@@ -158,14 +158,14 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a passage short enough is left as it stands", func(t *testing.T) {
 		text := "no engine beats a reversible engine"
-		at := spans(text, "engine")
+		pos := spans(text, "engine")
 
-		trimmed, retainedSpans := getTextAround(text, at, 0)
+		trimmed, retainedSpans := getTextAround(text, pos, 0)
 		if trimmed != text {
 			t.Errorf("cut %q, want it whole", trimmed)
 		}
-		if len(retainedSpans) != len(at) || retainedSpans[0] != at[0] {
-			t.Errorf("kept %+v, want %+v", retainedSpans, at)
+		if len(retainedSpans) != len(pos) || retainedSpans[0] != pos[0] {
+			t.Errorf("kept %+v, want %+v", retainedSpans, pos)
 		}
 	})
 
@@ -239,12 +239,12 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a span left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
-		at := spans(text, "engine")
-		if len(at) != 2 {
-			t.Fatalf("the passage holds %d spans, want 2", len(at))
+		offset := spans(text, "engine")
+		if len(offset) != 2 {
+			t.Fatalf("the passage holds %d spans, want 2", len(offset))
 		}
 
-		_, retainedData := getTextAround(text, at, 0)
+		_, retainedData := getTextAround(text, offset, 0)
 		if len(retainedData) != 1 {
 			t.Errorf("kept %+v, want only the span the window holds", retainedData)
 		}

@@ -6,11 +6,11 @@ import "testing"
 func BenchmarkSileroVAD(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	by, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), cfg)
 	if err != nil {
 		b.Skipf("silero VAD model not available: %v", err)
 	}
-	defer by.Close()
+	defer delta.Close()
 
 	// 5 seconds of 16kHz audio = 80,000 samples (~156 windows of 512 samples)
 	audio := make([]float32, 16000*5)
@@ -21,7 +21,7 @@ func BenchmarkSileroVAD(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for b.Loop() {
-		scores, err := by.scoreSpeech(b.Context(), audio)
+		scores, err := delta.scoreSpeech(b.Context(), audio)
 		if err != nil {
 			b.Fatal(err)
 		}

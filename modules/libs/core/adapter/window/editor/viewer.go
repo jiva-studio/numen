@@ -275,7 +275,7 @@ const pagesName = "pages"
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
 func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, where string) {
-	at, width, named, err := parsePageQuery(where, r.URL.Query())
+	pos, width, named, err := parsePageQuery(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -294,7 +294,7 @@ func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, whe
 
 	key := document.PageKey{
 		Document: document.Fingerprint{Path: path, Size: named.Size, Mtime: named.Mtime},
-		Page:     at,
+		Page:     pos,
 		Width:    width,
 	}
 	body, err := h.getPage.Execute(ctx, showing, key)

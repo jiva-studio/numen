@@ -64,14 +64,14 @@ func readAnswer(ctx context.Context, steps <-chan port.Step) (string, error) {
 
 // finishAnswer is the text the agent said, once its steps are over. The end of the context makes it
 // no answer of the agent's.
-func finishAnswer(ctx context.Context, said string) (string, error) {
+func finishAnswer(ctx context.Context, response string) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if strings.TrimSpace(said) == "" {
+	if strings.TrimSpace(response) == "" {
 		return "", fmt.Errorf("%w: %w", port.ErrUnavailable, errNoAnswer)
 	}
-	return said, nil
+	return response, nil
 }
 
 // failAnswer is the failure of an answer: the end of the caller's context is the caller's own, and

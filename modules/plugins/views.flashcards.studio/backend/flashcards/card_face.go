@@ -126,14 +126,14 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 	reader, err := u.readers.Open(v)
 	found := make([][]CardFace, len(paths))
 	var misses []int
-	for at, path := range paths {
+	for item, path := range paths {
 		if err == nil {
 			if faces, target := u.getCached(ctx, reader, v, path); target {
-				found[at] = faces
+				found[item] = faces
 				continue
 			}
 		}
-		misses = append(misses, at)
+		misses = append(misses, item)
 	}
 
 	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), by: make(map[string]stencilRead)}
@@ -144,13 +144,13 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 		running.Add(1)
 		go func() {
 			defer running.Done()
-			for at := range queue {
-				found[at] = u.parseDeck(ctx, v, paths[at], epoch, stencils)
+			for entry := range queue {
+				found[entry] = u.parseDeck(ctx, v, paths[entry], epoch, stencils)
 			}
 		}()
 	}
-	for _, at := range misses {
-		queue <- at
+	for _, elem := range misses {
+		queue <- elem
 	}
 	close(queue)
 	running.Wait()
@@ -188,12 +188,12 @@ func (u ListCardFaces) getCached(
 	}
 	stencils := make(map[string]domain.Fingerprint, len(e.stencils))
 	for stencil := range e.stencils {
-		at, err := reader.GetFingerprint(ctx, stencil)
+		pos, err := reader.GetFingerprint(ctx, stencil)
 		if err != nil {
 			u.cache.drop(key)
 			return nil, false
 		}
-		stencils[stencil] = at
+		stencils[stencil] = pos
 	}
 	if !e.isCurrent(deck, stencils) {
 		u.cache.drop(key)

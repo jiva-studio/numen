@@ -10,21 +10,21 @@ import (
 // makeJumbledHistory is a history as a synchroniser leaves it: out of order,
 // with a duplicated run and an answer taken back.
 func makeJumbledHistory() []review.Answer {
-	at := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
+	pos := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := review.Answer{
 		ID: "b", CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
-		At: at.Add(time.Minute), Rating: review.Good, Took: 4 * time.Second,
+		At: pos.Add(time.Minute), Rating: review.Good, Took: 4 * time.Second,
 	}
 	two := review.Answer{
 		ID: "a", CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
-		At: at, Rating: review.Again, Took: 9 * time.Second,
+		At: pos, Rating: review.Again, Took: 9 * time.Second,
 	}
 	three := review.Answer{
 		ID: "c", CardFace: review.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"},
-		At: at.Add(2 * time.Minute), Rating: review.Hard, Took: 6 * time.Second,
+		At: pos.Add(2 * time.Minute), Rating: review.Hard, Took: 6 * time.Second,
 	}
 	back := review.Answer{
-		ID: "d", Undoes: "c", At: at.Add(3 * time.Minute),
+		ID: "d", Undoes: "c", At: pos.Add(3 * time.Minute),
 	}
 	return []review.Answer{one, two, three, back, one}
 }

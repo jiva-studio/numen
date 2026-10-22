@@ -87,7 +87,6 @@ func (e AmbiguousSpan) Error() string {
 // original that is gone, which is the write having landed already.
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
-//
 // Fingerprint is what the caller believes is on disk. A note that has changed
 // since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
@@ -104,7 +103,7 @@ func (u Replace) Execute(
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.Fingerprint = fingerprint
 	e.Bound = MaxBytes
-	at, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
+	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
 
 		where, plainly := markdown.FindSpans(body, stood)
@@ -141,7 +140,7 @@ func (u Replace) Execute(
 	if err != nil {
 		return ReplaceResult{}, err
 	}
-	isDone.Fingerprint = at
+	isDone.Fingerprint = pos
 	return isDone, nil
 }
 
@@ -151,18 +150,18 @@ func (u Replace) Execute(
 // present for every shorter opening allows.
 func newMissingSpan(body, stood string) MissingSpan {
 	var ends []int
-	for at := 0; at < len(stood); {
-		_, width := utf8.DecodeRuneInString(stood[at:])
-		at += width
-		ends = append(ends, at)
+	for pos := 0; pos < len(stood); {
+		_, width := utf8.DecodeRuneInString(stood[pos:])
+		pos += width
+		ends = append(ends, pos)
 	}
 	var first markdown.Span
 	count := sort.Search(len(ends), func(i int) bool {
-		at, _ := markdown.FindSpans(body, stood[:ends[i]])
-		if len(at) == 0 {
+		offset, _ := markdown.FindSpans(body, stood[:ends[i]])
+		if len(offset) == 0 {
 			return true
 		}
-		first = at[0]
+		first = offset[0]
 		return false
 	})
 	if count == 0 {

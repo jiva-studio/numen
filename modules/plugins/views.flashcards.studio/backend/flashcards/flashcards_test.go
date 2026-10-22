@@ -91,8 +91,8 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 // write puts a file into the vault and brings the index level with it, which is
 func write(t *testing.T, s vaulted, path, body string) {
 	t.Helper()
-	at := filepath.Join(s.vault.Path, filepath.FromSlash(path))
-	if err := os.WriteFile(at, []byte(body), 0o600); err != nil {
+	pos := filepath.Join(s.vault.Path, filepath.FromSlash(path))
+	if err := os.WriteFile(pos, []byte(body), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	if err := s.scan(t.Context(), s.vault, []string{path}); err != nil {
@@ -142,13 +142,13 @@ func (s sitting) TakeBack(ctx context.Context, id string) (review.Answer, error)
 	return s.record.TakeBack(ctx, s.run, id)
 }
 
-func (s vaulted) run(t *testing.T, at time.Time) sitting {
+func (s vaulted) run(t *testing.T, pos time.Time) sitting {
 	t.Helper()
-	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, at)
+	run, err := flashcards.Log{Stores: s.logs}.Open(t.Context(), s.vault, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return newSitting(run, func() time.Time { return at })
+	return newSitting(run, func() time.Time { return pos })
 }
 
 // runNamed is a run whose file is named for one instant and whose answers were
@@ -342,11 +342,11 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 // getModTime is when a file of the vault was last written.
 func getModTime(t *testing.T, v domain.Vault, path string) time.Time {
 	t.Helper()
-	at, err := os.Stat(filepath.Join(v.Path, filepath.FromSlash(path)))
+	pos, err := os.Stat(filepath.Join(v.Path, filepath.FromSlash(path)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	return at.ModTime()
+	return pos.ModTime()
 }
 
 // A person starting a session on a vault has its cards given marks, and what stands
@@ -863,8 +863,8 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 			Card: invented.Card, Face: invented.Face,
 			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 1,
 		})
-		for at := range was.Faces {
-			was.Faces[at].Reps = 7
+		for item := range was.Faces {
+			was.Faces[item].Reps = 7
 		}
 	})
 
@@ -902,7 +902,7 @@ type plantedFace struct {
 	Reps int    `json:"reps"`
 }
 
-func formatTime(at time.Time) string { return at.UTC().Format(review.TimestampLayout) }
+func formatTime(pos time.Time) string { return pos.UTC().Format(review.TimestampLayout) }
 
 // rewrite changes the cache a vault holds, so that a test can say what a cache
 // claims and see whether it was believed.

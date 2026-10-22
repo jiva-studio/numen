@@ -11,8 +11,8 @@ import (
 // glancing is a window that records what is put in front of the person.
 type glancing struct{ asked []domain.Place }
 
-func (w *glancing) FocusPlace(_ context.Context, at domain.Place) error {
-	w.asked = append(w.asked, at)
+func (w *glancing) FocusPlace(_ context.Context, pos domain.Place) error {
+	w.asked = append(w.asked, pos)
 	return nil
 }
 func (w *glancing) ShowMove(context.Context, domain.Move) error { return nil }

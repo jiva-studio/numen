@@ -14,9 +14,9 @@ func TestModelBytesAreTheSumOfTheFilesHere(t *testing.T) {
 	segmenter := writeEmptyFile(t, dir, "silero.onnx")
 	var want int64
 	for i, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile} {
-		at := writeEmptyFile(t, dir, name)
+		pos := writeEmptyFile(t, dir, name)
 		size := 10 * (i + 1)
-		if err := os.WriteFile(at, make([]byte, size), 0o644); err != nil {
+		if err := os.WriteFile(pos, make([]byte, size), 0o644); err != nil {
 			t.Fatal(err)
 		}
 		want += int64(size)

@@ -25,8 +25,8 @@ func readEncryptedPaths(files map[string]*zip.File) map[string]bool {
 	locked := map[string]bool{}
 	for _, reference := range document.References {
 		// A cipher reference is written against the root of the archive.
-		if at := resolve("", reference.URI); at != "" {
-			locked[at] = true
+		if pos := resolve("", reference.URI); pos != "" {
+			locked[pos] = true
 		}
 	}
 	return locked

@@ -112,8 +112,8 @@ func (f *artifactFiles) getArtifactFile(
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(getReachCode(err), err)
 	}
-	at := f.getArtifactAddress(ctx, showing, ref)
-	producer, err := f.getProducer(ctx, at)
+	pos := f.getArtifactAddress(ctx, showing, ref)
+	producer, err := f.getProducer(ctx, pos)
 	if err != nil {
 		return domain.Vault{}, domain.Fingerprint{}, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -128,15 +128,15 @@ func (f *artifactFiles) getArtifactFile(
 // where this build reaches no address at all. What is at an address is the
 // fetcher's to say, so nothing here reads the address itself. A fetcher that
 // does not answer is an error.
-func (f *artifactFiles) getProducer(ctx context.Context, at domain.URL) (string, error) {
-	if f.imports == nil || f.imports.By == nil || at == "" {
+func (f *artifactFiles) getProducer(ctx context.Context, pos domain.URL) (string, error) {
+	if f.imports == nil || f.imports.By == nil || pos == "" {
 		return "", nil
 	}
-	by, err := f.imports.By.GetDownloadModel(ctx, at)
+	delta, err := f.imports.By.GetDownloadModel(ctx, pos)
 	if err != nil {
 		return "", err
 	}
-	return by.Producer, nil
+	return delta.Producer, nil
 }
 
 // getArtifactID is the name one artifact is placed under in the store, and whether the
@@ -173,14 +173,14 @@ func (f *artifactFiles) getArtifactAddress(ctx context.Context, v domain.Vault, 
 // text that is follows from the address: a video is a transcript, and every
 // other page is an article.
 func (h *artifactHandler) getLinkedArtifact(
-	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, pos domain.URL,
 ) (*v1.Artifact, error) {
-	producer, err := h.files.getProducer(ctx, at)
+	producer, err := h.files.getProducer(ctx, pos)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	of := getTextKind(producer)
-	if at == "" {
+	if pos == "" {
 		return newArtifact(of, source.RunNone, 0), nil
 	}
 	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
@@ -193,9 +193,9 @@ func (h *artifactHandler) getLinkedArtifact(
 // removeCopy takes the copy of a video off this disk. The note stands as it did,
 // pointing at the address, and the tab frames it again.
 func (h *artifactHandler) removeCopy(
-	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, pos domain.URL,
 ) (*connect.Response[v1.DeleteArtifactResponse], error) {
-	if err := h.deleteCopy.Execute(ctx, v, ref.Path, at); err != nil {
+	if err := h.deleteCopy.Execute(ctx, v, ref.Path, pos); err != nil {
 		if errors.Is(err, source.ErrNotReady) {
 			return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 		}
@@ -207,13 +207,13 @@ func (h *artifactHandler) removeCopy(
 // getVideoCopy is whether a copy of the video at an address relies on this disk, and
 // how large it is.
 func (h *artifactHandler) getVideoCopy(
-	ctx context.Context, v domain.Vault, path string, at domain.URL,
+	ctx context.Context, v domain.Vault, path string, pos domain.URL,
 ) *v1.Artifact {
 	out := &v1.Artifact{
 		Kind:  v1.ArtifactKind_ARTIFACT_KIND_COPY,
 		State: v1.State_STATE_NONE,
 	}
-	location := h.getCopyLocation.Execute(ctx, v, path, at)
+	location := h.getCopyLocation.Execute(ctx, v, path, pos)
 	if !location.Exists {
 		return out
 	}
@@ -224,7 +224,7 @@ func (h *artifactHandler) getVideoCopy(
 // fetchCopy fetches a copy of what is at an address and answers with what stands
 // once it has. A copy over the size the settings name is not fetched, and the
 func (h *artifactHandler) fetchCopy(
-	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
+	ctx context.Context, v domain.Vault, ref domain.Fingerprint, pos domain.URL,
 ) (*v1.Artifact, error) {
 	if h.imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
@@ -239,7 +239,7 @@ func (h *artifactHandler) fetchCopy(
 	}
 	got, err := h.imports.Copy(ctx, v, ref.Path, report)
 	h.state.finishTask(copying + ref.Path)
-	out := h.getVideoCopy(ctx, v, ref.Path, at)
+	out := h.getVideoCopy(ctx, v, ref.Path, pos)
 	if errors.Is(err, source.ErrBeingDownloaded) {
 		out.State = v1.State_STATE_RUNNING
 		return out, nil
@@ -288,14 +288,14 @@ func (h *artifactHandler) ListArtifacts(
 	if err != nil {
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	at := h.files.getArtifactAddress(ctx, showing, ref)
-	producer, err := h.files.getProducer(ctx, at)
+	pos := h.files.getArtifactAddress(ctx, showing, ref)
+	producer, err := h.files.getProducer(ctx, pos)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
 	out := &v1.ListArtifactsResponse{}
 	for _, of := range getArtifactKinds(ref.Kind, producer) {
-		one, err := h.artifact(ctx, showing, ref, at, of)
+		one, err := h.artifact(ctx, showing, ref, pos, of)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, err)
 		}
@@ -324,8 +324,8 @@ func (h *artifactHandler) CreateArtifact(
 	}
 	// What a url carries is what fetches it, so a build that reaches no address
 	// says it cannot and not that the file carries nothing.
-	at := h.files.getArtifactAddress(ctx, showing, ref)
-	producer, err := h.files.getProducer(ctx, at)
+	pos := h.files.getArtifactAddress(ctx, showing, ref)
+	producer, err := h.files.getProducer(ctx, pos)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable, err)
 	}
@@ -348,12 +348,12 @@ func (h *artifactHandler) CreateArtifact(
 		// A recording's transcript is heard by a model here; a note's is
 		// fetched from the address it points at.
 		if ref.Kind == domain.KindURL {
-			made, err = h.fetchArtifact(ctx, showing, ref, at)
+			made, err = h.fetchArtifact(ctx, showing, ref, pos)
 			break
 		}
 		made, err = h.run(ctx, showing, ref, of)
 	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
-		made, err = h.fetchCopy(ctx, showing, ref, at)
+		made, err = h.fetchCopy(ctx, showing, ref, pos)
 	default:
 		made, err = h.run(ctx, showing, ref, of)
 	}
@@ -418,8 +418,8 @@ func (h *artifactHandler) run(
 	ref domain.Fingerprint,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
-	by := h.runner(of)
-	if by == nil {
+	delta := h.runner(of)
+	if delta == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
 	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
@@ -440,7 +440,7 @@ func (h *artifactHandler) run(
 	// under the work and the file it is over.
 	return &v1.Artifact{
 		Kind:  of,
-		State: getStartState(by.Start(v, ref.Path)),
+		State: getStartState(delta.Start(v, ref.Path)),
 	}, nil
 }
 
@@ -478,7 +478,7 @@ func (h *artifactHandler) fetchArtifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.URL,
+	pos domain.URL,
 ) (*v1.Artifact, error) {
 	if h.imports == nil {
 		return nil, connect.NewError(connect.CodeUnimplemented, errNoDownloader)
@@ -491,7 +491,7 @@ func (h *artifactHandler) fetchArtifact(
 	if err != nil {
 		return nil, connect.NewError(getDownloadCode(err), err)
 	}
-	return h.getLinkedArtifact(ctx, v, ref, at)
+	return h.getLinkedArtifact(ctx, v, ref, pos)
 }
 
 // proofreadTranscript begins putting the transcript of a recording right, and
@@ -600,7 +600,7 @@ func (h *artifactHandler) artifact(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.URL,
+	pos domain.URL,
 	of v1.ArtifactKind,
 ) (*v1.Artifact, error) {
 	if of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
@@ -614,10 +614,10 @@ func (h *artifactHandler) artifact(
 	if ref.Kind == domain.KindURL &&
 		(of == v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT ||
 			of == v1.ArtifactKind_ARTIFACT_KIND_ARTICLE) {
-		return h.getLinkedArtifact(ctx, v, ref, at)
+		return h.getLinkedArtifact(ctx, v, ref, pos)
 	}
 	if of == v1.ArtifactKind_ARTIFACT_KIND_COPY {
-		return h.getVideoCopy(ctx, v, ref.Path, at), nil
+		return h.getVideoCopy(ctx, v, ref.Path, pos), nil
 	}
 	progress, err := h.getRunProgress.Execute(ctx, v, ref.Path, ref.Kind)
 	if err != nil {

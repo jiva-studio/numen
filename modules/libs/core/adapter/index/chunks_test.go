@@ -782,13 +782,13 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	// Two large chunks, each holding two small ones. Only the small ones ever
 	// carry a vector.
 	large := make([]chunk.Chunk, 0, 2)
-	for _, at := range []int{0, 100} {
+	for _, item := range []int{0, 100} {
 		large = append(large, chunk.Chunk{
-			Start: at, Length: 100, Location: "chapter",
+			Start: item, Length: 100, Location: "chapter",
 			Text: "whole",
 			Small: []chunk.Chunk{
-				{Start: at, Length: 50, Text: "first half"},
-				{Start: at + 50, Length: 50, Text: "second half"},
+				{Start: item, Length: 50, Text: "first half"},
+				{Start: item + 50, Length: 50, Text: "second half"},
 			},
 		})
 	}

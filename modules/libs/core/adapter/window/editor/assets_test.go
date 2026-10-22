@@ -16,8 +16,8 @@ import (
 func assetURL(path string) string { return assetsRoute + url.PathEscape(path) }
 
 // pageURL is the address of one page of a file of the vault.
-func pageURL(path string, at, wide int, mark document.Fingerprint) string {
-	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetURL(path), pagesName, at, wide, formatFingerprint(mark))
+func pageURL(path string, pos, wide int, mark document.Fingerprint) string {
+	return fmt.Sprintf("%s/%s/%d?wide=%d&%s", assetURL(path), pagesName, pos, wide, formatFingerprint(mark))
 }
 
 // A file of the vault is one part of its address, and what is asked of it is

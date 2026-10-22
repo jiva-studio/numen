@@ -169,15 +169,15 @@ func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 // synchroniser that met a conflict leaves.
 func writeConflictedCopies(t *testing.T, s vaulted) {
 	t.Helper()
-	at := filepath.Join(s.vault.Path, ".numen", "flashcards")
+	pos := filepath.Join(s.vault.Path, ".numen", "flashcards")
 	for _, name := range getRunFiles(t, s) {
-		raw, err := os.ReadFile(filepath.Join(at, name))
+		raw, err := os.ReadFile(filepath.Join(pos, name))
 		if err != nil {
 			t.Fatal(err)
 		}
 		stem := strings.TrimSuffix(name, ".jsonl") +
 			" (conflicted copy).jsonl"
-		if err := os.WriteFile(filepath.Join(at, stem), raw, 0o644); err != nil {
+		if err := os.WriteFile(filepath.Join(pos, stem), raw, 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -200,8 +200,8 @@ func getRunFiles(t *testing.T, s vaulted) []string {
 // spaces is a file of one length holding nothing that reads as an answer.
 func spaces(n int) []byte {
 	out := make([]byte, n)
-	for at := range out {
-		out[at] = ' '
+	for item := range out {
+		out[item] = ' '
 	}
 	return out
 }

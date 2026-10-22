@@ -8,8 +8,8 @@ const UI_SRC = fileURLToPath(new URL('../src', import.meta.url))
 
 /** Where a window's own screens are drawn, beside the components they use. */
 const APPS = [
-  '../../../apps/desktop/editor/src*.stories.ts',
-  '../../../apps/desktop/flashcards/src*.stories.ts',
+  '../../../apps/desktop/editor/src/**/*.stories.ts',
+  '../../../apps/desktop/flashcards/src/**/*.stories.ts',
 ]
 
 /**
@@ -53,7 +53,7 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
 })
 
 const config: StorybookConfig = {
-  stories: ['../src*.stories.ts', ...(drawing ? APPS : [])],
+  stories: ['../src/**/*.stories.ts', ...(drawing ? APPS : [])],
   addons: ['@storybook/addon-docs', '@storybook/addon-vitest'],
   framework: { name: '@storybook/vue3-vite', options: {} },
   ...(drawing ? { viteFinal: reaching } : {}),

@@ -66,9 +66,9 @@ func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string
 }
 
 // writeAppearance is one choice as a client makes it, whatever of it the client names.
-func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.WriteAppearanceRequest) {
+func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, requested *v1.WriteAppearanceRequest) {
 	t.Helper()
-	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(asked))
+	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(requested))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, as
 }
 
 // size is a size a choice names.
-func size(said float64) *float64 { return &said }
+func size(response float64) *float64 { return &response }
 
 // getResponse is what comes back at exactly this path. The page is handed over as
 // the empty path as well, which no URL parses to.
@@ -417,8 +417,8 @@ func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 	reply := make(chan struct{})
 	go func() {
 		defer close(reply)
-		at := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
+		pos := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, pos, nil))
 	}()
 	<-readers.begun
 

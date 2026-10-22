@@ -52,12 +52,12 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	for _, at := range []time.Time{
+	for _, item := range []time.Time{
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, -1),
 		time.Now(),
 	} {
-		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -345,9 +345,9 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
-	by := review.NewFSRSAt(0.9)
-	begun := by.Next(review.Schedule{}, when, review.Good)
-	fell := by.Next(begun, when, review.Good).Due
+	delta := review.NewFSRSAt(0.9)
+	begun := delta.Next(review.Schedule{}, when, review.Good)
+	fell := delta.Next(begun, when, review.Good).Due
 	if away := fell.Sub(when).Hours() / 24; away < review.EvenFrom {
 		t.Fatalf("the second answer sends the card %g days away", away)
 	}
@@ -375,7 +375,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 
 	// The projection takes the card on from where the first answer left it, and
 	// its one day of review is the day that answer is given in.
-	run := review.Simulation{By: by, Day: today, Cost: review.DefaultCost, Days: 21}
+	run := review.Simulation{By: delta, Day: today, Cost: review.DefaultCost, Days: 21}
 	projected, err := run.Run(t.Context(), when, read.Settings, first, 0)
 	if err != nil {
 		t.Fatal(err)
@@ -408,10 +408,10 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 
 // dayFrom is how many days of review stand between the one holding from and the
 // one holding at.
-func dayFrom(from, at time.Time) int {
+func dayFrom(from, pos time.Time) int {
 	open := from
 	for i := range 400 {
-		if at.Before(today.GetEnd(open)) {
+		if pos.Before(today.GetEnd(open)) {
 			return i
 		}
 		open = today.GetEnd(open)
@@ -424,9 +424,9 @@ func dayFrom(from, at time.Time) int {
 func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 	t.Parallel()
 	when := time.Date(2026, 9, 7, 4, 0, 0, 0, time.Local)
-	by := review.NewFSRSAt(0.9)
-	begun := by.Next(review.Schedule{}, when, review.Good)
-	fell := by.Next(begun, when, review.Good).Due
+	delta := review.NewFSRSAt(0.9)
+	begun := delta.Next(review.Schedule{}, when, review.Good)
+	fell := delta.Next(begun, when, review.Good).Due
 
 	s := openVault(t, map[string]string{
 		"Term.md": term,

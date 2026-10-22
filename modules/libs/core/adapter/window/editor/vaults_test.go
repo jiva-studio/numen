@@ -205,11 +205,11 @@ func addVault(t *testing.T, add vaults.Add, name string) domain.Vault {
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
-	at := filepath.Join(t.TempDir(), name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(t.TempDir(), name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // getList is the list as the client is answered with it.

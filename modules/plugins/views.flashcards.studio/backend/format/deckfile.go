@@ -186,20 +186,20 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 	_, spans := readDeck(domain.Fingerprint{}, body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
-	at := -1
+	pos := -1
 	for i, span := range spans {
 		if span.mark == "" || span.mark != card {
 			continue
 		}
-		if at >= 0 {
+		if pos >= 0 {
 			return cardSpan{}, fmt.Errorf("%w: %s", ErrTwoCards, card)
 		}
-		at = i
+		pos = i
 	}
-	if at < 0 {
+	if pos < 0 {
 		return cardSpan{}, fmt.Errorf("%w: %s", ErrNoSuchCard, card)
 	}
-	return spans[at], nil
+	return spans[pos], nil
 }
 
 // RenameSection gives the section standing at one place in the deck another
@@ -253,15 +253,15 @@ func (f *DeckFile) AddSection(s Section) error {
 	if lead := trimBlankLines(markdown.Normalise(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, strings.Join(blocks, "\n\n")))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
 }
 
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, cardBlock(card)))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, cardBlock(card)))
 }
 
 // AddCardUnder writes a card at the end of the section standing at one place in
@@ -408,6 +408,6 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 // under the heading is an ordinary wikilink, so what cuts the card is the note
 // that name lands on.
 func usesStencil(card Card, linkTargets map[string]string, stencil string) bool {
-	at, lands := linkTargets[card.StencilLink]
-	return lands && at == stencil
+	pos, lands := linkTargets[card.StencilLink]
+	return lands && pos == stencil
 }

@@ -85,8 +85,8 @@ func getUseCases(t *testing.T) []string {
 		if !folder.IsDir() {
 			continue
 		}
-		at := filepath.Join("..", "usecase", folder.Name())
-		files, err := os.ReadDir(at)
+		pos := filepath.Join("..", "usecase", folder.Name())
+		files, err := os.ReadDir(pos)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -95,7 +95,7 @@ func getUseCases(t *testing.T) []string {
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
 			}
-			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(at, one.Name()), nil, 0)
+			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(pos, one.Name()), nil, 0)
 			if err != nil {
 				t.Fatal(err)
 			}

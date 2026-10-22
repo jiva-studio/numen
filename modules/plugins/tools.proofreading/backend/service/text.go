@@ -57,15 +57,15 @@ func proofreadSpeech(
 	ctx context.Context, ask askModel, lines []Line, size, overlap, from, limit int,
 ) (textResult, error) {
 	cues := getSpokenLines(lines)
-	at := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
-	if at >= len(cues) {
+	pos := sort.Search(len(cues), func(i int) bool { return cues[i].Number >= from })
+	if pos >= len(cues) {
 		return textResult{next: from, isDone: true}, nil
 	}
 	end := len(cues)
 	if limit > 0 {
-		end = min(end, at+limit)
+		end = min(end, pos+limit)
 	}
-	window := cues[at:end:end]
+	window := cues[pos:end:end]
 
 	about := describeSpeech(cues)
 
@@ -94,13 +94,13 @@ func proofreadSpeech(
 		out.next, out.isDone = cues[end-1].Number+1, true
 		return out, nil
 	}
-	resume := max(end-max(overlap, 0), at+1)
+	resume := max(end-max(overlap, 0), pos+1)
 	for _, one := range answers {
 		if one.batch.Last() != window[len(window)-1].Number {
 			continue
 		}
 		for _, start := range one.reaching {
-			resume = min(resume, max(getLineIndex(cues, start), at+1))
+			resume = min(resume, max(getLineIndex(cues, start), pos+1))
 		}
 	}
 	out.next = cues[resume].Number
@@ -130,8 +130,8 @@ func askBatches(
 
 // setContext returns the batches with what the recording holds on each of them.
 func setContext(batches []Batch, about string) []Batch {
-	for at := range batches {
-		batches[at].Context = about
+	for item := range batches {
+		batches[item].Context = about
 	}
 	return batches
 }

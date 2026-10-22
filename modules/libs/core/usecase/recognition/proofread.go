@@ -51,7 +51,6 @@ type Proofread struct {
 // NewProofread is what a recognition is put right through: the vault it is
 // read out of, the store the recognition and its corrections are kept in, and the
 // proofreader that answers about a page.
-//
 func NewProofread(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (Proofread, error) {
@@ -73,15 +72,15 @@ func NewProofread(
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
 ) (right Proofread, held bool, err error) {
-	by, err := run.OpenProofreader(c.By)
+	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
 		return Proofread{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
-	if by == nil {
+	if delta == nil {
 		return Proofread{}, false, nil
 	}
 
-	right, err = NewProofread(readers, derived, by)
+	right, err = NewProofread(readers, derived, delta)
 	if err != nil {
 		return Proofread{}, false, err
 	}
@@ -185,16 +184,16 @@ type proofreadRecognitionJob struct {
 func (u Proofread) askPages(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	at int,
+	pos int,
 	res *ProofreadResult,
 ) error {
-	if at >= len(p.pages) {
+	if pos >= len(p.pages) {
 		return nil
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	request := p.pages[at:]
+	request := p.pages[pos:]
 	answer, err := u.by.ProofreadScan(ctx, request)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
@@ -208,12 +207,12 @@ func (u Proofread) askPages(
 func (u Proofread) writeCorrections(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	asked []domain.ProofreadPage,
+	requested []domain.ProofreadPage,
 	answer domain.ScanProofreading,
 	end int,
 	res *ProofreadResult,
 ) error {
-	placed, err := getCorrectionLines(asked, answer.Corrections)
+	placed, err := getCorrectionLines(requested, answer.Corrections)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -263,7 +262,7 @@ func (u Proofread) lines(
 
 // getCorrectionLines returns the corrections as lines of the recognition, rejecting
 // any correction whose line number was not asked about or that joins lines.
-func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
+func getCorrectionLines(requested []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
 	out := make([]domain.CorrectionLine, len(made))
 	for i, one := range made {
 		if one.IsJoined() {
@@ -272,7 +271,7 @@ func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCor
 		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
 	}
 	var lines []domain.ProofreadLine
-	for _, page := range asked {
+	for _, page := range requested {
 		lines = append(lines, page.Lines...)
 	}
 	if one, ok := domain.FindUnaskedCorrection(lines, made); ok {

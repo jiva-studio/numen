@@ -9,11 +9,11 @@ import (
 // writeEmptyFile writes an empty file under dir and answers with where it is.
 func writeEmptyFile(t *testing.T, dir, name string) string {
 	t.Helper()
-	at := filepath.Join(dir, name)
-	if err := os.WriteFile(at, nil, 0o644); err != nil {
+	pos := filepath.Join(dir, name)
+	if err := os.WriteFile(pos, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // Ready is answered by what is on this machine: a path written down is the

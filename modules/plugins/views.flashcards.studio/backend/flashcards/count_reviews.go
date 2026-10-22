@@ -260,14 +260,14 @@ func getUncounted(answers []review.Answer, seen map[string]bool) []review.Answer
 // it. Where a card falls is worked out from the answers like everything else,
 // so the day it shows is the day it would be asked on.
 func (u CountReviews) getDueAndRetained(
-	ctx context.Context, v domain.Vault, held ReviewLog,
+	ctx context.Context, v domain.Vault, target ReviewLog,
 ) (map[string]int, map[string]review.RecallTally, error) {
 	falls := make(map[string]int)
 	if u.schedules.by == nil {
 		return falls, nil, nil
 	}
 
-	schedules, err := u.schedules.GetFromLog(ctx, v, held)
+	schedules, err := u.schedules.GetFromLog(ctx, v, target)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -280,7 +280,7 @@ func (u CountReviews) getDueAndRetained(
 		}
 		falls[u.day.GetName(s.Due)]++
 	}
-	return falls, held.GetHistory().GetRetained(u.schedules.by, u.day), nil
+	return falls, target.GetHistory().GetRetained(u.schedules.by, u.day), nil
 }
 
 // readRemembered is what was counted last time, by the name of the run it was

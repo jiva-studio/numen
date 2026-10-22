@@ -16,10 +16,10 @@ import (
 
 // writeSettings is a settings file holding that text, and the container reading
 // it.
-func writeSettings(t *testing.T, written string) (Config, string) {
+func writeSettings(t *testing.T, output string) (Config, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.WriteFile(path, []byte(written), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return Config{SettingsPath: path}, path

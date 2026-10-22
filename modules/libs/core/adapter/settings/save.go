@@ -99,8 +99,8 @@ func writeSettings(raw []byte, wrote []Setting, into Document) error {
 
 // isFieldCovered is whether a setting handed in at one name wrote the field at
 // another: the field itself, or a field inside the section named.
-func isFieldCovered(at []string, field string) bool {
-	name := strings.Join(at, ".")
+func isFieldCovered(pos []string, field string) bool {
+	name := strings.Join(pos, ".")
 	return field == name || strings.HasPrefix(field, name+".")
 }
 
@@ -110,7 +110,7 @@ func isFieldCovered(at []string, field string) bool {
 //
 // A file that has not got the field is left alone. A field whose new name the
 // section already holds is left alone as well: one section holds one of a name.
-func renameField(path string, at []string, to string) error {
+func renameField(path string, pos []string, to string) error {
 	return runOnFile(path, func(path string) error {
 		raw, err := os.ReadFile(path)
 		if err != nil {
@@ -124,7 +124,7 @@ func renameField(path string, at []string, to string) error {
 			return fmt.Errorf("%s: %w", path, err)
 		}
 
-		renamed, isDone := renameMember(raw, at, to)
+		renamed, isDone := renameMember(raw, pos, to)
 		if !isDone {
 			return nil
 		}
@@ -134,8 +134,8 @@ func renameField(path string, at []string, to string) error {
 
 // renameMember returns the object's bytes with one member's name changed,
 // and whether it found the member to change.
-func renameMember(object []byte, at []string, to string) ([]byte, bool) {
-	if len(at) == 0 {
+func renameMember(object []byte, pos []string, to string) ([]byte, bool) {
+	if len(pos) == 0 {
 		return object, false
 	}
 	target, err := parseObjectShape(object)
@@ -144,8 +144,8 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 	}
 
 	for _, one := range target.pairs {
-		if one.key == at[0] {
-			return renameInMember(object, target, one, at, to)
+		if one.key == pos[0] {
+			return renameInMember(object, target, one, pos, to)
 		}
 	}
 
@@ -153,15 +153,15 @@ func renameMember(object []byte, at []string, to string) ([]byte, bool) {
 }
 
 // renameInMember renames the member the path ends at, and says whether it did.
-func renameInMember(object []byte, held shape, one member, at []string, to string) ([]byte, bool) {
-	if len(at) > 1 {
-		section, isDone := renameMember(object[one.from:one.to], at[1:], to)
+func renameInMember(object []byte, target shape, one member, pos []string, to string) ([]byte, bool) {
+	if len(pos) > 1 {
+		section, isDone := renameMember(object[one.from:one.to], pos[1:], to)
 		if !isDone {
 			return object, false
 		}
 		return splice(object, one.from, one.to, section), true
 	}
-	if one.nameTo == 0 || held.hasKey(to) {
+	if one.nameTo == 0 || target.hasKey(to) {
 		return object, false
 	}
 	name, err := json.Marshal(to)
@@ -212,27 +212,27 @@ func applySetting(raw []byte, setting Setting) ([]byte, error) {
 // object's bytes with that one span changed.
 //
 // what a section made here is laid out against.
-func replaceValueAt(object []byte, at []string, value []byte, outer string) ([]byte, error) {
+func replaceValueAt(object []byte, pos []string, value []byte, outer string) ([]byte, error) {
 	target, err := parseObjectShape(object)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, one := range target.pairs {
-		if one.key != at[0] {
+		if one.key != pos[0] {
 			continue
 		}
-		if len(at) == 1 {
+		if len(pos) == 1 {
 			return splice(object, one.from, one.to, value), nil
 		}
-		section, err := replaceValueAt(object[one.from:one.to], at[1:], value, target.indent)
+		section, err := replaceValueAt(object[one.from:one.to], pos[1:], value, target.indent)
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", one.key, err)
 		}
 		return splice(object, one.from, one.to, section), nil
 	}
 
-	return target.appendMember(object, at, value, outer), nil
+	return target.appendMember(object, pos, value, outer), nil
 }
 
 // member is one member of an object: its name, where that name is written, and
@@ -288,7 +288,7 @@ func parseObjectShape(object []byte) (shape, error) {
 }
 
 // readMember reads the next member of the object the decoder is in.
-func readMember(decoder *json.Decoder, object []byte, held shape) (member, error) {
+func readMember(decoder *json.Decoder, object []byte, target shape) (member, error) {
 	name, err := decoder.Token()
 	if err != nil {
 		return member{}, err
@@ -297,7 +297,7 @@ func readMember(decoder *json.Decoder, object []byte, held shape) (member, error
 	if !is {
 		return member{}, errNotASection
 	}
-	if held.hasKey(key) {
+	if target.hasKey(key) {
 		return member{}, fmt.Errorf("%s: %w", key, errRepeated)
 	}
 	one := member{key: key}
@@ -333,18 +333,18 @@ func (s shape) hasKey(key string) bool {
 // appendMember puts a member at the end of the object, laid out the way the
 // object already is. The end is where a name nobody has written yet belongs:
 // the order of the rest is a person's.
-func (s shape) appendMember(object []byte, at []string, value []byte, outer string) []byte {
-	name, _ := json.Marshal(at[0])
+func (s shape) appendMember(object []byte, pos []string, value []byte, outer string) []byte {
+	name, _ := json.Marshal(pos[0])
 
 	if len(s.pairs) == 0 {
 		// An object holding nothing says nothing about how it is laid out, so
 		// it is opened out one step past the name it hangs from.
 		indent := outer + "  "
-		body := string(name) + ": " + string(wrapInSections(at[1:], value, indent))
+		body := string(name) + ": " + string(wrapInSections(pos[1:], value, indent))
 		return splice(object, s.last, s.last, []byte("\n"+indent+body+"\n"+outer))
 	}
 
-	body := string(name) + ": " + string(wrapInSections(at[1:], value, s.indent))
+	body := string(name) + ": " + string(wrapInSections(pos[1:], value, s.indent))
 	if s.indent == "" {
 		return splice(object, s.last, s.last, []byte(", "+body))
 	}
@@ -354,12 +354,12 @@ func (s shape) appendMember(object []byte, at []string, value []byte, outer stri
 // wrapInSections is the value a name is given, wrapped in the sections between
 // it and the field it names. A section made for a one-line object is written on
 // one line too.
-func wrapInSections(at []string, value []byte, indent string) []byte {
-	if len(at) == 0 {
+func wrapInSections(pos []string, value []byte, indent string) []byte {
+	if len(pos) == 0 {
 		return value
 	}
-	name, _ := json.Marshal(at[0])
-	inside := wrapInSections(at[1:], value, indent+"  ")
+	name, _ := json.Marshal(pos[0])
+	inside := wrapInSections(pos[1:], value, indent+"  ")
 	if indent == "" {
 		return []byte("{" + string(name) + ": " + string(inside) + "}")
 	}

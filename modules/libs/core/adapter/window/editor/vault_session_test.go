@@ -103,8 +103,8 @@ func newListedVault(
 	t.Helper()
 
 	root := t.TempDir()
-	for at, body := range notes {
-		path := filepath.Join(root, filepath.FromSlash(at))
+	for item, body := range notes {
+		path := filepath.Join(root, filepath.FromSlash(item))
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -350,8 +350,8 @@ func TestTheVaultThatWentIsNoLongerFollowed(t *testing.T) {
 func write(t *testing.T, v domain.Vault, path, body string) {
 	t.Helper()
 
-	at := filepath.Join(v.Path, filepath.FromSlash(path))
-	if err := os.WriteFile(at, []byte(body), 0o644); err != nil {
+	pos := filepath.Join(v.Path, filepath.FromSlash(path))
+	if err := os.WriteFile(pos, []byte(body), 0o644); err != nil {
 		t.Fatal(err)
 	}
 }

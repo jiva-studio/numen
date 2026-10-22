@@ -177,14 +177,14 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 	}
 }
 
-func warn(into Document, said string, about ...any) {
-	into.AddNotice(fmt.Sprintf(said, about...))
+func warn(into Document, response string, about ...any) {
+	into.AddNotice(fmt.Sprintf(response, about...))
 }
 
 // write puts the settings where they are read from, beside the file and
 // renamed over the top.
-func write(path string, held Document) error {
-	raw, err := json.MarshalIndent(held, "", "  ")
+func write(path string, target Document) error {
+	raw, err := json.MarshalIndent(target, "", "  ")
 	if err != nil {
 		return err
 	}

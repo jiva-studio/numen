@@ -36,11 +36,11 @@ func getHeldAdapters(name, src string) []string {
 		if err != nil {
 			continue
 		}
-		at := path[strings.LastIndex(path, "/")+1:]
+		pos := path[strings.LastIndex(path, "/")+1:]
 		if one.Name != nil {
-			at = one.Name.Name
+			pos = one.Name.Name
 		}
-		underMap[at] = path
+		underMap[pos] = path
 	}
 
 	var findings []string
@@ -55,15 +55,15 @@ func getHeldAdapters(name, src string) []string {
 				if !ok {
 					return true
 				}
-				at, ok := sel.X.(*ast.Ident)
+				offset, ok := sel.X.(*ast.Ident)
 				if !ok {
 					return true
 				}
-				path := underMap[at.Name]
+				path := underMap[offset.Name]
 				if !strings.HasPrefix(path, compilerHolds) || driving[strings.TrimPrefix(path, module)] {
 					return true
 				}
-				findings = append(findings, fn.Name.Name+" answers with "+at.Name+"."+sel.Sel.Name+
+				findings = append(findings, fn.Name.Name+" answers with "+offset.Name+"."+sel.Sel.Name+
 					", which is "+strings.TrimPrefix(path, module)+"'s own type and not a port")
 				return true
 			})

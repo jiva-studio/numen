@@ -96,9 +96,9 @@ func (d Day) boundary() (int, int) {
 
 // wall is a clock reading taken apart from the zone it was read in, so that two
 // of them can be subtracted.
-func wall(at time.Time) time.Time {
-	y, m, day := at.Date()
-	return time.Date(y, m, day, at.Hour(), at.Minute(), 0, 0, time.UTC)
+func wall(pos time.Time) time.Time {
+	y, m, day := pos.Date()
+	return time.Date(y, m, day, pos.Hour(), pos.Minute(), 0, 0, time.UTC)
 }
 
 // GetEndOfDate is the instant the day of this date gives way to the next. The
@@ -127,11 +127,11 @@ func ParseDayStart(written string) (time.Duration, error) {
 	if written == "" {
 		return DayStartTime, nil
 	}
-	at, err := time.Parse("15:04", written)
+	pos, err := time.Parse("15:04", written)
 	if err != nil {
 		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), written)
 	}
-	starts := time.Duration(at.Hour())*time.Hour + time.Duration(at.Minute())*time.Minute
+	starts := time.Duration(pos.Hour())*time.Hour + time.Duration(pos.Minute())*time.Minute
 	if starts > LatestDayStart {
 		return DayStartTime, fmt.Errorf("%w, 00:00 to %s: %q", ErrNotAnHour, Clock(LatestDayStart), written)
 	}

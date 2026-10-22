@@ -30,25 +30,25 @@ type section struct {
 func sections(body []byte, first, last int) []section {
 	var out []section
 	var f markdown.Fence
-	for at := 0; at <= len(body); {
+	for pos := 0; pos <= len(body); {
 		end, next := len(body), len(body)+1
-		if i := bytes.IndexByte(body[at:], '\n'); i >= 0 {
-			end, next = at+i, at+i+1
+		if i := bytes.IndexByte(body[pos:], '\n'); i >= 0 {
+			end, next = pos+i, pos+i+1
 		}
-		line := bytes.TrimRight(body[at:end], "\r")
+		line := bytes.TrimRight(body[pos:end], "\r")
 		if !f.IsCrossedByBytes(line) && !f.IsInside() {
 			if level, name, ok := heading(line, first, last); ok {
 				if n := len(out); n > 0 {
-					out[n-1].to = at
+					out[n-1].to = pos
 				}
 				// A heading the file ends on has nothing under it, so its run
 				// begins where the body ends.
 				out = append(out, section{
-					level: level, name: name, head: at, from: min(next, len(body)), to: len(body),
+					level: level, name: name, head: pos, from: min(next, len(body)), to: len(body),
 				})
 			}
 		}
-		at = next
+		pos = next
 	}
 	if n := len(out); n > 0 {
 		out[n-1].to = len(body)
@@ -105,17 +105,17 @@ func getTrimmedEnd(body []byte, from, to int) int {
 }
 
 // lineAt is one line without its ending, and the byte the next one begins at.
-func lineAt(body []byte, at, to int) ([]byte, int) {
-	if i := bytes.IndexByte(body[at:to], '\n'); i >= 0 {
-		return bytes.TrimRight(body[at:at+i], "\r"), at + i + 1
+func lineAt(body []byte, pos, to int) ([]byte, int) {
+	if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {
+		return bytes.TrimRight(body[pos:pos+i], "\r"), pos + i + 1
 	}
-	return bytes.TrimRight(body[at:to], "\r"), to
+	return bytes.TrimRight(body[pos:to], "\r"), to
 }
 
 // lineFrom is the byte the line holding at begins at, looked for no further
 // back than from.
-func lineFrom(body []byte, from, at int) int {
-	if i := bytes.LastIndexByte(body[from:at], '\n'); i >= 0 {
+func lineFrom(body []byte, from, pos int) int {
+	if i := bytes.LastIndexByte(body[from:pos], '\n'); i >= 0 {
 		return from + i + 1
 	}
 	return from

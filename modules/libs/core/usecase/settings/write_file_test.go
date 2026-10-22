@@ -12,8 +12,8 @@ func TestWriteFilePassesTheTextAndTheBaselineOn(t *testing.T) {
 	t.Parallel()
 	var text string
 	var from *string
-	write := settings.NewWriteFile(func(written string, baseline *string) error {
-		text, from = written, baseline
+	write := settings.NewWriteFile(func(output string, baseline *string) error {
+		text, from = output, baseline
 		return port.ErrStale
 	})
 	baseline := "was"

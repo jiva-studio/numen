@@ -30,14 +30,14 @@ func (c Config) AgentProvider() port.AgentProvider {
 
 // getAgentPrograms are the programs the agent plugins list, asked for with the command lines the
 // settings give. A provider that does not answer in time lists none.
-func (c Config) getAgentPrograms(held settings.Agent) []port.AgentProgram {
+func (c Config) getAgentPrograms(target settings.Agent) []port.AgentProgram {
 	provider := c.AgentProvider()
 	if provider == nil {
 		return nil
 	}
 	ctx, stop := context.WithTimeout(context.Background(), programsLimit)
 	defer stop()
-	programs, err := provider.GetPrograms(ctx, held.GetCommands())
+	programs, err := provider.GetPrograms(ctx, target.GetCommands())
 	if err != nil {
 		c.handleError(fmt.Errorf("list agent programs: %w", err))
 	}
@@ -78,11 +78,11 @@ func (h *hostAgentProvider) GetPrograms(
 	failed := make([]error, len(ids))
 
 	var group sync.WaitGroup
-	for at, id := range ids {
+	for item, id := range ids {
 		group.Add(1)
 		go func() {
 			defer group.Done()
-			items[at], failed[at] = h.listPrograms(ctx, id, commands)
+			items[item], failed[item] = h.listPrograms(ctx, id, commands)
 		}()
 	}
 	group.Wait()

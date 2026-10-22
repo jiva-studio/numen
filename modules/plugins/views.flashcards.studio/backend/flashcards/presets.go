@@ -94,8 +94,8 @@ func NewPresets(
 // getStopReasons is why a preset schedules nothing, and why it schedules
 // nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	at := u.now()
-	return p.GetOverallStopReason(u.day, at), p.GetStopReason(u.day, at)
+	pos := u.now()
+	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
 }
 
 // PresetSummary is one preset as a person choosing between them sees it: where
@@ -217,10 +217,10 @@ func (r *PresetReads) getSchedulingPreset(
 	}
 
 	first := at[0]
-	by := first.Target.GetWritten()
+	delta := first.Target.GetWritten()
 	out := CreateDefaultPreset()
 	if first.To != "" {
-		by = first.To
+		delta = first.To
 		if out, err = r.read(ctx, v, first.To); err != nil {
 			return PresetContents{}, err
 		}
@@ -230,11 +230,11 @@ func (r *PresetReads) getSchedulingPreset(
 			out.Path = ""
 		}
 	} else {
-		out.Problems = []string{by + " reaches no note, and the defaults stand"}
+		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
 	}
 	if len(at) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
-			"this deck names more than one preset, and is scheduled by "+by)
+			"this deck names more than one preset, and is scheduled by "+delta)
 	}
 	return out, nil
 }

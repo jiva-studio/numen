@@ -107,12 +107,12 @@ func buildKernel(cutoff, reach float64) kernel {
 // between. The kernel is even, so a distance either side of nothing reads the
 // same.
 func (w kernel) getValueAt(d float64) float64 {
-	at := math.Abs(d) * w.step
-	i := int(at)
+	pos := math.Abs(d) * w.step
+	i := int(pos)
 	if i+1 >= len(w.held) {
 		return 0
 	}
-	part := at - float64(i)
+	part := pos - float64(i)
 	return w.held[i]*(1-part) + w.held[i+1]*part
 }
 

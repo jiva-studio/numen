@@ -28,8 +28,8 @@ func getLibraryName(goos string) string {
 // getEnvLibrary returns the library a person named in the environment, or empty.
 func getEnvLibrary() string {
 	for _, name := range libraryEnvs {
-		if at := os.Getenv(name); at != "" {
-			return at
+		if pos := os.Getenv(name); pos != "" {
+			return pos
 		}
 	}
 	return ""
@@ -61,9 +61,9 @@ func findMatching(pattern string) []string {
 		return nil
 	}
 	var out []string
-	for _, at := range found {
-		if info, err := os.Stat(at); err == nil && info.Mode().IsRegular() {
-			out = append(out, at)
+	for _, item := range found {
+		if info, err := os.Stat(item); err == nil && info.Mode().IsRegular() {
+			out = append(out, item)
 		}
 	}
 	return out
@@ -101,12 +101,12 @@ func getCandidatesInStore(pluginDir, home, librarySum string, machine []string, 
 	name := getLibraryName(runtime.GOOS)
 	var out []string
 	for _, dir := range getBesideDirs(pluginDir) {
-		if at := filepath.Join(dir, name); isFile(at) {
-			out = append(out, at)
+		if pos := filepath.Join(dir, name); isFile(pos) {
+			out = append(out, pos)
 		}
 	}
-	if at := filepath.Join(home, name); home != "" && isFile(at) && verifyFile(at, librarySum) == nil {
-		out = append(out, at)
+	if offset := filepath.Join(home, name); home != "" && isFile(offset) && verifyFile(offset, librarySum) == nil {
+		out = append(out, offset)
 	}
 	isDefault := machine == nil
 	if isDefault {
@@ -156,12 +156,12 @@ func getLoaderDirs(goos string) []string {
 
 // readLoaderConfig returns the folders a loader configuration file names,
 // following its include lines. seen holds the files already read.
-func readLoaderConfig(at string, seen map[string]bool) []string {
-	if seen[at] {
+func readLoaderConfig(pos string, seen map[string]bool) []string {
+	if seen[pos] {
 		return nil
 	}
-	seen[at] = true
-	raw, err := os.ReadFile(at)
+	seen[pos] = true
+	raw, err := os.ReadFile(pos)
 	if err != nil {
 		return nil
 	}
@@ -173,7 +173,7 @@ func readLoaderConfig(at string, seen map[string]bool) []string {
 		case len(fields) == 0, fields[0] == "hwcap":
 		case fields[0] == "include":
 			for _, pattern := range fields[1:] {
-				out = append(out, readIncludedConfig(at, pattern, seen)...)
+				out = append(out, readIncludedConfig(pos, pattern, seen)...)
 			}
 		default:
 			out = append(out, fields...)
@@ -210,21 +210,21 @@ func isConfigSeparator(r rune) bool {
 func removeDuplicates(paths []string) []string {
 	observed := make(map[string]bool, len(paths))
 	var out []string
-	for _, at := range paths {
-		resolved, err := filepath.EvalSymlinks(at)
+	for _, item := range paths {
+		resolved, err := filepath.EvalSymlinks(item)
 		if err != nil {
-			resolved = at
+			resolved = item
 		}
 		if !observed[resolved] {
 			observed[resolved] = true
-			out = append(out, at)
+			out = append(out, item)
 		}
 	}
 	return out
 }
 
-func isFile(at string) bool {
-	info, err := os.Stat(at)
+func isFile(pos string) bool {
+	info, err := os.Stat(pos)
 	return err == nil && info.Mode().IsRegular()
 }
 

@@ -305,9 +305,9 @@ func wordBounded(t *testing.T, text string, c Chunk) {
 // strictly inside a chunk is structure the cut ignored.
 func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 	t.Helper()
-	for _, at := range bounds {
-		if c.Start < at && at < c.Start+c.Length {
-			t.Errorf("chunk %d+%d runs across the part at %d", c.Start, c.Length, at)
+	for _, item := range bounds {
+		if c.Start < item && item < c.Start+c.Length {
+			t.Errorf("chunk %d+%d runs across the part at %d", c.Start, c.Length, item)
 		}
 	}
 }

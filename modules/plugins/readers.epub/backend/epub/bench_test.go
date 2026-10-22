@@ -27,20 +27,20 @@ func getLargestBook(b *testing.B) string {
 	if err != nil {
 		b.Fatalf("walk the corpus: %v", err)
 	}
-	at, most := "", int64(0)
+	pos, most := "", int64(0)
 	for _, targetVal := range target {
 		info, err := os.Stat(targetVal)
 		if err != nil {
 			continue
 		}
 		if info.Size() > most {
-			at, most = targetVal, info.Size()
+			pos, most = targetVal, info.Size()
 		}
 	}
-	if at == "" {
+	if pos == "" {
 		b.Skipf("the corpus at %s holds no books", root)
 	}
-	return at
+	return pos
 }
 
 func BenchmarkReadingABook(b *testing.B) {
@@ -67,15 +67,15 @@ func BenchmarkDrawingOneDocument(b *testing.B) {
 		b.Fatal(err)
 	}
 	// The longest document of the book, which is what a reader waits on.
-	at, most := "", 0
+	pos, most := "", 0
 	for _, doc := range book.Documents {
 		if doc.Length > most {
-			at, most = doc.Path, doc.Length
+			pos, most = doc.Path, doc.Length
 		}
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		rendered, err := book.Markup(at)
+		rendered, err := book.Markup(pos)
 		if err != nil {
 			b.Fatal(err)
 		}

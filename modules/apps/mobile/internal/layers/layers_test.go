@@ -57,7 +57,7 @@ func readSources(t *testing.T) []standing {
 	}
 
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(held standing) bool { return held.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.at == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}

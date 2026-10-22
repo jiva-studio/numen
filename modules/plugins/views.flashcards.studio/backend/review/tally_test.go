@@ -15,13 +15,13 @@ var counting = review.Day{
 	In:     time.FixedZone("test", 0),
 }
 
-func moment(t *testing.T, said string) time.Time {
+func moment(t *testing.T, response string) time.Time {
 	t.Helper()
-	at, err := time.ParseInLocation("2006-01-02T15:04:05", said, counting.In)
+	pos, err := time.ParseInLocation("2006-01-02T15:04:05", response, counting.In)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // A day is named for the day a person would say they answered on. The night
@@ -106,9 +106,9 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
 	underMap := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
-	response := func(id string, face review.CardFaceID, at string, took time.Duration) review.Answer {
+	response := func(id string, face review.CardFaceID, pos string, took time.Duration) review.Answer {
 		return review.Answer{
-			ID: id, CardFace: face, At: moment(t, at), Rating: review.Good, Took: took,
+			ID: id, CardFace: face, At: moment(t, pos), Rating: review.Good, Took: took,
 		}
 	}
 	answers := []review.Answer{
@@ -303,12 +303,12 @@ func TestNothingAnsweredIsNoStreak(t *testing.T) {
 func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 
 	var history []review.Answer
-	response := func(id string, face review.CardFaceID, at string, r review.Rating) {
+	response := func(id string, face review.CardFaceID, pos string, r review.Rating) {
 		history = append(history, review.Answer{
-			ID: id, CardFace: face, At: moment(t, at), Rating: r,
+			ID: id, CardFace: face, At: moment(t, pos), Rating: r,
 		})
 	}
 
@@ -318,7 +318,7 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 	// Another card met for the first time on that second day.
 	response("01C", other, "2026-08-08T09:05:00", review.Again)
 
-	got := review.OrderAnswers(history).GetRetained(by, counting)
+	got := review.OrderAnswers(history).GetRetained(delta, counting)
 
 	// The first day is a card being learned, so nothing was tested on it.
 	if _, target := got["2026-08-01"]; target {
@@ -334,12 +334,12 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 // which is what the number is for.
 func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
-	}).GetRetained(by, counting)
+	}).GetRetained(delta, counting)
 
 	if want := (review.RecallTally{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["2026-08-08"], want)
@@ -349,13 +349,13 @@ func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
 // An answer taken back is not in it, as it is in nothing else.
 func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{
 		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
 		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},
-	}).GetRetained(by, counting)
+	}).GetRetained(delta, counting)
 
 	if _, target := got["2026-08-08"]; target {
 		t.Errorf("an answer taken back was counted: %+v", got["2026-08-08"])

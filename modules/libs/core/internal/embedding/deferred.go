@@ -84,11 +84,11 @@ func (e *Embedder) DiscardModel(why error) error {
 
 // closeIfPresent closes a model that is here, and says what closing it said. There is
 // nothing to close where nothing landed.
-func closeIfPresent(held port.Embedder) error {
-	if held == nil {
+func closeIfPresent(target port.Embedder) error {
+	if target == nil {
 		return nil
 	}
-	return held.Close()
+	return target.Close()
 }
 
 // GetModel is what the settings say this is, known before the weights are here.

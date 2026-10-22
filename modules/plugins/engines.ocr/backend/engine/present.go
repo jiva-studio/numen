@@ -27,14 +27,14 @@ func IsFetched(cfg Config, held RecogniserModel) bool {
 		return false
 	}
 	sum := pinnedSums.GetSum(held.Name)
-	at := filepath.Join(dir, models.GetCacheName(held.Name, sum))
-	if !isPresent(at) {
+	pos := filepath.Join(dir, models.GetCacheName(held.Name, sum))
+	if !isPresent(pos) {
 		return false
 	}
-	return sum == "" || models.VerifyFile(at, sum) == nil
+	return sum == "" || models.VerifyFile(pos, sum) == nil
 }
 
-func isPresent(at string) bool {
-	_, err := os.Stat(at)
+func isPresent(pos string) bool {
+	_, err := os.Stat(pos)
 	return err == nil
 }

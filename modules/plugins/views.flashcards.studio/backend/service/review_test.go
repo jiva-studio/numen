@@ -84,7 +84,7 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 	client := newFlashcardsClient(t, api)
 
 	var out *v1.WatchCardsDueResponse
-	for at := time.Now(); time.Since(at) < 30*time.Second; {
+	for pos := time.Now(); time.Since(pos) < 30*time.Second; {
 		out = readCardsDue(t, client)
 		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetIsIndexing) {
 			return out
@@ -106,14 +106,14 @@ func readCardsDue(
 	}
 	defer stream.Close()
 
-	out, at, first := &v1.WatchCardsDueResponse{}, map[string]int{}, true
+	out, pos, first := &v1.WatchCardsDueResponse{}, map[string]int{}, true
 	for stream.Receive() {
 		response := stream.Msg()
 		if first {
 			first = false
 			out.Day, out.Vaults = response.GetDay(), response.GetVaults()
 			for where, one := range out.GetVaults() {
-				at[one.GetId()] = where
+				pos[one.GetId()] = where
 			}
 			continue
 		}
@@ -123,7 +123,7 @@ func readCardsDue(
 			// running so that a page which has gone is found.
 			continue
 		}
-		where, items := at[one.GetId()]
+		where, items := pos[one.GetId()]
 		if !items {
 			t.Fatalf("unexpected vault %s in count response", one.GetId())
 		}
@@ -472,14 +472,14 @@ func TestCountingTheFrontDoorWritesIntoNoVault(t *testing.T) {
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 	}
 	api, target := newAPI(t, handwritten)
-	at := filepath.Join(target[0].Path, "decks", "Own.md")
+	pos := filepath.Join(target[0].Path, "decks", "Own.md")
 
-	before, err := os.ReadFile(at)
+	before, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
 	front(t, api)
-	after, err := os.ReadFile(at)
+	after, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -610,10 +610,10 @@ func TestTheFrontDoorReturnsWhatEachPresetOfAVaultContains(t *testing.T) {
 // newDeck is a deck of as many cards, pointing at the preset named.
 // Each deck is written from a mark of its own, because a mark is what names a
 // card and two decks writing one mark are writing one card.
-func newDeck(at string, cards, from int) string {
+func newDeck(pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
-	if at != "" {
-		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
+	if pos != "" {
+		out += "links:\n  - to: " + pos + "\n    role: ref\n    type: preset\n"
 	}
 	out += "---\n"
 	for i := from; i < from+cards; i++ {
@@ -700,14 +700,14 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 			}
 
 			curveResp := getCurve(t, api, v, "Steady.md", p)
-			at := curveResp.GetNow().GetAt()
-			if at < 0 {
+			pos := curveResp.GetNow().GetAt()
+			if pos < 0 {
 				t.Fatalf("the preset stands nowhere on its own curve: %+v", curveResp.GetNow())
 			}
-			if got := int(curveResp.GetAt()[at].GetReviews()); one.isSameDay && got != offers {
+			if got := int(curveResp.GetAt()[pos].GetReviews()); one.isSameDay && got != offers {
 				t.Errorf("the deck screen offers %d cards and the tab draws %d", offers, got)
 			}
-			if got := curveResp.GetAt()[at].GetClosed(); !slices.Contains(got, presetwire.ConvertBudgetToWire(one.closed)) {
+			if got := curveResp.GetAt()[pos].GetClosed(); !slices.Contains(got, presetwire.ConvertBudgetToWire(one.closed)) {
 				t.Errorf("the day closed on %v, want %q among them", got, one.closed)
 			}
 			for i, point := range curveResp.GetAt() {
@@ -752,27 +752,27 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	writePreset(t, api, v, "Sanskrit.md", p)
 
 	curveResp := getCurve(t, api, v, "Sanskrit.md", p)
-	at := int(curveResp.GetSuggested().GetAt())
-	if at < 0 {
+	pos := int(curveResp.GetSuggested().GetAt())
+	if pos < 0 {
 		t.Fatalf("nothing is suggested: %+v", curveResp.GetSuggested())
 	}
-	if at == 0 {
+	if pos == 0 {
 		t.Error("the shortest day on the range is suggested, and this vault is behind")
 	}
 
 	whole := curveResp.GetAt()[len(curveResp.GetAt())-1].GetReviews()
-	if got := curveResp.GetAt()[at].GetReviews(); got != whole {
+	if got := curveResp.GetAt()[pos].GetReviews(); got != whole {
 		t.Errorf("the suggested day asks %v cards, and a day of any length asks %v", got, whole)
 	}
-	if got := curveResp.GetAt()[at].GetClosed(); len(got) != 0 {
+	if got := curveResp.GetAt()[pos].GetClosed(); len(got) != 0 {
 		t.Errorf("the suggested day closed on %v, and a day that asks everything closes on nothing",
 			got)
 	}
-	for i := range at {
+	for i := range pos {
 		got := curveResp.GetAt()[i].GetClosed()
 		if !slices.Contains(got, presetwire.ConvertBudgetToWire(review.ClosedMinutes)) {
 			t.Errorf("%v minutes a day closed on %v, and %v is suggested",
-				curveResp.GetGrid()[i], got, curveResp.GetGrid()[at])
+				curveResp.GetGrid()[i], got, curveResp.GetGrid()[pos])
 		}
 	}
 }
@@ -1091,10 +1091,10 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			}
 
 			// What the cost buys climbs with it, and is a share of the material.
-			for i, at := range curveResp.GetAt() {
-				if at.GetRetained() < 0 || at.GetRetained() > 1 {
+			for i, item := range curveResp.GetAt() {
+				if item.GetRetained() < 0 || item.GetRetained() > 1 {
 					t.Errorf("%.2f leaves %v of the material in the head",
-						curveResp.GetGrid()[i], at.GetRetained())
+						curveResp.GetGrid()[i], item.GetRetained())
 				}
 			}
 			retentionDelta := curveResp.GetAt()[len(curveResp.GetAt())-1].GetRetained() -
@@ -1151,16 +1151,16 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 		writePreset(t, api, v, "Sanskrit.md", p)
 
 		curveResp = getCurve(t, api, v, "Sanskrit.md", p)
-		at := 2
-		if curveResp.GetGrid()[at] != value {
-			t.Fatalf("got grid[%d] = %v, want %v", at, curveResp.GetGrid()[at], value)
+		pos := 2
+		if curveResp.GetGrid()[pos] != value {
+			t.Fatalf("got grid[%d] = %v, want %v", pos, curveResp.GetGrid()[pos], value)
 		}
 
 		one := session(t, api, v, "Sanskrit.md")
-		if got := int(curveResp.GetAt()[at].GetReviews()); got != one.total {
+		if got := int(curveResp.GetAt()[pos].GetReviews()); got != one.total {
 			t.Errorf("share %d: got reviews = %d, want %d", share, got, one.total)
 		}
-		target[share], bands[share] = one, curveResp.GetAt()[at].GetBacklog()
+		target[share], bands[share] = one, curveResp.GetAt()[pos].GetBacklog()
 	}
 
 	if target[100].due == 0 || target[0].unbegun == 0 {

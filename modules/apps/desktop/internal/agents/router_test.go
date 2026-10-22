@@ -281,10 +281,10 @@ type drawn struct {
 
 func (d *drawn) preview(unique bool) EditPreview {
 	return EditPreview{
-		Emit: func(_ context.Context, said domain.Edit) {
+		Emit: func(_ context.Context, response domain.Edit) {
 			d.mu.Lock()
 			defer d.mu.Unlock()
-			d.edits = append(d.edits, said)
+			d.edits = append(d.edits, response)
 		},
 		Locate: func(_ context.Context, path, stood string) (int, int, bool) {
 			d.mu.Lock()

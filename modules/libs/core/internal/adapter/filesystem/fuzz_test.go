@@ -174,10 +174,10 @@ func FuzzReadConfig(f *testing.F) {
 	if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
 		f.Fatal(err)
 	}
-	at := configAt(root, DefaultServiceDir)
+	pos := configAt(root, DefaultServiceDir)
 
 	f.Fuzz(func(t *testing.T, raw string) {
-		if err := os.WriteFile(at, []byte(raw), 0o644); err != nil {
+		if err := os.WriteFile(pos, []byte(raw), 0o644); err != nil {
 			t.Fatal(err)
 		}
 
@@ -196,7 +196,7 @@ func FuzzReadConfig(f *testing.F) {
 		case err != nil && adding == nil:
 			t.Fatalf("%q could not be read (%v) and the folder was added all the same", raw, err)
 		}
-		after, readErr := os.ReadFile(at)
+		after, readErr := os.ReadFile(pos)
 		if readErr != nil {
 			t.Fatal(readErr)
 		}

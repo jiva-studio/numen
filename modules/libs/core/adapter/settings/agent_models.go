@@ -58,26 +58,26 @@ func getProgramModels(useAt []string, programs []port.AgentProgram) []port.Model
 
 // getModelsOfProgram are the rows of one program: what it reported, or the model the settings name
 // alone where it reported none.
-func getModelsOfProgram(at []string, program port.AgentProgram, set string) []port.Model {
+func getModelsOfProgram(pos []string, program port.AgentProgram, set string) []port.Model {
 	var models []port.Model
 	switch {
 	case len(program.Models) == 0 && set != "":
-		models = []port.Model{{Path: at, Name: set, Title: set, IsDefault: true}}
+		models = []port.Model{{Path: pos, Name: set, Title: set, IsDefault: true}}
 	case len(program.Models) == 0:
-		models = []port.Model{{Path: at, Title: "Whatever this machine answers with", IsDefault: true}}
+		models = []port.Model{{Path: pos, Title: "Whatever this machine answers with", IsDefault: true}}
 	default:
-		models = getReportedModels(at, set, program.Models)
+		models = getReportedModels(pos, set, program.Models)
 	}
 	for place := range models {
 		models[place].Presence = port.NothingToFetch
-		models[place].Writes = []port.Setting{newSetting(at, models[place].Name)}
+		models[place].Writes = []port.Setting{newSetting(pos, models[place].Name)}
 	}
 	return models
 }
 
 // getReportedModels are the rows of the models a program reported, the one the settings name last
 // where it is not among them.
-func getReportedModels(at []string, set string, offered []port.AgentModel) []port.Model {
+func getReportedModels(pos []string, set string, offered []port.AgentModel) []port.Model {
 	isSet := slices.ContainsFunc(offered, func(one port.AgentModel) bool { return one.Name == set })
 	isReportedDefault := slices.ContainsFunc(offered, func(one port.AgentModel) bool { return one.IsDefault })
 	var models []port.Model
@@ -91,21 +91,21 @@ func getReportedModels(at []string, set string, offered []port.AgentModel) []por
 			isDefault = one.IsDefault || (place == 0 && !isReportedDefault)
 		}
 		models = append(models, port.Model{
-			Path: at, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
+			Path: pos, Name: one.Name, Title: title, Group: groupInFull, IsDefault: isDefault,
 			ReasoningLevels: one.ReasoningLevels, DefaultReasoning: one.DefaultReasoning,
 		})
 	}
 	if set != "" && !isSet {
-		models = append(models, port.Model{Path: at, Name: set, Title: set, Group: groupConfigured})
+		models = append(models, port.Model{Path: pos, Name: set, Title: set, Group: groupConfigured})
 	}
 	return models
 }
 
 // newSetting is one setting written down.
-func newSetting(at []string, value any) port.Setting {
+func newSetting(pos []string, value any) port.Setting {
 	response, err := json.Marshal(value)
 	if err != nil {
-		return port.Setting{Path: at, JSON: ""}
+		return port.Setting{Path: pos, JSON: ""}
 	}
-	return port.Setting{Path: at, JSON: string(response)}
+	return port.Setting{Path: pos, JSON: string(response)}
 }

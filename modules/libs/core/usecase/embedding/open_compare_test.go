@@ -212,9 +212,9 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 	if second.closed.Load() != 0 {
 		t.Error("the second provider was let go of by a run that was stopped")
 	}
-	for _, at := range tasks.List() {
-		if at.About == "second" && at.Error != "" {
-			t.Errorf("the second provider is in the list as %q", at.Error)
+	for _, item := range tasks.List() {
+		if item.About == "second" && item.Error != "" {
+			t.Errorf("the second provider is in the list as %q", item.Error)
 		}
 	}
 }
@@ -253,14 +253,14 @@ func TestTheFirstByteOfTheModelIsGeneratedAsAShare(t *testing.T) {
 	defer func() { _ = letGo() }()
 	defer close(stop)
 
-	if at := getOnlyTask(t, tasks); at.Count != 0 || at.Unit != run.Things {
-		t.Errorf("a line that has counted nothing is drawn as %d %v", at.Count, at.Unit)
+	if pos := getOnlyTask(t, tasks); pos.Count != 0 || pos.Unit != run.Things {
+		t.Errorf("a line that has counted nothing is drawn as %d %v", pos.Count, pos.Unit)
 	}
 
 	(<-progressCh)(1, 10)
-	at := getOnlyTask(t, tasks)
-	if at.Count != 1 || at.Total != 10 || at.Unit != run.Bytes {
-		t.Errorf("the first byte is drawn as %d of %d %v", at.Count, at.Total, at.Unit)
+	offset := getOnlyTask(t, tasks)
+	if offset.Count != 1 || offset.Total != 10 || offset.Unit != run.Bytes {
+		t.Errorf("the first byte is drawn as %d of %d %v", offset.Count, offset.Total, offset.Unit)
 	}
 }
 

@@ -40,7 +40,7 @@ type recorder struct {
 
 func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(at run.Task)                         { r.tasks.Set(at) }
+func (r *recorder) ReportTask(pos run.Task)                        { r.tasks.Set(pos) }
 func (r *recorder) FinishTask(id string)                           { r.tasks.Remove(id) }
 func (r *recorder) ReportError(error)                              {}
 func (r *recorder) ReportNotes(domain.Vault, int)                  {}
@@ -50,9 +50,9 @@ func (r *recorder) ReportBooks(domain.Vault, source.ExtractResult) {}
 // does not hold it.
 func findTask(t *testing.T, r *recorder, id string) *run.Task {
 	t.Helper()
-	for _, at := range r.tasks.List() {
-		if at.ID == id {
-			return &at
+	for _, item := range r.tasks.List() {
+		if item.ID == id {
+			return &item
 		}
 	}
 	return nil
@@ -195,12 +195,12 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	at := findTask(t, events, MakingVectors)
-	if at == nil {
+	pos := findTask(t, events, MakingVectors)
+	if pos == nil {
 		t.Fatal("the pass that could not embed took itself out of the list")
 	}
-	if at.Error == "" {
-		t.Errorf("the pass is shown as running: %+v", *at)
+	if pos.Error == "" {
+		t.Errorf("the pass is shown as running: %+v", *pos)
 	}
 }
 
@@ -217,8 +217,8 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	if at := findTask(t, events, MakingVectors); at != nil {
-		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
+	if pos := findTask(t, events, MakingVectors); pos != nil {
+		t.Errorf("a pass that embedded what was owed is still being done: %+v", *pos)
 	}
 }
 
@@ -247,9 +247,9 @@ func (*peeking) Concurrency() int { return 1 }
 func (p *peeking) opening(id string) (run.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	for _, at := range p.while {
-		if at.ID == id {
-			return at, true
+	for _, item := range p.while {
+		if item.ID == id {
+			return item, true
 		}
 	}
 	return run.Task{}, false
@@ -268,12 +268,12 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
 
-	at, target := watching.opening(MakingVectors)
+	pos, target := watching.opening(MakingVectors)
 	if !target {
 		t.Fatal("nothing was being indexed while a vector was asked for")
 	}
-	if at.About != "Note.md" {
-		t.Errorf("the pass says it is indexing %q", at.About)
+	if pos.About != "Note.md" {
+		t.Errorf("the pass says it is indexing %q", pos.About)
 	}
 }
 
@@ -325,8 +325,8 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}()
 
 	for range 20 {
-		if at := findTask(t, events, MakingVectors); at != nil {
-			t.Fatalf("a model still on its way is shown as indexing: %+v", *at)
+		if pos := findTask(t, events, MakingVectors); pos != nil {
+			t.Fatalf("a model still on its way is shown as indexing: %+v", *pos)
 		}
 		time.Sleep(time.Millisecond)
 	}
@@ -334,8 +334,8 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	incoming.SetModel(model, nil)
 	<-doneCh
 
-	if at := findTask(t, events, MakingVectors); at != nil {
-		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
+	if offset := findTask(t, events, MakingVectors); offset != nil {
+		t.Errorf("the pass that embedded what was owed is still being done: %+v", *offset)
 	}
 	if model.times() == 0 {
 		t.Error("the model landed and nothing was embedded")
@@ -356,12 +356,12 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 
 	newPass(made, db, events, nil, "", v).readBooks(t.Context(), false)
 
-	at := findTask(t, events, ExtractingBooks)
-	if at == nil {
+	pos := findTask(t, events, ExtractingBooks)
+	if pos == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
-	if at.Error == "" {
-		t.Errorf("the pass is shown as running: %+v", *at)
+	if pos.Error == "" {
+		t.Errorf("the pass is shown as running: %+v", *pos)
 	}
 }
 
@@ -423,15 +423,15 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	newPass(made, db, events, target.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
 
 	for _, list := range overVal.lists() {
-		for _, at := range list {
-			if at.ID != MakingVectors || at.Error != "" {
+		for _, item := range list {
+			if item.ID != MakingVectors || item.Error != "" {
 				continue
 			}
-			if at.About == "" {
-				t.Errorf("the pass stood in the list saying nothing but %q", at.Title)
+			if item.About == "" {
+				t.Errorf("the pass stood in the list saying nothing but %q", item.Title)
 			}
-			if at.Total > 0 && at.Count == 0 {
-				t.Errorf("the pass drew a share of nothing: %+v", at)
+			if item.Total > 0 && item.Count == 0 {
+				t.Errorf("the pass drew a share of nothing: %+v", item)
 			}
 		}
 	}
@@ -496,8 +496,8 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Error("the wake a recognition raised was taken and not put back")
 	}
 
-	if at := findTask(t, events, MakingVectors); at != nil && at.Error != "" {
-		t.Errorf("standing aside is shown as a failure: %q", at.Error)
+	if pos := findTask(t, events, MakingVectors); pos != nil && pos.Error != "" {
+		t.Errorf("standing aside is shown as a failure: %q", pos.Error)
 	}
 
 	// Taken up again, the pass asks the index what still owes a vector.

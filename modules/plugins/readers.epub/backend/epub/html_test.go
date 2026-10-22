@@ -131,11 +131,11 @@ func offsets(t *testing.T, root *html.Node) []run {
 			// A book writes spans of its own, and the run is the one that says
 			// at its current position.
 			if response := getAttribute(c, epub.OffsetAttribute); response != "" {
-				at, err := strconv.Atoi(response)
+				pos, err := strconv.Atoi(response)
 				if err != nil {
 					t.Fatalf("a run says got path %q", response)
 				}
-				out = append(out, run{at: at, said: text(c)})
+				out = append(out, run{at: pos, said: text(c)})
 				continue
 			}
 			walk(c)

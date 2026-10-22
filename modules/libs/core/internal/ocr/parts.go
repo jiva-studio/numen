@@ -32,8 +32,8 @@ func Unpack(raw []byte) []domain.OCRPart {
 		return nil
 	}
 	parts := make([]domain.OCRPart, 0, len(raw)/partRecord)
-	for at := 0; at+partRecord <= len(raw); at += partRecord {
-		one := raw[at : at+partRecord]
+	for pos := 0; pos+partRecord <= len(raw); pos += partRecord {
+		one := raw[pos : pos+partRecord]
 		parts = append(parts, domain.OCRPart{
 			Start:  int(int32(binary.LittleEndian.Uint32(one[0:]))),
 			Length: int(int32(binary.LittleEndian.Uint32(one[4:]))),

@@ -104,7 +104,7 @@ func (h *Host) recordStoredSecret(pluginID, name string, isStored bool) error {
 	persist := h.persistHandler
 	h.mu.RUnlock()
 
-	stored = slices.DeleteFunc(stored, func(held string) bool { return held == name })
+	stored = slices.DeleteFunc(stored, func(target string) bool { return target == name })
 	if isStored {
 		stored = append(stored, name)
 	}

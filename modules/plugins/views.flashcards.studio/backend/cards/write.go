@@ -72,12 +72,12 @@ func (u Write) Deck(
 	if err != nil {
 		return WriteResult{}, err
 	}
-	at, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
+	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
 	// levelling that failed, and the caller can tell the two apart.
-	return WriteResult{Fingerprint: at, Given: provided}, err
+	return WriteResult{Fingerprint: pos, Given: provided}, err
 }
 
 // createWholeBody returns the body with every card made whole, and the marks that
@@ -87,11 +87,11 @@ func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
 	read := NewRead(u.readers, u.links)
-	by, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	delta, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
 	}
-	whole, provided := format.Whole(body, by, cardid.New)
+	whole, provided := format.Whole(body, delta, cardid.New)
 	return whole, provided, nil
 }
 

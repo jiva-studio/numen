@@ -94,16 +94,16 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 	handler := (&API{}).NewHandler(files)
 
 	_, err := wire.GetInterface(pages)
-	for _, at := range []string{"/", "/index.html"} {
+	for _, item := range []string{"/", "/index.html"} {
 		out := httptest.NewRecorder()
-		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, at, nil))
+		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, item, nil))
 		if err == nil {
 			if !strings.Contains(out.Body.String(), "<!doctype html>") {
-				t.Errorf("%s answered %q", at, out.Body.String())
+				t.Errorf("%s answered %q", item, out.Body.String())
 			}
 		} else {
 			if got := out.Body.String(); got != "the files" {
-				t.Errorf("%s answered %q", at, got)
+				t.Errorf("%s answered %q", item, got)
 			}
 		}
 	}

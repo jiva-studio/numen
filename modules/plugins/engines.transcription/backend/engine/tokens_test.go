@@ -29,11 +29,11 @@ func TestPiecesJoinIntoWords(t *testing.T) {
 }
 
 func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
-	at := t.TempDir() + "/tokens.txt"
-	if err := os.WriteFile(at, []byte("<unk> 0\n▁a 1\n▁b 2\n<blk> 3\n"), 0o644); err != nil {
+	pos := t.TempDir() + "/tokens.txt"
+	if err := os.WriteFile(pos, []byte("<unk> 0\n▁a 1\n▁b 2\n<blk> 3\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	response, err := tokens(at)
+	response, err := tokens(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,9 +42,9 @@ func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
 	}
 }
 
-func decodeReference(p pieces, said []int) string {
+func decodeReference(p pieces, response []int) string {
 	var out strings.Builder
-	for _, token := range said {
+	for _, token := range response {
 		if token < 0 || token >= len(p) {
 			continue
 		}
@@ -59,11 +59,11 @@ func createVocabularyFile(t testing.TB, words []string) string {
 	for i, word := range words {
 		fmt.Fprintf(&file, "%s %d\n", word, i)
 	}
-	at := t.TempDir() + "/tokens.txt"
-	if err := os.WriteFile(at, []byte(file.String()), 0o644); err != nil {
+	pos := t.TempDir() + "/tokens.txt"
+	if err := os.WriteFile(pos, []byte(file.String()), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 var vocabularyWords = []string{

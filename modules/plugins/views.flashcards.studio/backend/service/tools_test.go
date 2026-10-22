@@ -125,9 +125,9 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	if len(read.Sections) != 1 || read.Sections[0] != "Camelids" {
 		t.Fatalf("the deck came back with the sections %+v", read.Sections)
 	}
-	for at, target := range read.Cards {
+	for item, target := range read.Cards {
 		if target.Section != 0 {
-			t.Errorf("card %d in section %d, unexpected", at, target.Section)
+			t.Errorf("card %d in section %d, unexpected", item, target.Section)
 		}
 	}
 }
@@ -141,11 +141,11 @@ func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	if len(read.Faults) != 1 {
 		t.Fatalf("the deck came back with %d faults: %+v", len(read.Faults), read.Faults)
 	}
-	at := read.Faults[0].Card
-	if at < 0 || at >= len(read.Cards) {
-		t.Fatalf("fault reported for card %d, deck count %d", at, len(read.Cards))
+	pos := read.Faults[0].Card
+	if pos < 0 || pos >= len(read.Cards) {
+		t.Fatalf("fault reported for card %d, deck count %d", pos, len(read.Cards))
 	}
-	if name := getFieldText(read.Cards[at], "Name"); name != "Alpaca" {
+	if name := getFieldText(read.Cards[pos], "Name"); name != "Alpaca" {
 		t.Errorf("expected fault against %q, got %q", "Alpaca", name)
 	}
 }
@@ -221,9 +221,9 @@ func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
 	if len(read.Cards) != 2 {
 		t.Fatalf("the deck came back with %d cards", len(read.Cards))
 	}
-	for at, one := range read.Cards {
+	for item, one := range read.Cards {
 		if len(one.Values) != 1 || one.Values[0].Field != "Name" {
-			t.Errorf("card %d came back holding %+v", at, one.Values)
+			t.Errorf("card %d came back holding %+v", item, one.Values)
 		}
 	}
 	if got := getFieldText(read.Cards[0], "Name"); got != "Llama" {

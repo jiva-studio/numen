@@ -407,8 +407,8 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 
 func backdate(t *testing.T, v domain.Vault, name string) {
 	t.Helper()
-	at := time.Now().Add(-time.Hour)
-	if err := os.Chtimes(filepath.Join(v.Path, name), at, at); err != nil {
+	pos := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(v.Path, name), pos, pos); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -464,8 +464,8 @@ func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing
 	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
-	at := time.Now().Add(-30 * time.Minute)
-	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+	pos := time.Now().Add(-30 * time.Minute)
+	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), pos, pos); err != nil {
 		t.Fatal(err)
 	}
 	refreshOne(t, refresh, v, "Note.md")
@@ -593,8 +593,8 @@ func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testi
 	for i := range 10 * perWindow {
 		tick.Store(int64(step) * int64(i))
 		rewrite(t, v, "Note.md", fmt.Sprintf("---\ntitle: Note\n---\n\n# Note\n\nversion %03d\n", i))
-		at := clock()
-		if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+		pos := clock()
+		if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), pos, pos); err != nil {
 			t.Fatal(err)
 		}
 		refreshOne(t, refresh, v, "Note.md")

@@ -177,12 +177,12 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	for _, at := range []time.Time{
+	for _, item := range []time.Time{
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, -1),
 		time.Now(),
 	} {
-		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -205,8 +205,8 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 			t.Errorf("%v is not sorted by name", one)
 		}
 	}
-	for at := range first {
-		if first[at].Name != second[at].Name {
+	for entry := range first {
+		if first[entry].Name != second[entry].Name {
 			t.Errorf("the same runs came back in another order: %v then %v", first, second)
 		}
 	}

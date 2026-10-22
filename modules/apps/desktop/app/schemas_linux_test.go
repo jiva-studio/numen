@@ -51,15 +51,15 @@ func TestAMachineWithNoSettingsIsSaidToHaveNone(t *testing.T) {
 func TestTheToolkitIsLookedThroughForItsSettings(t *testing.T) {
 	// The folder the toolkit was loaded from carries its own settings, either
 	// where every package puts them or filed under the package they came from.
-	for _, at := range []string{
+	for _, item := range []string{
 		filepath.Join("share", "glib-2.0", "schemas"),
 		filepath.Join("share", "gsettings-schemas", "gtk4-4.22.4", "glib-2.0", "schemas"),
 	} {
 		prefix := t.TempDir()
-		want := schemasIn(t, filepath.Join(prefix, at))
+		want := schemasIn(t, filepath.Join(prefix, item))
 
 		if got := getSchemasDir(prefix); got != want {
-			t.Errorf("under %s the settings were %q, want %q", at, got, want)
+			t.Errorf("under %s the settings were %q, want %q", item, got, want)
 		}
 	}
 }

@@ -46,9 +46,9 @@ func TestTheCorpusIsRead(t *testing.T) {
 
 	structure := map[epub.Structure]int{}
 	total := 0
-	for _, at := range books {
-		t.Run(filepath.Base(at), func(t *testing.T) {
-			raw, err := os.ReadFile(at)
+	for _, item := range books {
+		t.Run(filepath.Base(item), func(t *testing.T) {
+			raw, err := os.ReadFile(item)
 			if err != nil {
 				t.Fatalf("read the file: %v", err)
 			}
@@ -118,9 +118,9 @@ func checkBook(t *testing.T, book *epub.Book) {
 		if book.Tier == epub.FromHeadings && !strings.HasPrefix(book.Text[part.Offset:], part.Title) {
 			t.Fatalf("heading %q does not begin at its offset %d", part.Title, part.Offset)
 		}
-		at := book.Locate(part.Offset)
-		if at.PartOffset != part.Offset {
-			t.Fatalf("part %q at %d is located at %d", part.Title, part.Offset, at.PartOffset)
+		pos := book.Locate(part.Offset)
+		if pos.PartOffset != part.Offset {
+			t.Fatalf("part %q at %d is located at %d", part.Title, part.Offset, pos.PartOffset)
 		}
 	}
 
@@ -149,13 +149,13 @@ func checkPages(t *testing.T, book *epub.Book) {
 	t.Helper()
 
 	for page := 1; page <= book.PageCount(); page++ {
-		at := book.PageStart(page)
-		if r, _ := utf8.DecodeRuneInString(book.Text[at:]); r == utf8.RuneError {
+		pos := book.PageStart(page)
+		if r, _ := utf8.DecodeRuneInString(book.Text[pos:]); r == utf8.RuneError {
 			t.Fatalf("page %d of %d begins at %d, in the middle of a letter",
-				page, book.PageCount(), at)
+				page, book.PageCount(), pos)
 		}
-		if got := book.PageOf(at); got != page {
-			t.Fatalf("page %d begins at %d, which is on page %d", page, at, got)
+		if got := book.PageOf(pos); got != page {
+			t.Fatalf("page %d begins at %d, which is on page %d", page, pos, got)
 		}
 	}
 }
@@ -246,12 +246,12 @@ func corpus(t *testing.T) []string {
 // booksUnder is every EPUB file under a folder.
 func booksUnder(root string) ([]string, error) {
 	var books []string
-	err := filepath.WalkDir(root, func(at string, entry os.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(pos string, entry os.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-		if !entry.IsDir() && strings.EqualFold(filepath.Ext(at), ".epub") {
-			books = append(books, at)
+		if !entry.IsDir() && strings.EqualFold(filepath.Ext(pos), ".epub") {
+			books = append(books, pos)
 		}
 		return nil
 	})

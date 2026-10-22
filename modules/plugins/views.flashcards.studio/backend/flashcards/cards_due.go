@@ -258,9 +258,9 @@ func (u CountCardsDue) getPresets(
 	}
 
 	pointed := make(map[string]bool, len(out))
-	for at := range out {
-		out[at].Decks = naming[out[at].Preset]
-		pointed[out[at].Preset] = true
+	for item := range out {
+		out[item].Decks = naming[out[item].Preset]
+		pointed[out[item].Preset] = true
 	}
 
 	paths, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, format.TypePreset)
@@ -298,7 +298,7 @@ func (b *budgets) getCardsDue(due, newCards map[string]int) []PresetCardsDue {
 			AnsweredReviews: one.spentStats.Reviews,
 			Took:            one.spentStats.Took,
 			Budget:          one.admits.Keeps, Limits: one.admits.Limits,
-			Stops:           one.admits.Stops,
+			Stops: one.admits.Stops,
 		})
 	}
 	return out

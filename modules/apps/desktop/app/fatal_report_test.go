@@ -15,8 +15,8 @@ import (
 // What stopped the application is said where a person is: in a window, with
 // what this build knows about the state it found.
 func TestError_MessageContainsFound(t *testing.T) {
-	at := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.Config{IndexPath: at}
+	pos := filepath.Join(t.TempDir(), "index.db")
+	cfg := container.Config{IndexPath: pos}
 
 	page, err := fatalReport{}.page(cfg, settings.TextScaleBounds.Check("appearance.text_scale", 4))
 	if err != nil {
@@ -212,12 +212,12 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 	if os.Geteuid() == 0 {
 		t.Skip("root writes in a folder whatever its permissions say")
 	}
-	by := map[string]fatalReport{}
+	delta := map[string]fatalReport{}
 	for _, one := range getStoppings(t) {
-		by[one.name] = getFatalReport(one.cfg, one.why)
+		delta[one.name] = getFatalReport(one.cfg, one.why)
 	}
 
-	folder, noWriteFolder := by["an index path that is a folder"], by["an index folder nobody may write in"]
+	folder, noWriteFolder := delta["an index path that is a folder"], delta["an index folder nobody may write in"]
 	if folder.Sentence == noWriteFolder.Sentence {
 		t.Errorf("two faults are said in one sentence: %q", folder.Sentence)
 	}
@@ -228,7 +228,7 @@ func TestAnIndexThatWillNotOpenIsSaidByWhatIsWrong(t *testing.T) {
 		t.Errorf("a folder nobody may write in is answered with %q", noWriteFolder.Remedy)
 	}
 
-	corrupt := by["an index that is not a database"]
+	corrupt := delta["an index that is not a database"]
 	if strings.Contains(corrupt.Sentence, "(26)") || strings.Contains(corrupt.Sentence, "not a database") {
 		t.Errorf("the page speaks sqlite's language: %q", corrupt.Sentence)
 	}

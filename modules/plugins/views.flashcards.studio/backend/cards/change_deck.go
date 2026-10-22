@@ -17,10 +17,10 @@ type deckChange struct {
 
 // changeDeck splices one change into a deck. Every byte the change does not name is written as it arrived.
 func changeDeck(
-	ctx context.Context, read Read, write Write, v domain.Vault, at DeckVersion,
+	ctx context.Context, read Read, write Write, v domain.Vault, pos DeckVersion,
 	change func(contents DeckContents, file *format.DeckFile) error,
 ) (deckChange, error) {
-	contents, err := readExistingDeck(ctx, read, v, at.Path)
+	contents, err := readExistingDeck(ctx, read, v, pos.Path)
 	if err != nil {
 		return deckChange{}, err
 	}
@@ -28,7 +28,7 @@ func changeDeck(
 	if err := change(contents, file); err != nil {
 		return deckChange{}, err
 	}
-	wrote, err := write.Deck(ctx, v, at.Path, file.Body(), at.Fingerprint)
+	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.Fingerprint)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return deckChange{}, err
 	}

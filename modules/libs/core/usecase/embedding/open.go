@@ -73,12 +73,12 @@ func Open(
 		return newIndexLane(first), first.GetImpatientEmbedder(), first.Close
 	}
 
-	at := query.newArrival(forQuery)
-	second := open(ctx, tasks, at)
+	pos := query.newArrival(forQuery)
+	second := open(ctx, tasks, pos)
 	go func() {
 		if err := compareModels(ctx, first, second); err != nil {
 			_ = second.DiscardModel(err)
-			reportError(tasks, at, err)
+			reportError(tasks, pos, err)
 		}
 	}()
 	return first.GetWaitingEmbedder(), second.GetImpatientEmbedder(), closeBoth(first.Close, second.Close)
@@ -98,24 +98,24 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
-func open(ctx context.Context, tasks *run.Tasks, at arrival) *embedding.Embedder {
-	target := embedding.NewDeferredEmbedder(at.from.model)
-	if at.from.fetch == nil {
-		target.SetModel(at.from.held, nil)
+func open(ctx context.Context, tasks *run.Tasks, pos arrival) *embedding.Embedder {
+	target := embedding.NewDeferredEmbedder(pos.from.model)
+	if pos.from.fetch == nil {
+		target.SetModel(pos.from.held, nil)
 		return target
 	}
 
-	tell := newProgressReport(tasks, at)
+	tell := newProgressReport(tasks, pos)
 	tell(0, 0)
 	go func() {
-		model, err := at.from.fetch(ctx, tell)
+		model, err := pos.from.fetch(ctx, tell)
 		if err != nil {
 			target.SetModel(nil, err)
-			reportError(tasks, at, err)
+			reportError(tasks, pos, err)
 			return
 		}
 		target.SetModel(model, nil)
-		ready(tasks, at)
+		ready(tasks, pos)
 	}()
 	return target
 }
@@ -179,12 +179,12 @@ func (p Provider) newArrival(role string) arrival {
 // window's to write. A share is drawn once some of the model is here.
 //
 // A run with no list to tell is told nothing and still asks.
-func newProgressReport(tasks *run.Tasks, at arrival) func(done, total int64) {
+func newProgressReport(tasks *run.Tasks, pos arrival) func(done, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
 	return func(done, total int64) {
-		target := run.Task{ID: at.id, Title: "Preparing the model", About: at.name}
+		target := run.Task{ID: pos.id, Title: "Preparing the model", About: pos.name}
 		if done > 0 {
 			target.Count, target.Total, target.Unit = done, total, run.Bytes
 		}
@@ -192,17 +192,17 @@ func newProgressReport(tasks *run.Tasks, at arrival) func(done, total int64) {
 	}
 }
 
-func ready(tasks *run.Tasks, at arrival) {
+func ready(tasks *run.Tasks, pos arrival) {
 	if tasks != nil {
-		tasks.Remove(at.id)
+		tasks.Remove(pos.id)
 	}
 }
 
 // reportError leaves the model in the list under what stopped it.
-func reportError(tasks *run.Tasks, at arrival, why error) {
+func reportError(tasks *run.Tasks, pos arrival, why error) {
 	if tasks != nil {
 		tasks.Set(run.Task{
-			ID: at.id, Title: "Preparing the model", About: at.name,
+			ID: pos.id, Title: "Preparing the model", About: pos.name,
 			Error: why.Error(),
 		})
 	}

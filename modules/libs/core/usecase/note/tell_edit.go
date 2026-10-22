@@ -16,14 +16,14 @@ type TellEdit func(ctx context.Context, said domain.Edit)
 //
 // The name is a ULID, so the change the writer is telling about is named on the
 // clock the write itself is stamped from.
-func (tell TellEdit) beginChange(ctx context.Context, now port.Clock, said domain.Edit) func() {
+func (tell TellEdit) beginChange(ctx context.Context, now port.Clock, response domain.Edit) func() {
 	if tell == nil {
 		return func() {}
 	}
 	name := ulid.New(now())
-	said.Change = name
-	tell(ctx, said)
+	response.Change = name
+	tell(ctx, response)
 	return func() {
-		tell(ctx, domain.Edit{Change: name, Path: said.Path, IsDone: true})
+		tell(ctx, domain.Edit{Change: name, Path: response.Path, IsDone: true})
 	}
 }

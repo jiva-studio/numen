@@ -129,8 +129,8 @@ func newBookClient() *fakeBookClient {
 // the archive, each segment of it escaped on its own.
 func pictureOf(path, entry string, mark document.Fingerprint) string {
 	parts := strings.Split(entry, "/")
-	for at, one := range parts {
-		parts[at] = url.PathEscape(one)
+	for item, one := range parts {
+		parts[item] = url.PathEscape(one)
 	}
 	return fmt.Sprintf("%s/%s?%s", assetURL(path), strings.Join(parts, "/"), formatFingerprint(mark))
 }

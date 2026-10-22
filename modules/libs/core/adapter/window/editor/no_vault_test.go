@@ -225,8 +225,8 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if !focus.Receive() {
 		t.Fatalf("the focus stream said nothing: %v", focus.Err())
 	}
-	if at := focus.Msg().GetPath(); at != "Somewhere.md" {
-		t.Errorf("the window was sent to %q", at)
+	if pos := focus.Msg().GetPath(); pos != "Somewhere.md" {
+		t.Errorf("the window was sent to %q", pos)
 	}
 }
 

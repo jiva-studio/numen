@@ -97,8 +97,8 @@ func TestASocketThatStoppedAnsweringIsSaid(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the socket stopped answering and nobody received")
 	}
-	if at := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); at != "" {
-		t.Errorf("a socket that answers nothing gave out %s", at)
+	if pos := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk)); pos != "" {
+		t.Errorf("a socket that answers nothing gave out %s", pos)
 	}
 }
 
@@ -170,8 +170,8 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		t.Errorf("a note of the vault was answered %d", out.Code)
 	}
 	for _, outside := range []string{"../secrets", "/etc/passwd"} {
-		at := back.Address(vault, statOf(t, api, vault, outside))
-		if out := ask(handler, at); out.Code == http.StatusOK {
+		pos := back.Address(vault, statOf(t, api, vault, outside))
+		if out := ask(handler, pos); out.Code == http.StatusOK {
 			t.Errorf("%s was served", outside)
 		}
 	}

@@ -41,8 +41,8 @@ func session(t *rapid.T) []review.Answer {
 	})
 
 	answers := rapid.SliceOfN(answer, 1, 40).Draw(t, "answers")
-	for at := range answers {
-		answers[at].ID = fmt.Sprintf("01K3ZQ7X%018d", at)
+	for item := range answers {
+		answers[item].ID = fmt.Sprintf("01K3ZQ7X%018d", item)
 	}
 	return answers
 }
@@ -76,17 +76,17 @@ func TestASchedulesDoesNotDependOnHowTheRunsWereDelivered(t *testing.T) {
 		// The runs are carried in whatever order, and any of them may arrive
 		// twice.
 		as := make([]review.Answer, 0, 2*len(answers))
-		for _, at := range rapid.Permutation(order(len(answers))).Draw(t, "carried") {
-			as = append(as, answers[at])
+		for _, item := range rapid.Permutation(order(len(answers))).Draw(t, "carried") {
+			as = append(as, answers[item])
 			if rapid.Bool().Draw(t, "twice") {
-				as = append(as, answers[at])
+				as = append(as, answers[item])
 				copied++
 			}
 		}
 
-		by := review.NewFSRS()
-		want := review.OrderAnswers(answers).Replay(ahead, review.ScheduleBy(by))
-		got := review.OrderAnswers(as).Replay(ahead, review.ScheduleBy(by))
+		delta := review.NewFSRS()
+		want := review.OrderAnswers(answers).Replay(ahead, review.ScheduleBy(delta))
+		got := review.OrderAnswers(as).Replay(ahead, review.ScheduleBy(delta))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d answers delivered as %d gave %+v, want %+v",
 				len(answers), len(as), got, want)
@@ -133,9 +133,9 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 			}
 		}
 
-		by := review.NewFSRS()
-		want := review.OrderAnswers(expectedAnswers).Replay(ahead, review.ScheduleBy(by))
-		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(by))
+		delta := review.NewFSRS()
+		want := review.OrderAnswers(expectedAnswers).Replay(ahead, review.ScheduleBy(delta))
+		got := review.OrderAnswers(with).Replay(ahead, review.ScheduleBy(delta))
 		if !maps.Equal(got, want) {
 			t.Fatalf("%d of %d answers taken back gave %+v, want %+v",
 				took, len(answers), got, want)
@@ -150,8 +150,8 @@ func TestAnAnswerTakenBackPreservesTheScheduleItWasNeverGivenIn(t *testing.T) {
 // order is the places of a history, for a permutation to be drawn over.
 func order(n int) []int {
 	out := make([]int, n)
-	for at := range out {
-		out[at] = at
+	for item := range out {
+		out[item] = item
 	}
 	return out
 }

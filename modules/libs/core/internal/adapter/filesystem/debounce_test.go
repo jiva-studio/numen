@@ -24,14 +24,14 @@ func (e event) Sys() any            { return nil }
 // path the operating system names a change at.
 func makeVaultOfNotes(t *testing.T, notes int) (root string, reader *VaultReader) {
 	t.Helper()
-	at := t.TempDir()
+	pos := t.TempDir()
 	for i := range notes {
-		name := filepath.Join(at, fmt.Sprintf("Note%d.md", i))
+		name := filepath.Join(pos, fmt.Sprintf("Note%d.md", i))
 		if err := os.WriteFile(name, []byte("# Note\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	reader, err := Open(at, Options{})
+	reader, err := Open(pos, Options{})
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -45,17 +45,16 @@ func ruleNamed(t *rapid.T) review.Preset {
 }
 
 // preset says and whenever it is asked.
-//
 func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
 		s := whereItStands(t)
 		s.Last = time.Time{}
-		at := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
-		if p.IsLearned(s, at) {
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
+		if p.IsLearned(s, pos) {
 			t.Fatalf("a card face unanswered counts learned under %+v "+
-				"at %v, standing at %+v", p, at, s)
+				"at %v, standing at %+v", p, pos, s)
 		}
 	})
 }
@@ -70,7 +69,7 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
 		s := whereItStands(t)
-		at := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
 		standard := review.Defaults()
 		if review.IsKnownRule(p.Rule) {
@@ -82,9 +81,9 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 		if review.RetentionBounds.Contains(p.Retention) {
 			standard.Retention = p.Retention
 		}
-		if got, want := p.IsLearned(s, at), standard.IsLearned(s, at); got != want {
+		if got, want := p.IsLearned(s, pos), standard.IsLearned(s, pos); got != want {
 			t.Fatalf("%+v counts %+v learned as %v at %v, where the rule in "+
-				"force is %+v and counts it %v", p, s, got, at, standard, want)
+				"force is %+v and counts it %v", p, s, got, pos, standard, want)
 		}
 	})
 }
@@ -102,12 +101,12 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 		s := whereItStands(t)
 		short := rapid.IntRange(1, 365).Draw(t, "shorter")
 		long := rapid.IntRange(short, 365).Draw(t, "longer")
-		at := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
+		pos := lastAnswer.Add(time.Duration(rapid.IntRange(0, 1000).Draw(t, "days")) * 24 * time.Hour)
 
-		by := func(days int) review.Preset {
+		delta := func(days int) review.Preset {
 			return review.Preset{Rule: review.RuleInterval, Interval: days}
 		}
-		if by(long).IsLearned(s, at) && !by(short).IsLearned(s, at) {
+		if delta(long).IsLearned(s, pos) && !delta(short).IsLearned(s, pos) {
 			t.Fatalf("a card face sent away %v counts learned at an interval of "+
 				"%d days and not at one of %d", s.Due.Sub(s.Last), long, short)
 		}

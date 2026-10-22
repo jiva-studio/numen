@@ -19,31 +19,31 @@ func TestDropIsSafeConcurrentWithDrawAndHas(t *testing.T) {
 	renderFn := func() ([]byte, error) { return make([]byte, 100), nil }
 
 	target := make([]document.PageKey, 10)
-	for at := range target {
-		target[at] = newTestID(at)
-		cache.GetOrRender(t.Context(), target[at], renderFn)
+	for item := range target {
+		target[item] = newTestID(item)
+		cache.GetOrRender(t.Context(), target[item], renderFn)
 	}
 
 	var wg sync.WaitGroup
-	for at := range 50 {
+	for entry := range 50 {
 		wg.Add(2)
-		go func(at int) {
+		go func(pos int) {
 			defer wg.Done()
-			cache.GetOrRender(t.Context(), newTestID(1000+at), renderFn)
-		}(at)
-		go func(at int) {
+			cache.GetOrRender(t.Context(), newTestID(1000+pos), renderFn)
+		}(entry)
+		go func(offset int) {
 			defer wg.Done()
-			key := target[at%len(target)]
+			key := target[offset%len(target)]
 			cache.Has(key)
 			cache.Remove(key)
-		}(at)
+		}(entry)
 	}
 	wg.Wait()
 }
 
 // newTestID names one page of the one book these tests keep drawings of.
-func newTestID(at int) document.PageKey {
-	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
+func newTestID(pos int) document.PageKey {
+	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: pos, Width: 400}
 }
 
 func TestMemoryContainsSixtyFourMebibytes(t *testing.T) {
@@ -106,9 +106,9 @@ func TestDropConsumesThePageOutAndFreesItsRoom(t *testing.T) {
 	}
 
 	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(60))
-	for _, at := range []int{1, 2} {
-		if !cache.Has(newTestID(at)) {
-			t.Errorf("page %d was dropped, though what is held is inside the bound", at)
+	for _, item := range []int{1, 2} {
+		if !cache.Has(newTestID(item)) {
+			t.Errorf("page %d was dropped, though what is held is inside the bound", item)
 		}
 	}
 }
@@ -120,18 +120,18 @@ func TestTheLeastRecentlyAskedForGoFirst(t *testing.T) {
 	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
 	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(40))
 	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(20))
-	for at := range 3 {
-		if !cache.Has(newTestID(at)) {
-			t.Fatalf("page %d was dropped with what is held exactly at the bound", at)
+	for item := range 3 {
+		if !cache.Has(newTestID(item)) {
+			t.Fatalf("page %d was dropped with what is held exactly at the bound", item)
 		}
 	}
 
 	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
 	cache.GetOrRender(t.Context(), newTestID(3), newDrawing(40))
 
-	for at, isHeld := range []bool{true, false, true, true} {
-		if got := cache.Has(newTestID(at)); got != isHeld {
-			t.Errorf("page %d: held = %v, want %v", at, got, isHeld)
+	for entry, isHeld := range []bool{true, false, true, true} {
+		if got := cache.Has(newTestID(entry)); got != isHeld {
+			t.Errorf("page %d: held = %v, want %v", entry, got, isHeld)
 		}
 	}
 }
@@ -147,9 +147,9 @@ func TestAPageGeneratedAgainAfterADropIsHeldOnce(t *testing.T) {
 	cache.GetOrRender(t.Context(), newTestID(0), newDrawing(40))
 	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(40))
 
-	for at, isHeld := range []bool{true, false, true} {
-		if got := cache.Has(newTestID(at)); got != isHeld {
-			t.Errorf("page %d: held = %v, want %v", at, got, isHeld)
+	for item, isHeld := range []bool{true, false, true} {
+		if got := cache.Has(newTestID(item)); got != isHeld {
+			t.Errorf("page %d: held = %v, want %v", item, got, isHeld)
 		}
 	}
 }
@@ -171,9 +171,9 @@ func TestAPageDroppedWhileBeingGeneratedIsAnsweredAndNotHeld(t *testing.T) {
 
 	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(60))
 	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(40))
-	for _, at := range []int{1, 2} {
-		if !cache.Has(newTestID(at)) {
-			t.Errorf("page %d was dropped, though what is held is inside the bound", at)
+	for _, item := range []int{1, 2} {
+		if !cache.Has(newTestID(item)) {
+			t.Errorf("page %d was dropped, though what is held is inside the bound", item)
 		}
 	}
 }
@@ -202,9 +202,9 @@ func TestRoomIsMadeForAPageLargerThanTheOldest(t *testing.T) {
 	cache.GetOrRender(t.Context(), newTestID(1), newDrawing(40))
 	cache.GetOrRender(t.Context(), newTestID(2), newDrawing(90))
 
-	for at, isHeld := range []bool{false, false, true} {
-		if got := cache.Has(newTestID(at)); got != isHeld {
-			t.Errorf("page %d: held = %v, want %v", at, got, isHeld)
+	for item, isHeld := range []bool{false, false, true} {
+		if got := cache.Has(newTestID(item)); got != isHeld {
+			t.Errorf("page %d: held = %v, want %v", item, got, isHeld)
 		}
 	}
 }
@@ -233,9 +233,9 @@ func TestAnAskWaitingOnAFailedDrawingIsAnsweredWithItsFailure(t *testing.T) {
 		close(release)
 		wg.Wait()
 
-		for at, err := range answers {
+		for item, err := range answers {
 			if !errors.Is(err, failure) {
-				t.Errorf("ask %d was answered %v, want %v", at, err, failure)
+				t.Errorf("ask %d was answered %v, want %v", item, err, failure)
 			}
 		}
 	})

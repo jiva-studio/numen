@@ -103,17 +103,17 @@ func benchDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": deck["Term.md"]}
 	constructed := make([]*strings.Builder, decks)
-	for at := range constructed {
-		constructed[at] = &strings.Builder{}
-		constructed[at].WriteString("---\ntype: deck\n---\n")
+	for item := range constructed {
+		constructed[item] = &strings.Builder{}
+		constructed[item].WriteString("---\ntype: deck\n---\n")
 	}
-	for at := range cards {
-		fmt.Fprintf(constructed[at%decks],
+	for entry := range cards {
+		fmt.Fprintf(constructed[entry%decks],
 			"\n## Card %d ^%s\n\n[[Term]]\n\n### Word\n\nword %d\n\n### Meaning\n\nmeaning %d\n",
-			at, benchMark(at), at, at)
+			entry, benchMark(entry), entry, entry)
 	}
-	for at, one := range constructed {
-		out[fmt.Sprintf("decks/Deck%02d.md", at)] = one.String()
+	for elem, one := range constructed {
+		out[fmt.Sprintf("decks/Deck%02d.md", elem)] = one.String()
 	}
 	return out
 }
@@ -122,8 +122,8 @@ func benchDeck(cards int) map[string]string {
 func benchMark(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
-	for at := range out {
-		out[at] = alphabet[n%len(alphabet)]
+	for item := range out {
+		out[item] = alphabet[n%len(alphabet)]
 		n /= len(alphabet)
 	}
 	return string(out)
@@ -135,10 +135,10 @@ func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay in
 	b.Helper()
 	ctx := b.Context()
 
-	at := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
+	pos := time.Now().Add(-time.Duration(days) * 24 * time.Hour)
 	card := 0
 	for day := range days {
-		when := at.Add(time.Duration(day) * 24 * time.Hour)
+		when := pos.Add(time.Duration(day) * 24 * time.Hour)
 		run, err := api.scenarios().flash.Log.Open(ctx, v, when)
 		if err != nil {
 			b.Fatal(err)

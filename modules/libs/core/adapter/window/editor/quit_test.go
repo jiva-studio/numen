@@ -468,11 +468,11 @@ func (p *speaking) answerFlushes(doing func(token string) v1.FlushResult) {
 }
 
 // sendFlush is the page telling the application what it has left.
-func (p *speaking) sendFlush(token string, said v1.FlushResult) {
+func (p *speaking) sendFlush(token string, response v1.FlushResult) {
 	_, _ = p.f.drawn.ReportFlush(context.Background(), connect.NewRequest(&v1.ReportFlushRequest{
 		Window: wire.Editor,
 		Token:  token,
-		Result: said,
+		Result: response,
 	}))
 }
 

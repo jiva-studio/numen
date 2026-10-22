@@ -187,10 +187,10 @@ func (l *restartingLauncher) launch(_ context.Context, _ DiscoveredPlugin, _ int
 	return cmd.Process, io.NopCloser(strings.NewReader(ready)), nil
 }
 
-func (l *restartingLauncher) get(at int) (*os.Process, *restartedPlugin, *httptest.Server) {
+func (l *restartingLauncher) get(pos int) (*os.Process, *restartedPlugin, *httptest.Server) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	return l.procs[at], l.plugins[at], l.servers[at]
+	return l.procs[pos], l.plugins[pos], l.servers[pos]
 }
 
 func (l *restartingLauncher) count() int {
@@ -203,8 +203,8 @@ func (l *restartingLauncher) count() int {
 func writeRestartedPlugin(t *testing.T) string {
 	t.Helper()
 	dir := t.TempDir()
-	at := filepath.Join(dir, "stub")
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(dir, "stub")
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	manifest := `{
@@ -216,7 +216,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"permissions": ["vault:read", "network:outbound"],
 		"backend": {"type": "process", "entrypoint": "bin/stub"}
 	}`
-	if err := os.WriteFile(filepath.Join(at, "manifest.json"), []byte(manifest), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(pos, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return dir

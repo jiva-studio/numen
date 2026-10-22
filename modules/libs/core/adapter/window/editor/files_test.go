@@ -20,9 +20,9 @@ import (
 // able to say about either.
 
 // getEntries is what one folder of the vault holds, as the window asks for it.
-func getEntries(t *testing.T, f *going, at string) []*v1.Entry {
+func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	t.Helper()
-	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: at}))
+	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: pos}))
 	if err != nil {
 		t.Fatal(err)
 	}

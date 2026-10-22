@@ -67,12 +67,12 @@ var goldenNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
 // projections is every projection this file holds, written out.
 func projections(t *testing.T) string {
 	t.Helper()
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 	var out strings.Builder
-	for _, m := range goldenMaterials(by) {
+	for _, m := range goldenMaterials(delta) {
 		for _, p := range goldenPresets() {
 			run := review.Simulation{
-				By: by, Day: goldenDay, Days: 60, Retains: goldenDays(60),
+				By: delta, Day: goldenDay, Days: 60, Retains: goldenDays(60),
 				Cost: review.AnswerCost{New: 19 * time.Second, Review: 7 * time.Second},
 				Spent: review.Spent{
 					Answered: 4, New: 1, Reviews: 3, Took: 40 * time.Second,
@@ -204,13 +204,13 @@ type goldenMaterial struct {
 // one answered every which way, and one where the day runs out with both the
 // debt and the unbegun material still holding cards, so that the share the day
 // is split in decides what it asks for.
-func goldenMaterials(by review.Scheduler) []goldenMaterial {
+func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 	return []goldenMaterial{
 		{name: "an empty vault", at: nil, unseen: 0},
 		{name: "nothing begun", at: nil, unseen: 40},
-		{name: "a small debt", at: goldenAt(by, 25, 3), unseen: 5},
-		{name: "a large debt", at: goldenAt(by, 90, 40), unseen: 60},
-		{name: "more than a day holds of each", at: goldenAt(by, 120, 120), unseen: 200},
+		{name: "a small debt", at: goldenAt(delta, 25, 3), unseen: 5},
+		{name: "a large debt", at: goldenAt(delta, 90, 40), unseen: 60},
+		{name: "more than a day holds of each", at: goldenAt(delta, 120, 120), unseen: 200},
 	}
 }
 
@@ -221,7 +221,7 @@ func goldenMaterials(by review.Scheduler) []goldenMaterial {
 // which is a state a vault does not hold: a due day is worked out forward from
 // the instant of an answer. It stands here as a stress case, and the figures
 // written down under "a large debt" are not a picture of anybody's vault.
-func goldenAt(by review.Scheduler, faces, overdue int) map[review.CardFaceID]review.Schedule {
+func goldenAt(delta review.Scheduler, faces, overdue int) map[review.CardFaceID]review.Schedule {
 	out := make(map[review.CardFaceID]review.Schedule, faces)
 	for i := range faces {
 		c := review.Schedule{}
@@ -234,7 +234,7 @@ func goldenAt(by review.Scheduler, faces, overdue int) map[review.CardFaceID]rev
 			if step > 0 && (i+step)%7 == 0 {
 				rating = review.Easy
 			}
-			c = by.Next(c, when, rating)
+			c = delta.Next(c, when, rating)
 			when = c.Due
 		}
 		if i < overdue {

@@ -15,10 +15,10 @@ import (
 
 // recordingHandler answers what a recording is and where it is played from.
 type recordingHandler struct {
-	files              *artifactFiles
-	playing            *Loopback
-	getRawTranscript   source.GetRawTranscript
-	getCopyLocation    source.GetCopyLocation
+	files            *artifactFiles
+	playing          *Loopback
+	getRawTranscript source.GetRawTranscript
+	getCopyLocation  source.GetCopyLocation
 }
 
 // A recording crosses to the window twice: as the bytes a player is pointed at,
@@ -59,11 +59,11 @@ func (h *recordingHandler) GetRecording(
 	// framed at the address instead, from the socket this run opened, and the
 	// frame is a page whatever is inside it.
 	if ref.Kind == domain.KindURL {
-		at := h.files.getArtifactAddress(ctx, showing, ref)
+		pos := h.files.getArtifactAddress(ctx, showing, ref)
 		out.MediaUrl, out.MediaType = h.getCopyMedia(ctx, showing, ref)
-		out.Url = string(at)
+		out.Url = string(pos)
 		if out.MediaUrl == "" {
-			out.MediaUrl, out.MediaType = h.playing.Embed(at), asAPage
+			out.MediaUrl, out.MediaType = h.playing.Embed(pos), asAPage
 		}
 	}
 	if len(cues) > 0 {
@@ -82,8 +82,8 @@ const asAPage = "text/html"
 func (h *recordingHandler) getCopyMedia(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint,
 ) (media, kind string) {
-	at := h.files.getArtifactAddress(ctx, v, ref)
-	location := h.getCopyLocation.Execute(ctx, v, ref.Path, at)
+	pos := h.files.getArtifactAddress(ctx, v, ref)
+	location := h.getCopyLocation.Execute(ctx, v, ref.Path, pos)
 	if !location.Exists {
 		return "", ""
 	}

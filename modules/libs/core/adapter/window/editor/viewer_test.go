@@ -228,9 +228,9 @@ func printOf(t *testing.T, api *Services, path string) document.Fingerprint {
 }
 
 // getPageAddress is where one page of a file of this window's vault is drawn.
-func getPageAddress(t *testing.T, api *Services, path string, at, targetWidth int) string {
+func getPageAddress(t *testing.T, api *Services, path string, pos, targetWidth int) string {
 	t.Helper()
-	return pageURL(path, at, targetWidth, printOf(t, api, path))
+	return pageURL(path, pos, targetWidth, printOf(t, api, path))
 }
 
 // A page comes back drawn at least as wide as the window asked for it, and
@@ -348,9 +348,9 @@ func TestAPageTheDocumentDoesNotHaveIsRefused(t *testing.T) {
 			if one.widthQuery == "" {
 				join = "?"
 			}
-			at := assetURL(book) + "/" + pagesName + "/" + request +
+			pos := assetURL(book) + "/" + pagesName + "/" + request +
 				join + formatFingerprint(printOf(t, api, book))
-			out := ask(handler, at)
+			out := ask(handler, pos)
 			if out.Code != one.want {
 				t.Errorf("asking for %s was answered %d, not %d", request, out.Code, one.want)
 			}

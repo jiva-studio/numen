@@ -17,8 +17,8 @@ func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	now := time.Now()
 	yesterday, twoDaysAgo := now.AddDate(0, 0, -1), now.AddDate(0, 0, -2)
-	for _, at := range []time.Time{twoDaysAgo, yesterday, now} {
-		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+	for _, item := range []time.Time{twoDaysAgo, yesterday, now} {
+		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}

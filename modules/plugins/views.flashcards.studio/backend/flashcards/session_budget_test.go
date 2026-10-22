@@ -23,9 +23,9 @@ type deckLoad struct {
 func newDeckLoads(t *rapid.T) []deckLoad {
 	decks := rapid.IntRange(1, 5).Draw(t, "decks")
 	out := make([]deckLoad, decks)
-	for at := range out {
-		out[at] = deckLoad{
-			path:    fmt.Sprintf("decks/%c.md", 'A'+at),
+	for item := range out {
+		out[item] = deckLoad{
+			path:    fmt.Sprintf("decks/%c.md", 'A'+item),
 			owed:    rapid.IntRange(0, 8).Draw(t, "owed"),
 			unbegun: rapid.IntRange(0, 8).Draw(t, "fresh"),
 		}
@@ -62,8 +62,8 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 	}
 
 	var owed, newCards []CardFace
-	for _, at := range order {
-		one := load[at]
+	for _, item := range order {
+		one := load[item]
 		day.decks[one.path] = "Preset.md"
 		for card := range one.owed {
 			face := CardFace{Deck: one.path, ID: review.CardFaceID{
@@ -83,13 +83,13 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 
 	took := day.spend(owed, newCards)
 	out := make(map[review.CardFaceID]bool)
-	for at, one := range owed {
-		if took.owed[at] {
+	for entry, one := range owed {
+		if took.owed[entry] {
 			out[one.ID] = true
 		}
 	}
-	for at, one := range newCards {
-		if took.newCards[at] {
+	for elem, one := range newCards {
+		if took.newCards[elem] {
 			out[one.ID] = true
 		}
 	}
@@ -100,8 +100,8 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 // budget.
 func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 	places := make([]int, len(load))
-	for at := range places {
-		places[at] = at
+	for item := range places {
+		places[item] = item
 	}
 	out := make(map[string]int, len(load))
 	for face := range getTakenFaces(load, places, keeps) {
@@ -153,8 +153,8 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 			Reviews: rapid.IntRange(0, 20).Draw(t, "reviews"),
 		}
 		places := make([]int, len(load))
-		for at := range places {
-			places[at] = at
+		for item := range places {
+			places[item] = item
 		}
 
 		was := getTakenFaces(load, places, keeps)

@@ -79,13 +79,13 @@ func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *
 	return out
 }
 
-func newWireCard(c format.Card, at string) *v1.Card {
+func newWireCard(c format.Card, pos string) *v1.Card {
 	out := &v1.Card{
 		Heading:      c.Heading,
 		Mark:         string(c.Mark),
 		SectionIndex: section(c.Section),
 		StencilLink:  c.StencilLink,
-		StencilPath:  at,
+		StencilPath:  pos,
 		Preamble:     c.Preamble,
 		Values:       make([]*v1.Value, 0, len(c.Values)),
 	}
@@ -96,11 +96,11 @@ func newWireCard(c format.Card, at string) *v1.Card {
 }
 
 // section maps the section index to a protobuf int32 pointer, returning nil for NoSection.
-func section(at int) *int32 {
-	if at == format.NoSection {
+func section(pos int) *int32 {
+	if pos == format.NoSection {
 		return nil
 	}
-	index := int32(at)
+	index := int32(pos)
 	return &index
 }
 
@@ -144,11 +144,11 @@ func newWireProblem(p format.Problem) *v1.Problem {
 }
 
 // position converts an optional integer position to an int32 pointer.
-func position(at int) *int32 {
-	if at == format.NoPosition {
+func position(offset int) *int32 {
+	if offset == format.NoPosition {
 		return nil
 	}
-	pos := int32(at)
+	pos := int32(offset)
 	return &pos
 }
 

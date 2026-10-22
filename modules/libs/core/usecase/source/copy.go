@@ -44,11 +44,11 @@ func (u ImportURL) Copy(
 	ctx context.Context, v domain.Vault, path string, progress func(done, total int64),
 ) (CopyResult, error) {
 	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
-	at, _, store, err := u.readURLFile(ctx, v, path)
+	pos, _, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
-	hash := text.Fingerprint([]byte(string(at)))
+	hash := text.Fingerprint([]byte(string(pos)))
 	besidePath := CopyBeside(path)
 
 	// One run to a copy, held for as long as the download takes. The claim is on
@@ -73,7 +73,7 @@ func (u ImportURL) Copy(
 	// The size gate and the download share one operation on one address.
 	ctx, endOperation := operation.Begin(ctx)
 	defer endOperation()
-	meta, err := u.By.GetMetadata(ctx, at)
+	meta, err := u.By.GetMetadata(ctx, pos)
 	if err != nil {
 		return res, err
 	}
@@ -87,7 +87,7 @@ func (u ImportURL) Copy(
 	read, write := io.Pipe()
 	going := make(chan error, 1)
 	go func() {
-		_, err := u.By.Download(ctx, at, write)
+		_, err := u.By.Download(ctx, pos, write)
 		_ = write.CloseWithError(err)
 		going <- err
 	}()

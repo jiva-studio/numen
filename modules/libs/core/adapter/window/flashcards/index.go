@@ -120,25 +120,25 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 // nothing to show until this is done and the person is waiting on it, so that
 // work is drawn the moment it begins; a vault it carries is work drawn once it
 // has lasted.
-func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
-	at := run.Task{
+func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
+	pos := run.Task{
 		ID:            "indexing\t" + string(v.ID),
 		Title:         "Indexing the vault",
 		About:         v.Name,
-		IsUserStarted: !held,
+		IsUserStarted: !target,
 	}
-	a.reportTask(at)
+	a.reportTask(pos)
 
 	err := read(ctx, v)
 
 	a.indexRuns.record(v, err)
 
 	if err != nil {
-		at.Error = err.Error()
-		a.reportTask(at)
+		pos.Error = err.Error()
+		a.reportTask(pos)
 		return
 	}
-	a.finishTask(at.ID)
+	a.finishTask(pos.ID)
 	a.ReportChange()
 }
 

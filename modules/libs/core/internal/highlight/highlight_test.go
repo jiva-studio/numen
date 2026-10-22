@@ -26,11 +26,11 @@ func run(start, length int) domain.ByteSpan {
 // read is a document read into words, each five bytes with a space after.
 func read(pages, each int) []domain.HighlightBox {
 	var out []domain.HighlightBox
-	at := 0
+	pos := 0
 	for page := 0; page < pages; page++ {
 		for i := 0; i < each; i++ {
-			out = append(out, word(page, at, 5))
-			at += 6
+			out = append(out, word(page, pos, 5))
+			pos += 6
 		}
 	}
 	return out

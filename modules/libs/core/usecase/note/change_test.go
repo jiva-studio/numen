@@ -492,12 +492,12 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 			"  - to: Grammar\n    role: parent\n---\n# Roots\n",
 	})
 
-	at, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
+	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
 		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.IsZero() {
+	if pos.IsZero() {
 		t.Error("the write says nothing about the file it made")
 	}
 
@@ -602,16 +602,16 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", read)
+	pos, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", read)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.IsZero() {
+	if pos.IsZero() {
 		t.Fatal("the write answered with no fingerprint")
 	}
 
 	if _, err := writing.Execute(
-		t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n", at,
+		t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n", pos,
 	); err != nil {
 		t.Fatalf("the write after a write failed: %v", err)
 	}

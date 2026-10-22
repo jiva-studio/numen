@@ -48,8 +48,8 @@ func (u *GetArtifactText) Execute(
 		if err != nil {
 			return ArtifactText{}, err
 		}
-		at, run := getArtifactRange(words, start, length)
-		return ArtifactText{Artifact: one, Words: run, Start: at, Length: len(run)}, nil
+		pos, run := getArtifactRange(words, start, length)
+		return ArtifactText{Artifact: one, Words: run, Start: pos, Length: len(run)}, nil
 	}
 	return ArtifactText{}, fmt.Errorf("nothing of the kind %q was made from %s", kind, path)
 }
@@ -62,6 +62,6 @@ func getArtifactRange(words string, start, length int) (int, string) {
 	}
 	start = max(0, min(start, len(words)))
 	length = min(length, len(words)-start)
-	at, raw := text.WholeCharacters(start, []byte(words[start:start+length]), len(words))
-	return at, string(raw)
+	pos, raw := text.WholeCharacters(start, []byte(words[start:start+length]), len(words))
+	return pos, string(raw)
 }

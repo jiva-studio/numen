@@ -43,8 +43,8 @@ func newPlaceBroadcaster() broadcaster[domain.Place] {
 func newEditBroadcaster() broadcaster[domain.Edit] {
 	return broadcaster[domain.Edit]{
 		isLatest:   true,
-		getTopic:   func(said domain.Edit) string { return said.Change },
-		isRequired: func(said domain.Edit) bool { return said.IsDone },
+		getTopic:   func(response domain.Edit) string { return response.Change },
+		isRequired: func(reply domain.Edit) bool { return reply.IsDone },
 		capacity:   8,
 	}
 }

@@ -71,11 +71,11 @@ func (s Settings) Styles() string {
 // AddStyles is the page carrying those elements, put where the head ends. A
 // page with no head is handed back as it was built.
 func AddStyles(text []byte, styles string) []byte {
-	at := bytes.LastIndex(text, []byte(HeadEnd))
-	if styles == "" || at < 0 {
+	pos := bytes.LastIndex(text, []byte(HeadEnd))
+	if styles == "" || pos < 0 {
 		return text
 	}
-	return slices.Concat(text[:at], []byte(styles), text[at:])
+	return slices.Concat(text[:pos], []byte(styles), text[pos:])
 }
 
 // buildSizeElement is the two multipliers as the page carries them: how large the

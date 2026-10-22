@@ -51,7 +51,7 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 		vs.ports.Readers, writers, vs.queries, indexNothing, time.Now)
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
-	at, err := u.Stencil(
+	pos, err := u.Stencil(
 		t.Context(), vs.first, "Animal.md", body,
 		[]string{"Name", "Wingspan"}, domain.Fingerprint{})
 	if err != nil {
@@ -73,8 +73,8 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	}
 	// The fingerprint that comes back is the file on disk, so the next write of
 	// it lands.
-	if at.Size != int64(len(target)) {
-		t.Errorf("the fingerprint is not the file: %+v", at)
+	if pos.Size != int64(len(target)) {
+		t.Errorf("the fingerprint is not the file: %+v", pos)
 	}
 }
 

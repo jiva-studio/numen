@@ -684,12 +684,12 @@ func (u Extract) fingerprint(ref domain.Fingerprint, raw []byte) (string, error)
 	if ref.Kind != domain.KindURL {
 		return text.Fingerprint(raw), nil
 	}
-	at, err := urlfile.Read(raw)
+	pos, err := urlfile.Read(raw)
 	if errors.Is(err, urlfile.ErrNoAddress) || errors.Is(err, domain.ErrNotAURL) {
 		return "", text.ErrUnreadable
 	}
 	if err != nil {
 		return "", err
 	}
-	return text.Fingerprint([]byte(string(at))), nil
+	return text.Fingerprint([]byte(string(pos))), nil
 }

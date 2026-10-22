@@ -70,7 +70,7 @@ func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
 }
 
 // newLoopback is the socket answering, whichever socket it is.
-func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
+func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 
 	back := &Loopback{
 		files:   files,
-		address: "http://" + held.Addr().String(),
+		address: "http://" + target.Addr().String(),
 		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
 	back.server = &http.Server{
@@ -86,7 +86,7 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
-		err := back.server.Serve(held)
+		err := back.server.Serve(target)
 		if errors.Is(err, http.ErrServerClosed) {
 			return
 		}
@@ -210,13 +210,13 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
 func (h *fileServer) serveCopy(
-	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named document.Fingerprint,
+	w http.ResponseWriter, r *http.Request, target domain.Vault, pos string, named document.Fingerprint,
 ) bool {
-	points := h.files.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
+	points := h.files.getArtifactAddress(r.Context(), target, domain.Fingerprint{Path: pos, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
 		return false
 	}
-	video, found := h.openCopy.Execute(r.Context(), held, points)
+	video, found := h.openCopy.Execute(r.Context(), target, points)
 	if !found {
 		return false
 	}

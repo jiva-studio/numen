@@ -50,7 +50,7 @@ describe('the palette', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(true)
-    expect(window.findComponent(Palette).props('open')).toBe(true)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(true)
     expect(getGroups(window)).toStrictEqual(['note', 'window', 'vault'])
   })
 
@@ -60,7 +60,7 @@ describe('the palette', () => {
     pressKey('k')
     await settle()
 
-    expect(window.findComponent(Palette).props('open')).toBe(true)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(true)
     expect(getGroups(window)).toStrictEqual([])
   })
 
@@ -447,7 +447,7 @@ describe('a command reached by its own keystroke', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(false)
-    expect(window.findComponent(Palette).props('open')).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
     expect(requests.made).toStrictEqual([])
   })
 
@@ -459,7 +459,7 @@ describe('a command reached by its own keystroke', () => {
     globalThis.dispatchEvent(event)
     await settle()
 
-    expect(window.findComponent(Palette).props('open')).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
   })
 })
 
@@ -481,7 +481,7 @@ describe('a command reached by a keystroke holding Shift', () => {
     await settle()
 
     expect(event.defaultPrevented).toBe(false)
-    expect(window.findComponent(Palette).props('open')).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
   })
 
   it('no longer puts the commands up on the letter that puts them up alone', async () => {
@@ -679,7 +679,7 @@ describe('the keyboard on the command that removes a note', () => {
     const window = await overRemove()
 
     expect(document.body.textContent).not.toContain('Keep the note')
-    expect(window.findComponent(Palette).props('open')).toBe(false)
+    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
   })
 })
 

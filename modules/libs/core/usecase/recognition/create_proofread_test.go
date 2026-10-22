@@ -33,24 +33,24 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 }
 
 // newProofreadingConfig is an installation with a proofreader.
-func newProofreadingConfig(by *replying) run.ProofreadingConfig {
+func newProofreadingConfig(delta *replying) run.ProofreadingConfig {
 	return run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func() (port.Proofreader, error) { return by, nil },
+		By:      func() (port.Proofreader, error) { return delta, nil },
 	}
 }
 
 // A recognition is put right by the proofreader the installation names.
 func TestARecognitionIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	t.Parallel()
-	by := &replying{}
+	delta := &replying{}
 	readers, derived := somewhereToProofread()
 
-	right, target, err := CreateProofread(newProofreadingConfig(by), readers, derived)
+	right, target, err := CreateProofread(newProofreadingConfig(delta), readers, derived)
 	if err != nil || !target {
 		t.Fatalf("held %v, %v", target, err)
 	}
-	if right.by != port.Proofreader(by) {
+	if right.by != port.Proofreader(delta) {
 		t.Error("a recognition is put right by something the installation did not place")
 	}
 }

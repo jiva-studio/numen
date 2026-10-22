@@ -135,7 +135,7 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "ééé 😀 target tail\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
+	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
 
 	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.Fingerprint{}); err != nil {
 		t.Fatal(err)
@@ -222,7 +222,7 @@ func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "---\ntitle: Aggressor\nA hedgehog.\n"})
 	var notified []domain.Edit
 	replacing := c.replace()
-	replacing.Drawing = func(_ context.Context, said domain.Edit) { notified = append(notified, said) }
+	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
 
 	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
 	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {

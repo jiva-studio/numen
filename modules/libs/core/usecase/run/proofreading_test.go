@@ -55,16 +55,16 @@ func TestAProofreadingNeedsAVaultAStoreAndAProofreader(t *testing.T) {
 
 // Nothing is opened where an installation placed nothing to open.
 func TestNothingIsOpenedWhereNothingWasPlaced(t *testing.T) {
-	if by, err := OpenProofreader(nil); by != nil || err != nil {
-		t.Errorf("got %v, %v", by, err)
+	if delta, err := OpenProofreader(nil); delta != nil || err != nil {
+		t.Errorf("got %v, %v", delta, err)
 	}
 }
 
 // What the installation opens is what answers.
 func TestWhatTheInstallationOpensAnswers(t *testing.T) {
-	by, err := OpenProofreader(func() (port.Proofreader, error) { return answering{}, nil })
-	if err != nil || by == nil {
-		t.Errorf("got %v, %v", by, err)
+	delta, err := OpenProofreader(func() (port.Proofreader, error) { return answering{}, nil })
+	if err != nil || delta == nil {
+		t.Errorf("got %v, %v", delta, err)
 	}
 }
 

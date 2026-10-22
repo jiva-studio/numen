@@ -73,11 +73,11 @@ func cacheSnapshot(t *testing.T, revision string, files map[string]string) strin
 		t.Fatal(err)
 	}
 	for name, body := range files {
-		at := filepath.Join(cache, "snapshots", revision, filepath.FromSlash(name))
-		if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+		pos := filepath.Join(cache, "snapshots", revision, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(at, []byte(body), 0o644); err != nil {
+		if err := os.WriteFile(pos, []byte(body), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}

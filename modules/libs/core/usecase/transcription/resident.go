@@ -23,10 +23,10 @@ type resident struct {
 }
 
 // hold takes the models in use.
-func (r *resident) hold(by port.Transcriber, letGo func() error, release func()) {
+func (r *resident) hold(delta port.Transcriber, letGo func() error, release func()) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.by, r.letGo, r.release = by, letGo, release
+	r.by, r.letGo, r.release = delta, letGo, release
 	r.isParked = false
 }
 

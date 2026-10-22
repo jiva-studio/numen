@@ -57,8 +57,8 @@ func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 	if IsFetched(cfg, target) {
 		t.Fatal("an empty folder holds the model")
 	}
-	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
-	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
+	pos := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
+	if err := os.WriteFile(pos, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if !IsFetched(cfg, target) {
@@ -69,8 +69,8 @@ func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
-	at := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
-	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+	pos := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
+	if err := os.WriteFile(pos, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if IsFetched(Config{Dir: dir}, RecogniserModel{Name: pinnedTestAddress}) {

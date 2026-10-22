@@ -16,15 +16,15 @@ var when = time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 const counts = "goal: retention\nnew_a_day: 30\nreviews_a_day: 0\n"
 
 // deckAt is the path of the deck standing at this place.
-func deckAt(at int) string { return fmt.Sprintf("decks/D%d.md", at) }
+func deckAt(pos int) string { return fmt.Sprintf("decks/D%d.md", pos) }
 
 // newDeckVault is a vault of one preset and as many decks, each holding the
 // cards it is given and none of them answered.
 func newDeckVault(t testing.TB, front string, decks ...int) vaulted {
 	t.Helper()
 	files := map[string]string{"Term.md": term, "Steady.md": preset(front)}
-	for at, cards := range decks {
-		files[deckAt(at)] = deckOf("Steady", cards, at*1000)
+	for item, cards := range decks {
+		files[deckAt(item)] = deckOf("Steady", cards, item*1000)
 	}
 	return openVault(t, files)
 }
@@ -88,10 +88,10 @@ func TestDecksOwingTheSameDivideTheDayEqually(t *testing.T) {
 	t.Parallel()
 	s := newDeckVault(t, counts, 40, 40, 40)
 	got := s.rows(t, when)
-	for at := range 3 {
-		if got[deckAt(at)] != 10 {
+	for item := range 3 {
+		if got[deckAt(item)] != 10 {
 			t.Errorf("%s holds %d of a day of 30 over three equal decks, and a third is 10",
-				deckAt(at), got[deckAt(at)])
+				deckAt(item), got[deckAt(item)])
 		}
 	}
 }
@@ -121,9 +121,9 @@ func TestADeckThatCannotUseItsSharePreservesItToTheOthers(t *testing.T) {
 	if got[deckAt(2)] != 0 {
 		t.Errorf("%s holds %d out of a share that buys no card", deckAt(2), got[deckAt(2)])
 	}
-	for at := range 2 {
-		if got[deckAt(at)] < 29 {
-			t.Errorf("%s holds %d of the sixty the two of them divide", deckAt(at), got[deckAt(at)])
+	for item := range 2 {
+		if got[deckAt(item)] < 29 {
+			t.Errorf("%s holds %d of the sixty the two of them divide", deckAt(item), got[deckAt(item)])
 		}
 	}
 	whole := got[deckAt(0)] + got[deckAt(1)] + got[deckAt(2)]
@@ -163,10 +163,10 @@ func TestTheMinutesOfADayAreDividedOverTheDecksToo(t *testing.T) {
 		"new_a_day: 9999\nreviews_a_day: 9999\n", 60, 60, 60)
 	got := s.rows(t, when)
 	// A third of twenty minutes buys twenty cards nobody has begun.
-	for at := range 3 {
-		if got[deckAt(at)] != 20 {
+	for item := range 3 {
+		if got[deckAt(item)] != 20 {
 			t.Errorf("%s holds %d of twenty minutes over three equal decks, and a third buys 20 cards",
-				deckAt(at), got[deckAt(at)])
+				deckAt(item), got[deckAt(item)])
 		}
 	}
 }
@@ -190,8 +190,8 @@ func TestTheDeckRowIsWhatPressingTheDeckPassesOver(t *testing.T) {
 		t.Run(fmt.Sprint(shape.decks), func(t *testing.T) {
 			s := newDeckVault(t, shape.front, shape.decks...)
 			got := s.rows(t, when)
-			for at := range shape.decks {
-				deck := deckAt(at)
+			for item := range shape.decks {
+				deck := deckAt(item)
 				if pressed := s.pressDeck(t, when, deck); pressed != got[deck] {
 					t.Errorf("%s is at %d on the front door and hands over %d when pressed",
 						deck, got[deck], pressed)
@@ -209,18 +209,18 @@ func TestSessionTheDecksInAnyOrderSpendsTheOneDay(t *testing.T) {
 		t.Run(fmt.Sprint(order), func(t *testing.T) {
 			s := newDeckVault(t, counts, 40, 40, 40)
 			whole, each := 0, make(map[string]int)
-			for _, at := range order {
-				took := s.reviewDeckSession(t, when, deckAt(at))
-				each[deckAt(at)] = took
+			for _, item := range order {
+				took := s.reviewDeckSession(t, when, deckAt(item))
+				each[deckAt(item)] = took
 				whole += took
 			}
 			if whole != 30 {
 				t.Errorf("session the decks in the order %v spends %d of a day of 30", order, whole)
 			}
-			for at := range 3 {
-				if each[deckAt(at)] != 10 {
+			for entry := range 3 {
+				if each[deckAt(entry)] != 10 {
 					t.Errorf("%s spent %d of a day of 30 over three equal decks, and a third is 10",
-						deckAt(at), each[deckAt(at)])
+						deckAt(entry), each[deckAt(entry)])
 				}
 			}
 		})

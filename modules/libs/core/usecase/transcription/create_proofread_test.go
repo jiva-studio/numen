@@ -30,10 +30,10 @@ func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
 // A transcript is put right with the proofreader the installation names.
 func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	t.Parallel()
-	by := &replying{}
+	delta := &replying{}
 	config := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func() (port.Proofreader, error) { return by, nil },
+		By:      func() (port.Proofreader, error) { return delta, nil },
 	}
 	readers, derived := somewhereToProofread()
 
@@ -41,7 +41,7 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	if err != nil || !target {
 		t.Fatalf("held %v, %v", target, err)
 	}
-	if right.by != port.Proofreader(by) {
+	if right.by != port.Proofreader(delta) {
 		t.Error("a transcript is put right by something the installation did not place")
 	}
 }

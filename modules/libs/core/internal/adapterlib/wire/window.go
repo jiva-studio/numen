@@ -254,16 +254,16 @@ func (w *Window) CancelFlush() { w.clients.endRequest() }
 // describeTasks is the work as the schema says it.
 func describeTasks(list []run.Task) []*v1.Task {
 	out := make([]*v1.Task, 0, len(list))
-	for _, at := range list {
+	for _, item := range list {
 		out = append(out, &v1.Task{
-			Id:            at.ID,
-			Title:         at.Title,
-			About:         at.About,
-			Done:          at.Count,
-			Total:         at.Total,
-			Error:         at.Error,
-			IsUserStarted: at.IsUserStarted,
-			Unit:          convertUnit(at.Unit),
+			Id:            item.ID,
+			Title:         item.Title,
+			About:         item.About,
+			Done:          item.Count,
+			Total:         item.Total,
+			Error:         item.Error,
+			IsUserStarted: item.IsUserStarted,
+			Unit:          convertUnit(item.Unit),
 		})
 	}
 	return out
@@ -465,12 +465,12 @@ func (l *flushCoordinator) getRunning() *flushRequest {
 }
 
 // recordFlush records what one page has left.
-func (l *flushCoordinator) recordFlush(token string, said flushState) {
+func (l *flushCoordinator) recordFlush(token string, response flushState) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
 	if p, found := l.clients[token]; found && !p.isDisconnected {
-		p.state = said
+		p.state = response
 	}
 	l.updateProgress()
 }

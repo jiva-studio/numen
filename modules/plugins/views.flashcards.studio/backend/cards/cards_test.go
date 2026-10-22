@@ -106,11 +106,11 @@ func read(t *testing.T, v domain.Vault, path string) string {
 // write puts a note in the vault, with the folders above it.
 func write(t *testing.T, v domain.Vault, path, raw string) {
 	t.Helper()
-	at := filepath.Join(v.Path, filepath.FromSlash(path))
-	if err := os.MkdirAll(filepath.Dir(at), 0o700); err != nil {
+	pos := filepath.Join(v.Path, filepath.FromSlash(path))
+	if err := os.MkdirAll(filepath.Dir(pos), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(at, []byte(raw), 0o600); err != nil {
+	if err := os.WriteFile(pos, []byte(raw), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

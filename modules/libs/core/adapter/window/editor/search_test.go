@@ -234,12 +234,12 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 		t.Fatal("nothing found")
 	}
 	first := found[0]
-	at := first.GetSpan()
-	if at.GetTo() <= at.GetFrom() {
-		t.Errorf("the passage is over no text: %d to %d", at.GetFrom(), at.GetTo())
+	pos := first.GetSpan()
+	if pos.GetTo() <= pos.GetFrom() {
+		t.Errorf("the passage is over no text: %d to %d", pos.GetFrom(), pos.GetTo())
 	}
-	if at.GetFrom() < 0 {
-		t.Errorf("the passage begins at %d", at.GetFrom())
+	if pos.GetFrom() < 0 {
+		t.Errorf("the passage begins at %d", pos.GetFrom())
 	}
 }
 

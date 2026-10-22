@@ -19,9 +19,9 @@ const pointsAtAVideo = "https://youtu.be/dQw4w9WgXcQ"
 // told an address on this machine.
 func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 	back, handler := openLoopback(t, newBareServices())
-	at := parseURL(t, pointsAtAVideo)
+	pos := parseURL(t, pointsAtAVideo)
 
-	address := back.Embed(at)
+	address := back.Embed(pos)
 	if !strings.HasPrefix(address, back.address+"/") {
 		t.Fatalf("the player is framed from %q, want this run's socket", address)
 	}
@@ -35,8 +35,8 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 	if !strings.Contains(page, "origin="+url.QueryEscape(back.address)) {
 		t.Errorf("the host is told nothing about who frames it: %s", page)
 	}
-	if !strings.Contains(page, getPlayerURL(at)) {
-		t.Errorf("the page frames %q, want the player of %q", page, string(at))
+	if !strings.Contains(page, getPlayerURL(pos)) {
+		t.Errorf("the page frames %q, want the player of %q", page, string(pos))
 	}
 }
 
@@ -45,11 +45,11 @@ func TestThePlayerIsFramedFromThisRunsOwnSocket(t *testing.T) {
 // route learning anything about it.
 func TestTheRouteCarriesTheAddressAndNotOneHostsIdentifier(t *testing.T) {
 	back, _ := openLoopback(t, newBareServices())
-	at := parseURL(t, pointsAtAVideo)
+	pos := parseURL(t, pointsAtAVideo)
 
-	address := back.Embed(at)
+	address := back.Embed(pos)
 
-	if !strings.Contains(address, url.PathEscape(string(at))) {
+	if !strings.Contains(address, url.PathEscape(string(pos))) {
 		t.Errorf("the route reads %q, want the address it points at", address)
 	}
 	if strings.Contains(address, "/dQw4w9WgXcQ") {
@@ -96,11 +96,11 @@ func TestAnEmbedAddressNothingPlays(t *testing.T) {
 }
 
 // parseURL is one address a note points at.
-func parseURL(t *testing.T, written string) domain.URL {
+func parseURL(t *testing.T, output string) domain.URL {
 	t.Helper()
-	at, err := domain.ParseURL(written)
+	pos, err := domain.ParseURL(output)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }

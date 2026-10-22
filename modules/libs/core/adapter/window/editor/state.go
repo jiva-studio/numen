@@ -195,7 +195,7 @@ func (s *State) getRecordingForgetter() func(domain.Vault, string) {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (s *State) reportTask(at run.Task) { s.Window.AddTask(at) }
+func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
 
 // finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }

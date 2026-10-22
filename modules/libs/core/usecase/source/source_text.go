@@ -35,8 +35,8 @@ func (s sourceTexts) getStoredText(
 	if !s.isReady() {
 		return storedText{}, nil
 	}
-	if at := s.getNoteURL(ctx, v, path); string(at) != "" {
-		stored, _, err := s.getFetchedText(ctx, v, at)
+	if pos := s.getNoteURL(ctx, v, path); string(pos) != "" {
+		stored, _, err := s.getFetchedText(ctx, v, pos)
 		return stored, err
 	}
 	return s.getIndexedText(ctx, v, path)
@@ -70,22 +70,22 @@ func (s sourceTexts) getNoteURL(ctx context.Context, v domain.Vault, path string
 	if err != nil {
 		return domain.URL("")
 	}
-	at, err := urlfile.Read(raw)
+	pos, err := urlfile.Read(raw)
 	if err != nil {
 		return domain.URL("")
 	}
-	return at
+	return pos
 }
 
 // getFetchedText is the text kept under an address with how far its run has got, and a zero text where nothing was fetched.
 func (s sourceTexts) getFetchedText(
-	ctx context.Context, v domain.Vault, at domain.URL,
+	ctx context.Context, v domain.Vault, pos domain.URL,
 ) (storedText, RunProgress, error) {
 	store, err := s.derived.Open(v)
 	if err != nil {
 		return storedText{}, RunProgress{}, err
 	}
-	hash := text.Fingerprint([]byte(string(at)))
+	hash := text.Fingerprint([]byte(string(pos)))
 	for _, producer := range domain.GetAddressProducers() {
 		progress, err := readRunProgress(ctx, store, producer, hash)
 		if err != nil {

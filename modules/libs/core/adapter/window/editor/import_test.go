@@ -108,9 +108,9 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 	}
 
 	var response string
-	for _, at := range answer.Msg().GetTasks() {
-		if at.GetError() != "" {
-			response = at.GetError()
+	for _, item := range answer.Msg().GetTasks() {
+		if item.GetError() != "" {
+			response = item.GetError()
 		}
 	}
 	if response == "" {

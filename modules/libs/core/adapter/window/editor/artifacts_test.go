@@ -74,9 +74,9 @@ func TestARecordingCarriesWhatWasHeardAndWhatWasInsertRight(t *testing.T) {
 	if len(target) != len(want) {
 		t.Fatalf("a recording carries %v", target)
 	}
-	for at, one := range target {
-		if one.GetKind() != want[at] {
-			t.Errorf("the artifact at %d is a %s, want %s", at, one.GetKind(), want[at])
+	for item, one := range target {
+		if one.GetKind() != want[item] {
+			t.Errorf("the artifact at %d is a %s, want %s", item, one.GetKind(), want[item])
 		}
 		if one.GetState() != v1.State_STATE_NONE {
 			t.Errorf("%s of a recording nothing heard is %s", one.GetKind(), one.GetState())

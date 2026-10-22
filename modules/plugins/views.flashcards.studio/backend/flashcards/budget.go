@@ -38,7 +38,7 @@ type allowance struct {
 func getBudgets(
 	ctx context.Context, v domain.Vault, reads *PresetReads, day review.Day,
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
-	log ReviewLog, by review.Scheduler, at func(retention float64) review.Scheduler,
+	log ReviewLog, delta review.Scheduler, pos func(retention float64) review.Scheduler,
 	now time.Time,
 ) (*budgets, error) {
 	out := &budgets{
@@ -62,7 +62,7 @@ func getBudgets(
 	out.spentByDeck = review.GetSpentUnder(day, named, log.Answers, survey.in, deckCounts)
 	elapsed := sumSpentByPreset(out.spentByDeck, survey.presetByDeck)
 
-	costed := review.GetCostUnder(by, log.Answers, out.cardFacePresets)
+	costed := review.GetCostUnder(delta, log.Answers, out.cardFacePresets)
 	for path, p := range survey.settings {
 		cost, target := costed[path]
 		if !target {
@@ -71,7 +71,7 @@ func getBudgets(
 		// Target date goals scale daily review allowances by learning duration.
 		learn := 0
 		if p.Goal == review.GoalDate {
-			learn = review.GetDaysToLearn(at(p.Retention), day, p, now)
+			learn = review.GetDaysToLearn(pos(p.Retention), day, p, now)
 		}
 		out.allowances[path] = &allowance{
 			admits:     p.GetAllowance(day, now, elapsed[path], survey.unstarted[path], learn),
@@ -238,13 +238,13 @@ func (b *budgets) getAsking(
 
 	allocations := b.spend(owed, newCards)
 	var out asking
-	for at, one := range owed {
-		if allocations.owed[at] && b.isAllowed(one, scope) {
+	for item, one := range owed {
+		if allocations.owed[item] && b.isAllowed(one, scope) {
 			out.owed = append(out.owed, one)
 		}
 	}
-	for at, one := range newCards {
-		if allocations.newCards[at] && b.isAllowed(one, scope) {
+	for entry, one := range newCards {
+		if allocations.newCards[entry] && b.isAllowed(one, scope) {
 			out.newCards = append(out.newCards, one)
 		}
 	}
@@ -256,23 +256,23 @@ type budgetAllocation struct{ owed, newCards []bool }
 
 // deckShare tracks card face indices and budget consumption for a deck.
 type deckShare struct {
-	deck              string
-	owed, newCards    []int
+	deck           string
+	owed, newCards []int
 	// owedIndex and newIndex track progress through owed and new card pools.
 	owedIndex, newIndex int
-	debt, begun       int
+	debt, begun         int
 }
 
 // countRemaining returns the number of unallocated cards remaining for this deck.
 func (q *deckShare) countRemaining(out budgetAllocation) int {
 	target := 0
-	for _, at := range q.owed {
-		if !out.owed[at] {
+	for _, item := range q.owed {
+		if !out.owed[item] {
 			target++
 		}
 	}
-	for _, at := range q.newCards {
-		if !out.newCards[at] {
+	for _, entry := range q.newCards {
+		if !out.newCards[entry] {
 			target++
 		}
 	}
@@ -384,11 +384,11 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 	reviews := make([]int, len(decks))
 	begun := make([]int, len(decks))
 	minutes := make([]int, len(decks))
-	for at, q := range decks {
+	for item, q := range decks {
 		elapsed := b.spentByDeck[q.deck]
-		reviews[at] = len(q.owed) + elapsed.Reviews
-		begun[at] = len(q.newCards) + elapsed.New
-		minutes[at] = int(time.Duration(len(q.owed))*one.cost.Review +
+		reviews[item] = len(q.owed) + elapsed.Reviews
+		begun[item] = len(q.newCards) + elapsed.New
+		minutes[item] = int(time.Duration(len(q.owed))*one.cost.Review +
 			time.Duration(len(q.newCards))*one.cost.New + elapsed.Took)
 	}
 	keeps := one.admits.Keeps
@@ -397,12 +397,12 @@ func (b *budgets) divide(one *allowance, decks []*deckShare) []allowance {
 	minutes = review.DivideBudget(int(keeps.Minutes*float64(time.Minute)), minutes)
 
 	out := make([]allowance, len(decks))
-	for at, q := range decks {
+	for entry, q := range decks {
 		elapsedVal := b.spentByDeck[q.deck]
-		out[at] = *one
-		out[at].admits.Reviews = max(0, reviews[at]-elapsedVal.Reviews)
-		out[at].admits.New = max(0, begun[at]-elapsedVal.New)
-		out[at].admits.Minutes = max(0, time.Duration(minutes[at])-elapsedVal.Took)
+		out[entry] = *one
+		out[entry].admits.Reviews = max(0, reviews[entry]-elapsedVal.Reviews)
+		out[entry].admits.New = max(0, begun[entry]-elapsedVal.New)
+		out[entry].admits.Minutes = max(0, time.Duration(minutes[entry])-elapsedVal.Took)
 	}
 	return out
 }

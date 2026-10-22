@@ -38,10 +38,10 @@ func TestPageSettingsPaths_PersistedInFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	for row, at := range settingsData {
+	for row, item := range settingsData {
 		value := target
 		ok := true
-		for _, step := range at {
+		for _, step := range item {
 			object, is := value.(map[string]any)
 			if !is {
 				ok = false
@@ -53,7 +53,7 @@ func TestPageSettingsPaths_PersistedInFile(t *testing.T) {
 			}
 		}
 		if !ok {
-			t.Errorf("%s reads %v, which is no path through the file", row, at)
+			t.Errorf("%s reads %v, which is no path through the file", row, item)
 		}
 	}
 }

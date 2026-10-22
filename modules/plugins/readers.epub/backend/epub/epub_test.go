@@ -181,8 +181,8 @@ func TestPrintedPages(t *testing.T) {
 		if len(book.Pages) != 1 || book.Pages[0].Label != "42" {
 			t.Fatalf("pages = %v, want the one the markup marks", book.Pages)
 		}
-		at := strings.Index(book.Text, "Epsilon")
-		if got := book.Locate(at).Page; got != "42" {
+		pos := strings.Index(book.Text, "Epsilon")
+		if got := book.Locate(pos).Page; got != "42" {
 			t.Errorf("page at Epsilon = %q, want 42", got)
 		}
 		if got := book.Locate(strings.Index(book.Text, "Alpha")).Page; got != "" {
@@ -211,7 +211,7 @@ func TestPrintedPages(t *testing.T) {
 
 func TestLocate(t *testing.T) {
 	book := read(t, tinyBook(t, nil))
-	at := func(word string) int {
+	pos := func(word string) int {
 		t.Helper()
 		i := strings.Index(book.Text, word)
 		if i < 0 {
@@ -228,10 +228,10 @@ func TestLocate(t *testing.T) {
 		page     string
 	}{
 		{name: "the first byte of the book", offset: 0, document: coverDoc},
-		{name: "before the first heading", offset: at("Cover"), document: coverDoc},
-		{name: "inside the first section", offset: at("Gamma"), document: firstDoc, part: "Of the Beginning"},
-		{name: "inside the second section", offset: at("Delta"), document: secondDoc, part: "Of the Middle"},
-		{name: "after the page break", offset: at("Epsilon"), document: secondDoc, part: "Of the Middle", page: "42"},
+		{name: "before the first heading", offset: pos("Cover"), document: coverDoc},
+		{name: "inside the first section", offset: pos("Gamma"), document: firstDoc, part: "Of the Beginning"},
+		{name: "inside the second section", offset: pos("Delta"), document: secondDoc, part: "Of the Middle"},
+		{name: "after the page break", offset: pos("Epsilon"), document: secondDoc, part: "Of the Middle", page: "42"},
 		{name: "the last byte", offset: len(book.Text) - 1, document: secondDoc, part: "Of the Middle", page: "42"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -320,9 +320,9 @@ func titles(book *epub.Book) []string {
 	return out
 }
 
-func excerpt(text string, at int) string {
-	end := min(at+40, len(text))
-	return text[at:end]
+func excerpt(text string, pos int) string {
+	end := min(pos+40, len(text))
+	return text[pos:end]
 }
 
 // tinyBook zips the committed fixture into an EPUB.
@@ -332,15 +332,15 @@ func excerpt(text string, at int) string {
 func tinyBook(tb testing.TB, replace map[string]string, omit ...string) []byte {
 	tb.Helper()
 	parts := tinyParts(tb)
-	for at, from := range replace {
+	for item, from := range replace {
 		raw, err := os.ReadFile(filepath.Join("testdata", filepath.FromSlash(from)))
 		if err != nil {
 			tb.Fatalf("read the fixture: %v", err)
 		}
-		parts[at] = raw
+		parts[item] = raw
 	}
-	for _, at := range omit {
-		delete(parts, at)
+	for _, entry := range omit {
+		delete(parts, entry)
 	}
 	return buildReversedArchive(tb, parts)
 }
@@ -357,15 +357,15 @@ func partsIn(tb testing.TB, root string) map[string][]byte {
 	tb.Helper()
 
 	parts := map[string][]byte{}
-	err := filepath.WalkDir(root, func(at string, entry fs.DirEntry, err error) error {
+	err := filepath.WalkDir(root, func(pos string, entry fs.DirEntry, err error) error {
 		if err != nil || entry.IsDir() {
 			return err
 		}
-		raw, err := os.ReadFile(at)
+		raw, err := os.ReadFile(pos)
 		if err != nil {
 			return err
 		}
-		name, err := filepath.Rel(root, at)
+		name, err := filepath.Rel(root, pos)
 		if err != nil {
 			return err
 		}
@@ -620,8 +620,8 @@ func buildSpineArchive(t *testing.T, opf string, files map[string]string) []byte
 		</container>`),
 		"OEBPS/content.opf": []byte(opf),
 	}
-	for at, raw := range files {
-		parts[at] = []byte(raw)
+	for item, raw := range files {
+		parts[item] = []byte(raw)
 	}
 	return buildArchive(t, parts)
 }

@@ -147,7 +147,7 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	r.reportTask(run.Task{ID: id, Title: "Fetching models"})
-	by, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
+	delta, letGo, err := r.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		r.reportTask(run.Task{
@@ -175,7 +175,7 @@ func (r *Worker) recognise(ctx context.Context, v domain.Vault, id, path string)
 	}
 
 	r.reportTask(run.Task{ID: id, Title: "Recognising a scan", About: path})
-	read := NewRecognise(r.with.Readers, r.with.Sources, r.with.Derived, r.with.Documents, by)
+	read := NewRecognise(r.with.Readers, r.with.Sources, r.with.Derived, r.with.Documents, delta)
 	read.Cut = r.Cut
 	read.OnProgress = func(res RecogniseResult) {
 		r.reportTask(run.Task{
@@ -286,7 +286,7 @@ func (r *Worker) proofreadRecognition(
 
 // reportTask puts this recognition in the list of what is being done, shown at
 // once because a person asked for it.
-func (r *Worker) reportTask(at run.Task) { r.line.Report(at, true) }
+func (r *Worker) reportTask(pos run.Task) { r.line.Report(pos, true) }
 
 func (r *Worker) finishTask(id string) { r.line.Finish(id) }
 
@@ -304,12 +304,12 @@ func (r *Worker) TakeUp(
 		return
 	}
 	r.line.Go(func() {
-		by, err := run.OpenProofreader(proofreading.By)
-		if err != nil || by == nil {
+		delta, err := run.OpenProofreader(proofreading.By)
+		if err != nil || delta == nil {
 			return
 		}
 		for _, v := range vaults {
-			r.collect(ctx, known, by, v)
+			r.collect(ctx, known, delta, v)
 		}
 	})
 }
@@ -319,7 +319,7 @@ func (r *Worker) TakeUp(
 func (r *Worker) collect(
 	ctx context.Context,
 	known port.SourceQueries,
-	by port.Proofreader,
+	delta port.Proofreader,
 	v domain.Vault,
 ) {
 	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindBook)
@@ -331,7 +331,7 @@ func (r *Worker) collect(
 			return
 		}
 		id := run.GetProofreadID(one.Path)
-		right, err := NewProofread(r.with.Readers, r.with.Derived, by)
+		right, err := NewProofread(r.with.Readers, r.with.Derived, delta)
 		if err != nil {
 			r.line.Report(run.Task{
 				ID: id, Title: "Proofreading a recognition",

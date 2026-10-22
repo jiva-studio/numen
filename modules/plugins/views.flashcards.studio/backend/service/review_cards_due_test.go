@@ -34,8 +34,8 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	if len(first.GetVaults()) != len(target) {
 		t.Fatalf("the front door opens on %d of %d vaults", len(first.GetVaults()), len(target))
 	}
-	for at, one := range first.GetVaults() {
-		if one.GetId() != string(target[at].ID) || one.GetName() == "" || one.GetPath() == "" {
+	for item, one := range first.GetVaults() {
+		if one.GetId() != string(target[item].ID) || one.GetName() == "" || one.GetPath() == "" {
 			t.Errorf("the vault stands as %+v", one)
 		}
 		if one.GetFaces() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||

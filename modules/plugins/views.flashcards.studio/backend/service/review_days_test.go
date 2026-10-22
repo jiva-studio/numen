@@ -136,9 +136,9 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 	})
 
 	want := []string{"2026-07-01", "2026-08-09", "2026-08-30", "2026-08-30", "2027-01-02"}
-	for at, one := range response {
-		if one.GetDay() != want[at] {
-			t.Errorf("the day at %d is %s, want %s", at, one.GetDay(), want[at])
+	for item, one := range response {
+		if one.GetDay() != want[item] {
+			t.Errorf("the day at %d is %s, want %s", item, one.GetDay(), want[item])
 		}
 	}
 }

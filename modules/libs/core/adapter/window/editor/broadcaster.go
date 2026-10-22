@@ -101,11 +101,11 @@ func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
 	fitted := false
-	switch at := a.findSupersededIndex(l.waiting, message); {
-	case at >= 0:
-		l.waiting[at] = message
+	switch pos := a.findSupersededIndex(l.waiting, message); {
+	case pos >= 0:
+		l.waiting[pos] = message
 		fitted = true
-		if at == 0 {
+		if pos == 0 {
 			l.frontSeq++
 		}
 	case len(l.waiting) < a.getCapacity():
@@ -131,12 +131,12 @@ func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.isLatest {
 		return -1
 	}
-	for at, target := range waiting {
+	for item, target := range waiting {
 		if a.isRequired != nil && a.isRequired(target) {
 			continue
 		}
 		if a.getTopic == nil || a.getTopic(target) == a.getTopic(message) {
-			return at
+			return item
 		}
 	}
 	return -1

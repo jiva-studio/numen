@@ -18,26 +18,26 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 
 	cfg := Defaults()
 	cfg.Dir, cfg.ShouldDownload = dir, false
-	by, err := Open(t.Context(), cfg)
+	delta, err := Open(t.Context(), cfg)
 	if err != nil {
 		t.Skipf("the models in %s: %v", dir, err)
 	}
-	t.Cleanup(func() { by.Close() })
+	t.Cleanup(func() { delta.Close() })
 
 	raw, err := os.ReadFile(recorded)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return by, raw
+	return delta, raw
 }
 
 // A recording is opened, cut into the stretches that carry speech, and each of
 // them heard.
 func TestHearingARecording(t *testing.T) {
-	by, raw := openTranscriber(t)
+	delta, raw := openTranscriber(t)
 	recorded := os.Getenv("NUMEN_RECORDING")
 
-	sound, err := by.Open(t.Context(), raw)
+	sound, err := delta.Open(t.Context(), raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestHearingARecording(t *testing.T) {
 
 	var out []string
 	for _, one := range found {
-		text, err := by.Transcribe(t.Context(), one)
+		text, err := delta.Transcribe(t.Context(), one)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -73,17 +73,17 @@ func TestHearingARecording(t *testing.T) {
 // is given, and is how the words this writes are compared with the words it
 // writes.
 func TestHearingAWholeRecording(t *testing.T) {
-	by, raw := openTranscriber(t)
+	delta, raw := openTranscriber(t)
 
 	sound, rate, err := readSamples(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	at, err := resample(t.Context(), sound, rate, sampleRate, 0)
+	pos, err := resample(t.Context(), sound, rate, sampleRate, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
-	text, err := by.Transcribe(t.Context(), Audio{Samples: at})
+	text, err := delta.Transcribe(t.Context(), Audio{Samples: pos})
 	if err != nil {
 		t.Fatal(err)
 	}

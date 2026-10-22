@@ -93,12 +93,12 @@ func TestADocumentRewrittenIsGeneratedAgain(t *testing.T) {
 	}
 	_, rendered, _ := from.getCounts()
 
-	at := filepath.Join(string(api.state.GetCurrentVault().Path), book)
-	if err := os.WriteFile(at, []byte("the bytes of another scan entirely"), 0o644); err != nil {
+	pos := filepath.Join(string(api.state.GetCurrentVault().Path), book)
+	if err := os.WriteFile(pos, []byte("the bytes of another scan entirely"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	later := time.Now().Add(time.Second)
-	if err := os.Chtimes(at, later, later); err != nil {
+	if err := os.Chtimes(pos, later, later); err != nil {
 		t.Fatal(err)
 	}
 	api.Document.viewer.renderedPages.Store(pagecache.NewMemory(pagecache.MaxMemoryBytes))
@@ -122,9 +122,9 @@ func TestTheOldestDrawingsGoWhenTheFolderIsFull(t *testing.T) {
 	stopReadAhead(api)
 	cache := newDiskCache(t, api)
 
-	for at := 0; at < 4; at++ {
-		if out := ask(handler, getPageAddress(t, api, book, at, 400)); out.Code != http.StatusOK {
-			t.Fatalf("asked for page %d and got %d", at, out.Code)
+	for pos := 0; pos < 4; pos++ {
+		if out := ask(handler, getPageAddress(t, api, book, pos, 400)); out.Code != http.StatusOK {
+			t.Fatalf("asked for page %d and got %d", pos, out.Code)
 		}
 	}
 	if n := countDrawings(t, cache); n != 4 {

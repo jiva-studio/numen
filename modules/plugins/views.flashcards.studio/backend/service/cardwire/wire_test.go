@@ -63,7 +63,7 @@ func TestAStencilSummaryGoesOutWhole(t *testing.T) {
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
-	at := &v1.Fingerprint{}
+	pos := &v1.Fingerprint{}
 	got := NewRenameResponse(cards.RenameResult{
 		Decks: []string{"a.md"},
 		Cards: 7,
@@ -71,9 +71,9 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 			{Path: "x.md", Problem: format.Problem{Fault: format.FaultTwoFields, Card: format.NoPosition, Face: format.NoPosition}},
 			{Path: "y.md", Problem: format.Problem{Fault: format.FaultNoFields, Card: 2, Face: format.NoPosition}},
 		},
-	}, at)
+	}, pos)
 	requireEqual(t, got, &v1.RenameStencilFieldResponse{
-		Decks: []string{"a.md"}, Cards: 7, At: at,
+		Decks: []string{"a.md"}, Cards: 7, At: pos,
 		NotWritten: []*v1.UnwrittenDeck{
 			{Path: "x.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
 			{Path: "y.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},

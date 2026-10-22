@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	onnx.Register(func(at string) {
-		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: at})
+	onnx.Register(func(pos string) {
+		_, _ = paddle.NewEngine(paddle.Config{OnnxRuntimeLibPath: pos})
 	})
 }
 

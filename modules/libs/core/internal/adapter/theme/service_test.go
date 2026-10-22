@@ -34,7 +34,7 @@ func (d *fakeAppearances) Write(one theme.Appearance) error {
 	return nil
 }
 
-func (d *fakeAppearances) Warn(said string) { d.said = append(d.said, said) }
+func (d *fakeAppearances) Warn(response string) { d.said = append(d.said, response) }
 
 func createFakeAppearances(t *testing.T, worn theme.Appearance) *fakeAppearances {
 	t.Helper()

@@ -118,12 +118,12 @@ func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 	if fault := problems[0].GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL {
 		t.Errorf("the card with no wikilink under it is reported as %v", fault)
 	}
-	at := problems[0].GetCard()
+	pos := problems[0].GetCard()
 	if problems[0].Card == nil {
 		t.Fatal("a problem about a card came back standing against none")
 	}
-	if name := getFieldValue(target[at], "Name"); name != "Alpaca" {
-		t.Errorf("problem targets card %d (%q)", at, name)
+	if name := getFieldValue(target[pos], "Name"); name != "Alpaca" {
+		t.Errorf("problem targets card %d (%q)", pos, name)
 	}
 }
 
@@ -140,10 +140,10 @@ func TestACardReachesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 		t.Fatalf("the deck came back with %d cards", len(target))
 	}
 	marks := []string{"k7m2xq9fzp", "3n8vr4tqch", "9wq2xr4t8h"}
-	for at, card := range target {
-		if card.GetMark() != marks[at] {
+	for item, card := range target {
+		if card.GetMark() != marks[item] {
 			t.Errorf("card %d carries the mark %q, and the file writes %q",
-				at, card.GetMark(), marks[at])
+				item, card.GetMark(), marks[item])
 		}
 	}
 }
@@ -195,12 +195,12 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 	if len(problems) != 2 {
 		t.Fatalf("two cards of one mark came back as %d problems: %+v", len(problems), problems)
 	}
-	for at, problem := range problems {
+	for item, problem := range problems {
 		if fault := problem.GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE {
-			t.Errorf("the problem against card %d is %v", at, fault)
+			t.Errorf("the problem against card %d is %v", item, fault)
 		}
-		if problem.Card == nil || problem.GetCard() != int32(at) {
-			t.Errorf("the problem for card %d targets %+v", at, problem.Card)
+		if problem.Card == nil || problem.GetCard() != int32(item) {
+			t.Errorf("the problem for card %d targets %+v", item, problem.Card)
 		}
 	}
 }
@@ -609,8 +609,8 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range target {
 		name := getFieldValue(card, "Name")
-		if at := card.GetStencilPath(); at != filed[name] {
-			t.Errorf("the stencil of %s is filed at %q, want %q", name, at, filed[name])
+		if pos := card.GetStencilPath(); pos != filed[name] {
+			t.Errorf("the stencil of %s is filed at %q, want %q", name, pos, filed[name])
 		}
 	}
 	if content := target[0].GetStencilLink(); content != "cards/Animal" {

@@ -49,8 +49,8 @@ func (h *noteHandler) RenameNote(
 }
 
 // newWireNameSource is which of the two a rename wrote, as the schema carries it.
-func newWireNameSource(by note.NameSource) v1.NameSource {
-	switch by {
+func newWireNameSource(delta note.NameSource) v1.NameSource {
+	switch delta {
 	case note.ByFrontmatter:
 		return v1.NameSource_NAME_SOURCE_FRONTMATTER
 	case note.ByFilename:

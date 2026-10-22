@@ -11,10 +11,10 @@ import (
 )
 
 // front is a preset's frontmatter, as the parser hands it over.
-func front(t *testing.T, written string) map[string]any {
+func front(t *testing.T, output string) map[string]any {
 	t.Helper()
 	var out map[string]any
-	if err := yaml.Unmarshal([]byte(written), &out); err != nil {
+	if err := yaml.Unmarshal([]byte(output), &out); err != nil {
 		t.Fatalf("frontmatter: %v", err)
 	}
 	return out

@@ -6,28 +6,28 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/format"
 )
 
-func findCard(held []format.Card, mark string) (int, error) {
-	at := -1
+func findCard(target []format.Card, mark string) (int, error) {
+	pos := -1
 	if mark != "" {
-		for i, card := range held {
+		for i, card := range target {
 			if string(card.Mark) != mark {
 				continue
 			}
-			if at >= 0 {
+			if pos >= 0 {
 				return 0, fmt.Errorf("%w: %s", format.ErrTwoCards, mark)
 			}
-			at = i
+			pos = i
 		}
 	}
-	if at < 0 {
+	if pos < 0 {
 		return 0, fmt.Errorf("%w: %s", format.ErrNoSuchCard, mark)
 	}
-	return at, nil
+	return pos, nil
 }
 
-func getMark(given []format.CardMark, at int) string {
+func getMark(given []format.CardMark, pos int) string {
 	for _, one := range given {
-		if one.Card == at {
+		if one.Card == pos {
 			return string(one.Mark)
 		}
 	}

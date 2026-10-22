@@ -36,24 +36,24 @@ func describeSpeech(lines []Line) string {
 }
 
 // getOpeningWords is the opening words of the speech, with a mark where it was cut short.
-func getOpeningWords(said []string, words int) string {
-	if len(said) <= words {
-		return strings.Join(said, " ")
+func getOpeningWords(response []string, words int) string {
+	if len(response) <= words {
+		return strings.Join(response, " ")
 	}
-	return strings.Join(said[:words], " ") + " …"
+	return strings.Join(response[:words], " ") + " …"
 }
 
 // getRecurringNames returns the words the speech carries as names: a word standing capitalised
 // somewhere other than at the opening of a sentence, and standing there more
 // than once. They come in the order they are first said, written as they were
 // first said.
-func getRecurringNames(said []string) []string {
+func getRecurringNames(response []string) []string {
 	times := map[string]int{}
 	content := map[string]string{}
 	var order []string
 
 	opens := true
-	for _, word := range said {
+	for _, word := range response {
 		here := opens
 		opens = isSentenceEnd(word)
 
@@ -92,9 +92,9 @@ func isName(word string) bool {
 		return false
 	}
 	head, tail := word, ""
-	if at := strings.IndexAny(word, "'’"); at >= 0 {
-		_, runeLen := utf8.DecodeRuneInString(word[at:])
-		head, tail = word[:at], word[at+runeLen:]
+	if pos := strings.IndexAny(word, "'’"); pos >= 0 {
+		_, runeLen := utf8.DecodeRuneInString(word[pos:])
+		head, tail = word[:pos], word[pos+runeLen:]
 	}
 	return utf8.RuneCountInString(head) > 1 || utf8.RuneCountInString(tail) > 2
 }

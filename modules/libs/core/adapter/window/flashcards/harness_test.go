@@ -22,10 +22,10 @@ type carrying struct {
 func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) { return c.held[id], nil }
 
 // newAPI is the window over an index that holds the vaults named.
-func newAPI(t testing.TB, held ...domain.Vault) *API {
+func newAPI(t testing.TB, target ...domain.Vault) *API {
 	t.Helper()
 	index := carrying{held: map[domain.VaultID]bool{}}
-	for _, v := range held {
+	for _, v := range target {
 		index.held[v.ID] = true
 	}
 	return &API{Window: NewWindow(run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}

@@ -122,12 +122,12 @@ func TestWhatThePlacingRuleRefuses(t *testing.T) {
 func getCallers(file *ast.File, name string) []string {
 	var out []string
 	for _, decl := range file.Decls {
-		at, is := decl.(*ast.FuncDecl)
-		if !is || at.Body == nil {
+		pos, is := decl.(*ast.FuncDecl)
+		if !is || pos.Body == nil {
 			continue
 		}
 		var calls bool
-		ast.Inspect(at.Body, func(node ast.Node) bool {
+		ast.Inspect(pos.Body, func(node ast.Node) bool {
 			call, is := node.(*ast.CallExpr)
 			if !is {
 				return true
@@ -138,7 +138,7 @@ func getCallers(file *ast.File, name string) []string {
 			return true
 		})
 		if calls {
-			out = append(out, getFuncName(at))
+			out = append(out, getFuncName(pos))
 		}
 	}
 	return out
@@ -149,7 +149,7 @@ func getCallers(file *ast.File, name string) []string {
 func countDeclarations(file *ast.File, name string) int {
 	out := 0
 	for _, decl := range file.Decls {
-		if at, is := decl.(*ast.FuncDecl); is && at.Name.Name == name {
+		if pos, is := decl.(*ast.FuncDecl); is && pos.Name.Name == name {
 			out++
 		}
 	}
@@ -157,16 +157,16 @@ func countDeclarations(file *ast.File, name string) int {
 }
 
 // getFuncName is what a function is called, a method by the type it is of.
-func getFuncName(at *ast.FuncDecl) string {
-	if at.Recv == nil || len(at.Recv.List) == 0 {
-		return at.Name.Name
+func getFuncName(pos *ast.FuncDecl) string {
+	if pos.Recv == nil || len(pos.Recv.List) == 0 {
+		return pos.Name.Name
 	}
-	of := at.Recv.List[0].Type
+	of := pos.Recv.List[0].Type
 	if star, is := of.(*ast.StarExpr); is {
 		of = star.X
 	}
 	if target, is := of.(*ast.Ident); is {
-		return target.Name + "." + at.Name.Name
+		return target.Name + "." + pos.Name.Name
 	}
-	return at.Name.Name
+	return pos.Name.Name
 }

@@ -64,11 +64,11 @@ func recordSource(t *testing.T, index *store, shelved *library, from, hash strin
 // it is.
 func locate(t *testing.T, book document, word string) (start, length int) {
 	t.Helper()
-	at := strings.Index(book.Text, word)
-	if at < 0 {
+	pos := strings.Index(book.Text, word)
+	if pos < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return at, len(word)
+	return pos, len(word)
 }
 
 // litOn is where one run of a source's text sits, asked about on its own. A

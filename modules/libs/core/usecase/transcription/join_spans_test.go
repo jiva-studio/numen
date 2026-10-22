@@ -15,8 +15,8 @@ func newWholeRun(
 	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
 ) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
-	u, v, retained, by, hash := newProofreadTranscript(t, told, words...)
-	by.limit = len(words)
+	u, v, retained, delta, hash := newProofreadTranscript(t, told, words...)
+	delta.limit = len(words)
 	return u, v, retained, hash
 }
 
@@ -72,10 +72,10 @@ func newOverlappingRun(
 	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
 ) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
-	u, v, retained, by, hash := newProofreadTranscript(t,
+	u, v, retained, delta, hash := newProofreadTranscript(t,
 		told,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
-	by.limit = lines
+	delta.limit = lines
 	return u, v, retained, hash
 }
 
@@ -175,12 +175,12 @@ func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
-	by.limit = 2
+	u, v, shelved, delta, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
+	delta.limit = 2
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	by.stop = func(calls int) {
+	delta.stop = func(calls int) {
 		if calls == 2 {
 			stop()
 		}
@@ -233,9 +233,9 @@ func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.
 	if len(cues) != len(remaining) || cues[0].Text != putTogether {
 		t.Fatalf("the transcript says %+v", cues)
 	}
-	for at := range cues {
-		if cues[at].Text != remaining[at].Text {
-			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, remaining[at].Text)
+	for item := range cues {
+		if cues[item].Text != remaining[item].Text {
+			t.Errorf("line %d says %q, the run before left %q", item, cues[item].Text, remaining[item].Text)
 		}
 	}
 }

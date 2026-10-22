@@ -22,8 +22,8 @@ func TestTheWindowWaitsForTheSweepItStarted(t *testing.T) {
 	cache.limit = 2 * int64(len(page))
 	cache.every = int64(len(page))
 
-	for at := range 6 {
-		cache.Put(newDrawingID(at), page)
+	for item := range 6 {
+		cache.Put(newDrawingID(item), page)
 	}
 	cache.Close()
 
@@ -41,8 +41,8 @@ func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
 	cache.every = int64(len(page))
 
 	cache.Close()
-	for at := range 4 {
-		cache.Put(newDrawingID(at), page)
+	for item := range 4 {
+		cache.Put(newDrawingID(item), page)
 	}
 	cache.going.Wait()
 
@@ -52,8 +52,8 @@ func TestNoSweepIsStartedAfterTheWindowCloses(t *testing.T) {
 }
 
 // newDrawingID names one page of the one book these tests keep drawings of.
-func newDrawingID(at int) document.PageKey {
-	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: at, Width: 400}
+func newDrawingID(pos int) document.PageKey {
+	return document.PageKey{Document: document.Fingerprint{Path: "book.pdf", Size: 1, Mtime: 1}, Page: pos, Width: 400}
 }
 
 // countBytes is what the folder's drawings come to, in bytes.
@@ -193,27 +193,27 @@ func TestASweepDropsWhatWasLookedAtLongestAgo(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
 	page := make([]byte, 100)
 	names := make([]string, 4)
-	for at := range names {
-		cache.Put(newDrawingID(at), page)
-		names[at] = cache.GetPath(newDrawingID(at))
+	for item := range names {
+		cache.Put(newDrawingID(item), page)
+		names[item] = cache.GetPath(newDrawingID(item))
 	}
 	sort.Strings(names)
 
 	// The two looked at longest ago sort in the middle by name.
 	base := time.Date(2026, 3, 1, 12, 0, 0, 0, time.UTC)
-	for at, offset := range []time.Duration{3, 1, 2, 4} {
+	for entry, offset := range []time.Duration{3, 1, 2, 4} {
 		when := base.Add(offset * time.Hour)
-		if err := os.Chtimes(names[at], when, when); err != nil {
+		if err := os.Chtimes(names[entry], when, when); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	cache.TrimTo(2 * int64(len(page)))
 
-	for at, isKept := range []bool{true, false, false, true} {
-		_, err := os.Stat(names[at])
+	for elem, isKept := range []bool{true, false, false, true} {
+		_, err := os.Stat(names[elem])
 		if got := err == nil; got != isKept {
-			t.Errorf("drawing %d by name: kept = %v, want %v", at, got, isKept)
+			t.Errorf("drawing %d by name: kept = %v, want %v", elem, got, isKept)
 		}
 	}
 }
@@ -262,8 +262,8 @@ func TestNoDiskWhereItsFolderCannotBeMade(t *testing.T) {
 // Closing waits for a sweep that still has files to delete.
 func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
-	for at := range 200 {
-		name := filepath.Join(cache.GetDir(), fmt.Sprintf("old-%d.jpg", at))
+	for item := range 200 {
+		name := filepath.Join(cache.GetDir(), fmt.Sprintf("old-%d.jpg", item))
 		if err := os.WriteFile(name, []byte("0123456789"), 0o644); err != nil {
 			t.Fatal(err)
 		}
@@ -314,8 +314,8 @@ func TestCloseReturnsOnlyOnceTheSweepHasEmptiedTheFolder(t *testing.T) {
 // drops nothing from a folder under it.
 func TestASweepOfAFolderWithinTheBoundDropsNothing(t *testing.T) {
 	cache := NewDiskIn(t.TempDir())
-	for at := range 3 {
-		cache.Put(newDrawingID(at), make([]byte, 100))
+	for item := range 3 {
+		cache.Put(newDrawingID(item), make([]byte, 100))
 	}
 	cache.TrimTo(300)
 	if n := countDrawings(t, cache); n != 3 {

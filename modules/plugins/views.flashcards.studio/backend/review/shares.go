@@ -33,12 +33,12 @@ func DivideBudget(budget int, owes []int) []int {
 	shares := make([]int, len(owes))
 	parts := make([]float64, len(owes))
 	remaining := budget
-	for at, one := range owes {
+	for item, one := range owes {
 		exact := float64(budget) * float64(one) / float64(total)
-		out[at] = int(math.Floor(exact))
-		parts[at] = exact - float64(out[at])
-		remaining -= out[at]
-		shares[at] = at
+		out[item] = int(math.Floor(exact))
+		parts[item] = exact - float64(out[item])
+		remaining -= out[item]
+		shares[item] = item
 	}
 	slices.SortStableFunc(shares, func(a, b int) int {
 		return cmp.Or(
@@ -46,8 +46,8 @@ func DivideBudget(budget int, owes []int) []int {
 			cmp.Compare(owes[b], owes[a]),
 		)
 	})
-	for _, at := range shares[:min(len(shares), remaining)] {
-		out[at]++
+	for _, entry := range shares[:min(len(shares), remaining)] {
+		out[entry]++
 	}
 	return out
 }

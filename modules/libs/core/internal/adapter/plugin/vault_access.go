@@ -144,7 +144,7 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprin
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	at, err := reader.GetFingerprint(ctx, path)
+	pos, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
@@ -152,7 +152,7 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprin
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	return content, at, nil
+	return content, pos, nil
 }
 
 func (a Vault) Write(
@@ -162,11 +162,11 @@ func (a Vault) Write(
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	at, err := writer.Write(ctx, path, content, baseline)
+	pos, err := writer.Write(ctx, path, content, baseline)
 	if err == nil {
 		a.notifyFileWritten()
 	}
-	return at, err
+	return pos, err
 }
 
 func (a Vault) notifyFileWritten() {

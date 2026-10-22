@@ -23,7 +23,7 @@ var (
 
 // saveThroughPort puts one book in through the source port, cut into a large
 // chunk holding one small chunk for each text given.
-func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, at time.Time, texts ...string) {
+func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos time.Time, texts ...string) {
 	t.Helper()
 	small := make([]domain.Chunk, 0, len(texts))
 	for i, text := range texts {
@@ -31,7 +31,7 @@ func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, at t
 	}
 	if err := db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindBook, Size: 1000, ModTime: at},
+			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindBook, Size: 1000, ModTime: pos},
 			Hash:        "hash-" + path,
 			Recipe:      "epub",
 		},
@@ -154,7 +154,7 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 
 	// Every number is past 2^62.
 	const row = "9000000000000000000"
-	for _, at := range []struct {
+	for _, item := range []struct {
 		cursor port.ChunkCursor
 		want   []string
 	}{
@@ -165,13 +165,13 @@ func TestACursorOfAnEarlierShapeCarriesOnNoLaterThanItPoints(t *testing.T) {
 		}},
 		{port.ChunkCursor(strconv.FormatInt(farFuture.UnixNano(), 10) + ":" + row), []string{"library/far.epub", "library/far.epub"}},
 	} {
-		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, at.cursor, 10)
+		page, _, err := db.Sources().GetUnembeddedChunks(t.Context(), first.ID, benchModel, item.cursor, 10)
 		if err != nil {
-			t.Errorf("cursor %q: %v", at.cursor, err)
+			t.Errorf("cursor %q: %v", item.cursor, err)
 			continue
 		}
-		if got := getSourcePaths(page); !slices.Equal(got, at.want) {
-			t.Errorf("cursor %q carried on with chunks of %v, want %v", at.cursor, got, at.want)
+		if got := getSourcePaths(page); !slices.Equal(got, item.want) {
+			t.Errorf("cursor %q carried on with chunks of %v, want %v", item.cursor, got, item.want)
 		}
 	}
 }
@@ -346,7 +346,7 @@ func TestACursorIsReadIntoThePositionItNames(t *testing.T) {
 	for _, c := range []struct {
 		cursor               port.ChunkCursor
 		mtime, source, chunk int64
-		wantErr bool
+		wantErr              bool
 	}{
 		{cursor: "", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 0},
 		{cursor: "7", mtime: math.MaxInt64, source: math.MaxInt64, chunk: 7},

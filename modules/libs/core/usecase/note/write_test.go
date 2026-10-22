@@ -17,7 +17,7 @@ func TestASizeIsHeldToItsBound(t *testing.T) {
 	for _, tc := range []struct {
 		name        string
 		size, bound int
-		wantErr bool
+		wantErr     bool
 	}{
 		{"no bound holds to nothing", 5, 0, false},
 		{"a negative bound holds to nothing", 5, -1, false},
@@ -91,7 +91,7 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 // newDrawingWrite is a writer that records what it is told while a note is being drawn.
 func (c changing) newDrawingWrite(told *[]domain.Edit) note.Write {
 	w := c.newWrite()
-	w.Drawing = func(_ context.Context, said domain.Edit) { *told = append(*told, said) }
+	w.Drawing = func(_ context.Context, response domain.Edit) { *told = append(*told, response) }
 	return w
 }
 

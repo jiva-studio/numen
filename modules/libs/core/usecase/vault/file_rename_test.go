@@ -158,9 +158,9 @@ func TestARenamedFolderWritesToNothingBelowIt(t *testing.T) {
 				t.Fatal(err)
 			}
 			for path, raw := range notes {
-				at := "chemistry" + strings.TrimPrefix(path, "physics")
-				if got := f.read(t, at); got != raw {
-					t.Errorf("%s was written to:\n%s", at, got)
+				pos := "chemistry" + strings.TrimPrefix(path, "physics")
+				if got := f.read(t, pos); got != raw {
+					t.Errorf("%s was written to:\n%s", pos, got)
 				}
 			}
 		})

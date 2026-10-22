@@ -42,22 +42,22 @@ type ortAPITable struct {
 }
 
 func init() {
-	onnx.Register(func(at string) {
-		_ = initRunner(at)
+	onnx.Register(func(pos string) {
+		_ = initRunner(pos)
 	})
 }
 
-func initRunner(at string) error {
+func initRunner(pos string) error {
 	runnerMu.Lock()
 	defer runnerMu.Unlock()
 	if ortRun != nil {
 		return nil
 	}
-	if at == "" {
+	if pos == "" {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := onnx.OpenLibrary(at)
+	handle, err := onnx.OpenLibrary(pos)
 	if err != nil {
 		return err
 	}

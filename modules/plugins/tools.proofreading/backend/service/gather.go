@@ -34,8 +34,8 @@ func readAnswer(batch Batch, reply string, maxDistance float64) answer {
 func getReachingRuns(batch Batch, reply string) []int {
 	var starts []int
 	for _, row := range splitRows(reply) {
-		if at, through, _, _, ok := readRow(row); ok && through > batch.Last() {
-			starts = append(starts, at)
+		if pos, through, _, _, ok := readRow(row); ok && through > batch.Last() {
+			starts = append(starts, pos)
 		}
 	}
 	return starts
@@ -88,19 +88,19 @@ type gathering struct {
 // is how many lines follow each line in the batch it came from.
 func (g *gathering) offer(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
-	for at := first; at <= last; at++ {
-		if status, observed := g.best[at]; observed && after[at] < status {
+	for pos := first; pos <= last; pos++ {
+		if status, observed := g.best[pos]; observed && after[pos] < status {
 			return
 		}
 	}
-	for at := first; at <= last; at++ {
-		if target, covered := g.owner[at]; covered {
+	for offset := first; offset <= last; offset++ {
+		if target, covered := g.owner[offset]; covered {
 			g.evict(target)
 		}
 	}
 	g.put[first] = line
-	for at := first; at <= last; at++ {
-		g.owner[at], g.best[at] = first, after[at]
+	for index := first; index <= last; index++ {
+		g.owner[index], g.best[index] = first, after[index]
 	}
 }
 
@@ -108,9 +108,9 @@ func (g *gathering) offer(line Line, after map[int]int) {
 // it covers.
 func (g *gathering) evict(first int) {
 	line := g.put[first]
-	for at := first; at <= max(line.Last, line.Number); at++ {
-		delete(g.owner, at)
-		delete(g.best, at)
+	for pos := first; pos <= max(line.Last, line.Number); pos++ {
+		delete(g.owner, pos)
+		delete(g.best, pos)
 	}
 	delete(g.put, first)
 }

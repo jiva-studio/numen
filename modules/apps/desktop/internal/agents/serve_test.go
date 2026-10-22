@@ -116,11 +116,11 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = served.Close() })
 
-	at := authority(t, served.URL)
-	if _, port, _ := net.SplitHostPort(at); port == "0" || port == "" {
+	pos := authority(t, served.URL)
+	if _, port, _ := net.SplitHostPort(pos); port == "0" || port == "" {
 		t.Fatalf("the endpoint is announced at %q", served.URL)
 	}
-	if !isListening(at) {
+	if !isListening(pos) {
 		t.Errorf("nothing answers at %q", served.URL)
 	}
 }

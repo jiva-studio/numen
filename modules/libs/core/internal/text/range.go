@@ -15,12 +15,12 @@ func WholeCharacters(start int, raw []byte, whole int) (int, []byte) {
 	if start+len(raw) >= whole {
 		return start, raw
 	}
-	for at := len(raw) - 1; at >= 0 && at > len(raw)-utf8.UTFMax; at-- {
-		if !utf8.RuneStart(raw[at]) {
+	for pos := len(raw) - 1; pos >= 0 && pos > len(raw)-utf8.UTFMax; pos-- {
+		if !utf8.RuneStart(raw[pos]) {
 			continue
 		}
-		if !utf8.FullRune(raw[at:]) {
-			raw = raw[:at]
+		if !utf8.FullRune(raw[pos:]) {
+			raw = raw[:pos]
 		}
 		break
 	}

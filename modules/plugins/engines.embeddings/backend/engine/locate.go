@@ -122,18 +122,18 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {
 	p := Paths{}
 	for _, name := range files {
-		at, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
+		pos, err := repo.DownloadFileCtx(ctx, ModelFolder+"/"+name)
 		if err != nil {
 			return Paths{}, fmt.Errorf("fetching %s/%s: %w", ModelFolder, name, err)
 		}
-		if err := checkPinned(sums, ModelFolder+"/"+name, at); err != nil {
+		if err := checkPinned(sums, ModelFolder+"/"+name, pos); err != nil {
 			return Paths{}, err
 		}
 		if name == file {
-			p.Model = at
+			p.Model = pos
 		}
 		if name == TokenizerFile {
-			p.Tokenizer = at
+			p.Tokenizer = pos
 		}
 	}
 	return p, nil

@@ -27,18 +27,18 @@ func pickEvenlySpacedDays(days, places int) []int {
 // it reaches, whatever day the file names.
 //
 // The point under the place is worked out for the day the preset aims at.
-func setNearestStep(steps []int, at int) []int {
-	if at < 0 || len(steps) < 3 {
+func setNearestStep(steps []int, pos int) []int {
+	if pos < 0 || len(steps) < 3 {
 		return steps
 	}
 	step := 1
 	for i := 2; i < len(steps)-1; i++ {
-		if abs(steps[i]-at) < abs(steps[step]-at) {
+		if abs(steps[i]-pos) < abs(steps[step]-pos) {
 			step = i
 		}
 	}
-	if at > steps[0] && at < steps[len(steps)-1] {
-		steps[step] = at
+	if pos > steps[0] && pos < steps[len(steps)-1] {
+		steps[step] = pos
 	}
 	return steps
 }
@@ -53,13 +53,13 @@ func snap(grid []float64, value float64, first, last int) {
 	if first < 0 || last >= len(grid) || first > last {
 		return
 	}
-	at := first
+	pos := first
 	for i := first; i <= last; i++ {
-		if math.Abs(grid[i]-value) < math.Abs(grid[at]-value) {
-			at = i
+		if math.Abs(grid[i]-value) < math.Abs(grid[pos]-value) {
+			pos = i
 		}
 	}
-	grid[at] = value
+	grid[pos] = value
 }
 
 // abs is how far a whole number stands from nothing.
@@ -83,11 +83,11 @@ func findNearest(grid []float64, value float64) int {
 	if len(grid) == 0 || value < grid[0] || value > grid[len(grid)-1] {
 		return -1
 	}
-	at := 0
+	pos := 0
 	for i, one := range grid {
-		if math.Abs(one-value) < math.Abs(grid[at]-value) {
-			at = i
+		if math.Abs(one-value) < math.Abs(grid[pos]-value) {
+			pos = i
 		}
 	}
-	return at
+	return pos
 }

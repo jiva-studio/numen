@@ -160,7 +160,7 @@ func (u Schedules) getAssignmentFrom(
 		return out, nil
 	}
 
-	by := make(map[string]review.SchedulingPolicy)
+	delta := make(map[string]review.SchedulingPolicy)
 	underMap := make(map[review.CardFaceID]review.SchedulingPolicy, len(faces))
 	request := make(map[string]string, len(faces))
 	for _, one := range faces {
@@ -172,11 +172,11 @@ func (u Schedules) getAssignmentFrom(
 			}
 			path = p.Path
 			request[one.Deck] = path
-			if _, target := by[path]; !target {
-				by[path] = review.SchedulingPolicy{By: u.getScheduler(p.Settings.Retention), Preset: p.Settings}
+			if _, target := delta[path]; !target {
+				delta[path] = review.SchedulingPolicy{By: u.getScheduler(p.Settings.Retention), Preset: p.Settings}
 			}
 		}
-		underMap[one.ID] = by[path]
+		underMap[one.ID] = delta[path]
 	}
 
 	marks := make([]string, 0, len(underMap)+2)
@@ -261,8 +261,8 @@ func (u Schedules) GetFromLog(
 // caller here holds the card faces of one preset. A cache is thrown away when
 // what it was worked out under changes, so the two are never one answer and the
 // cache takes no part: neither read nor written.
-func (u Schedules) getSchedules(held ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
-	return replaySchedules(u.day, held, asks)
+func (u Schedules) getSchedules(target ReviewLog, asks assignment) map[review.CardFaceID]review.Schedule {
+	return replaySchedules(u.day, target, asks)
 }
 
 // getSchedulesCached is the same, with what a replay came to kept for the next
@@ -271,30 +271,30 @@ func (u Schedules) getSchedules(held ReviewLog, asks assignment) map[review.Card
 // stand on the same log and the same assignment, so the second of them to run
 // is told what the first worked out.
 func (u Schedules) getSchedulesCached(
-	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
+	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	if out, ok := u.readRemembered(ctx, v, held.Files, asks.mark); ok {
+	if out, ok := u.readRemembered(ctx, v, target.Files, asks.mark); ok {
 		return out
 	}
-	return u.replayAndRemember(ctx, v, held, asks)
+	return u.replayAndRemember(ctx, v, target, asks)
 }
 
 // replayAndRemember works the answers out and remembers what they came to. It
 // is what a caller that has already found the cache out of date asks for.
 func (u Schedules) replayAndRemember(
-	ctx context.Context, v domain.Vault, held ReviewLog, asks assignment,
+	ctx context.Context, v domain.Vault, target ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	out := replaySchedules(u.day, held, asks)
-	u.remember(ctx, v, held.Files, asks.mark, out)
+	out := replaySchedules(u.day, target, asks)
+	u.remember(ctx, v, target.Files, asks.mark, out)
 	return out
 }
 
 // replaySchedules is where the answers leave every card face, and is what a
 // caller that only reads them asks for.
 func replaySchedules(
-	d review.Day, held ReviewLog, asks assignment,
+	d review.Day, target ReviewLog, asks assignment,
 ) map[review.CardFaceID]review.Schedule {
-	return held.GetHistory().Replay(d, asks.under)
+	return target.GetHistory().Replay(d, asks.under)
 }
 
 // readRemembered is what was worked out last time, when it was worked out from
@@ -341,8 +341,8 @@ func read(was []cachedFile, files []ports.Entry) bool {
 	if len(was) != len(files) {
 		return false
 	}
-	for at, one := range was {
-		if one.Name != files[at].Name.Hash || one.Size != files[at].Size {
+	for item, one := range was {
+		if one.Name != files[item].Name.Hash || one.Size != files[item].Size {
 			return false
 		}
 	}

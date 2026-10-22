@@ -53,7 +53,7 @@ func capFileSize(t *testing.T, to int64) func() {
 func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
-	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir, "run.txt")
+	pos := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir, "run.txt")
 
 	first := strings.Repeat("a", 40) + "\n"
 	if err := derived.Append(ctx, "ocr/run.txt", []byte(first)); err != nil {
@@ -73,7 +73,7 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	if strings.Contains(err.Error(), " 0 of ") {
 		t.Fatalf("the append landed nothing, so nothing was taken back: %v", err)
 	}
-	if got, err := os.ReadFile(at); err != nil || string(got) != first {
+	if got, err := os.ReadFile(pos); err != nil || string(got) != first {
 		t.Fatalf("the file holds %q, want what stood there before the append: %v", got, err)
 	}
 	lift()
@@ -82,7 +82,7 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	if err := derived.Append(ctx, "ocr/run.txt", []byte(third)); err != nil {
 		t.Fatal(err)
 	}
-	got, err := os.ReadFile(at)
+	got, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}

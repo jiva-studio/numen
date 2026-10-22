@@ -154,10 +154,10 @@ func TestAPluginsOwnChoiceExistsOverTheDefault(t *testing.T) {
 	}
 	wantAgents := []string{"agent-a", "agent-b", "agent-d", "agent-d"}
 	wantModels := []string{"model-a", "", "model-d", "model-d"}
-	for at := range wantAgents {
-		if fake.tasks[at].Agent != wantAgents[at] || fake.tasks[at].Model != wantModels[at] {
+	for item := range wantAgents {
+		if fake.tasks[item].Agent != wantAgents[item] || fake.tasks[item].Model != wantModels[item] {
 			t.Errorf("question %d went to %q with %q, want %q with %q",
-				at, fake.tasks[at].Agent, fake.tasks[at].Model, wantAgents[at], wantModels[at])
+				item, fake.tasks[item].Agent, fake.tasks[item].Model, wantAgents[item], wantModels[item])
 		}
 	}
 }

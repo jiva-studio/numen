@@ -142,17 +142,17 @@ func TestRerankKeepsTheArrivalOrderAmongEqualSimilarities(t *testing.T) {
 
 func TestRerankKeepsACandidateAtTheFloor(t *testing.T) {
 	stored := signed(127, 127, 0, 0)
-	at := embedding.SimilarityBytes(scriptedQuery, stored)
+	pos := embedding.SimilarityBytes(scriptedQuery, stored)
 	q := scripted(t, [][]driver.Value{{int64(1), stored}}, nil)
 
-	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, at)
+	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(got, idsOf(1)) {
 		t.Errorf("at the floor: got %v, want [1]", got)
 	}
-	got, err = q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, math.Nextafter(at, 2))
+	got, err = q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, math.Nextafter(pos, 2))
 	if err != nil {
 		t.Fatal(err)
 	}

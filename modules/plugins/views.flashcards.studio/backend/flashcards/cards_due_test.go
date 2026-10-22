@@ -72,9 +72,9 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	if len(owing.Presets) != len(want) {
 		t.Fatalf("the day came to %+v, want %+v", owing.Presets, want)
 	}
-	for at, one := range want {
-		if owing.Presets[at] != one {
-			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[at], one)
+	for item, one := range want {
+		if owing.Presets[item] != one {
+			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[item], one)
 		}
 	}
 }
@@ -124,9 +124,9 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	}
 
 	var target *flashcards.PresetCardsDue
-	for at, one := range owing.Presets {
+	for item, one := range owing.Presets {
 		if one.Preset == "Empty.md" {
-			target = &owing.Presets[at]
+			target = &owing.Presets[item]
 		}
 	}
 	if target == nil {
@@ -193,7 +193,6 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 	}
 }
 
-//
 // It is asked for every vault a person holds, and again whenever the window
 // opens, a session ends or a vault moves, so a count over answers nothing has
 // changed replays nothing.
@@ -230,10 +229,10 @@ type replaying struct {
 }
 
 func (r replaying) Next(
-	s review.Schedule, at time.Time, rating review.Rating,
+	s review.Schedule, pos time.Time, rating review.Rating,
 ) review.Schedule {
 	*r.answers++
-	return r.Scheduler.Next(s, at, rating)
+	return r.Scheduler.Next(s, pos, rating)
 }
 
 // answer writes down one card answered well, and returns the line it stands

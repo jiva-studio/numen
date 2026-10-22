@@ -30,10 +30,10 @@ const oneWay = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
 //
 // Each deck is written from a mark of its own: a mark names a card, and two
 // decks writing one mark are writing one card.
-func newStencilDeck(stencil, at string, cards, from int) string {
+func newStencilDeck(stencil, pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
-	if at != "" {
-		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
+	if pos != "" {
+		out += "links:\n  - to: " + pos + "\n    role: ref\n    type: preset\n"
 	}
 	out += "---\n"
 	for i := from; i < from+cards; i++ {
@@ -84,13 +84,13 @@ var firstMorning = time.Date(2026, 4, 6, 9, 0, 0, 0, time.UTC)
 
 // setNow synchronizes window time, review day calculation, and scenario clocks to now.
 func setNow(api *API, now time.Time) {
-	at := func() time.Time { return now }
-	api.now = at
+	pos := func() time.Time { return now }
+	api.now = pos
 	api.scenarios().day = reviewDay
-	api.scenarios().flash.Record = flashcards.NewRecord(at)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithDay(reviewDay).WithNow(at)
-	api.scenarios().flash.Session = api.scenarios().flash.Session.WithDay(reviewDay).WithNow(at)
-	api.scenarios().flash.GetReviewDays = api.scenarios().flash.GetReviewDays.WithDay(reviewDay).WithNow(at)
+	api.scenarios().flash.Record = flashcards.NewRecord(pos)
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithDay(reviewDay).WithNow(pos)
+	api.scenarios().flash.Session = api.scenarios().flash.Session.WithDay(reviewDay).WithNow(pos)
+	api.scenarios().flash.GetReviewDays = api.scenarios().flash.GetReviewDays.WithDay(reviewDay).WithNow(pos)
 }
 
 // runDays simulates consecutive daily review sessions across a vault.
@@ -238,22 +238,22 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 
 			p := asWritten(t, api, v, "Sanskrit.md")
 			p.Goal = one.goal
-			for _, at := range one.places {
+			for _, item := range one.places {
 				// Apply curve configuration to preset.
 				curveResp := getCurve(t, api, v, "Sanskrit.md", p)
-				if len(curveResp.GetGrid()) <= at {
+				if len(curveResp.GetGrid()) <= item {
 					t.Fatalf("the curve has %d places", len(curveResp.GetGrid()))
 				}
-				value := curveResp.GetGrid()[at]
+				value := curveResp.GetGrid()[item]
 				one.steered(&p, value)
 				writePreset(t, api, v, "Sanskrit.md", p)
 
 				curveResp = getCurve(t, api, v, "Sanskrit.md", p)
-				if curveResp.GetGrid()[at] != value {
+				if curveResp.GetGrid()[item] != value {
 					t.Fatalf("the control was left at %v and the grid holds %v there",
-						value, curveResp.GetGrid()[at])
+						value, curveResp.GetGrid()[item])
 				}
-				draws := int(curveResp.GetAt()[at].GetReviews())
+				draws := int(curveResp.GetAt()[item].GetReviews())
 				if got := countOfferedCards(getVaultCount(t, api, v), underSanskrit); got != draws {
 					t.Errorf("at %v the curve draws %d cards for the day and the deck "+
 						"screen offers %d", value, draws, got)

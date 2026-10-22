@@ -6,9 +6,9 @@ import (
 )
 
 // gatherReplies is what the replies put right, as gatherAnswers gathers them.
-func gatherReplies(asked []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
+func gatherReplies(requested []Batch, replies map[int]string, maxDistance float64) (map[int]Line, []int) {
 	var answers []answer
-	for _, batch := range asked {
+	for _, batch := range requested {
 		reply, replyVal := replies[batch.Number]
 		if !replyVal {
 			continue
@@ -19,15 +19,15 @@ func gatherReplies(asked []Batch, replies map[int]string, maxDistance float64) (
 }
 
 // makeLine is one stretch of speech as the machine heard it.
-func makeLine(at int) Line {
-	return Line{Number: at, Text: []string{
+func makeLine(pos int) Line {
+	return Line{Number: pos, Text: []string{
 		"",
 		"the ferry left at noone",
 		"and the sea was calm",
 		"we spoke of the harbour lites",
 		"until the fog came in",
 		"and the bell began to ring",
-	}[at]}
+	}[pos]}
 }
 
 // wide and narrow both answer about lines 3 and 4. In wide the two stand
@@ -95,9 +95,9 @@ func TestALineNoAnsweredBatchCoversIsLeftAsItWasHeard(t *testing.T) {
 	replies := map[int]string{0: "3|we spoke of the harbour lights"}
 
 	placed, _ := gatherReplies([]Batch{wide(), narrow()}, replies, MaxEditDistance)
-	for _, at := range []int{1, 2, 4, 5} {
-		if text, named := placed[at]; named {
-			t.Errorf("line %d was put right to %q with nothing answered about it", at, text.Text)
+	for _, item := range []int{1, 2, 4, 5} {
+		if text, named := placed[item]; named {
+			t.Errorf("line %d was put right to %q with nothing answered about it", item, text.Text)
 		}
 	}
 }
@@ -160,8 +160,8 @@ func TestARefusedReplyIsNoAnswer(t *testing.T) {
 // answered in runs.
 func joinable(number, first, last int) Batch {
 	batch := Batch{Number: number, IsJoinable: true}
-	for at := first; at <= last; at++ {
-		batch.Lines = append(batch.Lines, makeLine(at))
+	for pos := first; pos <= last; pos++ {
+		batch.Lines = append(batch.Lines, makeLine(pos))
 	}
 	return batch
 }
@@ -171,11 +171,11 @@ func coveredOnce(t *testing.T, put map[int]Line) {
 	t.Helper()
 	observed := map[int]int{}
 	for first, line := range put {
-		for at := first; at <= max(line.Last, line.Number); at++ {
-			if other, twice := observed[at]; twice {
-				t.Errorf("line %d is covered by the corrections of %d and %d", at, other, first)
+		for pos := first; pos <= max(line.Last, line.Number); pos++ {
+			if other, twice := observed[pos]; twice {
+				t.Errorf("line %d is covered by the corrections of %d and %d", pos, other, first)
 			}
-			observed[at] = first
+			observed[pos] = first
 		}
 	}
 }

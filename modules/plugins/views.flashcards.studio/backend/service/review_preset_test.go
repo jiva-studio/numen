@@ -12,10 +12,10 @@ import (
 
 // newWordDeck is a deck of as many cards naming this preset. A deck naming none
 // is written with an empty name.
-func newWordDeck(at string, cards int, from int) string {
+func newWordDeck(pos string, cards int, from int) string {
 	out := "---\ntype: deck\n"
-	if at != "" {
-		out += "links:\n  - to: " + at + "\n    role: ref\n    type: preset\n"
+	if pos != "" {
+		out += "links:\n  - to: " + pos + "\n    role: ref\n    type: preset\n"
 	}
 	out += "---\n"
 	for i := range cards {
@@ -83,8 +83,8 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
 	// The marks are the ones the application writes, so the cards stand without
 	// the vault being sat down to.
-	marked := func(at string, mark string) string {
-		return "---\ntype: deck\nlinks:\n  - to: " + at + "\n    role: ref\n    type: preset\n" +
+	marked := func(pos string, mark string) string {
+		return "---\ntype: deck\nlinks:\n  - to: " + pos + "\n    role: ref\n    type: preset\n" +
 			"---\n\n## Card ^" + mark + "\n\n[[Term]]\n\n### Word\n\nw\n\n### Meaning\n\nm\n"
 	}
 	stoppedPresetFiles := map[string]string{

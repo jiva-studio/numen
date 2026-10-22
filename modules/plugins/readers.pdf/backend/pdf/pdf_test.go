@@ -61,8 +61,8 @@ func TestPagesAreTheReadingOrder(t *testing.T) {
 	if book.Pages[0].Offset != 0 {
 		t.Errorf("the first page begins at %d, want 0", book.Pages[0].Offset)
 	}
-	if at := book.Pages[1].Offset; !strings.HasPrefix(book.Text[at:], "Delta") {
-		t.Errorf("the second page begins at %d, which is %q", at, book.Text[at:])
+	if pos := book.Pages[1].Offset; !strings.HasPrefix(book.Text[pos:], "Delta") {
+		t.Errorf("the second page begins at %d, which is %q", pos, book.Text[pos:])
 	}
 }
 
@@ -142,13 +142,13 @@ func TestAPartBeginsWhereItsPageBegins(t *testing.T) {
 	book := read(t, outline)
 
 	for _, part := range book.Parts {
-		at := -1
+		pos := -1
 		for _, page := range book.Pages {
 			if page.Offset == part.Offset {
-				at = page.Offset
+				pos = page.Offset
 			}
 		}
-		if at < 0 {
+		if pos < 0 {
 			t.Errorf("%q begins at %d, which is not where any page begins", part.Title, part.Offset)
 		}
 	}
@@ -173,7 +173,7 @@ func TestLocate(t *testing.T) {
 
 	// Keyed by a word in the text, so that the case says where it is asking
 	// about and not what the offset happens to be.
-	at := func(word string) int {
+	pos := func(word string) int {
 		t.Helper()
 		i := strings.Index(book.Text, word)
 		if i < 0 {
@@ -188,10 +188,10 @@ func TestLocate(t *testing.T) {
 		part  string
 		sheet int
 	}{
-		{name: "before every name", at: at("Front"), part: "", sheet: 0},
-		{name: "at a name", at: at("Opening"), part: "The First Part", sheet: 1},
-		{name: "inside a nested name", at: at("closer"), part: "A Closer Reading", sheet: 2},
-		{name: "after the last name", at: at("Afterword"), part: "Afterword", sheet: 3},
+		{name: "before every name", at: pos("Front"), part: "", sheet: 0},
+		{name: "at a name", at: pos("Opening"), part: "The First Part", sheet: 1},
+		{name: "inside a nested name", at: pos("closer"), part: "A Closer Reading", sheet: 2},
+		{name: "after the last name", at: pos("Afterword"), part: "Afterword", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {

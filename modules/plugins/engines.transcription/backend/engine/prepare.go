@@ -32,11 +32,11 @@ func GetModelBytes(cfg Config) int64 {
 	var resolved paths
 	var total int64
 	for _, one := range getWantedFiles(cfg, &resolved) {
-		at, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.Path, one.Name, one.Kind)
+		pos, err := models.Locate(context.Background(), cfg.source(), pinnedSums, one.Path, one.Name, one.Kind)
 		if err != nil {
 			return 0
 		}
-		info, err := os.Stat(at)
+		info, err := os.Stat(pos)
 		if err != nil {
 			return 0
 		}

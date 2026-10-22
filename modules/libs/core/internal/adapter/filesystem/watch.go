@@ -79,14 +79,14 @@ func (w Watcher) WatchVault(
 // here — a database and the journals beside it are written together and are one
 // change.
 func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error) {
-	at, err := filepath.Abs(path)
+	pos, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
-	name := filepath.Base(at)
+	name := filepath.Base(pos)
 
 	raw := make(chan notify.EventInfo, handover)
-	if err := notify.Watch(filepath.Dir(at), raw, notify.All); err != nil {
+	if err := notify.Watch(filepath.Dir(pos), raw, notify.All); err != nil {
 		return nil, fmt.Errorf("watch %s: %w", path, err)
 	}
 

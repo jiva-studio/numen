@@ -255,14 +255,14 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	at, err := s.presets.Point(
+	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	was := read(t, s.vault, "decks/Terms.md")
 
-	staleFingerprint := at
+	staleFingerprint := pos
 	staleFingerprint.Size += 3
 	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFingerprint)
 	if !errors.Is(err, ports.ErrStale) {
@@ -277,13 +277,13 @@ func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	at, err := s.presets.Point(
+	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", at); err != nil {
+		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", pos); err != nil {
 		t.Fatal(err)
 	}
 

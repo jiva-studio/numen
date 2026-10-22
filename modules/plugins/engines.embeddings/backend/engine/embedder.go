@@ -310,15 +310,15 @@ func (e *Embedder) forward(ctx context.Context, batch [][]int) ([][]float32, err
 	return e.readVectors(target, rows, seq, padded.mask)
 }
 
-func (e *Embedder) readVectors(held *ort.Value, rows, seq int, mask []int64) ([][]float32, error) {
-	out, err := held.GetShape()
+func (e *Embedder) readVectors(target *ort.Value, rows, seq int, mask []int64) ([][]float32, error) {
+	out, err := target.GetShape()
 	if err != nil {
 		return nil, err
 	}
 	if dims := out[len(out)-1]; dims != int64(e.dimensions) {
 		return nil, fmt.Errorf("%s answered with %d dimensions, expected %d", e.name, dims, e.dimensions)
 	}
-	flat, err := ort.GetTensorData[float32](held)
+	flat, err := ort.GetTensorData[float32](target)
 	if err != nil {
 		return nil, err
 	}

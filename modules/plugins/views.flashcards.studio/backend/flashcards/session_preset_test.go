@@ -13,13 +13,13 @@ import (
 // openSession is what the vault asks at this instant when the session is opened
 // over this deck or this preset.
 func (s vaulted) openSession(
-	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
+	t *testing.T, day review.Day, now time.Time, pos flashcards.Scope,
 ) (flashcards.SessionResult, error) {
 	t.Helper()
 	return flashcards.NewSession(
 		s.marking, s.standings, s.kept,
 		s.presets, day, func() time.Time { return now },
-	).Execute(t.Context(), s.vault, at)
+	).Execute(t.Context(), s.vault, pos)
 }
 
 // openSessionByPreset is the session over one preset, and a fatal error where

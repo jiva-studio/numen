@@ -18,32 +18,32 @@ import (
 // folder is a vault of one note, somewhere of its own.
 func folder(t *testing.T, name string) string {
 	t.Helper()
-	at := filepath.Join(t.TempDir(), name)
-	if err := os.MkdirAll(at, 0o700); err != nil {
+	pos := filepath.Join(t.TempDir(), name)
+	if err := os.MkdirAll(pos, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(filepath.Join(at, "note.md"), []byte("hello"), 0o600); err != nil {
+	if err := os.WriteFile(filepath.Join(pos, "note.md"), []byte("hello"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // note is one trashinfo file read as the fields it carries.
-func note(t *testing.T, at string) map[string]string {
+func note(t *testing.T, pos string) map[string]string {
 	t.Helper()
-	raw, err := os.ReadFile(at)
+	raw, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimRight(string(raw), "\n"), "\n")
 	if len(lines) == 0 || lines[0] != "[Trash Info]" {
-		t.Fatalf("%s does not begin with [Trash Info]:\n%s", at, raw)
+		t.Fatalf("%s does not begin with [Trash Info]:\n%s", pos, raw)
 	}
 	fields := map[string]string{}
 	for _, line := range lines[1:] {
 		name, value, found := strings.Cut(line, "=")
 		if !found {
-			t.Fatalf("%s has a line that is not a field: %q", at, line)
+			t.Fatalf("%s has a line that is not a field: %q", pos, line)
 		}
 		fields[name] = value
 	}
@@ -53,14 +53,14 @@ func note(t *testing.T, at string) map[string]string {
 func TestAFolderGoesToTheTrash(t *testing.T) {
 	data := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", data)
-	at := folder(t, "Vault")
+	pos := folder(t, "Vault")
 
-	if err := New().Trash(at); err != nil {
+	if err := New().Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := os.Lstat(at); !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("%s is still where it was: %v", at, err)
+	if _, err := os.Lstat(pos); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("%s is still where it was: %v", pos, err)
 	}
 	moved := filepath.Join(data, "Trash", "files", "Vault")
 	text, err := os.ReadFile(filepath.Join(moved, "note.md"))
@@ -76,8 +76,8 @@ func TestAFolderGoesToTheTrash(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Path=%q does not decode: %v", fields["Path"], err)
 	}
-	if came != at {
-		t.Errorf("Path is %q, want %q", came, at)
+	if came != pos {
+		t.Errorf("Path is %q, want %q", came, pos)
 	}
 	if _, err := time.ParseInLocation(deletedAt, fields["DeletionDate"], time.Local); err != nil {
 		t.Errorf("DeletionDate=%q does not parse: %v", fields["DeletionDate"], err)
@@ -90,9 +90,9 @@ func TestAFolderGoesToTheTrash(t *testing.T) {
 func TestAFolderWithAPunctuatedName(t *testing.T) {
 	data := t.TempDir()
 	t.Setenv("XDG_DATA_HOME", data)
-	at := folder(t, "Notes & Papers 100% #1")
+	pos := folder(t, "Notes & Papers 100% #1")
 
-	if err := New().Trash(at); err != nil {
+	if err := New().Trash(pos); err != nil {
 		t.Fatal(err)
 	}
 
@@ -104,8 +104,8 @@ func TestAFolderWithAPunctuatedName(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Path=%q does not decode: %v", fields["Path"], err)
 	}
-	if came != at {
-		t.Errorf("Path is %q, want %q", came, at)
+	if came != pos {
+		t.Errorf("Path is %q, want %q", came, pos)
 	}
 }
 
@@ -117,8 +117,8 @@ func TestANameAlreadyTaken(t *testing.T) {
 	t.Setenv("XDG_DATA_HOME", data)
 	first, second := folder(t, "Vault"), folder(t, "Vault")
 
-	for _, at := range []string{first, second} {
-		if err := New().Trash(at); err != nil {
+	for _, item := range []string{first, second} {
+		if err := New().Trash(item); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -165,8 +165,8 @@ func TestNowhereToInsertIt(t *testing.T) {
 	if os.Getuid() == 0 {
 		t.Skip("root makes a trash directory at the root of any volume")
 	}
-	at := folder(t, "Vault")
-	top, err := getVolumeRoot(at)
+	pos := folder(t, "Vault")
+	top, err := getVolumeRoot(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,10 +176,10 @@ func TestNowhereToInsertIt(t *testing.T) {
 
 	// No trash of this login, so the volume's own is the only one there could
 	// be, and its root refuses one.
-	if err := moveToUserOrVolumeTrash(at, ""); !errors.Is(err, port.ErrNoTrash) {
-		t.Errorf("trashing %s gave %v, want %v", at, err, port.ErrNoTrash)
+	if err := moveToUserOrVolumeTrash(pos, ""); !errors.Is(err, port.ErrNoTrash) {
+		t.Errorf("trashing %s gave %v, want %v", pos, err, port.ErrNoTrash)
 	}
-	if _, err := os.Lstat(filepath.Join(at, "note.md")); err != nil {
-		t.Errorf("%s did not stay where it was: %v", at, err)
+	if _, err := os.Lstat(filepath.Join(pos, "note.md")); err != nil {
+		t.Errorf("%s did not stay where it was: %v", pos, err)
 	}
 }

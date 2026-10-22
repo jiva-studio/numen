@@ -115,15 +115,15 @@ func (m LocalModel) GetPasses(provider onnx.Provider) int {
 
 // GetAddress returns a unique descriptor for the model source.
 func (m LocalModel) GetAddress() string {
-	at := m.Name
+	pos := m.Name
 	if m.Dir != "" {
-		at = filepath.ToSlash(filepath.Clean(m.Dir))
+		pos = filepath.ToSlash(filepath.Clean(m.Dir))
 	}
 	file := m.File
 	if file == "" {
 		file = ModelFile
 	}
-	return "local:" + at + "/" + file
+	return "local:" + pos + "/" + file
 }
 
 // DefaultBGEM3Config returns the default configuration for BGE-M3.

@@ -602,8 +602,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	db := openIndex(t)
 
 	newest := filepath.Join(root, "edge", "unicode.md")
-	at := time.Now().Add(time.Hour)
-	if err := os.Chtimes(newest, at, at); err != nil {
+	pos := time.Now().Add(time.Hour)
+	if err := os.Chtimes(newest, pos, pos); err != nil {
 		t.Fatal(err)
 	}
 

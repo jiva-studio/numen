@@ -350,10 +350,10 @@ func (u Refresh) isCurrent(ctx context.Context, reader port.VaultReader, v domai
 	if err != nil {
 		return false
 	}
-	at := slices.IndexFunc(target, func(f domain.Fingerprint) bool {
+	pos := slices.IndexFunc(target, func(f domain.Fingerprint) bool {
 		return f.Path == ref.Path && f.Kind == domain.KindNote
 	})
-	if at < 0 || !target[at].IsUnchanged(ref) {
+	if pos < 0 || !target[pos].IsUnchanged(ref) {
 		return false
 	}
 	entry, ok := u.Ledger.get(u.now(), v.ID, ref.Path)

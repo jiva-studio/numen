@@ -38,11 +38,11 @@ func getToolkitDir() string {
 		return ""
 	}
 	for _, line := range strings.Split(string(maps), "\n") {
-		at := strings.Index(line, "/")
-		if at < 0 {
+		pos := strings.Index(line, "/")
+		if pos < 0 {
 			continue
 		}
-		path := line[at:]
+		path := line[pos:]
 		if !strings.Contains(filepath.Base(path), "libgtk-4.so") {
 			continue
 		}
@@ -58,17 +58,17 @@ func getSchemasDir(prefix string) string {
 	if prefix == "" {
 		return ""
 	}
-	at := filepath.Join(prefix, "share", "glib-2.0", "schemas")
-	if hasCompiledSchemas(at) {
-		return at
+	pos := filepath.Join(prefix, "share", "glib-2.0", "schemas")
+	if hasCompiledSchemas(pos) {
+		return pos
 	}
 	filed, err := filepath.Glob(filepath.Join(prefix, "share", "gsettings-schemas", "*", "glib-2.0", "schemas"))
 	if err != nil {
 		return ""
 	}
-	for _, at := range filed {
-		if hasCompiledSchemas(at) {
-			return at
+	for _, item := range filed {
+		if hasCompiledSchemas(item) {
+			return item
 		}
 	}
 	return ""
@@ -96,6 +96,6 @@ func hasSchemas() bool {
 }
 
 func hasCompiledSchemas(dir string) bool {
-	at, err := os.Stat(filepath.Join(dir, "gschemas.compiled"))
-	return err == nil && !at.IsDir()
+	pos, err := os.Stat(filepath.Join(dir, "gschemas.compiled"))
+	return err == nil && !pos.IsDir()
 }

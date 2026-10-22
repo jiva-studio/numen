@@ -121,12 +121,12 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		check = checkLibrary
 	}
 	var found location
-	for _, at := range getCandidates(pluginDir, home, release.LibrarySum, p.cfg.Machine) {
-		if err := check(at); err != nil {
-			found.skipped = append(found.skipped, fmt.Sprintf("%s: %v", at, err))
+	for _, item := range getCandidates(pluginDir, home, release.LibrarySum, p.cfg.Machine) {
+		if err := check(item); err != nil {
+			found.skipped = append(found.skipped, fmt.Sprintf("%s: %v", item, err))
 			continue
 		}
-		found.library = at
+		found.library = item
 		return found, nil
 	}
 	library, err := p.acquire(ctx, release, home)

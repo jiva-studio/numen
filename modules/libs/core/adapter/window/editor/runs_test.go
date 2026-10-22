@@ -68,7 +68,7 @@ func (c claimed) ClaimArtifact(_ context.Context, name domain.ArtifactName) (fun
 // not name is one nothing has produced a text of.
 func openRunWindow(
 	t *testing.T,
-	held port.DerivedStore,
+	target port.DerivedStore,
 	read indexed,
 	scans, hears Runner,
 ) (*Services, http.Handler) {
@@ -79,11 +79,11 @@ func openRunWindow(
 		idea:    "# an idea\n",
 		pointed: "[InternetShortcut]\nURL=" + pointsAt + "\n",
 	})
-	hl := source.NewHighlight(filesystem.VaultReaders{}, read, storing{held})
+	hl := source.NewHighlight(filesystem.VaultReaders{}, read, storing{target})
 	api := newBareServices()
 	api.readFiles(filesystem.VaultReaders{})
 	api.Ocr.highlight = &hl
-	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{held}))
+	api.readTexts(source.NewTexts(filesystem.VaultReaders{}, nil, read, storing{target}))
 	// What a url carries follows from what fetches it, so a window that reaches
 	// no address at all says a url carries nothing.
 	api.readImports(&source.ImportURL{By: reachingASite{}})
@@ -134,11 +134,11 @@ func getArtifactStates(t *testing.T, api *Services, path string) map[v1.Artifact
 	if err != nil {
 		t.Fatalf("asked what %s carries and failed: %v", path, err)
 	}
-	by := map[v1.ArtifactKind]v1.State{}
+	delta := map[v1.ArtifactKind]v1.State{}
 	for _, one := range out.Msg.GetArtifacts() {
-		by[one.GetKind()] = one.GetState()
+		delta[one.GetKind()] = one.GetState()
 	}
-	return by
+	return delta
 }
 
 // getRefusedCode is the code the window would not make an artifact under.

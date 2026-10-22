@@ -290,22 +290,22 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if err != nil {
 		return 0, err
 	}
-	at, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	pos, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
 		return 0, err
 	}
-	cards, err := f.RenameField(at, in.Stencil, in.From, in.To)
+	cards, err := f.RenameField(pos, in.Stencil, in.From, in.To)
 	if err != nil {
 		return 0, err
 	}
 	if cards == 0 {
 		return 0, nil
 	}
-	by, _, err := d.read.readStencils(ctx, d.vault, at)
+	delta, _, err := d.read.readStencils(ctx, d.vault, pos)
 	if err != nil {
 		return 0, err
 	}
-	if _, err := f.Whole(by, cardid.New); err != nil {
+	if _, err := f.Whole(delta, cardid.New); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

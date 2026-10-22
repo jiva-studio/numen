@@ -38,8 +38,8 @@ type keys struct {
 	gate    chan struct{}
 }
 
-func newKeys(held map[string]string) *keys {
-	return &keys{held: held}
+func newKeys(target map[string]string) *keys {
+	return &keys{held: target}
 }
 
 func (k *keys) GetKey(_ context.Context, name string) (string, error) {

@@ -46,11 +46,11 @@ func (h *articleHandler) ReadArticle(
 // readSpan is the run of the prose a request named, and the whole of it where a
 // request named none. A run is held within the prose and relies on whole
 // characters.
-func readSpan(prose string, at *v1.Span) (string, error) {
-	if at == nil {
+func readSpan(prose string, pos *v1.Span) (string, error) {
+	if pos == nil {
 		return prose, nil
 	}
-	span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
+	span := domain.ByteSpan{From: int(pos.GetFrom()), To: int(pos.GetTo())}
 	if span.From < 0 {
 		return "", fmt.Errorf("from: %d is not a place in the prose", span.From)
 	}

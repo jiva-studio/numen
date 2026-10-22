@@ -83,17 +83,17 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *testsupport.PD
 // where is where a word of the document is, as the window would ask about it.
 func where(t *testing.T, doc *testsupport.PDFBook, word string) *v1.Span {
 	t.Helper()
-	at := strings.Index(doc.Text, word)
-	if at < 0 {
+	pos := strings.Index(doc.Text, word)
+	if pos < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return &v1.Span{From: int32(at), To: int32(at + len(word))}
+	return &v1.Span{From: int32(pos), To: int32(pos + len(word))}
 }
 
 // readRuns is what the runs of a source's text say and where they sit, as the
-func readRuns(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
+func readRuns(api *Services, path string, pos ...*v1.Span) ([]*v1.Run, error) {
 	out, err := api.Ocr.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
-		Path: path, Spans: at,
+		Path: path, Spans: pos,
 	}))
 	if err != nil {
 		return nil, err

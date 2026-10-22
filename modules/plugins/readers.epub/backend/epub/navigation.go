@@ -165,12 +165,12 @@ func collectText(n *html.Node) string {
 // keeping the fragment.
 func resolveHref(base, href string) string {
 	target, fragment := splitHref(href)
-	at := resolve(base, target)
-	if at == "" {
+	pos := resolve(base, target)
+	if pos == "" {
 		return ""
 	}
 	if fragment == "" {
-		return at
+		return pos
 	}
-	return at + "#" + fragment
+	return pos + "#" + fragment
 }

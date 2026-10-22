@@ -143,11 +143,11 @@ func addVaultFolder(t *testing.T, add vaults.Add, name string) domain.Vault {
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
-	at := filepath.Join(testsupport.TempDir(t), name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(testsupport.TempDir(t), name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // answered is the list as an agent is answered with it.

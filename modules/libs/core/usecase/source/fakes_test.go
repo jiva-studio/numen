@@ -39,10 +39,10 @@ var (
 // store is the index, in memory, answering every question the way the index
 // answers it. What the two passes do next is read from those answers.
 type store struct {
-	mu      sync.RWMutex
-	sources map[domain.VaultID]map[string]domain.Source // vault, then path
-	chunks  []storedChunk
-	vectors map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
+	mu       sync.RWMutex
+	sources  map[domain.VaultID]map[string]domain.Source // vault, then path
+	chunks   []storedChunk
+	vectors  map[domain.ChunkID][]port.Vector // the coarse rows, by chunk, appended, so a second write shows
 	groups   [][]port.Vector                  // every write of vectors, in order
 	outBytes map[string]int                   // extractions per path
 	next     int64
@@ -421,15 +421,15 @@ func (d document) boxes(pages []int) []domain.HighlightBox {
 		if index < 0 || index >= len(d.pages) {
 			continue
 		}
-		at := d.Pages[index]
+		pos := d.Pages[index]
 		for i, word := range d.pages[index] {
 			down := 0.05 + 0.1*float32(i)
 			out = append(out, domain.HighlightBox{
 				Page:     index,
-				ByteSpan: domain.ByteSpan{From: at, To: at + len(word)},
+				ByteSpan: domain.ByteSpan{From: pos, To: pos + len(word)},
 				Rect:     domain.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
 			})
-			at += len(word) + 1
+			pos += len(word) + 1
 		}
 	}
 	return out

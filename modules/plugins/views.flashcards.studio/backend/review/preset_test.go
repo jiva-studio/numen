@@ -343,7 +343,7 @@ func TestADayAtNoLoadStopsTheDayAndNotThePreset(t *testing.T) {
 // is no next day for the cards to be picked up on.
 func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
-	at := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
+	pos := time.Date(2026, 9, 10, 10, 0, 0, 0, time.UTC)
 
 	dead := map[time.Weekday]int{}
 	for one := time.Sunday; one <= time.Saturday; one++ {
@@ -356,19 +356,19 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 			Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45, Load: dead,
 		},
 		"a date": {
-			Goal: review.GoalDate, By: at.AddDate(0, 0, 30),
+			Goal: review.GoalDate, By: pos.AddDate(0, 0, 30),
 			MinutesADay: 20, NewADay: 8, ReviewsADay: 45, Load: dead,
 		},
 	} {
 		t.Run(what, func(t *testing.T) {
-			if got := p.GetOverallStopReason(day, at); got != review.StoppedNoWeek {
+			if got := p.GetOverallStopReason(day, pos); got != review.StoppedNoWeek {
 				t.Errorf("a dead week stops on %q, want %q", got, review.StoppedNoWeek)
 			}
-			if got := p.GetStopReason(day, at); got != review.StoppedNoWeek {
+			if got := p.GetStopReason(day, pos); got != review.StoppedNoWeek {
 				t.Errorf("its day stops on %q, want %q", got, review.StoppedNoWeek)
 			}
 			for i := range 7 {
-				on := at.AddDate(0, 0, i)
+				on := pos.AddDate(0, 0, i)
 				if got := p.GetStopReason(day, on); got == review.StoppedNoLoad {
 					t.Errorf("its %v promises a next day that carries some load", on.Weekday())
 				}
@@ -380,10 +380,10 @@ func TestAWeekAtNoLoadStopsThePresetAndNotOneDay(t *testing.T) {
 	alive := maps.Clone(dead)
 	alive[time.Friday] = review.FullLoad
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, Load: alive}
-	if got := p.GetOverallStopReason(day, at); got != review.StoppedNothing {
+	if got := p.GetOverallStopReason(day, pos); got != review.StoppedNothing {
 		t.Errorf("a week with one loud day stops on %q", got)
 	}
-	if got := p.GetStopReason(day, at); got != review.StoppedNoLoad {
+	if got := p.GetStopReason(day, pos); got != review.StoppedNoLoad {
 		t.Errorf("its Thursday stops on %q, want %q", got, review.StoppedNoLoad)
 	}
 }

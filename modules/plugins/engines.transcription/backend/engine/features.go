@@ -130,9 +130,9 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 			defer wg.Done()
 			buf := make([]complex128, fftSize)
 			for t := start; t < end; t++ {
-				at := t * hopSize
+				pos := t * hopSize
 				for i := 0; i < fftSize; i++ {
-					buf[i] = complex(padded[at+i]*window[i], 0)
+					buf[i] = complex(padded[pos+i]*window[i], 0)
 				}
 				fft(buf)
 				offset := t * bins
@@ -149,13 +149,13 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 
 // padReflect is one signal with by samples of itself mirrored onto each end, the
 // edge sample not repeated.
-func padReflect(x []float64, by int) []float64 {
-	out := make([]float64, 0, len(x)+2*by)
-	for i := by; i > 0; i-- {
+func padReflect(x []float64, delta int) []float64 {
+	out := make([]float64, 0, len(x)+2*delta)
+	for i := delta; i > 0; i-- {
 		out = append(out, x[getMirroredIndex(i, len(x))])
 	}
 	out = append(out, x...)
-	for i := 1; i <= by; i++ {
+	for i := 1; i <= delta; i++ {
 		out = append(out, x[getMirroredIndex(len(x)-1-i, len(x))])
 	}
 	return out
@@ -297,9 +297,9 @@ var twiddles = sync.OnceValue(func() []complex128 {
 
 // getWorkerCount is how many goroutines share jobs units of work: the count
 // asked for, or one per CPU when none is, and never more than there are jobs.
-func getWorkerCount(asked, jobs int) int {
-	if asked <= 0 {
-		asked = runtime.GOMAXPROCS(0)
+func getWorkerCount(requested, jobs int) int {
+	if requested <= 0 {
+		requested = runtime.GOMAXPROCS(0)
 	}
-	return max(1, min(asked, jobs))
+	return max(1, min(requested, jobs))
 }

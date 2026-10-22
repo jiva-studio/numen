@@ -27,8 +27,8 @@ type indexLane struct {
 	slots chan struct{}
 }
 
-func newIndexLane(held *embedding.Embedder) *indexLane {
-	return &indexLane{held: held, waiting: held.GetWaitingEmbedder()}
+func newIndexLane(target *embedding.Embedder) *indexLane {
+	return &indexLane{held: target, waiting: target.GetWaitingEmbedder()}
 }
 
 func (l *indexLane) GetModel() port.EmbeddingModel { return l.held.GetModel() }

@@ -46,9 +46,9 @@ func (c *counted) counts() (opened, closed int) {
 
 func newResidentWorker(t *testing.T, keep bool, recordings ...string) (*Worker, *counted, unheard, domain.Vault) {
 	t.Helper()
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, recordings...)
-	models := &counted{by: by}
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, recordings...)
+	models := &counted{by: delta}
 	listening.with.Runtime.Open = models.open
 	listening.with.Runtime.CanKeep = func() bool { return keep }
 	return listening, models, unheard{recordings: recordings}, v
@@ -96,7 +96,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 
 	granted := make(chan func(), 1)
 	listening.with.Runtime.Open = func(ctx context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
-		by, letGo, err := models.open(ctx, tell)
+		delta, letGo, err := models.open(ctx, tell)
 		if opened, _ := models.counts(); opened == 1 {
 			// A scan joins the line while the first recording is being heard.
 			go func() {
@@ -109,7 +109,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 				time.Sleep(time.Millisecond)
 			}
 		}
-		return by, letGo, err
+		return delta, letGo, err
 	}
 
 	isDone := make(chan struct{})

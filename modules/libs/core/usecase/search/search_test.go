@@ -445,10 +445,10 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at := strings.Index(isotherm, target)
+	pos := strings.Index(isotherm, target)
 	whole := chunk.Chunk{
 		Start: 0, Length: len(isotherm), Text: isotherm,
-		Small: []chunk.Chunk{{Start: at, Length: len(target), Text: target}},
+		Small: []chunk.Chunk{{Start: pos, Length: len(target), Text: target}},
 	}
 	if err := c.db.Chunks().ReplaceChunks(ctx, v.ID, "note", path, []chunk.Chunk{whole}); err != nil {
 		t.Fatal(err)

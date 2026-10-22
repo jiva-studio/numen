@@ -27,21 +27,21 @@ func preset(front string) string {
 
 // deckOf is a deck of as many cards, pointing at the preset named. A deck
 // naming none is written with an empty name.
-func deckOf(at string, cards int, from int) string {
+func deckOf(pos string, cards int, from int) string {
 	var naming []string
-	if at != "" {
-		naming = append(naming, at)
+	if pos != "" {
+		naming = append(naming, pos)
 	}
 	return deckNaming(naming, cards, from)
 }
 
 // deckNaming is a deck of as many cards, naming these presets in the order it
 // names them.
-func deckNaming(at []string, cards int, from int) string {
+func deckNaming(pos []string, cards int, from int) string {
 	out := "---\ntype: deck\n"
-	if len(at) > 0 {
+	if len(pos) > 0 {
 		out += "links:\n"
-		for _, one := range at {
+		for _, one := range pos {
 			out += "  - to: " + one + "\n    role: ref\n    type: preset\n"
 		}
 	}
@@ -87,7 +87,7 @@ func unseen(sat flashcards.SessionResult) int {
 }
 
 // mark is the card of this place in a deck, as deckOf writes it.
-func mark(at int) string { return fmt.Sprintf("card%06d", at) }
+func mark(pos int) string { return fmt.Sprintf("card%06d", pos) }
 
 // Each preset turns its own minutes into a count from its own answer times, so
 // two presets of the same day hold as many cards as their cards cost.

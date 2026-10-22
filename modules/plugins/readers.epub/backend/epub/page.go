@@ -35,11 +35,11 @@ func (b *Book) PageOf(offset int) int {
 // PageStart is where a page begins in the text. A page begins at a letter, and
 // a letter is several bytes in most of the scripts a book is written in.
 func (b *Book) PageStart(page int) int {
-	at := min(max(0, (page-1)*b.PageBytes()), len(b.Text))
-	for at < len(b.Text) && !utf8.RuneStart(b.Text[at]) {
-		at++
+	pos := min(max(0, (page-1)*b.PageBytes()), len(b.Text))
+	for pos < len(b.Text) && !utf8.RuneStart(b.Text[pos]) {
+		pos++
 	}
-	return at
+	return pos
 }
 
 // PageBytes is how many bytes of this book's text stand on one page. Whoever

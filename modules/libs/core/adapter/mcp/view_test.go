@@ -37,11 +37,11 @@ type window struct {
 	fails error
 }
 
-func (w *window) FocusPlace(_ context.Context, at domain.Place) error {
+func (w *window) FocusPlace(_ context.Context, pos domain.Place) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.asked = append(w.asked, at)
+	w.asked = append(w.asked, pos)
 	return nil
 }
 
@@ -52,8 +52,8 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	_, core, queries := newCoreWithQueries(t, notes)
 	looking := &window{}
 	observeView(&core, queries, looking)
-	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
-		_ = looking.ShowEdit(ctx, said)
+	tells := note.TellEdit(func(ctx context.Context, response domain.Edit) {
+		_ = looking.ShowEdit(ctx, response)
 	})
 	core.Notes.Write.Drawing = tells
 	core.Notes.Replace.Drawing = tells
@@ -183,11 +183,11 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 
 // drawn is what the window was told about a change being made, in the order it
 // was told.
-func (w *window) ShowEdit(_ context.Context, said domain.Edit) error {
+func (w *window) ShowEdit(_ context.Context, response domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.drawn = append(w.drawn, said)
+	w.drawn = append(w.drawn, response)
 	return nil
 }
 

@@ -29,17 +29,17 @@ func TestAMarkedNameIsReadBackAsTheNameAndTheRunsInIt(t *testing.T) {
 		{"👋 \x02Entropy\x03", "👋 Entropy", []domain.UnitSpan{{From: 3, To: 10}}},
 		{"\x02👋\x03 Entropy", "👋 Entropy", []domain.UnitSpan{{From: 0, To: 2}}},
 	} {
-		name, at := parseMarkedName(c.marked)
+		name, pos := parseMarkedName(c.marked)
 		if name != c.name {
 			t.Errorf("split(%q) read %q, want %q", c.marked, name, c.name)
 		}
-		if len(at) != len(c.at) {
-			t.Errorf("split(%q) marked %+v, want %+v", c.marked, at, c.at)
+		if len(pos) != len(c.at) {
+			t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.at)
 			continue
 		}
-		for i := range at {
-			if at[i] != c.at[i] {
-				t.Errorf("split(%q) marked %+v, want %+v", c.marked, at, c.at)
+		for i := range pos {
+			if pos[i] != c.at[i] {
+				t.Errorf("split(%q) marked %+v, want %+v", c.marked, pos, c.at)
 				break
 			}
 		}

@@ -393,11 +393,11 @@ func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
 	// The pass enters the list when it opens the first of them, and a share is
 	// drawn once a vector has been made, counted over the work in hand.
 	making.OnVectorsProgress = func(res embedding.EmbedResult) {
-		at := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
+		pos := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
-			at.Count, at.Total = int64(res.Embedded), owing
+			pos.Count, pos.Total = int64(res.Embedded), owing
 		}
-		events.ReportTask(at)
+		events.ReportTask(pos)
 	}
 
 	switch _, err := making.MakeVectors(under, p.v); {

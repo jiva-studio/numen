@@ -101,13 +101,13 @@ func (s *Disk) Get(key document.PageKey) []byte {
 	if s == nil {
 		return nil
 	}
-	at := filepath.Join(s.dir, s.getFileName(key))
-	body, err := os.ReadFile(at)
+	pos := filepath.Join(s.dir, s.getFileName(key))
+	body, err := os.ReadFile(pos)
 	if err != nil {
 		return nil
 	}
 	now := time.Now()
-	_ = os.Chtimes(at, now, now)
+	_ = os.Chtimes(pos, now, now)
 	return body
 }
 
@@ -117,7 +117,7 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
-	at := filepath.Join(s.dir, s.getFileName(key))
+	pos := filepath.Join(s.dir, s.getFileName(key))
 	// Written under another name and moved into place, so a reader never opens
 	// half a picture.
 	temp, err := os.CreateTemp(s.dir, "drawing-")
@@ -133,7 +133,7 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 		os.Remove(temp.Name())
 		return
 	}
-	if err := os.Rename(temp.Name(), at); err != nil {
+	if err := os.Rename(temp.Name(), pos); err != nil {
 		os.Remove(temp.Name())
 		return
 	}

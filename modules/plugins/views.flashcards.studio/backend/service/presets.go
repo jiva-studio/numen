@@ -91,7 +91,7 @@ func (h *presetsHandler) ScheduleDeck(
 	if err != nil {
 		return nil, err
 	}
-	at, err := h.scenarios().flash.Presets.Point(
+	pos, err := h.scenarios().flash.Presets.Point(
 		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), readFingerprint(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
@@ -99,7 +99,7 @@ func (h *presetsHandler) ScheduleDeck(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.ScheduleDeckResponse{
-			At: writeFingerprint(at), IsUnlevelled: unlevelled,
+			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
@@ -150,14 +150,14 @@ func (h *presetsHandler) WritePreset(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	at, err := h.scenarios().flash.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, readFingerprint(r.Msg.GetBaseline()))
+	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, readFingerprint(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WritePresetResponse{
-			At: writeFingerprint(at), IsUnlevelled: unlevelled,
+			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.

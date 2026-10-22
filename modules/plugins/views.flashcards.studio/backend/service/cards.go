@@ -248,7 +248,7 @@ func (h *cardsHandler) WriteStencil(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	at, err := h.scenarios().cards.Write.Stencil(
+	pos, err := h.scenarios().cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), readFingerprint(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
@@ -256,7 +256,7 @@ func (h *cardsHandler) WriteStencil(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: writeFingerprint(at), IsUnlevelled: unlevelled,
+			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, ok := getErrorCode(err)

@@ -27,14 +27,14 @@ func (u *CheckRoot) Execute(root string) error {
 	if !filepath.IsAbs(root) {
 		return fmt.Errorf("%s is not an absolute path, and a vault is named by one", root)
 	}
-	at := u.getName(root)
-	if filepath.Dir(at) == at {
+	pos := u.getName(root)
+	if filepath.Dir(pos) == pos {
 		return fmt.Errorf(
-			"%s is the root of this filesystem, and a vault is a folder somebody keeps notes in", at)
+			"%s is the root of this filesystem, and a vault is a folder somebody keeps notes in", pos)
 	}
-	if home, err := u.home.GetHomeFolder(); err == nil && u.getName(home) == at {
+	if home, err := u.home.GetHomeFolder(); err == nil && u.getName(home) == pos {
 		return fmt.Errorf(
-			"%s is the person's home directory, and a vault is a folder inside it", at)
+			"%s is the person's home directory, and a vault is a folder inside it", pos)
 	}
 	return nil
 }

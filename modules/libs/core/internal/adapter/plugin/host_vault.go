@@ -244,12 +244,12 @@ func (e *vaultEndpoint) GetFileFingerprint(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: noVault}), nil
 	}
-	at, err := vault.GetFingerprint(ctx, req.Msg.GetPath())
+	pos, err := vault.GetFingerprint(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetFileFingerprintResponse{Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.GetFileFingerprintResponse{Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) ReadFile(
@@ -262,12 +262,12 @@ func (e *vaultEndpoint) ReadFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
 	}
-	content, at, err := vault.Read(ctx, req.Msg.GetPath())
+	content, pos, err := vault.Read(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) WriteFile(
@@ -280,12 +280,12 @@ func (e *vaultEndpoint) WriteFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: noVault}), nil
 	}
-	at, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFingerprint(req.Msg.GetBaseline()))
+	pos, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFingerprint(req.Msg.GetBaseline()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.WriteFileResponse{Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.WriteFileResponse{Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) CreateFile(

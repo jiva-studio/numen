@@ -70,9 +70,9 @@ func (b *Backend) writeCardAdd(ctx context.Context, in cardAddInput) (WriteOutco
 		return WriteOutcome{}, err
 	}
 	var added cards.AddedCard
-	content, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
+	content, err := b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
 		var err error
-		added, err = b.scenarios().cards.AddCard.Execute(ctx, v, at, in.Stencil, values(in.Values), in.Section)
+		added, err = b.scenarios().cards.AddCard.Execute(ctx, v, pos, in.Stencil, values(in.Values), in.Section)
 		return added.EditResult, err
 	})
 	if err != nil {
@@ -112,8 +112,8 @@ func (b *Backend) writeCardEdit(ctx context.Context, in cardEditInput) (WriteOut
 	if err := checkCardSize(in.Values); err != nil {
 		return WriteOutcome{}, err
 	}
-	return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-		return b.scenarios().cards.EditCard.Execute(ctx, v, at, in.Mark, in.Stencil, values(in.Values))
+	return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+		return b.scenarios().cards.EditCard.Execute(ctx, v, pos, in.Mark, in.Stencil, values(in.Values))
 	})
 }
 
@@ -139,8 +139,8 @@ func (b *Backend) addCardValueRemove(registry *tools.Registry) error {
 			"mark `card_read` gives it, the fingerprint from `card_read` is required, and " +
 			"a write lands only on the deck that fingerprint names.",
 	}, func(ctx context.Context, in cardValueRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveCardValue.Execute(ctx, v, at, in.Mark, in.Field)
+		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+			return b.scenarios().cards.RemoveCardValue.Execute(ctx, v, pos, in.Mark, in.Field)
 		})
 	})
 }
@@ -165,8 +165,8 @@ func (b *Backend) addCardRemove(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveCard.Execute(ctx, v, at, in.Mark)
+		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+			return b.scenarios().cards.RemoveCard.Execute(ctx, v, pos, in.Mark)
 		})
 	})
 }
@@ -189,8 +189,8 @@ func (b *Backend) addCardSectionAdd(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionAddInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.AddSection.Execute(ctx, v, at, in.Name)
+		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+			return b.scenarios().cards.AddSection.Execute(ctx, v, pos, in.Name)
 		})
 	})
 }
@@ -215,8 +215,8 @@ func (b *Backend) addCardSectionRename(registry *tools.Registry) error {
 			"fingerprint from `card_read` is required, and a write lands only on the deck " +
 			"that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionRenameInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RenameSection.Execute(ctx, v, at, in.Section, in.Name)
+		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+			return b.scenarios().cards.RenameSection.Execute(ctx, v, pos, in.Section, in.Name)
 		})
 	})
 }
@@ -241,8 +241,8 @@ func (b *Backend) addCardSectionRemove(registry *tools.Registry) error {
 			"`sections`. The fingerprint from `card_read` is required, and a write lands " +
 			"only on the deck that fingerprint names.",
 	}, func(ctx context.Context, in cardSectionRemoveInput) (WriteOutcome, error) {
-		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, at cards.DeckVersion) (cards.EditResult, error) {
-			return b.scenarios().cards.RemoveSection.Execute(ctx, v, at, in.Section)
+		return b.writeDeck(ctx, in.Path, in.Fingerprint, func(v domain.Vault, pos cards.DeckVersion) (cards.EditResult, error) {
+			return b.scenarios().cards.RemoveSection.Execute(ctx, v, pos, in.Section)
 		})
 	})
 }

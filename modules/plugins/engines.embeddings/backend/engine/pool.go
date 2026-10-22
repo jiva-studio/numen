@@ -28,8 +28,8 @@ func meanPool(flat []float32, mask []int64, rows, seq, dimensions int) [][]float
 				continue
 			}
 			tokenCount++
-			at := (rowOffset + token) * dimensions
-			addRow(vector, flat[at:at+dimensions])
+			pos := (rowOffset + token) * dimensions
+			addRow(vector, flat[pos:pos+dimensions])
 		}
 		if tokenCount > 0 {
 			k := float32(tokenCount)
@@ -77,9 +77,9 @@ func addRow(dst, src []float32) {
 func headPool(flat []float32, rows, seq, dimensions int) [][]float32 {
 	out := make([][]float32, rows)
 	for row := range out {
-		at := row * seq * dimensions
+		pos := row * seq * dimensions
 		vector := make([]float32, dimensions)
-		copy(vector, flat[at:at+dimensions])
+		copy(vector, flat[pos:pos+dimensions])
 		out[row] = Normalise(vector)
 	}
 	return out
@@ -113,17 +113,17 @@ func padBatch(batch [][]int, pad, limit int) (rows, seq int, in *padding) {
 	clear(in.mask)
 	clear(in.types)
 	for row, one := range batch {
-		at := row * seq
-		ids := in.ids[at : at+seq]
+		pos := row * seq
+		ids := in.ids[pos : pos+seq]
 		for i := range ids {
 			ids[i] = int64(pad)
 		}
 		for i, id := range one {
 			ids[i] = int64(id)
-			in.mask[at+i] = 1
+			in.mask[pos+i] = 1
 		}
 		if len(one) == 0 {
-			in.mask[at] = 1
+			in.mask[pos] = 1
 		}
 	}
 	return rows, seq, in

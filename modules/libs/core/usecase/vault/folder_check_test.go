@@ -17,16 +17,16 @@ func TestAFolderThatHasMissingIsMissing(t *testing.T) {
 	t.Parallel()
 	check := vaults.NewFolderCheck(filesystem.VaultReaders{})
 
-	at := filepath.Join(t.TempDir(), "one")
-	if err := os.Mkdir(at, 0o700); err != nil {
+	pos := filepath.Join(t.TempDir(), "one")
+	if err := os.Mkdir(pos, 0o700); err != nil {
 		t.Fatal(err)
 	}
-	v := domain.Vault{ID: "one", Name: "one", Path: at}
+	v := domain.Vault{ID: "one", Name: "one", Path: pos}
 	if check.Execute(v) {
 		t.Error("a folder that is there was called missing")
 	}
 
-	if err := os.Remove(at); err != nil {
+	if err := os.Remove(pos); err != nil {
 		t.Fatal(err)
 	}
 	if !check.Execute(v) {
@@ -38,12 +38,12 @@ func TestAFolderThatHasMissingIsMissing(t *testing.T) {
 // holding nothing.
 func TestAPathContainingAFileIsMissingToo(t *testing.T) {
 	t.Parallel()
-	at := filepath.Join(t.TempDir(), "one")
-	if err := os.WriteFile(at, []byte("not a vault"), 0o600); err != nil {
+	pos := filepath.Join(t.TempDir(), "one")
+	if err := os.WriteFile(pos, []byte("not a vault"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	check := vaults.NewFolderCheck(filesystem.VaultReaders{})
-	if !check.Execute(domain.Vault{ID: "one", Name: "one", Path: at}) {
+	if !check.Execute(domain.Vault{ID: "one", Name: "one", Path: pos}) {
 		t.Error("a file where a vault's folder was is not missing")
 	}
 }

@@ -59,14 +59,14 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 		Now: review.OutsideGrid, Suggested: review.OutsideGrid,
 	})
 
-	if at := got.GetAt()[0]; at.Learns != nil {
-		t.Errorf("a place with no day to name carries %d", at.GetLearns())
+	if pos := got.GetAt()[0]; pos.Learns != nil {
+		t.Errorf("a place with no day to name carries %d", pos.GetLearns())
 	}
-	if at := got.GetAt()[1]; at.Learns == nil || at.GetLearns() != review.NeverLearns {
-		t.Errorf("a place whose horizon ended first carries %+v", at.Learns)
+	if offset := got.GetAt()[1]; offset.Learns == nil || offset.GetLearns() != review.NeverLearns {
+		t.Errorf("a place whose horizon ended first carries %+v", offset.Learns)
 	}
-	if at := got.GetAt()[2]; at.Learns == nil || at.GetLearns() != 12 {
-		t.Errorf("a place learned on day 12 carries %+v", at.Learns)
+	if index := got.GetAt()[2]; index.Learns == nil || index.GetLearns() != 12 {
+		t.Errorf("a place learned on day 12 carries %+v", index.Learns)
 	}
 }
 

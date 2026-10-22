@@ -244,11 +244,11 @@ func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at, err := os.Lstat(link)
+	pos, err := os.Lstat(link)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.Mode()&os.ModeSymlink == 0 {
+	if pos.Mode()&os.ModeSymlink == 0 {
 		t.Error("the link was replaced by a file of its own")
 	}
 	body, err := os.ReadFile(filepath.Join(v.Path, "notes", "Real.md"))
@@ -331,7 +331,7 @@ func TestOneVaultIsHeldByOneWriterAtATime(t *testing.T) {
 // A note kept as a link may point at another note and nowhere else. The rule is
 // asked of where the bytes land, not only of the name they were asked for by.
 func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
-	for _, at := range []struct {
+	for _, item := range []struct {
 		name  string
 		makes string
 		// sentinel is what the rejection carries, where the error is the
@@ -343,16 +343,16 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 		{"another tool's folder", ".obsidian/workspace.json", port.ErrNotANote},
 		{"a file that is not a note", "attachments/paper.pdf", port.ErrNotANote},
 	} {
-		t.Run(at.name, func(t *testing.T) {
+		t.Run(item.name, func(t *testing.T) {
 			root := t.TempDir()
-			target := filepath.Join(root, filepath.FromSlash(at.makes))
+			target := filepath.Join(root, filepath.FromSlash(item.makes))
 			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				t.Fatal(err)
 			}
 			if err := os.WriteFile(target, []byte("what was there\n"), 0o644); err != nil {
 				t.Fatal(err)
 			}
-			if err := os.Symlink(filepath.FromSlash(at.makes), filepath.Join(root, "Note.md")); err != nil {
+			if err := os.Symlink(filepath.FromSlash(item.makes), filepath.Join(root, "Note.md")); err != nil {
 				t.Fatal(err)
 			}
 
@@ -364,15 +364,15 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			switch {
 			case err == nil:
 				t.Errorf("writing through the link was allowed")
-			case at.sentinel != nil && !errors.Is(err, at.sentinel):
-				t.Errorf("writing through the link gave %v, want %v", err, at.sentinel)
+			case item.sentinel != nil && !errors.Is(err, item.sentinel):
+				t.Errorf("writing through the link gave %v, want %v", err, item.sentinel)
 			}
 			raw, readErr := os.ReadFile(target)
 			if readErr != nil {
 				t.Fatal(readErr)
 			}
 			if string(raw) != "what was there\n" {
-				t.Errorf("%s was written: %q", at.makes, raw)
+				t.Errorf("%s was written: %q", item.makes, raw)
 			}
 		})
 	}

@@ -31,13 +31,13 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) {
 	access, _ := diskVault(t, map[string]string{"decks/A.md": "body"})
 
-	content, at, err := access.Read(t.Context(), "decks/A.md")
+	content, pos, err := access.Read(t.Context(), "decks/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if string(content) != "body" || at.Path != "decks/A.md" || at.Size != 4 {
-		t.Errorf("read %q with %+v", content, at)
+	if string(content) != "body" || pos.Path != "decks/A.md" || pos.Size != 4 {
+		t.Errorf("read %q with %+v", content, pos)
 	}
 	if _, _, err := access.Read(t.Context(), "gone.md"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a file that is not there was read with %v", err)
@@ -46,7 +46,7 @@ func TestAFileIsReadWithTheFingerprintItHadBeforeItsBytesWereRead(t *testing.T) 
 
 func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 	access, v := diskVault(t, map[string]string{"decks/A.md": "body"})
-	_, at, err := access.Read(t.Context(), "decks/A.md")
+	_, pos, err := access.Read(t.Context(), "decks/A.md")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,7 +54,7 @@ func TestAFileIsSavedOverWhatWasReadAndRefusedOverWhatMoved(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = access.Write(t.Context(), "decks/A.md", []byte("mine"), at)
+	_, err = access.Write(t.Context(), "decks/A.md", []byte("mine"), pos)
 
 	if !errors.Is(err, port.ErrStale) {
 		t.Errorf("a write over a file that moved was %v", err)

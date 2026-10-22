@@ -114,7 +114,7 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 				if word == "" || strings.ContainsFunc(word, isSpace) {
 					t.Errorf("a box covers %q, which is not one word", word)
 				}
-				if at := book.Pages[box.Page].Offset; box.From < at {
+				if pos := book.Pages[box.Page].Offset; box.From < pos {
 					t.Errorf("a box on page %d covers %q, which is before that page", box.Page, word)
 				}
 			}

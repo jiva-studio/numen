@@ -19,8 +19,8 @@ func faces(sat flashcards.SessionResult) []review.CardFaceID {
 }
 
 // getCardFace is a card face of the one stencil these vaults are cut by.
-func getCardFace(at int) review.CardFaceID {
-	return review.CardFaceID{Card: mark(at), Face: "Say it"}
+func getCardFace(pos int) review.CardFaceID {
+	return review.CardFaceID{Card: mark(pos), Face: "Say it"}
 }
 
 // The debt is paid oldest first, whatever order the cards stand in their deck.

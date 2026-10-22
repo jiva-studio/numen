@@ -422,14 +422,14 @@ func (t *Worker) transcribe(
 	id, path string,
 	isUserStarted bool,
 ) (res TranscribeResult, err error) {
-	by, finish, err := t.acquireModels(ctx, id, path, isUserStarted)
+	delta, finish, err := t.acquireModels(ctx, id, path, isUserStarted)
 	if err != nil {
 		return res, err
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
 	t.reportTask(run.Task{ID: id, Title: "Transcribing a recording", About: path}, isUserStarted)
-	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
+	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, delta)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
 		t.reportTask(run.Task{
@@ -454,7 +454,7 @@ func (t *Worker) acquireModels(
 	ctx context.Context,
 	id, path string,
 	isUserStarted bool,
-) (by port.Transcriber, finish func(ran error) error, err error) {
+) (delta port.Transcriber, finish func(ran error) error, err error) {
 	if retained, ok := t.resident.take(); ok {
 		return retained, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
@@ -469,7 +469,7 @@ func (t *Worker) acquireModels(
 	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.reportTask(run.Task{ID: id, Title: "Fetching models"}, isUserStarted)
-	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
+	delta, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.reportTask(run.Task{
@@ -483,12 +483,12 @@ func (t *Worker) acquireModels(
 	}
 
 	if t.with.Runtime.CanKeep != nil && t.with.Runtime.CanKeep() {
-		t.resident.hold(by, letGo, release)
-		return by, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+		t.resident.hold(delta, letGo, release)
+		return delta, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
 	// Letting the models go is what leaves the machine able to transcribe again.
 	// A machine that will not is worth saying, and the transcript stands.
-	return by, func(error) error {
+	return delta, func(error) error {
 		defer release()
 		if why := letGo(); why != nil {
 			return fmt.Errorf("letting the models go: %w", why)
@@ -530,8 +530,8 @@ func (t *Worker) ClearAnswer(v domain.Vault, path string) {
 // reportTask puts this transcription in the list of what is being done. Work nobody
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
-func (t *Worker) reportTask(at run.Task, isUserStarted bool) {
-	t.line.Report(at, isUserStarted)
+func (t *Worker) reportTask(pos run.Task, isUserStarted bool) {
+	t.line.Report(pos, isUserStarted)
 }
 
 func (t *Worker) finishTask(id string) { t.line.Finish(id) }

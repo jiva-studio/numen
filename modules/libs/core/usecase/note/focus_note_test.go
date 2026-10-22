@@ -15,11 +15,11 @@ type looking struct {
 	fails error
 }
 
-func (l *looking) FocusPlace(_ context.Context, at domain.Place) error {
+func (l *looking) FocusPlace(_ context.Context, pos domain.Place) error {
 	if l.fails != nil {
 		return l.fails
 	}
-	l.asked = append(l.asked, at)
+	l.asked = append(l.asked, pos)
 	return nil
 }
 func (l *looking) ShowMove(context.Context, domain.Move) error { return nil }

@@ -29,5 +29,5 @@ func TestEveryUnitIsSavedFromOne(t *testing.T) {
 // A page that named nothing has said nothing, and silence is what the round
 // waits its bound for. Every answer the schema offers is one of the answers.
 func TestEveryFlushResultIsAnAnswer(t *testing.T) {
-	testsupport.CheckHandled(t, func(said v1.FlushResult) bool { return parseFlushResult(said) != flushUnanswered })
+	testsupport.CheckHandled(t, func(response v1.FlushResult) bool { return parseFlushResult(response) != flushUnanswered })
 }

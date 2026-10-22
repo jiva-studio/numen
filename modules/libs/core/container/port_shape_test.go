@@ -53,21 +53,21 @@ func getInterfaceProbes(file *ast.File) []string {
 func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(at string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(at, ".go") {
+	err := filepath.WalkDir("..", func(pos string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(pos, ".go") {
 			return err
 		}
-		pkg := getPackage("..", at)
-		if strings.HasSuffix(at, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
+		pkg := getPackage("..", pos)
+		if strings.HasSuffix(pos, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
 			return nil
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), pos, nil, 0)
 		if err != nil {
 			return err
 		}
 		read++
 		for _, one := range getInterfaceProbes(file) {
-			wrong = append(wrong, at+" asserts to "+one)
+			wrong = append(wrong, pos+" asserts to "+one)
 		}
 		return nil
 	})
@@ -131,12 +131,12 @@ func internalTypes(file *ast.File) []string {
 	}
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
-		at, is := node.(*ast.SelectorExpr)
+		pos, is := node.(*ast.SelectorExpr)
 		if !is {
 			return true
 		}
-		if from, is := at.X.(*ast.Ident); is && local[from.Name] {
-			found = append(found, from.Name+"."+at.Sel.Name)
+		if from, is := pos.X.(*ast.Ident); is && local[from.Name] {
+			found = append(found, from.Name+"."+pos.Sel.Name)
 		}
 		return true
 	})
@@ -152,16 +152,16 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		t.Fatal(err)
 	}
 	var read int
-	for _, at := range entries {
-		if strings.HasSuffix(at, "_test.go") {
+	for _, item := range entries {
+		if strings.HasSuffix(item, "_test.go") {
 			continue
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), item, nil, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		read++
-		rel := "port/" + filepath.Base(at)
+		rel := "port/" + filepath.Base(item)
 		for _, one := range internalTypes(file) {
 			t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
 		}

@@ -443,18 +443,18 @@ func readResumePoint(ctx context.Context, store port.DerivedStore, partial domai
 // lastCount is the last count a partial carries and where the line holding it
 // ends. A file carrying none is a document nothing has read.
 func lastCount(raw []byte) (read, end int) {
-	at := strings.LastIndex(string(raw), resumeMark)
-	if at < 0 {
+	pos := strings.LastIndex(string(raw), resumeMark)
+	if pos < 0 {
 		return 0, 0
 	}
-	line := string(raw[at+len(resumeMark):])
+	line := string(raw[pos+len(resumeMark):])
 	stop := strings.IndexByte(line, '\n')
 	if stop < 0 {
-		return lastCount(raw[:at])
+		return lastCount(raw[:pos])
 	}
 	read, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
 	if err != nil || read < 0 || read > math.MaxInt32 {
-		return lastCount(raw[:at])
+		return lastCount(raw[:pos])
 	}
-	return read, at + len(resumeMark) + stop + 1
+	return read, pos + len(resumeMark) + stop + 1
 }

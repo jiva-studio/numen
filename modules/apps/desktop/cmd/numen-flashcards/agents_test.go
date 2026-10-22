@@ -90,8 +90,8 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 func hasWrittenSecrets(t *testing.T, cfg container.Config) (token bool, announcement bool) {
 	t.Helper()
 
-	there := func(at func(container.Config) (string, error)) bool {
-		path, err := at(cfg)
+	there := func(pos func(container.Config) (string, error)) bool {
+		path, err := pos(cfg)
 		if err != nil {
 			t.Fatal(err)
 		}

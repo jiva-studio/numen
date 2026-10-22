@@ -117,7 +117,7 @@ func NewWindow(tasks *run.Tasks) *wire.Window {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a window that keeps one.
-func (a *API) reportTask(at run.Task) { a.Window.AddTask(at) }
+func (a *API) reportTask(pos run.Task) { a.Window.AddTask(pos) }
 
 // finishTask takes one piece of work out of that list.
 func (a *API) finishTask(id string) { a.Window.RemoveTask(id) }

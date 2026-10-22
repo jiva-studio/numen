@@ -89,13 +89,13 @@ func (h History) GetRetained(by Scheduler, d Day) map[string]RecallTally {
 // walkAnswers walks the answers in the order they were given, telling each one
 // to the caller with the schedule the card face stood at before it.
 func walkAnswers(
-	by Scheduler, answers []Answer, each func(before Schedule, a Answer),
+	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
-	return OrderAnswers(answers).walkAnswers(by, each)
+	return OrderAnswers(answers).walkAnswers(delta, each)
 }
 
 func (h History) walkAnswers(
-	by Scheduler, each func(before Schedule, a Answer),
+	delta Scheduler, each func(before Schedule, a Answer),
 ) map[CardFaceID]Schedule {
 	out := make(map[CardFaceID]Schedule)
 	for _, a := range h {
@@ -103,7 +103,7 @@ func (h History) walkAnswers(
 		if each != nil {
 			each(before, a)
 		}
-		out[a.CardFace] = by.Next(before, a.At, a.Rating)
+		out[a.CardFace] = delta.Next(before, a.At, a.Rating)
 	}
 	return out
 }

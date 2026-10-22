@@ -481,21 +481,21 @@ func proseOpens(raw string) int {
 	if !found || strings.TrimRight(first, "\r") != "---" {
 		return 0
 	}
-	for at := 0; at < len(after); {
-		lineEnd := strings.IndexByte(after[at:], '\n')
+	for pos := 0; pos < len(after); {
+		lineEnd := strings.IndexByte(after[pos:], '\n')
 		var line string
 		var next int
 		if lineEnd >= 0 {
-			line = after[at : at+lineEnd]
-			next = at + lineEnd + 1
+			line = after[pos : pos+lineEnd]
+			next = pos + lineEnd + 1
 		} else {
-			line = after[at:]
+			line = after[pos:]
 			next = len(after)
 		}
 		if strings.TrimRight(line, "\r") == "---" {
 			return (len(raw) - len(after)) + next
 		}
-		at = next
+		pos = next
 	}
 	return 0
 }

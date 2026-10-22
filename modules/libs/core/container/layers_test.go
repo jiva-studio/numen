@@ -322,13 +322,13 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			}
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
+			pos, is := node.(*ast.SelectorExpr)
 			if !is {
 				return true
 			}
-			from, is := at.X.(*ast.Ident)
-			if is && from.Name == "filepath" && looking[at.Sel.Name] {
-				wrong = append(wrong, path+" runs filepath."+at.Sel.Name)
+			from, is := pos.X.(*ast.Ident)
+			if is && from.Name == "filepath" && looking[pos.Sel.Name] {
+				wrong = append(wrong, path+" runs filepath."+pos.Sel.Name)
 			}
 			return true
 		})
@@ -529,19 +529,19 @@ var (
 // timers, each written time.Name. The local name of the import is not read.
 func getClockReads(file *ast.File) (reads, arms []string) {
 	ast.Inspect(file, func(node ast.Node) bool {
-		at, is := node.(*ast.SelectorExpr)
+		pos, is := node.(*ast.SelectorExpr)
 		if !is {
 			return true
 		}
-		from, is := at.X.(*ast.Ident)
+		from, is := pos.X.(*ast.Ident)
 		if !is || from.Name != "time" {
 			return true
 		}
-		if telling[at.Sel.Name] {
-			reads = append(reads, "time."+at.Sel.Name)
+		if telling[pos.Sel.Name] {
+			reads = append(reads, "time."+pos.Sel.Name)
 		}
-		if waiting[at.Sel.Name] {
-			arms = append(arms, "time."+at.Sel.Name)
+		if waiting[pos.Sel.Name] {
+			arms = append(arms, "time."+pos.Sel.Name)
 		}
 		return true
 	})
@@ -631,8 +631,8 @@ func identities(file *ast.File) []identity {
 
 // getTypeName is a type as it is written, and empty for one this rule reads
 // nothing into.
-func getTypeName(at ast.Expr) string {
-	switch target := at.(type) {
+func getTypeName(pos ast.Expr) string {
+	switch target := pos.(type) {
 	case *ast.Ident:
 		return target.Name
 	case *ast.SelectorExpr:
@@ -654,8 +654,8 @@ func getTypeName(at ast.Expr) string {
 func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, at := range []string{"domain", "port"} {
-		dir := getPackageDir(at)
+	for _, item := range []string{"domain", "port"} {
+		dir := getPackageDir(item)
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -673,7 +673,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 				read++
 				if numbered[found.spelled] {
 					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
-						at, found.in, found.field, found.spelled))
+						item, found.in, found.field, found.spelled))
 				}
 			}
 		}
@@ -732,14 +732,14 @@ func getClaimedPorts(file *ast.File) []string {
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
-				return at.Name == "_"
+			if !is || !slices.ContainsFunc(named.Names, func(pos *ast.Ident) bool {
+				return pos.Name == "_"
 			}) {
 				continue
 			}
-			if at, is := named.Type.(*ast.SelectorExpr); is {
-				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					target = append(target, at.Sel.Name)
+			if offset, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := offset.X.(*ast.Ident); is && from.Name == "port" {
+					target = append(target, offset.Sel.Name)
 				}
 			}
 		}
@@ -860,8 +860,8 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 // the rule has to come back with the names below. It is what says the passes
 // above are passing on the naming and not on an empty walk.
 func TestWhatThePortRuleRefuses(t *testing.T) {
-	at := filepath.Join("..", "port")
-	unnamed, err := getUnnamedTypes(at, at, false)
+	pos := filepath.Join("..", "port")
+	unnamed, err := getUnnamedTypes(pos, pos, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -894,8 +894,8 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 // Read against port/ as the whole tree, nothing outside it calls anything, and
 // the rule has to come back with the methods below.
 func TestWhatThePortMethodRuleRefuses(t *testing.T) {
-	at := filepath.Join("..", "port")
-	uncalled, err := getUncalledMethods(at, at)
+	pos := filepath.Join("..", "port")
+	uncalled, err := getUncalledMethods(pos, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -934,8 +934,8 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 			return err
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			if at, is := node.(*ast.SelectorExpr); is {
-				called[at.Sel.Name] = true
+			if pos, is := node.(*ast.SelectorExpr); is {
+				called[pos.Sel.Name] = true
 			}
 			return true
 		})
@@ -974,11 +974,11 @@ func methodsIn(dir string) (map[string]string, error) {
 			return nil, err
 		}
 		for _, decl := range file.Decls {
-			at, is := decl.(*ast.GenDecl)
-			if !is || at.Tok != token.TYPE {
+			pos, is := decl.(*ast.GenDecl)
+			if !is || pos.Tok != token.TYPE {
 				continue
 			}
-			for _, spec := range at.Specs {
+			for _, spec := range pos.Specs {
 				named, is := spec.(*ast.TypeSpec)
 				if !is || !named.Name.IsExported() {
 					continue
@@ -991,9 +991,9 @@ func methodsIn(dir string) (map[string]string, error) {
 					if _, is := method.Type.(*ast.FuncType); !is {
 						continue
 					}
-					for _, at := range method.Names {
-						if at.IsExported() {
-							declared[named.Name.Name+"."+at.Name] = at.Name
+					for _, item := range method.Names {
+						if item.IsExported() {
+							declared[named.Name.Name+"."+item.Name] = item.Name
 						}
 					}
 				}
@@ -1029,12 +1029,12 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 			return err
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
+			pos, is := node.(*ast.SelectorExpr)
 			if !is {
 				return true
 			}
-			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-				named[at.Sel.Name] = true
+			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
+				named[pos.Sel.Name] = true
 			}
 			return true
 		})
@@ -1075,11 +1075,11 @@ func getDeclaredTypes(dir string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, decl := range file.Decls {
-			at, is := decl.(*ast.GenDecl)
-			if !is || at.Tok != token.TYPE {
+			pos, is := decl.(*ast.GenDecl)
+			if !is || pos.Tok != token.TYPE {
 				continue
 			}
-			for _, spec := range at.Specs {
+			for _, spec := range pos.Specs {
 				named, is := spec.(*ast.TypeSpec)
 				if !is || !named.Name.IsExported() {
 					continue
@@ -1260,7 +1260,7 @@ func family(pkg string) string {
 // getAdaptersIn are the adapters in one folder, named under it. A folder that
 // groups adapters is not an adapter, so what is placed under it is read in its
 // place.
-func getAdaptersIn(dir, at string) ([]string, error) {
+func getAdaptersIn(dir, pos string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -1270,7 +1270,7 @@ func getAdaptersIn(dir, at string) ([]string, error) {
 		if !one.IsDir() {
 			continue
 		}
-		below := at + "/" + one.Name()
+		below := pos + "/" + one.Name()
 		if !slices.Contains(grouping, below) {
 			found = append(found, one.Name())
 			continue
@@ -1414,9 +1414,9 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 // Reading the tree is what the rules are checked against, so the tree has to be
 // where this expects it.
 func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
-	for _, at := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
-		if _, err := os.Stat(getPackageDir(at)); err != nil {
-			t.Fatalf("%s: %v", at, err)
+	for _, item := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
+		if _, err := os.Stat(getPackageDir(item)); err != nil {
+			t.Fatalf("%s: %v", item, err)
 		}
 	}
 }
@@ -1456,8 +1456,8 @@ func getInstants(file *ast.File) []identity {
 func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, at := range []string{"domain", "port"} {
-		dir := getPackageDir(at)
+	for _, item := range []string{"domain", "port"} {
+		dir := getPackageDir(item)
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -1475,7 +1475,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 				read++
 				if found.spelled != "time.Time" {
 					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
-						at, found.in, found.field, found.spelled))
+						item, found.in, found.field, found.spelled))
 				}
 			}
 		}
@@ -1699,9 +1699,9 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 }
 
 // getPackageDir returns the filesystem path for a package name.
-func getPackageDir(at string) string {
-	if at == "domain" {
+func getPackageDir(pos string) string {
+	if pos == "domain" {
 		return filepath.Join("..", "..", "notes", "domain")
 	}
-	return filepath.Join("..", at)
+	return filepath.Join("..", pos)
 }

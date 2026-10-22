@@ -224,14 +224,14 @@ type learnedCount struct {
 
 // newLearnedCount opens the count over the card faces a run begins with, at the
 // instant it opens on.
-func newLearnedCount(p Preset, cards []Schedule, at time.Time) *learnedCount {
+func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	rule, _, retention := p.getLearnedRule()
 	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention}
 	if out.isCarried {
 		out.learned = make([]bool, len(cards))
 	}
 	for i, c := range cards {
-		if !p.IsLearned(c, at) {
+		if !p.IsLearned(c, pos) {
 			continue
 		}
 		out.count++
@@ -243,11 +243,11 @@ func newLearnedCount(p Preset, cards []Schedule, at time.Time) *learnedCount {
 }
 
 // countAnswer carries one card face the day has answered.
-func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
+func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, at)
+	stands := r.preset.IsLearned(c, pos)
 	if stands == r.learned[card] {
 		return
 	}
@@ -260,11 +260,11 @@ func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
 }
 
 // countBegun carries one card face the day has begun.
-func (r *learnedCount) countBegun(c Schedule, at time.Time) {
+func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, at)
+	stands := r.preset.IsLearned(c, pos)
 	r.learned = append(r.learned, stands)
 	if stands {
 		r.count++
@@ -279,7 +279,7 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 // whole material is made on the days the share is wanted. A count read off the
 // chance of recall is the same walk, and the share falls out of it.
 func (r *learnedCount) countLearned(
-	cards []Schedule, at time.Time, faces int, wanted bool,
+	cards []Schedule, pos time.Time, faces int, wanted bool,
 ) (int, float64) {
 	if r.isCarried {
 		if !wanted || faces == 0 {
@@ -287,13 +287,13 @@ func (r *learnedCount) countLearned(
 		}
 		back := 0.0
 		for _, c := range cards {
-			back += Recall(at.Sub(c.Last), c.Stability)
+			back += Recall(pos.Sub(c.Last), c.Stability)
 		}
 		return r.count, back / float64(faces)
 	}
 	stands, back := 0, 0.0
 	for _, c := range cards {
-		one := Recall(at.Sub(c.Last), c.Stability)
+		one := Recall(pos.Sub(c.Last), c.Stability)
 		back += one
 		if !c.IsNew() && one >= r.target {
 			stands++

@@ -55,10 +55,10 @@ func TestNoDeckConsumesMoreOfTheDayThanItOwes(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
-		for at, share := range review.DivideBudget(budget, owes) {
-			if share < 0 || share > owes[at] {
+		for item, share := range review.DivideBudget(budget, owes) {
+			if share < 0 || share > owes[item] {
 				t.Fatalf("a deck owing %v took %v of a budget of %v over %v",
-					owes[at], share, budget, owes)
+					owes[item], share, budget, owes)
 			}
 		}
 	})
@@ -79,12 +79,12 @@ func TestAShareIsTheProportionOfTheDayItsDeckOwes(t *testing.T) {
 		if total <= 0 || budget >= total {
 			return
 		}
-		for at, share := range review.DivideBudget(budget, owes) {
-			exact := float64(budget) * float64(owes[at]) / float64(total)
+		for item, share := range review.DivideBudget(budget, owes) {
+			exact := float64(budget) * float64(owes[item]) / float64(total)
 			if float64(share) < math.Floor(exact) || float64(share) > math.Ceil(exact) {
 				t.Fatalf("a deck owing %v of %v took %v of a budget of %v, "+
 					"where its proportion of it is %v",
-					owes[at], total, share, budget, exact)
+					owes[item], total, share, budget, exact)
 			}
 		}
 	})
@@ -124,12 +124,12 @@ func TestTheOrderDecksAreGivenInDoesNotChangeTheShares(t *testing.T) {
 	rapid.Check(t, func(t *rapid.T) {
 		budget, owes := drawDivision(t)
 		places := make([]int, len(owes))
-		for at := range places {
-			places[at] = at
+		for item := range places {
+			places[item] = item
 		}
 		otherwise := make([]int, len(owes))
-		for at, one := range rapid.Permutation(places).Draw(t, "order") {
-			otherwise[at] = owes[one]
+		for entry, one := range rapid.Permutation(places).Draw(t, "order") {
+			otherwise[entry] = owes[one]
 		}
 
 		was, now := review.DivideBudget(budget, owes), review.DivideBudget(budget, otherwise)

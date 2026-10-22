@@ -211,8 +211,8 @@ func inOrder(a, b domain.Entry) int {
 		}
 		return 1
 	}
-	if by := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); by != 0 {
-		return by
+	if delta := strings.Compare(strings.ToLower(a.Name), strings.ToLower(b.Name)); delta != 0 {
+		return delta
 	}
 	return strings.Compare(a.Name, b.Name)
 }

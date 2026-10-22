@@ -18,10 +18,10 @@ import (
 
 // getTask is what the list of what is being done says about putting a
 // transcript right.
-func getTask(held *Worker, path string) (doing, failed string) {
-	for _, at := range held.with.Tasks.List() {
-		if at.ID == run.GetProofreadID(path) {
-			return at.Title, at.Error
+func getTask(target *Worker, path string) (doing, failed string) {
+	for _, item := range target.with.Tasks.List() {
+		if item.ID == run.GetProofreadID(path) {
+			return item.Title, item.Error
 		}
 	}
 	return "", ""
@@ -64,8 +64,8 @@ func TestAProfileNoSettingsNameIsShown(t *testing.T) {
 
 // Silence carries no words, so nothing is asked about it.
 func TestSilenceIsNotInsertRight(t *testing.T) {
-	by := &deaf{}
-	target, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	target, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 	target.with.Proofreading = run.ProofreadingConfig{IsNamed: true, IsAutomatic: true, By: openNoProofreader}
 
 	target.Start(v, "talks/one.mp3")
@@ -79,8 +79,8 @@ func TestSilenceIsNotInsertRight(t *testing.T) {
 // cues is the words as the cues a model wrote them down as, one second apart.
 func cues(words []string) []domain.TranscriptCue {
 	out := make([]domain.TranscriptCue, 0, len(words))
-	for at, response := range words {
-		out = append(out, domain.TranscriptCue{Text: response, From: at * 1000, To: at*1000 + 800})
+	for item, response := range words {
+		out = append(out, domain.TranscriptCue{Text: response, From: item * 1000, To: item*1000 + 800})
 	}
 	return out
 }
@@ -93,7 +93,7 @@ func cues(words []string) []domain.TranscriptCue {
 // line.
 func newStoppedWorker(
 	t *testing.T,
-	by port.Proofreader,
+	delta port.Proofreader,
 	through int,
 	words ...string,
 ) (*Worker, domain.Vault, port.DerivedStore, string) {
@@ -101,7 +101,7 @@ func newStoppedWorker(
 	target, v := newTranscriptionWorker(t, &deaf{}, recording)
 	target.with.Proofreading = run.ProofreadingConfig{
 		IsNamed: true, IsAutomatic: true,
-		By: func() (port.Proofreader, error) { return by, nil },
+		By: func() (port.Proofreader, error) { return delta, nil },
 	}
 
 	reader, err := target.with.Readers.Open(v)
@@ -127,13 +127,13 @@ func newStoppedWorker(
 
 	// The shelf as a run that ended among the batches left it: the lines it put
 	// right, and the count standing after them.
-	for at := range through {
-		cuesList[at].Text = strings.ToUpper(cuesList[at].Text)
+	for item := range through {
+		cuesList[item].Text = strings.ToUpper(cuesList[item].Text)
 	}
 	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, hash), transcript.Marshal(cuesList)); err != nil {
 		t.Fatal(err)
 	}
-	status, err := json.Marshal(putting{By: by.GetName(), At: cuesList[through-1].To})
+	status, err := json.Marshal(putting{By: delta.GetName(), At: cuesList[through-1].To})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -162,13 +162,13 @@ func readLines(t *testing.T, store port.DerivedStore, name domain.ArtifactName) 
 
 // and the lines after it are asked about when the application opens.
 func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testing.T) {
-	by := &corrector{says: says(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
-	target, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing", "third thing")
+	delta := &corrector{says: says(fixes(1, "SECOND THING"), fixes(2, "THIRD THING"))}
+	target, v, store, hash := newStoppedWorker(t, delta, 1, "first thing", "second thing", "third thing")
 
 	target.TakeUp(t.Context(), recognised{recording}, v)
 	target.Wait()
 
-	if got := by.lines(); !slices.Equal(got, []int{1, 2}) {
+	if got := delta.lines(); !slices.Equal(got, []int{1, 2}) {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 	want := []string{"FIRST THING", "SECOND THING", "THIRD THING"}
@@ -183,13 +183,13 @@ func TestATranscriptLeftPartWayThroughIsTakenUpWhenTheApplicationOpens(t *testin
 // A transcript put right to its last line is asked about nothing and shown
 // nowhere, however often the application opens.
 func TestATranscriptAlreadyInsertRightIsAskedAboutNothing(t *testing.T) {
-	by := &corrector{}
-	target, v, _, _ := newStoppedWorker(t, by, 3, "first thing", "second thing", "third thing")
+	delta := &corrector{}
+	target, v, _, _ := newStoppedWorker(t, delta, 3, "first thing", "second thing", "third thing")
 
 	target.TakeUp(t.Context(), recognised{recording}, v)
 	target.Wait()
 
-	if got := by.lines(); len(got) != 0 {
+	if got := delta.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 	if executing, failed := getTask(target, recording); executing != "" {
@@ -200,14 +200,14 @@ func TestATranscriptAlreadyInsertRightIsAskedAboutNothing(t *testing.T) {
 // An installation that did not ask for its transcripts to be put right takes up
 // nothing.
 func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
-	by := &corrector{says: says(fixes(1, "SECOND THING"))}
-	target, v, _, _ := newStoppedWorker(t, by, 1, "first thing", "second thing")
+	delta := &corrector{says: says(fixes(1, "SECOND THING"))}
+	target, v, _, _ := newStoppedWorker(t, delta, 1, "first thing", "second thing")
 	target.with.Proofreading.IsAutomatic = false
 
 	target.TakeUp(t.Context(), recognised{recording}, v)
 	target.Wait()
 
-	if got := by.lines(); len(got) != 0 {
+	if got := delta.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 }
@@ -215,8 +215,8 @@ func TestNoTranscriptIsTakenUpWhereItWasNotAskedFor(t *testing.T) {
 // One run to a transcript. A run that finds it held leaves the list to the run
 // that holds it.
 func TestATranscriptAnotherRunContainsKeepsItsPlaceInTheList(t *testing.T) {
-	by := &corrector{}
-	target, v, store, hash := newStoppedWorker(t, by, 1, "first thing", "second thing")
+	delta := &corrector{}
+	target, v, store, hash := newStoppedWorker(t, delta, 1, "first thing", "second thing")
 	release, err := store.ClaimArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, hash))
 	if err != nil {
 		t.Fatal(err)
@@ -233,7 +233,7 @@ func TestATranscriptAnotherRunContainsKeepsItsPlaceInTheList(t *testing.T) {
 	if executing, _ := getTask(target, recording); executing != "Proofreading a transcript" {
 		t.Errorf("the run holding the transcript is in the list as %q", executing)
 	}
-	if got := by.lines(); len(got) != 0 {
+	if got := delta.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 }
@@ -256,8 +256,8 @@ func (r *refuses) ProofreadSpeech(
 // A transcript this proofreader has been over every line of is asked about
 // nothing, and whoever asked is told that and not nothing at all.
 func TestATranscriptAlreadyInsertRightReturnsThatNothingWasLeft(t *testing.T) {
-	by := &corrector{}
-	target, v, _, _ := newStoppedWorker(t, by, 2, "first thing", "second thing")
+	delta := &corrector{}
+	target, v, _, _ := newStoppedWorker(t, delta, 2, "first thing", "second thing")
 
 	res, err := target.Proofread(t.Context(), v, recording)
 	target.Wait()
@@ -268,7 +268,7 @@ func TestATranscriptAlreadyInsertRightReturnsThatNothingWasLeft(t *testing.T) {
 	if !res.IsAlready {
 		t.Errorf("a transcript nothing was left of answered %+v", res)
 	}
-	if got := by.lines(); len(got) != 0 {
+	if got := delta.lines(); len(got) != 0 {
 		t.Errorf("the proofreader was asked about lines %v", got)
 	}
 }
@@ -277,8 +277,8 @@ func TestATranscriptAlreadyInsertRightReturnsThatNothingWasLeft(t *testing.T) {
 // not keep whoever asked waiting for the whole of it.
 func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
 	stand := make(chan struct{})
-	by := &waits{on: stand, asked: make(chan struct{})}
-	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
+	delta := &waits{on: stand, asked: make(chan struct{})}
+	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing", "second thing")
 
 	res, err := target.Proofread(t.Context(), v, recording)
 
@@ -288,7 +288,7 @@ func TestAProofreadingWithWorkToDoAnswersBeforeItIsOver(t *testing.T) {
 	if res.IsAlready || res.IsNone || res.IsEdited || res.IsBusy {
 		t.Errorf("a run with work to do answered %+v", res)
 	}
-	<-by.asked
+	<-delta.asked
 	close(stand)
 	target.Wait()
 }
@@ -317,13 +317,13 @@ func (w *waits) ProofreadSpeech(
 // not from the moment it has something to count. Opening the proofreader is the
 // first thing it does, and the list already says so there.
 func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *testing.T) {
-	by := &corrector{}
-	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
+	delta := &corrector{}
+	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing", "second thing")
 	reached, stand := make(chan struct{}), make(chan struct{})
 	target.with.Proofreading.By = func() (port.Proofreader, error) {
 		close(reached)
 		<-stand
-		return by, nil
+		return delta, nil
 	}
 
 	go func() { _, _ = target.Proofread(t.Context(), v, recording) }()
@@ -339,8 +339,8 @@ func TestAProofreadingAskedForExistsInTheListBeforeItOpensTheProofreader(t *test
 
 // A run that ends leaves nothing behind in the list.
 func TestAProofreadingThatEndsPreservesTheListEmpty(t *testing.T) {
-	by := &corrector{says: says(fixes(0, "FIRST THING"))}
-	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing")
+	delta := &corrector{says: says(fixes(0, "FIRST THING"))}
+	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing")
 
 	_, _ = target.Proofread(t.Context(), v, recording)
 	target.Wait()
@@ -353,8 +353,8 @@ func TestAProofreadingThatEndsPreservesTheListEmpty(t *testing.T) {
 // A proofreader that will not answer is a failure a person is shown, and the
 // failure stays in the list.
 func TestAProofreaderThatWillNotAnswerIsShownAsAFailure(t *testing.T) {
-	by := &refuses{why: errors.New("the command line is not on this machine")}
-	target, v, _, _ := newStoppedWorker(t, by, 0, "first thing", "second thing")
+	delta := &refuses{why: errors.New("the command line is not on this machine")}
+	target, v, _, _ := newStoppedWorker(t, delta, 0, "first thing", "second thing")
 
 	_, _ = target.Proofread(t.Context(), v, recording)
 	target.Wait()

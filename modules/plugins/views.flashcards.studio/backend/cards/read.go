@@ -55,7 +55,6 @@ type StencilContents struct {
 }
 
 // Read hands over a deck or a stencil, read out of the vault.
-//
 type Read struct {
 	readers ports.VaultReaders
 	// links answers where the wikilink a card names its stencil by lands. A
@@ -114,12 +113,12 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 func (u Read) GetCardStencils(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.Stencil, error) {
-	at, err := getStencilPaths(ctx, u.links, v.ID, path, d)
+	pos, err := getStencilPaths(ctx, u.links, v.ID, path, d)
 	if err != nil {
 		return nil, err
 	}
-	by, _, err := u.readStencils(ctx, v, at)
-	return by, err
+	delta, _, err := u.readStencils(ctx, v, pos)
+	return delta, err
 }
 
 // the brackets. The link is written in the deck, so it resolves against the
@@ -143,11 +142,11 @@ func getStencilPaths(
 	if err != nil {
 		return nil, err
 	}
-	at := make(map[string]string, len(reached))
+	pos := make(map[string]string, len(reached))
 	for raw, one := range reached {
-		at[raw] = one.To
+		pos[raw] = one.To
 	}
-	return at, nil
+	return pos, nil
 }
 
 // readStencils reads the stencil the cards of a deck are cut by, keyed by what stands
@@ -155,16 +154,16 @@ func getStencilPaths(
 //
 // A name landing on a note that is not a stencil is left out of the stencils
 func (u Read) readStencils(
-	ctx context.Context, v domain.Vault, at map[string]string,
+	ctx context.Context, v domain.Vault, pos map[string]string,
 ) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
-	if len(at) == 0 {
+	if len(pos) == 0 {
 		return nil, nil, nil
 	}
-	read := make(map[string]format.Stencil, len(at))
-	isLoose := make(map[string]bool, len(at))
-	by = make(map[string]format.Stencil, len(at))
-	ordinary = make(map[string]bool, len(at))
-	for content, path := range at {
+	read := make(map[string]format.Stencil, len(pos))
+	isLoose := make(map[string]bool, len(pos))
+	by = make(map[string]format.Stencil, len(pos))
+	ordinary = make(map[string]bool, len(pos))
+	for content, path := range pos {
 		target, observed := read[path]
 		if !observed {
 			found, err := u.Stencil(ctx, v, path)
@@ -187,11 +186,11 @@ func (u Read) readStencils(
 // a stencil. The values are read, and no face lays the card out.
 func getNonStencilProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
-	for at, card := range d.Cards {
+	for item, card := range d.Cards {
 		if !ordinary[card.StencilLink] {
 			continue
 		}
-		out = append(out, format.OnCard(at, format.FaultNotAStencil,
+		out = append(out, format.OnCard(item, format.FaultNotAStencil,
 			card.StencilLink+" is a note and not a stencil, so this card is shown by no face"))
 	}
 	return out

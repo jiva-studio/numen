@@ -74,20 +74,20 @@ func parseAssetAddress(r *http.Request) (address, bool) {
 // The reader the file is read by names the places it has, and a file no reader
 // reads has none.
 func (h *assetHandler) Asset(w http.ResponseWriter, r *http.Request) {
-	at, ok := parseAssetAddress(r)
+	pos, ok := parseAssetAddress(r)
 	if !ok {
 		http.Error(w, "not an asset", http.StatusBadRequest)
 		return
 	}
-	if at.where == "" {
+	if pos.where == "" {
 		http.Error(w, "an asset is asked with where in the file", http.StatusBadRequest)
 		return
 	}
-	switch named, _ := derived.ReaderName(domain.Fingerprint{Path: at.path}); named {
+	switch named, _ := derived.ReaderName(domain.Fingerprint{Path: pos.path}); named {
 	case derived.ReaderEPUB:
-		h.book.Entry(w, r, at.path, at.where)
+		h.book.Entry(w, r, pos.path, pos.where)
 	case derived.ReaderPDF:
-		h.document.Page(w, r, at.path, at.where)
+		h.document.Page(w, r, pos.path, pos.where)
 	default:
 		http.Error(w, "no reader reads that file", http.StatusNotFound)
 	}

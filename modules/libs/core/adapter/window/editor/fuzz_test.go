@@ -53,15 +53,15 @@ func FuzzAssetAddress(f *testing.F) {
 		mark := document.Fingerprint{Size: size, Mtime: mtime}
 		url := pageURL(path, page, 800, mark)
 
-		at, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
+		pos, ok := parseAssetAddress(httptest.NewRequest("GET", url, nil))
 		if !ok {
 			t.Fatalf("%q is addressed as %q, which is no address", path, url)
 		}
-		if at.path != path {
-			t.Fatalf("%q is addressed as %q and read back as %q", path, url, at.path)
+		if pos.path != path {
+			t.Fatalf("%q is addressed as %q and read back as %q", path, url, pos.path)
 		}
-		if want := pagesName + "/" + strconv.Itoa(page); at.where != want {
-			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, at.where)
+		if want := pagesName + "/" + strconv.Itoa(page); pos.where != want {
+			t.Fatalf("page %d of %q is addressed as %q and asks for %q", page, path, url, pos.where)
 		}
 
 		// Which bytes the address is about rides beside it, and says the same

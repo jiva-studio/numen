@@ -43,17 +43,17 @@ func FuzzReadArtifact(f *testing.F) {
 		if !subsequence(text, raw) {
 			t.Fatalf("%q was read as %q, which is not what the file says", raw, text)
 		}
-		at := -1
+		pos := -1
 		for i, page := range pages {
 			if page.Offset < 0 || page.Offset > len(text) {
 				t.Fatalf("page %d begins at %d in %d bytes of prose",
 					i, page.Offset, len(text))
 			}
-			if page.Offset < at {
+			if page.Offset < pos {
 				t.Fatalf("page %d begins at %d, before page %d at %d",
-					i, page.Offset, i-1, at)
+					i, page.Offset, i-1, pos)
 			}
-			at = page.Offset
+			pos = page.Offset
 		}
 	})
 }
@@ -124,15 +124,15 @@ func FuzzWriteArtifact(f *testing.F) {
 // subsequence reports whether every byte of the prose stood in the file, in the
 // order the file has them.
 func subsequence(prose, raw string) bool {
-	at := 0
+	pos := 0
 	for i := range len(prose) {
-		for at < len(raw) && raw[at] != prose[i] {
-			at++
+		for pos < len(raw) && raw[pos] != prose[i] {
+			pos++
 		}
-		if at == len(raw) {
+		if pos == len(raw) {
 			return false
 		}
-		at++
+		pos++
 	}
 	return true
 }

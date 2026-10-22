@@ -46,7 +46,6 @@ type Proofread struct {
 // NewProofread is what a transcript is put right through: the vault
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about the lines.
-//
 func NewProofread(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (Proofread, error) {
@@ -63,15 +62,15 @@ func NewProofread(
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
 ) (right Proofread, held bool, err error) {
-	by, err := run.OpenProofreader(c.By)
+	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
 		return Proofread{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
-	if by == nil {
+	if delta == nil {
 		return Proofread{}, false, nil
 	}
 
-	right, err = NewProofread(readers, derived, by)
+	right, err = NewProofread(readers, derived, delta)
 	if err != nil {
 		return Proofread{}, false, err
 	}
@@ -230,9 +229,9 @@ func newTranscriptJob(
 ) *transcriptProofreadJob {
 	original := slices.Clone(cues)
 	var lines []domain.ProofreadLine
-	for at, cue := range original {
+	for item, cue := range original {
 		if cue.Text != "" {
-			lines = append(lines, domain.ProofreadLine{Number: at, Text: cue.Text})
+			lines = append(lines, domain.ProofreadLine{Number: item, Text: cue.Text})
 		}
 	}
 	return &transcriptProofreadJob{
@@ -446,9 +445,9 @@ func (u Proofread) writeCheckpoint(
 // getFirstUnasked is the first line no run has asked about. A line ending at
 // the moment a run reached is one that run asked about.
 func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
-	for at, cue := range cues {
+	for item, cue := range cues {
 		if cue.To > ms {
-			return at
+			return item
 		}
 	}
 	return len(cues)
@@ -458,8 +457,8 @@ func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
 // about a line already put together with another. Those words no longer stand
 // on their own.
 func isJoined(merged map[int]bool, first, last int) bool {
-	for at := first; at <= last; at++ {
-		if merged[at] {
+	for pos := first; pos <= last; pos++ {
+		if merged[pos] {
 			return true
 		}
 	}
@@ -476,9 +475,9 @@ func getProgress(original []domain.TranscriptCue, end int) putting {
 }
 
 // countUnchanged reports how many of the asked lines remain unmodified.
-func countUnchanged(asked, fixed map[int]bool) int {
+func countUnchanged(requested, fixed map[int]bool) int {
 	out := 0
-	for line := range asked {
+	for line := range requested {
 		if !fixed[line] {
 			out++
 		}
@@ -488,9 +487,9 @@ func countUnchanged(asked, fixed map[int]bool) int {
 
 // linesBefore is how many of the cues before one carry a line. A cue saying
 // nothing is no line.
-func linesBefore(cues []domain.TranscriptCue, at int) int {
+func linesBefore(cues []domain.TranscriptCue, pos int) int {
 	out := 0
-	for _, cue := range cues[:min(at, len(cues))] {
+	for _, cue := range cues[:min(pos, len(cues))] {
 		if cue.Text != "" {
 			out++
 		}

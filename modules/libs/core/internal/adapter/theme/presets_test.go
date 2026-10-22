@@ -265,16 +265,16 @@ func stripComments(css string) string {
 func splitOn(text string, on byte) []string {
 	var parts []string
 	depth, start := 0, 0
-	for at := range len(text) {
-		switch text[at] {
+	for item := range len(text) {
+		switch text[item] {
 		case '(':
 			depth++
 		case ')':
 			depth--
 		case on:
 			if depth == 0 {
-				parts = append(parts, text[start:at])
-				start = at + 1
+				parts = append(parts, text[start:item])
+				start = item + 1
 			}
 		}
 	}
@@ -291,16 +291,16 @@ func splitWords(text string) []string {
 			found = append(found, word)
 		}
 	}
-	for at := range len(text) {
-		switch text[at] {
+	for item := range len(text) {
+		switch text[item] {
 		case '(':
 			depth++
 		case ')':
 			depth--
 		case ' ', '\t', '\n', '\r':
 			if depth == 0 {
-				keep(at)
-				start = at + 1
+				keep(item)
+				start = item + 1
 			}
 		}
 	}

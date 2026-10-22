@@ -45,11 +45,11 @@ func getPortFields(file *ast.File) []string {
 			if star, is := callType.(*ast.StarExpr); is {
 				callType = star.X
 			}
-			at, is := callType.(*ast.SelectorExpr)
+			pos, is := callType.(*ast.SelectorExpr)
 			if !is {
 				continue
 			}
-			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
 				for _, name := range one.Names {
 					found = append(found, name.Name)
 				}

@@ -109,16 +109,16 @@ func (u Write) Execute(
 		// A note rewritten whole is drawn as the stretch that changed, so what
 		// a person watching sees is the change and not the note.
 		was := markdown.Normalise(doc.Body())
-		at, insert := markdown.Diff(was, markdown.Normalise(body))
+		pos, insert := markdown.Diff(was, markdown.Normalise(body))
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
-		if at.From != at.To || insert != "" {
+		if pos.From != pos.To || insert != "" {
 			ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
-				From: markdown.CountUTF16(was, at.From),
-				To:   markdown.CountUTF16(was, at.To),
+				From: markdown.CountUTF16(was, pos.From),
+				To:   markdown.CountUTF16(was, pos.To),
 				Text: insert,
 			})
 		}

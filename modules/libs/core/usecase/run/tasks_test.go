@@ -141,11 +141,11 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 		far := map[string]int64{}
 		var last []Task
 		for list := range watching {
-			for _, at := range list {
-				if at.Count < far[at.ID] {
-					t.Errorf("%s had got to %d and is now said to be at %d", at.ID, far[at.ID], at.Count)
+			for _, item := range list {
+				if item.Count < far[item.ID] {
+					t.Errorf("%s had got to %d and is now said to be at %d", item.ID, far[item.ID], item.Count)
 				}
-				far[at.ID] = at.Count
+				far[item.ID] = item.Count
 			}
 			last = list
 		}

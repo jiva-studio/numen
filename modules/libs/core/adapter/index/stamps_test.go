@@ -11,13 +11,13 @@ import (
 // The column is an INTEGER of nanoseconds since the epoch, and it holds that
 // number and no other.
 func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
-	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
+	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789
 
 	db := openDB(t)
 	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
 		Fingerprint: domain.Fingerprint{
-			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: at,
+			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 		},
 		Title: "Compost",
 		Body:  "Leaves and peelings.",
@@ -38,8 +38,8 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if back := found["notes/Compost.md"]; !back.ModTime.Equal(at) {
-		t.Errorf("the index read the file back at %v, and it changed at %v", back.ModTime, at)
+	if back := found["notes/Compost.md"]; !back.ModTime.Equal(pos) {
+		t.Errorf("the index read the file back at %v, and it changed at %v", back.ModTime, pos)
 	}
 }
 
@@ -47,11 +47,11 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 // carries neither. A file read back off the index is still the file that was
 // walked, or every scan indexes the whole vault again.
 func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
-	at := time.Now()
+	pos := time.Now()
 	db := openDB(t)
 
 	ref := domain.Fingerprint{
-		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: at,
+		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 	}
 	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
 		Fingerprint: ref, Title: "Leaves", Body: "Turned and rotted down.",

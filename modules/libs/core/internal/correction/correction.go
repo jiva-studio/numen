@@ -32,17 +32,17 @@ func Pack(lines []domain.CorrectionLine) []byte {
 // through a record give back the whole records before them.
 func Unpack(raw []byte) []domain.CorrectionLine {
 	var lines []domain.CorrectionLine
-	for at := 0; at+head <= len(raw); {
-		n := uint64(binary.LittleEndian.Uint32(raw[at+4:]))
-		if uint64(at)+head+n > uint64(len(raw)) {
+	for pos := 0; pos+head <= len(raw); {
+		n := uint64(binary.LittleEndian.Uint32(raw[pos+4:]))
+		if uint64(pos)+head+n > uint64(len(raw)) {
 			break
 		}
-		text := raw[at+head : at+head+int(n)]
+		text := raw[pos+head : pos+head+int(n)]
 		lines = append(lines, domain.CorrectionLine{
-			Number: int(int32(binary.LittleEndian.Uint32(raw[at:]))),
+			Number: int(int32(binary.LittleEndian.Uint32(raw[pos:]))),
 			Text:   string(text),
 		})
-		at += head + int(n)
+		pos += head + int(n)
 	}
 	return lines
 }

@@ -22,14 +22,14 @@ func (f *changeSubscribers) subscribe() (<-chan struct{}, func()) {
 		f.subscribers = make(map[int]chan struct{})
 	}
 	line := make(chan struct{}, 1)
-	at := f.next
+	pos := f.next
 	f.next++
-	f.subscribers[at] = line
+	f.subscribers[pos] = line
 	return line, func() {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		if target, is := f.subscribers[at]; is {
-			delete(f.subscribers, at)
+		if target, is := f.subscribers[pos]; is {
+			delete(f.subscribers, pos)
 			close(target)
 		}
 	}

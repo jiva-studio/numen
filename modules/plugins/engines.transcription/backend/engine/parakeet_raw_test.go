@@ -20,12 +20,12 @@ func openCachedTranscriber(t testing.TB) *Transcriber {
 	if dir := os.Getenv("NUMEN_MODELS"); dir != "" {
 		cfg.Dir = dir
 	}
-	by, err := Open(t.Context(), cfg)
+	delta, err := Open(t.Context(), cfg)
 	if err != nil {
 		t.Skipf("parakeet models not available: %v", err)
 	}
-	t.Cleanup(func() { by.Close() })
-	return by
+	t.Cleanup(func() { delta.Close() })
+	return delta
 }
 
 // makeFrames is a run of encoder frames that is the same on every call and
@@ -47,16 +47,16 @@ func makeFrames(t testing.TB, width int) map[string]*ort.Value {
 }
 
 func TestDecodingOnTheRawRuntimeReturnsTheSameTokensAsDecodingThroughTheLibrary(t *testing.T) {
-	by := openCachedTranscriber(t)
+	delta := openCachedTranscriber(t)
 
 	for _, width := range []int{1, 2, 40, 120} {
 		frames := makeFrames(t, width)
 
-		want, err := by.decodeWith(t.Context(), frames, false)
+		want, err := delta.decodeWith(t.Context(), frames, false)
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err := by.decodeWith(t.Context(), frames, true)
+		got, err := delta.decodeWith(t.Context(), frames, true)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -70,14 +70,14 @@ func TestDecodingOnTheRawRuntimeReturnsTheSameTokensAsDecodingThroughTheLibrary(
 }
 
 func TestDecodingOnTheRawRuntimeAllocatesLessThanDecodingThroughTheLibrary(t *testing.T) {
-	by := openCachedTranscriber(t)
+	delta := openCachedTranscriber(t)
 	const short, long = 30, 130
 	shortFrames, longFrames := makeFrames(t, short), makeFrames(t, long)
 
 	perFrame := func(useRaw bool) float64 {
 		measure := func(frames map[string]*ort.Value) float64 {
 			return testing.AllocsPerRun(3, func() {
-				if _, err := by.decodeWith(t.Context(), frames, useRaw); err != nil {
+				if _, err := delta.decodeWith(t.Context(), frames, useRaw); err != nil {
 					t.Fatal(err)
 				}
 			})
@@ -95,7 +95,7 @@ func TestDecodingOnTheRawRuntimeAllocatesLessThanDecodingThroughTheLibrary(t *te
 }
 
 func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
-	by := openCachedTranscriber(t)
+	delta := openCachedTranscriber(t)
 	frames := makeFrames(t, 20)
 
 	runnerMu.Lock()
@@ -112,7 +112,7 @@ func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
 		runnerMu.Unlock()
 	})
 
-	if _, err := by.decodeWith(t.Context(), frames, true); err != nil {
+	if _, err := delta.decodeWith(t.Context(), frames, true); err != nil {
 		t.Fatal(err)
 	}
 	// The predictor answers three values and the joiner one.
@@ -131,7 +131,7 @@ type position struct {
 	decoderRun, joiner *rawRun
 }
 
-func openPosition(t *testing.T, by *Transcriber) *position {
+func openPosition(t *testing.T, delta *Transcriber) *position {
 	t.Helper()
 	p := &position{
 		target: []int32{0}, count: []int32{1},
@@ -159,8 +159,8 @@ func openPosition(t *testing.T, by *Transcriber) *position {
 	if !ok {
 		t.Skip("the raw runtime is not registered")
 	}
-	p.decoderRun, _ = newRawRun(calls, by.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
-	p.joiner, _ = newRawRun(calls, by.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
+	p.decoderRun, _ = newRawRun(calls, delta.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
+	p.joiner, _ = newRawRun(calls, delta.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
 	if p.decoderRun == nil || p.joiner == nil {
 		t.Skip("the sessions hold no handle to run by")
 	}
@@ -170,8 +170,8 @@ func openPosition(t *testing.T, by *Transcriber) *position {
 }
 
 func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *testing.T) {
-	by := openCachedTranscriber(t)
-	library, raw := openPosition(t, by), openPosition(t, by)
+	delta := openCachedTranscriber(t)
+	library, raw := openPosition(t, delta), openPosition(t, delta)
 	frames := makeFrames(t, 1)
 	data, err := ort.GetTensorData[float32](frames[outputFrames])
 	if err != nil {
@@ -179,16 +179,16 @@ func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *te
 	}
 
 	var libraryScores, rawScores []float32
-	for step, token := range []int{by.blank, 3, 17, 250, 9, 1024, 4, 4, 77, 600, 12, 5} {
+	for step, token := range []int{delta.blank, 3, 17, 250, 9, 1024, 4, 4, 77, 600, 12, 5} {
 		library.target[0], raw.target[0] = int32(token), int32(token)
-		if _, err := by.predict(library.decoderInputs, library.prediction, library.state, library.cell); err != nil {
+		if _, err := delta.predict(library.decoderInputs, library.prediction, library.state, library.cell); err != nil {
 			t.Fatal(err)
 		}
 		if step == 0 {
-			if _, err := by.predict(raw.decoderInputs, raw.prediction, raw.state, raw.cell); err != nil {
+			if _, err := delta.predict(raw.decoderInputs, raw.prediction, raw.state, raw.cell); err != nil {
 				t.Fatal(err)
 			}
-		} else if _, err := by.predictRaw(raw.decoderRun, raw.prediction, raw.state, raw.cell); err != nil {
+		} else if _, err := delta.predictRaw(raw.decoderRun, raw.prediction, raw.state, raw.cell); err != nil {
 			t.Fatal(err)
 		}
 		for name, pair := range map[string][2][]float32{
@@ -199,13 +199,13 @@ func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *te
 			}
 		}
 
-		if libraryScores, err = by.computeJoint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
+		if libraryScores, err = delta.computeJoint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
 			t.Fatal(err)
 		}
 		if step == 0 {
-			rawScores, err = by.computeJoint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
+			rawScores, err = delta.computeJoint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
 		} else {
-			rawScores, err = by.computeJointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
+			rawScores, err = delta.computeJointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
 		}
 		if err != nil {
 			t.Fatal(err)

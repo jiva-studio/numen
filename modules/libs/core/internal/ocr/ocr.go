@@ -142,10 +142,10 @@ func Assemble(lines []Line) (string, []domain.OCRBox) {
 		} else if len(out) > 0 {
 			out = append(out, ' ')
 		}
-		at := len(out)
+		pos := len(out)
 		for _, box := range boxes {
-			box.Span.From += at
-			box.Span.To += at
+			box.Span.From += pos
+			box.Span.To += pos
 			keptBoxes = append(keptBoxes, box)
 		}
 		out = append(out, text...)
@@ -246,8 +246,8 @@ func writeLine(line []Line) (string, []domain.OCRBox) {
 		if out.Len() > 0 {
 			out.WriteString(" ")
 		}
-		at := out.Len()
-		keptBoxes = append(keptBoxes, domain.OCRBox{Rect: one.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		pos := out.Len()
+		keptBoxes = append(keptBoxes, domain.OCRBox{Rect: one.Box, Span: domain.ByteSpan{From: pos, To: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), keptBoxes

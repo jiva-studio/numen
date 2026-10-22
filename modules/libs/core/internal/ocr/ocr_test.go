@@ -268,9 +268,9 @@ func TestEveryBoxReturnsWhereItsWordsAreInTheProse(t *testing.T) {
 		t.Errorf("the first box covers %v..%v, %v..%v", boxes[0].MinX, boxes[0].MaxX, boxes[0].MinY, boxes[0].MaxY)
 	}
 	for i, box := range boxes {
-		for _, at := range []float32{box.MinX, box.MinY, box.MaxX, box.MaxY} {
-			if at < 0 || at > 1 {
-				t.Errorf("box %d reaches %v, and the page is one wide and one high", i, at)
+		for _, item := range []float32{box.MinX, box.MinY, box.MaxX, box.MaxY} {
+			if item < 0 || item > 1 {
+				t.Errorf("box %d reaches %v, and the page is one wide and one high", i, item)
 			}
 		}
 	}
@@ -369,12 +369,12 @@ func TestAHeadingReturnsWhereAPartOfTheDocumentBegins(t *testing.T) {
 	if len(parts) != len(want) {
 		t.Fatalf("wrote %d parts, want %d", len(parts), len(want))
 	}
-	at := -1
+	pos := -1
 	for i, part := range parts {
-		if part.Start <= at {
-			t.Errorf("part %d begins at %d, and the one before it at %d", i, part.Start, at)
+		if part.Start <= pos {
+			t.Errorf("part %d begins at %d, and the one before it at %d", i, part.Start, pos)
 		}
-		at = part.Start
+		pos = part.Start
 		if part.Start < 0 || part.Start+part.Length > len(text) {
 			t.Fatalf("part %d covers %d..%d, and the prose is %d long",
 				i, part.Start, part.Start+part.Length, len(text))
@@ -467,8 +467,8 @@ func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
 		} else if joined != "" {
 			out.WriteString(" ")
 		}
-		at := out.Len()
-		retained = append(retained, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: at, To: at + len(text)}})
+		pos := out.Len()
+		retained = append(retained, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: pos, To: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), retained

@@ -16,8 +16,8 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 		Title:       title,
 		Body:        strings.Join(headings, "\n"),
 	}
-	for at, heading := range headings {
-		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: at * 2})
+	for item, heading := range headings {
+		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: item * 2})
 	}
 	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
@@ -45,8 +45,8 @@ func describeMatch(m domain.NameMatch) string {
 	runes := []rune(text)
 	// The runs come in order and do not overlap, so they are put in from the
 	// end and no offset moves before it is used.
-	for at := len(m.Spans) - 1; at >= 0; at-- {
-		span := m.Spans[at]
+	for pos := len(m.Spans) - 1; pos >= 0; pos-- {
+		span := m.Spans[pos]
 		runes = append(runes[:span.From],
 			append([]rune("["+string(runes[span.From:span.To])+"]"), runes[span.To:]...)...)
 	}

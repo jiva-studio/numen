@@ -26,9 +26,9 @@ type proofreadable struct {
 }
 
 // put is a proofreading of that recognition, by the proofreader given.
-func (p proofreadable) put(t *testing.T, by port.Proofreader) Proofread {
+func (p proofreadable) put(t *testing.T, delta port.Proofreader) Proofread {
 	t.Helper()
-	made, err := NewProofread(p.readers, p.derived, by)
+	made, err := NewProofread(p.readers, p.derived, delta)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,8 +40,8 @@ func (p proofreadable) put(t *testing.T, by port.Proofreader) Proofread {
 func newProofreadRecognition(t *testing.T, says map[int]domain.ProofreadCorrection) (Proofread, domain.Vault, *fakeStorage, *corrector) {
 	t.Helper()
 	target := newProofreadable(t)
-	by := &corrector{says: says}
-	return target.put(t, by), target.vault, target.shelved, by
+	delta := &corrector{says: says}
+	return target.put(t, delta), target.vault, target.shelved, delta
 }
 
 // newProofreadable is the fixture's recognition, written down and ready to be put
@@ -134,10 +134,10 @@ func TestACorrectedRecognitionIsTheTextTheSourceIsSplitFrom(t *testing.T) {
 }
 
 func TestAPageWhoseReplyIsNoAnswerIsLeftAsItWasRead(t *testing.T) {
-	placed, v, shelved, by := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+	placed, v, shelved, delta := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		1: corrects(1, "the WORDS 2"),
 	})
-	by.refuses = map[int]bool{0: true}
+	delta.refuses = map[int]bool{0: true}
 
 	res, err := placed.Execute(t.Context(), v, documentPath)
 	if err != nil {
@@ -231,7 +231,7 @@ func TestCorrectionsAnotherProofreaderMadeAreNotTakenUp(t *testing.T) {
 }
 
 func TestOneRunToARecognition(t *testing.T) {
-	placed, v, shelved, by := newProofreadRecognition(t, nil)
+	placed, v, shelved, delta := newProofreadRecognition(t, nil)
 	shelved.hold(textNames(t, shelved).corrections)
 
 	res, err := placed.Execute(t.Context(), v, documentPath)
@@ -241,8 +241,8 @@ func TestOneRunToARecognition(t *testing.T) {
 	if !res.IsBusy {
 		t.Error("two runs to one recognition")
 	}
-	if len(by.asked) != 0 {
-		t.Errorf("asked about %v", by.asked)
+	if len(delta.asked) != 0 {
+		t.Errorf("asked about %v", delta.asked)
 	}
 }
 
@@ -279,7 +279,7 @@ func TestASourceIsSplitAgainAsItsPagesAreInsertRight(t *testing.T) {
 }
 
 func TestABatchThatWasNotSplitIsAskedAboutAgain(t *testing.T) {
-	placed, v, shelved, by := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
+	placed, v, shelved, delta := newProofreadRecognition(t, map[int]domain.ProofreadCorrection{
 		0: corrects(0, "the WORDS 1"),
 		2: corrects(2, "the WORDS 3"),
 	})
@@ -299,12 +299,12 @@ func TestABatchThatWasNotSplitIsAskedAboutAgain(t *testing.T) {
 		t.Error("a batch nothing cut was counted")
 	}
 
-	by.asked = nil
+	delta.asked = nil
 	if _, err := placed.Execute(t.Context(), v, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(by.asked) != 1 || len(by.asked[0]) != 4 || by.asked[0][0] != 0 {
-		t.Errorf("the run after it asked about %v", by.asked)
+	if len(delta.asked) != 1 || len(delta.asked[0]) != 4 || delta.asked[0][0] != 0 {
+		t.Errorf("the run after it asked about %v", delta.asked)
 	}
 }
 
@@ -392,8 +392,8 @@ func TestAProofreadingGivenAKnownHashDoesNotReadTheSourceFile(t *testing.T) {
 // A proofreader that cannot answer ends the run, and nothing is written for a
 // page it did not answer about.
 func TestAProofreaderThatIsUnavailableEndsTheRunAndWritesNothing(t *testing.T) {
-	placed, v, shelved, by := newProofreadRecognition(t, nil)
-	by.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
+	placed, v, shelved, delta := newProofreadRecognition(t, nil)
+	delta.fail = fmt.Errorf("%w: no route for the purpose", port.ErrUnavailable)
 
 	_, err := placed.Execute(t.Context(), v, documentPath)
 

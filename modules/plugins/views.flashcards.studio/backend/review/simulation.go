@@ -145,9 +145,9 @@ func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Sc
 //
 // Nothing paces it: a card face this does not get there is one no pace gets
 // there, because no pace can give it more days than there are.
-func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool {
+func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bool {
 	for range mostAnswers {
-		if !c.IsNew() && !c.Due.Before(by) {
+		if !c.IsNew() && !c.Due.Before(delta) {
 			break
 		}
 		if !c.IsNew() && !c.Due.Before(s.Day.GetEnd(open)) {
@@ -162,7 +162,7 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool 
 		}
 		open = ends
 	}
-	return p.IsLearned(c, by)
+	return p.IsLearned(c, delta)
 }
 
 // short is how many of these card faces cannot be learned by the day the preset
@@ -171,14 +171,14 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	by := s.Day.GetEndOfDate(p.By)
+	delta := s.Day.GetEndOfDate(p.By)
 	out := 0
 	for _, c := range cards {
-		if !s.canReachGoal(p, c, open, by) {
+		if !s.canReachGoal(p, c, open, delta) {
 			out++
 		}
 	}
-	if unseen > 0 && !s.canReachGoal(p, Schedule{}, open, by) {
+	if unseen > 0 && !s.canReachGoal(p, Schedule{}, open, delta) {
 		out += unseen
 	}
 	return out
@@ -190,33 +190,33 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 // back, which is the run's own assumption, so a projection follows one card
 // down the middle of what it may do. The phase is the one a card that came back
 // is left in.
-func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Schedule {
+func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
 	if c.IsNew() {
-		good := s.By.Next(c, at, Good)
-		good.Due = p.AssignDueDay(on, at, good.Due)
+		good := s.By.Next(c, pos, Good)
+		good.Due = p.AssignDueDay(on, pos, good.Due)
 		return good
 	}
-	back := s.getRecallProbability(c, at)
-	good, again := s.By.Endings(c, at)
+	back := s.getRecallProbability(c, pos)
+	good, again := s.By.Endings(c, pos)
 
 	out := good
 	out.Stability = back*good.Stability + (1-back)*again.Stability
 	out.Difficulty = back*good.Difficulty + (1-back)*again.Difficulty
-	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
-	out.Due = p.AssignDueDay(on, at, at.Add(time.Duration(away*float64(time.Second))))
+	away := back*good.Due.Sub(pos).Seconds() + (1-back)*again.Due.Sub(pos).Seconds()
+	out.Due = p.AssignDueDay(on, pos, pos.Add(time.Duration(away*float64(time.Second))))
 	return out
 }
 
 // getRecallProbability is how likely a card face standing here is to come back at this
 // instant, under the assumption this run was given.
-func (s Simulation) getRecallProbability(c Schedule, at time.Time) float64 {
+func (s Simulation) getRecallProbability(c Schedule, pos time.Time) float64 {
 	if s.Recalls == nil {
-		return GetModelledRecall(c, at)
+		return GetModelledRecall(c, pos)
 	}
-	return s.Recalls(c, at)
+	return s.Recalls(c, pos)
 }
 
 // Run projects the card faces forward from now.
@@ -362,13 +362,13 @@ func (s Simulation) Run(
 			// order the sessions of that day put them in.
 			repeat := !owed && !hasNew
 			if repeat || admits.IsNextCardDebt(observed, begun, owed, hasNew) {
-				at := 0
+				pos := 0
 				if repeat {
-					at = again[next]
+					pos = again[next]
 				} else {
-					at = due[take]
+					pos = due[take]
 				}
-				counted := p.Counts.IsCharged(showings[at] > 0)
+				counted := p.Counts.IsCharged(showings[pos] > 0)
 				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
 					closed = closed.add(admits.Limits.Reviews)
 					if repeat {
@@ -398,18 +398,18 @@ func (s Simulation) Run(
 				if counted {
 					charged++
 				}
-				if showings[at] == 0 {
+				if showings[pos] == 0 {
 					faced++
 				}
-				showings[at]++
-				cards[at] = s.getScheduleAfterShowing(cards[at], open, ends, p, on)
-				reckoned.countAnswer(at, cards[at], ends)
-				if s.Day.IsOwed(cards[at], open) && showings[at] < MostShowings {
-					again = append(again, at)
+				showings[pos]++
+				cards[pos] = s.getScheduleAfterShowing(cards[pos], open, ends, p, on)
+				reckoned.countAnswer(pos, cards[pos], ends)
+				if s.Day.IsOwed(cards[pos], open) && showings[pos] < MostShowings {
+					again = append(again, pos)
 					continue
 				}
-				if day := max(today+1, on.number(cards[at].Due)-base); day < days {
-					falls[day] = append(falls[day], at)
+				if day := max(today+1, on.number(cards[pos].Due)-base); day < days {
+					falls[day] = append(falls[day], pos)
 				}
 				continue
 			}
@@ -432,13 +432,13 @@ func (s Simulation) Run(
 			cards = append(cards, one)
 			showings = append(showings, 1)
 			reckoned.countBegun(one, ends)
-			at := len(cards) - 1
-			if s.Day.IsOwed(one, open) && showings[at] < MostShowings {
-				again = append(again, at)
+			offset := len(cards) - 1
+			if s.Day.IsOwed(one, open) && showings[offset] < MostShowings {
+				again = append(again, offset)
 				continue
 			}
 			if day := max(today+1, on.number(one.Due)-base); day < days {
-				falls[day] = append(falls[day], at)
+				falls[day] = append(falls[day], offset)
 			}
 		}
 

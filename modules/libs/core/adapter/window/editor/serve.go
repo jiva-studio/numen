@@ -209,12 +209,12 @@ func (o *Installation) DraftingLocation(ctx context.Context, path, text string) 
 	if err != nil || contents.Outcome != note.Ok {
 		return 0, 0, false
 	}
-	at, _ := markdown.FindSpans(contents.Body, text)
-	if len(at) != 1 {
+	pos, _ := markdown.FindSpans(contents.Body, text)
+	if len(pos) != 1 {
 		return 0, 0, false
 	}
-	return markdown.CountUTF16(contents.Body, at[0].From),
-		markdown.CountUTF16(contents.Body, at[0].To), true
+	return markdown.CountUTF16(contents.Body, pos[0].From),
+		markdown.CountUTF16(contents.Body, pos[0].To), true
 }
 
 // Refresh brings named notes up to date. Whatever changes a note calls it, so
@@ -280,9 +280,9 @@ func (o *Installation) SayTheme(message string) {
 
 // Report records configuration messages as tasks.
 func (o *Installation) Report(messages []string) {
-	for at, one := range messages {
+	for item, one := range messages {
 		o.State.reportTask(run.Task{
-			ID:    fmt.Sprintf("%s %d", readingTheSettings, at),
+			ID:    fmt.Sprintf("%s %d", readingTheSettings, item),
 			Title: "Reading the settings",
 			Error: one,
 		})
@@ -394,8 +394,8 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 
 	// A machine holding neither of the tools an address is reached with binds
 	// no downloader, and the window is answered that this build cannot do it.
-	if by := made.OpenDownloader(ctx); by != nil {
-		fetching := made.OpenImportURL(ctx, by)
+	if delta := made.OpenDownloader(ctx); delta != nil {
+		fetching := made.OpenImportURL(ctx, delta)
 		services.readImports(&fetching)
 	}
 }

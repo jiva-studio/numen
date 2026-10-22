@@ -51,18 +51,18 @@ func readMetadata(path, key string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	for at := 0; at < len(raw); {
-		field, wire, size, ok := parseTag(raw[at:])
+	for pos := 0; pos < len(raw); {
+		field, wire, size, ok := parseTag(raw[pos:])
 		if !ok {
 			return "", fmt.Errorf("%s is not a model this can read", path)
 		}
-		at += size
+		pos += size
 
-		body, size, ok := readPayload(raw[at:], wire)
+		body, size, ok := readPayload(raw[pos:], wire)
 		if !ok {
 			return "", fmt.Errorf("%s is not a model this can read", path)
 		}
-		at += size
+		pos += size
 
 		if field != metadataField {
 			continue
@@ -75,17 +75,17 @@ func readMetadata(path, key string) (string, error) {
 }
 
 func parseEntry(raw []byte) (key, value string, ok bool) {
-	for at := 0; at < len(raw); {
-		field, wire, size, good := parseTag(raw[at:])
+	for pos := 0; pos < len(raw); {
+		field, wire, size, good := parseTag(raw[pos:])
 		if !good {
 			return "", "", false
 		}
-		at += size
-		body, size, good := readPayload(raw[at:], wire)
+		pos += size
+		body, size, good := readPayload(raw[pos:], wire)
 		if !good {
 			return "", "", false
 		}
-		at += size
+		pos += size
 
 		switch field {
 		case keyField:

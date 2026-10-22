@@ -429,11 +429,11 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 // same rules replace writes bytes it already holds.
 func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
 	dir := filepath.Dir(target)
-	tmp, at, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
+	tmp, pos, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return err
 	}
-	defer root.Remove(at)
+	defer root.Remove(pos)
 
 	if _, err := io.Copy(tmp, content); err != nil {
 		tmp.Close()
@@ -450,7 +450,7 @@ func streamReplace(ctx context.Context, root *os.Root, target string, content io
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := rename(ctx, root, at, target); err != nil {
+	if err := rename(ctx, root, pos, target); err != nil {
 		return err
 	}
 	return syncDirectory(root, dir)

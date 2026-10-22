@@ -264,7 +264,7 @@ func makeEndpoint(
 		},
 		GetVault:       opened.GetCurrentVault,
 		SetAgent:       opened.State.SetAgent,
-		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
+		SetUnreachable: func(response string) { opened.State.Unreachable.Store(response) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 }

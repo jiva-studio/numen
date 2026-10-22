@@ -15,7 +15,7 @@ import (
 // The window asks for every setting and writes one of them back.
 
 // them. What the file leaves out stands there at its default.
-func getSetting(t *testing.T, f *going, at ...string) any {
+func getSetting(t *testing.T, f *going, pos ...string) any {
 	t.Helper()
 	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
@@ -25,10 +25,10 @@ func getSetting(t *testing.T, f *going, at ...string) any {
 	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
 		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	for _, step := range at {
+	for _, step := range pos {
 		section, is := target.(map[string]any)
 		if !is {
-			t.Fatalf("%s is not a section of the settings", strings.Join(at, "."))
+			t.Fatalf("%s is not a section of the settings", strings.Join(pos, "."))
 		}
 		target = section[step]
 	}
@@ -257,7 +257,7 @@ func TestWhatAnErrorReturnsDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 }
 
 // newString is the file a client says it last read.
-func newString(written string) *string { return &written }
+func newString(output string) *string { return &output }
 
 // The settings page and the file's own tab both write this file. A tab
 // presenting a file the settings page has since patched is answered the

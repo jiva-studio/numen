@@ -94,8 +94,8 @@ func TestTheEditLimitOfARequestIsHeld(t *testing.T) {
 // speech is a transcript of count lines, line n saying "word n".
 func speech(count int) []Line {
 	out := make([]Line, count)
-	for at := range out {
-		out[at] = Line{Number: at, Text: "word " + strconv.Itoa(at)}
+	for item := range out {
+		out[item] = Line{Number: item, Text: "word " + strconv.Itoa(item)}
 	}
 	return out
 }

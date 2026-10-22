@@ -60,12 +60,12 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	at, err := domain.ParseURL(content)
+	pos, err := domain.ParseURL(content)
 	if err != nil {
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	played := getPlayerURL(at)
+	played := getPlayerURL(pos)
 	if played == "" {
 		http.Error(w, "nothing plays what is at that address", http.StatusBadRequest)
 		return
@@ -89,7 +89,7 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string
 		Player template.URL
 		Host   template.JSStr
 	}{
-		Title:  string(at),
+		Title:  string(pos),
 		Player: template.URL(played + "&origin=" + url.QueryEscape(l.address)),
 		Host:   template.JSStr(host),
 	})
@@ -128,8 +128,8 @@ var videoSites = map[string]bool{
 
 // getPlayerURL is where a frame plays what is at an address, and nothing where this
 // window knows no player for it.
-func getPlayerURL(at domain.URL) string {
-	address, err := url.Parse(string(at))
+func getPlayerURL(pos domain.URL) string {
+	address, err := url.Parse(string(pos))
 	if err != nil || !videoSites[strings.TrimPrefix(address.Hostname(), "www.")] {
 		return ""
 	}

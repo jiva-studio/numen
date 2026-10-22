@@ -65,8 +65,8 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	// picture, and what a reader draws is that picture. One that draws none is
 	// answered with the text it carries and nothing else.
 	if doc.mediaType == mediaSVG {
-		if at, ok := b.findSVGImage(path.Dir(docPath), raw); ok {
-			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: at}}}}, nodes...)
+		if pos, ok := b.findSVGImage(path.Dir(docPath), raw); ok {
+			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: pos}}}}, nodes...)
 		}
 	}
 	shift(nodes, doc.Offset)
@@ -94,10 +94,10 @@ func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 			if a.Name.Local != "href" {
 				continue
 			}
-			switch at := resolveImageSource(base, a.Value); {
-			case at == "":
-			case isInlineImage(at), b.files[at] != nil:
-				return at, true
+			switch pos := resolveImageSource(base, a.Value); {
+			case pos == "":
+			case isInlineImage(pos), b.files[pos] != nil:
+				return pos, true
 			}
 		}
 	}
@@ -207,10 +207,10 @@ func (b *builder) finish(text string, end int) []Node {
 
 	// The line a block ends takes back the space before it, and an element
 	// standing on that space stands where the line ends instead.
-	at := end
+	pos := end
 	for i := len(found) - 1; i >= 0; i-- {
-		found[i].Offset = min(found[i].Offset, at)
-		at = found[i].Offset
+		found[i].Offset = min(found[i].Offset, pos)
+		pos = found[i].Offset
 	}
 
 	var last *Node
@@ -239,10 +239,10 @@ func collectNodes(nodes []Node, into []*Node) []*Node {
 }
 
 // shift moves a document to at its current position in the book.
-func shift(nodes []Node, by int) {
+func shift(nodes []Node, delta int) {
 	for i := range nodes {
-		nodes[i].Offset += by
-		shift(nodes[i].Children, by)
+		nodes[i].Offset += delta
+		shift(nodes[i].Children, delta)
 	}
 }
 

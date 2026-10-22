@@ -422,11 +422,11 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
 func upsertChunk(
-	ctx context.Context, tx *sqlwrite.Transaction, held *rows,
+	ctx context.Context, tx *sqlwrite.Transaction, target *rows,
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
-	if row, hasRow := held.takeUnusedRow(key); hasRow {
+	if row, hasRow := target.takeUnusedRow(key); hasRow {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)

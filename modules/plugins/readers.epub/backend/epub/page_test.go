@@ -24,12 +24,12 @@ func TestThePagesABookIsRead(t *testing.T) {
 		t.Errorf("the last byte is on page %d of %d", got, book.PageCount())
 	}
 	for page := 1; page <= book.PageCount(); page++ {
-		at := book.PageStart(page)
-		if at < 0 || at > len(book.Text) {
-			t.Fatalf("page %d begins at %d in %d bytes of text", page, at, len(book.Text))
+		pos := book.PageStart(page)
+		if pos < 0 || pos > len(book.Text) {
+			t.Fatalf("page %d begins at %d in %d bytes of text", page, pos, len(book.Text))
 		}
-		if got := book.PageOf(at); got != page {
-			t.Errorf("page %d begins at %d, which is on page %d", page, at, got)
+		if got := book.PageOf(pos); got != page {
+			t.Errorf("page %d begins at %d, which is on page %d", page, pos, got)
 		}
 	}
 	// An offset outside the text is still answered, because a caller holding a
@@ -60,9 +60,9 @@ func TestAPageIsThatManyLetters(t *testing.T) {
 	// A page opened in the middle of a letter is a page of broken text, and an
 	// offset that names no place in the book.
 	for page := 1; page <= cyrillic.PageCount(); page++ {
-		at := cyrillic.PageStart(page)
-		if r, _ := utf8.DecodeRuneInString(cyrillic.Text[at:]); r == utf8.RuneError {
-			t.Fatalf("page %d begins at %d, in the middle of a letter", page, at)
+		pos := cyrillic.PageStart(page)
+		if r, _ := utf8.DecodeRuneInString(cyrillic.Text[pos:]); r == utf8.RuneError {
+			t.Fatalf("page %d begins at %d, in the middle of a letter", page, pos)
 		}
 	}
 }
@@ -145,15 +145,15 @@ func TestAPageBeginsAtTheFirstLetterAtOrAfterItsMeasure(t *testing.T) {
 			}
 			for page := 1; page <= book.PageCount(); page++ {
 				measure := (page - 1) * book.PageBytes()
-				at := book.PageStart(page)
-				if at < measure || at-measure >= utf8.UTFMax {
-					t.Fatalf("page %d begins at %d, measure %d", page, at, measure)
+				pos := book.PageStart(page)
+				if pos < measure || pos-measure >= utf8.UTFMax {
+					t.Fatalf("page %d begins at %d, measure %d", page, pos, measure)
 				}
-				if !utf8.RuneStart(book.Text[at]) {
-					t.Fatalf("page %d begins inside a letter at %d", page, at)
+				if !utf8.RuneStart(book.Text[pos]) {
+					t.Fatalf("page %d begins inside a letter at %d", page, pos)
 				}
-				if at > 0 && utf8.RuneStart(book.Text[measure]) && at != measure {
-					t.Fatalf("page %d moved off a letter, %d to %d", page, measure, at)
+				if pos > 0 && utf8.RuneStart(book.Text[measure]) && pos != measure {
+					t.Fatalf("page %d moved off a letter, %d to %d", page, measure, pos)
 				}
 			}
 		})

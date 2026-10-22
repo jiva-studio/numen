@@ -335,7 +335,7 @@ func TestTheRegistryIsWhereTheInstallationPointedItAndOtherwiseInTheConfigFolder
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at, ok := got.(placed); !ok || at.Path() != named {
+	if pos, ok := got.(placed); !ok || pos.Path() != named {
 		t.Errorf("the registry is %#v, and it was pointed at %q", got, named)
 	}
 
@@ -347,7 +347,7 @@ func TestTheRegistryIsWhereTheInstallationPointedItAndOtherwiseInTheConfigFolder
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at, ok := got.(placed); !ok || at.Path() != filepath.Join(config, "numen", "vaults.json") {
+	if offset, ok := got.(placed); !ok || offset.Path() != filepath.Join(config, "numen", "vaults.json") {
 		t.Errorf("the registry is %#v", got)
 	}
 }

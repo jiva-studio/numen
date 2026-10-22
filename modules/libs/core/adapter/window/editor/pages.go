@@ -45,7 +45,7 @@ type served struct {
 }
 
 // mount takes a generated handler and the path it answers under as one.
-func mount(at string, to http.Handler) served { return served{at: at, to: to} }
+func mount(pos string, to http.Handler) served { return served{at: pos, to: to} }
 
 // NewHandler puts the questions in front of the pages, so that a window and a
 // browser are answered by one handler.

@@ -62,14 +62,14 @@ func (f *StencilFile) SetFields(names []string) error {
 // stencil that comes out declares what its faces place.
 func (f *StencilFile) RenameField(from, to string) error {
 	names := f.Fields()
-	at := slices.Index(names, from)
-	if at < 0 {
+	pos := slices.Index(names, from)
+	if pos < 0 {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
 	}
-	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != at {
+	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != pos {
 		return fmt.Errorf("%w: %s", ErrFieldTaken, to)
 	}
-	names[at] = to
+	names[pos] = to
 	if err := f.SetFields(names); err != nil {
 		return err
 	}
@@ -85,11 +85,11 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 	// Backwards, because a splice moves every byte after it.
 	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
 	for i := len(found) - 1; i >= 0; i-- {
-		at := found[i]
-		if body[at[2]:at[3]] != from {
+		pos := found[i]
+		if body[pos[2]:pos[3]] != from {
 			continue
 		}
-		if err := f.doc.SpliceBody(at[0], at[1], content); err != nil {
+		if err := f.doc.SpliceBody(pos[0], pos[1], content); err != nil {
 			return err
 		}
 	}
@@ -100,8 +100,8 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 // through each face it carries, so two faces of one name are two faces.
 func (f *StencilFile) AddFace(face FaceTemplate) error {
 	body := []byte(f.doc.Body())
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, formatFace(face)))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, formatFace(face)))
 }
 
 // formatFace is the markdown one face is written as: its heading, the lead

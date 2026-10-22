@@ -162,16 +162,16 @@ func (h History) GetFaced(d Day, day string) map[CardFaceID]bool {
 // not broken anything, and their streak is what they had last night. A day they
 // did answer on counts from itself.
 func Streak(d Day, days map[string]Tally, now time.Time) int {
-	at := now.In(d.zone())
-	if days[d.GetName(at)].Answered == 0 {
+	pos := now.In(d.zone())
+	if days[d.GetName(pos)].Answered == 0 {
 		// Today is not answered yet, so the count is of the days behind it.
-		at = at.AddDate(0, 0, -1)
+		pos = pos.AddDate(0, 0, -1)
 	}
 
 	out := 0
-	for days[d.GetName(at)].Answered > 0 {
+	for days[d.GetName(pos)].Answered > 0 {
 		out++
-		at = at.AddDate(0, 0, -1)
+		pos = pos.AddDate(0, 0, -1)
 	}
 	return out
 }

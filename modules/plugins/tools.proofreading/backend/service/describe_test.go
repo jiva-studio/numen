@@ -8,10 +8,10 @@ import (
 
 // makeLines is a transcript of the words, one line to each of them, numbered by
 // place. A line of no words is left in so the numbering shows the gap.
-func makeLines(said ...string) []Line {
-	out := make([]Line, 0, len(said))
-	for at, text := range said {
-		out = append(out, Line{Number: at, Text: text})
+func makeLines(response ...string) []Line {
+	out := make([]Line, 0, len(response))
+	for item, text := range response {
+		out = append(out, Line{Number: item, Text: text})
 	}
 	return out
 }
@@ -84,8 +84,8 @@ func TestTheWordAPersonCallsHimselfIsNotAName(t *testing.T) {
 // cut short.
 func TestTheOpeningIsSplitShort(t *testing.T) {
 	var response []string
-	for at := range 200 {
-		response = append(response, "word"+strconv.Itoa(at))
+	for item := range 200 {
+		response = append(response, "word"+strconv.Itoa(item))
 	}
 	about := describeSpeech(makeLines(strings.Join(response, " ")))
 

@@ -59,7 +59,7 @@ func (quiet) Close() error { return nil }
 
 // newTranscriptionWorker creates a Worker hearing through one transcriber, in a vault holding
 // the recordings named.
-func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Worker, domain.Vault) {
+func newTranscriptionWorker(t *testing.T, delta *deaf, recordings ...string) (*Worker, domain.Vault) {
 	t.Helper()
 	shelved := newLibrary()
 	for _, path := range recordings {
@@ -77,7 +77,7 @@ func newTranscriptionWorker(t *testing.T, by *deaf, recordings ...string) (*Work
 		Runtime: Runtime{
 			Ready: func() bool { return true },
 			Open: func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
-				return by, by.Close, nil
+				return delta, delta.Close, nil
 			},
 		},
 	})
@@ -111,14 +111,14 @@ func (h unheard) GetRecognisedSources(
 // queue that came back to it would spend the machine on the same answer for as
 // long as the application ran.
 func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
-	by := &deaf{why: errors.New("not a container anything here decodes")}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{why: errors.New("not a container anything here decodes")}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
 		listening.round(t.Context(), recognized, v)
 	}
-	if got := by.times(); got != 1 {
+	if got := delta.times(); got != 1 {
 		t.Errorf("the recording was handed over %d times", got)
 	}
 }
@@ -127,8 +127,8 @@ func TestARecordingThatWillNotOpenIsHandedOverOnce(t *testing.T) {
 // row that calls it by the name of the work that follows leaves a person
 // watching a recording nothing has listened to yet.
 func TestTheModelsAreGotBelowTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	var while []run.Task
@@ -157,14 +157,14 @@ func TestTheModelsAreGotBelowTheirOwnNameBeforeARecordingIsHeard(t *testing.T) {
 
 // Silence is an answer too.
 func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 	recognized := unheard{recordings: []string{"talks/one.mp3"}}
 
 	for range 3 {
 		listening.round(t.Context(), recognized, v)
 	}
-	if got := by.times(); got != 1 {
+	if got := delta.times(); got != 1 {
 		t.Errorf("the recording was handed over %d times", got)
 	}
 }
@@ -172,8 +172,8 @@ func TestARecordingCarryingNoSpeechIsHandedOverOnce(t *testing.T) {
 // The queue is a question asked of the index: what it holds, less what stands
 // on a text a producer made.
 func TestARecordingActiveOnATextIsNotOwed(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by)
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta)
 	owed := listening.getUntranscribed(t.Context(), recognised{"talks/one.mp3"}, v)
 	if len(owed) != 0 {
 		t.Errorf("the queue owes %v", owed)
@@ -256,8 +256,8 @@ func (h recognised) GetSourceText(context.Context, domain.VaultID, string) (port
 // being heard waits its turn and is heard when the turn is free, and one named
 // twice waits once.
 func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3", "talks/two.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3", "talks/two.mp3")
 
 	hearing, going := make(chan struct{}, 1), make(chan struct{})
 	first := true
@@ -269,7 +269,7 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 			hearing <- struct{}{}
 			<-going
 		}
-		return by, by.Close, nil
+		return delta, delta.Close, nil
 	}
 
 	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
@@ -291,7 +291,7 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 	close(going)
 	listening.Wait()
 
-	if got := by.times(); got != 2 {
+	if got := delta.times(); got != 2 {
 		t.Errorf("%d recordings were heard", got)
 	}
 	if listening.CountWaiting() != 0 {
@@ -302,8 +302,8 @@ func TestARecordingNamedWhileOneIsBeingHeardWaitsItsTurn(t *testing.T) {
 // A recording named by hand is heard whatever the queue would leave alone. A
 // person naming a file has said that this file is worth the machine's time.
 func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "album.flac")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "album.flac")
 	listening.with.Unasked = 10 << 20
 
 	recognized := sized{recordings: map[string]int64{"album.flac": 400 << 20}}
@@ -316,7 +316,7 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 	}
 	listening.Wait()
 
-	if got := by.times(); got != 1 {
+	if got := delta.times(); got != 1 {
 		t.Errorf("the recording was heard %d times", got)
 	}
 }
@@ -324,23 +324,23 @@ func TestALargeRecordingIsHeardWhenItIsAskedForByHand(t *testing.T) {
 // An installation that listens to nothing on its own still listens to what is
 // asked for: nothing here calls Queue.
 func TestAnInstallationListeningToNothingStillHearsWhatIsAsked(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 
 	if got := listening.Start(v, "talks/one.mp3"); got != port.Began {
 		t.Fatalf("the recording was not heard: %v", got)
 	}
 	listening.Wait()
 
-	if got := by.times(); got != 1 {
+	if got := delta.times(); got != 1 {
 		t.Errorf("the recording was heard %d times", got)
 	}
 }
 
 // A round hands over what a person named before what the vault owes on its own.
 func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/owed.mp3", "talks/named.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/owed.mp3", "talks/named.mp3")
 
 	var mu sync.Mutex
 	var order []string
@@ -364,8 +364,8 @@ func TestARecordingNamedIsHeardBeforeTheOnesNobodyAskedFor(t *testing.T) {
 // One run holds the models on a machine: a scan being read holds them, and a
 // transcription waits for them and says so.
 func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 
 	target, err := listening.with.Models.Acquire(t.Context(), true, nil)
 	if err != nil {
@@ -374,8 +374,8 @@ func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
 	listening.Start(v, "talks/one.mp3")
 	waited := false
 	for range 200 {
-		for _, at := range listening.with.Tasks.List() {
-			if at.Title == "Waiting for the models" {
+		for _, item := range listening.with.Tasks.List() {
+			if item.Title == "Waiting for the models" {
 				waited = true
 			}
 		}
@@ -390,7 +390,7 @@ func TestARecordingWaitsForTheModelsAScanContains(t *testing.T) {
 	if !waited {
 		t.Error("the transcription was not shown waiting for the models")
 	}
-	if got := by.times(); got != 1 {
+	if got := delta.times(); got != 1 {
 		t.Errorf("the recording was heard %d times once the models were free", got)
 	}
 }
@@ -443,13 +443,13 @@ func TestALargeRecordingIsLeftForTheHand(t *testing.T) {
 // A recording is transcribed through whatever runtime this process has, opened
 // when there is a recording to transcribe.
 func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
-	by := &deaf{}
-	target, v := newTranscriptionWorker(t, by, "talk.mp3")
+	delta := &deaf{}
+	target, v := newTranscriptionWorker(t, delta, "talk.mp3")
 
 	var opened, provided int
 	target.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Transcriber, func() error, error) {
 		opened++
-		return by, func() error { provided++; return by.Close() }, nil
+		return delta, func() error { provided++; return delta.Close() }, nil
 	}
 
 	if err := target.transcribeOne(t.Context(), v, "talk.mp3", true); err != nil {
@@ -461,16 +461,16 @@ func TestARecordingIsTranscribedThroughARuntimeOpenedNow(t *testing.T) {
 	if provided != 1 {
 		t.Error("what was opened was not given back")
 	}
-	if by.times() != 1 {
-		t.Errorf("the recording was handed over %d times", by.times())
+	if delta.times() != 1 {
+		t.Errorf("the recording was handed over %d times", delta.times())
 	}
 }
 
 // Taking up a transcript proofreading uses the known hash from the index and
 // avoids reading the source file from disk.
 func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t *testing.T) {
-	by := &deaf{}
-	target, v := newTranscriptionWorker(t, by, "talks/one.mp3")
+	delta := &deaf{}
+	target, v := newTranscriptionWorker(t, delta, "talks/one.mp3")
 	hash := text.Fingerprint([]byte("not a recording: talks/one.mp3"))
 
 	store, err := target.with.Derived.Open(v)

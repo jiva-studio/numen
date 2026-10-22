@@ -90,7 +90,7 @@ func (t *Tasks) Remove(id string) {
 		return
 	}
 	delete(t.held, id)
-	t.order = slices.DeleteFunc(t.order, func(at string) bool { return at == id })
+	t.order = slices.DeleteFunc(t.order, func(pos string) bool { return pos == id })
 	t.notifyWatchers()
 }
 
@@ -144,7 +144,7 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 		<-ctx.Done()
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == watcher })
+		t.waiting = slices.DeleteFunc(t.waiting, func(pos chan []Task) bool { return pos == watcher })
 		close(watcher)
 	}()
 	return watcher

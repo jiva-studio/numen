@@ -67,8 +67,8 @@ func (p played) GetDuration() int { return len(p.words) * 1000 }
 func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
-		if at := getSpan(n); at.From >= from {
-			out = append(out, at)
+		if pos := getSpan(n); pos.From >= from {
+			out = append(out, pos)
 			if len(out) == count {
 				break
 			}

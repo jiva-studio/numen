@@ -10,16 +10,16 @@ import (
 
 // A `.url` file is what every system writes, and what one wrote is read back.
 func TestAnAddressIsReadBackFromWhatWasSaved(t *testing.T) {
-	at, err := domain.ParseURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
+	pos, err := domain.ParseURL("https://www.youtube.com/watch?v=dQw4w9WgXcQ")
 	if err != nil {
 		t.Fatal(err)
 	}
-	read, err := urlfile.Read(urlfile.Write(at))
+	read, err := urlfile.Read(urlfile.Write(pos))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(read) != string(at) {
-		t.Errorf("read %q, wrote %q", string(read), string(at))
+	if string(read) != string(pos) {
+		t.Errorf("read %q, wrote %q", string(read), string(pos))
 	}
 }
 
@@ -28,12 +28,12 @@ func TestAnAddressIsReadBackFromWhatWasSaved(t *testing.T) {
 // them.
 func TestWhatAnotherProgramWroteIsRead(t *testing.T) {
 	raw := "[InternetShortcut]\r\nIDList=\r\nurl=https://example.com/a\r\nIconIndex=0\r\n"
-	at, err := urlfile.Read([]byte(raw))
+	pos, err := urlfile.Read([]byte(raw))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if string(at) != "https://example.com/a" {
-		t.Errorf("read %q", string(at))
+	if string(pos) != "https://example.com/a" {
+		t.Errorf("read %q", string(pos))
 	}
 }
 

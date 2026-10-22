@@ -180,18 +180,18 @@ func isUnderRoot(resolved, root string) bool {
 // getDeepestExisting resolves as much of a path as exists, so that a file about to be
 // created is judged by the folder it would land in.
 func getDeepestExisting(target string) (string, error) {
-	at := target
+	pos := target
 	var missing []string
 	for {
-		resolved, err := filepath.EvalSymlinks(at)
+		resolved, err := filepath.EvalSymlinks(pos)
 		if err == nil {
 			return filepath.Join(append([]string{resolved}, missing...)...), nil
 		}
-		parent := filepath.Dir(at)
-		if parent == at {
+		parent := filepath.Dir(pos)
+		if parent == pos {
 			return "", err
 		}
-		missing = append([]string{filepath.Base(at)}, missing...)
-		at = parent
+		missing = append([]string{filepath.Base(pos)}, missing...)
+		pos = parent
 	}
 }

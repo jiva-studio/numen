@@ -256,8 +256,8 @@ func TestAnIdentifierThatIsNotDecimalNamesNoChunk(t *testing.T) {
 
 func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 	db := openIndex(t)
-	at := time.Date(2024, 3, 1, 12, 0, 0, 123, time.UTC)
-	source{path: "n/one.md", kind: "note", size: 11, mtime: at.UnixNano()}.save(t, db)
+	pos := time.Date(2024, 3, 1, 12, 0, 0, 123, time.UTC)
+	source{path: "n/one.md", kind: "note", size: 11, mtime: pos.UnixNano()}.save(t, db)
 	source{path: "n/two.md", kind: "note", size: 22}.save(t, db)
 	source{path: "b/x.epub", kind: "book", size: 5, mtime: 9}.save(t, db)
 	source{vault: vaultB, path: "n/other.md", kind: "note", size: 3, mtime: 9}.save(t, db)
@@ -270,8 +270,8 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 		t.Fatalf("got %d fingerprints, want the 2 notes of the vault: %v", len(got), got)
 	}
 	one := got["n/one.md"]
-	if one.Path != "n/one.md" || one.Size != 11 || !one.ModTime.Equal(at) {
-		t.Errorf("the first note is %+v, want size 11 at %v", one, at)
+	if one.Path != "n/one.md" || one.Size != 11 || !one.ModTime.Equal(pos) {
+		t.Errorf("the first note is %+v, want size 11 at %v", one, pos)
 	}
 	two := got["n/two.md"]
 	if two.Path != "n/two.md" || two.Size != 22 || !two.ModTime.IsZero() {
@@ -310,8 +310,8 @@ func TestAFingerprintReadFromAClosedOrBrokenIndexFails(t *testing.T) {
 
 func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	db := openIndex(t)
-	at := time.Date(2022, 5, 6, 7, 8, 9, 10, time.UTC)
-	source{path: "physics/Entropy.md", kind: "note", size: 40, mtime: at.UnixNano()}.save(t, db)
+	pos := time.Date(2022, 5, 6, 7, 8, 9, 10, time.UTC)
+	source{path: "physics/Entropy.md", kind: "note", size: 40, mtime: pos.UnixNano()}.save(t, db)
 	source{path: "physics/heat/Heat.md", kind: "note", size: 41}.save(t, db)
 	source{path: "physics/A Book.epub", kind: "book", size: 42}.save(t, db)
 	source{path: "physics-old/Stray.md", kind: "note", size: 43}.save(t, db)
@@ -329,8 +329,8 @@ func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	if folder[0].Kind != domain.KindBook || folder[0].Size != 42 || !folder[0].ModTime.IsZero() {
 		t.Errorf("the book is %+v", folder[0])
 	}
-	if folder[1].Kind != domain.KindNote || folder[1].Size != 40 || !folder[1].ModTime.Equal(at) {
-		t.Errorf("the note is %+v, want size 40 at %v", folder[1], at)
+	if folder[1].Kind != domain.KindNote || folder[1].Size != 40 || !folder[1].ModTime.Equal(pos) {
+		t.Errorf("the note is %+v, want size 40 at %v", folder[1], pos)
 	}
 
 	file, err := queries.GetSourcesUnder(t.Context(), vaultA, "physics/Entropy.md")

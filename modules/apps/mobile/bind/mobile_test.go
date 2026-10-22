@@ -172,7 +172,7 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = bind.Stop() })
 
-	for _, at := range []string{
+	for _, item := range []string{
 		"/assets/Physics.md",
 		"/numen.v1.DocumentService/GetDocument",
 		"/numen.v1.RecordingService/GetRecording",
@@ -184,20 +184,20 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		"/numen.v1.ArtifactService/CreateArtifact",
 		"/numen.v1.ArtifactService/DeleteArtifact",
 	} {
-		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, at)
+		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))
 		if err != nil {
-			t.Fatalf("asking %s: %v", at, err)
+			t.Fatalf("asking %s: %v", item, err)
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Connect-Protocol-Version", "1")
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			t.Fatalf("asking %s: %v", at, err)
+			t.Fatalf("asking %s: %v", item, err)
 		}
 		res.Body.Close()
 		if res.StatusCode != http.StatusNotFound {
-			t.Errorf("%s answered %s", at, res.Status)
+			t.Errorf("%s answered %s", item, res.Status)
 		}
 	}
 }
@@ -207,8 +207,8 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 // phone for the file the socket above refuses to serve. It is turned off, and
 // nothing else in this repository reads the manifest.
 func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
-	at := filepath.Join("..", "android", "app", "src", "main")
-	manifest, err := os.ReadFile(filepath.Join(at, "AndroidManifest.xml"))
+	pos := filepath.Join("..", "android", "app", "src", "main")
+	manifest, err := os.ReadFile(filepath.Join(pos, "AndroidManifest.xml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,7 +221,7 @@ func TestThePlatformDoesNotCarryTheVaultOffThePhone(t *testing.T) {
 		}
 	}
 
-	rules, err := os.ReadFile(filepath.Join(at, "res", "xml", "data_extraction_rules.xml"))
+	rules, err := os.ReadFile(filepath.Join(pos, "res", "xml", "data_extraction_rules.xml"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -254,30 +254,30 @@ func TestTheSettingsFileIsNotServedToThePhone(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = bind.Stop() })
 
-	for _, at := range []string{
+	for _, item := range []string{
 		"/numen.v1.SettingsService/GetSettings",
 		"/numen.v1.SettingsService/ReadSettingsFile",
 		"/numen.v1.SettingsService/WriteSettings",
 		"/numen.v1.SettingsService/WriteSettingsFile",
 	} {
-		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, at)
+		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"written":"stolen: true\n"}`)))
 		if err != nil {
-			t.Fatalf("asking %s: %v", at, err)
+			t.Fatalf("asking %s: %v", item, err)
 		}
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Connect-Protocol-Version", "1")
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
-			t.Fatalf("asking %s: %v", at, err)
+			t.Fatalf("asking %s: %v", item, err)
 		}
 		response, _ := io.ReadAll(res.Body)
 		res.Body.Close()
 		if res.StatusCode == http.StatusOK {
-			t.Errorf("%s answered %s: %s", at, res.Status, response)
+			t.Errorf("%s answered %s: %s", item, res.Status, response)
 		}
 		if bytes.Contains(response, []byte(secret)) {
-			t.Errorf("%s gave the key away: %s", at, response)
+			t.Errorf("%s gave the key away: %s", item, response)
 		}
 	}
 

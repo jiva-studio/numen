@@ -30,8 +30,8 @@ type ImportOutcome struct {
 	// CopiedBytes is how large the copy is, and is nothing where none was asked
 	// for or the video was over the size the settings allow.
 	CopiedBytes int64  `json:"copied_bytes,omitempty" jsonschema:"how large the copy on this disk is"`
-	CopyError string `json:"copy_error,omitempty" jsonschema:"why no copy was made, empty when one was or none was asked for"`
-	Error string `json:"error,omitempty" jsonschema:"why the address was not fetched; the file stands either way"`
+	CopyError   string `json:"copy_error,omitempty" jsonschema:"why no copy was made, empty when one was or none was asked for"`
+	Error       string `json:"error,omitempty" jsonschema:"why the address was not fetched; the file stands either way"`
 }
 
 // addImportTool serves the one tool that makes a file out of an address.
@@ -54,12 +54,12 @@ func addImportTool(server *sdk.Server, core Core) {
 			"the site. An address nothing here reaches, and one that refuses an " +
 			"unattended request, say so and leave the file standing.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in NewURL) (*sdk.CallToolResult, ImportOutcome, error) {
-		at, err := domain.ParseURL(in.URL)
+		pos, err := domain.ParseURL(in.URL)
 		if err != nil {
 			return nil, ImportOutcome{}, err
 		}
 		imported, err := core.Sources.CreateAndImportURL.Execute(
-			ctx, core.getCurrentVault().Vault, source.NewURL{Address: at, Path: in.Folder}, in.ShouldCopy)
+			ctx, core.getCurrentVault().Vault, source.NewURL{Address: pos, Path: in.Folder}, in.ShouldCopy)
 		out := ImportOutcome{Path: imported.Path}
 		var copyFailed *source.CopyError
 		if err != nil && !errors.As(err, &copyFailed) {

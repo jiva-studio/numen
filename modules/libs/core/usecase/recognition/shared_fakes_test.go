@@ -236,8 +236,8 @@ func (c *corrector) ProofreadSpeech(
 }
 
 // corrects is the correction putting one line right.
-func corrects(at int, text string) domain.ProofreadCorrection {
-	return domain.ProofreadCorrection{Number: at, Last: at, Text: text}
+func corrects(pos int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: pos, Last: pos, Text: text}
 }
 
 func readShelf(t *testing.T, shelved *fakeStorage, name domain.ArtifactName) []byte {

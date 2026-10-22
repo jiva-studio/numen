@@ -138,8 +138,8 @@ func TestALinkNoteIsItsProseAndThenWhatWasFetched(t *testing.T) {
 	if !strings.HasPrefix(doc.Text, prose+text.Separator) {
 		t.Errorf("the note reads %q, want its prose first", doc.Text)
 	}
-	if at := strings.Index(doc.Text, opening); at != len(prose)+len(text.Separator) {
-		t.Errorf("what was fetched begins at %d, want %d", at, len(prose)+len(text.Separator))
+	if pos := strings.Index(doc.Text, opening); pos != len(prose)+len(text.Separator) {
+		t.Errorf("what was fetched begins at %d, want %d", pos, len(prose)+len(text.Separator))
 	}
 	checkLocation(t, doc, opening, "0:01")
 	checkLocation(t, doc, middle, "1:23:45")

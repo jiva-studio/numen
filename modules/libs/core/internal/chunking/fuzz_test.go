@@ -48,13 +48,13 @@ func FuzzCut(f *testing.F) {
 		// over, and the chunks cut from it begin inside a character too.
 		var parts []domain.PartStart
 		if len(text) > 0 {
-			at := part % len(text)
-			for at > 0 && !utf8.RuneStart(text[at]) {
-				at--
+			pos := part % len(text)
+			for pos > 0 && !utf8.RuneStart(text[pos]) {
+				pos--
 			}
 			parts = []domain.PartStart{
 				{Title: "one", Offset: 0},
-				{Title: "two", Offset: at},
+				{Title: "two", Offset: pos},
 			}
 		}
 

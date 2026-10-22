@@ -154,11 +154,11 @@ func (r *VaultRegistry) Remove(id domain.VaultID) error {
 	if err != nil {
 		return err
 	}
-	at := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
-	if at < 0 {
+	pos := slices.IndexFunc(f.Vaults, func(v domain.Vault) bool { return v.ID == id })
+	if pos < 0 {
 		return nil
 	}
-	f.Vaults = slices.Delete(f.Vaults, at, at+1)
+	f.Vaults = slices.Delete(f.Vaults, pos, pos+1)
 	if f.LastID == id {
 		f.LastID = ""
 	}

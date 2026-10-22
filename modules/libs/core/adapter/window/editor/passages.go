@@ -57,20 +57,20 @@ func isCJKRune(r rune) bool {
 
 // isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
-func isWordStart(runes []rune, at int) bool { return at == 0 || !isWordRune(runes[at-1]) }
+func isWordStart(runes []rune, pos int) bool { return pos == 0 || !isWordRune(runes[pos-1]) }
 
-func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !isWordRune(runes[at]) }
+func isWordEnd(runes []rune, pos int) bool { return pos == len(runes) || !isWordRune(runes[pos]) }
 
 // mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func mergeSpans(at []domain.UnitSpan) []domain.UnitSpan {
-	if len(at) < 2 {
-		return at
+func mergeSpans(pos []domain.UnitSpan) []domain.UnitSpan {
+	if len(pos) < 2 {
+		return pos
 	}
-	slices.SortFunc(at, func(a, b domain.UnitSpan) int { return a.From - b.From })
+	slices.SortFunc(pos, func(a, b domain.UnitSpan) int { return a.From - b.From })
 
-	out := at[:1]
-	for _, span := range at[1:] {
+	out := pos[:1]
+	for _, span := range pos[1:] {
 		last := &out[len(out)-1]
 		if span.From <= last.To {
 			last.To = max(last.To, span.To)
@@ -91,16 +91,16 @@ func getFoldedRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
-	at := 0
+	pos := 0
 	for _, r := range text {
 		runes = append(runes, unicode.ToLower(r))
-		units = append(units, at)
-		at++
+		units = append(units, pos)
+		pos++
 		if r > 0xffff {
-			at++
+			pos++
 		}
 	}
-	return runes, append(units, at)
+	return runes, append(units, pos)
 }
 
 // How much of a passage is drawn at most, and how much of that stands before
@@ -175,23 +175,23 @@ func getRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
-	at := 0
+	pos := 0
 	for _, r := range text {
 		runes = append(runes, r)
-		units = append(units, at)
-		at++
+		units = append(units, pos)
+		pos++
 		if r > 0xffff {
-			at++
+			pos++
 		}
 	}
-	return runes, append(units, at)
+	return runes, append(units, pos)
 }
 
 // getOpeningRune is the rune the window opens on: the last one beginning at or
 // before the offset given, so a cut never lands inside a character.
-func getOpeningRune(units []int, at int) int {
+func getOpeningRune(units []int, pos int) int {
 	for i := 1; i < len(units); i++ {
-		if units[i] > at {
+		if units[i] > pos {
 			return i - 1
 		}
 	}
@@ -200,9 +200,9 @@ func getOpeningRune(units []int, at int) int {
 
 // getClosingRune is the rune the window closes before: the first one beginning
 // at or after the offset given.
-func getClosingRune(units []int, at int) int {
+func getClosingRune(units []int, pos int) int {
 	for i := range units {
-		if units[i] >= at {
+		if units[i] >= pos {
 			return i
 		}
 	}

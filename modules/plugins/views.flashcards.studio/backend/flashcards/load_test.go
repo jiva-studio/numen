@@ -87,14 +87,14 @@ type countingBy struct {
 
 func (b countingBy) GetName() string { return b.inner.GetName() }
 
-func (b countingBy) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
+func (b countingBy) Next(s review.Schedule, pos time.Time, r review.Rating) review.Schedule {
 	b.on.Dated++
-	return b.inner.Next(s, at, r)
+	return b.inner.Next(s, pos, r)
 }
 
-func (b countingBy) Endings(s review.Schedule, at time.Time) (review.Schedule, review.Schedule) {
+func (b countingBy) Endings(s review.Schedule, pos time.Time) (review.Schedule, review.Schedule) {
 	b.on.Dated += 2
-	return b.inner.Endings(s, at)
+	return b.inner.Endings(s, pos)
 }
 
 func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s) }
@@ -177,17 +177,17 @@ func loadDeck(cards int) map[string]string {
 	const decks = 20
 	out := map[string]string{"Term.md": vault["Term.md"]}
 	constructed := make([]*strings.Builder, decks)
-	for at := range constructed {
-		constructed[at] = &strings.Builder{}
-		constructed[at].WriteString("---\ntype: deck\n---\n")
+	for item := range constructed {
+		constructed[item] = &strings.Builder{}
+		constructed[item].WriteString("---\ntype: deck\n---\n")
 	}
-	for at := range cards {
-		fmt.Fprintf(constructed[at%decks],
+	for entry := range cards {
+		fmt.Fprintf(constructed[entry%decks],
 			"\n## Card %d ^%s\n\n[[Term]]\n\n### Word\n\nword %d\n\n### Meaning\n\nmeaning %d\n",
-			at, loadMark(at), at, at)
+			entry, loadMark(entry), entry, entry)
 	}
-	for at, one := range constructed {
-		out[fmt.Sprintf("decks/Deck%02d.md", at)] = one.String()
+	for elem, one := range constructed {
+		out[fmt.Sprintf("decks/Deck%02d.md", elem)] = one.String()
 	}
 	return out
 }
@@ -196,8 +196,8 @@ func loadDeck(cards int) map[string]string {
 func loadMark(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
-	for at := range out {
-		out[at] = alphabet[n%len(alphabet)]
+	for item := range out {
+		out[item] = alphabet[n%len(alphabet)]
 		n /= len(alphabet)
 	}
 	return string(out)

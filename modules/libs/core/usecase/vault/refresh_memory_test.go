@@ -64,7 +64,7 @@ func newMemWorld() *memWorld {
 	return w
 }
 
-func (w *memWorld) setNow(at time.Time) { w.clock = func() time.Time { return at } }
+func (w *memWorld) setNow(pos time.Time) { w.clock = func() time.Time { return pos } }
 
 func (w *memWorld) addNote(path, content string, mtime time.Time) *memFile {
 	f := &memFile{

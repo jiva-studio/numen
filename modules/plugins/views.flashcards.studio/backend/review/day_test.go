@@ -107,15 +107,15 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			from := time.Date(2025, 1, 1, 0, 0, 0, 0, in)
 			for i := range 800 * 24 {
-				at := from.Add(time.Duration(i) * time.Hour).In(in)
-				y, m, d := at.Date()
+				pos := from.Add(time.Duration(i) * time.Hour).In(in)
+				y, m, d := pos.Date()
 				want := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
-				if at.Hour() < hour {
+				if pos.Hour() < hour {
 					want = want.AddDate(0, 0, -1)
 				}
-				if got := day.GetName(at); got != want.Format(review.DayLayout) {
+				if got := day.GetName(pos); got != want.Format(review.DayLayout) {
 					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
-						name, at, hour, got, want.Format(review.DayLayout))
+						name, pos, hour, got, want.Format(review.DayLayout))
 				}
 			}
 		}
@@ -134,18 +134,18 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			on := review.NewDueByDay(day)
 			days := make([]time.Time, 0, 800)
-			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.GetEnd(at) {
-				days = append(days, at)
-				if next := day.GetEnd(at); !next.After(at) {
+			for pos := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; pos = day.GetEnd(pos) {
+				days = append(days, pos)
+				if next := day.GetEnd(pos); !next.After(pos) {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
-						"ends at %v", name, at, hour, next)
+						"ends at %v", name, pos, hour, next)
 				}
-				on.Add(at)
+				on.Add(pos)
 			}
-			for _, at := range days {
-				if got := on.CountOn(at); got != 1 {
+			for _, item := range days {
+				if got := on.CountOn(item); got != 1 {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
-						"carries %d of the 800 cards, want 1", name, at, hour, got)
+						"carries %d of the 800 cards, want 1", name, item, hour, got)
 				}
 			}
 		}

@@ -53,9 +53,9 @@ func (s *debounceState) deliverChan(changes chan<- []string) chan<- []string {
 	return nil
 }
 
-func (s *debounceState) walkChan(asked chan<- string) (chan<- string, string) {
+func (s *debounceState) walkChan(requested chan<- string) (chan<- string, string) {
 	if len(s.queued) > 0 {
-		return asked, s.queued[0]
+		return requested, s.queued[0]
 	}
 	return nil, ""
 }
@@ -183,7 +183,7 @@ func walkFolders(
 	ctx context.Context,
 	shape *folders,
 	going <-chan struct{},
-	asked <-chan string,
+	requested <-chan string,
 	walked chan<- walkResult,
 ) {
 	for {
@@ -192,8 +192,8 @@ func walkFolders(
 			return
 		case <-going:
 			return
-		case at := <-asked:
-			paths, whole := shape.getPathsUnder(ctx, at)
+		case pos := <-requested:
+			paths, whole := shape.getPathsUnder(ctx, pos)
 			select {
 			case <-ctx.Done():
 				return

@@ -64,11 +64,11 @@ func getWantedFiles(cfg Config, into *paths) []models.Wanted {
 // getModelName is what a model is called, for the record kept along with what it produced.
 // A name in the settings stands, and a model without one is called after the
 // file it was loaded from.
-func getModelName(name, at string) string {
+func getModelName(name, pos string) string {
 	if name != "" {
 		return name
 	}
-	return strings.TrimSuffix(path.Base(filepath.ToSlash(at)), filepath.Ext(at))
+	return strings.TrimSuffix(path.Base(filepath.ToSlash(pos)), filepath.Ext(pos))
 }
 
 func (c Config) source() models.Source {

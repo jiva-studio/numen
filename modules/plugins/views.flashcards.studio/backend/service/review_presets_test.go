@@ -89,8 +89,8 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 	api, target := newAPI(t, handwritten)
 	v := target[0]
 
-	at := filepath.Join(v.Path, "decks", "Words.md")
-	if err := os.WriteFile(at, []byte(typedByHand), 0o644); err != nil {
+	pos := filepath.Join(v.Path, "decks", "Words.md")
+	if err := os.WriteFile(pos, []byte(typedByHand), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -101,7 +101,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 	startSession(t, api, v)
 
-	content, err := os.ReadFile(at)
+	content, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}

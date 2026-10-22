@@ -34,8 +34,8 @@ func runWithDeps(given cli.Deps, args ...string) (string, error) {
 	return out.String(), err
 }
 
-func createVaultList(held domain.Vault) func() (cli.Vaults, error) {
-	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{held}}, nil }
+func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
+	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{target}}, nil }
 }
 
 // failingLinkQueries answers every question about links with an error.
@@ -448,11 +448,11 @@ type scanFixture struct {
 	rebuilt    bool
 }
 
-func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
+func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 	t.Helper()
 	indexPath := filepath.Join(t.TempDir(), "index.db")
 	return cli.Deps{
-		Vaults: createVaultList(held),
+		Vaults: createVaultList(target),
 		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 			s.rebuilt = rebuild
 			db, err := index.Open(ctx, indexPath)

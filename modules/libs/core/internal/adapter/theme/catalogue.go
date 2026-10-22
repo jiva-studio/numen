@@ -256,13 +256,13 @@ func stripComments(css string) string {
 
 // hasDeclared looks for a property being set: the name, and a colon after it.
 func hasDeclared(css, property string) bool {
-	for at := 0; ; {
-		found := strings.Index(css[at:], property)
+	for pos := 0; ; {
+		found := strings.Index(css[pos:], property)
 		if found < 0 {
 			return false
 		}
-		at += found + len(property)
-		if strings.HasPrefix(strings.TrimLeft(css[at:], " \t\r\n"), ":") {
+		pos += found + len(property)
+		if strings.HasPrefix(strings.TrimLeft(css[pos:], " \t\r\n"), ":") {
 			return true
 		}
 	}

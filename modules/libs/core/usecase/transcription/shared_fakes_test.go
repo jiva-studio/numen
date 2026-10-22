@@ -196,17 +196,17 @@ func (c *corrector) ProofreadSpeech(
 		return domain.SpeechProofreading{}, c.fail
 	}
 
-	at := 0
-	for at < len(lines) && lines[at].Number < from {
-		at++
+	pos := 0
+	for pos < len(lines) && lines[pos].Number < from {
+		pos++
 	}
 	end := len(lines)
 	if c.limit > 0 {
-		end = min(end, at+c.limit)
+		end = min(end, pos+c.limit)
 	}
 	out := domain.SpeechProofreading{Uncorrected: c.uncorrected}
 	var reply []int
-	for _, line := range lines[at:end] {
+	for _, line := range lines[pos:end] {
 		reply = append(reply, line.Number)
 		if one, has := c.says[line.Number]; has {
 			out.Corrections = append(out.Corrections, one)
@@ -234,13 +234,13 @@ func (c *corrector) lines() []int {
 }
 
 // fixes is a correction putting one line right.
-func fixes(at int, text string) domain.ProofreadCorrection {
-	return domain.ProofreadCorrection{Number: at, Last: at, Text: text}
+func fixes(pos int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: pos, Last: pos, Text: text}
 }
 
 // joins is a correction putting a run of lines together as one.
-func joins(at, through int, text string) domain.ProofreadCorrection {
-	return domain.ProofreadCorrection{Number: at, Last: through, Text: text}
+func joins(pos, through int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: pos, Last: through, Text: text}
 }
 
 // says is the corrections as a corrector is told them.

@@ -86,7 +86,7 @@ func readSources(t *testing.T) []standing {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(held standing) bool { return held.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.at == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}
@@ -220,14 +220,14 @@ func getClaimedPorts(file *ast.File) []string {
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
-				return at.Name == "_"
+			if !is || !slices.ContainsFunc(named.Names, func(pos *ast.Ident) bool {
+				return pos.Name == "_"
 			}) {
 				continue
 			}
-			if at, is := named.Type.(*ast.SelectorExpr); is {
-				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					target = append(target, at.Sel.Name)
+			if offset, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := offset.X.(*ast.Ident); is && from.Name == "port" {
+					target = append(target, offset.Sel.Name)
 				}
 			}
 		}

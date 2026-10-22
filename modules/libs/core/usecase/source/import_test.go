@@ -34,9 +34,9 @@ func (s *site) GetDownloadModel(_ context.Context, _ domain.URL) (port.DownloadM
 	return port.DownloadModel{Tool: "a test", Version: "1", Producer: producer}, nil
 }
 
-func (s *site) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (s *site) GetMetadata(ctx context.Context, pos domain.URL) (port.Metadata, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
-	s.asked = append(s.asked, "metadata "+string(at))
+	s.asked = append(s.asked, "metadata "+string(pos))
 	if s.refusing != nil {
 		return port.Metadata{}, s.refusing
 	}
@@ -44,9 +44,9 @@ func (s *site) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, e
 }
 
 func (s *site) GetText(
-	_ context.Context, at domain.URL, _ port.PreferredCaptions,
+	_ context.Context, pos domain.URL, _ port.PreferredCaptions,
 ) (port.Text, error) {
-	s.asked = append(s.asked, "text "+string(at))
+	s.asked = append(s.asked, "text "+string(pos))
 	if len(s.cues) > 0 {
 		return port.Text{
 			Producer: domain.Captions, Cues: s.cues, Title: s.title, Length: s.length,
@@ -58,9 +58,9 @@ func (s *site) GetText(
 	return port.Text{}, port.ErrNothingDownloaded
 }
 
-func (s *site) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+func (s *site) Download(ctx context.Context, pos domain.URL, into io.Writer) (port.Copy, error) {
 	s.inOperation = append(s.inOperation, operation.IsActive(ctx))
-	s.asked = append(s.asked, "download "+string(at))
+	s.asked = append(s.asked, "download "+string(pos))
 	if len(s.bytes) == 0 {
 		return port.Copy{}, port.ErrNothingDownloaded
 	}
@@ -74,10 +74,10 @@ const videoNote = "notes/https---youtu.be-dQw4w9WgXcQ.url"
 
 // newImportURL is a vault holding one link note, and the store what is
 // downloaded for it is kept in.
-func newImportURL(t *testing.T, written string, from *site) (ImportURL, *fakeStorage, string) {
+func newImportURL(t *testing.T, output string, from *site) (ImportURL, *fakeStorage, string) {
 	t.Helper()
 	shelved := newLibrary()
-	shelved.hold(videoNote, domain.KindURL, []byte(written), 1)
+	shelved.hold(videoNote, domain.KindURL, []byte(output), 1)
 	shelf := newShelf()
 	paths := []string{}
 	return ImportURL{

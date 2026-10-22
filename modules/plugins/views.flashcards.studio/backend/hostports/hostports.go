@@ -51,8 +51,8 @@ func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
 type reader struct{ vault host.Vault }
 
 func (r reader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	at, err := r.vault.GetFingerprint(ctx, path)
-	return at, readError(err)
+	pos, err := r.vault.GetFingerprint(ctx, path)
+	return pos, readError(err)
 }
 
 func (r reader) Read(ctx context.Context, path string) ([]byte, error) {
@@ -74,8 +74,8 @@ func (w Writers) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 type writer struct{ vault host.Vault }
 
 func (w writer) Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	at, err := w.vault.Write(ctx, path, content, fingerprint)
-	return at, readError(err)
+	pos, err := w.vault.Write(ctx, path, content, fingerprint)
+	return pos, readError(err)
 }
 
 func (w writer) Create(ctx context.Context, path string, content []byte) error {

@@ -148,11 +148,11 @@ func (s Simulation) Curve(
 
 // minutes computes the curve for daily review duration goals.
 func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	free := p
 	free.MinutesADay = int(MinutesADayBounds.Most)
-	load, err := run.Run(ctx, now, free, at, unreviewed)
+	load, err := run.Run(ctx, now, free, pos, unreviewed)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -171,12 +171,12 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 	if err := d.places(len(out.Grid), func(i int) error {
 		one := p
 		one.MinutesADay = int(out.Grid[i])
-		ran, err := run.Run(ctx, now, one, at, unreviewed)
+		ran, err := run.Run(ctx, now, one, pos, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := session(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, at, unreviewed); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, run, now, one, pos, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -209,7 +209,7 @@ func (d curveBuilder) minutes(ctx context.Context) (Curve, error) {
 // the same whatever target is chosen, and what a target changes it changes from
 // tomorrow on.
 func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewed := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	out := Curve{Goal: GoalRetention, Now: OutsideGrid, Suggested: OutsideGrid}
 	least, most := RetentionBounds.Least, RetentionBounds.Most
@@ -228,12 +228,12 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 		one, asks := p, run
 		one.Retention = out.Grid[i]
 		asks.By = d.by(out.Grid[i])
-		ran, err := asks.Run(ctx, now, one, at, unreviewed)
+		ran, err := asks.Run(ctx, now, one, pos, unreviewed)
 		if err != nil {
 			return err
 		}
 		place := point(ran)
-		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, at, unreviewed); err != nil {
+		if place.Learns, err = getDaysToLearnWithoutForgetting(ctx, asks, now, one, pos, unreviewed); err != nil {
 			return err
 		}
 		out.Points[i] = place
@@ -248,19 +248,19 @@ func (d curveBuilder) retention(ctx context.Context) (Curve, error) {
 
 // date computes the curve of completing reviews by a specified target date.
 func (d curveBuilder) date(ctx context.Context) (Curve, error) {
-	run, now, p, at, unreviewedCount := d.run, d.now, d.preset, d.at, d.unbegunCount
+	run, now, p, pos, unreviewedCount := d.run, d.now, d.preset, d.at, d.unbegunCount
 
 	out := Curve{Goal: GoalDate, Now: OutsideGrid, Suggested: OutsideGrid}
 	open := run.Day.GetStart(now)
-	by := p.By.Format(DayLayout)
-	if p.By.IsZero() || by < run.Day.GetName(open) {
+	delta := p.By.Format(DayLayout)
+	if p.By.IsZero() || delta < run.Day.GetName(open) {
 		return out, nil
 	}
 	// How far off the day the file names is, counting the day holding now as
 	// none. A day further off than the projection reaches stands nowhere on the
 	// range, and the range is drawn as far as it goes.
 	named := 0
-	for day := open; run.Day.GetName(day) < by; day = day.AddDate(0, 0, 1) {
+	for day := open; run.Day.GetName(day) < delta; day = day.AddDate(0, 0, 1) {
 		named++
 		if named > MostAhead {
 			named = OutsideGrid.Index
@@ -293,7 +293,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 		// A place of this range is read on the day it names, and that is the day
 		// the run works the returning share out on.
 		asks.Retains = []int{day}
-		ran, err := asks.Run(ctx, now, aiming, at, unreviewedCount)
+		ran, err := asks.Run(ctx, now, aiming, pos, unreviewedCount)
 		if err != nil {
 			return err
 		}
@@ -365,12 +365,12 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 // getDaysToLearnWithoutForgetting calculates days needed to learn all cards assuming full recall.
 func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
-	at map[CardFaceID]Schedule, unbegunCount int,
+	pos map[CardFaceID]Schedule, unbegunCount int,
 ) (int, error) {
 	run.Recalls = GetFullRecall
 	// The day the material is learned is all this run is read for.
 	run.Retains = nil
-	ran, err := run.Run(ctx, now, p, at, unbegunCount)
+	ran, err := run.Run(ctx, now, p, pos, unbegunCount)
 	if err != nil {
 		return 0, err
 	}

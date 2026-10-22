@@ -56,36 +56,36 @@ func (w *outlineWalk) walk(bookmark *references.FPDF_BOOKMARK, level int) {
 	if err != nil || child.Bookmark == nil {
 		return
 	}
-	for at := child.Bookmark; at != nil; {
+	for pos := child.Bookmark; pos != nil; {
 		// gomutants:disable-next-line BRANCH_IF reason="walk stops when visit limit is reached or entry is already seen"
-		if !w.visit(at, level) {
+		if !w.visit(pos, level) {
 			return
 		}
 		next, err := d.worker.FPDFBookmark_GetNextSibling(&requests.FPDFBookmark_GetNextSibling{
-			Document: d.ref, Bookmark: *at,
+			Document: d.ref, Bookmark: *pos,
 		})
 		// gomutants:disable-next-line BRANCH_IF reason="walk stops when next sibling cannot be retrieved"
 		if err != nil {
 			return
 		}
-		at = next.Bookmark
+		pos = next.Bookmark
 	}
 }
 
 // visit reads one entry and what lies under it, and says whether the walk
 // goes on. An outline that points back at itself is read once.
-func (w *outlineWalk) visit(at *references.FPDF_BOOKMARK, level int) bool {
+func (w *outlineWalk) visit(pos *references.FPDF_BOOKMARK, level int) bool {
 	// gomutants:disable-next-line EXPRESSION_REMOVE reason="visit drops seen bookmarks to prevent cycles and respects mostEntries limit"
-	if len(w.parts) >= mostEntries || w.seen[*at] {
+	if len(w.parts) >= mostEntries || w.seen[*pos] {
 		return false
 	}
 	// gomutants:disable-next-line STATEMENT_REMOVE reason="marks bookmark as seen to prevent cycles"
-	w.seen[*at] = true
+	w.seen[*pos] = true
 
-	if part, ok := w.doc.readPart(*at, level, w.starts); ok {
+	if part, ok := w.doc.readPart(*pos, level, w.starts); ok {
 		w.parts = append(w.parts, part)
 	}
-	w.walk(at, level+1)
+	w.walk(pos, level+1)
 	return true
 }
 
@@ -147,12 +147,12 @@ func (d *document) getDestinationPage(bookmark references.FPDF_BOOKMARK) (int, b
 }
 
 func (d *document) pageOf(dest references.FPDF_DEST) (int, bool) {
-	at, err := d.worker.FPDFDest_GetDestPageIndex(&requests.FPDFDest_GetDestPageIndex{
+	pos, err := d.worker.FPDFDest_GetDestPageIndex(&requests.FPDFDest_GetDestPageIndex{
 		Document: d.ref, Dest: dest,
 	})
 	// gomutants:disable-next-line BRANCH_IF reason="invalid destination drops destination page lookup"
 	if err != nil {
 		return 0, false
 	}
-	return at.Index, true
+	return pos.Index, true
 }

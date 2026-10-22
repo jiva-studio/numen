@@ -19,7 +19,7 @@ type paths struct {
 }
 
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, error) {
-	engine, at, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
+	engine, pos, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, "", paths{}, err
 	}
@@ -34,7 +34,7 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, 
 	if cfg.Dir != "" {
 		found.from = cfg.Dir
 	}
-	return engine, at, found, nil
+	return engine, pos, found, nil
 }
 
 func name(path string) string {
