@@ -42,11 +42,11 @@ const insertRows = (rows: readonly Row[], target: RowDropTarget, dragRows: reado
 const moveRows = (
   rows: readonly Row[],
   dragIds: readonly RowId[],
-  at: RowDropTarget,
+  dropTarget: RowDropTarget,
 ): readonly Row[] => {
   const target = dragIds.map((row) => found(rows, row)).filter((row): row is Row => row !== null)
   const remainingRows = dragIds.reduce((rest, row) => removeRow(rest, row), rows)
-  return target.length ? insertRows(remainingRows, at, target) : rows
+  return target.length ? insertRows(remainingRows, dropTarget, target) : rows
 }
 
 /** The application's part again: rows taken out of the tree. */
@@ -99,9 +99,9 @@ const deep = (levels: number): readonly Row[] => {
 const DEEP_LEVELS = 14
 
 const many = (count: number): readonly Row[] =>
-  Array.from({ length: count }, (_, at) => ({
-    id: `row-${at}`,
-    name: `Row ${at + 1}`,
+  Array.from({ length: count }, (_, index) => ({
+    id: `row-${index}`,
+    name: `Row ${index + 1}`,
     hasChildren: false,
   }))
 
@@ -152,7 +152,7 @@ const CORPORA = {
   'a few': { rows: FEW, open: ['work'] },
   nested: {
     rows: deep(DEEP_LEVELS),
-    open: Array.from({ length: DEEP_LEVELS }, (_, at) => `level-${at + 1}`),
+    open: Array.from({ length: DEEP_LEVELS }, (_, index) => `level-${index + 1}`),
   },
   many: { rows: many(2000), open: [] },
   'other scripts': { rows: CYRILLIC, open: ['грядки'] },

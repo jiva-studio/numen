@@ -54,9 +54,9 @@ export interface NoticeCardsOptions {
 
 export interface NoticeCardsState {
   /** Everything standing, whether or not it is folded away behind the rest. */
-  readonly drawn: ComputedRef<readonly Notice[]>
+  readonly notices: ComputedRef<readonly Notice[]>
   /** What is drawn, and how many stand behind it. */
-  readonly folds: ComputedRef<{ shown: readonly Notice[]; over: number }>
+  readonly folds: ComputedRef<{ visible: readonly Notice[]; overflowCount: number }>
   /** Whether a person has asked to see what is folded away behind the rest. */
   readonly isOpened: Ref<boolean>
   /** What a counting notice has left to run, in words. */
@@ -84,13 +84,13 @@ function useNoticeSampling(
   const leftOn = (one: Notice): string => {
     const tally = findTally(one)
     if (tally === undefined) return ''
-    return getRemainingWord(tally.total - tally.done, movements.value.get(one.id)?.rate ?? 0)
+    return getRemainingWord(tally.total - tally.completedCount, movements.value.get(one.id)?.rate ?? 0)
   }
   return { sample, leftOn }
 }
 
 interface DismissalContext {
-  readonly folds: ComputedRef<{ shown: readonly Notice[] }>
+  readonly folds: ComputedRef<{ visible: readonly Notice[]; overflowCount: number }>
   readonly away: ShallowRef<ReadonlySet<string>>
   readonly forgotten: Set<string>
   readonly dismiss: (id: string) => void
@@ -105,14 +105,14 @@ function useNoticeDismissal(context: DismissalContext) {
   }
 
   const dismissByHand = async (id: string): Promise<void> => {
-    const pos = context.folds.value.shown.findIndex((one) => one.id === id)
+    const pos = context.folds.value.visible.findIndex((one: Notice) => one.id === id)
     const hadFocus = cards.get(id)?.way === document.activeElement
     context.forgotten.add(id)
     context.away.value = new Set([...context.away.value, id])
     context.dismiss(id)
     if (!hadFocus || pos < 0) return
     await nextTick()
-    const remainingFolds = context.folds.value.shown
+    const remainingFolds = context.folds.value.visible
     const next = remainingFolds[Math.min(pos, remainingFolds.length - 1)]
     if (next) cards.get(next.id)?.way?.focus()
   }
@@ -228,7 +228,7 @@ export function useNoticeCards(options: NoticeCardsOptions): NoticeCardsState {
   })
 
   return {
-    drawn: shownNotices,
+    notices: shownNotices,
     folds,
     isOpened,
     leftOn,

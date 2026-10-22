@@ -116,14 +116,14 @@ const groupDecksIntoPresets = (
   const came = new Map(vault.presets.map((one) => [one.preset, one]))
   const tallies = countDecksIntoPresets(reads)
 
-  const out = [...at.values()].map((one) => getPresetFromDecks(one, came.get(one.path), today))
+  const out = [...tallies.values()].map((one) => getPresetFromDecks(one, came.get(one.path), today))
 
   // A preset every one of whose decks is empty is answered for no deck, and so
   // is one whose settings could not be read, so both stand here on the count
   // alone, beside the presets nothing points at.
   const why = getCommonError(reads.map((one) => one.result))
   for (const one of vault.presets) {
-    if (at.has(one.preset)) continue
+    if (tallies.has(one.preset)) continue
     out.push(getPresetFromCount(one, why, today))
   }
   return out

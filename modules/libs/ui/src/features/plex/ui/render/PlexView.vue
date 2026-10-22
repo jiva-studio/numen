@@ -88,7 +88,7 @@ const thread = computed(() => getReachThread(props.frame, props.gestureFrom, pro
 const pendingThread = computed(() =>
   getPendingThread(props.frame, {
     from: props.pending?.from ?? null,
-    at: props.pending?.at ?? null,
+    position: props.pending?.at ?? null,
     viewport: props.viewport,
   }),
 )

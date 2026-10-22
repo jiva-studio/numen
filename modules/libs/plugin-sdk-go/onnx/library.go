@@ -16,7 +16,7 @@ func FindLibrary(dir string) string {
 		return ""
 	}
 	targetPath := filepath.Join(dir, GetLibraryName())
-	if info, err := os.Stat(at); err == nil && info.Mode().IsRegular() {
+	if info, err := os.Stat(targetPath); err == nil && info.Mode().IsRegular() {
 		return targetPath
 	}
 	return ""
@@ -107,8 +107,8 @@ func findMatching(pattern string) []string {
 	}
 	var out []string
 	for _, p := range found {
-		if info, err := os.Stat(at); err == nil && info.Mode().IsRegular() {
-			out = append(out, at)
+		if info, err := os.Stat(p); err == nil && info.Mode().IsRegular() {
+			out = append(out, p)
 		}
 	}
 	return out

@@ -54,7 +54,7 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
   grid: [0, 10, 20, 30],
   days: [],
   at: [],
-  now: { at: 1, value: 10, day: '' },
+  now: { index: 1, value: 10, day: '' },
   suggested: NO_CURVE_POINT,
   decks: 2,
   cards: 40,
@@ -72,7 +72,7 @@ const createGate = () => {
     open = resolve
     fail = reject
   })
-  return { answered: reply, open, fail }
+  return { promise: reply, open, fail }
 }
 
 /** An application that answers each question for a curve in turn. */
@@ -115,14 +115,14 @@ describe('whether two curves are drawn over the same range', () => {
 
 describe('where the knob remains', () => {
   it('is where the curve says the preset remains, the first place among them', () => {
-    expect(getKnobPosition(curve({ now: { at: 0, value: 0, day: '' } }), settings(), today)).toBe(0)
-    expect(getKnobPosition(curve({ now: { at: 3, value: 30, day: '' } }), settings(), today)).toBe(
+    expect(getKnobPosition(curve({ now: { index: 0, value: 0, day: '' } }), settings(), today)).toBe(0)
+    expect(getKnobPosition(curve({ now: { index: 3, value: 30, day: '' } }), settings(), today)).toBe(
       3,
     )
   })
 
   it('is the place nearest the preset where the curve does not hold it', () => {
-    const off = curve({ now: { at: -1, value: 0, day: '' } })
+    const off = curve({ now: { index: -1, value: 0, day: '' } })
 
     expect(getKnobPosition(off, settings({ minutesADay: 21 }), today)).toBe(2)
   })
@@ -147,7 +147,7 @@ describe('asking for a curve', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     state.curve.value = curve()
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
     const sketch = estimateCurve(DEFAULTS, today, BOUNDS)
 
     const picture = updateCurves(
@@ -162,8 +162,8 @@ describe('asking for a curve', () => {
     await flushPromises()
 
     expect(state.curve.value).toStrictEqual(sketch)
-    expect(sketch.now.at).toBeGreaterThan(0)
-    expect(state.place.value).toBe(sketch.now.at)
+    expect(sketch.now.index).toBeGreaterThan(0)
+    expect(state.place.value).toBe(sketch.now.index)
     gate.open(curve())
     await picture
   })
@@ -172,7 +172,7 @@ describe('asking for a curve', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     applyCurveAnswer(state, curve({ goal: 'retention' }))
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
 
     const picture = updateCurves(
       state,
@@ -194,7 +194,7 @@ describe('asking for a curve', () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     applyCurveAnswer(state, curve())
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
 
     const picture = updateCurves(
       state,
@@ -216,7 +216,7 @@ describe('asking for a curve', () => {
 
   it('draws an answer already retained without asking again', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
-    const target = curve({ now: { at: 3, value: 30, day: '' } })
+    const target = curve({ now: { index: 3, value: 30, day: '' } })
     state.answers.set(getShapeKey(DEFAULTS), target)
     const { core, requests } = createCore()
 
@@ -239,7 +239,7 @@ describe('asking for a curve', () => {
   it('asks once more for settings changed while a question was out', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const gate = createGate()
-    const { core, requests } = createCore(gate.answered)
+    const { core, requests } = createCore(gate.promise)
     let now = DEFAULTS
 
     const picture = updateCurves(
@@ -276,7 +276,7 @@ describe('an answer nobody is waiting for any more', () => {
     const other = settings({ minutesADay: 30 })
     state.answers.set(getShapeKey(other), card)
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
     let now = DEFAULTS
 
     const picture = updateCurves(
@@ -309,7 +309,7 @@ describe('an answer nobody is waiting for any more', () => {
     const other = settings({ minutesADay: 30 })
     state.answers.set(getShapeKey(other), curve())
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
     const response: string[] = []
     let now = DEFAULTS
 
@@ -341,7 +341,7 @@ describe('an answer nobody is waiting for any more', () => {
   it('is returned where the question still remains', async () => {
     const state = createCurveState(DEFAULTS, today, BOUNDS)
     const gate = createGate()
-    const { core } = createCore(gate.answered)
+    const { core } = createCore(gate.promise)
     const response: string[] = []
 
     const picture = updateCurves(

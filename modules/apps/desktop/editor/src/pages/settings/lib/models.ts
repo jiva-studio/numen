@@ -95,6 +95,6 @@ export const createChoices = (
 /** The choices for one setting of the fields, read from what the file holds there. */
 export const createModelChoices = (
   fields: Pick<SettingFields, 'getModels' | 'getString'>,
-  at: readonly string[],
+  path: readonly string[],
   words: Words,
-): readonly SelectChoice[] => createChoices(fields.getModels(at), fields.getString(at), words)
+): readonly SelectChoice[] => createChoices(fields.getModels(path), fields.getString(path), words)

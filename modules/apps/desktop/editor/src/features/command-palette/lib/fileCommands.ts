@@ -18,7 +18,7 @@ const isBookProofreadOffered = createArtifactOffer(
 )
 
 const isProofreadOffered = (target: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingProofreadOffered(at, runs) || isBookProofreadOffered(at, runs)
+  isRecordingProofreadOffered(target, runs) || isBookProofreadOffered(target, runs)
 
 const isRecordingDeleteTextOffered = createArtifactOffer(
   'deleteText',
@@ -33,7 +33,7 @@ const isUrlDeleteTextOffered = createArtifactOffer(
 )
 
 const isDeleteTextOffered = (target: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
+  isRecordingDeleteTextOffered(target, runs) || isUrlDeleteTextOffered(target, runs)
 
 export const createArtifactCommands = (words: Words): readonly Command[] => [
   {
@@ -64,11 +64,11 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     id: 'downloadCopy',
     text: words.downloadCopy,
     group: 'file',
-    isOffered: (at, runs) =>
-      at.isReady &&
+    isOffered: (target, runs) =>
+      target.isReady &&
       runs.canRun('downloadCopy') &&
-      at.made.copy !== undefined &&
-      isArtifactMissing(at.made.copy),
+      target.made.copy !== undefined &&
+      isArtifactMissing(target.made.copy),
   },
   {
     id: 'proofread',
@@ -87,7 +87,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     isOffered: isDeleteTextOffered,
     answers: {
       keeps: words.keepsTranscript,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deleted,
     },
@@ -100,7 +100,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     isOffered: createArtifactOffer('deleteCopy', 'url', (createdItem) => createdItem.copy === 'done'),
     answers: {
       keeps: words.keepsCopy,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deletedCopy,
     },

@@ -38,7 +38,7 @@ const createTestStencil = (overrides: Partial<VaultStencil> = {}): VaultStencil 
 })
 
 const stencil = (overrides: Partial<VaultStencil> = {}): BufferStencil =>
-  createBufferStencil(createTestStencil(over), createIds())
+  createBufferStencil(createTestStencil(overrides), createIds())
 
 describe('a stencil as the window holds it', () => {
   it('gives every face an identity of its own', () => {

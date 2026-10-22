@@ -11,7 +11,7 @@ import (
 
 func init() {
 	Register(func(libPath string) {
-		_ = initGraphOptimization(loadedPath)
+		_ = initGraphOptimization(libPath)
 	})
 }
 
@@ -40,7 +40,7 @@ func initGraphOptimization(libPath string) error {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := loadLibrary(at)
+	handle, err := loadLibrary(libPath)
 	if err != nil {
 		return err
 	}
@@ -77,7 +77,7 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 	if fn == nil {
 		_, loadedPath := runtimeState.GetLoaded()
 
-		if err := initGraphOptimization(libPath); err != nil {
+		if err := initGraphOptimization(loadedPath); err != nil {
 			return err
 		}
 		optLevelMu.Lock()

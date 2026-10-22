@@ -21,8 +21,8 @@ const props = defineProps<{
 // --- State ---
 const fields = createSettingFields(() => props.state.installation)
 
-const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
-  createModelChoices(fields, at, words)
+const getChoices = (path: readonly string[]): readonly SelectChoice[] =>
+  createModelChoices(fields, path, words)
 
 // --- Handlers ---
 function onOcrModelChange(name: string) {

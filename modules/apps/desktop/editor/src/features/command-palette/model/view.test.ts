@@ -54,7 +54,7 @@ const createCommand = (overrides: Partial<Command> & Pick<Command, 'id' | 'text'
 })
 
 const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget, typed: string) =>
-  view.createGroups(null, over, typed).find((group) => group.id === 'note')
+  view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
   const view = createView(createCommands(words))

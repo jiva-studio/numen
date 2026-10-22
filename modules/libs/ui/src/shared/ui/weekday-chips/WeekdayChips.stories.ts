@@ -179,10 +179,10 @@ export const NoLevelsAtAll: Story = {
 /** Far more days than a week holds, each drawn at the size of the rest. */
 export const FarTooMany: Story = {
   args: {
-    named: Array.from({ length: 31 }, (_, at) => ({
-      id: `day-${at}`,
-      short: `${at + 1}`,
-      long: `Day ${at + 1}`,
+    named: Array.from({ length: 31 }, (_, index) => ({
+      id: `day-${index}`,
+      short: `${index + 1}`,
+      long: `Day ${index + 1}`,
     })),
   },
   play: async ({ canvasElement }) => {
@@ -339,7 +339,7 @@ export const Dark: Story = {
     // blended from: Friday, Thursday, Wednesday, Tuesday and Monday, in that
     // order, each one further from it.
     const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
-    const rising = [5, 4, 3, 2, 1, 0].map((at) => ground(all[at] as HTMLElement))
+    const rising = [5, 4, 3, 2, 1, 0].map((idx) => ground(all[idx] as HTMLElement))
     for (const [at, chip] of rising.slice(1).entries()) {
       expect(chip).toBeGreaterThan((rising[at] as number) + 1)
     }

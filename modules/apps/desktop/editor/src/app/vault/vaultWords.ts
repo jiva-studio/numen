@@ -21,8 +21,8 @@ import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
  * for is counted one by one.
  */
 export const counted: Record<Units, TallyUnit> = {
-  [Units.UNSPECIFIED]: 'things',
-  [Units.THINGS]: 'things',
+  [Units.UNSPECIFIED]: 'items',
+  [Units.THINGS]: 'items',
   [Units.BYTES]: 'bytes',
   [Units.SECONDS]: 'seconds',
 }

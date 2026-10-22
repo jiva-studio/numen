@@ -21,13 +21,13 @@ func isolateMachine(t *testing.T) (home, bin string) {
 
 func writeExecutable(t *testing.T, targetPath string, mode os.FileMode) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(targetPath, []byte("#!/bin/sh\n"), mode); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(at, mode); err != nil {
+	if err := os.Chmod(targetPath, mode); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -84,7 +84,7 @@ func TestLocateConsumesAnyExecuteBit(t *testing.T) {
 		home, _ := isolateMachine(t)
 		targetPath := filepath.Join(home, "tool")
 		writeExecutable(t, targetPath, mode)
-		if got := Locate(nil, []string{at}); got != at {
+		if got := Locate(nil, []string{targetPath}); got != targetPath {
 			t.Errorf("mode %o: found %q", mode, got)
 		}
 	}

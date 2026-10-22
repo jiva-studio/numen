@@ -29,7 +29,7 @@ import { WORDS as words } from '@/shared/words'
 // --- Props & Emits ---
 const props = defineProps<{
   /** Every vault the installation holds, as the list last answered. */
-  listed: VaultList
+  vaultList: VaultList
   /** Every tab the window holds, which is none while this screen is what shows. */
   tabs: readonly Tab[]
   commands: Commands
@@ -63,7 +63,7 @@ const ways = computed(() => {
   })
 })
 
-const onList = computed(() => createVaultRows(props.listed, words))
+const onList = computed(() => createVaultRows(props.vaultList, words))
 
 /** Whether the welcome screen is what the person is looking at and typing into. */
 const welcoming = computed(
@@ -78,7 +78,7 @@ function onRun(id: string) {
 }
 
 function onOpen(id: string) {
-  const one = props.listed.vaults.find((vault) => vault.id === id)
+  const one = props.vaultList.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
   void runInvocation(

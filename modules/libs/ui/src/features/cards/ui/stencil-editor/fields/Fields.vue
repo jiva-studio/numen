@@ -66,7 +66,7 @@ const naming = useNameEntry<Objection>({
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const { dragged, at: dropTarget, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   isMoved: (held, lands) => canDropField(props.fields, held, lands),
@@ -103,7 +103,7 @@ const add = (): void => {
         :naming="naming"
         :objections-id="objectionsId(row.field)"
         :wrong="wrongWith(row.field)"
-        :is-drop-above="row.field === at"
+        :is-drop-above="row.field === dropTarget"
         :words="words"
         @drag-over="hover"
         @drop="drop"

@@ -38,7 +38,7 @@ const kind = ({ isKept = false, ...options }: Partial<AnyTabKind> & { isKept?: b
     },
     ...options,
   }
-  return { declared: () => one, one, opened: openedTab, closedPaths, seen: observed }
+  return { declared: () => one, one, opened: openedTab, closedPaths, inspected: observed }
 }
 
 /** A window told what kinds it draws, each of them made with what it is given. */
@@ -215,7 +215,7 @@ describe('the tab now on screen', () => {
 
     window.onTabShown(id)
 
-    expect(thing.seen).toEqual(['Note.md'])
+    expect(thing.inspected).toEqual(['Note.md'])
   })
 
   it('is nothing to a window that no longer holds it', () => {
@@ -224,7 +224,7 @@ describe('the tab now on screen', () => {
 
     window.onTabShown('gone')
 
-    expect(thing.seen).toEqual([])
+    expect(thing.inspected).toEqual([])
   })
 })
 
@@ -352,7 +352,7 @@ describe('the window going', () => {
 
   it('lets a kind that has its own way of going take it, and asks no more', async () => {
     const going: string[] = []
-    const thing = kind({ onDestroy: (state: { at: string }) => going.push(state.targetPath) })
+    const thing = kind({ onDestroy: (state: { targetPath: string }) => going.push(state.targetPath) })
     const window = notifiedCalls([thing.declared])
     await window.openTabOfKind('thing', 'One.md')
 
@@ -607,7 +607,7 @@ describe('a key struck on the window, offered in turn', () => {
 
     expect(window.onKeyPress(strike)).toBe(false)
 
-    expect(offer.offered).toEqual(['A', 'C', 'B'])
+    expect(sampleTab.actions).toEqual(['A', 'C', 'B'])
   })
 
   it('is taken by the first tab that reads it, and by no later one', async () => {
@@ -620,7 +620,7 @@ describe('a key struck on the window, offered in turn', () => {
 
     expect(window.onKeyPress(strike)).toBe(true)
 
-    expect(offer.offered).toEqual(['A', 'C'])
+    expect(offer.actions).toEqual(['A', 'C'])
   })
 
   it('is not offered to a tab hidden behind another in its pane', async () => {
@@ -631,7 +631,7 @@ describe('a key struck on the window, offered in turn', () => {
 
     window.onKeyPress(strike)
 
-    expect(offer.offered).toEqual(['Shown'])
+    expect(offer.actions).toEqual(['Shown'])
   })
 
   it('is no trouble for a layout drawing a tab the window does not hold', () => {
@@ -648,7 +648,7 @@ describe('a key struck on the window, offered in turn', () => {
     window.layout.value = { ...window.layout.value, focus: 'ghost' }
 
     expect(window.onKeyPress(strike)).toBe(true)
-    expect(offer.offered).toEqual(['A'])
+    expect(offer.actions).toEqual(['A'])
   })
 })
 
@@ -1031,9 +1031,9 @@ describe('text put to the tabs of a kind', () => {
   const listener = () =>
     kind({
       kind: 'listener',
-      open: () => ({ heard: [] as string[], title: '' }),
-      receiveText: (state: { heard: string[] }, text: string) => {
-        state.heard.push(text)
+      open: () => ({ received: [] as string[], title: '' }),
+      receiveText: (state: { received: string[] }, text: string) => {
+        state.received.push(text)
       },
     })
 
@@ -1048,8 +1048,8 @@ describe('text put to the tabs of a kind', () => {
     const dispatched = await window.sendText('listener', 'what is this?')
 
     expect(dispatched).toBe(second)
-    expect(window.getTab(first)?.state).toMatchObject({ heard: [] })
-    expect(window.getTab(second)?.state).toMatchObject({ heard: ['what is this?'] })
+    expect(window.getTab(first)?.state).toMatchObject({ received: [] })
+    expect(window.getTab(second)?.state).toMatchObject({ received: ['what is this?'] })
     expect(paneById(window.layout.value.root, window.layout.value.focus)?.active).toBe(second)
   })
 
@@ -1059,7 +1059,7 @@ describe('text put to the tabs of a kind', () => {
 
     const id = await window.sendText('listener', 'what is this?')
 
-    expect(window.getTab(id)?.state).toMatchObject({ heard: ['what is this?'] })
+    expect(window.getTab(id)?.state).toMatchObject({ received: ['what is this?'] })
   })
 
   it('is left unheard by a tab of a kind that takes no text', async () => {
@@ -1076,8 +1076,8 @@ describe('where a command over a file leads', () => {
     const request: string[][] = []
     const window = notifiedCalls([
       kind({
-        resolveCommand: async (at, command, type) => {
-          request.push([at, command, type])
+        resolveCommand: async (targetPath, command, type) => {
+          request.push([targetPath, command, type])
           return { ok: true, kind: 'preset', at: 'Slow.md' }
         },
       }).declared,

@@ -69,7 +69,7 @@ const FILE = {
 }
 
 const installation: Installation = {
-  getSetting: (at) => getSettingAt(FILE, at),
+  getSetting: (path) => getSettingAt(FILE, path),
   getModels: createProgramModels(PROGRAMS),
   write: fn(),
   writeSecret: fn(),

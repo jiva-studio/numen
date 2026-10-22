@@ -26,13 +26,13 @@ defineExpose({ scrollPage })
 // panel comes in while they are still being asked for, and a note cannot be
 // scrolled to before it is drawn.
 watch(
-  () => [props.held.open.value, props.held.col.value, props.held.notes.value] as const,
+  () => [props.panel.open.value, props.panel.col.value, props.panel.notes.value] as const,
   ([open, col, notes]) => {
     if (!open || !col || !notes.length) return
     void nextTick(() => {
-      const found = notes.find((one) => one.written === col || one.path === col)
+      const found = notes.find((one) => one.text === col || one.path === col)
       if (found) noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
-      props.held.read()
+      props.panel.read()
     })
   },
   { immediate: true },
@@ -40,7 +40,7 @@ watch(
 
 /* -------------------------------- Helpers --------------------------------- */
 /** A note is keyed by what its article is keyed by. */
-const getNoteKey = (one: Neighbour) => one.path || one.written
+const getNoteKey = (one: Neighbour) => one.path || one.text
 
 /**
  * Where each note was drawn, so the one a link named can be scrolled to. Read
@@ -68,14 +68,14 @@ function scrollPage(back = false) {
   <section class="reading" :aria-label="words.reading">
     <div ref="column" class="reading__column">
       <p
-        v-if="!props.held.notes.value.length && !props.held.isWorking.value"
+        v-if="!props.panel.notes.value.length && !props.panel.isWorking.value"
         class="reading__quiet"
       >
         {{ words.nothing }}
       </p>
 
       <article
-        v-for="one in props.held.notes.value"
+        v-for="one in props.panel.notes.value"
         :key="getNoteKey(one)"
         :ref="(element) => registerNoteElement(one, element)"
         class="reading__note"
@@ -90,8 +90,8 @@ function scrollPage(back = false) {
         <Prose v-if="one.body" :text="one.body" />
       </article>
 
-      <p v-if="props.held.unread.value" class="reading__quiet">
-        {{ words.named(props.held.unread.value) }}
+      <p v-if="props.panel.unread.value" class="reading__quiet">
+        {{ words.named(props.panel.unread.value) }}
       </p>
     </div>
   </section>

@@ -51,12 +51,12 @@ export function createCurveState(
 
 /** Whether two curves are drawn over the same range, place for place. */
 export const isSameGrid = (one: readonly number[], two: readonly number[]): boolean =>
-  one.length === two.length && one.every((value, at) => value === two[at])
+  one.length === two.length && one.every((value, index) => value === two[index])
 
 /** Where the knob relies on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.at >= 0
-    ? curve.now.at
+  curve.now.index >= 0
+    ? curve.now.index
     : Math.max(findNearest(curve.grid, getGoalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
@@ -96,7 +96,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   } else {
     const meanwhile = estimateCurve(settings, today, bounds)
     state.curve.value = meanwhile
-    state.place.value = Math.max(meanwhile.now.at, 0)
+    state.place.value = Math.max(meanwhile.now.index, 0)
   }
   state.isReal = false
   state.isWaiting.value = true

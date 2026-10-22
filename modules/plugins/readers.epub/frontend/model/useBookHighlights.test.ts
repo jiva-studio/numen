@@ -42,7 +42,7 @@ describe('a passage reached', () => {
   })
 
   it('lights nothing and goes nowhere once the tab is closed', async () => {
-    const { lit, goToOffset } = create(false)
+    const { highlights, goToOffset } = create(false)
 
     await highlights.focusSpans({ from: 10, to: 20 })
 

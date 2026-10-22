@@ -400,12 +400,12 @@ The ones I began with.
 	}
 
 	// A card may stand before the first section, and is placed under none.
-	var under []int
+	var sections []int
 	for _, c := range deck.Cards {
-		under = append(under, c.Section)
+		sections = append(sections, c.Section)
 	}
-	if !slices.Equal(under, []int{format.NoSection, 0, 1}) {
-		t.Errorf("sections = %v, want the first card under none", under)
+	if !slices.Equal(sections, []int{format.NoSection, 0, 1}) {
+		t.Errorf("sections = %v, want the first card under none", sections)
 	}
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %+v", deck.Problems)

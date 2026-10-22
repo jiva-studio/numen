@@ -100,10 +100,10 @@ export function useCommands(options: CommandsDepsOptions) {
       void options.pluginHost.executeCommand(id)
       return
     }
-    const invocation = commands.startCommand(id, at)
+    const invocation = commands.startCommand(id, target)
     if (invocation) return void runInvocation(invocation, commandDeps, ANSWER_WORDS)
     if (commands.open.value) return void palette.setOpen(false)
-    writeMessage(commands.getObjection(id, at), 'error')
+    writeMessage(commands.getObjection(id, target), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {

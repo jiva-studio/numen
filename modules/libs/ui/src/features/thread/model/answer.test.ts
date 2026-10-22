@@ -25,7 +25,7 @@ describe('an answer as it arrives', () => {
     answer.say('Hel')
     expect(sendTurn).toHaveBeenCalledExactlyOnceWith({
       id: 'a1',
-      voice: 'answered',
+      voice: 'response',
       text: 'Hel',
       state: 'arriving',
     })
@@ -41,7 +41,7 @@ describe('an answer as it arrives', () => {
     flush()
     expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a1',
-      voice: 'answered',
+      voice: 'response',
       text: 'abc',
       state: 'arriving',
     })
@@ -71,11 +71,11 @@ describe('an answer as it arrives', () => {
     const { answer, put: sendTurn } = create()
     answer.say('done')
     answer.settle()
-    expect(sendTurn).toHaveBeenLastCalledWith({ id: 'a1', voice: 'answered', text: 'done' })
+    expect(sendTurn).toHaveBeenLastCalledWith({ id: 'a1', voice: 'response', text: 'done' })
     answer.say('next')
     expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a2',
-      voice: 'answered',
+      voice: 'response',
       text: 'next',
       state: 'arriving',
     })
@@ -103,7 +103,7 @@ describe('an answer as it arrives', () => {
     answer.fail()
     expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a1',
-      voice: 'answered',
+      voice: 'response',
       text: 'half',
       state: 'failed',
     })
@@ -111,7 +111,7 @@ describe('an answer as it arrives', () => {
     answer.say('again')
     expect(sendTurn).toHaveBeenLastCalledWith({
       id: 'a2',
-      voice: 'answered',
+      voice: 'response',
       text: 'again',
       state: 'arriving',
     })

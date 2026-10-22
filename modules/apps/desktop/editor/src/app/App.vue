@@ -35,7 +35,7 @@ const {
   fileFlush,
   windowTabs,
   layout,
-  listed,
+  vaultList,
   log,
   notices,
   statusBar,
@@ -64,7 +64,7 @@ function onCloseTab(id: string, hold?: () => void) {
 
 async function onTearOffTab(id: string, position: { x: number; y: number }) {
   try {
-    await detachTab(id, at)
+    await detachTab(id, position)
     onCloseTab(id)
   } catch (err) {
     writeMessage(err instanceof Error ? err.message : String(err), 'error')
@@ -80,7 +80,7 @@ function dismissNotice(id: string) {
 }
 
 function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
-  linkMenu.open(tabId, at)
+  linkMenu.open(tabId, position)
 }
 </script>
 
@@ -117,7 +117,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
 
       <template #silence>
         <WelcomeScreen
-          :listed="listed"
+          :vault-list="vaultList"
           :tabs="windowTabs.tabs.value"
           :commands="commands"
           :search="palette"

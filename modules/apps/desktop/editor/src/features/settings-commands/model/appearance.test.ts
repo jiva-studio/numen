@@ -147,7 +147,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
     chosen: selected,
     messages: notifiedCalls,
     changeThemes: response.changeThemes,
-    listed: () => items,
+    getAppearanceCount: () => items,
     writeTheme: (name: string, css: string) => (texts[name] = css),
     fails: (error: string) => (failed = error),
     failsText: (error: string) => (textError = error),
@@ -157,7 +157,7 @@ const window = (overrides: Partial<Appearance> = {}, css = SERVED) => {
 
 /** The window listing what it can wear, over a page it was served dressed. */
 const startWindow = async (overrides: Partial<Appearance> = {}, css = SERVED) => {
-  const one = window(over, css)
+  const one = window(overrides, css)
   await one.worn.start()
   await settle()
   return one
@@ -370,7 +370,7 @@ describe('the three halves the step offers', () => {
     one.worn.previewItem('preset:dracula')
     await settle()
 
-    expect(rows(one).map((row) => row.disabled)).toStrictEqual([true, true, true])
+    expect(rows(one).map((row) => row.isDisabled)).toStrictEqual([true, true, true])
     expect(rows(one).map((row) => row.detail)).toStrictEqual([
       words.pinned,
       words.pinned,
@@ -386,7 +386,7 @@ describe('the three halves the step offers', () => {
     one.worn.previewItem('')
     await settle()
 
-    expect(rows(one).map((row) => row.disabled)).toStrictEqual([undefined, undefined, undefined])
+    expect(rows(one).map((row) => row.isDisabled)).toStrictEqual([undefined, undefined, undefined])
   })
 })
 
@@ -707,7 +707,7 @@ describe('the person editing their own theme file', () => {
 
     await one.changeThemes('mine:sea')
 
-    expect(one.listed()).toBe(2)
+    expect(one.getAppearanceCount()).toBe(2)
     expect(
       one.worn.getThemeGroups().flatMap((group) => group.items.map((row) => row.id)),
     ).toStrictEqual(['preset:numen', 'preset:dracula'])
@@ -906,7 +906,7 @@ describe('the folder when it names a theme that is not worn', () => {
 
     await one.changeThemes()
 
-    expect(one.listed()).toBe(1)
+    expect(one.getAppearanceCount()).toBe(1)
   })
 })
 

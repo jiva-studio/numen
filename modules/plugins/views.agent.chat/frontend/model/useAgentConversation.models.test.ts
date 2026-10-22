@@ -39,7 +39,7 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
     resolve: async () => new Map(),
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
-    getModelsAt: (at) => models.filter((one) => one.nameAt.join('/') === at.join('/')),
+    getModelsAt: (categoryPath) => models.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
 
 /** The agents the tab offers, each once, in the order offered. */

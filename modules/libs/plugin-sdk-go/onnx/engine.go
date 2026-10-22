@@ -20,9 +20,9 @@ func Open(ctx context.Context, libPath string) (*ort.Engine, string, error) {
 // openEngine loads the library at.
 func openEngine(libPath string) (*ort.Engine, error) {
 	preloadCppRuntime()
-	engine, err := ort.NewEngine(at)
+	engine, err := ort.NewEngine(libPath)
 	if err != nil {
-		return nil, fmt.Errorf("the onnx runtime %s: %w", at, err)
+		return nil, fmt.Errorf("the onnx runtime %s: %w", libPath, err)
 	}
 	return engine, nil
 }

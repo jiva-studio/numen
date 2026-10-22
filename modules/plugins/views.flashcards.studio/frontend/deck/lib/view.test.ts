@@ -157,8 +157,8 @@ describe('a reading under the identities the window drew it by', () => {
     ['its stencil', { stencilLink: 'Bird' }],
     ['its prose', { preamble: 'a note\n' }],
     ['its values', { values: [{ field: 'Name', text: 'Alpaca' }] }],
-  ])('takes the identity read for a card whose %s changed', (_what, over) => {
-    const { screen, read } = data(over)
+  ])('takes the identity read for a card whose %s changed', (_what, override) => {
+    const { screen, read } = data(override)
 
     expect(applyScreenIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
@@ -216,8 +216,8 @@ describe('whether two stencil listings are the same', () => {
     ['titled otherwise', { title: 'Beast' }],
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
-  ])('is not so where the second stencil is %s', (_what, over) => {
-    expect(areOffersEqual([offer(), offer()], [offer(), offer(over)])).toBe(false)
+  ])('is not so where the second stencil is %s', (_what, override) => {
+    expect(areOffersEqual([offer(), offer()], [offer(), offer(override)])).toBe(false)
   })
 
   it('is not so where one listing has a stencil more', () => {

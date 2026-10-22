@@ -124,9 +124,9 @@ class MarkBuilder {
     }
 
     if (node.name === 'FencedCode') {
-      this.eachLine(node.from, node.to, (at, first, isLast) => {
+      this.eachLine(node.from, node.to, (pos, first, isLast) => {
         const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
-        this.found.push(line(`cm-code${edge}`).range(at))
+        this.found.push(line(`cm-code${edge}`).range(pos))
       })
       return true
     }

@@ -46,8 +46,8 @@ const meta: Meta<Knobs> = {
         args.words
           .split('\n')
           .filter((word) => word.length > 0)
-          .map((text, at) => ({
-            id: text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${at}`,
+          .map((text, index) => ({
+            id: text.trim().toLowerCase().replace(/\s+/g, '-') || `choice-${index}`,
             text,
           })),
       )
@@ -146,7 +146,7 @@ export const OneChoice: Story = {
 /** Far more choices than a segmented control is drawn for. */
 export const FarTooMany: Story = {
   args: {
-    words: Array.from({ length: 12 }, (_, at) => `Choice ${at + 1}`).join('\n'),
+    words: Array.from({ length: 12 }, (_, index) => `Choice ${index + 1}`).join('\n'),
     chosen: 'choice-1',
     width: '30rem',
   },

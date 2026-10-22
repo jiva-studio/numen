@@ -239,7 +239,7 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
   return {
     getStepGroups: (command, typed) => {
       const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
-      if (appearance.length > 0) return appearance
+      if (appearanceGroups.length > 0) return appearanceGroups
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === NESTING) return nesting.getNestingGroups()
       if (command === HEADINGS) return nesting.getHeadingsGroups()
@@ -308,7 +308,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     rest,
     file,
     configured,
-    kept: retainedItem,
+    paletteLists: retainedItem,
     kinds,
     start,
     close,

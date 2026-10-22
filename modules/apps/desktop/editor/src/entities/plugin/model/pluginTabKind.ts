@@ -80,7 +80,7 @@ export function createDeclaredTabKind(
     ...pickDeclaredHooks(registration),
     kind,
     pluginId,
-    open: (at, id) => registration.open(at, id),
+    open: (targetPath, id) => registration.open(targetPath, id),
     getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
   }

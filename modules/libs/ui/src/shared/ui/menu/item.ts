@@ -62,18 +62,18 @@ export interface MenuPlacement {
  * The point is a span of no width, touching the menu: the menu runs on from it
  * sits at the near edge and scrolls.
  */
-export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({
+export const placeMenu = ({ at: point, size, viewport, margin }: MenuPlacement): Position => ({
   x: getAdjacentPlace({
-    from: at.x,
-    to: at.x,
+    from: point.x,
+    to: point.x,
     size: size.width,
     room: viewport.width,
     margin,
     gap: 0,
   }),
   y: getAdjacentPlace({
-    from: at.y,
-    to: at.y,
+    from: point.y,
+    to: point.y,
     size: size.height,
     room: viewport.height,
     margin,

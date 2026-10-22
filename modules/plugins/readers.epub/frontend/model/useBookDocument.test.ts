@@ -40,7 +40,7 @@ describe('a book with nothing drawn', () => {
     const { doc } = create()
 
     expect(doc.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
-    expect(doc.drawn.value).toBe('')
+    expect(doc.renderedChapter.value).toBe('')
     expect(doc.markup.value).toBe('')
   })
 })
@@ -53,7 +53,7 @@ describe('a document drawn', () => {
     pending.get(FIRST.path)?.resolve('<img src="pics/a.png">')
     await drawTask
 
-    expect(doc.drawn.value).toBe(FIRST.path)
+    expect(doc.renderedChapter.value).toBe(FIRST.path)
     expect(doc.documentSpan.value).toStrictEqual(FIRST.span)
     expect(doc.markup.value).toContain('src="/served/pics/a.png"')
     expect(urls).toStrictEqual(['library/b.epub|pics/a.png|print-1'])
@@ -69,7 +69,7 @@ describe('a document drawn', () => {
     pending.get(FIRST.path)?.resolve('<p>first</p>')
     await older
 
-    expect(doc.drawn.value).toBe(SECOND.path)
+    expect(doc.renderedChapter.value).toBe(SECOND.path)
     expect(doc.markup.value).toContain('second')
   })
 
@@ -82,7 +82,7 @@ describe('a document drawn', () => {
     pending.get(FIRST.path)?.resolve('<p>first</p>')
     await drawTask
 
-    expect(doc.drawn.value).toBe('')
+    expect(doc.renderedChapter.value).toBe('')
     expect(doc.markup.value).toBe('')
   })
 })

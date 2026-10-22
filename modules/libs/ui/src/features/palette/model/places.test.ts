@@ -48,12 +48,12 @@ describe('usePalettePlaces', () => {
         group('second', [], { silence: 'No notes' }),
         group('quiet', [item('b')]),
       ])
-      expect(state.said.value).toBe('No names. No notes')
+      expect(state.announcement.value).toBe('No names. No notes')
     })
 
     it('is one group alone as it says it', () => {
       const { state } = setUp([group('first', [], { silence: 'No names' })])
-      expect(state.said.value).toBe('No names')
+      expect(state.announcement.value).toBe('No names')
     })
 
     it('is empty where no group is silent', () => {
@@ -61,7 +61,7 @@ describe('usePalettePlaces', () => {
         group('seen', [item('a')]),
         group('loading', [], { isWorking: true }),
       ])
-      expect(state.said.value).toBe('')
+      expect(state.announcement.value).toBe('')
     })
   })
 
@@ -85,7 +85,7 @@ describe('usePalettePlaces', () => {
 
     it('stays on the first row when that row is the one it holds', async () => {
       const { groups, state } = setUp([group('g', [item('a', true), item('b')])])
-      state.held.value = 'a'
+      state.selectedId.value = 'a'
       groups.value = [group('g', [item('a', true), item('b'), item('c')])]
       await nextTick()
       expect(state.here.value).toBe(0)
@@ -104,7 +104,7 @@ describe('usePalettePlaces', () => {
       await nextTick()
       typed.value = 'n'
       await nextTick()
-      expect(state.held.value).toBe('')
+      expect(state.selectedId.value).toBe('')
       expect(state.activeItem.value).toBeUndefined()
       expect(onItemActive).toHaveBeenLastCalledWith('')
     })

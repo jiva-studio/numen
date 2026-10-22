@@ -56,7 +56,7 @@ func newAnsweredVault(t *testing.T, cards int) vaulted {
 // curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	u := flashcards.NewProjectCurve(
-		s.standings, s.kept, s.presets,
+		s.standings, s.schedules, s.presets,
 		today, func() time.Time { return now },
 	)
 	u.Cores = runtime.GOMAXPROCS(0)
@@ -77,7 +77,7 @@ func TestACurveWritesNoScheduleCache(t *testing.T) {
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
 		t.Fatal(err)
 	}
-	if raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID); err == nil {
+	if raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID); err == nil {
 		t.Errorf("a curve wrote a cache of %d bytes", len(raw))
 	}
 }
@@ -1173,7 +1173,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 4)
 	noIndex := flashcards.NewListCardFaces(s.env.Ports.Readers, nil, nil)
-	u := flashcards.NewProjectCurve(noIndex, s.kept, s.presets, today, func() time.Time { return noon })
+	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,

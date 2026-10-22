@@ -154,7 +154,7 @@ export const FarTooMany: Story = {
   args: { wide: '100%', high: '0.9rem', isPill: false },
   render: (args) => ({
     components: { Skeleton },
-    setup: () => ({ args, rows: Array.from({ length: 40 }, (_, at) => at) }),
+    setup: () => ({ args, rows: Array.from({ length: 40 }, (_, index) => index) }),
     template: `
       <div class="numen" style="display:flex;flex-direction:column;gap:6px;inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink)">
         <Skeleton v-for="row in rows" :key="row" v-bind="args" />

@@ -61,7 +61,7 @@ describe('where the preset itself remains', () => {
 // one: the preset's own value is not a place of the grid, and rounding it onto
 // one would read out a value nobody set.
 describe('the value the knob remains at', () => {
-  const riding = drawnCurve({ now: { at: 2, value: 21, day: '' } })
+  const riding = drawnCurve({ now: { index: 2, value: 21, day: '' } })
 
   it('is the preset’s own where the knob has not been moved off it', () => {
     expect(getKnobValue(riding, 2)).toBe(21)
@@ -105,7 +105,7 @@ describe('what one place of the curve produces', () => {
       point({ reviews: 80, retained: 0.88 }),
       point({ reviews: 120, retained: 0.93 }),
     ],
-    now: { at: 2, value: 20, day: '' },
+    now: { index: 2, value: 20, day: '' },
     suggested: NO_CURVE_POINT,
     decks: 1,
     cards: 400,
@@ -271,11 +271,11 @@ describe('where a value relies on a grid, at the edges', () => {
 
 describe('the value the knob remains at, at the edges', () => {
   it('is the preset’s own at the first place', () => {
-    expect(getKnobValue(drawnCurve({ now: { at: 0, value: 7, day: '' } }), 0)).toBe(7)
+    expect(getKnobValue(drawnCurve({ now: { index: 0, value: 7, day: '' } }), 0)).toBe(7)
   })
 
   it('is nothing at no place, where the preset falls outside the grid', () => {
-    expect(getKnobValue(drawnCurve({ now: { at: -1, value: 7, day: '' } }), -1)).toBe(0)
+    expect(getKnobValue(drawnCurve({ now: { index: -1, value: 7, day: '' } }), -1)).toBe(0)
   })
 })
 

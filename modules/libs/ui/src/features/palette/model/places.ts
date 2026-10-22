@@ -25,7 +25,7 @@ export interface PalettePlacesState {
   /** Every row of every group, in the order the keyboard walks them. */
   readonly places: ComputedRef<readonly PalettePlace[]>
   /** What a search came back with, where it came back with nothing. */
-  readonly said: ComputedRef<string>
+  readonly announcement: ComputedRef<string>
   /** The number of the row the keyboard is on, and -1 for none. */
   readonly here: ComputedRef<number>
   /** The item the keyboard is on, and what it can be asked. */
@@ -34,7 +34,7 @@ export interface PalettePlacesState {
   /** The keyboard onto the row at that number. */
   readonly goTo: (pos: number) => void
   /** The keyboard put on nothing, which a fresh question leaves it on. */
-  readonly held: Ref<string>
+  readonly selectedId: Ref<string>
   /** A pointer crossing the list lights the row it passes over. */
   readonly lightAt: (pos: number, event: PointerEvent) => void
   /** The row at that number chosen, and whether the second action was asked for. */
@@ -132,5 +132,5 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
     options.tellChoice(item.id, action)
   }
 
-  return { placed: placedPalette, places, said: response, here, activeItem, actions: proposed, goTo, held: target, lightAt, chooseAt }
+  return { placed: placedPalette, places, announcement: response, here, activeItem, actions: proposed, goTo, selectedId: target, lightAt, chooseAt }
 }

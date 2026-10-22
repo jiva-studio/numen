@@ -136,14 +136,14 @@ describe('what the page asks for', () => {
       const css = readFileSync(from.resolve(sheet), 'utf8')
       expect([
         sheet,
-        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1]),
+        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((match) => match[1]),
       ]).toStrictEqual([sheet, []])
     }
   })
 
   it('names no host but the core in what it is built from', () => {
     const named = readSources(join(here, 'src')).flatMap((source) =>
-      [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((at) => at[1]),
+      [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((match) => match[1]),
     )
     expect([...new Set(named)]).toStrictEqual(['127.0.0.1'])
   })

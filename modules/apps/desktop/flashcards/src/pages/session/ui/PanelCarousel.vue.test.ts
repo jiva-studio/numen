@@ -15,7 +15,7 @@ const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
     // The window is listening and answers by setting the prop, so what is in the
     // window stays the window's answer. A strip nobody listens to keeps its own.
-    props: { at, 'onUpdate:at': () => {} },
+    props: { at: place, 'onUpdate:at': () => {} },
     slots: {
       before: '<p>the reading</p>',
       default: '<p>the card</p>',
@@ -49,8 +49,8 @@ const scrollStrip = async (window_: HTMLElement, to: number) => {
 
 describe('a card with a panel on either side of it', () => {
   it('draws all three, wherever the strip is standing', () => {
-    for (const at of ['before', 'here', 'after'] as const) {
-      const { one } = strip(at)
+    for (const place of ['before', 'here', 'after'] as const) {
+      const { one } = strip(place)
       expect(one.text()).toContain('the reading')
       expect(one.text()).toContain('the card')
       expect(one.text()).toContain('the chat')

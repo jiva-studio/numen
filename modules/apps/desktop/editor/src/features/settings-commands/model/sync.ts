@@ -78,5 +78,5 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
     if (isLatest) isEnabled.value = was
   }
 
-  return { isEnabled, kept: isEnabled, start, getSyncingGroups, choose }
+  return { isEnabled, start, getSyncingGroups, choose }
 }

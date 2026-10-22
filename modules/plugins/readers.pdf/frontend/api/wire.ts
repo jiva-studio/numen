@@ -56,8 +56,8 @@ export const documents: Documents = {
     `${getAssetUrl(path)}/pages/${pageNumber}?wide=${width}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() => client.ocr.readOcr({ path, spans: [...spans] }))
-    return spans.map((_, at) => {
-      const run = answer.runs[at]
+    return spans.map((_, index) => {
+      const run = answer.runs[index]
       return run ? toHighlightedPages(run) : []
     })
   },

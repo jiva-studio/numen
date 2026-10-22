@@ -33,9 +33,9 @@ const createKindOver = (tree: FileTree, options: HostOptions = {}) => {
 }
 
 /** A tab of the kind, opened in a scope of its own the way the window opens one. */
-const openTab = (kind: ReturnType<typeof createKindOver>['kind'], at = '', id = FILES) => {
+const openTab = (kind: ReturnType<typeof createKindOver>['kind'], targetPath = '', id = FILES) => {
   const scope = effectScope(true)
-  const state = scope.run(() => kind.open!(at, id))!
+  const state = scope.run(() => kind.open!(targetPath, id))!
   return { state, scope }
 }
 

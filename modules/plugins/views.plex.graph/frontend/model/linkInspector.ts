@@ -36,17 +36,17 @@ function createLinkItem(
 
 /** The neighbour the line between two drawn notes stands for. */
 export function findPairNeighbour(
-  around: Neighbourhood | null,
+  neighbourhood: Neighbourhood | null,
   pathA: string,
   pathB: string,
 ): Neighbour | undefined {
-  if (!around) return undefined
-  const focus = around.focus.path
+  if (!neighbourhood) return undefined
+  const focus = neighbourhood.focus.path
   if (pathA === focus || pathB === focus) {
     const other = pathA === focus ? pathB : pathA
-    return around.related.find((one) => one.path === other)
+    return neighbourhood.related.find((one) => one.path === other)
   }
-  return around.related.find(
+  return neighbourhood.related.find(
     (one) =>
       one.relation === 'sibling' &&
       [pathA, pathB].includes(one.path) &&
@@ -56,18 +56,18 @@ export function findPairNeighbour(
 
 /** The links the core reports between two drawn notes, the one written in `pathA` first. */
 export function createInspectorLinks(
-  around: Neighbourhood | null,
+  neighbourhood: Neighbourhood | null,
   pathA: string,
   pathB: string,
 ): DirectionalLinkItem[] {
-  const related = findPairNeighbour(around, pathA, pathB)
-  if (!around || !related) return []
+  const related = findPairNeighbour(neighbourhood, pathA, pathB)
+  if (!neighbourhood || !related) return []
 
   if (related.relation === 'sibling') {
     return [createLinkItem(related.path, related.through, 'parent', related.label, pathA)]
   }
 
-  const focus = around.focus.path
+  const focus = neighbourhood.focus.path
   const links = [createLinkItem(focus, related.path, related.relation, related.label, pathA)]
   if (related.isMutual) {
     const reverse = related.reverseLabel ?? ''
@@ -198,7 +198,7 @@ function getTopPosition(
 }
 
 export function resolvePopoverPosition({
-  at,
+  at: point,
   popoverSize,
   containerSize,
   margin = 12,
@@ -212,7 +212,7 @@ export function resolvePopoverPosition({
     containerSize.height || (typeof window !== 'undefined' ? window.innerHeight : 600)
 
   return {
-    left: Math.round(getLeftPosition(at.x, width, containerW, margin)),
-    top: Math.round(getTopPosition(at.y, height, containerH, margin, gap)),
+    left: Math.round(getLeftPosition(point.x, width, containerW, margin)),
+    top: Math.round(getTopPosition(point.y, height, containerH, margin, gap)),
   }
 }

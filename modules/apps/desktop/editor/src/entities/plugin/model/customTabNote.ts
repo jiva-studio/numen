@@ -11,7 +11,7 @@ const getErrorMessage = (err: unknown): string => (err instanceof Error ? err.me
  * that a newer write replaced is not shown.
  */
 export const createNoteWriter = (
-  at: string,
+  path: string,
   writeNote: PluginHostDeps['writeNote'],
   errorMessage: Ref<string>,
 ): ((body: string) => void) => {
@@ -20,7 +20,7 @@ export const createNoteWriter = (
   return (body) => {
     if (!writeNote) return
     const turn = ++writes
-    writeNote(at, body).then(
+    writeNote(path, body).then(
       () => {
         if (turn !== writes || !hasWriteError) return
         hasWriteError = false
@@ -53,13 +53,13 @@ const splitRead = (result: NoteRead): { body?: string; error?: string } => {
 /** The body and the error a read answered, put where the tab shows them. */
 const applyRead = (targetPath: string, result: NoteRead, state: NoteReadState): void => {
   const { body, error } = splitRead(result)
-  if (body !== undefined) state.note.value = { path: at, body }
+  if (body !== undefined) state.note.value = { path: targetPath, body }
   if (error) state.errorMessage.value = error
 }
 
 const finishRead = (targetPath: string, result: NoteRead, state: NoteReadState): void => {
   state.isLoading.value = false
-  if (!state.hasEdited()) applyRead(at, result, state)
+  if (!state.hasEdited()) applyRead(targetPath, result, state)
 }
 
 const failRead = (err: unknown, state: NoteReadState): void => {
@@ -69,11 +69,11 @@ const failRead = (err: unknown, state: NoteReadState): void => {
 
 /** The body the first read gives, unless the tab was edited while it was in flight. */
 export const startNoteRead = (
-  at: string,
+  path: string,
   readNote: NonNullable<PluginHostDeps['readNote']>,
   state: NoteReadState,
 ): void => {
-  readNote(at)
-    .then((result) => finishRead(at, result, state))
+  readNote(path)
+    .then((result) => finishRead(path, result, state))
     .catch((err) => failRead(err, state))
 }

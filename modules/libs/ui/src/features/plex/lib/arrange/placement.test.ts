@@ -22,9 +22,9 @@ const FOCUS: PlacedNode = {
 
 /** Nodes of one relation, named after it. */
 const createNodes = (relation: PlexRelation, count: number): readonly PlexNode[] =>
-  Array.from({ length: count }, (_, at) => ({
-    id: `${relation}-${at}`,
-    title: `${relation} ${at}`,
+  Array.from({ length: count }, (_, index) => ({
+    id: `${relation}-${index}`,
+    title: `${relation} ${index}`,
     relation,
   }))
 

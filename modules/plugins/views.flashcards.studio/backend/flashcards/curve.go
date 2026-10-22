@@ -65,7 +65,7 @@ func checkGoal(p review.Preset) error {
 
 // Execute is the curve of the goal this preset steers.
 //
-// The preset is the settings the curve is drawn under, and need not be what its
+// The preset is the settings the curve is drawn presets, and need not be what its
 // schedules, and a preset standing in no note schedules the decks that name
 // none.
 func (u ProjectCurve) Execute(
@@ -98,7 +98,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	decks, pos, under, unbegunCount := mine.decks, mine.schedules, mine.presetMap, mine.unreviewed
+	decks, pos, presets, unbegunCount := mine.decks, mine.schedules, mine.presetMap, mine.unreviewed
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
@@ -107,7 +107,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, presets)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
@@ -117,7 +117,7 @@ func (u ProjectCurve) Execute(
 	// already partway through.
 	run := review.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
-		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, under,
+		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
 	out, err := run.Curve(ctx, now, p, pos, unbegunCount, u.getScheduler, u.computePlaces)
@@ -126,7 +126,7 @@ func (u ProjectCurve) Execute(
 	}
 	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = pointing
-	out.Cards = len(under)
+	out.Cards = len(presets)
 	out.Overdue = review.CountOverdue(u.day, pos, now)
 	out.Unbegun = unbegunCount
 	return out, nil

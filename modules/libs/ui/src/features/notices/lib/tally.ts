@@ -27,7 +27,7 @@ export type Tone = 'plain' | 'caution' | 'alarm'
 
 /** A count of things done out of things to do. */
 export interface Tally {
-  readonly done: number
+  readonly completedCount: number
   readonly total: number
 }
 
@@ -58,9 +58,9 @@ export interface ActivityDescriptor {
  */
 export const findShare = (tally: Tally): number | undefined => {
   if (tally.total <= 0) return undefined
-  if (tally.done >= tally.total) return 1
-  if (tally.done <= 0) return 0
-  return tally.done / tally.total
+  if (tally.completedCount >= tally.total) return 1
+  if (tally.completedCount <= 0) return 0
+  return tally.completedCount / tally.total
 }
 
 /**
@@ -119,12 +119,12 @@ export const getRemainingWord = (left: number, perSecond: number): string => {
 export const SMOOTHING = 10
 
 export const getRate = (
-  previous: { readonly done: number; readonly rate: number },
+  previous: { readonly completedCount: number; readonly rate: number },
   count: number,
   seconds: number,
 ): number => {
   if (seconds <= 0) return previous.rate
-  const moved = count - previous.done
+  const moved = count - previous.completedCount
   if (moved < 0) return 0
   if (moved === 0) return previous.rate
   const now = moved / seconds

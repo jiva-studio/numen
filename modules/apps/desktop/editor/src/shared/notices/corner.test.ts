@@ -39,9 +39,9 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   id: 'indexing-1',
   label: 'Recognising a scan',
   about: 'library/Sabhaparva.pdf',
-  done: 42,
+  completedCount: 42,
   total: 400,
-  counting: 'things',
+  counting: 'items',
   error: '',
   isUserStarted: true,
   ...overrides,
@@ -177,7 +177,7 @@ describe('work that stopped badly', () => {
 
 describe('work with nothing to count', () => {
   it('carries no tally, which is an ordinary state and not an unknown one', () => {
-    const notices = corner([createTask({ done: 0, total: 0 })])
+    const notices = corner([createTask({ completedCount: 0, total: 0 })])
 
     expect(notices[0]?.done).toBeUndefined()
     expect(notices[0]?.total).toBeUndefined()
@@ -190,7 +190,7 @@ describe('work with nothing to count', () => {
         id: 'getting ready',
         label: 'Fetching models',
         about: 'inference.onnx',
-        done: 0,
+        completedCount: 0,
         total: 0,
       }),
     ])
@@ -206,7 +206,7 @@ describe('a step of a run', () => {
       id: 'making the vectors',
       label: what,
       about,
-      done: count,
+      completedCount: count,
       total,
       isUserStarted: false,
     })

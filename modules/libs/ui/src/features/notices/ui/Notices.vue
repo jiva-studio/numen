@@ -56,7 +56,7 @@ const emit = defineEmits<{
 const stack = useTemplateRef<HTMLElement>('stack')
 
 const {
-  drawn,
+  notices,
   folds,
   isOpened,
   leftOn,
@@ -77,15 +77,15 @@ const {
 })
 
 /** What the corner is read out through. */
-const { told, cried } = useAnnouncer(() => drawn.value)
+const { polite, assertive } = useAnnouncer(() => notices.value)
 </script>
 
 <template>
   <div class="notices numen text-small font-sans">
-    <LiveRegions :told="told" :cried="cried" />
+    <LiveRegions :told="polite" :cried="assertive" />
 
     <aside
-      v-if="folds.shown.length || folds.over"
+      v-if="folds.visible.length || folds.overflowCount"
       ref="stack"
       class="notices__stack flex flex-col"
       :aria-label="name"
@@ -95,18 +95,18 @@ const { told, cried } = useAnnouncer(() => drawn.value)
     >
       <TransitionGroup name="notice">
         <button
-          v-if="folds.over"
+          v-if="folds.overflowCount"
           key="folded"
           type="button"
           class="notice notice__folded"
           @pointerover="onPointerOver"
           @click="isOpened = true"
         >
-          {{ folds.over }} {{ more }}
+          {{ folds.overflowCount }} {{ more }}
         </button>
 
         <NoticeCard
-          v-for="one in folds.shown"
+          v-for="one in folds.visible"
           :key="one.id"
           :ref="(card) => holdCard(one.id, card)"
           :one="one"

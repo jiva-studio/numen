@@ -42,7 +42,7 @@ const press = (more: { button?: number; clientX?: number; pointerId?: number } =
  * under.
  */
 const createStrip = (
-  at: PanelPlace = 'here',
+  initialPlace: PanelPlace = 'here',
   more: { hasCard?: boolean; owner?: Ref<PanelPlace> } = {},
 ) => {
   const window_ = document.createElement('div')
@@ -65,7 +65,7 @@ const createStrip = (
 
   const windowRef = shallowRef<HTMLElement | null>(window_)
   const middleRef = shallowRef<HTMLElement | null>(more.hasCard === false ? null : card)
-  const displayedItems = more.owner ?? ref<PanelPlace>(at)
+  const displayedItems = more.owner ?? ref<PanelPlace>(initialPlace)
   const errors: unknown[] = []
 
   let target: ReturnType<typeof useCarouselStrip> | null = null
@@ -357,7 +357,7 @@ describe('a strip taken off the screen', () => {
 
 /** The owner's hold on where the strip is, which hears of every write made to it. */
 const createOwner = (place: PanelPlace) => {
-  const target = ref<PanelPlace>(at)
+  const target = ref<PanelPlace>(place)
   const writes: PanelPlace[] = []
   const owner = computed<PanelPlace>({
     get: () => target.value,

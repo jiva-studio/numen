@@ -122,8 +122,8 @@ export function areNeighbourhoodsEqual(
   if (one.focusType !== other.focusType) return false
   if (one.related.length !== other.related.length) return false
 
-  return one.related.every((related, at) => {
-    const comparison = other.related[at]!
+  return one.related.every((related, index) => {
+    const comparison = other.related[index]!
     return (
       related.path === comparison.path &&
       related.title === comparison.title &&

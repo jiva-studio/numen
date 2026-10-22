@@ -33,7 +33,7 @@ const window = (options: HostOptions = {}) => {
 }
 
 /** A line of the conversation. */
-const turn = (id: string, voice: 'asked' | 'answered', text: string): Turn =>
+const turn = (id: string, voice: 'prompt' | 'response', text: string): Turn =>
   ({ id, voice, text, state: 'settled' })
 
 describe('the agent tab as the window keeps it', () => {
@@ -50,7 +50,7 @@ describe('what an agent tab is called', () => {
   it('is the first thing requested of it, shortened', () => {
     const one = window()
     const state = one.open()
-    one.conversations[0]!.said.value = [turn('a', 'asked', 'what is this whole vault about')]
+    one.conversations[0]!.said.value = [turn('a', 'prompt', 'what is this whole vault about')]
 
     expect(one.kind.getTitle?.(state)).toBe('what is this whole…')
   })
@@ -59,8 +59,8 @@ describe('what an agent tab is called', () => {
     const one = window()
     const state = one.open()
     one.conversations[0]!.said.value = [
-      turn('a', 'answered', 'an answer'),
-      turn('b', 'asked', 'the question'),
+      turn('a', 'response', 'an answer'),
+      turn('b', 'prompt', 'the question'),
     ]
 
     expect(one.kind.getTitle?.(state)).toBe('the question')

@@ -18,7 +18,7 @@ const MIDDLE = 'OEBPS/middle.xhtml'
 /** One run of the corpus: where it says it begins, and what it says. */
 interface Run {
   readonly at: number
-  readonly said: string
+  readonly text: string
 }
 
 /** The runs the corpus carries, in the order it writes them. */
@@ -26,7 +26,7 @@ const getRuns = (): readonly Run[] => {
   const target = new DOMParser().parseFromString(spine, 'text/html')
   return [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
     at: Number(one.getAttribute('data-offset')),
-    said: one.textContent ?? '',
+    text: one.textContent ?? '',
   }))
 }
 
@@ -34,7 +34,7 @@ const span = () => {
   const all = getRuns()
   const first = all[0]!
   const last = all[all.length - 1]!
-  return { from: first.at, to: last.at + countBytes(last.said) }
+  return { from: first.at, to: last.at + countBytes(last.text) }
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
@@ -71,7 +71,7 @@ describe('the markup a spine document arrives as', () => {
     const all = getRuns()
     for (let i = 1; i < all.length; i++) {
       const before = all[i - 1]!
-      expect(all[i]!.at).toBe(before.at + countBytes(before.said))
+      expect(all[i]!.at).toBe(before.at + countBytes(before.text))
     }
   })
 

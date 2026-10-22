@@ -41,7 +41,7 @@ describe('whether a title and a filename are one name', () => {
     )
     await target.start()
 
-    expect(target.kept.value).toBe(true)
+    expect(target.isEnabled.value).toBe(true)
   })
 
   it('says which of the two is the one in force, and nothing alongside the other', async () => {
@@ -61,7 +61,7 @@ describe('whether a title and a filename are one name', () => {
     await target.choose(OFF)
 
     expect(core.wrote).toStrictEqual([false])
-    expect(target.kept.value).toBe(false)
+    expect(target.isEnabled.value).toBe(false)
   })
 
   it('writes nothing for the row already in force', async () => {
@@ -82,7 +82,7 @@ describe('whether a title and a filename are one name', () => {
     await target.choose('interfaceScale:1.5')
 
     expect(core.wrote).toStrictEqual([])
-    expect(target.kept.value).toBe(true)
+    expect(target.isEnabled.value).toBe(true)
   })
 
   it('goes back to what the settings hold where the setting could not be written', async () => {
@@ -93,7 +93,7 @@ describe('whether a title and a filename are one name', () => {
 
     await target.choose(OFF)
 
-    expect(target.kept.value).toBe(true)
+    expect(target.isEnabled.value).toBe(true)
     expect(mockWriter.messagesText.at(-1)).toContain(words.unturned)
   })
 
@@ -105,7 +105,7 @@ describe('whether a title and a filename are one name', () => {
     await target.choose(ON)
 
     expect(core.wrote).toStrictEqual([true])
-    expect(target.kept.value).toBe(true)
+    expect(target.isEnabled.value).toBe(true)
   })
 
   it('clears the message line before it writes', async () => {

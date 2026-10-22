@@ -78,8 +78,8 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
 
   const sections =
     screen.sections.length === readItem.sections.length
-      ? readItem.sections.map((section, at) => {
-          const was = screen.sections[at]
+      ? readItem.sections.map((section, index) => {
+          const was = screen.sections[index]
           return was && was.name === section.name && was.preamble === section.preamble
             ? { ...section, id: was.id }
             : section
@@ -92,9 +92,9 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
 
   const alongside = screen.cards.length === readItem.cards.length
 
-  const cards = readItem.cards.map((card, at) => {
+  const cards = readItem.cards.map((card, index) => {
     const withSection = { ...card, section: getSectionId(card.section) }
-    const was = screen.cards[at]
+    const was = screen.cards[index]
     if (!alongside || !was || was.mark !== '' || card.mark === '') return withSection
     const same =
       was.stencilLink === card.stencilLink &&
@@ -116,8 +116,8 @@ export const areOffersEqual = (
   other: readonly StencilSummary[],
 ): boolean =>
   one.length === other.length &&
-  one.every((offer, at) => {
-    const otherVal = other[at]
+  one.every((offer, index) => {
+    const otherVal = other[index]
     return (
       // Stryker disable next-line ConditionalExpression: array lengths are equal so element at index is never undefined.
       otherVal !== undefined &&

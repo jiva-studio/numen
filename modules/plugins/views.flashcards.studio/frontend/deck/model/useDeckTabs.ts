@@ -167,7 +167,7 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
       id,
       note: computed(() => store.getOpenNote(id)),
       deck,
-      drawn: computed(() => createDeckCards(deck.value, offers.value)),
+      deckCards: computed(() => createDeckCards(deck.value, offers.value)),
       sections: computed(() => createDeckSections(deck.value)),
       stencils,
       marks: computed(() => getMarks(id)),

@@ -267,7 +267,7 @@ func TestStopEndsTheServerAndFreesTheCoreToStartAgain(t *testing.T) {
 func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
 	startIn(t, t.TempDir())
 	mu.Lock()
-	running.gone.Store(true)
+	running.isDown.Store(true)
 	mu.Unlock()
 	if got := Port(); got != 0 {
 		t.Errorf("Port() = %d for a server that ended", got)

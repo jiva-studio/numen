@@ -51,8 +51,8 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
     onLights: (item) => void happened.push(`lights ${item}`),
     onLists: () => void happened.push('lists'),
     onClose: () => void happened.push('close'),
-    invocation: (id, over, name) => {
-      invoked.push([id, over, name])
+    invocation: (id, target, name) => {
+      invoked.push([id, target, name])
       return { id } as never
     },
   })

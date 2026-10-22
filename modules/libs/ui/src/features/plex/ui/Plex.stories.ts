@@ -1258,9 +1258,9 @@ const INSIDE: Record<string, readonly PlexHeading[]> = {
     { id: '11', text: 'مدخل بالعربية', level: 2 },
   ],
   // The one node there is exactly one of, so the play can find it by its relation.
-  'focus/jump-0': Array.from({ length: 30 }, (_, at) => ({
-    id: `${at}`,
-    text: `Section ${at + 1}`,
+  'focus/jump-0': Array.from({ length: 30 }, (_, index) => ({
+    id: `${index}`,
+    text: `Section ${index + 1}`,
     level: 1,
   })),
 }

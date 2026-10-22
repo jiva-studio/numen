@@ -44,17 +44,17 @@ export function createDeckKind({
     kind: DECK,
     component: DeckTab,
     icon: Layers,
-    open: (at, id) => {
-      store.open(id, at)
+    open: (path, id) => {
+      store.open(id, path)
       void listStencils()
       void listPresets()
-      void refreshDeckPreset(at)
+      void refreshDeckPreset(path)
       return createDeckTabState(id)
     },
     // A deck already open under the path is the tab of that path, wherever the file has since moved.
-    identity: (at) => {
-      const open = store.getOpenIds().find((id) => store.getPath(id) === at)
-      return open === undefined ? at : open.slice(DECK.length + 1)
+    identity: (path) => {
+      const open = store.getOpenIds().find((id) => store.getPath(id) === path)
+      return open === undefined ? path : open.slice(DECK.length + 1)
     },
     getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
     getMark: (one) => getMarkOf(one.note.value.state),

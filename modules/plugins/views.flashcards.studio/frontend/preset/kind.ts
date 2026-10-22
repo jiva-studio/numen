@@ -102,10 +102,10 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     onDestroy: () => {},
     flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
-    resolveCommand: async (at, command, type) => {
+    resolveCommand: async (targetPath, command, type) => {
       if (command !== 'preset') return null
-      if (type !== 'deck') return { ok: true, kind: PRESET, at }
-      const answer = await core.getDeckPreset(at)
+      if (type !== 'deck') return { ok: true, kind: PRESET, at: targetPath }
+      const answer = await core.getDeckPreset(targetPath)
       if (!answer.ok) return { ok: false, text: ERRORS[answer.error], severity: 'error' }
       const readItem = answer.value.preset
       if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'caution' }

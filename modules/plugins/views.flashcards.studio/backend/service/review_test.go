@@ -682,7 +682,7 @@ func TestTheDeckScreenAndThePresetTabAgreeBelowEveryGoal(t *testing.T) {
 			api, target := newAPI(t, backlogged)
 			v := target[0]
 
-			p := asWritten(t, api, v, "Steady.md")
+			p := readPresetConfig(t, api, v, "Steady.md")
 			p.Goal, p.By = one.goal, one.byDate
 			if one.learned != "" {
 				p.Rule = one.learned
@@ -728,7 +728,7 @@ func TestALongEnoughDayIsClosedByNothing(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
-	curveResp := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	curveResp := getCurve(t, api, v, "Steady.md", readPresetConfig(t, api, v, "Steady.md"))
 	if got := curveResp.GetAt()[len(curveResp.GetAt())-1].GetClosed(); len(got) != 0 {
 		t.Errorf("the longest day on the range is closed by %q", got)
 	}
@@ -747,7 +747,7 @@ func TestTheSuggestedDayIsTheShortestThatAsksEverything(t *testing.T) {
 	runDays(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
-	p := asWritten(t, api, v, "Sanskrit.md")
+	p := readPresetConfig(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
 	writePreset(t, api, v, "Sanskrit.md", p)
 
@@ -796,7 +796,7 @@ func TestWhatIsOverdueExistsOverTheWholeCurve(t *testing.T) {
 		}
 	}
 
-	p := asWritten(t, api, v, "Sanskrit.md")
+	p := readPresetConfig(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
 	writePreset(t, api, v, "Sanskrit.md", p)
 	byMinutes := getCurve(t, api, v, "Sanskrit.md", p)
@@ -833,7 +833,7 @@ func TestAVaultNobodyHasAnsweredHasNothingOverdue(t *testing.T) {
 	api, target := newAPI(t, backlogged)
 	v := target[0]
 
-	curveResp := getCurve(t, api, v, "Steady.md", asWritten(t, api, v, "Steady.md"))
+	curveResp := getCurve(t, api, v, "Steady.md", readPresetConfig(t, api, v, "Steady.md"))
 	if got := curveResp.GetOverdue(); got != 0 {
 		t.Errorf("got overdue = %d, want 0", got)
 	}
@@ -994,7 +994,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 	runDays(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
-	p := asWritten(t, api, v, "Sanskrit.md")
+	p := readPresetConfig(t, api, v, "Sanskrit.md")
 	p.Goal = review.GoalMinutes
 	writePreset(t, api, v, "Sanskrit.md", p)
 	curveResp := getCurve(t, api, v, "Sanskrit.md", p)
@@ -1068,7 +1068,7 @@ func TestTheRetentionCurvePlotsWhatTheTargetCosts(t *testing.T) {
 			runDays(t, api, v, 14)
 			setNow(api, firstMorning.AddDate(0, 0, 14))
 
-			p := asWritten(t, api, v, "Sanskrit.md")
+			p := readPresetConfig(t, api, v, "Sanskrit.md")
 			p.Goal = review.GoalRetention
 			p.NewADay, p.ReviewsADay = one.newADay, one.reviews
 			p.Counts = one.counts
@@ -1140,7 +1140,7 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 		runDays(t, api, v, 20)
 		setNow(api, firstMorning.AddDate(0, 0, 20))
 
-		p := asWritten(t, api, v, "Sanskrit.md")
+		p := readPresetConfig(t, api, v, "Sanskrit.md")
 		p.Goal, p.Backlog = review.GoalMinutes, share
 		writePreset(t, api, v, "Sanskrit.md", p)
 

@@ -294,7 +294,7 @@ func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.Finge
 	if err := v.check(ctx, filePath); err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	at, err := v.files.stat(filePath)
+	fp, err := v.files.stat(filePath)
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
@@ -302,7 +302,7 @@ func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.Finge
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	return content, at, nil
+	return content, fp, nil
 }
 
 func (v *Vault) Write(ctx context.Context, filePath string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {

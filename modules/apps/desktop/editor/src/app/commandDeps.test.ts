@@ -328,8 +328,8 @@ describe('the commands reach the window', () => {
     const { deps } = createOptions({
       rest: {
         writeSettings: async () => {},
-        getModelsAt: (at) => {
-          request.push(at)
+        getModelsAt: (categoryPath) => {
+      request.push(categoryPath)
           return []
         },
       },
@@ -393,14 +393,14 @@ describe('useSettings step groups', () => {
       onSizeChanged: () => {},
     })
 
-    const perfGroups = settings.kept.getStepGroups('performanceProfile', '')
+    const perfGroups = settings.paletteLists.getStepGroups('performanceProfile', '')
     expect(perfGroups.length).toBe(1)
     expect(perfGroups[0]?.id).toBe('performance')
 
-    const indexingGroups = settings.kept.getStepGroups('indexingModel', '')
+    const indexingGroups = settings.paletteLists.getStepGroups('indexingModel', '')
     expect(Array.isArray(indexingGroups)).toBe(true)
 
-    const unknownGroups = settings.kept.getStepGroups('unknown', '')
+    const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')
     expect(unknownGroups).toStrictEqual([])
   })
 })

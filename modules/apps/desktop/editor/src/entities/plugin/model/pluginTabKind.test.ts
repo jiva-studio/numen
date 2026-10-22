@@ -152,7 +152,7 @@ describe('a declared kind registered through a plugin context', () => {
     const sub = context.registerTabKind<Held>({
       kind: 'held',
       component: Pane,
-      open: (at, id) => ({ at, id, title: 'T' }),
+      open: (folderPath, id) => ({ at: folderPath, id, title: 'T' }),
       isTool: true,
     })
 

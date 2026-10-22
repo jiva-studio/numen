@@ -28,11 +28,11 @@ const window = (options: HostOptions = {}) => {
   let count = 0
 
   /** A plex tab of this window, opened on what it was given. */
-  const openTab = async (at = '') => {
+  const openTab = async (targetPath = '') => {
     count += 1
     const id = `${PLEX}:${count}`
     const scope = effectScope(true)
-    const state = scope.run(() => kind.open!(at, id))!
+    const state = scope.run(() => kind.open!(targetPath, id))!
     open.set(id, { state, scope })
     await settle()
     return { id, state }
@@ -147,7 +147,7 @@ describe('a change to the vault', () => {
 
     await one.refresh({})
 
-    expect(one.asked.opening).toHaveLength(1)
+    expect(one.requested.opening).toHaveLength(1)
   })
 
   it('asks it not at all while every one of them is standing somewhere', async () => {
@@ -157,7 +157,7 @@ describe('a change to the vault', () => {
 
     await one.refresh({})
 
-    expect(one.asked.opening).toStrictEqual([])
+    expect(one.requested.opening).toStrictEqual([])
   })
 
   it('asks nothing for a plex whose tab has closed', async () => {
@@ -200,11 +200,11 @@ describe('a plex tab the person has closed', () => {
     await settle()
 
     one.closeTab(plex.id)
-    one.asked.headings.length = 0
+    one.requested.headings.length = 0
     one.isNesting.value = true
     await settle()
 
-    expect(one.asked.headings).toStrictEqual([])
+    expect(one.requested.headings).toStrictEqual([])
   })
 })
 

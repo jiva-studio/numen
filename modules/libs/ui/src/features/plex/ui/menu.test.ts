@@ -22,10 +22,10 @@ const mountPlex = (props: Partial<PlexProps> = {}) =>
   })
 
 /** A right-click, which is what a webview would otherwise answer itself. */
-const rightClick = (element: Element, at = { x: 320, y: 240 }) => {
+const rightClick = (element: Element, pos = { x: 320, y: 240 }) => {
   const event = new MouseEvent('contextmenu', {
-    clientX: at.x,
-    clientY: at.y,
+    clientX: pos.x,
+    clientY: pos.y,
     button: 2,
     bubbles: true,
     cancelable: true,

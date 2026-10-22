@@ -16,4 +16,4 @@ export interface NestingSettings {
 
 /** The counts offered, from one end of what the setting takes to the other. */
 export const ladder = (least: number, most: number): readonly number[] =>
-  Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
+  Array.from({ length: Math.max(0, most - least + 1) }, (_, index) => least + index)

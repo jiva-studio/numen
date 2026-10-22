@@ -49,7 +49,7 @@ func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	handle, err := purego.Dlopen(libPath, purego.RTLD_NOW|purego.RTLD_GLOBAL)
 	if err != nil {
 		return err
 	}

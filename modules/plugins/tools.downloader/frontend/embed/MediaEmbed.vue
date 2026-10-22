@@ -61,13 +61,13 @@ onBeforeUnmount(() => onPointerUp())
  * move and the release with it.
  */
 function onPointerDown(event: PointerEvent): void {
-  const bar = at.currentTarget as HTMLElement
+  const bar = event.currentTarget as HTMLElement
   const prevElement = bar.previousElementSibling
-  bar.setPointerCapture(at.pointerId)
+  bar.setPointerCapture(event.pointerId)
   dragSession.value = {
     bar,
-    pointer: at.pointerId,
-    from: at.clientY,
+    pointer: event.pointerId,
+    from: event.clientY,
     was: prevElement?.clientHeight ?? LEAST,
   }
   bar.addEventListener('pointermove', onPointerMove)
@@ -78,7 +78,7 @@ function onPointerDown(event: PointerEvent): void {
 function onPointerMove(event: PointerEvent): void {
   const currentDrag = dragSession.value
   if (!currentDrag) return
-  tall.value = getDraggedHeight(currentDrag.was, at.clientY - currentDrag.from, window.innerHeight)
+  tall.value = getDraggedHeight(currentDrag.was, event.clientY - currentDrag.from, window.innerHeight)
 }
 
 function onPointerUp(): void {

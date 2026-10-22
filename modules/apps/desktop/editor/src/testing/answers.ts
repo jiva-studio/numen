@@ -123,7 +123,7 @@ export const outside = (() => {
   let wake: (() => void) | null = null
   return {
     ask: (target: { path: string; start: number; length: number }) => {
-      queue.push({ path: target.path, spans: [{ from: target.start, to: at.start + target.length }] })
+      queue.push({ path: target.path, spans: [{ from: target.start, to: target.start + target.length }] })
       wake?.()
       wake = null
     },

@@ -50,8 +50,8 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80, retained: 0.88, clears: 6, backlog: [400, 300, 210, 130, 70, 20, 0] }),
     point({ reviews: 120, retained: 0.93, clears: 4, backlog: [400, 260, 140, 50, 0, 0, 0] }),
   ],
-  now: { at: 2, value: 20, day: '' },
-  suggested: { at: 3, value: 30, day: '' },
+  now: { index: 2, value: 20, day: '' },
+  suggested: { index: 3, value: 30, day: '' },
   decks: 3,
   cards: 400,
   overdue: 120,
@@ -102,7 +102,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     reload: fn(),
     chooseGoal: fn(),
     moveSlider: (pos: number) => {
-      place.value = at
+      place.value = pos
     },
     flushPending: fn(),
     updateSetting: fn(),

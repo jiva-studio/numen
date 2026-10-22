@@ -35,7 +35,7 @@ func TestAModelAdjacentTheApplicationIsUsedWhenItContainsThePinnedSum(t *testing
 	}
 
 	got, err := Locate(context.Background(), sourceIn(dir), pinTestModel("weights"), "", pinnedTestAddress, "layout model")
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Locate() = %q, %v", got, err)
 	}
 }
@@ -60,7 +60,7 @@ func TestAModelNobodyPinnedAdjacentTheApplicationIsUsedAsFound(t *testing.T) {
 	}
 
 	got, err := Locate(context.Background(), sourceIn(dir), nil, "", "https://example.invalid/unpinned/model.onnx", "layout model")
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Locate() = %q, %v", got, err)
 	}
 }

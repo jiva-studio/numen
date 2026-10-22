@@ -15,14 +15,14 @@ export type InsertionPoint = string | null
 export function orderNames(
   names: readonly string[],
   dragEntry: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly string[] {
   if (!names.includes(dragEntry)) return names
 
   const remaining = names.filter((name) => name !== dragEntry)
-  if (at === null) return [...remaining, dragEntry]
+  if (targetPoint === null) return [...remaining, dragEntry]
 
-  const before = remaining.indexOf(at)
+  const before = remaining.indexOf(targetPoint)
   if (before === -1) return names
   return [...remaining.slice(0, before), dragEntry, ...remaining.slice(before)]
 }
@@ -77,9 +77,9 @@ export function getStepInsertionPoint(
 export const reorderFields = (
   fields: readonly string[],
   dragEntry: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly string[] =>
-  canDropField(fields, dragEntry, at) ? orderNames(fields, dragEntry, at) : fields
+  canDropField(fields, dragEntry, targetPoint) ? orderNames(fields, dragEntry, targetPoint) : fields
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'

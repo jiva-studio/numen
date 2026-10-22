@@ -227,8 +227,8 @@ describe('the names of the marks that fit', () => {
     { where: 'the right edge', at: { x: PLOT_RIGHT, y: 100 } },
     { where: 'the top', at: { x: PLOT_WIDTH / 2, y: PLOT_TOP } },
     { where: 'the foot', at: { x: PLOT_WIDTH / 2, y: PLOT_BOTTOM } },
-  ])('keeps the room a name takes at $where inside the picture', ({ at }) => {
-    const names = createLabels([mark('suggested', at.x, at.y)], null)
+  ])('keeps the room a name takes at $where inside the picture', ({ at: pos }) => {
+    const names = createLabels([mark('suggested', pos.x, pos.y)], null)
 
     expect(names).toHaveLength(1)
     expect(isInside(names[0]!.box)).toBe(true)

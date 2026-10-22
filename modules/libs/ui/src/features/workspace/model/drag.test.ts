@@ -357,9 +357,9 @@ describe('letting go of a tab', () => {
     Object.defineProperty(window, 'screenY', { value: 50, configurable: true })
 
     const { dragTo, release } = start({
-      onTearOff: (tab, at) => {
-        divided = { tab, at }
-      },
+      onTearOff: (tab, targetPos) => {
+      divided = { tab, at: targetPos }
+    },
     })
     dragTo('plex', [350, 300], [20, 300])
     release(20, 300)

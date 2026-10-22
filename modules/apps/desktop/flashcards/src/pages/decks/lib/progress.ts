@@ -8,7 +8,7 @@ import type { Preset } from '../types'
  * preset scheduling it schedules something.
  */
 export const canStart = (deck: DeckCardsDue, presets: ReadonlyMap<string, Preset>): boolean =>
-  deck.due + deck.new > 0 && !by.get(deck.deck)?.paused
+  deck.due + deck.new > 0 && !presets.get(deck.deck)?.paused
 
 /**
  * Whether a deck holds nothing that can ever be asked for: every card face in
@@ -18,7 +18,7 @@ export const canStart = (deck: DeckCardsDue, presets: ReadonlyMap<string, Preset
  * preset schedules; there is nothing here for it to schedule.
  */
 export const hasNothingToBegin = (deck: DeckCardsDue, preset: Preset | undefined): boolean =>
-  deck.faces > 0 && deck.unbegun === deck.faces && by?.budget.new === 0
+  deck.faces > 0 && deck.unbegun === deck.faces && preset?.budget.new === 0
 
 /**
  * How far through its day a preset stands: what has been answered against the

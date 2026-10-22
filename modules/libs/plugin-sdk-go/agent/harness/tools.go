@@ -73,7 +73,7 @@ func openToolbox(ctx context.Context, url, token string, named []string) (*toolb
 			return nil, fmt.Errorf("list the vault's tools: %w", err)
 		}
 		if slices.Contains(allowed, tool.Name) {
-			box.offered = append(box.offered, readFunctionTool(tool))
+			box.tools = append(box.tools, readFunctionTool(tool))
 		}
 	}
 	return box, nil
@@ -97,7 +97,7 @@ func readFunctionTool(tool *mcp.Tool) functionTool {
 // call runs the tool with the arguments the model wrote and returns what the model is told: the
 // tool's text, or what went wrong.
 func (b *toolbox) call(ctx context.Context, name, arguments string) string {
-	if b.session == nil || !slices.ContainsFunc(b.offered, func(t functionTool) bool { return t.Function.Name == name }) {
+	if b.session == nil || !slices.ContainsFunc(b.tools, func(t functionTool) bool { return t.Function.Name == name }) {
 		return fmt.Sprintf("error: there is no tool %q", name)
 	}
 	args := json.RawMessage(arguments)

@@ -109,9 +109,9 @@ describe('a session', () => {
     const report = await one.start('01VAULT', '')
 
     expect(report).toEqual({ unwritten: [], skipped: 0 })
-    expect(one.asked.value).toHaveLength(3)
+    expect(one.cardList.value).toHaveLength(3)
     expect(one.card.value?.mark).toBe('one')
-    expect(one.shown.value).toBe(false)
+    expect(one.isAnswerShown.value).toBe(false)
     expect(one.left.value).toBe(3)
     expect(one.over.value).toBe(false)
   })
@@ -123,9 +123,9 @@ describe('a session', () => {
     one.forget()
 
     expect(one.card.value).toBeNull()
-    expect(one.asked.value).toHaveLength(0)
+    expect(one.cardList.value).toHaveLength(0)
     expect(one.run.value).toBe('')
-    expect(one.shown.value).toBe(false)
+    expect(one.isAnswerShown.value).toBe(false)
   })
 
   it('answers a card once, whatever a second press says', async () => {
@@ -145,7 +145,7 @@ describe('a session', () => {
     settle({ answer: '011' })
     await first
 
-    expect(one.at.value).toBe(1)
+    expect(one.cardIndex.value).toBe(1)
     expect(one.answers.value).toEqual(['011'])
   })
 
@@ -156,9 +156,9 @@ describe('a session', () => {
     await one.answer('good')
 
     expect(errors).toHaveLength(1)
-    expect(one.at.value).toBe(0)
+    expect(one.cardIndex.value).toBe(0)
     expect(one.card.value?.mark).toBe('one')
-    expect(one.shown.value).toBe(true)
+    expect(one.isAnswerShown.value).toBe(true)
     expect(one.answers.value).toEqual([])
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(1)
   })
@@ -169,7 +169,7 @@ describe('a session', () => {
     await one.answer('good')
 
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(0)
-    expect(one.at.value).toBe(0)
+    expect(one.cardIndex.value).toBe(0)
   })
 
   it('brings the card back with its answer showing when one is taken back', async () => {
@@ -182,9 +182,9 @@ describe('a session', () => {
     await one.takeBack()
 
     expect(one.card.value?.mark).toBe('one')
-    expect(one.shown.value).toBe(true)
+    expect(one.isAnswerShown.value).toBe(true)
     expect(one.answers.value).toEqual([])
-    expect(one.done.value).toBe(0)
+    expect(one.completedCount.value).toBe(0)
   })
 
   it('takes nothing back before anything was answered', async () => {
@@ -193,7 +193,7 @@ describe('a session', () => {
     await one.takeBack()
 
     expect(asks.filter((ask) => ask.what === 'takeBack')).toHaveLength(0)
-    expect(one.at.value).toBe(0)
+    expect(one.cardIndex.value).toBe(0)
   })
 
   it('keeps the answer it wrote when taking it back failed', async () => {
@@ -216,7 +216,7 @@ describe('a session', () => {
     one.show()
     await one.answer('good')
     expect(one.answers.value).toHaveLength(1)
-    expect(one.at.value).toBe(1)
+    expect(one.cardIndex.value).toBe(1)
 
     refuses = true
     await one.takeBack()
@@ -224,8 +224,8 @@ describe('a session', () => {
     // The vault holds the answer; the window may not pretend otherwise.
     expect(errors).toHaveLength(1)
     expect(one.answers.value).toHaveLength(1)
-    expect(one.at.value).toBe(1)
-    expect(one.shown.value).toBe(false)
+    expect(one.cardIndex.value).toBe(1)
+    expect(one.isAnswerShown.value).toBe(false)
   })
 
   it('is over when the last card has been answered', async () => {
@@ -238,7 +238,7 @@ describe('a session', () => {
 
     expect(one.over.value).toBe(true)
     expect(one.left.value).toBe(0)
-    expect(one.done.value).toBe(3)
+    expect(one.completedCount.value).toBe(3)
   })
 
   it('says nothing was opened when the vault could not be sat down to', async () => {
@@ -302,7 +302,7 @@ describe('the next card', () => {
     await one.answer('good')
 
     expect(one.card.value?.mark).toBe('two')
-    expect(one.shown.value).toBe(false)
+    expect(one.isAnswerShown.value).toBe(false)
   })
 })
 
@@ -315,7 +315,7 @@ describe('an answer taken back', () => {
 
     await one.takeBack()
 
-    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.said)).toEqual([
+    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.cardId)).toEqual([
       { vault: '01VAULT', run: 'flashcards/01A.jsonl', answer: '011' },
     ])
   })
@@ -428,7 +428,7 @@ describe('the cards a session opens on', () => {
 
     await one.start('01VAULT', '')
 
-    expect(one.asked.value).toEqual([
+    expect(one.cardList.value).toEqual([
       {
         deck: 'decks/Words.md',
         section: 'Garden',

@@ -79,6 +79,7 @@ const window = (
     removed?: RemoveResult
     wasMade?: boolean
     /** Where the tab holding the note stands now. */
+    targetPath?: string
     at?: string
     /** The note is waiting on the person, so nothing may move its file. */
     isAsking?: boolean
@@ -248,7 +249,7 @@ const window = (
       tones.push(kind ?? '')
     },
   }
-  return { on, done: isDone, notices, tones, calls, runs }
+  return { on, actions: isDone, notices, tones, calls, runs }
 }
 
 /** One command carried out over the note in front. */
@@ -261,7 +262,7 @@ describe('every command that is offered', () => {
       const one = window()
       await carry(createInvocation(command.id, front(), 'Entropy'), one.on)
 
-      expect(one.done, command.id).not.toStrictEqual([])
+      expect(one.actions, command.id).not.toStrictEqual([])
     }
   })
 
@@ -286,7 +287,7 @@ describe('a note put in front of the person', () => {
     await carry(createInvocation('read', front()), one.on)
     await carry(createInvocation('beside', front()), one.on)
 
-    expect(one.done).toStrictEqual([
+    expect(one.actions).toStrictEqual([
       'openFile physics/Ontology.md Ontology here',
       'openFile physics/Ontology.md Ontology beside',
     ])
@@ -297,7 +298,7 @@ describe('a note put in front of the person', () => {
 
     await carry(createInvocation('travel', front()), one.on)
 
-    expect(one.done).toStrictEqual(['travel physics/Ontology.md'])
+    expect(one.actions).toStrictEqual(['travel physics/Ontology.md'])
   })
 })
 
@@ -308,7 +309,7 @@ describe('a deck, a stencil or a preset made', () => {
     await carry(createInvocation('deck', front(), 'Animals'), one.on)
 
     // The vault names the file, so nothing here puts an ending on the name.
-    expect(one.done).toStrictEqual(['decks — Animals'])
+    expect(one.actions).toStrictEqual(['decks — Animals'])
   })
 
   it('passes a name that carries an ending over unchanged', async () => {
@@ -316,7 +317,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await carry(createInvocation('deck', front(), 'Animals.md'), one.on)
 
-    expect(one.done).toStrictEqual(['decks — Animals.md'])
+    expect(one.actions).toStrictEqual(['decks — Animals.md'])
   })
 
   it('is a stencil where that is what was requested for', async () => {
@@ -324,7 +325,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await carry(createInvocation('stencil', front(), 'Animal'), one.on)
 
-    expect(one.done).toStrictEqual(['stencils — Animal'])
+    expect(one.actions).toStrictEqual(['stencils — Animal'])
   })
 
   it('is a preset where that is what was requested for', async () => {
@@ -332,7 +333,7 @@ describe('a deck, a stencil or a preset made', () => {
 
     await carry(createInvocation('newPreset', front(), 'Sanskrit'), one.on)
 
-    expect(one.done).toStrictEqual(['presets — Sanskrit'])
+    expect(one.actions).toStrictEqual(['presets — Sanskrit'])
   })
 
   it('is nothing at all where nothing was typed', async () => {
@@ -341,7 +342,7 @@ describe('a deck, a stencil or a preset made', () => {
     await carry(createInvocation('deck', front(), ''), one.on)
     await carry(createInvocation('newPreset', front(), ''), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -351,7 +352,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
-    expect(one.done[0]).toBe('createNote Entropy physics/Ontology.md child')
+    expect(one.actions[0]).toBe('createNote Entropy physics/Ontology.md child')
   })
 
   it('relies on its own where no relation was requested for', async () => {
@@ -359,7 +360,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('note', front(), 'Entropy'), one.on)
 
-    expect(one.done[0]).toBe('createNote Entropy — —')
+    expect(one.actions[0]).toBe('createNote Entropy — —')
   })
 
   it('is travelled to in the plex the person is looking at', async () => {
@@ -367,7 +368,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
-    expect(one.done.at(-1)).toBe('travel Entropy.md')
+    expect(one.actions.at(-1)).toBe('travel Entropy.md')
   })
 
   it('opens in a tab alongside the note the person is in', async () => {
@@ -375,7 +376,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
-    expect(one.done.at(-1)).toBe('openNewFile note Entropy.md Entropy beside')
+    expect(one.actions.at(-1)).toBe('openNewFile note Entropy.md Entropy beside')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {
@@ -383,7 +384,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['createNote Entropy physics/Ontology.md child'])
+    expect(one.actions).toStrictEqual(['createNote Entropy physics/Ontology.md child'])
   })
 
   it('is nothing at all where nothing was typed', async () => {
@@ -391,7 +392,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front(), ''), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -423,7 +424,7 @@ describe('an artifact requested for over a file', () => {
 
     await carry(invocation, one.on)
 
-    expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
+    expect(one.actions).toStrictEqual(['makes transcript talks/Ants.mp3'])
   })
 
   // happened.
@@ -467,7 +468,7 @@ describe('an artifact requested for over a file', () => {
 
     await carry(invocation, one.on)
 
-    expect(one.done).toStrictEqual(['makes transcript talks/Ants.mp3'])
+    expect(one.actions).toStrictEqual(['makes transcript talks/Ants.mp3'])
     expect(one.notices).toStrictEqual([`${words.made.transcript.failed} ${reason}`])
   })
 
@@ -476,7 +477,7 @@ describe('an artifact requested for over a file', () => {
 
     await carry(createInvocation('recognise', front({ file: 'books/Ants.pdf' })), one.on)
 
-    expect(one.done).toStrictEqual(['makes ocr books/Ants.pdf'])
+    expect(one.actions).toStrictEqual(['makes ocr books/Ants.pdf'])
     expect(one.notices).toStrictEqual([words.made.ocr.done])
   })
 
@@ -514,7 +515,7 @@ describe('the transcript of a recording deleted', () => {
 
     await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.done).toStrictEqual(['deletes the text of talks/Ants.mp3'])
+    expect(one.actions).toStrictEqual(['deletes the text of talks/Ants.mp3'])
     expect(one.notices).toStrictEqual([])
   })
 
@@ -544,7 +545,7 @@ describe('a note renamed', () => {
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
+    expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Ontology.md Entropy'])
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -552,7 +553,7 @@ describe('a note renamed', () => {
 
     await carry(createInvocation('title', front(), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 
@@ -569,7 +570,7 @@ describe('a note renamed', () => {
 
     await carry(createInvocation('title', front({ path: 'Elsewhere.md' }), 'Entropy'), one.on)
 
-    expect(one.done).toStrictEqual(['rename Elsewhere.md Entropy'])
+    expect(one.actions).toStrictEqual(['rename Elsewhere.md Entropy'])
   })
 
   it('is left alone where the name it was given is the name it has', async () => {
@@ -577,7 +578,7 @@ describe('a note renamed', () => {
 
     await carry(createInvocation('title', front(), 'Ontology'), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 
   it('says nothing of the notes whose links it wrote again', async () => {
@@ -635,7 +636,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front()), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual([
+    expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
       'remove physics/Ontology.md false',
     ])
@@ -646,7 +647,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('destroy', front(), 'Ontology'), one.on)
 
-    expect(one.done[1]).toBe('remove physics/Ontology.md true')
+    expect(one.actions[1]).toBe('remove physics/Ontology.md true')
   })
 
   /** The row has gone from the tree, which is the whole of what a person needs. */
@@ -671,7 +672,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front()), one.on)
 
-    expect(one.done.at(-1)).toBe('leave physics/Ontology.md Root.md')
+    expect(one.actions.at(-1)).toBe('leave physics/Ontology.md Root.md')
   })
 
   it('leaves the plexes alone where the vault opens with no note at all', async () => {
@@ -680,7 +681,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front()), nowhere)
 
-    expect(one.done.some((step) => step.startsWith('leave'))).toBe(false)
+    expect(one.actions.some((step) => step.startsWith('leave'))).toBe(false)
   })
 
   it('lets go of the tab that was reading it', async () => {
@@ -688,7 +689,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
-    expect(one.done).toContain('close active')
+    expect(one.actions).toContain('close active')
   })
 
   it('keeps the tab of a note the vault would not remove', async () => {
@@ -696,7 +697,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
-    expect(one.done).not.toContain('close active')
+    expect(one.actions).not.toContain('close active')
   })
 
   it('says a note that is not in the vault, and takes the plex nowhere', async () => {
@@ -705,7 +706,7 @@ describe('a note removed', () => {
     await carry(createInvocation('remove', front()), one.on)
 
     expect(one.notices).toStrictEqual([words.errors.missing])
-    expect(one.done.at(-1)).toBe('remove physics/Ontology.md false')
+    expect(one.actions.at(-1)).toBe('remove physics/Ontology.md false')
   })
 
   it('is rejected while the note is waiting on the person', async () => {
@@ -713,7 +714,7 @@ describe('a note removed', () => {
 
     await carry(createInvocation('remove', front()), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 })
@@ -726,7 +727,7 @@ describe('several files removed at once', () => {
 
     await carry(createInvocation('remove', both), one.on)
 
-    expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
@@ -737,7 +738,7 @@ describe('several files removed at once', () => {
 
     await carry(createInvocation('remove', both), one.on)
 
-    expect(one.done.filter((step) => step.startsWith('leave'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('leave'))).toStrictEqual([
       'leave physics/Ontology.md Root.md',
       'leave physics/Heat.pdf Root.md',
     ])
@@ -758,7 +759,7 @@ describe('several files removed at once', () => {
       files: {
         ...one.on.files,
         remove: async (path, destroy) => {
-          one.done.push(`remove ${path} ${destroy}`)
+          one.actions.push(`remove ${path} ${destroy}`)
           return path === 'physics/Ontology.md'
             ? asFailure('missing' as const)
             : createRemoveResult()
@@ -768,7 +769,7 @@ describe('several files removed at once', () => {
 
     await carry(createInvocation('remove', both), picky)
 
-    expect(one.done.filter((step) => step.startsWith('remove'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('remove'))).toStrictEqual([
       'remove physics/Ontology.md false',
       'remove physics/Heat.pdf false',
     ])
@@ -785,7 +786,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual([
+    expect(one.actions).toStrictEqual([
       'flushPending active',
       'move physics/Ontology.md notes/Ontology.md',
     ])
@@ -796,8 +797,8 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done.indexOf('flushPending active')).toBeLessThan(
-      one.done.indexOf('move physics/Ontology.md notes/Ontology.md'),
+    expect(one.actions.indexOf('flushPending active')).toBeLessThan(
+      one.actions.indexOf('move physics/Ontology.md notes/Ontology.md'),
     )
   })
 
@@ -806,7 +807,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('notes/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
     expect(one.notices).toStrictEqual([words.unanswered])
   })
 
@@ -831,7 +832,7 @@ describe('a file filed somewhere else', () => {
 
     await carry(createMoveInvocation('physics/Ontology.md'), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -841,7 +842,7 @@ describe('a folder made', () => {
 
     await carry(createInvocation('createFolder', front(), 'physics/heat'), one.on)
 
-    expect(one.done).toStrictEqual(['createFolder physics/heat'])
+    expect(one.actions).toStrictEqual(['createFolder physics/heat'])
   })
 
   it('is not made where something of that name is filed there', async () => {
@@ -857,7 +858,7 @@ describe('a folder made', () => {
 
     await carry(createInvocation('createFolder', front()), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -871,7 +872,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(createInvocation('title', front(), 'Substance', 'held'), one.on)
 
-    expect(one.done).toStrictEqual(['flushPending active', 'rename physics/Being.md Substance'])
+    expect(one.actions).toStrictEqual(['flushPending active', 'rename physics/Being.md Substance'])
   })
 
   it('is removed at its current position now', async () => {
@@ -879,7 +880,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(createInvocation('remove', front(), '', 'active'), one.on)
 
-    expect(one.done.slice(0, 2)).toStrictEqual([
+    expect(one.actions.slice(0, 2)).toStrictEqual([
       'flushPending active',
       'remove physics/Being.md false',
     ])
@@ -890,7 +891,7 @@ describe('a note that moved between the answer and the invocation', () => {
 
     await carry(createInvocation('remove', front()), one.on)
 
-    expect(one.done[0]).toBe('remove physics/Ontology.md false')
+    expect(one.actions[0]).toBe('remove physics/Ontology.md false')
   })
 })
 
@@ -902,7 +903,7 @@ describe('a command over the window', () => {
     await carry(createInvocation('agent', front()), one.on)
     await carry(createInvocation('close', front()), one.on)
 
-    expect(one.done).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
+    expect(one.actions).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
   })
 
   it('passes the field back to the search', async () => {
@@ -910,7 +911,7 @@ describe('a command over the window', () => {
 
     await carry(createInvocation('find', front()), one.on)
 
-    expect(one.done).toStrictEqual(['search'])
+    expect(one.actions).toStrictEqual(['search'])
   })
 
   it('passes over the row that was chosen, and nothing about the note in front', async () => {
@@ -919,7 +920,7 @@ describe('a command over the window', () => {
     await carry(createInvocation('appearance', front(), 'mine:sea'), one.on)
     await carry(createInvocation('appearance', front(), 'mode:dark'), one.on)
 
-    expect(one.done).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
+    expect(one.actions).toStrictEqual(['appearance mine:sea', 'appearance mode:dark'])
   })
 })
 
@@ -929,7 +930,7 @@ describe('a command over the vault', () => {
 
     await carry(createInvocation('first', front()), one.on)
 
-    expect(one.done).toStrictEqual(['travel Root.md'])
+    expect(one.actions).toStrictEqual(['travel Root.md'])
   })
 
   it('says a vault that opens with no note at all', async () => {
@@ -949,7 +950,7 @@ describe('what the window is requested about a note', () => {
     await carry(createInvocation('ask', front()), one.on)
     await carry(createInvocation('copy', front()), one.on)
 
-    expect(one.done).toStrictEqual(['ask physics/Ontology.md — ', 'copies physics/Ontology.md'])
+    expect(one.actions).toStrictEqual(['ask physics/Ontology.md — ', 'copies physics/Ontology.md'])
   })
 })
 
@@ -961,7 +962,7 @@ describe('another vault under this window', () => {
 
     await carry(createInvocation('openVault', heat()), one.on)
 
-    expect(one.done).toStrictEqual(['opens vault heat', 'reloads'])
+    expect(one.actions).toStrictEqual(['opens vault heat', 'reloads'])
   })
 
   it('leaves the page at its current position where the vault would not open', async () => {
@@ -969,7 +970,7 @@ describe('another vault under this window', () => {
 
     await carry(createInvocation('openVault', heat()), one.on)
 
-    expect(one.done).toStrictEqual(['opens vault heat'])
+    expect(one.actions).toStrictEqual(['opens vault heat'])
     expect(one.notices).toStrictEqual([words.vaultErrors.showing])
   })
 })
@@ -980,7 +981,7 @@ describe('a vault made', () => {
 
     await carry(createInvocation('newVault', front()), one.on)
 
-    expect(one.done).toStrictEqual([
+    expect(one.actions).toStrictEqual([
       `choose ${words.folder}`,
       'add /vaults/Heat —',
       'opens vault heat',
@@ -993,7 +994,7 @@ describe('a vault made', () => {
 
     await carry(createInvocation('newVault', front()), one.on)
 
-    expect(one.done).toStrictEqual([`choose ${words.folder}`])
+    expect(one.actions).toStrictEqual([`choose ${words.folder}`])
     expect(one.notices).toStrictEqual([])
   })
 
@@ -1012,7 +1013,7 @@ describe('a vault renamed', () => {
 
     await carry(createInvocation('renameVault', front(), 'Heat'), one.on)
 
-    expect(one.done).toStrictEqual(['renames vault physics Heat', 'calls physics Heat'])
+    expect(one.actions).toStrictEqual(['renames vault physics Heat', 'calls physics Heat'])
   })
 
   it('is left alone where the name it was given is the name it has', async () => {
@@ -1020,7 +1021,7 @@ describe('a vault renamed', () => {
 
     await carry(createInvocation('renameVault', front(), 'Physics'), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 
   it('says a name another vault is already called', async () => {
@@ -1041,7 +1042,7 @@ describe('a vault taken off the list', () => {
 
     await carry(createInvocation('removeVault', heat()), one.on)
 
-    expect(one.done).toStrictEqual(['removes heat'])
+    expect(one.actions).toStrictEqual(['removes heat'])
   })
 
   it('says the only vault this installation has stays on it', async () => {
@@ -1057,7 +1058,7 @@ describe('a vault taken off the list', () => {
 
     await carry(createInvocation('eraseVault', heat(), 'Heat'), one.on)
 
-    expect(one.done).toStrictEqual(['erases heat'])
+    expect(one.actions).toStrictEqual(['erases heat'])
   })
 
   it('says a machine with nowhere to put what is deleted', async () => {
@@ -1098,7 +1099,7 @@ describe('nothing to carry out', () => {
     await carry(createInvocation('constructor', front()), one.on)
     await carry(createInvocation('', front()), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 
   it('says what the vault could not be requested, and asks no further', async () => {
@@ -1131,7 +1132,7 @@ describe('the open files a command reaches', () => {
   const createStores = () => {
     const isDone: string[] = []
     const stores = [store('note', 'Ontology.md', isDone), store('Animals.md', 'Animals.md', isDone)]
-    return { done: isDone, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
+    return { actions: isDone, done: isDone, notes: createNotes(stores, { openFile: () => {}, openNewFile: () => {} }) }
   }
 
   it('is the tab of whichever store remains at the file', () => {
@@ -1148,7 +1149,7 @@ describe('the open files a command reaches', () => {
     await one.notes.flushPending('Animals.md')
     one.notes.close('Animals.md')
 
-    expect(one.done).toStrictEqual(['flushPending Animals.md', 'close Animals.md'])
+    expect(one.actions).toStrictEqual(['flushPending Animals.md', 'close Animals.md'])
   })
 
   it('leaves an identity no store holds where it was, and does nothing to it', async () => {
@@ -1159,7 +1160,7 @@ describe('the open files a command reaches', () => {
 
     expect(one.notes.getPath('Gone.md')).toBe('Gone.md')
     expect(one.notes.asking('Gone.md')).toBe(false)
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -1198,7 +1199,7 @@ describe('a note made in a relation of another', () => {
     await carry(createInvocation('parent', front(), 'Entropy'), one.on)
     await carry(createInvocation('jump', front(), 'Heat'), one.on)
 
-    expect(one.done.filter((step) => step.startsWith('createNote'))).toStrictEqual([
+    expect(one.actions.filter((step) => step.startsWith('createNote'))).toStrictEqual([
       'createNote Entropy physics/Ontology.md parent',
       'createNote Heat physics/Ontology.md jump',
     ])
@@ -1220,7 +1221,7 @@ describe('a stencil or an address made', () => {
     await carry(createInvocation('stencil', front(), ''), one.on)
     await carry(createInvocation('importUrl', front(), ''), one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 
   it('is a note at the address that was typed, at the top of the vault', async () => {
@@ -1228,7 +1229,7 @@ describe('a stencil or an address made', () => {
 
     await carry(createInvocation('importUrl', front(), 'https://example.org'), one.on)
 
-    expect(one.done).toStrictEqual(['imports — https://example.org'])
+    expect(one.actions).toStrictEqual(['imports — https://example.org'])
   })
 })
 
@@ -1238,7 +1239,7 @@ describe('a copy or a text of a file requested for', () => {
 
     await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(one.done).toStrictEqual(['makes copy talks/Ants.mp3'])
+    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
   })
 
   it('says what fetching the address came to, in the words for an address', async () => {
@@ -1246,7 +1247,7 @@ describe('a copy or a text of a file requested for', () => {
 
     await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)
 
-    expect(one.done).toStrictEqual(['fetches https://example.org'])
+    expect(one.actions).toStrictEqual(['fetches https://example.org'])
     expect(one.notices).toStrictEqual([words.fetched.done])
     expect(one.tones).toStrictEqual(['report'])
   })
@@ -1286,7 +1287,7 @@ describe('a command nothing carries out', () => {
 
     await carry({ ...createInvocation('read', front()), id: 'nothing' }, one.on)
 
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
     expect(one.calls).toStrictEqual([])
   })
 })
@@ -1385,7 +1386,7 @@ describe('a file removed that no tab holds', () => {
 
     await carry(createInvocation('remove', front({ path: 'physics/Heat.pdf' })), one.on)
 
-    expect(one.done).toStrictEqual([
+    expect(one.actions).toStrictEqual([
       'remove physics/Heat.pdf false',
       'leave physics/Heat.pdf Root.md',
     ])
@@ -1409,7 +1410,7 @@ describe('the tab holding a note flushed', () => {
       tabId: 'active',
       isWaiting: false,
     })
-    expect(one.done).toStrictEqual(['flushPending active'])
+    expect(one.actions).toStrictEqual(['flushPending active'])
   })
 
   it('is the tab, waiting and not flushed, where it waits on the person', async () => {
@@ -1419,7 +1420,7 @@ describe('the tab holding a note flushed', () => {
       tabId: 'active',
       isWaiting: true,
     })
-    expect(one.done).toStrictEqual([])
+    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -1431,18 +1432,18 @@ describe('plugin setting invocation', () => {
       createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'on'),
       one.on,
     )
-    expect(one.done).toStrictEqual(['plugin md.numen.engines.transcription autoRun true'])
+    expect(one.actions).toStrictEqual(['plugin md.numen.engines.transcription autoRun true'])
 
     await carry(
       createInvocation('plugin-setting:md.numen.engines.transcription:autoRun', front(), 'off'),
       one.on,
     )
-    expect(one.done[1]).toBe('plugin md.numen.engines.transcription autoRun false')
+    expect(one.actions[1]).toBe('plugin md.numen.engines.transcription autoRun false')
 
     await carry(
       createInvocation('plugin-setting:md.numen.engines.transcription:language', front(), 'en'),
       one.on,
     )
-    expect(one.done[2]).toBe('plugin md.numen.engines.transcription language en')
+    expect(one.actions[2]).toBe('plugin md.numen.engines.transcription language en')
   })
 })

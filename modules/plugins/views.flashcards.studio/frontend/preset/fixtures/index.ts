@@ -89,8 +89,8 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80, retained: 0.88 }),
     point({ reviews: 120, retained: 0.93 }),
   ],
-  now: { at: 2, value: 20, day: '' },
-  suggested: { at: 3, value: 30, day: '' },
+  now: { index: 2, value: 20, day: '' },
+  suggested: { index: 3, value: 30, day: '' },
   decks: 1,
   cards: 400,
   overdue: 0,
@@ -122,8 +122,8 @@ const createTab = (
   const state: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
-    curve: shallowRef(curve(over)),
-    material: shallowRef(counts === undefined ? getCounts(curve(over)) : counts),
+    curve: shallowRef(curve(overrides)),
+    material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
     place,
     isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
@@ -134,8 +134,8 @@ const createTab = (
     reload: () => void isDone.push('reload'),
     chooseGoal: (goal) => void isDone.push(`choose ${goal}`),
     moveSlider: (pos) => {
-      place.value = at
-      isDone.push(`move ${at}`)
+      place.value = pos
+      isDone.push(`move ${pos}`)
     },
     flushPending: () => void isDone.push('flushPending'),
     updateSetting: (field, value) => void isDone.push(`type ${field} ${value}`),
@@ -149,7 +149,7 @@ const mountPresetTab = (
   settings: Partial<Settings> = {},
   options: TabFixtureOptions = {},
 ) => {
-  const one = createTab(over, settings, options)
+  const one = createTab(overrides, settings, options)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 

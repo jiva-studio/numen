@@ -131,7 +131,7 @@ function useGestureOutcome(points: GesturePoints, deps: PlexGestureDeps): Comput
       frame: deps.frame(),
       options: deps.options(),
       from: source,
-      at: now,
+      point: now,
       relations: deps.relations(),
     })
   })

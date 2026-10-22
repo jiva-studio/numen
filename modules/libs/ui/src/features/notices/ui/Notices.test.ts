@@ -12,8 +12,8 @@ import { MIN_DURATION } from '../lib/duration'
 import type { Notice } from '../lib/notice'
 
 /** A clock a test winds by hand, so nothing waits on the real one. */
-function wound(at = 0) {
-  const clock = { at }
+function wound(timeMs = 0) {
+  const clock = { at: timeMs }
   return { clock: () => clock.at, wind: (delta: number) => (clock.at += delta) }
 }
 
@@ -132,9 +132,9 @@ describe('the corner as a place', () => {
 
   it('brings out what it folded away when the count is pressed', async () => {
     const { clock } = wound()
-    const many = Array.from({ length: 5 }, (_, at) => ({
-      id: `said-${at}`,
-      text: `Renamed ${at}`,
+    const many = Array.from({ length: 5 }, (_, index) => ({
+      id: `item-${index}`,
+      text: `Renamed ${index}`,
       stay: 'read' as const,
       isUserStarted: true,
     }))

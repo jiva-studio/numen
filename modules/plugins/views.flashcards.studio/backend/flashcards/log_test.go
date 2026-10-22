@@ -251,7 +251,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.kept, today, time.Now)
+	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.schedules, today, time.Now)
 	if _, err := counter.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
@@ -343,9 +343,9 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
 		t.Errorf("the answer after it came back with %v", err)
 	}
-	if full.store.asked != 2 {
+	if full.store.callCount != 2 {
 		t.Errorf("the run wrote to the file %d times, want it to stop at the one that did not land",
-			full.store.asked)
+			full.store.callCount)
 	}
 
 	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)

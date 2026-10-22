@@ -372,8 +372,8 @@ export const LitFarDown: Story = {
       {
         id: 'names',
         title: 'Names',
-        items: Array.from({ length: 60 }, (_, at) =>
-          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+        items: Array.from({ length: 60 }, (_, index) =>
+          createItem(`note-${index}`, `Entropy in ${index + 1} dimensions`, 'ent'),
         ),
       },
     ],
@@ -717,8 +717,8 @@ export const FarTooMany: Story = {
       {
         id: 'names',
         title: 'Names',
-        items: Array.from({ length: 60 }, (_, at) =>
-          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+        items: Array.from({ length: 60 }, (_, index) =>
+          createItem(`note-${index}`, `Entropy in ${index + 1} dimensions`, 'ent'),
         ),
       },
     ],

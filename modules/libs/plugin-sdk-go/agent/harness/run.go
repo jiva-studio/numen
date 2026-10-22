@@ -126,13 +126,13 @@ func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 func (r *run) ask(ctx context.Context, messages []message, emit func(string) error) (message, string, error) {
 	var reqErr error
 	if !r.isPlain {
-		reply, finished, err := r.chat.stream(ctx, r.model, r.effort, messages, r.tools.offered, emit)
+		reply, finished, err := r.chat.stream(ctx, r.model, r.effort, messages, r.tools.tools, emit)
 		if !errors.Is(err, errStreamRejected) {
 			return reply, finished, err
 		}
 		reqErr = err
 	}
-	reply, finished, err := r.chat.send(ctx, r.model, r.effort, messages, r.tools.offered)
+	reply, finished, err := r.chat.send(ctx, r.model, r.effort, messages, r.tools.tools)
 	if err != nil {
 		return message{}, "", err
 	}

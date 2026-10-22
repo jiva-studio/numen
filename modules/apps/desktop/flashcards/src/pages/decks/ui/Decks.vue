@@ -54,11 +54,11 @@ const allDue = computed(() => props.vault.due + props.vault.new)
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
     <ul v-else class="decks__list">
-      <li v-for="(deck, at) in vault.decks" :key="deck.deck">
+      <li v-for="(deck, index) in vault.decks" :key="deck.deck">
         <DeckRow
           :deck="deck"
-          :at="at"
-          :by="byDeck.get(deck.deck)"
+          :index="index"
+          :preset="byDeck.get(deck.deck)"
           :has-presets="hasPresets"
           :is-counted="vault.isCounted"
           :can-open="canStart(deck, byDeck)"

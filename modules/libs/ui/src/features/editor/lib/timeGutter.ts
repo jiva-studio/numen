@@ -142,7 +142,7 @@ const isSame = (one: TimeGutterState, two: TimeGutterState): boolean =>
   one.current === two.current &&
   one.isFollowing === two.isFollowing &&
   one.times.length === two.times.length &&
-  one.times.every((text, at) => text === two.times[at])
+  one.times.every((text, index) => text === two.times[index])
 
 export function createTimeGutter(goToLine: (line: number) => void): TimeGutter {
   let view: EditorView | null = null

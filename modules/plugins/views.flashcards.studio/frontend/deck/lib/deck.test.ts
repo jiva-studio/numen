@@ -87,7 +87,7 @@ const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
 const deck = (overrides: Partial<VaultDeck> = {}): BufferDeck =>
-  deserializeVaultDeck(readItem(over), createIds())
+  deserializeVaultDeck(readItem(overrides), createIds())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {

@@ -122,12 +122,12 @@ func (r Request) reportProgress(done, total int64) {
 func Fetch(ctx context.Context, r Request) (string, error) {
 	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	var corrupt error
-	if _, err := os.Stat(at); err == nil {
+	if _, err := os.Stat(targetPath); err == nil {
 		if r.Sum == "" {
-			return at, nil
+			return targetPath, nil
 		}
-		if corrupt = VerifyFile(at, r.Sum); corrupt == nil {
-			return at, nil
+		if corrupt = VerifyFile(targetPath, r.Sum); corrupt == nil {
+			return targetPath, nil
 		}
 	}
 	if !r.ShouldDownload {
@@ -147,11 +147,11 @@ func Fetch(ctx context.Context, r Request) (string, error) {
 		return "", err
 	}
 	if corrupt != nil {
-		if err := os.Remove(at); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := os.Remove(targetPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return "", err
 		}
 	}
-	return at, download(ctx, r, targetPath)
+	return targetPath, download(ctx, r, targetPath)
 }
 
 // download writes what one address holds through a file beside at.
@@ -181,7 +181,7 @@ func download(ctx context.Context, r Request, targetPath string) error {
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
 
-	file, err := os.CreateTemp(r.Dir, filepath.Base(at)+".part-*")
+	file, err := os.CreateTemp(r.Dir, filepath.Base(targetPath)+".part-*")
 	if err != nil {
 		return err
 	}
@@ -199,7 +199,7 @@ func download(ctx context.Context, r Request, targetPath string) error {
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
-	if err := os.Rename(part, at); err != nil {
+	if err := os.Rename(part, targetPath); err != nil {
 		os.Remove(part)
 		return err
 	}
@@ -244,10 +244,10 @@ type progressWriter struct {
 
 func (c *progressWriter) Write(raw []byte) (int, error) {
 	n, err := c.to.Write(raw)
-	c.done += int64(n)
+	c.downloaded += int64(n)
 	if now := time.Now(); now.Sub(c.last) > time.Second {
 		c.last = now
-		c.onProgress(c.done, c.total)
+		c.onProgress(c.downloaded, c.total)
 	}
 	return n, err
 }

@@ -302,9 +302,9 @@ describe('the line under the hand', () => {
     const view = mountTitled()
 
     // One line down the page and one across it, and both carry their words.
-    for (const at of [down, acrossIndex]) {
-      expect(title(view, at)[0]!.find('textPath').exists()).toBe(true)
-      expect(title(view, at)[0]!.attributes('x')).toBeUndefined()
+    for (const targetIndex of [down, acrossIndex]) {
+      expect(title(view, targetIndex)[0]!.find('textPath').exists()).toBe(true)
+      expect(title(view, targetIndex)[0]!.attributes('x')).toBeUndefined()
     }
   })
 

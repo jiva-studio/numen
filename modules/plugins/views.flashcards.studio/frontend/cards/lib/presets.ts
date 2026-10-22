@@ -135,7 +135,7 @@ export interface CurvePoint {
 }
 
 /** A curve point that falls outside the grid. */
-export const NO_CURVE_POINT: CurvePoint = { at: -1, value: 0, day: '' }
+export const NO_CURVE_POINT: CurvePoint = { index: -1, value: 0, day: '' }
 
 /**
  * What a preset schedules, as the figures over the picture count it.

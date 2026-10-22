@@ -202,7 +202,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
-	s.kept.At = func(retention float64) review.Scheduler {
+	s.schedules.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
 	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })

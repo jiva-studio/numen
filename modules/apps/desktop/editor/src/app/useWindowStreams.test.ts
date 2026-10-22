@@ -43,9 +43,9 @@ const task = (id: string): Task => ({
   id,
   label: 'Indexing',
   about: '',
-  done: 0,
+  completedCount: 0,
   total: 0,
-  counting: 'things',
+  counting: 'items',
   error: '',
   isUserStarted: false,
 })

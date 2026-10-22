@@ -34,7 +34,7 @@ const resolved = {
 function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
   const request: string[] = []
   return {
-    requested: request,
+    asked: request,
     neighbourhood: async (path) => {
       request.push(path)
       return answer(path)
@@ -247,7 +247,7 @@ describe('another vault under this window', () => {
         renderedElement.push('reloaded')
       },
     })
-    return { window, drawn: renderedElement }
+    return { window, renderEvents: renderedElement }
   }
 
   /**
@@ -280,7 +280,7 @@ describe('another vault under this window', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(one.drawn.at(-1)).toBe('reloaded')
+    expect(one.renderEvents.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -304,8 +304,8 @@ describe('another vault under this window', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(one.drawn).toContain('changed Heat.md')
-    expect(one.drawn.at(-1)).toBe('reloaded')
+    expect(one.renderEvents).toContain('changed Heat.md')
+    expect(one.renderEvents.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -324,7 +324,7 @@ describe('another vault under this window', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(one.drawn).not.toContain('reloaded')
+    expect(one.renderEvents).not.toContain('reloaded')
 
     one.window.close()
   })
@@ -336,8 +336,8 @@ describe('another vault under this window', () => {
     await flushPromises()
     await flushPromises()
 
-    expect(one.drawn).not.toContain('reloaded')
-    expect(one.drawn.at(-1)).toBe('changed ')
+    expect(one.renderEvents).not.toContain('reloaded')
+    expect(one.renderEvents.at(-1)).toBe('changed ')
 
     one.window.close()
   })
@@ -491,9 +491,9 @@ describe('what the application is doing', () => {
     id: 'reading:library/scan.pdf',
     label: 'Recognising a scan',
     about: 'library/scan.pdf',
-    done: count,
+    completedCount: count,
     total: 400,
-    counting: 'things',
+    counting: 'items',
     error: '',
     isUserStarted: true,
   })
@@ -520,7 +520,7 @@ describe('what the application is doing', () => {
     await window.start()
     await flushPromises()
 
-    expect(window.tasks.value.map((one) => one.done)).toEqual([32])
+    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([32])
 
     window.close()
   })
@@ -553,7 +553,7 @@ describe('what the application is doing', () => {
     await flushPromises()
 
     expect(openedWindows).toBeGreaterThan(1)
-    expect(window.tasks.value.map((one) => one.done)).toEqual([48])
+    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([48])
     // A stream taken up again is not a stream that was lost.
     expect(window.lost.value).toBe('')
 

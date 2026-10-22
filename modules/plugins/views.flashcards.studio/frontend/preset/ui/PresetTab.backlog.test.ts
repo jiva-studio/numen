@@ -21,7 +21,7 @@ describe('what a goal of a date draws', () => {
         grid: [4, 8, 13],
         days: ['2026-09-04', '2026-09-08', '2026-09-13'],
         cards: 79,
-        now: { at: 0, value: 4, day: '2026-09-04' },
+        now: { index: 0, value: 4, day: '2026-09-04' },
         at: [
           point({ backlog: climbing }),
           point({ backlog: climbing }),
@@ -145,7 +145,7 @@ describe('the plot of what remains overdue', () => {
   // nothing under the picture moves when the answer lands.
   it('holds one room for the plot, waiting, drawn and empty areNeighbourhoodsEqual', () => {
     const room = (overrides: Partial<Curve> = {}) =>
-      mountPresetTab(over)
+      mountPresetTab(overrides)
         .tab.findAll('[data-control="room"]')
         .map((one) => one.attributes('style'))
     expect(room({ isHonest: false })).toStrictEqual(room())

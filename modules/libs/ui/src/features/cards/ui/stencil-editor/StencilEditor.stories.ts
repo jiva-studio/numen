@@ -20,7 +20,7 @@ interface Corpus {
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 const many = (count: number): readonly string[] =>
-  Array.from({ length: count }, (_, at) => `Field ${at + 1}`)
+  Array.from({ length: count }, (_, index) => `Field ${index + 1}`)
 
 const CORPORA = {
   'a stencil': {
@@ -42,9 +42,9 @@ const CORPORA = {
   },
   'far too many': {
     fields: many(40),
-    faces: Array.from({ length: 12 }, (_, at) => ({
-      id: `face-${at}`,
-      name: `Face ${at + 1}`,
+    faces: Array.from({ length: 12 }, (_, index) => ({
+      id: `face-${index}`,
+      name: `Face ${index + 1}`,
       front: '{{Field 1}}',
       back: many(40)
         .map((field) => `<b>${field}:</b> {{${field}}}`)

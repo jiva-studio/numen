@@ -33,7 +33,7 @@ func (r *Runtime[E]) Open(ctx context.Context, libPath string, load func(libPath
 	for {
 		r.mu.Lock()
 		if r.loaded.Load() {
-			engine, openedPath := r.engine, r.at
+			engine, openedPath := r.engine, r.libPath
 			r.mu.Unlock()
 			return engine, openedPath, nil
 		}
@@ -77,7 +77,7 @@ func (r *Runtime[E]) load(libPath string, load func(libPath string) (E, error)) 
 
 // record keeps the engine and runs every hook. The lock is the caller's.
 func (r *Runtime[E]) record(engine E, libPath string) {
-	r.engine, r.at = engine, at
+	r.engine, r.libPath = engine, libPath
 	for _, hook := range r.hooks {
 		hook(libPath)
 	}

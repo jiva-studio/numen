@@ -64,21 +64,21 @@ const keepTab = (tab: Tab): Transition => ({ tab, effects: [] })
  * A body equal to what is shown replaces nothing.
  */
 const applyBody = (tab: Tab, body: string, filePath: string | null): Transition => ({
-  tab: { ...tab, written: body, filePath, shown: body, since: null },
-  effects: body === tab.shown ? [] : [{ kind: 'replace', body }],
+  tab: { ...tab, savedText: body, filePath, editorText: body, since: null },
+  effects: body === tab.editorText ? [] : [{ kind: 'replace', body }],
 })
 
 /** What the tab last saw, for a write to present. */
 const getBaseline = (tab: Tab): NoteBaseline | null =>
   // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
-  tab.written === null || tab.filePath === null
+  tab.savedText === null || tab.filePath === null
     ? null
-    : { prose: tab.written, fingerprint: tab.filePath }
+    : { prose: tab.savedText, fingerprint: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
 const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({
-  tab: { ...tab, pendingWrite: tab.shown, hasPendingWrite: false, isStale: false },
-  effects: [{ kind: 'write', path: tab.path, body: tab.shown, seen: baseline }],
+  tab: { ...tab, pendingWrite: tab.editorText, hasPendingWrite: false, isStale: false },
+  effects: [{ kind: 'write', path: tab.path, body: tab.editorText, baseline }],
 })
 
 /**
@@ -103,14 +103,14 @@ const applyReadBody = (
   answer: { body: string; at: string },
   isStale: boolean,
 ): Transition => {
-  const { body, at } = answer
+  const { body, at: revision } = answer
   const state = getState(tab)
-  if (state === 'loading') return applyBody(tab, body, at)
-  if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, body, at)
+  if (state === 'loading') return applyBody(tab, body, revision)
+  if (state === 'gone') return applyBody({ ...tab, isDeleted: false }, body, revision)
   if (isStale) return keepTab(tab)
-  if (state === 'stale') return applyBody({ ...tab, isStale: false }, body, at)
+  if (state === 'stale') return applyBody({ ...tab, isStale: false }, body, revision)
   if (isDirty(tab)) return keepTab(tab)
-  return applyBody(tab, body, at)
+  return applyBody(tab, body, revision)
 }
 
 /**
@@ -124,7 +124,7 @@ const getWriteDelay = (since: number, now: number, limits: WriteLimits): number 
  */
 // Stryker disable next-line ConditionalExpression: RETRYABLE_ERRORS.includes(null) evaluates to false.
 const isRetryable = (tab: Tab): boolean =>
-  tab.written !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
+  tab.savedText !== null && tab.error !== null && RETRYABLE_ERRORS.includes(tab.error)
 
 const applyEdit = (
   tab: Tab,
@@ -136,7 +136,7 @@ const applyEdit = (
   if (state === 'loading') return keepTab(tab)
   const error = isRetryable(tab) ? null : tab.error
   const since = tab.since ?? editTime
-  const next: Tab = { ...tab, shown: body, since, error }
+  const next: Tab = { ...tab, editorText: body, since, error }
   if (state === 'stale') return keepTab(next)
   return { tab: next, effects: [{ kind: 'startTimer', after: getWriteDelay(since, editTime, limits) }] }
 }
@@ -166,7 +166,7 @@ const applyWrite = (tab: Tab, answer: WriteResult): Transition => {
   }
   const content: Tab = {
     ...tab,
-    written: tab.pendingWrite,
+    savedText: tab.pendingWrite,
     filePath: answer.at,
     pendingWrite: null,
     since: null,
@@ -239,7 +239,7 @@ const applyClose = (tab: Tab): Transition => {
   const state = getState(tab)
   // Stryker disable next-line LogicalOperator,ConditionalExpression: Stuck state implies truthy tab.error and vice versa.
   if (tab.error && state === 'stuck') {
-    if (tab.written !== null && isDirty(tab) && RETRYABLE_ERRORS.includes(tab.error)) {
+    if (tab.savedText !== null && isDirty(tab) && RETRYABLE_ERRORS.includes(tab.error)) {
       return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'keepOpen' }] }
     }
     return { tab, effects: [{ kind: 'reportError', error: tab.error }, { kind: 'close' }] }

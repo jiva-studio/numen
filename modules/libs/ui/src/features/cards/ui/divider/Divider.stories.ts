@@ -40,7 +40,7 @@ const meta: Meta<Knobs> = {
         <Divider :at="args.at">
           <Button variant="outline" size="small" aria-label="Add a field">
             <Icon name="plus" />
-            {{ args.said }}
+            {{ args.label }}
           </Button>
         </Divider>
       </div>

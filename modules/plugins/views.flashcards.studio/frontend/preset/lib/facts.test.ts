@@ -30,29 +30,29 @@ describe('what a place buys', () => {
   })
 
   it('adds when the overdue is gone, or that it stays, where something is overdue', () => {
-    expect(getBuyFacts('minutes', { ...at, clears: 3 }).at(-1)).toStrictEqual({
+    expect(getBuyFacts('minutes', { ...targetPoint, clears: 3 }).at(-1)).toStrictEqual({
       kind: 'overdueGone',
       days: 3,
     })
-    expect(getBuyFacts('minutes', { ...at, clears: 0 }).at(-1)).toStrictEqual({
+    expect(getBuyFacts('minutes', { ...targetPoint, clears: 0 }).at(-1)).toStrictEqual({
       kind: 'overdueGone',
       days: 0,
     })
-    expect(getBuyFacts('minutes', { ...at, clears: -1 }).at(-1)).toStrictEqual({
+    expect(getBuyFacts('minutes', { ...targetPoint, clears: -1 }).at(-1)).toStrictEqual({
       kind: 'overdueStays',
       horizon: 14,
     })
   })
 
   it('is the days off and the minutes under a goal of a date, and says nothing of the overdue', () => {
-    expect(getBuyFacts('date', { ...at, clears: 3 }).map((one) => one.kind)).toStrictEqual([
+    expect(getBuyFacts('date', { ...targetPoint, clears: 3 }).map((one) => one.kind)).toStrictEqual([
       'daysOff',
       'minutesADay',
     ])
   })
 
   it('adds the cards no pace reaches under a goal of a date only where there are any', () => {
-    expect(getBuyFacts('date', { ...at, short: 3 }).at(-1)).toStrictEqual({
+    expect(getBuyFacts('date', { ...targetPoint, short: 3 }).at(-1)).toStrictEqual({
       kind: 'cannotGetThere',
       short: 3,
       cards: 400,

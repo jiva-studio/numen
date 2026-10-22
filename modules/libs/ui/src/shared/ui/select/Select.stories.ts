@@ -136,7 +136,7 @@ export const NoChoicesAtAll: Story = {
 /** Far more choices than the list is drawn for. */
 export const FarTooMany: Story = {
   args: {
-    words: Array.from({ length: 40 }, (_, at) => `Choice ${at + 1}`).join('\n'),
+    words: Array.from({ length: 40 }, (_, index) => `Choice ${index + 1}`).join('\n'),
     chosen: 'choice-1',
   },
   play: async ({ canvasElement }) => {

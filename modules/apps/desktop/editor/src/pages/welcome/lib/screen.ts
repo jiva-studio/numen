@@ -53,7 +53,7 @@ export const SETTINGS = 'settings'
  * is a key that works.
  */
 export const createWelcomeActions = (
-  at: CurrentVault,
+  currentVault: CurrentVault,
   words: Words,
   agent: string,
 ): readonly WelcomeAction[] => {
@@ -62,8 +62,8 @@ export const createWelcomeActions = (
     text: words.settings,
     ...createRowKeys(SETTINGS, agent),
   }
-  if (at.vault === '') return [settings]
-  const note: readonly WelcomeAction[] = at.isReady
+  if (currentVault.vault === '') return [settings]
+  const note: readonly WelcomeAction[] = currentVault.isReady
     ? [{ id: 'note', text: words.newNote, ...createRowKeys('note', agent) }]
     : []
   return [

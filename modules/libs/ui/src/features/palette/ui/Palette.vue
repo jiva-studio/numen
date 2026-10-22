@@ -124,13 +124,13 @@ const places = usePalettePlaces({
   onItemActive: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
-const { placed, said, here, activeItem, actions, held, chooseAt } = places
+const { placed, announcement, here, activeItem, actions, selectedId, chooseAt } = places
 
 /** The actions a key reaches, which is what the foot of the palette says. */
 const hinted = computed(() => getShortcuts(activeItem.value))
 
 /** What is lit is brought into sight. */
-const reveal = (): void => void results.value?.reveal(held.value)
+const reveal = (): void => void results.value?.reveal(selectedId.value)
 
 const {
   open: isPanelOpen,
@@ -189,7 +189,7 @@ const onOver = (pos: number, event: PointerEvent) => {
     <!-- What a search came back with, where it came back with nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
-    <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
+    <span class="sr-only" aria-live="polite" data-palette="said">{{ announcement }}</span>
 
     <PaletteResults
       v-if="placed.length"

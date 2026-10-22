@@ -37,7 +37,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	}
 
 	session := flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		s.presets, today, func() time.Time { return pos },
 	)
 	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
@@ -114,7 +114,7 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 			); err != nil {
 				t.Fatal(err)
 			}
-			schedules, err := s.kept.Execute(t.Context(), s.vault)
+			schedules, err := s.schedules.Execute(t.Context(), s.vault)
 			if err != nil {
 				t.Fatal(err)
 			}

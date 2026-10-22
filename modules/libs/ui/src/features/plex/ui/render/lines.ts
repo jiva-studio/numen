@@ -29,13 +29,13 @@ export interface EdgeLine {
  * each name their own.
  */
 export const getLines = (edges: readonly PlacedEdge[], uid: string): readonly EdgeLine[] =>
-  edges.map((edge, at) => ({
+  edges.map((edge, index) => ({
     edge,
     key: `${edge.from}->${edge.to}`,
     pair: edgeKey(edge),
     d: createPath(edge),
     arrow: edge.arrowhead ? createArrowTransform(edge.arrowhead) : null,
-    titlePath: edge.words ? `${uid}-title-${at}` : null,
+    titlePath: edge.words ? `${uid}-title-${index}` : null,
     titleLine: createReadingPath(edge),
     titleAt: `${100 * edge.wordsAt}%`,
   }))

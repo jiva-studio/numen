@@ -82,7 +82,7 @@ function useSessionCards() {
     answers.value = []
   }
 
-  return { asked: request, at, shown: isAnswerShown, answers, card, left: remaining, over: isOver, done: isDone, reset }
+  return { cardList: request, cardIndex, isAnswerShown, answers, card, left: remaining, isOver, completedCount: isDone, reset }
 }
 
 async function openSession(deps: {
@@ -163,7 +163,7 @@ function useAnswerActions(deps: {
 }) {
   const answer = async (how: Grade) => {
     const one = deps.cards.card.value
-    if (!one || !deps.cards.shown.value || deps.writing.value) return
+    if (!one || !deps.cards.isAnswerShown.value || deps.writing.value) return
     const elapsedMs = deps.now() - deps.getPut()
     deps.writing.value = true
     try {
@@ -182,7 +182,7 @@ function useAnswerActions(deps: {
       deps.writing.value = false
     }
     deps.cards.cardIndex.value += 1
-    deps.cards.shown.value = false
+    deps.cards.isAnswerShown.value = false
     deps.setPut(deps.now())
   }
 
@@ -204,7 +204,7 @@ function useAnswerActions(deps: {
     }
     deps.cards.answers.value.pop()
     deps.cards.cardIndex.value = Math.max(0, deps.cards.cardIndex.value - 1)
-    deps.cards.shown.value = true
+    deps.cards.isAnswerShown.value = true
     deps.setPut(deps.now())
   }
 
@@ -235,9 +235,9 @@ function useSessionOpener(deps: {
     if (!startedSession) return null
     deps.vault.value = id
     deps.run.value = startedSession.run
-    deps.cards.asked.value = startedSession.cards
+    deps.cards.cardList.value = startedSession.cards
     deps.cards.cardIndex.value = 0
-    deps.cards.shown.value = false
+    deps.cards.isAnswerShown.value = false
     deps.cards.answers.value = []
     deps.setPut(deps.now())
     return startedSession.report
@@ -289,18 +289,18 @@ export function useReviewSession(deps: SessionDeps) {
   return {
     vault: vault as Ref<string>,
     run,
-    asked: cards.asked,
-    at: cards.at,
-    shown: cards.shown,
+    asked: cards.cardList,
+    cardIndex: cards.cardIndex,
+    shown: cards.isAnswerShown,
     answers: cards.answers,
     writing,
     card: cards.card,
     left: cards.left,
-    over: cards.over,
-    done: cards.done,
+    over: cards.isOver,
+    done: cards.completedCount,
     start,
     show: () => {
-      cards.shown.value = true
+      cards.isAnswerShown.value = true
     },
     answer,
     takeBack,

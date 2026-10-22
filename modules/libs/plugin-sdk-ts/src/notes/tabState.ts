@@ -43,11 +43,11 @@ export interface Tab {
   /** What was opened. */
   readonly path: string
   /** The body as last read or last successfully written, normalised. */
-  readonly written: string | null
+  readonly savedText: string | null
   /** Which file `written` came out of, and nothing where no file was read. */
   readonly filePath: string | null
   /** The body on screen. */
-  readonly shown: string
+  readonly editorText: string
   /** The body on its way to the file, and nothing where no write is in the air. */
   readonly pendingWrite: string | null
   /** Whether the pending write has to be followed by another write. */
@@ -67,14 +67,14 @@ export interface Tab {
 export type State = 'loading' | 'stuck' | 'gone' | 'stale' | 'saving' | 'unsaved' | 'clean'
 
 /** Dirty is what is shown differing from what was written. */
-export const isDirty = (tab: Tab): boolean => tab.shown !== tab.written
+export const isDirty = (tab: Tab): boolean => tab.editorText !== tab.savedText
 
 /**
  * The predicates are read in order, so a tab is in exactly one state.
  */
 export const getState = (tab: Tab): State => {
   if (tab.error) return 'stuck'
-  if (tab.written === null) return 'loading'
+  if (tab.savedText === null) return 'loading'
   if (tab.isDeleted) return 'gone'
   if (tab.isStale) return 'stale'
   if (tab.pendingWrite !== null) return 'saving'
@@ -133,7 +133,7 @@ export type Effect =
       readonly kind: 'write'
       readonly path: string
       readonly body: string
-      readonly seen: NoteBaseline | null
+      readonly baseline: NoteBaseline | null
     }
   | { readonly kind: 'startTimer'; readonly after: number }
   | { readonly kind: 'cancelTimer' }
@@ -159,9 +159,9 @@ export const DEFAULT_WRITE_LIMITS: WriteLimits = { quiet: 800, bound: 5000 }
 export const openTab = (path: string): Transition => ({
   tab: {
     path,
-    written: null,
+    savedText: null,
     filePath: null,
-    shown: '',
+    editorText: '',
     pendingWrite: null,
     hasPendingWrite: false,
     isDeleted: false,

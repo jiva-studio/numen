@@ -53,17 +53,17 @@ describe('the line to a point awaiting a node', () => {
   const viewport = { width: 400, height: 200 }
 
   it('runs from the handle of the node to the point measured from the corner', () => {
-    expect(getPendingThread(frame, { from: 'b', at: { x: 420, y: 250 }, viewport })).toBe(
+    expect(getPendingThread(frame, { from: 'b', position: { x: 420, y: 250 }, viewport })).toBe(
       'M 120 50 C 170 50 170 150 220 150',
     )
   })
 
   it('is nothing off a node or without a point', () => {
     expect(
-      getPendingThread(frame, { from: 'missing', at: { x: 420, y: 250 }, viewport }),
+      getPendingThread(frame, { from: 'missing', position: { x: 420, y: 250 }, viewport }),
     ).toBeNull()
-    expect(getPendingThread(frame, { from: null, at: { x: 420, y: 250 }, viewport })).toBeNull()
-    expect(getPendingThread(frame, { from: 'b', at: null, viewport })).toBeNull()
+    expect(getPendingThread(frame, { from: null, position: { x: 420, y: 250 }, viewport })).toBeNull()
+    expect(getPendingThread(frame, { from: 'b', position: null, viewport })).toBeNull()
   })
 })
 

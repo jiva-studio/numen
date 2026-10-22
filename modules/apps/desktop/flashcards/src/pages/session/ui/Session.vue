@@ -103,7 +103,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
           :key="how"
           class="session__answer"
           :how="how"
-          :at="i + 1"
+          :shortcut-number="i + 1"
           :ahead="card.ahead"
           @answer="$emit('answer', how)"
         />

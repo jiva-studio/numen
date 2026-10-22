@@ -136,14 +136,14 @@ const drag = useRowDrag({
     if (!listEl || !overBox) return null
     const anyRow = listEl.querySelector('[data-tree-row]')
     const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
-    return { over: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
+    return { hoverRect: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
   getCountWords: () => props.counted,
   tell: emit,
 })
-const { into, before, lifted, label, at } = drag
+const { into, before, lifted, label, at: dropTarget } = drag
 
 const {
   onContextMenu,
@@ -200,7 +200,7 @@ function getRowHeight(): number {
   <div
     ref="box"
     class="tree numen bg-surface text-ink min-h-0 font-sans text-base"
-    :data-into="at && 'into' in at && at.into === null ? '' : undefined"
+    :data-into="dropTarget && 'into' in dropTarget && dropTarget.into === null ? '' : undefined"
     v-bind="getMarkOf(marking, null)"
     @scroll.passive="virtual.onScroll"
     @contextmenu.prevent="onContextMenu"

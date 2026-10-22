@@ -126,7 +126,7 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
 
   if (press.key.length !== 1) return null
   const choiceIndex = LETTERS.indexOf(press.key.toLowerCase())
-  if (at >= 0 && at < decks) return { does: 'deck', at }
+  if (choiceIndex >= 0 && choiceIndex < decks) return { does: 'deck', at: choiceIndex }
   return null
 }
 

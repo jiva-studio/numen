@@ -48,40 +48,40 @@ const panels = (more: { card?: CardFace | null; unreachable?: string } = {}) => 
 
 describe('the window', () => {
   it('starts on the card', () => {
-    const { showing, at, agentPanel, notesPanel } = panels()
+    const { showing, targetPanel, agentPanel, notesPanel } = panels()
 
     expect(showing.value).toBe('here')
-    expect(at.value).toBe('here')
+    expect(targetPanel.value).toBe('here')
     expect(agentPanel.open.value).toBe(false)
     expect(notesPanel.open.value).toBe(false)
   })
 
   it('brings the reading in before the card, and takes it away with the same key', async () => {
-    const { showing, at, notesPanel, toggleNotes } = panels()
+    const { showing, targetPanel, notesPanel, toggleNotes } = panels()
 
     toggleNotes()
     await nextTick()
     expect(showing.value).toBe('reading')
-    expect(at.value).toBe('before')
+    expect(targetPanel.value).toBe('before')
     expect(notesPanel.open.value).toBe(true)
 
     toggleNotes()
     expect(showing.value).toBe('here')
-    expect(at.value).toBe('here')
+    expect(targetPanel.value).toBe('here')
     expect(notesPanel.open.value).toBe(false)
   })
 
   it('brings the conversation in after the card, and takes it away with the same key', () => {
-    const { showing, at, agentPanel, toggleAgent } = panels()
+    const { showing, targetPanel, agentPanel, toggleAgent } = panels()
 
     toggleAgent()
     expect(showing.value).toBe('asking')
-    expect(at.value).toBe('after')
+    expect(targetPanel.value).toBe('after')
     expect(agentPanel.open.value).toBe(true)
 
     toggleAgent()
     expect(showing.value).toBe('here')
-    expect(at.value).toBe('here')
+    expect(targetPanel.value).toBe('here')
     expect(agentPanel.open.value).toBe(false)
   })
 
@@ -105,7 +105,7 @@ describe('the window', () => {
     toggleNotes('notes/Leaves.md')
 
     expect(showing.value).toBe('reading')
-    expect(notesPanel.at.value).toBe('notes/Leaves.md')
+    expect(notesPanel.col.value).toBe('notes/Leaves.md')
   })
 
   it('stays on the conversation when the reading is put away behind it', () => {

@@ -54,41 +54,41 @@ const getStateAt = (state: EditorState, change: EditorChange, part: number): Edi
 
 describe('how much of a change is shown', () => {
   it('is none of it before it starts', () => {
-    expect(createReveal(FIVE, 0)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal(FIVE, 0)).toEqual({ visibleLength: 0, fading: 0 })
   })
 
   it('is two words of five, forty per cent of the way through', () => {
-    expect(createReveal(FIVE, 0.4)).toEqual({ shown: 8, fading: 4 })
+    expect(createReveal(FIVE, 0.4)).toEqual({ visibleLength: 8, fading: 4 })
   })
 
   it('is one more word at each step', () => {
-    const steps = [0, 1, 2, 3, 4, 5, 6].map((step) => createReveal(FIVE, step / 6).shown)
+    const steps = [0, 1, 2, 3, 4, 5, 6].map((step) => createReveal(FIVE, step / 6).visibleLength)
     expect(steps).toEqual([0, 4, 8, 14, 19, 23, 23])
   })
 
   it('takes in the space after a word, so the boundary remains between words', () => {
-    expect(createReveal(FIVE, 0.2).shown).toBe(4)
+    expect(createReveal(FIVE, 0.2).visibleLength).toBe(4)
   })
 
   it('is all of it at the end, with nothing arriving', () => {
-    expect(createReveal(FIVE, 1)).toEqual({ shown: 23, fading: 23 })
+    expect(createReveal(FIVE, 1)).toEqual({ visibleLength: 23, fading: 23 })
   })
 
   it('stays inside the text however far it is requested for', () => {
-    expect(createReveal(FIVE, 4)).toEqual({ shown: 23, fading: 23 })
-    expect(createReveal(FIVE, -1)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal(FIVE, 4)).toEqual({ visibleLength: 23, fading: 23 })
+    expect(createReveal(FIVE, -1)).toEqual({ visibleLength: 0, fading: 0 })
   })
 
   it('has nothing to show for text with no words in it', () => {
-    expect(createReveal('', 0.5)).toEqual({ shown: 0, fading: 0 })
-    expect(createReveal('   \n  ', 1)).toEqual({ shown: 6, fading: 6 })
-    expect(createReveal('   \n  ', 0.5)).toEqual({ shown: 0, fading: 0 })
+    expect(createReveal('', 0.5)).toEqual({ visibleLength: 0, fading: 0 })
+    expect(createReveal('   \n  ', 1)).toEqual({ visibleLength: 6, fading: 6 })
+    expect(createReveal('   \n  ', 0.5)).toEqual({ visibleLength: 0, fading: 0 })
   })
 
   it('counts the words of a script that is not Latin', () => {
-    expect(createReveal(RUSSIAN, 1)).toEqual({ shown: RUSSIAN.length, fading: RUSSIAN.length })
-    expect(createReveal(RUSSIAN, 0.5).shown).toBeGreaterThan(0)
-    expect(createReveal(RUSSIAN, 0.5).shown).toBeLessThan(RUSSIAN.length)
+    expect(createReveal(RUSSIAN, 1)).toEqual({ visibleLength: RUSSIAN.length, fading: RUSSIAN.length })
+    expect(createReveal(RUSSIAN, 0.5).visibleLength).toBeGreaterThan(0)
+    expect(createReveal(RUSSIAN, 0.5).visibleLength).toBeLessThan(RUSSIAN.length)
   })
 })
 
@@ -336,7 +336,7 @@ describe('the clock that steps the showing', () => {
     expect(view.state.field(changeMarks)).toBe(before)
 
     world.tick(1220)
-    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 4, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ visibleLength: 4, fading: 0 })
 
     view.destroy()
   })
@@ -368,14 +368,14 @@ describe('the clock that steps the showing', () => {
     const { world, view, slot } = open(ARRIVED, WORDS)
     world.tick(0)
     world.tick(220)
-    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 4, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ visibleLength: 4, fading: 0 })
 
     view.dispatch({ effects: slot.reconfigure(pendingChange.of({ ...WORDS, id: 'b' })) })
     expect(world.cancelled).toEqual([3])
     expect(world.getWaiting()).toBe(1)
 
     world.tick(300)
-    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 0, fading: 0 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ visibleLength: 0, fading: 0 })
 
     view.destroy()
   })
@@ -387,7 +387,7 @@ describe('the clock that steps the showing', () => {
 
     world.tick(880)
     expect(world.getWaiting()).toBe(0)
-    expect(view.state.field(changeMarks).reveal).toEqual({ shown: 11, fading: 11 })
+    expect(view.state.field(changeMarks).reveal).toEqual({ visibleLength: 11, fading: 11 })
 
     view.destroy()
     expect(world.cancelled).toEqual([])

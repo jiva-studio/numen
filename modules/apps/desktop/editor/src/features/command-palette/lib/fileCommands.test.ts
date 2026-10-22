@@ -105,7 +105,7 @@ describe('deleting a copy', () => {
     expect(getCommand('deleteCopy').needs).toBe('asking')
     expect(getCommand('deleteCopy').answers).toStrictEqual({
       keeps: words.keepsCopy,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deletedCopy,
     })

@@ -26,7 +26,7 @@ const ROWS: readonly Row[] = [
 ]
 
 const METRICS: TreeMetrics = {
-  over: { left: 0, right: 200, top: 100, bottom: 220 },
+  hoverRect: { left: 0, right: 200, top: 100, bottom: 220 },
   top: 100,
   height: 24,
 }

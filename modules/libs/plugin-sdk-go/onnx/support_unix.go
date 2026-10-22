@@ -11,7 +11,7 @@ import "github.com/ebitengine/purego"
 // resolves that name on a machine that keeps the file somewhere else.
 func preloadCppRuntime() {
 	for _, p := range FindInstalled("libstdc++.so", "*-gcc-*-lib") {
-		if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
+		if _, err := purego.Dlopen(p, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 			return
 		}
 	}

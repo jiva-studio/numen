@@ -73,7 +73,7 @@ func Fold(models []Listed) []Family {
 	for _, one := range models {
 		base, level := SplitTitle(one.Title)
 		if level == "" {
-			groups = append(groups, &group{base: one.Title, listed: []Listed{one}, levels: []string{""}})
+			groups = append(groups, &group{base: one.Title, listings: []Listed{one}, levels: []string{""}})
 			continue
 		}
 		found := byBase[base]
@@ -82,20 +82,20 @@ func Fold(models []Listed) []Family {
 			byBase[base] = found
 			groups = append(groups, found)
 		}
-		found.listed = append(found.listed, one)
+		found.listings = append(found.listings, one)
 		found.levels = append(found.levels, level)
 	}
 
 	families := make([]Family, 0, len(groups))
 	for _, one := range groups {
-		if len(one.listed) == 1 {
-			only := one.listed[0]
+		if len(one.listings) == 1 {
+			only := one.listings[0]
 			families = append(families, Family{
 				Name: only.Name, Title: only.Title, variants: map[string]string{"": only.Name},
 			})
 			continue
 		}
-		families = append(families, newFamily(one.base, one.listed, one.levels))
+		families = append(families, newFamily(one.base, one.listings, one.levels))
 	}
 	return families
 }
@@ -104,8 +104,8 @@ func Fold(models []Listed) []Family {
 func newFamily(title string, listings []Listed, names []string) Family {
 	levels := NewLevels(names...)
 	Sort(levels)
-	variants := make(map[string]string, len(listed))
-	for place, one := range listed {
+	variants := make(map[string]string, len(listings))
+	for place, one := range listings {
 		variants[names[place]] = one.Name
 	}
 	return Family{
@@ -118,10 +118,10 @@ func newFamily(title string, listings []Listed, names []string) Family {
 // else the name of the first.
 func getFamilyName(listings []Listed, levels []string) string {
 	shared := ""
-	for place, one := range listed {
+	for place, one := range listings {
 		trimmed, found := strings.CutSuffix(one.Name, "-"+levels[place])
 		if !found || trimmed == "" || (place > 0 && trimmed != shared) {
-			return listed[0].Name
+			return listings[0].Name
 		}
 		shared = trimmed
 	}

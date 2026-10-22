@@ -20,11 +20,11 @@ type Source struct {
 func FindLocal(src Source, pins Pins, name string) (string, bool) {
 	sum := pins.GetSum(name)
 	for _, p := range src.GetPaths(filepath.Base(name)) {
-		if _, err := os.Stat(at); err != nil {
+		if _, err := os.Stat(p); err != nil {
 			continue
 		}
-		if sum == "" || VerifyFile(at, sum) == nil {
-			return at, true
+		if sum == "" || VerifyFile(p, sum) == nil {
+			return p, true
 		}
 	}
 	return "", false

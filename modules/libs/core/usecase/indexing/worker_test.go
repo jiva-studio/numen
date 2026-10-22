@@ -126,18 +126,18 @@ func fit(t *testing.T, db *container.Index, model port.Embedder) {
 
 // asked is a model that answers a direction belonging to the text it was given.
 // It reaches nothing outside this process, and counts what it was asked.
-type asked struct {
+type fakeEmbedder struct {
 	dims int
 
 	mu    sync.Mutex
 	calls int
 }
 
-func (a *asked) GetModel() port.EmbeddingModel {
+func (a *fakeEmbedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
-func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
+func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	a.mu.Lock()
 	a.calls++
 	a.mu.Unlock()
@@ -149,11 +149,11 @@ func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-func (*asked) Close() error { return nil }
+func (*fakeEmbedder) Close() error { return nil }
 
-func (*asked) Concurrency() int { return 1 }
+func (*fakeEmbedder) Concurrency() int { return 1 }
 
-func (a *asked) times() int {
+func (a *fakeEmbedder) times() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.calls
@@ -174,7 +174,7 @@ func direction(text string, dims int) []float32 {
 
 // sulking is a model that turns down every asking.
 type sulking struct {
-	*asked
+	*fakeEmbedder
 }
 
 func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
@@ -185,7 +185,7 @@ func (*sulking) Concurrency() int { return 1 }
 
 // A model that is there and not answering leaves the pass in the list under the
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
-	model := &sulking{asked: &asked{dims: 64}}
+	model := &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -207,7 +207,7 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 // What ended is not what is being done, and a list a finished pass stays in is a
 // list nobody reads.
 func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -225,7 +225,7 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 // peeking is a model that says what was being done when it was asked for a
 // vector, which is what a person watching the corner reads.
 type peeking struct {
-	*asked
+	*fakeEmbedder
 	tasks *run.Tasks
 
 	mu    sync.Mutex
@@ -238,7 +238,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 		p.while = p.tasks.List()
 	}
 	p.mu.Unlock()
-	return p.asked.Embed(ctx, texts)
+	return p.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*peeking) Concurrency() int { return 1 }
@@ -259,7 +259,7 @@ func (p *peeking) opening(id string) (run.Task, bool) {
 // person asking which of their notes it is on.
 func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	events := newRecorder()
-	watching := &peeking{asked: &asked{dims: 64}, tasks: events.tasks}
+	watching := &peeking{fakeEmbedder: &fakeEmbedder{dims: 64}, tasks: events.tasks}
 	made, db := reading(t)
 	fit(t, db, watching)
 
@@ -281,7 +281,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // and cuts what a recognition wrote, and a model is fetched and compiled in
 // minutes. A vault that owes nothing holds that goroutine for nothing.
 func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 
 	// The notes are on disk and nothing has cut them, so the index holds no
@@ -308,7 +308,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 // Fetching a model is not indexing. A row that calls it by the name of the work
 // that follows sits at no share of nothing while the weights come down.
 func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -369,7 +369,7 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 // every time it was asked anything, which is what a person watching the corner
 // reads.
 type overheard struct {
-	*asked
+	*fakeEmbedder
 	tasks *run.Tasks
 
 	mu      sync.Mutex
@@ -379,12 +379,12 @@ type overheard struct {
 // GetModel is asked at the head of every pass, before a source has been opened.
 func (o *overheard) GetModel() port.EmbeddingModel {
 	o.keep()
-	return o.asked.GetModel()
+	return o.fakeEmbedder.GetModel()
 }
 
 func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	o.keep()
-	return o.asked.Embed(ctx, texts)
+	return o.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*overheard) Concurrency() int { return 1 }
@@ -407,7 +407,7 @@ func (o *overheard) lists() [][]run.Task {
 // vectors take to come back.
 func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -416,7 +416,7 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
-	overVal := &overheard{asked: model, tasks: events.tasks}
+	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
 	target := embedding.NewDeferredEmbedder(model.GetModel())
 	target.SetModel(overVal, nil)
 
@@ -440,7 +440,7 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 // nudging is a model that has a recognition write a batch of pages while the
 // vector pass is running, and holds the pass until the wake has stopped it.
 type nudging struct {
-	*asked
+	*fakeEmbedder
 	wake chan struct{}
 
 	once sync.Once
@@ -456,7 +456,7 @@ func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error
 	if isStopped {
 		return nil, ctx.Err()
 	}
-	return n.asked.Embed(ctx, texts)
+	return n.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*nudging) Concurrency() int { return 1 }
@@ -466,7 +466,7 @@ func (*nudging) Concurrency() int { return 1 }
 // hundred thousand vectors owes them for hours.
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
-	model := &nudging{asked: &asked{dims: 64}, wake: make(chan struct{}, 1)}
+	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -501,7 +501,7 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	}
 
 	// Taken up again, the pass asks the index what still owes a vector.
-	again := newPass(made, db, events, model.asked, model.GetModel().Recipe(), v)
+	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
 	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())

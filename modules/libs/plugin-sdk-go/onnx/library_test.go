@@ -14,8 +14,8 @@ func TestFindLibraryReturnsTheLibraryInTheFolder(t *testing.T) {
 	if err := os.WriteFile(targetPath, []byte("a library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got := FindLibrary(dir); got != at {
-		t.Errorf("FindLibrary() = %q, want %q", got, at)
+	if got := FindLibrary(dir); got != targetPath {
+		t.Errorf("FindLibrary() = %q, want %q", got, targetPath)
 	}
 }
 

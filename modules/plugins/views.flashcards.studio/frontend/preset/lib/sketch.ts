@@ -50,7 +50,7 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
   const place = findNearest(grid, value)
-  const now: CurvePoint = { at: place, value, day: days[place] ?? '' }
+  const now: CurvePoint = { index: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,
     grid,
@@ -90,7 +90,7 @@ const createGrid = (
 
 /** The places between two ends, both ends among them. */
 const ladder = (least: number, most: number, rounds: (one: number) => number): readonly number[] =>
-  Array.from({ length: PLACES }, (_, at) => rounds(least + ((most - least) * at) / (PLACES - 1)))
+  Array.from({ length: PLACES }, (_, index) => rounds(least + ((most - least) * index) / (PLACES - 1)))
 
 /**
  * What one place of the range evaluates to, guessed from the settings. A day of

@@ -123,10 +123,10 @@ func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T)
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	read, _ := f.GetFingerprint(t.Context(), "A.md")
 
-	at, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if err != nil || at.IsUnchanged(read) {
-		t.Fatalf("got %+v (%v)", at, err)
+	if err != nil || res.IsUnchanged(read) {
+		t.Fatalf("got %+v (%v)", res, err)
 	}
 	if got := f.content["A.md"]; !strings.Contains(got, "id:") || !strings.HasSuffix(got, "# B\n") {
 		t.Errorf("the note is now %q", got)
@@ -210,10 +210,10 @@ func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
 	e := editing(f)
 	e.Index = func(context.Context, domain.Vault, []string) error { return errors.New("index is busy") }
 
-	at, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if !errors.Is(err, edit.ErrUnlevelled) || at.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
-		t.Errorf("got %+v (%v)", at, err)
+	if !errors.Is(err, edit.ErrUnlevelled) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
+		t.Errorf("got %+v (%v)", res, err)
 	}
 }
 

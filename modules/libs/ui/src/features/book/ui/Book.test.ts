@@ -220,9 +220,9 @@ const setLayout = (paper: HTMLElement, scrollWidth: number, lefts: readonly numb
     configurable: true,
   })
   const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')
-  runs.forEach((run, at) => {
+  runs.forEach((run, index) => {
     Object.defineProperty(run, 'getClientRects', {
-      value: () => [{ left: lefts[at] }],
+      value: () => [{ left: lefts[index] }],
       configurable: true,
     })
   })

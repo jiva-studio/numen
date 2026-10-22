@@ -19,7 +19,7 @@ export const getFolderPath = (path: string): string => {
  * the row it came before. Into no row at all is the root.
  */
 export const resolveDropFolder = (target: { into: string | null } | { before: string }): string =>
-  'into' in target ? (target.into ?? ROOT) : getFolderPath(at.before)
+  'into' in target ? (target.into ?? ROOT) : getFolderPath(target.before)
 
 /** The folders above a path, from the root down. */
 export const getParentFolders = (path: string): readonly string[] => {
@@ -38,7 +38,7 @@ const isSameEntry = (one: Entry, other: Entry): boolean =>
 const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[]): boolean =>
   one !== undefined &&
   one.length === other.length &&
-  one.every((entry, at) => isSameEntry(entry, other[at]!))
+  one.every((entry, index) => isSameEntry(entry, other[index]!))
 
 /**
  * Generates a name not taken in the folder.

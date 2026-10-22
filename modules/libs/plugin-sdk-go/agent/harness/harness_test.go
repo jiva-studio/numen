@@ -87,12 +87,12 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 			http.Error(w, `{"error":{"message":"stream is not supported"}}`, http.StatusBadRequest)
 			return
 		}
-		f.answered++
-		if got.Stream && f.script != nil && f.answered == 1 {
+		f.replyCount++
+		if got.Stream && f.script != nil && f.replyCount == 1 {
 			writeEvents(w, f.script)
 			return
 		}
-		reply := f.replies[min(f.answered, len(f.replies))-1]
+		reply := f.replies[min(f.replyCount, len(f.replies))-1]
 		if got.Stream && !f.ignoresStream {
 			writeEvents(w, f.getPieces(reply))
 			return

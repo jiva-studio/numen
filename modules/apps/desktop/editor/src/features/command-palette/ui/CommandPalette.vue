@@ -59,7 +59,7 @@ const field = computed(() =>
         groups: appendCreateOffer(props.search.groups.value, {
           text: props.search.typed.value,
           words,
-          at: props.getTarget(),
+          target: props.getTarget(),
         }),
         crumb: '',
         step: '',

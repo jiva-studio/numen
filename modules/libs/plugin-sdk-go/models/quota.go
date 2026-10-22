@@ -103,14 +103,14 @@ func reserve(ctx context.Context, root string, want int64, part string, touch ti
 		return nil, err
 	}
 	claim := &Reservation{Room: want, file: file.Name(), stop: make(chan struct{})}
-	claim.done.Add(1)
+	claim.wg.Add(1)
 	go claim.keepAlive(touch)
 	return claim, nil
 }
 
 // keepAlive touches the reservation every interval until Release.
 func (r *Reservation) keepAlive(interval time.Duration) {
-	defer r.done.Done()
+	defer r.wg.Done()
 	tick := time.NewTicker(interval)
 	defer tick.Stop()
 	for {
@@ -127,7 +127,7 @@ func (r *Reservation) keepAlive(interval time.Duration) {
 func (r *Reservation) Release() {
 	r.once.Do(func() {
 		close(r.stop)
-		r.done.Wait()
+		r.wg.Wait()
 		os.Remove(r.file)
 	})
 }

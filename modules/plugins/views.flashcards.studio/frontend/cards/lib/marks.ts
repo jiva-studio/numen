@@ -11,7 +11,7 @@ export interface Marks {
    * What is wrong with one field of one card, under that card's identity and
    * then the name the file spells the field.
    */
-  readonly under: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
+  readonly bySection: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
   /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
   /** What is wrong that stands against no card, no face and no field. */
@@ -67,7 +67,7 @@ export const createMarks = (
     whole.push(problem.text)
   }
 
-  return { at: marksAt, under: underMap, fields, whole }
+  return { at: marksAt, bySection: underMap, fields, whole }
 }
 
 /** Whether two lists of words read the same, in the same order. */
@@ -103,5 +103,5 @@ const areUnderMapsEqual = (
 export const areMarksEqual = (one: Marks, other: Marks): boolean =>
   areWordsEqual(one.whole, other.whole) &&
   areMarkMapsEqual(one.at, other.at) &&
-  areUnderMapsEqual(one.under, other.under) &&
+  areUnderMapsEqual(one.bySection, other.bySection) &&
   areMarkMapsEqual(one.fields, other.fields)

@@ -153,7 +153,7 @@ vi.mock('@/shared/clients', async (original) => ({
       }
     },
     answerCard: async (request: { mark: string }) => {
-      wire.answered.push(request)
+      wire.responses.push(request)
       return { answer: 'answer-1' }
     },
     takeBackAnswer: async (request: unknown) => {
@@ -249,7 +249,7 @@ beforeEach(() => {
   wire.daysAsked.length = 0
   wire.presetsAsked.length = 0
   wire.notesAsked.length = 0
-  wire.answered.length = 0
+  wire.responses.length = 0
   wire.takenBack.length = 0
   wire.scrolled.length = 0
   wire.agent = async () => ({ unreachable: '' })
@@ -298,7 +298,7 @@ describe('a person who went in and came back out', () => {
 
     expect(window.on.value).toBe('session')
     expect(window.session.state.card.value?.mark).toBe('mark-1')
-    expect(window.decks.done.streak.value).toBe(4)
+    expect(window.decks.reviewDays.streak.value).toBe(4)
     expect(window.session.agentPanel.about.value).not.toBeNull()
     expect(window.session.notesPanel.notes.value).toHaveLength(1)
   })
@@ -483,14 +483,14 @@ describe('the keys of the window', () => {
     const sessionWindow = await openSession()
 
     expect((await press(' ')).defaultPrevented).toBe(true)
-    expect(sessionWindow.session.state.shown.value).toBe(true)
+    expect(sessionWindow.session.state.isAnswerShown.value).toBe(true)
 
     // With the answer showing, the space bar asks nothing of the card and is
     // left to the page.
     expect((await press(' ')).defaultPrevented).toBe(false)
 
     await press('3')
-    expect(wire.answered).toMatchObject([{ mark: 'mark-1' }])
+    expect(wire.responses).toMatchObject([{ mark: 'mark-1' }])
 
     await press('u')
     expect(wire.takenBack).toHaveLength(1)
@@ -523,7 +523,7 @@ describe('the keys of the window', () => {
     await press(' ')
 
     expect(wire.scrolled).toEqual([false])
-    expect(sessionWindow.session.state.shown.value).toBe(false)
+    expect(sessionWindow.session.state.isAnswerShown.value).toBe(false)
   })
 
   it('leave the session for the decks counted again, and the decks for the vaults', async () => {

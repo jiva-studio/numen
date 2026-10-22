@@ -9,7 +9,7 @@ import (
 	"testing"
 )
 
-type fakeEngine struct{ at string }
+type fakeEngine struct{ libPath string }
 
 func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
@@ -32,16 +32,16 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	r.Register(func(libPath string) { received = append(received, libPath) })
 	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
-		return &fakeEngine{at: at}, nil
+		return &fakeEngine{libPath: libPath}, nil
 	}
 
-	first, at, err := r.Open(t.Context(), "/lib/one.so", load)
-	if err != nil || at != "/lib/one.so" || first.at != "/lib/one.so" {
-		t.Fatalf("Open() = %v, %q, %v", first, at, err)
+	first, libPath, err := r.Open(t.Context(), "/lib/one.so", load)
+	if err != nil || libPath != "/lib/one.so" || first.libPath != "/lib/one.so" {
+		t.Fatalf("Open() = %v, %q, %v", first, libPath, err)
 	}
-	second, at, err := r.Open(t.Context(), "/lib/two.so", load)
-	if err != nil || second != first || at != "/lib/one.so" {
-		t.Fatalf("second Open() = %v, %q, %v, want the first engine", second, at, err)
+	second, libPath, err := r.Open(t.Context(), "/lib/two.so", load)
+	if err != nil || second != first || libPath != "/lib/one.so" {
+		t.Fatalf("second Open() = %v, %q, %v, want the first engine", second, libPath, err)
 	}
 	if got := loads.Load(); got != 1 {
 		t.Errorf("load ran %d times, want 1", got)
@@ -50,7 +50,7 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 		t.Errorf("hooks heard %v, want [/lib/one.so]", received)
 	}
 	if engine, loadedPath := r.GetLoaded(); engine != first || loadedPath != "/lib/one.so" {
-		t.Errorf("GetLoaded() = %v, %q", engine, at)
+		t.Errorf("GetLoaded() = %v, %q", engine, loadedPath)
 	}
 	if !r.IsAvailable("") {
 		t.Error("an open runtime is not available")
@@ -66,10 +66,10 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 		t.Fatalf("Open() = %v, want %v", err, broken)
 	}
 	if engine, loadedPath := r.GetLoaded(); engine != nil || loadedPath != "" {
-		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, at)
+		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, loadedPath)
 	}
 	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(libPath string) (*fakeEngine, error) {
-		return &fakeEngine{at: at}, nil
+		return &fakeEngine{libPath: libPath}, nil
 	})
 	if err != nil || engine == nil {
 		t.Fatalf("Open() = %v, %v, want an engine", engine, err)
@@ -85,7 +85,7 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 		loads.Add(1)
 		close(entered)
 		<-release
-		return &fakeEngine{at: at}, nil
+		return &fakeEngine{libPath: libPath}, nil
 	}
 
 	isDone := make(chan *fakeEngine)

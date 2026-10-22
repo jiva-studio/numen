@@ -78,24 +78,24 @@ const createModel = (at: readonly string[], overrides: Partial<Model>): Model =>
  */
 export const createProgramModels =
   (programs: readonly ProgramFixture[]) =>
-  (at: readonly string[]): readonly Model[] => {
-    if (at.join('.') === 'agent.use') {
+  (settingPath: readonly string[]): readonly Model[] => {
+    if (settingPath.join('.') === 'agent.use') {
       return [
         ...programs.map((one) =>
-          createModel(at, { name: one.name, title: one.title, isDefault: one.isDefault ?? false }),
+          createModel(settingPath, { name: one.name, title: one.title, isDefault: one.isDefault ?? false }),
         ),
-        createModel(at, {
+        createModel(settingPath, {
           title: 'Nothing answers',
           isDefault: !programs.some((one) => one.isDefault),
         }),
       ]
     }
     const program = programs.find(
-      (one) => at.length === 3 && one.name === at[1] && at[2] === 'model',
+      (one) => settingPath.length === 3 && one.name === settingPath[1] && settingPath[2] === 'model',
     )
     if (!program) return []
     return [
-      createModel(at, { title: 'Whatever this machine answers with', isDefault: true }),
-      ...(program.models ?? []).map((one) => createModel(at, one)),
+      createModel(settingPath, { title: 'Whatever this machine answers with', isDefault: true }),
+      ...(program.models ?? []).map((one) => createModel(settingPath, one)),
     ]
   }

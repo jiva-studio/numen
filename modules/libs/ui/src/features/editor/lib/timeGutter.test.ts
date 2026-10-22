@@ -421,7 +421,7 @@ describe('the gutter elements', () => {
 
     const after = [...view.dom.querySelectorAll('.cm-times .cm-time')]
     expect(after).toHaveLength(3)
-    expect(after.every((one, at) => one === before[at])).toBe(true)
+    expect(after.every((one, index) => one === before[index])).toBe(true)
   })
 })
 

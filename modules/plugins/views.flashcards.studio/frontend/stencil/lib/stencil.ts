@@ -105,10 +105,10 @@ export const removeField = (stencil: BufferStencil, field: string): BufferStenci
 export const moveField = (
   stencil: BufferStencil,
   field: string,
-  at: InsertionPoint,
+  target: InsertionPoint,
 ): BufferStencil => ({
   ...stencil,
-  fields: reorderFields(stencil.fields, field, at),
+  fields: reorderFields(stencil.fields, field, target),
 })
 
 /**
@@ -120,7 +120,7 @@ export const moveFace = (stencil: BufferStencil, id: string, target: InsertionPo
   const order = orderNames(
     stencil.faces.map((face) => face.id),
     id,
-    at,
+    target,
   )
   const faces = [...stencil.faces].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
   return { ...stencil, faces }

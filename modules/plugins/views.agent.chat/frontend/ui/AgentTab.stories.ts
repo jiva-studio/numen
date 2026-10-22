@@ -56,10 +56,10 @@ export const Answered: Story = {
   render: () => ({
     components: {
       Tab: createTab([
-        { id: 'a', voice: 'asked', text: 'What is entropy?' },
+        { id: 'a', voice: 'prompt', text: 'What is entropy?' },
         {
           id: 'b',
-          voice: 'answered',
+          voice: 'response',
           text: 'A measure of how many ways a system can be arranged.',
         },
       ]),

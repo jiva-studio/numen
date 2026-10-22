@@ -158,8 +158,8 @@ func countOfferedCards(due *v1.VaultCardsDue, decks []string) int {
 	return out
 }
 
-// asWritten reads the preset configuration stored at path.
-func asWritten(t *testing.T, api *API, v domain.Vault, path string) review.Preset {
+// readPresetConfig reads the preset configuration stored at path.
+func readPresetConfig(t *testing.T, api *API, v domain.Vault, path string) review.Preset {
 	t.Helper()
 	found, err := api.scenarios().flash.Presets.Read(t.Context(), v, path)
 	if err != nil {
@@ -236,7 +236,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 			runDays(t, api, v, 14)
 			setNow(api, firstMorning.AddDate(0, 0, 14))
 
-			p := asWritten(t, api, v, "Sanskrit.md")
+			p := readPresetConfig(t, api, v, "Sanskrit.md")
 			p.Goal = one.goal
 			for _, item := range one.places {
 				// Apply curve configuration to preset.
@@ -270,7 +270,7 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	v := target[0]
 	setNow(api, firstMorning)
 
-	curveResp := getCurve(t, api, v, "Sanskrit.md", asWritten(t, api, v, "Sanskrit.md"))
+	curveResp := getCurve(t, api, v, "Sanskrit.md", readPresetConfig(t, api, v, "Sanskrit.md"))
 	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
 	if int(curveResp.GetDecks()) != len(underSanskrit) || int(curveResp.GetCards()) != want {
 		t.Errorf("curve deck count = %d, face count = %d, want %d and %d",
@@ -428,7 +428,7 @@ func TestATargetMovedIsNotAnsweredFromTheWorkingOutBelowTheOldOne(t *testing.T) 
 	runDays(t, api, v, 14)
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
-	p := asWritten(t, api, v, "Grammar.md")
+	p := readPresetConfig(t, api, v, "Grammar.md")
 	p.Retention = review.RetentionBounds.Least
 	writePreset(t, api, v, "Grammar.md", p)
 	// The first count is what writes the working out down, so the second is the

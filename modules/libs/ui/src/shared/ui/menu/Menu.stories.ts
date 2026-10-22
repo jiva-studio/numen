@@ -328,9 +328,9 @@ export const Icons: Story = {
 /** Far more than fits: the list scrolls and the menu still relies on screen. */
 export const FarTooMany: Story = {
   args: {
-    items: Array.from({ length: 60 }, (_, at) => ({
-      id: `item-${at}`,
-      text: `Something to do (${at + 1})`,
+    items: Array.from({ length: 60 }, (_, index) => ({
+      id: `item-${index}`,
+      text: `Something to do (${index + 1})`,
     })),
   },
   play: async () => {
@@ -346,10 +346,10 @@ export const SearchStaysAboveTheList: Story = {
   args: {
     searchable: true,
     hasGroups: true,
-    items: Array.from({ length: 60 }, (_, at) => ({
-      id: `item-${at}`,
-      text: `Something to do (${at + 1})`,
-      group: at < 30 ? 'First' : 'Second',
+    items: Array.from({ length: 60 }, (_, index) => ({
+      id: `item-${index}`,
+      text: `Something to do (${index + 1})`,
+      group: index < 30 ? 'First' : 'Second',
     })),
   },
   play: async () => {

@@ -14,10 +14,10 @@ import { WORDS as words } from '../../cards'
 const props = defineProps<{ state: DeckTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { choices, drawn, marks, errorMessage, note, scheduled, sections, stencils } = props.state
+const { choices, deckCards, marks, errorMessage, note, scheduled, sections, stencils } = props.state
 
 /** Validation errors against cards as reported by deck marks. */
-const validationErrors = computed(() => ({ at: marks.value.at, under: marks.value.under }))
+const validationErrors = computed(() => ({ at: marks.value.at, ['under']: marks.value.bySection }))
 
 /* -------------------------------- Handlers -------------------------------- */
 function onChooseSchedule(path: string) {
@@ -33,7 +33,7 @@ function onRemoveCard(id: string) {
 }
 
 function onMoveCard(id: string, target: InsertionPoint) {
-  props.state.moveCard(id, at)
+  props.state.moveCard(id, target)
 }
 
 function onWriteCard(...[id, field, index, text]: [string, string, number, string]) {
@@ -85,7 +85,7 @@ function empty(stencil: string) {
 
     <DeckEditor
       class="deck-tab__grid"
-      :cards="drawn"
+      :cards="deckCards"
       :sections="sections"
       :stencils="stencils"
       :name="words.deck"

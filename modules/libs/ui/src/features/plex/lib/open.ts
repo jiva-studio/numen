@@ -80,7 +80,7 @@ export function scrollBy(
 /** What one of a wheel's own units evaluates to in pixels: a line, or a window. */
 function getStride(suspended: NodeHeadings, mode: number): number {
   if (mode === LINES) return suspended.headingHeight
-  if (mode === WINDOWS) return suspended.shown * suspended.headingHeight
+  if (mode === WINDOWS) return suspended.visibleCount * suspended.headingHeight
   return 1
 }
 
@@ -90,7 +90,7 @@ const WINDOWS = 2
 
 /** The getFurthest the window on the headings may be scrolled down, counted in headings. */
 export const getFurthest = (suspended: NodeHeadings): number =>
-  Math.max(0, suspended.headings.length - suspended.shown)
+  Math.max(0, suspended.headings.length - suspended.visibleCount)
 
 /**
  * What a node hangs at a moment of the opening.
@@ -112,7 +112,7 @@ export function getOpenHeadings(
 
   // The window stands whole on the headings, scrolled by one at a time.
   const first = Math.min(Math.max(Math.round(scrollOffset), 0), getFurthest(suspended))
-  const visibleHeadings = suspended.headings.slice(first, first + suspended.shown)
+  const visibleHeadings = suspended.headings.slice(first, first + suspended.visibleCount)
 
   // Each heading sets off a lead behind the one above it, and the leads together
   // take the same share of the opening whatever number of headings stand. What is
@@ -124,9 +124,9 @@ export function getOpenHeadings(
   /** The deepest a heading may set off from and still stand on the ground. */
   const floor = suspended.height - 2 * suspended.pad - suspended.headingHeight
 
-  const headings = visibleHeadings.map((heading, at) => {
-    const own = easeOut(clamp01((openProgress - at * lead) / runs))
-    const rests = at * suspended.headingHeight
+  const headings = visibleHeadings.map((heading, index) => {
+    const own = easeOut(clamp01((openProgress - index * lead) / runs))
+    const rests = index * suspended.headingHeight
     const from = Math.min(rests + RISE * suspended.headingHeight, floor)
     return { ...heading, at: rests, y: lerp(from, rests, own), opacity: own }
   })

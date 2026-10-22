@@ -8,7 +8,7 @@ import type { SettingEdit } from './configuration'
 
 const PATH_JOIN = '\u0000'
 
-export const getPathKey = (at: readonly string[]): string => at.join(PATH_JOIN)
+export const getPathKey = (path: readonly string[]): string => path.join(PATH_JOIN)
 
 export function createPendingWrites() {
   const values = shallowRef<ReadonlyMap<string, { token: number; value: unknown }>>(new Map())
@@ -19,8 +19,8 @@ export function createPendingWrites() {
 
   return {
     /** The value being written at a path, if any. */
-    getPending: (at: readonly string[]) =>
-      values.value.get(getPathKey(at)),
+    getPending: (path: readonly string[]) =>
+      values.value.get(getPathKey(path)),
 
     /** The edits begin to be written; returns the token that releases them. */
     add: (edits: readonly SettingEdit[]): number => {

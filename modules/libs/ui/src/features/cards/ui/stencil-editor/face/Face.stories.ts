@@ -29,7 +29,7 @@ interface Corpus {
 const ANIMAL = ['Name', 'Height', 'Weight', 'Life span']
 
 const many = (count: number): readonly string[] =>
-  Array.from({ length: count }, (_, at) => `Field ${at + 1}`)
+  Array.from({ length: count }, (_, index) => `Field ${index + 1}`)
 
 const CORPORA = {
   'a face': {

@@ -63,8 +63,8 @@ export const isAxisLabelClear = (
   marks: readonly (Position | null)[],
 ): boolean => {
   const isNear = (position: Position): boolean =>
-    position.x <= PLOT_LEFT + AXIS_LABEL_WIDTH && Math.abs(at.y - y) <= AXIS_LABEL_HEIGHT
-  if (marks.some((at) => at !== null && isNear(at))) return false
+    position.x <= PLOT_LEFT + AXIS_LABEL_WIDTH && Math.abs(position.y - y) <= AXIS_LABEL_HEIGHT
+  if (marks.some((pos) => pos !== null && isNear(pos))) return false
   return !places.some(isNear)
 }
 
@@ -77,7 +77,7 @@ export const getMarkNameStyle = (position: Position): CSSProperties => {
   else if (position.x > PLOT_RIGHT - LABEL) back = '-100%'
   return {
     insetInlineStart: `${(position.x / PLOT_WIDTH) * 100}%`,
-    insetBlockStart: `${(Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) / PLOT_HEIGHT) * 100}%`,
+    insetBlockStart: `${(Math.max(position.y - AXIS_LABEL_LIFT, PLOT_TOP) / PLOT_HEIGHT) * 100}%`,
     translate: `${back} -100%`,
   }
 }
@@ -89,7 +89,7 @@ export const getNameBox = (position: Position): Box => {
   else if (position.x > PLOT_RIGHT - LABEL) back = LABEL * 2
   return {
     x: position.x - back,
-    y: Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) - AXIS_LABEL_HEIGHT,
+    y: Math.max(position.y - AXIS_LABEL_LIFT, PLOT_TOP) - AXIS_LABEL_HEIGHT,
     wide: LABEL * 2,
     high: AXIS_LABEL_HEIGHT,
   }

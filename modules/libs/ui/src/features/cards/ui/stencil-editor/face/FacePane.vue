@@ -68,7 +68,7 @@ defineExpose({
 
     <!-- An empty part says what it is for, in the middle of itself. -->
     <p v-if="pane.isBlank" class="face__ghost caps-numen text-small text-hushed" aria-hidden="true">
-      {{ pane.said }}
+      {{ pane.label }}
     </p>
 
     <!-- What is wrong with the half stands in the foot of the part, over what is

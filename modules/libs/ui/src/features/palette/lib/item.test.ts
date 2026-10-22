@@ -71,7 +71,7 @@ describe('one list drawn in groups', () => {
     const paletteItems = placePalette(SECTIONS).flatMap((placed) => placed.items)
     const walked = flatten(SECTIONS)
 
-    expect(paletteItems.map((placed) => placed.at)).toEqual(walked.map((_, at) => at))
+    expect(paletteItems.map((placed) => placed.at)).toEqual(walked.map((_, index) => index))
     expect(paletteItems.map((placed) => placed.item.id)).toEqual(walked.map((p) => p.item.id))
   })
 

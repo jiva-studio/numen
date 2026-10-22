@@ -47,24 +47,24 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
  * out.
  */
 const many = (count: number): readonly DeckCard[] =>
-  Array.from({ length: count }, (_, at) =>
-    at % 2 === 0
+  Array.from({ length: count }, (_, index) =>
+    index % 2 === 0
       ? {
-          id: `beast00${at}`,
+          id: `beast00${index}`,
           section: null,
           stencil: 'Animal',
           filled: [
-            { field: 'Name', text: `Beast ${at + 1}` },
+            { field: 'Name', text: `Beast ${index + 1}` },
             { field: 'Height', text: 'about 45"' },
             { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg\n- calf: 40 kg' },
             { field: 'Life span', text: 'about 20 years' },
           ],
         }
       : {
-          id: `asked00${at}`,
+          id: `asked00${index}`,
           section: null,
           stencil: 'Basic',
-          filled: [{ field: 'Question', text: `Question ${at + 1}` }],
+          filled: [{ field: 'Question', text: `Question ${index + 1}` }],
         },
   )
 
@@ -417,15 +417,15 @@ const moveCard = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   id: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly DeckCard[] => {
   const card = cards.find((card) => card.id === id)
   if (!card) return cards
   const remainingCards = cards.filter((card) => card.id !== id)
 
-  if (at === HEAD) return [{ ...card, section: null }, ...remainingCards]
+  if (targetPoint === HEAD) return [{ ...card, section: null }, ...remainingCards]
 
-  const before = at === null ? -1 : remainingCards.findIndex((card) => card.id === at)
+  const before = targetPoint === null ? -1 : remainingCards.findIndex((card) => card.id === targetPoint)
   if (before !== -1) {
     const underItem = { ...card, section: remainingCards[before]?.section ?? null }
     return [...remainingCards.slice(0, before), underItem, ...remainingCards.slice(before)]
@@ -434,14 +434,14 @@ const moveCard = (
   const rank = (section: string | null): number =>
     section === null ? 0 : sections.findIndex((each) => each.id === section) + 1
 
-  if (at === null) {
+  if (targetPoint === null) {
     return [...remainingCards, { ...card, section: sections.at(-1)?.id ?? null }]
   }
-  if (!sections.some((each) => each.id === at)) return cards
+  if (!sections.some((each) => each.id === targetPoint)) return cards
 
-  const seat = remainingCards.findIndex((card) => rank(card.section) >= rank(at))
+  const seat = remainingCards.findIndex((card) => rank(card.section) >= rank(targetPoint))
   const where = seat === -1 ? remainingCards.length : seat
-  return [...remainingCards.slice(0, where), { ...card, section: at }, ...remainingCards.slice(where)]
+  return [...remainingCards.slice(0, where), { ...card, section: targetPoint }, ...remainingCards.slice(where)]
 }
 
 export default meta

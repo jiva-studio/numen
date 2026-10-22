@@ -35,7 +35,7 @@ var (
 // foundation loads the framework the classes named here come from, once.
 var foundation = sync.OnceValue(func() error {
 	const at = "/System/Library/Frameworks/Foundation.framework/Foundation"
-	_, err := purego.Dlopen(at, purego.RTLD_LAZY|purego.RTLD_GLOBAL)
+	_, err := purego.Dlopen(libPath, purego.RTLD_LAZY|purego.RTLD_GLOBAL)
 	return err
 })
 

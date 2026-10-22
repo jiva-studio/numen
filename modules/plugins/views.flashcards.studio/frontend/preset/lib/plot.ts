@@ -123,7 +123,7 @@ const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top),
 
 /** The line through those places. */
 export const createLinePath = (places: readonly Position[]): string =>
-  places.map((at, place) => `${place === 0 ? 'M' : 'L'}${round(at.x)} ${round(at.y)}`).join(' ')
+  places.map((point, place) => `${place === 0 ? 'M' : 'L'}${round(point.x)} ${round(point.y)}`).join(' ')
 
 /**
  * The stretch the budget the preset keeps does not get through, drawn as a

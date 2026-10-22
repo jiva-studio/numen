@@ -22,7 +22,7 @@ export const getShortcuts = (item: PaletteItem | undefined): readonly PaletteSho
   const actions = item && canChoose(item) ? (item.actions ?? []) : []
   return actions
     .slice(0, PALETTE_KEYS.length)
-    .map((action, at) => ({ action, key: PALETTE_KEYS[at] ?? null }))
+    .map((action, index) => ({ action, key: PALETTE_KEYS[index] ?? null }))
 }
 
 /** What the action Enter reaches is, and Shift and Enter the second. */

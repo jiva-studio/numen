@@ -16,8 +16,8 @@ export interface VoiceDescriptor {
  * colours all read from here.
  */
 export const VOICES = {
-  asked: { isBubble: true, against: 'end' },
-  answered: { isBubble: false, against: 'start' },
+  prompt: { isBubble: true, against: 'end' },
+  response: { isBubble: false, against: 'start' },
   doing: { isBubble: false, against: 'start' },
 } as const satisfies Record<string, VoiceDescriptor>
 

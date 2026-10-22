@@ -54,7 +54,7 @@ export function usePlexDrag(drag: PlexDragDeps): PlexDragState {
       frame: drag.getFrame(),
       options: drag.getOptions(),
       viewport: drag.getViewport(),
-      at: now,
+      point: now,
       relations: drag.getAllowedRelations(),
       threshold: drag.getThreshold(),
     })

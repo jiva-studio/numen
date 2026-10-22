@@ -57,15 +57,15 @@ func (r *Reader) Send(resp *numenv1.AskAgentResponse) {
 	case <-r.work.Stopped():
 		return
 	}
-	r.sent++
+	r.sentCount++
 	if resp.GetToolFinished() != nil {
-		r.done++
+		r.completed++
 	}
 }
 
 // CountStep counts one step of the run, for a program whose stream does not say when a tool
 // finished.
-func (r *Reader) CountStep() { r.done++ }
+func (r *Reader) CountStep() { r.completed++ }
 
 // SetSession keeps the session the next task of the conversation is asked in. A run in no
 // conversation keeps none.
@@ -75,7 +75,7 @@ func (r *Reader) SetSession(session string) {
 	}
 }
 
-func (r *Reader) isOverLimit() bool { return r.limit > 0 && r.done >= r.limit }
+func (r *Reader) isOverLimit() bool { return r.limit > 0 && r.completed >= r.limit }
 
 func (r *Reader) reportLimit() {
 	r.reportStop(fmt.Sprintf("reached maximum limit of %d steps", r.limit))
@@ -183,7 +183,7 @@ func Start(ctx context.Context, reg *Registry, spec Spec) (*Work, error) {
 			reader.reportStop(scanErr.Error())
 		case waitErr != nil:
 			reader.reportStop(FailureMessage(waitErr, stderr.String()))
-		case reader.sent == 0 && strings.TrimSpace(stderr.String()) != "":
+		case reader.sentCount == 0 && strings.TrimSpace(stderr.String()) != "":
 			reader.reportStop(FailureMessage(errNoOutput, stderr.String()))
 		}
 	}()

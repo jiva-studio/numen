@@ -42,12 +42,12 @@ const vault = (
     requests: request,
     core: {
       list: async (folderPath: string) => {
-        request.push(at)
-        return folders[at] ?? []
+        request.push(folderPath)
+        return folders[folderPath] ?? []
       },
     },
     puts: (folderPath: string, entry: Entry) => {
-      folders[at] = [...(folders[at] ?? []), entry]
+      folders[folderPath] = [...(folders[folderPath] ?? []), entry]
     },
   }
 }
@@ -448,8 +448,8 @@ describe('the refresh of every open folder', () => {
     let isFailing = false
     const list = useFileTree({
       list: async (folderPath: string) => {
-        if (isFailing && at === 'physics') throw new Error('gone')
-        return one.core.list(at)
+        if (isFailing && folderPath === 'physics') throw new Error('gone')
+        return one.core.list(folderPath)
       },
     })
     await list.openFolder(ROOT)
@@ -521,7 +521,7 @@ describe('a tab that has closed, requested for more', () => {
     const list = useFileTree({
       list: async (folderPath: string) => {
         holder.list?.close()
-        return folders[at] ?? []
+        return folders[folderPath] ?? []
       },
     })
     holder.list = list
@@ -597,7 +597,7 @@ describe('a listing that changes in one field of one entry', () => {
     ['type', { type: 'deck' }],
   ]
 
-  it.each(changes)('is drawn again where the %s changed', async (_field, over) => {
+  it.each(changes)('is drawn again where the %s changed', async (_field, overrides) => {
     let listing: readonly Entry[] = [first, second]
     const list = useFileTree({ list: async () => listing })
     await list.openFolder(ROOT)

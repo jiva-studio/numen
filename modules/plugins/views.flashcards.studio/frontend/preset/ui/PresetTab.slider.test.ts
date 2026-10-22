@@ -157,7 +157,7 @@ describe('the one slider', () => {
       {
         goal: 'retention',
         grid: [0.7, 0.8, 0.9, 0.95],
-        now: { at: 2, value: 0.9, day: '' },
+        now: { index: 2, value: 0.9, day: '' },
         at: [point(), point(), point({ minutes: 14, backlog: [5, 0] }), point()],
       },
       { goal: 'retention' },
@@ -175,7 +175,7 @@ describe('the one slider', () => {
         goal: 'date',
         grid: [10, 20, 30, 40],
         days: ['2026-09-09', '2026-09-19', '2026-09-29', '2026-10-09'],
-        now: { at: 2, value: 30, day: '2026-09-29' },
+        now: { index: 2, value: 30, day: '2026-09-29' },
         at: [point(), point(), point({ minutes: 40, backlog: [9, 4, 0, 8] }), point()],
       },
       { goal: 'date', byDate: '2026-09-29' },
@@ -210,7 +210,7 @@ describe('the one slider', () => {
   // A preset's own value need not sit on the grid, and the place it opens at
   // is only the nearest one. The knob does not claim a value it is not at.
   it('reads the preset’s own value where it opens, and the place once walked', async () => {
-    const { tab } = mountPresetTab({ grid: [0, 10, 20, 30], now: { at: 2, value: 23, day: '' } })
+    const { tab } = mountPresetTab({ grid: [0, 10, 20, 30], now: { index: 2, value: 23, day: '' } })
     const first = () => tab.findAll('[data-control="bought"]')[0]?.text()
     expect(first()).toBe('23 minutes a day')
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
@@ -315,7 +315,7 @@ describe('what a day cannot reach', () => {
         grid: [14, 30, 90, 180],
         days: ['2026-09-14', '2026-09-30', '2026-11-29', '2027-02-27'],
         cards: 79,
-        now: { at: 0, value: 14, day: '2026-09-14' },
+        now: { index: 0, value: 14, day: '2026-09-14' },
         at: [
           point({ minutes: 40, short: 38, ...overrides }),
           point({ minutes: 30, short: 11 }),

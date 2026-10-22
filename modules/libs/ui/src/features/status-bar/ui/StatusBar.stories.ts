@@ -111,10 +111,10 @@ export const WithAFailure: Story = {
 /** Far more tasks than the popover has room for. */
 export const FarTooMany: Story = {
   args: {
-    tasks: Array.from({ length: 40 }, (_, at) => ({
+    tasks: Array.from({ length: 40 }, (_, index) => ({
       ...INDEXING,
-      id: `task-${at}`,
-      label: `Indexing book ${at}`,
+      id: `task-${index}`,
+      label: `Indexing book ${index}`,
     })),
   },
 }

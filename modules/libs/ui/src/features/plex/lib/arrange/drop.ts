@@ -89,7 +89,7 @@ export interface DropInput {
   /** The node the gesture started from. */
   readonly from: string
   /** Where it was let go, in the plex's own coordinates. */
-  readonly at: Position
+  readonly point: Position
   /** Relations a gesture is allowed to produce. */
   readonly relations: readonly PlexRelation[]
 }
@@ -100,12 +100,12 @@ export interface DropInput {
  * workable: the relations around a child overlap the rest of the picture, and
  * whatever the gesture crosses, only where it stops decides.
  */
-export function resolveDrop({ frame, options, from, at, relations }: DropInput): Drop | null {
+export function resolveDrop({ frame, options, from, point, relations }: DropInput): Drop | null {
   const source = frame.nodes.find((node) => node.id === from)
   if (!source) return null
 
-  const landedOn = findNode(at, frame)
-  const target = landedOn ? { x: landedOn.x, y: landedOn.y } : at
+  const landedOn = findNode(point, frame)
+  const target = landedOn ? { x: landedOn.x, y: landedOn.y } : point
   const relation = getRelationTowards(source, target, options)
   if (!relation || !relations.includes(relation)) return null
 
@@ -120,7 +120,7 @@ export interface DroppedInput {
   /** The window the plex is drawn in, centred on the focus. */
   readonly viewport: Size
   /** Where the pointer is, in the plex's own coordinates. */
-  readonly at: Position
+  readonly point: Position
   /** Relations a gesture is allowed to produce. */
   readonly relations: readonly PlexRelation[]
   /** How far from the focus the pointer stands before it names a direction. */
@@ -138,7 +138,7 @@ export function getDropRelation({
   frame,
   options,
   viewport,
-  at,
+  point,
   relations,
   threshold,
 }: DroppedInput): PlexRelation | null {
@@ -146,11 +146,11 @@ export function getDropRelation({
   if (!focus) return null
 
   // Past the edge of the window is over whatever is drawn beside the plex.
-  if (Math.abs(at.x) > viewport.width / 2 || Math.abs(at.y) > viewport.height / 2) return null
+  if (Math.abs(point.x) > viewport.width / 2 || Math.abs(point.y) > viewport.height / 2) return null
 
   // Close enough to the focus that the direction is the tremor of a hand.
-  if (Math.hypot(at.x - focus.x, at.y - focus.y) < threshold) return null
+  if (Math.hypot(point.x - focus.x, point.y - focus.y) < threshold) return null
 
-  const relation = getRelationTowards(focus, at, options)
+  const relation = getRelationTowards(focus, point, options)
   return relation && relations.includes(relation) ? relation : null
 }

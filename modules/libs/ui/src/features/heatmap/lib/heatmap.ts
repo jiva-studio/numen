@@ -174,10 +174,10 @@ export function getCells(
   days: readonly Day[],
 ): readonly Cell[] {
   const step = getStep(grid)
-  return days.map((day, at) => ({
+  return days.map((day, index) => ({
     day,
-    x: Math.floor(at / ROWS) * step,
-    y: (at % ROWS) * step,
+    x: Math.floor(index / ROWS) * step,
+    y: (index % ROWS) * step,
     size: grid.cell,
     radius: RADIUS,
   }))

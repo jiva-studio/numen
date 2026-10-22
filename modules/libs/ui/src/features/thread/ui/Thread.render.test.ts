@@ -21,8 +21,8 @@ vi.mock('@/shared/ui/prose/render', async (importOriginal) => {
 
 const createAnswered = (id: string, text: string, unresolved?: readonly string[]): Turn =>
   unresolved === undefined
-    ? { id, voice: 'answered', text }
-    : { id, voice: 'answered', text, unresolved }
+    ? { id, voice: 'response', text }
+    : { id, voice: 'response', text, unresolved }
 
 const countRenders = (text: string) =>
   renderSpy.mock.calls.filter(([rendered]) => rendered === text).length

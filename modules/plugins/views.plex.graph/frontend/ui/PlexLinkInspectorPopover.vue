@@ -221,7 +221,7 @@ function updatePosition() {
         class="plex-link-popover__btn plex-link-popover__btn--done"
         @click="onDone"
       >
-        <span>{{ words.done }}</span>
+        <span>{{ words.apply }}</span>
         <span class="plex-link-popover__shortcut">↵</span>
       </button>
     </div>

@@ -25,12 +25,12 @@ func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	retained, err := s.kept.Execute(t.Context(), s.vault)
+	retained, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	uncached := s.kept
+	uncached := s.schedules
 	uncached.Cache = nil
 	worked, err := uncached.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -65,7 +65,7 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	counts := &loadCounts{}
 	logs := countingStores{inner: &reorderedStores{DerivedStores: s.logs}, on: counts}
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, s.standings, s.presets)
-	schedules.Cache = countingKept{inner: s.kept.Cache, on: counts}
+	schedules.Cache = countingKept{inner: s.schedules.Cache, on: counts}
 
 	if _, err := schedules.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
@@ -100,11 +100,11 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	if _, err := record.Answer(t.Context(), recognise, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := s.kept.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.schedules.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 
-	raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID)
+	raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,16 +131,16 @@ func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	want, err := s.kept.Execute(t.Context(), s.vault)
+	want, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := s.kept.Cache.Write(t.Context(), s.vault.ID, []byte("not a cache")); err != nil {
+	if err := s.schedules.Cache.Write(t.Context(), s.vault.ID, []byte("not a cache")); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := s.kept.Execute(t.Context(), s.vault)
+	got, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a cache nothing can read rejected the schedules: %v", err)
 	}
@@ -191,7 +191,7 @@ func TestEachPresetSchedulesItsCardsAtItsOwnTarget(t *testing.T) {
 	s := openVault(t, newTargetedNotes(0.95, 0.75))
 	answerBothAlike(t, s)
 
-	got, err := s.kept.Execute(t.Context(), s.vault)
+	got, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 	s := openVault(t, newTargetedNotes(0.95, 0.75))
 	answerBothAlike(t, s)
 
-	was, err := s.kept.Execute(t.Context(), s.vault)
+	was, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestMovingATargetWorksTheSchedulesOutAgain(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	now, err := s.kept.Execute(t.Context(), s.vault)
+	now, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -250,7 +250,7 @@ func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 	s := openVault(t, files)
 	answerBothAlike(t, s)
 
-	was, err := s.kept.Execute(t.Context(), s.vault)
+	was, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +263,7 @@ func TestRepointingADeckWorksTheSchedulesOutAgain(t *testing.T) {
 	write(t, s, "decks/High.md", strings.Replace(files["decks/High.md"], "to: High", "to: Low", 1))
 	write(t, s, "decks/Low.md", strings.Replace(files["decks/Low.md"], "to: Low", "to: High", 1))
 
-	now, err := s.kept.Execute(t.Context(), s.vault)
+	now, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -287,7 +287,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	s := openVault(t, files)
 	answerBothAlike(t, s)
 
-	was, err := s.kept.Execute(t.Context(), s.vault)
+	was, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -295,7 +295,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 	write(t, s, "decks/High.md", strings.Replace(files["decks/High.md"], movedCard, "", 1))
 	write(t, s, "decks/Low.md", files["decks/Low.md"]+movedCard)
 
-	now, err := s.kept.Execute(t.Context(), s.vault)
+	now, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -315,7 +315,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := s.kept.Execute(t.Context(), s.vault)
+	got, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -368,7 +368,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	first, err := s.kept.Execute(t.Context(), s.vault)
+	first, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +391,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	reply, err := s.kept.Execute(t.Context(), s.vault)
+	reply, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -401,7 +401,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 		t.Errorf("the projection has the card back on day %d and the answer on day %d",
 			comes, actualDay)
 	}
-	if stands == dayFrom(when, fell) {
+	if actualDay == dayFrom(when, fell) {
 		t.Errorf("the card stood on the %v it fell on", fell.Weekday())
 	}
 }
@@ -442,7 +442,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	reply, err := s.kept.Execute(t.Context(), s.vault)
+	reply, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

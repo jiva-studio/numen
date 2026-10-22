@@ -128,7 +128,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
    */
   const enter = async (): Promise<void> => {
     isPanelOpen.value = false
-    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.held.value))
+    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.selectedId.value))
     await nextTick()
     field.value?.focus()
     field.value?.select()
@@ -137,7 +137,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   const leave = (): void => {
     isPanelOpen.value = false
-    places.held.value = ''
+    places.selectedId.value = ''
     const back = options.getOpenedFrom()
     if (back?.isConnected) back.focus()
   }

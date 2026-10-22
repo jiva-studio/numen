@@ -43,7 +43,7 @@ interface WindowActionDeps {
   goTo: (screen: WindowScreen) => void
   stop: () => void
   count: () => Promise<void>
-  done: ReturnType<typeof useReviewDays>
+  reviewDays: ReturnType<typeof useReviewDays>
   schedules: ReturnType<typeof useVaultPresets>
   state: ReturnType<typeof useReviewSession>
   agentPanel: { endConversation: () => void; closePanel: () => void }
@@ -55,7 +55,7 @@ function useWindowActions(deps: WindowActionDeps) {
     deps.stop()
     deps.vault.value = id
     deps.goTo('decks')
-    void deps.done.read(id)
+    void deps.reviewDays.read(id)
     void deps.schedules.read(deps.chosen.value, deps.today.value)
   }
 
@@ -75,7 +75,7 @@ function useWindowActions(deps: WindowActionDeps) {
 
   const leave = async () => {
     deps.goTo('decks')
-    void deps.done.read(deps.vault.value)
+    void deps.reviewDays.read(deps.vault.value)
     await deps.count()
     void deps.schedules.read(deps.chosen.value, deps.today.value)
   }
@@ -93,7 +93,7 @@ function useWindowActions(deps: WindowActionDeps) {
   const refresh = async () => {
     if (deps.on.value === 'session') return
     await deps.count()
-    await deps.done.read(deps.vault.value)
+    await deps.reviewDays.read(deps.vault.value)
     await deps.schedules.read(deps.chosen.value, deps.today.value)
   }
 
@@ -119,7 +119,7 @@ function createWindowKeyboard(deps: {
     getVaults: () => deps.vaults.value,
     getChosenVault: () => deps.chosen.value,
     getPresetsByDeck: () => deps.schedules.byDeck.value,
-    isShown: () => deps.state.shown.value,
+    isShown: () => deps.state.isAnswerShown.value,
     getShowing: () => deps.showing.value,
     choose: deps.actions.choose,
     start: (deck) => void deps.actions.start(deck),
@@ -137,7 +137,7 @@ function createWindowKeyboard(deps: {
 }
 
 function useWindowScreens(deps: {
-  done: ReturnType<typeof useReviewDays>
+  reviewDays: ReturnType<typeof useReviewDays>
   schedules: ReturnType<typeof useVaultPresets>
   vault: Ref<string>
   state: ReturnType<typeof useReviewSession>
@@ -146,7 +146,7 @@ function useWindowScreens(deps: {
 }) {
   return useScreens(['vaults', 'decks', 'session'] as const, {
     decks: [
-      deps.done.forget,
+      deps.reviewDays.forget,
       deps.schedules.forget,
       () => {
         deps.vault.value = ''
@@ -161,7 +161,7 @@ function useWindowState() {
   const notices = useNotices()
   const counter = useReviewCounter({ cards, reportError: notices.reportError })
   const state = useReviewSession({ cards, reportError: notices.reportError })
-  const isDone = useReviewDays({
+  const reviewDaysInstance = useReviewDays({
     cards,
     reportError: notices.reportError,
     widest: () => Math.max(window.screen.width, document.documentElement.clientWidth),
@@ -169,7 +169,7 @@ function useWindowState() {
   const schedules = useVaultPresets({ presets: cards })
   const unreachable = ref('')
 
-  return { vault, notices, counter, state, done: isDone, schedules, unreachable }
+  return { vault, notices, counter, state, reviewDays: reviewDaysInstance, schedules, unreachable }
 }
 
 function createWindowView(deps: {
@@ -177,7 +177,7 @@ function createWindowView(deps: {
   notices: ReturnType<typeof useNotices>
   actions: ReturnType<typeof useWindowActions>
   counter: ReturnType<typeof useReviewCounter>
-  done: ReturnType<typeof useReviewDays>
+  reviewDays: ReturnType<typeof useReviewDays>
   schedules: ReturnType<typeof useVaultPresets>
   chosen: ComputedRef<VaultCardsDue | null>
   state: ReturnType<typeof useReviewSession>
@@ -195,7 +195,7 @@ function createWindowView(deps: {
     decks: {
       chosen: deps.chosen,
       today: deps.counter.day,
-      done: deps.done,
+      reviewDays: deps.reviewDays,
       schedules: deps.schedules,
       start: deps.actions.start,
       startPreset: deps.actions.startPreset,

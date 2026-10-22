@@ -61,15 +61,15 @@ export const sessionCore: SessionCore = {
   },
   async *watchTasks(signal) {
     for await (const update of windowService.watchTasks({ window: WINDOW }, { signal })) {
-      yield update.tasks.map((at) => ({
-        id: at.id,
-        label: at.title,
-        about: at.about,
-        done: Number(at.done),
-        total: Number(at.total),
-        counting: counted[at.unit] ?? 'things',
-        error: at.error,
-        isUserStarted: at.isUserStarted,
+      yield update.tasks.map((task) => ({
+        id: task.id,
+        label: task.title,
+        about: task.about,
+        completedCount: Number(task.done),
+        total: Number(task.total),
+        counting: counted[task.unit] ?? 'things',
+        error: task.error,
+        isUserStarted: task.isUserStarted,
       }))
     }
   },
@@ -81,7 +81,7 @@ export const sessionCore: SessionCore = {
       result: flushResults[owed ?? 'nothing'],
     })
   },
-  detachTab: async (tabId, at) => {
-    await workspace.detachTab({ tabId, x: at.x, y: at.y })
+  detachTab: async (tabId, position) => {
+    await workspace.detachTab({ tabId, x: position.x, y: position.y })
   },
 }

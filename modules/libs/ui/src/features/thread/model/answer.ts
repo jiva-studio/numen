@@ -40,7 +40,7 @@ export function createAnswer(actions: AnswerActions, paint: Paint): Answer {
     painting = true
     paint(() => {
       painting = false
-      if (id) put({ id, voice: 'answered', text, state: 'arriving' })
+      if (id) put({ id, voice: 'response', text, state: 'arriving' })
     })
   }
 
@@ -52,7 +52,7 @@ export function createAnswer(actions: AnswerActions, paint: Paint): Answer {
         // The turn goes up with its first words in the same step the wait comes
         // down. A window nobody is looking at draws no frames, and the frames
         // are what grow the turn.
-        put({ id, voice: 'answered', text, state: 'arriving' })
+        put({ id, voice: 'response', text, state: 'arriving' })
         return
       }
       text += words
@@ -63,13 +63,13 @@ export function createAnswer(actions: AnswerActions, paint: Paint): Answer {
       // An answer with nothing in it is a turn with no words and a gap either
       // side of it.
       if (text === '') drop(id)
-      else put({ id, voice: 'answered', text })
+      else put({ id, voice: 'response', text })
       id = ''
     },
     fail: () => {
       if (!id) return
       if (text === '') drop(id)
-      else put({ id, voice: 'answered', text, state: 'failed' })
+      else put({ id, voice: 'response', text, state: 'failed' })
       id = ''
     },
     getText: () => text,

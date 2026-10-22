@@ -88,4 +88,4 @@ export const everyRow = (visibleRows: readonly ShownRow[], anchor: RowId | null)
 
 /** Whether two selections hold the same rows in the same order. */
 export const isSameSelection = (rows: readonly RowId[], others: readonly RowId[]): boolean =>
-  rows.length === others.length && rows.every((row, at) => row === others[at])
+  rows.length === others.length && rows.every((row, index) => row === others[index])

@@ -67,7 +67,7 @@ export interface DeckDataState {
   readonly id: string
   readonly note: ComputedRef<OpenNote>
   readonly deck: ComputedRef<BufferDeck>
-  readonly drawn: ComputedRef<readonly DeckCard[]>
+  readonly deckCards: ComputedRef<readonly DeckCard[]>
   readonly sections: ComputedRef<readonly DeckSection[]>
   readonly stencils: ComputedRef<readonly Stencil[]>
   readonly marks: ComputedRef<Marks>

@@ -11,8 +11,8 @@ import ReaderToolbar from './ReaderToolbar.vue'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
 /** The controls over a document of that many pages, open at the first. */
-const mountToolbar = (pages = 200, at = 0) =>
-  mount(ReaderToolbar, { props: { pages, at, 'onUpdate:at': (page: number) => void page } })
+const mountToolbar = (pages = 200, pageIndex = 0) =>
+  mount(ReaderToolbar, { props: { pages, at: pageIndex, 'onUpdate:at': (page: number) => void page } })
 
 /**
  * The same, with a caller standing behind how close the page is drawn: it puts

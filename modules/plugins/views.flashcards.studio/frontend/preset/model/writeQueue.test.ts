@@ -16,7 +16,7 @@ const createGate = () => {
   const reply = new Promise<PresetWriteResult>((resolve) => {
     open = resolve
   })
-  return { answered: reply, open }
+  return { promise: reply, open }
 }
 
 /** A vault whose writes answer in turn, recording the version each was based on. */
@@ -24,7 +24,7 @@ const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)
   const based: string[] = []
   const core = {
     write: async (_path: string, _settings: unknown, target: string) => {
-      based.push(at)
+      based.push(target)
       return (await answers.shift()) ?? { ok: true, value: { at: 'v-last' } }
     },
   } as unknown as Presets
@@ -71,7 +71,7 @@ describe('one write', () => {
     await sendWrite(queue, createWriteOpts(core, writeMessage))
 
     expect(based).toStrictEqual(['', 'v1'])
-    expect(said[0]).toStrictEqual(['', undefined])
+    expect(messages[0]).toStrictEqual(['', undefined])
   })
 
   it('takes back an earlier failure and warning once it lands', async () => {
@@ -118,7 +118,7 @@ describe('a write requested for while another is out', () => {
   it('goes after it', async () => {
     const queue = createWriteQueue()
     const first = createGate()
-    const { core, based } = createCore(first.answered, { ok: true, value: { at: 'v2' } })
+    const { core, based } = createCore(first.promise, { ok: true, value: { at: 'v2' } })
     const { writeMessage } = createMessages()
 
     const one = requestWrite(queue, createWriteOpts(core, writeMessage))
@@ -135,7 +135,7 @@ describe('a write requested for while another is out', () => {
   it('is dropped where the first found the file changed elsewhere', async () => {
     const queue = createWriteQueue()
     const first = createGate()
-    const { core, based } = createCore(first.answered)
+    const { core, based } = createCore(first.promise)
     const { writeMessage } = createMessages()
 
     const one = requestWrite(queue, createWriteOpts(core, writeMessage))
@@ -182,7 +182,7 @@ describe('flushing a preset', () => {
   it('waits for the write already out', async () => {
     const queue = createWriteQueue()
     const first = createGate()
-    const { core } = createCore(first.answered)
+    const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
     void requestWrite(queue, createWriteOpts(core, writeMessage))
 

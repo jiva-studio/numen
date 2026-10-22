@@ -17,12 +17,12 @@ import { getRenamedPath } from '@numen/plugin-sdk'
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (
-  at: string,
+  targetPath: string,
   neighbours: readonly NeighbourSpec[] = [],
   takes = true,
   types: Types = {},
 ) => {
-  const plex = viewOn(at, neighbours, types)
+  const plex = viewOn(targetPath, neighbours, types)
   const vault = createVault(takes)
   const openedCalls: [string, string, string][] = []
   const request: string[] = []
@@ -84,6 +84,7 @@ const tab = (
     divides,
     isNesting,
     headingsAsked,
+    requested: request,
     asked: request,
     ran,
     messages,
@@ -725,6 +726,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     moveFiles,
     moveFilesAndReload,
     goToNote,
+    requested: request,
     asked: request,
     opened: openedCalls,
     ran,
@@ -847,7 +849,7 @@ describe('a gesture the plex reports', () => {
 
     one.state.activate(one.node('Heat'))
 
-    expect(one.asked.at(-1)).toBe('physics/Heat.md')
+    expect(one.requested.at(-1)).toBe('physics/Heat.md')
   })
 
   it('opens the note the node remains for, called what the picture calls it', async () => {
@@ -890,7 +892,7 @@ describe('a gesture the plex reports', () => {
   it('is release where the picture never drew that node', async () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     expect(one.node('Heat')).not.toBe('')
-    const request = one.asked.length
+    const request = one.requested.length
 
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
       one.state.activate(node)
@@ -901,7 +903,7 @@ describe('a gesture the plex reports', () => {
       await one.state.joinNodes(node, one.node('Root'), 'jump')
     }
 
-    expect(one.asked).toHaveLength(request)
+    expect(one.requested).toHaveLength(request)
     expect(one.opened).toStrictEqual([])
     expect(one.ran).toStrictEqual([])
     expect(one.made).toStrictEqual([])
@@ -924,7 +926,7 @@ describe('a plex that travelled', () => {
     // a gesture dragging one asks the vault about nothing.
     await one.goToNote('Warm.md', ['Fire.md', 'child'])
     for (const node of initialNodeIds) one.state.activate(node)
-    expect(one.asked.at(-1)).toBe('Warm.md')
+    expect(one.requested.at(-1)).toBe('Warm.md')
   })
 
   it('calls a note that arrives back the navigation right after leaving what it always called it', async () => {

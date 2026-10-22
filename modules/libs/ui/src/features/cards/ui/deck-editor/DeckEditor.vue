@@ -65,7 +65,7 @@ const activePickerRunId = shallowRef<string | null>(null)
 /**
  * The card under the pointer's hand, and where letting go would put it.
  */
-const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const { dragged, at: dropTarget, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
   isMoved: (held: string, target: InsertionPoint): boolean => isMoved(grid.value.runs, held, target),
@@ -146,7 +146,7 @@ function onAddSection(): void {
       :stencils="stencils"
       :of="grid.of"
       :wrong="wrong"
-      :at="at"
+      :at="dropTarget"
       :is-asking="activePickerRunId === run.id"
       :words="words"
       @drag-over="onDragOver"

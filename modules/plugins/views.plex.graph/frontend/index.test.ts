@@ -50,7 +50,7 @@ describe('view-plex-graph plugin', () => {
     await settle()
     await settle()
 
-    expect(asked.headings.length).toBeGreaterThan(0)
+    expect(requested.headings.length).toBeGreaterThan(0)
   })
 
   it('refuses to activate in a window that offers no workspace or notes', () => {

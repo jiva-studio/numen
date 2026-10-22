@@ -43,7 +43,7 @@ export interface NodeHeadings {
   /** Ground kept clear around them, so none stands flush against an edge. */
   readonly pad: number
   /** How many stand in the window at once. The rest are scrolled to. */
-  readonly shown: number
+  readonly visibleCount: number
   /** As wide as the longest of them asks for, held inside the window. */
   readonly width: number
   /** How far their middle stands from where the node is placed. */
@@ -108,18 +108,18 @@ export function getNodeHeadings(
   const headingCount = Math.min(maxHeadings, rows, headings.length)
   const setIn = getIndents(headings, headingIndent)
 
-  const suspended: HungHeading[] = headings.map((heading, at) => ({
+  const suspended: HungHeading[] = headings.map((heading, index) => ({
     id: heading.id,
     text: heading.text,
     indent: setIn.get(heading.level) ?? 0,
-    at: at * headingHeight,
+    at: index * headingHeight,
   }))
 
   return {
     top,
     headingHeight,
     pad,
-    shown: headingCount,
+    visibleCount: headingCount,
     ...getHeadingsWidth(node, suspended, { pad, deps }),
     headings: suspended,
     height: headingCount * headingHeight + 2 * pad,

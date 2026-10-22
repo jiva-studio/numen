@@ -250,7 +250,7 @@ export function createPluginContext(
       requirePerm('vault:read', 'emitFileSelect')
       host.emitFileSelect(pluginId, e)
     },
-    openTab: (kind: string, at?: string) => host.openTab?.(kind, at),
+    openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
     closeTab: (id: string) => {
       host.closeTab?.(id)
     },

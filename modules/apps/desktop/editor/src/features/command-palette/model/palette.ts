@@ -90,7 +90,7 @@ function createNamesSearch(deps: PaletteSearchDeps) {
 interface PaletteVaultsDeps {
   readonly core: CommandsDeps
   readonly words: Words
-  readonly asked: ReturnType<typeof latest>
+  readonly requests: ReturnType<typeof latest>
   readonly known: Ref<readonly Vault[]>
   readonly showing: Ref<string>
   readonly isWorking: Ref<boolean>
@@ -99,7 +99,7 @@ interface PaletteVaultsDeps {
 
 function createVaultsLoader(deps: PaletteVaultsDeps) {
   return async () => {
-    const mine = deps.asked.acquireRequest()
+    const mine = deps.requests.acquireRequest()
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
@@ -129,20 +129,20 @@ interface PaletteCommandsDeps {
 function createPaletteCommands(deps: PaletteCommandsDeps) {
   const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
     const command = deps.byId.get(id)
-    if (!command || !command.isOffered(over, deps.runs)) return null
+    if (!command || !command.isOffered(target, deps.runs)) return null
     if (!command.needs) return deps.invocation(command.id, target)
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true
     }
-    deps.steps.pushStep({ step: command.needs, command, on: over })
+    deps.steps.pushStep({ step: command.needs, command, on: target })
     return null
   }
 
   const getObjection = (id: string, target: CommandTarget): string => {
     const command = deps.byId.get(id)
-    if (!command || command.isOffered(over, deps.runs)) return ''
-    return over.isReady ? deps.words.noNote : deps.words.noVault
+    if (!command || command.isOffered(target, deps.runs)) return ''
+    return target.isReady ? deps.words.noNote : deps.words.noVault
   }
 
   return { startCommand, getObjection }
@@ -162,12 +162,12 @@ function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
   args: PaletteRestArgs,
 ): CommandPaletteDeps {
-  const [words, at, knows, lists, runs, wait, getExtraCommands] = args
+  const [words, targetPoint, knows, lists, runs, wait, getExtraCommands] = args
   if ('core' in coreOrDeps) return coreOrDeps
   return {
     core: coreOrDeps,
     words: words!,
-    at: at!,
+    at: targetPoint!,
     knows: knows!,
     lists: lists!,
     runs: runs!,
@@ -196,7 +196,7 @@ function createPaletteState(wait?: Wait) {
     failureMessage.value = BLANK.failureMessage
   }
 
-  return { open, typed: inputValue, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
+  return { open, typed: inputValue, found, known: recognized, showing, isWorking, failureMessage, requests: request, debounced, drop }
 }
 
 function createPaletteStepsAndSearch(
@@ -207,7 +207,7 @@ function createPaletteStepsAndSearch(
   const loadVaults = createVaultsLoader({
     core: deps.core,
     words: deps.words,
-    asked: state.asked,
+    requests: state.requests,
     known: state.known,
     showing: state.showing,
     isWorking: state.isWorking,
@@ -356,7 +356,7 @@ export function useCommandPalette(
   const on = computed<CommandTarget>(() => deps.at())
 
   const invocation = (id: string, target: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, over, name, over.path ? deps.knows.getTabAt(over.path) : null)
+    createInvocation(id, target, name, target.path ? deps.knows.getTabAt(target.path) : null)
 
   const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
     deps,

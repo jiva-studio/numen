@@ -64,7 +64,7 @@ function open(settings: Record<string, string> = {}) {
     writeSetting: async (path, value) => {
       content.push([path.join('/'), value])
     },
-    getModelsAt: (at) => LISTED.filter((one) => one.nameAt.join('/') === at.join('/')),
+    getModelsAt: (categoryPath) => LISTED.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
   return { state, requests: request, writtenSettings: content }
 }

@@ -102,7 +102,7 @@ function createConflict(note: string) {
       drop = raising(conflict)
     },
     /** The conflict stops standing, however that came about. */
-    answered: () => drop(),
+    dismiss: () => drop(),
   }
 }
 
@@ -312,7 +312,7 @@ describe('a page holding text the file changed under', () => {
 
     mockStream.end()
     await settle()
-    note.answered()
+    note.dismiss()
     await settle()
 
     // Nothing answers to that token now, and the page has not been asked again.
@@ -399,7 +399,7 @@ describe('a conflict put off and settled', () => {
     mockStream.send({ token: '1', flush: true })
     await settle()
     going.conflicts.value[0]?.later()
-    first.answered()
+    first.dismiss()
 
     createConflict('Again.md').raise(going.raise)
     await settle()

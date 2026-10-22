@@ -59,14 +59,14 @@ export function separateTitles(
   const titles: Box[] = []
   const resolved = [...edges]
 
-  for (const { edge, at, metrics } of sortTightestFirst(edges, width)) {
+  for (const { edge, index, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
     const clear = clearSpans(boxAt, [...boxes, ...titles], { ends, step: STEP / metrics.arc })
 
     const found = settle(clear, edge.words!, { metrics, width })
     if (!found) {
-      resolved[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
+      resolved[index] = { ...edge, words: undefined, wordsAt: MIDDLE }
       continue
     }
 
@@ -78,7 +78,7 @@ export function separateTitles(
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
     const heading = getHeading(edge, found.at)
-    resolved[at] = {
+    resolved[index] = {
       ...edge,
       words: found.words,
       heading,
@@ -97,21 +97,21 @@ export function separateTitles(
 function sortTightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
-): { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] {
-  const measured: { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] = []
+): { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] {
+  const measured: { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] = []
 
-  for (const [at, edge] of edges.entries()) {
+  for (const [index, edge] of edges.entries()) {
     if (!edge.words) continue
     const arc = getLength(edge)
     const extent = width(edge.words)
     if (arc <= 0 || extent <= 0) continue
-    measured.push({ edge, at, metrics: { arc, extent } })
+    measured.push({ edge, index, metrics: { arc, extent } })
   }
 
   return measured.sort(
     (one, other) =>
       one.metrics.arc - one.metrics.extent - (other.metrics.arc - other.metrics.extent) ||
-      one.at - other.at,
+      one.index - other.index,
   )
 }
 

@@ -14,8 +14,8 @@ const getWords = (one: Notice): string => (one.about ? `${one.text} — ${one.ab
 /** The two regions the corner is read out through. */
 export interface Announcer {
   /** What is read out politely, and what is read out over everything. */
-  readonly told: Ref<string>
-  readonly cried: Ref<string>
+  readonly polite: Ref<string>
+  readonly assertive: Ref<string>
 }
 
 /**
@@ -23,8 +23,8 @@ export interface Announcer {
  * Nothing is read out until the regions themselves have been drawn.
  */
 export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
-  const announcementText = ref('')
-  const cried = ref('')
+  const polite = ref('')
+  const assertive = ref('')
 
   /** The words each card was last read out by. */
   const announced = shallowRef<ReadonlyMap<string, string>>(new Map())
@@ -42,8 +42,8 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     pendingNotices = [...pendingNotices, ...unannounced]
 
     const mine = ++activeReadCount
-    announcementText.value = ''
-    cried.value = ''
+    polite.value = ''
+    assertive.value = ''
     await nextTick()
     if (mine !== activeReadCount) return
 
@@ -51,8 +51,8 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     pendingNotices = []
     const loud = pending.filter((one) => one.tone === 'alarm')
     const regular = pending.filter((one) => one.tone !== 'alarm')
-    if (loud.length) cried.value = loud.map(getWords).join('. ')
-    if (regular.length) announcementText.value = regular.map(getWords).join('. ')
+    if (loud.length) assertive.value = loud.map(getWords).join('. ')
+    if (regular.length) polite.value = regular.map(getWords).join('. ')
   }
 
   watch(getNotices, (all) => void readOut(all))
@@ -63,5 +63,5 @@ export function useAnnouncer(getNotices: () => readonly Notice[]): Announcer {
     void readOut(getNotices())
   })
 
-  return { told: announcementText, cried }
+  return { polite, assertive }
 }

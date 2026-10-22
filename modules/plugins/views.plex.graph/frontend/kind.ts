@@ -75,8 +75,8 @@ export function createPlexKind(host: PlexHost, createView: () => PlexView) {
     icon: Waypoints,
     isTool: true,
     placement: { pane: 'main', order: 0 },
-    open: (at, id) => {
-      const from = at || tabs.getCurrentPath() || host.workspace.openingPath.value
+    open: (targetPath, id) => {
+      const from = targetPath || tabs.getCurrentPath() || host.workspace.openingPath.value
       const state = usePlexTab(createView(), createPlexTabDeps(host, id))
       tabs.add(id, state)
       if (from) void state.view.go(from)

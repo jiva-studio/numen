@@ -39,10 +39,10 @@ type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
 const createAsked = (id: string, text: string, state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
+  state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
 const createAnswered = (id: string, text: string, state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
+  state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 const renderThread =
   (turns: readonly Turn[]): Render =>

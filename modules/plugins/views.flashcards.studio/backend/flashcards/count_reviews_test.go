@@ -218,7 +218,7 @@ func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	schedules, err := s.kept.Execute(t.Context(), s.vault)
+	schedules, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

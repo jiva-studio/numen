@@ -59,7 +59,7 @@ func BenchmarkCurveCards(b *testing.B) {
 			loadAnswers(b, s, time.Now(), cards, 180, max(1, cards*150/50000))
 
 			ctx := b.Context()
-			if _, err := s.kept.Execute(ctx, s.vault); err != nil {
+			if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
 				b.Fatal(err)
 			}
 			p := review.Preset{
@@ -93,7 +93,7 @@ func BenchmarkPresetCurve(b *testing.B) {
 	loadAnswers(b, s, time.Now(), cards, 180, 150)
 
 	ctx := b.Context()
-	if _, err := s.kept.Execute(ctx, s.vault); err != nil {
+	if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
 		b.Fatal(err)
 	}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}

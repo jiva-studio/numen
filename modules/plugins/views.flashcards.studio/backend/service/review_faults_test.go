@@ -135,13 +135,13 @@ func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
 	}
 
 	all := list("", "")
-	behind, ahead := names(all.GetDays()), names(all.GetDue())
-	if len(behind) < 6 || len(ahead) < 6 {
-		t.Fatalf("the history holds %d days behind and %d ahead, want six of each", len(behind), len(ahead))
+	pastDays, ahead := names(all.GetDays()), names(all.GetDue())
+	if len(pastDays) < 6 || len(ahead) < 6 {
+		t.Fatalf("the history holds %d days behind and %d ahead, want six of each", len(pastDays), len(ahead))
 	}
 
-	inside := list(behind[1], behind[len(behind)-2])
-	if got, want := names(inside.GetDays()), behind[1:len(behind)-1]; !slices.Equal(got, want) {
+	inside := list(pastDays[1], pastDays[len(pastDays)-2])
+	if got, want := names(inside.GetDays()), pastDays[1:len(pastDays)-1]; !slices.Equal(got, want) {
 		t.Errorf("the days behind came back as %v, want %v", got, want)
 	}
 

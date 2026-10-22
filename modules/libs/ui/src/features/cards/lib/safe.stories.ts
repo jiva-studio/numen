@@ -280,13 +280,13 @@ const wrong = (element: Element): string | null => {
 interface Tally {
   arrangements: number
   /** How many came to markup a browser reads as elements. */
-  drawn: number
+  renderedCount: number
   elements: number
 }
 
 const measureArrangements = (): Tally => {
   const next = numbers(SEED)
-  const tally: Tally = { arrangements: 0, drawn: 0, elements: 0 }
+  const tally: Tally = { arrangements: 0, renderedCount: 0, elements: 0 }
 
   for (let i = 0; i < ARRANGEMENTS; i++) {
     const content = createArrangement(next, i)
@@ -302,7 +302,7 @@ const measureArrangements = (): Tally => {
 
     const readItem = new DOMParser().parseFromString(once, 'text/html')
     const elements = [...readItem.body.querySelectorAll('*')]
-    if (elements.length > 0) tally.drawn += 1
+    if (elements.length > 0) tally.renderedCount += 1
     tally.elements += elements.length
 
     for (const element of elements) {
@@ -324,7 +324,7 @@ const meta = {
     setup: () => ({ tally: measureArrangements() }),
     template: `
       <div class="numen" style="padding:32px;background:var(--numen-surface);color:var(--numen-ink);font-family:var(--numen-font-sans);font-size:var(--numen-font-size)">
-        <p data-tally>{{ tally.arrangements }} arrangements, {{ tally.drawn }} of them drawn as {{ tally.elements }} elements</p>
+        <p data-tally>{{ tally.arrangements }} arrangements, {{ tally.renderedCount }} of them drawn as {{ tally.elements }} elements</p>
       </div>
     `,
   }),

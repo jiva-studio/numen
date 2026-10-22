@@ -29,12 +29,12 @@ export function createFilesKind(host: FileTreeHost, createTree: () => FileTree) 
     icon: FolderTree,
     isTool: true,
     placement: { pane: 'aside', order: 1 },
-    open: (at, id) => {
+    open: (targetPath, id) => {
       const deps = createFilesTabDeps(host, id)
       const state = useFilesTab(createTree(), deps)
       tabs.set(id, state)
       void state.list.openFolder(ROOT)
-      if (at) void state.list.revealPath(at)
+      if (targetPath) void state.list.revealPath(targetPath)
       watch(state.list.selectedPaths, (paths) => {
         const path = paths[0]
         if (path) deps.onSelectPath?.(path, state)

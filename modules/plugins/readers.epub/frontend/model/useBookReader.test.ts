@@ -313,7 +313,7 @@ describe('a link inside a book followed', () => {
     await book.followLink('text/part0003.xhtml')
 
     expect(book.offset.value).toBe(6_000)
-    expect(book.drawn.value).toBe('text/part0003.xhtml')
+    expect(book.renderedChapter.value).toBe('text/part0003.xhtml')
   })
 
   it('leads nowhere, where the book holds no such document', async () => {
@@ -324,7 +324,7 @@ describe('a link inside a book followed', () => {
     await book.followLink('text/nowhere.xhtml')
 
     expect(book.offset.value).toBe(0)
-    expect(book.drawn.value).toBe('text/part0001.xhtml')
+    expect(book.renderedChapter.value).toBe('text/part0001.xhtml')
   })
 })
 

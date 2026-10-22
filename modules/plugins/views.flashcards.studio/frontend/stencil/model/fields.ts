@@ -39,13 +39,13 @@ function createStencilActions(
     renameField: (field: string, name: string) => void renameFieldOnWire(id, field, name),
     removeField: (field: string) => applyStencil(id, removeField(getStencil(id), field)),
     moveField: (field: string, target: string | null) =>
-      applyStencil(id, moveField(getStencil(id), field, at)),
+      applyStencil(id, moveField(getStencil(id), field, target)),
     addFace: (name: string) => applyStencil(id, addFace(getStencil(id), name)),
     renameFace: (face: string, name: string) =>
       applyStencil(id, renameFace(getStencil(id), face, name)),
     removeFace: (face: string) => applyStencil(id, removeFace(getStencil(id), face)),
     moveFace: (face: string, target: string | null) =>
-      applyStencil(id, moveFace(getStencil(id), face, at)),
+      applyStencil(id, moveFace(getStencil(id), face, target)),
     writeFaceHalf: (face: string, half: Half, text: string) =>
       applyStencil(id, writeFace(getStencil(id), face, half, text)),
   }

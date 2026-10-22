@@ -33,7 +33,7 @@ func TestFolderFetchReturnsAFileThatIsAlreadyThere(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := Folder{Dir: dir}.Fetch(context.Background(), address, sum)
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Fetch() = %q, %v", got, err)
 	}
 }
@@ -74,8 +74,8 @@ func TestGetPathsAreTheSettingsFolderAndTheInstallFolder(t *testing.T) {
 		t.Errorf("GetPaths() = %v lacks %s", got, want)
 	}
 	for _, p := range (Folder{}).GetPaths("m.onnx") {
-		if filepath.Dir(at) == "." {
-			t.Errorf("GetPaths() names %s, a folder the settings do not", at)
+		if filepath.Dir(p) == "." {
+			t.Errorf("GetPaths() names %s, a folder the settings do not", p)
 		}
 	}
 }
@@ -113,9 +113,9 @@ func TestFolderLocateFillsDestinations(t *testing.T) {
 	f := NewFolder("indexing.test", dir, false, nil)
 	var got string
 	err := f.Locate(context.Background(), nil, []Wanted{
-		{Dst: &got, Path: at, Kind: "test model"},
+		{Dst: &got, Path: targetPath, Kind: "test model"},
 	})
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Folder.Locate() = %v, got %q", err, got)
 	}
 }

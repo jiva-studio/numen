@@ -61,7 +61,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.kept,
+    kept: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
@@ -101,7 +101,7 @@ interface AppLifecycleDeps {
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
   const startLayout = async () => {
-    if (!vaultsModule.shown.value.id) return
+    if (!vaultsModule.activeVault.value.id) return
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
     const params = search ? new URLSearchParams(search) : null
     const initialTab = params?.get('tab')
@@ -341,7 +341,7 @@ export const useWindow = () => {
     fileFlush: editing.fileFlush,
     windowTabs: base.windowTabs,
     layout: base.windowTabs.layout,
-    listed: ctx.vaults.listed,
+    vaultList: ctx.vaults.vaultList,
     log: base.log,
     notices,
     statusBar,

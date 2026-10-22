@@ -47,7 +47,7 @@ function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect
       void queue.read(id, effect.path, effect.generation)
       return true
     case 'write':
-      void queue.write(id, { path: effect.path, body: effect.body, baseline: effect.seen })
+      void queue.write(id, { path: effect.path, body: effect.body, baseline: effect.baseline })
       return true
     case 'startTimer':
       queue.startTimer(id, effect.after)

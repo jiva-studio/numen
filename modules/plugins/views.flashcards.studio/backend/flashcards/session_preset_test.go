@@ -17,7 +17,7 @@ func (s vaulted) openSession(
 ) (flashcards.SessionResult, error) {
 	t.Helper()
 	return flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
 	).Execute(t.Context(), s.vault, pos)
 }

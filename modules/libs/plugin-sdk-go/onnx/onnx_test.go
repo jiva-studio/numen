@@ -47,7 +47,7 @@ func TestResolveLibraryIsTheSettingThenTheFolderThenTheHost(t *testing.T) {
 	}
 	for _, one := range []struct{ configured, dir, want string }{
 		{"mine.so", dir, "mine.so"},
-		{"", dir, at},
+		{"", dir, targetPath},
 		{"", t.TempDir(), "/host/libonnxruntime.so"},
 		{"", "", "/host/libonnxruntime.so"},
 	} {

@@ -58,7 +58,7 @@ export interface RetypeWords {
 export interface ConfirmWords {
   /** The answer that changes nothing, and what it leaves. */
   readonly keeps: string
-  readonly kept: string
+  readonly retainedNotice: string
   /** The answer that does it, and what it leaves. */
   readonly action: string
   readonly detail: string
@@ -187,7 +187,7 @@ export interface Words extends EmptyWords {
   /** How many files a command is over, where it is over several. */
   readonly several: (files: number) => string
   readonly answer: string
-  readonly kept: string
+  readonly retainedNotice: string
   /** The two answers over a vault, whose folder is left where it is. */
   readonly keepsVault: string
   readonly removeVaultAction: string

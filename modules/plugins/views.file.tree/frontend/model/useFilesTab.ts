@@ -57,7 +57,7 @@ function useFileMoves(list: FileTree, deps: FilesTabDeps) {
   const move = async (paths: readonly string[], target: DropPosition) => {
     if (paths.length === 0) return
 
-    const into = resolveDropFolder(at)
+    const into = resolveDropFolder(target)
     await list.loadFolder(into)
     const existingNames = new Set(list.getEntriesInFolder(into).map((one) => one.name))
     const conflictedNames: string[] = []

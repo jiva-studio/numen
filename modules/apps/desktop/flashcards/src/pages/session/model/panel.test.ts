@@ -32,7 +32,7 @@ const createAgent = (says: AgentStep[] = [{ kind: 'said', text: 'Because of the 
       overVal.push(conversation)
     },
   }
-  return { agent, asked: request, over: overVal }
+  return { agent, asked: request, overflow: overVal }
 }
 
 /**
@@ -46,7 +46,7 @@ const panel = (
     showing?: 'reading' | 'here' | 'asking'
   } = {},
 ) => {
-  const { agent, asked, over } = createAgent()
+  const { agent, asked, overflow } = createAgent()
   const on = ref<CardFace | null>(more.card === undefined ? card() : more.card)
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
   const notices: string[] = []
@@ -69,7 +69,7 @@ const panel = (
     // for a frame.
     paint: (draw) => draw(),
   })
-  return { held: target, asked, requests: asked, over, notices, on, showing, about }
+  return { held: target, asked, requests: asked, overflow: over, notices, on, showing, about }
 }
 
 describe('the panel coming in', () => {
@@ -160,7 +160,7 @@ describe('one conversation to a card', () => {
 
   // The card in front of a person is never answered out of the one behind it.
   it('ends the conversation when the card is answered, and notifies the agent', async () => {
-    const { held, over } = panel()
+    const { held, overflow } = panel()
     held.openPanel()
     await held.send('why')
 
@@ -168,20 +168,20 @@ describe('one conversation to a card', () => {
     expect(held.open.value).toBe(false)
     expect(held.about.value).toBeNull()
     expect(held.turns.value).toEqual([])
-    expect(over.length).toBe(1)
+    expect(overflow.length).toBe(1)
   })
 
   // A card is answered with whichever panel is up, and answering it ends the
   // conversation wherever the window happens to be standing.
   it('leaves the window where it is when the card is answered from the reading', async () => {
-    const { held, over, showing } = panel({ showing: 'reading' })
+    const { held, overflow, showing } = panel({ showing: 'reading' })
     held.openPanel()
     await held.send('why')
     showing.value = 'reading'
 
     held.endConversation()
     expect(showing.value).toBe('reading')
-    expect(over.length).toBe(1)
+    expect(overflow.length).toBe(1)
   })
 
   it('opens a conversation of its own for the next card', async () => {
@@ -287,7 +287,7 @@ describe('a conversation in flight', () => {
 
 describe('the panel requested for again', () => {
   it('keeps the conversation of the card it is already on', async () => {
-    const { held, over, about } = panel()
+    const { held, overflow, about } = panel()
     held.openPanel()
     await held.send('why')
     held.closePanel()
@@ -295,34 +295,34 @@ describe('the panel requested for again', () => {
     held.openPanel()
 
     expect(about).toHaveLength(1)
-    expect(over).toEqual([])
+    expect(overflow).toEqual([])
     expect(held.turns.value.length).toBeGreaterThan(0)
   })
 
   // A card is its mark and its face together: the same note asked the other way
   // round is another card.
   it('ends the conversation of another card with the same face, and opens one of its own', async () => {
-    const { held, over, about, on } = panel()
+    const { held, overflow, about, on } = panel()
     held.openPanel()
     await held.send('why')
 
     on.value = card({ mark: 'zpqrstvwxy' })
     held.openPanel()
 
-    expect(over).toEqual(['card-0'])
+    expect(overflow).toEqual(['card-0'])
     expect(about.map((one) => one.mark)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
     expect(held.turns.value).toEqual([])
   })
 
   it('ends the conversation of the other face of the same card, and opens one of its own', async () => {
-    const { held, over, about, on } = panel()
+    const { held, overflow, about, on } = panel()
     held.openPanel()
     await held.send('why')
 
     on.value = card({ face: 'Name it' })
     held.openPanel()
 
-    expect(over).toEqual(['card-0'])
+    expect(overflow).toEqual(['card-0'])
     expect(about.map((one) => one.face)).toEqual(['Say it', 'Name it'])
   })
 
@@ -345,7 +345,7 @@ describe('what is written', () => {
 
     await held.send('why')
 
-    expect(held.written.value).toBe('')
+    expect(held.text.value).toBe('')
   })
 
   it('is kept when nothing was sent', async () => {
@@ -355,7 +355,7 @@ describe('what is written', () => {
 
     await held.send('')
 
-    expect(held.written.value).toBe('wh')
+    expect(held.text.value).toBe('wh')
   })
 })
 

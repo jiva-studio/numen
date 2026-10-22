@@ -14,7 +14,7 @@ const focus = frame.nodes.find((n) => n.relation === 'focus')!
 const child = frame.nodes.find((n) => n.relation === 'child')!
 
 const drop = (from: string, point: { x: number; y: number }, relations = ALLOWED) =>
-  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, at: point, relations })
+  resolveDrop({ frame, options: DEFAULT_OPTIONS, from, point, relations })
 
 describe('the relation a direction remains for', () => {
   it('reads the arrangement and not assuming which way is up', () => {
@@ -193,14 +193,14 @@ describe('the relation something dragged in evaluates to', () => {
   const THRESHOLD = 8
 
   const getRelationAt = (
-    at: { x: number; y: number },
+    point: { x: number; y: number },
     overrides: Partial<Parameters<typeof getDropRelation>[0]> = {},
   ) =>
     getDropRelation({
       frame,
       options: DEFAULT_OPTIONS,
       viewport: VIEWPORT,
-      at,
+      point,
       relations: ALLOWED,
       threshold: THRESHOLD,
       ...overrides,

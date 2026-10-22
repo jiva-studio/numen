@@ -72,9 +72,9 @@ describe('the file a save presents', () => {
     })
 
     expect(request.writeNote.mock.calls[0]?.[0]).toEqual({
-      path: at.path,
+      path: noteFile.path,
       body: 'prose and more',
-      baseline: { prose: 'prose', at },
+      baseline: { prose: 'prose', at: noteFile },
     })
   })
 

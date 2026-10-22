@@ -58,7 +58,7 @@ func deckNaming(pos []string, cards int, from int) string {
 func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
 	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
@@ -174,7 +174,7 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 	} {
 		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/By.md"]
 		if got != one.cards {
-			t.Errorf("at %v the deck was asked %d cards, want %d", one.at, got, one.cards)
+			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
 	}
 }
@@ -887,7 +887,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	}
 	// The working out under the old target, remembered where the next one will
 	// look for it.
-	was, err := s.kept.Execute(t.Context(), s.vault)
+	was, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -898,7 +898,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	write(t, s, "On.md", preset("retention: 0.99\nnew_a_day: 0\nreviews_a_day: 50\n"+
 		"minutes_a_day: 0\n"))
 
-	now, err := s.kept.Execute(t.Context(), s.vault)
+	now, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1133,23 +1133,23 @@ func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
-	if all.owed != 20 || all.fresh == 0 {
+	if all.owed != 20 || all.newCount == 0 {
 		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
 			"the rest of the day on new ones", all)
 	}
 	none := s0(t, newBacklogVault(t, day+"backlog: 0\n"))
-	if none.fresh != 20 || none.owed == 0 {
+	if none.newCount != 20 || none.owed == 0 {
 		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
 			"the rest of the day on owed ones", none)
 	}
 	// An odd day gives the extra card to the debt, so the two are never more
 	// than one apart.
 	half := s0(t, newBacklogVault(t, day+"backlog: 50\n"))
-	if half.owed-half.fresh < 0 || half.owed-half.fresh > 1 {
-		t.Errorf("splession the day evenly asked %+v", half)
+	if half.owed-half.newCount < 0 || half.owed-half.newCount > 1 {
+		t.Errorf("splitting the day evenly asked %+v", half)
 	}
-	if half.owed == 0 || half.fresh == 0 {
-		t.Errorf("splession the day evenly left one side of it unspent: %+v", half)
+	if half.owed == 0 || half.newCount == 0 {
+		t.Errorf("splitting the day evenly left one side of it unspent: %+v", half)
 	}
 }
 
@@ -1217,7 +1217,7 @@ func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
 	newCards := unseen(sat)
-	return session{owed: countQueue(sat) - newCards, fresh: newCards}
+	return session{owed: countQueue(sat) - newCards, newCount: newCards}
 }
 
 // The share of the day that goes to the debt moves the day where the day is one

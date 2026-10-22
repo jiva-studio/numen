@@ -79,7 +79,7 @@ function getConfirmGroup(
   const word = text.trim().toLowerCase()
   const {
     keeps = '',
-    kept = '',
+    retainedNotice = '',
     action = '',
     detail = '',
   }: Partial<ConfirmWords> = step.command.answers ?? {}
@@ -89,7 +89,7 @@ function getConfirmGroup(
       {
         id: NO,
         title: keeps,
-        detail: kept,
+        detail: retainedNotice,
         actions: [{ id: NO, text: keeps }],
       },
     ],

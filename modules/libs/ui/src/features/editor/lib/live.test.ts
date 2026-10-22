@@ -52,7 +52,7 @@ const createCaretState = (doc: string, carets: number[], isReadOnly = false): Ed
   return createState(doc)
     .update({ effects: StateEffect.appendConfig.of(extra) })
     .state.update({
-      selection: EditorSelection.create(carets.map((at) => EditorSelection.cursor(at))),
+      selection: EditorSelection.create(carets.map((pos) => EditorSelection.cursor(pos))),
     }).state
 }
 

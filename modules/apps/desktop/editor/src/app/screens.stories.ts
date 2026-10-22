@@ -212,15 +212,15 @@ const createBacklog = (rate: number): readonly number[] =>
     Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)),
   )
 
-const AT: readonly Point[] = GRID.map((minutes, at) =>
+const AT: readonly Point[] = GRID.map((minutes, index) =>
   point({
     minutes,
-    reviews: Math.round(28 + 44 * Math.sqrt(at)),
-    retained: 0.62 + at * 0.026,
-    learned: 140 + Math.round(210 * Math.sqrt(at)),
-    clears: at < 2 ? -1 : Math.max(4, Math.round(140 / at)),
-    ['through']: Math.min(1, 0.18 + at * 0.075),
-    backlog: createBacklog(0.4 + at * 0.55),
+    reviews: Math.round(28 + 44 * Math.sqrt(index)),
+    retained: 0.62 + index * 0.026,
+    learned: 140 + Math.round(210 * Math.sqrt(index)),
+    clears: index < 2 ? -1 : Math.max(4, Math.round(140 / index)),
+    ['through']: Math.min(1, 0.18 + index * 0.075),
+    backlog: createBacklog(0.4 + index * 0.55),
   }),
 )
 
@@ -229,8 +229,8 @@ const CURVE: Curve = {
   grid: GRID,
   days: [],
   at: AT,
-  now: { at: 4, value: 25, day: '' },
-  suggested: { at: 7, value: 40, day: '' },
+  now: { index: 4, value: 25, day: '' },
+  suggested: { index: 7, value: 40, day: '' },
   decks: 3,
   cards: 1_240,
   overdue: 96,
@@ -355,7 +355,7 @@ const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
   note: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
-  drawn: computed(() => CARDS),
+  deckCards: computed(() => CARDS),
   sections: computed(() => SECTIONS),
   stencils: computed(() => [ROOT_CUT, WORD]),
   marks: computed(() => NO_MARKS),
@@ -699,9 +699,9 @@ const escapeXml = (line: string) =>
 const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
   const activeSet = lines
-    .map((line, at) => {
-      const y = FIRST + at * LEADING
-      const weight = at === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+    .map((line, index) => {
+      const y = FIRST + index * LEADING
+      const weight = index === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="${SET}"${weight} fill="#1b1b1b">${escapeXml(line)}</text>`
     })
     .join('')
@@ -718,8 +718,8 @@ const createPage = (page: number): string => {
 const overLine = (pos: number, ends: number) => ({
   minX: (MARGIN - 4) / PAGE.width,
   maxX: (MARGIN + ends) / PAGE.width,
-  minY: (FIRST + at * LEADING - 22) / PAGE.height,
-  maxY: (FIRST + at * LEADING + 7) / PAGE.height,
+  minY: (FIRST + pos * LEADING - 22) / PAGE.height,
+  maxY: (FIRST + pos * LEADING + 7) / PAGE.height,
 })
 
 /** The passage a search found: the sentence the count is defined by. */
@@ -731,7 +731,7 @@ const BOOK: Documents = {
       pages: Array.from({ length: LEAVES }, () => PAGE),
       fingerprint: '1024 1700000000000000000 book.pdf',
     }),
-  getPageUrl: (_path, at) => createPage(at),
+  getPageUrl: (_path, index) => createPage(index),
   getHighlights: () => Promise.resolve([[{ page: OPENS_AT, rects: HIGHLIGHTS }]]),
 }
 

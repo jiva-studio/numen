@@ -233,6 +233,37 @@ const RE_TS_THIRD_PERSON_FUNC = new RegExp(
   `\\b(?:function|const)\\s+(${BANNED_THIRD_PERSON_FUNCTIONS.join('|')})\\s*(?:=\\s*(?:async\\s*)?\\(|\\()`,
 )
 
+// Participle field and property accesses (e.g. found.listed, r.done, r.sent, s.kept, plot.held)
+const BANNED_PARTICIPLE_FIELDS = [
+  'held', 'said', 'drawn', 'written', 'kept', 'seen', 'done', 'shown', 'told',
+  'heard', 'asked', 'answered', 'listed', 'offered', 'sent', 'spent', 'met',
+]
+const RE_GO_FIELD_PARTICIPLE = new RegExp(
+  `\\b[a-zA-Z0-9_]+\\.(${BANNED_PARTICIPLE_FIELDS.join('|')})\\b`,
+)
+const RE_TS_PROP_PARTICIPLE = new RegExp(
+  `\\b[a-zA-Z0-9_$]+\\.(${BANNED_PARTICIPLE_FIELDS.join('|')})\\b`,
+)
+
+// Preposition arguments, member accesses, and object properties
+const BANNED_PREPOSITION_USAGES = [
+  'at', 'around', 'beside', 'along', 'over', 'behind', 'across', 'under',
+]
+const BANNED_PREPOSITION_SHORTHANDS = [
+  'around', 'beside', 'along', 'over', 'behind', 'across', 'under',
+]
+const RE_PREPOSITION_ARGUMENT = new RegExp(
+  `[(,]\\s*(${BANNED_PREPOSITION_USAGES.join('|')})\\s*[,)]`,
+)
+const RE_PREPOSITION_MEMBER = new RegExp(
+  `(?<![\\w$.])\\b(${BANNED_PREPOSITION_USAGES.join('|')})\\.[a-zA-Z0-9_$]+`,
+)
+const RE_PREPOSITION_SHORTHAND_OR_PROP = new RegExp(
+  `[{,]\\s*(${BANNED_PREPOSITION_SHORTHANDS.join('|')})\\s*[,}:]`,
+)
+const RE_PREPOSITION_AT_SHORTHAND = /[{,]\s*at\s*[,}]/
+
+
 // Go Regexes
 const RE_GO_VAR_PARTICIPLE = new RegExp(
   `\\b(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=|var\\s+(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s+[A-Za-z*]|for\\s+(?:[a-zA-Z0-9_]+,\\s*)?(${BANNED_PARTICIPLE_IDENTIFIERS.join('|')})\\s*:=`,
@@ -468,6 +499,7 @@ function scanFile(filePath) {
   totalScannedFiles++
 
   const baseName = path.basename(filePath)
+  if (baseName === 'scan.mjs') return
   if (baseName.endsWith('_pb.ts') || baseName.endsWith('_pb.js') || baseName.endsWith('.pb.go')) return
   if (shouldCheckCategory('conversational') && baseName === 'questions.ts') {
     findings.conversationalRequests.push({
@@ -598,11 +630,14 @@ function scanFile(filePath) {
     }
 
     const lineWithoutStrings = line.replace(/"(?:[^"\\]|\\.)*"/g, '""').replace(/`[^`]*`/g, '``').replace(/'(?:[^'\\]|\\.)*'/g, "''")
+    const lineWithoutComments = lineWithoutStrings.replace(/\/\/.*$/, '').replace(/\/\*.*?\*\//g, '')
 
-    // 2. Participle Identifiers (variables & params)
+    // 2. Participle Identifiers (variables, params, struct fields & member accesses)
     if (isCode && !isCommentLine && shouldCheckCategory('participles')) {
       if (isGo) {
-        const m = RE_GO_VAR_PARTICIPLE.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(lineWithoutStrings)
+        const m = RE_GO_VAR_PARTICIPLE.exec(lineWithoutComments) ||
+                  RE_GO_PARAM_OR_FIELD_PARTICIPLE.exec(lineWithoutComments) ||
+                  RE_GO_FIELD_PARTICIPLE.exec(lineWithoutComments)
         if (m) {
           const word = m[1] || m[2] || m[3] || m[4]
           if (!filterWord || filterWord === word) {
@@ -611,25 +646,36 @@ function scanFile(filePath) {
           }
         }
       } else {
-        const mVar = RE_TS_VAR_PARTICIPLE.exec(lineWithoutStrings)
-        if (mVar && (!filterWord || filterWord === mVar[1])) {
-          findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word: mVar[1], text: trimmed })
-          stats.frontendTotal++
-        } else {
-          const mParam = RE_TS_PARAM_PARTICIPLE.exec(lineWithoutStrings)
-          if (mParam && (!filterWord || filterWord === mParam[1])) {
-            findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word: mParam[1], text: trimmed })
+        const mVar = RE_TS_VAR_PARTICIPLE.exec(lineWithoutComments)
+        const rawProp = RE_TS_PROP_PARTICIPLE.exec(lineWithoutComments)
+        const isWireProp = rawProp && /\b(?:(?:answer|response|res|file|one|step|call|preset|reviewData|tally|day|task|at)\.(?:written|answered|asked|done)|props\.preset\.answered|props\.day\.asked|\.(?:transcript|ocr|fetched)\.done|\.done\])\b/.test(lineWithoutComments)
+        const mProp = isWireProp ? null : rawProp
+        const mParam = RE_TS_PARAM_PARTICIPLE.exec(lineWithoutComments)
+        const m = mVar || mProp || mParam
+
+        if (m) {
+          const word = m[1]
+          if (!filterWord || filterWord === word) {
+            findings.participleIdentifiers.push({ file: relPath, line: lineNum, lang: 'ts', word, text: trimmed })
             stats.frontendTotal++
           }
         }
       }
     }
 
-    // 3. Prepositions used as bare variables
+    // 3. Prepositions used as bare variables, arguments, member accesses, or object properties
     if (isCode && !isCommentLine && shouldCheckCategory('prepositions')) {
       const m = isGo
-        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutStrings))
-        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutStrings) || RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutStrings))
+        ? (RE_GO_VAR_PREPOSITION.exec(lineWithoutComments) ||
+           RE_GO_PARAM_OR_FIELD_PREPOSITION.exec(lineWithoutComments) ||
+           RE_PREPOSITION_ARGUMENT.exec(lineWithoutComments) ||
+           RE_PREPOSITION_MEMBER.exec(lineWithoutComments))
+        : (RE_TS_VAR_PREPOSITION.exec(lineWithoutComments) ||
+           RE_TS_PARAM_OR_PROP_PREPOSITION.exec(lineWithoutComments) ||
+           RE_PREPOSITION_ARGUMENT.exec(lineWithoutComments) ||
+           RE_PREPOSITION_MEMBER.exec(lineWithoutComments) ||
+           RE_PREPOSITION_SHORTHAND_OR_PROP.exec(lineWithoutComments) ||
+           (RE_PREPOSITION_AT_SHORTHAND.test(lineWithoutComments) ? { 1: 'at' } : null))
       if (m) {
         const word = m[1] || m[2] || m[3]
         if (!filterWord || filterWord === word) {

@@ -113,10 +113,10 @@ function usePlexNodeActions(options: {
   const createNode = async (
     from: string,
     relation: PlexRelation,
-    at?: { x: number; y: number },
+    pos?: { x: number; y: number },
   ) => {
-    if (at) {
-      openQuickLink({ from, relation, at })
+    if (pos) {
+      openQuickLink({ from, relation, at: pos })
       return
     }
     const path = map.getNodePath(from)
@@ -195,8 +195,8 @@ function usePlexMenu(options: {
 }
 
 function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
-  if (around?.focus.path === path && around.focus.title) return around.focus.title
-  const foundNode = around?.related.find((one) => one.path === path)
+  if (neighbourhood?.focus.path === path && neighbourhood.focus.title) return neighbourhood.focus.title
+  const foundNode = neighbourhood?.related.find((one) => one.path === path)
   return foundNode?.title || getFileName(path).replace(/\.md$/, '')
 }
 

@@ -40,7 +40,7 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
  * that made it.
  */
 const scatter = (index: number, salt: number): number => {
-  let x = Math.imul(at + salt * 7919 + 1, 2654435761)
+  let x = Math.imul(index + salt * 7919 + 1, 2654435761)
   x ^= x >>> 15
   x = Math.imul(x, 2246822519)
   x ^= x >>> 13

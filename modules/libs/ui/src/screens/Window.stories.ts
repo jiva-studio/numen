@@ -319,9 +319,9 @@ const renderPage = (page: number): string => {
   const leaf = page - BOOK_FIRST
   const lines = BOOK_PAGES[leaf] ?? []
   const activeSet = lines
-    .map((line, at) => {
-      const y = FIRST + at * LEADING
-      const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+    .map((line, index) => {
+      const y = FIRST + index * LEADING
+      const weight = index === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escapeHtml(line)}</text>`
     })
     .join('')
@@ -341,7 +341,7 @@ const overLines = (from: number, to: number, ends: number) => ({
 /** The passage a search found in it: the sentence the count is defined by. */
 const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
 
 const did = (id: string, text: string, subject: string, aside: string): Turn => ({
   id,
@@ -352,7 +352,7 @@ const did = (id: string, text: string, subject: string, aside: string): Turn => 
   canOpen: true,
 })
 
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
 const TURNS: readonly Turn[] = [
   createAsked('1', 'What does this note leave out?'),

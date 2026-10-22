@@ -17,7 +17,7 @@ export interface Task {
   /** What it is being done to. */
   readonly about: string
   /** How far it has got, where there is a total to count against. */
-  readonly done: number
+  readonly completedCount: number
   readonly total: number
   /** What that count counts. */
   readonly counting: TallyUnit

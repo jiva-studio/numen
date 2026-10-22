@@ -43,7 +43,7 @@ export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions
         preamble: '',
         values,
       },
-      ...deck.cards.slice(at),
+      ...deck.cards.slice(targetIndex),
     ],
   }
 }
@@ -65,20 +65,20 @@ export const dropCard = (deck: BufferDeck, id: string, target: InsertionPoint): 
   if (!targetCard) return deck
   const otherCards = deck.cards.filter((card) => card.id !== id)
 
-  if (at === CARD_HEAD) return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
+  if (target === CARD_HEAD) return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
 
-  const before = otherCards.findIndex((card) => card.id === at)
+  const before = otherCards.findIndex((card) => card.id === target)
   if (before !== -1) {
     // Stryker disable next-line OptionalChaining: the index was found in this array, so the card exists
     const underVal = { ...targetCard, section: otherCards[before]?.section ?? null }
     return { ...deck, cards: [...otherCards.slice(0, before), underVal, ...otherCards.slice(before)] }
   }
 
-  if (at === null) {
+  if (target === null) {
     return { ...deck, cards: [...otherCards, { ...targetCard, section: getLastSection(deck) }] }
   }
 
-  return dropOnSection(deck, { card: targetCard, left: otherCards, target: at })
+  return dropOnSection(deck, { card: targetCard, left: otherCards, target })
 }
 
 interface DropOnSectionParams {

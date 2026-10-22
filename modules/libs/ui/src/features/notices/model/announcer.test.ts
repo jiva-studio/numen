@@ -41,13 +41,13 @@ describe('what the corner reads out', () => {
   it('has nothing to say until the notices are drawn', async () => {
     const { regions } = listen([createQuietNotice('a', 'Renamed')])
 
-    expect(regions.told.value).toBe('')
-    expect(regions.cried.value).toBe('')
+    expect(regions.polite.value).toBe('')
+    expect(regions.assertive.value).toBe('')
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('Renamed')
-    expect(regions.cried.value).toBe('')
+    expect(regions.polite.value).toBe('Renamed')
+    expect(regions.assertive.value).toBe('')
   })
 
   it('reads what a card is about after its words', async () => {
@@ -55,7 +55,7 @@ describe('what the corner reads out', () => {
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('Renamed — notes.md')
+    expect(regions.polite.value).toBe('Renamed — notes.md')
   })
 
   it('reads trouble over everything and the rest politely', async () => {
@@ -63,8 +63,8 @@ describe('what the corner reads out', () => {
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('Renamed')
-    expect(regions.cried.value).toBe('Filed there')
+    expect(regions.polite.value).toBe('Renamed')
+    expect(regions.assertive.value).toBe('Filed there')
   })
 
   it('reads only trouble when there is nothing else', async () => {
@@ -72,8 +72,8 @@ describe('what the corner reads out', () => {
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('')
-    expect(regions.cried.value).toBe('Filed there')
+    expect(regions.polite.value).toBe('')
+    expect(regions.assertive.value).toBe('Filed there')
   })
 
   it('reads several cards in one sentence each, joined', async () => {
@@ -86,8 +86,8 @@ describe('what the corner reads out', () => {
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('Renamed. Moved')
-    expect(regions.cried.value).toBe('Filed there. Locked')
+    expect(regions.polite.value).toBe('Renamed. Moved')
+    expect(regions.assertive.value).toBe('Filed there. Locked')
   })
 
   it('reads a card that arrives, and only that card', async () => {
@@ -97,8 +97,8 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Renamed'), createQuietNotice('b', 'Moved')]
     await flushPromises()
 
-    expect(regions.told.value).toBe('Moved')
-    expect(regions.cried.value).toBe('')
+    expect(regions.polite.value).toBe('Moved')
+    expect(regions.assertive.value).toBe('')
   })
 
   it('reads a card again when its words change', async () => {
@@ -108,7 +108,7 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Indexing', '2 of 3')]
     await flushPromises()
 
-    expect(regions.told.value).toBe('Indexing — 2 of 3')
+    expect(regions.polite.value).toBe('Indexing — 2 of 3')
   })
 
   it('does not read a card again when its words have not changed', async () => {
@@ -118,7 +118,7 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Renamed')]
     await nextTick()
 
-    expect(regions.told.value).toBe('Renamed')
+    expect(regions.polite.value).toBe('Renamed')
   })
 
   it('does not read a card that has gone', async () => {
@@ -128,7 +128,7 @@ describe('what the corner reads out', () => {
     notices.value = []
     await nextTick()
 
-    expect(regions.told.value).toBe('Renamed')
+    expect(regions.polite.value).toBe('Renamed')
   })
 
   it('reads a card again when it returns after going', async () => {
@@ -140,9 +140,9 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Renamed')]
     await nextTick()
 
-    expect(regions.told.value).toBe('')
+    expect(regions.polite.value).toBe('')
     await flushPromises()
-    expect(regions.told.value).toBe('Renamed')
+    expect(regions.polite.value).toBe('Renamed')
   })
 
   it('empties both regions before it fills them again', async () => {
@@ -152,13 +152,13 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Renamed'), loud('b', 'Filed there'), createQuietNotice('c', 'Moved')]
     await nextTick()
 
-    expect(regions.told.value).toBe('')
-    expect(regions.cried.value).toBe('')
+    expect(regions.polite.value).toBe('')
+    expect(regions.assertive.value).toBe('')
 
     await flushPromises()
 
-    expect(regions.told.value).toBe('Moved')
-    expect(regions.cried.value).toBe('')
+    expect(regions.polite.value).toBe('Moved')
+    expect(regions.assertive.value).toBe('')
   })
 
   it('reads together what two changes inside one tick brought', async () => {
@@ -169,6 +169,6 @@ describe('what the corner reads out', () => {
     notices.value = [createQuietNotice('a', 'Renamed')]
     await flushPromises()
 
-    expect(regions.told.value).toBe('Renamed. Moved')
+    expect(regions.polite.value).toBe('Renamed. Moved')
   })
 })

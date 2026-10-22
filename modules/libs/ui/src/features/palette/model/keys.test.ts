@@ -226,7 +226,7 @@ describe('usePaletteKeys', () => {
     it('relies on the item the step opens on', async () => {
       const { isOpen, places, opensOn } = setUp()
       opensOn.value = 'b'
-      places.held.value = 'c'
+      places.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
       expect(places.activeItem.value?.id).toBe('b')
@@ -234,7 +234,7 @@ describe('usePaletteKeys', () => {
 
     it('relies on the item it was on when the step names none', async () => {
       const { isOpen, places } = setUp()
-      places.held.value = 'c'
+      places.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
       expect(places.activeItem.value?.id).toBe('c')
@@ -297,7 +297,7 @@ describe('usePaletteKeys', () => {
       isOpen.value = false
       await flushPromises()
       expect(isPanelOpen.value).toBe(false)
-      expect(places.held.value).toBe('')
+      expect(places.selectedId.value).toBe('')
       expect(document.activeElement).toBe(back)
     })
 
@@ -321,10 +321,10 @@ describe('usePaletteKeys', () => {
 
     it('leaves the keyboard alone when it was closed', () => {
       const { wrapper, back, places } = setUp()
-      places.held.value = 'b'
+      places.selectedId.value = 'b'
       wrapper.unmount()
       expect(document.activeElement).not.toBe(back)
-      expect(places.held.value).toBe('b')
+      expect(places.selectedId.value).toBe('b')
     })
   })
 })

@@ -918,7 +918,7 @@ describe('a question that cannot be requested', () => {
     await askPromise
 
     expect(request).toBe(1)
-    expect(conversation.turns.value.filter((turn) => turn.voice === 'asked')).toHaveLength(1)
+    expect(conversation.turns.value.filter((turn) => turn.voice === 'prompt')).toHaveLength(1)
     expect(conversation.isWorking.value).toBe(false)
   })
 })

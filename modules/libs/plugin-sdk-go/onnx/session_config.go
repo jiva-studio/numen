@@ -45,9 +45,9 @@ var (
 // loadConfigEntryTable resolves the config-entry calls of the library at path.
 // It returns a nil table when the library does not carry them.
 func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
-	handle, err := loadLibrary(at)
+	handle, err := loadLibrary(libPath)
 	if err != nil {
-		return nil, fmt.Errorf("open %s: %w", at, err)
+		return nil, fmt.Errorf("open %s: %w", libPath, err)
 	}
 
 	var getAPIBase func() *ortAPIBase
@@ -78,7 +78,7 @@ func loadConfigEntryTable(libPath string) (*configEntryTable, error) {
 // resolving them on first use.
 func getConfigEntryTable() (*configEntryTable, error) {
 	_, loadedPath := runtimeState.GetLoaded()
-	if libPath == "" {
+	if loadedPath == "" {
 		return nil, fmt.Errorf("onnx runtime not loaded")
 	}
 

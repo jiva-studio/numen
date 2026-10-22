@@ -485,9 +485,9 @@ describe('the headings a node hangs', () => {
   })
 
   const headings = (count: number): PlexHeading[] =>
-    Array.from({ length: count }, (_, at) => ({
-      id: `${at}`,
-      text: `Heading ${at}`,
+    Array.from({ length: count }, (_, index) => ({
+      id: `${index}`,
+      text: `Heading ${index}`,
       level: 1,
     }))
 

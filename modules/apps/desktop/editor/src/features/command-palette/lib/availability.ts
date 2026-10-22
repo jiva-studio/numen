@@ -10,10 +10,10 @@ import type { Source } from '@/entities/file'
 import type { CommandTarget, RunSupport } from '../types'
 
 /** A command over the note in front, which there has to be one of. */
-export const isNoteOpen = (target: CommandTarget): boolean => at.isReady && at.path !== ''
+export const isNoteOpen = (target: CommandTarget): boolean => target.isReady && target.path !== ''
 
 /** A command over the vault in front, which there has to be one of. */
-export const isVaultOpen = (target: CommandTarget): boolean => at.vault.id !== ''
+export const isVaultOpen = (target: CommandTarget): boolean => target.vault.id !== ''
 
 /**
  * A run over the file in front, which the vault has to hold that kind of and
@@ -22,7 +22,7 @@ export const isVaultOpen = (target: CommandTarget): boolean => at.vault.id !== '
 export const createSourceOffer =
   (run: string, source: Source) =>
   (target: CommandTarget, runs: RunSupport): boolean =>
-    at.isReady && at.file !== '' && at.source === source && runs.canRun(run)
+    target.isReady && target.file !== '' && target.source === source && runs.canRun(run)
 
 /**
  * A run over the file in front that is offered on what has been made from it,
@@ -32,7 +32,7 @@ export const createSourceOffer =
 export const createArtifactOffer =
   (run: string, source: Source, isOffered: (states: ArtifactStates) => boolean) =>
   (target: CommandTarget, runs: RunSupport): boolean =>
-    createSourceOffer(run, source)(at, runs) && (isEmpty(at.made) || isOffered(at.made))
+    createSourceOffer(run, source)(target, runs) && (isEmpty(target.made) || isOffered(target.made))
 
 const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length === 0
 

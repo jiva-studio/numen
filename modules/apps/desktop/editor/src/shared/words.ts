@@ -174,7 +174,7 @@ export const WORDS = {
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
   answer: 'Choose an answer',
-  kept: 'Nothing happens to it',
+  retainedNotice: 'Nothing happens to it',
   keepsVault: 'Keep the vault',
   removeVaultAction: 'Remove',
   stays: 'The folder stays where it is',

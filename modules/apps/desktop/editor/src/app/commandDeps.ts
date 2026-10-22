@@ -87,7 +87,7 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
   }
 }
 
-function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goes'] {
+function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
   const { files, travel, leavePath, agents, windowTabs, openPreset, getOpeningNote, search } = options
   return {
     revealPath: (path) => void files().revealPath(path),

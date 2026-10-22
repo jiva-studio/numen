@@ -27,14 +27,14 @@ export interface WindowAppearanceDeps {
 
 interface ThemeWearDeps {
   core: Themes
-  dressed: ReturnType<typeof getStyleElements>
+  styleElements: ReturnType<typeof getStyleElements>
   write: MessageWriter
   words: AppearanceWords
   applied: Ref<string>
 }
 
 function createThemeWear(deps: ThemeWearDeps) {
-  const { core, dressed, write, words, applied } = deps
+  const { core, styleElements, write, words, applied } = deps
   const files = new Map<string, string>()
   const guard = createRequestGuard()
 
@@ -49,10 +49,10 @@ function createThemeWear(deps: ThemeWearDeps) {
   const wear = async (theme: string, half: Mode) => {
     if (!applied.value) return
     const mine = guard.acquireRequest()
-    dressed.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
+    styleElements.mode.textContent = `:root { color-scheme: ${SCHEMES[half]}; }`
     try {
       const css = await fileOf(theme)
-      if (mine.isCurrent) dressed.theme.textContent = css
+      if (mine.isCurrent) styleElements.theme.textContent = css
     } catch {
       if (mine.isCurrent) write(words.unworn, 'error')
     }
@@ -69,8 +69,8 @@ function createSizesWriter(styleElements: ReturnType<typeof getStyleElements>, s
     // Stryker disable next-line ConditionalExpression: Cached css skips redundant DOM style mutations.
     if (css === appliedSizesCss) return
     appliedSizesCss = css
-    dressed.sizes ??= addAfter(dressed.theme, IS_SIZES, sheet)
-    dressed.sizes.textContent = css
+    styleElements.sizes ??= addAfter(styleElements.theme, IS_SIZES, sheet)
+    styleElements.sizes.textContent = css
   }
 }
 
@@ -178,9 +178,9 @@ function createAppearanceGroups(
 export function createWindowAppearance(deps: WindowAppearanceDeps) {
   const { core, words, write, sheet = document, wait = sleep } = deps
   const styleElements = getStyleElements(sheet)
-  const served = dressed.theme.textContent ?? ''
+  const served = styleElements.theme.textContent ?? ''
   const state = initAppearanceState()
-  const { files, wear } = createThemeWear({ core, dressed, write, words, applied: state.applied })
+  const { files, wear } = createThemeWear({ core, styleElements, write, words, applied: state.applied })
 
   const choice = useAppearanceChoice({
     core,
@@ -194,7 +194,7 @@ export function createWindowAppearance(deps: WindowAppearanceDeps) {
   })
 
   const applyAppearance = () => wear(choice.worn.value, choice.half.value)
-  const writeSizes = createSizesWriter(dressed, sheet)
+  const writeSizes = createSizesWriter(styleElements, sheet)
   const targetDrawing = watch(choice.sized, writeSizes)
 
   const loadAppearance = createAppearanceLoader({

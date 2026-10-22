@@ -45,9 +45,9 @@ const getNodeHeadings = (
 
 /** Headings all at one level, named by their number. */
 const headings = (count: number, level = 1): PlexHeading[] =>
-  Array.from({ length: count }, (_, at) => ({
-    id: `${at}`,
-    text: `Heading ${at}`,
+  Array.from({ length: count }, (_, index) => ({
+    id: `${index}`,
+    text: `Heading ${index}`,
     level,
   }))
 
@@ -87,14 +87,14 @@ describe('what a node hangs', () => {
 describe('more headings than the window holds', () => {
   it('remains the ceiling of them in it, and keeps every one of them', () => {
     const resolved = suspended(headings(MOST + 4))!
-    expect(resolved.shown).toBe(MOST)
+    expect(resolved.visibleCount).toBe(MOST)
     expect(resolved.headings).toHaveLength(MOST + 4)
     expect(getFurthest(resolved)).toBe(4)
   })
 
   it('has nowhere to scroll where every one of them remains at once', () => {
     const resolved = suspended(headings(MOST))!
-    expect(resolved.shown).toBe(MOST)
+    expect(resolved.visibleCount).toBe(MOST)
     expect(getFurthest(resolved)).toBe(0)
   })
 
@@ -105,7 +105,7 @@ describe('more headings than the window holds', () => {
 
   it('remains as many as the options ask for', () => {
     const resolved = getNodeHeadings(NODE, headings(MOST + 4), { ...SIZES, maxHeadings: 3 }, DEPS)!
-    expect(resolved.shown).toBe(3)
+    expect(resolved.visibleCount).toBe(3)
     expect(getFurthest(resolved)).toBe(MOST + 1)
   })
 })
@@ -124,7 +124,7 @@ describe('scrolling the window over the headings', () => {
     const visibleHeadings = getOpenHeadings(many(), 1, 2)!
     expect(visibleHeadings.headings[0]!.text).toBe('Heading 2')
     expect(visibleHeadings.headings.map((heading) => heading.at)).toStrictEqual(
-      visibleHeadings.headings.map((_, at) => at * SIZES.headingHeight),
+      visibleHeadings.headings.map((_, index) => index * SIZES.headingHeight),
     )
   })
 
@@ -146,7 +146,7 @@ describe('scrolling the window over the headings', () => {
   it('remains the window full however far it is scrolled', () => {
     const resolved = many()
     for (const scrollOffset of [0, 1, 2, 3, 99]) {
-      expect(getOpenHeadings(resolved, 1, scrollOffset)!.headings).toHaveLength(resolved.shown)
+      expect(getOpenHeadings(resolved, 1, scrollOffset)!.headings).toHaveLength(resolved.visibleCount)
     }
   })
 })
@@ -154,7 +154,7 @@ describe('scrolling the window over the headings', () => {
 describe('how far in a heading is set', () => {
   const getHeadingIndents = (levels: readonly number[]) =>
     (
-      suspended(levels.map((level, at) => ({ id: `${at}`, text: `Heading ${at}`, level })))?.headings ??
+      suspended(levels.map((level, index) => ({ id: `${index}`, text: `Heading ${index}`, level })))?.headings ??
       []
     ).map((heading) => heading.indent)
 
@@ -204,8 +204,8 @@ describe('the opening', () => {
 
   it('rises onto its place from below, never from above it', () => {
     const resolved = suspended(headings(3))!
-    getOpenHeadings(resolved, 0.5)!.headings.forEach((heading, at) => {
-      const rests = resolved.headings[at]!.at
+    getOpenHeadings(resolved, 0.5)!.headings.forEach((heading, index) => {
+      const rests = resolved.headings[index]!.at
       expect(heading.y).toBeGreaterThanOrEqual(rests)
       expect(heading.y).toBeLessThanOrEqual(rests + resolved.headingHeight)
     })
@@ -330,13 +330,13 @@ describe('a node with little room under it', () => {
 
   it('remains in its window only what the depth left under it holds', () => {
     const resolved = hangWithRoom(3 * SIZES.headingHeight + 10)!
-    expect(resolved.shown).toBe(3)
+    expect(resolved.visibleCount).toBe(3)
     expect(getFurthest(resolved)).toBe(MOST)
   })
 
   it('hangs one heading where the depth holds exactly one with its ground', () => {
     const resolved = hangWithRoom(30)!
-    expect(resolved.shown).toBe(1)
+    expect(resolved.visibleCount).toBe(1)
     expect(resolved.height).toBe(SIZES.headingHeight + 2 * resolved.pad)
   })
 
@@ -355,7 +355,7 @@ describe('a node with little room under it', () => {
 
   it('remains them all at once where the depth holds every one of them', () => {
     const resolved = getNodeHeadings(low(400), headings(3), SIZES, DEPS)!
-    expect(resolved.shown).toBe(3)
+    expect(resolved.visibleCount).toBe(3)
     expect(getFurthest(resolved)).toBe(0)
   })
 })
@@ -397,7 +397,7 @@ describe('what a wheel scrolls', () => {
 
   it('reads a wheel returned in windows as the whole window', () => {
     const target = hangMany()
-    expect(scrollBy(target, { delta: 1, mode: 2 }, 0).by).toBe(target.shown)
+    expect(scrollBy(target, { delta: 1, mode: 2 }, 0).by).toBe(target.visibleCount)
   })
 
   it('scrolls back the way it came, and carries the leftover the same way', () => {
@@ -418,7 +418,7 @@ describe('however many headings stand at once', () => {
     for (const ceiling of [1, 2, 6, 9, 12, 20]) {
       const resolved = hangWithCeiling(ceiling)
       const renderedHeadings = getOpenHeadings(resolved, 1)!.headings
-      expect(renderedHeadings).toHaveLength(resolved.shown)
+      expect(renderedHeadings).toHaveLength(resolved.visibleCount)
       for (const heading of renderedHeadings) expect(heading.opacity).toBe(1)
     }
   })

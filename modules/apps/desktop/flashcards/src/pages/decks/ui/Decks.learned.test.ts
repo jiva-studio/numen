@@ -69,11 +69,11 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 const mountDecks = (overrides: VaultCardsDue, presets: readonly Preset[], isScheduled = true) =>
   mount(Decks, {
     props: {
-      vault: over,
+      vault: overrides,
       days: new Map(),
       due: new Map(),
       presets,
-      byDeck: new Map(presets.flatMap((one) => one.decks.map((at) => [at, one] as const))),
+      byDeck: new Map(presets.flatMap((one) => one.decks.map((deck) => [deck, one] as const))),
       hasPresets: isScheduled,
       today: '2026-09-05',
     },
@@ -83,7 +83,7 @@ describe('how much of a deck remains learned', () => {
   it('is drawn as a share of the deck, with the word', () => {
     const one = mountDecks(vault(), [preset()])
 
-    expect(one.findAll('.decks__learned').map((at) => at.text())).toEqual(['25% learned'])
+    expect(one.findAll('.decks__learned').map((el) => el.text())).toEqual(['25% learned'])
   })
 
   // The tile above draws a bare share of the day's work, so this one carries
@@ -91,8 +91,8 @@ describe('how much of a deck remains learned', () => {
   it('never remains as a figure alone', () => {
     const one = mountDecks(vault(), [preset({ answered: 10, took: 10 })])
 
-    for (const at of one.findAll('.decks__learned')) {
-      expect(at.text()).toContain('learned')
+    for (const el of one.findAll('.decks__learned')) {
+      expect(el.text()).toContain('learned')
     }
   })
 

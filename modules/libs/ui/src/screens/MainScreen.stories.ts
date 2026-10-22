@@ -36,8 +36,8 @@ interface Knobs {
   neighbourhood: PlexNeighbourhood
 }
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
 const OPENING: readonly Turn[] = [
   createAsked('1', 'What is this note linked to?'),
@@ -79,7 +79,7 @@ const meta: Meta<Knobs> = {
         isWorking.value = true
 
         const id = `${++next}`
-        turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
+        turns.value.push({ id, voice: 'response', text: '', state: 'arriving' })
 
         const reply = `About “${message}”. ${LONG}`
         let offset = 0
@@ -89,8 +89,8 @@ const meta: Meta<Knobs> = {
           const index = turns.value.findIndex((turn) => turn.id === id)
           if (index >= 0) {
             turns.value[index] = isDone
-              ? { id, voice: 'answered', text: reply.slice(0, offset) }
-              : { id, voice: 'answered', text: reply.slice(0, offset), state: 'arriving' }
+              ? { id, voice: 'response', text: reply.slice(0, offset) }
+              : { id, voice: 'response', text: reply.slice(0, offset), state: 'arriving' }
           }
           if (isDone) settle()
         }, 16)

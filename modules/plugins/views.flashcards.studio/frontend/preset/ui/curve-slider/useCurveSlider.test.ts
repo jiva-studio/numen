@@ -34,8 +34,8 @@ const curve = (overrides: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80 }),
     point({ reviews: 120 }),
   ],
-  now: { at: 2, value: 30, day: '' },
-  suggested: { at: 3, value: 40, day: '' },
+  now: { index: 2, value: 30, day: '' },
+  suggested: { index: 3, value: 40, day: '' },
   decks: 1,
   cards: 400,
   overdue: 0,
@@ -105,10 +105,10 @@ describe('the marks on the picture', () => {
     const costs = [10, 10, 10, 10, 0, 20, 30, 40, 50, 100]
     const { state } = slider({
       curve: curve({
-        grid: costs.map((_, at) => at * 10),
+        grid: costs.map((_, index) => index * 10),
         at: costs.map((reviews) => point({ reviews })),
-        now: { at: 4, value: 40, day: '' },
-        suggested: { at: 5, value: 50, day: '' },
+        now: { index: 4, value: 40, day: '' },
+        suggested: { index: 5, value: 50, day: '' },
       }),
       place: 4,
     })

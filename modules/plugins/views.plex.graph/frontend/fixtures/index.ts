@@ -51,20 +51,20 @@ const createNeighbourhood = (
 
 /** A plex standing on a note, which records every note it was sent to. */
 export const viewOn = (
-  at: string,
+  initialPath: string,
   neighbours: readonly NeighbourSpec[] = [],
   types: Types = {},
 ) => {
   const went: string[] = []
   const view = {
-    neighbourhood: ref(createNeighbourhood(at, neighbours, types)),
-    here: ref(at),
+    neighbourhood: ref(createNeighbourhood(initialPath, neighbours, types)),
+    here: ref(initialPath),
     error: ref(''),
     isLoading: ref(false),
     go: async (path: string) => {
       went.push(path)
       view.here.value = path
-      view.neighbourhood.value = createNeighbourhood(path, path === at ? neighbours : [], types)
+      view.neighbourhood.value = createNeighbourhood(path, path === initialPath ? neighbours : [], types)
     },
     followMoves: (renamed: readonly { from: string; to: string }[]) => {
       const one = renamed.find((went) => went.from === view.here.value)

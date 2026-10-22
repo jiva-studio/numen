@@ -110,7 +110,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     notes,
     unread,
     isWorking,
-    at,
+    col: activePath,
     open,
     openPanel,
     closePanel,

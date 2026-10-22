@@ -33,13 +33,13 @@ export function createMockTabWindow(): MockTabWindow {
     register: <State>(registration: TabKindRegistration<State>) => {
       kinds.set(registration.kind, registration as TabKindRegistration<unknown>)
     },
-    openTab: async (kind, at = '') => {
+    openTab: async (kind, targetPath = '') => {
       const registration = kinds.get(kind)
       if (!registration?.open) throw new Error(`no kind of tab declares ${kind}`)
-      const id = `${kind}:${registration.identity ? registration.identity(at) : crypto.randomUUID()}`
+      const id = `${kind}:${registration.identity ? registration.identity(targetPath) : crypto.randomUUID()}`
       if (open.has(id)) return id
       const scope = effectScope(true)
-      const state = scope.run(() => registration.open?.(at, id))
+      const state = scope.run(() => registration.open?.(targetPath, id))
       scopes.set(id, scope)
       open.set(id, { kind: registration, state })
       return id

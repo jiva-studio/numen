@@ -47,5 +47,5 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
     markup.value = ''
   }
 
-  return { markup, drawn: picture, documentSpan, draw, close }
+  return { markup, renderedChapter: picture, documentSpan, draw, close }
 }

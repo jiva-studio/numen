@@ -16,7 +16,7 @@ import type { Row, RowId, ShownRow } from '../lib/row'
 /** The tree as it relies on screen, which only the drawing knows. */
 export interface TreeMetrics {
   /** What the tree takes up: a drop lands only over it. */
-  readonly over: {
+  readonly hoverRect: {
     readonly left: number
     readonly right: number
     readonly top: number
@@ -67,7 +67,7 @@ export interface RowDragState {
 }
 
 export function useRowDrag(options: RowDragOptions): RowDragState {
-  const { dragging, at, position, lift } = usePressDrag<readonly RowId[], RowDropTarget>({
+  const { dragging, at: dropTarget, position, lift } = usePressDrag<readonly RowId[], RowDropTarget>({
     getThreshold: options.getThreshold,
     getClock: options.getClock,
     getDropTargetAt,
@@ -78,8 +78,8 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     begin: (rows) => options.tell('drag', rows),
   })
 
-  const into = computed(() => (at.value && 'into' in at.value ? at.value.into : null))
-  const before = computed(() => (at.value && 'before' in at.value ? at.value.before : null))
+  const into = computed(() => (dropTarget.value && 'into' in dropTarget.value ? dropTarget.value.into : null))
+  const before = computed(() => (dropTarget.value && 'before' in dropTarget.value ? dropTarget.value.before : null))
 
   const lifted = computed(() => new Set(position.value ? dragging.value!.item : []))
 
@@ -101,9 +101,9 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     if (!measurements) return null
 
     // A pointer that has left the tree is taking what it holds somewhere else.
-    const { over } = measurements
+    const { hoverRect } = measurements
     const inside =
-      where.x >= over.left && where.x <= over.right && where.y >= over.top && where.y <= over.bottom
+      where.x >= hoverRect.left && where.x <= hoverRect.right && where.y >= hoverRect.top && where.y <= hoverRect.bottom
     if (!inside) return null
 
     const shownRows = options.getShownRows()
@@ -116,5 +116,5 @@ export function useRowDrag(options: RowDragOptions): RowDragState {
     return isRefused(options.getRows(), rows, findHolder(shownRows, found)) ? null : found
   }
 
-  return { into, before, lifted, label, hasMoved, at, lift }
+  return { into, before, lifted, label, hasMoved, at: dropTarget, lift }
 }

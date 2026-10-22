@@ -89,10 +89,10 @@ export function createReaderTabKind(
     kind: kindId,
     pluginId,
     open: (targetPath: string) => {
-      const filename = extractFilename(at)
+      const filename = extractFilename(targetPath)
       return reactive({
-        path: at,
-        file: at,
+        path: targetPath,
+        file: targetPath,
         pluginId,
         title: filename,
         spans: [] as readonly unknown[],
@@ -116,7 +116,7 @@ export function createReaderTabKind(
       return registration.title || ''
     },
     pane: createPluginPaneWrapper(pluginId, registration.component, getContext),
-    identity: (targetPath: string) => at,
+    identity: (targetPath: string) => targetPath,
     getTarget: (state: unknown) => {
       const s = state as { path?: string; title?: string } | undefined
       const path = s?.path
@@ -145,32 +145,32 @@ const FORBIDDEN_ACTION_NAMES = new Set([
 ])
 
 function bindCustomTabHandlers(
-  at: string,
+  tabId: string,
   actions: Record<string, unknown>,
   handlers: Record<string, (targetPath: string, ...args: unknown[]) => void> | undefined,
 ): void {
   if (!handlers) return
   for (const [name, handler] of Object.entries(handlers)) {
     if (FORBIDDEN_ACTION_NAMES.has(name) || actions[name]) continue
-    actions[name] = (...args: unknown[]) => handler(at, ...args)
+    actions[name] = (...args: unknown[]) => handler(tabId, ...args)
   }
 }
 
 function appendHostActions(
-  at: string,
+  tabId: string,
   actions: Record<string, unknown>,
   deps?: PluginHostDeps,
 ): void {
   if (!deps) return
-  bindCustomTabHandlers(at, actions, deps.tabActionHandlers)
+  bindCustomTabHandlers(tabId, actions, deps.tabActionHandlers)
   if (deps.onTabAction && !actions.dispatch) {
     actions.dispatch = (action: string, ...args: unknown[]) =>
-      deps.onTabAction!(action, at, ...args)
+      deps.onTabAction!(action, tabId, ...args)
   }
 }
 
 function createTabActions(
-  at: string,
+  tabId: string,
   registration: TabKindRegistration,
   deps?: PluginHostDeps,
 ): Record<string, unknown> {
@@ -178,11 +178,11 @@ function createTabActions(
 
   for (const [actionName, handler] of Object.entries(registration.actions ?? {})) {
     if (!FORBIDDEN_ACTION_NAMES.has(actionName)) {
-      actions[actionName] = (...args: unknown[]) => handler(at, ...args)
+      actions[actionName] = (...args: unknown[]) => handler(tabId, ...args)
     }
   }
 
-  appendHostActions(at, actions, deps)
+  appendHostActions(tabId, actions, deps)
   return actions
 }
 
@@ -193,15 +193,15 @@ interface CustomTabStateDeps {
 }
 
 function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
-  const defaultName = stripMarkdownExtension(extractFilename(at))
-  const noteRef = ref({ path: at, body: '' })
+  const defaultName = stripMarkdownExtension(extractFilename(targetPath))
+  const noteRef = ref({ path: targetPath, body: '' })
   const errorMessageRef = ref('')
   const isLoading = ref(deps.hostDeps?.readNote !== undefined)
   let hasEdited = false
-  const write = createNoteWriter(at, deps.hostDeps?.writeNote, errorMessageRef)
+  const write = createNoteWriter(targetPath, deps.hostDeps?.writeNote, errorMessageRef)
 
   if (deps.hostDeps?.readNote) {
-    startNoteRead(at, deps.hostDeps.readNote, {
+    startNoteRead(targetPath, deps.hostDeps.readNote, {
       note: noteRef,
       errorMessage: errorMessageRef,
       isLoading,
@@ -209,8 +209,8 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     })
   }
   return {
-    at,
-    path: at,
+    at: targetPath,
+    path: targetPath,
     pluginId: deps.pluginId,
     title: defaultName,
     note: noteRef,
@@ -219,14 +219,14 @@ function createCustomTabState(targetPath: string, deps: CustomTabStateDeps) {
     body: computed(() => noteRef.value.body),
     updateBody: (body: string) => {
       hasEdited = true
-      noteRef.value = { path: at, body }
+      noteRef.value = { path: targetPath, body }
       write(body)
     },
     save: () => {
       if (isLoading.value && !hasEdited) return
       write(noteRef.value.body)
     },
-    ...createTabActions(at, deps.registration, deps.hostDeps),
+    ...createTabActions(targetPath, deps.registration, deps.hostDeps),
   }
 }
 
@@ -259,7 +259,7 @@ export function createCustomTabKind(
   return {
     kind: registration.kind,
     pluginId,
-    open: (targetPath: string) => createCustomTabState(at, { pluginId, registration, hostDeps: deps }),
+    open: (targetPath: string) => createCustomTabState(targetPath, { pluginId, registration, hostDeps: deps }),
     getTitle: (state: unknown) => {
       const s = state as { title?: unknown; at?: string; path?: string } | undefined
       const titleVal = extractTitleValue(s?.title)
@@ -270,7 +270,7 @@ export function createCustomTabKind(
       return registration.title || registration.kind
     },
     pane: createPluginPaneWrapper(pluginId, registration.component, deps?.getContext),
-    identity: (targetPath: string) => at || registration.kind,
+    identity: (targetPath: string) => targetPath || registration.kind,
     onShow: (state: unknown) => {
       const s = state as { measure?: () => void; editor?: { measure?: () => void } } | undefined
       s?.measure?.()

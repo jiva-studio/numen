@@ -83,12 +83,12 @@ const isSameReason = (outer: string, inner: string): boolean =>
  * saying the same thing it is the one that said it first.
  */
 const dropDuplicateErrors = (tasks: readonly Task[]): readonly Task[] =>
-  tasks.filter((at, index) => {
+  tasks.filter((task, index) => {
     return !tasks.some(
       (other, was) =>
         other.error !== '' &&
-        isSameReason(at.error, other.error) &&
-        (other.error.length < at.error.length || was < index),
+        isSameReason(task.error, other.error) &&
+        (other.error.length < task.error.length || was < index),
     )
   })
 
@@ -111,7 +111,9 @@ export const getCornerNotices = (
   context: CornerContext,
 ): readonly Notice[] => {
   const { state, vault, words } = context
-  const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map((task) => createNotice(task))
+  const isWorking: readonly Notice[] = dropDuplicateErrors(tasks).map((task) =>
+    createNotice({ ...task, done: task.completedCount }),
+  )
 
   const so: Notice[] = [
     ...createStateNotices('unwatched', state.unwatched && words.unwatched, {
