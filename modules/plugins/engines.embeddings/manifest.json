@@ -8,7 +8,7 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
-  "runtimes": ["onnxruntime"],
+  "dependencies": [{ "id": "onnxruntime", "kind": "runtime" }],
   "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
