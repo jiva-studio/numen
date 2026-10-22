@@ -230,6 +230,140 @@ const numenPlugin = {
         }
       },
     },
+
+    'boolean-prop-naming': {
+      meta: {
+        type: 'suggestion',
+        docs: {
+          description:
+            'Enforce boolean props to use is/has/can prefix according to AGENTS.md rule 6',
+        },
+        messages: {
+          invalidBooleanPrefix:
+            'Boolean prop "{{name}}" must use prefix is/has/can (e.g. is{{capitalized}}).',
+        },
+      },
+      create(context) {
+        return {
+          'CallExpression[callee.name="defineProps"] > TSTypeParameterInstantiation > TSTypeLiteral > TSPropertySignature'(
+            node,
+          ) {
+            const name = node.key?.name || node.key?.value
+            if (!name) return
+
+            const typeAnnotation = node.typeAnnotation?.typeAnnotation
+            if (!typeAnnotation) return
+
+            let isBoolean = typeAnnotation.type === 'TSBooleanKeyword'
+            if (typeAnnotation.type === 'TSUnionType') {
+              isBoolean = typeAnnotation.types.some((t) => t.type === 'TSBooleanKeyword')
+            }
+
+            if (isBoolean && !/^(is|has|can)[A-Z]/.test(name)) {
+              const capitalized = name.charAt(0).toUpperCase() + name.slice(1)
+              context.report({
+                node: node.key,
+                messageId: 'invalidBooleanPrefix',
+                data: { name, capitalized },
+              })
+            }
+          },
+        }
+      },
+    },
+
+    'handler-naming': {
+      meta: {
+        type: 'suggestion',
+        docs: {
+          description:
+            'Enforce event handler naming on<Action> and forbid handle... prefix (AGENTS.md rule 3)',
+        },
+        messages: {
+          invalidHandlerName:
+            'Event handler "{{name}}" must start with "on" in PascalCase (e.g. on{{capitalized}}). Patterns like "handle..." are forbidden by AGENTS.md rule 3.',
+        },
+      },
+      create(context) {
+        let handlersStart = -1
+        let handlersEnd = Infinity
+
+        return {
+          Program() {
+            const docFrag = context.sourceCode.parserServices.getDocumentFragment?.()
+            const script = docFrag?.children?.find(
+              (c) => c.type === 'VElement' && c.name === 'script',
+            )
+            if (!script) return
+
+            const comments = context.sourceCode
+              .getAllComments()
+              .filter(
+                (c) =>
+                  c.loc.start.line >= script.loc.start.line &&
+                  c.loc.end.line <= script.loc.end.line,
+              )
+
+            for (let i = 0; i < comments.length; i++) {
+              const c = comments[i]
+              const match = c.value.trim().match(bannerRegex)
+              if (match && match[1].trim().toLowerCase() === 'handlers') {
+                handlersStart = c.loc.end.line
+                for (let j = i + 1; j < comments.length; j++) {
+                  const nextMatch = comments[j].value.trim().match(bannerRegex)
+                  if (nextMatch) {
+                    handlersEnd = comments[j].loc.start.line
+                    break
+                  }
+                }
+                if (handlersEnd === Infinity) {
+                  handlersEnd = script.loc.end.line
+                }
+                break
+              }
+            }
+          },
+
+          FunctionDeclaration(node) {
+            if (!node.id || handlersStart === -1) return
+            const line = node.loc.start.line
+            if (line > handlersStart && line < handlersEnd) {
+              const name = node.id.name
+              if (!/^on[A-Z]/.test(name)) {
+                const cleaned = name.replace(/^handle/, '')
+                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+                context.report({
+                  node: node.id,
+                  messageId: 'invalidHandlerName',
+                  data: { name, capitalized },
+                })
+              }
+            }
+          },
+
+          VariableDeclarator(node) {
+            if (!node.id || handlersStart === -1) return
+            const isFn =
+              node.init?.type === 'ArrowFunctionExpression' ||
+              node.init?.type === 'FunctionExpression'
+            if (!isFn) return
+            const line = node.loc.start.line
+            if (line > handlersStart && line < handlersEnd) {
+              const name = node.id.name
+              if (!/^on[A-Z]/.test(name)) {
+                const cleaned = name.replace(/^handle/, '')
+                const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+                context.report({
+                  node: node.id,
+                  messageId: 'invalidHandlerName',
+                  data: { name, capitalized },
+                })
+              }
+            }
+          },
+        }
+      },
+    },
   },
 }
 
@@ -304,6 +438,8 @@ export function createBaseConfig(dirname, options = {}) {
         'numen/max-inline-props': ['error', { max: 6 }],
         'numen/vue-script-sections': ['error', { minCodeLines: 35 }],
         'numen/max-script-lines': ['error', { max: 100 }],
+        'numen/boolean-prop-naming': 'error',
+        'numen/handler-naming': 'error',
         'vue/max-lines-per-block': [
           'error',
           {
@@ -312,10 +448,12 @@ export function createBaseConfig(dirname, options = {}) {
           },
         ],
         'vue/define-props-declaration': ['error', 'type-based'],
+        'vue/define-emits-declaration': ['error', 'type-based'],
         'vue/require-explicit-emits': 'error',
         'vue/no-undef-components': 'error',
         'vue/attribute-hyphenation': ['error', 'always'],
         'vue/custom-event-name-casing': ['error', 'kebab-case'],
+        'vue/v-on-event-hyphenation': ['error', 'always'],
         'vue/no-unused-refs': 'error',
         'vue/component-api-style': ['error', ['script-setup', 'composition']],
         'vue/component-name-in-template-casing': ['error', 'PascalCase'],
@@ -328,6 +466,14 @@ export function createBaseConfig(dirname, options = {}) {
             order: ['defineOptions', 'defineProps', 'defineModel', 'defineEmits', 'defineSlots'],
           },
         ],
+        'vue/no-side-effects-in-computed-properties': 'error',
+        'vue/no-async-in-computed-properties': 'error',
+        'vue/no-ref-as-operand': 'error',
+        'vue/no-useless-v-bind': 'error',
+        'vue/no-lone-template': 'error',
+        'vue/no-useless-mustaches': 'error',
+        'vue/prefer-true-attribute-shorthand': 'error',
+        'vue/prefer-use-template-ref': 'error',
         'no-restricted-properties': [
           'error',
           {
@@ -385,6 +531,8 @@ export function createBaseConfig(dirname, options = {}) {
         'vue/max-lines-per-block': 'off',
         'numen/max-script-lines': 'off',
         'numen/vue-script-sections': 'off',
+        'numen/boolean-prop-naming': 'off',
+        'numen/handler-naming': 'off',
       },
     },
 
