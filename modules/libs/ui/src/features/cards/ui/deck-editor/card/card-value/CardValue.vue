@@ -31,7 +31,7 @@ if (!deck) throw new Error('A card value is drawn outside a deck')
 
 /** The value as it now reads, told to the deck with the card and the place it is in. */
 const onWrite = (text: string): void =>
-  deck.write(props.card, { field: props.value.field, nth: props.value.nth }, text)
+  deck.write(props.card, { field: props.value.field, index: props.value.index }, text)
 </script>
 
 <template>

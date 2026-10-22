@@ -89,8 +89,8 @@ const groups = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(Splitte
 const getHandles = ({ wrapper }: BranchFixture) => wrapper.findAllComponents(SplitterResizeHandle)
 
 /** The splitter reporting the shares it has settled on, in percent. */
-const layout = (one: BranchFixture, at: number, sizes: number[]) =>
-  groups(one)[at]!.vm.$emit('layout', sizes)
+const layout = (one: BranchFixture, pos: number, sizes: number[]) =>
+  groups(one)[pos]!.vm.$emit('layout', sizes)
 
 describe('what a branch draws', () => {
   afterEach(() => {

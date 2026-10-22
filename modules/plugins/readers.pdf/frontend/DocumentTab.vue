@@ -85,8 +85,8 @@ function onGoToPage(page: number) {
   if (activeState.value) void activeState.value.goToPage(page)
 }
 
-function onWiden(wide: number) {
-  activeState.value?.widen(wide)
+function onWiden(width: number) {
+  activeState.value?.widen(width)
 }
 
 function onPageTurnKey(event: KeyboardEvent) {

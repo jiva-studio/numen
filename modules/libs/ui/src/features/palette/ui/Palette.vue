@@ -161,8 +161,8 @@ const { onKey } = usePaletteKeys({
 
 // The action panel is about the item that was lit when it opened, and stays
 // about it while a pointer crosses the list.
-const onOver = (at: number, event: PointerEvent) => {
-  if (!isPanelOpen.value) places.lightAt(at, event)
+const onOver = (pos: number, event: PointerEvent) => {
+  if (!isPanelOpen.value) places.lightAt(pos, event)
 }
 </script>
 

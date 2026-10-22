@@ -11,9 +11,9 @@ const SEVERAL = EditorState.allowMultipleSelections.of(true)
 const replaceIn = (doc: string, selection: EditorSelection, newText: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
   const updatedState = state.update(replace(state, newText)).state
-  const place = (at: number) => {
-    const line = updatedState.doc.lineAt(at)
-    return [line.number, at - line.from]
+  const place = (pos: number) => {
+    const line = updatedState.doc.lineAt(pos)
+    return [line.number, pos - line.from]
   }
   return {
     text: updatedState.doc.toString(),

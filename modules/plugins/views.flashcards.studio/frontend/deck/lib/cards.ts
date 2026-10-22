@@ -129,7 +129,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
 
 export interface ReplaceValueTarget {
   field: string
-  nth: number
+  index: number
   text: string
 }
 
@@ -141,7 +141,7 @@ export const replaceCardValue = (
   id: string,
   target: ReplaceValueTarget,
 ): BufferDeck => {
-  const { field, nth, text } = target
+  const { field, index, text } = target
   return {
     ...deck,
     cards: deck.cards.map((card) => {
@@ -152,7 +152,7 @@ export const replaceCardValue = (
       const values = card.values.map((value) => {
         if (value.field !== field) return value
         underCount += 1
-        if (underCount !== nth) return value
+        if (underCount !== index) return value
         found = true
         return { field, text }
       })

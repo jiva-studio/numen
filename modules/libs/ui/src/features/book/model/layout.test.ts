@@ -28,7 +28,7 @@ vi.mock('./columns', () => ({ useBookColumns: () => fake.columns }))
 vi.mock('./turns', () => ({ useBookTurns: () => fake.turns }))
 
 const KEPT = 77
-const SPREAD_OF = (at: number) => at + 1000
+const SPREAD_OF = (pos: number) => pos + 1000
 
 const setUp = () => {
   fake.frames.length = 0
@@ -358,12 +358,12 @@ describe('another document being opened', () => {
 })
 
 describe('an offset requested for from outside', () => {
-  const request = async (at: number, standing = 0) => {
+  const request = async (pos: number, standing = 0) => {
     const { props } = room()
     turns().standing.value = standing
     turns().stand.mockClear()
     turns().getSpreadOf.mockClear()
-    props.at = at
+    props.at = pos
     await nextTick()
   }
 

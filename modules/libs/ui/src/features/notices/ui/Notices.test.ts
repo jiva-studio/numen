@@ -14,7 +14,7 @@ import type { Notice } from '../lib/notice'
 /** A clock a test winds by hand, so nothing waits on the real one. */
 function wound(at = 0) {
   const clock = { at }
-  return { clock: () => clock.at, wind: (by: number) => (clock.at += by) }
+  return { clock: () => clock.at, wind: (delta: number) => (clock.at += delta) }
 }
 
 const draw = (notices: readonly Notice[], clock: () => number) =>

@@ -20,10 +20,10 @@ export interface ContentsEntry {
  * Which line holds an offset: the last one beginning at or before it, and none
  * where the offset precedes every name. The entries ascend by offset.
  */
-export function findLineAt(entries: readonly ContentsEntry[], at: number): number {
+export function findLineAt(entries: readonly ContentsEntry[], pos: number): number {
   let found = -1
   for (let i = 0; i < entries.length; i++) {
-    if (entries[i]!.at > at) break
+    if (entries[i]!.at > pos) break
     found = i
   }
   return found

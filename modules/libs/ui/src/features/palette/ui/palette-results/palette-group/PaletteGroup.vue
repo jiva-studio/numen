@@ -22,9 +22,9 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   /** The pointer crossed a row: its number, and the move that took it there. */
-  (event: 'point-at', at: number, hasMoved: PointerEvent): void
+  (event: 'point-at', pos: number, hasMoved: PointerEvent): void
   /** A row was pressed: its number, and whether the second action was asked for. */
-  (event: 'choose', at: number, second: boolean): void
+  (event: 'choose', pos: number, second: boolean): void
 }>()
 
 defineSlots<{
@@ -51,7 +51,7 @@ defineExpose({ reveal })
 /** What this group's name is addressed by, which the list points at. */
 const titleId = computed(() => `${props.uid}-group-${props.placed.group.id}`)
 
-const rowId = (at: number): string => optionId(props.uid, at)
+const rowId = (pos: number): string => optionId(props.uid, pos)
 </script>
 
 <template>

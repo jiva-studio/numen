@@ -54,19 +54,19 @@ const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
   return out
 }
 
-const clampToText = (text: string, at: number): number =>
-  Math.max(0, Math.min(Math.trunc(at) || 0, text.length))
+const clampToText = (text: string, pos: number): number =>
+  Math.max(0, Math.min(Math.trunc(pos) || 0, text.length))
 
 /**
  * The nearest boundary that does not fall inside a character, from `at` in the
  * direction given. A character outside the basic plane is two code units, and a
  * span that names one of them names half a character.
  */
-const whole = (text: string, at: number, by: 1 | -1): number => {
-  let here = at
-  while (isInsideCharacter(text, here)) here += by
+const whole = (text: string, pos: number, delta: 1 | -1): number => {
+  let here = pos
+  while (isInsideCharacter(text, here)) here += delta
   return here
 }
 
-const isInsideCharacter = (text: string, at: number): boolean =>
-  isTrailing(text.charCodeAt(at)) && isLeading(text.charCodeAt(at - 1))
+const isInsideCharacter = (text: string, pos: number): boolean =>
+  isTrailing(text.charCodeAt(pos)) && isLeading(text.charCodeAt(pos - 1))

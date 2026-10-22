@@ -25,8 +25,8 @@ export interface ReaderWords {
   /** What the row of pages is called, which the keyboard scrolls. */
   readonly pages: string
   /** What drawing the page larger is called, and smaller. */
-  readonly closer: string
-  readonly further: string
+  readonly zoomIn: string
+  readonly zoomOut: string
 }
 
 export const READER_WORDS: ReaderWords = {
@@ -34,8 +34,8 @@ export const READER_WORDS: ReaderWords = {
   next: 'Next page',
   page: 'Page',
   pages: 'Pages',
-  closer: 'Closer',
-  further: 'Further',
+  zoomIn: 'Closer',
+  zoomOut: 'Further',
 }
 
 /** One page's size, in the page's own units. */
@@ -165,7 +165,7 @@ export function getScrollTarget(row: Row, viewport: Size, page: number): number 
  * The page a key turns to, counted from the first. Nothing for a key that turns
  * no page, a document with no pages, or a turn that leaves the document.
  */
-export function getTurnTarget(key: string, at: number, pageCount: number): number | undefined {
+export function getTurnTarget(key: string, pos: number, pageCount: number): number | undefined {
   const way = getPageNavigationAction(key)
   if (!way || pageCount === 0) return undefined
 
@@ -173,7 +173,7 @@ export function getTurnTarget(key: string, at: number, pageCount: number): numbe
   let to: number
   if (way === 'first') to = 0
   else if (way === 'last') to = last
-  else to = at + (way === 'next' ? 1 : -1)
+  else to = pos + (way === 'next' ? 1 : -1)
 
   return to < 0 || to > last ? undefined : to
 }

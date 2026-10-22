@@ -170,8 +170,8 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
  * one that loops out of a column arrives at its midpoint running back the way
  * it came, and one that doubles back turns twice over a short run.
  */
-export const getHeading = (edge: EdgeCurve, at: number): EdgeHeading => {
-  const way = getTangent(edge, getParameter(measureAlong(edge), at))
+export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
+  const way = getTangent(edge, getParameter(measureAlong(edge), pos))
   if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
   return way.y < 0 ? 'against' : 'along'
 }

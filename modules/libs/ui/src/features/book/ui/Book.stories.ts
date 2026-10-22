@@ -34,12 +34,12 @@ const ITS_OWN_PACE = 10_000
 
 /** A room of a fixed width, so a story is read at the measure it is judged at. */
 const room =
-  (wide: number): Decorator =>
+  (width: number): Decorator =>
   (story) => ({
     components: { story },
     template: `
       <div class="numen h-screen bg-surface p-6 font-sans text-base text-ink" style="user-select: none; -webkit-user-select: none">
-        <div class="mx-auto flex h-full flex-col" style="inline-size: ${wide}px; max-inline-size: 100%">
+        <div class="mx-auto flex h-full flex-col" style="inline-size: ${width}px; max-inline-size: 100%">
           <story />
         </div>
       </div>

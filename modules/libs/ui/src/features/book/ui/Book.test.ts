@@ -204,8 +204,8 @@ const LAID = createChapter(
 )
 
 /** What the browser is told about the reading area, which jsdom never says. */
-const setSize = (area: HTMLElement, wide: number, high: number): void => {
-  Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
+const setSize = (area: HTMLElement, width: number, high: number): void => {
+  Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
   Object.defineProperty(area, 'getBoundingClientRect', {
     value: () => ({ left: 0 }),
@@ -292,9 +292,9 @@ describe('a document the browser has laid out', () => {
   it('is turned by a press near either edge, and by the edges alone', async () => {
     const target = await mountBook()
     const area = target.find('.book__area').element as HTMLElement
-    const press = (at: number) => {
-      area.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: at }))
-      area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: at }))
+    const press = (pos: number) => {
+      area.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: pos }))
+      area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: pos }))
     }
 
     press(1090)

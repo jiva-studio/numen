@@ -71,8 +71,8 @@ function stand(initial: readonly Notice[], options: { room?: number; wait?: numb
     { attachTo: document.body },
   )
   /** The clock forward by a duration, and one tick of the interval. */
-  const wind = async (by: number): Promise<void> => {
-    clock.at += by
+  const wind = async (delta: number): Promise<void> => {
+    clock.at += delta
     vi.advanceTimersByTime(250)
     await nextTick()
   }

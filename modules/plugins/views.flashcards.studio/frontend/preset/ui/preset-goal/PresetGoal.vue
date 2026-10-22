@@ -45,8 +45,8 @@ function onSelectGoal(one: string) {
   props.state.chooseGoal(one as Goal)
 }
 
-function onMoveSlider(at: number) {
-  props.state.moveSlider(at)
+function onMoveSlider(pos: number) {
+  props.state.moveSlider(pos)
 }
 
 function onSliderCommit() {

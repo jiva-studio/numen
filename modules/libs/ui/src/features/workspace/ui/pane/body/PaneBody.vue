@@ -40,8 +40,8 @@ function onPanelEscape(event: KeyboardEvent): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-const tabName = (at: number): string => getTabName(props.pane.id, at)
-const panelName = (at: number): string => getPanelName(props.pane.id, at)
+const tabName = (pos: number): string => getTabName(props.pane.id, pos)
+const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 </script>
 
 <template>

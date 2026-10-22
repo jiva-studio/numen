@@ -101,7 +101,7 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     hasExternalChange: ref(false),
     reload: fn(),
     chooseGoal: fn(),
-    moveSlider: (at: number) => {
+    moveSlider: (pos: number) => {
       place.value = at
     },
     flushPending: fn(),

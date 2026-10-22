@@ -35,7 +35,7 @@ const props = withDefaults(defineProps<BookProps>(), {
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset now in front, in bytes of the book's text. */
-  (event: 'move', at: number): void
+  (event: 'move', pos: number): void
   /**
    * A link led to another document of the book, named as the archive names it.
    * The reader lands on the place inside it once that document is drawn.
@@ -51,7 +51,7 @@ const paper = useTemplateRef<HTMLElement>('paper')
 const getEdge = (of: HTMLElement) => of.getBoundingClientRect().left
 
 const links = createBookLinks(props, {
-  reportMove: (at) => emit('move', at),
+  reportMove: (pos) => emit('move', pos),
   reportFollow: (path) => emit('follow', path),
 })
 
@@ -59,7 +59,7 @@ const layout = useBookLayout({
   area,
   paper,
   props,
-  onMove: (at) => emit('move', at),
+  onMove: (pos) => emit('move', pos),
   takeLed: links.takeLed,
   getEdge,
 })

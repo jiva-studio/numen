@@ -121,8 +121,8 @@ const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => 
 export const isWritable = (state: EditorState) =>
   !state.readOnly && state.facet(EditorView.editable)
 
-const shiftCells = (row: Row, by: number): Row =>
-  row.map((cell) => (cell ? { ...cell, from: cell.from + by, to: cell.to + by } : null))
+const shiftCells = (row: Row, delta: number): Row =>
+  row.map((cell) => (cell ? { ...cell, from: cell.from + delta, to: cell.to + delta } : null))
 
 /** The same widget, standing where the changes have carried the table. Other widgets come back as they are. */
 export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType => {

@@ -51,8 +51,8 @@ export const isAllowed = (text: string, bounds: Bounds): boolean => {
 }
 
 /** Where an arrow key leaves the number: one step from at its current position. */
-export const stepBy = (value: number | null, by: number, bounds: Bounds): number =>
-  snapToBounds((value ?? bounds.min) + by * bounds.step, bounds)
+export const stepBy = (value: number | null, delta: number, bounds: Bounds): number =>
+  snapToBounds((value ?? bounds.min) + delta * bounds.step, bounds)
 
 /** How many steps a page key covers at once. */
 const PACES = 10

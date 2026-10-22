@@ -31,7 +31,7 @@ const renderPicture = (neighbourhood: ReturnType<typeof createNeighbourhood>) =>
 }
 
 /**
- * Every edge, as the notes at its two ends. A ticket no note holds reads as
+ * Every edge, as the notes at its two ends. A token no note holds reads as
  * nothing, so an edge drawn under anything else says so here.
  */
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
@@ -124,7 +124,7 @@ describe('what a note is drawn under', () => {
     ['Beside', 'sibling', '', 'Above'],
   ])
 
-  it('is the ticket the note holds, and never the file it is filed under', () => {
+  it('is the token the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
     const plex = convertNeighbourhood(target, (path) => `#${path}`)
 

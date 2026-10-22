@@ -90,9 +90,9 @@ export const canLandOn = (place: PalettePlace): boolean => canChoose(place.item)
  * wraps, and answers -1 for a list holding nothing. Every row of such a list
  * can be landed on.
  */
-export const getSteppedIndex = (total: number, from: number, by: number): number => {
+export const getSteppedIndex = (total: number, from: number, delta: number): number => {
   if (total <= 0) return -1
-  return (((from + by) % total) + total) % total
+  return (((from + delta) % total) + total) % total
 }
 
 /**

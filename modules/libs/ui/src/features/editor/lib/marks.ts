@@ -76,7 +76,7 @@ class MarkBuilder {
   private eachLine(
     start: number,
     end: number,
-    add: (at: number, first: boolean, isLast: boolean) => void,
+    add: (pos: number, first: boolean, isLast: boolean) => void,
   ): void {
     for (let at = start, first = true; ; first = false) {
       const row = this.doc.lineAt(at)
@@ -119,7 +119,7 @@ class MarkBuilder {
     }
 
     if (node.name === 'Blockquote') {
-      this.eachLine(node.from, node.to, (at) => this.found.push(line('cm-quote').range(at)))
+      this.eachLine(node.from, node.to, (pos) => this.found.push(line('cm-quote').range(pos)))
       return true
     }
 

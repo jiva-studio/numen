@@ -39,8 +39,8 @@ const addCard = (
     ...(generateCardId ? { generateCardId } : {}),
   })
 
-const replaceCardValue = (deck: BufferDeck, id: string, field: string, nth: number, text: string) =>
-  replaceCardValueInternal(deck, id, { field, nth, text })
+const replaceCardValue = (deck: BufferDeck, id: string, field: string, index: number, text: string) =>
+  replaceCardValueInternal(deck, id, { field, index, text })
 
 /** Identities counted out, so a test names the card it means. */
 const createIds = () => {

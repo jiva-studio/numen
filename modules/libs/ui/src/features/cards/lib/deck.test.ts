@@ -128,7 +128,7 @@ describe('grid', () => {
       text: 'Llama',
       isDeclared: true,
       at: 1,
-      nth: 1,
+      index: 1,
       key: 'Name#1',
       isLast: true,
     })
@@ -151,7 +151,7 @@ describe('grid', () => {
       },
     ]
     const filled = getTiles(grid(response))[0]?.filled ?? []
-    expect(filled.filter((each) => each.field === 'Name').map((each) => each.nth)).toEqual([1, 2])
+    expect(filled.filter((each) => each.field === 'Name').map((each) => each.index)).toEqual([1, 2])
   })
 
   it('marks the last box standing for each field, which is where a mark is returned', () => {

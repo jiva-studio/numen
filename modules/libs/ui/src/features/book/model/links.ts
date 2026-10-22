@@ -12,7 +12,7 @@ import type { SettledBookProps } from '../lib/props'
 /** What the reader says when a link is followed. */
 export interface BookLinkSaid {
   /** The offset now in front, in bytes of the book's text. */
-  readonly reportMove: (at: number) => void
+  readonly reportMove: (pos: number) => void
   /** A link targetLink to another document of the book, named as the archive names it. */
   readonly reportFollow: (path: string) => void
 }

@@ -5,8 +5,8 @@ export const WORDS = {
   next: 'Next page',
   page: 'Page',
   pages: 'Pages',
-  closer: 'Larger',
-  further: 'Smaller',
+  zoomIn: 'Larger',
+  zoomOut: 'Smaller',
   /** Where in the book the page in front stands. */
   of: (page: number, pages: number) => `${page} of ${pages}`,
   /** How much of the chapter in front is still to come. */

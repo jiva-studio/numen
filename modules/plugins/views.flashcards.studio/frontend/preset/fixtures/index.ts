@@ -133,7 +133,7 @@ const createTab = (
     hasExternalChange: ref(false),
     reload: () => void isDone.push('reload'),
     chooseGoal: (goal) => void isDone.push(`choose ${goal}`),
-    moveSlider: (at) => {
+    moveSlider: (pos) => {
       place.value = at
       isDone.push(`move ${at}`)
     },

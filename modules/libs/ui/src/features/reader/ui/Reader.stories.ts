@@ -51,11 +51,11 @@ const createPages = (pageCount: number) =>
  * A page, drawn to the width it was asked for. What a document does for real;
  * this one carries its own number and nothing else.
  */
-const renderPage = (label: string, wide: number): string => {
-  const tall = Math.round((wide * 792) / 612)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${wide}" height="${tall}">
+const renderPage = (label: string, width: number): string => {
+  const tall = Math.round((width * 792) / 612)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${tall}">
     <rect width="100%" height="100%" fill="#ffffff"/>
-    <text x="50%" y="52%" text-anchor="middle" font-family="serif" font-size="${Math.round(wide / 5)}" fill="#1d1f22">${label}</text>
+    <text x="50%" y="52%" text-anchor="middle" font-family="serif" font-size="${Math.round(width / 5)}" fill="#1d1f22">${label}</text>
   </svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }

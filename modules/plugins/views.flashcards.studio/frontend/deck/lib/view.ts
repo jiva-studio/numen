@@ -60,11 +60,11 @@ export const areDecksEqual = (one: BufferDeck, other: BufferDeck): boolean =>
  * The deck on screen under the headings the file now carries.
  */
 export const applyReadHeadings = (screen: BufferDeck, readItem: BufferDeck): BufferDeck => {
-  const getHeading = (at: number): string => readItem.cards[at]?.heading ?? ''
-  if (screen.cards.every((card, at) => card.heading === getHeading(at))) return screen
+  const getHeading = (pos: number): string => readItem.cards[pos]?.heading ?? ''
+  if (screen.cards.every((card, index) => card.heading === getHeading(index))) return screen
   return {
     ...screen,
-    cards: screen.cards.map((card, at) => ({ ...card, heading: getHeading(at) })),
+    cards: screen.cards.map((card, index) => ({ ...card, heading: getHeading(index) })),
   }
 }
 

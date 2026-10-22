@@ -38,13 +38,13 @@ export const getNoticeDuration = (text: string, about = ''): number => {
 export const getArrivalTimes = (
   was: ReadonlyMap<string, number>,
   notices: readonly Notice[],
-  at: number,
+  pos: number,
 ): ReadonlyMap<string, number> =>
-  new Map(getReadable(notices).map((notice) => [notice.id, was.get(notice.id) ?? at]))
+  new Map(getReadable(notices).map((notice) => [notice.id, was.get(notice.id) ?? pos]))
 
 /** Whether a notice has stood long enough to have been read. */
-const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, at: number): boolean =>
-  at - (firstSeen.get(notice.id) ?? at) >= getNoticeDuration(notice.text, notice.about)
+const isRead = (notice: Notice, firstSeen: ReadonlyMap<string, number>, pos: number): boolean =>
+  pos - (firstSeen.get(notice.id) ?? pos) >= getNoticeDuration(notice.text, notice.about)
 
 export interface ShownNoticeOptions {
   readonly firstSeen: ReadonlyMap<string, number>
@@ -55,15 +55,15 @@ export interface ShownNoticeOptions {
 /** The notices drawn: the ones that have lasted, less the ones put away. */
 export const getShownNotices = (
   notices: readonly Notice[],
-  at: number,
+  pos: number,
   options: ShownNoticeOptions,
 ): readonly Notice[] => {
   const away = options.away ?? new Set<string>()
   const wait = options.wait ?? CARD_DELAY
   return getReadable(notices).filter((notice) => {
     if (away.has(notice.id)) return false
-    if (notice.stay === 'read') return !isRead(notice, options.firstSeen, at)
-    return notice.isUserStarted || at - (options.firstSeen.get(notice.id) ?? at) >= wait
+    if (notice.stay === 'read') return !isRead(notice, options.firstSeen, pos)
+    return notice.isUserStarted || pos - (options.firstSeen.get(notice.id) ?? pos) >= wait
   })
 }
 
@@ -71,8 +71,8 @@ export const getShownNotices = (
 export const getFinishedNotices = (
   notices: readonly Notice[],
   firstSeen: ReadonlyMap<string, number>,
-  at: number,
+  pos: number,
 ): readonly string[] =>
   getReadable(notices)
-    .filter((notice) => notice.stay === 'read' && isRead(notice, firstSeen, at))
+    .filter((notice) => notice.stay === 'read' && isRead(notice, firstSeen, pos))
     .map((notice) => notice.id)

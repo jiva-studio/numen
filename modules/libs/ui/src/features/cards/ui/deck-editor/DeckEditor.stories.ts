@@ -355,16 +355,16 @@ const meta: Meta<Knobs> = {
         onMove: (id: string, at: InsertionPoint) => {
           cards.value = moveCard(cards.value, sections.value, id, at)
         },
-        onWrite: (id: string, field: string, nth: number, text: string) => {
+        onWrite: (id: string, field: string, index: number, text: string) => {
           cards.value = changeCard(id, (card) => {
             // The one written is the one counted off under its own field.
             let underCount = 0
             const filled = card.filled.map((each) => {
               if (each.field !== field) return each
               underCount += 1
-              return underCount === nth ? { field, text } : each
+              return underCount === index ? { field, text } : each
             })
-            if (underCount < nth) filled.push({ field, text })
+            if (underCount < index) filled.push({ field, text })
             return { ...card, filled }
           })
         },

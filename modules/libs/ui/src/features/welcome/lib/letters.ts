@@ -17,7 +17,7 @@ export const VAULT_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
  * an installation of thirty vaults is one where the last four are opened with
  * the hand.
  */
-export const vaultLetter = (at: number): string => VAULT_LETTERS[at] ?? ''
+export const vaultLetter = (pos: number): string => VAULT_LETTERS[pos] ?? ''
 
 /**
  * Which vault of the list a keystroke opens, counting from the top, and nothing

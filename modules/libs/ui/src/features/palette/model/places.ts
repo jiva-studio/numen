@@ -32,13 +32,13 @@ export interface PalettePlacesState {
   readonly lit: ComputedRef<PaletteItem | undefined>
   readonly offered: ComputedRef<readonly PaletteAction[]>
   /** The keyboard onto the row at that number. */
-  readonly goTo: (at: number) => void
+  readonly goTo: (pos: number) => void
   /** The keyboard put on nothing, which a fresh question leaves it on. */
   readonly held: Ref<string>
   /** A pointer crossing the list lights the row it passes over. */
-  readonly lightAt: (at: number, event: PointerEvent) => void
+  readonly lightAt: (pos: number, event: PointerEvent) => void
   /** The row at that number chosen, and whether the second action was asked for. */
-  readonly chooseAt: (at: number, second: boolean) => void
+  readonly chooseAt: (pos: number, second: boolean) => void
 }
 
 export interface PalettePlacesOptions {
@@ -80,8 +80,8 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
   const lit = computed(() => places.value[here.value]?.item)
   const proposed = computed(() => lit.value?.actions ?? [])
 
-  const goTo = (at: number): void => {
-    target.value = places.value[at]?.item.id ?? ''
+  const goTo = (pos: number): void => {
+    target.value = places.value[pos]?.item.id ?? ''
   }
 
   /**
@@ -117,16 +117,16 @@ export function usePalettePlaces(options: PalettePlacesOptions): PalettePlacesSt
    */
   let status = { x: -1, y: -1 }
 
-  const lightAt = (at: number, event: PointerEvent): void => {
+  const lightAt = (pos: number, event: PointerEvent): void => {
     if (event.clientX === status.x && event.clientY === status.y) return
     status = { x: event.clientX, y: event.clientY }
     // An item the keyboard steps over is one the pointer passes over.
-    const item = places.value[at]?.item
-    if (item && canChoose(item)) goTo(at)
+    const item = places.value[pos]?.item
+    if (item && canChoose(item)) goTo(pos)
   }
 
-  const chooseAt = (at: number, second: boolean): void => {
-    const item = places.value[at]?.item
+  const chooseAt = (pos: number, second: boolean): void => {
+    const item = places.value[pos]?.item
     const action = getActionId(item, second)
     if (!item || !action) return
     options.tellChoice(item.id, action)

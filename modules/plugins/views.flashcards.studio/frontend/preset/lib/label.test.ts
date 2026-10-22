@@ -46,7 +46,7 @@ const mark = (key: string, x: number, y: number, text = key): Mark => ({
 })
 
 /** A room somewhere in the picture, to stand a word against. */
-const box = (x: number, y: number, wide: number, high: number): Box => ({ x, y, wide, high })
+const box = (x: number, y: number, width: number, height: number): Box => ({ x, y, wide: width, high: height })
 
 /** Whether a room is wholly inside the picture, which is what the viewBox holds. */
 const isInside = (one: Box): boolean =>

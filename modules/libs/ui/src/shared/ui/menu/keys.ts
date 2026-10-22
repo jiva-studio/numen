@@ -21,7 +21,7 @@ export interface MenuKeysState {
   /** A row as it is drawn, held under the item it stands for. */
   readonly holdRow: (item: string, row: unknown) => void
   /** The keyboard onto an item, or onto the menu itself where there is none. */
-  readonly goTo: (at: number) => void
+  readonly goTo: (pos: number) => void
   /** A key pressed inside the menu. */
   readonly onKey: (event: KeyboardEvent) => void
 }
@@ -41,9 +41,9 @@ export function useMenuKeys(
     renderedRows.set(item, row as RowHandle | null)
   }
 
-  const goTo = (at: number): void => {
-    here.value = at
-    const item = items()[at]
+  const goTo = (pos: number): void => {
+    here.value = pos
+    const item = items()[pos]
     const selected = item ? renderedRows.get(item.id) : undefined
     if (selected) selected.focus()
     else menu.value?.focus()
@@ -60,9 +60,9 @@ export function useMenuKeys(
   }
 
   const onKey = (event: KeyboardEvent): void => {
-    const step = (by: number, from: number): void => {
+    const step = (delta: number, from: number): void => {
       event.preventDefault()
-      goTo(stepTo(items(), { from, by }, canLandOn))
+      goTo(stepTo(items(), { from, by: delta }, canLandOn))
     }
     const stepForward = (): void => step(1, here.value)
     // Counting back from no item is counting back from the first.

@@ -17,9 +17,9 @@ interface Place {
   readonly column: number
 }
 
-const getLineColumn = (doc: Text, at: number): Place => {
-  const line = doc.lineAt(at)
-  return { line: line.number, column: at - line.from }
+const getLineColumn = (doc: Text, pos: number): Place => {
+  const line = doc.lineAt(pos)
+  return { line: line.number, column: pos - line.from }
 }
 
 const getOffset = (doc: Text, place: Place): number => {

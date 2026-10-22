@@ -208,7 +208,7 @@ const meta: Meta<Knobs> = {
         },
       )
 
-      const onWrite = (field: string, nth: number, text: string) => {
+      const onWrite = (field: string, index: number, text: string) => {
         const card = target.value.card
 
         // The one written is the one counted off under its own field.
@@ -216,16 +216,16 @@ const meta: Meta<Knobs> = {
         const filled = card.filled.map((each) => {
           if (each.field !== field) return each
           underCount += 1
-          return underCount === nth ? { field, text } : each
+          return underCount === index ? { field, text } : each
         })
-        if (underCount < nth) filled.push({ field, text })
+        if (underCount < index) filled.push({ field, text })
         const content = { ...target.value, card: { ...card, filled } }
         target.value = content
         tile.value = createTile(content)
       }
 
       provide(DECK_CONTEXT, {
-        write: (_card, { field, nth }, text) => onWrite(field, nth, text),
+        write: (_card, { field, index }, text) => onWrite(field, index, text),
       })
 
       return {

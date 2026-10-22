@@ -200,12 +200,12 @@ describe('the line under the hand', () => {
     })
 
   /** The band drawn over one line, in the order the frame gave the edges. */
-  const reach = (view: ReturnType<typeof mountTitled>, at: number) =>
-    view.findAll('.plex__edge-hit')[at]!
+  const reach = (view: ReturnType<typeof mountTitled>, pos: number) =>
+    view.findAll('.plex__edge-hit')[pos]!
 
   /** The two layers one resting title is painted in, in the same order. */
-  const title = (view: ReturnType<typeof mountTitled>, at: number) =>
-    view.findAll('.plex__edge-label').slice(2 * at, 2 * at + 2)
+  const title = (view: ReturnType<typeof mountTitled>, pos: number) =>
+    view.findAll('.plex__edge-label').slice(2 * pos, 2 * pos + 2)
 
   it('lifts the line the hand evaluates to rest on, and puts it back after', async () => {
     const view = mountTitled()

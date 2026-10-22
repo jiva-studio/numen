@@ -63,7 +63,7 @@ describe('what is drawn', () => {
   // a day at nothing has none.
   it('fills a day in step with the level it remains at', () => {
     const chips = mountChips({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
-    const getStyle = (at: number) => chips[at]?.attributes('style') ?? ''
+    const getStyle = (pos: number) => chips[pos]?.attributes('style') ?? ''
     expect(getStyle(0)).toContain('var(--numen-accent) 100%')
     expect(getStyle(5)).toContain('var(--numen-accent) 0%')
     expect(getStyle(6)).toContain('var(--numen-accent) 75%')
@@ -121,8 +121,8 @@ describe('a day standing at a level the offer does not name', () => {
 
 describe('the keyboard while the levels are offered', () => {
   /** The chip pressed, focused as the keyboard would leave it. */
-  const openMenu = async (row: ReturnType<typeof mountChips>, at: number) => {
-    const chip = row.findAll('button')[at]
+  const openMenu = async (row: ReturnType<typeof mountChips>, pos: number) => {
+    const chip = row.findAll('button')[pos]
     const element = chip?.element as HTMLElement
     element.focus()
     await chip?.trigger('click')

@@ -34,7 +34,7 @@ const props = withDefaults(
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset the person chose, in bytes of the book's text. */
-  (event: 'go', at: number): void
+  (event: 'go', pos: number): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */

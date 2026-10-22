@@ -26,8 +26,8 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
 }
 
 /**
- * A node is drawn under the ticket its note holds, and so is each end of an
- * edge. The caller says what a note's ticket is.
+ * A node is drawn under the token its note holds, and so is each end of an
+ * edge. The caller says what a note's token is.
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
@@ -37,10 +37,10 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
-  ticket: (path: string) => string,
+  token: (path: string) => string,
 ): PlexNeighbourhood {
   const focus: PlexNode = {
-    id: ticket(neighbourhood.focus.path),
+    id: token(neighbourhood.focus.path),
     title: neighbourhood.focus.title,
     relation: 'focus',
   }
@@ -58,7 +58,7 @@ export function convertNeighbourhood(
   /** The path of every note this picture draws, the note in focus included. */
   const visiblePaths = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
-    const id = ticket(related.path)
+    const id = token(related.path)
     visiblePaths.add(related.path)
     nodes.push({ id, title: related.title, relation: related.relation })
     items.push({
@@ -84,7 +84,7 @@ export function convertNeighbourhood(
     if (relation === 'child') {
       return [{ from: focus.id, to: id, ...line, ...head }]
     }
-    return visiblePaths.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
+    return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
   })
 
   return { nodes, edges }

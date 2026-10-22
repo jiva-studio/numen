@@ -10,7 +10,7 @@ import type { Conversation, Turn } from '@numen/ui'
 import type { AgentModel, Span } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
-type Model = AgentModel & { readonly namedAt: readonly string[] }
+type Model = AgentModel & { readonly nameAt: readonly string[] }
 
 /** A conversation that records what it was asked, and where its lines point. */
 const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
@@ -51,8 +51,8 @@ const tab = (
   return { state, opened: openedCalls, beside: besideItems, ...fake }
 }
 
-const items = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
-  namedAt,
+const items = (nameAt: readonly string[], name: string, presence: Model['presence']): Model => ({
+  nameAt,
   name,
   title: name,
   isDefault: false,
@@ -236,7 +236,7 @@ describe('agent model selection and settings', () => {
       resolve: async () => new Map(),
       unreachable: () => '',
       getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
-      getModelsAt: (at) => models.value.filter((one) => one.namedAt.join('.') === at.join('.')),
+      getModelsAt: (at) => models.value.filter((one) => one.nameAt.join('.') === at.join('.')),
     })
     expect(state.selectedAgentId.value).toBe('')
 

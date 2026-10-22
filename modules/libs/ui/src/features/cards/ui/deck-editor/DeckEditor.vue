@@ -50,7 +50,7 @@ const emit = defineEmits<{
   (event: 'add', stencil: string, section: string | null): void
   (event: 'remove', card: string): void
   (event: 'move', card: string, at: InsertionPoint): void
-  (event: 'write', card: string, field: string, nth: number, text: string): void
+  (event: 'write', card: string, field: string, index: number, text: string): void
   (event: 'add-section', name: string): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void
@@ -75,7 +75,7 @@ const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint
 const grid = computed(() => getGrid(props, dragged.value))
 
 provide(DECK_CONTEXT, {
-  write: (card, target, text) => emit('write', card, target.field, target.nth, text),
+  write: (card, target, text) => emit('write', card, target.field, target.index, text),
 })
 
 // --- Handlers ---

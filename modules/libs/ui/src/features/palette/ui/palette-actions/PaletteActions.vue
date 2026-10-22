@@ -29,7 +29,7 @@ const emit = defineEmits<{
 }>()
 
 const uid = useId()
-const actionName = (at: number): string => `${uid}-action-${at}`
+const actionName = (pos: number): string => `${uid}-action-${pos}`
 
 const hunt = useTemplateRef<HTMLInputElement>('hunt')
 
@@ -109,9 +109,9 @@ watch(
 )
 
 const onKey = (event: KeyboardEvent) => {
-  const step = (by: number, from = here.value) => {
+  const step = (delta: number, from = here.value) => {
     event.preventDefault()
-    goTo(getSteppedIndex(actions.value.length, from, by))
+    goTo(getSteppedIndex(actions.value.length, from, delta))
     void reveal()
   }
   if (isActionsChord(event) || event.key === 'Escape') {

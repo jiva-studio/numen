@@ -25,9 +25,9 @@ interface Knobs {
 }
 
 /** One line of the knob: the words on the row, and the group after a tab. */
-const getChoice = (line: string, at: number) => {
+const getChoice = (line: string, pos: number) => {
   const [text = '', group] = line.split('\t')
-  const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${at}`
+  const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${pos}`
   return { id, text, ...(group ? { group } : {}) }
 }
 

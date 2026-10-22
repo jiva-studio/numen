@@ -12,9 +12,9 @@ import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 export const SWIPE = 40
 
 /** Determine page turn direction from swipe delta. */
-export function swipeTurn(by: number): PageNavigationAction | undefined {
-  if (by <= -SWIPE) return 'next'
-  if (by >= SWIPE) return 'back'
+export function swipePage(delta: number): PageNavigationAction | undefined {
+  if (delta <= -SWIPE) return 'next'
+  if (delta >= SWIPE) return 'back'
   return undefined
 }
 
@@ -28,14 +28,14 @@ export interface HandTurnOptions {
 
 export function handTurn(from: number, to: number, options: HandTurnOptions): PageNavigationAction | undefined {
   if (options.hasSelection) return undefined
-  return swipeTurn(to - from) ?? pressTurn(to, options.wide)
+  return swipePage(to - from) ?? pressTurn(to, options.wide)
 }
 
 /** Which way a press across the reading area turns the page. */
-export function pressTurn(x: number, wide: number): PageNavigationAction | undefined {
-  if (wide <= 0) return undefined
-  if (x <= wide * EDGE) return 'back'
-  if (x >= wide * (1 - EDGE)) return 'next'
+export function pressTurn(x: number, width: number): PageNavigationAction | undefined {
+  if (width <= 0) return undefined
+  if (x <= width * EDGE) return 'back'
+  if (x >= width * (1 - EDGE)) return 'next'
   return undefined
 }
 
@@ -62,7 +62,7 @@ export interface TurnContext {
  * for; past either end stands the document beside this one, which the holder
  * of the book opens at the offset the turn names.
  */
-export function turnTo(way: PageNavigationAction, context: TurnContext): Destination {
+export function goToPage(way: PageNavigationAction, context: TurnContext): Destination {
   if (way === 'first') return { spread: 0 }
   if (way === 'last') return { spread: context.count - 1 }
 

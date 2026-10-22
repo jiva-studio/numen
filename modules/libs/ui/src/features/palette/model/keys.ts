@@ -55,7 +55,7 @@ interface KeyContext {
   readonly places: PalettePlacesState
   readonly isPanelOpen: { value: boolean }
   readonly options: PaletteKeysOptions
-  readonly stepBy: (by: number, from?: number) => void
+  readonly stepBy: (delta: number, from?: number) => void
   readonly openActions: (event: KeyboardEvent) => void
 }
 
@@ -105,8 +105,8 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   })
 
   /** The keyboard moved through the places, and what it lands on brought into sight. */
-  const stepBy = (by: number, from = places.here.value): void => {
-    places.goTo(stepTo(places.places.value, { from, by }, canLandOn))
+  const stepBy = (delta: number, from = places.here.value): void => {
+    places.goTo(stepTo(places.places.value, { from, by: delta }, canLandOn))
     options.reveal()
   }
 

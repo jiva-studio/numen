@@ -48,11 +48,11 @@ const getStepsAbove = (value: number, bounds: Bounds): number => {
  * step back come to where they began. The result is written to as many places
  * as the floor and the step are.
  */
-export const stepBy = (value: number, by: number, bounds: Bounds): number => {
+export const stepBy = (value: number, delta: number, bounds: Bounds): number => {
   const from = clamp(value, bounds)
-  if (bounds.step <= 0 || by === 0) return from
+  if (bounds.step <= 0 || delta === 0) return from
   const at = getStepsAbove(from, bounds)
-  const place = (by > 0 ? Math.floor(at) : Math.ceil(at)) + by
+  const place = (delta > 0 ? Math.floor(at) : Math.ceil(at)) + delta
   const places = Math.max(getDecimalPlaces(bounds.min), getDecimalPlaces(bounds.step))
   return clamp(roundToPlaces(bounds.min + place * bounds.step, places), bounds)
 }

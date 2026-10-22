@@ -3,6 +3,6 @@
  */
 import type { NodeId } from '../../lib/node'
 
-export const getTabName = (pane: NodeId, at: number): string => `${pane}-tab-${at}`
+export const getTabName = (pane: NodeId, pos: number): string => `${pane}-tab-${pos}`
 
-export const getPanelName = (pane: NodeId, at: number): string => `${pane}-panel-${at}`
+export const getPanelName = (pane: NodeId, pos: number): string => `${pane}-panel-${pos}`

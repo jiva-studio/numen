@@ -21,7 +21,7 @@ export interface PlacedFieldValue extends CardFieldValue {
    */
   readonly key: string
   /** at its current position among the values the card writes under its own field, from one. */
-  readonly nth: number
+  readonly index: number
   /**
    * It is the last box standing for its field, which is where what is wrong
    * with that field is said, once.
@@ -106,9 +106,9 @@ function createTile(
   /** How many values the card writes under each field, as they are counted off. */
   const underItem = new Map<string, number>()
   const countOff = (field: string): number => {
-    const nth = (underItem.get(field) ?? 0) + 1
-    underItem.set(field, nth)
-    return nth
+    const index = (underItem.get(field) ?? 0) + 1
+    underItem.set(field, index)
+    return index
   }
 
   // A value the stencil does not name is the person's and stays in the file,
@@ -120,8 +120,8 @@ function createTile(
   const counted = getCardFieldValues(card.filled, fields)
     .filter((each) => each.isDeclared || !named)
     .map((each, place) => {
-      const nth = countOff(each.field)
-      return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
+      const index = countOff(each.field)
+      return { ...each, at: place + 1, index, key: `${each.field}#${index}` }
     })
 
   return {
@@ -130,7 +130,7 @@ function createTile(
     stencil: card.stencil,
     filled: counted.map((each) => ({
       ...each,
-      isLast: each.nth === (underItem.get(each.field) ?? 0),
+      isLast: each.index === (underItem.get(each.field) ?? 0),
     })),
     at: 0,
     of: 0,

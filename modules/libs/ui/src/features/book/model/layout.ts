@@ -24,7 +24,7 @@ export interface BookLayoutOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
   readonly props: SettledBookProps
-  readonly onMove: (at: number) => void
+  readonly onMove: (pos: number) => void
   readonly takeLed: () => BookLink | undefined
   readonly getEdge: (of: HTMLElement) => number
 }
@@ -34,7 +34,7 @@ interface BookWatchContext {
   readonly getKeptOffset: () => number
   readonly takeLed: () => BookLink | undefined
   readonly standing: { value: number }
-  readonly getSpreadOf: (at: number) => number
+  readonly getSpreadOf: (pos: number) => number
   readonly stand: (spread: number, how: 'smooth' | 'auto') => void
   readonly isStood: { value: boolean }
 }
@@ -67,9 +67,9 @@ function watchBookLayout(
 
   watch(
     () => props.at,
-    (at) => {
-      if (at < props.span.from || at >= props.span.to) return
-      const want = context.getSpreadOf(at)
+    (pos) => {
+      if (pos < props.span.from || pos >= props.span.to) return
+      const want = context.getSpreadOf(pos)
       if (want !== context.standing.value) context.stand(want, 'smooth')
     },
   )

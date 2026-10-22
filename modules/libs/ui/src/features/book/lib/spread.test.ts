@@ -20,7 +20,7 @@ import {
 } from './spread'
 import { countBytes, getUnitOffset } from './bytes'
 import { BOOK_WORDS } from './words'
-import { EDGE, SWIPE, handTurn, pressTurn, swipeTurn, turnTo } from './turn'
+import { EDGE, SWIPE, goToPage, handTurn, pressTurn, swipePage } from './turn'
 import type { Span } from '@/shared/lib/span'
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
 
@@ -293,16 +293,16 @@ describe('countBytes and getUnitOffset', () => {
   })
 })
 
-describe('swipeTurn and pressTurn', () => {
+describe('swipePage and pressTurn', () => {
   it('maps swipe leftward to next page and swipe rightward to previous page', () => {
-    expect(swipeTurn(-SWIPE)).toBe('next')
-    expect(swipeTurn(SWIPE)).toBe('back')
+    expect(swipePage(-SWIPE)).toBe('next')
+    expect(swipePage(SWIPE)).toBe('back')
   })
 
   it('ignores swipe when displacement is below threshold', () => {
-    expect(swipeTurn(0)).toBeUndefined()
-    expect(swipeTurn(SWIPE - 1)).toBeUndefined()
-    expect(swipeTurn(1 - SWIPE)).toBeUndefined()
+    expect(swipePage(0)).toBeUndefined()
+    expect(swipePage(SWIPE - 1)).toBeUndefined()
+    expect(swipePage(1 - SWIPE)).toBeUndefined()
   })
 
   it('maps edge presses to page turns', () => {
@@ -406,11 +406,11 @@ describe('BOOK_WORDS', () => {
   })
 })
 
-describe('turnTo', () => {
+describe('goToPage', () => {
   const span = { from: 400, to: 900 }
   const book = { from: 0, to: 1400 }
   const to = (way: PageNavigationAction, spread: number, count: number, s = span, b = book) =>
-    turnTo(way, { spread, count, span: s, book: b })
+    goToPage(way, { spread, count, span: s, book: b })
 
   it('navigates to target spread within document boundaries', () => {
     expect(to('next', 0, 3)).toStrictEqual({ spread: 1 })

@@ -236,9 +236,9 @@ describe('walking the list', () => {
 
 describe('where the keyboard is standing', () => {
   /** A pointer over an item, from wherever the one before it was. */
-  const passOver = async (item: Element | undefined, at: number) => {
+  const passOver = async (item: Element | undefined, pos: number) => {
     item?.dispatchEvent(
-      new PointerEvent('pointermove', { bubbles: true, clientX: at, clientY: at }),
+      new PointerEvent('pointermove', { bubbles: true, clientX: pos, clientY: pos }),
     )
     await nextTick()
   }

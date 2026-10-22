@@ -40,7 +40,7 @@ const createTile = (
   return cardGrid
 }
 
-const write = vi.fn<(card: string, target: { field: string; nth: number }, text: string) => void>()
+const write = vi.fn<(card: string, target: { field: string; index: number }, text: string) => void>()
 
 const mountCard = (tile: Tile, props: Record<string, unknown> = {}) =>
   mount(Card, {
@@ -91,7 +91,7 @@ describe('Card', () => {
     expect(press.defaultPrevented).toBe(false)
 
     await box.setValue('Llama\nand alpaca')
-    expect(write.mock.calls).toEqual([['llama', { field: 'Name', nth: 1 }, 'Llama\nand alpaca']])
+    expect(write.mock.calls).toEqual([['llama', { field: 'Name', index: 1 }, 'Llama\nand alpaca']])
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {

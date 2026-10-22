@@ -36,8 +36,8 @@ function onMoveCard(id: string, at: InsertionPoint) {
   props.state.moveCard(id, at)
 }
 
-function onWriteCard(...[id, field, nth, text]: [string, string, number, string]) {
-  props.state.writeCardField(id, field, nth, text)
+function onWriteCard(...[id, field, index, text]: [string, string, number, string]) {
+  props.state.writeCardField(id, field, index, text)
 }
 
 function onAddSection(name: string) {

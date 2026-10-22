@@ -27,7 +27,7 @@ function book(
       if (layout instanceof Error) throw layout
       return layout
     },
-    getPageUrl: (path, pageNumber, wide) => `${path} ${pageNumber} ${wide}`,
+    getPageUrl: (path, pageNumber, width) => `${path} ${pageNumber} ${width}`,
     getHighlights: async (path, requestedSpans) => {
       for (const one of requestedSpans) spans.push(`${path} ${one.from} ${one.to}`)
       return requestedSpans.map((_, i) => where[i] ?? [])

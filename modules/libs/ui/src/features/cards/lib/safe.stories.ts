@@ -200,8 +200,8 @@ const numbers = (from: number): (() => number) => {
 }
 
 /** One arrangement: the known ones first, then pieces put together at random. */
-const createArrangement = (next: () => number, at: number): string => {
-  if (at < KNOWN.length) return KNOWN[at]!
+const createArrangement = (next: () => number, pos: number): string => {
+  if (pos < KNOWN.length) return KNOWN[pos]!
 
   const amongItems = <T>(pool: readonly T[]): T => pool[Math.floor(next() * pool.length)]!
   const pieces = 1 + Math.floor(next() * 12)

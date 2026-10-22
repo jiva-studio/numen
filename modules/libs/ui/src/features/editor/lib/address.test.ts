@@ -53,7 +53,7 @@ describe('the address under a position on a later line', () => {
 describe('a link followed with the pointer', () => {
   const SOURCE = 'go [there](https://example.invalid) now'
 
-  const open = (at: number | null, doc = SOURCE) => {
+  const open = (pos: number | null, doc = SOURCE) => {
     const openState = vi.fn<(address: string) => void>()
     const passed = vi.fn<() => void>()
     const view = new EditorView({
@@ -66,7 +66,7 @@ describe('a link followed with the pointer', () => {
         ]),
       }).state,
     })
-    const coordinates = vi.spyOn(view, 'posAtCoords').mockReturnValue(at)
+    const coordinates = vi.spyOn(view, 'posAtCoords').mockReturnValue(pos)
     views.push(view)
     return { view, opened: openState, coordinates, passed }
   }

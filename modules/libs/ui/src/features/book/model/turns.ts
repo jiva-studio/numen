@@ -17,7 +17,7 @@ import {
   type Mark,
 } from '../lib/spread'
 import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
-import { turnTo } from '../lib/turn'
+import { goToPage } from '../lib/turn'
 import type { SettledBookProps } from '../lib/props'
 
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
@@ -37,7 +37,7 @@ export interface BookTurnsOptions {
   readonly flow: ComputedRef<Flow>
   readonly spreadCount: ComputedRef<number>
   readonly marks: Readonly<ShallowRef<readonly Mark[]>>
-  readonly onMove: (at: number) => void
+  readonly onMove: (pos: number) => void
 }
 
 /** `onMove` is what the reader says when the offset in front changes. */
@@ -88,11 +88,11 @@ export function useBookTurns(options: BookTurnsOptions) {
     inFront(options.marks.value, options.flow.value, activeSpread.value) ?? options.props.at
 
   /** The spread one offset of the book's text falls on. */
-  const getSpreadOf = (at: number) => findSpreadAt(options.marks.value, options.flow.value, at)
+  const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
 
   /** What a turn of the page asks for, and where it lands. */
   const turn = (way: PageNavigationAction) => {
-    const to = turnTo(way, {
+    const to = goToPage(way, {
       spread: activeSpread.value,
       count: options.spreadCount.value,
       span: options.props.span,
