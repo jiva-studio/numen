@@ -1,11 +1,11 @@
-package ocr_test
+package ocrartifact_test
 
 import (
 	"image"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -39,7 +39,7 @@ func FuzzReadArtifact(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		text, pages := ocr.Read([]byte(raw))
+		text, pages := ocrartifact.Read([]byte(raw))
 		if !subsequence(text, raw) {
 			t.Fatalf("%q was read as %q, which is not what the file says", raw, text)
 		}
@@ -77,7 +77,7 @@ func FuzzWriteArtifact(f *testing.F) {
 			return
 		}
 
-		pages := []ocr.Page{{
+		pages := []ocrartifact.Page{{
 			Index: 0,
 			Size:  image.Point{X: 100, Y: 200},
 			Blocks: []domain.OCRBlock{
@@ -92,8 +92,8 @@ func FuzzWriteArtifact(f *testing.F) {
 			Blocks: []domain.OCRBlock{{Text: second}},
 		}}
 
-		raw, boxes, parts := ocr.Write(pages)
-		text, read := ocr.Read(raw)
+		raw, boxes, parts := ocrartifact.Write(pages)
+		text, read := ocrartifact.Read(raw)
 		if len(read) != len(pages) {
 			t.Fatalf("%d pages were written and %d read back", len(pages), len(read))
 		}

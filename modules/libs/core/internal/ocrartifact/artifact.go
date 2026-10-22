@@ -1,10 +1,28 @@
-package ocr
+// Package ocrartifact is the stored form of a read document: plain text with
+// the pages marked in it, the boxes its prose was read from, and the parts it
+// divides into.
+package ocrartifact
 
 import (
+	"image"
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
+
+// A Page is one page of a document, read.
+//
+// It carries no name of its own. What a page is called is at its current position in
+// the document, and that is what a person is shown and what a viewer opens at.
+type Page struct {
+	// Index is which page of the document this is, counted from zero.
+	Index int
+	// Size is the page as it was rendered, which the rectangles are addressed
+	// from. A zero size is a page nothing was measured on.
+	Size image.Point
+	// Blocks are what it says, in the order it is read.
+	Blocks []domain.OCRBlock
+}
 
 // The artifact is plain text with the pages marked in it:
 //

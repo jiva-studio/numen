@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -22,8 +22,8 @@ const (
 	padmavati   = "Padmavati was given to him by her father."
 )
 
-func book() []ocr.Page {
-	return []ocr.Page{
+func book() []ocrartifact.Page {
+	return []ocrartifact.Page{
 		{Index: 0, Blocks: []domain.OCRBlock{
 			{Label: "text", Text: frontMatter},
 		}},
@@ -46,8 +46,8 @@ func book() []ocr.Page {
 // parts a layout model named in it.
 func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 	t.Helper()
-	raw, _, _ = ocr.Write(book())
-	prose, _ := ocr.Read(raw)
+	raw, _, _ = ocrartifact.Write(book())
+	prose, _ := ocrartifact.Read(raw)
 	named := []struct {
 		heading string
 		depth   int
@@ -61,7 +61,7 @@ func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 		}
 		found = append(found, domain.OCRPart{Start: pos, Length: len(n.heading), Depth: n.depth})
 	}
-	return raw, ocr.Pack(found)
+	return raw, ocrartifact.Pack(found)
 }
 
 // getOffset is where a passage begins in a document's text.
@@ -123,13 +123,13 @@ func TestAPassageBeforeTheFirstPartIsLocatedByPageAlone(t *testing.T) {
 }
 
 func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
-	raw, _, _ := ocr.Write([]ocr.Page{
+	raw, _, _ := ocrartifact.Write([]ocrartifact.Page{
 		{Index: 0, Blocks: []domain.OCRBlock{
 			{Label: "doc_title", Text: docTitle},
 			{Label: "text", Text: birth},
 		}},
 	})
-	parts := ocr.Pack([]domain.OCRPart{{Start: 0, Length: len(docTitle), Depth: 0}})
+	parts := ocrartifact.Pack([]domain.OCRPart{{Start: 0, Length: len(docTitle), Depth: 0}})
 	doc := text.ReadRecognition(raw, parts, nil, nil)
 
 	if doc.Text[:len(docTitle)] != docTitle {
@@ -141,8 +141,8 @@ func TestAPartAtTheVeryStartNamesTheTextFromItsFirstByte(t *testing.T) {
 
 func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 	raw, _ := writeRecognition(t)
-	prose, _ := ocr.Read(raw)
-	parts := ocr.Pack([]domain.OCRPart{
+	prose, _ := ocrartifact.Read(raw)
+	parts := ocrartifact.Pack([]domain.OCRPart{
 		{Start: strings.Index(prose, sectionTwo), Length: len(sectionTwo), Depth: 1},
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 	})
@@ -156,8 +156,8 @@ func TestPartsOutOfOrderAreNotTrusted(t *testing.T) {
 
 func TestPartsNamingOffsetsPastTheTextAreNotTrusted(t *testing.T) {
 	raw, _ := writeRecognition(t)
-	prose, _ := ocr.Read(raw)
-	parts := ocr.Pack([]domain.OCRPart{
+	prose, _ := ocrartifact.Read(raw)
+	parts := ocrartifact.Pack([]domain.OCRPart{
 		{Start: strings.Index(prose, sectionOne), Length: len(sectionOne), Depth: 1},
 		{Start: len(prose) - 4, Length: 100, Depth: 1},
 	})
@@ -173,7 +173,7 @@ func TestAPageIsSaidByWhereItExistsInTheFile(t *testing.T) {
 	// One name to a page, and it is the one a viewer opens at. What the paper
 	// printed is a second number for the same page, and a person shown both has
 	// to work out which is being talked about.
-	raw, _, _ := ocr.Write([]ocr.Page{
+	raw, _, _ := ocrartifact.Write([]ocrartifact.Page{
 		{Index: 0, Blocks: []domain.OCRBlock{{Label: "text", Text: "Alpha beta."}}},
 		{Index: 1, Blocks: []domain.OCRBlock{{Label: "text", Text: "Gamma delta."}}},
 	})

@@ -11,7 +11,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -226,8 +226,8 @@ func readOptional(ctx context.Context, store port.DerivedStore, name domain.Arti
 // A recognition that was proofread is composed with its corrections in it, and the
 // pages and the parts stand where they now are.
 func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
-	prose, marks := ocr.Read(raw)
-	named := ocr.Unpack(parts)
+	prose, marks := ocrartifact.Read(raw)
+	named := ocrartifact.Unpack(parts)
 	if correctionsList := correction.Unpack(corrections); len(correctionsList) > 0 {
 		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, correctionsList)
 	}

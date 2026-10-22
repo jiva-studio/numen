@@ -9,7 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -256,7 +256,7 @@ func (u Proofread) lines(
 	if err != nil {
 		return nil, err
 	}
-	prose, _ := ocr.Read(artifact)
+	prose, _ := ocrartifact.Read(artifact)
 	return getProofreadPages(prose, highlight.Unpack(boxes)), nil
 }
 

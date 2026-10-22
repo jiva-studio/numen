@@ -182,12 +182,12 @@ import (
 	"image"
 
 	"`+module+`domain"
-	"`+module+`internal/ocr"
+	"`+module+`internal/ocrartifact"
 	hl "`+module+`internal/highlight"
 )
 
 type Reader interface {
-	Read(page image.Image) ([]ocr.Block, error)
+	Read(page image.Image) ([]ocrartifact.Block, error)
 	Boxes() []hl.Box
 	Span() domain.ByteSpan
 	Bounds(page image.Image) image.Rectangle
@@ -196,7 +196,7 @@ type Reader interface {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"ocr.Block", "hl.Box"}
+	want := []string{"ocrartifact.Block", "hl.Box"}
 	if got := internalTypes(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}

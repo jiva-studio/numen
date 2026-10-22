@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -111,7 +111,7 @@ func TestWhatIsReadIsSavedDownAndClaimed(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
-	prose, marks := ocr.Read(raw)
+	prose, marks := ocrartifact.Read(raw)
 	if !strings.Contains(prose, "What the page says.") {
 		t.Errorf("the artifact says %q", prose)
 	}
@@ -335,7 +335,7 @@ func TestEveryCoordinateNamesTheWordsItWasReadFrom(t *testing.T) {
 		t.Fatalf("the coordinates are not beside the artifact: %v", err)
 	}
 
-	prose, _ := ocr.Read(raw)
+	prose, _ := ocrartifact.Read(raw)
 	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
@@ -384,7 +384,7 @@ func TestCoordinatesAheadOfTheCountAreDropped(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prose, _ := ocr.Read(raw)
+	prose, _ := ocrartifact.Read(raw)
 	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
@@ -448,7 +448,7 @@ func TestABatchThatDidNotLandWholeIsReadAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prose, marks := ocr.Read(raw)
+	prose, marks := ocrartifact.Read(raw)
 	if len(marks) != res.Pages {
 		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
 	}
@@ -508,7 +508,7 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prose, marks := ocr.Read(raw)
+	prose, marks := ocrartifact.Read(raw)
 	if len(marks) != res.Pages {
 		t.Errorf("the artifact names %d pages and the document has %d", len(marks), res.Pages)
 	}
@@ -554,7 +554,7 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	prose, _ := ocr.Read(raw)
+	prose, _ := ocrartifact.Read(raw)
 	boxes := highlight.Unpack(packed)
 	if len(boxes) != res.Pages {
 		t.Fatalf("%d coordinates over %d pages", len(boxes), res.Pages)
@@ -627,7 +627,7 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 	if _, err := u.Execute(ctx, v, documentPath); !errors.Is(err, context.Canceled) {
 		t.Fatalf("stopping gave %v", err)
 	}
-	stray := ocr.Pack([]domain.OCRPart{{Start: 9000, Length: 7, Depth: 1}})
+	stray := ocrartifact.Pack([]domain.OCRPart{{Start: 9000, Length: 7, Depth: 1}})
 	if err := shelf.AppendArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactParts, "ocr", documentHash()), stray); err != nil {
 		t.Fatal(err)
 	}
@@ -679,7 +679,7 @@ func TestTheArtifactMarksOnePageForEachPageOfTheDocument(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prose, marks := ocr.Read(artifact(t, v, index, shelf))
+	prose, marks := ocrartifact.Read(artifact(t, v, index, shelf))
 	if len(marks) != res.Pages {
 		t.Fatalf("the artifact marks %d pages and the document has %d", len(marks), res.Pages)
 	}

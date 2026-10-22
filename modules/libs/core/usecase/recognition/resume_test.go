@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -22,9 +22,9 @@ const scan = "books/one.pdf"
 // newScanArtifact is a recognition of one line to a page, as the artifact and the
 // boxes its prose was read from.
 func newScanArtifact(lines []string) ([]byte, []byte) {
-	pages := make([]ocr.Page, 0, len(lines))
+	pages := make([]ocrartifact.Page, 0, len(lines))
 	for item, response := range lines {
-		pages = append(pages, ocr.Page{
+		pages = append(pages, ocrartifact.Page{
 			Index: item,
 			Size:  image.Point{X: 100, Y: 100},
 			Blocks: []domain.OCRBlock{{
@@ -33,7 +33,7 @@ func newScanArtifact(lines []string) ([]byte, []byte) {
 			}},
 		})
 	}
-	artifact, boxes, _ := ocr.Write(pages)
+	artifact, boxes, _ := ocrartifact.Write(pages)
 	return artifact, highlight.Pack(boxes)
 }
 

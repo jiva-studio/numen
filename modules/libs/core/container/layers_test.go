@@ -34,7 +34,7 @@ var driving = map[string]bool{
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
-	"internal/highlight", "internal/ocr", "internal/transcript",
+	"internal/highlight", "internal/ocrartifact", "internal/transcript",
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -1387,7 +1387,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 
 		// What is true of a note is worked out from what is true of a note.
 		{"internal/highlight", "internal/epub", true},
-		{"internal/ocr", "internal/highlight", false},
+		{"internal/ocrartifact", "internal/highlight", false},
 		{"internal/transcript", "port", true},
 
 		// The composition root does none of the core's work.

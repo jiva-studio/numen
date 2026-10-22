@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
@@ -187,8 +187,8 @@ type pageWriter struct {
 }
 
 // write appends pages and, after them, the count of pages read.
-func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) error {
-	content, found, named := ocr.Write(pages)
+func (w *pageWriter) write(ctx context.Context, pages []ocrartifact.Page, read int) error {
+	content, found, named := ocrartifact.Write(pages)
 	for i := range found {
 		found[i].From += w.prose
 		found[i].To += w.prose
@@ -200,14 +200,14 @@ func (w *pageWriter) write(ctx context.Context, pages []ocr.Page, read int) erro
 		return err
 	}
 	if len(named) > 0 {
-		if err := w.store.AppendArtifact(ctx, w.parts, ocr.Pack(named)); err != nil {
+		if err := w.store.AppendArtifact(ctx, w.parts, ocrartifact.Pack(named)); err != nil {
 			return err
 		}
 	}
 	if err := w.store.AppendArtifact(ctx, w.partial, appendCount(content, read)); err != nil {
 		return err
 	}
-	response, _ := ocr.Read(content)
+	response, _ := ocrartifact.Read(content)
 	w.prose += len(response)
 	return run.Cut(ctx, w.u.Cut, w.v, w.path)
 }
@@ -237,7 +237,7 @@ func (u Recognise) readPages(
 	run.Report(u.OnProgress, *res)
 
 	batch := run.GetSize(u.Batch, DefaultBatch)
-	pages := make([]ocr.Page, 0, batch)
+	pages := make([]ocrartifact.Page, 0, batch)
 	for index := isDone; index < scan.GetPageCount(); index++ {
 		if err := ctx.Err(); err != nil {
 			// What has been read is on disk already, and the next run begins
@@ -266,16 +266,16 @@ func (u Recognise) readPages(
 }
 
 // recognisePage draws one page and reads its blocks.
-func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocr.Page, error) {
+func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocrartifact.Page, error) {
 	rendered, err := scan.RenderPage(index, u.provider.GetRecognitionModel().DPI)
 	if err != nil {
-		return ocr.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
+		return ocrartifact.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 	}
 	blocks, err := u.provider.Recognise(ctx, rendered)
 	if err != nil {
-		return ocr.Page{}, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
+		return ocrartifact.Page{}, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 	}
-	return ocr.Page{Index: index, Size: rendered.Bounds().Size(), Blocks: blocks}, nil
+	return ocrartifact.Page{Index: index, Size: rendered.Bounds().Size(), Blocks: blocks}, nil
 }
 
 // saveRecognition stands the source on the artifact made from the partial, or forgets a
@@ -299,7 +299,7 @@ func (u Recognise) saveRecognition(
 	if err != nil {
 		return err
 	}
-	if response, _ := ocr.Read(whole); strings.TrimSpace(response) == "" {
+	if response, _ := ocrartifact.Read(whole); strings.TrimSpace(response) == "" {
 		// A document that says nothing writes nothing: an empty artifact would
 		// stand in for a text layer that worked.
 		res.IsEmpty = true
@@ -369,14 +369,14 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 	if err != nil {
 		return err
 	}
-	target := ocr.Unpack(raw)
+	target := ocrartifact.Unpack(raw)
 	keptParts := make([]domain.OCRPart, 0, len(target))
 	for _, part := range target {
 		if part.Start+part.Length <= prose {
 			keptParts = append(keptParts, part)
 		}
 	}
-	return store.WriteArtifact(ctx, name, ocr.Pack(keptParts))
+	return store.WriteArtifact(ctx, name, ocrartifact.Pack(keptParts))
 }
 
 // record keeps what read the document along with what it read. Nothing on any path
@@ -412,7 +412,7 @@ func appendCount(raw []byte, read int) []byte {
 }
 
 // resumeMark begins the line that says how much of a document has been read.
-const resumeMark = ocr.Note + "pages "
+const resumeMark = ocrartifact.Note + "pages "
 
 // readResumePoint is how many pages of a document a run before this one read
 // and how many bytes of prose those pages came to, with anything past the last
@@ -436,7 +436,7 @@ func readResumePoint(ctx context.Context, store port.DerivedStore, partial domai
 			return 0, 0, err
 		}
 	}
-	response, _ := ocr.Read(raw[:end])
+	response, _ := ocrartifact.Read(raw[:end])
 	return read, len(response), nil
 }
 

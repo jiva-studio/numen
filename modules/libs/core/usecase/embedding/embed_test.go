@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -295,7 +295,7 @@ func TestASourceActiveOnARecognitionIsEmbeddedFromIt(t *testing.T) {
 
 	raw := bookOf(t, "Scanned", words(sanskrit, 400))
 	shelf.hold(bookPath, domain.KindBook, raw, 1)
-	read, _, _ := ocr.Write([]ocr.Page{{Index: 0, Blocks: []domain.OCRBlock{{Label: "text", Text: words(sanskrit, 400)}}}})
+	read, _, _ := ocrartifact.Write([]ocrartifact.Page{{Index: 0, Blocks: []domain.OCRBlock{{Label: "text", Text: words(sanskrit, 400)}}}})
 	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", text.Fingerprint(raw)), read); err != nil {
 		t.Fatal(err)
 	}

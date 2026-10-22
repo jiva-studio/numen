@@ -1,4 +1,4 @@
-package ocr_test
+package engine
 
 import (
 	"fmt"
@@ -10,21 +10,17 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/jiva-studio/numen/modules/libs/core/internal/ocr"
-	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 // line is one run of words at a place on the page, written the way a detector
 // hands it over.
-func line(x0, y0, x1, y1 int, text string) ocr.Line {
-	return ocr.Line{Box: image.Rect(x0, y0, x1, y1), Text: text, Score: 1}
+func line(x0, y0, x1, y1 int, text string) Line {
+	return Line{Box: image.Rect(x0, y0, x1, y1), Text: text, Score: 1}
 }
-
 func TestLinesAreGroupedByWhatTheyShareVertically(t *testing.T) {
 	// Two runs on one line, and a third beneath them. The one beneath is a line
 	// of its own however far left it starts.
-	got, _ := ocr.Assemble([]ocr.Line{
+	got, _ := Assemble([]Line{
 		line(10, 100, 60, 120, "second"),
 		line(0, 98, 8, 121, "the"),
 		line(0, 140, 90, 160, "line beneath"),
@@ -49,7 +45,7 @@ func TestALineBrokenByAHyphenContinues(t *testing.T) {
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			got, _ := ocr.Assemble([]ocr.Line{
+			got, _ := Assemble([]Line{
 				line(0, 0, 100, 20, c.ends),
 				line(0, 40, 100, 60, c.next),
 			})
@@ -64,13 +60,13 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 	// The same paragraph, found twice at slightly different bounds, and a
 	// heading inside the second of them. Reading all three would say the
 	// paragraph twice and the heading twice.
-	regions := []ocr.Region{
+	regions := []Region{
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 1},
 		{Label: "text", Score: 0.8, Rect: image.Rect(2, 1, 99, 101), Order: 2},
 		{Label: "paragraph_title", Score: 0.7, Rect: image.Rect(10, 10, 90, 20), Order: 3},
 		{Label: "text", Score: 0.95, Rect: image.Rect(0, 200, 100, 300), Order: 4},
 	}
-	filtered := ocr.Distinct(regions, 0.6)
+	filtered := Distinct(regions, 0.6)
 
 	if len(filtered) != 2 {
 		var got []string
@@ -87,7 +83,7 @@ func TestARegionFoundTwiceIsReadOnce(t *testing.T) {
 func TestRegionsComeBackInReadingOrder(t *testing.T) {
 	// The model answers in whatever order it found them, and says where each
 	// belongs. Sorting on that is what keeps the second column after the first.
-	filtered := ocr.Distinct([]ocr.Region{
+	filtered := Distinct([]Region{
 		{Label: "text", Score: 0.9, Rect: image.Rect(200, 0, 300, 100), Order: 3},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 0, 100, 100), Order: 1},
 		{Label: "text", Score: 0.9, Rect: image.Rect(0, 200, 100, 300), Order: 2},
@@ -100,89 +96,10 @@ func TestRegionsComeBackInReadingOrder(t *testing.T) {
 	}
 }
 
-func TestAnArtifactReturnsWhatEachPageReturns(t *testing.T) {
-	pages := []ocr.Page{
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Preface."}}},
-		{Blocks: []domain.OCRBlock{
-			{Label: "paragraph_title", Text: "THE FIRST PART"},
-			{Label: "text", Text: "The body begins."},
-		}},
-	}
-	raw, _, _ := ocr.Write(pages)
-
-	text, marks := ocr.Read(raw)
-	if len(marks) != 2 {
-		t.Fatalf("read %d pages, want 2", len(marks))
-	}
-	// The marks are not in the text: an offset in it is an offset in the prose.
-	if strings.ContainsRune(text, '\x0c') {
-		t.Errorf("the text still carries a page mark: %q", text)
-	}
-	if !strings.HasPrefix(text[marks[1].Offset:], "THE FIRST PART") {
-		t.Errorf("the second page begins %q", text[marks[1].Offset:])
-	}
-	for _, want := range []string{"Preface.", "THE FIRST PART", "The body begins."} {
-		if !strings.Contains(text, want) {
-			t.Errorf("the artifact does not say %q", want)
-		}
-	}
-}
-
-func TestAnArtifactWithNoMarksIsAllProse(t *testing.T) {
-	// A file the person wrote, or one written by something else. Dropping its
-	// text because it names no pages would lose the whole document.
-	text, marks := ocr.Read([]byte("just words, and no pages named"))
-
-	if len(marks) != 0 {
-		t.Errorf("found %d pages in a file that names none", len(marks))
-	}
-	if text != "just words, and no pages named" {
-		t.Errorf("read %q", text)
-	}
-}
-
-func TestAPageWithNothingOnItIsStillAPage(t *testing.T) {
-	raw, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Something."}}},
-		{},
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Something else."}}},
-	})
-
-	_, marks := ocr.Read(raw)
-	if len(marks) != 3 {
-		t.Fatalf("read %d pages, want 3 — a blank page is a fact about the document", len(marks))
-	}
-}
-
-func TestWritingAndReadingAgreeAboutEveryOffset(t *testing.T) {
-	pages := []ocr.Page{
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Alpha."}}},
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Beta."}, {Label: "text", Text: "Gamma."}}},
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Delta."}}},
-	}
-	raw, _, _ := ocr.Write(pages)
-	text, marks := ocr.Read(raw)
-
-	// Every mark is inside the text and they ascend, which is what Locate
-	// searches through.
-	for i, mark := range marks {
-		if mark.Offset < 0 || mark.Offset > len(text) {
-			t.Errorf("page %d begins at %d, and the text is %d long", i, mark.Offset, len(text))
-		}
-		if i > 0 && mark.Offset < marks[i-1].Offset {
-			t.Errorf("page %d begins before the page before it", i)
-		}
-	}
-	// The first page's prose is where it says it is.
-	if got := strings.TrimSpace(text[marks[0].Offset:marks[1].Offset]); got != "Alpha." {
-		t.Errorf("the first page says %q, want %q", got, "Alpha.")
-	}
-}
-
 func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 	// A detector finds a run of words and the recogniser reads nothing in it.
 	// Joining that in puts two spaces where the page prints one.
-	got, _ := ocr.Assemble([]ocr.Line{
+	got, _ := Assemble([]Line{
 		line(0, 0, 30, 20, "As the"),
 		line(35, 0, 40, 20, ""),
 		line(45, 0, 90, 20, "Lord traveled"),
@@ -195,91 +112,10 @@ func TestABoxReadAsNothingIsNotAWord(t *testing.T) {
 	}
 }
 
-func TestALineSavedForTheWriterIsNotProse(t *testing.T) {
-	// A run stopped part way writes down how far it got. That line is not what
-	// the page says, and an offset into the prose must not count it.
-	first, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Alpha."}}},
-	})
-	second, _, _ := ocr.Write([]ocr.Page{
-		{Blocks: []domain.OCRBlock{{Label: "text", Text: "Beta."}}},
-	})
-	raw := append([]byte("\x00pages 2\n"), first...)
-	raw = append(raw, []byte("\x00pages 4\n")...)
-	raw = append(raw, second...)
-
-	text, marks := ocr.Read(raw)
-	if strings.Contains(text, "pages") {
-		t.Errorf("the prose carries a note meant for the writer: %q", text)
-	}
-	if len(marks) != 2 {
-		t.Fatalf("read %d pages, want 2", len(marks))
-	}
-	if got := strings.TrimSpace(text[marks[1].Offset:]); got != "Beta." {
-		t.Errorf("the second page says %q, want %q", got, "Beta.")
-	}
-}
-
-func TestEveryBoxReturnsWhereItsWordsAreInTheProse(t *testing.T) {
-	// Two pages, and the first of them two regions. The offsets are in the
-	// prose, so the second page's boxes are past everything the first says.
-	first, firstBoxes := ocr.Assemble([]ocr.Line{
-		line(0, 0, 50, 20, "Alpha"),
-		line(60, 0, 100, 20, "beta"),
-		line(0, 40, 60, 60, "gamma"),
-	})
-	last, lastBoxes := ocr.Assemble([]ocr.Line{
-		line(0, 0, 70, 20, "Epsilon"),
-		line(80, 0, 120, 20, "zeta"),
-	})
-	opening := []domain.OCRBlock{
-		{Label: "text", Text: first, Boxes: firstBoxes},
-		// A region read by something that reports no rectangles. It says
-		// what it says and the prose after it moves along by that much.
-		{Label: "text", Text: "Delta."},
-	}
-	pages := []ocr.Page{
-		{Index: 0, Size: image.Pt(600, 800), Blocks: opening},
-		{Index: 1, Size: image.Pt(600, 800), Blocks: []domain.OCRBlock{
-			{Label: "text", Text: last, Boxes: lastBoxes},
-		}},
-	}
-	raw, boxes, _ := ocr.Write(pages)
-	text, _ := ocr.Read(raw)
-
-	want := []string{"Alpha", "beta", "gamma", "Epsilon", "zeta"}
-	if len(boxes) != len(want) {
-		t.Fatalf("wrote %d boxes, want %d", len(boxes), len(want))
-	}
-	for i, box := range boxes {
-		if box.From < 0 || box.To > len(text) {
-			t.Fatalf("box %d covers %d..%d, and the prose is %d long", i, box.From, box.To, len(text))
-		}
-		if got := text[box.From:box.To]; got != want[i] {
-			t.Errorf("box %d reads %q, want %q", i, got, want[i])
-		}
-	}
-
-	if boxes[3].Page != 1 {
-		t.Errorf("the fourth box is on page %d, want 1", boxes[3].Page)
-	}
-	// The rectangle is the share of the page the box covers.
-	if boxes[0].MinX != 0 || boxes[0].MaxX != 50.0/600 || boxes[0].MaxY != 20.0/800 {
-		t.Errorf("the first box covers %v..%v, %v..%v", boxes[0].MinX, boxes[0].MaxX, boxes[0].MinY, boxes[0].MaxY)
-	}
-	for i, box := range boxes {
-		for _, item := range []float32{box.MinX, box.MinY, box.MaxX, box.MaxY} {
-			if item < 0 || item > 1 {
-				t.Errorf("box %d reaches %v, and the page is one wide and one high", i, item)
-			}
-		}
-	}
-}
-
 func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
 	// The hyphen is gone from the end of the box that carried it, so that box
 	// covers the first half of the word and no more.
-	text, spans := ocr.Assemble([]ocr.Line{
+	text, spans := Assemble([]Line{
 		line(0, 0, 100, 20, "under-"),
 		line(0, 40, 200, 60, "standing follows"),
 	})
@@ -297,31 +133,12 @@ func TestAJoinedWordPreservesTheHyphenBoxOneByteShorter(t *testing.T) {
 	}
 }
 
-func TestAPageNothingWasMeasuredOnHasNoBoxes(t *testing.T) {
-	// A page with no size gives no fraction of itself to divide a rectangle by.
-	raw, boxes, _ := ocr.Write([]ocr.Page{
-		{Index: 0, Blocks: []domain.OCRBlock{{
-			Label: "text",
-			Text:  "Alpha beta",
-			Boxes: []domain.OCRBox{{Rect: image.Rect(0, 0, 50, 20), Span: domain.ByteSpan{From: 0, To: 5}}},
-		}}},
-	})
-
-	if len(boxes) != 0 {
-		t.Errorf("wrote %d boxes for a page nothing was measured on", len(boxes))
-	}
-	text, marks := ocr.Read(raw)
-	if len(marks) != 1 || !strings.Contains(text, "Alpha beta") {
-		t.Errorf("the page says %q", text)
-	}
-}
-
 func TestAJoinedWordPreservesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 	// A hyphen is one byte, or two, or three. What the box covers is what it
 	// wrote less the mark that was taken out of it.
 	for _, hyphen := range []string{"-", "‐", "‑", "\u00ad"} {
 		t.Run(hyphen, func(t *testing.T) {
-			text, spans := ocr.Assemble([]ocr.Line{
+			text, spans := Assemble([]Line{
 				line(0, 0, 100, 20, "Viśvakoṣa"+hyphen),
 				line(0, 40, 200, 60, "ṭīkā follows"),
 			})
@@ -341,57 +158,10 @@ func TestAJoinedWordPreservesTheHyphenBoxShorterByTheHyphen(t *testing.T) {
 	}
 }
 
-// A heading is where a part of the document begins, and a part carries the run
-// of prose the heading is, not the words themselves. A scan that read the
-// heading badly still says where its part starts.
-func TestAHeadingReturnsWhereAPartOfTheDocumentBegins(t *testing.T) {
-	raw, _, parts := ocr.Write([]ocr.Page{
-		{Index: 0, Blocks: []domain.OCRBlock{
-			{Label: "doc_title", Text: "IAYADEVA GOSVAMI", IsHeading: true, Depth: 0},
-			{Label: "text", Text: "He was born in Kenduli."},
-			{Label: "paragraph_title", Text: "His Youth", IsHeading: true, Depth: 1},
-		}},
-		{Index: 1, Blocks: []domain.OCRBlock{
-			{Label: "text", Text: "The village stands there still."},
-			{Label: "paragraph_title", Text: "The Journey", IsHeading: true, Depth: 1},
-		}},
-	})
-	text, _ := ocr.Read(raw)
-
-	want := []struct {
-		title string
-		depth int
-	}{
-		{"IAYADEVA GOSVAMI", 0},
-		{"His Youth", 1},
-		{"The Journey", 1},
-	}
-	if len(parts) != len(want) {
-		t.Fatalf("wrote %d parts, want %d", len(parts), len(want))
-	}
-	pos := -1
-	for i, part := range parts {
-		if part.Start <= pos {
-			t.Errorf("part %d begins at %d, and the one before it at %d", i, part.Start, pos)
-		}
-		pos = part.Start
-		if part.Start < 0 || part.Start+part.Length > len(text) {
-			t.Fatalf("part %d covers %d..%d, and the prose is %d long",
-				i, part.Start, part.Start+part.Length, len(text))
-		}
-		if got := text[part.Start : part.Start+part.Length]; got != want[i].title {
-			t.Errorf("part %d reads %q, want %q", i, got, want[i].title)
-		}
-		if part.Depth != want[i].depth {
-			t.Errorf("%q sits at depth %d, want %d", want[i].title, part.Depth, want[i].depth)
-		}
-	}
-}
-
 // createDocument is a page of rows lines, every third of which breaks a word
 // with a hyphen.
-func createDocument(rows int) []ocr.Line {
-	lines := make([]ocr.Line, 0, rows)
+func createDocument(rows int) []Line {
+	lines := make([]Line, 0, rows)
 	for i := range rows {
 		text := "the quick brown fox jumps over the lazy dog and keeps running far"
 		switch i % 3 {
@@ -411,7 +181,7 @@ func BenchmarkAssemble(b *testing.B) {
 		b.Run(fmt.Sprintf("%d lines", rows), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				ocr.Assemble(lines)
+				Assemble(lines)
 			}
 		})
 	}
@@ -419,9 +189,9 @@ func BenchmarkAssemble(b *testing.B) {
 
 // createWordPage is a page of rows lines, each cut into one box per word, every
 // third of which ends in a hyphen.
-func createWordPage(rows int) []ocr.Line {
+func createWordPage(rows int) []Line {
 	words := strings.Fields("the quick brown fox jumps over the lazy dog and keeps running far")
-	lines := make([]ocr.Line, 0, rows*len(words))
+	lines := make([]Line, 0, rows*len(words))
 	for i := range rows {
 		for j, word := range words {
 			if i%3 == 0 && j == len(words)-1 {
@@ -439,7 +209,7 @@ func BenchmarkAssembleWords(b *testing.B) {
 		b.Run(fmt.Sprintf("%d lines", rows), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				ocr.Assemble(lines)
+				Assemble(lines)
 			}
 		})
 	}
@@ -449,9 +219,9 @@ var oldHyphen = regexp.MustCompile(`(\pL)[-‐‑\x{00ad}]$`)
 
 // assembleByRegexp joins one-box lines that are already in reading order, by
 // matching the whole text written so far.
-func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
+func assembleByRegexp(lines []Line) (string, []Box) {
 	var out strings.Builder
-	var retained []domain.OCRBox
+	var retained []Box
 	for _, l := range lines {
 		text := strings.TrimSpace(l.Text)
 		if text == "" {
@@ -468,15 +238,15 @@ func assembleByRegexp(lines []ocr.Line) (string, []domain.OCRBox) {
 			out.WriteString(" ")
 		}
 		pos := out.Len()
-		retained = append(retained, domain.OCRBox{Rect: l.Box, Span: domain.ByteSpan{From: pos, To: pos + len(text)}})
+		retained = append(retained, Box{Rect: l.Box, Span: ByteSpan{From: pos, To: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), retained
 }
 
 func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
-	documents := map[string][]ocr.Line{"50 lines": createDocument(50), "200 lines": createDocument(200)}
-	var edge []ocr.Line
+	documents := map[string][]Line{"50 lines": createDocument(50), "200 lines": createDocument(200)}
+	var edge []Line
 	for i, text := range []string{
 		"under-", "-", "-", "a-", "  ", "- x", "Viśvakoṣa\u00ad", "‐", "word -", "x‑", "1-", "-", "ṇ‐", "end",
 		"bad\xff-", "\xff-", "tail-",
@@ -487,7 +257,7 @@ func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
 
 	for name, lines := range documents {
 		t.Run(name, func(t *testing.T) {
-			gotText, gotBoxes := ocr.Assemble(lines)
+			gotText, gotBoxes := Assemble(lines)
 			wantText, wantBoxes := assembleByRegexp(lines)
 			if gotText != wantText {
 				t.Errorf("assembled %q, want %q", gotText, wantText)
@@ -501,8 +271,8 @@ func TestAssembleMatchesTheRegexpJoin(t *testing.T) {
 
 // createRegions is n regions in a scrambled reading order, a third of which
 // repeat another and a third of which sit inside another.
-func createRegions(n int) []ocr.Region {
-	regions := make([]ocr.Region, 0, n)
+func createRegions(n int) []Region {
+	regions := make([]Region, 0, n)
 	for i := range n {
 		y := (i / 3) * 100
 		rect := image.Rect(0, y, 400, y+80)
@@ -512,7 +282,7 @@ func createRegions(n int) []ocr.Region {
 		case 2:
 			rect = image.Rect(20, y+10, 200, y+50)
 		}
-		regions = append(regions, ocr.Region{
+		regions = append(regions, Region{
 			Label: "text",
 			Score: float32((i*7919)%101) / 100,
 			Rect:  rect,
@@ -523,8 +293,8 @@ func createRegions(n int) []ocr.Region {
 }
 
 // createRows is rows lines of three skewed boxes each, in scrambled order.
-func createRows(rows int) []ocr.Line {
-	lines := make([]ocr.Line, 0, rows*3)
+func createRows(rows int) []Line {
+	lines := make([]Line, 0, rows*3)
 	for i := range rows * 3 {
 		row, col := (i*7)%rows, (i*5)%3
 		skew := (i % 4) - 1
@@ -536,12 +306,12 @@ func createRows(rows int) []ocr.Line {
 func BenchmarkDistinct(b *testing.B) {
 	for _, n := range []int{20, 100, 400} {
 		regions := createRegions(n)
-		scratch := make([]ocr.Region, n)
+		scratch := make([]Region, n)
 		b.Run(fmt.Sprintf("%d regions", n), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
 				copy(scratch, regions)
-				ocr.Distinct(scratch, 0.6)
+				Distinct(scratch, 0.6)
 			}
 		})
 	}
@@ -553,16 +323,16 @@ func BenchmarkGroup(b *testing.B) {
 		b.Run(fmt.Sprintf("%d rows", rows), func(b *testing.B) {
 			b.ReportAllocs()
 			for range b.N {
-				ocr.Assemble(lines)
+				Assemble(lines)
 			}
 		})
 	}
 }
 
-func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
-	byScore := append([]ocr.Region(nil), regions...)
+func distinctByCopy(regions []Region, most float64) []Region {
+	byScore := append([]Region(nil), regions...)
 	sort.SliceStable(byScore, func(a, b int) bool { return byScore[a].Score > byScore[b].Score })
-	filtered := make([]ocr.Region, 0, len(byScore))
+	filtered := make([]Region, 0, len(byScore))
 	for _, r := range byScore {
 		covered := false
 		for _, k := range filtered {
@@ -585,11 +355,11 @@ func distinctByCopy(regions []ocr.Region, most float64) []ocr.Region {
 	return filtered
 }
 
-func createRandomRegions(random *rand.Rand, n int) []ocr.Region {
-	regions := make([]ocr.Region, n)
+func createRandomRegions(random *rand.Rand, n int) []Region {
+	regions := make([]Region, n)
 	for i := range regions {
 		x, y := random.Intn(300), random.Intn(300)
-		regions[i] = ocr.Region{
+		regions[i] = Region{
 			Label: fmt.Sprint(i),
 			Score: float32(random.Intn(5)) / 4,
 			Rect:  image.Rect(x, y, x+random.Intn(200), y+random.Intn(200)),
@@ -604,17 +374,17 @@ func TestDistinctMatchesTheCopyingFilter(t *testing.T) {
 	for i := range 300 {
 		regions := createRandomRegions(random, random.Intn(60))
 		want := distinctByCopy(regions, 0.6)
-		got := ocr.Distinct(append([]ocr.Region(nil), regions...), 0.6)
+		got := Distinct(append([]Region(nil), regions...), 0.6)
 		if !slices.Equal(got, want) {
 			t.Fatalf("case %d: kept %v, want %v", i, got, want)
 		}
 	}
 }
 
-func groupByLists(lines []ocr.Line) [][]ocr.Line {
-	sorted := append([]ocr.Line(nil), lines...)
+func groupByLists(lines []Line) [][]Line {
+	sorted := append([]Line(nil), lines...)
 	sort.SliceStable(sorted, func(a, b int) bool { return sorted[a].Box.Min.Y < sorted[b].Box.Min.Y })
-	overlapOf := func(line []ocr.Line, box ocr.Line) float64 {
+	overlapOf := func(line []Line, box Line) float64 {
 		top, bottom, height := box.Box.Min.Y, box.Box.Max.Y, box.Box.Dy()
 		for _, l := range line {
 			top, bottom, height = max(top, l.Box.Min.Y), min(bottom, l.Box.Max.Y), min(height, l.Box.Dy())
@@ -624,8 +394,8 @@ func groupByLists(lines []ocr.Line) [][]ocr.Line {
 		}
 		return float64(max(bottom-top, 0)) / float64(height)
 	}
-	var out [][]ocr.Line
-	var current []ocr.Line
+	var out [][]Line
+	var current []Line
 	flush := func() {
 		sort.SliceStable(current, func(a, b int) bool { return current[a].Box.Min.X < current[b].Box.Min.X })
 		out = append(out, current)
@@ -646,7 +416,7 @@ func groupByLists(lines []ocr.Line) [][]ocr.Line {
 func TestAssembleMatchesTheListGrouping(t *testing.T) {
 	random := rand.New(rand.NewSource(364))
 	for i := range 300 {
-		lines := make([]ocr.Line, random.Intn(40))
+		lines := make([]Line, random.Intn(40))
 		for j := range lines {
 			x, y := random.Intn(400), random.Intn(120)
 			lines[j] = line(x, y, x+random.Intn(100), y+random.Intn(30), fmt.Sprintf("w%d-", random.Intn(9)))
@@ -657,8 +427,8 @@ func TestAssembleMatchesTheListGrouping(t *testing.T) {
 				want = append(want, one.Text)
 			}
 		}
-		original := append([]ocr.Line(nil), lines...)
-		text, boxes := ocr.Assemble(lines)
+		original := append([]Line(nil), lines...)
+		text, boxes := Assemble(lines)
 		if !slices.Equal(lines, original) {
 			t.Fatalf("case %d: Assemble reordered its input", i)
 		}

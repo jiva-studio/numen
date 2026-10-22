@@ -1,4 +1,4 @@
-package ocr
+package ocrartifact
 
 import (
 	"encoding/binary"
