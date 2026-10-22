@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -e
+
+# Fast architectural and code quality gate before push.
+# Set NUMEN_SKIP_CHECKS=1 to push without running this suite.
+[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+echo "⏳ Running architecture and quality gates before push..."
+make -C "$root" check_gate || {
+  echo ""
+  echo "❌ Pre-push gate failed."
+  echo "Fix the issues reported above, or bypass with: NUMEN_SKIP_CHECKS=1 git push"
+  exit 1
+}

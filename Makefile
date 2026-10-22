@@ -19,6 +19,7 @@ LANDING  := modules/apps/landing
 ICON     := modules/tools/build.icons
 STORIES  := modules/tools/ci.stories
 LAYERS   := modules/tools/lint.layers
+QUALITY  := modules/tools/lint.quality
 PLUGINS  := modules/plugins
 PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
 
@@ -418,6 +419,23 @@ tool_stories_check: ## verify story references
 .PHONY: check_layers tool_layers_check
 check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
 	node $(LAYERS)/check.mjs $(target)
+
+.PHONY: check_quality
+check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
+	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
+
+.PHONY: check_gate
+check_gate: ## run architectural and quality gates on changed files (fast pre-push gate)
+	node $(LAYERS)/check.mjs --changed-only
+	node $(QUALITY)/check.mjs --changed-only $(opts)
+
+.PHONY: gate
+gate: check_gate ## alias for check_gate
+
+.PHONY: check_all
+check_all: ## run full architectural and quality suites across all modules
+	node $(LAYERS)/check.mjs
+	node $(QUALITY)/check.mjs $(opts)
 
 # ---------------------------------- Plugins -----------------------------------
 .PHONY: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES)))

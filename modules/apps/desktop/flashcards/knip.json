@@ -1,0 +1,12 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["src/main.ts!", "src/**/*.stories.ts", "src/**/*.test.ts", ".storybook/**/*.{ts,js}"],
+  "project": ["src/**/*.{ts,vue}", ".storybook/**/*.{ts,js}"],
+  "rules": {
+    "files": "error",
+    "dependencies": "warn",
+    "unlisted": "warn",
+    "exports": "warn",
+    "types": "warn"
+  }
+}

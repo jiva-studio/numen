@@ -1,0 +1,10 @@
+{
+  "name": "@numen/lint-quality",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Code quality metrics and structural linting for Go and TypeScript/Vue.",
+  "scripts": {
+    "check": "node check.mjs"
+  }
+}

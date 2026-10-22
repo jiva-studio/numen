@@ -202,7 +202,57 @@ if (args.includes("--list")) {
   process.exit(0);
 }
 
+function getChangedModules() {
+  const currentBranch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  }).stdout?.trim();
+
+  const uncommitted =
+    spawnSync("git", ["diff", "--name-only", "HEAD"], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    }).stdout?.split("\n").map((f) => f.trim()).filter(Boolean) || [];
+
+  let base = process.env.BASE_REF;
+  if (!base) {
+    base = currentBranch === "main" ? "HEAD~1" : "origin/main";
+  }
+
+  let res = spawnSync("git", ["diff", "--name-only", `${base}...HEAD`], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  if (res.status !== 0) {
+    res = spawnSync("git", ["diff", "--name-only", "HEAD~1...HEAD"], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    });
+  }
+
+  const committed = (res.stdout || "").split("\n").map((f) => f.trim()).filter(Boolean);
+  const files = Array.from(new Set([...uncommitted, ...committed]));
+
+  const matched = new Set();
+  for (const file of files) {
+    if (file.startsWith("modules/libs/core/")) matched.add("core");
+    if (file.startsWith("modules/libs/notes/")) matched.add("notes");
+    if (file.startsWith("modules/libs/plugin-sdk-go/")) matched.add("sdk");
+    if (file.startsWith("modules/libs/ui/")) matched.add("ui");
+    if (file.startsWith("modules/plugins/")) matched.add("plugins");
+    if (file.startsWith("modules/apps/desktop/")) matched.add("desktop");
+  }
+  return Array.from(matched);
+}
+
 function resolveSelectedVerifiers(targets) {
+  if (targets.includes("--changed-only")) {
+    const changedModules = getChangedModules();
+    if (changedModules.length === 0) {
+      return [];
+    }
+    return VERIFIERS.filter((v) => changedModules.includes(v.module));
+  }
   if (targets.length === 0 || targets.includes("all")) {
     return VERIFIERS;
   }
@@ -227,6 +277,12 @@ function resolveSelectedVerifiers(targets) {
 }
 
 const activeVerifiers = resolveSelectedVerifiers(args);
+
+if (activeVerifiers.length === 0) {
+  console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
+  console.log("No architectural checks required for changed files.\n");
+  process.exit(0);
+}
 
 console.log("\x1b[1mNumen Architectural Layer & Boundary Validator\x1b[0m");
 console.log("Selected targets: " + (args.length === 0 ? "all" : args.join(", ")));

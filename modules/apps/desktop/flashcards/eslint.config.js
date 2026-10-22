@@ -98,6 +98,7 @@ export default tseslint.config(
       'vue/no-undef-components': 'error',
       'vue/attribute-hyphenation': ['error', 'always'],
       'vue/custom-event-name-casing': ['error', 'kebab-case'],
+      'vue/no-unused-refs': 'error',
     },
   },
 

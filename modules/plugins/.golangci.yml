@@ -14,8 +14,25 @@ linters:
     - staticcheck
     - unused
     - depguard
+    - cyclop
+    - gocognit
+    - nestif
+    - funlen
 
   settings:
+    cyclop:
+      max-complexity: 15
+
+    gocognit:
+      min-complexity: 15
+
+    nestif:
+      min-complexity: 4
+
+    funlen:
+      lines: 80
+      statements: 50
+
     depguard:
       rules:
         agents_acp:

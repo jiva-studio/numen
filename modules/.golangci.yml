@@ -41,8 +41,23 @@ linters:
     - nestif
     - funlen
     - nakedret
+    - maintidx
+    - wastedassign
+    - interfacebloat
+    - goconst
 
   settings:
+    maintidx:
+      under: 20
+
+    interfacebloat:
+      max: 10
+
+    goconst:
+      min-len: 3
+      min-occurrences: 3
+      ignore-tests: true
+
     cyclop:
       max-complexity: 15
 
@@ -145,7 +160,7 @@ linters:
             - "**/adapter/mcp/**"
             - "**/adapter/cli/**"
             - "!$test"
-            - "!**/adapter/window/editor/assembly.go"
+            - "!**/adapter/window/editor/assembly*.go"
             - "!**/adapter/window/editor/serve.go"
             - "!**/adapter/window/editor/state.go"
             - "!**/adapter/window/editor/index.go"

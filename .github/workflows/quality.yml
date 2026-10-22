@@ -1,0 +1,63 @@
+name: Quality
+
+# Verification of code quality metrics (duplication, complexity, dead code, interfaces)
+# across Go and TypeScript/Vue modules.
+on:
+  pull_request:
+    paths:
+      - "modules/**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/quality.yml"
+  merge_group:
+    types: [checks_requested]
+  push:
+    branches: [main]
+    paths:
+      - "modules/**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "Makefile"
+      - ".github/workflows/quality.yml"
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  metrics:
+    name: Code Quality & Metrics
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: modules/libs/core/go.mod
+          cache-dependency-path: |
+            modules/libs/core/go.sum
+            modules/libs/notes/go.sum
+            modules/libs/plugin-sdk-go/go.sum
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: modules/package-lock.json
+
+      - name: Install dependencies
+        uses: ./.github/actions/install-node-modules
+
+      - name: Install golangci-lint
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.14.0
+
+      - name: Run code quality suite
+        run: make check_quality opts="--github-summary --warn"
