@@ -118,19 +118,6 @@ export const getRemainingWord = (left: number, perSecond: number): string => {
 /** How long a rate is averaged over, in seconds. */
 export const SMOOTHING = 10
 
-/**
- * The rate a count is moving at, from two readings and the time between them.
- *
- * `seconds` is the time since the count last moved, so a count written in
- * groups is measured over the stretch a group took.
- *
- * Movement is smoothed towards what was known over that stretch, so a reading
- * taken a moment after the last counts for a moment and one taken a minute later
- * counts for a minute.
- *
- * A count that went backwards is a fresh start, and has no rate until it is read
- * twice.
- */
 export const getRate = (
   previous: { readonly done: number; readonly rate: number },
   count: number,

@@ -79,7 +79,6 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	}
 }
 
-// joiner these tokens came from, and is refused.
 func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	_, err := transducer{
 		frames:    1,
@@ -95,7 +94,6 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	}
 }
 
-// A joiner answering with exactly blank+1 scores has no step scores and is refused.
 func TestDecodeRefusesJoinerWithNoStepScores(t *testing.T) {
 	const blank = 3
 	_, err := transducer{

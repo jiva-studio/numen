@@ -434,7 +434,6 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	target := getKindsByPath(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
 		"Entropy.md", "Physics.epub", "Scan.pdf", "Notes.txt", "Gone.md")
 
-	// One book reflows and the other is drawn as pictures, and a window opens
 	// each in the reader made for it.
 	want := map[string]struct {
 		kind   v1.SourceKind

@@ -19,7 +19,6 @@ export const WORDS = {
   take: "Take the file's",
   /** What stopped the whole file being read, said above what was read. */
   notRead: 'This file could not be read.',
-  /** What a write of the whole file is refused for, said the same way. */
   notSaved: 'This file could not be written.',
   /** The vault answered nothing at all, and what is on screen is still here. */
   unreachable: 'The vault could not be reached.',

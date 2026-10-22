@@ -24,7 +24,6 @@ func newDiscoveredHost(t *testing.T) *Host {
 	return host
 }
 
-// activateOutsideBackoff calls EnsureActive until the answer is no longer a backoff refusal.
 func activateOutsideBackoff(t *testing.T, host *Host) error {
 	t.Helper()
 	var err error

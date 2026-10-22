@@ -1,9 +1,3 @@
-/**
- * What the window asks of the application, and how it reads an error.
- *
- * Each call hands the client the message the schema names for it, and each
- * refusal comes back as a failure in the window's own words.
- */
 import { describe, expect, it, vi } from 'vitest'
 import { ErrorCode, Role, VaultsErrorCode } from '@numen/protocol'
 import { core, vaults } from './index'

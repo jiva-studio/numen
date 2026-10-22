@@ -62,7 +62,6 @@ type ThemeServiceClient interface {
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
 	// WriteAppearance writes the theme, the mode and the two sizes into the
 	// settings. The file is patched as an object, so every key a person typed
-	// stays where it was. A size outside its bounds is refused and the settings
 	// are left as they are.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long
@@ -148,7 +147,6 @@ type ThemeServiceHandler interface {
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
 	// WriteAppearance writes the theme, the mode and the two sizes into the
 	// settings. The file is patched as an object, so every key a person typed
-	// stays where it was. A size outside its bounds is refused and the settings
 	// are left as they are.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long

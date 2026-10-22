@@ -1,4 +1,3 @@
-// Package presetwire carries a preset, its settings and its curve between the words the review speaks
 // and the words the schema does.
 //
 // A preset is asked about from the editor's window and from the window a person
@@ -214,7 +213,6 @@ func ConvertGoalToWire(g review.Goal) v1.Goal {
 	}
 }
 
-// the schema does not name is refused where the settings are weighed.
 func ConvertGoalFromWire(g v1.Goal) review.Goal {
 	switch g {
 	case v1.Goal_GOAL_MINUTES_A_DAY:
@@ -240,7 +238,6 @@ func ConvertRuleToWire(r review.LearnedRule) v1.Rule {
 	}
 }
 
-// the schema does not name is refused where the settings are weighed.
 func ConvertRuleFromWire(r v1.Rule) review.LearnedRule {
 	switch r {
 	case v1.Rule_RULE_INTERVAL:
@@ -265,7 +262,6 @@ func ConvertBudgetUnitToWire(u review.BudgetUnit) v1.BudgetUnit {
 }
 
 // ConvertBudgetUnitFromWire is what a client said a day's budget is counted in, in the words
-// the core holds it in. A value the schema does not name is refused where the
 // settings are weighed.
 func ConvertBudgetUnitFromWire(u v1.BudgetUnit) review.BudgetUnit {
 	switch u {

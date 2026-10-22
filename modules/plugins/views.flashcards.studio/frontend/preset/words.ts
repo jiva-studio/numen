@@ -124,7 +124,6 @@ export const WORDS = {
   reads: 'Read it again',
   /** What a read failed for. */
   notRead: (error: ErrorCode) => sayAsSentence(getErrorWords(error)),
-  /** What a write was refused for, and where the settings stand after it. */
   notSaved: (error: ErrorCode) =>
     `${sayAsSentence(getErrorWords(error))} These settings are still here.`,
   /** The vault answered a read with neither settings nor a reason. */

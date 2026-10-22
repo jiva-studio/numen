@@ -86,14 +86,12 @@ type NoteServiceClient interface {
 	// no headings.
 	//
 	// A path named twice is answered once, and a filter naming more notes than
-	// the vault answers at once is refused, so that an answer is never cut to
 	// fit.
 	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// ReadNote answers with the prose of a note, below its frontmatter.
 	ReadNote(context.Context, *connect.Request[v1.ReadNoteRequest]) (*connect.Response[v1.ReadNoteResponse], error)
 	// WriteNote puts prose into a note, keeping the frontmatter the file has when
 	// the write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and refused
 	// `stale`.
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links
@@ -296,14 +294,12 @@ type NoteServiceHandler interface {
 	// no headings.
 	//
 	// A path named twice is answered once, and a filter naming more notes than
-	// the vault answers at once is refused, so that an answer is never cut to
 	// fit.
 	ListHeadings(context.Context, *connect.Request[v1.ListHeadingsRequest]) (*connect.Response[v1.ListHeadingsResponse], error)
 	// ReadNote answers with the prose of a note, below its frontmatter.
 	ReadNote(context.Context, *connect.Request[v1.ReadNoteRequest]) (*connect.Response[v1.ReadNoteResponse], error)
 	// WriteNote puts prose into a note, keeping the frontmatter the file has when
 	// the write lands and creating the file where there is none. A note that no
-	// longer holds the prose the caller read is left alone and refused
 	// `stale`.
 	WriteNote(context.Context, *connect.Request[v1.WriteNoteRequest]) (*connect.Response[v1.WriteNoteResponse], error)
 	// CreateNote makes a note. The file is named after the title, and the links

@@ -64,7 +64,6 @@ type FileServiceClient interface {
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
-	// answers at once are refused, so that an answer is never cut to fit.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.
@@ -181,7 +180,6 @@ type FileServiceHandler interface {
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
-	// answers at once are refused, so that an answer is never cut to fit.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.

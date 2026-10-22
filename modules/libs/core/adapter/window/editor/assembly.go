@@ -26,7 +26,6 @@ import (
 // The cache is answered as the ports asked of it, so this window names no
 // store. It is opened before the window is, and the window closes it.
 type Assembly interface {
-	// GetBooks is the reader of books that reflow.
 	GetBooks() port.Book
 
 	// GetPluginDir returns the root directory of an installed plugin by ID, or false if not found.

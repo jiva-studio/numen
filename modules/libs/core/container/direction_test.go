@@ -15,7 +15,6 @@ import (
 const wire = "github.com/jiva-studio/numen/modules/libs/protocol"
 
 // outward is what the core may not be compiled from: an adapter, the place
-// adapters are assembled, and the schema an adapter speaks.
 var outward = []string{
 	module + "adapter", module + "internal/adapter", module + "container", wire,
 }
@@ -55,7 +54,6 @@ func isEdgeRefused(pkg, dep string) bool {
 
 // What getRefusedImports says is the whole of the rule, so it is asked directly.
 // A walk that reads the tree and refuses nothing passes: these are the edges
-// that have to come back refused.
 func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		pkg, dep  string
@@ -74,7 +72,6 @@ func TestWhatTheDirectionRulesRefuse(t *testing.T) {
 		{"container", module + "adapter/index", false},
 		{"container", module + "internal/adapter/theme", false},
 
-		// A shared adapter library speaks the schema; a package that is no adapter
 		// does not.
 		{"internal/adapterlib/wire", wire + "/gen/numen/v1", false},
 		{"internal/adapterlib/onnxruntime", wire + "/gen/numen/v1", false},

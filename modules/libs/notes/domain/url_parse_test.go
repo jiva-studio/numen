@@ -35,7 +35,6 @@ func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 }
 
 // What a link note may point at is what can be fetched over the network. A
-// scheme reaching this machine is refused where it is read, so nothing later
 // has to remember to.
 func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
 	for _, content := range []string{
@@ -81,7 +80,6 @@ func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 
 // A note points somewhere a browser would go, and this machine is not that.
 // What listens here — an index, the window's own socket — answers nobody's
-// paste, and an address reaching one is refused where every address is read.
 func TestAnAddressOnThisMachineIsNoAddressToPointAt(t *testing.T) {
 	for _, raw := range []string{
 		"http://localhost:9200/_all/_search",

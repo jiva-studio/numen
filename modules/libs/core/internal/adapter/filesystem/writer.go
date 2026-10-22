@@ -265,7 +265,6 @@ func (w *VaultWriter) getContainedPath(path string) (string, error) {
 
 // openRoot is the vault as a handle, and a place in it as a name that handle
 // takes. Every step of a write is made through the handle, so a folder swapped
-// for a link while the write is on its way is refused by the machine itself and
 // not by a rule read a moment before. The caller closes the handle.
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 	name, err := w.getRelativeName(target)
@@ -356,7 +355,6 @@ func (w VaultWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 
 // Create writes a note where there is none, and refuses where there is one.
 //
-// The refusal comes from the filesystem: O_EXCL either creates the file or
 // does not, in one step, so two callers racing cannot both be told the path
 // was free.
 func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) error {

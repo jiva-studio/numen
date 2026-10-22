@@ -77,7 +77,6 @@ type GetRecordingResponse struct {
 	// How long it runs. A recording nothing has transcribed runs nowhere, and the
 	// player it is loaded into is what then says.
 	DurationMs int32 `protobuf:"varint,1,opt,name=duration_ms,json=durationMs,proto3" json:"duration_ms,omitempty"`
-	// Where it is played from, and what it is played as. A media element speaks
 	// the protocols of the world and not the scheme a window is served under, so
 	// the bytes are answered at an address of their own; a url with no copy on
 	// this disk is answered with the page that frames it, typed `text/html`.

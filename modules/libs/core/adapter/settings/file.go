@@ -26,7 +26,6 @@ func Read(path string) ([]byte, error) {
 
 // Write replaces the settings file whole, with the bytes as they were typed.
 //
-// Bytes the settings cannot be read out of are refused and the file is left as
 // it was. What is said names where in the file the trouble is, and nothing
 // standing in it is repeated back.
 //
@@ -35,7 +34,6 @@ func Read(path string) ([]byte, error) {
 // their own window outranks a caller that read the file, thought about it, and
 // arrived late. Nil is a caller that compares nothing, and its bytes land.
 // into says what shape the whole file takes, so bytes the settings cannot be
-// read out of are refused before any of them land.
 func Write(path string, raw []byte, baseline *string, into Document) error {
 	if err := checkObject(raw); err != nil {
 		return err
@@ -76,7 +74,6 @@ func checkUnchanged(path string, baseline *string) error {
 // checkObject says what is wrong with bytes that are not the one checkObject the
 // settings are the fields of, and nothing where they are it.
 //
-// A bare `null` unmarshals into anything and leaves it alone, so it is refused
 // by name.
 func checkObject(raw []byte) error {
 	var whole map[string]json.RawMessage

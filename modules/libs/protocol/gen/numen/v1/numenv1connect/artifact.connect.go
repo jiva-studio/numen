@@ -57,7 +57,6 @@ type ArtifactServiceClient interface {
 	//
 	// It is asked before anything is offered over a file: whether a book has been
 	// read is a question about the book, and the only other way to ask it is to
-	// ask for the book to be read again and be refused.
 	ListArtifacts(context.Context, *connect.Request[v1.ListArtifactsRequest]) (*connect.Response[v1.ListArtifactsResponse], error)
 	// CreateArtifact asks for one to be made, and answers at once with what
 	// became of the ask. The work carries on behind the answer, and how far it
@@ -132,7 +131,6 @@ type ArtifactServiceHandler interface {
 	//
 	// It is asked before anything is offered over a file: whether a book has been
 	// read is a question about the book, and the only other way to ask it is to
-	// ask for the book to be read again and be refused.
 	ListArtifacts(context.Context, *connect.Request[v1.ListArtifactsRequest]) (*connect.Response[v1.ListArtifactsResponse], error)
 	// CreateArtifact asks for one to be made, and answers at once with what
 	// became of the ask. The work carries on behind the answer, and how far it

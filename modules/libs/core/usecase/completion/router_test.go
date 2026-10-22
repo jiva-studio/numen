@@ -241,7 +241,6 @@ func TestTheQuestionIsTheTasksPromptAndInstructions(t *testing.T) {
 	}
 }
 
-// A question with no message to answer, or a role nobody speaks in, is refused before any agent is asked.
 func TestAQuestionNoAgentCanAnswerIsRefused(t *testing.T) {
 	fake := &programs{}
 	router := newRouter(t, completion.Config{}, choices{}, fake)

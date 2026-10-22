@@ -21,7 +21,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// HostVaultErrorCode is why a call was served and refused. The zero value
 // means it was not.
 type HostVaultErrorCode int32
 

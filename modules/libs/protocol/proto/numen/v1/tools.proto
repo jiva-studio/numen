@@ -128,7 +128,6 @@ message ToolResult {
   // tool listed none.
   bytes structured = 2;
 
-  // True where the tool ran and refused, and text says why.
   bool is_refusal = 3;
 }
 

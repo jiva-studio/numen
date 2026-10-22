@@ -599,7 +599,6 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	}
 }
 
-// A rating outside the four is refused: nothing here guesses what a person meant
 // to say about their own recall.
 func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	t.Parallel()

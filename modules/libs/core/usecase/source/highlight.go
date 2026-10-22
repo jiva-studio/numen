@@ -67,7 +67,6 @@ func (u Highlight) Execute(
 		return nil, err
 	}
 	// Everything from outside reaches the vault through a reader, so a path
-	// leaving it is refused there, and so is one the vault holds nothing at.
 	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, err

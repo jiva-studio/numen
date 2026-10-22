@@ -348,7 +348,6 @@ func parseUint(b []byte) (int, bool) {
 }
 
 // GetCuesAt is where a run of the words sits: the cues it falls in, in the
-// order they were spoken. A run crossing a silence is in both of them.
 func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
 	if length <= 0 || len(cues) == 0 {
 		return nil
@@ -396,7 +395,6 @@ func GetHandWrittenMark() []byte {
 }
 
 // IsWrittenByHand says whether a person wrote these words. The mark is a note
-// of its own, and the same words spoken in a cue are speech.
 func IsWrittenByHand(raw []byte) bool {
 	note := []byte(HandWrittenNote)
 	for at := 0; at <= len(raw)-len(note); {

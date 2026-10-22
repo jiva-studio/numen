@@ -18,7 +18,6 @@ import (
 //
 // A deck is a file holding what would otherwise be a folder of notes, so it is
 // bounded several times a note's. The size is asked of the file before it is
-// opened, so a deck over the bound is refused with none of its bytes read.
 const MaxBytes = 8 << 20
 
 // DeckContents is one deck as a read hands it over.
@@ -57,8 +56,6 @@ type StencilContents struct {
 
 // Read hands over a deck or a stencil, read out of the vault.
 //
-// A file is asked about before it is opened, so what is refused for its size is
-// refused without being read.
 type Read struct {
 	readers ports.VaultReaders
 	// links answers where the wikilink a card names its stencil by lands. A

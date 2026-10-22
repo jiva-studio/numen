@@ -9,7 +9,6 @@ import (
 )
 
 // EventHandler receives an event the plugin's manifest subscribes to in activationEvents. An error it
-// returns is answered to the host as the plugin's refusal of the event.
 type EventHandler func(ctx context.Context, event string) error
 
 // WithEventHandler mounts numen.v1.PluginEventService, which hands each delivered event to fn.
@@ -26,7 +25,6 @@ type eventServer struct {
 	handle EventHandler
 }
 
-// DeliverEvent passes the event to the plugin's handler. A handler error is answered as a refusal
 // that carries its text; the call itself succeeds.
 func (s eventServer) DeliverEvent(
 	ctx context.Context,

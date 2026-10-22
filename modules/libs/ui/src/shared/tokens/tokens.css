@@ -154,7 +154,6 @@
 
   /* What floats over the window, in the order it stands. Everything that
      floats takes one of these, and nothing takes a number of its own. */
-  /* A sheet fills the window and is worked in; everything below speaks over it. */
   --numen-lift-sheet: 20;
   --numen-lift-notice: 40;
   --numen-lift-menu: 60;

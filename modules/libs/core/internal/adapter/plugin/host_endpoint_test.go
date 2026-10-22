@@ -156,7 +156,6 @@ func TestAPluginWithoutThePermissionIsRefused(t *testing.T) {
 }
 
 // A caller with no token, an unknown token or a header that is no bearer is
-// refused before the permission is looked at.
 func TestACallerWithoutAKnownTokenIsRefused(t *testing.T) {
 	for _, one := range []struct {
 		name, token string
@@ -191,7 +190,6 @@ func TestAHeaderThatIsNoBearerTokenIsRefused(t *testing.T) {
 	}
 }
 
-// A call that was served and refused answers with the code, not with a status.
 func TestARefusedCompletionAnswersWithItsCode(t *testing.T) {
 	for _, one := range []struct {
 		name   string
@@ -230,7 +228,6 @@ func TestAHostWithoutACompleterAnswersNoRoute(t *testing.T) {
 	}
 }
 
-// A failure that is no refusal is a status.
 func TestAFailureOfTheCompleterIsAStatus(t *testing.T) {
 	fakeCallers := newCallers(completerFunc(func(context.Context, port.Question) (string, error) {
 		return "", errors.New("the model broke")

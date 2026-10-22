@@ -111,7 +111,6 @@ func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //
-// The stencil leads: a rename the stencil refused reaches no deck. A deck it
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {

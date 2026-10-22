@@ -29,7 +29,6 @@ type voice struct {
 	stop  func(int)
 }
 
-// getSpan is where the words spoken n-th sit in the recording. Every span is
 // a second long with a fifth of a second of silence after it.
 func getSpan(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
@@ -82,7 +81,6 @@ func (p played) Close() error { return nil }
 
 const recordingPath = "library/talk.mp3"
 
-// newRecording is the bytes of the file the words were spoken into. Nothing
 // here reads them: what the recording says comes from the model, and the model
 // is a fake.
 func newRecording(words []string) []byte {

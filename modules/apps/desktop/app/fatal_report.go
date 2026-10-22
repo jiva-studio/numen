@@ -52,7 +52,6 @@ func failWithDialog(cfg container.Config, why error) {
 	_ = app.Run()
 }
 
-// refusal is what the page says: what could not be opened, the sentence, the
 // facts behind it, and what to do about it.
 type fatalReport struct {
 	Heading  string

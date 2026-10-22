@@ -28,7 +28,6 @@ var vttSeeds = []string{
 }
 
 // carries is where its text is to be found in the words the transcript reads
-// as, and the cues are in the order they were spoken.
 //
 // A transcript arrives from the transcriber and may be edited by hand, so the
 // bytes are a stranger's.

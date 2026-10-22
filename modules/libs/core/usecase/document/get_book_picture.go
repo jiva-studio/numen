@@ -42,7 +42,6 @@ func NewGetBookPicture(readers port.VaultReaders, books port.Book, detect func([
 // Execute answers while the file at the path is the bytes the named fingerprint
 // gives, and refuses it with ErrChanged otherwise. The bytes are somebody
 // else's, so the type is settled by reading them, and an entry that is none of
-// the pictures is refused with ErrNotAPicture.
 func (u GetBookPicture) Execute(
 	ctx context.Context, v domain.Vault, path string, named Fingerprint, entry string,
 ) (Picture, error) {

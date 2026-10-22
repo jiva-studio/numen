@@ -184,7 +184,6 @@ func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
 	}
 }
 
-// The words come back against the milliseconds they were spoken in, so the
 // window draws them along the recording.
 func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 	for _, one := range []struct {

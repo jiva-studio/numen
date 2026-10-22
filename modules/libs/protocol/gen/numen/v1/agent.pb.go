@@ -137,7 +137,6 @@ type AskAgentRequest struct {
 	Tools []string `protobuf:"bytes,9,rep,name=tools,proto3" json:"tools,omitempty"`
 	// Maximum steps the agent may take.
 	MaxSteps int32 `protobuf:"varint,10,opt,name=max_steps,json=maxSteps,proto3" json:"max_steps,omitempty"`
-	// How each vault tool in tools is spoken about and read while a call of it is being written.
 	ToolDeclarations []*ToolDeclaration `protobuf:"bytes,11,rep,name=tool_declarations,json=toolDeclarations,proto3" json:"tool_declarations,omitempty"`
 	// The folder the agent is started in. Empty starts it where the plugin runs.
 	Root string `protobuf:"bytes,12,opt,name=root,proto3" json:"root,omitempty"`
@@ -623,7 +622,6 @@ func (x *AgentModel) GetDefaultReasoning() string {
 	return ""
 }
 
-// ToolDeclaration is how one vault tool is spoken about to a person and how a call of it is read
 // while it is being written.
 type ToolDeclaration struct {
 	state protoimpl.MessageState `protogen:"open.v1"`

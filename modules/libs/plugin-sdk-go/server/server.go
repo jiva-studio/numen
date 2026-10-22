@@ -324,7 +324,6 @@ func (s *Server) ServeContext(ctx context.Context) error {
 	}
 	defer s.listener.Close()
 
-	// The plugin speaks HTTP/1.1 and HTTP/2 with prior knowledge, both over
 	// plain TCP on loopback.
 	var protocols http.Protocols
 	protocols.SetHTTP1(true)

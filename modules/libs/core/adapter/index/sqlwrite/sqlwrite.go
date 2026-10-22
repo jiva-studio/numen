@@ -102,7 +102,6 @@ func (t *Transaction) prepare(ctx context.Context, query string) (*sql.Stmt, err
 
 // Exec runs one write statement, asking again while another process holds the
 // write lock. A statement of its own is its own transaction, so one that was
-// refused the lock wrote nothing.
 func Exec(ctx context.Context, db *sql.DB, query string, args ...any) (sql.Result, error) {
 	var out sql.Result
 	err := retry(ctx, func() error {

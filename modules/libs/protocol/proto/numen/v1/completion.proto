@@ -25,9 +25,7 @@ message HostServiceCompleteRequest {
 
 message HostServiceCompleteResponse {
   CompletionAnswer answer = 1;
-  // Set when the call was served and refused. The answer is then unset.
   CompletionErrorCode error = 2;
-  // Why the call was refused, as the host states it. Empty where the host has nothing to add.
   string detail = 3;
 }
 
@@ -49,7 +47,6 @@ message CompletionMessage {
   string text = 2;
 }
 
-// CompletionErrorCode is why a served completion call was refused. The zero
 // value means it was not.
 enum CompletionErrorCode {
   COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
@@ -62,7 +59,6 @@ enum CompletionErrorCode {
   // an answer.
   COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
 
-  // The person has not let the calling plugin ask a model, or has refused it.
   // The window asks the person, and a plugin shows this as the reason nothing
   // was answered.
   COMPLETION_ERROR_CODE_NO_CONSENT = 3;

@@ -27,7 +27,6 @@ import (
 const programName = "claude"
 
 // readsHooksOption is the option that lets the program read the hooks, skills and standing
-// instructions this machine holds for it. What a vault holds is refused either way.
 const readsHooksOption = "reads_hooks_and_skills"
 
 // programTitle is what the program is called when shown to a person.

@@ -495,7 +495,6 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 }
 
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
-// refused, and nothing is written.
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	f := newScheduling(t, pointed)
 

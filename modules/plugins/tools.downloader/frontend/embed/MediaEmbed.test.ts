@@ -72,7 +72,6 @@ describe('a moment chosen in the transcript', () => {
       args: [83, true],
     })
     // The message goes to the page holding the player and to nothing else. That
-    // page hands it on to the host, and this window speaks to no host at all.
     expect(postedMessages[0]![1]).toBe('http://127.0.0.1:9')
   })
 

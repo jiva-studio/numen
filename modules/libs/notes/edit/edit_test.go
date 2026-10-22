@@ -14,7 +14,6 @@ import (
 )
 
 // files are the files of a vault held in memory. A write moves the modification time on, and one held
-// to a fingerprint that is not the file's is refused.
 type files struct {
 	content map[string]string
 	kinds   map[string]domain.SourceKind

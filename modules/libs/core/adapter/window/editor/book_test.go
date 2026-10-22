@@ -164,7 +164,6 @@ func TestWhatABookIsIsAskedOfThePlugin(t *testing.T) {
 	}
 }
 
-// A refusal of the plugin reaches the window under the code the wire has always
 // given it.
 func TestAErrorOfTheBookIsCoded(t *testing.T) {
 	for why, want := range map[error]connect.Code{

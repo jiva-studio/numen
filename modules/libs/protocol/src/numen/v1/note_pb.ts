@@ -305,12 +305,6 @@ export const ResolvedAddressSchema: GenMessage<ResolvedAddress> = /*@__PURE__*/
  * @generated from message numen.v1.ListHeadingsRequest
  */
 export type ListHeadingsRequest = Message<"numen.v1.ListHeadingsRequest"> & {
-  /**
-   * Only the notes filed under these paths. A filter naming none passes none,
-   * and one naming more notes than the vault answers at once is refused.
-   *
-   * @generated from field: repeated string paths = 1;
-   */
   paths: string[];
 };
 
@@ -420,12 +414,6 @@ export const ReadNoteRequestSchema: GenMessage<ReadNoteRequest> = /*@__PURE__*/
  * @generated from message numen.v1.ReadNoteResponse
  */
 export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
-  /**
-   * The prose below the frontmatter, with line endings as LF. Empty when the
-   * note is refused.
-   *
-   * @generated from field: string body = 1;
-   */
   body: string;
 
   /**
@@ -435,11 +423,6 @@ export type ReadNoteResponse = Message<"numen.v1.ReadNoteResponse"> & {
    */
   error?: ErrorCode | undefined;
 
-  /**
-   * The file this prose came out of. Absent when the note was refused.
-   *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
-   */
   at?: Fingerprint | undefined;
 };
 
@@ -861,13 +844,6 @@ export const RenameNoteRequestSchema: GenMessage<RenameNoteRequest> = /*@__PURE_
  * @generated from message numen.v1.RenameNoteResponse
  */
 export type RenameNoteResponse = Message<"numen.v1.RenameNoteResponse"> & {
-  /**
-   * Where the note is filed. Empty when the note was never opened. The note is
-   * brought into line before the file is, so a refused move answers with the
-   * path the note still has.
-   *
-   * @generated from field: string path = 1;
-   */
   path: string;
 
   /**
@@ -965,12 +941,6 @@ export type WatchEditsResponse = Message<"numen.v1.WatchEditsResponse"> & {
    */
   text: string;
 
-  /**
-   * The last report of this change, which arrives whether the change landed or
-   * was refused.
-   *
-   * @generated from field: bool is_final = 5;
-   */
   isFinal: boolean;
 };
 
@@ -1136,18 +1106,6 @@ export const NoteService: GenService<{
     input: typeof ResolveAddressesRequestSchema;
     output: typeof ResolveAddressesResponseSchema;
   },
-  /**
-   * ListHeadings is the headings of the vault's notes, grouped by the note they
-   * stand in and in the order they stand there. The paths are the filter: a
-   * note it does not name is not in the answer, and neither is one that carries
-   * no headings.
-   *
-   * A path named twice is answered once, and a filter naming more notes than
-   * the vault answers at once is refused, so that an answer is never cut to
-   * fit.
-   *
-   * @generated from rpc numen.v1.NoteService.ListHeadings
-   */
   listHeadings: {
     methodKind: "unary";
     input: typeof ListHeadingsRequestSchema;
@@ -1163,14 +1121,6 @@ export const NoteService: GenService<{
     input: typeof ReadNoteRequestSchema;
     output: typeof ReadNoteResponseSchema;
   },
-  /**
-   * WriteNote puts prose into a note, keeping the frontmatter the file has when
-   * the write lands and creating the file where there is none. A note that no
-   * longer holds the prose the caller read is left alone and refused
-   * `stale`.
-   *
-   * @generated from rpc numen.v1.NoteService.WriteNote
-   */
   writeNote: {
     methodKind: "unary";
     input: typeof WriteNoteRequestSchema;

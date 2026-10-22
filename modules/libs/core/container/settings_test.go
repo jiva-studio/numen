@@ -122,7 +122,6 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	}
 }
 
-// A file that cannot be read is refused, and what is handed back is nothing.
 func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -138,7 +137,6 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	}
 }
 
-// Settings that cannot be written as JSON are refused with no text.
 func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 	target := DefaultSettings()
 	target.Appearance.InterfaceScale = math.NaN()

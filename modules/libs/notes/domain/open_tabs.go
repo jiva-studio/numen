@@ -39,7 +39,6 @@ type Tab struct {
 	// Recording is the recording the tab holds, and nothing in a tab holding
 	// none.
 	Recording *RecordingProgress
-	// Book is how far through the book that reflows the tab holds they are, and
 	// nothing in a tab holding none.
 	Book *BookProgress
 }
@@ -52,7 +51,6 @@ type DocumentProgress struct {
 	PageCount int
 }
 
-// A BookProgress is how far through a book that reflows the person reading it
 // is. Such a book has no pages of its own, so where they stand is an offset
 // into its text and the page is counted from that.
 type BookProgress struct {
@@ -75,7 +73,6 @@ type RecordingProgress struct {
 }
 
 // The kinds of tab this application has words for. A tab of any other kind is
-// spoken about by the name its window gave it.
 const (
 	TabNote      = "note"
 	TabDocument  = "document"

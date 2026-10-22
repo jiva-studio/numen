@@ -1,4 +1,3 @@
-/** Where rows let go at a height land, and which landings are refused. */
 
 import type { Row, RowId, ShownRow } from './row'
 

@@ -27,10 +27,6 @@ const vault = (stands: Record<string, FileKind> = {}) => {
 
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
-/**
- * A document drawn as pictures of its pages, an epub book that reflows, a recording, and
- * a file the vault holds no source for.
- */
 const DOCUMENT: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
 const BOOK: FileKind = { kind: 'book', type: 'note', format: 'epub' }
 const TALK: FileKind = { kind: 'recording', type: 'note' }

@@ -102,7 +102,6 @@ func (e *HostEndpoint) Close(ctx context.Context) error {
 }
 
 // Complete answers a plugin's question with text from the agent its setting
-// names, else the default. A caller that holds no valid token is refused as
 // unauthenticated, and one without the ai:complete permission as denied. A
 // plugin the person has not let ask a model is answered NO_CONSENT.
 func (e *HostEndpoint) Complete(
@@ -144,7 +143,6 @@ func (e *HostEndpoint) authorize(header, permission string) (string, error) {
 }
 
 // answerFailure answers a call that failed: the end of the caller's context is
-// cancelled, a question nothing can answer is an invalid argument, a refusal is
 // answered with its code, and anything else is internal.
 func answerFailure(ctx context.Context, err error) (*connect.Response[v1.HostServiceCompleteResponse], error) {
 	if ctxErr := ctx.Err(); ctxErr != nil {

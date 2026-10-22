@@ -443,7 +443,6 @@ func (x *ReadThemeResponse) GetCss() string {
 
 type WriteAppearanceRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The theme to apply, by its name. A name matching no theme is refused and
 	// the settings are left as they are.
 	Name string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	// Which half of a pair the tokens resolve to from now on.

@@ -144,7 +144,6 @@ func TestNamingACheckRunsItOnce(t *testing.T) {
 	}
 }
 
-// A name no check answers to is refused with every name there is, in order,
 // and nothing else in the list.
 func TestAnUnknownCheckIsRefusedWithTheNamesThereAre(t *testing.T) {
 	l := check.Checks{List: []check.Checker{fixed{name: "first"}, fixed{name: "second"}}}

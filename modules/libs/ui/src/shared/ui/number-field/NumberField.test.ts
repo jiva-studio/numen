@@ -283,7 +283,6 @@ describe('what a screen reader is told', () => {
     expect(mountField().get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 
-  // A line refused with no number to announce is refused in silence, and the
   // eye can see what the ear is not told.
   it('reads out a line that is no number, where no number remains with it', async () => {
     const field = mountField({ modelValue: null })
@@ -319,7 +318,6 @@ describe('a number set from outside', () => {
     expect(field.get('input').element.value).toBe('60.0')
   })
 
-  // A line refused stands for no number, so a field emptied from outside is
   // emptied whatever is standing in it.
   it('empties the field where the number is taken away under invalid text', async () => {
     const field = mountField()

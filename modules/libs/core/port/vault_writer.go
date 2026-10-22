@@ -23,7 +23,6 @@ var ErrOccupied = errors.New("a file is already there")
 // belongs in a note is the core's business, and where the bytes land is this.
 //
 // Every path is relative to the vault root, in the form a walk reports it.
-// A path that leaves the vault is refused.
 type VaultWriter interface {
 	// Write puts content at a path, replacing whatever is there and creating
 	// the folders above it. It is atomic: a reader sees the note as it was or
@@ -48,7 +47,6 @@ type VaultWriter interface {
 	// it. The file is whatever a person handed the window, so it is any kind of
 	// file and not a note alone.
 	//
-	// A path something occupies is refused with ErrOccupied. The file appears
 	// whole: whoever is watching the vault never reads half of one.
 	Import(ctx context.Context, path string, content io.Reader) error
 
@@ -56,13 +54,11 @@ type VaultWriter interface {
 	// destination. The bytes do not change, so a note that carried no
 	// identifier still carries none afterwards.
 	//
-	// A destination that is taken is refused: two notes arriving at one path
 	// is a question only whoever asked for the move can answer.
 	Move(ctx context.Context, from, to string) error
 
 	// MakeFolder puts an empty folder at a path, creating the folders above
 	// it. A folder that is already there is the outcome that was asked for; a
-	// file there is refused with ErrOccupied.
 	MakeFolder(ctx context.Context, path string) error
 
 	// Remove takes a file out of the vault for good. Putting a note in the

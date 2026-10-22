@@ -305,7 +305,6 @@ describe('the arrowhead a line carries', () => {
     const chord =
       (Math.atan2(aside.toPoint.y - behindPoint.y, aside.toPoint.x - behindPoint.x) * 180) / Math.PI
 
-    // The line bends over the head's length, so the two readings differ.
     expect(Math.abs(chord - 90)).toBeGreaterThan(3)
     expect(aside.arrowhead!.angle).toBeCloseTo(chord, 1)
 

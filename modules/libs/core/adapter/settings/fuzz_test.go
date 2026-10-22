@@ -137,7 +137,6 @@ var byteSeeds = []string{
 
 // Bytes the settings are saved from land in the file as they were typed, and
 // what lands is read back as settings: a file the application itself took is
-// never one it cannot open at the next launch. Bytes it refuses are refused by
 // name, and the file is left holding what it held — a person's own settings are
 // worth more than the one being written over them.
 //

@@ -430,7 +430,6 @@ func TestARepairNeedsNoIndexToBringLevel(t *testing.T) {
 }
 
 // A note whose name carries a character a link is read up to is reached by no
-// link. Moving it is not refused, and nothing is written for it.
 func TestANoteNoLinkReachesCanStillBeMoved(t *testing.T) {
 	c := openLinked(t)
 

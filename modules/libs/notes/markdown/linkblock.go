@@ -188,7 +188,6 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 // taken out, so a note names one place under one type. An empty address takes
 // them all out, and an empty block goes with them.
 //
-// An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
@@ -243,7 +242,6 @@ func (d *Document) appendEntry(b block, l domain.Link) error {
 // taken out, so a note names one place under one type. An empty address takes
 // them all out, and an empty block goes with them.
 //
-// An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
 func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
@@ -315,8 +313,6 @@ func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Li
 }
 
 // UpdateLink changes what an entry says about itself without moving where it
-// goes. An entry carrying anything the application does not own is refused,
-// and a refusal is the whole change refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
 	b, err := d.block()
 	if err != nil {

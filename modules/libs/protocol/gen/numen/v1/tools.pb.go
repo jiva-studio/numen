@@ -560,7 +560,6 @@ type ToolResult struct {
 	// The structured result as JSON, meeting the output schema. Empty where the
 	// tool listed none.
 	Structured []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
-	// True where the tool ran and refused, and text says why.
 	IsRefusal     bool `protobuf:"varint,3,opt,name=is_refusal,json=isRefusal,proto3" json:"is_refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

@@ -15,7 +15,6 @@ type Span struct {
 }
 
 //
-// Three readings are tried and the first that finds anything answers: the text
 // currently, then punctuation and spacing read as the marks they stand for,
 // then a run of spacing inside a line read as one space. A span that stands
 // exactly is therefore never reported where it only nearly stands.
@@ -64,7 +63,6 @@ func occurrences(text, wanted string) []Span {
 	return at
 }
 
-// A mappedText is text as one of the readings has it, and where each of its bytes
 // came from. There is one more offset than there are bytes, so the end of a
 // span reads back as well as its beginning.
 type mappedText struct {

@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// wrapHeldByAnother is err as port.ErrHeldByAnother where the system refused the file to
 // somebody else holding it, and err itself otherwise.
 //
 // Windows refuses every other opener while a program has a file open, and says

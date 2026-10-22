@@ -96,7 +96,6 @@ type Addition struct {
 	Link
 }
 
-// AddOutcome is what happened to one link in a batch. Refused is empty when it
 // was written.
 type AddOutcome struct {
 	From        string `json:"from"`

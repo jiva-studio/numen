@@ -12,11 +12,9 @@ import (
 )
 
 // maxMatches is how many passages one call may ask for. A call asking for more
-// is refused and told so.
 const maxMatches = 100
 
 // passagesEach is how many places in one file a search answers with. A book
-// speaks about a thing in several places, and a reader who cannot turn the page
 // is told about all of them.
 const passagesEach = 3
 
@@ -33,7 +31,6 @@ type Passage struct {
 }
 
 // addressOf is where a passage is reached, as the window opens one. A passage
-// spoken about without one is a passage the person cannot go to.
 func addressOf(source string, start, length int) string {
 	return fmt.Sprintf("numen:%s?start=%d&length=%d", url.PathEscape(source), start, length)
 }
@@ -95,7 +92,6 @@ func addNoteSearch(server *sdk.Server, core Core) {
 }
 
 // sorts is the kinds of source a question names. A search reaches notes and
-// books, and a kind outside those two is refused and said so.
 func sorts(named []string) ([]domain.SourceKind, error) {
 	out := make([]domain.SourceKind, 0, len(named))
 	for _, one := range named {

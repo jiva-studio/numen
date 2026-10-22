@@ -85,7 +85,6 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds an
 // assertion to an anonymous interface and to a port, in a type switch as well,
 // and lets through an assertion to a concrete type and to an error.
 func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
@@ -145,7 +144,6 @@ func internalTypes(file *ast.File) []string {
 }
 
 // An adapter outside the core cannot name a package under internal/, so a port
-// that does is a port it cannot answer. What a port speaks in is declared in
 // domain/ or beside the port.
 func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	dir := filepath.Join("..", "port")
@@ -175,7 +173,6 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds a
 // type of a package under internal/, by whatever name the file imports it, and
 // lets through the domain's, the standard library's and a selector on a value.
 func TestWhatThePortInternalRuleRefuses(t *testing.T) {

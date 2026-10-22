@@ -169,7 +169,6 @@ func TestNoApplicationLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
@@ -237,7 +236,6 @@ func getClaimedPorts(file *ast.File) []string {
 	return target
 }
 
-// What the rule refuses, read against a file written to be refused. The three
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
 func TestWhatThePortClaimRefuses(t *testing.T) {

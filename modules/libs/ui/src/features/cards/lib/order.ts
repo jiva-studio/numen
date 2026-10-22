@@ -84,7 +84,6 @@ export const reorderFields = (
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
 
-/** Why a name written as a heading and in no slot is refused. */
 export type HeadingObjection = 'blank' | 'taken'
 
 /** What checking a name came back with. */
@@ -148,10 +147,6 @@ export const HALVES: readonly Half[] = ['front', 'back']
 /** What is wrong with each of a number of things, under what each is known by. */
 export type Problems = ReadonlyMap<string, readonly string[]>
 
-/**
- * A map of nothing that stays a map of nothing. An empty default stands for
- * every caller at once, so putting anything into it is refused.
- */
 export function createSealedMap<K, V>(): ReadonlyMap<K, V> {
   const empty = new Map<K, V>()
   const refuse = (): never => {

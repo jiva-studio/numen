@@ -236,7 +236,6 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	}
 }
 
-// A path the vault holds no note at is refused, and nothing is written.
 func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)

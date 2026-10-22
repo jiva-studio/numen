@@ -35,7 +35,6 @@ type Sources struct {
 	// no request.
 	Images []string
 	// Media fills media-src, which is where sound and video are loaded from. A
-	// browser fetches those down a path of its own, which speaks the protocols
 	// of the world and not the scheme a window is drawn from.
 	Media []string
 	// Frames fills frame-src, which is where a page a link note points at is

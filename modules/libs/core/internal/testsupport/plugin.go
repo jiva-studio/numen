@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// PluginLifecycle answers Ping as a plugin that speaks the host's protocol.
 type PluginLifecycle struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 }

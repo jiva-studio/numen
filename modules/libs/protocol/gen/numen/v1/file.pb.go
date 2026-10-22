@@ -87,7 +87,6 @@ func (SourceKind) EnumDescriptor() ([]byte, []int) {
 }
 
 // the reader made for it: one is drawn as pictures a page at a time, the other
-// reflows. It is decided from the file's name, as SourceKind is, and a file
 // that is no book is unspecified.
 type BookFormat int32
 
@@ -317,7 +316,6 @@ func (x *Entry) GetType() string {
 type ListFileKindsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The paths to answer about, as the vault files them. More than the vault
-	// answers at once are refused.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -897,7 +895,6 @@ type CreateURLRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The address, as a browser would go to it. It is read into the one form
 	// every spelling of it reaches, and one nothing can be fetched from is
-	// refused and no file is made.
 	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
 	// The folder it goes in, as a path relative to the root. Empty is the root.
 	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`

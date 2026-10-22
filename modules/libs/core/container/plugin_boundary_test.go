@@ -57,7 +57,6 @@ func getPluginRequirements(gomod string) []string {
 
 // What isPlugin, mayNamePlugins and getPluginRequirements say is the whole of the
 // rule, so it is asked directly. A walk that reads the tree and refuses nothing
-// passes: these are the edges that have to come back refused.
 func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 	for _, one := range []struct {
 		dep      string

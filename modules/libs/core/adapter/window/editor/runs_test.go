@@ -395,7 +395,6 @@ func TestASourceCarryingItsOwnTextHasNotBeenRun(t *testing.T) {
 }
 
 // A path the vault does not hold is not something a person can act on, and is
-// refused as an error.
 func TestARunOverAPathTheVaultDoesNotHoldIsNotFound(t *testing.T) {
 	api, _ := openRunWindow(t, stored{}, newEmptyIndex(), willRun(), willRun())
 

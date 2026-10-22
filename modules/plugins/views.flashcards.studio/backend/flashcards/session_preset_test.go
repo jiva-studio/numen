@@ -23,7 +23,6 @@ func (s vaulted) openSession(
 }
 
 // openSessionByPreset is the session over one preset, and a fatal error where
-// it was refused.
 func (s vaulted) openSessionByPreset(
 	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.SessionResult {
@@ -153,7 +152,6 @@ func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 	}
 }
 
-// A paused preset is refused with the reason, and not with an empty session.
 func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -171,7 +169,6 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	}
 }
 
-// A day already spent is refused with the reason. The first session takes the
 // whole of the allowance, and the second is told why there is nothing left.
 func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 	t.Parallel()

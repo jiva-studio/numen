@@ -1303,7 +1303,6 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 
 func TestASectionIsFoundByItsName(t *testing.T) {
 	// The words half answers with the paragraph that says the name most often.
-	// Asked where a book speaks about a thing, what a person wants is the
 	// section about it.
 	ctx := t.Context()
 	db := openDB(t)

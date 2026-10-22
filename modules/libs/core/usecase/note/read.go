@@ -35,8 +35,6 @@ type Contents = edit.Contents
 
 // Read hands over the prose of one note.
 //
-// The window and an agent read through here, so what is refused to one is
-// refused to the other, and the rules for it are written once.
 type Read struct {
 	readers port.VaultReaders
 }

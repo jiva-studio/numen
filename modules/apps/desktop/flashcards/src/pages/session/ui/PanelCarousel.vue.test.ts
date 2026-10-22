@@ -164,7 +164,6 @@ describe('a hand on the strip', () => {
     expect(one.emitted('update:at')).toEqual([['after']])
   })
 
-  // A panel the window refused to open is one the strip must not be left
   // standing on: what is in the window is the window's answer, not the strip's.
   it('goes back off a panel the window did not open', async () => {
     const { one, window_ } = strip()
@@ -229,7 +228,6 @@ describe('a wheel on the strip', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
-  // A panel the window refused to open is one the strip must not be left
   // standing on, and a wheel is settled the same way a hand is.
   it('is taken back off a stop the window did not take', async () => {
     vi.useFakeTimers()

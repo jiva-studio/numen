@@ -9,8 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 )
 
-// writeRefusal maps an error of a completion to the code a refused call answers
-// with. It reports false for an error that is no refusal.
 func writeRefusal(err error) (v1.CompletionErrorCode, bool) {
 	switch {
 	case errors.Is(err, port.ErrNoConsent):
@@ -34,7 +32,6 @@ func readWireQuestion(wire *v1.CompletionQuestion) port.Question {
 	}
 }
 
-// readRefusalDetail is the text of a refusal without the sentinel that names its code, which the code
 // already states.
 func readRefusalDetail(err error) string {
 	text := err.Error()

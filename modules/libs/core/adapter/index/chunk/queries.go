@@ -173,7 +173,6 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 // typed, best first.
 //
 // A section answers with the chunk it opens, so what comes back stands where the
-// section begins. Asked where a book speaks about a thing, this is the half that
 // answers with the chapter about it and not with the paragraph that says its
 // name most often.
 func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {

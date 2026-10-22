@@ -601,7 +601,6 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	}
 }
 
-// staleWriters is the vault's writers, with the write refused the way one is
 // when something outside this process wrote the file in the meantime.
 type staleWriters struct{ port.VaultWriters }
 

@@ -354,7 +354,6 @@ func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 	}
 }
 
-// newerProtocolLifecycle answers Ping as a plugin that speaks a protocol after the host's.
 type newerProtocolLifecycle struct {
 	numenv1connect.UnimplementedPluginLifecycleServiceHandler
 }
@@ -366,7 +365,6 @@ func (newerProtocolLifecycle) Ping(
 	return connect.NewResponse(&v1.PingResponse{Status: "ok", Protocol: port.PluginProtocolVersion + 1}), nil
 }
 
-// A built-in plugin that reports another protocol is refused.
 func TestABuiltInPluginThatSpeaksAnotherProtocolIsRefused(t *testing.T) {
 	host := newBuiltInHost(t)
 	registerBuiltIn(t, host, newBuiltInManifest(firstBuiltInID), func(map[string]string) (http.Handler, error) {

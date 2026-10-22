@@ -27,7 +27,6 @@ type assetHandler struct {
 //
 // The id is the file's path in the vault, escaped whole, and where in the file
 // is the rest. Which places a file has is the reader's to say: a document is
-// asked for a page of it, a book that reflows for a picture it carries. Bytes
 // are the whole of what this route answers; everything else about a file is
 // asked over the schema.
 const assetsRoute = "/assets/"

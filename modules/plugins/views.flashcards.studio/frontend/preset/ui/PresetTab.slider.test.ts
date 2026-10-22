@@ -489,7 +489,6 @@ describe('what the control remains at', () => {
   })
 
   // A caption promising work in progress is a promise, and there is nothing
-  // behind it once the vault has refused the picture.
   it('says nothing of indexing the vault where no answer is coming', () => {
     const { tab } = mountPresetTab({ isHonest: false }, {}, { isWaiting: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)

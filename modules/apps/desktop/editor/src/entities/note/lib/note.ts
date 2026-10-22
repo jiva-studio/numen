@@ -1,7 +1,3 @@
-/**
- * The words the vault speaks about notes, and what the window asks of it over
- * them.
- */
 import type { Result } from '@numen/wire'
 import type { LinkAddress, NoteContents } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'

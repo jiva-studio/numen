@@ -228,7 +228,6 @@ func (s *State) Close() {
 func (s *State) isClosed() bool { return s.closed.Load() }
 
 // getCurrentVault is the vault a question is answered over. A window standing on nothing
-// has none, and every question that would reach into a vault is refused there.
 func (s *State) getCurrentVault() (domain.Vault, error) {
 	v := s.GetCurrentVault()
 	if v.ID == "" {

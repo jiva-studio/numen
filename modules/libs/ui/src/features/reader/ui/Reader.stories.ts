@@ -28,10 +28,6 @@ type Render = NonNullable<Story['render']>
 const PAGES = 12
 const MANY = 500
 
-/**
- * How long a wait goes on where the browser sets the pace: a scroll it
- * animates itself, or a page refused four times over.
- */
 const ITS_OWN_PACE = 10_000
 
 interface Rect {
@@ -274,13 +270,6 @@ export const HighlightedOver: Story = {
   },
 }
 
-/**
- * A page that will not come is asked for again, and then said so.
- *
- * A document is busy while another page of it is drawing, so the first refusal
- * is ordinary. What is not ordinary is a page that stays empty for ever and
- * says nothing about why.
- */
 export const Undrawn: Story = {
   render: () => ({
     components: { Reader },

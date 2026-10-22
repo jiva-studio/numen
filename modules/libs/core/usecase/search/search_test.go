@@ -401,7 +401,6 @@ func (c corpus) writeSections(t *testing.T, v domain.Vault, path string) {
 func TestASearchAnswersWithTheSectionAskedAbout(t *testing.T) {
 	// A search by words ranks by how often the words appear, so a paragraph in the
 	// middle of a chapter outranks the chapter's own opening. Asked where a book
-	// speaks about a thing, what a person wants is the section about it.
 	ctx := t.Context()
 	c := newCorpus(t)
 	c.writeSections(t, c.first, "notes/Entropy.md")

@@ -15,7 +15,6 @@ import (
 //
 // A note is shown by its `title`, else by its filename, and whichever of the
 // two names it is brought into line first. The file follows where a title and a
-// filename are kept as one name, and a move refused because the name is taken
 // leaves a note that says what it is called under a filename that does not.
 type Rename struct{ Move }
 

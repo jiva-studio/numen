@@ -20,7 +20,6 @@ func NewFocusNote(queries port.NoteQueries, view port.Window) *FocusNote {
 }
 
 // Execute puts the note at path in focus and returns what it is called. A path
-// naming no note is refused.
 func (u *FocusNote) Execute(ctx context.Context, v domain.Vault, path string) (domain.NoteRef, error) {
 	if path == "" {
 		return domain.NoteRef{}, errors.New("name the note to put in focus")

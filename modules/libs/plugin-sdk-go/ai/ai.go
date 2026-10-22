@@ -92,8 +92,6 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	return answer.GetText(), nil
 }
 
-// readRefusal maps the code of a refused call to its error, followed by the detail the host gave.
-// Unspecified is no refusal.
 func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 	switch code {
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:

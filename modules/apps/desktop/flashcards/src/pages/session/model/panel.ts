@@ -1,14 +1,3 @@
-/**
- * The panel a card is asked about in: whether it is showing, what has been said
- * in it, and what is being written.
- *
- * Everything the panel is, is here. What draws it reads this and decides
- * nothing: a card that may not be asked about is refused here, and the reason
- * is said here.
- *
- * A conversation belongs to one card. Answering the card ends it, so the card
- * in front of a person is never answered out of the one behind it.
- */
 import { computed, ref, shallowRef } from 'vue'
 import { useConversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'

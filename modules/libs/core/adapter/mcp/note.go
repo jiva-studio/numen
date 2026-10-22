@@ -100,7 +100,6 @@ type Neighbour struct {
 // The filesystem offers no transaction over many files: the twenty-ninth can
 // fail on its own. A batch says what happened to each.
 
-// MoveOutcome is what happened to one note in a batch. Refused is empty when it
 // moved.
 type MoveOutcome struct {
 	note.MoveResult

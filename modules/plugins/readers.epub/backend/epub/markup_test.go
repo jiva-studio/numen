@@ -121,7 +121,6 @@ func TestMarkup(t *testing.T) {
 }
 
 // A spine document that is an SVG is a cover drawn around a picture, and there
-// is nothing in it to reflow. What a reader draws is the picture it wraps: an
 // SVG served from the window's own origin is a document there, and its own
 // addresses reach no entry of the archive.
 func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {

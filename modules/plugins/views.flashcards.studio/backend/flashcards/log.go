@@ -163,9 +163,7 @@ func (u Log) Open(ctx context.Context, v domain.Vault, at time.Time) (*LogWriter
 type LogWriter struct {
 	store ports.DerivedStore
 	name  domain.ArtifactName
-	// stopped is the append that did not land. A run whose file refused one
 	// answer writes nothing further to it, and every answer after it is
-	// refused with what stopped the first.
 	stopped error
 }
 

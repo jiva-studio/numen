@@ -16,11 +16,6 @@ import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search'
 
-/**
- * What a command answers in: the window's own voice, the words a run over a
- * file is spoken about in, and the words the list of vaults reports in. Each is
- * written where it belongs, and a command is where they meet.
- */
 export const ANSWER_WORDS: AnswerWords = {
   ...WORDS,
   made: MADE,

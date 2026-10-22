@@ -31,7 +31,6 @@ func (c Config) MigratePluginSettings() error {
 	}
 	var file map[string]any
 	if err := json.Unmarshal(raw, &file); err != nil {
-		//nolint:nilerr // a file that is not JSON is refused where the settings are read
 		return nil
 	}
 

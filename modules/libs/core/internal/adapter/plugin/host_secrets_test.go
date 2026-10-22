@@ -203,7 +203,6 @@ func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
 }
 
 // A key typed into the settings file under a secret's name is not a key: it
-// reaches the plugin by none of the ways the host speaks to it.
 func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})

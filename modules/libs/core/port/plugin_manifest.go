@@ -32,7 +32,6 @@ const (
 	// RuntimeONNX names the ONNX Runtime library, which the host provisions for a plugin that declares it.
 	RuntimeONNX = "onnxruntime"
 
-	// PluginProtocolVersion is the newest plugin protocol this host speaks.
 	PluginProtocolVersion = 1
 )
 
@@ -102,7 +101,6 @@ var (
 const SettingStoredSecrets = "storedSecrets"
 
 // SettingAIConsent is the setting under which the host records whether the
-// person lets a plugin ask for model completions: true allowed, false refused,
 // absent not asked yet. The window writes it, and no manifest takes the name.
 const SettingAIConsent = "aiConsent"
 

@@ -76,7 +76,6 @@ func TestAFitThatFailsPreservesTheVectorIndexAsItWas(t *testing.T) {
 	}
 }
 
-// A width of no dimensions is refused, and the vector index keeps the one it
 // held.
 func TestAWidthOfNoDimensionsIsRefused(t *testing.T) {
 	db := openDB(t)

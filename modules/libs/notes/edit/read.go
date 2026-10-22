@@ -50,7 +50,6 @@ type Contents struct {
 	// for every outcome but Ok.
 	Body string
 	// Fingerprint is what the file was when it was asked about, which is before its bytes were read.
-	// It is set for any path the vault holds, whatever kind it holds it as, so a note refused on its
 	// size still says what it was.
 	Fingerprint domain.Fingerprint
 }

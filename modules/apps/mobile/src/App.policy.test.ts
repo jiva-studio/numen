@@ -103,7 +103,6 @@ describe('the policy the page carries', () => {
   })
 
   it('writes no directive a page may not give itself', () => {
-    // A policy in the document is refused these three, and saying them anyway
     // buys nothing but a warning in the log.
     for (const named of ['frame-ancestors', 'report-uri', 'sandbox']) {
       expect(policy).not.toHaveProperty(named)

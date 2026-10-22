@@ -1,6 +1,3 @@
-/**
- * What the reader of a book that reflows is told, before it draws anything.
- */
 import type { Span } from '@/shared/lib/span'
 import type { BookWords } from './words'
 

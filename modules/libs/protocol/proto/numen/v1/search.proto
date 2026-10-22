@@ -90,7 +90,6 @@ message SearchPassagesRequest {
   // How many passages to answer with. Zero takes the number the vault chooses.
   int32 limit = 2;
 
-  // How the search is asked. A request naming no mode is refused.
   SearchMode mode = 3;
 }
 

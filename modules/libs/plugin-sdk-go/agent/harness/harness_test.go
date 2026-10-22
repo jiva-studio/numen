@@ -38,7 +38,6 @@ type sentRequest struct {
 }
 
 // fakeChat is an OpenAI-compatible chat API that answers each request with the next reply it holds,
-// repeating the last, and keeps every request, refused ones too. A streaming request is answered
 // with the reply in pieces: its text word by word, and each tool call in three fragments. script,
 // where it is set, is the data of the events that answer the first request. refusesStream answers
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.

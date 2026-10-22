@@ -78,9 +78,7 @@ export const isTextForValue = (text: string, value: number | null): boolean =>
 /** What the field relies on while a person types, and what each act does with it. */
 export interface NumberEntry {
   readonly typed: Ref<string>
-  /** Whether what stands there is refused. */
   readonly isInvalid: ComputedRef<boolean>
-  /** What a refused line is said as, so it is read out and not only marked. */
   readonly speechText: ComputedRef<string | undefined>
   /** The text now in the field. */
   readonly setText: (text: string) => void

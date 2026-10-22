@@ -22,7 +22,6 @@ import (
 // be deleted and a person can always ask what the machine heard.
 //
 // A correction changes words. The proofreader is given line numbers and text,
-// and every cue keeps the moments it was spoken between.
 type Proofread struct {
 	readers port.VaultReaders
 	derived port.DerivedStores
@@ -48,7 +47,6 @@ type Proofread struct {
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about the lines.
 //
-// An installation that configured no proofreader is refused here.
 func NewProofread(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (Proofread, error) {
@@ -271,7 +269,6 @@ func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, re
 }
 
 // askWindow asks about one window, puts what came back into the cues, and saves
-// it. A proofreader that continues from where it began is refused.
 func (u Proofread) askWindow(
 	ctx context.Context,
 	p *transcriptProofreadJob,

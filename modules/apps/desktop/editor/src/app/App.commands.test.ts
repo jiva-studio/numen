@@ -463,10 +463,6 @@ describe('a command reached by its own keystroke', () => {
   })
 })
 
-/**
- * The keystrokes that hold Shift. The letter each holds is spoken for on its
- * own, so what the window does with it turns on Shift alone.
- */
 describe('a command reached by a keystroke holding Shift', () => {
   /** A keystroke taken on the window, and whether the window took it. */
   const pressKey = (key: string, over: Partial<KeyboardEventInit> = {}) => {

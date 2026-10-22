@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Tool is how one tool is spoken about to a person: what it is called, and
 // which of its arguments says what a call was about.
 //
 // Both are the tool's own declaration. A display name is the title it carries,

@@ -64,7 +64,6 @@ func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []b
 // getPath is the file one vault's schedules stand in.
 //
 // The identity is written into the name, and an identity carrying a separator
-// or a dot is refused.
 func (s *Schedules) getPath(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {

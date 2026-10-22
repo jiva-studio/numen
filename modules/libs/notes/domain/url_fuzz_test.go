@@ -35,7 +35,6 @@ func authority(address string) string {
 	return host
 }
 
-// An address read out of a note is either fetchable or refused, and what comes
 // back is fetchable and stays itself when it is read again.
 //
 // A link note is written by hand in a file somebody else's editor wrote, so what

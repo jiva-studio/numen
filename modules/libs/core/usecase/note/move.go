@@ -93,7 +93,6 @@ type MoveResult struct {
 	From string
 	To   string
 	// IsLanded is whether the file is at To. It is false for a move that was
-	// refused and for one that was not needed, and it stays true once the file
 	// is there however the rest of the work goes.
 	IsLanded bool
 	// Repaired is the notes whose link stopped resolving and was written

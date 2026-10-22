@@ -13,7 +13,6 @@ var ErrUnnameable = errors.New("a note cannot be given this title")
 // Filename refuses a title no note can be given, and answers for every other
 // with the name it is filed under and whether it survived the trip.
 //
-// Two titles are refused whatever the note: one that leaves no filename, and
 // one carrying a line break. The title comes in trimmed.
 func Filename(title string) (name string, exact bool, err error) {
 	switch name, exact = GetReducedFilename(title); {

@@ -88,7 +88,6 @@ func TestOffsetsAreIntoTheTextAsItExists(t *testing.T) {
 	}
 }
 
-// A run of spacing inside a line is read as one space, so prose reflowed by an
 // editor is still found.
 func TestARunOfSpacingInsideALineIsOneSpace(t *testing.T) {
 	at, plainly := FindSpans("the  foe\tadvances", "the foe advances")

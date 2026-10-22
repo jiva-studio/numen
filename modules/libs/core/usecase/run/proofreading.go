@@ -21,7 +21,6 @@ type ProofreadingConfig struct {
 	By func() (port.Proofreader, error)
 }
 
-// The faults a proofreading is refused with. A profile that has no proofreader
 // at all is a value the settings produce and not a caller's slip; the other two
 // are.
 var (

@@ -13,7 +13,6 @@ import (
 type TellEdit func(ctx context.Context, said domain.Edit)
 
 // beginChange names one change and says what it is about to do. What comes back
-// ends it, and ends it whether the change landed or was refused.
 //
 // The name is a ULID, so the change the writer is telling about is named on the
 // clock the write itself is stamped from.

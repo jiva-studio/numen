@@ -82,7 +82,6 @@ func (w writer) Create(ctx context.Context, path string, content []byte) error {
 	return readError(w.vault.Create(ctx, path, content))
 }
 
-// readError is the host's refusal as the use cases name it.
 func readError(err error) error {
 	switch {
 	case errors.Is(err, host.ErrOccupied):

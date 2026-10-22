@@ -32,7 +32,6 @@ type fileServer struct {
 //
 // The window is drawn from a scheme the toolkit registers, and a page fetched
 // through it reaches this application. A player does not: a browser loads sound
-// and video down a path of its own, which speaks the protocols of the world and
 // not the scheme of one application, and answers that it does not know the
 // format. A loopback address is a place it does reach.
 //
@@ -105,7 +104,6 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 // on while the person moves the window to another vault, and what it plays is
 // the file it opened.
 //
-// A path leaving the vault, and a file the vault leaves alone, are refused by
 // the vault's own reader. That is the boundary, and it is the same one every
 // other question crosses.
 func (l *Loopback) getHandler() http.Handler {
@@ -186,7 +184,6 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 		return
 	}
 	// A copy of what a url points at is kept in the vault's own folder,
-	// which the vault's reader is refused, so it is served from the store it
 	// was written to. Every other file of the vault is
 	// served as the file it is.
 	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, target, at, named) {

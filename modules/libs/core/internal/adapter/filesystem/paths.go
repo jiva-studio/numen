@@ -69,7 +69,6 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 // same measures.
 //
 // The two overlap nowhere, which is what lets one type write a derived file
-// where no writer of notes can reach, without making any note's refusal weaker.
 // That property is the subject of a test. A path whose spelling and whose
 // landing disagree is neither's, and both refuse it.
 func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
@@ -102,7 +101,6 @@ func isOurs(clean, serviceDir string) bool {
 }
 
 // cleanPath is a path a vault could hold, in the one form the rules are written
-// against. A path that could not name anything inside a vault is refused here
 // and never reaches the filesystem.
 func cleanPath(path string) (string, error) {
 	if path == "" {

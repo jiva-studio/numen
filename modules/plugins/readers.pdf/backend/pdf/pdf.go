@@ -13,7 +13,6 @@
 //
 // A page whose text layer says nothing is an ordinary page. A document that
 // says nothing at all is a scan, and it is read to an empty text rather than
-// refused: what to do about a scan is decided elsewhere. An error here means
 // the file is not a PDF.
 package pdf
 

@@ -29,7 +29,6 @@ type transcriptHandler struct {
 var errBeingHeard = errors.New("transcription already in progress")
 
 // ReadTranscript answers with the words of a file that carries times: each
-// stretch of speech against the milliseconds it was spoken in. A file nothing
 // has been heard for holds none, which is an answer.
 func (h *transcriptHandler) ReadTranscript(
 	ctx context.Context,
@@ -79,7 +78,6 @@ func (h *transcriptHandler) WriteTranscript(
 	case err != nil:
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	// A write that landed is not refused for a cut that could not be asked for.
 	if content.CutError != nil {
 		h.state.reportTask(run.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: content.CutError.Error()})
 	}
@@ -102,7 +100,6 @@ func newWireCues(cues []domain.TranscriptCue) []*v1.Cue {
 // the one before it ends. A cue whose words trim away is dropped, and its
 // timings still bound the cue after it.
 //
-// A transcript carrying no words at all is refused.
 func parseCues(cues []*v1.Cue) ([]domain.TranscriptCue, error) {
 	out := make([]domain.TranscriptCue, 0, len(cues))
 	last := domain.TranscriptCue{From: -1, To: -1}

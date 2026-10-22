@@ -56,7 +56,6 @@ func New(cfg Config) *Provisioner {
 // given; the first one this machine holds that opens (beside the plugin or the
 // host, in the folders shared libraries live in, in the package store, in the
 // folders the platform loader searches); and last the pinned release, fetched
-// into the models home. A GPU provider is refused for the pinned release, which
 // is the CPU build. A caller that arrives while another is provisioning waits
 // for it, against its own context. A failure is returned to the caller that met
 // it and the next call tries again.

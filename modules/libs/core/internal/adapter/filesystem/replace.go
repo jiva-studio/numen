@@ -118,7 +118,6 @@ func replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 // Flushing the file is what keeps its contents whole; flushing the folder is
 // what keeps the rename itself.
 //
-// Not every filesystem lets a directory be opened for this, and a refusal is
 // not an error to hand back: the note is written either way.
 func syncDirectory(root *os.Root, dir string) error {
 	folder, err := root.Open(dir)

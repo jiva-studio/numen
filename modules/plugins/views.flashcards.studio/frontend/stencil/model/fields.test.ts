@@ -1,8 +1,3 @@
-/**
- * What a stencil tab keeps between two readings of its body: the stencil and
- * the marks stay the same objects while what they read is the same, and every
- * gesture writes the stencil it makes back as the body.
- */
 import { describe, expect, it, vi } from 'vitest'
 import type { DeckProblem, VaultStencil } from '../../cards'
 import { serializeStencil, createBufferStencil } from '../lib/stencil'

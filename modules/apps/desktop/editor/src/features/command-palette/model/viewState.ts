@@ -24,7 +24,6 @@ export interface ViewState {
   readonly found: Readonly<Ref<readonly NameMatch[]>>
   readonly known: Readonly<Ref<readonly Vault[]>>
   readonly showing: Readonly<Ref<string>>
-  /** Whether the vault is being asked, and what it said when it refused. */
   readonly isWorking: Readonly<Ref<boolean>>
   readonly failureMessage: Readonly<Ref<string>>
   /** What a step is over, in the words a person reads it as. */

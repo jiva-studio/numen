@@ -43,7 +43,6 @@ type Metadata struct {
 	Length int
 	// Language is what the site says the video is in, as it names it. A video
 	// publishes words in every language somebody has translated it into, and
-	// this is the one it was spoken in.
 	Language string
 	// Captions are the languages a person published words in for it, and
 	// Automatic those a machine wrote, both as the site names them. They are

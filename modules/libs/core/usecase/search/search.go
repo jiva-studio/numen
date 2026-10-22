@@ -42,7 +42,6 @@ type Parameters struct {
 	// Each is how many passages one document may answer with. Zero is one, and
 	// a document names itself once.
 	//
-	// A reader who cannot turn the page needs the several places a book speaks
 	// about a thing, and a list a person runs their eye down needs one line per
 	// book.
 	Each int

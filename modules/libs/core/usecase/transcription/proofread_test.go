@@ -360,7 +360,6 @@ func TestASourceIsSplitAgainAsItsLinesAreInsertRight(t *testing.T) {
 	}
 }
 
-// Every call is given the whole transcript's spoken lines, numbered by their
 // cue, and the line to continue from.
 func TestEveryCallIsGivenTheWholeTranscriptAndTheLineToContinueFrom(t *testing.T) {
 	words := []string{"first thing", "secnd thing", "third thing", "forth thing"}

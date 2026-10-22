@@ -139,7 +139,6 @@ func fingerprintOf(ref domain.Fingerprint) string {
 }
 
 // parseFingerprint is the fingerprint a caller presents. A tool that changes what somebody may have
-// read since takes one, and a call carrying none is refused.
 func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
 		return domain.Fingerprint{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_stencil_read for a stencil")

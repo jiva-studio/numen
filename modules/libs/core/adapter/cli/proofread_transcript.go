@@ -14,7 +14,6 @@ import (
 
 // proofreadTranscriptCommand puts one recording's transcript right with a model.
 //
-// The words are corrected and the moments they were spoken at are left where
 // they are. A transcript a person edited is theirs, and is left as they left it.
 func proofreadTranscriptCommand(
 	ctx context.Context,

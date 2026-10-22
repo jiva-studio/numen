@@ -223,7 +223,6 @@ func (h *artifactHandler) getVideoCopy(
 
 // fetchCopy fetches a copy of what is at an address and answers with what stands
 // once it has. A copy over the size the settings name is not fetched, and the
-// size it was refused at is said.
 func (h *artifactHandler) fetchCopy(
 	ctx context.Context, v domain.Vault, ref domain.Fingerprint, at domain.URL,
 ) (*v1.Artifact, error) {
@@ -742,7 +741,6 @@ func (f *artifactFiles) recording(
 // on to do is done to that vault.
 //
 // Everything from outside reaches the vault through a reader, so a path leaving
-// it is refused there.
 func (f *artifactFiles) getShownFile(ctx context.Context, path string) (domain.Vault, domain.Fingerprint, error) {
 	showing := f.state.GetCurrentVault()
 	if showing.ID == "" || f.getFingerprint == nil {

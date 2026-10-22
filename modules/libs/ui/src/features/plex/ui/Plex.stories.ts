@@ -1321,7 +1321,6 @@ export const HeadingsInside: Story = {
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)
 
-    // Said in lines, which is one heading the line. A hand on a trackpad speaks
     // in pixels and scrolls when they come to a heading's height.
     const wheel = (deltaY: number) =>
       many

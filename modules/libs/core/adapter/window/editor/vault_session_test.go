@@ -572,7 +572,6 @@ func TestASwapAndACloseAskedForAtOnceDoNotCancelEachOther(t *testing.T) {
 // TestARunReachesTheVaultTheWindowIsShowing. The passes behind a vault are
 // taken down and built again while requests are being served, so a handler that
 // reads one reads it where the swap publishes it. A request that arrives in the
-// middle is answered by a vault or refused, and never by a pass that stopped.
 func TestARunReachesTheVaultTheWindowIsShowing(t *testing.T) {
 	f := openTwoVaults(t)
 

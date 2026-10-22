@@ -52,7 +52,6 @@ type Proofread struct {
 // read out of, the store the recognition and its corrections are kept in, and the
 // proofreader that answers about a page.
 //
-// An installation that configured no proofreader is refused here.
 func NewProofread(
 	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
 ) (Proofread, error) {

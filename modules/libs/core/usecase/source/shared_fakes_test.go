@@ -227,7 +227,6 @@ func textNames(t *testing.T, shelved *fakeStorage) names {
 
 const recordingPath = "library/talk.mp3"
 
-// newRecording is the bytes of the file the words were spoken into. Nothing
 // here reads them: what the recording says comes from the model, and the model
 // is a fake.
 func newRecording(words []string) []byte {

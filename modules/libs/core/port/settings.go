@@ -114,10 +114,8 @@ const (
 	// has not asked since the host started.
 	ConsentUnanswered
 	// ConsentAsked is a plugin that has asked since the host started, was
-	// refused for want of an answer, and the person has not answered for.
 	ConsentAsked
 	// ConsentAllowed is a plugin the person lets ask.
 	ConsentAllowed
-	// ConsentRefused is a plugin the person refused.
 	ConsentRefused
 )

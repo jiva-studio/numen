@@ -469,7 +469,6 @@ func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	}
 }
 
-// A name that leaves the store is refused here as it is everywhere else.
 func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 	derived, _ := store(t)
 	if _, err := derived.List(t.Context(), "ocr/../.."); err == nil {
@@ -533,7 +532,6 @@ func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	}
 }
 
-// The areas of a store are each one folder, and one that is not is refused with
 // the rest of it.
 func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 	root := t.TempDir()

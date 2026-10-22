@@ -13,7 +13,6 @@ import (
 //
 // A note is prose somebody wrote, and a megabyte of it is a quarter of a million words. Something
 // larger is a pasted export or a mistake. The size is asked of the file before it is opened, so a
-// note over the bound is refused without its bytes being read.
 const MaxBytes = 1 << 20
 
 var (

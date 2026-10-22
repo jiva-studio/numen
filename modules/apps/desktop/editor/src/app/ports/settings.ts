@@ -25,22 +25,9 @@ export interface SettingsPort {
   setNestingSettings(isNesting: boolean, headings?: number): Promise<string | null>
   /** Every setting currently, and the models the settings offer. */
   getSettings(): Promise<Configuration>
-  /**
-   * Settings written into the settings file, together or not at all. A value
-   * the settings could not be read out of again is refused, and what the file
-   * holds is unchanged.
-   */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
   /** The settings file as its person wrote it, and at its current position. */
   getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
-  /**
-   * The settings file replaced whole, with the bytes as they were typed. A file
-   * the settings could not be read out of is refused, and what the file holds
-   * is unchanged.
-   *
-   * Expected version is the file as it was last read, and a file standing at anything else
-   * is answered `changed` with nothing written.
-   */
   saveSettingsFile(
     content: string,
     expectedVersion: string | null,

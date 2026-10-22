@@ -10,7 +10,6 @@ export const DEFAULT_HEADINGS = 6
 export interface NestingSettings {
   readonly isNesting: boolean
   readonly headings: number
-  /** How many the vault takes, at each end. A count outside them is refused. */
   readonly least: number
   readonly most: number
 }

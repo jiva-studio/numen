@@ -96,7 +96,6 @@ func New() *Registry {
 
 // Add adds the tool run answers for. The schemas of the arguments and of the result are derived
 // from In and Out; an Out that is not a struct is answered as text. A run that returns an error is
-// a tool that ran and refused, and an agent reads the error.
 func Add[In, Out any](r *Registry, spec Spec, run func(ctx context.Context, in In) (Out, error)) error {
 	input, err := schemaOf(reflect.TypeFor[In]())
 	if err != nil {

@@ -80,12 +80,6 @@ export type Span = Message<"numen.v1.Span"> & {
 export const SpanSchema: GenMessage<Span> = /*@__PURE__*/
   messageDesc(file_numen_v1_shared, 1);
 
-/**
- * Bounds is how far a size goes, at each end. A number outside them is
- * refused.
- *
- * @generated from message numen.v1.Bounds
- */
 export type Bounds = Message<"numen.v1.Bounds"> & {
   /**
    * @generated from field: double least = 1;

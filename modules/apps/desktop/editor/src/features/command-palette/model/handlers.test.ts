@@ -86,7 +86,6 @@ const window = (
     chose?: string
     /** What the list of vaults answered adding or renaming one. */
     added?: VaultResult
-    /** What the list of vaults refused forgetting, erasing or opening one. */
     turnedDown?: VaultErrorCode
     /** What moving a file came back with. */
     movement?: Movement

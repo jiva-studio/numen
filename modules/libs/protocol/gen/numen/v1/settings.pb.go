@@ -136,7 +136,6 @@ type GetSettingsResponse struct {
 	// The models the settings that name one can be set to.
 	Models []*Model `protobuf:"bytes,3,rep,name=models,proto3" json:"models,omitempty"`
 	// How many headings may nest under a note, at each end. A number outside
-	// it is refused. A client asking a person for one says these.
 	NestedHeadingLimitBounds *Bounds `protobuf:"bytes,4,opt,name=nested_heading_limit_bounds,json=nestedHeadingLimitBounds,proto3" json:"nested_heading_limit_bounds,omitempty"`
 	// Active plugins and their declarative settings schema.
 	Plugins       []*PluginInfo `protobuf:"bytes,7,rep,name=plugins,proto3" json:"plugins,omitempty"`
@@ -335,7 +334,6 @@ type Setting struct {
 	// The setting, as a path through the file.
 	At []string `protobuf:"bytes,1,rep,name=at,proto3" json:"at,omitempty"`
 	// What to write there, as JSON. A value the settings cannot be read out of
-	// again is refused, and the file is left as it was.
 	Value         string `protobuf:"bytes,2,opt,name=value,proto3" json:"value,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

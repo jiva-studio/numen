@@ -182,12 +182,6 @@ export const ReadThemeResponseSchema: GenMessage<ReadThemeResponse> = /*@__PURE_
  * @generated from message numen.v1.WriteAppearanceRequest
  */
 export type WriteAppearanceRequest = Message<"numen.v1.WriteAppearanceRequest"> & {
-  /**
-   * The theme to apply, by its name. A name matching no theme is refused and
-   * the settings are left as they are.
-   *
-   * @generated from field: string name = 1;
-   */
   name: string;
 
   /**
@@ -373,14 +367,6 @@ export const ThemeService: GenService<{
     input: typeof ReadThemeRequestSchema;
     output: typeof ReadThemeResponseSchema;
   },
-  /**
-   * WriteAppearance writes the theme, the mode and the two sizes into the
-   * settings. The file is patched as an object, so every key a person typed
-   * stays where it was. A size outside its bounds is refused and the settings
-   * are left as they are.
-   *
-   * @generated from rpc numen.v1.ThemeService.WriteAppearance
-   */
   writeAppearance: {
     methodKind: "unary";
     input: typeof WriteAppearanceRequestSchema;

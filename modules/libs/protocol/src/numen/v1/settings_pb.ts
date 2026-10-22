@@ -65,12 +65,6 @@ export type GetSettingsResponse = Message<"numen.v1.GetSettingsResponse"> & {
    */
   models: Model[];
 
-  /**
-   * How many headings may nest under a note, at each end. A number outside
-   * it is refused. A client asking a person for one says these.
-   *
-   * @generated from field: numen.v1.Bounds nested_heading_limit_bounds = 4;
-   */
   nestedHeadingLimitBounds?: Bounds | undefined;
 
   /**
@@ -179,12 +173,6 @@ export type Setting = Message<"numen.v1.Setting"> & {
    */
   at: string[];
 
-  /**
-   * What to write there, as JSON. A value the settings cannot be read out of
-   * again is refused, and the file is left as it was.
-   *
-   * @generated from field: string value = 2;
-   */
   value: string;
 };
 
@@ -520,15 +508,6 @@ export const SettingsService: GenService<{
     input: typeof ReadSettingsFileRequestSchema;
     output: typeof ReadSettingsFileResponseSchema;
   },
-  /**
-   * WriteSettingsFile replaces that file whole, with the bytes as they were
-   * typed. A file the settings cannot be read out of is refused and the file is
-   * left as it was; what is said names where in the file the trouble is. A file
-   * standing at anything other than what the caller presents is left alone and
-   * refused `stale`.
-   *
-   * @generated from rpc numen.v1.SettingsService.WriteSettingsFile
-   */
   writeSettingsFile: {
     methodKind: "unary";
     input: typeof WriteSettingsFileRequestSchema;

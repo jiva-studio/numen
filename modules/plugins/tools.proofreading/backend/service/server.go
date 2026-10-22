@@ -132,7 +132,6 @@ func (s *proofreadingServer) ProofreadText(
 }
 
 // proofread runs a request under the kind it names. A kind with no options of
-// its own, and options of the other kind, are refused.
 func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.ProofreadTextRequest) (textResult, error) {
 	groups := readGroups(msg.GetGroups())
 	var (

@@ -41,7 +41,6 @@ func readStated(t *testing.T, reader statedReader) (note.Contents, error) {
 
 const ceiling = 1048576
 
-// A note of exactly the ceiling is read, and one byte more is refused.
 func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	t.Parallel()
 	body := []byte("# Entropy\n")

@@ -27,7 +27,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// CompletionErrorCode is why a served completion call was refused. The zero
 // value means it was not.
 type CompletionErrorCode int32
 
@@ -39,7 +38,6 @@ const (
 	// The program the question is routed to cannot be reached or stopped without
 	// an answer.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_UNAVAILABLE CompletionErrorCode = 2
-	// The person has not let the calling plugin ask a model, or has refused it.
 	// The window asks the person, and a plugin shows this as the reason nothing
 	// was answered.
 	CompletionErrorCode_COMPLETION_ERROR_CODE_NO_CONSENT CompletionErrorCode = 3
@@ -135,9 +133,7 @@ func (x *HostServiceCompleteRequest) GetQuestion() *CompletionQuestion {
 type HostServiceCompleteResponse struct {
 	state  protoimpl.MessageState `protogen:"open.v1"`
 	Answer *CompletionAnswer      `protobuf:"bytes,1,opt,name=answer,proto3" json:"answer,omitempty"`
-	// Set when the call was served and refused. The answer is then unset.
 	Error CompletionErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.CompletionErrorCode" json:"error,omitempty"`
-	// Why the call was refused, as the host states it. Empty where the host has nothing to add.
 	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

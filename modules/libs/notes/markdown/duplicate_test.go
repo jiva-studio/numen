@@ -8,7 +8,6 @@ import (
 )
 
 // A key written twice names two values, and reading the note gives one of them.
-// Opening such a note for changing is refused, which is the answer reading it
 // already gives.
 func TestFrontmatterWithAKeySavedTwiceIsUnreadable(t *testing.T) {
 	raw := "---\ntitle: One\nid: 01J8\ntitle: Two\n---\nbody\n"

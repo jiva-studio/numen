@@ -273,7 +273,6 @@ type SearchPassagesRequest struct {
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
 	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	// How the search is asked. A request naming no mode is refused.
 	Mode          SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

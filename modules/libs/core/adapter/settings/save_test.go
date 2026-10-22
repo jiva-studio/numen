@@ -403,7 +403,6 @@ func TestAnUntouchedInstallationIsSavedThroughTheLink(t *testing.T) {
 	}
 }
 
-// A number a setting does not take is refused where it is handed in. One the
 // file already held is the person's to put right, and every other setting stays
 // reachable while they do.
 func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
@@ -455,7 +454,6 @@ func TestASectionHandedInIsCheckedAtTheNumbersItContains(t *testing.T) {
 }
 
 // A name written twice is read from the last of the two and patched at the
-// first. One section holds one of a name, and a file holding two is refused.
 func TestASectionContainsOneOfAName(t *testing.T) {
 	for what, body := range map[string]string{
 		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,

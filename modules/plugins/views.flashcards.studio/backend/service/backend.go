@@ -143,7 +143,6 @@ func (b *Backend) build(dayStart func() time.Duration) *Scenarios {
 }
 
 // getCurrentVault is the vault a question is answered over. A host showing none has no vault to
-// reach into, and every question that would is refused.
 func (b *Backend) getCurrentVault(ctx context.Context) (domain.Vault, error) {
 	v, err := b.vault.GetVault(ctx)
 	if errors.Is(err, host.ErrNoVault) {

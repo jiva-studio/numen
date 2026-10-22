@@ -20,14 +20,6 @@ export interface Chord {
   readonly hasShift: boolean
 }
 
-/**
- * Every keystroke that carries a command out.
- *
- * A command earns one by being reached often and by leaving nothing behind to
- * undo. Nothing that removes a note, a vault or a file is ever one keystroke
- * away. A letter means one word wherever it is written, and Shift is held where
- * the letter on its own is spoken for.
- */
 export const CHORDS: readonly Chord[] = [
   { command: 'note', letter: 'n', hasShift: false },
   { command: 'newVault', letter: 'n', hasShift: true },

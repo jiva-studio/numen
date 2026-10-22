@@ -29,7 +29,6 @@ type CopyResult struct {
 	At string
 }
 
-// IsTooLarge is a copy the limit refused. Nothing was downloaded.
 func (r CopyResult) IsTooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
 
 // Copy downloads what is at a url's address so a person plays it from this disk.

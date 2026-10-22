@@ -284,7 +284,6 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 	}
 }
 
-// A task naming no program, or one nobody runs, is refused.
 func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()

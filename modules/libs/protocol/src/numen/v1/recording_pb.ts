@@ -49,15 +49,6 @@ export type GetRecordingResponse = Message<"numen.v1.GetRecordingResponse"> & {
    */
   durationMs: number;
 
-  /**
-   * Where it is played from, and what it is played as. A media element speaks
-   * the protocols of the world and not the scheme a window is served under, so
-   * the bytes are answered at an address of their own; a url with no copy on
-   * this disk is answered with the page that frames it, typed `text/html`.
-   * Empty where this build serves nothing.
-   *
-   * @generated from field: string media_url = 2;
-   */
   mediaUrl: string;
 
   /**

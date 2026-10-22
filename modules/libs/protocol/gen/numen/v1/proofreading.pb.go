@@ -26,7 +26,6 @@ const (
 type ProofreadKind int32
 
 const (
-	// No kind is named. A request of this kind is refused.
 	ProofreadKind_PROOFREAD_KIND_UNSPECIFIED ProofreadKind = 0
 	// Text a machine read off the pages of a printed book.
 	ProofreadKind_PROOFREAD_KIND_SCAN ProofreadKind = 1
@@ -308,7 +307,6 @@ type ProofreadTextRequest struct {
 	Kind   ProofreadKind          `protobuf:"varint,1,opt,name=kind,proto3,enum=numen.v1.ProofreadKind" json:"kind,omitempty"`
 	Groups []*ProofreadGroup      `protobuf:"bytes,2,rep,name=groups,proto3" json:"groups,omitempty"`
 	// The settings of the kind named. A request whose options are of the other
-	// kind, or are absent, is refused.
 	//
 	// Types that are valid to be assigned to Options:
 	//

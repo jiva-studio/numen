@@ -91,7 +91,6 @@ func (h *settingsHandler) ReadSettingsFile(
 // read out of is the client's to correct, and the file is left as it was.
 //
 // The client presents the file it last read. A file holding bytes it has not
-// read is left alone and refused `stale`: the person chooses what happens to
 // their text.
 func (h *settingsHandler) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],

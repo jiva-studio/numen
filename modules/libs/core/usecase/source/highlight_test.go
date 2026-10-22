@@ -274,7 +274,6 @@ func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
 	}
 }
 
-// A path the vault does not hold is refused, and so is one leaving it. Nothing
 // is read and nothing is lit.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	u, index, _, _, shelved := newHighlight(t, tiny)

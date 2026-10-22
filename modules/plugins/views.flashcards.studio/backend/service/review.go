@@ -251,7 +251,6 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.Vaul
 // StartSession opens a session and hands over what to ask, in order.
 //
 // A session is opened over one deck, over one preset, or over the whole vault.
-// A refused session opens no run: the file a vault's answers go to is written
 // when there is something to answer.
 func (a *reviewHandler) StartSession(
 	ctx context.Context, r *connect.Request[v1.StartSessionRequest],

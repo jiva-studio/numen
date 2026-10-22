@@ -31,7 +31,6 @@ func (f *chatFailure) Error() string { return f.err.Error() }
 func (f *chatFailure) Unwrap() error { return f.err }
 
 // run is one task worked by the model: the chat API, the tools, and where its steps go. isPlain
-// holds once the chat API has refused to stream, and the run's later requests do not stream.
 type run struct {
 	chat    chat
 	model   string

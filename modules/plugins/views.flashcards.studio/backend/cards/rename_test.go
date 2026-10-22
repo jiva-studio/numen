@@ -235,7 +235,6 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 	}
 }
 
-// The stencil leads. A rename the stencil refused reaches no deck.
 func TestARenameTheStencilRefusedReachesNoDeck(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")

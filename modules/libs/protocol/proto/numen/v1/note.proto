@@ -32,7 +32,6 @@ service NoteService {
   // no headings.
   //
   // A path named twice is answered once, and a filter naming more notes than
-  // the vault answers at once is refused, so that an answer is never cut to
   // fit.
   rpc ListHeadings(ListHeadingsRequest) returns (ListHeadingsResponse);
 
@@ -41,7 +40,6 @@ service NoteService {
 
   // WriteNote puts prose into a note, keeping the frontmatter the file has when
   // the write lands and creating the file where there is none. A note that no
-  // longer holds the prose the caller read is left alone and refused
   // `stale`.
   rpc WriteNote(WriteNoteRequest) returns (WriteNoteResponse);
 
@@ -177,7 +175,6 @@ message ResolvedAddress {
 
 message ListHeadingsRequest {
   // Only the notes filed under these paths. A filter naming none passes none,
-  // and one naming more notes than the vault answers at once is refused.
   repeated string paths = 1;
 }
 
@@ -212,13 +209,11 @@ message ReadNoteRequest {
 
 message ReadNoteResponse {
   // The prose below the frontmatter, with line endings as LF. Empty when the
-  // note is refused.
   string body = 1;
 
   // Set when the note was not read, and why.
   optional ErrorCode error = 2;
 
-  // The file this prose came out of. Absent when the note was refused.
   optional Fingerprint at = 3;
 }
 
@@ -379,7 +374,6 @@ message RenameNoteRequest {
 
 message RenameNoteResponse {
   // Where the note is filed. Empty when the note was never opened. The note is
-  // brought into line before the file is, so a refused move answers with the
   // path the note still has.
   string path = 1;
 
@@ -418,6 +412,5 @@ message WatchEditsResponse {
   // What is going in where that span stands.
   string text = 4;
   // The last report of this change, which arrives whether the change landed or
-  // was refused.
   bool is_final = 5;
 }

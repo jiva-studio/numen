@@ -35,7 +35,6 @@ func TestAVaultIsWalkedOnceHoweverManyAsk(t *testing.T) {
 	}
 }
 
-// A walk asked for once the window has begun closing is refused, so none begins
 // after the index has been waited for.
 func TestClosingWindowReadsNothing(t *testing.T) {
 	vaults, target := makeOpenVaults(t)
@@ -47,7 +46,6 @@ func TestClosingWindowReadsNothing(t *testing.T) {
 	}
 }
 
-// A levelling asked for once the window has begun closing is refused, so none
 // begins writing to the index after it has been waited for. The prose is on
 // disk either way, and the window says the note is written and unlevelled.
 func TestClosingWindowUpdatesNothing(t *testing.T) {

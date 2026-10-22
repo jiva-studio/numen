@@ -10,7 +10,6 @@ import (
 )
 
 // An answer belongs to one card through one face. A line naming neither stands
-// for nothing a schedule could be worked out from, so it is refused before it
 // is written and not left in the log for every later reading to skip.
 func TestAnAnswerReturnsWhichCardAndThroughWhichFace(t *testing.T) {
 	t.Parallel()

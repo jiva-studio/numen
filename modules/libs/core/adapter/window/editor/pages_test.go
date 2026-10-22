@@ -95,7 +95,6 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 // A build that opened no socket plays from nowhere, so it widens nothing. A
 // theme is an ordinary stylesheet a person may have downloaded, and the policy
 // is the whole of what stops one reaching the network: a remote `url()` is
-// refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	target := csp.Sources{

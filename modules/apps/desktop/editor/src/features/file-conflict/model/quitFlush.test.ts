@@ -41,7 +41,6 @@ function createMockStream() {
   }
 }
 
-/** A mock core whose reads and writes a test drives, and whose quit it speaks for. */
 function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
   const writtenFiles: { path: string; body: string }[] = []

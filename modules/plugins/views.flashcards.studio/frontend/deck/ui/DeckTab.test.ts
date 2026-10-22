@@ -73,7 +73,6 @@ const mountDeck = async (
     by?: string
     /** What is said against what the deck names. */
     saying?: string
-    /** What putting the deck on a preset is refused for. */
     notScheduled?: ErrorCode
   } = {},
 ) => {

@@ -48,7 +48,6 @@ func NewImport(writers port.VaultWriters, files port.ImportedFiles) Import {
 // Execute brings each handle into the folder, under the name it already
 // carries. A folder arrives with everything under it.
 //
-// One file refused leaves the rest to arrive: a drop of twenty pictures is
 // nineteen pictures and a sentence. A name the folder already carries is one of
 // those errors: what a person meant by a second file of that name is theirs to
 // say.
@@ -107,7 +106,6 @@ func (u Import) bring(
 }
 
 // importFolder makes the folder at a path in the vault and brings each entry of
-// the folder at from into it. An entry refused is an error of the result and
 // leaves the rest to arrive.
 func (u Import) importFolder(
 	ctx context.Context,

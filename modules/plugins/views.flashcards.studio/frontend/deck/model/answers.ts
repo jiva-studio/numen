@@ -1,8 +1,3 @@
-/**
- * What the vault last said about each deck file the window holds: what is
- * wrong with it, what a read or a write was refused for, and what it is called.
- *
- */
 import type { ErrorCode } from '@numen/wire'
 import { type DeckProblem, WORDS as words } from '../../cards'
 import { getFileName } from '@numen/plugin-sdk'

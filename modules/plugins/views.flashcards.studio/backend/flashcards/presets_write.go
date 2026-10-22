@@ -49,8 +49,6 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // block that carries `type: preset`.
 //
 // An empty preset takes that entry out, and the deck is scheduled by the
-// defaults. A path naming a note that is not a preset is refused ErrNotAPreset,
-// and a path the vault holds no note at is refused note.ErrNoNote.
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A deck
 // that has changed since it was read is left alone and port.ErrStale comes

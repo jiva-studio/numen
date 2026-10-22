@@ -14,7 +14,6 @@ type Current struct {
 }
 
 // Get reads every setting, the models a setting can name, and the limits the
-// settings are refused outside.
 type Get struct {
 	read                     func() (written, path string, err error)
 	models                   func() []Model

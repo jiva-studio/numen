@@ -36,7 +36,6 @@ type Setting struct {
 //
 // A file the settings could not be read out of again is not written either: a
 // value of the wrong shape, and a number past what its setting goes to, are
-// refused where they are handed in.
 // into says what shape the whole file takes, so a value written into any
 // section of it is read back before it lands.
 func Save(path string, into Document, settings ...Setting) error {
@@ -84,7 +83,6 @@ func checkSettings(raw []byte, into Document) error {
 // setting begins at.
 //
 // A value outside its setting that the file already held is one the person
-// typed and one they can still reach: what is refused is what was handed in.
 func writeSettings(raw []byte, wrote []Setting, into Document) error {
 	if err := json.Unmarshal(raw, into); err != nil {
 		return err

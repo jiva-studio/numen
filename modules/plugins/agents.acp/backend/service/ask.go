@@ -16,7 +16,6 @@ import (
 const reasonDone = "done"
 
 var (
-	// errNoTools is why a task naming tools is refused: the client opens sessions with no MCP server.
 	errNoTools           = errors.New("this agent answers single questions and runs no tools")
 	errAgentNotInstalled = errors.New("the ACP agent is not installed")
 )
@@ -39,7 +38,6 @@ func (s *agentServer) answer(ctx context.Context, agent acpAgent, modelID, level
 }
 
 // AskAgent answers a task that names no tool with the ACP agent the task names, in a session of its
-// own with no MCP servers, no file system or terminal and every permission refused. A task naming a
 // tool is stopped.
 func (s *agentServer) AskAgent(
 	ctx context.Context,

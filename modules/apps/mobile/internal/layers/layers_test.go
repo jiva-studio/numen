@@ -96,7 +96,6 @@ func TestNoApplicationLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {

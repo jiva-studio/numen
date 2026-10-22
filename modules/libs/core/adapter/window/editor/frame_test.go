@@ -76,7 +76,6 @@ func TestThePageContainingAPlayerIsHeldToItsOwnPolicy(t *testing.T) {
 	}
 }
 
-// An address nothing plays is refused. The route serves a player, and is not a
 // way to ask this socket for a page of somebody else's.
 func TestAnEmbedAddressNothingPlays(t *testing.T) {
 	back, handler := openLoopback(t, newBareServices())

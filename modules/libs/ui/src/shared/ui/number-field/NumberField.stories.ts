@@ -179,10 +179,6 @@ export const TheEndsAreOneKeyAway: Story = {
   },
 }
 
-/**
- * A line that is no number is read out currently, so what is refused is said
- * and not only marked.
- */
 export const ARefusedLineIsReadOut: Story = {
   args: { value: null },
   play: async ({ canvasElement }) => {

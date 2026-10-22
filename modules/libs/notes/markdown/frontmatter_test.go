@@ -218,7 +218,6 @@ func TestAnEntryCarryingSomebodyElsesKeyIsRefused(t *testing.T) {
 	}
 }
 
-// A refusal is the whole change rejected. Two entries go to the same place, the
 // application owns the second and not the first, and the note comes out of the
 // call as every byte it went in.
 func TestARefusedUpdateWritesNoEntryAtAll(t *testing.T) {

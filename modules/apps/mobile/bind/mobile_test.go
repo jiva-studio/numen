@@ -107,13 +107,11 @@ func TestStartAnswers(t *testing.T) {
 // The three services this mounts read and write the person's notes, and the
 // socket they stand on is one every process on the phone reaches. So the one
 // origin it answers is the page the platform serves: a page in the person's own
-// browser asks the same address and is refused by the browser before the ask
 // leaves it.
 // page is the one origin, spelled out here and read from nothing under test.
 const page = "http://localhost"
 
 // The origin is settled in the platform's own configuration and named here in
-// Go, and a scheme changed in one is a page refused by the other with nothing
 // said. The two are read against each other.
 func TestThePageIsServedFromTheOriginTheCoreAnswers(t *testing.T) {
 	target, err := os.ReadFile(filepath.Join("..", "capacitor.config.ts"))

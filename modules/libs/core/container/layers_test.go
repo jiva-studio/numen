@@ -409,7 +409,6 @@ func TestNoInnerLayerImportsATransport(t *testing.T) {
 	}
 }
 
-// What the transport rule refuses, read against imports written to be refused.
 func TestWhatTheTransportRuleRefuses(t *testing.T) {
 	var rejected []string
 	for _, to := range []string{
@@ -498,7 +497,6 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
@@ -691,7 +689,6 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a declaration written to be refused. It
 // has to find the field and the type it is spelled in, and let through the ones
 // that are the core's own word and the ones that name no identity at all.
 func TestWhatTheIdentityRuleRefuses(t *testing.T) {
@@ -751,7 +748,6 @@ func getClaimedPorts(file *ast.File) []string {
 	return target
 }
 
-// What the rule refuses, read against a file written to be refused. The three
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
 func TestWhatThePortClaimRefuses(t *testing.T) {
@@ -1345,8 +1341,6 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 	}
 }
 
-// What refused answers is the whole of the rule, so it is asked directly. Each
-// refusal here is an edge that was walked around once: an adapter the compiler
 // holds took the name of one it does not and was given that name's baseline
 // entry, and a package holding what is true of a note reached one that holds
 // work.
@@ -1497,7 +1491,6 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a declaration written to be refused. It
 // finds the field and the type it is written in, and lets through the one that
 // is a time and the ones that name no instant at all.
 func TestWhatTheInstantRuleRefuses(t *testing.T) {
@@ -1603,7 +1596,6 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against an interface written to be refused. It
 // reaches a parameter and a result alike, lets through the one that is the
 // core's own word, and reads nothing into a parameter with no name.
 func TestWhatTheIdentityRuleRefusesInASignature(t *testing.T) {
@@ -1631,7 +1623,6 @@ type Store interface {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds
 // the clock read and each timer armed, and lets through the arithmetic over an
 // instant and the constructors that read no clock.
 func TestWhatTheClockRuleRefuses(t *testing.T) {

@@ -28,7 +28,6 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
   }>
-  /** Settings written. A value the settings cannot hold is refused. */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
 
@@ -93,11 +92,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const getModelsAt = (path: readonly string[]): readonly Model[] =>
     models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
 
-  /**
-   * Settings written into the file, together or not at all. A write that was
-   * refused is said, and the window reads the file again either way, so what is
-   * last written to it, and a read that answers late does not move it.
-   */
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
     if (edits.length === 0) return
     say('')

@@ -75,7 +75,6 @@ type PluginToolResult struct {
 	Text string
 	// Structured is the result as JSON. Empty where the tool listed no output schema.
 	Structured []byte
-	// IsRefusal is a tool that ran and refused, and Text says why.
 	IsRefusal bool
 }
 

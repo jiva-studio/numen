@@ -624,7 +624,6 @@ func TestRenamingAFieldIsRefusedWhereTheVaultContainsTooManyDecks(t *testing.T) 
 		}
 	}
 
-	// Refused before anything was written: the stencil still declares the name
 	// it had, and so does the deck cut by it.
 	if content := readVaultFile(t, v, "Animal.md"); !strings.Contains(content, "- Height") {
 		t.Errorf("the stencil was written: %q", content)

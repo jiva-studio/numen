@@ -23,7 +23,6 @@ func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	s := openVault(t, handwritten)
 
 	// The deck cannot be replaced. What a person meets is the editor holding
-	// the file; this is the same refusal from the same place.
 	s.env.Host.RefuseWriting("decks/Own.md", fs.ErrPermission)
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)
@@ -64,7 +63,6 @@ func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 }
 
 // A vault whose decks are all written has nothing to report, which is what says
-// the naming above is the refusal and not the ordinary case.
 func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)

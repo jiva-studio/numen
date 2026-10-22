@@ -110,7 +110,6 @@ func (u Write) Execute(
 		// a person watching sees is the change and not the note.
 		was := markdown.Normalise(doc.Body())
 		at, insert := markdown.Diff(was, markdown.Normalise(body))
-		// Told after the write is settled: a refusal is not a stretch anybody
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
 			return err

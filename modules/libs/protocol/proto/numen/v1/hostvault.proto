@@ -113,7 +113,6 @@ service HostVaultService {
   rpc WatchVault(WatchVaultRequest) returns (stream WatchVaultResponse);
 }
 
-// HostVaultErrorCode is why a call was served and refused. The zero value
 // means it was not.
 enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;

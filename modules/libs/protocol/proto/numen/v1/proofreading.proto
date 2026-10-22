@@ -16,7 +16,6 @@ service ProofreadingService {
 // ProofreadKind is what is being proofread. The proofreader chooses its own
 // instructions, batching and reply rules from it.
 enum ProofreadKind {
-  // No kind is named. A request of this kind is refused.
   PROOFREAD_KIND_UNSPECIFIED = 0;
   // Text a machine read off the pages of a printed book.
   PROOFREAD_KIND_SCAN = 1;
@@ -62,7 +61,6 @@ message ProofreadTextRequest {
   repeated ProofreadGroup groups = 2;
 
   // The settings of the kind named. A request whose options are of the other
-  // kind, or are absent, is refused.
   oneof options {
     ProofreadScanOptions scan = 3;
     ProofreadSpeechOptions speech = 4;

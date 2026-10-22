@@ -25,7 +25,6 @@ const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
 // A plugin is an element of its own. A plugin reaches the host and another
-// plugin through no policy, so both directions are refused wherever a plugin
 // file is linted; the host reaches a plugin through the policy below.
 const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
 

@@ -49,7 +49,6 @@ type Book struct {
 	// Tier names the tier that produced Parts.
 	Tier Structure
 
-	// Layout is whether the book's documents can be reflowed.
 	Layout Layout
 
 	// Direction is the direction the book's pages progress in, and empty for a
@@ -77,14 +76,12 @@ type Document struct {
 	// order: a note, an appendix, the back of a plate. Its text is in Text all
 	// the same.
 	IsLinear bool
-	// Layout is whether this document can be reflowed.
 	Layout Layout
 
 	// mediaType is what the manifest calls the document.
 	mediaType string
 }
 
-// A Layout is whether a document can be reflowed or is a page laid out once and
 // drawn currently.
 type Layout string
 

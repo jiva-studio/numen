@@ -354,7 +354,6 @@ const did = (id: string, text: string, subject: string, aside: string): Turn => 
 
 const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
 
-/** A tool is named the way the panel says it: as a program is named, spoken. */
 const TURNS: readonly Turn[] = [
   createAsked('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),

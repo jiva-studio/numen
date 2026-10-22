@@ -16,7 +16,6 @@ import (
 
 const wrenDeck = "\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n"
 
-// A deck over the bound is refused and the file is left as it was.
 func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
@@ -32,7 +31,6 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	}
 }
 
-// A stencil over the bound of a note is refused and the file is left as it was.
 func TestAStencilOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
@@ -110,7 +108,6 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 }
 
 // A body opening with the frontmatter delimiter would be read as the stencil's
-// own frontmatter, so it is refused.
 func TestAStencilBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
@@ -144,7 +141,6 @@ func TestAStencilWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	}
 }
 
-// A stencil whose frontmatter is never closed is refused even when the fields
 // written are the ones it declares.
 func TestAStencilWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
 	vs := newVaults(t)

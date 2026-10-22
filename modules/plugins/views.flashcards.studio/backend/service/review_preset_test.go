@@ -142,7 +142,6 @@ func TestThePresetOfADeckCarriesWhyItSchedulesNothing(t *testing.T) {
 	}
 }
 
-// A preset with nothing to ask is refused with the reason, which is what the
 // window shows in place of an empty session.
 func TestAPresetThatSchedulesNothingIsRefusedWithItsReason(t *testing.T) {
 	api, target := newAPI(t, presetted)

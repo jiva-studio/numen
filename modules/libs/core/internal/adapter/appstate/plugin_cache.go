@@ -59,7 +59,6 @@ func (c *PluginCaches) Write(
 }
 
 // at is the folder one plugin keeps one name in. A plugin and a name that carry a separator or a dot
-// are refused, since each is written into a path.
 func (c *PluginCaches) at(pluginID, name string) (*Schedules, error) {
 	for _, part := range []string{pluginID, name} {
 		if part == "" || strings.ContainsAny(part, `/\`) || strings.HasPrefix(part, ".") || strings.Contains(part, "..") {

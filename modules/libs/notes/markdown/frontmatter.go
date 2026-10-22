@@ -310,7 +310,6 @@ func (d *Document) readMapping() (*yaml.Node, error) {
 
 // getWritableNode is the frontmatter when it is laid out so that one key can be
 // changed without touching another. Reading one that is not is fine; writing to
-// it is what has to be refused.
 func (d *Document) getWritableNode() (*yaml.Node, error) {
 	if d.isUnterminated {
 		return nil, ErrUnterminated

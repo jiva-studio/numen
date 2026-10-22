@@ -1,4 +1,3 @@
-/** What the window asks of the vault about itself, and the streams it speaks on. */
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
 import type { OpenTabs } from '@/entities/tab'

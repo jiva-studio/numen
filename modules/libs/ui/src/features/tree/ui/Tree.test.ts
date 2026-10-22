@@ -1,10 +1,3 @@
-/**
- * What the tree draws from the rows it was handed, and what it emits.
- *
- * The negatives are here: a shut row's contents are not drawn, a refused drop
- * does not move, and a name abandoned does not rename. A drag is read from
- * heights, and the rows are given theirs by hand.
- */
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'

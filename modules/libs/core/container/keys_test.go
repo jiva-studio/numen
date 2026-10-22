@@ -101,7 +101,6 @@ func TestASecretSavedThroughTheContainerReachesTheKeyStore(t *testing.T) {
 	}
 }
 
-// A secret the plugin does not declare is refused.
 func TestASecretNoPluginDeclaresIsRefused(t *testing.T) {
 	jar := keyJar{}
 	cfg := Config{KeyStore: jar, SettingsPath: filepath.Join(t.TempDir(), "numen.json"), PluginHost: NewPluginHost("desktop.editor", writeSecretPlugin(t))}

@@ -197,11 +197,6 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
    */
   structured: Uint8Array;
 
-  /**
-   * True where the tool ran and refused, and text says why.
-   *
-   * @generated from field: bool is_refusal = 3;
-   */
   isRefusal: boolean;
 };
 

@@ -57,7 +57,6 @@ type Task struct {
 	Options map[string]string
 	// Endpoint is where the agent reaches the vault's tools. Empty gives it none.
 	Endpoint ToolEndpoint
-	// ToolDeclarations say how each tool of Tools is spoken about and read while a call of it is being
 	// written.
 	ToolDeclarations []ToolDeclaration
 }
@@ -68,7 +67,6 @@ type ToolEndpoint struct {
 	Token string
 }
 
-// ToolDeclaration is how one tool of the vault is spoken about to a person and how a call of it is
 // read while it is being written.
 type ToolDeclaration struct {
 	// Name is the tool, by the name the vault serves it under.

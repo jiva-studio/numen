@@ -18,7 +18,6 @@ import (
 var errNoMode = errors.New("a search says how it is asked")
 
 // errTooManyPaths is a filter naming more paths than are answered at once. The
-// whole filter is refused, and no part of it is answered.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 // How many answers a client gets when it names no number, and the most it may
@@ -156,7 +155,6 @@ func atMost(limit int32) int {
 }
 
 // eachOnce is the paths a client asked about, each named once. A filter past
-// the ceiling is refused: each path costs a round trip of its own, and an
 // answer cut to fit says nothing about which paths were left out.
 func eachOnce(paths []string) ([]string, error) {
 	observed := make(map[string]bool, len(paths))

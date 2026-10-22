@@ -42,7 +42,6 @@ func (r *Registry) Remove(w *Work) {
 	delete(r.running, w)
 }
 
-// Close stops every work and waits for them. Work added afterwards is refused.
 func (r *Registry) Close() error {
 	r.mu.Lock()
 	r.isClosed = true

@@ -43,7 +43,6 @@ func newVaultEndpoint(endpoint *HostEndpoint) *vaultEndpoint {
 var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
 // begin authorizes a call and returns the plugin that made it and the vault it works. A plugin that
-// lacks the permission is refused; a host showing no vault leaves the vault nil.
 func (e *vaultEndpoint) begin(header http.Header, permission string) (string, port.PluginVault, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
@@ -61,7 +60,6 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, po
 	return pluginID, linked, nil
 }
 
-// answer sorts the failure of a call to the vault: a refusal the host can name is the code of the
 // answer, the end of the caller's context is cancelled, and anything else is internal.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {

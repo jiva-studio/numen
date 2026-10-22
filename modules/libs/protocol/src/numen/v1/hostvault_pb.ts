@@ -1233,12 +1233,6 @@ export type WatchVaultResponse = Message<"numen.v1.WatchVaultResponse"> & {
 export const WatchVaultResponseSchema: GenMessage<WatchVaultResponse> = /*@__PURE__*/
   messageDesc(file_numen_v1_hostvault, 57);
 
-/**
- * HostVaultErrorCode is why a call was served and refused. The zero value
- * means it was not.
- *
- * @generated from enum numen.v1.HostVaultErrorCode
- */
 export enum HostVaultErrorCode {
   /**
    * @generated from enum value: HOST_VAULT_ERROR_CODE_UNSPECIFIED = 0;

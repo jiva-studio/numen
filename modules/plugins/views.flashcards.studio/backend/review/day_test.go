@@ -168,7 +168,6 @@ func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 }
 
 // Something that is not an hour of the day, or lies past the latest hour a day may begin at, is
-// refused, and the default stands with the refusal.
 func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 	for _, content := range []string{"half past four", "18:00", "12:01", "4", "24:00"} {
 		got, err := review.ParseDayStart(content)

@@ -25,7 +25,7 @@ export default defineConfig({
         test: {
           name: 'unit',
           environment: 'jsdom',
-          include: ['src/**/*.test.ts', '.storybook/**/*.test.ts'],
+          include: ['src*.test.ts', '.storybook*.test.ts'],
           testTimeout: 30_000,
         },
       },

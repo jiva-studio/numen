@@ -326,7 +326,6 @@ type Tab struct {
 	Title string `protobuf:"bytes,4,opt,name=title,proto3" json:"title,omitempty"`
 	// How far the person has got through what the tab holds. A tab holding a
 	// document sets document, a tab holding a recording sets recording, a tab
-	// holding a book that reflows sets book, and a tab of any other kind sets
 	// none of them.
 	Document      *DocumentProgress  `protobuf:"bytes,5,opt,name=document,proto3" json:"document,omitempty"`
 	Recording     *RecordingProgress `protobuf:"bytes,6,opt,name=recording,proto3" json:"recording,omitempty"`
@@ -469,7 +468,6 @@ func (x *DocumentProgress) GetPageCount() int32 {
 	return 0
 }
 
-// A BookProgress is how far through a book that reflows the person reading it
 // is. Such a book has no pages of its own, so where they stand is an offset
 // into its text and the page is counted from that.
 type BookProgress struct {

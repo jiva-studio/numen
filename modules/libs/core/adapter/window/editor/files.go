@@ -224,7 +224,6 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 	return string(noteType)
 }
 
-// One is drawn as pictures a page at a time and the other reflows, and which
 // reads the file is decided from its name.
 func convertBookFormatToWire(path string, kind domain.SourceKind) v1.BookFormat {
 	if kind != domain.KindBook {

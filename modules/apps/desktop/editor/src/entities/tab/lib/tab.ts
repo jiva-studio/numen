@@ -8,7 +8,6 @@ export interface TabProgress {
   readonly document?: DocumentProgress
   /** The recording it holds, absent in a tab holding none. */
   readonly recording?: RecordingProgress
-  /** How far through the book that reflows it holds, absent in a tab holding none. */
   readonly book?: BookProgress
 }
 
@@ -38,10 +37,6 @@ export interface DocumentProgress {
   readonly pageCount: number
 }
 
-/**
- * How far through a book that reflows the person reading it is. Such a book has
- * no pages of its own, so where they stand is an offset into its text.
- */
 export interface BookProgress {
   /** Where they are reading, in bytes of the book's text. */
   readonly offset: number

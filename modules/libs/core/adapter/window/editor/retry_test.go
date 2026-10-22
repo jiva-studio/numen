@@ -50,7 +50,6 @@ func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
 	}
 }
 
-// A plugin nobody installed is not found, and any other refusal is the core's.
 func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
 	missing := newRetryHandler(t, func(_ context.Context, id string) (*setting.PluginFailure, error) {
 		return nil, &setting.UnavailableError{PluginID: id, Reason: setting.PluginNotInstalled}

@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// ProtocolVersion is the plugin protocol this SDK speaks. Ping reports it to the host.
 const ProtocolVersion = 1
 
 // LifecycleOption configures a LifecycleServer instance.
@@ -66,7 +65,6 @@ func NewLifecycleServer(shutdownCh chan struct{}, opts ...LifecycleOption) *Life
 	return ls
 }
 
-// Ping answers health check probes from the plugin host with the protocol version the plugin speaks.
 func (s *LifecycleServer) Ping(
 	_ context.Context,
 	_ *connect.Request[numenv1.PingRequest],

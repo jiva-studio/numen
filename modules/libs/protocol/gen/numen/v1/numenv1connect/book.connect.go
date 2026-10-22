@@ -2,7 +2,6 @@
 //
 // Source: numen/v1/book.proto
 
-// What a client has to know before it can read a book that reflows: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //

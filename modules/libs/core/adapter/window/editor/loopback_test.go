@@ -155,7 +155,6 @@ func TestAFileOfAVaultNobodyContainsIsRefused(t *testing.T) {
 	}
 }
 
-// Every file of the vault is served, and a path leaving it is refused by the
 // vault's own reader.
 func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 	vault := testsupport.NewVault(t, map[string]string{

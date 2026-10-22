@@ -203,7 +203,6 @@ func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 	}
 }
 
-// getAnswer is one call as it came back, whether it answered or refused. A
 // vault leaks into any field of an answer, so the whole of it is read.
 func getAnswer(t *testing.T, session *sdk.ClientSession, name string, args any) string {
 	t.Helper()

@@ -487,7 +487,6 @@ func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 
 // openRoot is the store's folder as a handle, and a place in it as a name that
 // handle takes. Every step of a write is made through the handle, so a folder
-// swapped for a link while the write is on its way is refused by the machine
 // itself and not by a rule read a moment before. The caller closes the handle.
 func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	name, err := filepath.Rel(d.root, target)

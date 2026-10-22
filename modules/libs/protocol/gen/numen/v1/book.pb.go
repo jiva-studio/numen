@@ -4,7 +4,6 @@
 // 	protoc        (unknown)
 // source: numen/v1/book.proto
 
-// What a client has to know before it can read a book that reflows: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //
@@ -88,7 +87,6 @@ type GetBookResponse struct {
 	// offset. A book naming nothing is reached by these, and most books carry
 	// none.
 	PrintedPages []*PrintedPage `protobuf:"bytes,4,rep,name=printed_pages,json=printedPages,proto3" json:"printed_pages,omitempty"`
-	// How many pages the book is read in. A book that reflows has none of its
 	// own, so they are counted over its text and not over anything drawn.
 	PageCount int32 `protobuf:"varint,5,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
 	// How many bytes the book's text is, and how many of them stand on one page.
@@ -419,7 +417,6 @@ type ReadBookEntryRequest struct {
 	// The entry, as the archive names it.
 	Entry string `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
 	// Which bytes the ask was given out for. A file that is other bytes now is
-	// refused as aborted.
 	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

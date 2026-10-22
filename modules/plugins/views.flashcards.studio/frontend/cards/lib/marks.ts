@@ -1,11 +1,3 @@
-/**
- * Where each problem a reading came back with is drawn: against a card,
- * against a face, against one field of a card, or against the file itself.
- *
- * A problem says at its current position, and the window draws it on the thing
- * standing there. Two readings wrong in the same way leave what is drawn where
- * it is, so a mark a person is reading does not blink on every read.
- */
 import type { DeckProblem } from '../types'
 
 /** Where each problem is drawn. */
@@ -108,10 +100,6 @@ const areUnderMapsEqual = (
   return true
 }
 
-/**
- * Whether two readings of a file are wrong in the same way. What is drawn
- * against a file it says nothing about is drawn again.
- */
 export const areMarksEqual = (one: Marks, other: Marks): boolean =>
   areWordsEqual(one.whole, other.whole) &&
   areMarkMapsEqual(one.at, other.at) &&

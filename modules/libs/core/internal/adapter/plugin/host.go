@@ -1294,7 +1294,6 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 }
 
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
-// The record of the stored secrets is the host's own and is refused.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
 	if key == port.SettingStoredSecrets {
 		return fmt.Errorf("plugin %s: %w: %s", pluginID, port.ErrReservedSettingKey, key)
