@@ -67,21 +67,17 @@ func (r *vaultTracker) getVault() domain.Vault {
 func serveAgents(
 	ctx context.Context,
 	cfg container.Config,
-	db *container.Index,
-	notes container.Notes,
 	api *window.API,
 	off bool,
 	out io.Writer,
 ) func() error {
-	_, away := serveAgentsTracker(ctx, cfg, db, notes, api, off, out)
+	_, away := serveAgentsTracker(ctx, cfg, api, off, out)
 	return away
 }
 
 func serveAgentsTracker(
 	ctx context.Context,
 	cfg container.Config,
-	db *container.Index,
-	notes container.Notes,
 	api *window.API,
 	off bool,
 	out io.Writer,

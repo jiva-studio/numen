@@ -114,7 +114,7 @@ func run(cfg container.Config, noAgent bool) error {
 
 	// The agent reaches the cards through tools on a port this window opens, and
 	// is started and stopped around a session.
-	away := serveAgents(ctx, cfg, db, notes, api, noAgent, os.Stderr)
+	away := serveAgents(ctx, cfg, api, noAgent, os.Stderr)
 
 	// The agents stop, then the walk and the watch, then the index they write to closes.
 	target := shutdown.NewSequence(

@@ -106,11 +106,10 @@ func hasWrittenSecrets(t *testing.T, cfg container.Config) (token bool, announce
 
 // An installation that names no agent lets nothing be asked, and says so.
 func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
-	cfg, db, opening, api, _ := makeWindow(t)
+	cfg, _, _, api, _ := makeWindow(t)
 	cfg.Agent = settings.Agent{Use: settings.UseProgram("")}
 
-	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -123,11 +122,10 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 
 // The flag shuts it for one launch, whatever the settings name.
 func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
-	cfg, db, opening, api, _ := makeWindow(t)
+	cfg, _, _, api, _ := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, true, io.Discard)
+	away := serveAgents(t.Context(), cfg, api, true, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if api.GetAgent() != nil {
@@ -145,11 +143,10 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 // window's vault. This window writes neither it nor a token: a second writer
 // would point that agent at whichever window started last.
 func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg, _, _, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
@@ -166,11 +163,10 @@ func TestTheReviewerWritesDownNoAddressAndNoToken(t *testing.T) {
 // The agent works the vault the person's session is on. A session on another
 // vault starts it again there; one on the same vault leaves it where it is.
 func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg, _, _, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes := makeNotes(cfg, db, opening)
-	tracker, away := serveAgentsTracker(t.Context(), cfg, db, notes, api, false, io.Discard)
+	tracker, away := serveAgentsTracker(t.Context(), cfg, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if tracker.getURL() != "" {
@@ -197,12 +193,11 @@ func TestTheAgentFollowsTheVaultTheSessionIsOn(t *testing.T) {
 // A window that can reach an agent clears what an earlier answer said about why
 // it could not.
 func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
-	cfg, db, opening, api, _ := makeWindow(t)
+	cfg, _, _, api, _ := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 	api.Unreachable.Store("an earlier reason")
 
-	notes := makeNotes(cfg, db, opening)
-	away := serveAgents(t.Context(), cfg, db, notes, api, false, io.Discard)
+	away := serveAgents(t.Context(), cfg, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	if why := api.Unreachable.Why(); why != "" {
@@ -213,11 +208,10 @@ func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
 // Taking the agents away stops the endpoint a session started, and the panel
 // has nobody to ask.
 func TestTakingTheAgentsAwayStopsTheEndpoint(t *testing.T) {
-	cfg, db, opening, api, vaults := makeWindow(t)
+	cfg, _, _, api, vaults := makeWindow(t)
 	cfg.Agent = settings.Agent{}
 
-	notes := makeNotes(cfg, db, opening)
-	tracker, away := serveAgentsTracker(t.Context(), cfg, db, notes, api, false, io.Discard)
+	tracker, away := serveAgentsTracker(t.Context(), cfg, api, false, io.Discard)
 	t.Cleanup(func() { _ = away() })
 
 	api.Opened(t.Context(), vaults[0])
