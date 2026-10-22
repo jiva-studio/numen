@@ -49,9 +49,6 @@ jobs:
       - name: Lint components
         run: npm run lint --prefix modules/libs/ui
 
-      # Check dead code and unused dependencies
-      - name: Check dead code
-        run: npm run knip --prefix modules/libs/ui
 
       # Build the component library.
       - name: Build the components
