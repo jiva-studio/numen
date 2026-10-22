@@ -115,26 +115,24 @@ func (a Vault) open() (domain.Vault, error) {
 	return v, nil
 }
 
-func (a Vault) openReader() (port.VaultReader, domain.Vault, error) {
+func (a Vault) openReader() (port.VaultReader, error) {
 	v, err := a.open()
 	if err != nil {
-		return nil, domain.Vault{}, err
+		return nil, err
 	}
-	reader, err := a.Readers.Open(v)
-	return reader, v, err
+	return a.Readers.Open(v)
 }
 
-func (a Vault) openWriter() (port.VaultWriter, domain.Vault, error) {
+func (a Vault) openWriter() (port.VaultWriter, error) {
 	v, err := a.open()
 	if err != nil {
-		return nil, domain.Vault{}, err
+		return nil, err
 	}
-	writer, err := a.Writers.Open(v)
-	return writer, v, err
+	return a.Writers.Open(v)
 }
 
 func (a Vault) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	reader, _, err := a.openReader()
+	reader, err := a.openReader()
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -142,7 +140,7 @@ func (a Vault) GetFingerprint(ctx context.Context, path string) (domain.Fingerpr
 }
 
 func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error) {
-	reader, _, err := a.openReader()
+	reader, err := a.openReader()
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
@@ -160,7 +158,7 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprin
 func (a Vault) Write(
 	ctx context.Context, path string, content []byte, baseline domain.Fingerprint,
 ) (domain.Fingerprint, error) {
-	writer, _, err := a.openWriter()
+	writer, err := a.openWriter()
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
@@ -178,7 +176,7 @@ func (a Vault) tellWritten() {
 }
 
 func (a Vault) Create(ctx context.Context, path string, content []byte) error {
-	writer, _, err := a.openWriter()
+	writer, err := a.openWriter()
 	if err != nil {
 		return err
 	}

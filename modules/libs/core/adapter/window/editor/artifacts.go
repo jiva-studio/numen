@@ -40,19 +40,6 @@ type artifactHandler struct {
 // Which model does the work follows from the file, so the caller names the
 // artifact and never the producer.
 
-// The artifacts a file of the vault can carry, by the name each is placed under.
-// A name is the last part of an artifact's resource name.
-const (
-	// An artifact is named by what it is. What made it is the store's to say,
-	// and a caller asking for one asks for a kind and not for a producer.
-	recognitionID          = source.KindRecognition
-	recognitionCorrectedID = source.KindRecognition + ".corrected"
-	transcriptID           = source.KindTranscript
-	transcriptCorrectedID  = source.KindTranscript + ".corrected"
-	articleID              = source.KindArticle
-	copiedID               = source.KindCopy
-)
-
 // errNoArtifact is a kind no file of the vault carries, and errNotCarried one
 // this file's kind does not carry.
 var (
@@ -140,24 +127,18 @@ func (f *artifactFiles) getProducer(ctx context.Context, at domain.URL) (string,
 	return by.Producer, nil
 }
 
-// getArtifactID is the name one artifact is placed under in the store, and whether the
-// schema names that artifact at all.
-func getArtifactID(of v1.ArtifactKind) (string, bool) {
+// hasArtifact is whether the schema names that artifact at all.
+func hasArtifact(of v1.ArtifactKind) bool {
 	switch of {
-	case v1.ArtifactKind_ARTIFACT_KIND_OCR:
-		return recognitionID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT:
-		return transcriptID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED:
-		return transcriptCorrectedID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED:
-		return recognitionCorrectedID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_ARTICLE:
-		return articleID, true
-	case v1.ArtifactKind_ARTIFACT_KIND_COPY:
-		return copiedID, true
+	case v1.ArtifactKind_ARTIFACT_KIND_OCR,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT,
+		v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED,
+		v1.ArtifactKind_ARTIFACT_KIND_OCR_CORRECTED,
+		v1.ArtifactKind_ARTIFACT_KIND_ARTICLE,
+		v1.ArtifactKind_ARTIFACT_KIND_COPY:
+		return true
 	default:
-		return "", false
+		return false
 	}
 }
 
@@ -317,7 +298,7 @@ func (h *artifactHandler) CreateArtifact(
 	r *connect.Request[v1.CreateArtifactRequest],
 ) (*connect.Response[v1.CreateArtifactResponse], error) {
 	of := r.Msg.GetKind()
-	if _, named := getArtifactID(of); !named {
+	if !hasArtifact(of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
 	showing, ref, err := h.files.getShownFile(ctx, r.Msg.GetPath())
@@ -377,7 +358,7 @@ func (h *artifactHandler) DeleteArtifact(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	of := r.Msg.GetKind()
-	if _, named := getArtifactID(of); !named {
+	if !hasArtifact(of) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, errNoArtifact)
 	}
 	// A copy is bytes and no words: taking it away leaves the url as it was,

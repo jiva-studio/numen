@@ -298,12 +298,11 @@ func parseStamp(raw []byte) (int, bool) {
 		last = raw[c2+1:]
 	}
 
-	ms := 0
 	n0, ok := parseUint(p0)
 	if !ok {
 		return 0, false
 	}
-	ms = n0
+	ms := n0
 	if p1 != nil {
 		n1, ok := parseUint(p1)
 		if !ok {

@@ -131,10 +131,7 @@ func TestEveryArtifactStateIsSavedFromOne(t *testing.T) {
 // Every artifact the schema names is placed under a name in the store, and is
 // carried by a file of some kind.
 func TestEveryArtifactTheSchemaNamesExistsSomewhere(t *testing.T) {
-	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {
-		id, named := getArtifactID(of)
-		return named && id != ""
-	})
+	testsupport.CheckHandled(t, hasArtifact)
 	testsupport.CheckHandled(t, func(of v1.ArtifactKind) bool {
 		// A url carries what was fetched from the address it holds, and which
 		// of the two texts that is follows from what fetched it.

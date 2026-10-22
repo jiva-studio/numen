@@ -45,7 +45,6 @@ func TestRecognisingAFileOnDiskContainsNoCopyOfIt(t *testing.T) {
 	v := newDiskVault(t, padded)
 	size := uint64(len(padded))
 	want := text.Fingerprint(padded)
-	padded = nil
 
 	var peak uint64
 	u, hashOf := newDiskRecognise(func() {

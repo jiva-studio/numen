@@ -54,7 +54,7 @@ window.addEventListener('message', function (said) {
 </script>`))
 
 // serveFrame serves that page for one address.
-func (l *Loopback) serveFrame(w http.ResponseWriter, r *http.Request, raw string) {
+func (l *Loopback) serveFrame(w http.ResponseWriter, _ *http.Request, raw string) {
 	content, err := url.PathUnescape(raw)
 	if err != nil {
 		http.Error(w, "not an address", http.StatusBadRequest)
