@@ -27,7 +27,7 @@ func TestAPortServingTheReadingToolsOffersNoOther(t *testing.T) {
 
 	onlyOffers(t, tools.Tools, "the reading port", []string{
 		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "vault_get",
+		"vault_get",
 	})
 }
 
@@ -48,7 +48,7 @@ func TestAPortServingTheReviewingToolsOffersNoOther(t *testing.T) {
 
 	onlyOffers(t, tools.Tools, "the reviewing port", []string{
 		"note_search", "note_titles", "note_read", "note_neighbourhood", "link_list",
-		"source_list", "source_read", "vault_get",
+		"vault_get",
 	})
 }
 

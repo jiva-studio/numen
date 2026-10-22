@@ -127,6 +127,6 @@ func booksAreNotNotes(b *strings.Builder) {
 	b.WriteString("book's sections are searched by name, and a section named what was asked ")
 	b.WriteString("for is what the search answers with.\n")
 	b.WriteString("- A passage is a window cut to a size and it ends where it was cut, which ")
-	b.WriteString("is mid-sentence as often as not. Read on with `source_read` before saying ")
+	b.WriteString("is mid-sentence as often as not. Read on before saying ")
 	b.WriteString("a book does not say something.\n")
 }

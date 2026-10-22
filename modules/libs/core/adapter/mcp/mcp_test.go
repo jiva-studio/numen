@@ -190,7 +190,7 @@ func TestTheVaultIsLocatedInTheInstructions(t *testing.T) {
 func TestHowABookIsAskedIsInTheInstructions(t *testing.T) {
 	session, _ := newSession(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	response := session.InitializeResult().Instructions
-	for _, rule := range []string{"source_focus", "source_read", "own words", "numen:"} {
+	for _, rule := range []string{"source_focus", "own words", "numen:"} {
 		if !strings.Contains(response, rule) {
 			t.Errorf("the instructions say nothing about %q:\n%s", rule, response)
 		}
@@ -216,7 +216,6 @@ func TestTheToolsAreNamedForWhatTheyWorkOn(t *testing.T) {
 		"file_read",
 		"link_add", "link_update", "link_remove", "link_list",
 		"vault_get", "vault_problems",
-		"source_list", "source_read", "source_recognise", "source_transcribe",
 	})
 }
 
@@ -242,31 +241,9 @@ func TestTheWindowAPersonWritesInServesEveryToolTheVaultHas(t *testing.T) {
 		"link_add", "link_update", "link_remove", "link_list",
 		"vault_get", "vault_problems",
 		"vault_list", "vault_add", "vault_rename", "vault_remove", "vault_open",
-		"source_list", "source_read", "source_recognise", "source_transcribe",
 		"source_focus",
 		"window_tab_list",
 	})
-}
-
-// Both of these put megabytes of new text in the folder a person syncs, and an
-// agent weighing an hour's work on their behalf is told so before it calls.
-func TestReadingAndListeningSayWhatTheyWriteIntoTheVault(t *testing.T) {
-	session, _ := newSession(t, nil)
-
-	for tool, area := range map[string]string{
-		"source_recognise":  filesystem.OCRDir,
-		"source_transcribe": filesystem.TranscriptDir,
-	} {
-		response := getToolDescription(t, session, tool)
-		for _, rule := range []string{
-			"into the vault",
-			filesystem.DefaultServiceDir + "/" + area,
-		} {
-			if !strings.Contains(response, rule) {
-				t.Errorf("%s says nothing about %q:\n%s", tool, rule, response)
-			}
-		}
-	}
 }
 
 // getServedTools returns every tool a session is offered, and verifies each of them says what it is for.

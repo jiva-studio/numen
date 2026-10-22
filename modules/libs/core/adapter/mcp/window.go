@@ -36,8 +36,7 @@ func addWindowTools(server *sdk.Server, core Core) {
 			"person moves between tabs while you work, so what they are looking at now is " +
 			"not what they were looking at when the conversation began. A tab holding a " +
 			"file names it by the path the vault files it under, and a tab whose kind you " +
-			"do not know is a tab of that kind and nothing more. What a recording says is " +
-			"read with source_read, as a document is.",
+			"do not know is a tab of that kind and nothing more.",
 	}, func(_ context.Context, _ *sdk.CallToolRequest, _ struct{}) (*sdk.CallToolResult, struct {
 		Tabs    []Tab  `json:"tabs"`
 		Summary string `json:"summary" jsonschema:"the tab the person is looking at, in words to say back to them"`

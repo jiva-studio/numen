@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -23,7 +22,7 @@ import (
 // reads is every tool the reading server serves.
 var reads = []string{
 	"note_search", "note_titles", "note_read", "note_neighbourhood",
-	"link_list", "source_list", "source_read",
+	"link_list",
 	"vault_get",
 }
 
@@ -67,8 +66,6 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 		{"note_read", map[string]any{"paths": []string{"Entropy.md"}}},
 		{"note_neighbourhood", map[string]any{"path": "Entropy.md"}},
 		{"link_list", map[string]any{"path": "Entropy.md"}},
-		{"source_list", map[string]any{}},
-		{"source_read", map[string]any{"path": "Entropy.md", "start": 0, "length": 200}},
 		{"vault_get", map[string]any{}},
 	}
 	called := make([]string, 0, len(request))
@@ -167,14 +164,6 @@ func (s side) assertAnswers(t *testing.T) {
 	if len(joined.Links) == 0 {
 		t.Errorf("%s sees no link written in its own note", s.what)
 	}
-
-	run := call[struct {
-		Text string `json:"text"`
-	}](t, s.session, "source_read", map[string]any{"path": s.note, "start": 0, "length": 400})
-	if !strings.Contains(run.Text, s.own) {
-		t.Errorf("%s reads its own note as a source without %q: %q", s.what, s.own, run.Text)
-	}
-
 }
 
 // checkHoldsNothingOf asks this vault's session about the other vault's notes,
@@ -191,7 +180,6 @@ func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 		{"note_read", map[string]any{"paths": []string{other.note}}},
 		{"note_neighbourhood", map[string]any{"path": other.note}},
 		{"link_list", map[string]any{"path": other.note}},
-		{"source_read", map[string]any{"path": other.note, "start": 0, "length": 400}},
 	} {
 		response := getAnswer(t, s.session, request.name, request.args)
 		for _, word := range other.hers {
@@ -254,7 +242,6 @@ func reader(t *testing.T, cfg container.Config, db *container.Index, v domain.Va
 			GetTitles:     note.NewGetTitles(queries),
 			Links:         note.NewShowLinks(db.Links()),
 		},
-		Sources: mcp.Sources{GetDocumentList: source.NewGetDocumentList(db.SourcesKnown()), GetDocumentText: source.NewGetDocumentText(readers, db.SourcesKnown(), nil, nil)},
 	}
 }
 

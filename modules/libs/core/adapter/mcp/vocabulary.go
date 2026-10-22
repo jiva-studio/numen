@@ -61,16 +61,7 @@ var handler = map[string]Tool{
 	"vault_rename":       {Kind: domain.StepMove},
 	"vault_remove":       {Kind: domain.StepRemove},
 	"vault_open":         {Kind: domain.StepRead},
-	"source_list":        {Kind: domain.StepRead},
-	"source_read":        {Kind: domain.StepRead},
-	"artifact_list":      {Kind: domain.StepRead},
-	"artifact_read":      {Kind: domain.StepRead},
 	"source_focus":       {Kind: domain.StepRead},
-	// Reading a document changes what the vault holds — it writes down what a
-	// model saw — so it is shown as a change and not as a look. Listening to a
-	// recording writes down what a model heard, and is shown the same way.
-	"source_recognise":  {Kind: domain.StepEdit},
-	"source_transcribe": {Kind: domain.StepEdit},
 }
 
 // Vocabulary asks the server what it serves, and reads the answer.

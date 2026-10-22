@@ -45,7 +45,7 @@ func addImportTool(server *sdk.Server, core Core) {
 		Description: "Make a file holding a web address and fetch what is there. " +
 			"A video's published words come back as words with the times they were " +
 			"said at, and any other page comes back as the prose it is written " +
-			"around; either is searched from then on and read by `artifact_read`. " +
+			"around; either is searched from then on. " +
 			"The file is named after what is at the address, so no title is asked " +
 			"for.\n\nIt holds the address and nothing else: what you write about " +
 			"what is there is a note of your own, pointing at this file. `copy` " +

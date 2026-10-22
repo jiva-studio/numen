@@ -8,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/mcp"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	derived "github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/port"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -130,68 +129,6 @@ func TestABuildThatReachesNoAddressServesNoImport(t *testing.T) {
 			t.Error("url_import is served by a build that reaches no address")
 		}
 	}
-}
-
-// A note is prose the person wrote; what was fetched for the address it points
-// at stands beside it and is asked for by kind. An agent handed only the prose
-// is handed a note about a video with the video missing.
-func TestAnAgentReadsWhatWasFetchedForANote(t *testing.T) {
-	from := &site{title: "Entropy explained", cues: []domain.TranscriptCue{
-		{Text: "what was said", From: 1500, To: 4200},
-	}}
-	v, core := newCoreWithImport(t, from)
-	stores := filesystem.DerivedStores{
-		Area: filesystem.TranscriptDir, Areas: []string{domain.Article, filesystem.CopyDir},
-	}
-	queries := &sourced{indexed: map[string]port.SourceText{}}
-	core.Sources.GetArtifactList = source.NewGetArtifactList(queries, stores)
-	core.Sources.GetArtifactText = source.NewGetArtifactText(queries, stores)
-	session := sessionOf(t, mcp.New(core))
-	_ = v
-
-	made := call[mcp.ImportOutcome](t, session, "url_import", map[string]any{"url": aVideo})
-	if made.Error != "" {
-		t.Fatalf("the address failed: %s", made.Error)
-	}
-	// The index is what says which producer stands for a path, and a scan is
-	// what writes it. This is that row.
-	queries.indexed[made.Path] = port.SourceText{
-		Fingerprint: domain.Fingerprint{Path: made.Path},
-		Producer:    domain.Captions,
-		Hash:        derived.Fingerprint([]byte(aVideo)),
-	}
-
-	items := call[struct {
-		Artifacts []mcp.Artifact `json:"artifacts"`
-	}](t, session, "artifact_list", map[string]any{"path": made.Path})
-	if len(items.Artifacts) == 0 {
-		t.Fatal("the note carries nothing an agent can reach")
-	}
-	// Words with the times they were said at are a transcript, whoever made
-	// them: a site publishing them is another producer and not another kind.
-	if items.Artifacts[0].Kind != "transcript" {
-		t.Errorf("it carries %q", items.Artifacts[0].Kind)
-	}
-
-	read := call[struct {
-		Words string `json:"words"`
-	}](t, session, "artifact_read", map[string]any{"path": made.Path, "kind": "transcript"})
-	if !strings.Contains(read.Words, "what was said") {
-		t.Errorf("the words read %q", read.Words)
-	}
-}
-
-// sourced is what the index says was made from each path.
-type sourced struct {
-	port.SourceQueries
-	indexed map[string]port.SourceText
-}
-
-func (s *sourced) GetSourceText(
-	_ context.Context, _ domain.VaultID, path string,
-) (port.SourceText, bool, error) {
-	one, target := s.indexed[path]
-	return one, target, nil
 }
 
 // A copy that cannot be made is said beside the file it followed, which stands.

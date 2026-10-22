@@ -22,7 +22,7 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 			"enough that reading it whole would take the answer: ask for the range " +
 			"beginning at the previous range's start plus its length to read on. The answer " +
 			"says how long the whole file is. A note's prose, without its frontmatter, is " +
-			"note_read; the text of a book or a recording is source_read.",
+			"note_read.",
 	}, func(ctx context.Context, _ *sdk.CallToolRequest, in struct {
 		Path   string `json:"path" jsonschema:"the file's path relative to the vault folder, with forward slashes"`
 		Start  int    `json:"start,omitempty" jsonschema:"where the range begins in the file, in bytes; the beginning of the file by default"`

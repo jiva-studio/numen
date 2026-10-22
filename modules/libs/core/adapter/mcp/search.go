@@ -48,7 +48,7 @@ func addNoteSearch(server *sdk.Server, core Core) {
 			"read from. A file answers with at most a few of its passages, so a long " +
 			"book does not take the answer. " +
 			"A passage is a window cut to a size, and it ends where it was cut, which " +
-			"is mid-sentence as often as not: read on with source_read before " +
+			"is mid-sentence as often as not: read on before " +
 			"concluding that a book says nothing about something. " +
 			"Use this before assuming something is or is not written down. " +
 			"When the person asks about a book — find it in the book, what does the " +

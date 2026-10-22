@@ -112,9 +112,7 @@ type Vaults struct {
 	Opens func(context.Context, domain.Vault) error
 }
 
-// Sources holds the use cases of the tools for the documents a vault keeps beside its
-// notes. A tool whose use case is left out answers that the vault cannot do it, except
-// the artifact and import tools, which are not added.
+// Sources holds the use cases for documents and passages.
 type Sources struct {
 	GetDocumentList *source.GetDocumentList
 	GetDocumentText *source.GetDocumentText
@@ -132,8 +130,7 @@ type Sources struct {
 	// FocusPassage opens a document in front of the person at a passage. Without it the
 	// tool that does is not added.
 	FocusPassage *source.FocusPassage
-	// The artifacts list, read and correct what was made from a file. Without
-	// them the tools for those artifacts are not added.
+	// The artifacts list, read and correct what was made from a file.
 	GetArtifactList  *source.GetArtifactList
 	GetArtifactText  *source.GetArtifactText
 	WriteCorrections *source.WriteCorrections
@@ -164,9 +161,6 @@ func newFull(ctx context.Context, core Core) *sdk.Server {
 	addVaultsTools(server, core)
 	addViewTools(server, core)
 	addWindowTools(server, core)
-	addSourceTools(server, core)
-	addArtifactTools(server, core)
-	addArtifactWriteTool(server, core)
 	return server
 }
 
@@ -191,7 +185,6 @@ func newReading(ctx context.Context, core Core) *sdk.Server {
 	addPluginTools(ctx, server, core, plugintool.ServerReading)
 	addNoteReadTools(server, core)
 	addLinkReadTools(server, core)
-	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }
@@ -219,7 +212,6 @@ func newReview(ctx context.Context, core Core) *sdk.Server {
 	addPluginTools(ctx, server, core, plugintool.ServerReview)
 	addNoteReadTools(server, core)
 	addLinkReadTools(server, core)
-	addSourceReadTools(server, core)
 	addVaultGet(server, core)
 	return server
 }
