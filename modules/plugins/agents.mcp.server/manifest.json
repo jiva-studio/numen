@@ -1,0 +1,15 @@
+{
+  "id": "md.numen.agents.mcp.server",
+  "name": "Model Context Protocol Server",
+  "version": "1.0.0",
+  "protocol": 1,
+  "description": "Exposes an external MCP (Model Context Protocol) SSE/stdio server aggregating tools from Numén plugins and host",
+  "capabilities": ["mcp.server"],
+  "targets": ["desktop.editor"],
+  "permissions": ["vault:read", "vault:write", "network:listen"],
+  "backend": {
+    "type": "process",
+    "entrypoint": "bin/agents.mcp.server",
+    "serviceName": "numen.v1.McpServerService"
+  }
+}
