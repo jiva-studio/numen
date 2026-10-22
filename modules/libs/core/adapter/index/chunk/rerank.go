@@ -101,19 +101,19 @@ func formatInt64s(nums []int64) string {
 	return string(b)
 }
 
-func formatKinds(chosen []domain.SourceKind) string {
-	if len(chosen) == 0 {
+func formatKinds(selected []domain.SourceKind) string {
+	if len(selected) == 0 {
 		return "[]"
 	}
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the mutated values are 1 and 3: the text needs 1 byte less than the hint, so a hint one smaller or larger reaches the same text without growing"
 	size := 2
-	for _, k := range chosen {
+	for _, k := range selected {
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="the mutated value is 4: a larger capacity hint; the text is the same at any capacity"
 		size += len(k) + 3
 	}
 	b := make([]byte, 0, size)
 	b = append(b, '[')
-	for i, k := range chosen {
+	for i, k := range selected {
 		if i > 0 {
 			b = append(b, ',')
 		}

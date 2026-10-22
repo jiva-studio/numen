@@ -8,7 +8,8 @@ import type { Words } from '../words'
 const isRecordingProofreadOffered = createArtifactOffer(
   'proofread',
   'recording',
-  (createdItem) => createdItem.transcript === 'done' && isArtifactMissing(createdItem['transcript.corrected']),
+  (createdItem) =>
+    createdItem.transcript === 'done' && isArtifactMissing(createdItem['transcript.corrected']),
 )
 
 const isBookProofreadOffered = createArtifactOffer(
@@ -17,8 +18,8 @@ const isBookProofreadOffered = createArtifactOffer(
   (createdItem) => createdItem.ocr === 'done' && isArtifactMissing(createdItem['ocr.corrected']),
 )
 
-const isProofreadOffered = (at: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingProofreadOffered(at, runs) || isBookProofreadOffered(at, runs)
+const isProofreadOffered = (target: CommandTarget, runs: RunSupport): boolean =>
+  isRecordingProofreadOffered(target, runs) || isBookProofreadOffered(target, runs)
 
 const isRecordingDeleteTextOffered = createArtifactOffer(
   'deleteText',
@@ -32,8 +33,8 @@ const isUrlDeleteTextOffered = createArtifactOffer(
   (createdItem) => createdItem.transcript !== 'none',
 )
 
-const isDeleteTextOffered = (at: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingDeleteTextOffered(at, runs) || isUrlDeleteTextOffered(at, runs)
+const isDeleteTextOffered = (target: CommandTarget, runs: RunSupport): boolean =>
+  isRecordingDeleteTextOffered(target, runs) || isUrlDeleteTextOffered(target, runs)
 
 export const createArtifactCommands = (words: Words): readonly Command[] => [
   {
@@ -48,7 +49,9 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     id: 'recognise',
     text: words.recognise,
     group: 'file',
-    isOffered: createArtifactOffer('recognise', 'book', (createdItem) => isArtifactMissing(createdItem.ocr)),
+    isOffered: createArtifactOffer('recognise', 'book', (createdItem) =>
+      isArtifactMissing(createdItem.ocr),
+    ),
   },
   {
     id: 'downloadText',
@@ -64,11 +67,11 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     id: 'downloadCopy',
     text: words.downloadCopy,
     group: 'file',
-    isOffered: (at, runs) =>
-      at.isReady &&
+    isOffered: (target, runs) =>
+      target.isReady &&
       runs.canRun('downloadCopy') &&
-      at.made.copy !== undefined &&
-      isArtifactMissing(at.made.copy),
+      target.made.copy !== undefined &&
+      isArtifactMissing(target.made.copy),
   },
   {
     id: 'proofread',
@@ -87,7 +90,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     isOffered: isDeleteTextOffered,
     answers: {
       keeps: words.keepsTranscript,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deleted,
     },
@@ -97,10 +100,14 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     text: words.deleteCopy,
     group: 'file',
     needs: 'asking',
-    isOffered: createArtifactOffer('deleteCopy', 'url', (createdItem) => createdItem.copy === 'done'),
+    isOffered: createArtifactOffer(
+      'deleteCopy',
+      'url',
+      (createdItem) => createdItem.copy === 'done',
+    ),
     answers: {
       keeps: words.keepsCopy,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deletedCopy,
     },

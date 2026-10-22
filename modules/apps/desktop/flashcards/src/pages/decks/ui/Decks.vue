@@ -2,7 +2,6 @@
 /**
  * One vault's decks, and what each owes today.
  *
- * The whole vault is the ordinary way to sit down to this, so it stands at the
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
@@ -35,7 +34,6 @@ const props = defineProps<{
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{
   (event: 'start', deck: string): void
-  /** Sit down to every deck one preset schedules, by the note it stands in. */
   (event: 'start-preset', preset: string): void
   (event: 'back'): void
 }>()
@@ -56,11 +54,11 @@ const allDue = computed(() => props.vault.due + props.vault.new)
     <p v-if="!vault.decks.length" class="decks__saying">This vault holds no deck.</p>
 
     <ul v-else class="decks__list">
-      <li v-for="(deck, at) in vault.decks" :key="deck.deck">
+      <li v-for="(deck, index) in vault.decks" :key="deck.deck">
         <DeckRow
           :deck="deck"
-          :at="at"
-          :by="byDeck.get(deck.deck)"
+          :index="index"
+          :preset="byDeck.get(deck.deck)"
           :has-presets="hasPresets"
           :is-counted="vault.isCounted"
           :can-open="canStart(deck, byDeck)"
@@ -101,7 +99,6 @@ const allDue = computed(() => props.vault.due + props.vault.new)
   font-weight: 600;
 }
 
-/* What is done stands at the foot of the screen, whatever is above it. */
 .decks__actions {
   display: flex;
   flex: none;

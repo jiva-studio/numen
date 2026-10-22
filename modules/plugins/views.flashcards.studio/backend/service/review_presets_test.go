@@ -17,8 +17,6 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/flashcards"
 )
 
-// elsewhere is a second vault whose deck stands at the path the first's deck
-// stands at, and is scheduled by a preset of its own. A claim about the vault a
 // request names is worth nothing when the path alone tells the two apart.
 var elsewhere = map[string]string{
 	"Term.md": deck["Term.md"],
@@ -91,19 +89,19 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 	api, target := newAPI(t, handwritten)
 	v := target[0]
 
-	at := filepath.Join(v.Path, "decks", "Words.md")
-	if err := os.WriteFile(at, []byte(typedByHand), 0o644); err != nil {
+	pos := filepath.Join(v.Path, "decks", "Words.md")
+	if err := os.WriteFile(pos, []byte(typedByHand), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	// The index still holds the deck as it was scanned, so it names no preset.
 	if before := getDeckPreset(t, api, v, "decks/Words.md"); before.GetPath() != "" {
-		t.Fatalf("the deck already stands under %+v", before)
+		t.Fatalf("the deck already is under %+v", before)
 	}
 
 	startSession(t, api, v)
 
-	content, err := os.ReadFile(at)
+	content, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -113,7 +111,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 
 	after := getDeckPreset(t, api, v, "decks/Words.md")
 	if after.GetPath() != "Sanskrit.md" || after.GetTitle() != "Sanskrit" {
-		t.Errorf("the deck stands under %+v", after)
+		t.Errorf("the deck is under %+v", after)
 	}
 }
 

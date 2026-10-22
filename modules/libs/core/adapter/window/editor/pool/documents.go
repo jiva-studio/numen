@@ -71,32 +71,24 @@ func (d *Document) Close() {
 	}
 }
 
-// Documents are the documents held open. A file is read and parsed once,
-// however many of its pages are turned.
-//
-// Few are held: an open document keeps one of the library's workers for as long
-// as it is open, and a recognition keeps another for as long as it reads. One
-// nobody has looked at for a while is closed.
+// Documents manages an LRU pool of open documents.
 type Documents struct {
 	mu   sync.Mutex
 	open map[document.Fingerprint]*Document
-	// order is what is held, least recently asked for first.
+	// order tracks access order, least recently used first.
 	order []document.Fingerprint
-	// limit is how many are held open at once, and idleFor how long one nobody
-	// is looking at is kept.
+	// limit is the maximum number of concurrent open documents.
+	// idleFor is the duration after which an unused document is closed.
 	limit   int
 	idleFor time.Duration
 
-	// isClosing is the window going. A document being drawn from is left to the
-	// reader holding it, and empty is closed when the last of them gives it
-	// back.
+	// isClosing indicates the pool is shutting down.
 	isClosing bool
 	empty     chan struct{}
-	done      sync.Once
+	closeOnce sync.Once
 }
 
-// How many documents are held open at once, and how long one nobody is looking
-// at is kept.
+// Pool limits and idle timeout defaults.
 const (
 	MaxOpenDocuments    = 2
 	DocumentIdleTimeout = 2 * time.Minute
@@ -214,7 +206,7 @@ func (d *Documents) Release(mark document.Fingerprint, doc *Document) {
 		}
 		doc.Close()
 		if len(d.open) == 0 {
-			d.done.Do(func() { close(d.empty) })
+			d.closeOnce.Do(func() { close(d.empty) })
 		}
 		return
 	}
@@ -237,11 +229,7 @@ func (d *Documents) CloseIfIdle(mark document.Fingerprint, doc *Document) {
 	doc.Close()
 }
 
-// Close closes every document held open, once nobody is drawing from one.
-//
-// Closing gives the library's worker back, and a worker given back while it is
-// drawing is taken from under the drawing. What is left to close is what the
-// last reader gives back.
+// Close closes all open documents when active usage completes.
 func (d *Documents) Close() {
 	d.mu.Lock()
 	d.isClosing = true
@@ -308,7 +296,7 @@ func (d *Documents) RemoveFromOrder(mark document.Fingerprint) {
 
 func (d *Document) GetPageCount() int { return d.Scan.GetPageCount() }
 
-func (d *Document) GetPageSize(index int) (wide, high float64, err error) {
+func (d *Document) GetPageSize(index int) (width, height float64, err error) {
 	return d.Scan.GetPageSize(index)
 }
 
@@ -323,25 +311,24 @@ const PointsDPI = 72
 // width asked for and the page's own size, rounded up. The size is the
 // document's own answer, and is asked once.
 //
-// It comes back a pixel or two wider than was asked for, and goes as it is. The
 // window lays the page out at the width it asked for, so the browser takes those
 // pixels off; resampling them off here is a pass over every pixel of the page to
 // change nothing anybody sees.
-func (d *Document) Render(at, width int) (image.Image, error) {
-	points, measured := d.points[at]
+func (d *Document) Render(pos, width int) (image.Image, error) {
+	points, measured := d.points[pos]
 	if !measured {
-		across, _, err := d.Scan.GetPageSize(at)
+		item, _, err := d.Scan.GetPageSize(pos)
 		if err != nil {
 			return nil, err
 		}
-		points = int(across)
+		points = int(item)
 		if points < 1 {
-			return nil, fmt.Errorf("page %d has no width", at)
+			return nil, fmt.Errorf("page %d has no width", pos)
 		}
-		d.points[at] = points
+		d.points[pos] = points
 	}
 	dpi := (width*PointsDPI + points - 1) / points
-	rendered, err := d.Scan.RenderPage(at, max(dpi, 1))
+	rendered, err := d.Scan.RenderPage(pos, max(dpi, 1))
 	if err != nil {
 		return nil, err
 	}

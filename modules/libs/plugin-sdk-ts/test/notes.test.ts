@@ -8,7 +8,7 @@ import { openNotes, type Notes } from '../src/notes/notes'
 const getFingerprint = (body: string): string => `at:${body}`
 
 /** A core that answers reads and writes from what a test puts in it. */
-function fake(over: Partial<Notes> = {}) {
+function fake(overrides: Partial<Notes> = {}) {
   const files = new Map<string, string>()
   const wrote: { path: string; body: string }[] = []
   const core: Notes = {
@@ -32,7 +32,7 @@ function fake(over: Partial<Notes> = {}) {
       files.set(path, body)
       return asValue({ body: '', at: getFingerprint(body) })
     },
-    ...over,
+    ...overrides,
   }
   return { core, files, wrote }
 }
@@ -120,7 +120,7 @@ describe('typing', () => {
     await settle()
 
     notes.setBody('Heat.md', 'one')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toHaveLength(0)
   })
@@ -276,7 +276,7 @@ describe('a note whose file is about to be renamed or removed', () => {
     const slow: Notes = {
       ...core,
       write: async (path, body, seen) => {
-        await new Promise((wake) => setTimeout(wake, 20))
+        await new Promise((resolve) => setTimeout(resolve, 20))
         return core.write(path, body, seen)
       },
     }
@@ -286,7 +286,7 @@ describe('a note whose file is about to be renamed or removed', () => {
 
     notes.setBody('Heat.md', 'one two')
     await notes.flushPending('Heat.md')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toEqual([{ path: 'Heat.md', body: 'one two' }])
   })
@@ -350,7 +350,6 @@ describe('where a note remains', () => {
   })
 
   /**
-   * A note stands at the name of its identity while the window has none open
    * under it, so whether the window has one at all is asked apart.
    */
   it('is answered for only while the window holds the note', async () => {
@@ -422,7 +421,7 @@ describe('a note that changed on disk under a save', () => {
     expect(notes.getOpenNote('Heat.md').body).toBe('mine')
 
     notes.setBody('Heat.md', 'mine and more')
-    await new Promise((wake) => setTimeout(wake, 20))
+    await new Promise((resolve) => setTimeout(resolve, 20))
 
     expect(wrote).toHaveLength(1)
     expect(notes.getOpenNote('Heat.md').state).toBe('stale')

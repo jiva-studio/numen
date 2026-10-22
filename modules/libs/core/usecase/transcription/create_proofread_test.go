@@ -22,19 +22,18 @@ func (r *replying) ProofreadSpeech(
 }
 
 // somewhereToProofread is a vault to read out of and a store to keep the
-// corrections in. A proofreading is refused without them, so the tests here
 // hand over both and watch the proofreader.
 func somewhereToProofread() (port.VaultReaders, port.DerivedStores) {
-	return vaults{}, shelves{newShelf()}
+	return vaults{}, fakeStores{newShelf()}
 }
 
 // A transcript is put right with the proofreader the installation names.
 func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	t.Parallel()
-	by := &replying{}
+	delta := &replying{}
 	config := run.ProofreadingConfig{
 		IsNamed: true,
-		By:      func() (port.Proofreader, error) { return by, nil },
+		By:      func() (port.Proofreader, error) { return delta, nil },
 	}
 	readers, derived := somewhereToProofread()
 
@@ -42,7 +41,7 @@ func TestATranscriptIsBuiltWithTheConfiguredProofreader(t *testing.T) {
 	if err != nil || !target {
 		t.Fatalf("held %v, %v", target, err)
 	}
-	if right.by != port.Proofreader(by) {
+	if right.provider != port.Proofreader(delta) {
 		t.Error("a transcript is put right by something the installation did not place")
 	}
 }
@@ -57,7 +56,7 @@ func TestNamingNoProofreaderContainsNoneAndIsNoFailure(t *testing.T) {
 		{By: func() (port.Proofreader, error) { return nil, nil }},
 	} {
 		right, target, err := CreateProofread(response, readers, derived)
-		if err != nil || target || right.by != nil {
+		if err != nil || target || right.provider != nil {
 			t.Errorf("a transcript came back: held %v, %v", target, err)
 		}
 	}

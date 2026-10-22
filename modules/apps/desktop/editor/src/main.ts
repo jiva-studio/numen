@@ -1,5 +1,5 @@
 import { createApp } from 'vue'
-import { interceptOutwardLinks } from '@numen/ui'
+import { interceptExternalLinks } from '@numen/ui'
 import App from './app/App.vue'
 
 // The window draws its own menus. The one the webview draws carries a browser's
@@ -16,7 +16,7 @@ const wails = import(/* @vite-ignore */ runtime).catch(() => undefined)
 // A note may have been written by anybody, and this window has no address bar
 // to say where it has ended up. Nothing takes it off the pages it serves: an
 // address that leads outward is opened where the person opens everything else.
-interceptOutwardLinks((href) => {
+interceptExternalLinks((href) => {
   void wails.then((it) => {
     if (it?.Browser?.OpenURL) {
       it.Browser.OpenURL(href)

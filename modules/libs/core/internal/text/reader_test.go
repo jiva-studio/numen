@@ -47,7 +47,7 @@ func TestATranscriptNamesNoParts(t *testing.T) {
 
 // A transcript nothing put right is composed from its own bytes.
 func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
-	store := shelf{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
+	store := artifactMap{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 	if err != nil {
@@ -64,7 +64,7 @@ func TestATranscriptIsComposedFromWhatItWasInsertRightTo(t *testing.T) {
 		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
 	})
-	store := shelf{
+	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(cuesData, transcript.GetHandWrittenMark()...),
 	}
@@ -86,16 +86,16 @@ func TestATranscriptIsComposedFromWhatItWasInsertRightTo(t *testing.T) {
 // heard is what the source says.
 func TestATranscriptInsertRightToNothingIsWhatWasHeard(t *testing.T) {
 	for _, one := range []struct {
-		what string
-		put  []byte
+		what    string
+		applied []byte
 	}{
 		{"a file holding no bytes", nil},
 		{"a file holding no cues", []byte(transcript.Head + "\n")},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			store := shelf{
+			store := artifactMap{
 				domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
-				domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): one.put,
+				domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): one.applied,
 			}
 			doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 			if err != nil {
@@ -112,7 +112,7 @@ func TestATranscriptInsertRightToNothingIsWhatWasHeard(t *testing.T) {
 // passed over, and the cues before it stand where they were said.
 func TestATranscriptTornMidCueIsReadAsFarAsItGoes(t *testing.T) {
 	divided := append(writeTranscript(), "\n00:1"...)
-	store := shelf{
+	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): divided,
 	}
@@ -138,8 +138,8 @@ func TestALinkNoteIsItsProseAndThenWhatWasFetched(t *testing.T) {
 	if !strings.HasPrefix(doc.Text, prose+text.Separator) {
 		t.Errorf("the note reads %q, want its prose first", doc.Text)
 	}
-	if at := strings.Index(doc.Text, opening); at != len(prose)+len(text.Separator) {
-		t.Errorf("what was fetched begins at %d, want %d", at, len(prose)+len(text.Separator))
+	if pos := strings.Index(doc.Text, opening); pos != len(prose)+len(text.Separator) {
+		t.Errorf("what was fetched begins at %d, want %d", pos, len(prose)+len(text.Separator))
 	}
 	checkLocation(t, doc, opening, "0:01")
 	checkLocation(t, doc, middle, "1:23:45")

@@ -273,7 +273,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
       }
     },
     ...createEventBridge(deps, registry),
-    openTab: (kind: string, at?: string) => deps.openTab(kind, at),
+    openTab: (kind: string, target?: string) => deps.openTab(kind, target),
     closeTab: (id: string) => deps.closeTab?.(id),
     ...createServiceBridge(deps),
   }

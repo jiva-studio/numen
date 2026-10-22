@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
  * The settings a preset's goal schedules by, a row to each. A row is drawn in
- * the control its field takes, held to the ends the application answered with,
  * and written when the person is done with it.
  *
  * A row carries `data-preset-row`, the field it is about. `data-preset` names

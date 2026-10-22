@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// The default stands in the settings under ai.default, with the agent, the
 // model and the limit.
 func TestTheDefaultIsReadFromTheAISection(t *testing.T) {
 	cfg, _ := writeSettings(t, `{"ai": {"default": {"agent": "a", "model": "m", "concurrency": 3}}}`)

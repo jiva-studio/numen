@@ -27,10 +27,10 @@ import (
 // another, and a file nothing here can open is a third. All three are written
 // down, and a recording that has answered is not listened to again.
 type Transcribe struct {
-	readers port.VaultReaders
-	sources port.SourceRepository
-	derived port.DerivedStores
-	by      port.Transcriber
+	readers  port.VaultReaders
+	sources  port.SourceRepository
+	derived  port.DerivedStores
+	provider port.Transcriber
 
 	// Area is the store the artifact is kept in. Empty means the default.
 	Area string
@@ -56,18 +56,17 @@ type Transcribe struct {
 
 // NewTranscribe is what a recording is listened to through: the vault it is
 // read out of, where what the vault holds is recorded, the store the transcript
-// is written into, and the model that hears it.
 func NewTranscribe(
 	readers port.VaultReaders,
 	sources port.SourceRepository,
 	derived port.DerivedStores,
-	by port.Transcriber,
+	transcriber port.Transcriber,
 ) Transcribe {
-	return Transcribe{readers: readers, sources: sources, derived: derived, by: by}
+	return Transcribe{readers: readers, sources: sources, derived: derived, provider: transcriber}
 }
 
 // By returns the transcriber.
-func (u Transcribe) By() port.Transcriber { return u.by }
+func (u Transcribe) By() port.Transcriber { return u.provider }
 
 // TranscribeResult reports what transcribing did.
 type TranscribeResult struct {
@@ -134,7 +133,7 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 		return res, err
 	}
 
-	recording, err := u.by.Open(ctx, raw)
+	recording, err := u.provider.Open(ctx, raw)
 	if err != nil {
 		res.IsUnopened = true
 		return res, u.answer(ctx, v, ref, hash, area, store, text.Unopened+": "+describeFailure(err.Error()))
@@ -295,7 +294,7 @@ func (u Transcribe) transcribeBatch(
 	reached := from
 	cues := make([]domain.TranscriptCue, 0, len(segments))
 	for _, audio := range segments {
-		words, err := u.by.Transcribe(ctx, audio)
+		words, err := u.provider.Transcribe(ctx, audio)
 		if err != nil {
 			return nil, from, fmt.Errorf("hear %s at %s: %w", path, transcript.FormatTimestamp(audio.From), err)
 		}
@@ -327,12 +326,11 @@ func (u Transcribe) answer(
 	return run.Stand(ctx, u.Cut, u.sources, v, ref, hash, "")
 }
 
-// record keeps what listened to the recording along with what it heard. Nothing on
 // any path that answers a question reads it: it is there so that a person can
 // ask what produced a text, and so that everything a transcriber now known to
 // be bad produced can be found again.
 func (u Transcribe) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.by.GetTranscriptionModel()
+	named := u.provider.GetTranscriptionModel()
 	raw, err := json.MarshalIndent(struct {
 		Model     string `json:"model"`
 		Segmenter string `json:"segmenter"`

@@ -7,7 +7,6 @@ import type { Conversation } from '@numen/ui'
 import type { AgentModel } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
-/** A conversation with nothing said in it. */
 const createConversation = (): Conversation => ({
   turns: ref([]),
   isWorking: ref(false),
@@ -17,17 +16,15 @@ const createConversation = (): Conversation => ({
   finish: () => {},
 })
 
-/** A model the window lists, found at the place given. */
-type Model = AgentModel & { readonly namedAt: readonly string[] }
+type Model = AgentModel & { readonly nameAt: readonly string[] }
 
-/** A setting the window lists, found at the place given. */
 const model = (
-  namedAt: readonly string[],
+  nameAt: readonly string[],
   name: string,
   presence: Model['presence'] = 'present',
   isDefault = false,
 ): Model => ({
-  namedAt,
+  nameAt,
   name,
   title: name.toUpperCase(),
   isDefault,
@@ -42,7 +39,8 @@ const open = (models: readonly Model[] = [], settings: Record<string, string> = 
     resolve: async () => new Map(),
     unreachable: () => '',
     getSetting: (path) => settings[path.join('/')],
-    getModelsAt: (at) => models.filter((one) => one.namedAt.join('/') === at.join('/')),
+    getModelsAt: (categoryPath) =>
+      models.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
 
 /** The agents the tab offers, each once, in the order offered. */

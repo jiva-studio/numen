@@ -28,7 +28,7 @@ func TestTheSettingIsReadAsEachRenameIsMade(t *testing.T) {
 	cfg := writeSettings(t, `{"naming":{"sync_title_and_filename":true}}`)
 	setting := cfg.SyncSetting()
 	if !setting.GetSetting() {
-		t.Fatal("a title and a filename are told apart")
+		t.Fatal("a title and a filename are distinguished")
 	}
 
 	path := filepath.Join(filepath.Dir(cfg.RegistryPath), "numen.json")
@@ -51,7 +51,7 @@ func TestWhatIsReadWhereTheFileReturnsNothing(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			if !writeSettings(t, body).SyncSetting().GetSetting() {
-				t.Error("a title and a filename are told apart")
+				t.Error("a title and a filename are distinguished")
 			}
 		})
 	}

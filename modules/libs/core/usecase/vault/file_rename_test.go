@@ -83,17 +83,17 @@ func TestARenamedFileCallsTheNoteByTheNameItNowCarries(t *testing.T) {
 func TestARenamedFilePreservesTheNoteAloneWhereTheTwoAreReportedApart(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		raw   string
-		shown string
+		raw      string
+		expected string
 	}{
 		"a title in the frontmatter": {
-			raw: "---\ntitle: Entropy\n---\nA measure.\n", shown: "Entropy",
+			raw: "---\ntitle: Entropy\n---\nA measure.\n", expected: "Entropy",
 		},
 		"a level-one heading, which names nothing": {
-			raw: "# Entropy\n\nA measure.\n", shown: "Disorder",
+			raw: "# Entropy\n\nA measure.\n", expected: "Disorder",
 		},
 		"neither, so the file carries the name": {
-			raw: "A measure.\n", shown: "Disorder",
+			raw: "A measure.\n", expected: "Disorder",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -105,7 +105,7 @@ func TestARenamedFilePreservesTheNoteAloneWhereTheTwoAreReportedApart(t *testing
 			if got := f.read(t, "Disorder.md"); got != c.raw {
 				t.Errorf("the note was written to:\n%s", got)
 			}
-			if got := f.title(t, "Disorder.md"); got != c.shown {
+			if got := f.title(t, "Disorder.md"); got != c.expected {
 				t.Errorf("the vault shows it as %q", got)
 			}
 		})
@@ -158,9 +158,9 @@ func TestARenamedFolderWritesToNothingBelowIt(t *testing.T) {
 				t.Fatal(err)
 			}
 			for path, raw := range notes {
-				at := "chemistry" + strings.TrimPrefix(path, "physics")
-				if got := f.read(t, at); got != raw {
-					t.Errorf("%s was written to:\n%s", at, got)
+				pos := "chemistry" + strings.TrimPrefix(path, "physics")
+				if got := f.read(t, pos); got != raw {
+					t.Errorf("%s was written to:\n%s", pos, got)
 				}
 			}
 		})
@@ -196,7 +196,7 @@ func TestAMoveThatLandedIsSettled(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(*f.went) != 1 || (*f.went)[0].To != "Note #.md" {
-		t.Errorf("whoever is drawing it was told %+v", *f.went)
+		t.Errorf("whoever is drawing it received %+v", *f.went)
 	}
 }
 

@@ -94,22 +94,21 @@ func TestThePageIsAnsweredAtEveryAddressItOpensAt(t *testing.T) {
 	handler := (&API{}).NewHandler(files)
 
 	_, err := wire.GetInterface(pages)
-	for _, at := range []string{"/", "/index.html"} {
+	for _, item := range []string{"/", "/index.html"} {
 		out := httptest.NewRecorder()
-		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, at, nil))
+		handler.ServeHTTP(out, httptest.NewRequest(http.MethodGet, item, nil))
 		if err == nil {
 			if !strings.Contains(out.Body.String(), "<!doctype html>") {
-				t.Errorf("%s answered %q", at, out.Body.String())
+				t.Errorf("%s answered %q", item, out.Body.String())
 			}
 		} else {
 			if got := out.Body.String(); got != "the files" {
-				t.Errorf("%s answered %q", at, got)
+				t.Errorf("%s answered %q", item, got)
 			}
 		}
 	}
 }
 
-// The policy the window is held to. What each directive says is `appearance`'s to say and is asserted
 // there; what this window widens is asserted here.
 //
 // A card is HTML from the person's own vault and carries its own pictures. A `data:` URI is no
@@ -128,7 +127,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 		out := httptest.NewRecorder()
 		handler.ServeHTTP(out, r)
 		if response := out.Header().Get("Content-Security-Policy"); response != target {
-			t.Errorf("%q is held to %q", path, response)
+			t.Errorf("%q is bound to %q", path, response)
 		}
 	}
 }

@@ -13,7 +13,7 @@ import (
 // ErrNoSuchCard is what changing a card says when the deck holds no card of
 // that mark. A card is known by its mark, so a card rewritten from end to end
 // is still that card.
-var ErrNoSuchCard = errors.New("this deck holds no card of that mark")
+var ErrNoSuchCard = errors.New("card face not found in deck")
 
 // ErrTwoCards is what changing a card says when two cards of the deck carry
 // the mark it was addressed by. Both are read and both are shown, and which of
@@ -22,14 +22,13 @@ var ErrTwoCards = errors.New("two cards of this deck carry that mark")
 
 // ErrNoSuchSection is what changing a section says when the deck holds no
 // section standing there.
-var ErrNoSuchSection = errors.New("this deck holds no section standing there")
+var ErrNoSuchSection = errors.New("section not found in deck")
 
 // ErrNoSuchValue is what removing a value says when the card writes nothing
 // under that field. The stencil may well declare it: what is not there is what
 // the person wrote.
 var ErrNoSuchValue = errors.New("this card writes no value under that field")
 
-// DeckFile is a deck held open so that one value can be changed and every other
 // byte of the file left as it arrived. A change is a splice: the run one value
 // occupies is replaced, and nothing else in the file is written.
 type DeckFile struct {
@@ -143,7 +142,6 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 	return fmt.Errorf("%w: %s", ErrNoSuchValue, field)
 }
 
-// SetStencil writes the wikilink naming the stencil a card is cut by. A card
 // that named none is given the paragraph under its heading, and the values it
 // already holds stay where they stand.
 func (f *DeckFile) SetStencil(card cardid.ID, name string) error {
@@ -188,50 +186,50 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 	_, spans := readDeck(domain.Fingerprint{}, body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
-	at := -1
+	pos := -1
 	for i, span := range spans {
 		if span.mark == "" || span.mark != card {
 			continue
 		}
-		if at >= 0 {
+		if pos >= 0 {
 			return cardSpan{}, fmt.Errorf("%w: %s", ErrTwoCards, card)
 		}
-		at = i
+		pos = i
 	}
-	if at < 0 {
+	if pos < 0 {
 		return cardSpan{}, fmt.Errorf("%w: %s", ErrNoSuchCard, card)
 	}
-	return spans[at], nil
+	return spans[pos], nil
 }
 
 // RenameSection gives the section standing at one place in the deck another
 // name. What is placed under it is left where it was.
-func (f *DeckFile) RenameSection(at int, name string) error {
+func (f *DeckFile) RenameSection(index int, name string) error {
 	body := []byte(f.doc.Body())
 	heads := sectionHeads(body)
-	if at < 0 || at >= len(heads) {
-		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
+	if index < 0 || index >= len(heads) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
 	line := headingLine(1, name)
-	if from := heads[at].from; from > 0 && body[from-1] == '\n' {
+	if from := heads[index].from; from > 0 && body[from-1] == '\n' {
 		line += "\n"
 	}
-	return f.doc.SpliceBody(heads[at].head, heads[at].from, line)
+	return f.doc.SpliceBody(heads[index].head, heads[index].from, line)
 }
 
 // RemoveSection takes away the heading of the section standing at one place in
 // the deck. A section is a name and nothing else, so the cards that stood under
 // it and what a person wrote beneath it stay where they are, under whatever now
 // stands above them.
-func (f *DeckFile) RemoveSection(at int) error {
+func (f *DeckFile) RemoveSection(index int) error {
 	body := []byte(f.doc.Body())
 	heads := sectionHeads(body)
-	if at < 0 || at >= len(heads) {
-		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
+	if index < 0 || index >= len(heads) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, index)
 	}
 	// The blank line under the heading went with it, so the block below closes
 	// up against what the heading stood beneath.
-	head, to := heads[at].head, heads[at].from
+	head, to := heads[index].head, heads[index].from
 	for to < len(body) && (body[to] == '\n' || body[to] == '\r') {
 		to++
 	}
@@ -255,29 +253,29 @@ func (f *DeckFile) AddSection(s Section) error {
 	if lead := trimBlankLines(markdown.Normalise(s.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
 	}
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, strings.Join(blocks, "\n\n")))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, strings.Join(blocks, "\n\n")))
 }
 
 // AddCard writes a card at the end of the deck.
 func (f *DeckFile) AddCard(card Card) error {
 	body := []byte(f.doc.Body())
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, cardBlock(card)))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, cardBlock(card)))
 }
 
 // AddCardUnder writes a card at the end of the section standing at one place in
 // the deck, which is in front of the section after it. ErrNoSuchSection when
 // the deck holds no section standing there.
-func (f *DeckFile) AddCardUnder(at int, card Card) error {
+func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 	body := []byte(f.doc.Body())
 	heads := sectionHeads(body)
-	if at < 0 || at >= len(heads) {
-		return fmt.Errorf("%w: %d", ErrNoSuchSection, at)
+	if sectionIndex < 0 || sectionIndex >= len(heads) {
+		return fmt.Errorf("%w: %d", ErrNoSuchSection, sectionIndex)
 	}
 	content := len(body)
-	if at+1 < len(heads) {
-		content = heads[at+1].head
+	if sectionIndex+1 < len(heads) {
+		content = heads[sectionIndex+1].head
 	}
 	return f.doc.SpliceBody(content, content, insert(body, content, cardBlock(card)))
 }
@@ -317,17 +315,17 @@ func cardBlock(card Card) string {
 // the end where nothing is placed under it. A card standing under a section the
 // deck does not hold is ErrNoSuchSection.
 type deckBodyWriter struct {
-	scratch  *DeckFile
-	sections []Section
-	written  int
+	scratch      *DeckFile
+	sections     []Section
+	sectionCount int
 }
 
 func (w *deckBodyWriter) writeSectionsUpTo(to int) error {
-	for w.written < len(w.sections) && w.written <= to {
-		if err := w.scratch.AddSection(w.sections[w.written]); err != nil {
+	for w.sectionCount < len(w.sections) && w.sectionCount <= to {
+		if err := w.scratch.AddSection(w.sections[w.sectionCount]); err != nil {
 			return err
 		}
-		w.written++
+		w.sectionCount++
 	}
 	return nil
 }
@@ -349,9 +347,9 @@ func DeckBody(d Deck) (string, error) {
 		return "", err
 	}
 	w := deckBodyWriter{
-		scratch:  scratch,
-		sections: d.Sections,
-		written:  0,
+		scratch:      scratch,
+		sections:     d.Sections,
+		sectionCount: 0,
 	}
 	for _, card := range d.Cards {
 		if err := w.writeCard(card); err != nil {
@@ -410,6 +408,6 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 // under the heading is an ordinary wikilink, so what cuts the card is the note
 // that name lands on.
 func usesStencil(card Card, linkTargets map[string]string, stencil string) bool {
-	at, lands := linkTargets[card.StencilLink]
-	return lands && at == stencil
+	pos, lands := linkTargets[card.StencilLink]
+	return lands && pos == stencil
 }

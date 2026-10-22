@@ -14,10 +14,10 @@ import (
 
 // serveCompletions gives the host the settings written and returns what answers the questions of
 // its plugins.
-func serveCompletions(t *testing.T, host *plugin.Host, written string) (port.Completer, string) {
+func serveCompletions(t *testing.T, host *plugin.Host, output string) (port.Completer, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.WriteFile(path, []byte(written), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	cfg := container.Config{PluginHost: host, SettingsPath: path}
@@ -66,7 +66,6 @@ func TestAQuestionIsATaskOfTheProgramTheDefaultNames(t *testing.T) {
 	}
 }
 
-// The model the route names stands over the one the program's section names, and an empty default
 // is the program the plugins mark as the default.
 func TestTheRouteModelExistsOverTheSectionAndAnEmptyDefaultIsTheProgramsDefault(t *testing.T) {
 	host, one, _ := twoProviders(t)

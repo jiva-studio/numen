@@ -37,7 +37,7 @@ export function createHost({
   const recorded = {
     opened: [] as [string, OpenFileOptions | undefined][],
     openedAt: [] as [string, readonly Span[]][],
-    written: [] as [readonly string[], unknown][],
+    settings: [] as [readonly string[], unknown][],
     finished: [] as string[],
     resolved: [] as (readonly string[])[],
   }
@@ -59,7 +59,7 @@ export function createHost({
     },
     getUnreachable: () => unreachable,
     getSetting: (path) => settings[path.join('.')],
-    writeSetting: async (path, value) => void recorded.written.push([path, value]),
+    writeSetting: async (path, value) => void recorded.settings.push([path, value]),
     getModelsAt: (path) => models[path.join('.')] ?? [],
   }
 

@@ -39,10 +39,10 @@ const words: Words = {
 }
 
 /** A window showing a vault it has read. */
-const createCurrentVault = (over: Partial<CurrentVault> = {}): CurrentVault => ({
+const createCurrentVault = (overrides: Partial<CurrentVault> = {}): CurrentVault => ({
   vault: 'physics',
   isReady: true,
-  ...over,
+  ...overrides,
 })
 
 const vault = (id: string, name: string, isMissing = false): Vault => ({
@@ -57,11 +57,10 @@ const createVaultList = (vaults: readonly Vault[], current: string): VaultList =
   showing: current,
 })
 
-/** Two vaults, the first of them the one the window is showing. */
 const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 
 describe('the ways into the vault', () => {
-  it('are the settings alone where the window is showing no vault', () => {
+  it('shows only settings when no vault is active', () => {
     expect(
       createWelcomeActions(createCurrentVault({ vault: '', isReady: false }), words, APPLE).map(
         (one) => one.id,
@@ -140,7 +139,7 @@ describe('the vaults the screen lists', () => {
     expect(createVaultRows(two, words).map((one) => one.name)).toStrictEqual(['Physics', 'Heat'])
   })
 
-  it('marks the one the window is showing, and draws it all the same', () => {
+  it('marks active item and renders normally', () => {
     expect(createVaultRows(two, words)[0]).toStrictEqual({
       id: 'a',
       name: 'Physics',

@@ -28,7 +28,7 @@ type Embedder struct {
 	once  sync.Once
 
 	mu     sync.RWMutex
-	held   port.Embedder
+	item   port.Embedder
 	reason error
 	// isDone is the wait being over: something answered for it, it was let go
 	// of, or it was closed.
@@ -53,18 +53,18 @@ func NewDeferredEmbedder(is port.EmbeddingModel) *Embedder {
 // SetModel is the model turning up, or the reason it never will. It is the
 // first of these that counts, and a model arriving after the wait is over is
 // release at its current position.
-func (e *Embedder) SetModel(held port.Embedder, why error) {
+func (e *Embedder) SetModel(embedder port.Embedder, why error) {
 	e.mu.Lock()
 	late := e.isDone
 	if !late {
 		e.isDone = true
-		e.held, e.reason = held, why
+		e.item, e.reason = embedder, why
 	}
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
 	if late {
-		_ = closeIfPresent(held)
+		_ = closeIfPresent(embedder)
 	}
 }
 
@@ -74,8 +74,8 @@ func (e *Embedder) SetModel(held port.Embedder, why error) {
 // The reason is in place before anybody can see the wait is over.
 func (e *Embedder) DiscardModel(why error) error {
 	e.mu.Lock()
-	target := e.held
-	e.held, e.reason, e.isDone = nil, why, true
+	target := e.item
+	e.item, e.reason, e.isDone = nil, why, true
 	e.mu.Unlock()
 
 	e.once.Do(func() { close(e.ready) })
@@ -84,11 +84,11 @@ func (e *Embedder) DiscardModel(why error) error {
 
 // closeIfPresent closes a model that is here, and says what closing it said. There is
 // nothing to close where nothing landed.
-func closeIfPresent(held port.Embedder) error {
-	if held == nil {
+func closeIfPresent(target port.Embedder) error {
+	if target == nil {
 		return nil
 	}
-	return held.Close()
+	return target.Close()
 }
 
 // GetModel is what the settings say this is, known before the weights are here.
@@ -106,7 +106,7 @@ func (e *Embedder) Wait(ctx context.Context) error {
 	switch {
 	case e.reason != nil:
 		return e.reason
-	case e.held == nil:
+	case e.item == nil:
 		return ErrModelNotReady
 	}
 	return nil
@@ -116,8 +116,8 @@ func (e *Embedder) Wait(ctx context.Context) error {
 // its way down is release the moment it arrives.
 func (e *Embedder) Close() error {
 	e.mu.Lock()
-	target := e.held
-	e.held, e.isDone = nil, true
+	target := e.item
+	e.item, e.isDone = nil, true
 	e.mu.Unlock()
 	return closeIfPresent(target)
 }
@@ -133,7 +133,7 @@ func (e *Embedder) GetImpatientEmbedder() port.Embedder { return nonBlockingEmbe
 // embed is what the model answers with, once it is here.
 func (e *Embedder) embed(ctx context.Context, texts []string) ([][]float32, error) {
 	e.mu.RLock()
-	target := e.held
+	target := e.item
 	e.mu.RUnlock()
 	if target == nil {
 		return nil, ErrModelNotReady
@@ -190,7 +190,7 @@ func (i nonBlockingEmbedder) Concurrency() int { return i.e.Concurrency() }
 // has not arrived.
 func (e *Embedder) Concurrency() int {
 	e.mu.RLock()
-	target := e.held
+	target := e.item
 	e.mu.RUnlock()
 	if target == nil {
 		return 1

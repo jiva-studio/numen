@@ -1,10 +1,3 @@
-/**
- * What the tree draws from the rows it was handed, and what it emits.
- *
- * The negatives are here: a shut row's contents are not drawn, a refused drop
- * does not move, and a name abandoned does not rename. A drag is read from
- * heights, and the rows are given theirs by hand.
- */
 import { mount } from '@vue/test-utils'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Tree from './Tree.vue'
@@ -93,10 +86,10 @@ const pointer = (
   kind: string,
   y: number,
   on: EventTarget = window,
-  over: MouseEventInit = {},
+  overrides: MouseEventInit = {},
 ): void => {
   on.dispatchEvent(
-    new MouseEvent(kind, { bubbles: true, button: 0, clientX: 10, clientY: y, ...over }),
+    new MouseEvent(kind, { bubbles: true, button: 0, clientX: 10, clientY: y, ...overrides }),
   )
 }
 
@@ -107,22 +100,22 @@ const getMiddle = (wrapper: Tree, row: string): number => {
 }
 
 /** A row pressed and let go, with whatever was held down as it was. */
-const press = async (wrapper: Tree, row: string, over: MouseEventInit = {}): Promise<void> => {
+const press = async (wrapper: Tree, row: string, overrides: MouseEventInit = {}): Promise<void> => {
   const on = getRow(wrapper, row)
-  const at = getMiddle(wrapper, row)
+  const pos = getMiddle(wrapper, row)
 
-  pointer('pointerdown', at, on.element, over)
-  pointer('pointerup', at)
-  await on.trigger('click', over)
+  pointer('pointerdown', pos, on.element, overrides)
+  pointer('pointerup', pos)
+  await on.trigger('click', overrides)
 }
 
 /** A row picked up and let go at a height, in as many steps as a hand takes. */
 const dragTo = async (wrapper: Tree, row: string, y: number): Promise<void> => {
   const from = getRow(wrapper, row).element
-  const at = getMiddle(wrapper, row)
+  const start = getMiddle(wrapper, row)
 
-  pointer('pointerdown', at, from)
-  pointer('pointermove', (at + y) / 2)
+  pointer('pointerdown', start, from)
+  pointer('pointermove', (start + y) / 2)
   pointer('pointermove', y)
   pointer('pointerup', y)
   await wrapper.vm.$nextTick()
@@ -239,8 +232,12 @@ describe('a press', () => {
 })
 
 describe('the keyboard', () => {
-  const pressKey = (wrapper: Tree, row: string, key: string, over: Record<string, unknown> = {}) =>
-    getRow(wrapper, row).trigger('keydown', { key, ...over })
+  const pressKey = (
+    wrapper: Tree,
+    row: string,
+    key: string,
+    overrides: Record<string, unknown> = {},
+  ) => getRow(wrapper, row).trigger('keydown', { key, ...overrides })
 
   it('moves the selection a row at a time', async () => {
     const target = mountTree({ selected: ['work'] })
@@ -315,7 +312,6 @@ describe('the keyboard', () => {
     expect(target.emitted('select')).toStrictEqual([[['work']]])
   })
 
-  // A space the tree lets by is a space the pane it stands in scrolls under.
   it('keeps the space to itself', () => {
     const target = mountTree({ selected: ['work'] })
     const press = new KeyboardEvent('keydown', { key: ' ', bubbles: true, cancelable: true })
@@ -628,7 +624,6 @@ describe('the attribute rows are marked with', () => {
 
   const getMark = (wrapper: Tree, row: string) => getRow(wrapper, row).attributes(ATTRIBUTE)
 
-  /** The place a row stands for, or the place it sits in. */
   const getAttributeValue = (row: string | null): string => {
     if (row === null) return ''
     if (row === 'work' || row === 'plans' || row === 'empty') return row
@@ -670,15 +665,19 @@ describe('the attribute rows are marked with', () => {
 })
 
 /** A cancelable key press: the tree took it where it is prevented. */
-const sendKey = (target: Element, key: string, over: KeyboardEventInit = {}): KeyboardEvent => {
-  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...over })
+const sendKey = (
+  target: Element,
+  key: string,
+  overrides: KeyboardEventInit = {},
+): KeyboardEvent => {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...overrides })
   target.dispatchEvent(event)
   return event
 }
 
 describe('the keys the tree takes', () => {
-  const sendKeyOn = (wrapper: Tree, row: string, key: string, over: KeyboardEventInit = {}) =>
-    sendKey(getRow(wrapper, row).element, key, over)
+  const sendKeyOn = (wrapper: Tree, row: string, key: string, overrides: KeyboardEventInit = {}) =>
+    sendKey(getRow(wrapper, row).element, key, overrides)
 
   it('takes Ctrl and A, in either case, to select every row', () => {
     const wrapper = mountTree()
@@ -697,7 +696,9 @@ describe('the keys the tree takes', () => {
     const acquiredItem = sendKeyOn(wrapper, 'notes', 'a', { metaKey: true })
 
     expect(acquiredItem.defaultPrevented).toBe(true)
-    expect(wrapper.emitted('select')).toStrictEqual([[['work', 'plans', 'notes', 'empty', 'loose']]])
+    expect(wrapper.emitted('select')).toStrictEqual([
+      [['work', 'plans', 'notes', 'empty', 'loose']],
+    ])
   })
 
   it('leaves A alone while nothing is retained down', () => {

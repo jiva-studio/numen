@@ -44,7 +44,7 @@ func DiscoverPlugins(dirs []string) ([]DiscoveredPlugin, []DiscoveryProblem) {
 	return found, problems
 }
 
-func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, []DiscoveryProblem) {
+func scanDirectory(dir string, visited map[string]string) ([]DiscoveredPlugin, []DiscoveryProblem) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -60,7 +60,7 @@ func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, []Di
 			continue
 		}
 		pluginDir := filepath.Join(dir, entry.Name())
-		p, ok, err := scanPluginDir(pluginDir, seen)
+		p, ok, err := scanPluginDir(pluginDir, visited)
 		if err != nil {
 			problems = append(problems, DiscoveryProblem{Dir: pluginDir, Err: err})
 			continue
@@ -72,7 +72,7 @@ func scanDirectory(dir string, seen map[string]string) ([]DiscoveredPlugin, []Di
 	return found, problems
 }
 
-func scanPluginDir(pluginDir string, seen map[string]string) (DiscoveredPlugin, bool, error) {
+func scanPluginDir(pluginDir string, seenCount map[string]string) (DiscoveredPlugin, bool, error) {
 	manifestPath := filepath.Join(pluginDir, "manifest.json")
 	m, err := readManifestPath(manifestPath)
 	if err != nil {
@@ -87,13 +87,13 @@ func scanPluginDir(pluginDir string, seen map[string]string) (DiscoveredPlugin, 
 		cleanPluginDir = abs
 	}
 
-	if existingDir, ok := seen[m.ID]; ok {
+	if existingDir, ok := seenCount[m.ID]; ok {
 		if existingDir == cleanPluginDir {
 			return emptyDiscoveredPlugin(), false, nil
 		}
 		return emptyDiscoveredPlugin(), false, fmt.Errorf("duplicate plugin id %q in %s and %s", m.ID, existingDir, cleanPluginDir)
 	}
-	seen[m.ID] = cleanPluginDir
+	seenCount[m.ID] = cleanPluginDir
 	return DiscoveredPlugin{
 		Dir:      cleanPluginDir,
 		Manifest: m,

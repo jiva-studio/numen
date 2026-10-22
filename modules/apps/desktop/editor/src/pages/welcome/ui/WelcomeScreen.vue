@@ -3,7 +3,6 @@
  * The screen a window holding nothing shows: the vaults this installation
  * holds, and the ways into the one it is showing.
  *
- * The screen draws what it is given, so what stands in front of each way is
  * chosen here, where the window's own icons are. A letter alone opens the vault
  * standing at it, which is the letter drawn on that row.
  */
@@ -30,7 +29,7 @@ import { WORDS as words } from '@/shared/words'
 // --- Props & Emits ---
 const props = defineProps<{
   /** Every vault the installation holds, as the list last answered. */
-  listed: VaultList
+  vaultList: VaultList
   /** Every tab the window holds, which is none while this screen is what shows. */
   tabs: readonly Tab[]
   commands: Commands
@@ -38,7 +37,7 @@ const props = defineProps<{
   doing: CommandDeps
   getTarget: () => CommandTarget
   /** A command asked for, which is what every way in but the commands evaluates to. */
-  runCommand: (id: string, at: CommandTarget) => void
+  runCommand: (id: string, target: CommandTarget) => void
 }>()
 
 // --- State ---
@@ -53,9 +52,9 @@ const adding = computed(() => {
 })
 
 const ways = computed(() => {
-  const at = props.getTarget()
+  const target = props.getTarget()
   return createWelcomeActions(
-    { vault: at.vault.id, isReady: at.isReady },
+    { vault: target.vault.id, isReady: target.isReady },
     words,
     navigator.userAgent,
   ).map((one) => {
@@ -64,7 +63,7 @@ const ways = computed(() => {
   })
 })
 
-const onList = computed(() => createVaultRows(props.listed, words))
+const onList = computed(() => createVaultRows(props.vaultList, words))
 
 /** Whether the welcome screen is what the person is looking at and typing into. */
 const welcoming = computed(
@@ -79,7 +78,7 @@ function onRun(id: string) {
 }
 
 function onOpen(id: string) {
-  const one = props.listed.vaults.find((vault) => vault.id === id)
+  const one = props.vaultList.vaults.find((vault) => vault.id === id)
   if (!one) return
   const vault: VaultRef = { id: one.id, name: one.name }
   void runInvocation(
@@ -91,8 +90,8 @@ function onOpen(id: string) {
 
 function onKeyDown(event: KeyboardEvent) {
   if (event.defaultPrevented || !welcoming.value) return
-  const at = getVaultForKey(event, onList.value.length)
-  const one = at === null ? undefined : onList.value[at]
+  const pos = getVaultForKey(event, onList.value.length)
+  const one = pos === null ? undefined : onList.value[pos]
   if (!one) return
   event.preventDefault()
   onOpen(one.id)

@@ -43,7 +43,6 @@ export const OnlyCreate: Story = {
     await expect(gaps.top).toBeCloseTo(gaps.bottom, 1)
     await expect(gaps.top).toBeCloseTo(gaps.left, 1)
 
-    // Nothing the row stands in is transformed, so its text is drawn at whole pixels.
     for (const box of [canvas.getByRole('dialog'), dropdown]) {
       await expect(getComputedStyle(box).transform).toBe('none')
     }

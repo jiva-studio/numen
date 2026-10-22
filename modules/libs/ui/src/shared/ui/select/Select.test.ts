@@ -79,7 +79,7 @@ describe('the line at rest', () => {
   })
 
   it('is not opened while nobody may turn it', async () => {
-    const control = mountSelect({ disabled: true })
+    const control = mountSelect({ isDisabled: true })
     expect(line(control).attributes('disabled')).toBeDefined()
     await openSelect(control)
     expect(rows()).toHaveLength(0)
@@ -233,6 +233,8 @@ describe('the value written on the line', () => {
       modelValue: 'long',
     })
     const readingElement = control.get('.select__reading')
-    expect(readingElement.attributes('title')).toBe('Agent of the panel (OpenAI Codex) with a long tail')
+    expect(readingElement.attributes('title')).toBe(
+      'Agent of the panel (OpenAI Codex) with a long tail',
+    )
   })
 })

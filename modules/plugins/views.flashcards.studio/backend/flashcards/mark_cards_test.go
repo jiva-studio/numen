@@ -12,20 +12,17 @@ import (
 )
 
 // busy is an index that cannot be brought level, which is what a second writer
-// holding it leaves behind.
 func busy(context.Context, domain.Vault, []string) error {
 	return errors.New("the index is busy")
 }
 
 // A deck that could not be written is named and left currently. The editor
-// may be holding it, and a person is told which deck their cards are missing
 // from and not left to wonder.
 func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
 	// The deck cannot be replaced. What a person meets is the editor holding
-	// the file; this is the same refusal from the same place.
 	s.env.Host.RefuseWriting("decks/Own.md", fs.ErrPermission)
 
 	marked, err := s.marking.Execute(t.Context(), s.vault)
@@ -66,7 +63,6 @@ func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 }
 
 // A vault whose decks are all written has nothing to report, which is what says
-// the naming above is the refusal and not the ordinary case.
 func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)

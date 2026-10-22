@@ -14,7 +14,6 @@ export interface FlushResult {
 }
 
 /**
- * The invocation at the file its note stands at now. One over a note no tab of the
  * window holds is at the name it was made over.
  */
 export const withCurrentNotePath = (
@@ -42,7 +41,7 @@ export const navigateToPath = async (
   words: AnswerWords,
 ): Promise<void> => {
   if (!path) return on.writeMessage(words.nowhere, 'caution')
-  await on.goes.travel(path)
+  await on.navigator.travel(path)
 }
 
 export interface CreateNoteOptions {
@@ -57,10 +56,17 @@ export const createNoteCommand = async (
 ): Promise<void> => {
   if (!invocation.name) return
   const { relation, words } = options
-  const createdItem = await on.files.createNote(invocation.name, relation ? invocation.path : '', relation)
+  const createdItem = await on.files.createNote(
+    invocation.name,
+    relation ? invocation.path : '',
+    relation,
+  )
   if (!createdItem) return
   if (invocation.kind === NOTE) {
-    return on.notes.openNewFile(createdItem.path, createdItem.title, { type: 'note', where: 'beside' })
+    return on.notes.openNewFile(createdItem.path, createdItem.title, {
+      type: 'note',
+      where: 'beside',
+    })
   }
   await navigateToPath(createdItem.path, on, words)
 }

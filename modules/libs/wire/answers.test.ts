@@ -22,15 +22,15 @@ import {
 
 describe('the file an answer came out of', () => {
   it('arrives back out as it went in', () => {
-    const at = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
-    expect(parseFingerprint(formatFingerprint(at) as string)).toEqual(at)
+    const fingerprint = { path: 'physics/Entropy.md', size: 1234n, mtime: 1_700_000_000n }
+    expect(parseFingerprint(formatFingerprint(fingerprint) as string)).toEqual(fingerprint)
   })
 
   // A path is the one part that may hold a space, so it is what is left after
   // the two numbers and not one field among several.
   it('arrives back out whole where the path holds spaces', () => {
-    const at = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
-    expect(parseFingerprint(formatFingerprint(at) as string)).toEqual(at)
+    const fingerprint = { path: 'heat/Maxwell’s demon and the rest.md', size: 7n, mtime: 9n }
+    expect(parseFingerprint(formatFingerprint(fingerprint) as string)).toEqual(fingerprint)
   })
 
   it('is nothing where the answer named no file', () => {

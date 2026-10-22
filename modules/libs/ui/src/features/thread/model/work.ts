@@ -1,6 +1,5 @@
 /**
  * The line that says what the agent has in hand, and the line under it that
- * says an answer is still on its way. One of each stands at a time.
  */
 import { writeCharCount, type Turn } from '../lib/turn'
 import type { SourceLocation } from '../lib/agent'

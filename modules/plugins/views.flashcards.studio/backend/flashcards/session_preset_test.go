@@ -13,17 +13,16 @@ import (
 // openSession is what the vault asks at this instant when the session is opened
 // over this deck or this preset.
 func (s vaulted) openSession(
-	t *testing.T, day review.Day, now time.Time, at flashcards.Scope,
+	t *testing.T, day review.Day, now time.Time, pos flashcards.Scope,
 ) (flashcards.SessionResult, error) {
 	t.Helper()
 	return flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
-	).Execute(t.Context(), s.vault, at)
+	).Execute(t.Context(), s.vault, pos)
 }
 
 // openSessionByPreset is the session over one preset, and a fatal error where
-// it was refused.
 func (s vaulted) openSessionByPreset(
 	t *testing.T, day review.Day, now time.Time, preset string,
 ) flashcards.SessionResult {
@@ -153,7 +152,6 @@ func TestASessionOverAPresetNothingPointsAtIsRefused(t *testing.T) {
 	}
 }
 
-// A paused preset is refused with the reason, and not with an empty session.
 func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -171,7 +169,6 @@ func TestASessionOverAPausedPresetIsRefused(t *testing.T) {
 	}
 }
 
-// A day already spent is refused with the reason. The first session takes the
 // whole of the allowance, and the second is told why there is nothing left.
 func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 	t.Parallel()

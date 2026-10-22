@@ -137,7 +137,6 @@ var byteSeeds = []string{
 
 // Bytes the settings are saved from land in the file as they were typed, and
 // what lands is read back as settings: a file the application itself took is
-// never one it cannot open at the next launch. Bytes it refuses are refused by
 // name, and the file is left holding what it held — a person's own settings are
 // worth more than the one being written over them.
 //
@@ -155,7 +154,7 @@ func FuzzWrite(f *testing.F) {
 		switch err := settings.Write(path, []byte(raw), nil, newDocument()); {
 		case err == nil:
 			if got := reading(t, path); got != raw {
-				t.Fatalf("%q was saved and %q stands in the file", raw, got)
+				t.Fatalf("saved %q, found %q in file", raw, got)
 			}
 			if _, err := openAt(path); err != nil {
 				t.Fatalf("%q was saved and reads back as %v", raw, err)
@@ -171,7 +170,6 @@ func FuzzWrite(f *testing.F) {
 	})
 }
 
-// writeFile stands these bytes in the settings file, and returns where it
 // is. One file is written over and over: a folder for each of a million inputs
 // is a folder a run never gets to the end of.
 func writeFile(tb testing.TB, path, raw string) string {
@@ -182,7 +180,6 @@ func writeFile(tb testing.TB, path, raw string) string {
 	return path
 }
 
-// reading is what stands in the file, as the bytes a caller is handed.
 func reading(tb testing.TB, path string) string {
 	tb.Helper()
 	raw, err := settings.Read(path)

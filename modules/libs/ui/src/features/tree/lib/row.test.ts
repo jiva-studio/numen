@@ -64,7 +64,7 @@ describe('what is drawn', () => {
 
   it('leaves a row that cannot hold shut, named or not', () => {
     expect(getRowIds('loose')).toStrictEqual(['work', 'empty', 'loose'])
-    expect(getShownRows('loose')[2]?.open).toBe(false)
+    expect(getShownRows('loose')[2]?.isOpen).toBe(false)
   })
 
   it('counts the level from one, down the levels it walked', () => {
@@ -158,7 +158,8 @@ describe('the keys a tree answers', () => {
 
 describe('where a key takes the keyboard', () => {
   const visibleRows = getShownRows('work')
-  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) => stepTo(visibleRows, from, key)
+  const step = (from: RowId | null, key: Parameters<typeof stepTo>[2]) =>
+    stepTo(visibleRows, from, key)
 
   it('moves a row down and a row up', () => {
     expect(step('work', 'ArrowDown')).toStrictEqual({ at: 'plans', turn: null })
@@ -183,7 +184,7 @@ describe('where a key takes the keyboard', () => {
   it('opens a shut row and stays on it', () => {
     expect(step('plans', 'ArrowRight')).toStrictEqual({
       at: 'plans',
-      turn: { row: 'plans', open: true },
+      turn: { row: 'plans', isOpen: true },
     })
   })
 
@@ -202,7 +203,7 @@ describe('where a key takes the keyboard', () => {
   it('closes an open row and stays on it', () => {
     expect(step('work', 'ArrowLeft')).toStrictEqual({
       at: 'work',
-      turn: { row: 'work', open: false },
+      turn: { row: 'work', isOpen: false },
     })
   })
 
@@ -490,13 +491,13 @@ describe('two selections', () => {
 
 describe('what follows the pointer', () => {
   const visibleRows = getShownRows('work')
-  const at = { x: 40, y: 60 }
+  const point = { x: 40, y: 60 }
   const formatCount = (rows: number) => `${rows} rows`
   const label = (rows: readonly RowId[]) =>
-    dragLabel(visibleRows, rows, { at, getCountWords: formatCount })
+    dragLabel(visibleRows, rows, { at: point, getCountWords: formatCount })
 
   it('is the name of the one row dragged', () => {
-    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at })
+    expect(label(['notes'])).toStrictEqual({ label: 'Notes', at: point })
   })
 
   it('is how many are dragged, where there are several', () => {

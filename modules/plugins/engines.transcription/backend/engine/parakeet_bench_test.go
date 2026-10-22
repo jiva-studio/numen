@@ -10,11 +10,11 @@ import (
 func BenchmarkParakeetGreedyLoop(b *testing.B) {
 	cfg := Defaults()
 	cfg.ShouldDownload = false
-	by, err := Open(b.Context(), cfg)
+	delta, err := Open(b.Context(), cfg)
 	if err != nil {
 		b.Skipf("parakeet models not available: %v", err)
 	}
-	defer by.Close()
+	defer delta.Close()
 
 	const width = 100
 	data := make([]float32, encoded*width)
@@ -32,7 +32,7 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for b.Loop() {
-		_, err := by.decode(ctx, out)
+		_, err := delta.decode(ctx, out)
 		if err != nil {
 			b.Fatal(err)
 		}

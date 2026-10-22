@@ -85,7 +85,7 @@ Forty-three, each a colour except where it says otherwise.
 | `--numen-accent` | the node the keyboard is on, what a button is filled with, and every line and mark drawn in the accent. |
 | `--numen-accent-ink` | text on the accent. |
 | `--numen-ring` | the outline around what is focused, and a link in marked-up text. |
-| `--numen-alarm` | what is wrong: a refusal, and what the parser could not read. |
+| `--numen-alarm` | what is wrong: an error, and what the parser could not read. |
 | `--numen-alarm-bg` | the ground a card carrying an alarm stands on. |
 | `--numen-hushed` | text said quietly beside what it is about: a caption, a count, a month over a grid. |
 

@@ -177,7 +177,7 @@ func TestOnlyARebuildForgetsTheVectorsOfAnotherModel(t *testing.T) {
 		t.Errorf("a run that was not a rebuild forgot the vectors of the first model: %d chunks owe one", got)
 	}
 	if got := owingAfterAModelSwitch(t, true); got == 0 {
-		t.Error("a rebuild kept the vectors of a model nobody asked for")
+		t.Error("a rebuild kept the vectors of a model unrequested for")
 	}
 }
 

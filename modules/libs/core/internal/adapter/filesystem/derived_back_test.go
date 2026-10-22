@@ -11,8 +11,8 @@ import (
 // where this one's bytes begin, and the length the file had is no longer it.
 func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "run.txt")
-	if err := os.WriteFile(at, []byte("one\n"), 0o644); err != nil {
+	pos := filepath.Join(dir, "run.txt")
+	if err := os.WriteFile(pos, []byte("one\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	root, err := os.OpenRoot(dir)
@@ -25,7 +25,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	other, err := os.OpenFile(at, os.O_WRONLY|os.O_APPEND, 0o644)
+	other, err := os.OpenFile(pos, os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		file.Close()
 		t.Fatal(err)
@@ -45,7 +45,7 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := os.ReadFile(at)
+	got, err := os.ReadFile(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,8 +57,8 @@ func TestAnAppendIsTakenBackToWhereItLanded(t *testing.T) {
 // A write that landed nothing has nothing to take back.
 func TestAnAppendThatLandedNothingSplitsNothing(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "run.txt")
-	if err := os.WriteFile(at, []byte("one\n"), 0o644); err != nil {
+	pos := filepath.Join(dir, "run.txt")
+	if err := os.WriteFile(pos, []byte("one\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	root, err := os.OpenRoot(dir)
@@ -73,7 +73,7 @@ func TestAnAppendThatLandedNothingSplitsNothing(t *testing.T) {
 	if err := closeAndTruncate(root, file, "run.txt", 0); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := os.ReadFile(at); err != nil || string(got) != "one\n" {
+	if got, err := os.ReadFile(pos); err != nil || string(got) != "one\n" {
 		t.Errorf("the file holds %q, want what stood there: %v", got, err)
 	}
 }

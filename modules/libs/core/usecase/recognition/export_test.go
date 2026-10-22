@@ -20,7 +20,7 @@ func NewMemoryRecognise(
 			onPage()
 		}
 	}}
-	r := NewRecognise(readers, index, shelves{newShelf()}, documents, model)
+	r := NewRecognise(readers, index, fakeStores{newShelf()}, documents, model)
 	r.Batch = 1
 	return r, func(v domain.VaultID, path string) string { return index.sources[v][path].Hash }
 }

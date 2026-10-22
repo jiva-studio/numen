@@ -54,7 +54,6 @@ func NewHighlight(
 // Execute is what the runs of one source's text say and where each of them
 // sits: the boxes covering it, each on the page it was read from.
 //
-// The answer stands in the order the runs were asked about, so a caller that
 // asked about a passage and the places around it knows which is which. The text
 // and the coordinates are read once however many runs are asked about.
 func (u Highlight) Execute(
@@ -68,7 +67,6 @@ func (u Highlight) Execute(
 		return nil, err
 	}
 	// Everything from outside reaches the vault through a reader, so a path
-	// leaving it is refused there, and so is one the vault holds nothing at.
 	ref, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, err
@@ -76,13 +74,13 @@ func (u Highlight) Execute(
 	if len(runs) == 0 {
 		return nil, nil
 	}
-	sourceText, stands, err := u.sources.GetSourceText(ctx, v.ID, path)
+	sourceText, exists, err := u.sources.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return nil, err
 	}
 	// Which producer made a source's text is what says where its offsets are,
 	// and a source the index does not hold says nothing about either.
-	if !stands {
+	if !exists {
 		return getRuns("", nil, runs), nil
 	}
 	var store port.DerivedStore

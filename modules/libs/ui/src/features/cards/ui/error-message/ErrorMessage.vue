@@ -23,9 +23,6 @@ defineProps<{
 </template>
 
 <style scoped>
-/* A line or two saying what is wrong, and never a list to read: no bullet, and
-   no room kept for one, so it stands over the edge the host draws it on. It
-   takes the whole row under whatever it is wrong about. */
 .error-message {
   flex-basis: 100%;
   margin: 0;

@@ -39,7 +39,7 @@ type Disk struct {
 	mu sync.Mutex
 	// written is what has been written since the last sweep. Counting the folder
 	// on every write is a folder read per page turned.
-	written int64
+	writtenBytes int64
 	// isShut is the window gone. A sweep started after it would be one nobody is
 	// left to wait for.
 	isShut bool
@@ -60,11 +60,11 @@ const (
 // NewDisk is where this machine keeps pages already drawn, and nothing where it
 // says it keeps nothing.
 func NewDisk() *Disk {
-	under, err := os.UserCacheDir()
+	underCtx, err := os.UserCacheDir()
 	if err != nil {
 		return nil
 	}
-	dir := filepath.Join(under, "numen", "pages")
+	dir := filepath.Join(underCtx, "numen", "pages")
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil
 	}
@@ -101,13 +101,13 @@ func (s *Disk) Get(key document.PageKey) []byte {
 	if s == nil {
 		return nil
 	}
-	at := filepath.Join(s.dir, s.getFileName(key))
-	body, err := os.ReadFile(at)
+	pos := filepath.Join(s.dir, s.getFileName(key))
+	body, err := os.ReadFile(pos)
 	if err != nil {
 		return nil
 	}
 	now := time.Now()
-	_ = os.Chtimes(at, now, now)
+	_ = os.Chtimes(pos, now, now)
 	return body
 }
 
@@ -117,7 +117,7 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 	if s == nil || len(body) == 0 {
 		return
 	}
-	at := filepath.Join(s.dir, s.getFileName(key))
+	pos := filepath.Join(s.dir, s.getFileName(key))
 	// Written under another name and moved into place, so a reader never opens
 	// half a picture.
 	temp, err := os.CreateTemp(s.dir, "drawing-")
@@ -133,16 +133,16 @@ func (s *Disk) Put(key document.PageKey, body []byte) {
 		os.Remove(temp.Name())
 		return
 	}
-	if err := os.Rename(temp.Name(), at); err != nil {
+	if err := os.Rename(temp.Name(), pos); err != nil {
 		os.Remove(temp.Name())
 		return
 	}
 
 	s.mu.Lock()
-	s.written += int64(len(body))
-	due := !s.isShut && s.written >= s.every
+	s.writtenBytes += int64(len(body))
+	due := !s.isShut && s.writtenBytes >= s.every
 	if due {
-		s.written = 0
+		s.writtenBytes = 0
 		// Counted before the sweep is started, so a close cannot come between
 		// the two and go without waiting for it.
 		s.going.Add(1)

@@ -48,7 +48,7 @@ const emit = defineEmits<{
   (event: 'close', tab: TabId, hold: () => void): void
   (event: 'activate', tab: TabId): void
   /** A menu asked for on a tab, and where on the screen. */
-  (event: 'tab-context-menu', tab: TabId, at: { x: number; y: number }): void
+  (event: 'tab-context-menu', tab: TabId, pos: { x: number; y: number }): void
   /**
    * The tab a pane is now showing, once it is on screen. Every tab of a pane is
    * drawn and the ones not shown are held out of sight, so what a tab holds is
@@ -56,7 +56,7 @@ const emit = defineEmits<{
    */
   (event: 'show', tab: TabId): void
   /** A tab dragged out of the workspace into empty space or a new window. */
-  (event: 'tear-off', tab: TabId, at: { x: number; y: number }): void
+  (event: 'tear-off', tab: TabId, pos: { x: number; y: number }): void
 }>()
 
 const slots = defineSlots<{
@@ -90,7 +90,7 @@ const { hasMoved, overlay, label, position, dropTarget, press } = useTabDrag({
   getEdge: () => props.edge,
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
-  onTearOff: (tab, at) => emit('tear-off', tab, at),
+  onTearOff: (tab, pos) => emit('tear-off', tab, pos),
 })
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -110,8 +110,8 @@ function onCloseTab(tab: TabId): void {
   workspace.value = closeTab(workspace.value, tab)
 }
 
-function onMenuTab(tab: TabId, at: { x: number; y: number }): void {
-  emit('tab-context-menu', tab, at)
+function onMenuTab(tab: TabId, pos: { x: number; y: number }): void {
+  emit('tab-context-menu', tab, pos)
 }
 
 function onClaimPane(pane: NodeId): void {
@@ -185,7 +185,6 @@ provide(
   overflow: hidden;
 }
 
-/* The tab being dragged stands over the panes and the overlay both. */
 .workspace__dragged {
   z-index: var(--numen-lift-tooltip);
 }

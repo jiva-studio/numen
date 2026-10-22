@@ -9,7 +9,6 @@ import (
 )
 
 // Every section of the settings file reaches the configuration the application
-// is built from. A section left behind is a part of the application that does
 // nothing, and turning a model off is done by naming none, so nothing says it.
 func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	response := container.DefaultIndexing()

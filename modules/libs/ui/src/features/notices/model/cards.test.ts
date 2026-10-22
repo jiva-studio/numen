@@ -30,7 +30,7 @@ const countMetric = (id: string, isDone: number): Notice => ({
   isUserStarted: true,
   done: isDone,
   total: 100,
-  counting: 'things',
+  counting: 'items',
 })
 
 let mounted: VueWrapper | undefined
@@ -71,12 +71,12 @@ function stand(initial: readonly Notice[], options: { room?: number; wait?: numb
     { attachTo: document.body },
   )
   /** The clock forward by a duration, and one tick of the interval. */
-  const wind = async (by: number): Promise<void> => {
-    clock.at += by
+  const wind = async (delta: number): Promise<void> => {
+    clock.at += delta
     vi.advanceTimersByTime(250)
     await nextTick()
   }
-  const ids = (): string[] => state.drawn.value.map((one) => one.id)
+  const ids = (): string[] => state.notices.value.map((one) => one.id)
   return { notices, state, dismiss, wind, ids }
 }
 
@@ -259,20 +259,20 @@ describe('the cards folded away behind the rest', () => {
     await nextTick()
 
     expect(state.isOpened.value).toBe(true)
-    expect(state.folds.value.shown).toHaveLength(4)
+    expect(state.folds.value.visible).toHaveLength(4)
   })
 
   it('close once everything fits', async () => {
     const { state } = stand(three, { room: 2 })
     state.isOpened.value = true
     await nextTick()
-    expect(state.folds.value.shown).toHaveLength(3)
+    expect(state.folds.value.visible).toHaveLength(3)
 
     await state.dismissByHand('a')
     await nextTick()
 
     expect(state.isOpened.value).toBe(false)
-    expect(state.folds.value.over).toBe(0)
+    expect(state.folds.value.overflowCount).toBe(0)
   })
 
   it('close when fewer than the room remain', async () => {

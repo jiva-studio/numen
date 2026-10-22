@@ -16,17 +16,19 @@ import (
 // carrying is the index as far as this window asks of it: which vaults it holds.
 type carrying struct {
 	port.NoteQueries
-	held map[domain.VaultID]bool
+	targetVault map[domain.VaultID]bool
 }
 
-func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) { return c.held[id], nil }
+func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) {
+	return c.targetVault[id], nil
+}
 
 // newAPI is the window over an index that holds the vaults named.
-func newAPI(t testing.TB, held ...domain.Vault) *API {
+func newAPI(t testing.TB, target ...domain.Vault) *API {
 	t.Helper()
-	index := carrying{held: map[domain.VaultID]bool{}}
-	for _, v := range held {
-		index.held[v.ID] = true
+	index := carrying{targetVault: map[domain.VaultID]bool{}}
+	for _, v := range target {
+		index.targetVault[v.ID] = true
 	}
 	return &API{Window: NewWindow(run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}
 }

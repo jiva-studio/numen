@@ -19,15 +19,15 @@ import (
 // answering is a host that answers a few calls, and records who asked.
 type answering struct {
 	numenv1connect.UnimplementedHostVaultServiceHandler
-	code      v1.HostVaultErrorCode
-	asked     string
-	unlocked  string
-	named     string
-	baselines []*v1.HostFingerprint
+	code       v1.HostVaultErrorCode
+	authHeader string
+	unlocked   string
+	named      string
+	baselines  []*v1.HostFingerprint
 }
 
 func (a *answering) GetFileFingerprint(_ context.Context, req *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
-	a.asked = req.Header().Get("Authorization")
+	a.authHeader = req.Header().Get("Authorization")
 	return connect.NewResponse(&v1.GetFileFingerprintResponse{
 		Error:       a.code,
 		Fingerprint: &v1.HostFingerprint{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
@@ -95,11 +95,11 @@ func clientTo(t *testing.T, a *answering) *host.Client {
 func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 	a := &answering{}
 
-	at, err := clientTo(t, a).GetFingerprint(context.Background(), "n.md")
+	fp, err := clientTo(t, a).GetFingerprint(context.Background(), "n.md")
 
 	want := domain.Fingerprint{Path: "n.md", Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
-	if err != nil || at != want || a.asked != "Bearer tok" {
-		t.Errorf("got %+v (%v) asked as %q", at, err, a.asked)
+	if err != nil || fp != want || a.authHeader != "Bearer tok" {
+		t.Errorf("got %+v (%v) authHeader as %q", fp, err, a.authHeader)
 	}
 }
 

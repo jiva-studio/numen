@@ -64,7 +64,10 @@ describe('a path chosen in a linked tab', () => {
     const windowTabs = createWindowTabs({ 'files:1': { navigate } })
 
     expect(
-      useTabSync({ windowTabs, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab('s', 'a.md'),
+      useTabSync({ windowTabs, tabLinks: useTabLinks(), onError: vi.fn() }).syncPathFromTab(
+        's',
+        'a.md',
+      ),
     ).toBe(false)
     expect(navigate).not.toHaveBeenCalled()
   })

@@ -74,7 +74,6 @@ func getExposedDependencies(file *ast.File) []exposed {
 	return found
 }
 
-// getUseCases are every use case of the core, under the file it stands in.
 func getUseCases(t *testing.T) []string {
 	t.Helper()
 	var findings []string
@@ -86,8 +85,8 @@ func getUseCases(t *testing.T) []string {
 		if !folder.IsDir() {
 			continue
 		}
-		at := filepath.Join("..", "usecase", folder.Name())
-		files, err := os.ReadDir(at)
+		pos := filepath.Join("..", "usecase", folder.Name())
+		files, err := os.ReadDir(pos)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -96,7 +95,7 @@ func getUseCases(t *testing.T) []string {
 				strings.HasSuffix(one.Name(), "_test.go") {
 				continue
 			}
-			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(at, one.Name()), nil, 0)
+			file, err := parser.ParseFile(token.NewFileSet(), filepath.Join(pos, one.Name()), nil, 0)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -116,7 +115,6 @@ func TestNoUseCaseCarriesACollaboratorInTheOpen(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused: a field the
 // constructor also takes, and not the ones it does not.
 func TestWhatTheUseCaseRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "held.go", `package p

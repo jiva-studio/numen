@@ -65,18 +65,18 @@ describe('the menu key on a row with no place on screen', () => {
 })
 
 describe('the menu keys on a row with a place on screen', () => {
-  const at: Position = { x: 12, y: 34 }
+  const pos: Position = { x: 12, y: 34 }
 
   it('opens the menu on shift and F10', () => {
-    const { gestures, notified } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => pos)
 
     gestures.onKeyDown(new KeyboardEvent('keydown', { key: 'F10', shiftKey: true }))
 
-    expect(notified).toStrictEqual([['menu', 'notes', at]])
+    expect(notified).toStrictEqual([['menu', 'notes', pos]])
   })
 
   it('leaves F10 alone without shift', () => {
-    const { gestures, notified } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => pos)
     const event = new KeyboardEvent('keydown', { key: 'F10', cancelable: true })
 
     gestures.onKeyDown(event)
@@ -86,7 +86,7 @@ describe('the menu keys on a row with a place on screen', () => {
   })
 
   it('leaves another key alone when shift is retained', () => {
-    const { gestures, notified } = create(ref<string | null>(null), () => at)
+    const { gestures, notified } = create(ref<string | null>(null), () => pos)
     const event = new KeyboardEvent('keydown', { key: 'x', shiftKey: true, cancelable: true })
 
     gestures.onKeyDown(event)

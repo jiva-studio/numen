@@ -26,13 +26,14 @@ defineExpose({ scrollPage })
 // panel comes in while they are still being asked for, and a note cannot be
 // scrolled to before it is drawn.
 watch(
-  () => [props.held.open.value, props.held.at.value, props.held.notes.value] as const,
-  ([open, at, notes]) => {
-    if (!open || !at || !notes.length) return
+  () => [props.panel.open.value, props.panel.col.value, props.panel.notes.value] as const,
+  ([open, col, notes]) => {
+    if (!open || !col || !notes.length) return
     void nextTick(() => {
-      const found = notes.find((one) => one.written === at || one.path === at)
-      if (found) noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
-      props.held.read()
+      const found = notes.find((one) => one.text === col || one.path === col)
+      if (found)
+        noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
+      props.panel.read()
     })
   },
   { immediate: true },
@@ -40,7 +41,7 @@ watch(
 
 /* -------------------------------- Helpers --------------------------------- */
 /** A note is keyed by what its article is keyed by. */
-const getNoteKey = (one: Neighbour) => one.path || one.written
+const getNoteKey = (one: Neighbour) => one.path || one.text
 
 /**
  * Where each note was drawn, so the one a link named can be scrolled to. Read
@@ -58,9 +59,9 @@ const STEP = 0.85
 
 /** The panel scrolled by a key, because the caret is nowhere in it. */
 function scrollPage(back = false) {
-  const at = column.value
-  if (!at) return
-  at.scrollBy({ top: at.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
+  const col = column.value
+  if (!col) return
+  col.scrollBy({ top: col.clientHeight * STEP * (back ? -1 : 1), behavior: 'smooth' })
 }
 </script>
 
@@ -68,14 +69,14 @@ function scrollPage(back = false) {
   <section class="reading" :aria-label="words.reading">
     <div ref="column" class="reading__column">
       <p
-        v-if="!props.held.notes.value.length && !props.held.isWorking.value"
+        v-if="!props.panel.notes.value.length && !props.panel.isWorking.value"
         class="reading__quiet"
       >
         {{ words.nothing }}
       </p>
 
       <article
-        v-for="one in props.held.notes.value"
+        v-for="one in props.panel.notes.value"
         :key="getNoteKey(one)"
         :ref="(element) => registerNoteElement(one, element)"
         class="reading__note"
@@ -90,15 +91,15 @@ function scrollPage(back = false) {
         <Prose v-if="one.body" :text="one.body" />
       </article>
 
-      <p v-if="props.held.unread.value" class="reading__quiet">
-        {{ words.named(props.held.unread.value) }}
+      <p v-if="props.panel.unread.value" class="reading__quiet">
+        {{ words.named(props.panel.unread.value) }}
       </p>
     </div>
   </section>
 </template>
 
 <style scoped>
-/* The panel stands where the card stood and is the same thing to look at, so it
+/* The panel stands where the card stood and is the same thing to look col, so it
    takes the card's ground. */
 .reading {
   display: flex;
@@ -113,7 +114,6 @@ function scrollPage(back = false) {
   background: var(--numen-raised);
 }
 
-/* Read down, while the strip it stands in is taken across. */
 .reading__column {
   flex: 1;
   min-inline-size: 0;

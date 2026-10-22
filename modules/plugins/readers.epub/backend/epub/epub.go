@@ -9,8 +9,7 @@
 // Everything a book names — a navigation entry, a
 // heading, a printed page — is an offset into that stream.
 //
-// One document is read a second time as the elements it is drawn from, carrying
-// the offsets its text already stands at.
+// # One document is read a second time as the elements it is drawn from, carrying
 //
 // A book that is empty is still read. An error here means the file is not a
 // book at all.
@@ -50,7 +49,6 @@ type Book struct {
 	// Tier names the tier that produced Parts.
 	Tier Structure
 
-	// Layout is whether the book's documents can be reflowed.
 	Layout Layout
 
 	// Direction is the direction the book's pages progress in, and empty for a
@@ -58,9 +56,9 @@ type Book struct {
 	Direction Direction
 
 	// files is the archive the book was read out of, which Markup reads one
-	// document out of again, and held is the document of each name.
-	files map[string]*zip.File
-	held  map[string]Document
+	// document out of again, and documents is the document of each name.
+	files     map[string]*zip.File
+	documents map[string]Document
 
 	// pageBytes is how many bytes of this book's text stand on one page.
 	pageBytes int
@@ -78,14 +76,12 @@ type Document struct {
 	// order: a note, an appendix, the back of a plate. Its text is in Text all
 	// the same.
 	IsLinear bool
-	// Layout is whether this document can be reflowed.
-	Layout Layout
+	Layout   Layout
 
 	// mediaType is what the manifest calls the document.
 	mediaType string
 }
 
-// A Layout is whether a document can be reflowed or is a page laid out once and
 // drawn currently.
 type Layout string
 
@@ -166,7 +162,7 @@ func Read(raw []byte) (*Book, error) {
 		Layout:    pkg.layout,
 		Direction: pkg.direction,
 		files:     files,
-		held:      map[string]Document{},
+		documents: map[string]Document{},
 	}
 	remaining := int64(mostPerBook)
 	for _, item := range pkg.spine {
@@ -184,10 +180,10 @@ func Read(raw []byte) (*Book, error) {
 		doc := text.readDocument(item.path, markup)
 		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
 		book.Documents = append(book.Documents, doc)
-		if _, twice := book.held[doc.Path]; !twice {
+		if _, twice := book.documents[doc.Path]; !twice {
 			// A spine may read one document twice, and the first standing is the
 			// one a name is answered with.
-			book.held[doc.Path] = doc
+			book.documents[doc.Path] = doc
 		}
 	}
 	book.Text = string(text.out)
@@ -296,17 +292,17 @@ type Location struct {
 
 // Locate answers where one offset in the book's text is.
 func (b *Book) Locate(offset int) Location {
-	var at Location
+	var loc Location
 	if i := findPreceding(len(b.Documents), offset, func(i int) int { return b.Documents[i].Offset }); i >= 0 {
-		at.Document = b.Documents[i].Path
+		loc.Document = b.Documents[i].Path
 	}
 	if i := findPreceding(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
-		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
+		loc.Part, loc.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	if i := findPreceding(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.Page = b.Pages[i].Label
+		loc.Page = b.Pages[i].Label
 	}
-	return at
+	return loc
 }
 
 // findPreceding is the index of the last item at or before an offset, and -1 when

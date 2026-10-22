@@ -1,5 +1,4 @@
 /**
- * The shape a value will take, held open while the value is worked out.
  *
  * The stories are a list filling row by row, because that is where the claim
  * lives: a shape the size of what replaces it leaves the rows where they are.
@@ -143,7 +142,9 @@ export const Dark: Story = {
     const measureContrast = (ground: HTMLElement) => {
       const behindColor = getComputedStyle(ground).backgroundColor
       const shape = ground.querySelector<HTMLElement>('.skeleton')!
-      return lightness(getComputedStyle(shape).backgroundColor, behindColor) - lightness(behindColor)
+      return (
+        lightness(getComputedStyle(shape).backgroundColor, behindColor) - lightness(behindColor)
+      )
     }
     await expect(measureContrast(grounds[0]!)).toBeGreaterThan(2)
     await expect(measureContrast(grounds[1]!)).toBeLessThan(-2)
@@ -155,7 +156,7 @@ export const FarTooMany: Story = {
   args: { wide: '100%', high: '0.9rem', isPill: false },
   render: (args) => ({
     components: { Skeleton },
-    setup: () => ({ args, rows: Array.from({ length: 40 }, (_, at) => at) }),
+    setup: () => ({ args, rows: Array.from({ length: 40 }, (_, index) => index) }),
     template: `
       <div class="numen" style="display:flex;flex-direction:column;gap:6px;inline-size:320px;padding:24px;background:var(--numen-surface);color:var(--numen-ink)">
         <Skeleton v-for="row in rows" :key="row" v-bind="args" />

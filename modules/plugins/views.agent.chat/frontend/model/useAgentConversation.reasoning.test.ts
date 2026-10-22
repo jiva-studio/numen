@@ -9,7 +9,7 @@ import { useAgentConversation } from './useAgentConversation'
 
 type AskOptions = NonNullable<Parameters<Conversation['ask']>[2]>
 
-type Model = AgentModel & { readonly namedAt: readonly string[] }
+type Model = AgentModel & { readonly nameAt: readonly string[] }
 
 const LEVELS = [
   { name: 'low', title: 'Low' },
@@ -17,11 +17,11 @@ const LEVELS = [
 ]
 
 const model = (
-  namedAt: readonly string[],
+  nameAt: readonly string[],
   name: string,
   extra: Partial<AgentModel> = {},
 ): Model => ({
-  namedAt,
+  nameAt,
   name,
   title: name.toUpperCase(),
   isDefault: false,
@@ -64,7 +64,8 @@ function open(settings: Record<string, string> = {}) {
     writeSetting: async (path, value) => {
       content.push([path.join('/'), value])
     },
-    getModelsAt: (at) => LISTED.filter((one) => one.namedAt.join('/') === at.join('/')),
+    getModelsAt: (categoryPath) =>
+      LISTED.filter((one) => one.nameAt.join('/') === categoryPath.join('/')),
   })
   return { state, requests: request, writtenSettings: content }
 }

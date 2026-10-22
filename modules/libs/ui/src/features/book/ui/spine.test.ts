@@ -18,7 +18,7 @@ const MIDDLE = 'OEBPS/middle.xhtml'
 /** One run of the corpus: where it says it begins, and what it says. */
 interface Run {
   readonly at: number
-  readonly said: string
+  readonly text: string
 }
 
 /** The runs the corpus carries, in the order it writes them. */
@@ -26,16 +26,15 @@ const getRuns = (): readonly Run[] => {
   const target = new DOMParser().parseFromString(spine, 'text/html')
   return [...target.body.querySelectorAll('[data-offset]')].map((one) => ({
     at: Number(one.getAttribute('data-offset')),
-    said: one.textContent ?? '',
+    text: one.textContent ?? '',
   }))
 }
 
-/** Where the document stands in the book's text, read off its own runs. */
 const span = () => {
   const all = getRuns()
   const first = all[0]!
   const last = all[all.length - 1]!
-  return { from: first.at, to: last.at + countBytes(last.said) }
+  return { from: first.at, to: last.at + countBytes(last.text) }
 }
 
 /** A reader drawing the corpus, in a room jsdom has laid nothing out in. */
@@ -67,13 +66,12 @@ describe('the markup a spine document arrives as', () => {
   })
 
   it('runs on from one offset to the next, by the bytes each run says', () => {
-    // Every byte of the document stands in one run, so a run reaches exactly to
     // where the next begins. An escaping the two sides read differently parts
     // these numbers on the first paragraph that carries an ampersand.
     const all = getRuns()
     for (let i = 1; i < all.length; i++) {
       const before = all[i - 1]!
-      expect(all[i]!.at).toBe(before.at + countBytes(before.said))
+      expect(all[i]!.at).toBe(before.at + countBytes(before.text))
     }
   })
 

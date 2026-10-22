@@ -102,8 +102,8 @@ func TestASecondOpeningOfTheIndexKnowsItsSources(t *testing.T) {
 
 // A machine where nothing has scanned reads as a vault holding nothing.
 func TestAnIndexNobodyHasBuiltAnswersEmpty(t *testing.T) {
-	at := filepath.Join(t.TempDir(), "index.db")
-	cfg := container.Config{IndexPath: at}
+	pos := filepath.Join(t.TempDir(), "index.db")
+	cfg := container.Config{IndexPath: pos}
 	vault := domain.Vault{ID: "01ENTROPY", Name: "physics", Path: t.TempDir()}
 
 	db := read(t, cfg)

@@ -29,7 +29,6 @@ type CopyResult struct {
 	At string
 }
 
-// IsTooLarge is a copy the limit refused. Nothing was downloaded.
 func (r CopyResult) IsTooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
 
 // Copy downloads what is at a url's address so a person plays it from this disk.
@@ -42,14 +41,14 @@ func (r CopyResult) IsTooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit 
 //
 // The progress function, where given, is told how much of the copy has arrived out of how much the site declared.
 func (u ImportURL) Copy(
-	ctx context.Context, v domain.Vault, path string, progress func(done, total int64),
+	ctx context.Context, v domain.Vault, path string, progress func(finished, total int64),
 ) (CopyResult, error) {
 	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
-	at, _, store, err := u.readURLFile(ctx, v, path)
+	pos, _, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
-	hash := text.Fingerprint([]byte(string(at)))
+	hash := text.Fingerprint([]byte(string(pos)))
 	besidePath := CopyBeside(path)
 
 	// One run to a copy, held for as long as the download takes. The claim is on
@@ -74,7 +73,7 @@ func (u ImportURL) Copy(
 	// The size gate and the download share one operation on one address.
 	ctx, endOperation := operation.Begin(ctx)
 	defer endOperation()
-	meta, err := u.By.GetMetadata(ctx, at)
+	meta, err := u.By.GetMetadata(ctx, pos)
 	if err != nil {
 		return res, err
 	}
@@ -88,7 +87,7 @@ func (u ImportURL) Copy(
 	read, write := io.Pipe()
 	going := make(chan error, 1)
 	go func() {
-		_, err := u.By.Download(ctx, at, write)
+		_, err := u.By.Download(ctx, pos, write)
 		_ = write.CloseWithError(err)
 		going <- err
 	}()
@@ -127,23 +126,23 @@ func CopyBeside(path string) string {
 
 // landing is where the copy is, as the vault names it, and nothing where it is
 // in the application's own folder.
-func (u ImportURL) landing(beside string) string {
+func (u ImportURL) landing(copyPath string) string {
 	if !u.IsToVault {
 		return ""
 	}
-	return beside
+	return copyPath
 }
 
 // getExistingCopy says whether a copy is already here, and how large.
 func (u ImportURL) getExistingCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, beside string,
+	ctx context.Context, v domain.Vault, store port.DerivedStore, hash, copyPath string,
 ) (int64, bool, error) {
 	if u.IsToVault {
 		reader, err := u.Readers.Open(v)
 		if err != nil {
 			return 0, false, err
 		}
-		ref, err := reader.GetFingerprint(ctx, beside)
+		ref, err := reader.GetFingerprint(ctx, copyPath)
 		if errors.Is(err, fs.ErrNotExist) {
 			return 0, false, nil
 		}
@@ -169,7 +168,7 @@ func (u ImportURL) getExistingCopy(
 // A copy in the vault is the person's file: the application does not replace
 // one that is there, and putting the folders above it right is the writer's.
 func (u ImportURL) writeCopy(
-	ctx context.Context, v domain.Vault, store port.DerivedStore, name domain.ArtifactName, beside string, from io.Reader,
+	ctx context.Context, v domain.Vault, store port.DerivedStore, name domain.ArtifactName, adjacent string, from io.Reader,
 ) (int64, error) {
 	if !u.IsToVault {
 		return store.WriteArtifactStream(ctx, name, from)
@@ -179,7 +178,7 @@ func (u ImportURL) writeCopy(
 		return 0, err
 	}
 	counted := &passing{from: from}
-	if err := writer.Import(ctx, beside, counted); err != nil {
+	if err := writer.Import(ctx, adjacent, counted); err != nil {
 		return 0, err
 	}
 	return counted.read, nil

@@ -120,7 +120,6 @@ func DefaultIndexing() Indexing {
 
 // DefaultTranscribeUnderMB is how large a recording listened to unasked may be.
 // It is a talk of a few hours at the bitrates a recorder writes, and larger than
-// anything a person speaks into a phone.
 const DefaultTranscribeUnderMB = 300
 
 // CanTranscribe is whether a recording is listened to without being asked. A

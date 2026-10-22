@@ -212,16 +212,16 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	saving := c.newWrite()
 	baseline := c.openNote(t, "Entropy.md")
 
-	at, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", baseline)
+	pos, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nOne.\n", baseline)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.IsZero() {
+	if pos.IsZero() {
 		t.Fatal("the save answered with no fingerprint")
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.Baseline{Prose: baseline.Prose, Fingerprint: at}); err != nil {
+		&note.Baseline{Prose: baseline.Prose, Fingerprint: pos}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -242,7 +242,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	baseline := c.openNote(t, "Heat.md")
 
 	mine := "# Heat\n\nMine.\n"
-	at, err := saving.Save(t.Context(), c.vault, "Heat.md", mine, baseline)
+	pos, err := saving.Save(t.Context(), c.vault, "Heat.md", mine, baseline)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.Baseline{Prose: mine, Fingerprint: at}); err != nil {
+		&note.Baseline{Prose: mine, Fingerprint: pos}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -487,11 +487,11 @@ func TestSavingThroughALinkPreservesTheLink(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	at, err := os.Lstat(link)
+	pos, err := os.Lstat(link)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at.Mode()&os.ModeSymlink == 0 {
+	if pos.Mode()&os.ModeSymlink == 0 {
 		t.Error("the link was replaced by a file of its own")
 	}
 	if body := c.read(t, "notes/Real.md"); !strings.Contains(body, "Mine.") {
@@ -539,7 +539,6 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 }
 
 // A deck is a note file read at a bound of its own, and the writer it goes to
-// disk through carries that bound. One that carries none is held to MaxBytes.
 func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
@@ -562,8 +561,6 @@ func TestAWriterCarriesTheBoundItsFilesAreReadAt(t *testing.T) {
 	}
 }
 
-// An agent writes through Execute, and is held to the bound the person's own
-// save is held to.
 func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -578,7 +575,6 @@ func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	}
 }
 
-// Create writes a whole note in one go, and is held to the same bound.
 func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, nil)

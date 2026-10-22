@@ -16,13 +16,13 @@ import (
 // typed is the index, answering what each note is from a fixed table.
 type typed struct {
 	port.NoteQueries
-	types map[string]domain.NoteType
-	err   error
-	asked [][]string
+	types     map[string]domain.NoteType
+	err       error
+	requested [][]string
 }
 
 func (q *typed) GetTypes(_ context.Context, _ domain.VaultID, paths []string) (map[string]domain.NoteType, error) {
-	q.asked = append(q.asked, paths)
+	q.requested = append(q.requested, paths)
 	return q.types, q.err
 }
 
@@ -46,8 +46,8 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 	if listing.Types["decks/spanish.md"] != "deck" {
 		t.Errorf("the deck is %v", listing.Types["decks/spanish.md"])
 	}
-	if len(index.asked) != 1 || len(index.asked[0]) != 2 {
-		t.Errorf("the index was asked %v, want one question about the two notes", index.asked)
+	if len(index.requested) != 1 || len(index.requested[0]) != 2 {
+		t.Errorf("the index was asked %v, want one question about the two notes", index.requested)
 	}
 }
 

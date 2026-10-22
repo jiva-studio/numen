@@ -6,7 +6,6 @@
 //
 // A stencil declares the fields a card has and the faces it is shown by; a
 // deck holds the cards. Both are notes, so both are addressed by the path they
-// are filed under, and both are refused for the reasons any note is.
 //
 // Nothing here is laid out. A face travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
@@ -84,10 +83,8 @@ type CardsServiceClient interface {
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
 	// WriteStencil puts fields and faces into a stencil. A path the vault holds
-	// no note at is refused `missing`; CreateStencil is what puts a stencil in
 	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
 	// and a stencil that no longer holds what the caller read is left alone and
-	// refused `stale`.
 	//
 	// The preamble, the tail and each face's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -104,7 +101,6 @@ type CardsServiceClient interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// refused `stale`, and then no deck is written either.
 	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
 	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
@@ -114,10 +110,8 @@ type CardsServiceClient interface {
 	// stand in the file. Each card says which section it is placed under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
-	// given. A path the vault holds no note at is refused `missing`; CreateDeck
 	// is what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card is placed under is written where the cards around it put it.
@@ -261,10 +255,8 @@ type CardsServiceHandler interface {
 	// ReadStencil is the fields and the faces of one stencil.
 	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
 	// WriteStencil puts fields and faces into a stencil. A path the vault holds
-	// no note at is refused `missing`; CreateStencil is what puts a stencil in
 	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
 	// and a stencil that no longer holds what the caller read is left alone and
-	// refused `stale`.
 	//
 	// The preamble, the tail and each face's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
@@ -281,7 +273,6 @@ type CardsServiceHandler interface {
 	// heading and comes back under `not_written`.
 	//
 	// A stencil that no longer holds what the caller read is left alone and
-	// refused `stale`, and then no deck is written either.
 	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
 	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
@@ -291,10 +282,8 @@ type CardsServiceHandler interface {
 	// stand in the file. Each card says which section it is placed under.
 	ReadDeck(context.Context, *connect.Request[v1.ReadDeckRequest]) (*connect.Response[v1.ReadDeckResponse], error)
 	// WriteDeck puts sections and cards into a deck, in the order they are
-	// given. A path the vault holds no note at is refused `missing`; CreateDeck
 	// is what puts a deck in the vault. The frontmatter stays as the person wrote
 	// it, and a deck that no longer holds what the caller read is left alone and
-	// refused `stale`.
 	//
 	// A card carrying no section stands before the first one, and a section no
 	// card is placed under is written where the cards around it put it.

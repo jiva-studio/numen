@@ -10,7 +10,6 @@ type Audio struct {
 	To      int
 }
 
-// TranscriptionModel names what listened to a recording.
 type TranscriptionModel struct {
 	Model     string
 	Segmenter string

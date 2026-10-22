@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { many, percent } from '@numen/ui'
 import { WORDS } from './words'
 
-const at = {
+const samplePoint = {
   value: 30,
   reviews: 12,
   minutes: 20,
@@ -14,33 +14,33 @@ const at = {
 
 describe('WORDS.buys', () => {
   it('says a pile that no projected day clears is not within the horizon', () => {
-    const lines = WORDS.buys('minutes', { ...at, clears: -1 })
+    const lines = WORDS.buys('minutes', { ...samplePoint, clears: -1 })
     expect(lines[2]).toBe(`not within ${many(14, 'day')}`)
   })
 
   it('says a pile cleared on day zero is gone in zero days', () => {
-    const lines = WORDS.buys('minutes', { ...at, clears: 0 })
+    const lines = WORDS.buys('minutes', { ...samplePoint, clears: 0 })
     expect(lines[2]).toBe(`overdue gone in ${many(0, 'day')}`)
   })
 
   it('says nothing about the overdue where nothing is overdue', () => {
-    expect(WORDS.buys('retention', at)).toEqual([
+    expect(WORDS.buys('retention', samplePoint)).toEqual([
       `${percent(30)} remembered`,
       `${many(20, 'minute')} a day`,
     ])
   })
 
   it('names the card count of a session under a goal of minutes', () => {
-    expect(WORDS.buys('minutes', at)[1]).toBe(`${many(12, 'card')} a session`)
+    expect(WORDS.buys('minutes', samplePoint)[1]).toBe(`${many(12, 'card')} a session`)
   })
 
   it('adds the cards no pace reaches under a goal of a date', () => {
-    expect(WORDS.buys('date', { ...at, short: 3 })).toEqual([
+    expect(WORDS.buys('date', { ...samplePoint, short: 3 })).toEqual([
       `${many(30, 'day')} off`,
       `${many(20, 'minute')} a day`,
       '3 of 40 cannot get there',
     ])
-    expect(WORDS.buys('date', at)).toHaveLength(2)
+    expect(WORDS.buys('date', samplePoint)).toHaveLength(2)
   })
 })
 

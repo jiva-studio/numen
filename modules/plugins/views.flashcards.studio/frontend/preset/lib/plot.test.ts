@@ -26,7 +26,7 @@ import {
   yOfGridline,
 } from './plot'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -38,15 +38,15 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 /** A curve of a goal of minutes, which is read in the cards a day answers. */
 const curve = (cards: readonly number[], enough: readonly boolean[] = []): Curve => ({
   goal: 'minutes',
-  grid: cards.map((_, at) => at * 10),
+  grid: cards.map((_, index) => index * 10),
   days: [],
-  at: cards.map((one, at) => point({ reviews: one, canLearnEveryCard: enough[at] ?? true })),
+  at: cards.map((one, index) => point({ reviews: one, canLearnEveryCard: enough[index] ?? true })),
   now: NO_CURVE_POINT,
   suggested: NO_CURVE_POINT,
   decks: 1,
@@ -85,7 +85,7 @@ describe('the curve as it is drawn', () => {
   // little inside it is drawn as the little it moves.
   it('draws a curve that is flat within its extent flat', () => {
     const positions = createPositions(curve([0.9, 0.9, 0.9]), { least: 0, most: 1 })
-    expect(positions.every((at) => at.y === positions[0]?.y)).toBe(true)
+    expect(positions.every((point) => point.y === positions[0]?.y)).toBe(true)
   })
 
   it('keeps a curve past either end of its extent inside the picture', () => {
@@ -117,9 +117,9 @@ describe('the curve as it is drawn', () => {
     ]) {
       const one = curve(run)
       const positions = createPositions(one, getExtent(one))
-      for (const [at, value] of run.entries()) {
-        if (value === 0) expect(positions[at]?.y).toBe(PLOT_BOTTOM)
-        expect(positions[at]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
+      for (const [index, value] of run.entries()) {
+        if (value === 0) expect(positions[index]?.y).toBe(PLOT_BOTTOM)
+        expect(positions[index]?.y).toBeLessThanOrEqual(PLOT_BOTTOM)
       }
     }
   })
@@ -166,7 +166,7 @@ describe('the place a pointer remains over', () => {
   it('reads back the place a point was drawn at', () => {
     const one = curve([0, 0.25, 0.5, 0.75, 1])
     const positions = createPositions(one, getExtent(one))
-    positions.forEach((at, place) => expect(getPlaceAtX(at.x, positions.length)).toBe(place))
+    positions.forEach((point, place) => expect(getPlaceAtX(point.x, positions.length)).toBe(place))
   })
 
   it('is the first place of a grid holding one', () => {
@@ -214,8 +214,8 @@ describe('the extent a backlog is drawn against', () => {
 
 describe('a series drawn against an extent that does not begin at nothing', () => {
   it('measures each value up from the least of the extent', () => {
-    const at = createSeries([10, 15, 20], { least: 10, most: 20 })
-    expect(at.map((one) => one.y)).toStrictEqual([
+    const series = createSeries([10, 15, 20], { least: 10, most: 20 })
+    expect(series.map((one) => one.y)).toStrictEqual([
       PLOT_BOTTOM,
       PLOT_BOTTOM - (PLOT_BOTTOM - PLOT_TOP) / 2,
       PLOT_TOP,
@@ -236,7 +236,8 @@ describe('the line through places', () => {
 })
 
 describe('the stretch a budget does not get through, as drawn', () => {
-  const alongPoints = (count: number) => Array.from({ length: count }, (_, at) => ({ x: at, y: at }))
+  const alongPoints = (count: number) =>
+    Array.from({ length: count }, (_, index) => ({ x: index, y: index }))
 
   it('is one line through the places in a stretch', () => {
     const one = curve([0, 0, 0, 0], [true, false, false, true])

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// GetBook reads what a book that reflows is.
 type GetBook struct {
 	books port.Book
 }
@@ -24,7 +23,6 @@ func (u GetBook) Execute(ctx context.Context, path string) (domain.BookShape, er
 	return u.books.GetBook(ctx, path)
 }
 
-// ReadBookMarkup reads one section of a book that reflows as markup.
 type ReadBookMarkup struct {
 	books port.Book
 }

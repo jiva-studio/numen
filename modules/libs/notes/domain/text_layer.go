@@ -27,7 +27,6 @@ type BookPage struct {
 	Offset int
 }
 
-// A BookText is the text a book that reflows carries, taken out. Every offset is
 // a byte offset into Text, and Parts and Pages ascend by offset.
 type BookText struct {
 	Text string
@@ -37,7 +36,6 @@ type BookText struct {
 	Pages []BookPage
 }
 
-// A BookSection is one document of a book's spine, and where its text stands in
 // the book's text.
 type BookSection struct {
 	// Path is the section's name inside the archive.
@@ -57,7 +55,6 @@ type BookPart struct {
 	Level int
 }
 
-// A BookShape is what a book that reflows is: what it is called, the sections it
 // is read in, what it names inside them and how far its text runs. Every offset
 // and length is counted in bytes of the book's text.
 type BookShape struct {

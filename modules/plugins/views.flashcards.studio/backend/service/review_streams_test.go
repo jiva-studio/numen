@@ -47,13 +47,13 @@ func (b breaking) WrapStreamingHandler(next connect.StreamingHandlerFunc) connec
 // nth message, counted from one.
 type breakingConn struct {
 	connect.StreamingHandlerConn
-	fails func(n int, msg any) bool
-	sent  int
+	fails     func(n int, msg any) bool
+	sentCount int
 }
 
 func (c *breakingConn) Send(msg any) error {
-	c.sent++
-	if c.fails(c.sent, msg) {
+	c.sentCount++
+	if c.fails(c.sentCount, msg) {
 		return errPageGone
 	}
 	return c.StreamingHandlerConn.Send(msg)
@@ -94,7 +94,6 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		fails func(n int, msg any) bool
 		moved bool
 	}{
-		// The window is told the stream is open before it waits for anything.
 		"opening": {cancelled, func(n int, _ any) bool { return n == 1 }, false},
 		// Nothing moved, and the window says so again until the page is found
 		// gone.
@@ -128,7 +127,6 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	}
 }
 
-// The front door ends with the write's error when the page can no longer be
 // written to, whichever message finds it out.
 func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 	for name, fails := range map[string]func(n int, msg any) bool{
@@ -222,7 +220,7 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	}
 	t.Cleanup(func() { stream.Close() })
 	if !stream.Receive() {
-		t.Fatalf("the front door never opened: %v", stream.Err())
+		t.Fatalf("overview stream never opened: %v", stream.Err())
 	}
 
 	// The first count lands half way to the list being said again, and the

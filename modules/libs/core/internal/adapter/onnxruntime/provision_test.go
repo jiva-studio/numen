@@ -334,7 +334,7 @@ func TestProvisionWaitsAgainstItsOwnContext(t *testing.T) {
 	waiter, cancel := context.WithCancel(t.Context())
 	cancel()
 	if _, _, err := provisioner.Provision(waiter, t.TempDir()); err == nil {
-		t.Error("a caller whose context ended was held to the provisioning of another")
+		t.Error("a caller whose context ended was bound to the provisioning of another")
 	}
 	close(release)
 	if err := <-isDone; err != nil {
@@ -456,7 +456,7 @@ func assertNoFile(t *testing.T, dir string) {
 	t.Helper()
 	_ = filepath.WalkDir(dir, func(path string, entry os.DirEntry, err error) error {
 		if err == nil && !entry.IsDir() {
-			t.Errorf("%s was left behind", path)
+			t.Errorf("%s was retained", path)
 		}
 		return nil
 	})
@@ -482,11 +482,11 @@ func writeLibrary(t *testing.T, dir string) string {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(dir, name)
-	if err := os.WriteFile(at, []byte("the machine's own"), 0o755); err != nil {
+	pos := filepath.Join(dir, name)
+	if err := os.WriteFile(pos, []byte("the machine's own"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 func TestProvisionNamedInTheEnvironmentIsUsedAsGiven(t *testing.T) {
@@ -623,9 +623,9 @@ func writeLibraryDir(t *testing.T) string {
 
 // refuse returns a check that refuses the libraries at the given paths.
 func refuse(paths ...string) func(string) error {
-	return func(at string) error {
+	return func(pos string) error {
 		for _, rejected := range paths {
-			if at == rejected {
+			if pos == rejected {
 				return errors.New("serves no API 23")
 			}
 		}
@@ -661,8 +661,8 @@ func TestProvisionTriesEveryLibraryInAFolder(t *testing.T) {
 	shared := t.TempDir()
 	name := filepath.Base(writeLibrary(t, t.TempDir()))
 	older, newer := filepath.Join(shared, name+".1.16.3"), filepath.Join(shared, name+".1.23.0")
-	for _, at := range []string{older, newer} {
-		if err := os.WriteFile(at, []byte(at), 0o755); err != nil {
+	for _, item := range []string{older, newer} {
+		if err := os.WriteFile(item, []byte(item), 0o755); err != nil {
 			t.Fatal(err)
 		}
 	}

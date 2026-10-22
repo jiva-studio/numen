@@ -27,7 +27,6 @@ var ErrHeldByAnother = errors.New("the file is held by another program")
 // here can redo, and in the application's own folder inside it because it is
 // the application's and not the person's.
 //
-// Every name is a name in one store. A name that leaves it is refused, and so
 // is one that resolves out of it through a link. Where a name is kept is the
 // store's own business.
 type DerivedStore interface {
@@ -65,7 +64,6 @@ type DerivedStore interface {
 	RemoveArtifact(ctx context.Context, name domain.ArtifactName) error
 
 	// ClaimArtifact takes a name for this caller alone and returns what lets it
-	// go. A name already claimed is refused with ErrClaimed, so work whose whole
 	// output is one file is done once.
 	ClaimArtifact(ctx context.Context, name domain.ArtifactName) (release func() error, err error)
 }

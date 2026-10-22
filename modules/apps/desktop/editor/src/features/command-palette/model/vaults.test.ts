@@ -19,7 +19,7 @@ const vault = (id: string, name: string): Vault => ({
 })
 
 const unused = async (): Promise<never> => {
-  throw new Error('a command over a vault touches nothing else')
+  throw new Error('empty selection')
 }
 
 /** The vaults of an installation, answering as the test says and remembering the calls. */

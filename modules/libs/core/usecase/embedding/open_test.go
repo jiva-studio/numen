@@ -26,10 +26,10 @@ func is(name string) port.EmbeddingModel {
 // given. It counts the times it was asked the text two providers are compared
 // over, and the times it was release.
 type saying struct {
-	model  port.EmbeddingModel
-	vector []float32
-	asked  atomic.Int64
-	closed atomic.Int64
+	model        port.EmbeddingModel
+	vector       []float32
+	requestCount atomic.Int64
+	closed       atomic.Int64
 }
 
 func newSaying(name string, vector ...float32) *saying {
@@ -42,7 +42,7 @@ func (s *saying) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	out := make([][]float32, len(texts))
 	for i, one := range texts {
 		if one == agreement.Asked {
-			s.asked.Add(1)
+			s.requestCount.Add(1)
 		}
 		out[i] = s.vector
 	}
@@ -55,7 +55,7 @@ func (s *saying) Close() error {
 }
 
 // refuseFetch is a model that is not on this machine and is not to be fetched.
-func refuseFetch(context.Context, func(done, total int64)) (port.Embedder, error) {
+func refuseFetch(context.Context, func(finished, total int64)) (port.Embedder, error) {
 	return nil, errors.New("the model is not on this machine")
 }
 
@@ -192,7 +192,6 @@ func TestTwoProvidersOfOneRepositoryAreTwoLines(t *testing.T) {
 	}
 }
 
-// A provider reached at once is nothing a person waits for, so it stands in no
 // list.
 func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 	target := newSaying("reached-at-once", 1, 0, 0)
@@ -211,9 +210,9 @@ func TestAProviderReachedAtOnceExistsInNoList(t *testing.T) {
 // of nothing against a size is a row sitting at nought per cent for the length
 // of a download, which says less than a ring that turns.
 func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
-	progressCh := make(chan func(done, total int64), 1)
+	progressCh := make(chan func(completed, total int64), 1)
 	stop := make(chan struct{})
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(processed, total int64)) (port.Embedder, error) {
 		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
@@ -225,29 +224,29 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 	defer func() { _ = letGo() }()
 
 	// Nothing is known yet: the line is in the list from the moment it starts.
-	at := getOnlyTask(t, tasks)
-	if at.Title != "Preparing the model" || at.About != "a/model" {
-		t.Errorf("the line is shown as %q about %q", at.Title, at.About)
+	pos := getOnlyTask(t, tasks)
+	if pos.Title != "Preparing the model" || pos.About != "a/model" {
+		t.Errorf("the line is shown as %q about %q", pos.Title, pos.About)
 	}
-	if at.Total != 0 {
-		t.Errorf("a line that has counted nothing is drawn against %d", at.Total)
+	if pos.Total != 0 {
+		t.Errorf("a line that has counted nothing is drawn against %d", pos.Total)
 	}
 
 	tell := <-progressCh
 
 	// The cache is read before the first bytes land, and the size is known.
 	tell(0, 90_000_000)
-	if at := getOnlyTask(t, tasks); at.Total != 0 || at.Count != 0 {
-		t.Errorf("a model with none of it here is drawn as %d of %d", at.Count, at.Total)
+	if offset := getOnlyTask(t, tasks); offset.Total != 0 || offset.Count != 0 {
+		t.Errorf("a model with none of it here is drawn as %d of %d", offset.Count, offset.Total)
 	}
 
 	tell(30_000_000, 90_000_000)
-	at = getOnlyTask(t, tasks)
-	if at.Count != 30_000_000 || at.Total != 90_000_000 {
-		t.Errorf("the model is drawn as %d of %d", at.Count, at.Total)
+	pos = getOnlyTask(t, tasks)
+	if pos.Count != 30_000_000 || pos.Total != 90_000_000 {
+		t.Errorf("the model is drawn as %d of %d", pos.Count, pos.Total)
 	}
-	if at.Unit != run.Bytes {
-		t.Errorf("a model is counted as %v", at.Unit)
+	if pos.Unit != run.Bytes {
+		t.Errorf("a model is counted as %v", pos.Unit)
 	}
 
 	// The model never turns up, and the line stays in the list under the reason.
@@ -261,7 +260,7 @@ func TestTheModelDrawsNoShareBeforeAnyOfItIsHere(t *testing.T) {
 // what is happening, not a record of what happened.
 func TestAModelThatArrivedIsNoLongerBeingPreparedFor(t *testing.T) {
 	target := newSaying("a/model", 1, 0, 0)
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
 		tell(90_000_000, 90_000_000)
 		return target, nil
 	}
@@ -297,19 +296,18 @@ func TestARunWithNoListToTellStillOpensAModel(t *testing.T) {
 }
 
 // waitForComparison is the two providers having been asked the one text they
-// are held to answering alike. The comparison runs behind the caller, so what
 // it settles is waited for and not assumed.
 func waitForComparison(t *testing.T, first, second *saying) {
 	t.Helper()
-	waitFor(t, func() bool { return first.asked.Load() > 0 && second.asked.Load() > 0 },
+	waitFor(t, func() bool { return first.requestCount.Load() > 0 && second.requestCount.Load() > 0 },
 		"the two providers were never compared")
 }
 
 // waitFor is something happening somewhere else, waited for.
-func waitFor(t *testing.T, done func() bool, why string) {
+func waitFor(t *testing.T, finishedVal func() bool, why string) {
 	t.Helper()
 	for range 400 {
-		if done() {
+		if finishedVal() {
 			return
 		}
 		time.Sleep(5 * time.Millisecond)
@@ -335,8 +333,8 @@ func waitForFailures(t *testing.T, tasks *run.Tasks, want int) []run.Task {
 	waitFor(t, func() bool {
 		target = tasks.List()
 		got := 0
-		for _, at := range target {
-			if at.Error != "" {
+		for _, item := range target {
+			if item.Error != "" {
 				got++
 			}
 		}

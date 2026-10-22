@@ -1,11 +1,5 @@
 /**
- * Putting a document in over the one that is there. The change covers the
- * stretch that differs and nothing else, and is annotated out of the undo
- * history.
- *
- * A position is held as a line and a column: where the line is shorter than the
- * column it is the end of the line, and where the text has fewer lines it is
- * the last of them.
+ * Document text replacement preserving selection line and column positions.
  */
 import {
   EditorSelection,
@@ -17,15 +11,15 @@ import {
 } from '@codemirror/state'
 import { isLeading, isTrailing } from '@/shared/lib/surrogate'
 
-/** Where a position sits in the text a person sees. */
+/** Line and column position in document text. */
 interface Place {
   readonly line: number
   readonly column: number
 }
 
-const getLineColumn = (doc: Text, at: number): Place => {
-  const line = doc.lineAt(at)
-  return { line: line.number, column: at - line.from }
+const getLineColumn = (doc: Text, pos: number): Place => {
+  const line = doc.lineAt(pos)
+  return { line: line.number, column: pos - line.from }
 }
 
 const getOffset = (doc: Text, place: Place): number => {
@@ -46,7 +40,7 @@ const difference = (was: Text, now: Text): ChangeSpec => {
 
   let head = 0
   while (before.charCodeAt(head) === after.charCodeAt(head)) head += 1
-  // A pair standing for one character is not cut between its halves.
+  // Surrogate pairs representing a single character are not split.
   if (isLeading(before.charCodeAt(head - 1))) head -= 1
 
   let tail = 0
@@ -65,9 +59,9 @@ const difference = (was: Text, now: Text): ChangeSpec => {
   }
 }
 
-/** The text of `fresh`, put in over what the state holds. */
-export const replace = (state: EditorState, fresh: string): TransactionSpec => {
-  const now = state.toText(fresh)
+/** Replaces editor text while preserving selection line and column positions. */
+export const replace = (state: EditorState, newText: string): TransactionSpec => {
+  const now = state.toText(newText)
   const ranges = state.selection.ranges.map((range) =>
     EditorSelection.range(
       getOffset(now, getLineColumn(state.doc, range.anchor)),

@@ -60,7 +60,7 @@ function onSelectReasoning(id: string) {
   >
     <template #silence>{{ props.state.unreachable() || words.nothingSaid }}</template>
     <template #failure="{ turn }">
-      {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
+      {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
     </template>
   </Agent>
 </template>

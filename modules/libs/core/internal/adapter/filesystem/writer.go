@@ -265,7 +265,6 @@ func (w *VaultWriter) getContainedPath(path string) (string, error) {
 
 // openRoot is the vault as a handle, and a place in it as a name that handle
 // takes. Every step of a write is made through the handle, so a folder swapped
-// for a link while the write is on its way is refused by the machine itself and
 // not by a rule read a moment before. The caller closes the handle.
 func (w *VaultWriter) openRoot(target string) (*os.Root, string, error) {
 	name, err := w.getRelativeName(target)
@@ -356,7 +355,6 @@ func (w VaultWriters) Open(v domain.Vault) (port.VaultWriter, error) {
 
 // Create writes a note where there is none, and refuses where there is one.
 //
-// The refusal comes from the filesystem: O_EXCL either creates the file or
 // does not, in one step, so two callers racing cannot both be told the path
 // was free.
 func (w *VaultWriter) Create(ctx context.Context, path string, content []byte) error {
@@ -431,11 +429,11 @@ func (w *VaultWriter) Import(ctx context.Context, path string, content io.Reader
 // same rules replace writes bytes it already holds.
 func streamReplace(ctx context.Context, root *os.Root, target string, content io.Reader) error {
 	dir := filepath.Dir(target)
-	tmp, at, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
+	tmp, pos, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return err
 	}
-	defer root.Remove(at)
+	defer root.Remove(pos)
 
 	if _, err := io.Copy(tmp, content); err != nil {
 		tmp.Close()
@@ -452,7 +450,7 @@ func streamReplace(ctx context.Context, root *os.Root, target string, content io
 	if err := tmp.Close(); err != nil {
 		return err
 	}
-	if err := rename(ctx, root, at, target); err != nil {
+	if err := rename(ctx, root, pos, target); err != nil {
 		return err
 	}
 	return syncDirectory(root, dir)

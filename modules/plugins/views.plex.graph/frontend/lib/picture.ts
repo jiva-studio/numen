@@ -9,7 +9,6 @@ import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../type
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '@numen/ui'
 
 /**
- * Which of three each note on a neighbourhood is, by the path it stands at. A
  * plex draws a deck and a stencil as what they are.
  */
 export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
@@ -27,22 +26,21 @@ function getEdgeArrow(relation: NoteRelation, isMutual: boolean): EdgeArrow | un
 }
 
 /**
- * A node is drawn under the ticket its note holds, and so is each end of an
- * edge. The caller says what a note's ticket is.
+ * A node is drawn under the token its note holds, and so is each end of an
+ * edge. The caller says what a note's token is.
  *
  * An edge runs the way the relationship runs, and a sibling's does not touch
  * the focus at all: it is another of a parent's children, so it hangs off that
  * parent. Which parent that is comes from the vault, and this file names it.
  *
  * A relationship both notes named is drawn with an arrow at the end away from
- * the focus, the words along the line being the ones the note in focus wrote.
  */
 export function convertNeighbourhood(
   neighbourhood: Neighbourhood,
-  ticket: (path: string) => string,
+  token: (path: string) => string,
 ): PlexNeighbourhood {
   const focus: PlexNode = {
-    id: ticket(neighbourhood.focus.path),
+    id: token(neighbourhood.focus.path),
     title: neighbourhood.focus.title,
     relation: 'focus',
   }
@@ -60,7 +58,7 @@ export function convertNeighbourhood(
   /** The path of every note this picture draws, the note in focus included. */
   const visiblePaths = new Set<string>([neighbourhood.focus.path])
   for (const related of neighbourhood.related) {
-    const id = ticket(related.path)
+    const id = token(related.path)
     visiblePaths.add(related.path)
     nodes.push({ id, title: related.title, relation: related.relation })
     items.push({
@@ -86,7 +84,7 @@ export function convertNeighbourhood(
     if (relation === 'child') {
       return [{ from: focus.id, to: id, ...line, ...head }]
     }
-    return visiblePaths.has(through) ? [{ from: ticket(through), to: id, ...line }] : []
+    return visiblePaths.has(through) ? [{ from: token(through), to: id, ...line }] : []
   })
 
   return { nodes, edges }
@@ -124,8 +122,8 @@ export function areNeighbourhoodsEqual(
   if (one.focusType !== other.focusType) return false
   if (one.related.length !== other.related.length) return false
 
-  return one.related.every((related, at) => {
-    const comparison = other.related[at]!
+  return one.related.every((related, index) => {
+    const comparison = other.related[index]!
     return (
       related.path === comparison.path &&
       related.title === comparison.title &&

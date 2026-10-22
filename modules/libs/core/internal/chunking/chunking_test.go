@@ -305,9 +305,9 @@ func wordBounded(t *testing.T, text string, c Chunk) {
 // strictly inside a chunk is structure the cut ignored.
 func assertWithinParts(t *testing.T, bounds []int, c Chunk) {
 	t.Helper()
-	for _, at := range bounds {
-		if c.Start < at && at < c.Start+c.Length {
-			t.Errorf("chunk %d+%d runs across the part at %d", c.Start, c.Length, at)
+	for _, item := range bounds {
+		if c.Start < item && item < c.Start+c.Length {
+			t.Errorf("chunk %d+%d runs across the part at %d", c.Start, c.Length, item)
 		}
 	}
 }
@@ -439,18 +439,18 @@ func TestSplitUsesTheDefaultSizes(t *testing.T) {
 // characters when the caller names no limit.
 func TestSplitDefaultLimit(t *testing.T) {
 	tests := []struct {
-		name  string
-		runes int
-		kept  bool
+		name      string
+		runes     int
+		preserved bool
 	}{
-		{name: "a word at the limit is indexed", runes: 1000, kept: true},
-		{name: "a word over the limit is not", runes: 1001, kept: false},
+		{name: "a word at the limit is indexed", runes: 1000, preserved: true},
+		{name: "a word over the limit is not", runes: 1001, preserved: false},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			out := Cut(strings.Repeat("a", test.runes), nil, Sizes{}, Legibility{})
-			if got := countSmall(out) > 0; got != test.kept {
-				t.Errorf("small chunk kept: got %v, want %v", got, test.kept)
+			if got := countSmall(out) > 0; got != test.preserved {
+				t.Errorf("small chunk kept: got %v, want %v", got, test.preserved)
 			}
 		})
 	}

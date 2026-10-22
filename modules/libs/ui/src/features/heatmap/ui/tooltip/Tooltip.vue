@@ -8,7 +8,7 @@
  */
 import { computed, onMounted, ref, useTemplateRef, watch } from 'vue'
 
-import { getPlaceBeside, type Box } from '@/shared/lib/place'
+import { getAdjacentPlace, type Box } from '@/shared/lib/place'
 import type { Size } from '@/shared/lib/geometry'
 import { browserViewport, useRoom, type Viewport } from '@/shared/lib/viewport'
 
@@ -36,7 +36,7 @@ const size = ref<Size>({ width: 0, height: 0 })
  * thing begins, and folds up from there at the foot of the window.
  */
 const tooltipPosition = computed(() => ({
-  x: getPlaceBeside({
+  x: getAdjacentPlace({
     from: props.at.x,
     to: props.at.x + props.at.width,
     size: size.value.width,
@@ -44,7 +44,7 @@ const tooltipPosition = computed(() => ({
     margin: props.margin,
     gap: props.gap,
   }),
-  y: getPlaceBeside({
+  y: getAdjacentPlace({
     from: props.at.y,
     to: props.at.y,
     size: size.value.height,

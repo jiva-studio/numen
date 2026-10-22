@@ -273,7 +273,6 @@ func TestEndingAConversationIsHandedToThePlugins(t *testing.T) {
 	}
 }
 
-// drawn records the changes the window is told of, and the stretches looked for.
 type drawn struct {
 	mu      sync.Mutex
 	edits   []domain.Edit
@@ -282,16 +281,16 @@ type drawn struct {
 
 func (d *drawn) preview(unique bool) EditPreview {
 	return EditPreview{
-		Emit: func(_ context.Context, said domain.Edit) {
+		Emit: func(_ context.Context, response domain.Edit) {
 			d.mu.Lock()
 			defer d.mu.Unlock()
-			d.edits = append(d.edits, said)
+			d.edits = append(d.edits, response)
 		},
-		Locate: func(_ context.Context, path, stood string) (int, int, bool) {
+		Locate: func(_ context.Context, path, text string) (int, int, bool) {
 			d.mu.Lock()
 			defer d.mu.Unlock()
-			d.located = append(d.located, path+":"+stood)
-			return 10, 10 + len(stood), unique
+			d.located = append(d.located, path+":"+text)
+			return 10, 10 + len(text), unique
 		},
 	}
 }
@@ -328,7 +327,7 @@ func TestDraftRendered_NotStep(t *testing.T) {
 		{Change: "c-1", IsDone: true},
 	}
 	if !slices.Equal(observed.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
+		t.Errorf("the window received %+v, want %+v", observed.edits, want)
 	}
 	if !slices.Equal(observed.located, []string{"a.md:old"}) {
 		t.Errorf("the stretch was looked for as %q, and once is enough", observed.located)
@@ -498,7 +497,7 @@ func TestTheDrawingOfAChangeEndsWithItsCall(t *testing.T) {
 		{Change: "c-1", IsDone: true},
 	}
 	if !slices.Equal(observed.edits, want) {
-		t.Errorf("the window was told %+v, want %+v", observed.edits, want)
+		t.Errorf("the window received %+v, want %+v", observed.edits, want)
 	}
 }
 

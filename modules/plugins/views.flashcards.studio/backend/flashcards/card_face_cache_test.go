@@ -118,9 +118,9 @@ func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 	t.Parallel()
 	s, faces, reads := openTallied(t, vault)
 
-	at := filepath.Join(s.vault.Path, "decks", "Words.md")
+	pos := filepath.Join(s.vault.Path, "decks", "Words.md")
 	later := time.Now().Add(time.Hour)
-	if err := os.Chtimes(at, later, later); err != nil {
+	if err := os.Chtimes(pos, later, later); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
@@ -134,8 +134,8 @@ func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 	t.Parallel()
 	s, faces, reads := openTallied(t, vault)
-	at := filepath.Join(s.vault.Path, "decks", "Words.md")
-	info, err := os.Stat(at)
+	pos := filepath.Join(s.vault.Path, "decks", "Words.md")
+	info, err := os.Stat(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +154,7 @@ func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 
 	// The same bytes under the same stamp are the file the entry was made from.
 	write(t, s, "decks/Words.md", vault["decks/Words.md"])
-	if err := os.Chtimes(at, info.ModTime(), info.ModTime()); err != nil {
+	if err := os.Chtimes(pos, info.ModTime(), info.ModTime()); err != nil {
 		t.Fatal(err)
 	}
 	back, err := faces.Execute(t.Context(), s.vault)

@@ -5,17 +5,16 @@
  * arithmetic is done in here: two written days are counted apart on the
  * calendar itself, where an hour put into or taken out of a clock is not a
  * length of time at all. A day is read off an instant in the zone the machine
- * stands in, which is the calendar the person is looking at.
  */
 
 /** How long a day of the calendar is, where no clock changes under it. */
 const DAY = 86_400_000
 
 /** A day as it is written down: the year, the month and the day. */
-export const getDayName = (at: Date): string => {
-  const month = String(at.getMonth() + 1).padStart(2, '0')
-  const day = String(at.getDate()).padStart(2, '0')
-  return `${at.getFullYear()}-${month}-${day}`
+export const getDayName = (date: Date): string => {
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${date.getFullYear()}-${month}-${day}`
 }
 
 /**
@@ -24,8 +23,8 @@ export const getDayName = (at: Date): string => {
  * it was.
  */
 export const parseDay = (day: string): Date => {
-  const [year, month, at] = day.split('-').map(Number)
-  return new Date(year ?? 2000, (month ?? 1) - 1, at ?? 1, 12)
+  const [year, month, dayNum] = day.split('-').map(Number)
+  return new Date(year ?? 2000, (month ?? 1) - 1, dayNum ?? 1, 12)
 }
 
 /** Whether a value is a day at all, which an empty field is not. */
@@ -43,9 +42,9 @@ export const daysBetween = (from: string, to: string): number => {
 /** The day that many days after a written one, and itself where it is not a day. */
 export const dayAfter = (from: string, days: number): string => {
   if (!isDay(from)) return from
-  const at = new Date(getDayNumber(from))
-  at.setUTCDate(at.getUTCDate() + days)
-  return at.toISOString().slice(0, 10)
+  const date = new Date(getDayNumber(from))
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
 }
 
 /**
@@ -53,6 +52,6 @@ export const dayAfter = (from: string, days: number): string => {
  * touches. It is not an instant and nothing is shown from it.
  */
 const getDayNumber = (day: string): number => {
-  const [year, month, at] = day.split('-').map(Number)
-  return Date.UTC(year ?? 2000, (month ?? 1) - 1, at ?? 1)
+  const [year, month, dayNum] = day.split('-').map(Number)
+  return Date.UTC(year ?? 2000, (month ?? 1) - 1, dayNum ?? 1)
 }

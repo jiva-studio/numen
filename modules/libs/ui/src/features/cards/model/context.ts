@@ -6,7 +6,7 @@ import type { InjectionKey } from 'vue'
 
 export interface CardFieldTarget {
   readonly field: string
-  readonly nth: number
+  readonly index: number
 }
 
 export interface DeckContext {

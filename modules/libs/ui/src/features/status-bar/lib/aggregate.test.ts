@@ -83,12 +83,12 @@ describe('groupTasks', () => {
 })
 
 describe('calculateAggregate eta and cancelling', () => {
-  const createTask = (over: Partial<StatusBarTask>): StatusBarTask => ({
+  const createTask = (overrides: Partial<StatusBarTask>): StatusBarTask => ({
     id: 'x',
     label: 'x',
     group: 'g',
     state: 'running',
-    ...over,
+    ...overrides,
   })
 
   it('counts a cancelling task as active, with its progress and eta', () => {

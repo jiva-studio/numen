@@ -12,7 +12,6 @@ import (
 // Day is where one day of review gives way to the next.
 type Day = review.Day
 
-// Scenarios is everything that runs a vault's cards: what stands in it, what it
 // owes, what to ask next, and what an answer is written to.
 type Scenarios struct {
 	CardFaces ListCardFaces
@@ -89,15 +88,15 @@ func NewScenarios(cfg Config) Scenarios {
 	// Each card is worked out at the share of the cards its own preset asks
 	// for, which is what says which preset a card face is placed under.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
-	var at func(retention float64) review.Scheduler
+	var createScheduler func(retention float64) review.Scheduler
 	if cfg.Scheduler != nil {
 		defaultScheduler = cfg.Scheduler.CreateScheduler(review.Defaults().Retention)
-		at = cfg.Scheduler.CreateScheduler
+		createScheduler = cfg.Scheduler.CreateScheduler
 	}
 	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, faces, presets)
 	schedules.Cache = cfg.Schedules
-	if at != nil {
-		schedules.At = at
+	if createScheduler != nil {
+		schedules.At = createScheduler
 	}
 
 	counted := NewCountReviews(cfg.Logs, schedules, day, cfg.Now)
@@ -105,8 +104,8 @@ func NewScenarios(cfg Config) Scenarios {
 
 	curves := NewProjectCurve(faces, schedules, presets, day, cfg.Now)
 	curves.Cores = cfg.Cores
-	if at != nil {
-		curves.By = at
+	if createScheduler != nil {
+		curves.By = createScheduler
 	}
 
 	return Scenarios{

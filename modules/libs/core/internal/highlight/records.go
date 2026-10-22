@@ -11,7 +11,6 @@ import (
 // order and prose grows within a page, so they come out sorted by where the run
 // begins and need no index of their own.
 //
-// A record holds where the run begins and how long it is. Files written by
 // every version stand, and the span is made from the two on the way in.
 const record = 28
 
@@ -49,8 +48,8 @@ func Unpack(raw []byte) []domain.HighlightBox {
 		return nil
 	}
 	boxes := make([]domain.HighlightBox, 0, len(raw)/record)
-	for at := 0; at+record <= len(raw); at += record {
-		one := raw[at : at+record]
+	for pos := 0; pos+record <= len(raw); pos += record {
+		one := raw[pos : pos+record]
 		from := int(int32(binary.LittleEndian.Uint32(one[4:])))
 		boxes = append(boxes, domain.HighlightBox{
 			Page: int(int32(binary.LittleEndian.Uint32(one[0:]))),

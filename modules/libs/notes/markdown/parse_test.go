@@ -62,7 +62,6 @@ func TestTitlePreferenceOrder(t *testing.T) {
 	if got := parseFile(t, "Thermodynamics.md").Title; got != "Thermodynamics" {
 		t.Errorf("explicit title = %q", got)
 	}
-	// No title key: the filename stands in, whatever the prose says.
 	if got := parseFile(t, "notes/Entropy.md").Title; got != "Entropy" {
 		t.Errorf("title from the filename = %q", got)
 	}

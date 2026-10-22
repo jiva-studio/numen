@@ -28,7 +28,7 @@ defineProps<{
 }>()
 
 /** Which of the card and the panels either side of it is in the window. */
-const at = defineModel<PanelPlace>('at', { required: true })
+const place = defineModel<PanelPlace>('at', { required: true })
 
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{
@@ -94,7 +94,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
     </PanelCarousel>
 
     <footer class="session__answers">
-      <!-- The key first and the word after it: a person answering with the
+      <!-- The key first and the word after it: user review input with the
            keyboard reads down the row of keys, and one answering with the mouse
            reads the words either way. -->
       <template v-if="isShown">
@@ -103,7 +103,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
           :key="how"
           class="session__answer"
           :how="how"
-          :at="i + 1"
+          :shortcut-number="i + 1"
           :ahead="card.ahead"
           @answer="$emit('answer', how)"
         />
@@ -133,9 +133,6 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
   min-block-size: 0;
 }
 
-/* Where the card stands, said once and quietly: a person answering is reading
-   the card, not the line above it. Text and marks are centred against each
-   other, because a button has no baseline to put a word on. */
 .session__where {
   display: flex;
   align-items: center;
@@ -168,8 +165,6 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
   gap: var(--numen-inset);
 }
 
-/* An answer is a target a person hits without looking, so it takes the whole
-   width it can and stands taller than a button in a row of controls. */
 .session__answer {
   flex: 1;
   block-size: auto;

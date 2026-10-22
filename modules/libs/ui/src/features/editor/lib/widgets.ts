@@ -44,11 +44,11 @@ export class Box extends WidgetType {
     box.addEventListener('mousedown', (event) => event.preventDefault())
     box.addEventListener('click', () => {
       if (!this.isWritable) return
-      const at = view.posAtDOM(box)
-      const marker = view.state.doc.sliceString(at, at + 3)
+      const pos = view.posAtDOM(box)
+      const marker = view.state.doc.sliceString(pos, pos + 3)
       if (marker.length !== 3) return
       view.dispatch({
-        changes: { from: at, to: at + 3, insert: this.isTicked ? '[ ]' : '[x]' },
+        changes: { from: pos, to: pos + 3, insert: this.isTicked ? '[ ]' : '[x]' },
       })
     })
     return box

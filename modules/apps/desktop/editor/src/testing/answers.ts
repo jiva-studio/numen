@@ -2,7 +2,6 @@
  * What the mocked application answers, and what a test sets before the window
  * draws.
  *
- * `said` is what the vault says about itself and what stands in it, `listed`
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import { asValue } from '@numen/wire'
@@ -67,7 +66,6 @@ export const mockVaultState = {
   }) as FieldRenameResult,
 }
 
-/** The vaults this installation holds, and the one the window is showing. */
 export const mockVaultList = {
   vaults: [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }],
   showing: 'physics',
@@ -124,8 +122,11 @@ export const outside = (() => {
   const queue: { path: string; spans: { from: number; to: number }[] }[] = []
   let wake: (() => void) | null = null
   return {
-    ask: (at: { path: string; start: number; length: number }) => {
-      queue.push({ path: at.path, spans: [{ from: at.start, to: at.start + at.length }] })
+    ask: (target: { path: string; start: number; length: number }) => {
+      queue.push({
+        path: target.path,
+        spans: [{ from: target.start, to: target.start + target.length }],
+      })
       wake?.()
       wake = null
     },
@@ -227,6 +228,8 @@ export const forgetAnswers = () => {
   mockVaultState.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
-  mockVaultList.vaults = [{ id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false }]
+  mockVaultList.vaults = [
+    { id: 'physics', name: 'Physics', path: '/vaults/Physics', isMissing: false },
+  ]
   mockVaultList.showing = 'physics'
 }

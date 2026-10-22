@@ -10,12 +10,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// ErrNoVault is a call for the vault the window is showing when it shows none.
 var ErrNoVault = errors.New("the host is showing no vault")
 
 // Vault is port.PluginVault over the ports of the installation.
 type Vault struct {
-	// Current is the vault the window is showing.
 	Current func() (domain.Vault, bool)
 	Readers port.VaultReaders
 	Writers port.VaultWriters
@@ -144,7 +142,7 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprin
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	at, err := reader.GetFingerprint(ctx, path)
+	pos, err := reader.GetFingerprint(ctx, path)
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
@@ -152,7 +150,7 @@ func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprin
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	return content, at, nil
+	return content, pos, nil
 }
 
 func (a Vault) Write(
@@ -162,14 +160,14 @@ func (a Vault) Write(
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	at, err := writer.Write(ctx, path, content, baseline)
+	pos, err := writer.Write(ctx, path, content, baseline)
 	if err == nil {
-		a.tellWritten()
+		a.notifyFileWritten()
 	}
-	return at, err
+	return pos, err
 }
 
-func (a Vault) tellWritten() {
+func (a Vault) notifyFileWritten() {
 	if a.Written != nil {
 		a.Written()
 	}
@@ -183,7 +181,7 @@ func (a Vault) Create(ctx context.Context, path string, content []byte) error {
 	if err := writer.Create(ctx, path, content); err != nil {
 		return err
 	}
-	a.tellWritten()
+	a.notifyFileWritten()
 	return nil
 }
 
@@ -200,7 +198,7 @@ func (a Vault) Scan(ctx context.Context, paths []string) error {
 	if err != nil || a.Index == nil {
 		return err
 	}
-	a.tellWritten()
+	a.notifyFileWritten()
 	return a.Index(ctx, v, paths)
 }
 
@@ -253,13 +251,13 @@ func (a Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLi
 }
 
 func (a Vault) ResolveLinks(
-	ctx context.Context, from string, written []string,
+	ctx context.Context, from string, targets []string,
 ) (map[string]domain.ResolvedLink, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
 	}
-	return a.Links.ResolveLinks(ctx, v.ID, from, written)
+	return a.Links.ResolveLinks(ctx, v.ID, from, targets)
 }
 
 func (a Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {

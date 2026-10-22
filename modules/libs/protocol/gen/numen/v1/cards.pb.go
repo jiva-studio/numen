@@ -8,7 +8,6 @@
 //
 // A stencil declares the fields a card has and the faces it is shown by; a
 // deck holds the cards. Both are notes, so both are addressed by the path they
-// are filed under, and both are refused for the reasons any note is.
 //
 // Nothing here is laid out. A face travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
@@ -617,10 +616,8 @@ type Card struct {
 	// the ten characters alone, without the caret a heading writes them behind,
 	// and it is empty for a card the application has not written yet.
 	Mark string `protobuf:"bytes,1,opt,name=mark,proto3" json:"mark,omitempty"`
-	// Where the section this card is placed under stands in the deck's own, counted
 	// from the first. Absent for a card standing before the first section.
 	//
-	// A write naming a section the deck does not hold is refused. Nothing is
 	// written, and the card is not quietly stood somewhere else.
 	SectionIndex *int32 `protobuf:"varint,2,opt,name=section_index,json=sectionIndex,proto3,oneof" json:"section_index,omitempty"`
 	// The line the card's heading says, with the mark taken off. It is not what
@@ -1062,13 +1059,11 @@ func (x *ReadStencilRequest) GetPath() string {
 }
 
 type ReadStencilResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Absent when the stencil was refused.
-	Stencil *Stencil `protobuf:"bytes,1,opt,name=stencil,proto3,oneof" json:"stencil,omitempty"`
+	state   protoimpl.MessageState `protogen:"open.v1"`
+	Stencil *Stencil               `protobuf:"bytes,1,opt,name=stencil,proto3,oneof" json:"stencil,omitempty"`
 	// Set when the stencil was not read, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file this stencil came out of, for the caller to present at its next
-	// write. Absent when the stencil was refused.
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1366,7 +1361,6 @@ type RenameStencilFieldResponse struct {
 	// the old heading.
 	NotWritten []*UnwrittenDeck `protobuf:"bytes,3,rep,name=not_written,json=notWritten,proto3" json:"not_written,omitempty"`
 	// Set when the field was not renamed at all, and why. No deck is written
-	// where the stencil refused the rename, and a stencil that is no longer the
 	// one this caller read is ERROR_CODE_STALE.
 	Error *ErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The stencil the rename produced, for the caller to present at its next
@@ -1672,12 +1666,10 @@ func (x *ReadDeckRequest) GetPath() string {
 
 type ReadDeckResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Absent when the deck was refused.
-	Deck *Deck `protobuf:"bytes,1,opt,name=deck,proto3,oneof" json:"deck,omitempty"`
+	Deck  *Deck                  `protobuf:"bytes,1,opt,name=deck,proto3,oneof" json:"deck,omitempty"`
 	// Set when the deck was not read, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file this deck came out of, for the caller to present at its next
-	// write. Absent when the deck was refused.
 	At *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// The size a deck is read up to, in bytes. Set with
 	// ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding

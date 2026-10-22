@@ -29,13 +29,13 @@ func sourceIn(dir string) Source {
 
 func TestAModelAdjacentTheApplicationIsUsedWhenItContainsThePinnedSum(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "model.onnx")
-	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, "model.onnx")
+	if err := os.WriteFile(targetPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := Locate(context.Background(), sourceIn(dir), pinTestModel("weights"), "", pinnedTestAddress, "layout model")
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Locate() = %q, %v", got, err)
 	}
 }
@@ -54,13 +54,13 @@ func TestAModelAdjacentTheApplicationWithAnotherSumIsNotUsed(t *testing.T) {
 
 func TestAModelNobodyPinnedAdjacentTheApplicationIsUsedAsFound(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "model.onnx")
-	if err := os.WriteFile(at, []byte("anything"), 0o644); err != nil {
+	targetPath := filepath.Join(dir, "model.onnx")
+	if err := os.WriteFile(targetPath, []byte("anything"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := Locate(context.Background(), sourceIn(dir), nil, "", "https://example.invalid/unpinned/model.onnx", "layout model")
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Locate() = %q, %v", got, err)
 	}
 }
@@ -140,4 +140,3 @@ func TestLocateAllFailsFastOnError(t *testing.T) {
 		t.Errorf("destinations were modified on error: d1=%q, d2=%q", d1, d2)
 	}
 }
-

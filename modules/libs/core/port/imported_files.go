@@ -29,7 +29,6 @@ type ImportedFile struct {
 // another, and nothing above this knows which.
 type ImportedFiles interface {
 	// GetName is what the machine calls the file at a handle. It reads nothing,
-	// so a handle that cannot be opened still has a name to be refused under.
 	GetName(handle string) string
 	// GetImportedFile says what is at a handle.
 	GetImportedFile(ctx context.Context, handle string) (ImportedFile, error)

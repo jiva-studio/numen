@@ -17,7 +17,6 @@ func london(t *testing.T) *time.Location {
 	return in
 }
 
-// An hour after midnight belongs to the day before: a person answering cards at
 // one in the morning is finishing that day, not starting the next.
 func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	in := london(t)
@@ -34,7 +33,6 @@ func TestAnHourAfterMidnightBelongsToTheDayBefore(t *testing.T) {
 	}
 }
 
-// The boundary is an hour of the clock on the wall, so the day an hour is taken
 // out of ends at the hour a person reads.
 func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	in := london(t)
@@ -47,7 +45,6 @@ func TestTheDayAnHourIsTakenOutOfEndsAtTheHourOnTheWall(t *testing.T) {
 	}
 }
 
-// A card due later today is owed now: a person sits down when they sit down,
 // and a card owed today is owed for the whole of it.
 func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	in := london(t)
@@ -73,7 +70,6 @@ func TestACardDueLaterTodayIsOwedNow(t *testing.T) {
 	}
 }
 
-// A card nobody has answered is owed the first time it is asked about.
 func TestACardNobodyAnsweredIsOwed(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime}
 	if !day.IsOwed(review.Schedule{}, time.Now()) {
@@ -111,15 +107,15 @@ func TestADayOfReviewIsNamedForItsOwnDate(t *testing.T) {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			from := time.Date(2025, 1, 1, 0, 0, 0, 0, in)
 			for i := range 800 * 24 {
-				at := from.Add(time.Duration(i) * time.Hour).In(in)
-				y, m, d := at.Date()
+				pos := from.Add(time.Duration(i) * time.Hour).In(in)
+				y, m, d := pos.Date()
 				want := time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
-				if at.Hour() < hour {
+				if pos.Hour() < hour {
 					want = want.AddDate(0, 0, -1)
 				}
-				if got := day.GetName(at); got != want.Format(review.DayLayout) {
+				if got := day.GetName(pos); got != want.Format(review.DayLayout) {
 					t.Fatalf("in %s, %v under a day beginning at %02d:00 is named %s, want %s",
-						name, at, hour, got, want.Format(review.DayLayout))
+						name, pos, hour, got, want.Format(review.DayLayout))
 				}
 			}
 		}
@@ -138,25 +134,24 @@ func TestEachDayOfReviewIsNumberedApartFromTheNext(t *testing.T) {
 			day := review.Day{Starts: time.Duration(hour) * time.Hour, In: in}
 			on := review.NewDueByDay(day)
 			days := make([]time.Time, 0, 800)
-			for at := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; at = day.GetEnd(at) {
-				days = append(days, at)
-				if next := day.GetEnd(at); !next.After(at) {
+			for pos := time.Date(2025, 1, 1, 12, 0, 0, 0, in); len(days) < 800; pos = day.GetEnd(pos) {
+				days = append(days, pos)
+				if next := day.GetEnd(pos); !next.After(pos) {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
-						"ends at %v", name, at, hour, next)
+						"ends at %v", name, pos, hour, next)
 				}
-				on.Add(at)
+				on.Add(pos)
 			}
-			for _, at := range days {
-				if got := on.CountOn(at); got != 1 {
+			for _, item := range days {
+				if got := on.CountOn(item); got != 1 {
 					t.Fatalf("in %s, the day holding %v under a day beginning at %02d:00 "+
-						"carries %d of the 800 cards, want 1", name, at, hour, got)
+						"carries %d of the 800 cards, want 1", name, item, hour, got)
 				}
 			}
 		}
 	}
 }
 
-// The hour a day of review begins at is read as hours and minutes of the clock on the wall.
 func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 	for content, want := range map[string]time.Duration{
 		"":      review.DayStartTime,
@@ -173,7 +168,6 @@ func TestTheHourADayBeginsAtIsReadAsTheClockOnTheWall(t *testing.T) {
 }
 
 // Something that is not an hour of the day, or lies past the latest hour a day may begin at, is
-// refused, and the default stands with the refusal.
 func TestAnHourTheDayDoesNotBeginAt(t *testing.T) {
 	for _, content := range []string{"half past four", "18:00", "12:01", "4", "24:00"} {
 		got, err := review.ParseDayStart(content)

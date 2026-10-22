@@ -124,8 +124,6 @@ const getBoxStyle = (one: Rect) => ({
   opacity: 0.35;
 }
 
-/* The ring stands in the middle of a page's worth of nothing, so it is drawn at
-   the size of something being waited for and not of a word. */
 .reader__spinner {
   --spinner-size: 1.4rem;
   --spinner-thickness: 2px;

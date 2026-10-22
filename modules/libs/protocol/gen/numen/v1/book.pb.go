@@ -4,7 +4,6 @@
 // 	protoc        (unknown)
 // source: numen/v1/book.proto
 
-// What a client has to know before it can read a book that reflows: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //
@@ -88,7 +87,6 @@ type GetBookResponse struct {
 	// offset. A book naming nothing is reached by these, and most books carry
 	// none.
 	PrintedPages []*PrintedPage `protobuf:"bytes,4,rep,name=printed_pages,json=printedPages,proto3" json:"printed_pages,omitempty"`
-	// How many pages the book is read in. A book that reflows has none of its
 	// own, so they are counted over its text and not over anything drawn.
 	PageCount int32 `protobuf:"varint,5,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
 	// How many bytes the book's text is, and how many of them stand on one page.
@@ -99,7 +97,6 @@ type GetBookResponse struct {
 	// page wherever it is counted.
 	TextBytes int32 `protobuf:"varint,6,opt,name=text_bytes,json=textBytes,proto3" json:"text_bytes,omitempty"`
 	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
-	// Which bytes the book was read from. It stands in the ask for the markup of
 	// a document and in the address the bytes of a picture are answered at, so
 	// both name one reading of one file.
 	Fingerprint   *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
@@ -420,7 +417,6 @@ type ReadBookEntryRequest struct {
 	// The entry, as the archive names it.
 	Entry string `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
 	// Which bytes the ask was given out for. A file that is other bytes now is
-	// refused as aborted.
 	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -522,7 +518,6 @@ func (x *ReadBookEntryResponse) GetBody() []byte {
 	return nil
 }
 
-// SpineDocument is one document of the book, and where its text stands in the
 // book's text.
 type SpineDocument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`

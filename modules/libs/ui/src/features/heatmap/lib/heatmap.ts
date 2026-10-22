@@ -84,9 +84,9 @@ export function getDays(
   const opens = monday(getFirstDay(did, due, now))
   const first = opens > behindDate ? opens : behindDate
 
-  for (let at = 0; at < columns * ROWS; at += 1) {
+  for (let offset = 0; offset < columns * ROWS; offset += 1) {
     const on = new Date(first)
-    on.setDate(on.getDate() + at)
+    on.setDate(on.getDate() + offset)
     const day = getDayName(on)
     const isAhead = day > today
     const tally = did.get(day) ?? NOTHING
@@ -117,20 +117,19 @@ function getFirstDay(
     if (first === '' || day < first) first = day
   }
   if (first === '') return now
-  const at = parseDay(first)
-  return at > now ? now : at
+  const date = parseDay(first)
+  return date > now ? now : date
 }
 
-/** The Monday of the week a day stands in, which is the column it opens. */
-function monday(at: Date): Date {
-  const out = new Date(at)
+function monday(date: Date): Date {
+  const out = new Date(date)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
 /** Monday is the first day of a week, and Sunday the seventh. */
-function weekday(at: Date): number {
-  const day = at.getDay()
+function weekday(date: Date): number {
+  const day = date.getDay()
   return day === 0 ? 7 : day
 }
 
@@ -150,7 +149,6 @@ export function getWeight(did: number): Day['weight'] {
 /** How round the corner of a cell is drawn, in the grid's own units. */
 const RADIUS = 2
 
-/** Where one day stands in the grid, and how it is drawn there. */
 export interface Cell {
   readonly day: Day
   readonly x: number
@@ -176,10 +174,10 @@ export function getCells(
   days: readonly Day[],
 ): readonly Cell[] {
   const step = getStep(grid)
-  return days.map((day, at) => ({
+  return days.map((day, index) => ({
     day,
-    x: Math.floor(at / ROWS) * step,
-    y: (at % ROWS) * step,
+    x: Math.floor(index / ROWS) * step,
+    y: (index % ROWS) * step,
     size: grid.cell,
     radius: RADIUS,
   }))

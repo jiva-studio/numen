@@ -1,11 +1,3 @@
-/**
- * Where each problem a reading came back with is drawn: against a card,
- * against a face, against one field of a card, or against the file itself.
- *
- * A problem says at its current position, and the window draws it on the thing
- * standing there. Two readings wrong in the same way leave what is drawn where
- * it is, so a mark a person is reading does not blink on every read.
- */
 import type { DeckProblem } from '../types'
 
 /** Where each problem is drawn. */
@@ -19,7 +11,7 @@ export interface Marks {
    * What is wrong with one field of one card, under that card's identity and
    * then the name the file spells the field.
    */
-  readonly under: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
+  readonly bySection: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
   /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
   /** What is wrong that stands against no card, no face and no field. */
@@ -37,7 +29,7 @@ export const createMarks = (
   cards: readonly string[],
   faces: readonly string[],
 ): Marks => {
-  const at = new Map<string, string[]>()
+  const marksAt = new Map<string, string[]>()
   const underMap = new Map<string, Map<string, string[]>>()
   const fields = new Map<string, string[]>()
   const whole: string[] = []
@@ -52,7 +44,7 @@ export const createMarks = (
     const card = cards[problem.card ?? -1]
     if (card !== undefined) {
       if (problem.field === '') {
-        addProblemMark(at, card, problem.text)
+        addProblemMark(marksAt, card, problem.text)
         continue
       }
       let cardMarks = underMap.get(card)
@@ -65,7 +57,7 @@ export const createMarks = (
     }
     const face = faces[problem.face ?? -1]
     if (face !== undefined) {
-      addProblemMark(at, face, problem.text)
+      addProblemMark(marksAt, face, problem.text)
       continue
     }
     if (problem.field !== '') {
@@ -75,12 +67,12 @@ export const createMarks = (
     whole.push(problem.text)
   }
 
-  return { at, under: underMap, fields, whole }
+  return { at: marksAt, bySection: underMap, fields, whole }
 }
 
 /** Whether two lists of words read the same, in the same order. */
 const areWordsEqual = (one: readonly string[], other: readonly string[]): boolean =>
-  one.length === other.length && one.every((text, at) => text === other[at])
+  one.length === other.length && one.every((text, index) => text === other[index])
 
 /** Whether two of those maps stand against the same things, saying the same. */
 const areMarkMapsEqual = (
@@ -108,12 +100,8 @@ const areUnderMapsEqual = (
   return true
 }
 
-/**
- * Whether two readings of a file are wrong in the same way. What is drawn
- * against a file it says nothing about is drawn again.
- */
 export const areMarksEqual = (one: Marks, other: Marks): boolean =>
   areWordsEqual(one.whole, other.whole) &&
   areMarkMapsEqual(one.at, other.at) &&
-  areUnderMapsEqual(one.under, other.under) &&
+  areUnderMapsEqual(one.bySection, other.bySection) &&
   areMarkMapsEqual(one.fields, other.fields)

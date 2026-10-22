@@ -63,7 +63,7 @@ describe('where a menu goes', () => {
 
 describe('where the keyboard lands as a menu opens', () => {
   const items: MenuItem[] = [
-    { id: 'one', text: 'One', disabled: true },
+    { id: 'one', text: 'One', isDisabled: true },
     { id: 'two', text: 'Two' },
   ]
 
@@ -135,11 +135,11 @@ describe('the rules a menu draws between its groups', () => {
 
   it('carries every item through, in the order it was given', () => {
     const items: MenuItem[] = [
-      { id: 'one', text: 'One', group: 'file', disabled: true },
+      { id: 'one', text: 'One', group: 'file', isDisabled: true },
       { id: 'two', text: 'Two', group: 'plex' },
     ]
     expect(groupItems(items).map((one) => one.id)).toStrictEqual(['one', 'two'])
-    expect(groupItems(items)[0]?.disabled).toBe(true)
+    expect(groupItems(items)[0]?.isDisabled).toBe(true)
   })
 
   it('has nothing to draw for a menu holding nothing', () => {

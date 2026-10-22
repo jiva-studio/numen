@@ -236,7 +236,6 @@ func TestADeckIsNotPointedAtANoteThatIsNotAPreset(t *testing.T) {
 	}
 }
 
-// A path the vault holds no note at is refused, and nothing is written.
 func TestADeckIsNotPointedAtANoteThatIsNotThere(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
@@ -256,14 +255,14 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	at, err := s.presets.Point(
+	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	was := read(t, s.vault, "decks/Terms.md")
 
-	staleFingerprint := at
+	staleFingerprint := pos
 	staleFingerprint.Size += 3
 	_, err = s.presets.Point(t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", staleFingerprint)
 	if !errors.Is(err, ports.ErrStale) {
@@ -274,18 +273,17 @@ func TestADeckThatChangedSinceItWasReadIsNotPointed(t *testing.T) {
 	}
 }
 
-// The fingerprint a write answers with is the one the next write is held to.
 func TestTheFingerprintAPointAnswersWithIsPresentedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, choosing)
 
-	at, err := s.presets.Point(
+	pos, err := s.presets.Point(
 		t.Context(), s.vault, "decks/Terms.md", "Sanskrit.md", domain.Fingerprint{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := s.presets.Point(
-		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", at); err != nil {
+		t.Context(), s.vault, "decks/Terms.md", "presets/Slow.md", pos); err != nil {
 		t.Fatal(err)
 	}
 

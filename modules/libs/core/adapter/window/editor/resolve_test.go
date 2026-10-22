@@ -13,11 +13,11 @@ const identified = "01M02ACGM0FYMSXNDP29C90JNR"
 // getResolved is where each address landed, by what was asked about.
 func getResolved(t *testing.T, answer *v1.ResolveAddressesResponse) map[string]*v1.ResolvedAddress {
 	t.Helper()
-	by := map[string]*v1.ResolvedAddress{}
+	delta := map[string]*v1.ResolvedAddress{}
 	for _, one := range answer.GetResolved() {
-		by[one.GetWritten()] = one
+		delta[one.GetWritten()] = one
 	}
-	return by
+	return delta
 }
 
 // A window asks where a link written in an answer or in a note lands, and the

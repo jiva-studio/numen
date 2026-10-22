@@ -17,7 +17,6 @@ import {
  * A card face is shown on two surfaces and each lays it out for itself: this
  * library for the preview beside the stencil being written, and the core's
  * flashcards/format for the window a card is reviewed in. The table both are
- * held to is one file, and neither owns it.
  */
 import corpus from '../../../../../protocol/testdata/faces.json'
 
@@ -36,7 +35,6 @@ const VALUES = [
  * Every slot of the table names a field the stencil declares. A slot naming
  * none is where the two surfaces part on purpose — the review window lays it
  * out as nothing and the preview marks it at its current position, because the stencil
- * is what the preview is there to settle — and it is held to below instead.
  */
 describe('a card face', () => {
   it('means the same on every surface it is shown on', () => {

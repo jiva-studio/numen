@@ -98,7 +98,7 @@ describe('what else a plex tab asks of the window', () => {
   })
 
   it('reads what the window shows, and asks the vault where it opens', async () => {
-    const { host, asked } = createHost({ opening: 'Root.md' })
+    const { host, requested } = createHost({ opening: 'Root.md' })
     const deps = createPlexTabDeps(host, 'plex:1')
 
     expect(deps.isReady.value).toBe(true)
@@ -108,7 +108,7 @@ describe('what else a plex tab asks of the window', () => {
     expect(deps.dragged.value).toStrictEqual([])
     expect(await deps.readOpeningPath()).toBe('Root.md')
     await deps.readHeadings(['Root.md'])
-    expect(asked.headings).toStrictEqual([['Root.md']])
+    expect(requested.headings).toStrictEqual([['Root.md']])
     expect(await deps.searchNames?.('Ro', 5)).toStrictEqual([])
   })
 })

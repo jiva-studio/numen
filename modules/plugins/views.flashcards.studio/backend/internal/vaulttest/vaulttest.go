@@ -99,7 +99,7 @@ const Patience = 10 * time.Second
 // WaitFor holds until something is so, and fails the test if it never is.
 func WaitFor(tb testing.TB, condition func() bool) {
 	tb.Helper()
-	for at := time.Now(); time.Since(at) < Patience; {
+	for pos := time.Now(); time.Since(pos) < Patience; {
 		if condition() {
 			return
 		}

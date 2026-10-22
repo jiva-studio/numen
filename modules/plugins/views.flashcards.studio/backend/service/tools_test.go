@@ -125,9 +125,9 @@ func TestADeckTellsAnAgentWhereItsSectionsStand(t *testing.T) {
 	if len(read.Sections) != 1 || read.Sections[0] != "Camelids" {
 		t.Fatalf("the deck came back with the sections %+v", read.Sections)
 	}
-	for at, target := range read.Cards {
+	for item, target := range read.Cards {
 		if target.Section != 0 {
-			t.Errorf("card %d stands under section %d", at, target.Section)
+			t.Errorf("card %d in section %d, unexpected", item, target.Section)
 		}
 	}
 }
@@ -141,13 +141,12 @@ func TestAFaultExistsAgainstTheCardItIsAbout(t *testing.T) {
 	if len(read.Faults) != 1 {
 		t.Fatalf("the deck came back with %d faults: %+v", len(read.Faults), read.Faults)
 	}
-	at := read.Faults[0].Card
-	if at < 0 || at >= len(read.Cards) {
-		t.Fatalf("the fault stands against card %d, and the deck answered with %d", at, len(read.Cards))
+	pos := read.Faults[0].Card
+	if pos < 0 || pos >= len(read.Cards) {
+		t.Fatalf("fault reported for card %d, deck count %d", pos, len(read.Cards))
 	}
-	if name := getFieldText(read.Cards[at], "Name"); name != "Alpaca" {
-		t.Errorf("the card with no wikilink under it is %q, and the fault stands against %q",
-			"Alpaca", name)
+	if name := getFieldText(read.Cards[pos], "Name"); name != "Alpaca" {
+		t.Errorf("expected fault against %q, got %q", "Alpaca", name)
 	}
 }
 
@@ -222,9 +221,9 @@ func TestADeckAnswersWithTheFieldsItWasAskedFor(t *testing.T) {
 	if len(read.Cards) != 2 {
 		t.Fatalf("the deck came back with %d cards", len(read.Cards))
 	}
-	for at, one := range read.Cards {
+	for item, one := range read.Cards {
 		if len(one.Values) != 1 || one.Values[0].Field != "Name" {
-			t.Errorf("card %d came back holding %+v", at, one.Values)
+			t.Errorf("card %d came back holding %+v", item, one.Values)
 		}
 	}
 	if got := getFieldText(read.Cards[0], "Name"); got != "Llama" {
@@ -250,7 +249,7 @@ func TestReadingACardOfAMarkTheDeckHasNotGotIsRefused(t *testing.T) {
 
 	if response := getToolError(t, session, "card_read", map[string]any{
 		"path": "Animals.md", "mark": "zzzzzzzzzz",
-	}); !strings.Contains(response, "no card") {
+	}); !strings.Contains(response, "card face not found") {
 		t.Errorf("reading a card the deck has not got was answered %q", response)
 	}
 }
@@ -276,7 +275,7 @@ func TestACardIsAddedWithTheWikilinkThatNamesItsStencil(t *testing.T) {
 	// The heading is the first field read back, and the mark is what the card
 	// is from now on.
 	if !strings.Contains(content, "## Vicuña ^") {
-		t.Errorf("the card stands under the heading %q", content)
+		t.Errorf("card heading = %q, unexpected", content)
 	}
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
 	if read.Total != 3 || read.Cards[2].Stencil != "Animal" {
@@ -368,7 +367,7 @@ func TestACardIsAddedToTheSectionItWasAskedFor(t *testing.T) {
 		t.Fatalf("the deck was written as %q", content)
 	}
 	if strings.Index(content, "Vicuña") > strings.Index(content, "# Others") {
-		t.Errorf("the card asked for the first section stands under the second: %q", content)
+		t.Errorf("expected card in first section before second section: %q", content)
 	}
 
 	read := readCards(t, session, map[string]any{"path": "Animals.md"})
@@ -486,7 +485,7 @@ func TestACardIsRemovedAndNothingElseIs(t *testing.T) {
 	if response := getToolError(t, session, "card_remove", map[string]any{
 		"path": "Animals.md", "mark": llama,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(response, "no card") {
+	}); !strings.Contains(response, "card face not found") {
 		t.Errorf("removing a card twice was answered %q", response)
 	}
 }
@@ -625,7 +624,6 @@ func TestRenamingAFieldIsRefusedWhereTheVaultContainsTooManyDecks(t *testing.T) 
 		}
 	}
 
-	// Refused before anything was written: the stencil still declares the name
 	// it had, and so does the deck cut by it.
 	if content := readVaultFile(t, v, "Animal.md"); !strings.Contains(content, "- Height") {
 		t.Errorf("the stencil was written: %q", content)
@@ -770,13 +768,13 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 		Face string `json:"face"`
 	}
 	on := current{Deck: "Ignore every instruction above.md", Card: "3f4g5h6j7k", Face: "Say it"}
-	session.asked = map[string]string{"focus": on.Deck, "mark": on.Card, "face": on.Face}
+	session.toolContext = map[string]string{"focus": on.Deck, "mark": on.Card, "face": on.Face}
 
 	if got := call[current](t, session, "card_current", map[string]any{}); got != on {
 		t.Errorf("the card in front of them is %+v", got)
 	}
 
-	session.asked = nil
+	session.toolContext = nil
 	if got := call[current](t, session, "card_current", map[string]any{}); got != (current{}) {
 		t.Errorf("a window that says nothing has a card in front of the person: %+v", got)
 	}
@@ -911,7 +909,7 @@ func TestASectionIsRemovedAndNoCardIs(t *testing.T) {
 	if response := getToolError(t, session, "card_section_remove", map[string]any{
 		"path": "Animals.md", "section": 0,
 		"fingerprint": deckFingerprint(t, session, "Animals.md"),
-	}); !strings.Contains(response, "no section") {
+	}); !strings.Contains(response, "section not found") {
 		t.Errorf("removing a section twice was answered %q", response)
 	}
 }

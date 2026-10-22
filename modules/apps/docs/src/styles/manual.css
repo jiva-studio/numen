@@ -125,8 +125,6 @@ header.header {
   border-radius: 22%;
 }
 
-/* The column of text hugs the sidebar rather than the table of contents, and
-   stands clear of both. */
 @media (min-width: 72rem) {
   :root[data-has-sidebar][data-has-toc] .main-pane {
     --sl-content-margin-inline: 0 auto;
@@ -201,7 +199,6 @@ header.header {
   color: var(--sl-color-accent);
 }
 
-/* A group's items sit under its heading rather than beside a rule. */
 .sidebar-content ul ul li {
   border-inline-start: none;
   margin-inline-start: 0;
@@ -366,8 +363,6 @@ header.header {
   white-space: nowrap;
 }
 
-/* The front page: what it says stands near the top, and no wider than it reads
-   well at. */
 .hero {
   padding-block: 2.5rem 1rem;
 }

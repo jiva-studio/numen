@@ -12,7 +12,6 @@ import (
 //
 // An error here is the themes folder — a machine that names no configuration
 // folder, a folder that could not be made — and what the binary ships is
-// offered either way. Whatever a person is told is told through say.
 func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	catalogue, err := c.getCatalogue()
 	return &theme.Service{
@@ -41,8 +40,8 @@ type appearances struct {
 
 func (a appearances) Read() (theme.Appearance, error) { return a.cfg.readAppearance(a.scales) }
 
-func (a appearances) Write(chosen theme.Appearance) error {
-	return a.cfg.writeAppearance(chosen, a.scales)
+func (a appearances) Write(choice theme.Appearance) error {
+	return a.cfg.writeAppearance(choice, a.scales)
 }
 
 func (a appearances) Warn(why string) {
@@ -58,25 +57,25 @@ type scales struct {
 }
 
 // apply overrides appearance scales with CLI flags if set.
-func (l *scales) apply(worn *theme.Appearance) {
+func (l *scales) apply(appearance *theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.uiScale > 0 {
-		worn.InterfaceScale = l.uiScale
+		appearance.InterfaceScale = l.uiScale
 	}
 	if l.textScale > 0 {
-		worn.TextScale = l.textScale
+		appearance.TextScale = l.textScale
 	}
 }
 
 // clearSizes clears CLI scale overrides when the user configures explicit values.
-func (l *scales) clearSizes(chosen theme.Appearance) {
+func (l *scales) clearSizes(current theme.Appearance) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	if chosen.InterfaceScale > 0 {
+	if current.InterfaceScale > 0 {
 		l.uiScale = 0
 	}
-	if chosen.TextScale > 0 {
+	if current.TextScale > 0 {
 		l.textScale = 0
 	}
 }
@@ -117,34 +116,34 @@ const appearancePrefix = "appearance"
 // writeAppearance writes a choice into the file. Both sizes are checked before any of it
 // is written, so a number outside what its setting goes to leaves the file as
 // it stands.
-func (c Config) writeAppearance(chosen theme.Appearance, scales *scales) error {
+func (c Config) writeAppearance(selectedVal theme.Appearance, scales *scales) error {
 	path, err := c.settingsFile()
 	if err != nil {
 		return err
 	}
 	writing := []settings.Setting{
-		{At: []string{appearancePrefix, "theme"}, Written: chosen.ThemeName},
-		{At: []string{appearancePrefix, "mode"}, Written: settings.GetModeName(chosen.Mode)},
+		{At: []string{appearancePrefix, "theme"}, Written: selectedVal.ThemeName},
+		{At: []string{appearancePrefix, "mode"}, Written: settings.GetModeName(selectedVal.Mode)},
 	}
-	if chosen.InterfaceScale > 0 {
-		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", chosen.InterfaceScale)
+	if selectedVal.InterfaceScale > 0 {
+		err := settings.InterfaceScaleBounds.Check("appearance.interface_scale", selectedVal.InterfaceScale)
 		if err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{appearancePrefix, "interface_scale"}, Written: chosen.InterfaceScale})
+			settings.Setting{At: []string{appearancePrefix, "interface_scale"}, Written: selectedVal.InterfaceScale})
 	}
-	if chosen.TextScale > 0 {
-		if err := settings.TextScaleBounds.Check("appearance.text_scale", chosen.TextScale); err != nil {
+	if selectedVal.TextScale > 0 {
+		if err := settings.TextScaleBounds.Check("appearance.text_scale", selectedVal.TextScale); err != nil {
 			return err
 		}
 		writing = append(writing,
-			settings.Setting{At: []string{appearancePrefix, "text_scale"}, Written: chosen.TextScale})
+			settings.Setting{At: []string{appearancePrefix, "text_scale"}, Written: selectedVal.TextScale})
 	}
 	into := DefaultSettings()
 	if err := settings.Save(path, &into, writing...); err != nil {
 		return err
 	}
-	scales.clearSizes(chosen)
+	scales.clearSizes(selectedVal)
 	return nil
 }

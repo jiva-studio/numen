@@ -20,7 +20,7 @@ type puts struct {
 	says map[int]domain.ProofreadCorrection
 
 	mu    sync.Mutex
-	asked []int
+	query []int
 }
 
 func (p *puts) GetName() string { return "a proofreader" }
@@ -32,7 +32,7 @@ func (p *puts) ProofreadScan(
 	defer p.mu.Unlock()
 	var out domain.ScanProofreading
 	for _, page := range pages {
-		p.asked = append(p.asked, page.Number)
+		p.query = append(p.query, page.Number)
 		if response, target := p.says[page.Number]; target {
 			out.Corrections = append(out.Corrections, response)
 		}
@@ -54,29 +54,29 @@ var errSpeechNotProofread = errors.New("a recognition has no speech to proofread
 func (p *puts) lines() []int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return slices.Clone(p.asked)
+	return slices.Clone(p.query)
 }
 
-// A shelf is what a recognition is written to, in memory.
-type shelf struct {
-	mu     sync.Mutex
-	files  map[domain.ArtifactName][]byte
-	held   map[domain.ArtifactName]bool
-	opens  int
-	closes int
+// fakeStorage is what a recognition is written to, in memory.
+type fakeStorage struct {
+	mu         sync.Mutex
+	files      map[domain.ArtifactName][]byte
+	activeItem map[domain.ArtifactName]bool
+	opens      int
+	closes     int
 }
 
-func newShelf() *shelf {
-	return &shelf{files: map[domain.ArtifactName][]byte{}, held: map[domain.ArtifactName]bool{}}
+func newShelf() *fakeStorage {
+	return &fakeStorage{files: map[domain.ArtifactName][]byte{}, activeItem: map[domain.ArtifactName]bool{}}
 }
 
-// shelves hands the one shelf to whatever opens a vault's store.
-type shelves struct{ *shelf }
+// fakeStores hands the one store to whatever opens a vault's store.
+type fakeStores struct{ *fakeStorage }
 
-func (s shelves) Open(domain.Vault) (port.DerivedStore, error) { return s.shelf, nil }
+func (s fakeStores) Open(domain.Vault) (port.DerivedStore, error) { return s.fakeStorage, nil }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
+func (s *fakeStorage) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, target := s.files[name]
@@ -88,7 +88,7 @@ func (s *shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.Re
 }
 
 // WriteStream puts what a reader gives under a name.
-func (s *shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
+func (s *fakeStorage) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -99,11 +99,11 @@ func (s *shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName,
 	return int64(len(raw)), nil
 }
 
-// trackedCloser is one file opened from a shelf, counted against it once it
+// trackedCloser is one file opened from a store, counted against it once it
 // is closed.
 type trackedCloser struct {
 	*bytes.Reader
-	of *shelf
+	of *fakeStorage
 }
 
 func (c trackedCloser) Close() error {
@@ -113,7 +113,7 @@ func (c trackedCloser) Close() error {
 	return nil
 }
 
-func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
+func (s *fakeStorage) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw, target := s.files[name]
@@ -123,14 +123,14 @@ func (s *shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byt
 	return raw, nil
 }
 
-func (s *shelf) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (s *fakeStorage) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append([]byte(nil), content...)
 	return nil
 }
 
-func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (s *fakeStorage) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.files[name] = append(s.files[name], content...)
@@ -139,37 +139,37 @@ func (s *shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, cont
 
 // Remove takes a name out of the store, along with the claim on it: a claim is
 // held on a file, and taking that file away frees the name.
-func (s *shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
+func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.files, name)
-	delete(s.held, name)
+	delete(s.activeItem, name)
 	return nil
 }
 
-func (s *shelf) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
+func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName) (func() error, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.held[name] {
+	if s.activeItem[name] {
 		return nil, port.ErrClaimed
 	}
-	s.held[name] = true
+	s.activeItem[name] = true
 	return func() error {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.held, name)
+		delete(s.activeItem, name)
 		return nil
 	}, nil
 }
 
 // hold takes a name the way another run holds it.
-func (s *shelf) hold(name domain.ArtifactName) {
+func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.held[name] = true
+	s.activeItem[name] = true
 }
 
-func (s *shelf) artifactNames() []domain.ArtifactName {
+func (s *fakeStorage) artifactNames() []domain.ArtifactName {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	var out []domain.ArtifactName
@@ -186,7 +186,7 @@ type corrector struct {
 	says map[int]domain.ProofreadCorrection
 	// refuses is the pages whose reply is no answer.
 	refuses map[int]bool
-	asked   [][]int
+	query   [][]int
 	fail    error
 	// stop is called with the number of requests made so far.
 	stop func(int)
@@ -202,13 +202,13 @@ func (c *corrector) GetName() string {
 func (c *corrector) ProofreadScan(
 	ctx context.Context, pages []domain.ProofreadPage,
 ) (domain.ScanProofreading, error) {
-	var at []int
+	var offset []int
 	for _, page := range pages {
-		at = append(at, page.Number)
+		offset = append(offset, page.Number)
 	}
-	c.asked = append(c.asked, at)
+	c.query = append(c.query, offset)
 	if c.stop != nil {
-		c.stop(len(c.asked))
+		c.stop(len(c.query))
 	}
 	if err := ctx.Err(); err != nil {
 		return domain.ScanProofreading{}, err
@@ -236,11 +236,11 @@ func (c *corrector) ProofreadSpeech(
 }
 
 // corrects is the correction putting one line right.
-func corrects(at int, text string) domain.ProofreadCorrection {
-	return domain.ProofreadCorrection{Number: at, Last: at, Text: text}
+func corrects(pos int, text string) domain.ProofreadCorrection {
+	return domain.ProofreadCorrection{Number: pos, Last: pos, Text: text}
 }
 
-func readShelf(t *testing.T, shelved *shelf, name domain.ArtifactName) []byte {
+func readShelf(t *testing.T, shelved *fakeStorage, name domain.ArtifactName) []byte {
 	t.Helper()
 	raw, err := shelved.ReadArtifact(t.Context(), name)
 	if err != nil {

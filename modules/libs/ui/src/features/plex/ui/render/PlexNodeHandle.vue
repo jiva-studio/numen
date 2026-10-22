@@ -4,7 +4,6 @@
  * on it, drawn about its own origin and put where it belongs by the one number
  * it takes.
  *
- * It sits inside a node that answers a click and a double click of its own, so
  * pressing it must never reach that.
  */
 import type { Position } from '../../lib/node'

@@ -11,7 +11,7 @@ describe('findShare', () => {
     { isDone: -1, total: 10, want: 0, why: 'a count below nothing is nothing' },
     { isDone: 1, total: -3, want: undefined, why: 'a total below nothing is no total' },
   ])('$why', ({ isDone, total, want }) => {
-    expect(findShare({ done: isDone, total })).toBe(want)
+    expect(findShare({ completedCount: isDone, total })).toBe(want)
   })
 })
 
@@ -21,7 +21,7 @@ describe('activity', () => {
   })
 
   it('is quiet even with a tally, when it has no words', () => {
-    expect(activity({ text: '', tally: { done: 1, total: 2 } })).toEqual({
+    expect(activity({ text: '', tally: { completedCount: 1, total: 2 } })).toEqual({
       state: 'quiet',
       hasCounts: false,
     })
@@ -42,7 +42,7 @@ describe('activity', () => {
   })
 
   it('works from a count alone, because a count that moves is work', () => {
-    expect(activity({ text: 'reading', tally: { done: 1, total: 4 } })).toEqual({
+    expect(activity({ text: 'reading', tally: { completedCount: 1, total: 4 } })).toEqual({
       state: 'working',
       share: 0.25,
       hasCounts: true,
@@ -50,7 +50,7 @@ describe('activity', () => {
   })
 
   it('counts when there is a share to draw', () => {
-    expect(activity({ text: 'reading', tally: { done: 2, total: 8 } })).toEqual({
+    expect(activity({ text: 'reading', tally: { completedCount: 2, total: 8 } })).toEqual({
       state: 'working',
       share: 0.25,
       hasCounts: true,
@@ -58,14 +58,16 @@ describe('activity', () => {
   })
 
   it('rests when a tally has no total to draw', () => {
-    expect(activity({ text: 'reading', tally: { done: 0, total: 0 } })).toEqual({
+    expect(activity({ text: 'reading', tally: { completedCount: 0, total: 0 } })).toEqual({
       state: 'resting',
       hasCounts: false,
     })
   })
 
   it('lets a failure outrank a count', () => {
-    expect(activity({ text: 'reading', hasFailed: true, tally: { done: 2, total: 8 } })).toEqual({
+    expect(
+      activity({ text: 'reading', hasFailed: true, tally: { completedCount: 2, total: 8 } }),
+    ).toEqual({
       state: 'failed',
       hasCounts: false,
     })
@@ -103,18 +105,18 @@ describe('getRemainingWord', () => {
 
 describe('getRate', () => {
   it('is what moved over the time it took, the first time', () => {
-    expect(getRate({ done: 0, rate: 0 }, 20, 2)).toBe(10)
+    expect(getRate({ completedCount: 0, rate: 0 }, 20, 2)).toBe(10)
   })
 
   it('leans on the rate already known when something moved', () => {
-    expect(getRate({ done: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
-    expect(getRate({ done: 20, rate: 10 }, 60, 2)).toBeGreaterThan(10)
-    expect(getRate({ done: 20, rate: 10 }, 60, 2)).toBeLessThan(20)
+    expect(getRate({ completedCount: 20, rate: 10 }, 40, 2)).toBeCloseTo(10, 5)
+    expect(getRate({ completedCount: 20, rate: 10 }, 60, 2)).toBeGreaterThan(10)
+    expect(getRate({ completedCount: 20, rate: 10 }, 60, 2)).toBeLessThan(20)
   })
 
   it('leans further the longer the reading covers', () => {
-    const brief = getRate({ done: 20, rate: 10 }, 40, 1)
-    const long = getRate({ done: 20 * SMOOTHING, rate: 10 }, 40 * SMOOTHING, SMOOTHING)
+    const brief = getRate({ completedCount: 20, rate: 10 }, 40, 1)
+    const long = getRate({ completedCount: 20 * SMOOTHING, rate: 10 }, 40 * SMOOTHING, SMOOTHING)
     // Both saw twenty a second. The one that watched for a smoothing length
     // moved most of the way there; the one that watched for a second barely
     // moved.
@@ -127,16 +129,16 @@ describe('getRate', () => {
     // here divides into a longer and longer estimate every time it is drawn.
     let rate = 8
     for (let stalled = 0; stalled < 40; stalled++) {
-      rate = getRate({ done: 100, rate }, 100, 2)
+      rate = getRate({ completedCount: 100, rate }, 100, 2)
     }
     expect(rate).toBe(8)
   })
 
   it('keeps the old rate when no time has passed', () => {
-    expect(getRate({ done: 20, rate: 10 }, 40, 0)).toBe(10)
+    expect(getRate({ completedCount: 20, rate: 10 }, 40, 0)).toBe(10)
   })
 
   it('is nothing when the count went backwards, which is a fresh start', () => {
-    expect(getRate({ done: 100, rate: 10 }, 5, 2)).toBe(0)
+    expect(getRate({ completedCount: 100, rate: 10 }, 5, 2)).toBe(0)
   })
 })

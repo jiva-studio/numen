@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 )
 
-// Where the section each adapter is configured by stands in the settings file.
 // The settings adapter owns the file and the sections about the window; every
 // other section belongs to the adapter it configures, and is put beside them
 // here, where every adapter is bound.
@@ -44,7 +43,6 @@ type Settings struct {
 	// Importing is how an address a link note points at is reached.
 	Importing download.Config `json:"importing"`
 
-	// Titles is how a note's title and the name of its file are held together.
 	Titles settings.Titles `json:"naming"`
 
 	// Performance is the workload and resource calibration profile.
@@ -69,12 +67,11 @@ func (s *Settings) GetVersion() *int                    { return &s.Version }
 func (s *Settings) GetAppearance() *settings.Appearance { return &s.Appearance }
 
 // AddNotice leaves a person one line about what the file holds.
-func (s *Settings) AddNotice(said string) { s.Notices = append(s.Notices, said) }
+func (s *Settings) AddNotice(notice string) { s.Notices = append(s.Notices, notice) }
 
 // Sync is whether a note's title and its filename are kept as one name.
 func (s Settings) Sync() bool { return s.Titles.Sync() }
 
-// HasNestedHeadings is whether a node hangs the headings of its note under it, and GetNestedHeadingLimit is
 // how many of those headings stand under it at once.
 func (s Settings) HasNestedHeadings() bool    { return s.Appearance.HasNestedHeadings() }
 func (s Settings) GetNestedHeadingLimit() int { return s.Appearance.NestedHeadingLimit }
@@ -134,24 +131,23 @@ func (c Config) getSettingsOrDefaults() Settings {
 // SetSettings is this configuration carrying what a settings file says.
 //
 // Every section of it is carried here, in one place both entry points use. A
-// section an entry point leaves behind is a part of the application that does
 // nothing and says nothing, since naming no model is how a person turns one
 // off.
-func (c Config) SetSettings(said Settings) Config {
-	c.Embedding = said.Indexing.Embedding
-	c.Proofreading = said.Indexing.Proofreading
-	c.ScanProofreading = said.Indexing.Recognition.Proofread
-	c.TranscriptProofreading = said.Indexing.Transcription.Proofread
-	c.ShouldTranscribe = said.Indexing.CanTranscribe()
-	c.TranscribesUnder = said.Indexing.GetTranscribeLimit()
-	c.Agent = said.Agent
-	c.Importing = said.Importing
-	c.Performance = said.Performance
+func (c Config) SetSettings(s Settings) Config {
+	c.Embedding = s.Indexing.Embedding
+	c.Proofreading = s.Indexing.Proofreading
+	c.ScanProofreading = s.Indexing.Recognition.Proofread
+	c.TranscriptProofreading = s.Indexing.Transcription.Proofread
+	c.ShouldTranscribe = s.Indexing.CanTranscribe()
+	c.TranscribesUnder = s.Indexing.GetTranscribeLimit()
+	c.Agent = s.Agent
+	c.Importing = s.Importing
+	c.Performance = s.Performance
 	c.Hardware = settings.DetectHardware()
-	c.ResolvedCompute = settings.ResolveCompute(said.Performance.Profile, c.Hardware, said.Performance.Custom)
+	c.ResolvedCompute = settings.ResolveCompute(s.Performance.Profile, c.Hardware, s.Performance.Custom)
 	if c.PluginHost != nil {
-		if said.Plugins != nil {
-			c.PluginHost.SetSettings(said.Plugins)
+		if s.Plugins != nil {
+			c.PluginHost.SetSettings(s.Plugins)
 		}
 		c.PluginHost.SetPersistHandler(func(pluginID string, key string, value any) error {
 			writer := c.GetSettingsWriter()

@@ -20,7 +20,6 @@ type Source struct {
 }
 
 // Chunk is one cut of a source's text, as the index holds it. Location is where
-// it sits in the terms the source's own numbering uses, and is empty where the
 // format named none.
 //
 // Text is indexed for the words it holds and is not kept: it is the text at

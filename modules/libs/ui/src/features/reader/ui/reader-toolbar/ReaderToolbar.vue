@@ -23,7 +23,7 @@ withDefaults(
 )
 
 /** Which page is in front, counted from the first. */
-const at = defineModel<number>('at', { default: 0 })
+const page = defineModel<number>('at', { default: 0 })
 
 /** How close the page is drawn, which is never past either end. */
 const zoom = defineModel<number>('zoom', { default: 1, set: clampZoom })
@@ -36,7 +36,7 @@ const zoom = defineModel<number>('zoom', { default: 1, set: clampZoom })
     <div
       class="rounded-pill border-panel-rule bg-panel shadow-panel backdrop-blur-panel pointer-events-auto flex items-center gap-1 border p-1"
     >
-      <PageControls v-model:at="at" :page-count="pageCount" :words="words" />
+      <PageControls v-model:at="page" :page-count="pageCount" :words="words" />
       <ZoomControls v-model:zoom="zoom" :words="words" />
     </div>
   </div>

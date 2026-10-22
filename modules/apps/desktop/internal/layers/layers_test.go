@@ -31,9 +31,9 @@ func isAssembled(pkg string) bool {
 
 // standing is a file of the applications, under the package it belongs to.
 type standing struct {
-	at   string
-	in   string
-	file *ast.File
+	relPath string
+	in      string
+	file    *ast.File
 }
 
 // named are files every walk below has to have reached: the desktop's entry
@@ -49,7 +49,6 @@ var named = []string{
 // readSources is every hand-written Go file of the applications, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
-// builds what stands in for the real thing.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -70,9 +69,9 @@ func readSources(t *testing.T) []standing {
 			return err
 		}
 		found = append(found, standing{
-			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
-			in:   getPackage(root, path),
-			file: file,
+			relPath: filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
+			in:      getPackage(root, path),
+			file:    file,
 		})
 		return nil
 	})
@@ -87,7 +86,7 @@ func readSources(t *testing.T) []standing {
 		t.Fatalf("%d files read: the walk is not reading the applications", len(found))
 	}
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(held standing) bool { return held.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.relPath == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}
@@ -161,7 +160,7 @@ func TestNoApplicationLogs(t *testing.T) {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, target.at+" imports "+to)
+				wrong = append(wrong, target.relPath+" imports "+to)
 			}
 		}
 	}
@@ -170,7 +169,6 @@ func TestNoApplicationLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
@@ -198,7 +196,7 @@ func TestNoApplicationNamesThePortItSatisfies(t *testing.T) {
 	var wrong []string
 	for _, target := range readSources(t) {
 		for _, one := range getClaimedPorts(target.file) {
-			wrong = append(wrong, target.at+" names port."+one)
+			wrong = append(wrong, target.relPath+" names port."+one)
 		}
 	}
 	for _, one := range wrong {
@@ -222,14 +220,14 @@ func getClaimedPorts(file *ast.File) []string {
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
-				return at.Name == "_"
+			if !is || !slices.ContainsFunc(named.Names, func(pos *ast.Ident) bool {
+				return pos.Name == "_"
 			}) {
 				continue
 			}
-			if at, is := named.Type.(*ast.SelectorExpr); is {
-				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					target = append(target, at.Sel.Name)
+			if offset, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := offset.X.(*ast.Ident); is && from.Name == "port" {
+					target = append(target, offset.Sel.Name)
 				}
 			}
 		}
@@ -238,7 +236,6 @@ func getClaimedPorts(file *ast.File) []string {
 	return target
 }
 
-// What the rule refuses, read against a file written to be refused. The three
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
 func TestWhatThePortClaimRefuses(t *testing.T) {

@@ -22,7 +22,7 @@ const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
 // A panel opened is a panel opened to write in, so the field takes the keyboard
 // as it arrives. Taking it scrolls nothing, because the panel is still moving.
 watch(
-  () => props.held.open.value,
+  () => props.panel.open.value,
   (up) => {
     if (up) void nextTick(() => talk.value?.focus({ preventScroll: true }))
   },
@@ -36,17 +36,17 @@ watch(
     <Agent
       ref="talk"
       class="asking__talk"
-      :model-value="props.held.written.value"
-      :turns="props.held.turns.value"
-      :is-working="props.held.isWorking.value"
+      :model-value="props.panel.written.value"
+      :turns="props.panel.turns.value"
+      :is-working="props.panel.isWorking.value"
       :placeholder="words.ask"
       :send-label="words.send"
       :stop-label="words.stop"
-      @update:model-value="(text: string) => props.held.setWritten(text)"
-      @submit="(text: string) => props.held.send(text)"
-      @stop="props.held.stop()"
+      @update:model-value="(text: string) => props.panel.setWritten(text)"
+      @submit="(text: string) => props.panel.send(text)"
+      @stop="props.panel.stop()"
     >
-      <template #silence>{{ props.held.unreachable() || words.nothingSaid }}</template>
+      <template #silence>{{ props.panel.unreachable() || words.nothingSaid }}</template>
       <template #failure="{ turn }">
         {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
       </template>

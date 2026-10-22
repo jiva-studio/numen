@@ -19,7 +19,7 @@ type Scan struct {
 	readers     port.VaultReaders
 	vaults      port.VaultRepository
 	notes       port.NoteRepository
-	known       FingerprintQueries
+	indexedVal  FingerprintQueries
 	maintenance port.IndexMaintenance
 
 	// Cut is how the notes found are cut into the chunks the index keeps.
@@ -54,12 +54,12 @@ func NewScan(
 	readers port.VaultReaders,
 	vaults port.VaultRepository,
 	notes port.NoteRepository,
-	known FingerprintQueries,
+	queries FingerprintQueries,
 	maintenance port.IndexMaintenance,
 ) Scan {
 	return Scan{
 		readers: readers, vaults: vaults, notes: notes,
-		known: known, maintenance: maintenance,
+		indexedVal: queries, maintenance: maintenance,
 	}
 }
 
@@ -75,7 +75,7 @@ type ScanResult struct {
 	Unchanged  int // skipped on size and modification time alone
 	Removed    int // in the index, no longer on disk
 	Vanished   int // walked, but gone by the time it was read
-	Unreadable int // walked, still there, and the read failed
+	Unreadable int // walked, present, and the read failed
 }
 
 // FingerprintQueries is the one question a scan asks of the index, so that a
@@ -99,11 +99,11 @@ type FingerprintQueries interface {
 func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 	var res ScanResult
 
-	over, err := u.Walks.startOne(ctx, v.ID)
+	finished, err := u.Walks.startOne(ctx, v.ID)
 	if err != nil {
 		return ScanResult{}, err
 	}
-	defer over()
+	defer finished()
 
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -115,7 +115,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return ScanResult{}, fmt.Errorf("register vault: %w", err)
 	}
 
-	recognized, err := u.known.GetFingerprints(ctx, v.ID)
+	recognized, err := u.indexedVal.GetFingerprints(ctx, v.ID)
 	if err != nil {
 		return ScanResult{}, fmt.Errorf("read index: %w", err)
 	}
@@ -186,11 +186,11 @@ func (u Scan) indexChanged(
 	ctx context.Context,
 	reader port.VaultReader,
 	found []domain.Fingerprint,
-	known map[string]domain.Fingerprint,
+	indexed map[string]domain.Fingerprint,
 	group *grouping,
 	res *ScanResult,
 ) (map[string]bool, error) {
-	observed := make(map[string]bool, len(known))
+	observed := make(map[string]bool, len(indexed))
 	for _, ref := range found {
 		if err := ctx.Err(); err != nil {
 			return nil, err
@@ -204,7 +204,7 @@ func (u Scan) indexChanged(
 		res.Notes++
 		observed[ref.Path] = true
 
-		if previous, ok := known[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		if previous, ok := indexed[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			continue
 		}
@@ -242,11 +242,11 @@ func readNoteBytes(ctx context.Context, reader port.VaultReader, path string, re
 
 // removeGone takes out of the index the notes the walk did not find.
 func (u Scan) removeGone(
-	ctx context.Context, v domain.Vault, known map[string]domain.Fingerprint, seen map[string]bool, res *ScanResult,
+	ctx context.Context, v domain.Vault, indexed map[string]domain.Fingerprint, visited map[string]bool, res *ScanResult,
 ) error {
 	var removed []string
-	for path := range known {
-		if !seen[path] {
+	for path := range indexed {
+		if !visited[path] {
 			removed = append(removed, path)
 		}
 	}

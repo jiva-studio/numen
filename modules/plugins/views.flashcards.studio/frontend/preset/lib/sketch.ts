@@ -46,16 +46,16 @@ const MIDDLE = 0.9
  */
 export const estimateCurve = (settings: Settings, today: string, within: SettingsBounds): Curve => {
   const grid = createGrid(settings, today, within)
-  const at = grid.map((value) => estimatePoint(settings, value, grid))
+  const points = grid.map((value) => estimatePoint(settings, value, grid))
   const days = settings.goal === 'date' ? grid.map((value) => dayAfter(today, value)) : []
   const value = getGoalValue(settings, today)
   const place = findNearest(grid, value)
-  const now: CurvePoint = { at: place, value, day: days[place] ?? '' }
+  const now: CurvePoint = { index: place, value, day: days[place] ?? '' }
   return {
     goal: settings.goal,
     grid,
     days,
-    at,
+    at: points,
     now,
     suggested: NO_CURVE_POINT,
     decks: 0,
@@ -68,7 +68,6 @@ export const estimateCurve = (settings: Settings, today: string, within: Setting
 
 /**
  * The whole range of a goal, at the places the line is drawn at. A target is
- * held to the span the application answered with, and a span it has said
  * nothing about is no range at all: the sketch draws no places, and the answer
  * brings the honest ones.
  */
@@ -91,7 +90,9 @@ const createGrid = (
 
 /** The places between two ends, both ends among them. */
 const ladder = (least: number, most: number, rounds: (one: number) => number): readonly number[] =>
-  Array.from({ length: PLACES }, (_, at) => rounds(least + ((most - least) * at) / (PLACES - 1)))
+  Array.from({ length: PLACES }, (_, index) =>
+    rounds(least + ((most - least) * index) / (PLACES - 1)),
+  )
 
 /**
  * What one place of the range evaluates to, guessed from the settings. A day of

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// CopyLocation is where a copy stands: VaultPath is its path when it sits in the vault beside its note, empty when it sits in the store.
 type CopyLocation struct {
 	VaultPath string
 	Size      int64
@@ -19,8 +18,8 @@ type GetCopyLocation struct {
 	texts sourceTexts
 }
 
-func (u GetCopyLocation) Execute(ctx context.Context, v domain.Vault, path string, at domain.URL) CopyLocation {
-	if at == "" {
+func (u GetCopyLocation) Execute(ctx context.Context, v domain.Vault, path string, targetURL domain.URL) CopyLocation {
+	if targetURL == "" {
 		return CopyLocation{}
 	}
 	if u.texts.readers != nil {
@@ -37,7 +36,7 @@ func (u GetCopyLocation) Execute(ctx context.Context, v domain.Vault, path strin
 	if err != nil {
 		return CopyLocation{}
 	}
-	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(at)))))
+	file, size, err := store.OpenArtifact(ctx, domain.NewCopyName(text.Fingerprint([]byte(string(targetURL)))))
 	if err != nil {
 		return CopyLocation{}
 	}

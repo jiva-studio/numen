@@ -32,7 +32,6 @@ func TestSchedulesAreCachedByVault(t *testing.T) {
 }
 
 // The identity is written into a file's name, so a name that is not one is
-// refused: anything else could reach a file this folder does not hold.
 func TestAnIdentityThatIsNotOneNamesNoFile(t *testing.T) {
 	schedules := appstate.SchedulesAt(filepath.Join(t.TempDir(), "flashcards"))
 	for _, id := range []domain.VaultID{"", "../numen.json", "a/b", `a\b`, "one.json"} {

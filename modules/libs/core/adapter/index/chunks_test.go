@@ -327,11 +327,11 @@ func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, half := range []struct {
-		asked string
-		found []domain.Passage
+		requested string
+		found     []domain.Passage
 	}{{"words", lexical}, {"names", named}, {"meaning", dense}} {
 		if len(half.found) == 0 {
-			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.asked)
+			t.Errorf("the %s half answered with nothing, so it says nothing about a kind", half.requested)
 		}
 		for _, p := range half.found {
 			if p.Kind != want[p.Source] {
@@ -782,13 +782,13 @@ func TestHowFarAndWhatIsLeftAgreeOnWhatIsCounted(t *testing.T) {
 	// Two large chunks, each holding two small ones. Only the small ones ever
 	// carry a vector.
 	large := make([]chunk.Chunk, 0, 2)
-	for _, at := range []int{0, 100} {
+	for _, item := range []int{0, 100} {
 		large = append(large, chunk.Chunk{
-			Start: at, Length: 100, Location: "chapter",
+			Start: item, Length: 100, Location: "chapter",
 			Text: "whole",
 			Small: []chunk.Chunk{
-				{Start: at, Length: 50, Text: "first half"},
-				{Start: at + 50, Length: 50, Text: "second half"},
+				{Start: item, Length: 50, Text: "first half"},
+				{Start: item + 50, Length: 50, Text: "second half"},
 			},
 		})
 	}
@@ -900,13 +900,13 @@ func TestAChunkThatWentIsSavedNoVectorAndStopsNothing(t *testing.T) {
 		}
 		if got := countRows(t, db,
 			`SELECT count(*) FROM chunks_vec WHERE chunk_id = ?`, p.Chunk); got != target {
-			t.Errorf("chunk %d is held %d times and stands in %d rows of the coarse index",
+			t.Errorf("chunk %d has count %d in %d coarse index rows",
 				p.Chunk, target, got)
 		}
 		if got := countRows(t, db, `SELECT count(*) FROM chunks c
 		                            JOIN vectors v ON v.hash = unhex(c.hash) AND v.recipe = ?
 		                            WHERE c.id = ?`, testRecipe, p.Chunk); got != target {
-			t.Errorf("chunk %d is held %d times and stands in %d rows of vectors",
+			t.Errorf("chunk %d has count %d in %d vector rows",
 				p.Chunk, target, got)
 		}
 	}
@@ -932,12 +932,12 @@ func TestAChunkTooFarFromTheQueryIsNoAnswer(t *testing.T) {
 	}
 
 	// The same vault, asked what it does hold.
-	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
+	val, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 2 {
-		t.Errorf("%d answers, want the book's two small chunks", len(near))
+	if len(val) != 2 {
+		t.Errorf("%d answers, want the book's two small chunks", len(val))
 	}
 }
 
@@ -976,15 +976,15 @@ func TestTheFullPrecisionVectorsDecideTheOrder(t *testing.T) {
 		}
 	}
 
-	near, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
+	data, err := db.ChunkQueries().FindNearest(ctx, first.ID, "model", getVectorForSeed(0xff), nil, 1, search.DefaultFloor)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 1 {
-		t.Fatalf("%d answers, want the one that was asked for", len(near))
+	if len(data) != 1 {
+		t.Fatalf("%d answers, want the one that was asked for", len(data))
 	}
-	if near[0].Source != "library/true.epub" {
-		t.Errorf("the answer is %s, which is the one the bits put first", near[0].Source)
+	if data[0].Source != "library/true.epub" {
+		t.Errorf("the answer is %s, which is the one the bits put first", data[0].Source)
 	}
 }
 
@@ -1078,12 +1078,12 @@ func TestAVectorOfAnotherModelIsNoAnswer(t *testing.T) {
 
 	// The coarse pass answers, because the bits are there. What is asked of it
 	// afterwards is the model's own, and this vector is another model's.
-	near, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
+	itemVal, err := queries.FindNearest(ctx, first.ID, "model", getVectorForSeed(0x00), nil, 10, 0.5)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(near) != 0 {
-		t.Errorf("a query of one model was answered by another model's vectors: %v", near)
+	if len(itemVal) != 0 {
+		t.Errorf("a query of one model was answered by another model's vectors: %v", itemVal)
 	}
 
 	// Asked of the model that made them, the same rows answer.
@@ -1303,7 +1303,6 @@ func saveSectionedBook(t *testing.T, db *DB, vault domain.Vault, path string) {
 
 func TestASectionIsFoundByItsName(t *testing.T) {
 	// The words half answers with the paragraph that says the name most often.
-	// Asked where a book speaks about a thing, what a person wants is the
 	// section about it.
 	ctx := t.Context()
 	db := openDB(t)
@@ -1373,7 +1372,6 @@ func TestASearchByNameStaysInsideItsVault(t *testing.T) {
 
 func TestASectionNamePreservesWithTheSourceItCameFrom(t *testing.T) {
 	// A chunk's number is handed to the next chunk that wants one, so a name
-	// left behind by a source that is gone answers for whatever takes it.
 	ctx := t.Context()
 	db := openDB(t)
 	chunks := db.Chunks()

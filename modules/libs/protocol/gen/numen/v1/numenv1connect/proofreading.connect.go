@@ -41,7 +41,6 @@ const (
 // ProofreadingServiceClient is a client for the numen.v1.ProofreadingService service.
 type ProofreadingServiceClient interface {
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
-	// corrections the proofreader stands behind. It fails with code unavailable
 	// where nothing is routed to answer for the proofreading.
 	ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error)
 }
@@ -79,7 +78,6 @@ func (c *proofreadingServiceClient) ProofreadText(ctx context.Context, req *conn
 // ProofreadingServiceHandler is an implementation of the numen.v1.ProofreadingService service.
 type ProofreadingServiceHandler interface {
 	// ProofreadText proofreads numbered lines of one kind of text and returns the
-	// corrections the proofreader stands behind. It fails with code unavailable
 	// where nothing is routed to answer for the proofreading.
 	ProofreadText(context.Context, *connect.Request[v1.ProofreadTextRequest]) (*connect.Response[v1.ProofreadTextResponse], error)
 }

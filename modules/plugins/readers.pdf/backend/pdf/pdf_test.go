@@ -61,8 +61,8 @@ func TestPagesAreTheReadingOrder(t *testing.T) {
 	if book.Pages[0].Offset != 0 {
 		t.Errorf("the first page begins at %d, want 0", book.Pages[0].Offset)
 	}
-	if at := book.Pages[1].Offset; !strings.HasPrefix(book.Text[at:], "Delta") {
-		t.Errorf("the second page begins at %d, which is %q", at, book.Text[at:])
+	if pos := book.Pages[1].Offset; !strings.HasPrefix(book.Text[pos:], "Delta") {
+		t.Errorf("the second page begins at %d, which is %q", pos, book.Text[pos:])
 	}
 }
 
@@ -142,13 +142,13 @@ func TestAPartBeginsWhereItsPageBegins(t *testing.T) {
 	book := read(t, outline)
 
 	for _, part := range book.Parts {
-		at := -1
+		pos := -1
 		for _, page := range book.Pages {
 			if page.Offset == part.Offset {
-				at = page.Offset
+				pos = page.Offset
 			}
 		}
-		if at < 0 {
+		if pos < 0 {
 			t.Errorf("%q begins at %d, which is not where any page begins", part.Title, part.Offset)
 		}
 	}
@@ -173,7 +173,7 @@ func TestLocate(t *testing.T) {
 
 	// Keyed by a word in the text, so that the case says where it is asking
 	// about and not what the offset happens to be.
-	at := func(word string) int {
+	pos := func(word string) int {
 		t.Helper()
 		i := strings.Index(book.Text, word)
 		if i < 0 {
@@ -183,24 +183,24 @@ func TestLocate(t *testing.T) {
 	}
 
 	tests := []struct {
-		name  string
-		at    int
-		part  string
-		sheet int
+		name   string
+		offset int
+		part   string
+		sheet  int
 	}{
-		{name: "before every name", at: at("Front"), part: "", sheet: 0},
-		{name: "at a name", at: at("Opening"), part: "The First Part", sheet: 1},
-		{name: "inside a nested name", at: at("closer"), part: "A Closer Reading", sheet: 2},
-		{name: "after the last name", at: at("Afterword"), part: "Afterword", sheet: 3},
+		{name: "before every name", offset: pos("Front"), part: "", sheet: 0},
+		{name: "at a name", offset: pos("Opening"), part: "The First Part", sheet: 1},
+		{name: "inside a nested name", offset: pos("closer"), part: "A Closer Reading", sheet: 2},
+		{name: "after the last name", offset: pos("Afterword"), part: "Afterword", sheet: 3},
 	}
 	for _, c := range tests {
 		t.Run(c.name, func(t *testing.T) {
-			where := book.Locate(c.at)
+			where := book.Locate(c.offset)
 			if where.Part != c.part {
 				t.Errorf("part is %q, want %q", where.Part, c.part)
 			}
 			if where.Page != c.sheet {
-				t.Errorf("page stands at %d in the file, want %d", where.Page, c.sheet)
+				t.Errorf("page is %d, want %d", where.Page, c.sheet)
 			}
 		})
 	}
@@ -313,7 +313,7 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 			defer target.Close()
 
 			for page := range target.GetPageCount() {
-				wide, high, err := target.GetPageSize(page)
+				width, height, err := target.GetPageSize(page)
 				if err != nil {
 					t.Fatalf("page %d: %v", page, err)
 				}
@@ -335,11 +335,11 @@ func TestAPageReturnsHowBigItIs(t *testing.T) {
 				if !hasPixels {
 					t.Errorf("page %d: expected non-zero pixel data", page)
 				}
-				if got := float64(rendered.Bounds().Dx()); got < wide-1 || got > wide+1 {
-					t.Errorf("page %d says it is %g across and is drawn %g", page, wide, got)
+				if got := float64(rendered.Bounds().Dx()); got < width-1 || got > width+1 {
+					t.Errorf("page %d says it is %g across and is drawn %g", page, width, got)
 				}
-				if got := float64(rendered.Bounds().Dy()); got < high-1 || got > high+1 {
-					t.Errorf("page %d says it is %g high and is drawn %g", page, high, got)
+				if got := float64(rendered.Bounds().Dy()); got < height-1 || got > height+1 {
+					t.Errorf("page %d says it is %g high and is drawn %g", page, height, got)
 				}
 			}
 			if _, _, err := target.GetPageSize(-1); err == nil {

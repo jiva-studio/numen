@@ -29,6 +29,7 @@ import {
 } from '@plugins/views.flashcards.studio/frontend'
 import {
   DEFAULTS,
+  createMarks,
   type Curve,
   type Marks,
   type Point,
@@ -113,8 +114,8 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** A window holding a note or a transcript: Tab indents until Escape hands it back. */
-const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
+/** A window holding a note or a transcript: Tab indents until Escape returns focus. */
+const WRITING = { reach: { keeps: 'Escape returns Tab focus to the page' } }
 
 /* The settings. ------------------------------------------------------------ */
 
@@ -184,43 +185,42 @@ export const Settings: Story = {
 
 /* A preset. ---------------------------------------------------------------- */
 
-/** One place on the curve: what a day there costs, and what it evaluates to. */
-const point = (over: Partial<Point> = {}): Point => ({
+/** One place on the curve: daily cost and evaluation metrics. */
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
   owed: 0,
-  through: 0,
+  ['through']: 0,
   canLearnEveryCard: true,
   closed: [],
   clears: 0,
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 const GRID = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60]
 
 /**
- * What stands overdue at the end of each day, one entry a day. A longer day
- * pays the debt off sooner, and a day too short never pays it off at all.
+ * Backlog count at the end of each day, one entry per day. A longer study session
+ * clears the backlog sooner.
  */
 const createBacklog = (rate: number): readonly number[] =>
   Array.from({ length: 60 }, (_, day) =>
     Math.max(0, Math.round(96 - day * rate + day * day * rate * 0.004)),
   )
 
-const AT: readonly Point[] = GRID.map((minutes, at) =>
+const AT: readonly Point[] = GRID.map((minutes, index) =>
   point({
     minutes,
-    // A longer day buys fewer extra cards than the one before it.
-    reviews: Math.round(28 + 44 * Math.sqrt(at)),
-    retained: 0.62 + at * 0.026,
-    learned: 140 + Math.round(210 * Math.sqrt(at)),
-    clears: at < 2 ? -1 : Math.max(4, Math.round(140 / at)),
-    through: Math.min(1, 0.18 + at * 0.075),
-    backlog: createBacklog(0.4 + at * 0.55),
+    reviews: Math.round(28 + 44 * Math.sqrt(index)),
+    retained: 0.62 + index * 0.026,
+    learned: 140 + Math.round(210 * Math.sqrt(index)),
+    clears: index < 2 ? -1 : Math.max(4, Math.round(140 / index)),
+    ['through']: Math.min(1, 0.18 + index * 0.075),
+    backlog: createBacklog(0.4 + index * 0.55),
   }),
 )
 
@@ -229,8 +229,8 @@ const CURVE: Curve = {
   grid: GRID,
   days: [],
   at: AT,
-  now: { at: 4, value: 25, day: '' },
-  suggested: { at: 7, value: 40, day: '' },
+  now: { index: 4, value: 25, day: '' },
+  suggested: { index: 7, value: 40, day: '' },
   decks: 3,
   cards: 1_240,
   overdue: 96,
@@ -282,12 +282,7 @@ export const Preset: Story = {
 
 /* A deck and the stencil that cuts it. ------------------------------------- */
 
-const NO_MARKS: Marks = {
-  at: new Map(),
-  under: new Map(),
-  fields: new Map(),
-  whole: [],
-}
+const NO_MARKS: Marks = createMarks([], [], [])
 
 const WORD = { name: 'Word', fields: ['Word', 'Reading', 'Meaning', 'In a sentence'] }
 const ROOT_CUT = { name: 'Root', fields: ['Root', 'Class', 'Present', 'Meaning'] }
@@ -360,7 +355,7 @@ const DECK_STATE: DeckTabState = {
   id: 'Sanskrit/Roots.md',
   note: computed(() => ({ path: 'Sanskrit/Roots.md', body: '', state: 'clean', error: null })),
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
-  drawn: computed(() => CARDS),
+  deckCards: computed(() => CARDS),
   sections: computed(() => SECTIONS),
   stencils: computed(() => [ROOT_CUT, WORD]),
   marks: computed(() => NO_MARKS),
@@ -543,7 +538,7 @@ export const NoTranscript: Story = {
 }
 
 /**
- * The same recording with the run going. The player stands at its current position in
+ * Active recording during playback. The player position is set in
  * every other recording, and only what is below it says a run is on.
  */
 export const Transcribing: Story = {
@@ -558,13 +553,13 @@ export const Transcribing: Story = {
 
 /* The tree, and the runs a row can be put through. ------------------------- */
 
-const entry = (path: string, over: Partial<Entry> = {}): Entry => ({
+const entry = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const createOtherEntry = (path: string, kind: Entry['kind']): Entry =>
@@ -615,7 +610,9 @@ const VAULT: Record<string, readonly Entry[]> = {
 
 /** A files tab over that vault, and the reading of the folders named in it. */
 const files = (open: readonly string[]) => {
-  const list = useFileTree({ list: (at: string) => Promise.resolve(VAULT[at] ?? []) })
+  const list = useFileTree({
+    list: (folderPath: string) => Promise.resolve(VAULT[folderPath] ?? []),
+  })
   const state = useFilesTab(list, {
     ...createPathCommandHost({
       runs: { canRun: () => true },
@@ -638,7 +635,7 @@ const files = (open: readonly string[]) => {
   })
   const readItem = (async () => {
     await list.openFolder(ROOT)
-    for (const at of open) await list.openFolder(at)
+    for (const folder of open) await list.openFolder(folder)
   })()
   return { state, read: readItem }
 }
@@ -704,9 +701,9 @@ const escapeXml = (line: string) =>
 const createPage = (page: number): string => {
   const lines = LINES[page - OPENS_AT] ?? []
   const activeSet = lines
-    .map((line, at) => {
-      const y = FIRST + at * LEADING
-      const weight = at === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+    .map((line, index) => {
+      const y = FIRST + index * LEADING
+      const weight = index === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="${SET}"${weight} fill="#1b1b1b">${escapeXml(line)}</text>`
     })
     .join('')
@@ -720,11 +717,11 @@ const createPage = (page: number): string => {
  * off a scan is highlighted where it is located on the paper, so a passage is a
  * rectangle a line at a time and not a block.
  */
-const overLine = (at: number, ends: number) => ({
+const overLine = (pos: number, ends: number) => ({
   minX: (MARGIN - 4) / PAGE.width,
   maxX: (MARGIN + ends) / PAGE.width,
-  minY: (FIRST + at * LEADING - 22) / PAGE.height,
-  maxY: (FIRST + at * LEADING + 7) / PAGE.height,
+  minY: (FIRST + pos * LEADING - 22) / PAGE.height,
+  maxY: (FIRST + pos * LEADING + 7) / PAGE.height,
 })
 
 /** The passage a search found: the sentence the count is defined by. */
@@ -736,7 +733,7 @@ const BOOK: Documents = {
       pages: Array.from({ length: LEAVES }, () => PAGE),
       fingerprint: '1024 1700000000000000000 book.pdf',
     }),
-  getPageUrl: (_path, at) => createPage(at),
+  getPageUrl: (_path, index) => createPage(index),
   getHighlights: () => Promise.resolve([[{ page: OPENS_AT, rects: HIGHLIGHTS }]]),
 }
 
@@ -794,7 +791,7 @@ const createMenuStory = (
   `,
 })
 
-/** The run a recording can be put through, offered on the row it stands at. */
+/** Recording pipeline options displayed on its corresponding row. */
 export const Transcribed: Story = {
   parameters: WRITING,
   render: () =>
@@ -811,7 +808,7 @@ export const Transcribed: Story = {
     }),
 }
 
-/** The run a scanned document can be put through, on the row it stands at. */
+/** Document processing options displayed on its corresponding row. */
 export const Recognised: Story = {
   render: () => {
     const state = useDocumentTab(useDocumentReader(BOOK, 'Reading/Boltzmann 1877.pdf'))

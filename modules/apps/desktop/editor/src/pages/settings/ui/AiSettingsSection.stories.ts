@@ -15,7 +15,11 @@ import { getSettingAt } from '@/entities/settings'
 import { createProgramModels } from '@/testing/installation'
 import type { Installation } from '../types'
 
-const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
+const createPlugin = (
+  id: string,
+  name: string,
+  overrides: Partial<PluginInfo> = {},
+): PluginInfo => ({
   id,
   name,
   version: '1.0.0',
@@ -26,7 +30,7 @@ const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}):
   secrets: [],
   storedSecrets: [],
   consent: 'none',
-  ...over,
+  ...overrides,
 })
 
 const PLUGINS: readonly PluginInfo[] = [
@@ -69,7 +73,7 @@ const FILE = {
 }
 
 const installation: Installation = {
-  getSetting: (at) => getSettingAt(FILE, at),
+  getSetting: (path) => getSettingAt(FILE, path),
   getModels: createProgramModels(PROGRAMS),
   write: fn(),
   writeSecret: fn(),
@@ -152,8 +156,12 @@ export const APluginAskingIsPutToThePerson: Story = {
     const frame = canvasElement.querySelector('.numen')
     if (!frame) throw new Error('the page is not drawn')
     const page = frame.getBoundingClientRect()
-    const allow = within(activePrompt).getByRole('button', { name: 'Allow' }).getBoundingClientRect()
-    const refuse = within(activePrompt).getByRole('button', { name: 'Refuse' }).getBoundingClientRect()
+    const allow = within(activePrompt)
+      .getByRole('button', { name: 'Allow' })
+      .getBoundingClientRect()
+    const refuse = within(activePrompt)
+      .getByRole('button', { name: 'Refuse' })
+      .getBoundingClientRect()
     await expect(allow.right).toBeLessThanOrEqual(page.right)
     await expect(refuse.right).toBeLessThanOrEqual(page.right)
   },

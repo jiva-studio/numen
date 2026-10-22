@@ -14,9 +14,6 @@ type Span struct {
 	To   int
 }
 
-// FindSpans returns every place `wanted` stands in `text`.
-//
-// Three readings are tried and the first that finds anything answers: the text
 // currently, then punctuation and spacing read as the marks they stand for,
 // then a run of spacing inside a line read as one space. A span that stands
 // exactly is therefore never reported where it only nearly stands.
@@ -26,7 +23,7 @@ type Span struct {
 //
 // isApproximate is true when the span was found only once punctuation or
 // spacing were allowed to differ.
-func FindSpans(text, wanted string) (at []Span, isApproximate bool) {
+func FindSpans(text, wanted string) (spans []Span, isApproximate bool) {
 	if wanted == "" {
 		return nil, false
 	}
@@ -42,57 +39,55 @@ func FindSpans(text, wanted string) (at []Span, isApproximate bool) {
 		if len(found) == 0 {
 			continue
 		}
-		at = make([]Span, 0, len(found))
+		foundSpans := make([]Span, 0, len(found))
 		for _, span := range found {
-			at = append(at, Span{From: target.at[span.From], To: target.at[span.To]})
+			foundSpans = append(foundSpans, Span{From: target.offsets[span.From], To: target.offsets[span.To]})
 		}
-		return at, true
+		return foundSpans, true
 	}
 	return nil, false
 }
 
-// occurrences is every place `wanted` stands in `text`. A place found is
 // stepped over, so two reported spans never overlap.
 func occurrences(text, wanted string) []Span {
-	var at []Span
+	var foundSpans []Span
 	for from := 0; from <= len(text); {
 		next := strings.Index(text[from:], wanted)
 		if next < 0 {
-			return at
+			return foundSpans
 		}
-		at = append(at, Span{From: from + next, To: from + next + len(wanted)})
+		foundSpans = append(foundSpans, Span{From: from + next, To: from + next + len(wanted)})
 		from += next + len(wanted)
 	}
-	return at
+	return foundSpans
 }
 
-// A mappedText is text as one of the readings has it, and where each of its bytes
 // came from. There is one more offset than there are bytes, so the end of a
 // span reads back as well as its beginning.
 type mappedText struct {
-	text string
-	at   []int
+	text    string
+	offsets []int
 }
 
 // foldPunctuation reads typographic punctuation and spacing as the marks they stand for.
 func foldPunctuation(text string) mappedText {
 	var out strings.Builder
-	at := make([]int, 0, len(text)+1)
+	offsets := make([]int, 0, len(text)+1)
 	for from, r := range text {
 		before := out.Len()
 		out.WriteRune(getPlainRune(r))
 		for range out.Len() - before {
-			at = append(at, from)
+			offsets = append(offsets, from)
 		}
 	}
-	return mappedText{text: out.String(), at: append(at, len(text))}
+	return mappedText{text: out.String(), offsets: append(offsets, len(text))}
 }
 
 // foldSpacing reads a run of spacing inside a line as one space. A break between
 // lines is spacing of its own and is left where it is.
 func foldSpacing(text string) mappedText {
 	var out strings.Builder
-	at := make([]int, 0, len(text)+1)
+	offsets := make([]int, 0, len(text)+1)
 	spacing := false
 	for from, r := range text {
 		mark := getPlainRune(r)
@@ -110,10 +105,10 @@ func foldSpacing(text string) mappedText {
 		before := out.Len()
 		out.WriteRune(mark)
 		for range out.Len() - before {
-			at = append(at, from)
+			offsets = append(offsets, from)
 		}
 	}
-	return mappedText{text: out.String(), at: append(at, len(text))}
+	return mappedText{text: out.String(), offsets: append(offsets, len(text))}
 }
 
 // getPlainRune is the mark a rune stands for, or the rune itself. Dashes, quotes and
@@ -172,26 +167,26 @@ func Diff(was, now string) (Span, string) {
 
 // canSpanBeginAt reports whether a span may begin at `at`: at the start of the text,
 // or where a rune begins and spacing stands before it.
-func canSpanBeginAt(text string, at int) bool {
-	if at <= 0 {
+func canSpanBeginAt(text string, offset int) bool {
+	if offset <= 0 {
 		return true
 	}
-	if at < len(text) && !utf8.RuneStart(text[at]) {
+	if offset < len(text) && !utf8.RuneStart(text[offset]) {
 		return false
 	}
-	return isSpace(text[at-1])
+	return isSpace(text[offset-1])
 }
 
 // canSpanEndAt reports whether a span may end at `at`: at the end of the text, or
 // where spacing stands.
-func canSpanEndAt(text string, at int) bool {
-	if at >= len(text) {
+func canSpanEndAt(text string, offset int) bool {
+	if offset >= len(text) {
 		return true
 	}
-	if !utf8.RuneStart(text[at]) {
+	if !utf8.RuneStart(text[offset]) {
 		return false
 	}
-	return isSpace(text[at])
+	return isSpace(text[offset])
 }
 
 func isSpace(b byte) bool {
@@ -203,12 +198,12 @@ func isSpace(b byte) bool {
 //
 // A note is read by something that counts its own way, and a span named in
 // bytes lands somewhere else in prose that is not ASCII.
-func CountUTF16(text string, at int) int {
-	if at > len(text) {
-		at = len(text)
+func CountUTF16(text string, offset int) int {
+	if offset > len(text) {
+		offset = len(text)
 	}
 	units := 0
-	for _, r := range text[:at] {
+	for _, r := range text[:offset] {
 		units++
 		if r > 0xffff {
 			units++

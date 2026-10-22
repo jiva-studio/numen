@@ -14,11 +14,11 @@ export const ROOM = 4
 export const foldNotices = (
   notices: readonly Notice[],
   room: number = ROOM,
-): { shown: readonly Notice[]; over: number } => {
-  if (notices.length <= room) return { shown: notices, over: 0 }
+): { visible: readonly Notice[]; overflowCount: number } => {
+  if (notices.length <= room) return { visible: notices, overflowCount: 0 }
   const spare = notices.filter(
     (notice) => notice.stay !== undefined && notice.stay !== 'holds' && notice.tone !== 'alarm',
   )
   const away = new Set(spare.slice(0, notices.length - room).map((notice) => notice.id))
-  return { shown: notices.filter((notice) => !away.has(notice.id)), over: away.size }
+  return { visible: notices.filter((notice) => !away.has(notice.id)), overflowCount: away.size }
 }

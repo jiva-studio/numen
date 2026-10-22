@@ -8,8 +8,8 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
-import { createAnswerGuard as latest } from '@numen/plugin-sdk'
-import { useDebouncedAsk, type Wait } from '@/shared/search'
+import { createRequestGuard as latest } from '@numen/plugin-sdk'
+import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../lib/commands'
 import { getPaletteView } from './view'
@@ -53,7 +53,7 @@ export interface CommandPaletteDeps {
 interface PaletteSearchDeps {
   readonly core: CommandsDeps
   readonly words: Words
-  readonly debounced: ReturnType<typeof useDebouncedAsk>
+  readonly debounced: ReturnType<typeof useDebouncedSearch>
   readonly found: Ref<readonly NameMatch[]>
   readonly isWorking: Ref<boolean>
   readonly failureMessage: Ref<string>
@@ -90,7 +90,7 @@ function createNamesSearch(deps: PaletteSearchDeps) {
 interface PaletteVaultsDeps {
   readonly core: CommandsDeps
   readonly words: Words
-  readonly asked: ReturnType<typeof latest>
+  readonly requests: ReturnType<typeof latest>
   readonly known: Ref<readonly Vault[]>
   readonly showing: Ref<string>
   readonly isWorking: Ref<boolean>
@@ -99,7 +99,7 @@ interface PaletteVaultsDeps {
 
 function createVaultsLoader(deps: PaletteVaultsDeps) {
   return async () => {
-    const mine = deps.asked.ask()
+    const mine = deps.requests.acquireRequest()
     deps.isWorking.value = true
     deps.failureMessage.value = ''
     try {
@@ -122,27 +122,27 @@ interface PaletteCommandsDeps {
   readonly runs: RunSupport
   readonly open: Ref<boolean>
   readonly words: Words
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly steps: ReturnType<typeof createPaletteSteps>
 }
 
 function createPaletteCommands(deps: PaletteCommandsDeps) {
-  const startCommand = (id: string, over: CommandTarget): CommandInvocation | null => {
+  const startCommand = (id: string, target: CommandTarget): CommandInvocation | null => {
     const command = deps.byId.get(id)
-    if (!command || !command.isOffered(over, deps.runs)) return null
-    if (!command.needs) return deps.invocation(command.id, over)
+    if (!command || !command.isOffered(target, deps.runs)) return null
+    if (!command.needs) return deps.invocation(command.id, target)
     if (!deps.open.value) {
       deps.steps.reset()
       deps.open.value = true
     }
-    deps.steps.pushStep({ step: command.needs, command, on: over })
+    deps.steps.pushStep({ step: command.needs, command, on: target })
     return null
   }
 
-  const getObjection = (id: string, over: CommandTarget): string => {
+  const getObjection = (id: string, target: CommandTarget): string => {
     const command = deps.byId.get(id)
-    if (!command || command.isOffered(over, deps.runs)) return ''
-    return over.isReady ? deps.words.noNote : deps.words.noVault
+    if (!command || command.isOffered(target, deps.runs)) return ''
+    return target.isReady ? deps.words.noNote : deps.words.noVault
   }
 
   return { startCommand, getObjection }
@@ -162,12 +162,12 @@ function parsePaletteDeps(
   coreOrDeps: CommandsDeps | CommandPaletteDeps,
   args: PaletteRestArgs,
 ): CommandPaletteDeps {
-  const [words, at, knows, lists, runs, wait, getExtraCommands] = args
+  const [words, targetPoint, knows, lists, runs, wait, getExtraCommands] = args
   if ('core' in coreOrDeps) return coreOrDeps
   return {
     core: coreOrDeps,
     words: words!,
-    at: at!,
+    at: targetPoint!,
     knows: knows!,
     lists: lists!,
     runs: runs!,
@@ -185,10 +185,10 @@ function createPaletteState(wait?: Wait) {
   const isWorking = ref(BLANK.isWorking)
   const failureMessage = ref(BLANK.failureMessage)
   const request = latest()
-  const debounced = useDebouncedAsk({ guard: request, ...(wait ? { wait } : {}) })
+  const debounced = useDebouncedSearch({ guard: request, ...(wait ? { wait } : {}) })
 
   const drop = () => {
-    request.drop()
+    request.cancel()
     found.value = BLANK.found
     recognized.value = BLANK.known
     showing.value = BLANK.showing
@@ -196,18 +196,29 @@ function createPaletteState(wait?: Wait) {
     failureMessage.value = BLANK.failureMessage
   }
 
-  return { open, typed: inputValue, found, known: recognized, showing, isWorking, failureMessage, asked: request, debounced, drop }
+  return {
+    open,
+    typed: inputValue,
+    found,
+    known: recognized,
+    showing,
+    isWorking,
+    failureMessage,
+    requests: request,
+    debounced,
+    drop,
+  }
 }
 
 function createPaletteStepsAndSearch(
   deps: CommandPaletteDeps,
   state: ReturnType<typeof createPaletteState>,
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation,
+  invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation,
 ) {
   const loadVaults = createVaultsLoader({
     core: deps.core,
     words: deps.words,
-    asked: state.asked,
+    requests: state.requests,
     known: state.known,
     showing: state.showing,
     isWorking: state.isWorking,
@@ -263,7 +274,7 @@ function createPaletteExecution(options: {
   runs: RunSupport
   open: Ref<boolean>
   words: Words
-  invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   steps: ReturnType<typeof createPaletteSteps>
   draws: ReturnType<typeof getPaletteView>
   found: ShallowRef<readonly NameMatch[]>
@@ -301,7 +312,7 @@ function createPalettePresentation(
   context: {
     steps: ReturnType<typeof createPaletteSteps>
     on: ComputedRef<CommandTarget>
-    invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+    invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   },
 ) {
   const { steps, on, invocation } = context
@@ -355,8 +366,8 @@ export function useCommandPalette(
   const state = createPaletteState(deps.wait)
   const on = computed<CommandTarget>(() => deps.at())
 
-  const invocation = (id: string, over: CommandTarget, name = ''): CommandInvocation =>
-    createInvocation(id, over, name, over.path ? deps.knows.getTabAt(over.path) : null)
+  const invocation = (id: string, target: CommandTarget, name = ''): CommandInvocation =>
+    createInvocation(id, target, name, target.path ? deps.knows.getTabAt(target.path) : null)
 
   const { steps, previewItem, setOpen, setTyped } = createPaletteStepsAndSearch(
     deps,

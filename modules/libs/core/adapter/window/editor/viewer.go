@@ -275,7 +275,7 @@ const pagesName = "pages"
 // never changes. A file rewritten under the same name is a different address,
 // and this one is gone.
 func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, where string) {
-	at, width, named, err := parsePageQuery(where, r.URL.Query())
+	pos, width, named, err := parsePageQuery(where, r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -294,7 +294,7 @@ func (h *documentHandler) Page(w http.ResponseWriter, r *http.Request, path, whe
 
 	key := document.PageKey{
 		Document: document.Fingerprint{Path: path, Size: named.Size, Mtime: named.Mtime},
-		Page:     at,
+		Page:     pos,
 		Width:    width,
 	}
 	body, err := h.getPage.Execute(ctx, showing, key)
@@ -337,13 +337,13 @@ func (h *documentHandler) prefetchNextPage(v domain.Vault, key document.PageKey)
 // parsePageQuery is which page the window asks for and how width, in the pixels of the
 // device it draws on. A document is asked for a page of it and no other place
 // in it.
-func parsePageQuery(where string, query url.Values) (at, width int, named document.Fingerprint, err error) {
+func parsePageQuery(where string, query url.Values) (offset, width int, named document.Fingerprint, err error) {
 	request, found := strings.CutPrefix(where, pagesName+"/")
 	if !found {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a place in a document", where)
 	}
-	at, err = strconv.Atoi(request)
-	if err != nil || at < 0 || at > math.MaxInt32 {
+	offset, err = strconv.Atoi(request)
+	if err != nil || offset < 0 || offset > math.MaxInt32 {
 		return 0, 0, document.Fingerprint{}, fmt.Errorf("%q is not a page", request)
 	}
 	widthStr := query.Get("width")
@@ -358,11 +358,10 @@ func parsePageQuery(where string, query url.Values) (at, width int, named docume
 	if err != nil {
 		return 0, 0, document.Fingerprint{}, err
 	}
-	return at, width, named, nil
+	return offset, width, named, nil
 }
 
 // getDrawCode is the code a question about a document that could not be
-// answered is refused under.
 //
 // A document another reader holds is unavailable and not a failure: the caller
 // asks again. Everything else a caller can act on says which of its own doing
@@ -387,7 +386,6 @@ func getDrawCode(err error) connect.Code {
 func refuse(w http.ResponseWriter, err error) {
 	switch {
 	case errors.Is(err, pool.ErrBusy):
-		// The window is told when to ask again.
 		w.Header().Set("Retry-After", "1")
 		http.Error(w, err.Error(), http.StatusServiceUnavailable)
 	case errors.Is(err, errNoDocuments), errors.Is(err, port.ErrUnavailable):

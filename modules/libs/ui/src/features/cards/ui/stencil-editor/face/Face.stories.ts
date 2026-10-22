@@ -19,7 +19,6 @@ interface Corpus {
   readonly face: StencilFace
   /** The fields the stencil declares, which are what may be written into a half. */
   readonly fields: readonly string[]
-  /** What the preview stands in the slots. Each field under its own name by default. */
   readonly sample?: readonly FieldValue[]
   /** The names the other faces carry. */
   readonly taken?: readonly string[]
@@ -30,7 +29,7 @@ interface Corpus {
 const ANIMAL = ['Name', 'Height', 'Weight', 'Life span']
 
 const many = (count: number): readonly string[] =>
-  Array.from({ length: count }, (_, at) => `Field ${at + 1}`)
+  Array.from({ length: count }, (_, index) => `Field ${index + 1}`)
 
 const CORPORA = {
   'a face': {
@@ -143,7 +142,11 @@ const meta: Meta<Knobs> = {
 
       const renderedRow = computed<FaceRow>(() => {
         const fields = getDeclaredFields(target.value.fields)
-        const arrangedRow = faceRows([content.value], fields, target.value.sample ?? sampleValues(fields))[0]
+        const arrangedRow = faceRows(
+          [content.value],
+          fields,
+          target.value.sample ?? sampleValues(fields),
+        )[0]
         if (!arrangedRow) throw new Error('a corpus holding no face')
         return { ...arrangedRow, taken: target.value.taken ?? [] }
       })
@@ -272,7 +275,6 @@ export const AFace: Story = {
     expect(answer.getBoundingClientRect().height).toBeCloseTo(tall * 3, 0)
 
     // A field to write into a half is a small quiet chip with a ground of its
-    // own at rest, markedly smaller than the heading whose strip it stands in.
     const chip = found(canvasElement, '[data-insert="Height"]')
     const title = found(canvasElement, '.face__title')
     expect(getComputedStyle(chip).backgroundColor).not.toBe('rgba(0, 0, 0, 0)')
@@ -348,7 +350,6 @@ export const AStraySlot: Story = {
     ).toBe('Not a field: Weight')
     expect(canvasElement.querySelector('header .face__objections')).toBeNull()
 
-    // It stands in the foot of the part, over what is written there: the box
     // still fills the part, and a press meant for the box reaches it.
     const pane = getPane(canvasElement, 'front-written').getBoundingClientRect()
     const box = getBox(canvasElement, 'front').getBoundingClientRect()
@@ -374,7 +375,7 @@ export const NothingInIt: Story = {
     for (const pane of PANES) {
       const element = getPane(canvasElement, pane)
       const ghost = element.querySelector<HTMLElement>('.face__ghost')
-      if (!ghost) throw new Error(`nothing said in ${pane}`)
+      if (!ghost) throw new Error('face not found')
       placeholders.push(ghost.textContent?.trim() ?? '')
 
       const box = element.getBoundingClientRect()
@@ -511,7 +512,9 @@ export const Dark: Story = {
 
     await hoverOver(chip)
     await waitFor(() =>
-      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(restingLightness + 2),
+      expect(lightness(getComputedStyle(chip).backgroundColor)).toBeGreaterThan(
+        restingLightness + 2,
+      ),
     )
 
     // The chip is still a chip under the hand: lighter than it was, and still

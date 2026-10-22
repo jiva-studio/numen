@@ -96,7 +96,7 @@ export const drawingInk = async (drawing: SVGElement): Promise<Ink> => {
   ctx.drawImage(image, 0, 0, GRAIN, GRAIN)
 
   const ink = readInk(ctx)
-  const getPageY = (at: number): number => box.top + (at / GRAIN) * box.height
+  const getPageY = (pos: number): number => box.top + (pos / GRAIN) * box.height
   return {
     top: getPageY(ink.top),
     bottom: getPageY(ink.bottom),

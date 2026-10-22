@@ -179,7 +179,7 @@ func TestForgettingAVaultEmptiesTheVirtualTablesOfIt(t *testing.T) {
 	}
 	if shared := countRows(t, db, `SELECT COUNT(*) FROM
 		(SELECT hash FROM chunks GROUP BY hash HAVING COUNT(DISTINCT vault_id) > 1)`); shared == 0 {
-		t.Fatal("no text is held by both vaults, so no vector here is one the other vault still holds")
+		t.Fatal("vaults do not share vectors for distinct text")
 	}
 
 	for _, before := range []map[string]int{goneVirtual, goneOrdinary} {

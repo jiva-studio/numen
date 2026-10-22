@@ -44,7 +44,6 @@ const BLOCKS = new Set([
   'figcaption',
 ])
 
-/** Whether the whitespace beside this node stands between tags. The end of what holds it counts. */
 const isBlock = (node: Node | null): boolean =>
   node === null || BLOCKS.has((node as Element).tagName.toLowerCase())
 
@@ -54,7 +53,6 @@ const spacing = (node: Node): boolean =>
   isBlock(node.previousSibling) &&
   isBlock(node.nextSibling)
 
-/** The text with the whitespace that stands between tags taken out of it. */
 const tightenHtml = (html: string): string => {
   const readItem = new DOMParser().parseFromString(html, 'text/html')
 

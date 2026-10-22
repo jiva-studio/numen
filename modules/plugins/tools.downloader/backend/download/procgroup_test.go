@@ -46,13 +46,13 @@ func readPID(path string) (int, bool) {
 // group links them.
 func spawningScript(t *testing.T) program {
 	t.Helper()
-	at := filepath.Join(t.TempDir(), "tool")
+	pos := filepath.Join(t.TempDir(), "tool")
 	body := "#!/bin/sh\nsleep 600 >/dev/null 2>&1 &\necho $! > \"$1/child.tmp\"\n" +
 		"mv \"$1/child.tmp\" \"$1/child\"\nwait\n"
-	if err := os.WriteFile(at, []byte(body), 0o700); err != nil {
+	if err := os.WriteFile(pos, []byte(body), 0o700); err != nil {
 		t.Fatal(err)
 	}
-	return program{command: []string{at}}
+	return program{command: []string{pos}}
 }
 
 // Cancelling a run ends the process the tool started as well as the tool, and

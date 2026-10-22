@@ -27,7 +27,6 @@ const props = defineProps<{
 
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{
-  /** Sit down to every deck this preset schedules, by the note it stands in. */
   (event: 'start', preset: string): void
 }>()
 

@@ -37,8 +37,8 @@ describe('the vault in front', () => {
     const target = open()
     await target.loadVaults()
 
-    expect(target.shown.value).toEqual({ id: 'roots', name: 'Roots' })
-    expect(target.listed.value.showing).toBe('roots')
+    expect(target.activeVault.value).toEqual({ id: 'roots', name: 'Roots' })
+    expect(target.vaultList.value.showing).toBe('roots')
   })
 
   it('carries a rename without the list falling out of step', async () => {
@@ -47,19 +47,19 @@ describe('the vault in front', () => {
 
     target.setVaultName({ id: 'roots', name: 'Rooted' })
 
-    expect(target.shown.value).toEqual({ id: 'roots', name: 'Rooted' })
+    expect(target.activeVault.value).toEqual({ id: 'roots', name: 'Rooted' })
     // The list carries the new name, and still shows the same vault.
-    expect(target.listed.value.vaults.map((one) => one.name)).toEqual(['Rooted', 'Leaves'])
-    expect(target.listed.value.showing).toBe('roots')
+    expect(target.vaultList.value.vaults.map((one) => one.name)).toEqual(['Rooted', 'Leaves'])
+    expect(target.vaultList.value.showing).toBe('roots')
   })
 
   it('is empty while the list shows a vault it does not hold', async () => {
     const target = open()
     await target.loadVaults()
 
-    target.listed.value = { ...target.listed.value, showing: 'gone' }
+    target.vaultList.value = { ...target.vaultList.value, showing: 'gone' }
 
-    expect(target.shown.value).toEqual({ id: '', name: '' })
+    expect(target.activeVault.value).toEqual({ id: '', name: '' })
   })
 })
 
@@ -67,8 +67,8 @@ describe('the vault list before and after it is requested for', () => {
   it('is empty and shows nothing before the first answer', () => {
     const target = open()
 
-    expect(target.listed.value).toEqual({ vaults: [], showing: '' })
-    expect(target.shown.value).toEqual({ id: '', name: '' })
+    expect(target.vaultList.value).toEqual({ vaults: [], showing: '' })
+    expect(target.activeVault.value).toEqual({ id: '', name: '' })
   })
 
   it('reloads the page through the location', () => {
@@ -104,7 +104,7 @@ describe('the vault list before and after it is requested for', () => {
 
     expect(getWriter).toHaveBeenCalledWith('listed')
     expect(write).toHaveBeenCalledWith(WORDS.unlistedVaults, 'error')
-    expect(target.listed.value).toEqual({ vaults: [], showing: '' })
+    expect(target.vaultList.value).toEqual({ vaults: [], showing: '' })
   })
 })
 

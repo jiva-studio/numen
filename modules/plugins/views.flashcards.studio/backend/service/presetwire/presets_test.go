@@ -59,14 +59,14 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 		Now: review.OutsideGrid, Suggested: review.OutsideGrid,
 	})
 
-	if at := got.GetAt()[0]; at.Learns != nil {
-		t.Errorf("a place with no day to name carries %d", at.GetLearns())
+	if pos := got.GetAt()[0]; pos.Learns != nil {
+		t.Errorf("a place with no day to name carries %d", pos.GetLearns())
 	}
-	if at := got.GetAt()[1]; at.Learns == nil || at.GetLearns() != review.NeverLearns {
-		t.Errorf("a place whose horizon ended first carries %+v", at.Learns)
+	if offset := got.GetAt()[1]; offset.Learns == nil || offset.GetLearns() != review.NeverLearns {
+		t.Errorf("a place whose horizon ended first carries %+v", offset.Learns)
 	}
-	if at := got.GetAt()[2]; at.Learns == nil || at.GetLearns() != 12 {
-		t.Errorf("a place learned on day 12 carries %+v", at.Learns)
+	if index := got.GetAt()[2]; index.Learns == nil || index.GetLearns() != 12 {
+		t.Errorf("a place learned on day 12 carries %+v", index.Learns)
 	}
 }
 
@@ -204,8 +204,8 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 // front of the person.
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
-		why  review.StopReason
-		said v1.StopReason
+		why      review.StopReason
+		expected v1.StopReason
 	}{
 		{review.StoppedNothing, v1.StopReason_STOP_REASON_NOTHING},
 		{review.StoppedNoMinutes, v1.StopReason_STOP_REASON_NO_MINUTES},
@@ -215,8 +215,8 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 		{review.StoppedNoLoad, v1.StopReason_STOP_REASON_NO_LOAD},
 		{review.StoppedNoWeek, v1.StopReason_STOP_REASON_NO_WEEK},
 	} {
-		if got := ConvertStopReasonToWire(one.why); got != one.said {
-			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.said)
+		if got := ConvertStopReasonToWire(one.why); got != one.expected {
+			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.expected)
 		}
 	}
 
@@ -248,13 +248,13 @@ func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 // week, are the client's to correct.
 func TestSettingsTheCoreCannotMakeOutAreRefused(t *testing.T) {
 	for _, one := range []struct {
-		named string
-		said  *v1.Settings
+		named    string
+		settings *v1.Settings
 	}{
 		{"a day written in no form the core reads", &v1.Settings{ByDate: "30 September"}},
 		{"a load on a name no week carries", &v1.Settings{Load: map[string]int32{"caturday": 50}}},
 	} {
-		p, err := ConvertSettingsFromWire(one.said)
+		p, err := ConvertSettingsFromWire(one.settings)
 		if err == nil {
 			t.Errorf("%s is taken", one.named)
 		}

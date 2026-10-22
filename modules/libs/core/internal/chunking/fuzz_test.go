@@ -44,18 +44,17 @@ func FuzzCut(f *testing.F) {
 			LargeOverlap: largeOverlap, SmallOverlap: smallOverlap,
 			Limit: limit,
 		}
-		// A part begins where its title was found in the text, so it stands at a
 		// character. A part offset inside one is not a text a caller can hand
 		// over, and the chunks cut from it begin inside a character too.
 		var parts []domain.PartStart
 		if len(text) > 0 {
-			at := part % len(text)
-			for at > 0 && !utf8.RuneStart(text[at]) {
-				at--
+			pos := part % len(text)
+			for pos > 0 && !utf8.RuneStart(text[pos]) {
+				pos--
 			}
 			parts = []domain.PartStart{
 				{Title: "one", Offset: 0},
-				{Title: "two", Offset: at},
+				{Title: "two", Offset: pos},
 			}
 		}
 
@@ -68,14 +67,14 @@ func FuzzCut(f *testing.F) {
 				assertChunkInText(t, text, target, cuts, "a small chunk")
 				if middle := target.Start + target.Length/2; middle < one.Start ||
 					middle >= one.Start+max(one.Length, 1) {
-					t.Fatalf("a small chunk at %d+%d stands under a large one at %d+%d",
+					t.Fatalf("a small chunk at %d+%d is under a large one at %d+%d",
 						target.Start, target.Length, one.Start, one.Length)
 				}
 				if target.Length == 0 {
 					continue
 				}
 				if target.Location != one.Location && one.Location != "" {
-					t.Fatalf("a small chunk of %q stands under a large chunk of %q",
+					t.Fatalf("a small chunk of %q is under a large chunk of %q",
 						target.Location, one.Location)
 				}
 			}

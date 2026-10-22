@@ -33,22 +33,19 @@ type Config struct {
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
-	// SettingsPath is the file a person configures this installation in.
+	// SettingsPath specifies the configuration file path.
 	SettingsPath string
-	// ThemesPath is the folder the person's own themes are read from.
+	// ThemesPath specifies the directory for user themes.
 	ThemesPath string
-	// PluginCachePath is the folder what the plugins worked out for a vault is cached in. It is a cache
-	// and belongs to the installation, so a test names one of its own.
+	// PluginCachePath specifies the cache directory for plugin vault data.
 	PluginCachePath string
 
-	// InterfaceScale is how large the window is drawn and TextScale how large the
-	// text a person reads is set, said for this launch alone. Each stands over
-	// the settings file until a person chooses that size themselves, and zero is
-	// not said.
+	// InterfaceScale and TextScale configure UI and text rendering scales.
+	// When non-zero, they override values defined in the settings file.
 	InterfaceScale, TextScale float64
 
-	// BookExtensions are the file extensions treated as books. Empty means the
-	// default, which is every format a reader takes text out of.
+	// BookExtensions defines file extensions treated as books. When empty,
+	// defaults to all supported document formats.
 	BookExtensions []string
 
 	// Performance is the active workload and compute calibration profile.
@@ -57,70 +54,50 @@ type Config struct {
 	// ResolvedCompute is the concrete calculated concurrency and batch limits.
 	ResolvedCompute settings.ResolvedCompute
 
-	// Hardware is what this machine was found to have when the settings were read; a
-	// container without it knows nothing of the machine.
+	// Hardware specifies hardware specifications detected for the host system.
 	Hardware settings.HardwareSpecs
 
-	// Importing is how an address a link note points at is reached.
+	// Importing configures external URL and media download options.
 	Importing download.Config
 
-	// ShouldTranscribe is whether a recording the vault holds no transcript for is
-	// listened to without anybody asking. A configuration naming nothing leaves
-	// it to the hand.
+	// ShouldTranscribe enables automatic transcription for vault recordings without transcripts.
 	ShouldTranscribe bool
 
-	// TranscribesUnder is how many bytes a recording may run to and still be
-	// listened to unasked. A larger one is left for somebody to ask for by
-	// name. Zero is no limit.
+	// TranscribesUnder defines the maximum byte size for automatic transcription. Zero means no limit.
 	TranscribesUnder int64
 
-	// Embedding is the model this run turns text into vectors with. An entry
-	// point reads the settings and says what it found, so nothing below one
-	// reaches the machine's own file. A zero value names no embedder, and nothing
-	// is embedded.
+	// Embedding configures the model used to generate vector embeddings.
 	Embedding EmbeddingConfig
 
-	// Proofreading is what puts a recognition right. It arrives the way Embedding
-	// does, and naming no profile here is naming no proofreader.
+	// Proofreading configures the recognition proofreading pipeline.
 	Proofreading ProofreadingConfig
 
-	// ScanProofreading and TranscriptProofreading name the profile each kind of
-	// text is put right at, and say whether that happens without anybody
-	// asking.
+	// ScanProofreading and TranscriptProofreading configure automatic proofreading profiles.
 	ScanProofreading       Proofread
 	TranscriptProofreading Proofread
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost port.PluginManager
 
-	// KeyStore is where the keys of services are kept. Left nil, the system
-	// keychain.
+	// KeyStore provides credential storage. Defaults to the system keychain if nil.
 	KeyStore port.KeyStore
 
-	// Texts takes the text out of documents and books where an installation binds
-	// its own. Left nil, the document and book plugins of PluginHost give it.
+	// Texts extracts text from documents and books. Defaults to PluginHost plugins if nil.
 	Texts port.TextExtractor
 
-	// Agent is which agent answers in the panel. It arrives the way Embedding
-	// does.
+	// Agent configures the active assistant model.
 	Agent settings.Agent
 
-	// ShouldRebuildIndex reads every file and puts it in the index again, whatever the
-	// index remembers about it. Both entry points offer it under one name: a
-	// person with a vault restored from an archive is not asked which binary they
-	// are holding.
+	// ShouldRebuildIndex forces re-indexing of all vault files regardless of index state.
 	ShouldRebuildIndex bool
 
 	// SafeMode disables loading non-essential plugins for emergency recovery.
 	SafeMode bool
 
-	// ErrorHandler is where what is assembled here says what went wrong in work
-	// it carries on past. An installation that sets none is told nothing.
+	// ErrorHandler receives asynchronous errors.
 	ErrorHandler port.ErrorHandler
 
-	// Now is what time it is, for every scenario that stamps a note or asks
-	// what is due today. An installation that names none reads this machine's
-	// clock, and this is the one place in the core allowed to.
+	// Now provides current time for timestamping and scheduling. Defaults to time.Now if nil.
 	Now port.Clock
 }
 
@@ -145,16 +122,14 @@ func (c Config) Clock() port.Clock {
 	return time.Now
 }
 
-// handleError says what went wrong to whoever asked to be told.
+// handleError forwards errors to ErrorHandler if configured.
 func (c Config) handleError(err error) {
 	if c.ErrorHandler != nil {
 		c.ErrorHandler(err)
 	}
 }
 
-// SyncSetting reads, as each rename is made, whether a note's title and its
-// filename are kept as one name. A file that cannot be read keeps them one
-// name, which is what an installation nobody has configured does.
+// SyncSetting returns whether note title and filename synchronization is enabled.
 func (c Config) SyncSetting() note.SyncSetting {
 	return func() note.SyncTitleAndFilename {
 		target, _ := c.Settings()
@@ -162,8 +137,7 @@ func (c Config) SyncSetting() note.SyncSetting {
 	}
 }
 
-// ReadSettings reads, as the window asks, every setting as JSON and the file it
-// stands in.
+// ReadSettings returns a function that reads settings as JSON and returns the settings file path.
 func (c Config) ReadSettings() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
@@ -179,8 +153,7 @@ func (c Config) ReadSettings() func() (string, string, error) {
 	}
 }
 
-// ReadSettingsFile reads, as the window asks, the settings file as its person
-// wrote it, and the file it stands in.
+// ReadSettingsFile returns a function that reads raw settings file contents and path.
 func (c Config) ReadSettingsFile() func() (string, string, error) {
 	return func() (string, string, error) {
 		path, err := c.settingsFile()
@@ -195,20 +168,16 @@ func (c Config) ReadSettingsFile() func() (string, string, error) {
 	}
 }
 
-// WriteConfiguredFile replaces the settings file whole, with the bytes as they
-// were typed. A file the settings could not be read out of is refused and the
-// file is left as it was.
-//
-// Seen is the file as the window last read it. A file standing at anything else
-// is left alone with port.ErrStale.
-func (c Config) WriteConfiguredFile() func(written string, baseline *string) error {
-	return func(written string, baseline *string) error {
+// WriteConfiguredFile replaces the settings file content.
+// Returns port.ErrStale if baseline does not match current file content.
+func (c Config) WriteConfiguredFile() func(content string, baseline *string) error {
+	return func(content string, baseline *string) error {
 		path, err := c.settingsFile()
 		if err != nil {
 			return err
 		}
 		target := DefaultSettings()
-		if err := settings.Write(path, []byte(written), baseline, &target); err != nil {
+		if err := settings.Write(path, []byte(content), baseline, &target); err != nil {
 			return err
 		}
 		if c.PluginHost != nil {
@@ -221,20 +190,16 @@ func (c Config) WriteConfiguredFile() func(written string, baseline *string) err
 	}
 }
 
-// NestedHeadingLimitBounds is how many headings may nest under a note, at each
-// end. A number outside it is refused, and a client asking a person for one is
-// told them.
+// NestedHeadingLimitBounds returns min and max bounds for nested headings in notes.
 func (Config) NestedHeadingLimitBounds() settings.Bounds {
 	return settings.NestedHeadingLimitBounds
 }
 
-// GetSettingsWriter writes settings into the file. The file is patched as an object,
-// so every key a person typed stays where it was, and a value the settings
-// could not be read out of again is refused before anything is written.
-func (c Config) GetSettingsWriter() func(written []port.Setting) error {
-	return func(written []port.Setting) error {
-		target := make([]settings.Setting, 0, len(written))
-		for _, one := range written {
+// GetSettingsWriter patches specific settings paths in the configuration file.
+func (c Config) GetSettingsWriter() func(entries []port.Setting) error {
+	return func(entries []port.Setting) error {
+		target := make([]settings.Setting, 0, len(entries))
+		for _, one := range entries {
 			var value json.RawMessage
 			if err := json.Unmarshal([]byte(one.JSON), &value); err != nil {
 				return fmt.Errorf("%w: %w", port.ErrNotASetting, err)
@@ -249,18 +214,18 @@ func (c Config) GetSettingsWriter() func(written []port.Setting) error {
 		if err := settings.Save(path, &into, target...); err != nil {
 			return err
 		}
-		notifyPluginSettings(c.PluginHost, written)
+		notifyPluginSettings(c.PluginHost, entries)
 		return nil
 	}
 }
 
 const pluginSettingsPrefix = "plugins"
 
-func notifyPluginSettings(host port.PluginConfigurator, written []port.Setting) {
+func notifyPluginSettings(host port.PluginConfigurator, entries []port.Setting) {
 	if host == nil {
 		return
 	}
-	for _, one := range written {
+	for _, one := range entries {
 		if len(one.Path) < 3 || one.Path[0] != pluginSettingsPrefix {
 			continue
 		}
@@ -271,7 +236,7 @@ func notifyPluginSettings(host port.PluginConfigurator, written []port.Setting) 
 	}
 }
 
-// settingsFile is the file a person configures this installation in.
+// settingsFile resolves the configuration file path.
 func (c Config) settingsFile() (string, error) {
 	if c.SettingsPath != "" {
 		return c.SettingsPath, nil
@@ -282,9 +247,7 @@ func (c Config) settingsFile() (string, error) {
 	return settings.Path()
 }
 
-// getPathBeside is where this installation keeps a file of its own. A registry
-// pointed somewhere chosen takes everything else with it, which is what a test
-// and a second installation both need.
+// getPathBeside resolves a file path relative to the registry directory.
 func (c Config) getPathBeside(name string) (string, bool) {
 	if c.RegistryPath == "" {
 		return "", false
@@ -292,8 +255,7 @@ func (c Config) getPathBeside(name string) (string, bool) {
 	return filepath.Join(filepath.Dir(c.RegistryPath), name), true
 }
 
-// Registry is the list of vaults this installation knows: application state,
-// kept with the application.
+// Registry opens the vault registry for this installation.
 func (c Config) Registry() (port.VaultRegistry, error) {
 	if c.RegistryPath != "" {
 		return appstate.OpenAt(c.RegistryPath), nil
@@ -306,37 +268,30 @@ func (c Config) VaultReaders() port.VaultReaders {
 	return filesystem.VaultReaders{Options: c.vaultOptions()}
 }
 
-// VaultWriters opens vaults for changing. It is a separate opener from the
-// readers because reading and writing a person's notes are different rights.
+// VaultWriters opens vaults for write operations.
 func (c Config) VaultWriters() port.VaultWriters {
 	return filesystem.VaultWriters{Options: c.vaultOptions()}
 }
 
-// GetImportedFiles reads what a person handed this application from outside
-// every vault. On a machine with a filesystem that is a path; a phone hands
-// over something else, and this is where the two part.
+// GetImportedFiles opens files imported from outside the vault.
 func (c Config) GetImportedFiles() port.ImportedFiles {
 	return filesystem.ImportedFiles{}
 }
 
-// VaultWatcher follows vaults for changes the application did not make.
+// VaultWatcher monitors vaults for external filesystem changes.
 func (c Config) VaultWatcher() port.VaultWatcher {
 	return filesystem.Watcher{Options: c.vaultOptions()}
 }
 
-// VaultIdentity gives folders their identity.
+// VaultIdentity provides vault identification.
 func (c Config) VaultIdentity() port.VaultIdentity {
 	return filesystem.VaultIdentity{Options: c.vaultOptions()}
 }
 
-// Trash is the place this machine keeps what a person deleted.
+// Trash provides trash and recycling operations.
 func (c Config) Trash() port.Trash { return trash.New() }
 
-// vaultOptions is how a vault on disk is read: which folder is ours, and which
-// files count as books. The same answer for whatever looks at it.
-//
-// It is not exported: an application is handed a port, and `filesystem.Options`
-// is the adapter's own type.
+// vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() filesystem.Options {
 	return filesystem.Options{
 		ServiceDir:     c.ServiceDir,
@@ -344,13 +299,7 @@ func (c Config) vaultOptions() filesystem.Options {
 	}
 }
 
-// GetDerivedStores opens the shelf the application keeps its own irreplaceable
-// files on, inside a vault. It is a third opener beside the readers and the
-// writers because it is a third right: reading a person's vault, changing it,
-// and keeping something of our own in it are not the same permission.
-//
-// It answers for what a recognition wrote and for what a transcription wrote, since
-// a use case that places a passage reads both.
+// GetDerivedStores returns storage for generated artifacts (transcripts, OCR, copies).
 func (c Config) GetDerivedStores() port.DerivedStores {
 	return filesystem.DerivedStores{
 		Options: c.vaultOptions(),
@@ -361,11 +310,7 @@ func (c Config) GetDerivedStores() port.DerivedStores {
 	}
 }
 
-// IndexPathOrDefault defaults to the platform cache directory. The index is a
-// cache in the strict sense — losing it costs a rebuild and nothing else — so
-// it belongs where the system keeps disposable data. IndexPathOrDefault is
-// where the index is, whether or not one was named. It is what a person is told
-// when the index is what stopped the application.
+// IndexPathOrDefault returns the database index path, defaulting to the system cache directory.
 func (c Config) IndexPathOrDefault() (string, error) { return c.indexPath() }
 
 func (c Config) indexPath() (string, error) {

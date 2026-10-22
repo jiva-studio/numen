@@ -60,7 +60,6 @@ const MODELS: readonly Model[] = [
     ],
     presence: 'present',
   },
-  // What the vault answers with for a value standing in the settings: the
   // address in the place a name would be, which is all it has for one.
   {
     namedAt: ['indexing', 'recognition', 'recognise', 'name'],

@@ -3,7 +3,9 @@ import { fileURLToPath, URL } from 'node:url'
 import type { StorybookConfig } from '@storybook/vue3-vite'
 
 const EDITOR_SRC = fileURLToPath(new URL('../../../apps/desktop/editor/src', import.meta.url))
-const FLASHCARDS_SRC = fileURLToPath(new URL('../../../apps/desktop/flashcards/src', import.meta.url))
+const FLASHCARDS_SRC = fileURLToPath(
+  new URL('../../../apps/desktop/flashcards/src', import.meta.url),
+)
 const UI_SRC = fileURLToPath(new URL('../src', import.meta.url))
 
 /** Where a window's own screens are drawn, beside the components they use. */
@@ -33,7 +35,13 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
         find: /^@\/(.*)/,
         replacement: '$1',
         async customResolver(
-          this: { resolve: (id: string, importer?: string, options?: { skipSelf?: boolean }) => Promise<unknown> },
+          this: {
+            resolve: (
+              id: string,
+              importer?: string,
+              options?: { skipSelf?: boolean },
+            ) => Promise<unknown>
+          },
           source: string,
           importer: string | undefined,
         ) {
@@ -46,7 +54,10 @@ const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
           return this.resolve(target, importer, { skipSelf: true })
         },
       },
-      { find: '@numen/ui', replacement: fileURLToPath(new URL('../src/index.ts', import.meta.url)) },
+      {
+        find: '@numen/ui',
+        replacement: fileURLToPath(new URL('../src/index.ts', import.meta.url)),
+      },
     ] as never,
     dedupe: [...(config.resolve?.dedupe ?? []), 'vue', '@lucide/vue'],
   },

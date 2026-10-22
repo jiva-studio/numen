@@ -59,7 +59,6 @@ const EVERYTHING = [
 ]
 
 /**
- * Where a word stands in a line, every time it stands there. This is the
  * fixture's own arithmetic: the palette is told where the runs are.
  */
 const marks = (text: string, word: string): Span[] => {
@@ -67,8 +66,8 @@ const marks = (text: string, word: string): Span[] => {
   const out: Span[] = []
   const haystack = text.toLowerCase()
   const needle = word.toLowerCase()
-  for (let at = haystack.indexOf(needle); at >= 0; at = haystack.indexOf(needle, at + 1)) {
-    out.push({ from: at, to: at + needle.length })
+  for (let pos = haystack.indexOf(needle); pos >= 0; pos = haystack.indexOf(needle, pos + 1)) {
+    out.push({ from: pos, to: pos + needle.length })
   }
   return out
 }
@@ -159,7 +158,7 @@ const renderOverWindow = (args: Knobs) => ({
       <Palette
         v-model="typed"
         :groups="args.groups"
-        :open="open"
+        :is-open="open"
         :placeholder="args.placeholder"
         :crumb="args.crumb"
         :step="args.step"
@@ -224,12 +223,12 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 const palette = () => document.body.querySelector<HTMLElement>('[data-palette="ground"]')
-const lit = () => document.body.querySelector<HTMLElement>('[data-here]')
+const activeItem = () => document.body.querySelector<HTMLElement>('[data-here]')
 const options = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-palette="list"] [role="option"]'))
 const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
 const sheet = () => document.body.querySelector<HTMLElement>('[data-actions="panel"]')
-const hunt = () => document.body.querySelector<HTMLInputElement>('[data-actions="hunt"]')
+const searchInput = () => document.body.querySelector<HTMLInputElement>('[data-actions="search"]')
 const actions = () =>
   Array.from(document.body.querySelectorAll<HTMLElement>('[data-actions="list"] [role="option"]'))
 
@@ -254,7 +253,7 @@ export const Playground: Story = {}
  */
 export const Choosing: Story = {
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{Enter}')
     await expect(args.onChoose).toHaveBeenCalledWith('entropy', 'travel')
@@ -283,11 +282,11 @@ export const NothingBehindIt: Story = {
     await expect(document.activeElement).toBe(field())
 
     await userEvent.keyboard('{Control>}k{/Control}')
-    await waitFor(() => expect(document.activeElement).toBe(hunt()))
+    await waitFor(() => expect(document.activeElement).toBe(searchInput()))
     await expect(sheet()).toHaveAttribute('aria-modal', 'true')
 
     await userEvent.tab()
-    await expect(document.activeElement).toBe(hunt())
+    await expect(document.activeElement).toBe(searchInput())
   },
 }
 
@@ -315,9 +314,9 @@ export const Lit: Story = {
 export const OpensOnAValue: Story = {
   args: { opensOn: 'gibbs' },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
-    await expect(lit()?.textContent).toContain('Gibbs free energy')
+    await expect(activeItem()?.textContent).toContain('Gibbs free energy')
     await expect(args.onLight).toHaveBeenLastCalledWith('gibbs')
   },
 }
@@ -329,9 +328,9 @@ export const OpensOnAValue: Story = {
 export const OpensOnNothingThere: Story = {
   args: { opensOn: 'nowhere' },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
-    await expect(lit()?.textContent).toContain('Entropy')
+    await expect(activeItem()?.textContent).toContain('Entropy')
     await expect(args.onLight).toHaveBeenLastCalledWith('entropy')
   },
 }
@@ -373,8 +372,8 @@ export const LitFarDown: Story = {
       {
         id: 'names',
         title: 'Names',
-        items: Array.from({ length: 60 }, (_, at) =>
-          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+        items: Array.from({ length: 60 }, (_, index) =>
+          createItem(`note-${index}`, `Entropy in ${index + 1} dimensions`, 'ent'),
         ),
       },
     ],
@@ -402,7 +401,7 @@ export const NotLit: Story = {
         title: 'Names',
         items: [
           { ...createItem('entropy', 'Entropy', 'ent'), actions: EVERYTHING },
-          { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
+          { id: 'stuck', title: 'Enthalpy — this file cannot be read', isDisabled: true },
           createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
@@ -455,7 +454,7 @@ export const Filling: Story = {
         <Palette
           v-model="typed"
           :groups="groups"
-          :open="open"
+          :is-open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
         />
@@ -464,9 +463,9 @@ export const Filling: Story = {
   }),
   play: async () => {
     // The only item there is to begin with is in the second group.
-    await waitFor(() => expect(lit()?.textContent).toContain('Heat engines'))
+    await waitFor(() => expect(activeItem()?.textContent).toContain('Heat engines'))
     await waitFor(() => expect(options().length).toBe(6), { timeout: 3000 })
-    await expect(lit()?.textContent).toContain('Heat engines')
+    await expect(activeItem()?.textContent).toContain('Heat engines')
   },
 }
 
@@ -502,7 +501,7 @@ export const NothingHeard: Story = {
         <Palette
           v-model="typed"
           :groups="groups"
-          :open="open"
+          :is-open="open"
           @choose="args.onChoose"
           @dismiss="args.onDismiss"
         />
@@ -605,7 +604,7 @@ const renderWithIcons = (args: Knobs) => ({
       <Palette
         v-model="typed"
         :groups="args.groups"
-        :open="open"
+        :is-open="open"
         @choose="args.onChoose"
         @dismiss="args.onDismiss"
       >
@@ -617,7 +616,6 @@ const renderWithIcons = (args: Knobs) => ({
   `,
 })
 
-/** What an icon stands in, and what it draws, as the drawn rows report it. */
 const getIcon = (row: Element | null | undefined): string =>
   /(?:^|\s)lucide-([a-z-]+?)(?:-icon)?(?:\s|$)/.exec(
     row?.querySelector('svg')?.getAttribute('class') ?? '',
@@ -719,14 +717,14 @@ export const FarTooMany: Story = {
       {
         id: 'names',
         title: 'Names',
-        items: Array.from({ length: 60 }, (_, at) =>
-          createItem(`note-${at}`, `Entropy in ${at + 1} dimensions`, 'ent'),
+        items: Array.from({ length: 60 }, (_, index) =>
+          createItem(`note-${index}`, `Entropy in ${index + 1} dimensions`, 'ent'),
         ),
       },
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     for (let step = 0; step < 59; step += 1) await userEvent.keyboard('{ArrowDown}')
 
@@ -827,17 +825,17 @@ export const NotToBeChosen: Story = {
         title: 'Names',
         items: [
           createItem('entropy', 'Entropy', 'ent'),
-          { id: 'stuck', title: 'Enthalpy — this file cannot be read', disabled: true },
+          { id: 'stuck', title: 'Enthalpy — this file cannot be read', isDisabled: true },
           createItem('gibbs', 'Gibbs free energy', 'e'),
         ],
       },
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{ArrowDown}')
-    await expect(lit()?.textContent).toContain('Gibbs')
+    await expect(activeItem()?.textContent).toContain('Gibbs')
 
     await userEvent.click(within(document.body).getByText(/cannot be read/))
     await expect(args.onChoose).not.toHaveBeenCalled()
@@ -847,7 +845,6 @@ export const NotToBeChosen: Story = {
 /**
  * One group answered, another is still filling, and a third could not be asked.
  *
- * The one with something to say is still drawn, and it stands at the foot, out
  * of the way of what a person is actually reading.
  */
 export const SomeCameBackEmpty: Story = {
@@ -859,17 +856,16 @@ export const SomeCameBackEmpty: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const viewElement = Array.from(document.body.querySelectorAll('[data-palette="title"]')).map(
       (group) => group.textContent?.trim(),
     )
     await expect(viewElement).toEqual(['Text', 'Meaning', 'Names'])
-    await expect(lit()?.textContent).toContain('Heat engines')
+    await expect(activeItem()?.textContent).toContain('Heat engines')
   },
 }
 
-/** One item offering five things, where two of them have a key. */
 export const FiveActions: Story = {
   args: {
     groups: [
@@ -884,7 +880,7 @@ export const FiveActions: Story = {
     ],
   },
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(getText)
     await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
@@ -918,15 +914,15 @@ export const ActionPanel: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     await userEvent.keyboard('{Control>}k{/Control}')
     await waitFor(() => expect(sheet()).not.toBeNull())
 
     await expect(actions()).toHaveLength(EVERYTHING.length)
-    await expect(document.activeElement).toBe(hunt())
+    await expect(document.activeElement).toBe(searchInput())
     await expect(field()?.getAttribute('aria-activedescendant')).toBeNull()
-    await expect(hunt()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
+    await expect(searchInput()?.getAttribute('aria-activedescendant')).toBe(actions()[0]?.id)
 
     // Walking back from the first brings the last row into sight.
     await userEvent.keyboard('{ArrowUp}')
@@ -943,7 +939,7 @@ export const ActionPanel: Story = {
     await waitFor(() => expect(actions()).toHaveLength(1))
     await expect(actions()[0]?.textContent).toContain('Rename')
 
-    await userEvent.clear(hunt()!)
+    await userEvent.clear(searchInput()!)
     await waitFor(() => expect(actions()).toHaveLength(EVERYTHING.length))
   },
 }
@@ -953,7 +949,6 @@ export const ActionPanel: Story = {
  * the caller keeps the stack and swaps the groups, the words in the field and
  * the chip that says which step this is.
  *
- * On the second step the current name stands in the field and is selected, so
  * typing replaces it.
  */
 export const Steps: Story = {
@@ -989,7 +984,7 @@ export const Steps: Story = {
         <Palette
           v-model="typed"
           :groups="step === 'find' ? [NAMED] : []"
-          :open="open"
+          :is-open="open"
           :step="step"
           :crumb="crumb"
           :placeholder="step === 'find' ? 'Search' : 'The new name'"
@@ -1001,7 +996,7 @@ export const Steps: Story = {
     `,
   }),
   play: async ({ args }) => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     // Backspace in an empty field is the gesture for the step before, at every
     // step there is.
@@ -1057,7 +1052,7 @@ export const KeyHints: Story = {
     ],
   },
   play: async () => {
-    await waitFor(() => expect(lit()).not.toBeNull())
+    await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const hints = Array.from(document.body.querySelectorAll('[data-palette="hint"]'))
     await expect(hints.map(getSpokenKey)).toEqual([

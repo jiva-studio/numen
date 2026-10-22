@@ -13,7 +13,7 @@ const pointer = (type: string, x: number, y: number) =>
 
 /** A press under way, with the frame held until the test lets it come. */
 function createPress(threshold = 4, withBegin = true) {
-  const commit = vi.fn<(item: string, at: Position | null) => void>()
+  const commit = vi.fn<(item: string, target: Position | null) => void>()
   const begin = vi.fn<(item: string) => void>()
   let next: ((now: number) => void) | null = null
   let scheduled = 0
@@ -36,7 +36,7 @@ function createPress(threshold = 4, withBegin = true) {
     usePressDrag<string, Position>({
       getThreshold: () => threshold,
       getClock: () => clock,
-      getDropTargetAt: (_item, at) => (at.x < 500 ? at : null),
+      getDropTargetAt: (_item, index) => (index.x < 500 ? index : null),
       commit,
       ...(withBegin ? { begin } : {}),
     }),
@@ -199,15 +199,18 @@ describe('usePressDrag', () => {
     press.scope.stop()
   })
 
-  it.each(['pointerup', 'pointercancel'])('commits what was carried when the pointer ends in a %s', (kind) => {
-    const press = createPress()
-    press.lift('a row', pointer('pointerdown', 10, 10))
-    window.dispatchEvent(pointer('pointermove', 40, 60))
-    window.dispatchEvent(pointer(kind, 40, 60))
+  it.each(['pointerup', 'pointercancel'])(
+    'commits what was carried when the pointer ends in a %s',
+    (kind) => {
+      const press = createPress()
+      press.lift('a row', pointer('pointerdown', 10, 10))
+      window.dispatchEvent(pointer('pointermove', 40, 60))
+      window.dispatchEvent(pointer(kind, 40, 60))
 
-    expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
-    press.scope.stop()
-  })
+      expect(press.commit).toHaveBeenCalledExactlyOnceWith('a row', { x: 40, y: 60 })
+      press.scope.stop()
+    },
+  )
 
   it.each(['pointermove', 'pointerup', 'pointercancel'])(
     'ignores a %s that comes after the release, before the frame',
@@ -227,14 +230,17 @@ describe('usePressDrag', () => {
     },
   )
 
-  it.each(['pointerup', 'pointercancel'])('ignores a %s that comes after the scope went', (kind) => {
-    const press = createPress()
-    press.lift('a row', pointer('pointerdown', 10, 10))
-    press.scope.stop()
+  it.each(['pointerup', 'pointercancel'])(
+    'ignores a %s that comes after the scope went',
+    (kind) => {
+      const press = createPress()
+      press.lift('a row', pointer('pointerdown', 10, 10))
+      press.scope.stop()
 
-    window.dispatchEvent(pointer(kind, 40, 60))
+      window.dispatchEvent(pointer(kind, 40, 60))
 
-    expect(press.getScheduled()).toBe(0)
-    expect(press.commit).not.toHaveBeenCalled()
-  })
+      expect(press.getScheduled()).toBe(0)
+      expect(press.commit).not.toHaveBeenCalled()
+    },
+  )
 })

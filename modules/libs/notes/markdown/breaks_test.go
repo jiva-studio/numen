@@ -83,7 +83,6 @@ func TestALineIsEveryBreakYAMLReads(t *testing.T) {
 	}
 }
 
-// The note that was overwritten: a return stands between the `links:` key and
 // its one entry, and the top-level key below the block is not the block's.
 func TestAReturnDoesNotMoveTheLinksBlockDown(t *testing.T) {
 	raw := "---\nlinks:\r- to: Ferns\nseen: 3\n---\nbody\n"

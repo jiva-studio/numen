@@ -8,7 +8,14 @@
  */
 import { beforeEach, describe, expect, it } from 'vitest'
 import { Plex } from '@numen/ui'
-import { requests, cards, mountWindowWithPalette, nodeInPlex, mockVaultState, settle } from '@/testing/window'
+import {
+  requests,
+  cards,
+  mountWindowWithPalette,
+  nodeInPlex,
+  mockVaultState,
+  settle,
+} from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 
 describe('the four commands over how the window is drawn', () => {

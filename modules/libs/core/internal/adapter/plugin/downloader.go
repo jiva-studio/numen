@@ -51,9 +51,9 @@ func OpenDownloaderBridge(ctx context.Context, host DownloaderPluginHost) (*Down
 }
 
 // CanHandle reports whether the downloader plugin supports the given address.
-func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, error) {
+func (b *DownloaderBridge) CanHandle(ctx context.Context, targetURL domain.URL) (bool, error) {
 	req := connect.NewRequest(&v1.CanHandleRequest{
-		Url: string(at),
+		Url: string(targetURL),
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
@@ -69,11 +69,11 @@ func (b *DownloaderBridge) CanHandle(ctx context.Context, at domain.URL) (bool, 
 }
 
 // GetDownloadModel returns the tool identity and version for a given address.
-func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, rawURL domain.URL) (port.DownloadModel, error) {
 	ctx, cancel := context.WithTimeout(ctx, modelInfoTimeout)
 	defer cancel()
 	req := connect.NewRequest(&v1.GetDownloadModelRequest{
-		Url: string(at),
+		Url: string(rawURL),
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
@@ -93,7 +93,7 @@ func (b *DownloaderBridge) GetDownloadModel(ctx context.Context, at domain.URL) 
 }
 
 // GetMetadata returns media duration, language, and available caption tracks.
-func (b *DownloaderBridge) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (b *DownloaderBridge) GetMetadata(ctx context.Context, u domain.URL) (port.Metadata, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
 			return port.Metadata{}, err
@@ -101,7 +101,7 @@ func (b *DownloaderBridge) GetMetadata(ctx context.Context, at domain.URL) (port
 	}
 
 	req := connect.NewRequest(&v1.GetMetadataRequest{
-		Url: string(at),
+		Url: string(u),
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {
@@ -125,7 +125,7 @@ func (b *DownloaderBridge) GetMetadata(ctx context.Context, at domain.URL) (port
 }
 
 // GetText extracts transcripts, cues, or prose text from an address.
-func (b *DownloaderBridge) GetText(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error) {
+func (b *DownloaderBridge) GetText(ctx context.Context, pos domain.URL, want port.PreferredCaptions) (port.Text, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
 			return port.Text{}, err
@@ -133,7 +133,7 @@ func (b *DownloaderBridge) GetText(ctx context.Context, at domain.URL, want port
 	}
 
 	req := connect.NewRequest(&v1.GetTextRequest{
-		Url: string(at),
+		Url: string(pos),
 		PreferredCaptions: &v1.PreferredCaptions{
 			Languages:   want.Languages,
 			IsAutomatic: want.IsAutomatic,
@@ -173,7 +173,7 @@ func (b *DownloaderBridge) GetText(ctx context.Context, at domain.URL, want port
 }
 
 // Download streams media or page content from the address into the given destination writer.
-func (b *DownloaderBridge) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+func (b *DownloaderBridge) Download(ctx context.Context, offset domain.URL, into io.Writer) (port.Copy, error) {
 	if b.host != nil {
 		if err := b.host.CheckPluginPermission(b.pluginID, PermissionNetworkOutbound); err != nil {
 			return port.Copy{}, err
@@ -181,7 +181,7 @@ func (b *DownloaderBridge) Download(ctx context.Context, at domain.URL, into io.
 	}
 
 	req := connect.NewRequest(&v1.DownloadMediaRequest{
-		Url: string(at),
+		Url: string(offset),
 	})
 	client, call, err := b.service.open(ctx)
 	if err != nil {

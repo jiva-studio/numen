@@ -16,7 +16,7 @@ import (
 // faces answered three times each holds twice as many of the first kind as of
 // the second.
 func makeAnswers(
-	at time.Time, faces, each int, took func(face, step int) time.Duration,
+	pos time.Time, faces, each int, took func(face, step int) time.Duration,
 ) []review.Answer {
 	var out []review.Answer
 	for face := range faces {
@@ -24,7 +24,7 @@ func makeAnswers(
 		for step := range each {
 			out = append(out, review.Answer{
 				ID: fmt.Sprintf("%06d", len(out)), CardFace: on,
-				At:     at.Add(time.Duration(len(out)) * time.Hour),
+				At:     pos.Add(time.Duration(len(out)) * time.Hour),
 				Rating: review.Good, Took: took(face, step),
 			})
 		}
@@ -36,13 +36,13 @@ func makeAnswers(
 // fall either side of it, so a person who answered the door once moves it by one
 // place and not by minutes.
 func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// Twelve card faces answered three times each: three seconds while a card
 	// face is being learned and nine once it comes round in days. One of them
 	// stood on the screen for an hour every time.
-	answers := makeAnswers(at, 12, 3, func(face, step int) time.Duration {
+	answers := makeAnswers(pos, 12, 3, func(face, step int) time.Duration {
 		switch {
 		case face == 0:
 			return time.Hour
@@ -53,7 +53,7 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 		}
 	})
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost.New != 3*time.Second {
 		t.Errorf("a card being learned costs %v, want 3s", cost.New)
 	}
@@ -68,13 +68,13 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 // A history too short to say what a kind of answer costs leaves that kind at
 // the default, and says it did.
 func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// One card face answered once, for fifty-five seconds.
-	answers := makeAnswers(at, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
+	answers := makeAnswers(pos, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost != review.DefaultCost {
 		t.Errorf("cost = %+v, want the default %+v", cost, review.DefaultCost)
 	}
@@ -86,14 +86,14 @@ func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 // The two kinds of answer are counted apart: a history of one kind leaves the
 // other at the default and says which of the two it is.
 func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// Twelve card faces answered twice each, which is a vault holding no answer
 	// to a card that comes round in days.
-	answers := makeAnswers(at, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
+	answers := makeAnswers(pos, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost.New != 30*time.Second || !cost.ShouldReadNew {
 		t.Errorf("a card being learned costs %v, read %t, want 30s read", cost.New, cost.ShouldReadNew)
 	}
@@ -106,12 +106,12 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 // A history of key hits is costed at the shortest an answer is costed at, so a
 // day is never priced at more cards than a person could sit through.
 func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	answers := makeAnswers(at, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
+	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return 20 * time.Millisecond })
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost.New != review.ShortestAnswer || cost.Review != review.ShortestAnswer {
 		t.Errorf("cost = %+v, want both halves at %v", cost, review.ShortestAnswer)
 	}
@@ -120,14 +120,14 @@ func TestAKindOfAnswerIsNeverCostedBelowTheShortest(t *testing.T) {
 // One answer nobody sat through is counted at what a card is worth, so an hour
 // away from the screen is an hour of no review.
 func TestAnAnswerNobodySatThroughIsCappedAtTheLongest(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// Every answer stood on the screen for an hour, so the middle of them is
 	// what one answer is capped at.
-	answers := makeAnswers(at, 12, 3, func(int, int) time.Duration { return time.Hour })
+	answers := makeAnswers(pos, 12, 3, func(int, int) time.Duration { return time.Hour })
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost.New != review.LongestAnswer || cost.Review != review.LongestAnswer {
 		t.Errorf("cost = %+v, want both halves at %v", cost, review.LongestAnswer)
 	}
@@ -144,32 +144,32 @@ func TestAVaultContainingNoAnswerTimesIsProjectedAtTheDefault(t *testing.T) {
 // An answer carrying no time at all says nothing about how long its kind takes,
 // so the answers that do carry one are the whole of what a cost is read from.
 func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
-	by := review.NewFSRS()
-	at := time.Now().Add(-400 * 24 * time.Hour)
+	delta := review.NewFSRS()
+	pos := time.Now().Add(-400 * 24 * time.Hour)
 
 	// Twenty-four card faces answered three times each, at nine seconds an
 	// answer. Half the card faces were answered with no time recorded at all.
-	answers := makeAnswers(at, 24, 3, func(face, _ int) time.Duration {
+	answers := makeAnswers(pos, 24, 3, func(face, _ int) time.Duration {
 		if face%2 == 0 {
 			return 0
 		}
 		return 9 * time.Second
 	})
 
-	cost := getCost(by, answers)
+	cost := getCost(delta, answers)
 	if cost.New != 9*time.Second || cost.Review != 9*time.Second {
 		t.Errorf("cost = %+v, want both halves at 9s", cost)
 	}
 }
 
 // getCost is the cost of the answers taken as one group.
-func getCost(by review.Scheduler, answers []review.Answer) review.AnswerCost {
+func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
 	underMap := make(map[review.CardFaceID]string)
 	for _, a := range answers {
 		underMap[a.CardFace] = group
 	}
-	costs := review.GetCostUnder(by, answers, underMap)
+	costs := review.GetCostUnder(delta, answers, underMap)
 	if cost, ok := costs[group]; ok {
 		return cost
 	}

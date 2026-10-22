@@ -26,8 +26,8 @@ const createPaper = (markup: string, left: readonly number[] = []): HTMLElement 
   paper.innerHTML = markup
   document.body.append(paper)
   paper.querySelectorAll<HTMLElement>('[data-offset]').forEach((run, i) => {
-    const at = left[i] ?? 0
-    run.getClientRects = () => [{ left: at }] as unknown as DOMRectList
+    const pos = left[i] ?? 0
+    run.getClientRects = () => [{ left: pos }] as unknown as DOMRectList
   })
   return paper
 }

@@ -33,7 +33,7 @@ describe('the preset one deck is scheduled by', () => {
       'decks/Words.md',
     )
 
-    expect(one.ok && one.value.held.settings.goal).toBe('retention')
+    expect(one.ok && one.value.activePreset.settings.goal).toBe('retention')
   })
 
   it('is steered by its minutes where the settings name no goal', async () => {
@@ -43,7 +43,7 @@ describe('the preset one deck is scheduled by', () => {
       'decks/Words.md',
     )
 
-    expect(one.ok && one.value.held.settings.goal).toBe('minutes')
+    expect(one.ok && one.value.activePreset.settings.goal).toBe('minutes')
   })
 
   it('fails with the error given where the preset came without settings', async () => {

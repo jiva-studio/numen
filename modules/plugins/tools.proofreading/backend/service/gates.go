@@ -8,27 +8,12 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// MaxEditDistance is how far a correction may stand from the line as read.
+// MaxEditDistance is the maximum normalized edit distance allowed for a correction.
 const MaxEditDistance = 0.30
 
-// GetFixedLines is the lines a reply puts right, whether any of its runs ran on
-// past the last line the batch carries, and whether the reply answers the
-// question that was asked.
-//
-// A sentence carried on past the end of a batch is one the cut after that batch
-// broke, and past is how a caller learns of it.
-//
-// A mark of ours coming back refuses the batch, as does a reply row that is not
-// a number the batch carries and, after it, the line, and as does an answer
-// with no letters over a line that had them. A run of lines answered for as one
-// refuses a batch that does not put lines together, and a line two rows both
-// answer for refuses the batch.
-//
-// A correction saying what the line already says is dropped, as is one that
-// only puts something wordless in front of it, and as is one standing further
-// than maxDistance from the line as read. A maxDistance at or below zero sets
-// no limit.
-func GetFixedLines(batch Batch, reply string, maxDistance float64) (put []Line, past, ok bool) {
+// GetFixedLines parses and validates correction lines from a model reply against a batch.
+// Returns validated lines, hasOverflow if a line range extends beyond the batch, and ok indicating overall validity.
+func GetFixedLines(batch Batch, reply string, maxDistance float64) (lines []Line, hasOverflow, ok bool) {
 	if strings.Contains(reply, Opens) || strings.Contains(reply, Closes) {
 		return nil, false, false
 	}
@@ -44,64 +29,63 @@ func indexBatchLines(batch Batch) map[int]string {
 	return read
 }
 
-// buildFixedLines parses reply rows, verifying each against the batch and collecting
-// the accepted corrections.
+// buildFixedLines parses reply rows, validates each against the batch, and collects accepted corrections.
 func buildFixedLines(batch Batch, reply string, maxDistance float64, read map[int]string) ([]Line, bool, bool) {
 	var out []Line
-	past := false
-	replyVal := make(map[int]bool, len(batch.Lines))
+	hasOverflow := false
+	claimedLines := make(map[int]bool, len(batch.Lines))
 	for _, row := range splitRows(reply) {
-		line, keep, reaches, valid := processRow(row, batch, read, replyVal, maxDistance)
+		line, keep, reaches, valid := processRow(row, batch, read, claimedLines, maxDistance)
 		if !valid {
 			return nil, false, false
 		}
 		if reaches {
-			past = true
+			hasOverflow = true
 			continue
 		}
 		if keep {
 			out = append(out, line)
 		}
 	}
-	return out, past, true
+	return out, hasOverflow, true
 }
 
 // processRow parses and checks a single reply row against the batch lines and edit distance.
-func processRow(row string, batch Batch, read map[int]string, answered map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
-	at, through, text, barred, numbers := readRow(row)
+func processRow(row string, batch Batch, read map[int]string, claimedLines map[int]bool, maxDistance float64) (line Line, keep, reaches, ok bool) {
+	startLine, endLine, text, barred, numbers := readRow(row)
 	if !numbers {
 		return Line{}, false, false, false
 	}
-	if through > at && !batch.IsJoinable {
+	if endLine > startLine && !batch.IsJoinable {
 		return Line{}, false, false, false
 	}
-	was, reaches, matchOk := matchLines(read, at, through, batch.Last())
+	was, reaches, matchOk := matchLines(read, startLine, endLine, batch.Last())
 	if !matchOk {
 		return Line{}, false, false, false
 	}
 	if reaches {
 		return Line{}, false, true, true
 	}
-	if !claimLines(answered, at, through) {
+	if !claimLines(claimedLines, startLine, endLine) {
 		return Line{}, false, false, false
 	}
 	if !isValidRow(row, was, text, barred) {
 		return Line{}, false, false, false
 	}
-	if !canKeepCorrection(was, text, at, through, maxDistance) {
+	if !canKeepCorrection(was, text, startLine, endLine, maxDistance) {
 		return Line{}, false, false, true
 	}
-	return Line{Number: at, Last: through, Text: text}, true, false, true
+	return Line{Number: startLine, Last: endLine, Text: text}, true, false, true
 }
 
-// matchLines gathers the lines from at through to, verifying each exists in the batch.
-// A run reaching beyond the batch reports reaches true.
-func matchLines(read map[int]string, at, through, last int) (joined string, reaches, ok bool) {
-	was, named := read[at]
+// matchLines concatenates lines from startLine to endLine and checks whether each exists in the batch.
+// If a line range extends beyond the last batch line, reaches is true.
+func matchLines(read map[int]string, startLine, endLine, last int) (joined string, reaches, ok bool) {
+	was, named := read[startLine]
 	if !named {
 		return "", false, false
 	}
-	for line := at + 1; line <= through; line++ {
+	for line := startLine + 1; line <= endLine; line++ {
 		next, target := read[line]
 		if !target {
 			if line > last {
@@ -114,18 +98,18 @@ func matchLines(read map[int]string, at, through, last int) (joined string, reac
 	return was, false, true
 }
 
-// claimLines marks the given line range as answered, refusing lines answered twice.
-func claimLines(answered map[int]bool, at, through int) bool {
-	for line := at; line <= through; line++ {
-		if answered[line] {
+// claimLines marks the given line range as answered, rejecting duplicate lines.
+func claimLines(claimedLines map[int]bool, startLine, endLine int) bool {
+	for line := startLine; line <= endLine; line++ {
+		if claimedLines[line] {
 			return false
 		}
-		answered[line] = true
+		claimedLines[line] = true
 	}
 	return true
 }
 
-// isValidRow says whether the reply row has words and its digits separate from the line.
+// isValidRow validates that the reply row format and content are well-formed.
 func isValidRow(row, was, text string, barred bool) bool {
 	if !barred && strings.HasPrefix(strings.TrimSpace(was), readLeadingDigits(row)) {
 		return false
@@ -136,10 +120,9 @@ func isValidRow(row, was, text string, barred bool) bool {
 	return true
 }
 
-// canKeepCorrection says whether a correction changes the line and stands within
-// the allowed edit distance. A run of lines is always kept.
-func canKeepCorrection(was, text string, at, through int, maxDistance float64) bool {
-	if through > at {
+// canKeepCorrection reports whether a correction modifies the line within the maximum allowed edit distance.
+func canKeepCorrection(was, text string, startLine, endLine int, maxDistance float64) bool {
+	if endLine > startLine {
 		return true
 	}
 	if text == strings.TrimSpace(was) {
@@ -154,27 +137,23 @@ func canKeepCorrection(was, text string, at, through int, maxDistance float64) b
 	return true
 }
 
-// readRow is the line a reply row is about, what that line now says, and
-// whether a bar stood between the two.
-//
-// A row opens with the number, and a bar, spaces, or both stand between the
-// number and the line.
-func readRow(row string) (at, through int, text string, barred, ok bool) {
+// readRow parses a reply row into line bounds, text, and delimiter flags.
+func readRow(row string) (startLine, endLine int, text string, barred, ok bool) {
 	digits := readLeadingDigits(row)
 	if digits == "" || len(digits) == len(row) {
 		return 0, 0, "", false, false
 	}
-	at, err := strconv.Atoi(digits)
+	startLine, err := strconv.Atoi(digits)
 	if err != nil {
 		return 0, 0, "", false, false
 	}
 	rest := row[len(digits):]
-	through = at
+	endLine = startLine
 
-	// A run of lines put together is written as the first and the last of them.
+	// Hyphenated range indicates multiple lines combined into one.
 	if rest[0] == '-' {
 		var ok bool
-		if through, rest, ok = readRowRange(rest, at); !ok {
+		if endLine, rest, ok = readRowRange(rest, startLine); !ok {
 			return 0, 0, "", false, false
 		}
 	}
@@ -184,24 +163,24 @@ func readRow(row string) (at, through int, text string, barred, ok bool) {
 	}
 	rest = strings.TrimLeft(rest, " \t")
 	barred = strings.HasPrefix(rest, "|")
-	return at, through, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
+	return startLine, endLine, strings.TrimSpace(strings.TrimPrefix(rest, "|")), barred, true
 }
 
 // readRowRange parses the ending line number in a hyphenated line range.
-func readRowRange(rest string, at int) (through int, remainder string, ok bool) {
+func readRowRange(rest string, startLine int) (endLine int, remainder string, ok bool) {
 	last := readLeadingDigits(rest[1:])
 	if last == "" {
 		return 0, "", false
 	}
-	through, err := strconv.Atoi(last)
-	if err != nil || through <= at {
+	endLine, err := strconv.Atoi(last)
+	if err != nil || endLine <= startLine {
 		return 0, "", false
 	}
 	remainder = rest[1+len(last):]
 	if remainder == "" {
 		return 0, "", false
 	}
-	return through, remainder, true
+	return endLine, remainder, true
 }
 
 // readLeadingDigits is the run of digits a row opens with, and nothing for a row readLeadingDigits

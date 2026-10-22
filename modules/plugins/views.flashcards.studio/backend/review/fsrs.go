@@ -92,15 +92,15 @@ func (FSRS) IsSpaced(s Schedule) bool {
 }
 
 // Next is where an answer leaves a schedule.
-func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
-	one := f.readAtAnswer(s, at)
+func (f FSRS) Next(s Schedule, now time.Time, r Rating) Schedule {
+	one := f.readAtAnswer(s, now)
 	switch one.phase {
 	case fsrs.New:
-		return f.getNextFromNew(one, at, fsrs.Rating(r))
+		return f.getNextFromNew(one, now, fsrs.Rating(r))
 	case fsrs.Review:
-		return f.getNextFromReview(one, at, f.getRecall(one), fsrs.Rating(r))
+		return f.getNextFromReview(one, now, f.getRecall(one), fsrs.Rating(r))
 	default:
-		return f.getNextFromLearning(one, at, fsrs.Rating(r))
+		return f.getNextFromLearning(one, now, fsrs.Rating(r))
 	}
 }
 
@@ -109,18 +109,18 @@ func (f FSRS) Next(s Schedule, at time.Time, r Rating) Schedule {
 // A card face this scheduler has put into review is settled at every rating by
 // one reckoning of how likely it was to come back, so both endings are worked
 // out from that one reckoning.
-func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
-	one := f.readAtAnswer(s, at)
+func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
+	one := f.readAtAnswer(s, now)
 	switch one.phase {
 	case fsrs.New:
-		return f.getNextFromNew(one, at, fsrs.Good), f.getNextFromNew(one, at, fsrs.Again)
+		return f.getNextFromNew(one, now, fsrs.Good), f.getNextFromNew(one, now, fsrs.Again)
 	case fsrs.Review:
 		back := f.getRecall(one)
-		return f.getNextFromReview(one, at, back, fsrs.Good),
-			f.getNextFromReview(one, at, back, fsrs.Again)
+		return f.getNextFromReview(one, now, back, fsrs.Good),
+			f.getNextFromReview(one, now, back, fsrs.Again)
 	default:
-		return f.getNextFromLearning(one, at, fsrs.Good),
-			f.getNextFromLearning(one, at, fsrs.Again)
+		return f.getNextFromLearning(one, now, fsrs.Good),
+			f.getNextFromLearning(one, now, fsrs.Again)
 	}
 }
 
@@ -130,7 +130,6 @@ func (f FSRS) Endings(s Schedule, at time.Time) (good, again Schedule) {
 type atAnswer struct {
 	phase fsrs.State
 	// away is how many whole days the card face stood away, and is none for one
-	// nobody has answered.
 	away float64
 	// last is where the card face stood before the answer, and out is where the
 	// answer leaves it but for what the rating decides.
@@ -141,7 +140,7 @@ type atAnswer struct {
 // readAtAnswer reads a card face at the instant it is answered. One nobody has
 // answered opens at the phase the scheduler begins a card in, at no stability
 // and no difficulty.
-func (f FSRS) readAtAnswer(s Schedule, at time.Time) atAnswer {
+func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	one := atAnswer{phase: fsrs.New}
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
@@ -155,10 +154,10 @@ func (f FSRS) readAtAnswer(s Schedule, at time.Time) atAnswer {
 	}
 	// The days away are the whole days gone by, and they do not go below none.
 	if one.phase != fsrs.New {
-		one.away = math.Max(math.Floor(at.Sub(one.last.Last).Hours()/24), 0)
+		one.away = math.Max(math.Floor(pos.Sub(one.last.Last).Hours()/24), 0)
 	}
 	one.out = one.last
-	one.out.Last = at
+	one.out.Last = pos
 	one.out.Reps = one.last.Reps + 1
 	return one
 }
@@ -166,20 +165,20 @@ func (f FSRS) readAtAnswer(s Schedule, at time.Time) atAnswer {
 // getNextFromNew is where an answer leaves a card face nobody had answered.
 // Three of the four put it into memory over minutes, and the fourth sends it
 // away in days.
-func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
+func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.first(r)
 	out.Stability = math.Max(f.p.W[r-1], 0.1)
 	out.Phase = uint8(fsrs.Learning)
 	switch r {
 	case fsrs.Again:
-		out.Due = at.Add(1 * time.Minute)
+		out.Due = pos.Add(1 * time.Minute)
 	case fsrs.Hard:
-		out.Due = at.Add(5 * time.Minute)
+		out.Due = pos.Add(5 * time.Minute)
 	case fsrs.Good:
-		out.Due = at.Add(10 * time.Minute)
+		out.Due = pos.Add(10 * time.Minute)
 	case fsrs.Easy:
-		out.Due = at.Add(daysToDuration(f.getInterval(out.Stability)))
+		out.Due = pos.Add(daysToDuration(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -189,21 +188,21 @@ func (f FSRS) getNextFromNew(one atAnswer, at time.Time, r fsrs.Rating) Schedule
 // still putting into memory. The two lower ratings leave it where it was and
 // ask again in minutes; the two higher send it away in days and put it into
 // review.
-func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Schedule {
+func (f FSRS) getNextFromLearning(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
 	out := one.out
 	out.Difficulty = f.getNextDifficulty(one.last.Difficulty, r)
 	out.Stability = f.getLearningStability(one.last.Stability, r)
 	switch r {
 	case fsrs.Again:
-		out.Due = at.Add(5 * time.Minute)
+		out.Due = pos.Add(5 * time.Minute)
 	case fsrs.Hard:
-		out.Due = at.Add(10 * time.Minute)
+		out.Due = pos.Add(10 * time.Minute)
 	case fsrs.Good:
-		out.Due = at.Add(daysToDuration(f.getInterval(out.Stability)))
+		out.Due = pos.Add(daysToDuration(f.getInterval(out.Stability)))
 		out.Phase = uint8(fsrs.Review)
 	case fsrs.Easy:
 		good := f.getInterval(f.getLearningStability(one.last.Stability, fsrs.Good))
-		out.Due = at.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
+		out.Due = pos.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
 		out.Phase = uint8(fsrs.Review)
 	}
 	return out
@@ -215,7 +214,7 @@ func (f FSRS) getNextFromLearning(one atAnswer, at time.Time, r fsrs.Rating) Sch
 //
 // Each interval is held past the one below it, so the day an answer names is
 // worked out from the endings under it and not from its own stability alone.
-func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs.Rating) Schedule {
+func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsrs.Rating) Schedule {
 	d, s := one.last.Difficulty, one.last.Stability
 	out := one.out
 	out.Difficulty = f.getNextDifficulty(d, r)
@@ -223,7 +222,7 @@ func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs
 		out.Stability = math.Min(s/math.Exp(f.p.W[17]*f.p.W[18]), f.getStabilityOnLapse(d, s, back))
 		out.Lapses = one.last.Lapses + 1
 		out.Phase = uint8(fsrs.Relearning)
-		out.Due = at.Add(5 * time.Minute)
+		out.Due = pos.Add(5 * time.Minute)
 		return out
 	}
 
@@ -236,11 +235,11 @@ func (f FSRS) getNextFromReview(one atAnswer, at time.Time, back float64, r fsrs
 	good := math.Max(f.getInterval(f.getStabilityOnRecall(d, s, back, fsrs.Good)), hard+1)
 	switch r {
 	case fsrs.Hard:
-		out.Due = at.Add(daysToDuration(hard))
+		out.Due = pos.Add(daysToDuration(hard))
 	case fsrs.Easy:
-		out.Due = at.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
+		out.Due = pos.Add(daysToDuration(math.Max(f.getInterval(out.Stability), good+1)))
 	default:
-		out.Due = at.Add(daysToDuration(good))
+		out.Due = pos.Add(daysToDuration(good))
 	}
 	return out
 }

@@ -48,9 +48,7 @@ var ErrNoPresets = errors.New("this build cannot work the presets of a vault")
 // Point puts the deck at path on a preset, by writing the entry of its `links:`
 // block that carries `type: preset`.
 //
-// An empty preset takes that entry out, and the deck is scheduled by the
-// defaults. A path naming a note that is not a preset is refused ErrNotAPreset,
-// and a path the vault holds no note at is refused note.ErrNoNote.
+// # An empty preset takes that entry out, and the deck is scheduled by the
 //
 // Fingerprint, when it is given, is what the caller believes is on disk. A deck
 // that has changed since it was read is left alone and port.ErrStale comes
@@ -65,14 +63,14 @@ func (u Presets) Point(
 		if u.notes == nil {
 			return domain.Fingerprint{}, ErrNoPresets
 		}
-		at, err := u.Read(ctx, v, preset)
+		pos, err := u.Read(ctx, v, preset)
 		if err != nil {
 			return domain.Fingerprint{}, err
 		}
 		switch {
-		case at.Outcome == note.Missing:
+		case pos.Outcome == note.Missing:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", note.ErrNoNote, preset)
-		case at.Outcome != note.Ok || at.Type != format.TypePreset:
+		case pos.Outcome != note.Ok || pos.Type != format.TypePreset:
 			return domain.Fingerprint{}, fmt.Errorf("%w: %s", ErrNotAPreset, preset)
 		}
 		if to, err = note.GetAddress(ctx, u.notes, v.ID, preset); err != nil {
@@ -101,11 +99,11 @@ func (u Presets) Save(
 	if err := checkBounds(settings); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	at, err := u.save(ctx, v, path, settings, fingerprint)
+	pos, err := u.save(ctx, v, path, settings, fingerprint)
 	if err != nil {
-		return at, err
+		return pos, err
 	}
-	return at, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
+	return pos, note.WrapUnlevelled(u.index(ctx, v, []string{path}), path)
 }
 
 // save is the read, the change and the write, under this vault's write lock
@@ -133,8 +131,6 @@ func (u Presets) save(
 		return domain.Fingerprint{}, fmt.Errorf("%w: %s is %d bytes, and %d is the most",
 			note.ErrTooLarge, path, on.Size, note.MaxBytes)
 	}
-	// A caller that said what it believed the note was is held to that; one that
-	// said nothing is held to what stands there now.
 	expectedFp := fingerprint
 	if expectedFp.IsZero() {
 		expectedFp = on

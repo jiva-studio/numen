@@ -152,8 +152,8 @@ func (q *Queries) GetNameMatches(ctx context.Context, vaultID domain.VaultID, qu
 			return nil, err
 		}
 		m.Type = domain.NoteType(target)
-		name, at := parseMarkedName(marked)
-		m.Spans = at
+		name, pos := parseMarkedName(marked)
+		m.Spans = pos
 		if kind != 0 {
 			m.Heading, m.Line = name, line
 		}

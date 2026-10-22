@@ -48,7 +48,7 @@ export interface CommandsDepsOptions {
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   openPreset: (path: string) => Promise<void>
-  dressed: { chooseItem: (item: string) => Promise<void> | void }
+  appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   nesting: {
     choose: (item: string) => Promise<void> | void
@@ -94,16 +94,16 @@ export function useCommands(options: CommandsDepsOptions) {
     },
   })
 
-  const runCommand = (id: string, at: CommandTarget) => {
+  const runCommand = (id: string, target: CommandTarget) => {
     if (options.pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
       void options.pluginHost.executeCommand(id)
       return
     }
-    const invocation = commands.startCommand(id, at)
+    const invocation = commands.startCommand(id, target)
     if (invocation) return void runInvocation(invocation, commandDeps, ANSWER_WORDS)
     if (commands.open.value) return void palette.setOpen(false)
-    writeMessage(commands.getObjection(id, at), 'error')
+    writeMessage(commands.getObjection(id, target), 'error')
   }
 
   const onKeyDown = (event: KeyboardEvent) => {

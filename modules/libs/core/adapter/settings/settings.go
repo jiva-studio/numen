@@ -37,10 +37,9 @@ type Document interface {
 	GetAppearance() *Appearance
 
 	// AddNotice leaves a person one line about what the file holds.
-	AddNotice(said string)
+	AddNotice(reply string)
 }
 
-// Titles is how a note's title and the name of its file are held together.
 type Titles struct {
 	// SyncTitleAndFilename is whether renaming either of the two brings the
 	// other into line. A file leaving it out keeps them one name, and a file
@@ -178,14 +177,14 @@ func readInterfaceScale(into Document, path string, raw []byte) {
 	}
 }
 
-func warn(into Document, said string, about ...any) {
-	into.AddNotice(fmt.Sprintf(said, about...))
+func warn(into Document, response string, about ...any) {
+	into.AddNotice(fmt.Sprintf(response, about...))
 }
 
 // write puts the settings where they are read from, beside the file and
 // renamed over the top.
-func write(path string, held Document) error {
-	raw, err := json.MarshalIndent(held, "", "  ")
+func write(path string, target Document) error {
+	raw, err := json.MarshalIndent(target, "", "  ")
 	if err != nil {
 		return err
 	}

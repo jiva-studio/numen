@@ -18,19 +18,19 @@ const perPage = 3
 func createRecognition(lines []string) (string, []domain.OCRPageStart, []domain.HighlightBox, []domain.OCRPart) {
 	var marks []domain.OCRPageStart
 	var boxes []domain.HighlightBox
-	at := 0
+	offset := 0
 	for i, line := range lines {
 		if i%perPage == 0 {
-			marks = append(marks, domain.OCRPageStart{Offset: at})
+			marks = append(marks, domain.OCRPageStart{Offset: offset})
 		}
 		boxes = append(boxes, domain.HighlightBox{
 			Page:     i / perPage,
-			ByteSpan: domain.ByteSpan{From: at, To: at + len(line)},
+			ByteSpan: domain.ByteSpan{From: offset, To: offset + len(line)},
 			Rect: domain.Rect{
 				MinX: 0.1, MinY: float32(i) / 100, MaxX: 0.9, MaxY: float32(i+1) / 100,
 			},
 		})
-		at += len(line) + len("\n")
+		offset += len(line) + len("\n")
 	}
 	parts := []domain.OCRPart{
 		{Start: boxes[0].From, Length: boxes[0].Len(), Depth: 0},

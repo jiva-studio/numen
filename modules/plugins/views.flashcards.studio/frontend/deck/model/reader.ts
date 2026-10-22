@@ -15,7 +15,6 @@ import {
   type BufferDeck,
 } from '../lib/deck'
 
-/** The string a tab holds, and the file it stands at. */
 export interface ShownStore {
   getOpenNote(id: string): { body: string }
   getPath(id: string): string

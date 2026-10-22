@@ -6,10 +6,10 @@ import { NO_UNRESOLVED } from '../lib/turn'
 import type { Turn } from '../lib/turn'
 
 const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
+  state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
 const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
+  state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
 

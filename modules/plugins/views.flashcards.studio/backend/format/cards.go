@@ -47,8 +47,7 @@ type Stencil struct {
 // stands before the answer and what stands after it, each with `{{Field}}` where
 // a value goes. A face with only one of the two lays out nothing.
 type FaceTemplate struct {
-	Name string
-	// Preamble is what stands between the face's heading and its first side.
+	Name     string
 	Preamble string
 	Front    string
 	Back     string
@@ -73,7 +72,6 @@ type Deck struct {
 // nothing else: no fields, no stencil, no schedule, no mark.
 type Section struct {
 	Name string
-	// Preamble is what stands between the section's heading and its first card.
 	// Nothing lays it out and nothing reads it: it is a person writing about
 	// their own deck, and it is kept exactly currently.
 	Preamble string
@@ -97,9 +95,7 @@ type Card struct {
 	// `note://<identifier>` where none does. A card whose first paragraph is not
 	// one names no stencil.
 	StencilLink string
-	// Preamble is what stands between the wikilink and the first field.
-	Preamble string
-	// Section is where the section this card is placed under stands in the deck's
+	Preamble    string
 	// own, counted from the first. A card standing before the first section
 	// carries NoSection.
 	Section int

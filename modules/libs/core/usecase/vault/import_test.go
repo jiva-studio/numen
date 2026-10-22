@@ -137,7 +137,6 @@ func TestANameAlreadyThereIsRefusedAndTheRestArrive(t *testing.T) {
 	}
 }
 
-// A folder the vault itself sits in would be copied into itself for as long as
 // the disk lasted.
 func TestAFolderContainingTheVaultIsRefused(t *testing.T) {
 	t.Parallel()

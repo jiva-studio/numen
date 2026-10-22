@@ -49,7 +49,7 @@ var (
 func WrapUnlevelled(err error, paths ...string) error { return edit.WrapUnlevelled(err, paths...) }
 
 // CheckSize holds a file to the most it may be. Zero holds it to nothing.
-func CheckSize(path string, size, bound int) error { return edit.CheckSize(path, size, bound) }
+func CheckSize(path string, size, limit int) error { return edit.CheckSize(path, size, limit) }
 
 // GetAddress is how a note known by path is written into a link.
 func GetAddress(ctx context.Context, names ports.NoteQueries, vaultID domain.VaultID, path string) (domain.Address, error) {
@@ -103,7 +103,6 @@ type Read struct {
 	readers ports.VaultReaders
 }
 
-// NewRead is what a note is read out of: the vault it stands in.
 func NewRead(readers ports.VaultReaders) Read { return Read{readers: readers} }
 
 // Execute reads the note at path. An error is the vault being out of reach; what is wrong with the

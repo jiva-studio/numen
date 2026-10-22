@@ -15,13 +15,13 @@ const props = withDefaults(
     selectedId?: string
     /** What the control is called: its label while no level is chosen, and its menu's name. */
     name?: string
-    disabled?: boolean
+    isDisabled?: boolean
   }>(),
   {
     levels: () => [],
     selectedId: '',
     name: 'Reasoning',
-    disabled: false,
+    isDisabled: false,
   },
 )
 
@@ -40,12 +40,12 @@ const label = computed(
 )
 
 const menuItems = computed<MenuItem[]>(() =>
-  props.levels.map((one) => ({ id: one.id, text: one.title, disabled: false })),
+  props.levels.map((one) => ({ id: one.id, text: one.title, isDisabled: false })),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
-  if (props.disabled || props.levels.length === 0) return
+  if (props.isDisabled || props.levels.length === 0) return
   if (isOpen.value) {
     isOpen.value = false
     return
@@ -74,7 +74,7 @@ function onDismiss() {
       type="button"
       class="reasoning-selector__pill bg-bubble text-ink text-small hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
       :aria-label="name"
-      :disabled="disabled || levels.length === 0"
+      :disabled="isDisabled || levels.length === 0"
       @click="onToggle"
     >
       <span class="reasoning-selector__label min-w-0 flex-1 truncate">{{ label }}</span>
@@ -92,7 +92,7 @@ function onDismiss() {
     </button>
 
     <Menu
-      :open="isOpen"
+      :is-open="isOpen"
       :items="menuItems"
       :at="menuPosition"
       :current="selectedId"

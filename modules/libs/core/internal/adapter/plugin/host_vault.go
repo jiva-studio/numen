@@ -22,7 +22,6 @@ import (
 // letting them go must not stop the vault being written.
 const vaultLockHold = 2 * time.Minute
 
-// vaultWatchPoll is how often a watch looks at which vault the window is showing.
 const vaultWatchPoll = time.Second
 
 // vaultHeader is the header of a call that names the vault it works, by identity.
@@ -44,7 +43,6 @@ func newVaultEndpoint(endpoint *HostEndpoint) *vaultEndpoint {
 var _ numenv1connect.HostVaultServiceHandler = (*vaultEndpoint)(nil)
 
 // begin authorizes a call and returns the plugin that made it and the vault it works. A plugin that
-// lacks the permission is refused; a host showing no vault leaves the vault nil.
 func (e *vaultEndpoint) begin(header http.Header, permission string) (string, port.PluginVault, error) {
 	pluginID, err := e.endpoint.authorize(header.Get("Authorization"), permission)
 	if err != nil {
@@ -62,7 +60,6 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, po
 	return pluginID, linked, nil
 }
 
-// answer sorts the failure of a call to the vault: a refusal the host can name is the code of the
 // answer, the end of the caller's context is cancelled, and anything else is internal.
 func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 	if err == nil {
@@ -247,12 +244,12 @@ func (e *vaultEndpoint) GetFileFingerprint(
 	if vault == nil {
 		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: noVault}), nil
 	}
-	at, err := vault.GetFingerprint(ctx, req.Msg.GetPath())
+	pos, err := vault.GetFingerprint(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetFileFingerprintResponse{Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.GetFileFingerprintResponse{Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) ReadFile(
@@ -265,12 +262,12 @@ func (e *vaultEndpoint) ReadFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: noVault}), nil
 	}
-	content, at, err := vault.Read(ctx, req.Msg.GetPath())
+	content, pos, err := vault.Read(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) WriteFile(
@@ -283,12 +280,12 @@ func (e *vaultEndpoint) WriteFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: noVault}), nil
 	}
-	at, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFingerprint(req.Msg.GetBaseline()))
+	pos, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFingerprint(req.Msg.GetBaseline()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.WriteFileResponse{Fingerprint: writeFingerprint(at)}), nil
+	return connect.NewResponse(&v1.WriteFileResponse{Fingerprint: writeFingerprint(pos)}), nil
 }
 
 func (e *vaultEndpoint) CreateFile(
@@ -660,7 +657,7 @@ func (e *vaultEndpoint) WatchVault(
 // another vault.
 func followVault(
 	ctx context.Context, vault port.PluginVault, watched domain.Vault,
-	changes <-chan []string, lost <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
+	changes <-chan []string, lostChan <-chan struct{}, stream *connect.ServerStream[v1.WatchVaultResponse],
 ) error {
 	poll := time.NewTicker(vaultWatchPoll)
 	defer poll.Stop()
@@ -668,7 +665,7 @@ func followVault(
 		select {
 		case <-ctx.Done():
 			return nil
-		case <-lost:
+		case <-lostChan:
 			return nil
 		case paths, open := <-changes:
 			if !open {

@@ -32,7 +32,6 @@ type fileServer struct {
 //
 // The window is drawn from a scheme the toolkit registers, and a page fetched
 // through it reaches this application. A player does not: a browser loads sound
-// and video down a path of its own, which speaks the protocols of the world and
 // not the scheme of one application, and answers that it does not know the
 // format. A loopback address is a place it does reach.
 //
@@ -42,7 +41,6 @@ type Loopback struct {
 	server  *http.Server
 	files   *fileServer
 	address string
-	// token stands in the address and in no setting. Every process on this
 	// machine can reach a loopback socket, and a vault is the person's own
 	// writing; the address is what tells this window's own asking from anybody
 	// else's. It is made afresh for each run and outlives none of them.
@@ -72,7 +70,7 @@ func Listen(files *fileServer, stopped func(error)) (*Loopback, error) {
 }
 
 // newLoopback is the socket answering, whichever socket it is.
-func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
+func newLoopback(target net.Listener, files *fileServer, stopped func(error)) (*Loopback, error) {
 	word := make([]byte, 24)
 	if _, err := rand.Read(word); err != nil {
 		return nil, err
@@ -80,7 +78,7 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 
 	back := &Loopback{
 		files:   files,
-		address: "http://" + held.Addr().String(),
+		address: "http://" + target.Addr().String(),
 		token:   base64.RawURLEncoding.EncodeToString(word),
 	}
 	back.server = &http.Server{
@@ -88,7 +86,7 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	go func() {
-		err := back.server.Serve(held)
+		err := back.server.Serve(target)
 		if errors.Is(err, http.ErrServerClosed) {
 			return
 		}
@@ -106,7 +104,6 @@ func newLoopback(held net.Listener, files *fileServer, stopped func(error)) (*Lo
 // on while the person moves the window to another vault, and what it plays is
 // the file it opened.
 //
-// A path leaving the vault, and a file the vault leaves alone, are refused by
 // the vault's own reader. That is the boundary, and it is the same one every
 // other question crosses.
 func (l *Loopback) getHandler() http.Handler {
@@ -171,7 +168,7 @@ const errNoVaultNamed = "no vault of that name"
 //
 // A range is answered as a range, so a player seeks in an hour of speech and
 // holds the second it is on. The whole file is never in memory.
-func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string) {
+func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath string) {
 	named, err := parseFingerprint(r.URL.Query())
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -187,13 +184,12 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 		return
 	}
 	// A copy of what a url points at is kept in the vault's own folder,
-	// which the vault's reader is refused, so it is served from the store it
 	// was written to. Every other file of the vault is
 	// served as the file it is.
-	if strings.HasSuffix(at, domain.URLExtension) && h.serveCopy(w, r, target, at, named) {
+	if strings.HasSuffix(targetPath, domain.URLExtension) && h.serveCopy(w, r, target, targetPath, named) {
 		return
 	}
-	opened, err := h.openFile.Execute(r.Context(), target, at, named)
+	opened, err := h.openFile.Execute(r.Context(), target, targetPath, named)
 	if err != nil {
 		refuse(w, err)
 		return
@@ -214,13 +210,13 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, at string)
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
 func (h *fileServer) serveCopy(
-	w http.ResponseWriter, r *http.Request, held domain.Vault, at string, named document.Fingerprint,
+	w http.ResponseWriter, r *http.Request, target domain.Vault, pos string, named document.Fingerprint,
 ) bool {
-	points := h.files.getArtifactAddress(r.Context(), held, domain.Fingerprint{Path: at, Kind: domain.KindURL})
+	points := h.files.getArtifactAddress(r.Context(), target, domain.Fingerprint{Path: pos, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
 		return false
 	}
-	video, found := h.openCopy.Execute(r.Context(), held, points)
+	video, found := h.openCopy.Execute(r.Context(), target, points)
 	if !found {
 		return false
 	}

@@ -55,7 +55,7 @@ export interface ShownRow {
   /** Holding at least one row. */
   readonly hasRows: boolean
   /** What it holds is drawn. */
-  readonly open: boolean
+  readonly isOpen: boolean
 }
 
 /**
@@ -66,7 +66,7 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
   const shownRows: ShownRow[] = []
 
   const walk = (children: readonly Row[], parent: RowId | null, level: number): void => {
-    children.forEach((row, at) => {
+    children.forEach((row, index) => {
       const inside = row.rows ?? []
       const isOpened = row.hasChildren && open.has(row.id)
 
@@ -76,9 +76,9 @@ export function flatten(rows: readonly Row[], open: ReadonlySet<RowId>): readonl
         hasChildren: row.hasChildren,
         parent,
         level,
-        isLast: at === children.length - 1,
+        isLast: index === children.length - 1,
         hasRows: inside.length > 0,
-        open: isOpened,
+        isOpen: isOpened,
       })
 
       if (isOpened) walk(inside, row.id, level + 1)

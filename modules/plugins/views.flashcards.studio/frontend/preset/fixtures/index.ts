@@ -58,14 +58,13 @@ afterEach(() => {
 const rows = (tab: ReturnType<typeof mount>): readonly string[] =>
   tab.findAll('[data-preset-row] [data-preset="name"]').map((one) => one.text())
 
-/** The heights a drawn path stands at, in the picture's own units. */
 const heights = (d: string): readonly number[] =>
   d
     .split(/[ML]/)
     .slice(1)
     .map((one) => Number(one.trim().split(' ')[1]))
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -77,10 +76,10 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
@@ -90,14 +89,14 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80, retained: 0.88 }),
     point({ reviews: 120, retained: 0.93 }),
   ],
-  now: { at: 2, value: 20, day: '' },
-  suggested: { at: 3, value: 30, day: '' },
+  now: { index: 2, value: 20, day: '' },
+  suggested: { index: 3, value: 30, day: '' },
   decks: 1,
   cards: 400,
   overdue: 0,
   unbegun: 0,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 /** What an answer counted the material at, and nothing where none has landed. */
@@ -113,7 +112,7 @@ export interface TabFixtureOptions {
 
 /** A tab standing at those settings, and everything it was asked to do. */
 const createTab = (
-  over: Partial<Curve> = {},
+  overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   options: TabFixtureOptions = {},
 ) => {
@@ -123,8 +122,8 @@ const createTab = (
   const state: PresetTabState = {
     id: 'Sanskrit.md',
     settings: shallowRef({ ...DEFAULTS, ...settings }),
-    curve: shallowRef(curve(over)),
-    material: shallowRef(counts === undefined ? getCounts(curve(over)) : counts),
+    curve: shallowRef(curve(overrides)),
+    material: shallowRef(counts === undefined ? getCounts(curve(overrides)) : counts),
     place,
     isWaiting: ref(isWaiting),
     bounds: shallowRef(BOUNDS),
@@ -134,9 +133,9 @@ const createTab = (
     hasExternalChange: ref(false),
     reload: () => void isDone.push('reload'),
     chooseGoal: (goal) => void isDone.push(`choose ${goal}`),
-    moveSlider: (at) => {
-      place.value = at
-      isDone.push(`move ${at}`)
+    moveSlider: (pos) => {
+      place.value = pos
+      isDone.push(`move ${pos}`)
     },
     flushPending: () => void isDone.push('flushPending'),
     updateSetting: (field, value) => void isDone.push(`type ${field} ${value}`),
@@ -146,11 +145,11 @@ const createTab = (
 }
 
 const mountPresetTab = (
-  over: Partial<Curve> = {},
+  overrides: Partial<Curve> = {},
   settings: Partial<Settings> = {},
   options: TabFixtureOptions = {},
 ) => {
-  const one = createTab(over, settings, options)
+  const one = createTab(overrides, settings, options)
   return { ...one, tab: mount(PresetTab, { props: { state: one.state } }) }
 }
 

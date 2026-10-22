@@ -23,7 +23,6 @@ export const NOTE = 'note'
 const SCHEMED = /^([A-Za-z0-9+\-.]+):\/\/([\s\S]*)$/
 
 /**
- * Reads what stands between the brackets.
  *
  * An alias after `|` is how the link is read in the sentence and a fragment
  * after `#` names a place inside the note. Neither is part of the address.
@@ -83,5 +82,5 @@ export const getWikilinks = (text: string): readonly Wikilink[] => {
 }
 
 /** The wikilink a position in a text falls inside, and nothing where it falls in none. */
-export const findWikilink = (text: string, at: number): Wikilink | null =>
-  getWikilinks(text).find((one) => at >= one.at && at <= one.to) ?? null
+export const findWikilink = (text: string, pos: number): Wikilink | null =>
+  getWikilinks(text).find((one) => pos >= one.at && pos <= one.to) ?? null

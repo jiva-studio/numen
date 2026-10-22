@@ -80,12 +80,12 @@ func (c *faceCache) get(key deckKey) (deckFaces, bool) {
 	}
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	at, target := c.decks[key]
+	pos, target := c.decks[key]
 	if !target {
 		return deckFaces{}, false
 	}
-	c.order.MoveToFront(at)
-	return getEntry(at).deckFaces, true
+	c.order.MoveToFront(pos)
+	return getEntry(pos).deckFaces, true
 }
 
 // put stores a deck parsed in the given epoch, then forgets the least recently
@@ -110,14 +110,14 @@ func (c *faceCache) put(epoch uint64, key deckKey, e deckFaces, limit int) {
 
 // remove forgets the deck at key. The caller holds the lock.
 func (c *faceCache) remove(key deckKey) {
-	if at, target := c.decks[key]; target {
-		c.removeElement(at)
+	if pos, target := c.decks[key]; target {
+		c.removeElement(pos)
 	}
 }
 
-func (c *faceCache) removeElement(at *list.Element) {
-	one := getEntry(at)
-	c.order.Remove(at)
+func (c *faceCache) removeElement(pos *list.Element) {
+	one := getEntry(pos)
+	c.order.Remove(pos)
 	delete(c.decks, one.key)
 	c.total -= len(one.faces)
 }
@@ -154,12 +154,12 @@ func (c *faceCache) invalidate(vault domain.VaultID, paths []string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.epoch++
-	for key, at := range c.decks {
+	for key, item := range c.decks {
 		if key.vault != vault {
 			continue
 		}
-		if slices.Contains(paths, key.path) || usesAny(getEntry(at).stencils, paths) {
-			c.removeElement(at)
+		if slices.Contains(paths, key.path) || usesAny(getEntry(item).stencils, paths) {
+			c.removeElement(item)
 		}
 	}
 }
@@ -202,8 +202,8 @@ func (c *faceCache) hasDeck(key deckKey) bool {
 
 // getEntry returns the deck an element of the order stands for. Only decks are put in
 // it, so the zero entry is never seen.
-func getEntry(at *list.Element) *cached {
-	one, _ := at.Value.(*cached)
+func getEntry(pos *list.Element) *cached {
+	one, _ := pos.Value.(*cached)
 	if one == nil {
 		return &cached{}
 	}

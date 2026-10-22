@@ -1,25 +1,22 @@
 <script setup lang="ts">
-/**
- * What a person reaches for in a section's heading: the name, typed into where
- * it stands, and at its end the way to be rid of the section.
- */
 import { NameBox } from '../../../name-box'
 import { RemoveButton } from '../../../remove-button'
 import type { NameEntryState } from '../../../../model/nameEntry'
 import type { Objection } from '../../../../lib/order'
 
+/* ----------------------------- Props & Emits ------------------------------ */
 defineProps<{
-  /** The naming this box types into. */
+  /** Name entry state managing this section heading input. */
   naming: NameEntryState<Objection>
-  /** What is being typed over, as the naming addresses it. */
-  over: string
-  /** What the section is announced by while it carries no name. */
+  /** Unique target identifier for the section. */
+  targetId: string
+  /** Placeholder and accessible name when title is empty. */
   stem: string
-  /** What is in the box, which the cell behind it is set to. */
+  /** Current section name text. */
   text: string
-  /** What says why the name cannot be used, and nothing while it can. */
+  /** Validation description element ID. */
   describedBy: string | null
-  /** What the button to be rid of the section is announced as. */
+  /** Accessible label for the remove button. */
   removeLabel: string
 }>()
 
@@ -31,12 +28,10 @@ const emit = defineEmits<{
 <template>
   <span class="section-heading__held">
     <span class="section-heading__name" :data-typed="text || stem">
-      <!-- The box is as wide as the cell behind it comes to, and the cell
-           is set to the text. -->
       <NameBox
         class="section-heading__title rounded-node min-w-0"
         :naming="naming"
-        :over="over"
+        :target-id="targetId"
         :stem="stem"
         :described-by="describedBy"
       />
@@ -49,17 +44,13 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-/* What a person reaches for is the name and what stands at its end, and it is
-   as wide as the two of them come to. */
 .section-heading__held {
   display: flex;
   align-items: center;
   min-inline-size: 0;
 }
 
-/* The box is as wide as what is typed in it: the same text is set behind the
-   input, unseen, and the box takes the width it comes to. Past twenty
-   characters' room the text scrolls inside. */
+/* Sizing container matches width to mirror content up to max-inline-size. */
 .section-heading__name {
   display: inline-grid;
   flex: 0 1 auto;
@@ -74,7 +65,7 @@ const emit = defineEmits<{
   font-weight: 500;
 }
 
-/* The cell behind the box is the box's own size, so the two hold the same air. */
+/* Hidden mirror pseudo-element matching input text for auto-sizing. */
 .section-heading__name::after {
   content: attr(data-typed);
   padding: var(--card-row-pad-block, 0.125rem) var(--card-row-pad-inline, 0.375rem);
@@ -82,15 +73,11 @@ const emit = defineEmits<{
   white-space: pre;
 }
 
-/* The name is the heading of everything below it, and stands in the middle of
-   the rule it is typed on. */
 .section-heading__title {
   text-align: center;
 }
 
-/* What the section is pressed to be rid of is not drawn until its name is
-   reached for, by the pointer or by the keyboard. Until then it takes no room
-   at all, and the line runs unbroken up to the name. */
+/* Reveal action buttons on hover or focus within. */
 .section-heading__actions {
   display: flex;
   flex: none;

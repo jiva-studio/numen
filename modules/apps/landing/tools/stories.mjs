@@ -14,7 +14,7 @@ import { fileURLToPath } from 'node:url'
 
 // By path and not by name: this file is run by `node` with nothing installed,
 // and a package name is a link `npm ci` makes.
-import { faults, proves, stories } from '../../../tools/stories/stories.mjs'
+import { faults, proves, stories } from '../../../tools/ci.stories/stories.mjs'
 
 import { SHOTS } from './shots.mjs'
 

@@ -100,8 +100,8 @@ function onBringNodes(nodes: readonly string[], relation: PlexRelation) {
   void props.state.dropNodes(nodes, relation)
 }
 
-function onOpenMenu(node: string, at: { x: number; y: number }, opening: MenuTrigger) {
-  props.state.openMenu({ node, at, opening })
+function onOpenMenu(node: string, position: { x: number; y: number }, opening: MenuTrigger) {
+  props.state.openMenu({ node, at: position, opening })
 }
 
 function onShowNode(node: string, how: PlexDestination) {
@@ -136,14 +136,14 @@ function onDismissQuickLink() {
   props.state.dismissQuickLink()
 }
 
-function onEdgeMenu(pair: string, at: { x: number; y: number }) {
+function onEdgeMenu(pair: string, position: { x: number; y: number }) {
   const rect = rootElement.value?.getBoundingClientRect()
   if (rect) {
-    const localX = at.x - rect.left
-    const localY = at.y - rect.top
+    const localX = position.x - rect.left
+    const localY = position.y - rect.top
     props.state.openLinkInspector(pair, { x: localX, y: localY })
   } else {
-    props.state.openLinkInspector(pair, at)
+    props.state.openLinkInspector(pair, position)
   }
 }
 
@@ -222,7 +222,7 @@ function closeMenu(id?: string) {
       :items="items"
       :at="menu!.at"
       :trigger="menu!.opening"
-      open
+      is-open
       @choose="onChooseMenuItem"
       @dismiss="onDismissMenu"
     >
@@ -265,10 +265,6 @@ function closeMenu(id?: string) {
   min-block-size: 0;
 }
 
-/* Lucide draws on a 24 grid, and the stroke is given in those units.
-   A node's title stands in a `foreignObject`, and nothing drawn in one is given
-   an opacity of its own: WebKit paints what it makes a layer of at the corner
-   of the picture. Anything quieter is asked for in the colour. */
 .plex__icon {
   inline-size: 0.875rem;
   block-size: 0.875rem;

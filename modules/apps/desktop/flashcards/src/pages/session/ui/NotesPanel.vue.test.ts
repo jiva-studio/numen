@@ -23,7 +23,7 @@ const createNeighbour = (more: Partial<Neighbour> = {}): Neighbour => ({
 })
 
 /** The panel over one deck, with the session around it standing in for it. */
-const createPanel = (around: DeckNeighbourhood): NotesPanelState => {
+const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
   const open = ref(false)
   return useNotesPanel({
     open: () => open.value,
@@ -32,14 +32,14 @@ const createPanel = (around: DeckNeighbourhood): NotesPanelState => {
     },
     vault: () => 'one',
     deck: () => 'decks/Words.md',
-    getDeckNeighbourhood: async () => around,
+    getDeckNeighbourhood: async () => neighbourhood,
     showNotice: () => {},
   })
 }
 
 /** The panel, opened and drawn. */
-const mountPanel = async (around: DeckNeighbourhood) => {
-  const panel = createPanel(around)
+const mountPanel = async (neighbourhood: DeckNeighbourhood) => {
+  const panel = createPanel(neighbourhood)
   await panel.openPanel()
   return mount(NotesPanel, { props: { held: panel } })
 }
@@ -129,6 +129,6 @@ describe('a reading opened on one note', () => {
     expect(scrolled).toHaveBeenCalledTimes(1)
     expect(one.findAll('.reading__note')[1]?.element).toBe(scrolled.mock.instances[0])
     // What was sought has been scrolled to, and the next card does not seek it.
-    expect(panel.at.value).toBe('')
+    expect(panel.col.value).toBe('')
   })
 })

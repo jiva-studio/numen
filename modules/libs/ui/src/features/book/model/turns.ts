@@ -16,8 +16,8 @@ import {
   type Flow,
   type Mark,
 } from '../lib/spread'
-import type { PageTurn } from '@/shared/lib/turn'
-import { turnTo } from '../lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import { goToPage } from '../lib/pageStep'
 import type { SettledBookProps } from '../lib/props'
 
 function translatePaper(text: HTMLElement, to: string, how: 'smooth' | 'auto'): void {
@@ -37,7 +37,7 @@ export interface BookTurnsOptions {
   readonly flow: ComputedRef<Flow>
   readonly spreadCount: ComputedRef<number>
   readonly marks: Readonly<ShallowRef<readonly Mark[]>>
-  readonly onMove: (at: number) => void
+  readonly onMove: (pos: number) => void
 }
 
 /** `onMove` is what the reader says when the offset in front changes. */
@@ -73,7 +73,6 @@ export function useBookTurns(options: BookTurnsOptions) {
     translatePaper(options.paper.value, to, how)
   }
 
-  /** What stands in front now, said once, and nothing while nothing does. */
   const announce = () => {
     const now = inFront(options.marks.value, options.flow.value, activeSpread.value)
     if (now !== undefined && now !== options.props.at) options.onMove(now)
@@ -89,11 +88,11 @@ export function useBookTurns(options: BookTurnsOptions) {
     inFront(options.marks.value, options.flow.value, activeSpread.value) ?? options.props.at
 
   /** The spread one offset of the book's text falls on. */
-  const getSpreadOf = (at: number) => findSpreadAt(options.marks.value, options.flow.value, at)
+  const getSpreadOf = (pos: number) => findSpreadAt(options.marks.value, options.flow.value, pos)
 
   /** What a turn of the page asks for, and where it lands. */
-  const turn = (way: PageTurn) => {
-    const to = turnTo(way, {
+  const turn = (way: PageNavigationAction) => {
+    const to = goToPage(way, {
       spread: activeSpread.value,
       count: options.spreadCount.value,
       span: options.props.span,
@@ -103,5 +102,14 @@ export function useBookTurns(options: BookTurnsOptions) {
     if (to.offset !== undefined) options.onMove(to.offset)
   }
 
-  return { standing: activeSpread, front, leftInChapter, stand, goTo, getKeptOffset, getSpreadOf, turn }
+  return {
+    standing: activeSpread,
+    front,
+    leftInChapter,
+    stand,
+    goTo,
+    getKeptOffset,
+    getSpreadOf,
+    turn,
+  }
 }

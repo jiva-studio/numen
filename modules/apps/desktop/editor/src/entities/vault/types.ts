@@ -15,7 +15,6 @@ export interface Vault {
   readonly isMissing: boolean
 }
 
-/** Every vault the installation holds, and the one this window is showing. */
 export interface VaultList {
   readonly vaults: readonly Vault[]
   /** The identity of the vault in front of the person. */
@@ -29,7 +28,6 @@ export interface VaultList {
  */
 export type VaultResult = Result<Vault | null, VaultErrorCode>
 
-/** Why the list is as it was, or why the window is showing what it was showing. */
 export type VaultErrorCode =
   | 'unreadable'
   | 'copy'
@@ -43,7 +41,6 @@ export type VaultErrorCode =
 
 /** The vaults an installation holds, and what changes them. */
 export interface Vaults {
-  /** Every vault on the list, and which of them this window is showing. */
   list(): Promise<VaultList>
   /**
    * This machine's own folder picker, put in front of the person. It answers

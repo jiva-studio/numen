@@ -35,7 +35,7 @@ func TestAShapeShortOfAFolderReachesBackAsAnError(t *testing.T) {
 	if why == nil {
 		t.Fatal("a folder the walk could not enter was not reported")
 	}
-	if shape.known["shut/deep"] {
+	if shape.indexed["shut/deep"] {
 		t.Error("a folder behind one that could not be entered is in the shape")
 	}
 }

@@ -9,11 +9,11 @@ import (
 	"testing"
 )
 
-type fakeEngine struct{ at string }
+type fakeEngine struct{ libPath string }
 
 func TestOpenRejectsWhenTheHostGaveNoLibrary(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	_, _, err := r.Open(t.Context(), "", func(at string) (*fakeEngine, error) {
+	_, _, err := r.Open(t.Context(), "", func(libPath string) (*fakeEngine, error) {
 		t.Fatal("load ran with no library")
 		return nil, nil
 	})
@@ -29,19 +29,19 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	var r Runtime[*fakeEngine]
 	var loads atomic.Int32
 	var received []string
-	r.Register(func(at string) { received = append(received, at) })
-	load := func(at string) (*fakeEngine, error) {
+	r.Register(func(libPath string) { received = append(received, libPath) })
+	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
-		return &fakeEngine{at: at}, nil
+		return &fakeEngine{libPath: libPath}, nil
 	}
 
-	first, at, err := r.Open(t.Context(), "/lib/one.so", load)
-	if err != nil || at != "/lib/one.so" || first.at != "/lib/one.so" {
-		t.Fatalf("Open() = %v, %q, %v", first, at, err)
+	first, libPath, err := r.Open(t.Context(), "/lib/one.so", load)
+	if err != nil || libPath != "/lib/one.so" || first.libPath != "/lib/one.so" {
+		t.Fatalf("Open() = %v, %q, %v", first, libPath, err)
 	}
-	second, at, err := r.Open(t.Context(), "/lib/two.so", load)
-	if err != nil || second != first || at != "/lib/one.so" {
-		t.Fatalf("second Open() = %v, %q, %v, want the first engine", second, at, err)
+	second, libPath, err := r.Open(t.Context(), "/lib/two.so", load)
+	if err != nil || second != first || libPath != "/lib/one.so" {
+		t.Fatalf("second Open() = %v, %q, %v, want the first engine", second, libPath, err)
 	}
 	if got := loads.Load(); got != 1 {
 		t.Errorf("load ran %d times, want 1", got)
@@ -49,8 +49,8 @@ func TestOpenLoadsOnceAndRunsEveryHookOnce(t *testing.T) {
 	if len(received) != 1 || received[0] != "/lib/one.so" {
 		t.Errorf("hooks heard %v, want [/lib/one.so]", received)
 	}
-	if engine, at := r.GetLoaded(); engine != first || at != "/lib/one.so" {
-		t.Errorf("GetLoaded() = %v, %q", engine, at)
+	if engine, loadedPath := r.GetLoaded(); engine != first || loadedPath != "/lib/one.so" {
+		t.Errorf("GetLoaded() = %v, %q", engine, loadedPath)
 	}
 	if !r.IsAvailable("") {
 		t.Error("an open runtime is not available")
@@ -65,11 +65,11 @@ func TestOpenTriesAgainAfterALoadFails(t *testing.T) {
 	}); !errors.Is(err, broken) {
 		t.Fatalf("Open() = %v, want %v", err, broken)
 	}
-	if engine, at := r.GetLoaded(); engine != nil || at != "" {
-		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, at)
+	if engine, loadedPath := r.GetLoaded(); engine != nil || loadedPath != "" {
+		t.Fatalf("GetLoaded() = %v, %q after a failed load", engine, loadedPath)
 	}
-	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(at string) (*fakeEngine, error) {
-		return &fakeEngine{at: at}, nil
+	engine, _, err := r.Open(t.Context(), "/lib/one.so", func(libPath string) (*fakeEngine, error) {
+		return &fakeEngine{libPath: libPath}, nil
 	})
 	if err != nil || engine == nil {
 		t.Fatalf("Open() = %v, %v, want an engine", engine, err)
@@ -81,11 +81,11 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	var loads atomic.Int32
-	load := func(at string) (*fakeEngine, error) {
+	load := func(libPath string) (*fakeEngine, error) {
 		loads.Add(1)
 		close(entered)
 		<-release
-		return &fakeEngine{at: at}, nil
+		return &fakeEngine{libPath: libPath}, nil
 	}
 
 	isDone := make(chan *fakeEngine)
@@ -117,14 +117,14 @@ func TestAWaiterPreservesOnItsOwnContextAndTheNextGetsTheEngine(t *testing.T) {
 
 func TestALibraryIsAvailableWhereTheFileIs(t *testing.T) {
 	var r Runtime[*fakeEngine]
-	at := filepath.Join(t.TempDir(), "libonnxruntime.so")
-	if r.IsAvailable(at) {
+	libPath := filepath.Join(t.TempDir(), "libonnxruntime.so")
+	if r.IsAvailable(libPath) {
 		t.Error("a missing file is available")
 	}
-	if err := os.WriteFile(at, nil, 0o644); err != nil {
+	if err := os.WriteFile(libPath, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if !r.IsAvailable(at) {
+	if !r.IsAvailable(libPath) {
 		t.Error("a file that is there is not available")
 	}
 }

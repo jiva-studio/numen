@@ -9,7 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { dayAfter, parseDay, daysBetween, getDayName, isDay } from './day'
 
 /**
- * The zone the machine stands in, as vitest moves it. A test that moves it puts
  * it back, since every other test here reads it.
  */
 const inZone = (zone: string, run: () => void) => {
@@ -44,12 +43,12 @@ describe('a day as it is written down', () => {
 
 describe('the instant a written day is read at', () => {
   it('is noon, which no clock change moves off the day', () => {
-    const at = parseDay('2026-03-29')
+    const date = parseDay('2026-03-29')
 
-    expect(at.getFullYear()).toBe(2026)
-    expect(at.getMonth()).toBe(2)
-    expect(at.getDate()).toBe(29)
-    expect(at.getHours()).toBe(12)
+    expect(date.getFullYear()).toBe(2026)
+    expect(date.getMonth()).toBe(2)
+    expect(date.getDate()).toBe(29)
+    expect(date.getHours()).toBe(12)
   })
 })
 

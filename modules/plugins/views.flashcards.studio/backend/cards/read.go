@@ -18,7 +18,6 @@ import (
 //
 // A deck is a file holding what would otherwise be a folder of notes, so it is
 // bounded several times a note's. The size is asked of the file before it is
-// opened, so a deck over the bound is refused with none of its bytes read.
 const MaxBytes = 8 << 20
 
 // DeckContents is one deck as a read hands it over.
@@ -37,7 +36,6 @@ type DeckContents struct {
 	// one card splices. It is empty for any outcome but Ok.
 	Raw string
 	// Stencils is where the wikilink under each card's heading lands, keyed by
-	// what stands in the brackets. A name that reaches no note is absent.
 	Stencils map[string]string
 	// Fingerprint is what the file was when it was asked about, which is before
 	// its bytes were read.
@@ -57,9 +55,6 @@ type StencilContents struct {
 }
 
 // Read hands over a deck or a stencil, read out of the vault.
-//
-// A file is asked about before it is opened, so what is refused for its size is
-// refused without being read.
 type Read struct {
 	readers ports.VaultReaders
 	// links answers where the wikilink a card names its stencil by lands. A
@@ -111,7 +106,6 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 }
 
 // GetCardStencils is the stencil each card of a deck is cut by, keyed by what
-// stands in the card's brackets. A name that reaches no note, or reaches a note
 // that is not a stencil, carries a stencil of nothing.
 //
 // The two files are read against each other here, which is what says which of a
@@ -119,15 +113,14 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 func (u Read) GetCardStencils(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
 ) (map[string]format.Stencil, error) {
-	at, err := getStencilPaths(ctx, u.links, v.ID, path, d)
+	pos, err := getStencilPaths(ctx, u.links, v.ID, path, d)
 	if err != nil {
 		return nil, err
 	}
-	by, _, err := u.readStencils(ctx, v, at)
-	return by, err
+	delta, _, err := u.readStencils(ctx, v, pos)
+	return delta, err
 }
 
-// getStencilPaths is where each card's wikilink lands, keyed by what stands in
 // the brackets. The link is written in the deck, so it resolves against the
 // deck's own folder the way every name in that file does.
 func getStencilPaths(
@@ -149,29 +142,28 @@ func getStencilPaths(
 	if err != nil {
 		return nil, err
 	}
-	at := make(map[string]string, len(reached))
+	pos := make(map[string]string, len(reached))
 	for raw, one := range reached {
-		at[raw] = one.To
+		pos[raw] = one.To
 	}
-	return at, nil
+	return pos, nil
 }
 
 // readStencils reads the stencil the cards of a deck are cut by, keyed by what stands
 // in the brackets. Each file is opened once however many cards name it.
 //
 // A name landing on a note that is not a stencil is left out of the stencils
-// and stands in ordinary, so the cards written under it are marked.
 func (u Read) readStencils(
-	ctx context.Context, v domain.Vault, at map[string]string,
-) (by map[string]format.Stencil, ordinary map[string]bool, err error) {
-	if len(at) == 0 {
+	ctx context.Context, v domain.Vault, pos map[string]string,
+) (stencils map[string]format.Stencil, ordinary map[string]bool, err error) {
+	if len(pos) == 0 {
 		return nil, nil, nil
 	}
-	read := make(map[string]format.Stencil, len(at))
-	isLoose := make(map[string]bool, len(at))
-	by = make(map[string]format.Stencil, len(at))
-	ordinary = make(map[string]bool, len(at))
-	for content, path := range at {
+	read := make(map[string]format.Stencil, len(pos))
+	isLoose := make(map[string]bool, len(pos))
+	stencils = make(map[string]format.Stencil, len(pos))
+	ordinary = make(map[string]bool, len(pos))
+	for content, path := range pos {
 		target, observed := read[path]
 		if !observed {
 			found, err := u.Stencil(ctx, v, path)
@@ -184,21 +176,21 @@ func (u Read) readStencils(
 			read[path] = target
 			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
 		}
-		by[content] = target
+		stencils[content] = target
 		ordinary[content] = isLoose[path]
 	}
-	return by, ordinary, nil
+	return stencils, ordinary, nil
 }
 
 // getNonStencilProblems returns one problem per card whose wikilink reaches a note that is not
 // a stencil. The values are read, and no face lays the card out.
 func getNonStencilProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
-	for at, card := range d.Cards {
+	for item, card := range d.Cards {
 		if !ordinary[card.StencilLink] {
 			continue
 		}
-		out = append(out, format.OnCard(at, format.FaultNotAStencil,
+		out = append(out, format.OnCard(item, format.FaultNotAStencil,
 			card.StencilLink+" is a note and not a stencil, so this card is shown by no face"))
 	}
 	return out
@@ -222,7 +214,7 @@ func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (Stencil
 // readNote is the file at a path: what the vault says is there, and the note
 // its bytes parse to once everything that would refuse them has been asked.
 func (u Read) readNote(
-	ctx context.Context, v domain.Vault, path string, bound int64,
+	ctx context.Context, v domain.Vault, path string, maxSize int64,
 ) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
@@ -239,7 +231,7 @@ func (u Read) readNote(
 		if ref.Kind != domain.KindNote {
 			return domain.Note{}, ref, note.NotANote, nil
 		}
-		if ref.Size > bound {
+		if ref.Size > maxSize {
 			return domain.Note{}, ref, note.TooLarge, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):

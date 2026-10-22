@@ -17,7 +17,6 @@ import type { DeckNeighbourhood, Neighbour } from '../api/notes'
 
 /** What the panel asks of the window it is drawn in. */
 export interface NotesPanelDeps {
-  /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
    * The panel asked for, or put away. The window can only be showing one thing,
@@ -26,7 +25,6 @@ export interface NotesPanelDeps {
   readonly showPanel: (open: boolean) => void
   /** The vault the session is on. */
   readonly vault: () => string
-  /** The deck the card in front of the person stands in, empty between cards. */
   readonly deck: () => string
   /** What the deck is joined to. */
   readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>
@@ -80,7 +78,7 @@ function useDeckNotes(
 
 export function useNotesPanel(deps: NotesPanelDeps) {
   const open = computed(() => deps.open())
-  const at = ref('')
+  const activePath = ref('')
   const { notes, unread, isWorking, fetchNotes, clearNotes } = useDeckNotes(
     deps.getDeckNeighbourhood,
     deps.showNotice,
@@ -89,7 +87,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   const openPanel = async (note = '') => {
     const deck = deps.deck()
     if (!deck) return
-    at.value = note
+    activePath.value = note
     deps.showPanel(true)
     await fetchNotes(deps.vault(), deck)
   }
@@ -99,12 +97,12 @@ export function useNotesPanel(deps: NotesPanelDeps) {
   }
 
   const readItem = () => {
-    at.value = ''
+    activePath.value = ''
   }
 
   const endSession = () => {
     clearNotes()
-    at.value = ''
+    activePath.value = ''
     deps.showPanel(false)
   }
 
@@ -112,7 +110,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
     notes,
     unread,
     isWorking,
-    at,
+    col: activePath,
     open,
     openPanel,
     closePanel,

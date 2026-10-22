@@ -4,7 +4,7 @@ import Disc from './Disc.vue'
 
 const disc = (props: Record<string, unknown> = {}, slots: Record<string, string> = {}) =>
   mount(Disc, {
-    props: { action: 'send', disabled: false, sendLabel: 'Send', stopLabel: 'Stop', ...props },
+    props: { action: 'send', isDisabled: false, sendLabel: 'Send', stopLabel: 'Stop', ...props },
     slots,
   })
 
@@ -21,7 +21,7 @@ describe('the disc', () => {
   })
 
   it('says nothing while it is barred', () => {
-    expect(disc({ disabled: true }).get('button').attributes('disabled')).toBeDefined()
+    expect(disc({ isDisabled: true }).get('button').attributes('disabled')).toBeDefined()
   })
 
   it('remains one disc either way, and changes the glyph on it', () => {

@@ -67,7 +67,8 @@ export const WORDS = {
   /** The preset this note is: the note itself, or the one a deck is scheduled by. */
   preset: 'Open the preset',
   /** What a file is made as, or a command leads to, when the plugin that offers it is off or did not start. */
-  notOffered: 'That is not offered: the plugin that makes it is off or did not start.',
+  unavailable:
+    'That action is unavailable: the plugin providing it is disabled or failed to start.',
   newNote: 'New note',
   newDeck: 'New deck',
   newStencil: 'New stencil',
@@ -174,7 +175,7 @@ export const WORDS = {
   asking: 'Confirm',
   several: (files: number) => `${files} files`,
   answer: 'Choose an answer',
-  kept: 'Nothing happens to it',
+  retainedNotice: 'Nothing happens to it',
   keepsVault: 'Keep the vault',
   removeVaultAction: 'Remove',
   stays: 'The folder stays where it is',
@@ -199,7 +200,6 @@ export const WORDS = {
   stale: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
-  /** This build cannot do the run at all, and stops offering it. */
   unrunnable: 'this installation of numen cannot do that at all',
   /** What the action panel of the palette is called. */
   actions: 'Actions',

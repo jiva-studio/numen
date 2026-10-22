@@ -13,15 +13,15 @@ type mockScheduler struct {
 }
 
 func (m mockScheduler) GetName() string { return m.name }
-func (m mockScheduler) Next(s review.Schedule, at time.Time, r review.Rating) review.Schedule {
-	s.Last = at
-	s.Due = at.Add(24 * time.Hour)
+func (m mockScheduler) Next(s review.Schedule, pos time.Time, r review.Rating) review.Schedule {
+	s.Last = pos
+	s.Due = pos.Add(24 * time.Hour)
 	s.Reps++
 	return s
 }
-func (m mockScheduler) Endings(s review.Schedule, at time.Time) (good, again review.Schedule) {
-	good = m.Next(s, at, review.Good)
-	again = m.Next(s, at, review.Again)
+func (m mockScheduler) Endings(s review.Schedule, pos time.Time) (good, again review.Schedule) {
+	good = m.Next(s, pos, review.Good)
+	again = m.Next(s, pos, review.Again)
 	return good, again
 }
 func (m mockScheduler) IsSpaced(_ review.Schedule) bool { return true }

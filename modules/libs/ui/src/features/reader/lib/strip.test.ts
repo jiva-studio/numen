@@ -15,7 +15,6 @@ import {
 } from './strip'
 import type { Size } from '@/shared/lib/geometry'
 
-/** A viewport a page stands in whole: tall enough for a page, and a few wide. */
 const VIEWPORT: Size = { width: 900, height: 800 }
 
 /** Every page the same shape, the way a book is. */
@@ -35,7 +34,9 @@ describe('the row a document makes', () => {
 
     expect(stripLayout.starts[0]).toBe(GAP)
     for (let page = 1; page < 4; page++) {
-      expect(stripLayout.starts[page]).toBe(stripLayout.starts[page - 1]! + stripLayout.widths[page - 1]! + GAP)
+      expect(stripLayout.starts[page]).toBe(
+        stripLayout.starts[page - 1]! + stripLayout.widths[page - 1]! + GAP,
+      )
     }
     expect(stripLayout.length).toBe(stripLayout.starts[3]! + stripLayout.widths[3]! + GAP)
   })
@@ -122,22 +123,22 @@ describe('which pages are drawn', () => {
 
   it('draws around wherever the row has been scrolled to', () => {
     const stripLayout = row(book(500), VIEWPORT, 1)
-    const at = 300
+    const targetPage = 300
 
-    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[at]!)
+    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
 
-    expect(visiblePages).toContain(at)
+    expect(visiblePages).toContain(targetPage)
     expect(visiblePages).not.toContain(0)
     expect(visiblePages.length).toBeLessThan(500)
   })
 
-  it('draws a page just left behind, in case the hand arrives back', () => {
+  it('pre-renders previous page for reverse navigation', () => {
     const stripLayout = row(book(500), VIEWPORT, 1)
-    const at = 300
+    const targetPage = 300
 
-    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[at]!)
+    const visiblePages = getPagesWithin(stripLayout, VIEWPORT, stripLayout.starts[targetPage]!)
 
-    expect(visiblePages).toContain(at - 1)
+    expect(visiblePages).toContain(targetPage - 1)
   })
 
   it('draws exactly the pages that touch the reach either side of the viewport', () => {
@@ -168,7 +169,9 @@ describe('which page is in front', () => {
     const half = stripLayout.starts[4]! - stripLayout.widths[4]! / 2
 
     expect(inFront(stripLayout, VIEWPORT, stripLayout.starts[4]!)).toBe(4)
-    expect(inFront(stripLayout, { width: stripLayout.widths[0]!, height: VIEWPORT.height }, half)).toBe(4)
+    expect(
+      inFront(stripLayout, { width: stripLayout.widths[0]!, height: VIEWPORT.height }, half),
+    ).toBe(4)
   })
 
   it('is the last page at the end of the row', () => {
@@ -221,7 +224,6 @@ describe('where the row remains', () => {
 
 describe('how close a page is drawn', () => {
   it('goes no further out than a whole page in the viewport', () => {
-    // Further than that is a page smaller than the viewport it stands in, which
     // is room going to waste.
     expect(clampZoom(FURTHEST / NEARER)).toBe(FURTHEST)
     expect(clampZoom(FURTHEST)).toBeCloseTo(FURTHEST, 5)

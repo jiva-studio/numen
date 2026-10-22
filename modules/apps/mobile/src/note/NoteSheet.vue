@@ -1,11 +1,4 @@
 <script setup lang="ts">
-/**
- * One note, written where it is read. The prose is what the file holds below
- * its frontmatter, and what was read is carried back with the write, so a note
- * changed elsewhere meanwhile is refused.
- *
- * The editor stands in the page's own root, under the layer this draws.
- */
 import { onMounted, ref, useTemplateRef } from 'vue'
 import { Editor } from '@numen/ui'
 import { formatErrorCodeMessage } from '@numen/wire'

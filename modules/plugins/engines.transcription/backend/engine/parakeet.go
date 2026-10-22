@@ -108,7 +108,7 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 	threads := cfg.sessionThreads()
 	for _, one := range []struct {
 		dst     **ort.Session
-		at      string
+		path    string
 		kind    string
 		threads int
 	}{
@@ -117,10 +117,10 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		{&out.joiner, found.joiner, "joiner", threads.joiner},
 		{&out.segmenter, found.segmenter, "segmenter model", threads.segmenter},
 	} {
-		session, err := openSession(engine, one.at, one.threads)
+		session, err := openSession(engine, one.path, one.threads)
 		if err != nil {
 			out.Close()
-			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.at, err)
+			return nil, fmt.Errorf("the %s %s: %w", one.kind, one.path, err)
 		}
 		*one.dst = session
 	}
@@ -230,8 +230,8 @@ func (t *Transcriber) decodeWith(ctx context.Context, out map[string]*ort.Value,
 		frames:  frames.width,
 		blank:   t.blank,
 		encoded: encoded,
-		encoder: func(at int, dst []float32) []float32 {
-			frames.copyFrame(at, dst)
+		encoder: func(pos int, dst []float32) []float32 {
+			frames.copyFrame(pos, dst)
 			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
@@ -304,9 +304,9 @@ func readFrameCount(counted *ort.Value) (int, bool) {
 
 // copyFrame writes the frame at a position into dst, one value from each
 // channel.
-func (f encodedFrames) copyFrame(at int, dst []float32) {
+func (f encodedFrames) copyFrame(pos int, dst []float32) {
 	for c := range dst {
-		dst[c] = f.data[c*f.stride+at]
+		dst[c] = f.data[c*f.stride+pos]
 	}
 }
 
@@ -408,8 +408,7 @@ func (t *Transcriber) makeRawRuns(b *decodeBuffers, useRaw bool) (decoderRun, jo
 }
 
 // predict is one position of the predictor: the token that was said and the
-// state it leaves behind.
-func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []float32) ([]float32, error) {
+func (t *Transcriber) predict(inputs map[string]*ort.Value, response, state, cell []float32) ([]float32, error) {
 	out, err := t.decoder.Run(inputs)
 	if err != nil {
 		return nil, err
@@ -424,7 +423,7 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 		into []float32
 		name string
 	}{
-		{said, outputFrames},
+		{response, outputFrames},
 		{state, outputState},
 		{cell, outputCell},
 	} {
@@ -432,7 +431,7 @@ func (t *Transcriber) predict(inputs map[string]*ort.Value, said, state, cell []
 			return nil, err
 		}
 	}
-	return said, nil
+	return response, nil
 }
 
 // copyPrediction copies the output of the predictor with the given name into

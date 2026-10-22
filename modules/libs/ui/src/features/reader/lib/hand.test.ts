@@ -3,7 +3,6 @@ import { DRAG_THRESHOLD, Hand, getWheelOffset } from './hand'
 
 describe('a wheel turned over the row', () => {
   it('moves the row sideways where there is nothing below', () => {
-    // A whole page stands in the room, so nothing is above or below it and a
     // wheel turned down means the next page.
     expect(getWheelOffset({ x: 0, y: 120 }, false)).toEqual({ x: 120, y: 0 })
     expect(getWheelOffset({ x: 0, y: -120 }, false)).toEqual({ x: -120, y: 0 })

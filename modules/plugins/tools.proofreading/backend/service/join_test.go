@@ -22,7 +22,7 @@ func TestASentenceBrokenAcrossLinesIsInsertBackTogether(t *testing.T) {
 		t.Fatalf("%v put right, want one line", placed)
 	}
 	if placed[0].Number != 4 || placed[0].Last != 5 || !placed[0].IsJoined() {
-		t.Errorf("the run stands at %d-%d", placed[0].Number, placed[0].Last)
+		t.Errorf("run span is %d-%d", placed[0].Number, placed[0].Last)
 	}
 }
 

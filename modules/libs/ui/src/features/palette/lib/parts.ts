@@ -10,15 +10,14 @@ export interface PalettePart {
 
 /**
  * A line split into the runs that are why the item is here and the runs that
- * are not. A line nothing stands in is one run.
  *
  * The spans are counted in UTF-16 code units, which is how the text arrives and
  * how a string is sliced. A boundary landing inside a character is moved off it,
  * outwards, so no run ends on half of one.
  */
 // Stryker disable next-line ArrayDeclaration: the mutated default is ["Stryker was here"], whose one entry has no span bounds and is dropped as empty.
-export const getParts = (text: string, at: readonly Span[] = []): readonly PalettePart[] => {
-  const runs = mergeSpans(text, at)
+export const getParts = (text: string, spans: readonly Span[] = []): readonly PalettePart[] => {
+  const runs = mergeSpans(text, spans)
   const out: PalettePart[] = []
   let readItem = 0
   for (const run of runs) {
@@ -55,19 +54,19 @@ const mergeSpans = (text: string, at: readonly Span[]): Span[] => {
   return out
 }
 
-const clampToText = (text: string, at: number): number =>
-  Math.max(0, Math.min(Math.trunc(at) || 0, text.length))
+const clampToText = (text: string, pos: number): number =>
+  Math.max(0, Math.min(Math.trunc(pos) || 0, text.length))
 
 /**
  * The nearest boundary that does not fall inside a character, from `at` in the
  * direction given. A character outside the basic plane is two code units, and a
  * span that names one of them names half a character.
  */
-const whole = (text: string, at: number, by: 1 | -1): number => {
-  let here = at
-  while (isInsideCharacter(text, here)) here += by
+const whole = (text: string, pos: number, delta: 1 | -1): number => {
+  let here = pos
+  while (isInsideCharacter(text, here)) here += delta
   return here
 }
 
-const isInsideCharacter = (text: string, at: number): boolean =>
-  isTrailing(text.charCodeAt(at)) && isLeading(text.charCodeAt(at - 1))
+const isInsideCharacter = (text: string, pos: number): boolean =>
+  isTrailing(text.charCodeAt(pos)) && isLeading(text.charCodeAt(pos - 1))

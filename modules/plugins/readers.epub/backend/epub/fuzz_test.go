@@ -22,7 +22,6 @@ const mostPerBook = 256 << 20
 const mostFuzzed = 1 << 20
 
 // A book read without complaint is one the rest of the application can hold:
-// every spine document, every named part and every printed page stands at an
 // offset inside the text that was read, in the order they are read in, and each
 // carries a name on one line. The tier the book says its parts came from is the
 // tier that produced them.
@@ -41,7 +40,6 @@ func FuzzRead(f *testing.F) {
 	f.Add(whole[:len(whole)/2])
 	f.Add(flipByte(whole, len(whole)/3))
 	// The central directory says one thing and the entry says another: the two
-	// names disagree, which is what a shop's re-zipper leaves behind.
 	f.Add(renameEntry(whole))
 	// An entry whose header claims a size it has not got.
 	f.Add(overstateEntrySize(whole))
@@ -143,7 +141,7 @@ func FuzzRead(f *testing.F) {
 				len(raw), len(book.Text))
 		}
 
-		at := -1
+		pos := -1
 		for i, doc := range book.Documents {
 			if doc.Length < 0 || doc.Offset < 0 || doc.Offset+doc.Length > len(book.Text) {
 				t.Fatalf("document %d runs from %d for %d in %d bytes of text",
@@ -151,40 +149,40 @@ func FuzzRead(f *testing.F) {
 			}
 			// A document holding nothing begins where the one before it ended,
 			// so the order is what holds and not the distance.
-			if doc.Offset < at {
-				t.Fatalf("document %d begins at %d, before the one at %d", i, doc.Offset, at)
+			if doc.Offset < pos {
+				t.Fatalf("document %d begins at %d, before the one at %d", i, doc.Offset, pos)
 			}
-			at = doc.Offset
+			pos = doc.Offset
 		}
 
-		at = -1
+		pos = -1
 		for _, part := range book.Parts {
 			if part.Offset < 0 || part.Offset > len(book.Text) {
 				t.Fatalf("%q begins at %d in %d bytes of text",
 					part.Title, part.Offset, len(book.Text))
 			}
-			if part.Offset < at {
-				t.Fatalf("%q begins at %d, before the part at %d", part.Title, part.Offset, at)
+			if part.Offset < pos {
+				t.Fatalf("%q begins at %d, before the part at %d", part.Title, part.Offset, pos)
 			}
-			at = part.Offset
+			pos = part.Offset
 			if part.Level < 0 {
-				t.Fatalf("%q stands at depth %d", part.Title, part.Level)
+				t.Fatalf("part %q is at depth %d", part.Title, part.Level)
 			}
 			if !oneLine(part.Title) {
 				t.Fatalf("a part is named %q, which is not one line of a name", part.Title)
 			}
 		}
 
-		at = -1
+		pos = -1
 		for _, page := range book.Pages {
 			if page.Offset < 0 || page.Offset > len(book.Text) {
 				t.Fatalf("page %q begins at %d in %d bytes of text",
 					page.Label, page.Offset, len(book.Text))
 			}
-			if page.Offset < at {
-				t.Fatalf("page %q begins at %d, before the page at %d", page.Label, page.Offset, at)
+			if page.Offset < pos {
+				t.Fatalf("page %q begins at %d, before the page at %d", page.Label, page.Offset, pos)
 			}
-			at = page.Offset
+			pos = page.Offset
 			if !oneLine(page.Label) {
 				t.Fatalf("a page is labelled %q, which is not one line of a label", page.Label)
 			}
@@ -224,9 +222,9 @@ func oneLine(name string) bool {
 
 // isAtOrBefore is whether the document of this name begins at or before the
 // offset.
-func isAtOrBefore(documents []epub.Document, at string, offset int) bool {
+func isAtOrBefore(documents []epub.Document, pos string, offset int) bool {
 	for _, doc := range documents {
-		if doc.Path == at && doc.Offset <= offset {
+		if doc.Path == pos && doc.Offset <= offset {
 			return true
 		}
 	}
@@ -253,13 +251,13 @@ func clone(parts map[string][]byte) map[string][]byte {
 }
 
 // flipByte is the file with one byte of it written over by another.
-func flipByte(raw []byte, at int) []byte {
+func flipByte(raw []byte, pos int) []byte {
 	if len(raw) == 0 {
 		return raw
 	}
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
-	changed[at%len(changed)] ^= 0xff
+	changed[pos%len(changed)] ^= 0xff
 	return changed
 }
 
@@ -268,8 +266,8 @@ func flipByte(raw []byte, at int) []byte {
 func renameEntry(raw []byte) []byte {
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
-	if at := bytes.Index(changed, []byte("OEBPS/first.xhtml")); at >= 0 {
-		copy(changed[at:], []byte("OEBPS/other.xhtml"))
+	if pos := bytes.Index(changed, []byte("OEBPS/first.xhtml")); pos >= 0 {
+		copy(changed[pos:], []byte("OEBPS/other.xhtml"))
 	}
 	return changed
 }
@@ -281,8 +279,8 @@ func overstateEntrySize(raw []byte) []byte {
 	copy(changed, raw)
 	// The uncompressed size stands twenty-four bytes into a central directory
 	// header, four bytes wide and least significant first.
-	if at := bytes.Index(changed, []byte("PK\x01\x02")); at >= 0 && at+28 <= len(changed) {
-		copy(changed[at+24:at+28], []byte{0xff, 0xff, 0xff, 0x7f})
+	if pos := bytes.Index(changed, []byte("PK\x01\x02")); pos >= 0 && pos+28 <= len(changed) {
+		copy(changed[pos+24:pos+28], []byte{0xff, 0xff, 0xff, 0x7f})
 	}
 	return changed
 }
@@ -290,7 +288,6 @@ func overstateEntrySize(raw []byte) []byte {
 // The markup of a document is the text of that document: the same walk writes
 // both, and a reader takes its offsets off the markup and counts none itself. So
 // whatever the file, the words of the markup are the words of the text, in
-// order, and every element stands inside the document it was read from.
 //
 // A document the book was read from is always answered; nothing else is.
 func FuzzMarkup(f *testing.F) {
@@ -351,9 +348,9 @@ func FuzzMarkup(f *testing.F) {
 // book wrote, this is what the browser parses.
 //
 // The runs say the document's text, in the order the markup writes them.
-func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Markup) {
+func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, markup *epub.Markup) {
 	t.Helper()
-	root := parseHTML(t, drawn.HTML())
+	root := parseHTML(t, markup.HTML())
 	for _, name := range []string{
 		"script", "style", "link", "meta", "iframe", "frame", "object", "embed",
 		"form", "input", "button", "base", "svg", "math", "template",
@@ -383,7 +380,7 @@ func checkHTML(t *testing.T, book *epub.Book, doc epub.Document, drawn *epub.Mar
 
 	var response strings.Builder
 	for _, one := range offsets(t, root) {
-		response.WriteString(one.said)
+		response.WriteString(one.text)
 	}
 	if want := book.Text[doc.Offset : doc.Offset+doc.Length]; response.String() != want {
 		t.Fatalf("the runs of %s say %d bytes and the document is %d",
@@ -398,8 +395,8 @@ var sendable = map[string]bool{
 }
 
 // schemeOf is the scheme an address names, and empty for one that names none.
-func schemeOf(said string) string {
-	head, _, named := strings.Cut(said, ":")
+func schemeOf(response string) string {
+	head, _, named := strings.Cut(response, ":")
 	if !named || strings.ContainsAny(head, "/?# \t\r\n") {
 		return ""
 	}

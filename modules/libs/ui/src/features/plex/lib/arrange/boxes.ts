@@ -27,7 +27,6 @@ export const getBox = (node: PlacedNode, apart: number): Box => ({
  * The room a title takes up, step by step along the run it is set on.
  *
  * A title set across the picture is a ribbon and not a rectangle: the box
- * around the whole of a diagonal run stands over most of a quarter of the
  * picture, and a line crossing anywhere near it would find nowhere to be.
  */
 export interface BoxSpan {
@@ -42,8 +41,8 @@ export function getTitleBoxes(
 ): Box[] {
   const { from, to } = span
   const boxes: Box[] = []
-  for (let at = from; at < to; at += step) {
-    boxes.push(boxAt(at, Math.min(at + step, to)))
+  for (let offset = from; offset < to; offset += step) {
+    boxes.push(boxAt(offset, Math.min(offset + step, to)))
   }
   return boxes
 }

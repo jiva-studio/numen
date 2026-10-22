@@ -6,7 +6,6 @@
 
 /** One place the keyboard stopped. */
 export interface Stop {
-  /** Where it stands, said so a person can find it in the source. */
   readonly where: string
   /** What a screen reader would call it. */
   readonly name: string

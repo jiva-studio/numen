@@ -52,12 +52,12 @@ export const documents: Documents = {
       fingerprint: formatFingerprint(answer.fingerprint) ?? '',
     }
   },
-  getPageUrl: (...[path, pageNumber, wide, fingerprint = '']: [string, number, number, string?]) =>
-    `${getAssetUrl(path)}/pages/${pageNumber}?wide=${wide}&${getBytesQuery(fingerprint)}`,
+  getPageUrl: (...[path, pageNumber, width, fingerprint = '']: [string, number, number, string?]) =>
+    `${getAssetUrl(path)}/pages/${pageNumber}?wide=${width}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() => client.ocr.readOcr({ path, spans: [...spans] }))
-    return spans.map((_, at) => {
-      const run = answer.runs[at]
+    return spans.map((_, index) => {
+      const run = answer.runs[index]
       return run ? toHighlightedPages(run) : []
     })
   },

@@ -86,7 +86,6 @@ interface FrontTab {
 /** The tab in front, as the window's tabs hand it out. */
 const front = ref<FrontTab | null>(null)
 
-/** A kind that says what its tab stands over. */
 const createKind = (on: unknown) => ({ name: 'kind', getTarget: vi.fn(() => on) })
 
 beforeEach(() => {
@@ -193,7 +192,7 @@ describe('what the window answers about the tab in front', () => {
 
   it('is what the kind of the tab says it remains over', () => {
     const kind = createKind({ file: 'a.md', path: 'a', title: 'A', source: 'src' })
-    front.value = { id: 't1', kind, state: { held: 1 } }
+    front.value = { id: 't1', kind, state: { target: 1 } }
     h.f.vaults.makes.value = new Map([['a.md', { flashcards: true }]])
     const window = useWindow()
 
@@ -208,7 +207,7 @@ describe('what the window answers about the tab in front', () => {
       vault: { id: 'vault' },
       isReady: true,
     })
-    expect(kind.getTarget).toHaveBeenCalledWith({ held: 1 })
+    expect(kind.getTarget).toHaveBeenCalledWith({ target: 1 })
   })
 
   it('has made nothing from a file that nothing was made from', () => {
@@ -429,7 +428,11 @@ describe('a preset opened', () => {
 
   it('is requested of the kinds of the window with the type the vault names the file', async () => {
     mockFileKind('deck')
-    h.f.windowTabs.resolveCommand.mockResolvedValue({ ok: true, kind: 'preset', at: 'Presets/Fast.md' })
+    h.f.windowTabs.resolveCommand.mockResolvedValue({
+      ok: true,
+      kind: 'preset',
+      at: 'Presets/Fast.md',
+    })
     useWindow()
 
     await h.args.commands.openPreset('a.md')
@@ -440,7 +443,11 @@ describe('a preset opened', () => {
 
   it('says why it leads nowhere', async () => {
     mockFileKind('deck')
-    h.f.windowTabs.resolveCommand.mockResolvedValue({ ok: false, text: 'no preset', severity: 'caution' })
+    h.f.windowTabs.resolveCommand.mockResolvedValue({
+      ok: false,
+      text: 'no preset',
+      severity: 'caution',
+    })
     useWindow()
 
     await h.args.commands.openPreset('a.md')

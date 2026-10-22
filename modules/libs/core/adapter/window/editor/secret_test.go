@@ -15,7 +15,6 @@ import (
 var errNoKeychain = errors.New("no keychain on this machine")
 
 // The key the window sends is handed on with the plugin and the secret, and a
-// refusal is a status the window can word.
 func TestAKeyIsHandedOnAndAErrorIsSaid(t *testing.T) {
 	var got [3]string
 	handler := &settingsHandler{

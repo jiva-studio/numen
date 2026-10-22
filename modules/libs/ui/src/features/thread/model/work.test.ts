@@ -9,7 +9,11 @@ const create = () => {
   const sendTurn = vi.fn<(turn: Turn) => void>()
   const drop = vi.fn<(id: string) => void>()
   const locations = new Map<string, SourceLocation>()
-  const line = createWorkLine({ put: sendTurn, drop, locations, waitWords: 'Working' }, 'work', 'wait')
+  const line = createWorkLine(
+    { put: sendTurn, drop, locations, waitWords: 'Working' },
+    'work',
+    'wait',
+  )
   return { line, put: sendTurn, drop, locations }
 }
 

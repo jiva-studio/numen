@@ -39,10 +39,10 @@ type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
 const createAsked = (id: string, text: string, state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
+  state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
 const createAnswered = (id: string, text: string, state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
+  state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 const renderThread =
   (turns: readonly Turn[]): Render =>
@@ -158,12 +158,12 @@ interface Position {
 const getWordPosition = (root: Element, word: string): Position => {
   const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
   for (let node = walk.nextNode(); node; node = walk.nextNode()) {
-    const at = (node.nodeValue ?? '').indexOf(word)
-    if (at < 0) continue
+    const offset = (node.nodeValue ?? '').indexOf(word)
+    if (offset < 0) continue
 
     const range = document.createRange()
-    range.setStart(node, at)
-    range.setEnd(node, at + word.length)
+    range.setStart(node, offset)
+    range.setEnd(node, offset + word.length)
     const box = range.getBoundingClientRect()
     return { x: box.x + box.width / 2, y: box.y + box.height / 2 }
   }
@@ -171,14 +171,14 @@ const getWordPosition = (root: Element, word: string): Position => {
 }
 
 /** The same place told to the window the story is framed in. */
-const mapToFrame = (at: Position): Position => {
+const mapToFrame = (point: Position): Position => {
   const frame = window.frameElement as HTMLElement | null
-  if (!frame) return at
+  if (!frame) return point
 
   const box = frame.getBoundingClientRect()
   return {
-    x: box.x + at.x * (box.width / window.innerWidth),
-    y: box.y + at.y * (box.height / window.innerHeight),
+    x: box.x + point.x * (box.width / window.innerWidth),
+    y: box.y + point.y * (box.height / window.innerHeight),
   }
 }
 

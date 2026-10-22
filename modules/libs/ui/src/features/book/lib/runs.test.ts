@@ -135,10 +135,10 @@ describe('a stretch of the book marked at its current position', () => {
 const createPaper = (markup: string, lefts: readonly number[]): HTMLElement => {
   const paper = createMarkupPaper(markup)
   const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')
-  runs.forEach((run, at) => {
-    if (at >= lefts.length) return
+  runs.forEach((run, index) => {
+    if (index >= lefts.length) return
     Object.defineProperty(run, 'getClientRects', {
-      value: () => [{ left: lefts[at] }],
+      value: () => [{ left: lefts[index] }],
       configurable: true,
     })
   })

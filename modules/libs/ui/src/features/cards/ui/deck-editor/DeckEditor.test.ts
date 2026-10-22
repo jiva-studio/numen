@@ -91,10 +91,10 @@ const pressKey = (on: Element, key: string): KeyboardEvent => {
 }
 
 /** A card picked up and the drag ended without it being let go anywhere. */
-const dragOff = async (wrapper: Grid, id: string, over: string | null): Promise<void> => {
+const dragOff = async (wrapper: Grid, id: string, targetId: string | null): Promise<void> => {
   const grip = getTile(wrapper, id).get('[data-grip]')
   await grip.trigger('dragstart')
-  if (over !== null) await getTile(wrapper, over).trigger('dragover')
+  if (targetId !== null) await getTile(wrapper, targetId).trigger('dragover')
   await grip.trigger('dragend')
 }
 
@@ -610,8 +610,6 @@ describe('DeckEditor', () => {
     })
 
     describe('the cards before the first section', () => {
-      /* A deck whose every card stands in a section, so the place before the
-         first of them holds none. */
       const INSIDE: readonly DeckCard[] = [
         { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
         { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
@@ -644,7 +642,10 @@ describe('DeckEditor', () => {
 
       it('move nothing where the card dragged up already remains there', () => {
         const target = mountSectioned()
-        const press = pressKey(getTile(target, 'loose').get('.card-header__grip').element, 'ArrowUp')
+        const press = pressKey(
+          getTile(target, 'loose').get('.card-header__grip').element,
+          'ArrowUp',
+        )
         expect(press.defaultPrevented).toBe(false)
         expect(target.emitted('move')).toBeUndefined()
       })

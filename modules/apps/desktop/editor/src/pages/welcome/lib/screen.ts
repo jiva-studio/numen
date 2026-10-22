@@ -11,7 +11,6 @@ import { WORDS as own } from '../words'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
-  /** The vault the window is showing, and nothing where it shows none. */
   readonly vault: string
   /** Whether that vault has been read and can be asked to do anything. */
   readonly isReady: boolean
@@ -54,7 +53,7 @@ export const SETTINGS = 'settings'
  * is a key that works.
  */
 export const createWelcomeActions = (
-  at: CurrentVault,
+  currentVault: CurrentVault,
   words: Words,
   agent: string,
 ): readonly WelcomeAction[] => {
@@ -63,8 +62,8 @@ export const createWelcomeActions = (
     text: words.settings,
     ...createRowKeys(SETTINGS, agent),
   }
-  if (at.vault === '') return [settings]
-  const note: readonly WelcomeAction[] = at.isReady
+  if (currentVault.vault === '') return [settings]
+  const note: readonly WelcomeAction[] = currentVault.isReady
     ? [{ id: 'note', text: words.newNote, ...createRowKeys('note', agent) }]
     : []
   return [

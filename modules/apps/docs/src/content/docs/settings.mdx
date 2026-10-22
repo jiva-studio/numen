@@ -26,7 +26,7 @@ At the head of the page is the path of the file the page is a face onto, and **O
 | **A day of review** | the hour a day of cards begins at. |
 | **Transcribing recordings** | whether recordings are listened to unasked, how large one may be, and what corrects the transcript afterwards. |
 | **OCR** | which model reads a scanned page, and what corrects the text afterwards. |
-| **Indexing** | the model your notes are turned into vectors by, for [search by meaning](/meaning/). |
+| **Indexing** | the model your notes are turned into vectors by, for [semantic search](/semantic-search/). |
 | **The agent** | which assistant answers, its model, how far it may go, and what it may reach. |
 
 ### The window
@@ -42,16 +42,16 @@ At the head of the page is the path of the file the page is a face onto, and **O
 
 The two sizes are multipliers over what was designed. The interface goes from **0.8 to 2** and
 the text you read from **0.8 to 1.75**; hairlines, borders and focus rings stay one physical
-line under either. A number outside those bounds is refused, said out loud, and left in the file
+line under either. A number outside those bounds is rejected, reported with an alert, and left in the file
 exactly as you wrote it.
 
 ### A day of review
 
-**A day begins at** is the hour an answer stops counting for yesterday and starts counting for today — four in the morning unless you say otherwise, and noon at the latest. It is a fact about your clock rather than about a subject, which is why it is here and not in a [preset](/review/#a-preset).
+**A day begins at** sets the hour an answer stops counting for yesterday and starts counting for today — 04:00 by default, up to 12:00 maximum. This setting configures clock rollover independently of review [presets](/review/#a-preset).
 
 ### Models
 
-**OCR model**, **Embedding model** and **The agent's model** are lists rather than fields. What the file holds is always on the list and always the one in force; what this build offers stands beside it, and a model reached over the network can be typed in.
+**OCR model**, **Embedding model** and **The agent's model** provide selection dropdowns. The value in the settings file remains active, options provided by the current build appear in the list, and remote models can be entered directly.
 
 A model that runs on your own machine says underneath whether its files are **on this machine** or **not fetched yet**. Nothing is downloaded until the work that needs it is asked for.
 
@@ -61,7 +61,7 @@ numen produces two texts with a model, and each can be corrected afterwards by a
 
 The switch under each says whether it happens by itself, as soon as the text is made. Off, you ask for it by hand on the book or the recording in front of you.
 
-The profiles themselves are written in the file, under `indexing.proofreading.profiles` — see [correcting what OCR read](/reading/#correcting-what-ocr-read).
+The profiles themselves are written in the file, under `indexing.proofreading.profiles` — see [correcting what OCR read](/reader/#correcting-what-ocr-read).
 
 ### The agent
 
@@ -83,7 +83,7 @@ A row on the page and the command of the same name go through one piece of code,
 
 Every setting stands in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file** at the top of the settings page opens it in a tab of its own, drawn as the JSON it is. Unlike a note it is not written as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> keeps it, which is the chord a note is kept by.
 
-A file changed underneath the tab stops saving there and then and asks the same two questions a note does: [keep mine, or take the file's](/writing/#when-the-file-changed-underneath-you). What you typed that is not settings this build can read is refused, and the tab says so rather than writing it.
+A file changed underneath the tab stops saving there and then and asks the same two questions a note does: [keep mine, or take the file's](/editor/#when-the-file-changed-underneath-you). Content that does not match recognized configuration schemas is rejected, and the tab reports an error without saving invalid changes.
 
 It is yours to edit. Fields you leave out keep their defaults, so a file naming one setting is a
 complete file. Keys numen does not know are carried through untouched, and a file that does not
@@ -107,14 +107,14 @@ parse is never written over — numen says so and leaves it alone.
 | | |
 | --- | --- |
 | `appearance` | how the window is drawn: the theme, which half of it, the two sizes, and what a node hangs. |
-| `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [search by meaning](/meaning/). |
-| `indexing.recognition` | how a scanned book is read, and what corrects that text. See [reading scanned books](/reading/). |
+| `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [semantic search](/semantic-search/). |
+| `indexing.recognition` | how a scanned book is read, and what corrects that text. See [reading scanned books](/reader/). |
 | `indexing.proofreading` | the profiles those corrections are made at, and nothing by default. |
 | `indexing.transcription` | how a recording is listened to, and what corrects the transcript. See [recordings](/recordings/). |
 | `indexing.transcribe_recordings` | whether a recording numen holds no transcript for is listened to unasked, and how large one may be. |
 | `review` | the hour a day of review begins at. Everything else about review is a [preset](/review/#a-preset) in the vault. |
 | `agent` | which assistant answers in the panel, and how it is started. See [the agent](/agent/). |
-| `naming` | whether a note's title and its filename are kept as one name. See [writing notes](/writing/#renaming). |
+| `naming` | whether a note's title and its filename are kept as one name. See [writing notes](/editor/#renaming). |
 
 [Every setting](/reference/) is the complete list, taken from the application itself.
 

@@ -57,8 +57,8 @@ const getCells = (state: EditorState, row: SyntaxNode): Cell[] => {
       continue
     }
     if (emptyFrom !== null) {
-      const at = Math.min(emptyFrom + 1, child.from)
-      cells.push({ from: at, to: at, text: '' })
+      const pos = Math.min(emptyFrom + 1, child.from)
+      cells.push({ from: pos, to: pos, text: '' })
     }
     emptyFrom = child.to
   }
@@ -100,10 +100,7 @@ export const getRows = (table: Table): Row[] => {
 
 /** What a cell reads as. */
 export const readCell = (text: string): string =>
-  text
-    .replace(/\\\|/g, '|')
-    .replace(/\\\\/g, '\\')
-    .trim()
+  text.replace(/\\\|/g, '|').replace(/\\\\/g, '\\').trim()
 
 /** What typing in a cell writes. */
 export const writeCell = (text: string): string =>

@@ -158,8 +158,8 @@ func touch(b *testing.B, path string, seed int) {
 	}
 	// Modification time is the invalidation key, and a benchmark writes faster
 	// than the clock ticks.
-	at := time.Now().Add(time.Duration(seed+1) * time.Second)
-	if err := os.Chtimes(path, at, at); err != nil {
+	pos := time.Now().Add(time.Duration(seed+1) * time.Second)
+	if err := os.Chtimes(path, pos, pos); err != nil {
 		b.Fatal(err)
 	}
 }
@@ -216,12 +216,12 @@ func BenchmarkSearchDuringScan(b *testing.B) {
 }
 
 func touchAll(root string) error {
-	at := time.Now()
+	pos := time.Now()
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		return os.Chtimes(p, at, at)
+		return os.Chtimes(p, pos, pos)
 	})
 }
 

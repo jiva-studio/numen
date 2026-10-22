@@ -19,7 +19,7 @@ const props = withDefaults(
     max?: number
     /** What an arrow key moves it by. */
     step?: number
-    disabled?: boolean
+    isDisabled?: boolean
     /** The words standing in for a number nobody has typed. */
     placeholder?: string
     class?: HTMLAttributes['class']
@@ -28,7 +28,7 @@ const props = withDefaults(
     min: DEFAULT_BOUNDS.min,
     max: DEFAULT_BOUNDS.max,
     step: DEFAULT_BOUNDS.step,
-    disabled: false,
+    isDisabled: false,
     id: '',
     placeholder: '',
   },
@@ -65,7 +65,7 @@ const onKeyDown = (event: KeyboardEvent) => {
     void commit()
     return
   }
-  if (applyKey(event.key, props.disabled)) event.preventDefault()
+  if (applyKey(event.key, props.isDisabled)) event.preventDefault()
 }
 
 defineExpose({
@@ -85,7 +85,7 @@ defineExpose({
     role="spinbutton"
     data-slot="number-field"
     :value="typed"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :placeholder="placeholder"
     :aria-valuemin="min"
     :aria-valuemax="max"

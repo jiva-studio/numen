@@ -53,21 +53,21 @@ func getInterfaceProbes(file *ast.File) []string {
 func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	var wrong []string
 	var read int
-	err := filepath.WalkDir("..", func(at string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(at, ".go") {
+	err := filepath.WalkDir("..", func(pos string, entry fs.DirEntry, err error) error {
+		if err != nil || entry.IsDir() || !strings.HasSuffix(pos, ".go") {
 			return err
 		}
-		pkg := getPackage("..", at)
-		if strings.HasSuffix(at, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
+		pkg := getPackage("..", pos)
+		if strings.HasSuffix(pos, "_test.go") || isAdapter(pkg) || isShared(pkg) || isMachinery(pkg) {
 			return nil
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), pos, nil, 0)
 		if err != nil {
 			return err
 		}
 		read++
 		for _, one := range getInterfaceProbes(file) {
-			wrong = append(wrong, at+" asserts to "+one)
+			wrong = append(wrong, pos+" asserts to "+one)
 		}
 		return nil
 	})
@@ -85,23 +85,22 @@ func TestNoCodeOfTheCoreProbesAValueForAnotherInterface(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds an
 // assertion to an anonymous interface and to a port, in a type switch as well,
 // and lets through an assertion to a concrete type and to an error.
 func TestWhatTheInterfaceProbeRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "probe.go", `package p
 
-func probe(held any, reader port.VaultReader) {
-	_, _ = held.(interface{ Concurrency() int })
+func probe(target any, reader port.VaultReader) {
+	_, _ = target.(interface{ Concurrency() int })
 	_, _ = reader.(port.SharedOpener)
-	switch held.(type) {
+	switch target.(type) {
 	case port.Trash:
 	case *os.File:
 	}
-	_, _ = held.(string)
-	_, _ = held.(*Embedder)
-	_, _ = held.(error)
-	switch held {
+	_, _ = target.(string)
+	_, _ = target.(*Embedder)
+	_, _ = target.(error)
+	switch target {
 	case 1:
 	}
 }
@@ -132,12 +131,12 @@ func internalTypes(file *ast.File) []string {
 	}
 	var found []string
 	ast.Inspect(file, func(node ast.Node) bool {
-		at, is := node.(*ast.SelectorExpr)
+		pos, is := node.(*ast.SelectorExpr)
 		if !is {
 			return true
 		}
-		if from, is := at.X.(*ast.Ident); is && local[from.Name] {
-			found = append(found, from.Name+"."+at.Sel.Name)
+		if from, is := pos.X.(*ast.Ident); is && local[from.Name] {
+			found = append(found, from.Name+"."+pos.Sel.Name)
 		}
 		return true
 	})
@@ -145,7 +144,6 @@ func internalTypes(file *ast.File) []string {
 }
 
 // An adapter outside the core cannot name a package under internal/, so a port
-// that does is a port it cannot answer. What a port speaks in is declared in
 // domain/ or beside the port.
 func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	dir := filepath.Join("..", "port")
@@ -154,16 +152,16 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 		t.Fatal(err)
 	}
 	var read int
-	for _, at := range entries {
-		if strings.HasSuffix(at, "_test.go") {
+	for _, item := range entries {
+		if strings.HasSuffix(item, "_test.go") {
 			continue
 		}
-		file, err := parser.ParseFile(token.NewFileSet(), at, nil, 0)
+		file, err := parser.ParseFile(token.NewFileSet(), item, nil, 0)
 		if err != nil {
 			t.Fatal(err)
 		}
 		read++
-		rel := "port/" + filepath.Base(at)
+		rel := "port/" + filepath.Base(item)
 		for _, one := range internalTypes(file) {
 			t.Errorf("%s names %s: a port speaks in the core's own types", rel, one)
 		}
@@ -175,7 +173,6 @@ func TestNoPortNamesATypeFromInternal(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds a
 // type of a package under internal/, by whatever name the file imports it, and
 // lets through the domain's, the standard library's and a selector on a value.
 func TestWhatThePortInternalRuleRefuses(t *testing.T) {

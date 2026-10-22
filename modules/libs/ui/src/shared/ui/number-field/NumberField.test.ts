@@ -174,7 +174,7 @@ describe('the arrow keys', () => {
   })
 
   it('leave a field nobody may type into at its current position', async () => {
-    const field = mountField({ disabled: true })
+    const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'ArrowUp' })
     expect(getEmitted(field)).toEqual([])
   })
@@ -208,7 +208,7 @@ describe('the other keys a spin button answers', () => {
   })
 
   it('leaves a field nobody may type into at its current position', async () => {
-    const field = mountField({ disabled: true })
+    const field = mountField({ isDisabled: true })
     await field.get('input').trigger('keydown', { key: 'End' })
     await field.get('input').trigger('keydown', { key: 'PageUp' })
     expect(getEmitted(field)).toEqual([])
@@ -283,7 +283,6 @@ describe('what a screen reader is told', () => {
     expect(mountField().get('input').attributes('aria-valuetext')).toBeUndefined()
   })
 
-  // A line refused with no number to announce is refused in silence, and the
   // eye can see what the ear is not told.
   it('reads out a line that is no number, where no number remains with it', async () => {
     const field = mountField({ modelValue: null })
@@ -319,7 +318,6 @@ describe('a number set from outside', () => {
     expect(field.get('input').element.value).toBe('60.0')
   })
 
-  // A line refused stands for no number, so a field emptied from outside is
   // emptied whatever is standing in it.
   it('empties the field where the number is taken away under invalid text', async () => {
     const field = mountField()
@@ -336,7 +334,6 @@ describe('a number set from outside', () => {
  * A field whose caller holds the value and may refuse one.
  *
  * Passing the value and the listener both leaves the value the caller's: what
- * the field hands on is a request, and what stands in the field is whatever the
  * caller holds after it.
  */
 describe('a field the caller holds the value of', () => {

@@ -26,8 +26,6 @@ export type Field =
 export const FIELDS: readonly Field[] = [
   'newADay',
   'reviewsADay',
-  // The rule for what is learned stands over the value it reads, and one of
-  // those values is the target, so the rule stands over that too.
   'learned',
   'interval',
   'retention',
@@ -83,7 +81,12 @@ const ALWAYS: readonly Field[] = ['load', 'hasEvenLoad']
 
 /** The settings a goal schedules by, which are the rows the receipt draws. */
 export const getGoalFields = (goal: Goal, rule: Rule): readonly Field[] => {
-  const goalFields = new Set<Field>([...BUDGETS[goal], ...SPENDING[goal], ...LEARNS[rule], ...ALWAYS])
+  const goalFields = new Set<Field>([
+    ...BUDGETS[goal],
+    ...SPENDING[goal],
+    ...LEARNS[rule],
+    ...ALWAYS,
+  ])
   return FIELDS.filter((field) => goalFields.has(field))
 }
 
@@ -124,7 +127,6 @@ export const getShapeKey = (settings: Settings): string => {
   return [settings.goal, ...rest].join(' ')
 }
 
-/** The limits a control for a field is held to, and none where the field has none. */
 export type FieldLimits = { min: number; max: number } | Record<string, never>
 
 /** Retention is held as a share of one and shown as a percentage. */
@@ -133,7 +135,6 @@ const PERCENT = 100
 const toLimits = (bounds: Bounds | undefined, per = 1): FieldLimits =>
   bounds ? { min: bounds.least * per, max: bounds.most * per } : {}
 
-/** The limits a field's control is held to, in the unit the control shows. */
 export const getFieldLimits = (field: Field, bounds: SettingsBounds): FieldLimits => {
   if (field === 'newADay') return toLimits(bounds.newADay)
   if (field === 'reviewsADay') return toLimits(bounds.reviewsADay)

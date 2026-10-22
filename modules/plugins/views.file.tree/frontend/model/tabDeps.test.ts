@@ -7,13 +7,13 @@ import { createHost } from '../fixtures/host'
 import { createFilesTabDeps } from './tabDeps'
 import type { Entry, FilesTabState } from '../types'
 
-const entry = (over: Partial<Entry> = {}): Entry => ({
+const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'a.md',
   name: 'a.md',
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const createTabState = (one: Entry | null) =>

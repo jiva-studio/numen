@@ -49,7 +49,6 @@ const emit = defineEmits<{
 /**
  * The half last typed in, and nothing while neither has been. A box nothing has
  * been typed in holds no caret, so what half the caret is in is one thing and
- * where the caret stands in it is another.
  */
 const aim = shallowRef<Half | null>(null)
 

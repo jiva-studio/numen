@@ -41,13 +41,13 @@ func TestGetProviderOrIsTheFallbackForAuto(t *testing.T) {
 func TestResolveLibraryIsTheSettingThenTheFolderThenTheHost(t *testing.T) {
 	t.Setenv(EnvLibrary, "/host/libonnxruntime.so")
 	dir := t.TempDir()
-	at := filepath.Join(dir, GetLibraryName())
-	if err := os.WriteFile(at, []byte("a library"), 0o755); err != nil {
+	targetPath := filepath.Join(dir, GetLibraryName())
+	if err := os.WriteFile(targetPath, []byte("a library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	for _, one := range []struct{ configured, dir, want string }{
 		{"mine.so", dir, "mine.so"},
-		{"", dir, at},
+		{"", dir, targetPath},
 		{"", t.TempDir(), "/host/libonnxruntime.so"},
 		{"", "", "/host/libonnxruntime.so"},
 	} {
@@ -65,4 +65,3 @@ func TestGetSessionProviderOpensOnCPUUnlessHostNamesOne(t *testing.T) {
 		}
 	}
 }
-

@@ -288,18 +288,18 @@ func TestACurveReachesBackWithItsTwoPlaces(t *testing.T) {
 			len(grid), len(curve.GetAt()))
 	}
 	for _, place := range []struct {
-		what string
-		at   *v1.CurvePoint
+		what  string
+		point *v1.CurvePoint
 	}{
 		{"where the preset stands", curve.GetNow()},
 		{"what is suggested", curve.GetSuggested()},
 	} {
-		if place.at.GetAt() < 0 || int(place.at.GetAt()) >= len(grid) {
-			t.Errorf("%s is at place %d of %d", place.what, place.at.GetAt(), len(grid))
+		if place.point.GetAt() < 0 || int(place.point.GetAt()) >= len(grid) {
+			t.Errorf("%s is at place %d of %d", place.what, place.point.GetAt(), len(grid))
 		}
 	}
 	if value := curve.GetNow().GetValue(); value != 20 {
-		t.Errorf("the preset keeps 20 minutes a day and stands at %v", value)
+		t.Errorf("preset retention limit is %v", value)
 	}
 }
 
@@ -330,7 +330,6 @@ func TestThePresetsOfTheVaultAreListed(t *testing.T) {
 
 // TestAPresetMadeIsAPresetToRead. A preset is made where there was no file, and
 // it says it is a preset from the moment it exists. It names none of its
-// settings, so the read that follows stands at the defaults.
 func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 	f := newScheduling(t, pointed)
 
@@ -366,7 +365,7 @@ func TestAPresetMadeIsAPresetToRead(t *testing.T) {
 		t.Fatalf("the preset just made failed with %v", code)
 	}
 	if problems := read.Msg.GetPreset().GetProblems(); len(problems) != 0 {
-		t.Errorf("the preset just made stands against %v", problems)
+		t.Errorf("new preset validation errors: %v", problems)
 	}
 	if stops := read.Msg.GetPreset().GetStops(); stops != v1.StopReason_STOP_REASON_NOTHING {
 		t.Errorf("the preset just made schedules nothing, and says %v", stops)
@@ -496,7 +495,6 @@ func TestADeckIsNotScheduledByANoteThatIsNotAPreset(t *testing.T) {
 }
 
 // TestSchedulingAPresetThatIsNotThere. A path the vault holds no note at is
-// refused, and nothing is written.
 func TestSchedulingAPresetThatIsNotThere(t *testing.T) {
 	f := newScheduling(t, pointed)
 

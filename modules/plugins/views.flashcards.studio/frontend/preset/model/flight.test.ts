@@ -16,15 +16,15 @@ const createGate = () => {
   const reply = new Promise<PresetWriteResult>((resolve) => {
     open = resolve
   })
-  return { answered: reply, open }
+  return { promise: reply, open }
 }
 
 /** A vault whose writes answer in turn, recording the version each was based on. */
 const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)[]) => {
   const based: string[] = []
   const core = {
-    write: async (_path: string, _settings: unknown, at: string) => {
-      based.push(at)
+    write: async (_path: string, _settings: unknown, target: string) => {
+      based.push(target)
       return (await answers.shift()) ?? { ok: true, value: { at: 'v-last' } }
     },
   } as unknown as Presets
@@ -34,10 +34,14 @@ const createCore = (...answers: (PresetWriteResult | Promise<PresetWriteResult>)
 /** What the window was told, in order. */
 const createMessages = () => {
   const response: [string, string | undefined][] = []
-  return { said: response, writeMessage: (text: string, kind?: string) => void response.push([text, kind]) }
+  return {
+    messages: response,
+    said: response,
+    writeMessage: (text: string, kind?: string) => void response.push([text, kind]),
+  }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 const createFlightOpts = (core: Presets, writeMessage: MessageWriter = () => {}) => ({
   path: PATH,
@@ -65,13 +69,13 @@ describe('one write', () => {
   it('clears the transcript, and is based on the version last written', async () => {
     const flight = createWriteFlight()
     const { core, based } = createCore({ ok: true, value: { at: 'v1' } })
-    const { said, writeMessage } = createMessages()
+    const { messages, writeMessage } = createMessages()
 
     await sendWrite(flight, createFlightOpts(core, writeMessage))
     await sendWrite(flight, createFlightOpts(core, writeMessage))
 
     expect(based).toStrictEqual(['', 'v1'])
-    expect(said[0]).toStrictEqual(['', undefined])
+    expect(messages[0]).toStrictEqual(['', undefined])
   })
 
   it('takes back an earlier failure and warning once it lands', async () => {
@@ -91,11 +95,11 @@ describe('one write', () => {
   it('says an error as an error', async () => {
     const flight = createWriteFlight()
     const { core } = createCore({ ok: false, error: 'missing' } as PresetWriteResult)
-    const { said, writeMessage } = createMessages()
+    const { messages, writeMessage } = createMessages()
 
     await sendWrite(flight, createFlightOpts(core, writeMessage))
 
-    expect(said.at(-1)).toStrictEqual([flight.errorMessage.value, 'error'])
+    expect(messages.at(-1)).toStrictEqual([flight.errorMessage.value, 'error'])
   })
 })
 
@@ -118,7 +122,7 @@ describe('a write requested for while another is out', () => {
   it('goes after it', async () => {
     const flight = createWriteFlight()
     const first = createGate()
-    const { core, based } = createCore(first.answered, { ok: true, value: { at: 'v2' } })
+    const { core, based } = createCore(first.promise, { ok: true, value: { at: 'v2' } })
     const { writeMessage } = createMessages()
 
     const one = requestWrite(flight, createFlightOpts(core, writeMessage))
@@ -135,7 +139,7 @@ describe('a write requested for while another is out', () => {
   it('is not settled until the write out has landed', async () => {
     const flight = createWriteFlight()
     const first = createGate()
-    const { core } = createCore(first.answered)
+    const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
 
     const one = requestWrite(flight, createFlightOpts(core, writeMessage))
@@ -143,7 +147,7 @@ describe('a write requested for while another is out', () => {
     const two = requestWrite(flight, createFlightOpts(core, writeMessage)).then(() => {
       isSettled = true
     })
-    await nap()
+    await flushPromises()
     expect(isSettled).toBe(false)
 
     first.open({ ok: true, value: { at: 'v1' } })
@@ -154,7 +158,7 @@ describe('a write requested for while another is out', () => {
   it('is dropped where the first found the file changed elsewhere', async () => {
     const flight = createWriteFlight()
     const first = createGate()
-    const { core, based } = createCore(first.answered)
+    const { core, based } = createCore(first.promise)
     const { writeMessage } = createMessages()
 
     const one = requestWrite(flight, createFlightOpts(core, writeMessage))
@@ -201,7 +205,7 @@ describe('flushing a preset', () => {
   it('waits for the write already out', async () => {
     const flight = createWriteFlight()
     const first = createGate()
-    const { core } = createCore(first.answered)
+    const { core } = createCore(first.promise)
     const { writeMessage } = createMessages()
     void requestWrite(flight, createFlightOpts(core, writeMessage))
 
@@ -209,7 +213,7 @@ describe('flushing a preset', () => {
     const flushed = flushWrites(flight, createFlightOpts(core, writeMessage)).then(() => {
       isFlushed = true
     })
-    await nap()
+    await flushPromises()
     expect(isFlushed).toBe(false)
 
     first.open({ ok: true, value: { at: 'v1' } })

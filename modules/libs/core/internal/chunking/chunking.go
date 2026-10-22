@@ -92,7 +92,6 @@ type Legibility struct {
 	Dirty float64
 }
 
-// A Chunk is one cut of the text. Location is where the chunk sits in the terms
 // the source's own numbering uses, and is empty where the text named none.
 //
 // Small are the chunks inside this one. A Chunk with none of its own is a large
@@ -164,14 +163,14 @@ func divideText(text string, parts []domain.PartStart) []division {
 	sort.SliceStable(named, func(i, j int) bool { return named[i].Offset < named[j].Offset })
 
 	var divisions []division
-	at, location := 0, ""
+	pos, location := 0, ""
 	for _, p := range named {
-		if p.Offset > at {
-			divisions = append(divisions, division{from: at, to: p.Offset, location: location})
+		if p.Offset > pos {
+			divisions = append(divisions, division{from: pos, to: p.Offset, location: location})
 		}
-		at, location = p.Offset, p.Title
+		pos, location = p.Offset, p.Title
 	}
-	return append(divisions, division{from: at, to: len(text), location: location})
+	return append(divisions, division{from: pos, to: len(text), location: location})
 }
 
 // splitDivision tiles one division twice and puts each small chunk under the large
@@ -182,8 +181,8 @@ func splitDivision(text string, d division, s Sizes, l Legibility) []Chunk {
 		return nil
 	}
 	var large []Chunk
-	for _, at := range getOverlappingRanges(len(words), s.Large, s.LargeOverlap) {
-		c := getRangeChunk(words, at, d.location)
+	for _, item := range getOverlappingRanges(len(words), s.Large, s.LargeOverlap) {
+		c := getRangeChunk(words, item, d.location)
 		if !isLegible(c.ExtractText(text), l) {
 			continue
 		}
@@ -225,8 +224,8 @@ func createWholeTextChunks(text string, divisions []division, s Sizes, l Legibil
 // that is still over it after that is a single word and is dropped.
 func createSmallChunks(text string, words []word, location string, s Sizes, l Legibility) []Chunk {
 	var out []Chunk
-	for _, at := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
-		for _, piece := range splitAtLimit(text, words, at, s.Limit) {
+	for _, item := range getOverlappingRanges(len(words), s.Small, s.SmallOverlap) {
+		for _, piece := range splitAtLimit(text, words, item, s.Limit) {
 			c := getRangeChunk(words, piece, location)
 			body := c.ExtractText(text)
 			if utf8.RuneCountInString(body) > s.Limit || !isLegible(body, l) {
@@ -248,19 +247,19 @@ func createSmallChunks(text string, words []word, location string, s Sizes, l Le
 // and that is the first large chunk reaching past it. Both lists ascend and the
 // look forward stops at the middle, so one pass over each is enough.
 func enclose(large, small []Chunk) []Chunk {
-	at := 0
+	pos := 0
 	for _, c := range small {
-		for at < len(large) && large[at].Start+large[at].Length <= c.computeMiddle() {
-			at++
+		for pos < len(large) && large[pos].Start+large[pos].Length <= c.computeMiddle() {
+			pos++
 		}
-		if at == len(large) {
+		if pos == len(large) {
 			break
 		}
-		if large[at].Start > c.computeMiddle() {
+		if large[pos].Start > c.computeMiddle() {
 			continue
 		}
-		underVal := at
-		for i := at; i < len(large) && large[i].Start <= c.computeMiddle(); i++ {
+		underVal := pos
+		for i := pos; i < len(large) && large[i].Start <= c.computeMiddle(); i++ {
 			if large[i].Start <= c.Start && c.Start+c.Length <= large[i].Start+large[i].Length {
 				underVal = i
 				break
@@ -314,10 +313,10 @@ func getOverlappingRanges(n, size, overlap int) [][2]int {
 // splitAtLimit breaks a range of words into pieces of at most limit characters,
 // counting the space between words. A word of its own is a piece however long it
 // is.
-func splitAtLimit(text string, words []word, at [2]int, limit int) [][2]int {
-	from, to := at[0], at[1]
+func splitAtLimit(text string, words []word, pos [2]int, limit int) [][2]int {
+	from, to := pos[0], pos[1]
 	if utf8.RuneCountInString(text[words[from].start:words[to-1].end]) <= limit {
-		return [][2]int{at}
+		return [][2]int{pos}
 	}
 	var out [][2]int
 	start, chars := from, 0
@@ -333,8 +332,8 @@ func splitAtLimit(text string, words []word, at [2]int, limit int) [][2]int {
 }
 
 // getRangeChunk is the chunk covering a range of words.
-func getRangeChunk(words []word, at [2]int, location string) Chunk {
-	start, end := words[at[0]].start, words[at[1]-1].end
+func getRangeChunk(words []word, pos [2]int, location string) Chunk {
+	start, end := words[pos[0]].start, words[pos[1]-1].end
 	return Chunk{Start: start, Length: end - start, Location: location}
 }
 

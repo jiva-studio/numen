@@ -22,9 +22,9 @@ const FOCUS: PlacedNode = {
 
 /** Nodes of one relation, named after it. */
 const createNodes = (relation: PlexRelation, count: number): readonly PlexNode[] =>
-  Array.from({ length: count }, (_, at) => ({
-    id: `${relation}-${at}`,
-    title: `${relation} ${at}`,
+  Array.from({ length: count }, (_, index) => ({
+    id: `${relation}-${index}`,
+    title: `${relation} ${index}`,
     relation,
   }))
 
@@ -208,7 +208,10 @@ describe('a column', () => {
 
 describe('rows and columns together', () => {
   it('never lays a column over a row', () => {
-    const placedLayout = place({ child: createNodes('child', 5), sibling: createNodes('sibling', 3) })
+    const placedLayout = place({
+      child: createNodes('child', 5),
+      sibling: createNodes('sibling', 3),
+    })
     const isOverlapping = (one: PlacedNode, two: PlacedNode) =>
       Math.abs(one.x - two.x) < (one.width + two.width) / 2 &&
       Math.abs(one.y - two.y) < (one.height + two.height) / 2

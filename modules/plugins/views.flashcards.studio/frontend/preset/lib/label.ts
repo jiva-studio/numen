@@ -62,35 +62,34 @@ export const isAxisLabelClear = (
   places: readonly Position[],
   marks: readonly (Position | null)[],
 ): boolean => {
-  const isNear = (at: Position): boolean =>
-    at.x <= PLOT_LEFT + AXIS_LABEL_WIDTH && Math.abs(at.y - y) <= AXIS_LABEL_HEIGHT
-  if (marks.some((at) => at !== null && isNear(at))) return false
+  const isNear = (position: Position): boolean =>
+    position.x <= PLOT_LEFT + AXIS_LABEL_WIDTH && Math.abs(position.y - y) <= AXIS_LABEL_HEIGHT
+  if (marks.some((pos) => pos !== null && isNear(pos))) return false
   return !places.some(isNear)
 }
 
 /**
  * Where a name over a mark is set: above it, pulled back inside the picture at
- * either end so the whole word stands over it.
  */
-export const getMarkNameStyle = (at: Position): CSSProperties => {
+export const getMarkNameStyle = (position: Position): CSSProperties => {
   let back = '-50%'
-  if (at.x < PLOT_LEFT + LABEL) back = '0'
-  else if (at.x > PLOT_RIGHT - LABEL) back = '-100%'
+  if (position.x < PLOT_LEFT + LABEL) back = '0'
+  else if (position.x > PLOT_RIGHT - LABEL) back = '-100%'
   return {
-    insetInlineStart: `${(at.x / PLOT_WIDTH) * 100}%`,
-    insetBlockStart: `${(Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) / PLOT_HEIGHT) * 100}%`,
+    insetInlineStart: `${(position.x / PLOT_WIDTH) * 100}%`,
+    insetBlockStart: `${(Math.max(position.y - AXIS_LABEL_LIFT, PLOT_TOP) / PLOT_HEIGHT) * 100}%`,
     translate: `${back} -100%`,
   }
 }
 
 /** The room that name takes, which the knob's own figures stand clear of. */
-export const getNameBox = (at: Position): Box => {
+export const getNameBox = (position: Position): Box => {
   let back = LABEL
-  if (at.x < PLOT_LEFT + LABEL) back = 0
-  else if (at.x > PLOT_RIGHT - LABEL) back = LABEL * 2
+  if (position.x < PLOT_LEFT + LABEL) back = 0
+  else if (position.x > PLOT_RIGHT - LABEL) back = LABEL * 2
   return {
-    x: at.x - back,
-    y: Math.max(at.y - AXIS_LABEL_LIFT, PLOT_TOP) - AXIS_LABEL_HEIGHT,
+    x: position.x - back,
+    y: Math.max(position.y - AXIS_LABEL_LIFT, PLOT_TOP) - AXIS_LABEL_HEIGHT,
     wide: LABEL * 2,
     high: AXIS_LABEL_HEIGHT,
   }
@@ -172,8 +171,8 @@ export interface Label {
  * that would touch the readout over the knob, or a name already placed, is
  * left off.
  */
-export const createLabels = (marks: readonly Mark[], over: Box | null): readonly Label[] => {
-  const occupiedBoxes: Box[] = over ? [over] : []
+export const createLabels = (marks: readonly Mark[], calloutBox: Box | null): readonly Label[] => {
+  const occupiedBoxes: Box[] = calloutBox ? [calloutBox] : []
   const out: Label[] = []
   for (const mark of marks) {
     if (!mark.text) continue
@@ -201,7 +200,7 @@ export interface Height {
 export interface AxisLabelsContext {
   places: readonly Position[]
   marks: readonly Position[]
-  over?: Box | null
+  calloutBox?: Box | null
 }
 
 export const createAxisLabels = (
@@ -210,11 +209,11 @@ export const createAxisLabels = (
   getText: (value: number) => string,
 ): readonly Height[] => {
   const { least, most } = extent
-  const { places, marks, over = null } = context
+  const { places, marks, calloutBox = null } = context
   const measureHeightAt = (y: number, lift: string, value: number): readonly Height[] => {
     const box = getAxisNumberBox(y, lift)
     if (!isAxisLabelClear(y, places, marks)) return []
-    if (over && !areBoxesSeparate(box, over)) return []
+    if (calloutBox && !areBoxesSeparate(box, calloutBox)) return []
     return [{ at: getAxisNumber(y, lift), box, text: getText(value) }]
   }
   // An extent of no width has one number and nothing else to read, and it is set

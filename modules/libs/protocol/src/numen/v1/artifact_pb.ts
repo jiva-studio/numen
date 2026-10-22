@@ -210,7 +210,6 @@ export enum ArtifactKind {
   UNSPECIFIED = 0,
 
   /**
-   * Text with the place on the page each word stands at, read off a scan and
    * kept under `ocr`.
    *
    * @generated from enum value: ARTIFACT_KIND_OCR = 1;
@@ -347,16 +346,6 @@ export const StateSchema: GenEnum<State> = /*@__PURE__*/
  * @generated from service numen.v1.ArtifactService
  */
 export const ArtifactService: GenService<{
-  /**
-   * ListArtifacts is every artifact a file can carry and what has become of
-   * each. A file whose kind carries none is answered with none.
-   *
-   * It is asked before anything is offered over a file: whether a book has been
-   * read is a question about the book, and the only other way to ask it is to
-   * ask for the book to be read again and be refused.
-   *
-   * @generated from rpc numen.v1.ArtifactService.ListArtifacts
-   */
   listArtifacts: {
     methodKind: "unary";
     input: typeof ListArtifactsRequestSchema;
@@ -379,7 +368,6 @@ export const ArtifactService: GenService<{
     output: typeof CreateArtifactResponseSchema;
   },
   /**
-   * DeleteArtifact takes one away, with everything cut from it. The file stands
    * as it did before anything was made from it, and it is offered again.
    *
    * @generated from rpc numen.v1.ArtifactService.DeleteArtifact

@@ -1,6 +1,5 @@
 package recognition
 
-// Status is what stands in the way of reading a scan now.
 type Status struct {
 	IsRunning bool
 	IsReady   bool

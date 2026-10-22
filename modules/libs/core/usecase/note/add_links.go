@@ -15,7 +15,6 @@ type LinkAddition struct {
 	Link        domain.Link
 
 	// FingerprintError is why the caller's fingerprint could not be read. It is
-	// reported after the link's own refusal, and the addition is not written.
 	FingerprintError error
 }
 
@@ -82,7 +81,6 @@ func newLinkGroups() *linkGroups {
 }
 
 // add groups the i-th addition under its note and returns the reason it was
-// refused, nil when it was grouped.
 func (g *linkGroups) add(i int, add LinkAddition) error {
 	if err := CheckWritable(add.Link); err != nil {
 		return err

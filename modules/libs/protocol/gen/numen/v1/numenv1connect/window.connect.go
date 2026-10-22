@@ -70,7 +70,6 @@ type WindowServiceClient interface {
 	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest]) (*connect.ServerStreamForClient[v1.WatchQuitResponse], error)
 	// ReportFlush says what a caller has left. Nothing left lets the window go;
 	// work a person is being asked about keeps it open. A caller that never says
-	// it is waited for and then left behind.
 	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is
@@ -162,7 +161,6 @@ type WindowServiceHandler interface {
 	WatchQuit(context.Context, *connect.Request[v1.WatchQuitRequest], *connect.ServerStream[v1.WatchQuitResponse]) error
 	// ReportFlush says what a caller has left. Nothing left lets the window go;
 	// work a person is being asked about keeps it open. A caller that never says
-	// it is waited for and then left behind.
 	ReportFlush(context.Context, *connect.Request[v1.ReportFlushRequest]) (*connect.Response[v1.ReportFlushResponse], error)
 	// GetCurrentVault is which vault this window has in front of the person. Two
 	// windows are open on one installation and each shows what it shows, so it is

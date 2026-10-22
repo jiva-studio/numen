@@ -15,7 +15,7 @@ export interface TabLinkMenuDeps {
 
 export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   const tabId = ref<TabId | null>(null)
-  const at = ref<{ x: number; y: number }>({ x: 0, y: 0 })
+  const coords = ref<{ x: number; y: number }>({ x: 0, y: 0 })
 
   const eligibleTabs = computed(() =>
     tabId.value === null
@@ -43,7 +43,7 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
   const open = (tab: TabId, where: { x: number; y: number }): void => {
     if (!deps.isLinkable(tab)) return
     tabId.value = tab
-    at.value = where
+    coords.value = where
   }
 
   const close = (): void => {
@@ -62,5 +62,5 @@ export function useTabLinkMenu(deps: TabLinkMenuDeps) {
     close()
   }
 
-  return { tabId, at, eligibleTabs, linkedTargetTitle, isLinked, open, close, link, unlink }
+  return { tabId, at: coords, eligibleTabs, linkedTargetTitle, isLinked, open, close, link, unlink }
 }

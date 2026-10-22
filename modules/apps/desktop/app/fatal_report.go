@@ -52,7 +52,6 @@ func failWithDialog(cfg container.Config, why error) {
 	_ = app.Run()
 }
 
-// refusal is what the page says: what could not be opened, the sentence, the
 // facts behind it, and what to do about it.
 type fatalReport struct {
 	Heading  string
@@ -174,11 +173,11 @@ const (
 // getIndexRefusal is the index refusing to open, which is one fault for each
 // way a path can fail to be an index.
 func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
-	at := getIndexPath(cfg)
-	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", at}}}
+	pos := getIndexPath(cfg)
+	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", pos}}}
 
 	folder := false
-	if info, err := os.Stat(at); err == nil {
+	if info, err := os.Stat(pos); err == nil {
 		folder = info.IsDir()
 	}
 
@@ -192,7 +191,7 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 		response.Remedy = "Point -index at a file, or move the folder out of the way."
 	case code == cannotOpen:
 		response.Sentence = "numen could neither open an index here nor make one."
-		response.Facts = append(response.Facts, detail{"folder", filepath.Dir(at)})
+		response.Facts = append(response.Facts, detail{"folder", filepath.Dir(pos)})
 		response.Remedy = "Give yourself permission to write in the folder, " +
 			"or point -index somewhere you can write."
 	default:

@@ -9,7 +9,7 @@ import "testing"
 func TestWhatIsNotRenamed(t *testing.T) {
 	for what, target := range map[string]struct {
 		file string
-		at   []string
+		loc  []string
 	}{
 		"a section already holding the name": {
 			`{"appearance":{"zoom":1.5,"interface_scale":1.25}}`, []string{"appearance", "zoom"},
@@ -33,7 +33,7 @@ func TestWhatIsNotRenamed(t *testing.T) {
 			`{"appearance":{"zoom":1.5}}`, nil,
 		},
 	} {
-		back, isDone := renameMember([]byte(target.file), target.at, "interface_scale")
+		back, isDone := renameMember([]byte(target.file), target.loc, "interface_scale")
 		if isDone {
 			t.Errorf("%s: renamed, leaving %s", what, back)
 		}

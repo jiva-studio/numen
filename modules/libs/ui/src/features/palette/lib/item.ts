@@ -22,7 +22,6 @@ export interface PaletteItem {
   readonly detail?: string
   /** Where the words stand in that line. */
   readonly detailAt?: readonly Span[]
-  /** What can be done to it. An item offering none is drawn and not chosen. */
   readonly actions?: readonly PaletteAction[]
   /**
    * The keystroke that reaches this item away from the palette, as the caller
@@ -30,7 +29,7 @@ export interface PaletteItem {
    */
   readonly keys?: PaletteKeys
   /** Drawn and announced, and not choosable. */
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
 }
 
 /** One group of the list. What the groups are is the caller's. */
@@ -61,7 +60,6 @@ export interface PalettePlace {
 }
 
 /**
- * The groups in the order they are drawn: as they were offered, and the ones
  * holding nothing after the ones holding something.
  *
  * A group holding nothing is drawn while it is still working, and where it has
@@ -82,7 +80,7 @@ export const flatten = (groups: readonly PaletteGroup[]): readonly PalettePlace[
 
 /** Whether the keyboard may land here. An item with nothing to do is passed over. */
 export const canChoose = (item: PaletteItem): boolean =>
-  !item.disabled && (item.actions?.length ?? 0) > 0
+  !item.isDisabled && (item.actions?.length ?? 0) > 0
 
 /** Whether the keyboard may land on the place. */
 export const canLandOn = (place: PalettePlace): boolean => canChoose(place.item)
@@ -92,9 +90,9 @@ export const canLandOn = (place: PalettePlace): boolean => canChoose(place.item)
  * wraps, and answers -1 for a list holding nothing. Every row of such a list
  * can be landed on.
  */
-export const getSteppedIndex = (total: number, from: number, by: number): number => {
+export const getSteppedIndex = (total: number, from: number, delta: number): number => {
   if (total <= 0) return -1
-  return (((from + by) % total) + total) % total
+  return (((from + delta) % total) + total) % total
 }
 
 /**
@@ -103,6 +101,6 @@ export const getSteppedIndex = (total: number, from: number, by: number): number
  * first item there is; a list with nothing to land on takes it nowhere.
  */
 export const findKeptPlace = (places: readonly PalettePlace[], was: string): number => {
-  const at = places.findIndex((place) => place.item.id === was && canChoose(place.item))
-  return stepTo(places, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
+  const pos = places.findIndex((place) => place.item.id === was && canChoose(place.item))
+  return stepTo(places, { from: Math.max(pos, 0) - 1, by: 1 }, canLandOn)
 }

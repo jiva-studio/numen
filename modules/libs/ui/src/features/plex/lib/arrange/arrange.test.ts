@@ -228,7 +228,9 @@ describe('a box is as wide as its title needs', () => {
     const defaultLayout = arrangePlex(neighbourhoods.overcrowded)
 
     expect(measured.overflow).toStrictEqual(defaultLayout.overflow)
-    expect(measured.nodes.map((node) => node.id)).toStrictEqual(defaultLayout.nodes.map((node) => node.id))
+    expect(measured.nodes.map((node) => node.id)).toStrictEqual(
+      defaultLayout.nodes.map((node) => node.id),
+    )
   })
 })
 

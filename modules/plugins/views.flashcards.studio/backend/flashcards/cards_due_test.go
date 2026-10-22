@@ -72,9 +72,9 @@ func TestWhatADayCameToBelowEachPresetOfAVault(t *testing.T) {
 	if len(owing.Presets) != len(want) {
 		t.Fatalf("the day came to %+v, want %+v", owing.Presets, want)
 	}
-	for at, one := range want {
-		if owing.Presets[at] != one {
-			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[at], one)
+	for item, one := range want {
+		if owing.Presets[item] != one {
+			t.Errorf("%q came to %+v, want %+v", one.Preset, owing.Presets[item], one)
 		}
 	}
 }
@@ -107,7 +107,6 @@ func TestAVaultContainingNoPresetExistsOnTheDefaults(t *testing.T) {
 	}
 }
 
-// Every preset the vault holds stands in the count. A person who wrote one and
 // pointed nothing at it can still see it, and it says nothing of a day.
 func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	t.Parallel()
@@ -125,16 +124,16 @@ func TestAPresetNoDeckPointsAtExistsInTheCount(t *testing.T) {
 	}
 
 	var target *flashcards.PresetCardsDue
-	for at, one := range owing.Presets {
+	for item, one := range owing.Presets {
 		if one.Preset == "Empty.md" {
-			target = &owing.Presets[at]
+			target = &owing.Presets[item]
 		}
 	}
 	if target == nil {
 		t.Fatalf("the preset nothing points at is not in the count: %+v", owing.Presets)
 	}
 	if *target != (flashcards.PresetCardsDue{Preset: "Empty.md"}) {
-		t.Errorf("it came to %+v, want a preset nothing stands under", *target)
+		t.Errorf("it came to %+v, want a preset nothing is under", *target)
 	}
 }
 
@@ -160,7 +159,7 @@ func TestADayContainsWhatWasAnsweredInIt(t *testing.T) {
 	}
 	for _, one := range owing.Presets {
 		if one.Answered != 0 || one.Took != 0 {
-			t.Errorf("%q came to %+v, want a day nothing stands on", one.Preset, one)
+			t.Errorf("%q came to %+v, want a day nothing is on", one.Preset, one)
 		}
 	}
 }
@@ -194,8 +193,6 @@ func TestWhatEachDeckWasAnsweredIsCountedOnTheDeck(t *testing.T) {
 	}
 }
 
-// The front door counts out of the cache it filled.
-//
 // It is asked for every vault a person holds, and again whenever the window
 // opens, a session ends or a vault moves, so a count over answers nothing has
 // changed replays nothing.
@@ -205,7 +202,7 @@ func TestASecondCountReadsTheSchedulesOutOfTheCache(t *testing.T) {
 	answer(t, s.run(t, saturday), "k7m2xq9fzp", 6*time.Second)
 
 	replayed := 0
-	s.kept.At = func(retention float64) review.Scheduler {
+	s.schedules.At = func(retention float64) review.Scheduler {
 		return replaying{Scheduler: review.NewFSRSAt(retention), answers: &replayed}
 	}
 	owed := s.newCountCardsDueAt(today, func() time.Time { return saturday.Add(time.Hour) })
@@ -232,10 +229,10 @@ type replaying struct {
 }
 
 func (r replaying) Next(
-	s review.Schedule, at time.Time, rating review.Rating,
+	s review.Schedule, pos time.Time, rating review.Rating,
 ) review.Schedule {
 	*r.answers++
-	return r.Scheduler.Next(s, at, rating)
+	return r.Scheduler.Next(s, pos, rating)
 }
 
 // answer writes down one card answered well, and returns the line it stands

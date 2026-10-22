@@ -10,8 +10,8 @@ import (
 )
 
 func init() {
-	Register(func(at string) {
-		_ = initGraphOptimization(at)
+	Register(func(libPath string) {
+		_ = initGraphOptimization(libPath)
 	})
 }
 
@@ -30,17 +30,17 @@ type ortAPI struct {
 	SetSessionGraphOptimizationLevel uintptr
 }
 
-func initGraphOptimization(at string) error {
+func initGraphOptimization(libPath string) error {
 	optLevelMu.Lock()
 	defer optLevelMu.Unlock()
 	if setSessionGraphOptimizationLevel != nil {
 		return nil
 	}
-	if at == "" {
+	if libPath == "" {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := loadLibrary(at)
+	handle, err := loadLibrary(libPath)
 	if err != nil {
 		return err
 	}
@@ -75,9 +75,9 @@ func setGraphOptimizationLevel(opts *ort.SessionOptions, level uint32) error {
 	optLevelMu.Unlock()
 
 	if fn == nil {
-		_, at := runtimeState.GetLoaded()
+		_, loadedPath := runtimeState.GetLoaded()
 
-		if err := initGraphOptimization(at); err != nil {
+		if err := initGraphOptimization(loadedPath); err != nil {
 			return err
 		}
 		optLevelMu.Lock()

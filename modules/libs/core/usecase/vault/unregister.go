@@ -32,7 +32,6 @@ func (u Unregister) Execute(ctx context.Context, v domain.Vault) error {
 	}
 
 	// The index goes first: no entry on the list points at rows that are gone.
-	// Rows a failure here leaves behind belong to a vault the next scan writes
 	// again.
 	if err := u.index.Unregister(ctx, v.ID); err != nil {
 		return fmt.Errorf("take %s out of the index: %w", v.Name, err)

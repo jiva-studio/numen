@@ -12,7 +12,7 @@ import (
 
 // OpenModel is a model on this machine becoming answerable. It is told how far
 // fetching and compiling it has got, counted in the bytes of it that are here.
-type OpenModel func(ctx context.Context, tell func(done, total int64)) (port.Embedder, error)
+type OpenModel func(ctx context.Context, tell func(finished, total int64)) (port.Embedder, error)
 
 // Provider is one place vectors are made: the identity what it answers is kept
 // under, the name to call it by while it arrives, and the one way it is opened.
@@ -25,13 +25,13 @@ type Provider struct {
 	// One of the two, for a provider that is named at all. A service answers
 	// the moment there is something to ask; a model on this machine answers
 	// once it is here.
-	held  port.Embedder
-	fetch OpenModel
+	activeItem port.Embedder
+	fetch      OpenModel
 }
 
 // NewReached is a provider that answers at once.
-func NewReached(model port.EmbeddingModel, name string, held port.Embedder) Provider {
-	return Provider{model: model, name: name, held: held}
+func NewReached(model port.EmbeddingModel, name string, embedder port.Embedder) Provider {
+	return Provider{model: model, name: name, activeItem: embedder}
 }
 
 // NewFetched is a model on this machine, opened behind whoever asked.
@@ -40,7 +40,7 @@ func NewFetched(model port.EmbeddingModel, name string, open OpenModel) Provider
 }
 
 // isPlaced says whether this half was placed anywhere.
-func (p Provider) isPlaced() bool { return p.held != nil || p.fetch != nil }
+func (p Provider) isPlaced() bool { return p.activeItem != nil || p.fetch != nil }
 
 // Which half of the work a provider is for. An arrival is called by its role
 // and its name, and two providers naming one repository are two lines.
@@ -53,7 +53,6 @@ const (
 // two providers an installation was given, and what lets go of them.
 //
 // They are one model where only the first is named. Where both are, the second
-// is held to the first by being asked one text once both are here, and a second
 // answering it differently is release: a question embedded in another space
 // finds nothing the first indexed.
 //
@@ -74,12 +73,12 @@ func Open(
 		return newIndexLane(first), first.GetImpatientEmbedder(), first.Close
 	}
 
-	at := query.newArrival(forQuery)
-	second := open(ctx, tasks, at)
+	pos := query.newArrival(forQuery)
+	second := open(ctx, tasks, pos)
 	go func() {
 		if err := compareModels(ctx, first, second); err != nil {
 			_ = second.DiscardModel(err)
-			reportError(tasks, at, err)
+			reportError(tasks, pos, err)
 		}
 	}()
 	return first.GetWaitingEmbedder(), second.GetImpatientEmbedder(), closeBoth(first.Close, second.Close)
@@ -99,24 +98,24 @@ func OpenOne(ctx context.Context, from Provider) (port.Embedder, func() error) {
 // open is one provider held under the identity its vectors are kept under. What
 // it is is known before it is here, so the index is fitted and a vector claimed
 // under the right recipe while the weights are still coming down.
-func open(ctx context.Context, tasks *run.Tasks, at arrival) *embedding.Embedder {
-	target := embedding.NewDeferredEmbedder(at.from.model)
-	if at.from.fetch == nil {
-		target.SetModel(at.from.held, nil)
+func open(ctx context.Context, tasks *run.Tasks, pos arrival) *embedding.Embedder {
+	target := embedding.NewDeferredEmbedder(pos.from.model)
+	if pos.from.fetch == nil {
+		target.SetModel(pos.from.activeItem, nil)
 		return target
 	}
 
-	tell := newProgressReport(tasks, at)
+	tell := newProgressReport(tasks, pos)
 	tell(0, 0)
 	go func() {
-		model, err := at.from.fetch(ctx, tell)
+		model, err := pos.from.fetch(ctx, tell)
 		if err != nil {
 			target.SetModel(nil, err)
-			reportError(tasks, at, err)
+			reportError(tasks, pos, err)
 			return
 		}
 		target.SetModel(model, nil)
-		ready(tasks, at)
+		ready(tasks, pos)
 	}()
 	return target
 }
@@ -153,7 +152,7 @@ func compareModels(ctx context.Context, first, second *embedding.Embedder) error
 		return unchecked(err)
 	}
 	if len(response) != 1 || len(back) != 1 || !embedding.IsAgreed(response[0], back[0]) {
-		return fmt.Errorf("%s and %s are not one model, and a question embedded by the second finds nothing the first indexed",
+		return fmt.Errorf("%s and %s are not one model: query vector incompatible with indexed vectors",
 			first.GetModel(), second.GetModel())
 	}
 	return nil
@@ -180,30 +179,30 @@ func (p Provider) newArrival(role string) arrival {
 // window's to write. A share is drawn once some of the model is here.
 //
 // A run with no list to tell is told nothing and still asks.
-func newProgressReport(tasks *run.Tasks, at arrival) func(done, total int64) {
+func newProgressReport(tasks *run.Tasks, pos arrival) func(completed, total int64) {
 	if tasks == nil {
 		return func(int64, int64) {}
 	}
-	return func(done, total int64) {
-		target := run.Task{ID: at.id, Title: "Preparing the model", About: at.name}
-		if done > 0 {
-			target.Count, target.Total, target.Unit = done, total, run.Bytes
+	return func(processed, total int64) {
+		target := run.Task{ID: pos.id, Title: "Preparing the model", About: pos.name}
+		if processed > 0 {
+			target.Count, target.Total, target.Unit = processed, total, run.Bytes
 		}
 		tasks.Set(target)
 	}
 }
 
-func ready(tasks *run.Tasks, at arrival) {
+func ready(tasks *run.Tasks, pos arrival) {
 	if tasks != nil {
-		tasks.Remove(at.id)
+		tasks.Remove(pos.id)
 	}
 }
 
 // reportError leaves the model in the list under what stopped it.
-func reportError(tasks *run.Tasks, at arrival, why error) {
+func reportError(tasks *run.Tasks, pos arrival, why error) {
 	if tasks != nil {
 		tasks.Set(run.Task{
-			ID: at.id, Title: "Preparing the model", About: at.name,
+			ID: pos.id, Title: "Preparing the model", About: pos.name,
 			Error: why.Error(),
 		})
 	}

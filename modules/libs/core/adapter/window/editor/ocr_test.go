@@ -60,8 +60,8 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *testsupport.PD
 		Text: "Alpha Beta\nGamma Delta\n",
 	}
 	vault := testsupport.NewVault(t, map[string]string{
-		book:   string(raw),
-		beside: "a file the vault leaves alone",
+		book:     string(raw),
+		adjacent: "a file the vault leaves alone",
 	})
 	hl := source.NewHighlight(
 		filesystem.VaultReaders{},
@@ -83,18 +83,17 @@ func openHighlightWindow(t *testing.T) (*Services, http.Handler, *testsupport.PD
 // where is where a word of the document is, as the window would ask about it.
 func where(t *testing.T, doc *testsupport.PDFBook, word string) *v1.Span {
 	t.Helper()
-	at := strings.Index(doc.Text, word)
-	if at < 0 {
+	pos := strings.Index(doc.Text, word)
+	if pos < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return &v1.Span{From: int32(at), To: int32(at + len(word))}
+	return &v1.Span{From: int32(pos), To: int32(pos + len(word))}
 }
 
 // readRuns is what the runs of a source's text say and where they sit, as the
-// window is told it.
-func readRuns(api *Services, path string, at ...*v1.Span) ([]*v1.Run, error) {
+func readRuns(api *Services, path string, pos ...*v1.Span) ([]*v1.Run, error) {
 	out, err := api.Ocr.ReadOcr(context.Background(), connect.NewRequest(&v1.ReadOcrRequest{
-		Path: path, Spans: at,
+		Path: path, Spans: pos,
 	}))
 	if err != nil {
 		return nil, err
@@ -163,7 +162,7 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 		"../outside.pdf",
 		"library/../../outside.pdf",
 		"library/nothing.pdf",
-		beside,
+		adjacent,
 	} {
 		t.Run(path, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
@@ -180,8 +179,8 @@ func TestAPathTheVaultDoesNotHoldIsNotLit(t *testing.T) {
 // A run that is not one fails, and nothing is read to say so.
 func TestARunThatIsNotOneIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		what string
-		at   []*v1.Span
+		what   string
+		posVal []*v1.Span
 	}{
 		{"no run at all", nil},
 		{"a place before the text", []*v1.Span{{From: -1, To: 4}}},
@@ -191,7 +190,7 @@ func TestARunThatIsNotOneIsRefused(t *testing.T) {
 		t.Run(one.what, func(t *testing.T) {
 			api, _, _ := openHighlightWindow(t)
 
-			if _, err := readRuns(api, book, one.at...); connect.CodeOf(err) != connect.CodeInvalidArgument {
+			if _, err := readRuns(api, book, one.posVal...); connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Errorf("asking about %s failed %v", one.what, err)
 			}
 		})

@@ -10,15 +10,14 @@ import (
 	"strings"
 )
 
-// FindLibrary returns the path of the ONNX Runtime library that stands in dir,
 // or empty when dir is empty or holds none.
 func FindLibrary(dir string) string {
 	if dir == "" {
 		return ""
 	}
-	at := filepath.Join(dir, GetLibraryName())
-	if info, err := os.Stat(at); err == nil && info.Mode().IsRegular() {
-		return at
+	targetPath := filepath.Join(dir, GetLibraryName())
+	if info, err := os.Stat(targetPath); err == nil && info.Mode().IsRegular() {
+		return targetPath
 	}
 	return ""
 }
@@ -107,9 +106,9 @@ func findMatching(pattern string) []string {
 		return nil
 	}
 	var out []string
-	for _, at := range found {
-		if info, err := os.Stat(at); err == nil && info.Mode().IsRegular() {
-			out = append(out, at)
+	for _, p := range found {
+		if info, err := os.Stat(p); err == nil && info.Mode().IsRegular() {
+			out = append(out, p)
 		}
 	}
 	return out

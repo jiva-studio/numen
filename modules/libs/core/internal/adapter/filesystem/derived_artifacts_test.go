@@ -13,8 +13,8 @@ import (
 // lands at the path it always did.
 func TestEveryArtifactIsCachedWhereExistingVaultsKeepIt(t *testing.T) {
 	for _, one := range []struct {
-		name domain.ArtifactName
-		at   string
+		name       domain.ArtifactName
+		targetPath string
 	}{
 		{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"), "transcript/abc123.asr.vtt"},
 		{domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, "abc123"), "transcript/abc123.asr.partial.vtt"},
@@ -35,7 +35,7 @@ func TestEveryArtifactIsCachedWhereExistingVaultsKeepIt(t *testing.T) {
 		{domain.NewIndexClaimName(), "index/indexing"},
 		{domain.NewReviewLogName("01ARZ3"), "flashcards/01ARZ3.jsonl"},
 	} {
-		t.Run(one.at, func(t *testing.T) {
+		t.Run(one.targetPath, func(t *testing.T) {
 			_, root := store(t)
 			derived, err := filesystem.OpenDerived(root, filesystem.Options{},
 				filesystem.OCRDir, filesystem.TranscriptDir, filesystem.ArticleDir,
@@ -46,9 +46,9 @@ func TestEveryArtifactIsCachedWhereExistingVaultsKeepIt(t *testing.T) {
 			if err := derived.WriteArtifact(t.Context(), one.name, []byte("kept")); err != nil {
 				t.Fatal(err)
 			}
-			raw, err := os.ReadFile(filepath.Join(root, filesystem.DefaultServiceDir, filepath.FromSlash(one.at)))
+			raw, err := os.ReadFile(filepath.Join(root, filesystem.DefaultServiceDir, filepath.FromSlash(one.targetPath)))
 			if err != nil || string(raw) != "kept" {
-				t.Errorf("%v is not kept at %s: %q, %v", one.name, one.at, raw, err)
+				t.Errorf("%v is not kept at %s: %q, %v", one.name, one.targetPath, raw, err)
 			}
 		})
 	}

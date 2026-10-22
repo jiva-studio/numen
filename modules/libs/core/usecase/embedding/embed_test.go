@@ -426,11 +426,11 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	if len(uniqueTexts) >= len(small) {
 		t.Fatalf("expected duplicate chunks in test fixture, got %d unique out of %d total", len(uniqueTexts), len(small))
 	}
-	if len(model.seen) != len(uniqueTexts) {
-		t.Errorf("model saw %d texts, want %d unique texts", len(model.seen), len(uniqueTexts))
+	if len(model.seenCount) != len(uniqueTexts) {
+		t.Errorf("model saw %d texts, want %d unique texts", len(model.seenCount), len(uniqueTexts))
 	}
 	seenSet := map[string]struct{}{}
-	for _, text := range model.seen {
+	for _, text := range model.seenCount {
 		if _, exists := seenSet[text]; exists {
 			t.Errorf("model saw duplicate text %q", text)
 		}
@@ -466,11 +466,11 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(model.seen) == 0 {
+	if len(model.seenCount) == 0 {
 		t.Fatal("no texts were embedded")
 	}
 	sawSanskrit := false
-	for _, text := range model.seen {
+	for _, text := range model.seenCount {
 		isLatin := strings.Contains(text, "aqua") || strings.Contains(text, "terra")
 		isSanskrit := strings.Contains(text, "udyana") || strings.Contains(text, "vrksa")
 		if isSanskrit {

@@ -16,8 +16,8 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 		Title:       title,
 		Body:        strings.Join(headings, "\n"),
 	}
-	for at, heading := range headings {
-		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: at * 2})
+	for item, heading := range headings {
+		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: item * 2})
 	}
 	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
@@ -45,8 +45,8 @@ func describeMatch(m domain.NameMatch) string {
 	runes := []rune(text)
 	// The runs come in order and do not overlap, so they are put in from the
 	// end and no offset moves before it is used.
-	for at := len(m.Spans) - 1; at >= 0; at-- {
-		span := m.Spans[at]
+	for pos := len(m.Spans) - 1; pos >= 0; pos-- {
+		span := m.Spans[pos]
 		runes = append(runes[:span.From],
 			append([]rune("["+string(runes[span.From:span.To])+"]"), runes[span.To:]...)...)
 	}
@@ -82,10 +82,10 @@ func TestANoteIsFoundByAHeadingInsideIt(t *testing.T) {
 		t.Fatalf("found %d names, want 1: %+v", len(found), found)
 	}
 	if found[0].Title != "The Carnot cycle" {
-		t.Errorf("the note is called %q, want the note the heading stands in", found[0].Title)
+		t.Errorf("got note %q, want heading parent note", found[0].Title)
 	}
 	if found[0].Line != 0 {
-		t.Errorf("the heading stands on line %d, want 0", found[0].Line)
+		t.Errorf("got heading line %d, want 0", found[0].Line)
 	}
 	if got := describeMatch(found[0]); got != "[Entropy] over one cycle" {
 		t.Errorf("marked %q, want the run inside the heading", got)

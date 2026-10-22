@@ -11,7 +11,6 @@ import (
 // between the two, and the goal says so where it says which budget closes its
 // day.
 //
-// A goal of retention keeps a count for each side, so each is held to its own
 // and the share decides nothing. A goal of a date carries the whole material by
 // its own reckoning.
 func TestWhichSettingsAGoalReads(t *testing.T) {
@@ -67,11 +66,11 @@ func TestADaysSpendIsOffWhatItStillAdmits(t *testing.T) {
 // getBudget is what a preset keeps for a day of the week, read off the day
 // that admits it.
 func getBudget(p review.Preset, day time.Weekday) review.Budget {
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	for at.Weekday() != day {
-		at = at.AddDate(0, 0, 1)
+	pos := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
+	for pos.Weekday() != day {
+		pos = pos.AddDate(0, 0, 1)
 	}
-	return p.GetAllowance(review.Day{Starts: review.DayStartTime}, at, review.Spent{}, 0, 0).Keeps
+	return p.GetAllowance(review.Day{Starts: review.DayStartTime}, pos, review.Spent{}, 0, 0).Keeps
 }
 
 // The budget a preset keeps on one day is that day of the week's share of it,
@@ -102,14 +101,14 @@ func TestADayAtNoneOfTheLoadIsAPause(t *testing.T) {
 		Goal: review.GoalRetention, NewADay: 10, ReviewsADay: 40,
 		Load: map[time.Weekday]int{time.Sunday: 0},
 	}
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
-	if at.Weekday() != time.Sunday {
-		t.Fatalf("%v is a %v", at, at.Weekday())
+	pos := time.Date(2026, 3, 1, 9, 0, 0, 0, time.Local)
+	if pos.Weekday() != time.Sunday {
+		t.Fatalf("%v is a %v", pos, pos.Weekday())
 	}
-	if !p.GetAllowance(ahead, at, review.Spent{}, 0, 0).IsPaused() {
+	if !p.GetAllowance(ahead, pos, review.Spent{}, 0, 0).IsPaused() {
 		t.Error("a day at none of the load is not a pause")
 	}
-	if p.GetAllowance(ahead, at.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
+	if p.GetAllowance(ahead, pos.AddDate(0, 0, 1), review.Spent{}, 0, 0).IsPaused() {
 		t.Error("the day after it is a pause")
 	}
 }

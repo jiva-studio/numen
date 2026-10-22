@@ -19,15 +19,15 @@ interface Knobs {
   /** What each row says, one to a line. A line after a tab names its group. */
   words: string
   chosen: string
-  disabled: boolean
+  isDisabled: boolean
   /** How wide the box drawing the control is. */
   width: string
 }
 
 /** One line of the knob: the words on the row, and the group after a tab. */
-const getChoice = (line: string, at: number) => {
+const getChoice = (line: string, pos: number) => {
   const [text = '', group] = line.split('\t')
-  const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${at}`
+  const id = text.trim().toLowerCase().replace(/\s+/g, '-') || `at-${pos}`
   return { id, text, ...(group ? { group } : {}) }
 }
 
@@ -38,13 +38,13 @@ const meta: Meta<Knobs> = {
   argTypes: {
     words: { control: 'text' },
     chosen: { control: 'text' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     width: { control: 'text' },
   },
   args: {
     words: 'Small\nMedium\nLarge',
     chosen: 'small',
-    disabled: false,
+    isDisabled: false,
     width: '14rem',
   },
   render: (args) => ({
@@ -61,7 +61,7 @@ const meta: Meta<Knobs> = {
     },
     template: `
       <div :style="{ padding: '2rem', inlineSize: args.width }">
-        <Select v-model="chosen" aria-label="How large it is drawn" :choices="choices" :disabled="args.disabled" />
+        <Select v-model="chosen" aria-label="How large it is drawn" :choices="choices" :is-disabled="args.isDisabled" />
       </div>
     `,
   }),
@@ -136,7 +136,7 @@ export const NoChoicesAtAll: Story = {
 /** Far more choices than the list is drawn for. */
 export const FarTooMany: Story = {
   args: {
-    words: Array.from({ length: 40 }, (_, at) => `Choice ${at + 1}`).join('\n'),
+    words: Array.from({ length: 40 }, (_, index) => `Choice ${index + 1}`).join('\n'),
     chosen: 'choice-1',
   },
   play: async ({ canvasElement }) => {
@@ -154,7 +154,7 @@ export const AValueNotAmongThem: Story = {
 }
 
 /** A control nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** The keyboard lands on it, opens it, and walks the choices. */
 export const OneStopOnTheWayRound: Story = {

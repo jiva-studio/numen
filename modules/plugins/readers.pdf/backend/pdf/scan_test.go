@@ -18,13 +18,13 @@ func TestRenderPageDefaultDPIRendersAt300DPI(t *testing.T) {
 	}
 	defer scan.Close()
 
-	wide, high, err := scan.GetPageSize(0)
+	width, height, err := scan.GetPageSize(0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	wantDx := int(math.Ceil(wide * 300.0 / pointsPerInch))
-	wantDy := int(math.Ceil(high * 300.0 / pointsPerInch))
+	wantDx := int(math.Ceil(width * 300.0 / pointsPerInch))
+	wantDy := int(math.Ceil(height * 300.0 / pointsPerInch))
 
 	drawn300, err := scan.RenderPage(0, 300)
 	if err != nil {

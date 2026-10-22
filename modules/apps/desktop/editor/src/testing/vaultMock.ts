@@ -5,7 +5,14 @@
 import { vi } from 'vitest'
 import { asValue } from '@numen/wire'
 import { requests } from './requests'
-import { folders, getFileKind, mockVaultList, mockVaultState, outside, pendingStream } from './answers'
+import {
+  folders,
+  getFileKind,
+  mockVaultList,
+  mockVaultState,
+  outside,
+  pendingStream,
+} from './answers'
 import type { Tab } from '@/entities/tab'
 import type { VaultCore } from '@/app/vault/core'
 import type { Vaults } from '@/entities/vault'
@@ -46,7 +53,8 @@ vi.mock('@/app/vault', () => ({
       },
     }),
     agentUnreachable: async () => '',
-    getInitialOpenPath: async () => (mockVaultState.opening ? { path: mockVaultState.opening } : null),
+    getInitialOpenPath: async () =>
+      mockVaultState.opening ? { path: mockVaultState.opening } : null,
     neighbourhood: async (path: string) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
       focusType: 'note' as const,

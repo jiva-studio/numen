@@ -89,8 +89,8 @@ const URLExtension = ".url"
 //
 // Every other dot belongs to the name: `[[Lecture 1.2]]` names a note filed
 // under all of it.
-func LinkName(written string) string {
-	name := written
+func LinkName(target string) string {
+	name := target
 	if i := strings.LastIndexByte(name, '/'); i >= 0 {
 		name = name[i+1:]
 	}

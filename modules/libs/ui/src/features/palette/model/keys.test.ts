@@ -17,7 +17,7 @@ const item = (id: string): PaletteItem => ({ id, title: id, actions: [OPEN] })
 const GROUPS: PaletteGroup[] = [{ id: 'g', title: 'g', items: [item('a'), item('b'), item('c')] }]
 
 interface SetUpOptions {
-  readonly open?: boolean
+  readonly isOpen?: boolean
   readonly opensOn?: string
   readonly hasField?: boolean
   readonly typed?: string
@@ -32,7 +32,7 @@ afterEach(() => {
 })
 
 const setUp = (setUpOptions: SetUpOptions = {}) => {
-  const isOpen = ref(setUpOptions.open ?? false)
+  const isOpen = ref(setUpOptions.isOpen ?? false)
   const step = ref('one')
   const opensOn = ref(setUpOptions.opensOn ?? '')
   const searchQuery = ref(setUpOptions.typed ?? '')
@@ -60,7 +60,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
         places = usePalettePlaces({
           groups: () => GROUPS,
           typed: searchQuery,
-          tellLit: () => undefined,
+          onItemActive: () => undefined,
           tellChoice: () => undefined,
         })
         keys = usePaletteKeys({
@@ -68,7 +68,7 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
           reveal,
           places,
           isPanelOpen,
-          getOfferedActions: () => places.offered.value,
+          getActions: () => places.actions.value,
           typed: searchQuery,
           isOpen: () => isOpen.value,
           getStep: () => step.value,
@@ -112,55 +112,55 @@ const setUp = (setUpOptions: SetUpOptions = {}) => {
 describe('usePaletteKeys', () => {
   describe('the keys', () => {
     it('step through the places, claim the key, and bring what is lit into sight', () => {
-      const { places, press, reveal } = setUp({ open: true })
+      const { places, press, reveal } = setUp({ isOpen: true })
       places.goTo(0)
       reveal.mockClear()
       const down = press('ArrowDown')
       expect(down.defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('b')
+      expect(places.activeItem.value?.id).toBe('b')
       expect(reveal).toHaveBeenCalledOnce()
       const up = press('ArrowUp')
       expect(up.defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('go to the first place on Home and the last on End', () => {
-      const { places, press } = setUp({ open: true })
+      const { places, press } = setUp({ isOpen: true })
       places.goTo(1)
       expect(press('End').defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('c')
+      expect(places.activeItem.value?.id).toBe('c')
       expect(press('Home').defaultPrevented).toBe(true)
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('claim Enter', () => {
-      const { press } = setUp({ open: true })
+      const { press } = setUp({ isOpen: true })
       expect(press('Enter').defaultPrevented).toBe(true)
     })
 
     it('send Backspace in an empty field back a step, and leave it to the field otherwise', () => {
-      const empty = setUp({ open: true })
+      const empty = setUp({ isOpen: true })
       expect(empty.press('Backspace').defaultPrevented).toBe(true)
       expect(empty.goBack).toHaveBeenCalledOnce()
-      const typing = setUp({ open: true, typed: 'n' })
+      const typing = setUp({ isOpen: true, typed: 'n' })
       expect(typing.press('Backspace').defaultPrevented).toBe(false)
       expect(typing.goBack).not.toHaveBeenCalled()
     })
 
     it('dismiss the palette on Escape', () => {
-      const { press, dismiss } = setUp({ open: true })
+      const { press, dismiss } = setUp({ isOpen: true })
       expect(press('Escape').defaultPrevented).toBe(true)
       expect(dismiss).toHaveBeenCalledOnce()
     })
 
     it('keep the keyboard in the field on Tab', () => {
-      const { press, dismiss } = setUp({ open: true })
+      const { press, dismiss } = setUp({ isOpen: true })
       expect(press('Tab').defaultPrevented).toBe(true)
       expect(dismiss).not.toHaveBeenCalled()
     })
 
     it('leave every other key to the field', () => {
-      const { press, dismiss, goBack } = setUp({ open: true })
+      const { press, dismiss, goBack } = setUp({ isOpen: true })
       const event = press('a')
       expect(event.defaultPrevented).toBe(false)
       expect(dismiss).not.toHaveBeenCalled()
@@ -170,7 +170,7 @@ describe('usePaletteKeys', () => {
 
   describe('the field as the panel over it goes', () => {
     it('takes the keyboard back when the panel closes over an open palette', async () => {
-      const { isPanelOpen, handle } = setUp({ open: true })
+      const { isPanelOpen, handle } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true
       await flushPromises()
@@ -181,7 +181,7 @@ describe('usePaletteKeys', () => {
     })
 
     it('does not take it while the panel opens', async () => {
-      const { isPanelOpen, handle } = setUp({ open: true })
+      const { isPanelOpen, handle } = setUp({ isOpen: true })
       await flushPromises()
       handle.focus.mockClear()
       isPanelOpen.value = true
@@ -190,7 +190,7 @@ describe('usePaletteKeys', () => {
     })
 
     it('does not take it when the palette goes with the panel', async () => {
-      const { isOpen, isPanelOpen, handle } = setUp({ open: true })
+      const { isOpen, isPanelOpen, handle } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true
       await flushPromises()
@@ -201,7 +201,7 @@ describe('usePaletteKeys', () => {
     })
 
     it('survives a field that is not there', async () => {
-      const { isPanelOpen, errors } = setUp({ open: true, hasField: false })
+      const { isPanelOpen, errors } = setUp({ isOpen: true, hasField: false })
       await flushPromises()
       isPanelOpen.value = true
       await flushPromises()
@@ -226,25 +226,25 @@ describe('usePaletteKeys', () => {
     it('relies on the item the step opens on', async () => {
       const { isOpen, places, opensOn } = setUp()
       opensOn.value = 'b'
-      places.held.value = 'c'
+      places.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('b')
+      expect(places.activeItem.value?.id).toBe('b')
     })
 
     it('relies on the item it was on when the step names none', async () => {
       const { isOpen, places } = setUp()
-      places.held.value = 'c'
+      places.selectedId.value = 'c'
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('c')
+      expect(places.activeItem.value?.id).toBe('c')
     })
 
     it('relies on the first item when nothing is named or retained', async () => {
       const { isOpen, places } = setUp()
       isOpen.value = true
       await flushPromises()
-      expect(places.lit.value?.id).toBe('a')
+      expect(places.activeItem.value?.id).toBe('a')
     })
 
     it('carries on without a field', async () => {
@@ -256,7 +256,7 @@ describe('usePaletteKeys', () => {
     })
 
     it('does the same when it is mounted open', async () => {
-      const { handle, reveal } = setUp({ open: true })
+      const { handle, reveal } = setUp({ isOpen: true })
       await flushPromises()
       expect(handle.select).toHaveBeenCalledOnce()
       expect(reveal).toHaveBeenCalledOnce()
@@ -272,7 +272,7 @@ describe('usePaletteKeys', () => {
 
   describe('as a step begins', () => {
     it('selects what remains in the field while the palette is open', async () => {
-      const { step, handle } = setUp({ open: true })
+      const { step, handle } = setUp({ isOpen: true })
       await flushPromises()
       handle.select.mockClear()
       step.value = 'two'
@@ -291,18 +291,18 @@ describe('usePaletteKeys', () => {
 
   describe('as the palette closes', () => {
     it('lets go of the panel and what was lit, and goes back to where it came from', async () => {
-      const { isOpen, isPanelOpen, places, back } = setUp({ open: true })
+      const { isOpen, isPanelOpen, places, back } = setUp({ isOpen: true })
       await flushPromises()
       isPanelOpen.value = true
       isOpen.value = false
       await flushPromises()
       expect(isPanelOpen.value).toBe(false)
-      expect(places.held.value).toBe('')
+      expect(places.selectedId.value).toBe('')
       expect(document.activeElement).toBe(back)
     })
 
     it('does not go back to an element that has left the document', async () => {
-      const { isOpen, back } = setUp({ open: true })
+      const { isOpen, back } = setUp({ isOpen: true })
       back.remove()
       const focus = vi.spyOn(back, 'focus')
       isOpen.value = false
@@ -313,7 +313,7 @@ describe('usePaletteKeys', () => {
 
   describe('as the palette is taken away', () => {
     it('goes back to where it came from when it was open', async () => {
-      const { wrapper, back } = setUp({ open: true })
+      const { wrapper, back } = setUp({ isOpen: true })
       await flushPromises()
       wrapper.unmount()
       expect(document.activeElement).toBe(back)
@@ -321,10 +321,10 @@ describe('usePaletteKeys', () => {
 
     it('leaves the keyboard alone when it was closed', () => {
       const { wrapper, back, places } = setUp()
-      places.held.value = 'b'
+      places.selectedId.value = 'b'
       wrapper.unmount()
       expect(document.activeElement).not.toBe(back)
-      expect(places.held.value).toBe('b')
+      expect(places.selectedId.value).toBe('b')
     })
   })
 })

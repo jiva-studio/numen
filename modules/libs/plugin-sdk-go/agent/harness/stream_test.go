@@ -67,7 +67,7 @@ func TestStreamedToolCallFragmentsAreAssembledByIndex(t *testing.T) {
 	if len(request.ToolCalls) != 2 || request.ToolCalls[0].ID != "c1" || request.ToolCalls[1].ID != "c2" ||
 		request.ToolCalls[1].Function.Name != "note_read" || request.ToolCalls[1].Type != "function" ||
 		request.Content == nil || *request.Content != "Reading both." {
-		t.Errorf("the model was told back %+v", request)
+		t.Errorf("the model received back %+v", request)
 	}
 	if messages[len(messages)-2].ToolCallID != "c1" || messages[len(messages)-1].ToolCallID != "c2" {
 		t.Errorf("the results were told back as %+v", messages[len(messages)-2:])

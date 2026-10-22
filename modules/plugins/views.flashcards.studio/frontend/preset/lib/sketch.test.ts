@@ -14,10 +14,9 @@ import { estimateCurve } from './sketch'
  */
 import corpus from '../../../../../libs/protocol/testdata/presets.json'
 
-/** The review day the window is told, which is what a date is counted from. */
 const today = '2026-08-30'
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
 describe('the line the window draws in the answer’s place', () => {
   it('says it is not the application’s', () => {
@@ -28,14 +27,14 @@ describe('the line the window draws in the answer’s place', () => {
     const guess = estimateCurve(settings({ minutesADay: 20 }), today, BOUNDS)
     expect(guess.grid[0]).toBe(0)
     expect(guess.grid[guess.grid.length - 1]).toBe(60)
-    expect(guess.grid[guess.now.at]).toBe(20)
+    expect(guess.grid[guess.now.index]).toBe(20)
     expect(guess.suggested).toStrictEqual(NO_CURVE_POINT)
   })
 
   it('brings back more of the material the longer the day runs', () => {
     const guess = estimateCurve(settings(), today, BOUNDS)
     const costs = guess.at.map((one) => getPointCost('minutes', one))
-    expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
+    expect(costs.every((cost, index) => index === 0 || cost >= (costs[index - 1] ?? 0))).toBe(true)
   })
 
   it('costs more of the day the more of the material is requested back', () => {
@@ -43,13 +42,13 @@ describe('the line the window draws in the answer’s place', () => {
     expect(guess.grid[0]).toBe(0.7)
     expect(guess.grid[guess.grid.length - 1]).toBe(0.99)
     const costs = guess.at.map((one) => getPointCost('retention', one))
-    expect(costs.every((cost, at) => at === 0 || cost >= (costs[at - 1] ?? 0))).toBe(true)
+    expect(costs.every((cost, index) => index === 0 || cost >= (costs[index - 1] ?? 0))).toBe(true)
   })
 
   it('names a day at every place of a goal of a date', () => {
     const guess = estimateCurve(settings({ goal: 'date', byDate: '2026-09-29' }), today, BOUNDS)
     expect(guess.days).toHaveLength(guess.grid.length)
-    expect(guess.days[guess.now.at]).toBe('2026-09-29')
+    expect(guess.days[guess.now.index]).toBe('2026-09-29')
   })
 })
 
@@ -88,7 +87,7 @@ describe('where a sketch says the preset remains', () => {
   it('names no day under a goal that is not a date', () => {
     const guess = estimateCurve(settings({ minutesADay: 20 }), today, BOUNDS)
     expect(guess.days).toStrictEqual([])
-    expect(guess.now).toStrictEqual({ at: 8, value: 20, day: '' })
+    expect(guess.now).toStrictEqual({ index: 8, value: 20, day: '' })
   })
 
   it('names the day the preset aims at under a goal of a date', () => {

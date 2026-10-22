@@ -141,11 +141,11 @@ func TestWhatAListenerIsReportedLastIsTheNewest(t *testing.T) {
 		far := map[string]int64{}
 		var last []Task
 		for list := range watching {
-			for _, at := range list {
-				if at.Count < far[at.ID] {
-					t.Errorf("%s had got to %d and is now said to be at %d", at.ID, far[at.ID], at.Count)
+			for _, item := range list {
+				if item.Count < far[item.ID] {
+					t.Errorf("%s had got to %d and is now said to be at %d", item.ID, far[item.ID], item.Count)
 				}
-				far[at.ID] = at.Count
+				far[item.ID] = item.Count
 			}
 			last = list
 		}
@@ -190,7 +190,7 @@ func quiet(t *testing.T, watching <-chan []Task, why string) {
 	t.Helper()
 	select {
 	case list := <-watching:
-		t.Errorf("%s: a listener was told %+v", why, list)
+		t.Errorf("%s: a listener received %+v", why, list)
 	default:
 	}
 }
@@ -294,6 +294,6 @@ func TestAListenerThatEndedDoesNotStopTheOthersBeingReported(t *testing.T) {
 	// Telling the ended listener would send on a closed channel.
 	tasks.Set(Task{ID: "a"})
 	if list := next(t, staying); len(list) != 1 {
-		t.Errorf("the listener that stayed was told %+v", list)
+		t.Errorf("the listener that stayed received %+v", list)
 	}
 }

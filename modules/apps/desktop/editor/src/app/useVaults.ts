@@ -77,9 +77,9 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
 
   return {
     reload,
-    shown: displayedItems,
+    activeVault: displayedItems,
     setVaultName,
-    listed: items,
+    vaultList: items,
     loadVaults,
     coverage,
     makes,

@@ -13,10 +13,9 @@ import {
   reconcileSettings,
 } from './settings'
 
-/** The review day the window is told. */
 const today = '2026-08-30'
 
-const settings = (over: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...over })
+const settings = (overrides: Partial<Settings> = {}): Settings => ({ ...DEFAULTS, ...overrides })
 
 describe('whether a value is a load', () => {
   it('is true for a record of daily numeric shares', () => {

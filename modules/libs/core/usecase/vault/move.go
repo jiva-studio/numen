@@ -100,7 +100,6 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 		return res, err
 	}
 
-	// A refusal here is carried past the settling: the file is where it was
 	// sent, and whoever is drawing the note has to be told wherever the note's
 	// own name ended up.
 	var called error

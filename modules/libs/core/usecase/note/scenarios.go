@@ -50,8 +50,8 @@ func (n Scenarios) FollowMoves(view port.Window) Scenarios {
 // Only a caller that is not the person binds it. The window's own writes draw
 // nothing, because the person is looking at the text they typed.
 func (n Scenarios) ShowEdits(view port.Window) Scenarios {
-	tell := TellEdit(func(ctx context.Context, said domain.Edit) {
-		_ = view.ShowEdit(ctx, said)
+	tell := TellEdit(func(ctx context.Context, response domain.Edit) {
+		_ = view.ShowEdit(ctx, response)
 	})
 	n.Write.Drawing, n.Replace.Drawing = tell, tell
 	return n

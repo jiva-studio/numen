@@ -13,7 +13,6 @@ import (
 // corrections that stand beside the recording. The work carries on behind the
 // answer, and the answer says what those corrections now are.
 
-// Proofreader puts the transcript of a recording right, for a person who asked
 // for it.
 type Proofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a
@@ -24,7 +23,6 @@ type Proofreader interface {
 	Proofread(ctx context.Context, v domain.Vault, path string) (transcription.ProofreadResult, error)
 }
 
-// RecognitionProofreader puts a document's recognition right, for a person who asked
 // for it.
 type RecognitionProofreader interface {
 	// ProofreaderReady says whether this installation has anything to put a
@@ -39,5 +37,5 @@ type RecognitionProofreader interface {
 // transcript or recognition right with.
 var errNoProofreading = errors.New("this installation has no proofreader")
 
-// errNotRead is a document nothing has read yet.
-var errNotRead = errors.New("nothing has read this document")
+// errNotRead is a document not processed yet.
+var errNotRead = errors.New("document not processed")

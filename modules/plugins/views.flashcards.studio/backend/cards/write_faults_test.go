@@ -16,7 +16,6 @@ import (
 
 const wrenDeck = "\n## Wren\n\n[[Animal]]\n\n### Name\n\nWren\n"
 
-// A deck over the bound is refused and the file is left as it was.
 func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
@@ -32,7 +31,6 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	}
 }
 
-// A stencil over the bound of a note is refused and the file is left as it was.
 func TestAStencilOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
@@ -89,7 +87,6 @@ func TestAStaleWritePassesBackNothing(t *testing.T) {
 }
 
 // A deck written to disk whose index could not be brought level is an error
-// beside the result of the write: what the file stands at and the marks given.
 func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck).
@@ -100,7 +97,7 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 		t.Fatalf("write = %v, want the file written and the index not level", err)
 	}
 	if got.Fingerprint.Path != "decks/Wrens.md" || got.Fingerprint.Size == 0 {
-		t.Errorf("fingerprint = %+v, want what the file stands at", got.Fingerprint)
+		t.Errorf("fingerprint = %+v, want current file state", got.Fingerprint)
 	}
 	if len(got.Given) != 1 {
 		t.Errorf("given = %+v, want the mark of the one card", got.Given)
@@ -111,7 +108,6 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 }
 
 // A body opening with the frontmatter delimiter would be read as the stencil's
-// own frontmatter, so it is refused.
 func TestAStencilBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
@@ -145,7 +141,6 @@ func TestAStencilWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	}
 }
 
-// A stencil whose frontmatter is never closed is refused even when the fields
 // written are the ones it declares.
 func TestAStencilWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
 	vs := newVaults(t)

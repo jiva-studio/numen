@@ -8,7 +8,7 @@ import type { StencilSummary } from '../../cards'
 import type { BufferCard, BufferDeck, BufferSection } from '../types'
 import { applyReadHeadings, applyScreenIds, areDecksEqual, areOffersEqual } from './view'
 
-const card = (over: Partial<BufferCard> = {}): BufferCard => ({
+const card = (overrides: Partial<BufferCard> = {}): BufferCard => ({
   id: 'screen-card',
   mark: '',
   section: null,
@@ -17,28 +17,28 @@ const card = (over: Partial<BufferCard> = {}): BufferCard => ({
   stencilPath: 'stencils/Animal.md',
   preamble: '',
   values: [{ field: 'Name', text: 'Llama' }],
-  ...over,
+  ...overrides,
 })
 
-const section = (over: Partial<BufferSection> = {}): BufferSection => ({
+const section = (overrides: Partial<BufferSection> = {}): BufferSection => ({
   id: 'screen-section',
   name: 'Mammals',
   preamble: '',
-  ...over,
+  ...overrides,
 })
 
-const deck = (over: Partial<BufferDeck> = {}): BufferDeck => ({
+const deck = (overrides: Partial<BufferDeck> = {}): BufferDeck => ({
   preamble: '',
   cards: [],
   sections: [],
   tail: '',
-  ...over,
+  ...overrides,
 })
 
 /** The card just written by the window, and the same card read back with its new mark. */
-const data = (over: Partial<BufferCard> = {}) => ({
+const data = (overrides: Partial<BufferCard> = {}) => ({
   screen: deck({ cards: [card()] }),
-  read: deck({ cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', ...over })] }),
+  read: deck({ cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', ...overrides })] }),
 })
 
 describe('whether two decks read the same', () => {
@@ -125,11 +125,17 @@ describe('a reading under the identities the window drew it by', () => {
       cards: [card({ section: 'r2' }), card({ id: 'loose', section: null })],
     })
 
-    expect(applyScreenIds(screen, readItem).cards.map((one) => one.section)).toStrictEqual(['s2', null])
+    expect(applyScreenIds(screen, readItem).cards.map((one) => one.section)).toStrictEqual([
+      's2',
+      null,
+    ])
   })
 
   it('files a card under no section where the section it names was not read', () => {
-    const readItem = deck({ sections: [section({ id: 'r1' })], cards: [card({ section: 'ghost' })] })
+    const readItem = deck({
+      sections: [section({ id: 'r1' })],
+      cards: [card({ section: 'ghost' })],
+    })
 
     expect(applyScreenIds(deck(), readItem).cards[0]?.section).toBeNull()
   })
@@ -157,8 +163,8 @@ describe('a reading under the identities the window drew it by', () => {
     ['its stencil', { stencilLink: 'Bird' }],
     ['its prose', { preamble: 'a note\n' }],
     ['its values', { values: [{ field: 'Name', text: 'Alpaca' }] }],
-  ])('takes the identity read for a card whose %s changed', (_what, over) => {
-    const { screen, read } = data(over)
+  ])('takes the identity read for a card whose %s changed', (_what, override) => {
+    const { screen, read } = data(override)
 
     expect(applyScreenIds(screen, read).cards[0]?.id).toBe('k7m2xq9fzp')
   })
@@ -170,9 +176,9 @@ describe('a reading under the identities the window drew it by', () => {
       cards: [card({ id: 'k7m2xq9fzp', mark: 'k7m2xq9fzp', section: 'r2' })],
     })
 
-    expect(applyScreenIds({ ...screen, cards: [card({ section: null })] }, readItem).cards[0]?.id).toBe(
-      'k7m2xq9fzp',
-    )
+    expect(
+      applyScreenIds({ ...screen, cards: [card({ section: null })] }, readItem).cards[0]?.id,
+    ).toBe('k7m2xq9fzp')
   })
 
   it('takes the identity read for a card where the file holds another count of cards', () => {
@@ -198,11 +204,11 @@ describe('a reading under the identities the window drew it by', () => {
 })
 
 describe('whether two stencil listings are the same', () => {
-  const offer = (over: Partial<StencilSummary> = {}): StencilSummary => ({
+  const offer = (overrides: Partial<StencilSummary> = {}): StencilSummary => ({
     path: 'stencils/Animal.md',
     title: 'Animal',
     fields: ['Name', 'Height'],
-    ...over,
+    ...overrides,
   })
 
   it('is so for the same stencils in the same order', () => {
@@ -216,8 +222,8 @@ describe('whether two stencil listings are the same', () => {
     ['titled otherwise', { title: 'Beast' }],
     ['with a field more', { fields: ['Name', 'Height', 'Weight'] }],
     ['with a field renamed', { fields: ['Name', 'Weight'] }],
-  ])('is not so where the second stencil is %s', (_what, over) => {
-    expect(areOffersEqual([offer(), offer()], [offer(), offer(over)])).toBe(false)
+  ])('is not so where the second stencil is %s', (_what, override) => {
+    expect(areOffersEqual([offer(), offer()], [offer(), offer(override)])).toBe(false)
   })
 
   it('is not so where one listing has a stencil more', () => {

@@ -30,8 +30,8 @@ func (i VaultIdentity) CheckReadable(root string) error {
 	return err
 }
 
-func (i VaultIdentity) EnsureIdentity(root string, at time.Time) (domain.VaultID, error) {
-	cfg, err := Initialize(root, i.Options.ServiceDir, at)
+func (i VaultIdentity) EnsureIdentity(root string, timestamp time.Time) (domain.VaultID, error) {
+	cfg, err := Initialize(root, i.Options.ServiceDir, timestamp)
 	if err != nil {
 		return "", err
 	}

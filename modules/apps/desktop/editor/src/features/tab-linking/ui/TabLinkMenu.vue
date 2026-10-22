@@ -54,7 +54,7 @@ function getIconFor(id: string): Component | null {
 </script>
 
 <template>
-  <Menu :items="items" :at="props.at" has-groups open @choose="onChoose" @dismiss="onDismiss">
+  <Menu :items="items" :at="props.at" has-groups is-open @choose="onChoose" @dismiss="onDismiss">
     <template #icon="{ id }">
       <component
         :is="getIconFor(id)"

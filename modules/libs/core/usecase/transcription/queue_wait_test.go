@@ -14,15 +14,15 @@ import (
 // a round that has begun and not ended.
 type holding struct {
 	port.SourceQueries
-	asked chan struct{}
-	let   chan struct{}
+	requestChan chan struct{}
+	let         chan struct{}
 }
 
 func (h *holding) GetFingerprints(
 	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) (map[string]domain.Fingerprint, error) {
 	select {
-	case h.asked <- struct{}{}:
+	case h.requestChan <- struct{}{}:
 	default:
 	}
 	select {
@@ -37,7 +37,7 @@ func (h *holding) GetRecognisedSources(
 	ctx context.Context, _ domain.VaultID, _ domain.SourceKind,
 ) ([]port.SourceText, error) {
 	select {
-	case h.asked <- struct{}{}:
+	case h.requestChan <- struct{}{}:
 	default:
 	}
 	select {
@@ -59,7 +59,7 @@ func TestAQueueRunsPriorTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	defer stop()
 
 	target, v := newTranscriptionWorker(t, &deaf{})
-	recognized := &holding{asked: make(chan struct{}, 1), let: make(chan struct{})}
+	recognized := &holding{requestChan: make(chan struct{}, 1), let: make(chan struct{})}
 
 	// A call that does not come back is a window that never opens.
 	came := make(chan struct{})
@@ -87,7 +87,7 @@ func TestAQueueRunsPriorTheCallerAndIsCountedBeforeIt(t *testing.T) {
 	}
 
 	select {
-	case <-recognized.asked:
+	case <-recognized.requestChan:
 	case <-time.After(10 * time.Second):
 		t.Fatal("no round of the queue ran behind the caller")
 	}

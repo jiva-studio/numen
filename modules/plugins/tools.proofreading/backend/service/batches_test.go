@@ -56,11 +56,11 @@ func TestSharingNothingSplitsSpeechAsItAlwaysWas(t *testing.T) {
 	for _, overlap := range []int{0, -1, -8} {
 		for size := 1; size <= 4; size++ {
 			var want [][]int
-			for at := 0; at < len(cues); at++ {
-				if at%size == 0 {
+			for pos := 0; pos < len(cues); pos++ {
+				if pos%size == 0 {
 					want = append(want, nil)
 				}
-				want[len(want)-1] = append(want[len(want)-1], at)
+				want[len(want)-1] = append(want[len(want)-1], pos)
 			}
 			got := numbers(speechBatches(cues, size, overlap))
 			if !reflect.DeepEqual(got, want) {
@@ -110,9 +110,9 @@ func TestEveryLineIsInABatchHoweverSpeechIsSplit(t *testing.T) {
 						observed[line.Number] = true
 					}
 				}
-				for at := range cues {
-					if !observed[at] {
-						t.Errorf("%d cues by %d sharing %d: cue %d is in no batch", count, size, overlap, at)
+				for item := range cues {
+					if !observed[item] {
+						t.Errorf("%d cues by %d sharing %d: cue %d is in no batch", count, size, overlap, item)
 					}
 				}
 
@@ -219,8 +219,8 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 // cuts is the cut after each of a run of batches but the last.
 func cuts(batches int) []int {
 	out := make([]int, max(batches-1, 0))
-	for at := range out {
-		out[at] = at
+	for item := range out {
+		out[item] = item
 	}
 	return out
 }
@@ -279,12 +279,12 @@ func TestABatchOfOneLineHasNoSeams(t *testing.T) {
 }
 
 // hasLines reports whether a batch holds every line of a run, first to last.
-func hasLines(batch Batch, at, through int) bool {
+func hasLines(batch Batch, first, last int) bool {
 	target := make(map[int]bool, len(batch.Lines))
 	for _, line := range batch.Lines {
 		target[line.Number] = true
 	}
-	for line := at; line <= through; line++ {
+	for line := first; line <= last; line++ {
 		if !target[line] {
 			return false
 		}
@@ -302,18 +302,18 @@ func TestASentenceCrossingASplitExistsWholeInASeam(t *testing.T) {
 				batches := speechBatches(cues, size, overlap)
 				batchesAcrossCuts := cutBatches(cues, size, overlap, cuts(len(batches)))
 
-				for at := 0; at < count; at++ {
-					for throughIdx := at; throughIdx <= min(at+size/2-1, count-1); throughIdx++ {
+				for pos := 0; pos < count; pos++ {
+					for throughIdx := pos; throughIdx <= min(pos+size/2-1, count-1); throughIdx++ {
 						if slices.ContainsFunc(batches, func(b Batch) bool {
-							return hasLines(b, at, throughIdx)
+							return hasLines(b, pos, throughIdx)
 						}) {
 							continue
 						}
 						if !slices.ContainsFunc(batchesAcrossCuts, func(b Batch) bool {
-							return hasLines(b, at, throughIdx)
+							return hasLines(b, pos, throughIdx)
 						}) {
 							t.Errorf("%d lines by %d sharing %d: the run %d-%d is in no batch and no batch over a cut",
-								count, size, overlap, at, throughIdx)
+								count, size, overlap, pos, throughIdx)
 						}
 					}
 				}

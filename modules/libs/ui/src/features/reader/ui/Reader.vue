@@ -74,7 +74,7 @@ const { viewport, measure } = useViewport(area)
 
 /** Where the row stands, and what a hand or a wheel does to it. */
 const {
-  along,
+  along: scrollOffset,
   isDragging,
   getScrollOffset,
   send,
@@ -86,8 +86,10 @@ const {
 } = useHandScroll(area)
 
 const pageLayout = computed(() => row(props.pages, viewport.value, zoom.value))
-const visiblePages = computed(() => getPagesWithin(pageLayout.value, viewport.value, along.value))
-const middle = computed(() => inFront(pageLayout.value, viewport.value, along.value))
+const visiblePages = computed(() =>
+  getPagesWithin(pageLayout.value, viewport.value, scrollOffset.value),
+)
+const middle = computed(() => inFront(pageLayout.value, viewport.value, scrollOffset.value))
 
 /** What each page is asked for at. */
 const { drawnWidth } = usePageWidth(

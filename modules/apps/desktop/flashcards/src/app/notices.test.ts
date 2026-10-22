@@ -61,10 +61,10 @@ describe('what the window has to say', () => {
   it('ends a sentence whose only stop remains inside it', () => {
     const one = useNotices()
     one.reportError(
-      new ConnectError('is the preset paused? the deck says so', Code.FailedPrecondition),
+      new ConnectError('is the preset paused? failed to open', Code.FailedPrecondition),
     )
 
-    expect(one.notices.value[0]!.text).toBe('Is the preset paused? the deck says so.')
+    expect(one.notices.value[0]!.text).toBe('Is the preset paused? failed to open.')
   })
 
   it('raises nothing for a call the window itself stopped', () => {

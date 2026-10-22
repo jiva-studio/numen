@@ -12,7 +12,7 @@ import type { Command, CommandTarget, PaletteLists } from '../types'
 import { runSupport } from './runSupport'
 import { getPaletteView } from './view'
 
-const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
+const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   tab: 'tab',
   kind: 'note',
   path: 'physics/Ontology.md',
@@ -22,7 +22,7 @@ const front = (over: Partial<CommandTarget> = {}): CommandTarget => ({
   made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
-  ...over,
+  ...overrides,
 })
 
 const lists: PaletteLists = {
@@ -47,14 +47,14 @@ const createView = (commands: readonly Command[]) =>
     getStepLabel: () => 'Ontology.md',
   })
 
-const createCommand = (over: Partial<Command> & Pick<Command, 'id' | 'text'>): Command => ({
+const createCommand = (overrides: Partial<Command> & Pick<Command, 'id' | 'text'>): Command => ({
   group: 'note',
   isOffered: () => true,
-  ...over,
+  ...overrides,
 })
 
-const getNoteGroup = (view: ReturnType<typeof createView>, over: CommandTarget, typed: string) =>
-  view.createGroups(null, over, typed).find((group) => group.id === 'note')
+const getNoteGroup = (view: ReturnType<typeof createView>, target: CommandTarget, typed: string) =>
+  view.createGroups(null, target, typed).find((group) => group.id === 'note')
 
 describe('the commands as the words typed leave them', () => {
   const view = createView(createCommands(words))
@@ -167,7 +167,7 @@ describe('a command that gives no words for its confirmation', () => {
         id: 'exactly',
         title: ' “Ontology”',
         detail: '',
-        disabled: false,
+        isDisabled: false,
         actions: [{ id: 'exactly', text: '' }],
       },
     ])

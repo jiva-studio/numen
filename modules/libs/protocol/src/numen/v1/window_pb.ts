@@ -387,7 +387,6 @@ export const WindowService: GenService<{
   /**
    * ReportFlush says what a caller has left. Nothing left lets the window go;
    * work a person is being asked about keeps it open. A caller that never says
-   * it is waited for and then left behind.
    *
    * @generated from rpc numen.v1.WindowService.ReportFlush
    */

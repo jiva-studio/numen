@@ -75,7 +75,7 @@ const scrollHeadings = (event: WheelEvent) => {
 
 /** The line an arrow at an edge is drawn along. */
 const arrowLine = (arrow: Arrow) =>
-  arrow.points.map((at, index) => `${index === 0 ? 'M' : 'L'} ${at.x} ${at.y}`).join(' ')
+  arrow.points.map((pt, index) => `${index === 0 ? 'M' : 'L'} ${pt.x} ${pt.y}`).join(' ')
 </script>
 
 <template>

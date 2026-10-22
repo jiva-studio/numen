@@ -42,9 +42,9 @@ const filterStyles = (value: string): string =>
     .split(';')
     .map((each) => each.trim())
     .filter((each) => {
-      const at = each.indexOf(':')
-      if (at === -1) return false
-      const property = each.slice(0, at).trim().toLowerCase()
+      const pos = each.indexOf(':')
+      if (pos === -1) return false
+      const property = each.slice(0, pos).trim().toLowerCase()
       if (!STYLED.has(property)) return false
       const declaration = each.toLowerCase()
       return (

@@ -52,15 +52,15 @@ const createCaretState = (doc: string, carets: number[], isReadOnly = false): Ed
   return createState(doc)
     .update({ effects: StateEffect.appendConfig.of(extra) })
     .state.update({
-      selection: EditorSelection.create(carets.map((at) => EditorSelection.cursor(at))),
+      selection: EditorSelection.create(carets.map((pos) => EditorSelection.cursor(pos))),
     }).state
 }
 
 /** Whether the stretch of text is drawn as something else. */
 const applyReplace = (doc: string, text: string, caret?: number) => {
-  const at = doc.indexOf(text)
+  const pos = doc.indexOf(text)
   return getDrawn(doc, caret).some(
-    (deco) => deco.from === at && deco.to === at + text.length && !deco.spec.class,
+    (deco) => deco.from === pos && deco.to === pos + text.length && !deco.spec.class,
   )
 }
 

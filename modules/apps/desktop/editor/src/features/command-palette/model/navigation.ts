@@ -35,11 +35,11 @@ export interface PaletteStepsOptions {
   readonly onLights: (item: string) => void
   readonly onLists: () => void
   readonly onClose: () => void
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
 }
 
 interface StepActionDeps {
-  readonly invocation: (id: string, over: CommandTarget, name?: string) => CommandInvocation
+  readonly invocation: (id: string, target: CommandTarget, name?: string) => CommandInvocation
   readonly pushStep: (step: PendingStep) => void
   readonly popStep: () => void
   readonly lists: PaletteLists
@@ -89,7 +89,7 @@ function resolveInputOrChoiceAction(
   if (step.step === 'choosing') {
     const rows = deps.lists.getStepGroups(step.command.id, deps.text.value).flatMap((g) => g.items)
     const one = rows.find((r) => r.id === item)
-    return !one || one.disabled ? null : deps.invocation(step.command.id, step.on, one.id)
+    return !one || one.isDisabled ? null : deps.invocation(step.command.id, step.on, one.id)
   }
   return null
 }

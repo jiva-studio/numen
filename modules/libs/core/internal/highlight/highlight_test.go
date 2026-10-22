@@ -26,11 +26,11 @@ func run(start, length int) domain.ByteSpan {
 // read is a document read into words, each five bytes with a space after.
 func read(pages, each int) []domain.HighlightBox {
 	var out []domain.HighlightBox
-	at := 0
+	pos := 0
 	for page := 0; page < pages; page++ {
 		for i := 0; i < each; i++ {
-			out = append(out, word(page, at, 5))
-			at += 6
+			out = append(out, word(page, pos, 5))
+			pos += 6
 		}
 	}
 	return out
@@ -99,11 +99,11 @@ func TestNothingIsAskedForAndNothingIsLit(t *testing.T) {
 func TestTheBoxesComeBackInTheOrderTheyAreRead(t *testing.T) {
 	boxes := read(4, 2)
 
-	var at []int
+	var offset []int
 	for _, one := range highlight.GetBoxesOver(boxes, run(0, 48)) {
-		at = append(at, one.Page)
+		offset = append(offset, one.Page)
 	}
-	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(at, want) {
-		t.Errorf("pages %v, want %v", at, want)
+	if want := []int{0, 0, 1, 1, 2, 2, 3, 3}; !reflect.DeepEqual(offset, want) {
+		t.Errorf("pages %v, want %v", offset, want)
 	}
 }

@@ -258,7 +258,6 @@ func (x *Span) GetTo() int32 {
 }
 
 // Bounds is how far a size goes, at each end. A number outside them is
-// refused.
 type Bounds struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Least         float64                `protobuf:"fixed64,1,opt,name=least,proto3" json:"least,omitempty"`

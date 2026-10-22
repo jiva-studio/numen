@@ -17,9 +17,9 @@ var droppedEnvVars = []string{
 	"CLAUDE_EFFORT",
 }
 
-func buildEnvironment(held []string) []string {
-	out := make([]string, 0, len(held))
-	for _, entry := range held {
+func buildEnvironment(target []string) []string {
+	out := make([]string, 0, len(target))
+	for _, entry := range target {
 		name, _, found := strings.Cut(entry, "=")
 		if found && slices.Contains(droppedEnvVars, name) {
 			continue

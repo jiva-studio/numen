@@ -6,8 +6,7 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { createAnswerGuard } from '../lib/questions'
-import { getRenamedPath } from '@numen/plugin-sdk'
+import { createRequestGuard, getRenamedPath } from '@numen/plugin-sdk'
 import { areNeighbourhoodsEqual } from '../lib/picture'
 import type { Neighbourhood, PathRename } from '../types'
 
@@ -29,16 +28,15 @@ export function usePlexView(core: Neighbours) {
 
   /**
    * Whether the first neighbourhood is still on its way. An empty plex and one
-   * nobody has answered for yet are drawn the same way.
    */
   const isLoading = ref(true)
 
-  /** Two answers can be in flight — a click while a change is being followed. */
-  const asks = createAnswerGuard()
+  /** Two responses can be in flight — a click while a change is being followed. */
+  const guard = createRequestGuard()
 
   async function go(path: string) {
-    if (!asks.open()) return
-    const mine = asks.ask()
+    if (!guard.open()) return
+    const mine = guard.acquireRequest()
     try {
       const answer = await core.neighbourhood(path)
       if (!mine.isCurrent) return
@@ -61,11 +59,11 @@ export function usePlexView(core: Neighbours) {
     const to = getRenamedPath(renames, here.value)
     if (!to) return
     here.value = to
-    asks.drop()
+    guard.cancel()
   }
 
   const close = () => {
-    asks.close()
+    guard.close()
   }
 
   return { neighbourhood, here, error, isLoading, go, followMoves, close }

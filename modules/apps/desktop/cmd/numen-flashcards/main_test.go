@@ -92,7 +92,7 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
 	if inUse != nil || len(notified) != 1 || notified[0] != target[1].ID {
-		t.Errorf("the window was told %v (%v)", notified, inUse)
+		t.Errorf("got window update %v (%v)", notified, inUse)
 	}
 	if stateErr != nil || state.Status != port.PluginIndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)

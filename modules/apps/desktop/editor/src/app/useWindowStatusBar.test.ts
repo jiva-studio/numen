@@ -18,9 +18,9 @@ describe('useWindowStatusBar', () => {
         id: 'task-1',
         label: 'Indexing book',
         about: 'War and Peace.epub',
-        done: 50,
+        completedCount: 50,
         total: 100,
-        counting: 'things',
+        counting: 'items',
         error: '',
         isUserStarted: false,
       },
@@ -28,7 +28,7 @@ describe('useWindowStatusBar', () => {
         id: 'task-2',
         label: 'Transcribing speech',
         about: 'audio.mp3',
-        done: 0,
+        completedCount: 0,
         total: 0,
         counting: 'seconds',
         error: '',
@@ -58,9 +58,9 @@ describe('useWindowStatusBar', () => {
         id: 'failed-task',
         label: 'Reading file',
         about: 'doc.pdf',
-        done: 0,
+        completedCount: 0,
         total: 10,
-        counting: 'things',
+        counting: 'items',
         error: 'File is corrupted',
         isUserStarted: false,
       },
@@ -83,9 +83,9 @@ describe('useWindowStatusBar detail and unit', () => {
     id: 't',
     label: 'Reading',
     about: '',
-    done: 1,
+    completedCount: 1,
     total: 4,
-    counting: 'things',
+    counting: 'items',
     error: '',
     isUserStarted: false,
   }
@@ -109,7 +109,7 @@ describe('useWindowStatusBar detail and unit', () => {
   it('carries the counts of a task that has a total, and none of one that has not', () => {
     expect(first(base)).toMatchObject({ done: 1, total: 4, progress: 25 })
     const none = first({ ...base, total: 0 })
-    expect(none.done).toBeUndefined()
+    expect(none.progress).toBeUndefined()
     expect(none.total).toBeUndefined()
   })
 })
@@ -119,15 +119,17 @@ describe('useWindowStatusBar groups and handlers', () => {
     id: 't',
     label: 'Sorting',
     about: 'shelf',
-    done: 0,
+    completedCount: 0,
     total: 0,
-    counting: 'things',
+    counting: 'items',
     error: '',
     isUserStarted: false,
   }
 
   it('groups a task that matches no pattern under its label, or under a general name without one', () => {
-    const bar = useWindowStatusBar({ tasks: ref([defaultTask, { ...defaultTask, id: 'u', label: '' }]) })
+    const bar = useWindowStatusBar({
+      tasks: ref([defaultTask, { ...defaultTask, id: 'u', label: '' }]),
+    })
     expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
   })
 
@@ -154,9 +156,9 @@ describe('a proofreading the person has not allowed', () => {
         id: 'proofread-talks/one.mp3',
         label: 'Proofreading a transcript',
         about: 'talks/one.mp3',
-        done: 0,
+        completedCount: 0,
         total: 0,
-        counting: 'things',
+        counting: 'items',
         error: reason,
         isUserStarted: true,
       },

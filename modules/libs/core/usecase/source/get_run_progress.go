@@ -18,8 +18,8 @@ func (u GetRunProgress) Execute(
 	if !u.texts.isReady() {
 		return RunProgress{}, nil
 	}
-	if at := u.texts.getNoteURL(ctx, v, path); string(at) != "" {
-		_, progress, err := u.texts.getFetchedText(ctx, v, at)
+	if pos := u.texts.getNoteURL(ctx, v, path); string(pos) != "" {
+		_, progress, err := u.texts.getFetchedText(ctx, v, pos)
 		return progress, err
 	}
 	stored, err := u.texts.getIndexedText(ctx, v, path)

@@ -4,7 +4,6 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// Two questions are asked as a person types, and they answer with different
 // things: SearchNames answers with names, and SearchPassages with the passages
 // of text a vault holds. A client drawing them apart asks each of them.
 
@@ -74,7 +73,6 @@ export const SearchNamesResponseSchema: GenMessage<SearchNamesResponse> = /*@__P
 /**
  * NameMatch is one name that matched, and the note it stands for. A note's own
  * title matched when there is no heading here; otherwise the note is what the
- * heading stands in.
  *
  * @generated from message numen.v1.NameMatch
  */
@@ -102,7 +100,6 @@ export type NameMatch = Message<"numen.v1.NameMatch"> & {
 
   /**
    * The `type` key of the note's frontmatter, so a client draws a note as what it is.
-   * Empty for an ordinary note. A heading carries the type of the note it stands in.
    *
    * @generated from field: string type = 4;
    */
@@ -132,11 +129,6 @@ export type SearchPassagesRequest = Message<"numen.v1.SearchPassagesRequest"> & 
    */
   limit: number;
 
-  /**
-   * How the search is asked. A request naming no mode is refused.
-   *
-   * @generated from field: numen.v1.SearchMode mode = 3;
-   */
   mode: SearchMode;
 };
 
@@ -213,7 +205,6 @@ export type Passage = Message<"numen.v1.Passage"> & {
   location: string;
 
   /**
-   * Where the passage stands in the text of the source it was read out of,
    * counted in bytes. With the path above it is the place this opens, and a hit
    * in a note carries it as every other hit does.
    *

@@ -64,7 +64,6 @@ type Edit struct {
 
 	Fingerprint domain.Fingerprint
 	// ShouldOverwrite is a caller writing what is in front of the person: the note on disk is replaced
-	// without being held to a fingerprint, a note that is not there is made, and no identifier is
 	// stamped.
 	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.
@@ -164,8 +163,6 @@ func (e Edit) readNote(ctx context.Context, files Reader, path string) ([]byte, 
 	}
 }
 
-// getExpected is the fingerprint the write is held to: the one the caller gave, else the one read
-// just now. A caller writing over what is there is held to neither.
 func (e Edit) getExpected(path string, on domain.Fingerprint, looked error) (domain.Fingerprint, error) {
 	if !e.Fingerprint.IsZero() || e.ShouldOverwrite {
 		return e.Fingerprint, nil

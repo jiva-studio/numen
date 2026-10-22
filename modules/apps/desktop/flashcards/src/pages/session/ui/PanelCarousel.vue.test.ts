@@ -11,11 +11,11 @@ import type { PanelPlace } from '../model/carousel'
  * widths it would have had: a panel either side of a card the width of the
  * window, with a space between each pair.
  */
-const strip = (at: PanelPlace = 'here') => {
+const strip = (place: PanelPlace = 'here') => {
   const one = mount(PanelCarousel, {
     // The window is listening and answers by setting the prop, so what is in the
     // window stays the window's answer. A strip nobody listens to keeps its own.
-    props: { at, 'onUpdate:at': () => {} },
+    props: { at: place, 'onUpdate:at': () => {} },
     slots: {
       before: '<p>the reading</p>',
       default: '<p>the card</p>',
@@ -49,8 +49,8 @@ const scrollStrip = async (window_: HTMLElement, to: number) => {
 
 describe('a card with a panel on either side of it', () => {
   it('draws all three, wherever the strip is standing', () => {
-    for (const at of ['before', 'here', 'after'] as const) {
-      const { one } = strip(at)
+    for (const place of ['before', 'here', 'after'] as const) {
+      const { one } = strip(place)
       expect(one.text()).toContain('the reading')
       expect(one.text()).toContain('the card')
       expect(one.text()).toContain('the chat')
@@ -164,7 +164,6 @@ describe('a hand on the strip', () => {
     expect(one.emitted('update:at')).toEqual([['after']])
   })
 
-  // A panel the window refused to open is one the strip must not be left
   // standing on: what is in the window is the window's answer, not the strip's.
   it('goes back off a panel the window did not open', async () => {
     const { one, window_ } = strip()
@@ -229,7 +228,6 @@ describe('a wheel on the strip', () => {
     expect(window_.scrollLeft).toBe(220)
   })
 
-  // A panel the window refused to open is one the strip must not be left
   // standing on, and a wheel is settled the same way a hand is.
   it('is taken back off a stop the window did not take', async () => {
     vi.useFakeTimers()

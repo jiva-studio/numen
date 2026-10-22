@@ -48,7 +48,6 @@ function checkPermission(target: PermissionTarget, permission: string, operation
 /** The commands of the window over a file that change nothing in the vault. */
 const READ_ONLY_COMMANDS: ReadonlySet<string> = new Set(['read', 'travel', 'copy', 'ask'])
 
-/** The notes of the vault, their writes held to `vault:write`. */
 function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void): VaultNotes {
   return {
     ...notes,
@@ -75,7 +74,6 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
   }
 }
 
-/** The files of the vault, their writes held to `vault:write`. */
 function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void): VaultFiles {
   return {
     ...files,
@@ -152,7 +150,6 @@ function guardAgent(
   }
 }
 
-/** The open files of the window, their being written out held to `vault:write`. */
 function guardBuffers(
   buffers: BufferHost,
   requireWrite: (operation: string) => void,
@@ -170,7 +167,6 @@ function guardBuffers(
   }
 }
 
-/** The window, its commands that change the vault held to `vault:write`. */
 function guardWorkspace(
   workspace: WorkspaceHost,
   requireWrite: (operation: string) => void,
@@ -199,7 +195,6 @@ function guardService<K extends keyof Services, S>(
   return service === undefined ? {} : ({ [key]: guard(service) } as Pick<Services, K>)
 }
 
-/** The services the window made for a plugin, each held to the permissions the plugin declares. */
 function guardServices(
   host: PluginContextHost,
   requirePerm: (permission: string, operation: string) => void,
@@ -255,7 +250,7 @@ export function createPluginContext(
       requirePerm('vault:read', 'emitFileSelect')
       host.emitFileSelect(pluginId, e)
     },
-    openTab: (kind: string, at?: string) => host.openTab?.(kind, at),
+    openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
     closeTab: (id: string) => {
       host.closeTab?.(id)
     },

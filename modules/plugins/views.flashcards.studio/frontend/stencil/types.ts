@@ -19,14 +19,14 @@ export interface StencilFieldActions {
   addField(name: string): void
   renameField(field: string, name: string): void
   removeField(field: string): void
-  moveField(field: string, at: string | null): void
+  moveField(field: string, target: string | null): void
 }
 
 export interface StencilFaceActions {
   addFace(name: string): void
   renameFace(id: string, name: string): void
   removeFace(id: string): void
-  moveFace(id: string, at: string | null): void
+  moveFace(id: string, target: string | null): void
   writeFaceHalf(id: string, half: Half, text: string): void
 }
 

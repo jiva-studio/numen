@@ -9,9 +9,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/theme"
 )
 
-// contract is the stylesheet every token is declared in. A preset is held to
-// the first of its blocks that names tokens: that block is what a theme sets,
-// and the rest of the file is what a theme leaves alone.
+// contract defines the design token stylesheet required for theme presets.
 const contract = "../../../../../libs/ui/src/shared/tokens/tokens.css"
 
 // valueKind is the shape a value has. Each is read off the contract, so a token
@@ -122,15 +120,14 @@ func getThemeFields(t *testing.T) map[string]valueKind {
 var pointing = regexp.MustCompile(`^var\(\s*(--[\w-]+)\s*\)$`)
 
 // resolveToken follows a token given as another token, to the value at the end of
-// it. A ring of them resolves to itself and is read as the shape it is written
-// as, which is no shape at all.
-func resolveToken(value string, held map[string]string) string {
-	for range len(held) {
+// it. A cycle of tokens resolves to itself and retains its raw value.
+func resolveToken(value string, tokens map[string]string) string {
+	for range len(tokens) {
 		found := pointing.FindStringSubmatch(value)
 		if found == nil {
 			return value
 		}
-		next, is := held[found[1]]
+		next, is := tokens[found[1]]
 		if !is {
 			return value
 		}
@@ -268,16 +265,16 @@ func stripComments(css string) string {
 func splitOn(text string, on byte) []string {
 	var parts []string
 	depth, start := 0, 0
-	for at := range len(text) {
-		switch text[at] {
+	for item := range len(text) {
+		switch text[item] {
 		case '(':
 			depth++
 		case ')':
 			depth--
 		case on:
 			if depth == 0 {
-				parts = append(parts, text[start:at])
-				start = at + 1
+				parts = append(parts, text[start:item])
+				start = item + 1
 			}
 		}
 	}
@@ -294,16 +291,16 @@ func splitWords(text string) []string {
 			found = append(found, word)
 		}
 	}
-	for at := range len(text) {
-		switch text[at] {
+	for item := range len(text) {
+		switch text[item] {
 		case '(':
 			depth++
 		case ')':
 			depth--
 		case ' ', '\t', '\n', '\r':
 			if depth == 0 {
-				keep(at)
-				start = at + 1
+				keep(item)
+				start = item + 1
 			}
 		}
 	}

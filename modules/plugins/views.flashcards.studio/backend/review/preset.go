@@ -10,7 +10,6 @@ import (
 // Preset is how the decks pointing at one note are scheduled.
 //
 // It is read from the frontmatter of a note of `type: preset`. A key the file
-// does not carry stands at the default, and no cards a day is a pause.
 type Preset struct {
 	// Goal is the value the one control steers. The value itself is in the
 	// field that goal names.
@@ -30,7 +29,6 @@ type Preset struct {
 	Retention float64
 
 	// Rule is what counts as a card face the person has learned, written under
-	// `learned`. The value it reads stands in the field the rule names:
 	// Interval under RuleInterval, Retention under RuleRetention.
 	Rule LearnedRule
 	// Interval is how long a card face is sent away for before it is learned, in
@@ -135,16 +133,14 @@ func IsKnownRule(r LearnedRule) bool {
 // IsLearned reports whether a card face standing at this schedule is one the
 // person has learned at this instant, under the rule this preset names.
 //
-// A card face nobody has answered is learned by neither rule.
-//
 // It is the one place the rule is read.
-func (p Preset) IsLearned(s Schedule, at time.Time) bool {
+func (p Preset) IsLearned(s Schedule, target time.Time) bool {
 	if s.IsNew() {
 		return false
 	}
 	rule, interval, retention := p.getLearnedRule()
 	if rule == RuleRetention {
-		return Recall(at.Sub(s.Last), s.Stability) >= retention
+		return Recall(target.Sub(s.Last), s.Stability) >= retention
 	}
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
@@ -153,7 +149,6 @@ func (p Preset) IsLearned(s Schedule, at time.Time) bool {
 // two values a rule reads.
 //
 // A preset naming no rule counts by the default rule, and a value the rule
-// cannot hold stands at the default. A preset that says nothing holds its cards
 // to the threshold in Defaults.
 func (p Preset) getLearnedRule() (LearnedRule, int, float64) {
 	defaults := Defaults()
@@ -186,7 +181,7 @@ const (
 // count, where shown is whether the day has asked that face already.
 //
 // It is the one place the counting is read.
-func (u BudgetUnit) IsCharged(shown bool) bool { return u == BudgetUnitShows || !shown }
+func (u BudgetUnit) IsCharged(isShown bool) bool { return u == BudgetUnitShows || !isShown }
 
 // IsKnownBudgetUnit reports whether a value is one of the two.
 func IsKnownBudgetUnit(u BudgetUnit) bool {

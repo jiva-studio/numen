@@ -30,7 +30,6 @@ message GetRecordingResponse {
   // player it is loaded into is what then says.
   int32 duration_ms = 1;
 
-  // Where it is played from, and what it is played as. A media element speaks
   // the protocols of the world and not the scheme a window is served under, so
   // the bytes are answered at an address of their own; a url with no copy on
   // this disk is answered with the page that frames it, typed `text/html`.

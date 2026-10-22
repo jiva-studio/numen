@@ -16,10 +16,10 @@ import (
 
 // writeSettings is a settings file holding that text, and the container reading
 // it.
-func writeSettings(t *testing.T, written string) (Config, string) {
+func writeSettings(t *testing.T, output string) (Config, string) {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if err := os.WriteFile(path, []byte(written), 0o600); err != nil {
+	if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	return Config{SettingsPath: path}, path
@@ -122,7 +122,6 @@ func TestSettingsWithNowhereToLiveAreRefused(t *testing.T) {
 	}
 }
 
-// A file that cannot be read is refused, and what is handed back is nothing.
 func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	t.Setenv("HOME", t.TempDir())
 	t.Setenv("XDG_CONFIG_HOME", t.TempDir())
@@ -138,7 +137,6 @@ func TestASettingsFileThatIsNotReadableIsRefused(t *testing.T) {
 	}
 }
 
-// Settings that cannot be written as JSON are refused with no text.
 func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 	target := DefaultSettings()
 	target.Appearance.InterfaceScale = math.NaN()

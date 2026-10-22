@@ -53,15 +53,15 @@ func getReasoningField(supported []string) string {
 }
 
 // newModel is the model a chat API lists, with the depths of reasoning it names for the model.
-func newModel(name, title string, supported []string, listed *reasoningListing) model {
+func newModel(name, title string, supported []string, listing *reasoningListing) model {
 	one := model{Name: name, Title: title, ReasoningField: getReasoningField(supported)}
-	if listed != nil {
-		names := slices.DeleteFunc(slices.Clone(listed.SupportedEfforts), func(level string) bool { return level == effortNone })
+	if listing != nil {
+		names := slices.DeleteFunc(slices.Clone(listing.SupportedEfforts), func(level string) bool { return level == effortNone })
 		if len(names) > 0 {
 			one.ReasoningLevels = reasoning.NewLevels(names...)
 			reasoning.Sort(one.ReasoningLevels)
-			if reasoning.Contains(one.ReasoningLevels, listed.DefaultEffort) {
-				one.DefaultReasoning = listed.DefaultEffort
+			if reasoning.Contains(one.ReasoningLevels, listing.DefaultEffort) {
+				one.DefaultReasoning = listing.DefaultEffort
 			}
 			if one.ReasoningField == "" {
 				one.ReasoningField = fieldReasoning
@@ -77,21 +77,21 @@ func newModel(name, title string, supported []string, listed *reasoningListing) 
 
 // newEffort is the depth of reasoning asked of the model: the level if the model lists a field to take
 // it and the level is one it offers, else none.
-func newEffort(listed model, level string) effort {
-	if listed.ReasoningField == "" || reasoning.Pick(listed.ReasoningLevels, level) == "" {
+func newEffort(m model, level string) effort {
+	if m.ReasoningField == "" || reasoning.Pick(m.ReasoningLevels, level) == "" {
 		return effort{}
 	}
-	return effort{field: listed.ReasoningField, level: level}
+	return effort{field: m.ReasoningField, level: level}
 }
 
 // newChatRequest is the request for the next message of a conversation.
-func newChatRequest(model string, asked effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
+func newChatRequest(model string, reqEffort effort, messages []message, tools []functionTool, isStreamed bool) chatRequest {
 	request := chatRequest{Model: model, Messages: messages, Tools: tools, Stream: isStreamed}
-	switch asked.field {
+	switch reqEffort.field {
 	case fieldReasoningEffort:
-		request.ReasoningEffort = asked.level
+		request.ReasoningEffort = reqEffort.level
 	case fieldReasoning:
-		request.Reasoning = &reasoningRequest{Effort: asked.level}
+		request.Reasoning = &reasoningRequest{Effort: reqEffort.level}
 	}
 	return request
 }

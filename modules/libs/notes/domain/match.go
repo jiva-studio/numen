@@ -12,7 +12,7 @@ import (
 //
 // A path is matched under FoldName: every folder on the way to a note
 // answers the way the note's own name does.
-func ChooseMatch(from, name string, candidates []string) (chosen string, ambiguous bool) {
+func ChooseMatch(from, name string, candidates []string) (bestMatch string, ambiguous bool) {
 	if len(candidates) == 0 {
 		return "", false
 	}
@@ -26,15 +26,15 @@ func ChooseMatch(from, name string, candidates []string) (chosen string, ambiguo
 	// name the same file.
 	wanted := []string{name, name + NoteExtension}
 	for _, w := range wanted {
-		if at := findIndex(folded, FoldName(w)); at >= 0 {
-			return candidates[at], false
+		if idx := findIndex(folded, FoldName(w)); idx >= 0 {
+			return candidates[idx], false
 		}
 	}
 
 	for _, w := range wanted {
 		relative := FoldName(path.Join(path.Dir(from), w))
-		if at := findIndex(folded, relative); at >= 0 {
-			return candidates[at], false
+		if idx := findIndex(folded, relative); idx >= 0 {
+			return candidates[idx], false
 		}
 	}
 

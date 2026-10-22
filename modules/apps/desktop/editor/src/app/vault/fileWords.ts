@@ -24,7 +24,8 @@ const BOOK_FORMATS: Record<BookFormats, BookFormat | DocumentFormat | undefined>
   [BookFormats.EPUB]: 'epub',
 }
 
-export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined => BOOK_FORMATS[of]
+export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined =>
+  BOOK_FORMATS[of]
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({

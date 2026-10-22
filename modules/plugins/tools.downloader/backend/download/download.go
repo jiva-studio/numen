@@ -21,30 +21,30 @@ func New(_ context.Context, c Config) (*Downloader, error) {
 }
 
 // CanHandle reports whether any provider handles the address.
-func (f *Downloader) CanHandle(at string) bool {
+func (f *Downloader) CanHandle(address string) bool {
 	for _, one := range f.providers {
-		if one.CanHandle(at) {
+		if one.CanHandle(address) {
 			return true
 		}
 	}
 	return false
 }
 
-func (f *Downloader) providerFor(at string) (Provider, error) {
+func (f *Downloader) providerFor(pos string) (Provider, error) {
 	for _, one := range f.providers {
-		if one.CanHandle(at) {
+		if one.CanHandle(pos) {
 			return one, nil
 		}
 	}
-	return nil, fmt.Errorf("%s: %w", at, ErrNoTool)
+	return nil, fmt.Errorf("%s: %w", pos, ErrNoTool)
 }
 
-func (f *Downloader) playerFor(at string) (Player, error) {
-	by, err := f.providerFor(at)
+func (f *Downloader) playerFor(pos string) (Player, error) {
+	delta, err := f.providerFor(pos)
 	if err != nil {
 		return nil, err
 	}
-	plays, is := by.(Player)
+	plays, is := delta.(Player)
 	if !is {
 		return nil, ErrNothingDownloaded
 	}
@@ -52,39 +52,39 @@ func (f *Downloader) playerFor(at string) (Player, error) {
 }
 
 // GetDownloadModel returns tool identity for the address.
-func (f *Downloader) GetDownloadModel(at string) DownloadModel {
-	by, err := f.providerFor(at)
+func (f *Downloader) GetDownloadModel(address string) DownloadModel {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return DownloadModel{}
 	}
-	return by.GetDownloadModel(at)
+	return delta.GetDownloadModel(address)
 }
 
 // GetMetadata returns media metadata.
-func (f *Downloader) GetMetadata(ctx context.Context, at string) (Metadata, error) {
-	by, err := f.providerFor(at)
+func (f *Downloader) GetMetadata(ctx context.Context, address string) (Metadata, error) {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return Metadata{}, err
 	}
-	return by.GetMetadata(ctx, at)
+	return delta.GetMetadata(ctx, address)
 }
 
 // GetText returns published words or cues.
-func (f *Downloader) GetText(ctx context.Context, at string, want PreferredCaptions) (Text, error) {
-	by, err := f.providerFor(at)
+func (f *Downloader) GetText(ctx context.Context, address string, want PreferredCaptions) (Text, error) {
+	delta, err := f.providerFor(address)
 	if err != nil {
 		return Text{}, err
 	}
-	return by.GetText(ctx, at, want)
+	return delta.GetText(ctx, address, want)
 }
 
 // Download brings media bytes into the writer.
-func (f *Downloader) Download(ctx context.Context, at string, into io.Writer) (Copy, error) {
-	plays, err := f.playerFor(at)
+func (f *Downloader) Download(ctx context.Context, address string, into io.Writer) (Copy, error) {
+	plays, err := f.playerFor(address)
 	if err != nil {
 		return Copy{}, err
 	}
-	return plays.Download(ctx, at, into)
+	return plays.Download(ctx, address, into)
 }
 
 type program struct {
@@ -141,8 +141,8 @@ func run(ctx context.Context, tool program, into io.Writer, arguments ...string)
 	return out.Bytes(), nil
 }
 
-func getLastLine(said string) string {
-	lines := strings.Split(strings.TrimSpace(said), "\n")
+func getLastLine(response string) string {
+	lines := strings.Split(strings.TrimSpace(response), "\n")
 	for i := len(lines) - 1; i >= 0; i-- {
 		if line := strings.TrimSpace(lines[i]); line != "" {
 			return line

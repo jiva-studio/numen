@@ -105,10 +105,10 @@ export const removeField = (stencil: BufferStencil, field: string): BufferStenci
 export const moveField = (
   stencil: BufferStencil,
   field: string,
-  at: InsertionPoint,
+  target: InsertionPoint,
 ): BufferStencil => ({
   ...stencil,
-  fields: reorderFields(stencil.fields, field, at),
+  fields: reorderFields(stencil.fields, field, target),
 })
 
 /**
@@ -116,11 +116,15 @@ export const moveField = (
  * The order of the faces is the order a card's repetitions are taken from it,
  * and nothing among them is fixed.
  */
-export const moveFace = (stencil: BufferStencil, id: string, at: InsertionPoint): BufferStencil => {
+export const moveFace = (
+  stencil: BufferStencil,
+  id: string,
+  target: InsertionPoint,
+): BufferStencil => {
   const order = orderNames(
     stencil.faces.map((face) => face.id),
     id,
-    at,
+    target,
   )
   const faces = [...stencil.faces].sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id))
   return { ...stencil, faces }

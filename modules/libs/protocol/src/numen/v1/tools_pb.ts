@@ -100,7 +100,6 @@ export type PluginTool = Message<"numen.v1.PluginTool"> & {
   servers: ToolServer[];
 
   /**
-   * How a person is told of a call to the tool. None says what the effect says.
    *
    * @generated from field: numen.v1.ToolStep step = 8;
    */
@@ -198,11 +197,6 @@ export type ToolResult = Message<"numen.v1.ToolResult"> & {
    */
   structured: Uint8Array;
 
-  /**
-   * True where the tool ran and refused, and text says why.
-   *
-   * @generated from field: bool is_refusal = 3;
-   */
   isRefusal: boolean;
 };
 

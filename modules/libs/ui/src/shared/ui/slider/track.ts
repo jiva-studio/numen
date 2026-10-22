@@ -2,7 +2,6 @@
  * Where a key leaves the handle.
  *
  * Pure: the same value gives the same answer wherever it is read, so what the
- * handle stands at can be named without drawing it.
  */
 import { stepBy, type Bounds } from '@/shared/lib/bounds'
 

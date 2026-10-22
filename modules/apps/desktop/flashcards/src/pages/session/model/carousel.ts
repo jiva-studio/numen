@@ -33,10 +33,10 @@ export interface CarouselStripDeps {
 
 function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLElement | null>) {
   const getStops = (): Record<PanelPlace, number> => {
-    const at = window_.value
+    const place = window_.value
     const card = middle.value
-    if (!at || !card) return { before: 0, here: 0, after: 0 }
-    return { before: 0, here: card.offsetLeft, after: at.scrollWidth - at.clientWidth }
+    if (!place || !card) return { before: 0, here: 0, after: 0 }
+    return { before: 0, here: card.offsetLeft, after: place.scrollWidth - place.clientWidth }
   }
 
   const findNearest = (left: number): PanelPlace => {
@@ -62,29 +62,29 @@ function useCarouselDrag(deps: {
   let was = 0
 
   const onPointerDown = (press: PointerEvent) => {
-    const at = deps.window_.value
-    if (!at || press.button !== 0) return
+    const place = deps.window_.value
+    if (!place || press.button !== 0) return
     taking.value = true
     from = press.clientX
-    was = at.scrollLeft
-    at.setPointerCapture(press.pointerId)
+    was = place.scrollLeft
+    place.setPointerCapture(press.pointerId)
   }
 
   const onPointerMove = (press: PointerEvent) => {
-    const at = deps.window_.value
-    if (!at || !taking.value) return
-    at.scrollLeft = was - (press.clientX - from)
+    const place = deps.window_.value
+    if (!place || !taking.value) return
+    place.scrollLeft = was - (press.clientX - from)
   }
 
   const letGo = async () => {
     if (!taking.value) return
-    const at = deps.window_.value
-    const where = at ? deps.findNearest(at.scrollLeft) : deps.shown.value
+    const place = deps.window_.value
+    const where = place ? deps.findNearest(place.scrollLeft) : deps.activeSlide.value
     taking.value = false
     await nextTick()
-    if (where !== deps.shown.value) deps.shown.value = where
+    if (where !== deps.activeSlide.value) deps.activeSlide.value = where
     await nextTick()
-    deps.slideTo(deps.shown.value)
+    deps.slideTo(deps.activeSlide.value)
   }
 
   return { taking, onPointerDown, onPointerMove, letGo }
@@ -100,27 +100,27 @@ function useCarouselMover(
 
   const slideTo = (where: PanelPlace) => {
     window.clearTimeout(snapTimer)
-    const at = window_.value
-    if (!at || Math.abs(at.scrollLeft - getStops()[where]) <= 1) return
+    const place = window_.value
+    if (!place || Math.abs(place.scrollLeft - getStops()[where]) <= 1) return
     window.clearTimeout(sending)
     sending = window.setTimeout(() => {
       sending = 0
       aim = null
     }, SLIDE_DURATION_MS)
     aim = where
-    at.scrollLeft = getStops()[where]
+    place.scrollLeft = getStops()[where]
   }
 
   const placeAt = (where: PanelPlace) => {
-    const at = window_.value
-    if (!at) return
+    const place = window_.value
+    if (!place) return
     window.clearTimeout(snapTimer)
     window.clearTimeout(sending)
     sending = 0
     aim = null
-    at.style.scrollBehavior = 'auto'
-    at.scrollLeft = getStops()[where]
-    at.style.scrollBehavior = ''
+    place.style.scrollBehavior = 'auto'
+    place.scrollLeft = getStops()[where]
+    place.style.scrollBehavior = ''
   }
 
   const snapTo = (where: PanelPlace) => {
@@ -147,7 +147,7 @@ function useCarouselMover(
 export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const window_ = deps.window
   const middle = deps.middle
-  const displayedItems = deps.shown
+  const displayedItems = deps.activeSlide
   const { getStops, findNearest } = createCarouselStops(window_, middle)
   const mover = useCarouselMover(window_, getStops)
 
@@ -159,10 +159,10 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
   })
 
   const onScroll = () => {
-    const at = window_.value
-    if (!at) return
-    mover.checkArrived(at.scrollLeft)
-    const where = findNearest(at.scrollLeft)
+    const place = window_.value
+    if (!place) return
+    mover.checkArrived(place.scrollLeft)
+    const where = findNearest(place.scrollLeft)
     if (!mover.isAiming() && where !== displayedItems.value) displayedItems.value = where
     if (!taking.value) mover.snapTo(displayedItems.value)
   }

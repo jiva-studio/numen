@@ -28,8 +28,8 @@ defineSlots<{
  * hand and carries none, and a row still working is drawn without the letter it
  * will be opened by.
  */
-const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
-  const letter = vaultLetter(at)
+const getVaultKeys = (pos: number, vault: VaultRow): PaletteKeys | undefined => {
+  const letter = vaultLetter(pos)
   if (!letter || vault.isWorking) return undefined
   return { icons: [], letter }
 }
@@ -45,7 +45,7 @@ const getVaultKeys = (at: number, vault: VaultRow): PaletteKeys | undefined => {
         :aside="one.path"
         :whole="one.path"
         :keys="getVaultKeys(at, one)"
-        :disabled="one.isWorking"
+        :is-disabled="one.isWorking"
         @click="$emit('open', one.id)"
       >
         <!-- What the window has to say about this one, drawn at the far end of

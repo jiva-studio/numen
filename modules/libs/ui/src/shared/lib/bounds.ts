@@ -15,7 +15,6 @@ export interface Bounds extends Ends {
   readonly step: number
 }
 
-/** The value brought inside the ends; a value past both ends stands at the ceiling. */
 export const clamp = (value: number, ends: Ends): number =>
   Math.min(ends.max, Math.max(ends.min, value))
 
@@ -49,11 +48,11 @@ const getStepsAbove = (value: number, bounds: Bounds): number => {
  * step back come to where they began. The result is written to as many places
  * as the floor and the step are.
  */
-export const stepBy = (value: number, by: number, bounds: Bounds): number => {
+export const stepBy = (value: number, delta: number, bounds: Bounds): number => {
   const from = clamp(value, bounds)
-  if (bounds.step <= 0 || by === 0) return from
-  const at = getStepsAbove(from, bounds)
-  const place = (by > 0 ? Math.floor(at) : Math.ceil(at)) + by
+  if (bounds.step <= 0 || delta === 0) return from
+  const steps = getStepsAbove(from, bounds)
+  const place = (delta > 0 ? Math.floor(steps) : Math.ceil(steps)) + delta
   const places = Math.max(getDecimalPlaces(bounds.min), getDecimalPlaces(bounds.step))
   return clamp(roundToPlaces(bounds.min + place * bounds.step, places), bounds)
 }

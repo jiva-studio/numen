@@ -23,16 +23,16 @@ import (
 
 // memoryVault is a vault of files kept in memory that answers as the host does.
 type memoryVault struct {
-	mu      sync.Mutex
-	vault   *domain.Vault
-	files   map[string]string
-	stamp   int64
-	data    map[string][]byte
-	cache   map[string][]byte
-	scanned [][]string
-	locks   int
-	changes chan []string
-	lost    chan struct{}
+	mu          sync.Mutex
+	vault       *domain.Vault
+	files       map[string]string
+	stamp       int64
+	data        map[string][]byte
+	cache       map[string][]byte
+	scanned     [][]string
+	locks       int
+	changes     chan []string
+	droppedChan chan struct{}
 	// others are the vaults beside the shown one, by identity.
 	others map[domain.VaultID]*memoryVault
 	state  port.PluginIndexState
@@ -42,14 +42,14 @@ type memoryVault struct {
 
 func newMemoryVault(files map[string]string) *memoryVault {
 	return &memoryVault{
-		vault:   &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
-		files:   files,
-		data:    map[string][]byte{},
-		cache:   map[string][]byte{},
-		changes: make(chan []string, 4),
-		lost:    make(chan struct{}),
-		moves:   make(chan struct{}, 4),
-		state:   port.PluginIndexState{Status: port.PluginIndexed},
+		vault:       &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
+		files:       files,
+		data:        map[string][]byte{},
+		cache:       map[string][]byte{},
+		changes:     make(chan []string, 4),
+		droppedChan: make(chan struct{}),
+		moves:       make(chan struct{}, 4),
+		state:       port.PluginIndexState{Status: port.PluginIndexed},
 	}
 }
 
@@ -124,11 +124,11 @@ func (m *memoryVault) GetFingerprint(_ context.Context, path string) (domain.Fin
 func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.Fingerprint, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	at, err := m.fingerprint(path)
+	pos, err := m.fingerprint(path)
 	if err != nil {
 		return nil, domain.Fingerprint{}, err
 	}
-	return []byte(m.files[path]), at, nil
+	return []byte(m.files[path]), pos, nil
 }
 
 func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {
@@ -232,9 +232,9 @@ func (m *memoryVault) GetBacklinks(_ context.Context, to string) ([]domain.Resol
 	return []domain.ResolvedLink{m.link("decks/" + to)}, nil
 }
 
-func (m *memoryVault) ResolveLinks(_ context.Context, from string, written []string) (map[string]domain.ResolvedLink, error) {
+func (m *memoryVault) ResolveLinks(_ context.Context, from string, output []string) (map[string]domain.ResolvedLink, error) {
 	out := map[string]domain.ResolvedLink{}
-	for _, one := range written {
+	for _, one := range output {
 		out[one] = m.link(from)
 	}
 	return out, nil
@@ -293,7 +293,7 @@ func (m *memoryVault) WriteCache(_ context.Context, pluginID, name string, conte
 }
 
 func (m *memoryVault) Watch(context.Context) (<-chan []string, <-chan struct{}, error) {
-	return m.changes, m.lost, nil
+	return m.changes, m.droppedChan, nil
 }
 
 // newVaultClient serves the host's vault endpoint over the callers and returns a client for the plugin the token names.
@@ -544,7 +544,7 @@ func TestAWatchReturnsItIsOnThenTellsOfTheFilesThatChanged(t *testing.T) {
 	if !stream.Receive() || !slices.Equal(stream.Msg().GetPaths(), []string{"decks/A.md"}) {
 		t.Fatalf("the change was not told: %v %v", stream.Msg(), stream.Err())
 	}
-	close(vault.lost)
+	close(vault.droppedChan)
 	if stream.Receive() {
 		t.Errorf("a watch that was lost went on with %v", stream.Msg())
 	}
@@ -673,7 +673,7 @@ func TestAWatchOfMovesTellsThatSomethingMoved(t *testing.T) {
 	vault.moves <- struct{}{}
 
 	if !stream.Receive() {
-		t.Errorf("nothing was told of the move: %v", stream.Err())
+		t.Errorf("nothing received of the move: %v", stream.Err())
 	}
 }
 

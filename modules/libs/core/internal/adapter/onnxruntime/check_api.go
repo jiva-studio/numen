@@ -16,7 +16,6 @@ type apiBase struct {
 	getAPI uintptr
 }
 
-// checkAPI returns an error when the library whose OrtGetApiBase stands at
 // getAPIBase serves no apiVersion table.
 func checkAPI(getAPIBase uintptr) error {
 	var getBase func() *apiBase

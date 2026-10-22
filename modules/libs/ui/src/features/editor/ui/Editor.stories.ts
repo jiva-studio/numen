@@ -142,8 +142,8 @@ export const Steady: Story = {
     const getHeight = (line: number) => {
       const row = view.state.doc.line(line)
       const viewElement = Array.from(view.contentDOM.children).find((block) => {
-        const at = view.posAtDOM(block)
-        return at >= row.from && at <= row.to
+        const pos = view.posAtDOM(block)
+        return pos >= row.from && pos <= row.to
       })
       if (!viewElement) throw new Error(`nothing is drawn for line ${line}`)
       return viewElement.getBoundingClientRect().height
@@ -183,7 +183,6 @@ export const Steady: Story = {
         })
       }
 
-      // Either side of what stands in place of a mark there is somewhere for
       // the caret to be drawn, and a click there lands on that line.
       await setCaret(PARKED, 0)
       for (const [text, column] of [
@@ -208,7 +207,6 @@ export const Steady: Story = {
         }).toEqual({ face, text, column, drawn: true, lands: true })
       }
 
-      // The task's box stands inside the line it marks.
       const box = canvasElement.querySelector('.cm-box') as HTMLElement
       const element = box.getBoundingClientRect()
       const aroundRect = (box.closest('.cm-line') as HTMLElement).getBoundingClientRect()
@@ -368,7 +366,9 @@ export const FencedInEveryLanguage: Story = {
     }
 
     // The pack lands and paints the block it was fetched for.
-    await waitFor(() => expect(getColouredSpans(found('const answerVal')).length).toBeGreaterThan(0))
+    await waitFor(() =>
+      expect(getColouredSpans(found('const answerVal')).length).toBeGreaterThan(0),
+    )
     await waitFor(() => expect(getColouredSpans(found('answered_here')).length).toBeGreaterThan(0))
 
     // A word no pack answers to leaves the block plain, and leaves the text
@@ -433,8 +433,8 @@ const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDo
 /** The line at the top of what can be seen. */
 const topmost = (view: EditorView): number => {
   const box = view.scrollDOM.getBoundingClientRect()
-  const at = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
-  return view.state.doc.lineAt(at).number
+  const pos = view.posAtCoords({ x: box.left + 8, y: box.top + 8 }) ?? 0
+  return view.state.doc.lineAt(pos).number
 }
 
 /**
@@ -693,7 +693,9 @@ export const LeftByTheKeyboard: Story = {
     const stop = (which: string) => canvasElement.querySelector(`[${which}]`) as HTMLElement
 
     // What a reader is told on arrival is the way back out.
-    const notifiedElement = document.getElementById(view.contentDOM.getAttribute('aria-describedby') ?? '')
+    const notifiedElement = document.getElementById(
+      view.contentDOM.getAttribute('aria-describedby') ?? '',
+    )
     await expect(notifiedElement?.textContent).toContain('Escape')
 
     stop('data-before').focus()

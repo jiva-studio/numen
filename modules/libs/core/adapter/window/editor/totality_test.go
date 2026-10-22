@@ -113,7 +113,6 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 	})
 }
 
-// What an artifact stands at is written in two places: how far a run has got,
 // and what a run just set going is. Each schema value names the call that
 // writes it.
 func TestEveryArtifactStateIsSavedFromOne(t *testing.T) {
@@ -151,7 +150,6 @@ func getStateAt(got source.RunProgress) func() v1.State {
 
 // Which extensions are books and which reader cuts each of them are two lists,
 // and a book the vault names with no reader behind it opens in the reader made
-// for the other sort: the window is told the format is none, and none is the
 // picture reader.
 func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
 	for _, extension := range filesystem.DefaultBookExtensions {

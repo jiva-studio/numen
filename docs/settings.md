@@ -4,7 +4,7 @@ One file, JSON, named `numen.json` in the folder this desktop keeps a person's c
 
 Every field left out keeps its default. A file naming one setting is a valid file.
 
-A setting the window draws a control for is turned by that control, which patches the file as an object and leaves every other byte of it where it was. The window also opens the file whole, in a tab of its own, from the settings page: what is typed there is written as it stands, and a file the settings cannot be read out of is refused with where in it the trouble is.
+A setting the window draws a control for is turned by that control, which patches the file as an object and leaves every other byte of it where it was. The window also opens the file whole, in a tab of its own, from the settings page: what is typed there is written as it stands, and a malformed file is rejected with the syntax error location.
 
 This document is every section of the file, and says of each section which keys are worth turning and why. The complete list is the manual's [settings reference](../modules/apps/docs/src/content/docs/reference.md), which is written out of the code itself and checked against it on every build — `indexing.recognition` alone holds twenty-six keys, and three of them are below. Where what a key does is specified elsewhere, the page that specifies it is linked from the section.
 
@@ -36,7 +36,7 @@ How the window is drawn: how large, which half of a colour pair, and which palet
 
 Each size is a multiplier. `interface_scale` is the root's font size, and every length in the window is a multiple of it: the height of a field and a button, the clearance inside a node, the radii, the spacing, and the type throughout. `text_scale` is a second multiplier over the text a person reads — the editor, and marked-up text with the scale above it, its headings, code, lists and quotations. A hairline, a border, a focus ring and the stroke of a handle are one physical line under either.
 
-A number outside what its setting goes to is refused. What stands in the window's place is in [Starting](starting.md). The number is left as it was written.
+A number outside the valid range is rejected. What stands in the window's place is in [Starting](starting.md). The number is left as it was written.
 
 A file naming no size at all asks the desktop: a session that set `GDK_DPI_SCALE` draws its interface by that, and one that said nothing is drawn at 1. A scale outside what `interface_scale` goes to is not one it is seeded with.
 
@@ -72,9 +72,9 @@ On, a node in the plex nests the headings of the note it stands for under its bo
 
 | | |
 | --- | --- |
-| `day_start_time` | the hour a day of review begins at, on the clock on the wall. `04:00`, and it goes from `00:00` to `12:00`. |
+| `day_start_time` | the hour a day of review begins at, in local time (`04:00`, between `00:00` and `12:00`). |
 
-An answer given before that hour is written into the day before: a person answering at one in the morning is finishing the evening they sat down in, and a boundary at midnight would cut one session in two. The hour is an hour on the wall, so a day is read where a person reads it — [Flashcards](flashcards.md).
+An answer given before that hour is recorded in the previous day: a user reviewing cards at one in the morning is finishing the previous evening's session, and a boundary at midnight would split one session in two. The hour uses local time — [Flashcards](flashcards.md).
 
 Anything that is not an hour of the day is said, and `04:00` stands. The file is left as the person wrote it.
 
@@ -326,7 +326,7 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 
 `transcribe_recordings` and `transcription.proofread.automatically` are two flags about two things. The first decides whether a recording nobody asked about is listened to at all. The second decides whether a transcript that already exists is put right by itself. An installation can hear every recording unasked and proofread none of them, and it can proofread every transcript it has while listening to nothing new.
 
-Recognising a scan and transcribing a recording each hold the models and the processor, so they take turns: a person who asked for a scan to be read waits for it before a recording is transcribed, and the one waiting says so in the list of what is being done.
+Recognising a scan and transcribing a recording each hold the models and the processor, so they take turns: an explicit user request for a scan to be read waits for it before a recording is transcribed, and the waiting job indicates its status in the job queue.
 
 Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
 
@@ -417,7 +417,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 | | |
 | --- | --- |
-| `captions` | which languages published words are preferred in, best first. Empty takes the language the video was spoken in. |
+| `captions` | which languages published words are preferred in, best first. Empty defaults to the video's original audio language. |
 | `automatic_captions` | whether words a machine wrote count where a person published none. On. |
 | `copy_max_size_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |
 | `copies_to_vault` | whether a copy is kept beside the url, under that file's own name, as a file of the person's own. Off, which keeps it in the application's folder, where losing it costs another fetch. |
@@ -450,7 +450,7 @@ None of this is turned in the window. Every key here is a machine's answer rathe
 | `claude.command` | what starts it: the command line's path, and anything it is started through. Empty asks the path, then the folders its installers write to. Worth naming for an installation those folders do not cover, and for one machine carrying several. |
 | `claude.model` | which of its models answers — `opus`, `sonnet`, `haiku`, or a full name. Empty takes whatever that installation answers with. Worth naming because a panel is read while somebody waits. |
 | `claude.max_steps` | how many times it may go to the model before it is stopped. 30. |
-| `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is refused either way, since a vault arrives from elsewhere. |
+| `claude.reads_hooks_and_skills` | whether it reads what this machine holds configured for it: hooks, skills, standing instructions in `CLAUDE.md`, plugins. Off. A hook is a shell command Claude Code runs itself, and a question typed into a panel is not asking for one. On, what is configured for this person is read; what a vault carries is rejected either way, since a vault arrives from elsewhere. |
 | `numen.model` | which model of the chat API answers. Empty takes the plugin's own `model` setting. |
 | `numen.max_steps` | how many requests it may make to the model before it is stopped. 25. |
 
@@ -489,11 +489,11 @@ A plugin that holds the `ai:complete` permission asks the host for a completion 
 
 A program that is not installed or that no plugin lists is answered `NO_ROUTE`, and so is a question when `agent.use` is empty or no program is installed; no other program answers in its place. A program whose plugin cannot be reached, that stops without an answer or that says nothing is answered `UNAVAILABLE`, with the reason it stopped for in the log. The command line, the options and the model of the program's section under `agent` apply to the task as they do to the panel's. A model the program does not offer is the program's own error.
 
-Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission refused. It stops a task that names a tool.
+Every agent that runs a task answers a question, and a task that names no tool is given none. `md.numen.agents.claude` starts `claude` with no tool, no MCP server and one turn. `md.numen.agents.codex` starts `codex exec` read-only and ephemeral, without the user's configuration, the MCP servers in it and the tools of its own that can be turned off, in an empty folder. `md.numen.agents.antigravity` starts `agy` without the permission skip, with a home that holds no MCP server, in an empty folder. `md.numen.agents.numen` asks the chat API with no tool and connects to no tool server. `md.numen.agents.acp` is the generic ACP client: it lists a program `acp:<name>` for each section of that name under `agent` with a `command`, with the models the agent reports for a session, and answers a task that names no tool in one session of its own in an empty folder, with no MCP servers, no file system or terminal and every permission denied. It stops a task that names a tool.
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
-The first question of a plugin the person has not answered for is refused with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Refuse. Refused, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading stands in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
+The first question of a plugin the person has not answered for is rejected with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Deny. If denied, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading appears in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
 
 The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The agents a list offers are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
 

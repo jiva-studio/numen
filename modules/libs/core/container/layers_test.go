@@ -14,16 +14,10 @@ import (
 	"testing"
 )
 
-// module is what every package of the core is named under.
+// module is the base import path prefix for core packages.
 const module = "github.com/jiva-studio/numen/modules/libs/core/"
 
-// driving are the adapters something outside comes in through. They call the
-// scenarios; a driven adapter stands behind a port and calls none, so what a
-// scenario is written over is a port and never an adapter's own answer.
-//
-// Which way an adapter faces has nothing to do with at its current position: internal/
-// says only that nothing outside composes it, which holds of a driving adapter
-// another adapter mounts.
+// driving lists driving adapters that expose external interfaces and call use cases.
 var driving = map[string]bool{
 	"adapter/cli":               true,
 	"adapter/mcp":               true,
@@ -203,7 +197,7 @@ func TestNoAdapterNamesThePortItSatisfies(t *testing.T) {
 			t.Errorf("no file of adapter/%s was read: the rule stops at that adapter", one)
 		}
 	}
-	for _, one := range held {
+	for _, one := range internalAdapters {
 		if !reached["internal/adapter/"+one] {
 			t.Errorf("no file of internal/adapter/%s was read: the rule stops at that adapter", one)
 		}
@@ -260,16 +254,12 @@ func TestATestOfTheCoreBuildingAnAdapterExistsOutsideIt(t *testing.T) {
 	}
 }
 
-// isMachinery says whether a package is the composition root or a fixture only
-// a test is compiled from. Reaching outward is what they are, so they are held
-// to none of the abstinences below.
+// isMachinery reports whether a package is the composition root or a test fixture.
 func isMachinery(pkg string) bool {
 	return pkg == "container" || strings.HasPrefix(pkg, "internal/test")
 }
 
-// isShared says whether a package is a shared adapter library. Each is held to
-// the adapter rules, and the machine and the clock are open to it as they are to
-// an adapter.
+// isShared reports whether a package is a shared adapter library.
 func isShared(pkg string) bool {
 	return strings.HasPrefix(pkg, "internal/adapterlib/")
 }
@@ -332,13 +322,13 @@ func TestNothingOfTheCoreReachesTheMachine(t *testing.T) {
 			}
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
+			pos, is := node.(*ast.SelectorExpr)
 			if !is {
 				return true
 			}
-			from, is := at.X.(*ast.Ident)
-			if is && from.Name == "filepath" && looking[at.Sel.Name] {
-				wrong = append(wrong, path+" runs filepath."+at.Sel.Name)
+			from, is := pos.X.(*ast.Ident)
+			if is && from.Name == "filepath" && looking[pos.Sel.Name] {
+				wrong = append(wrong, path+" runs filepath."+pos.Sel.Name)
 			}
 			return true
 		})
@@ -419,7 +409,6 @@ func TestNoInnerLayerImportsATransport(t *testing.T) {
 	}
 }
 
-// What the transport rule refuses, read against imports written to be refused.
 func TestWhatTheTransportRuleRefuses(t *testing.T) {
 	var rejected []string
 	for _, to := range []string{
@@ -508,7 +497,6 @@ func TestNothingOfTheCoreLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {
@@ -541,19 +529,19 @@ var (
 // timers, each written time.Name. The local name of the import is not read.
 func getClockReads(file *ast.File) (reads, arms []string) {
 	ast.Inspect(file, func(node ast.Node) bool {
-		at, is := node.(*ast.SelectorExpr)
+		pos, is := node.(*ast.SelectorExpr)
 		if !is {
 			return true
 		}
-		from, is := at.X.(*ast.Ident)
+		from, is := pos.X.(*ast.Ident)
 		if !is || from.Name != "time" {
 			return true
 		}
-		if telling[at.Sel.Name] {
-			reads = append(reads, "time."+at.Sel.Name)
+		if telling[pos.Sel.Name] {
+			reads = append(reads, "time."+pos.Sel.Name)
 		}
-		if waiting[at.Sel.Name] {
-			arms = append(arms, "time."+at.Sel.Name)
+		if waiting[pos.Sel.Name] {
+			arms = append(arms, "time."+pos.Sel.Name)
 		}
 		return true
 	})
@@ -614,8 +602,7 @@ var numbered = map[string]bool{
 	"uintptr": true, "byte": true, "rune": true,
 }
 
-// identity is an exported field naming one: the type it stands in, the field,
-// and how its own type is written.
+// identity records an ID field: containing type, field name, and field type.
 type identity struct{ in, field, spelled string }
 
 // identities are the exported struct fields of one file whose names end in ID.
@@ -644,8 +631,8 @@ func identities(file *ast.File) []identity {
 
 // getTypeName is a type as it is written, and empty for one this rule reads
 // nothing into.
-func getTypeName(at ast.Expr) string {
-	switch target := at.(type) {
+func getTypeName(pos ast.Expr) string {
+	switch target := pos.(type) {
 	case *ast.Ident:
 		return target.Name
 	case *ast.SelectorExpr:
@@ -667,8 +654,8 @@ func getTypeName(at ast.Expr) string {
 func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, at := range []string{"domain", "port"} {
-		dir := getPackageDir(at)
+	for _, item := range []string{"domain", "port"} {
+		dir := getPackageDir(item)
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -686,7 +673,7 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 				read++
 				if numbered[found.spelled] {
 					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
-						at, found.in, found.field, found.spelled))
+						item, found.in, found.field, found.spelled))
 				}
 			}
 		}
@@ -702,7 +689,6 @@ func TestTheCoresIdentitiesAreItsOwn(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a declaration written to be refused. It
 // has to find the field and the type it is spelled in, and let through the ones
 // that are the core's own word and the ones that name no identity at all.
 func TestWhatTheIdentityRuleRefuses(t *testing.T) {
@@ -746,14 +732,14 @@ func getClaimedPorts(file *ast.File) []string {
 		}
 		for _, spec := range decl.Specs {
 			named, is := spec.(*ast.ValueSpec)
-			if !is || !slices.ContainsFunc(named.Names, func(at *ast.Ident) bool {
-				return at.Name == "_"
+			if !is || !slices.ContainsFunc(named.Names, func(pos *ast.Ident) bool {
+				return pos.Name == "_"
 			}) {
 				continue
 			}
-			if at, is := named.Type.(*ast.SelectorExpr); is {
-				if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-					target = append(target, at.Sel.Name)
+			if offset, is := named.Type.(*ast.SelectorExpr); is {
+				if from, is := offset.X.(*ast.Ident); is && from.Name == "port" {
+					target = append(target, offset.Sel.Name)
 				}
 			}
 		}
@@ -762,7 +748,6 @@ func getClaimedPorts(file *ast.File) []string {
 	return target
 }
 
-// What the rule refuses, read against a file written to be refused. The three
 // shapes of the claim are one claim, and the walk has to reach the one written
 // inside a function; a variable holding a port is left alone.
 func TestWhatThePortClaimRefuses(t *testing.T) {
@@ -797,10 +782,8 @@ func mount() {
 // interface it answers to, so nothing but the messages is left to read.
 const schema = wire + "/gen/numen/v1"
 
-// Which way an adapter faces is read off what it does, and not off the folder
-// it sits in. An adapter that serves or mounts the generated handler is a
-// driving adapter wherever it stands, and the list above says so, so the day
-// one of them needs a scenario it is allowed one.
+// TestEveryAdapterServingTheSchemaIsDriving ensures adapters serving or mounting
+// generated protocol handlers are declared as driving adapters.
 func TestEveryAdapterServingTheSchemaIsDriving(t *testing.T) {
 	var wrong []string
 	var found int
@@ -877,8 +860,8 @@ func TestEveryTypePortDeclaresIsNamedSomewhereElse(t *testing.T) {
 // the rule has to come back with the names below. It is what says the passes
 // above are passing on the naming and not on an empty walk.
 func TestWhatThePortRuleRefuses(t *testing.T) {
-	at := filepath.Join("..", "port")
-	unnamed, err := getUnnamedTypes(at, at, false)
+	pos := filepath.Join("..", "port")
+	unnamed, err := getUnnamedTypes(pos, pos, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -911,8 +894,8 @@ func TestEveryPortMethodIsCalledSomewhereElse(t *testing.T) {
 // Read against port/ as the whole tree, nothing outside it calls anything, and
 // the rule has to come back with the methods below.
 func TestWhatThePortMethodRuleRefuses(t *testing.T) {
-	at := filepath.Join("..", "port")
-	uncalled, err := getUncalledMethods(at, at)
+	pos := filepath.Join("..", "port")
+	uncalled, err := getUncalledMethods(pos, pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -951,8 +934,8 @@ func getUncalledMethods(root, dir string) ([]string, error) {
 			return err
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			if at, is := node.(*ast.SelectorExpr); is {
-				called[at.Sel.Name] = true
+			if pos, is := node.(*ast.SelectorExpr); is {
+				called[pos.Sel.Name] = true
 			}
 			return true
 		})
@@ -991,11 +974,11 @@ func methodsIn(dir string) (map[string]string, error) {
 			return nil, err
 		}
 		for _, decl := range file.Decls {
-			at, is := decl.(*ast.GenDecl)
-			if !is || at.Tok != token.TYPE {
+			pos, is := decl.(*ast.GenDecl)
+			if !is || pos.Tok != token.TYPE {
 				continue
 			}
-			for _, spec := range at.Specs {
+			for _, spec := range pos.Specs {
 				named, is := spec.(*ast.TypeSpec)
 				if !is || !named.Name.IsExported() {
 					continue
@@ -1008,9 +991,9 @@ func methodsIn(dir string) (map[string]string, error) {
 					if _, is := method.Type.(*ast.FuncType); !is {
 						continue
 					}
-					for _, at := range method.Names {
-						if at.IsExported() {
-							declared[named.Name.Name+"."+at.Name] = at.Name
+					for _, item := range method.Names {
+						if item.IsExported() {
+							declared[named.Name.Name+"."+item.Name] = item.Name
 						}
 					}
 				}
@@ -1046,12 +1029,12 @@ func getUnnamedTypes(root, dir string, onlyPorts bool) ([]string, error) {
 			return err
 		}
 		ast.Inspect(file, func(node ast.Node) bool {
-			at, is := node.(*ast.SelectorExpr)
+			pos, is := node.(*ast.SelectorExpr)
 			if !is {
 				return true
 			}
-			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
-				named[at.Sel.Name] = true
+			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
+				named[pos.Sel.Name] = true
 			}
 			return true
 		})
@@ -1092,11 +1075,11 @@ func getDeclaredTypes(dir string) (map[string]bool, error) {
 			return nil, err
 		}
 		for _, decl := range file.Decls {
-			at, is := decl.(*ast.GenDecl)
-			if !is || at.Tok != token.TYPE {
+			pos, is := decl.(*ast.GenDecl)
+			if !is || pos.Tok != token.TYPE {
 				continue
 			}
-			for _, spec := range at.Specs {
+			for _, spec := range pos.Specs {
 				named, is := spec.(*ast.TypeSpec)
 				if !is || !named.Name.IsExported() {
 					continue
@@ -1114,11 +1097,7 @@ var layers = map[string]bool{
 	"adapter": true, "container": true, "domain": true, "port": true, "usecase": true,
 }
 
-// A package is named at the call site for what it is. An alias naming a layer
-// says only which folder the package sits in, which the import path already
-// says, and the reader is left with usecase.Add for what is vaults.Add.
-//
-// The tests are read too: most of a package's call sites are in them.
+// TestNoPackageIsImportedBelowItsLayer verifies that packages do not use layer names as import aliases.
 func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	var wrong []string
 	var read, aliased int
@@ -1164,9 +1143,7 @@ func TestNoPackageIsImportedBelowItsLayer(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. The name
-// of a layer says only which folder the package sits in; any other word is the
-// caller saying what the package is, which is the whole point of writing one.
+// TestWhatTheLayerAliasRuleRefuses verifies rejection of layer names as import aliases.
 func TestWhatTheLayerAliasRuleRefuses(t *testing.T) {
 	file, err := parser.ParseFile(token.NewFileSet(), "alias.go", `package p
 
@@ -1201,9 +1178,7 @@ func getPackage(root, path string) string {
 	return filepath.ToSlash(target)
 }
 
-// isAdapter says whether a package is an adapter, wherever it stands. An
-// adapter the compiler holds sits under internal/ and is held to the same
-// rules.
+// isAdapter reports whether a package is an adapter.
 func isAdapter(pkg string) bool {
 	return strings.HasPrefix(pkg, "adapter/") ||
 		strings.HasPrefix(pkg, "internal/adapter/")
@@ -1285,7 +1260,7 @@ func family(pkg string) string {
 // getAdaptersIn are the adapters in one folder, named under it. A folder that
 // groups adapters is not an adapter, so what is placed under it is read in its
 // place.
-func getAdaptersIn(dir, at string) ([]string, error) {
+func getAdaptersIn(dir, pos string) ([]string, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return nil, err
@@ -1295,7 +1270,7 @@ func getAdaptersIn(dir, at string) ([]string, error) {
 		if !one.IsDir() {
 			continue
 		}
-		below := at + "/" + one.Name()
+		below := pos + "/" + one.Name()
 		if !slices.Contains(grouping, below) {
 			found = append(found, one.Name())
 			continue
@@ -1340,9 +1315,8 @@ func TestTheCoresPublicAdaptersAreTheseAndNoOthers(t *testing.T) {
 	}
 }
 
-// held are the adapters the compiler keeps to this module. Naming them is what
-// makes a new one arrive as a decision.
-var held = []string{
+// internalAdapters lists adapters internal to this module.
+var internalAdapters = []string{
 	"appstate", "download", "filesystem", "keychain", "onnxruntime", "plugin",
 	"theme", "trash",
 }
@@ -1356,19 +1330,17 @@ func TestTheCoresHeldAdaptersAreTheseAndNoOthers(t *testing.T) {
 	there := make(map[string]bool, len(found))
 	for _, one := range found {
 		there[one] = true
-		if !isAmong(held, one) {
+		if !isAmong(internalAdapters, one) {
 			t.Errorf("internal/adapter/%s stands here and is named nowhere", one)
 		}
 	}
-	for _, one := range held {
+	for _, one := range internalAdapters {
 		if !there[one] {
 			t.Errorf("internal/adapter/%s is named here and is not there", one)
 		}
 	}
 }
 
-// What refused answers is the whole of the rule, so it is asked directly. Each
-// refusal here is an edge that was walked around once: an adapter the compiler
 // holds took the name of one it does not and was given that name's baseline
 // entry, and a package holding what is true of a note reached one that holds
 // work.
@@ -1442,9 +1414,9 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 // Reading the tree is what the rules are checked against, so the tree has to be
 // where this expects it.
 func TestTheTreeIsWhereTheLayersAreRead(t *testing.T) {
-	for _, at := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
-		if _, err := os.Stat(getPackageDir(at)); err != nil {
-			t.Fatalf("%s: %v", at, err)
+	for _, item := range []string{"domain", "port", "usecase", "adapter", "internal/adapter", "internal/adapterlib"} {
+		if _, err := os.Stat(getPackageDir(item)); err != nil {
+			t.Fatalf("%s: %v", item, err)
 		}
 	}
 }
@@ -1484,8 +1456,8 @@ func getInstants(file *ast.File) []identity {
 func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	var wrong []string
 	var read int
-	for _, at := range []string{"domain", "port"} {
-		dir := getPackageDir(at)
+	for _, item := range []string{"domain", "port"} {
+		dir := getPackageDir(item)
 		target, err := os.ReadDir(dir)
 		if err != nil {
 			t.Fatal(err)
@@ -1503,7 +1475,7 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 				read++
 				if found.spelled != "time.Time" {
 					wrong = append(wrong, fmt.Sprintf("%s/%s.%s is a %s",
-						at, found.in, found.field, found.spelled))
+						item, found.in, found.field, found.spelled))
 				}
 			}
 		}
@@ -1519,7 +1491,6 @@ func TestEveryInstantTheCoreCarriesIsATime(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a declaration written to be refused. It
 // finds the field and the type it is written in, and lets through the one that
 // is a time and the ones that name no instant at all.
 func TestWhatTheInstantRuleRefuses(t *testing.T) {
@@ -1544,16 +1515,11 @@ type Reading struct {
 		}
 	}
 	if !slices.Equal(rejected, []string{"SeenTime"}) {
-		t.Errorf("the rule rejected %v, want the one instant written as a number", rejected)
+		t.Errorf("rejected %v, want SeenTime", rejected)
 	}
 }
 
-// getMethodIdentities are the parameters and results of a file's interface
-// methods whose names end in ID, by the interface each method stands in.
-//
-// A parameter carries its name in the signature, so a walk reads it the same
-// way it reads a field. One written with no name at all names no identity and
-// is not read.
+// getMethodIdentities extracts ID parameters and return types from interface methods.
 func getMethodIdentities(file *ast.File) []identity {
 	var found []identity
 	ast.Inspect(file, func(node ast.Node) bool {
@@ -1630,7 +1596,6 @@ func TestTheIdentitiesAPortAsksForAreTheCoresOwn(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against an interface written to be refused. It
 // reaches a parameter and a result alike, lets through the one that is the
 // core's own word, and reads nothing into a parameter with no name.
 func TestWhatTheIdentityRuleRefusesInASignature(t *testing.T) {
@@ -1658,7 +1623,6 @@ type Store interface {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds
 // the clock read and each timer armed, and lets through the arithmetic over an
 // instant and the constructors that read no clock.
 func TestWhatTheClockRuleRefuses(t *testing.T) {
@@ -1666,15 +1630,15 @@ func TestWhatTheClockRuleRefuses(t *testing.T) {
 
 import "time"
 
-func run(at time.Time) {
+func run(origin time.Time) {
 	_ = time.Now()
-	_ = time.Since(at)
+	_ = time.Since(origin)
 	<-time.After(time.Second)
 	time.AfterFunc(time.Second, func() {})
 	_ = time.NewTimer(time.Second)
 	_ = time.NewTicker(time.Second)
 	_ = time.Tick(time.Second)
-	_ = at.Add(time.Second)
+	_ = origin.Add(time.Second)
 	_ = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 	_ = time.Duration(3)
 }
@@ -1734,11 +1698,10 @@ func TestContainerDoesNotDowncastPluginHost(t *testing.T) {
 	}
 }
 
-// getPackageDir is where the package the rules call at is read from. The domain is the vocabulary the
-// core and the plugins share, and stands in a module of its own beside the core.
-func getPackageDir(at string) string {
-	if at == "domain" {
+// getPackageDir returns the filesystem path for a package name.
+func getPackageDir(pos string) string {
+	if pos == "domain" {
 		return filepath.Join("..", "..", "notes", "domain")
 	}
-	return filepath.Join("..", at)
+	return filepath.Join("..", pos)
 }

@@ -1,5 +1,4 @@
 /**
- * Asking an agent about what the window is showing.
  *
  * The window hands over what was written and reads what the agent does as it
  * does it. What answers sits behind this port.

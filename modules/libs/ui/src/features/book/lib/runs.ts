@@ -12,11 +12,11 @@ import { countBytes, getUnitOffset } from './bytes'
 import type { Span } from '@/shared/lib/span'
 import type { Mark } from './spread'
 
-/** One run of the book's text as it is drawn. */
+/** Single contiguous text run in rendered book. */
 export interface Run {
-  /** Where the run begins, in bytes of the book's text. */
+  /** Byte offset where the text run begins. */
   readonly at: number
-  /** The element the run is drawn in. */
+  /** DOM element containing the rendered text run. */
   readonly element: HTMLElement
 }
 
@@ -31,7 +31,6 @@ export function getRuns(paper: HTMLElement): Run[] {
 }
 
 /**
- * Where each run stands, measured from the near edge of the columns. The first
  * of a run's rectangles is the one that counts: a run broken over a column edge
  * has one in each column, and it begins in the first.
  */
@@ -45,17 +44,16 @@ export function createMarks(runs: readonly Run[], origin: number): Mark[] {
 }
 
 /** The run an offset falls in: the last one beginning at or before it. */
-export function findRun(runs: readonly Run[], at: number): Run | undefined {
+export function findRun(runs: readonly Run[], offset: number): Run | undefined {
   let found: Run | undefined
   for (const run of runs) {
-    if (run.at > at) break
+    if (run.at > offset) break
     found = run
   }
   return found
 }
 
 /**
- * The offset a place named inside the document stands at: the run the named
  * element falls in, or the first run after a name standing between runs.
  */
 export function findOffset(
@@ -89,7 +87,6 @@ export function findOffset(
 }
 
 /**
- * Where an offset stands inside a run: the text node it falls in, and how far
  * into that node it reaches. The distance from the run's own offset is a number
  * of bytes, and only `getUnitOffset` turns one of those into a place in a string.
  */

@@ -174,4 +174,4 @@ const parseCurve = (curve: CurveMessage | undefined): Curve =>
       }
 
 const parseCurvePoint = (place: CurvePointMessage | undefined): CurvePoint =>
-  place === undefined ? NO_CURVE_POINT : { at: place.at, value: place.value, day: place.day }
+  place === undefined ? NO_CURVE_POINT : { index: place.at, value: place.value, day: place.day }

@@ -313,8 +313,8 @@ func buildCommentBook(t *testing.T, sizes []int) []byte {
 		p, ok := cache[size]
 		if !ok {
 			body := strings.Repeat("x", size)
-			if size >= len("<!---->") {
-				body = "<!--" + strings.Repeat("a", size-len("<!---->")) + "-->"
+			if size >= len("") {
+				body = "<!--" + strings.Repeat("a", size-len("")) + "-->"
 			}
 			var buf bytes.Buffer
 			w, err := flate.NewWriter(&buf, flate.BestSpeed)

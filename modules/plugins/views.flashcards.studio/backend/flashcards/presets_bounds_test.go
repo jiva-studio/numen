@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
 
-// Settings a preset may not hold are refused, the reason names the key, and the
 // note is left as the person wrote it.
 //
 // A client that named none of goal, learned or counts sends a value that is not

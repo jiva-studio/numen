@@ -11,8 +11,10 @@ import ReaderToolbar from './ReaderToolbar.vue'
 import { CLOSEST, FURTHEST, NEARER, READER_WORDS } from '../../lib/strip'
 
 /** The controls over a document of that many pages, open at the first. */
-const mountToolbar = (pages = 200, at = 0) =>
-  mount(ReaderToolbar, { props: { pages, at, 'onUpdate:at': (page: number) => void page } })
+const mountToolbar = (pages = 200, pageIndex = 0) =>
+  mount(ReaderToolbar, {
+    props: { pages, at: pageIndex, 'onUpdate:at': (page: number) => void page },
+  })
 
 /**
  * The same, with a caller standing behind how close the page is drawn: it puts
@@ -85,8 +87,8 @@ describe('how close the page is drawn', () => {
   it('is handed on a step at a time, and the caller is what walks it', async () => {
     const one = createToolbar()
 
-    await one.press(READER_WORDS.closer)
-    await one.press(READER_WORDS.closer)
+    await one.press(READER_WORDS.zoomIn)
+    await one.press(READER_WORDS.zoomIn)
 
     expect(one.handed()).toEqual([FURTHEST * NEARER, FURTHEST * NEARER * NEARER])
   })
@@ -96,7 +98,7 @@ describe('how close the page is drawn', () => {
   it('goes no closer in than the closest, whatever the step evaluates to', async () => {
     const one = createToolbar(CLOSEST / NEARER + 0.5)
 
-    await one.press(READER_WORDS.closer)
+    await one.press(READER_WORDS.zoomIn)
 
     expect(one.handed()).toEqual([CLOSEST])
   })
@@ -104,18 +106,18 @@ describe('how close the page is drawn', () => {
   it('goes no further out than a whole page in the room', async () => {
     const one = createToolbar(FURTHEST * 1.1)
 
-    await one.press(READER_WORDS.further)
+    await one.press(READER_WORDS.zoomOut)
 
     expect(one.handed()).toEqual([FURTHEST])
   })
 
   it('offers no press at the end it already remains at', () => {
     const out = createToolbar(FURTHEST)
-    expect(out.button(READER_WORDS.further).attributes('disabled')).toBeDefined()
-    expect(out.button(READER_WORDS.closer).attributes('disabled')).toBeUndefined()
+    expect(out.button(READER_WORDS.zoomOut).attributes('disabled')).toBeDefined()
+    expect(out.button(READER_WORDS.zoomIn).attributes('disabled')).toBeUndefined()
 
     const inward = createToolbar(CLOSEST)
-    expect(inward.button(READER_WORDS.closer).attributes('disabled')).toBeDefined()
-    expect(inward.button(READER_WORDS.further).attributes('disabled')).toBeUndefined()
+    expect(inward.button(READER_WORDS.zoomIn).attributes('disabled')).toBeDefined()
+    expect(inward.button(READER_WORDS.zoomOut).attributes('disabled')).toBeUndefined()
   })
 })

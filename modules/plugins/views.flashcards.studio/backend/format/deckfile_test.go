@@ -312,7 +312,7 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
 	if read.Cards[0].Section != format.NoSection {
-		t.Errorf("the card stands under section %d", read.Cards[0].Section)
+		t.Errorf("card is under section %d", read.Cards[0].Section)
 	}
 }
 
@@ -811,8 +811,8 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 		t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
 	}
 	rest := body[from:]
-	if at := strings.Index(rest[1:], "\n## "); at >= 0 {
-		return rest[:at+2]
+	if pos := strings.Index(rest[1:], "\n## "); pos >= 0 {
+		return rest[:pos+2]
 	}
 	return rest
 }
@@ -1044,19 +1044,19 @@ func TestAnEmptyMarkAddressesNoCard(t *testing.T) {
 
 // A place before the first section or after the last stands nowhere.
 func TestASectionOutsideTheDeckIsRefused(t *testing.T) {
-	for _, at := range []int{-1, 1} {
+	for _, item := range []int{-1, 1} {
 		f := format.OpenDeckBody(deck)
-		if err := f.RenameSection(at, "Nowhere"); !errors.Is(err, format.ErrNoSuchSection) {
-			t.Errorf("rename %d = %v, want ErrNoSuchSection", at, err)
+		if err := f.RenameSection(item, "Nowhere"); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("rename %d = %v, want ErrNoSuchSection", item, err)
 		}
-		if err := f.RemoveSection(at); !errors.Is(err, format.ErrNoSuchSection) {
-			t.Errorf("remove %d = %v, want ErrNoSuchSection", at, err)
+		if err := f.RemoveSection(item); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("remove %d = %v, want ErrNoSuchSection", item, err)
 		}
-		if err := f.AddCardUnder(at, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
-			t.Errorf("add under %d = %v, want ErrNoSuchSection", at, err)
+		if err := f.AddCardUnder(item, format.Card{Heading: "Camel"}); !errors.Is(err, format.ErrNoSuchSection) {
+			t.Errorf("add under %d = %v, want ErrNoSuchSection", item, err)
 		}
 		if f.Body() != deck {
-			t.Errorf("a section at %d that is not there was written to", at)
+			t.Errorf("a section at %d that is not there was written to", item)
 		}
 	}
 }
@@ -1098,13 +1098,13 @@ func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 
 // A card standing under a section before the first or past the last fails.
 func TestDeckBodyRefusesACardBelowAPlaceOutsideTheSections(t *testing.T) {
-	for _, at := range []int{-2, 2} {
+	for _, item := range []int{-2, 2} {
 		_, err := format.DeckBody(format.Deck{
 			Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
-			Cards:    []format.Card{{Heading: "Llama", Section: at}},
+			Cards:    []format.Card{{Heading: "Llama", Section: item}},
 		})
 		if !errors.Is(err, format.ErrNoSuchSection) {
-			t.Errorf("section %d: body = %v, want ErrNoSuchSection", at, err)
+			t.Errorf("section %d: body = %v, want ErrNoSuchSection", item, err)
 		}
 	}
 }

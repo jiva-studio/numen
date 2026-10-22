@@ -2,7 +2,6 @@
  * What one face of a stencil draws from what it was handed, and what it emits.
  *
  * The negatives are here: a preview draws no braces, a part of the window
- * carries no outline of its own, a part something stands in says nothing about
  * being empty, one row of fields serves both halves, a name that objects
  * does not rename, and a name abandoned does not rename.
  */
@@ -80,7 +79,9 @@ describe('Face, the window', () => {
   it('names each box it is written in, and names it to a reader alone', () => {
     const target = mountFace()
     for (const half of ['front', 'back']) {
-      expect(getBox(target, half).attributes('aria-label')).toBe(half === 'front' ? 'Front' : 'Back')
+      expect(getBox(target, half).attributes('aria-label')).toBe(
+        half === 'front' ? 'Front' : 'Back',
+      )
     }
   })
 
@@ -284,9 +285,12 @@ describe('Face, what is wrong with it', () => {
   })
 
   it('remains what is wrong outside the rows it is wrong about', () => {
-    const target = mountFace(createFace({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }), {
-      wrong: ['this face has no back'],
-    })
+    const target = mountFace(
+      createFace({ id: 'one', name: 'One', front: '{{Colour}}', back: '' }),
+      {
+        wrong: ['this face has no back'],
+      },
+    )
     expect(target.find('.face__head .face__objections').exists()).toBe(false)
     expect(target.get('header .face__amiss').findAll('.face__objections')).toHaveLength(1)
 

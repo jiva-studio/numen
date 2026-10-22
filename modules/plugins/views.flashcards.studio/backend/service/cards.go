@@ -87,13 +87,13 @@ func (h *cardsHandler) CreateDeck(
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
 func (b *Backend) createCardNote(
-	ctx context.Context, cut func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
+	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
 ) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
 	showing, err := b.getCurrentVault(ctx)
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
 	}
-	made, err := cut(showing, cards.New{Title: title, Path: folder})
+	made, err := create(showing, cards.New{Title: title, Path: folder})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
 		// The file is on disk under that name and nothing renumbers a second
 		// attempt, so the path is the only way back to it.
@@ -248,7 +248,7 @@ func (h *cardsHandler) WriteStencil(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	at, err := h.scenarios().cards.Write.Stencil(
+	pos, err := h.scenarios().cards.Write.Stencil(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), readFingerprint(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
@@ -256,7 +256,7 @@ func (h *cardsHandler) WriteStencil(
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&v1.WriteStencilResponse{
-			At: writeFingerprint(at), IsUnlevelled: unlevelled,
+			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, ok := getErrorCode(err)

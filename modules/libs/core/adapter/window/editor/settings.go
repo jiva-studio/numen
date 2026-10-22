@@ -91,7 +91,6 @@ func (h *settingsHandler) ReadSettingsFile(
 // read out of is the client's to correct, and the file is left as it was.
 //
 // The client presents the file it last read. A file holding bytes it has not
-// read is left alone and refused `stale`: the person chooses what happens to
 // their text.
 func (h *settingsHandler) WriteSettingsFile(
 	_ context.Context, r *connect.Request[v1.WriteSettingsFileRequest],
@@ -113,9 +112,9 @@ func (h *settingsHandler) WriteSettingsFile(
 }
 
 // newWireModels is the models as the wire carries them.
-func newWireModels(held []settings.Model) []*v1.Model {
-	models := make([]*v1.Model, 0, len(held))
-	for _, one := range held {
+func newWireModels(target []settings.Model) []*v1.Model {
+	models := make([]*v1.Model, 0, len(target))
+	for _, one := range target {
 		models = append(models, &v1.Model{
 			NamedAt:          one.Path,
 			Name:             one.Name,
@@ -140,18 +139,18 @@ var presences = map[settings.Presence]v1.Presence{
 }
 
 // newWireSettings is what choosing a model writes, as the wire carries it.
-func newWireSettings(held []settings.Setting) []*v1.Setting {
-	content := make([]*v1.Setting, 0, len(held))
-	for _, one := range held {
+func newWireSettings(target []settings.Setting) []*v1.Setting {
+	content := make([]*v1.Setting, 0, len(target))
+	for _, one := range target {
 		content = append(content, &v1.Setting{At: one.Path, Value: one.JSON})
 	}
 	return content
 }
 
 // newWirePluginInfos is the discovered plugins and their declarative settings, as the wire carries it.
-func newWirePluginInfos(held []settings.PluginInfo) []*v1.PluginInfo {
-	infos := make([]*v1.PluginInfo, 0, len(held))
-	for _, one := range held {
+func newWirePluginInfos(target []settings.PluginInfo) []*v1.PluginInfo {
+	infos := make([]*v1.PluginInfo, 0, len(target))
+	for _, one := range target {
 		pluginSettings := make([]*v1.PluginSetting, 0, len(one.Settings))
 		for _, s := range one.Settings {
 			pluginSettings = append(pluginSettings, &v1.PluginSetting{
@@ -256,12 +255,12 @@ func (h *settingsHandler) RetryPlugin(
 }
 
 // newWireReasoningLevels is the levels of reasoning as the wire carries them.
-func newWireReasoningLevels(held []settings.ReasoningLevel) []*v1.ReasoningLevel {
-	if len(held) == 0 {
+func newWireReasoningLevels(target []settings.ReasoningLevel) []*v1.ReasoningLevel {
+	if len(target) == 0 {
 		return nil
 	}
-	levels := make([]*v1.ReasoningLevel, 0, len(held))
-	for _, one := range held {
+	levels := make([]*v1.ReasoningLevel, 0, len(target))
+	for _, one := range target {
 		levels = append(levels, &v1.ReasoningLevel{Name: one.Name, Title: one.Title})
 	}
 	return levels

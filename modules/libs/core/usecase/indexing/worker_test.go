@@ -40,7 +40,7 @@ type recorder struct {
 
 func newRecorder() *recorder { return &recorder{tasks: run.NewTasks()} }
 
-func (r *recorder) ReportTask(at run.Task)                         { r.tasks.Set(at) }
+func (r *recorder) ReportTask(pos run.Task)                        { r.tasks.Set(pos) }
 func (r *recorder) FinishTask(id string)                           { r.tasks.Remove(id) }
 func (r *recorder) ReportError(error)                              {}
 func (r *recorder) ReportNotes(domain.Vault, int)                  {}
@@ -50,9 +50,9 @@ func (r *recorder) ReportBooks(domain.Vault, source.ExtractResult) {}
 // does not hold it.
 func findTask(t *testing.T, r *recorder, id string) *run.Task {
 	t.Helper()
-	for _, at := range r.tasks.List() {
-		if at.ID == id {
-			return &at
+	for _, item := range r.tasks.List() {
+		if item.ID == id {
+			return &item
 		}
 	}
 	return nil
@@ -126,18 +126,18 @@ func fit(t *testing.T, db *container.Index, model port.Embedder) {
 
 // asked is a model that answers a direction belonging to the text it was given.
 // It reaches nothing outside this process, and counts what it was asked.
-type asked struct {
+type fakeEmbedder struct {
 	dims int
 
 	mu    sync.Mutex
 	calls int
 }
 
-func (a *asked) GetModel() port.EmbeddingModel {
+func (a *fakeEmbedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
-func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
+func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	a.mu.Lock()
 	a.calls++
 	a.mu.Unlock()
@@ -149,11 +149,11 @@ func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-func (*asked) Close() error { return nil }
+func (*fakeEmbedder) Close() error { return nil }
 
-func (*asked) Concurrency() int { return 1 }
+func (*fakeEmbedder) Concurrency() int { return 1 }
 
-func (a *asked) times() int {
+func (a *fakeEmbedder) times() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.calls
@@ -174,7 +174,7 @@ func direction(text string, dims int) []float32 {
 
 // sulking is a model that turns down every asking.
 type sulking struct {
-	*asked
+	*fakeEmbedder
 }
 
 func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
@@ -184,9 +184,8 @@ func (*sulking) Embed(context.Context, []string) ([][]float32, error) {
 func (*sulking) Concurrency() int { return 1 }
 
 // A model that is there and not answering leaves the pass in the list under the
-// reason, where a person is told.
 func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
-	model := &sulking{asked: &asked{dims: 64}}
+	model := &sulking{fakeEmbedder: &fakeEmbedder{dims: 64}}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -196,19 +195,19 @@ func TestAPassThatCouldNotEmbedStaysInTheList(t *testing.T) {
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	at := findTask(t, events, MakingVectors)
-	if at == nil {
+	pos := findTask(t, events, MakingVectors)
+	if pos == nil {
 		t.Fatal("the pass that could not embed took itself out of the list")
 	}
-	if at.Error == "" {
-		t.Errorf("the pass is shown as running: %+v", *at)
+	if pos.Error == "" {
+		t.Errorf("the pass is shown as running: %+v", *pos)
 	}
 }
 
 // What ended is not what is being done, and a list a finished pass stays in is a
 // list nobody reads.
 func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -218,15 +217,15 @@ func TestAPassThatEmbeddedPreservesTheList(t *testing.T) {
 
 	newPass(made, db, events, model, model.GetModel().Recipe(), v).embed(t.Context())
 
-	if at := findTask(t, events, MakingVectors); at != nil {
-		t.Errorf("a pass that embedded what was owed is still being done: %+v", *at)
+	if pos := findTask(t, events, MakingVectors); pos != nil {
+		t.Errorf("a pass that embedded what was owed is still being done: %+v", *pos)
 	}
 }
 
 // peeking is a model that says what was being done when it was asked for a
 // vector, which is what a person watching the corner reads.
 type peeking struct {
-	*asked
+	*fakeEmbedder
 	tasks *run.Tasks
 
 	mu    sync.Mutex
@@ -239,7 +238,7 @@ func (p *peeking) Embed(ctx context.Context, texts []string) ([][]float32, error
 		p.while = p.tasks.List()
 	}
 	p.mu.Unlock()
-	return p.asked.Embed(ctx, texts)
+	return p.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*peeking) Concurrency() int { return 1 }
@@ -248,9 +247,9 @@ func (*peeking) Concurrency() int { return 1 }
 func (p *peeking) opening(id string) (run.Task, bool) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	for _, at := range p.while {
-		if at.ID == id {
-			return at, true
+	for _, item := range p.while {
+		if item.ID == id {
+			return item, true
 		}
 	}
 	return run.Task{}, false
@@ -260,7 +259,7 @@ func (p *peeking) opening(id string) (run.Task, bool) {
 // person asking which of their notes it is on.
 func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	events := newRecorder()
-	watching := &peeking{asked: &asked{dims: 64}, tasks: events.tasks}
+	watching := &peeking{fakeEmbedder: &fakeEmbedder{dims: 64}, tasks: events.tasks}
 	made, db := reading(t)
 	fit(t, db, watching)
 
@@ -269,12 +268,12 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 
 	newPass(made, db, events, watching, watching.GetModel().Recipe(), v).embed(t.Context())
 
-	at, target := watching.opening(MakingVectors)
+	pos, target := watching.opening(MakingVectors)
 	if !target {
 		t.Fatal("nothing was being indexed while a vector was asked for")
 	}
-	if at.About != "Note.md" {
-		t.Errorf("the pass says it is indexing %q", at.About)
+	if pos.About != "Note.md" {
+		t.Errorf("the pass says it is indexing %q", pos.About)
 	}
 }
 
@@ -282,7 +281,7 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 // and cuts what a recognition wrote, and a model is fetched and compiled in
 // minutes. A vault that owes nothing holds that goroutine for nothing.
 func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 
 	// The notes are on disk and nothing has cut them, so the index holds no
@@ -309,7 +308,7 @@ func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
 // Fetching a model is not indexing. A row that calls it by the name of the work
 // that follows sits at no share of nothing while the weights come down.
 func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -326,8 +325,8 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	}()
 
 	for range 20 {
-		if at := findTask(t, events, MakingVectors); at != nil {
-			t.Fatalf("a model still on its way is shown as indexing: %+v", *at)
+		if pos := findTask(t, events, MakingVectors); pos != nil {
+			t.Fatalf("a model still on its way is shown as indexing: %+v", *pos)
 		}
 		time.Sleep(time.Millisecond)
 	}
@@ -335,8 +334,8 @@ func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
 	incoming.SetModel(model, nil)
 	<-doneCh
 
-	if at := findTask(t, events, MakingVectors); at != nil {
-		t.Errorf("the pass that embedded what was owed is still being done: %+v", *at)
+	if offset := findTask(t, events, MakingVectors); offset != nil {
+		t.Errorf("the pass that embedded what was owed is still being done: %+v", *offset)
 	}
 	if model.times() == 0 {
 		t.Error("the model landed and nothing was embedded")
@@ -357,12 +356,12 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 
 	newPass(made, db, events, nil, "", v).readBooks(t.Context(), false)
 
-	at := findTask(t, events, ExtractingBooks)
-	if at == nil {
+	pos := findTask(t, events, ExtractingBooks)
+	if pos == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}
-	if at.Error == "" {
-		t.Errorf("the pass is shown as running: %+v", *at)
+	if pos.Error == "" {
+		t.Errorf("the pass is shown as running: %+v", *pos)
 	}
 }
 
@@ -370,36 +369,36 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 // every time it was asked anything, which is what a person watching the corner
 // reads.
 type overheard struct {
-	*asked
+	*fakeEmbedder
 	tasks *run.Tasks
 
-	mu   sync.Mutex
-	seen [][]run.Task
+	mu      sync.Mutex
+	visited [][]run.Task
 }
 
 // GetModel is asked at the head of every pass, before a source has been opened.
 func (o *overheard) GetModel() port.EmbeddingModel {
 	o.keep()
-	return o.asked.GetModel()
+	return o.fakeEmbedder.GetModel()
 }
 
 func (o *overheard) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	o.keep()
-	return o.asked.Embed(ctx, texts)
+	return o.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*overheard) Concurrency() int { return 1 }
 
 func (o *overheard) keep() {
 	o.mu.Lock()
-	o.seen = append(o.seen, o.tasks.List())
+	o.visited = append(o.visited, o.tasks.List())
 	o.mu.Unlock()
 }
 
 func (o *overheard) lists() [][]run.Task {
 	o.mu.Lock()
 	defer o.mu.Unlock()
-	return o.seen
+	return o.visited
 }
 
 // The row a person watches for minutes must say what it is on. A pass that
@@ -408,7 +407,7 @@ func (o *overheard) lists() [][]run.Task {
 // vectors take to come back.
 func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	events := newRecorder()
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -417,22 +416,22 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 
 	// A provider that answers over a network is here the moment it is made, so
 	// there is no arrival to wait for and the pass begins at once.
-	overVal := &overheard{asked: model, tasks: events.tasks}
+	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
 	target := embedding.NewDeferredEmbedder(model.GetModel())
 	target.SetModel(overVal, nil)
 
 	newPass(made, db, events, target.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
 
 	for _, list := range overVal.lists() {
-		for _, at := range list {
-			if at.ID != MakingVectors || at.Error != "" {
+		for _, item := range list {
+			if item.ID != MakingVectors || item.Error != "" {
 				continue
 			}
-			if at.About == "" {
-				t.Errorf("the pass stood in the list saying nothing but %q", at.Title)
+			if item.About == "" {
+				t.Errorf("the pass stood in the list saying nothing but %q", item.Title)
 			}
-			if at.Total > 0 && at.Count == 0 {
-				t.Errorf("the pass drew a share of nothing: %+v", at)
+			if item.Total > 0 && item.Count == 0 {
+				t.Errorf("the pass drew a share of nothing: %+v", item)
 			}
 		}
 	}
@@ -441,7 +440,7 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 // nudging is a model that has a recognition write a batch of pages while the
 // vector pass is running, and holds the pass until the wake has stopped it.
 type nudging struct {
-	*asked
+	*fakeEmbedder
 	wake chan struct{}
 
 	once sync.Once
@@ -457,7 +456,7 @@ func (n *nudging) Embed(ctx context.Context, texts []string) ([][]float32, error
 	if isStopped {
 		return nil, ctx.Err()
 	}
-	return n.asked.Embed(ctx, texts)
+	return n.fakeEmbedder.Embed(ctx, texts)
 }
 
 func (*nudging) Concurrency() int { return 1 }
@@ -467,7 +466,7 @@ func (*nudging) Concurrency() int { return 1 }
 // hundred thousand vectors owes them for hours.
 func TestARecognitionStopsTheVectorPass(t *testing.T) {
 	events := newRecorder()
-	model := &nudging{asked: &asked{dims: 64}, wake: make(chan struct{}, 1)}
+	model := &nudging{fakeEmbedder: &fakeEmbedder{dims: 64}, wake: make(chan struct{}, 1)}
 	made, db := reading(t)
 	fit(t, db, model)
 
@@ -497,12 +496,12 @@ func TestARecognitionStopsTheVectorPass(t *testing.T) {
 		t.Error("the wake a recognition raised was taken and not put back")
 	}
 
-	if at := findTask(t, events, MakingVectors); at != nil && at.Error != "" {
-		t.Errorf("standing aside is shown as a failure: %q", at.Error)
+	if pos := findTask(t, events, MakingVectors); pos != nil && pos.Error != "" {
+		t.Errorf("standing aside is shown as a failure: %q", pos.Error)
 	}
 
 	// Taken up again, the pass asks the index what still owes a vector.
-	again := newPass(made, db, events, model.asked, model.GetModel().Recipe(), v)
+	again := newPass(made, db, events, model.fakeEmbedder, model.GetModel().Recipe(), v)
 	again.embed(t.Context())
 
 	target, embedded, err = db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())

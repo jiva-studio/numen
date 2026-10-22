@@ -19,9 +19,9 @@ export const stepTo = <T>(
   const { from, by } = motion
   const total = items.length
   for (let step = 1; step <= total; step += 1) {
-    const at = (((from + by * step) % total) + total) % total
-    const item = items[at]
-    if (item !== undefined && canLand(item)) return at
+    const pos = (((from + by * step) % total) + total) % total
+    const item = items[pos]
+    if (item !== undefined && canLand(item)) return pos
   }
   return -1
 }

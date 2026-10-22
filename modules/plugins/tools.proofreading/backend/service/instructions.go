@@ -8,7 +8,7 @@ line numbered 12, and that line runs to the next mark.
 
 Answer with the lines you would put right, one to a line:
 
-12|the line, put right
+12|the corrected line
 
 - Put right what the machine misread: letters, diacritics, words run together
   or broken apart, marks that are not words.
@@ -33,12 +33,12 @@ be read and is answered for by nothing.
 
 Answer with the lines you would put right, one to a line:
 
-12|the line, put right
+12|the corrected line
 
 A sentence broken across a run of lines is answered for as one line, written
 as the first and the last of them:
 
-12-14|the whole sentence, put right
+12-14|the corrected sentence
 
 - Put right what the machine misheard: a word for one that sounds like it,
   words run together or split apart, punctuation and capitalisation that are

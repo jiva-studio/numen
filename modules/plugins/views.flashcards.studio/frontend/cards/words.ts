@@ -19,7 +19,6 @@ export const WORDS = {
   take: "Take the file's",
   /** What stopped the whole file being read, said above what was read. */
   notRead: 'This file could not be read.',
-  /** What a write of the whole file is refused for, said the same way. */
   notSaved: 'This file could not be written.',
   /** The vault answered nothing at all, and what is on screen is still here. */
   unreachable: 'The vault could not be reached.',
@@ -29,9 +28,7 @@ export const WORDS = {
   tooLarge: (linked: number) => `This deck is over ${linked} bytes, so none of it was read.`,
   /** The line at the top of a deck, which says which preset schedules it. */
   scheduledBy: 'Scheduled by',
-  /** The choice a deck naming no preset stands at. */
   defaults: 'The defaults',
-  /** A preset the note carries no name for, drawn by the file it stands in. */
   unnamed: (path: string) => getFileName(path),
   /** A deck the vault would not put on the preset chosen. */
   notScheduled: 'This deck was not put on that preset.',

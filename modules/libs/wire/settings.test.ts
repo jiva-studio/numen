@@ -61,7 +61,12 @@ describe('the settings of a preset', () => {
   })
 
   it('come back unchanged from the message they are written to', () => {
-    const settings: Settings = { ...DEFAULT_SETTINGS, goal: 'date', counts: 'shows', learned: 'retention' }
+    const settings: Settings = {
+      ...DEFAULT_SETTINGS,
+      goal: 'date',
+      counts: 'shows',
+      learned: 'retention',
+    }
     expect(parseSettings(formatSettings(settings))).toStrictEqual(settings)
   })
 })

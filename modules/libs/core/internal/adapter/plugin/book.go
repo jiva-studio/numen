@@ -138,7 +138,6 @@ func (b *BookBridge) Close() error {
 }
 
 // ReadBook asks the plugin for the text of the book in the bytes given. Bytes
-// that are no book are refused with port.ErrNotADocument, and a locked book with
 // port.ErrEncrypted.
 func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText, error) {
 	if err := b.host.CheckPluginPermission(b.pluginID, PermissionVaultRead); err != nil {
@@ -164,7 +163,6 @@ func (b *BookBridge) ReadBook(ctx context.Context, raw []byte) (domain.BookText,
 	return out, nil
 }
 
-// getBookError is the error a refusal of the plugin is answered with: the ports'
 // own for a book that cannot be read, a file that changed, and, as missing, what
 // the plugin did not find.
 func getBookError(err, missing error) error {

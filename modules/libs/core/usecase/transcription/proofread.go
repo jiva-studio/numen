@@ -22,11 +22,10 @@ import (
 // be deleted and a person can always ask what the machine heard.
 //
 // A correction changes words. The proofreader is given line numbers and text,
-// and every cue keeps the moments it was spoken between.
 type Proofread struct {
-	readers port.VaultReaders
-	derived port.DerivedStores
-	by      port.Proofreader
+	readers  port.VaultReaders
+	derived  port.DerivedStores
+	provider port.Proofreader
 
 	// Area is the store the transcript is kept in. Empty means the default.
 	Area string
@@ -47,15 +46,13 @@ type Proofread struct {
 // NewProofread is what a transcript is put right through: the vault
 // the recording is read out of, the store the transcript and the words as they
 // now stand are kept in, and the proofreader that answers about the lines.
-//
-// An installation that configured no proofreader is refused here.
 func NewProofread(
-	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
+	readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader,
 ) (Proofread, error) {
-	if err := run.CheckProofread(readers, derived, by); err != nil {
+	if err := run.CheckProofread(readers, derived, proofreader); err != nil {
 		return Proofread{}, err
 	}
-	return Proofread{readers: readers, derived: derived, by: by}, nil
+	return Proofread{readers: readers, derived: derived, provider: proofreader}, nil
 }
 
 // CreateProofread is what puts a recording's transcript right, against the
@@ -64,16 +61,16 @@ func NewProofread(
 // held is false with no error where the installation named no profile.
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
-) (right Proofread, held bool, err error) {
-	by, err := run.OpenProofreader(c.By)
+) (right Proofread, target bool, err error) {
+	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
 		return Proofread{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
-	if by == nil {
+	if delta == nil {
 		return Proofread{}, false, nil
 	}
 
-	right, err = NewProofread(readers, derived, by)
+	right, err = NewProofread(readers, derived, delta)
 	if err != nil {
 		return Proofread{}, false, err
 	}
@@ -81,7 +78,7 @@ func CreateProofread(
 }
 
 // GetProofreaderName is what puts the words right, by the name it goes under.
-func (u Proofread) GetProofreaderName() string { return u.by.GetName() }
+func (u Proofread) GetProofreaderName() string { return u.provider.GetName() }
 
 // ProofreadResult reports what proofreading a transcript did.
 type ProofreadResult struct {
@@ -91,7 +88,7 @@ type ProofreadResult struct {
 	Resumed            int    // how many a run before this one had already asked about
 	Fixed              int    // lines put right
 	Left               int    // lines asked about that stand as they were heard
-	UncorrectedBatches int    // requests replied to without a correction, left as heard
+	UncorrectedBatches int    // requests replied to without a correction, unchanged as heard
 	IsNone             bool   // there is no transcript to put right, and nothing was done
 	IsEdited           bool   // somebody else wrote the corrections, and they are left as they left them
 	IsBusy             bool   // the recording is held by another run
@@ -147,7 +144,7 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	}
 	defer release()
 
-	whole, beside, err := u.current(ctx, store, area, hash)
+	whole, hasCorrections, err := u.current(ctx, store, area, hash)
 	if err != nil {
 		return res, err
 	}
@@ -161,14 +158,14 @@ func (u Proofread) Execute(ctx context.Context, v domain.Vault, path string) (Pr
 	if err != nil {
 		return res, err
 	}
-	if beside && (transcript.IsWrittenByHand(whole) || status.By != u.by.GetName()) {
+	if hasCorrections && (transcript.IsWrittenByHand(whole) || status.By != u.provider.GetName()) {
 		// The words as they stand are somebody's own, and a model does not
 		// correct them. Deleting the file beside the artifact gives back what
 		// was heard.
 		res.IsEdited = true
 		return res, nil
 	}
-	if !beside {
+	if !hasCorrections {
 		status = putting{}
 	}
 
@@ -214,7 +211,7 @@ type transcriptProofreadJob struct {
 	lines []domain.ProofreadLine
 	from  int
 
-	asked, fixed map[int]bool
+	requested, fixed map[int]bool
 	// merged is every cue a run of lines has been put together into, and every
 	// cue such a run swallowed.
 	merged map[int]bool
@@ -228,23 +225,22 @@ func newTranscriptJob(
 	path string,
 	correctionsName, progressName domain.ArtifactName,
 	cues []domain.TranscriptCue,
-	stood putting,
+	state putting,
 ) *transcriptProofreadJob {
 	original := slices.Clone(cues)
 	var lines []domain.ProofreadLine
-	for at, cue := range original {
+	for item, cue := range original {
 		if cue.Text != "" {
-			lines = append(lines, domain.ProofreadLine{Number: at, Text: cue.Text})
+			lines = append(lines, domain.ProofreadLine{Number: item, Text: cue.Text})
 		}
 	}
 	return &transcriptProofreadJob{
 		v: v, store: store, path: path, correctionsName: correctionsName, progressName: progressName,
-		cues: cues, original: original, lines: lines, from: getFirstUnasked(cues, stood.At),
-		asked: map[int]bool{}, fixed: map[int]bool{}, merged: map[int]bool{},
+		cues: cues, original: original, lines: lines, from: getFirstUnasked(cues, state.At),
+		requested: map[int]bool{}, fixed: map[int]bool{}, merged: map[int]bool{},
 	}
 }
 
-// hasLinesFrom says whether any line that says something stands at or after the
 // number.
 func (p *transcriptProofreadJob) hasLinesFrom(number int) bool {
 	return len(p.lines) > 0 && p.lines[len(p.lines)-1].Number >= number
@@ -272,14 +268,13 @@ func (u Proofread) askWindows(ctx context.Context, p *transcriptProofreadJob, re
 }
 
 // askWindow asks about one window, puts what came back into the cues, and saves
-// it. A proofreader that continues from where it began is refused.
 func (u Proofread) askWindow(
 	ctx context.Context,
 	p *transcriptProofreadJob,
 	from int,
 	res *ProofreadResult,
 ) (domain.SpeechProofreading, error) {
-	got, err := u.by.ProofreadSpeech(ctx, p.lines, from)
+	got, err := u.provider.ProofreadSpeech(ctx, p.lines, from)
 	if err != nil {
 		return got, fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -296,8 +291,8 @@ func (u Proofread) askWindow(
 	}
 	res.UncorrectedBatches += got.Uncorrected
 	p.markAskedLines(end)
-	res.Fixed, res.Left = len(p.fixed), countUnchanged(p.asked, p.fixed)
-	res.Read = res.Resumed + len(p.asked)
+	res.Fixed, res.Left = len(p.fixed), countUnchanged(p.requested, p.fixed)
+	res.Read = res.Resumed + len(p.requested)
 
 	if err := u.saveWindow(ctx, p, wrote, end); err != nil {
 		return got, err
@@ -325,7 +320,7 @@ func (u Proofread) saveWindow(ctx context.Context, p *transcriptProofreadJob, wr
 func (p *transcriptProofreadJob) markAskedLines(end int) {
 	for _, line := range p.lines {
 		if line.Number >= p.from && line.Number < end {
-			p.asked[line.Number] = true
+			p.requested[line.Number] = true
 		}
 	}
 }
@@ -437,10 +432,10 @@ func (u Proofread) readCheckpoint(
 // writeCheckpoint writes down who is putting this transcript right and how far
 // they have got.
 func (u Proofread) writeCheckpoint(
-	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, stood putting,
+	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, checkpoint putting,
 ) error {
-	stood.By = u.by.GetName()
-	raw, err := json.MarshalIndent(stood, "", "  ")
+	checkpoint.By = u.provider.GetName()
+	raw, err := json.MarshalIndent(checkpoint, "", "  ")
 	if err != nil {
 		return err
 	}
@@ -450,9 +445,9 @@ func (u Proofread) writeCheckpoint(
 // getFirstUnasked is the first line no run has asked about. A line ending at
 // the moment a run reached is one that run asked about.
 func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
-	for at, cue := range cues {
+	for item, cue := range cues {
 		if cue.To > ms {
-			return at
+			return item
 		}
 	}
 	return len(cues)
@@ -462,8 +457,8 @@ func getFirstUnasked(cues []domain.TranscriptCue, ms int) int {
 // about a line already put together with another. Those words no longer stand
 // on their own.
 func isJoined(merged map[int]bool, first, last int) bool {
-	for at := first; at <= last; at++ {
-		if merged[at] {
+	for pos := first; pos <= last; pos++ {
+		if merged[pos] {
 			return true
 		}
 	}
@@ -480,9 +475,9 @@ func getProgress(original []domain.TranscriptCue, end int) putting {
 }
 
 // countUnchanged reports how many of the asked lines remain unmodified.
-func countUnchanged(asked, fixed map[int]bool) int {
+func countUnchanged(requested, fixed map[int]bool) int {
 	out := 0
-	for line := range asked {
+	for line := range requested {
 		if !fixed[line] {
 			out++
 		}
@@ -492,9 +487,9 @@ func countUnchanged(asked, fixed map[int]bool) int {
 
 // linesBefore is how many of the cues before one carry a line. A cue saying
 // nothing is no line.
-func linesBefore(cues []domain.TranscriptCue, at int) int {
+func linesBefore(cues []domain.TranscriptCue, pos int) int {
 	out := 0
-	for _, cue := range cues[:min(at, len(cues))] {
+	for _, cue := range cues[:min(pos, len(cues))] {
 		if cue.Text != "" {
 			out++
 		}

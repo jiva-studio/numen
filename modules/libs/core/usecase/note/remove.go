@@ -45,7 +45,6 @@ func (u Remove) WithIndex(index Levels) Remove {
 	return u
 }
 
-// RemoveResult says what happened to what was removed and what it leaves behind.
 type RemoveResult struct {
 	Path string
 	// Trashed is where it now sits, empty when it was destroyed.

@@ -7,14 +7,12 @@
  *
  * The vaults arrive first, by name and by where they are, and each count
  * follows on its own. A vault whose count has not arrived relies on the list
- * with nothing said about what it holds.
  */
 import { ref, shallowRef } from 'vue'
 import type { StopReason } from '@numen/protocol'
 
 import type { VaultCardsDue } from '../types'
 
-/** What the front door of the application answers. */
 export interface CardsDueClient {
   watchCardsDue(
     req: Record<string, never>,

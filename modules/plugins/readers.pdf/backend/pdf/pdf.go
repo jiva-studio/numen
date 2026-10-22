@@ -13,7 +13,6 @@
 //
 // A page whose text layer says nothing is an ordinary page. A document that
 // says nothing at all is a scan, and it is read to an empty text rather than
-// refused: what to do about a scan is decided elsewhere. An error here means
 // the file is not a PDF.
 package pdf
 
@@ -169,7 +168,6 @@ type Location struct {
 	Part string
 	// PartOffset is where that part begins.
 	PartOffset int
-	// Page is where the page the offset falls on stands in the file, counted from
 	// the first. It is known for every page, and it is the one thing a page is
 	// called.
 	Page int
@@ -177,15 +175,15 @@ type Location struct {
 
 // Locate answers where one offset in the document's text is.
 func (b *Book) Locate(offset int) Location {
-	var at Location
+	var loc Location
 	if i := getPrecedingIndex(len(b.Parts), offset, func(i int) int { return b.Parts[i].Offset }); i >= 0 {
-		at.Part, at.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
+		loc.Part, loc.PartOffset = b.Parts[i].Title, b.Parts[i].Offset
 	}
 	// gomutants:disable-next-line CONDITIONALS_BOUNDARY reason="page index matches when preceding index is non-negative"
 	if i := getPrecedingIndex(len(b.Pages), offset, func(i int) int { return b.Pages[i].Offset }); i >= 0 {
-		at.Page = i
+		loc.Page = i
 	}
-	return at
+	return loc
 }
 
 // getPrecedingIndex is the index of the last item at or before an offset, and -1 when

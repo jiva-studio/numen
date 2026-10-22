@@ -49,8 +49,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'add', stencil: string, section: string | null): void
   (event: 'remove', card: string): void
-  (event: 'move', card: string, at: InsertionPoint): void
-  (event: 'write', card: string, field: string, nth: number, text: string): void
+  (event: 'move', card: string, target: InsertionPoint): void
+  (event: 'write', card: string, field: string, index: number, text: string): void
   (event: 'add-section', name: string): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void
@@ -65,17 +65,26 @@ const activePickerRunId = shallowRef<string | null>(null)
 /**
  * The card under the pointer's hand, and where letting go would put it.
  */
-const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const {
+  dragged,
+  at: dropTarget,
+  lift,
+  hover,
+  release,
+  drop,
+  step,
+} = useDrag<InsertionPoint | undefined>({
   order: () => [HEAD, ...props.cards.map((card) => card.id)],
   nowhere: undefined,
-  isMoved: (held: string, at: InsertionPoint): boolean => isMoved(grid.value.runs, held, at),
-  move: (held, at) => emit('move', held, at),
+  isMoved: (held: string, target: InsertionPoint): boolean =>
+    isMoved(grid.value.runs, held, target),
+  move: (held, target) => emit('move', held, target),
 })
 
 const grid = computed(() => getGrid(props, dragged.value))
 
 provide(DECK_CONTEXT, {
-  write: (card, target, text) => emit('write', card, target.field, target.nth, text),
+  write: (card, target, text) => emit('write', card, target.field, target.index, text),
 })
 
 // --- Handlers ---
@@ -146,7 +155,7 @@ function onAddSection(): void {
       :stencils="stencils"
       :of="grid.of"
       :wrong="wrong"
-      :at="at"
+      :at="dropTarget"
       :is-asking="activePickerRunId === run.id"
       :words="words"
       @drag-over="onDragOver"
@@ -178,7 +187,6 @@ function onAddSection(): void {
 .deck {
   --tile: 20rem;
   --gap: 0.75rem;
-  /* The caret stands in the middle of the room between two tiles. */
   --caret-out: calc(-1 * var(--gap) / 2);
 
   display: flex;

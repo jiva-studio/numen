@@ -69,32 +69,32 @@ func (r *stencilReader) readFaceSides(face *FaceTemplate, sides []section, openi
 	}
 }
 
-func (r *stencilReader) validateFacePlaceholders(at int, face FaceTemplate) {
+func (r *stencilReader) validateFacePlaceholders(pos int, face FaceTemplate) {
 	for _, name := range placeholders(face.Front + "\n" + face.Back) {
 		if r.declared[name] {
 			continue
 		}
-		problem := onFace(at, FaultPlaceholder, "this face places "+name+", which the stencil does not declare")
+		problem := onFace(pos, FaultPlaceholder, "this face places "+name+", which the stencil does not declare")
 		problem.Field = name
 		r.stencil.Problems = append(r.stencil.Problems, problem)
 	}
 }
 
-func (r *stencilReader) validateFace(at int, has map[string]bool, face FaceTemplate) {
+func (r *stencilReader) validateFace(pos int, has map[string]bool, face FaceTemplate) {
 	if !has[frontHeading] || !has[backHeading] {
 		missing := frontHeading
 		if has[frontHeading] {
 			missing = backHeading
 		}
-		r.stencil.Problems = append(r.stencil.Problems, onFace(at, FaultFaceSide,
+		r.stencil.Problems = append(r.stencil.Problems, onFace(pos, FaultFaceSide,
 			"this face has no "+missing+", and lays out nothing"))
 		return
 	}
-	r.validateFacePlaceholders(at, face)
+	r.validateFacePlaceholders(pos, face)
 }
 
 func (r *stencilReader) addFace(sec section, secsAfter []section) {
-	at := len(r.stencil.Faces)
+	pos := len(r.stencil.Faces)
 	face := FaceTemplate{Name: sec.name}
 
 	sides := findFaceSides(secsAfter)
@@ -118,7 +118,7 @@ func (r *stencilReader) addFace(sec section, secsAfter []section) {
 
 	r.readFaceSides(&face, sides, opening, end)
 	r.stencil.Faces = append(r.stencil.Faces, face)
-	r.validateFace(at, has, face)
+	r.validateFace(pos, has, face)
 }
 
 // ReadStencil reads a note as a stencil: the fields it declares in its

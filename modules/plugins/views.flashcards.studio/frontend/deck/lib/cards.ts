@@ -24,15 +24,15 @@ export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions
   const rank = (id: string | null): number => ranks.get(id) ?? -1
   const mine = rank(section)
 
-  let at = 0
+  let targetIndex = 0
   deck.cards.forEach((card, index) => {
-    if (rank(card.section) <= mine) at = index + 1
+    if (rank(card.section) <= mine) targetIndex = index + 1
   })
 
   return {
     ...deck,
     cards: [
-      ...deck.cards.slice(0, at),
+      ...deck.cards.slice(0, targetIndex),
       {
         id: generateCardId(),
         mark: '',
@@ -43,7 +43,7 @@ export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions
         preamble: '',
         values,
       },
-      ...deck.cards.slice(at),
+      ...deck.cards.slice(targetIndex),
     ],
   }
 }
@@ -60,31 +60,35 @@ const getLastSection = (deck: BufferDeck): string | null => deck.sections.at(-1)
 /**
  * A card let go somewhere in the deck.
  */
-export const dropCard = (deck: BufferDeck, id: string, at: InsertionPoint): BufferDeck => {
+export const dropCard = (deck: BufferDeck, id: string, target: InsertionPoint): BufferDeck => {
   const targetCard = deck.cards.find((card) => card.id === id)
   if (!targetCard) return deck
   const otherCards = deck.cards.filter((card) => card.id !== id)
 
-  if (at === CARD_HEAD) return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
+  if (target === CARD_HEAD)
+    return { ...deck, cards: [{ ...targetCard, section: null }, ...otherCards] }
 
-  const before = otherCards.findIndex((card) => card.id === at)
+  const before = otherCards.findIndex((card) => card.id === target)
   if (before !== -1) {
     // Stryker disable next-line OptionalChaining: the index was found in this array, so the card exists
     const underVal = { ...targetCard, section: otherCards[before]?.section ?? null }
-    return { ...deck, cards: [...otherCards.slice(0, before), underVal, ...otherCards.slice(before)] }
+    return {
+      ...deck,
+      cards: [...otherCards.slice(0, before), underVal, ...otherCards.slice(before)],
+    }
   }
 
-  if (at === null) {
+  if (target === null) {
     return { ...deck, cards: [...otherCards, { ...targetCard, section: getLastSection(deck) }] }
   }
 
-  return dropOnSection(deck, { card: targetCard, left: otherCards, at })
+  return dropOnSection(deck, { card: targetCard, left: otherCards, target })
 }
 
 interface DropOnSectionParams {
   card: BufferCard
   left: readonly BufferCard[]
-  at: string
+  target: string
 }
 
 /**
@@ -92,7 +96,7 @@ interface DropOnSectionParams {
  * the section begins while it holds none.
  */
 const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDeck => {
-  const { card, left, at } = params
+  const { card, left, target } = params
   const rank = (section: string | null): number =>
     deck.sections.findIndex((each) => each.id === section)
   const head = (section: string | null): number => {
@@ -115,7 +119,7 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     return seat
   }
 
-  const run = getRunEnd(at)
+  const run = getRunEnd(target)
   if (run !== null) {
     const section = run === CARD_HEAD ? null : run
     if (section !== null && !deck.sections.some((each) => each.id === section)) return deck
@@ -123,13 +127,13 @@ const dropOnSection = (deck: BufferDeck, params: DropOnSectionParams): BufferDec
     return placeCard(section, seat === -1 ? head(section) : seat + 1)
   }
 
-  if (!deck.sections.some((section) => section.id === at)) return deck
-  return placeCard(at, head(at))
+  if (!deck.sections.some((section) => section.id === target)) return deck
+  return placeCard(target, head(target))
 }
 
 export interface ReplaceValueTarget {
   field: string
-  nth: number
+  index: number
   text: string
 }
 
@@ -141,7 +145,7 @@ export const replaceCardValue = (
   id: string,
   target: ReplaceValueTarget,
 ): BufferDeck => {
-  const { field, nth, text } = target
+  const { field, index, text } = target
   return {
     ...deck,
     cards: deck.cards.map((card) => {
@@ -152,7 +156,7 @@ export const replaceCardValue = (
       const values = card.values.map((value) => {
         if (value.field !== field) return value
         underCount += 1
-        if (underCount !== nth) return value
+        if (underCount !== index) return value
         found = true
         return { field, text }
       })

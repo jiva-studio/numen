@@ -25,7 +25,7 @@ func (u WriteTranscript) Execute(
 	v domain.Vault,
 	path string,
 	cues []domain.TranscriptCue,
-	cut func(context.Context, domain.Vault, string) error,
+	extracted func(context.Context, domain.Vault, string) error,
 ) (TranscriptWrite, error) {
 	stored, err := u.texts.getStoredText(ctx, v, path)
 	if err != nil {
@@ -50,8 +50,8 @@ func (u WriteTranscript) Execute(
 	if err := stored.store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactCorrections, stored.meta.Producer, stored.meta.Hash), content); err != nil {
 		return TranscriptWrite{}, err
 	}
-	if cut == nil {
+	if extracted == nil {
 		return TranscriptWrite{}, nil
 	}
-	return TranscriptWrite{CutError: cut(ctx, v, path)}, nil
+	return TranscriptWrite{CutError: extracted(ctx, v, path)}, nil
 }

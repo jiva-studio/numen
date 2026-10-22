@@ -73,12 +73,12 @@ const longestRun = 100_000
 
 // parseSpans returns which parts of the source's text a caller is asking about, in the
 // order they were asked about.
-func parseSpans(at []*v1.Span) ([]domain.ByteSpan, error) {
-	if len(at) == 0 || len(at) > domain.MostHighlights {
-		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(at))
+func parseSpans(pos []*v1.Span) ([]domain.ByteSpan, error) {
+	if len(pos) == 0 || len(pos) > domain.MostHighlights {
+		return nil, fmt.Errorf("ask about between one and %d places, not %d", domain.MostHighlights, len(pos))
 	}
-	runs := make([]domain.ByteSpan, 0, len(at))
-	for _, one := range at {
+	runs := make([]domain.ByteSpan, 0, len(pos))
+	for _, one := range pos {
 		span := domain.ByteSpan{From: int(one.GetFrom()), To: int(one.GetTo())}
 		if span.From < 0 {
 			return nil, fmt.Errorf("from: %d is not a place in the text", span.From)

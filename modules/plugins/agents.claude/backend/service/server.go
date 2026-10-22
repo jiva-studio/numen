@@ -28,7 +28,6 @@ import (
 const programName = "claude"
 
 // readsHooksOption is the option that lets the program read the hooks, skills and standing
-// instructions this machine holds for it. What a vault holds is refused either way.
 const readsHooksOption = "reads_hooks_and_skills"
 
 // programTitle is what the program is called when shown to a person.
@@ -392,16 +391,16 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 
 // getReasoning returns the depth the program is started with: the one asked for, where the model
 // supports it. A model the program did not list takes the depth as asked.
-func (s *agentServer) getReasoning(model, asked string) string {
+func (s *agentServer) getReasoning(model, requested string) string {
 	if model == "" {
 		model = defaultModelName
 	}
 	levels, items := s.models.find(model)
 	if items {
-		return reasoning.Pick(levels, asked)
+		return reasoning.Pick(levels, requested)
 	}
-	if reasoning.IsKnown(asked) {
-		return asked
+	if reasoning.IsKnown(requested) {
+		return requested
 	}
 	return ""
 }

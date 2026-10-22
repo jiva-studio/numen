@@ -26,9 +26,9 @@ export interface Press<Item, At> {
   /** The clock the release is held against. */
   readonly getClock: () => Clock
   /** Where letting go here would put what is held. */
-  readonly getDropTargetAt: (item: Item, at: Position) => At | null
+  readonly getDropTargetAt: (item: Item, point: Position) => At | null
   /** What letting go after a drag evaluates to. The landing is nothing off any target. */
-  readonly commit: (item: Item, at: At | null) => void
+  readonly commit: (item: Item, target: At | null) => void
   /** Said once, when the press turns into a drag. */
   readonly begin?: (item: Item) => void
 }
@@ -44,7 +44,7 @@ export interface PressDragState<Item, At> {
 
 export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<Item, At> {
   const dragging = shallowRef<Drag<Item> | null>(null)
-  const at = shallowRef<At | null>(null)
+  const dropTarget = shallowRef<At | null>(null)
   const position = shallowRef<Position | null>(null)
 
   let start: Position
@@ -66,17 +66,17 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
 
     dragging.value = { item: target.item, hasMoved }
     position.value = hasMoved ? now : null
-    at.value = hasMoved ? press.getDropTargetAt(target.item, now) : null
+    dropTarget.value = hasMoved ? press.getDropTargetAt(target.item, now) : null
 
     if (hasMoved && !target.hasMoved) press.begin?.(target.item)
   }
 
   function drop(): void {
     const target = dragging.value!
-    const found = at.value
+    const found = dropTarget.value
 
     detach()
-    at.value = null
+    dropTarget.value = null
     position.value = null
     if (target.hasMoved) press.commit(target.item, found)
     // Held one frame longer: the click that follows the release reads it and
@@ -96,10 +96,10 @@ export function usePressDrag<Item, At>(press: Press<Item, At>): PressDragState<I
 
   onScopeDispose(() => {
     detach()
-    at.value = null
+    dropTarget.value = null
     position.value = null
     dragging.value = null
   })
 
-  return { dragging, at, position, lift }
+  return { dragging, at: dropTarget, position, lift }
 }

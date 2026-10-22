@@ -9,7 +9,6 @@ import (
 )
 
 // CurrentVault is the vault a call is answered about: the vault itself, and where
-// it sits on this machine. An agent that can open files joins the folder to a
 // path itself; one that cannot reads through a tool.
 type CurrentVault struct {
 	Vault domain.Vault
@@ -25,7 +24,6 @@ func (c Core) getCurrentVault() CurrentVault {
 	return c.Showing()
 }
 
-// ShowOneVault answers with the same vault for as long as the server is served.
 func ShowOneVault(v domain.Vault, root string) func() CurrentVault {
 	return func() CurrentVault { return CurrentVault{Vault: v, Root: root} }
 }

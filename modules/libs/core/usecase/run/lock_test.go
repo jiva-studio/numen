@@ -18,14 +18,14 @@ func TestTheLockGoesToWhatWasAskedFor(t *testing.T) {
 
 	// Both wait for the lock, the unasked one first.
 	took := make(chan bool, 2)
-	queue := func(asked bool) {
+	queue := func(requested bool) {
 		waitCh := make(chan struct{})
 		go func() {
-			release, err := g.Acquire(t.Context(), asked, func() { close(waitCh) })
+			release, err := g.Acquire(t.Context(), requested, func() { close(waitCh) })
 			if err != nil {
 				return
 			}
-			took <- asked
+			took <- requested
 			release()
 		}()
 		<-waitCh

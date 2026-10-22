@@ -36,30 +36,30 @@ var _ Vault = (*Client)(nil)
 // NewClientFromEnv reaches the host the process was started for: its endpoint and the token it knows
 // the plugin by come from the environment. It returns hostcall.ErrNoHost where the host named none.
 func NewClientFromEnv() (*Client, error) {
-	at, err := hostcall.FromEnv()
+	addr, err := hostcall.FromEnv()
 	if err != nil {
 		return nil, err
 	}
-	return NewClient(at), nil
+	return NewClient(addr), nil
 }
 
 // NewClientFromVars is NewClientFromEnv over the variables given.
 func NewClientFromVars(vars map[string]string) (*Client, error) {
-	at, err := hostcall.FromVars(vars)
+	addr, err := hostcall.FromVars(vars)
 	if err != nil {
 		return nil, err
 	}
-	return NewClient(at), nil
+	return NewClient(addr), nil
 }
 
 // NewClient reaches the host at the endpoint.
-func NewClient(at hostcall.Endpoint) *Client {
-	return NewClientOver(hostcall.HTTPClient(), at)
+func NewClient(endpoint hostcall.Endpoint) *Client {
+	return NewClientOver(hostcall.HTTPClient(), endpoint)
 }
 
 // NewClientOver reaches the host at the endpoint through the HTTP client given.
-func NewClientOver(httpClient connect.HTTPClient, at hostcall.Endpoint) *Client {
-	return &Client{rpc: numenv1connect.NewHostVaultServiceClient(httpClient, at.BaseURL, at.Options()...)}
+func NewClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoint) *Client {
+	return &Client{rpc: numenv1connect.NewHostVaultServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
 // fail turns the code of an answer into the error it stands for.
@@ -282,8 +282,8 @@ func (c *Client) GetBacklinks(ctx context.Context, to string) ([]domain.Resolved
 	return readLinks(res.Msg.GetLinks()), nil
 }
 
-func (c *Client) ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error) {
-	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Written: written}))
+func (c *Client) ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error) {
+	res, err := c.rpc.ResolveLinks(ctx, request(c, &v1.ResolveLinksRequest{Path: from, Written: targets}))
 	if err != nil {
 		return nil, readError(err)
 	}

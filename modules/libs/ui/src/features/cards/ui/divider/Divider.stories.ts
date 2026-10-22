@@ -2,7 +2,6 @@
  * Every situation a rule has to survive. Also the test corpus: each story is
  * run in a browser by `@storybook/addon-vitest`.
  *
- * What the rule holds here is the action a list is added to by. It stands in
  * the middle, or leads the rule where the rule is asked for that, which is how
  * a card heads the box one of its values is typed in.
  */
@@ -41,7 +40,7 @@ const meta: Meta<Knobs> = {
         <Divider :at="args.at">
           <Button variant="outline" size="small" aria-label="Add a field">
             <Icon name="plus" />
-            {{ args.said }}
+            {{ args.label }}
           </Button>
         </Divider>
       </div>
@@ -85,7 +84,6 @@ export const NoTextAtAll: Story = { args: { said: '' } }
 /** A window too narrow for the word and the line both. */
 export const Narrow: Story = { args: { width: '10rem' } }
 
-/** The line runs either side of what stands in the middle, and under neither. */
 export const TheLineGivesWayToWhatItHolds: Story = {
   args: { width: '40rem' },
   play: async ({ canvasElement }) => {
@@ -96,17 +94,16 @@ export const TheLineGivesWayToWhatItHolds: Story = {
     expect(before).toBeGreaterThan(0)
     expect(after).toBeGreaterThan(0)
 
-    // Both sides come to the same width, so what it holds stands in the middle.
     expect(before).toBeCloseTo(after ?? 0, 0)
 
-    const at = button.getBoundingClientRect()
+    const pos = button.getBoundingClientRect()
     const box = divider.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
+    expect(pos.left + pos.width / 2).toBeCloseTo(box.left + box.width / 2, 0)
 
     // The line and the word are laid side by side, so neither runs over the
     // other: the two sides and what they hold take the whole width between them.
     const gap = Number.parseFloat(getComputedStyle(divider).columnGap)
-    expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
+    expect((before ?? 0) + (after ?? 0) + pos.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 
@@ -126,12 +123,11 @@ export const LeadingWithWhatItHolds: Story = {
     expect(before).toBeCloseTo(gap, 0)
     expect(after).toBeGreaterThan(before ?? 0)
 
-    // What it holds stands at the start, and the two sides and it take the
     // whole width between them.
-    const at = button.getBoundingClientRect()
+    const pos = button.getBoundingClientRect()
     const box = divider.getBoundingClientRect()
-    expect(at.left - box.left).toBeLessThan(box.width / 4)
-    expect((before ?? 0) + (after ?? 0) + at.width + 2 * gap).toBeCloseTo(box.width, 0)
+    expect(pos.left - box.left).toBeLessThan(box.width / 4)
+    expect((before ?? 0) + (after ?? 0) + pos.width + 2 * gap).toBeCloseTo(box.width, 0)
   },
 }
 

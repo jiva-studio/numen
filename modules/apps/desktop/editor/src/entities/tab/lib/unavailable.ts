@@ -4,7 +4,7 @@ import type { AnyTabKind } from './kinds'
 /** What a tab of an unavailable kind holds: the kind it was made for, and what it stood on. */
 export interface UnavailableState {
   readonly kind: string
-  readonly at: string
+  readonly targetPath: string
 }
 
 const UnavailablePane = defineComponent({
@@ -16,7 +16,7 @@ const UnavailablePane = defineComponent({
       return h('div', { class: 'tab-unavailable p-4', role: 'status' }, [
         h('h3', { class: 'font-bold' }, 'Plugin unavailable'),
         h('p', `The plugin for "${state.kind}" is missing or disabled.`),
-        state.at ? h('p', { class: 'text-xs' }, state.at) : null,
+        state.targetPath ? h('p', { class: 'text-xs' }, state.targetPath) : null,
       ])
     }
   },
@@ -30,10 +30,10 @@ const UnavailablePane = defineComponent({
 export const createUnavailableKind = (kind: string): AnyTabKind => {
   return {
     kind,
-    open: (at: string): UnavailableState => ({ kind, at }),
+    open: (targetPath: string): UnavailableState => ({ kind, targetPath }),
     getTitle: () => 'Plugin unavailable',
-    getOpenTab: (state: unknown) => ({ path: (state as UnavailableState).at }),
+    getOpenTab: (state: unknown) => ({ path: (state as UnavailableState).targetPath }),
     pane: UnavailablePane,
-    identity: (at: string) => at,
+    identity: (targetPath: string) => targetPath,
   }
 }

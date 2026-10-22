@@ -57,13 +57,11 @@ type ThemeServiceClient interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
 	// WriteAppearance writes the theme, the mode and the two sizes into the
 	// settings. The file is patched as an object, so every key a person typed
-	// stays where it was. A size outside its bounds is refused and the settings
 	// are left as they are.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long
@@ -144,13 +142,11 @@ type ThemeServiceHandler interface {
 	// the ones in the person's themes folder — which of them is applied, and the
 	// two sizes the window is drawn at.
 	ListThemes(context.Context, *connect.Request[v1.ListThemesRequest]) (*connect.Response[v1.ListThemesResponse], error)
-	// ReadTheme is the text of one theme's file, as the file stands when it is
 	// asked for. It is asked once for each theme that is tried on, and again
 	// when that theme's file changes.
 	ReadTheme(context.Context, *connect.Request[v1.ReadThemeRequest]) (*connect.Response[v1.ReadThemeResponse], error)
 	// WriteAppearance writes the theme, the mode and the two sizes into the
 	// settings. The file is patched as an object, so every key a person typed
-	// stays where it was. A size outside its bounds is refused and the settings
 	// are left as they are.
 	WriteAppearance(context.Context, *connect.Request[v1.WriteAppearanceRequest]) (*connect.Response[v1.WriteAppearanceResponse], error)
 	// WatchThemes reports the person's themes folder having changed, for as long

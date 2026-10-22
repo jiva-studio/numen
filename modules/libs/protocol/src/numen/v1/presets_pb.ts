@@ -2,17 +2,8 @@
 // @generated from file numen/v1/presets.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the presets a vault holds.
-//
-// A preset is a note of `type: preset`, and its settings are frontmatter keys.
-// A deck names the preset it is scheduled by with an entry of its `links:`
-// block carrying `type: preset`, and a deck naming none is scheduled by the
-// defaults.
-//
-// One control steers a preset: `goal` says which value it moves, and the curve
-// says what the whole range of that value evaluates to. A curve is asked for with
-// the settings a person is moving and has not written yet, and asking for one
-// writes nothing.
+// Presets service definitions.
+// Manages deck scheduling presets and computes retention/load projection curves.
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
@@ -27,8 +18,7 @@ export const file_numen_v1_presets: GenFile = /*@__PURE__*/
   fileDesc("ChZudW1lbi92MS9wcmVzZXRzLnByb3RvEghudW1lbi52MSLnAgoIU2V0dGluZ3MSHAoEZ29hbBgBIAEoDjIOLm51bWVuLnYxLkdvYWwSDwoHYnlfZGF0ZRgCIAEoCRIVCg1taW51dGVzX2FfZGF5GAMgASgFEhEKCW5ld19hX2RheRgEIAEoBRIVCg1yZXZpZXdzX2FfZGF5GAUgASgFEhEKCXJldGVudGlvbhgGIAEoARIVCg1oYXNfZXZlbl9sb2FkGAcgASgIEiQKBmNvdW50cxgIIAEoDjIULm51bWVuLnYxLkJ1ZGdldFVuaXQSDwoHYmFja2xvZxgJIAEoBRIqCgRsb2FkGAogAygLMhwubnVtZW4udjEuU2V0dGluZ3MuTG9hZEVudHJ5Eh8KB2xlYXJuZWQYCyABKA4yDi5udW1lbi52MS5SdWxlEhAKCGludGVydmFsGAwgASgFGisKCUxvYWRFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAU6AjgBIqoBCgZQcmVzZXQSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIkCghzZXR0aW5ncxgDIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEhAKCHByb2JsZW1zGAQgAygJEiMKBXN0b3BzGAUgASgOMhQubnVtZW4udjEuU3RvcFJlYXNvbhImCghzdG9wc19vbhgGIAEoDjIULm51bWVuLnYxLlN0b3BSZWFzb24i6gEKBUN1cnZlEhwKBGdvYWwYASABKA4yDi5udW1lbi52MS5Hb2FsEgwKBGdyaWQYAiADKAESDAoEZGF5cxgDIAMoCRIbCgJhdBgEIAMoCzIPLm51bWVuLnYxLlBvaW50EiEKA25vdxgFIAEoCzIULm51bWVuLnYxLkN1cnZlUG9pbnQSJwoJc3VnZ2VzdGVkGAYgASgLMhQubnVtZW4udjEuQ3VydmVQb2ludBINCgVkZWNrcxgHIAEoBRINCgVjYXJkcxgIIAEoBRIPCgdvdmVyZHVlGAkgASgFEg8KB3VuYmVndW4YCiABKAUi9AEKBVBvaW50Eg8KB3Jldmlld3MYASABKAESDwoHbWludXRlcxgCIAEoARIQCghyZXRhaW5lZBgDIAEoARIMCgRvd2VkGAQgASgFEg8KB3Rocm91Z2gYBSABKAESEQoJaXNfZW5vdWdoGAYgASgIEiQKBmNsb3NlZBgHIAMoDjIULm51bWVuLnYxLkJ1ZGdldE5hbWUSDgoGY2xlYXJzGAggASgFEg8KB2JhY2tsb2cYCSADKAUSDwoHbGVhcm5lZBgKIAEoBRITCgZsZWFybnMYCyABKAVIAIgBARINCgVzaG9ydBgMIAEoBUIJCgdfbGVhcm5zIjQKCkN1cnZlUG9pbnQSCgoCYXQYASABKAUSDQoFdmFsdWUYAiABKAESCwoDZGF5GAMgASgJIiQKFEdldERlY2tQcmVzZXRSZXF1ZXN0EgwKBGRlY2sYASABKAki1QEKFUdldERlY2tQcmVzZXRSZXNwb25zZRIlCgZwcmVzZXQYASABKAsyEC5udW1lbi52MS5QcmVzZXRIAIgBARInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgBiAEBEiYKAmF0GAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAogBARIoCgZib3VuZHMYBCABKAsyGC5udW1lbi52MS5TZXR0aW5nc0JvdW5kc0IJCgdfcHJlc2V0QggKBl9lcnJvckIFCgNfYXQiFAoSTGlzdFByZXNldHNSZXF1ZXN0Ij8KE0xpc3RQcmVzZXRzUmVzcG9uc2USKAoHcHJlc2V0cxgBIAMoCzIXLm51bWVuLnYxLlByZXNldFN1bW1hcnkiLAoNUHJlc2V0U3VtbWFyeRIMCgRwYXRoGAEgASgJEg0KBXRpdGxlGAIgASgJIjIKE0NyZWF0ZVByZXNldFJlcXVlc3QSDQoFdGl0bGUYASABKAkSDAoEcGF0aBgCIAEoCSJuChRDcmVhdGVQcmVzZXRSZXNwb25zZRIMCgRwYXRoGAEgASgJEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3IibgoTU2NoZWR1bGVEZWNrUmVxdWVzdBIMCgRkZWNrGAEgASgJEg4KBnByZXNldBgCIAEoCRIsCghiYXNlbGluZRgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCCwoJX2Jhc2VsaW5lIo8BChRTY2hlZHVsZURlY2tSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEiYKAmF0GAIgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAYgBARIVCg1pc191bmxldmVsbGVkGAMgASgIQggKBl9lcnJvckIFCgNfYXQiIQoRUmVhZFByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCSLSAQoSUmVhZFByZXNldFJlc3BvbnNlEiUKBnByZXNldBgBIAEoCzIQLm51bWVuLnYxLlByZXNldEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEigKBmJvdW5kcxgEIAEoCzIYLm51bWVuLnYxLlNldHRpbmdzQm91bmRzQgkKB19wcmVzZXRCCAoGX2Vycm9yQgUKA19hdCKTAgoOU2V0dGluZ3NCb3VuZHMSJwoNbWludXRlc19hX2RheRgBIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCgluZXdfYV9kYXkYAiABKAsyEC5udW1lbi52MS5Cb3VuZHMSJwoNcmV2aWV3c19hX2RheRgDIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIjCglyZXRlbnRpb24YBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSIQoHYmFja2xvZxgFIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIiCghpbnRlcnZhbBgGIAEoCzIQLm51bWVuLnYxLkJvdW5kcxIeCgRsb2FkGAcgASgLMhAubnVtZW4udjEuQm91bmRzIoMBChJXcml0ZVByZXNldFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzEiwKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUijgEKE1dyaXRlUHJlc2V0UmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3JCBQoDX2F0IkkKE0NvbXB1dGVDdXJ2ZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIkCghzZXR0aW5ncxgCIAEoCzISLm51bWVuLnYxLlNldHRpbmdzIjYKFENvbXB1dGVDdXJ2ZVJlc3BvbnNlEh4KBWN1cnZlGAEgASgLMg8ubnVtZW4udjEuQ3VydmUqWgoER29hbBIUChBHT0FMX1VOU1BFQ0lGSUVEEAASFgoSR09BTF9NSU5VVEVTX0FfREFZEAESEgoOR09BTF9SRVRFTlRJT04QAhIQCgxHT0FMX0JZX0RBVEUQAypDCgRSdWxlEhQKEFJVTEVfVU5TUEVDSUZJRUQQABIRCg1SVUxFX0lOVEVSVkFMEAESEgoOUlVMRV9SRVRFTlRJT04QAipXCgpCdWRnZXRVbml0EhsKF0JVREdFVF9VTklUX1VOU1BFQ0lGSUVEEAASFQoRQlVER0VUX1VOSVRfQ0FSRFMQARIVChFCVURHRVRfVU5JVF9TSE9XUxACKtwBCgpTdG9wUmVhc29uEhsKF1NUT1BfUkVBU09OX1VOU1BFQ0lGSUVEEAASFwoTU1RPUF9SRUFTT05fTk9USElORxABEhoKFlNUT1BfUkVBU09OX05PX01JTlVURVMQAhIYChRTVE9QX1JFQVNPTl9OT19DQVJEUxADEhYKElNUT1BfUkVBU09OX05PX0RBWRAEEhgKFFNUT1BfUkVBU09OX1BBU1RfREFZEAUSFwoTU1RPUF9SRUFTT05fTk9fTE9BRBAGEhcKE1NUT1BfUkVBU09OX05PX1dFRUsQByrMAQoKQnVkZ2V0TmFtZRIbChdCVURHRVRfTkFNRV9VTlNQRUNJRklFRBAAEh0KGUJVREdFVF9OQU1FX01JTlVURVNfQV9EQVkQARIZChVCVURHRVRfTkFNRV9ORVdfQV9EQVkQAhIdChlCVURHRVRfTkFNRV9SRVZJRVdTX0FfREFZEAMSFwoTQlVER0VUX05BTUVfQllfREFURRAEEhcKE0JVREdFVF9OQU1FX0JBQ0tMT0cQBRIWChJCVURHRVRfTkFNRV9QQVVTRUQQBjKwBAoOUHJlc2V0c1NlcnZpY2USUAoNR2V0RGVja1ByZXNldBIeLm51bWVuLnYxLkdldERlY2tQcmVzZXRSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0RGVja1ByZXNldFJlc3BvbnNlEkoKC0xpc3RQcmVzZXRzEhwubnVtZW4udjEuTGlzdFByZXNldHNSZXF1ZXN0Gh0ubnVtZW4udjEuTGlzdFByZXNldHNSZXNwb25zZRJNCgxDcmVhdGVQcmVzZXQSHS5udW1lbi52MS5DcmVhdGVQcmVzZXRSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlUHJlc2V0UmVzcG9uc2USTQoMU2NoZWR1bGVEZWNrEh0ubnVtZW4udjEuU2NoZWR1bGVEZWNrUmVxdWVzdBoeLm51bWVuLnYxLlNjaGVkdWxlRGVja1Jlc3BvbnNlEkcKClJlYWRQcmVzZXQSGy5udW1lbi52MS5SZWFkUHJlc2V0UmVxdWVzdBocLm51bWVuLnYxLlJlYWRQcmVzZXRSZXNwb25zZRJKCgtXcml0ZVByZXNldBIcLm51bWVuLnYxLldyaXRlUHJlc2V0UmVxdWVzdBodLm51bWVuLnYxLldyaXRlUHJlc2V0UmVzcG9uc2USTQoMQ29tcHV0ZUN1cnZlEh0ubnVtZW4udjEuQ29tcHV0ZUN1cnZlUmVxdWVzdBoeLm51bWVuLnYxLkNvbXB1dGVDdXJ2ZVJlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbW9kdWxlcy9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
- * Settings are how the decks pointing at one preset are scheduled. A preset
- * carrying none of these keys is the defaults, and no cards a day is a pause.
+ * Settings contains scheduler parameters for a preset.
  *
  * @generated from message numen.v1.Settings
  */
@@ -39,24 +29,21 @@ export type Settings = Message<"numen.v1.Settings"> & {
   goal: Goal;
 
   /**
-   * The day the material is to be in the head, as the year, the month and the
-   * day. Empty for a preset aiming at no day.
+   * Target completion date in YYYY-MM-DD format.
    *
    * @generated from field: string by_date = 2;
    */
   byDate: string;
 
   /**
-   * How long a day of review runs, spent against the time each answer took. It
-   * closes the day under a goal of minutes, where zero is a pause, and no other
-   * goal reads it.
+   * Daily study duration limit in minutes.
    *
    * @generated from field: int32 minutes_a_day = 3;
    */
   minutesADay: number;
 
   /**
-   * How many cards of each kind a day holds.
+   * Daily card limits.
    *
    * @generated from field: int32 new_a_day = 4;
    */
@@ -68,60 +55,49 @@ export type Settings = Message<"numen.v1.Settings"> & {
   reviewsADay: number;
 
   /**
-   * The share of cards recalled when they come round again.
+   * Target recall probability.
    *
    * @generated from field: double retention = 6;
    */
   retention: number;
 
   /**
-   * Whether days are made to resemble each other.
+   * Balances card distribution across review days when enabled.
    *
    * @generated from field: bool has_even_load = 7;
    */
   hasEvenLoad: boolean;
 
   /**
-   * What a day's budget is counted in. Unspecified is the default, which
-   * charges a card face once a review day.
+   * Accounting unit for review quotas.
    *
    * @generated from field: numen.v1.BudgetUnit counts = 8;
    */
   counts: BudgetUnit;
 
   /**
-   * How much of a day goes to what is overdue before anything unbegun is
-   * offered, as a share in hundredths. A hundred pays the debt first and begins
-   * new cards on what is left, nothing puts the new material first, and between
-   * them the day is split until one side runs out and the other takes the rest.
-   *
-   * It says what a day is spent on and closes nothing. A goal of a date carries
-   * the whole material by its own reckoning, so it takes no part there.
+   * Backlog review allocation percentage (0 to 100).
    *
    * @generated from field: int32 backlog = 9;
    */
   backlog: number;
 
   /**
-   * How much of a day's load each day of the week carries, in per cent, under
-   * the first three letters of the day's name in lower case. A day not named
-   * carries the whole of it, and a day at nothing schedules nothing.
+   * Daily load multipliers by three-letter lowercase weekday key (e.g., "mon": 100).
    *
    * @generated from field: map<string, int32> load = 10;
    */
   load: { [key: string]: number };
 
   /**
-   * What counts as a card face the person has learned. The value the rule reads
-   * stands in the field it names: `interval` for RULE_INTERVAL, `retention` for
-   * RULE_RETENTION.
+   * Classification rule for learned cards.
    *
    * @generated from field: numen.v1.Rule learned = 11;
    */
   learned: Rule;
 
   /**
-   * How long a card face is sent away for before it is learned, in days.
+   * Interval threshold in days for RULE_INTERVAL.
    *
    * @generated from field: int32 interval = 12;
    */
@@ -136,55 +112,48 @@ export const SettingsSchema: GenMessage<Settings> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 0);
 
 /**
- * Preset is one preset as a read hands it over.
+ * Preset contains resolved configuration and status for a preset note.
  *
  * @generated from message numen.v1.Preset
  */
 export type Preset = Message<"numen.v1.Preset"> & {
   /**
-   * Path is the note the settings were read from, and is empty for a deck
-   * naming no preset.
+   * Preset note path, or empty for defaults.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * Title is what the preset is called.
+   * Display title.
    *
    * @generated from field: string title = 2;
    */
   title: string;
 
   /**
-   * The settings themselves, as the preset names them.
+   * Scheduler parameters.
    *
    * @generated from field: numen.v1.Settings settings = 3;
    */
   settings?: Settings | undefined;
 
   /**
-   * What was wrong in the file and was not guessed at, in the words to show.
-   * The settings stand at the defaults for each of them, and the editor is
-   * where they are settled.
+   * Validation diagnostics found in preset frontmatter.
    *
    * @generated from field: repeated string problems = 4;
    */
   problems: string[];
 
   /**
-   * Why the preset schedules nothing, asked against the day holding now: a goal
-   * of a date stops once the day it names is behind that one. It is the answer
-   * a window has before any curve exists.
+   * Overall stop reason across the schedule.
    *
    * @generated from field: numen.v1.StopReason stops = 5;
    */
   stops: StopReason;
 
   /**
-   * The same asked of the day holding now: whatever stops the preset at all,
-   * and a day of the week carrying none of the load. A preset with a light
-   * Sunday is not a stopped preset; it is a preset with a stopped Sunday.
+   * Stop reason evaluated for the current day.
    *
    * @generated from field: numen.v1.StopReason stops_on = 6;
    */
@@ -199,7 +168,7 @@ export const PresetSchema: GenMessage<Preset> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 1);
 
 /**
- * Curve is what the one control evaluates to over the whole range of its goal.
+ * Curve represents scheduler projections across the parameter range of a goal.
  *
  * @generated from message numen.v1.Curve
  */
@@ -210,29 +179,28 @@ export type Curve = Message<"numen.v1.Curve"> & {
   goal: Goal;
 
   /**
-   * The value of the goal at each place: minutes for `minutes_a_day`, a share
-   * of cards for `retention`, and days from today for `by_date`.
+   * Sample values along the goal axis.
    *
    * @generated from field: repeated double grid = 2;
    */
   grid: number[];
 
   /**
-   * The day of each place, filled for a goal of a date.
+   * Target dates corresponding to grid points for GOAL_BY_DATE.
    *
    * @generated from field: repeated string days = 3;
    */
   days: string[];
 
   /**
-   * What the preset evaluates to at each place of the grid, one for one with it.
+   * Projected metrics evaluated at each grid point.
    *
    * @generated from field: repeated numen.v1.Point at = 4;
    */
   at: Point[];
 
   /**
-   * Where the preset stands, and what is suggested.
+   * Current setting position and recommended position on the curve.
    *
    * @generated from field: numen.v1.CurvePoint now = 5;
    */
@@ -244,35 +212,26 @@ export type Curve = Message<"numen.v1.Curve"> & {
   suggested?: CurvePoint | undefined;
 
   /**
-   * How many decks are scheduled by this preset. Zero is a preset no deck
-   * points at, and every place of the curve stands at zero with it.
+   * Number of decks and total card faces assigned to this preset.
    *
    * @generated from field: int32 decks = 7;
    */
   decks: number;
 
   /**
-   * How many card faces stand in those decks. Zero is a preset with nothing to
-   * schedule, and every place of the curve stands at zero with it.
-   *
    * @generated from field: int32 cards = 8;
    */
   cards: number;
 
   /**
-   * How many of those card faces have had their day and were not answered on
-   * it. One number over the whole curve: it is a fact about the vault as it
-   * stands, and not about the setting being chosen. A card falling due later
-   * today is not one of these, and neither is a card nobody has begun.
+   * Current overdue card faces across assigned decks.
    *
    * @generated from field: int32 overdue = 9;
    */
   overdue: number;
 
   /**
-   * How many of those card faces nobody has answered at all, so they have had
-   * no day. Overdue and these two never overlap, and `cards` holds both plus
-   * the ones whose day is still to come.
+   * Card faces that have never been reviewed.
    *
    * @generated from field: int32 unbegun = 10;
    */
@@ -287,23 +246,13 @@ export const CurveSchema: GenMessage<Curve> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 2);
 
 /**
- * Point is what a preset evaluates to at one place of the grid.
+ * Point contains projected metrics evaluated at a single curve sample point.
  *
  * @generated from message numen.v1.Point
  */
 export type Point = Message<"numen.v1.Point"> & {
   /**
-   * `reviews` is counted in card faces and `minutes` in the showings they take,
-   * so a face the day comes back to costs its minutes and is the one card.
-   *
-   * Under a goal of minutes, the next session a person will sit down to: the
-   * first day the preset admits, which is the day the deck screen offers. A day
-   * at none of the load is no session, so the day after it is drawn. Under a
-   * goal of retention, the load over the days the preset admits.
-   *
-   * A goal of a date reads `reviews` off that first day, and fills `minutes`
-   * with what getting through the material by the day the place names costs,
-   * over the days of review up to it.
+   * Projected daily review counts and estimated time in minutes.
    *
    * @generated from field: double reviews = 1;
    */
@@ -315,24 +264,21 @@ export type Point = Message<"numen.v1.Point"> & {
   minutes: number;
 
   /**
-   * The share of the material that comes back.
+   * Projected retention rate.
    *
    * @generated from field: double retained = 3;
    */
   retained: number;
 
   /**
-   * The card faces standing owed on the last day the projection ran. Read
-   * `clears` for how long the backlog standing now takes to go.
+   * Projected overdue card faces remaining at the projection horizon.
    *
    * @generated from field: int32 owed = 4;
    */
   owed: number;
 
   /**
-   * The share of the material learned by this day under the rule the settings
-   * name, and whether the pace this place sets learns every card face that can
-   * be learned by it.
+   * Percentage of card faces learned by target horizon and sufficiency flag.
    *
    * @generated from field: double through = 5;
    */
@@ -344,66 +290,42 @@ export type Point = Message<"numen.v1.Point"> & {
   isEnough: boolean;
 
   /**
-   * Every budget that closed the day here. An empty list is a day that asked
-   * for every card there was, so the material itself ran out, and a budget the
-   * goal does not name is never here.
-   *
-   * A goal of retention holds a day to both card counts, and a day that ran out
-   * of new cards and of reviews names both: a person raising one of them and
-   * finding nothing changed is reading a day the other closed too.
+   * Budget constraints reached at this sample point.
    *
    * @generated from field: repeated numen.v1.BudgetName closed = 7;
    */
   closed: BudgetName[];
 
   /**
-   * How many days of review at this place it takes before nothing is overdue.
-   * Zero is a curve standing over nothing overdue, and -1 is a pace that never
-   * gets there, which a person reads as not at this one.
+   * Number of days required to clear the current backlog (-1 if unachievable).
    *
    * @generated from field: int32 clears = 8;
    */
   clears: number;
 
   /**
-   * How many card faces stand overdue at the end of each day projected at this
-   * place, one entry a day over the whole horizon. It runs over days, which is
-   * a different axis from the grid.
+   * Overdue count projection per day across the horizon.
    *
    * @generated from field: repeated int32 backlog = 9;
    */
   backlog: number[];
 
   /**
-   * How many card faces stand learned today under the rule the settings name.
+   * Total card faces currently classified as learned.
    *
    * @generated from field: int32 learned = 10;
    */
   learned: number;
 
   /**
-   * How many days of review at this place it takes before every card face the
-   * preset schedules is learned. Zero is a place standing over a material
-   * already learned, and -1 is a horizon that ends with one of them still to
-   * learn, which a person reads as further off than this projection saw.
-   *
-   * Absent where that day is not a day to name, and nothing is drawn for it
-   * there. A material counted by a chance of recall stands at a level: a card
-   * falls below the target as it fades and rises above it when it is answered,
-   * so no day holds all of them at once. A preset aiming at a date is answered
-   * by that date, with `short` for the card faces it cannot carry there. And a
-   * curve of retention moves the scheduler at every place, so the day steps
-   * wherever one more review is wanted to pass the interval and falls away
-   * between the steps; what a target buys there is `through` beside it.
+   * Number of days required to learn all cards (-1 if unachievable).
    *
    * @generated from field: optional int32 learns = 11;
    */
   learns?: number | undefined;
 
   /**
-   * How many card faces cannot be learned by this day whatever the pace: the
-   * rule wants more days than the day leaves them, so no pace reaches them and
-   * the pace beside this is the one that reaches every other.
+   * Number of card faces that cannot be learned before the target date.
    *
    * @generated from field: int32 short = 12;
    */
@@ -418,28 +340,27 @@ export const PointSchema: GenMessage<Point> = /*@__PURE__*/
   messageDesc(file_numen_v1_presets, 3);
 
 /**
- * CurvePoint is one point on the curve worth pointing at.
+ * CurvePoint marks a notable location on a projection curve.
  *
  * @generated from message numen.v1.CurvePoint
  */
 export type CurvePoint = Message<"numen.v1.CurvePoint"> & {
   /**
-   * Where on the grid it stands, and -1 for a value that falls outside it.
+   * Index on the grid array, or -1 if outside bounds.
    *
    * @generated from field: int32 at = 1;
    */
   at: number;
 
   /**
-   * The goal's value at the place, in the units of the grid. What the preset
-   * stands at need not sit on the grid.
+   * Goal parameter value.
    *
    * @generated from field: double value = 2;
    */
   value: number;
 
   /**
-   * The day at the place, filled for a goal of a date.
+   * Target date for GOAL_BY_DATE.
    *
    * @generated from field: string day = 3;
    */
@@ -458,7 +379,7 @@ export const CurvePointSchema: GenMessage<CurvePoint> = /*@__PURE__*/
  */
 export type GetDeckPresetRequest = Message<"numen.v1.GetDeckPresetRequest"> & {
   /**
-   * The deck whose preset this is, by the path it is filed under.
+   * Deck note path.
    *
    * @generated from field: string deck = 1;
    */
@@ -477,31 +398,28 @@ export const GetDeckPresetRequestSchema: GenMessage<GetDeckPresetRequest> = /*@_
  */
 export type GetDeckPresetResponse = Message<"numen.v1.GetDeckPresetResponse"> & {
   /**
-   * Absent when the preset was refused.
+   * Configured preset, absent if retrieval failed.
    *
    * @generated from field: optional numen.v1.Preset preset = 1;
    */
   preset?: Preset | undefined;
 
   /**
-   * Set when the preset was not read, and why.
+   * Error code if reading failed.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * The file the settings came out of, for the caller to present at its next
-   * write. Absent for a deck naming no preset, and when the preset was
-   * refused.
+   * File fingerprint for optimistic concurrency.
    *
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
   at?: Fingerprint | undefined;
 
   /**
-   * How far each setting goes. A client asking a person for a number says
-   * these, and a number outside them is refused here.
+   * Permitted bounds for preset settings.
    *
    * @generated from field: numen.v1.SettingsBounds bounds = 4;
    */
@@ -546,8 +464,7 @@ export const ListPresetsResponseSchema: GenMessage<ListPresetsResponse> = /*@__P
   messageDesc(file_numen_v1_presets, 8);
 
 /**
- * PresetSummary is one preset as a person choosing between them sees it: where
- * the file is, and what it is called.
+ * PresetSummary contains basic identity information for a preset note.
  *
  * @generated from message numen.v1.PresetSummary
  */
@@ -558,8 +475,6 @@ export type PresetSummary = Message<"numen.v1.PresetSummary"> & {
   path: string;
 
   /**
-   * What the preset is called. Empty where nothing names the note.
-   *
    * @generated from field: string title = 2;
    */
   title: string;
@@ -577,14 +492,14 @@ export const PresetSummarySchema: GenMessage<PresetSummary> = /*@__PURE__*/
  */
 export type CreatePresetRequest = Message<"numen.v1.CreatePresetRequest"> & {
   /**
-   * What the preset is called. The file is named after it.
+   * Preset title and file stem name.
    *
    * @generated from field: string title = 1;
    */
   title: string;
 
   /**
-   * The folder it goes in, as a path relative to the root. Empty is the root.
+   * Target directory relative to vault root. Empty indicates vault root.
    *
    * @generated from field: string path = 2;
    */
@@ -603,23 +518,21 @@ export const CreatePresetRequestSchema: GenMessage<CreatePresetRequest> = /*@__P
  */
 export type CreatePresetResponse = Message<"numen.v1.CreatePresetResponse"> & {
   /**
-   * Where the preset is filed. Empty when nothing was made.
+   * Created preset file path. Empty if creation failed.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * Set when nothing was made, and why.
+   * Error code if creation failed.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * Set when the preset is on disk and the index would not come level with it.
-   * The preset was made and `path` stands; search does not answer about it
-   * until a walk goes past.
+   * True if written to disk but not yet indexed.
    *
    * @generated from field: bool is_unlevelled = 3;
    */
@@ -638,23 +551,21 @@ export const CreatePresetResponseSchema: GenMessage<CreatePresetResponse> = /*@_
  */
 export type ScheduleDeckRequest = Message<"numen.v1.ScheduleDeckRequest"> & {
   /**
-   * The deck to schedule, by the path it is filed under.
+   * Deck note path.
    *
    * @generated from field: string deck = 1;
    */
   deck: string;
 
   /**
-   * The preset that schedules it. Empty takes the deck off the preset it names,
-   * and it is scheduled by the defaults.
+   * Preset note path. Empty resets deck to default scheduling.
    *
    * @generated from field: string preset = 2;
    */
   preset: string;
 
   /**
-   * The file this caller last read. Absent for a write that lands on whatever
-   * the deck now holds.
+   * Baseline fingerprint for optimistic concurrency.
    *
    * @generated from field: optional numen.v1.Fingerprint baseline = 3;
    */
@@ -673,26 +584,21 @@ export const ScheduleDeckRequestSchema: GenMessage<ScheduleDeckRequest> = /*@__P
  */
 export type ScheduleDeckResponse = Message<"numen.v1.ScheduleDeckResponse"> & {
   /**
-   * Set when nothing was written, and why. A deck that is no longer the one
-   * this caller read is ERROR_CODE_STALE, and the person chooses what happens
-   * next.
+   * Error code if assignment failed.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * The file the write produced, for the caller to present at its next write.
-   * Absent when nothing was written.
+   * Resulting file fingerprint for subsequent writes.
    *
    * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
   at?: Fingerprint | undefined;
 
   /**
-   * Set when the deck is on disk and the index would not come level with it.
-   * The write happened and `at` stands; search answers about this file as it
-   * read it last, until a walk goes past.
+   * True if written to disk but not yet indexed.
    *
    * @generated from field: bool is_unlevelled = 3;
    */
@@ -728,30 +634,28 @@ export const ReadPresetRequestSchema: GenMessage<ReadPresetRequest> = /*@__PURE_
  */
 export type ReadPresetResponse = Message<"numen.v1.ReadPresetResponse"> & {
   /**
-   * Absent when the preset was refused.
+   * Preset configuration, absent if retrieval failed.
    *
    * @generated from field: optional numen.v1.Preset preset = 1;
    */
   preset?: Preset | undefined;
 
   /**
-   * Set when the preset was not read, and why.
+   * Error code if reading failed.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 2;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * The file the settings came out of, for the caller to present at its next
-   * write. Absent when the preset was refused.
+   * File fingerprint for optimistic concurrency.
    *
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
   at?: Fingerprint | undefined;
 
   /**
-   * How far each setting goes. A client asking a person for a number says
-   * these, and a number outside them is refused here.
+   * Permitted bounds for preset settings.
    *
    * @generated from field: numen.v1.SettingsBounds bounds = 4;
    */
@@ -766,11 +670,7 @@ export const ReadPresetResponseSchema: GenMessage<ReadPresetResponse> = /*@__PUR
   messageDesc(file_numen_v1_presets, 15);
 
 /**
- * SettingsBounds is how far each setting of a preset may go. They are the
- * application's and not the preset's: the same bounds answer every read, and a
- * number outside the one it belongs to is refused where it is written.
- *
- * A setting no bound is given for goes as far as its type does.
+ * SettingsBounds defines allowable ranges for preset parameters.
  *
  * @generated from message numen.v1.SettingsBounds
  */
@@ -806,7 +706,7 @@ export type SettingsBounds = Message<"numen.v1.SettingsBounds"> & {
   interval?: Bounds | undefined;
 
   /**
-   * How much of a day's load one day of the week may carry, in per cent.
+   * Allowable load percentage range for weekdays.
    *
    * @generated from field: numen.v1.Bounds load = 7;
    */
@@ -830,16 +730,14 @@ export type WritePresetRequest = Message<"numen.v1.WritePresetRequest"> & {
   path: string;
 
   /**
-   * The settings to write. A value outside what a preset may hold is the
-   * caller's to correct, and nothing is written.
+   * Preset settings to update.
    *
    * @generated from field: numen.v1.Settings settings = 2;
    */
   settings?: Settings | undefined;
 
   /**
-   * The file this caller last read. Absent for a write that lands on whatever
-   * the note now holds.
+   * Baseline fingerprint for optimistic concurrency.
    *
    * @generated from field: optional numen.v1.Fingerprint baseline = 3;
    */
@@ -858,26 +756,21 @@ export const WritePresetRequestSchema: GenMessage<WritePresetRequest> = /*@__PUR
  */
 export type WritePresetResponse = Message<"numen.v1.WritePresetResponse"> & {
   /**
-   * Set when nothing was written, and why. A file that is no longer the one
-   * this caller read is ERROR_CODE_STALE, and the person chooses what happens to
-   * their settings.
+   * Error code if write failed.
    *
    * @generated from field: optional numen.v1.ErrorCode error = 1;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * The file the write produced, for the caller to present at its next write.
-   * Absent when nothing was written.
+   * Resulting file fingerprint for subsequent writes.
    *
    * @generated from field: optional numen.v1.Fingerprint at = 2;
    */
   at?: Fingerprint | undefined;
 
   /**
-   * Set when the preset is on disk and the index would not come level with it.
-   * The write happened and `at` stands; search answers about this file as it
-   * read it last, until a walk goes past.
+   * True if written to disk but not yet indexed.
    *
    * @generated from field: bool is_unlevelled = 3;
    */
@@ -896,16 +789,14 @@ export const WritePresetResponseSchema: GenMessage<WritePresetResponse> = /*@__P
  */
 export type ComputeCurveRequest = Message<"numen.v1.ComputeCurveRequest"> & {
   /**
-   * The note the preset stands in, which names the decks it schedules. Empty
-   * is the preset that schedules the decks naming none.
+   * Preset note path, or empty for default preset.
    *
    * @generated from field: string path = 1;
    */
   path: string;
 
   /**
-   * The settings a curve is wanted for. They are what a person is moving and
-   * has not written yet, so they need not be what the file holds.
+   * Settings to evaluate.
    *
    * @generated from field: numen.v1.Settings settings = 2;
    */
@@ -937,12 +828,7 @@ export const ComputeCurveResponseSchema: GenMessage<ComputeCurveResponse> = /*@_
   messageDesc(file_numen_v1_presets, 20);
 
 /**
- * Goal is which value the one control steers. The value itself stands in the
- * field the goal names.
- *
- * A window spells each of these as the control it steers, so the names that
- * change on the way across are these: MINUTES_A_DAY is `minutes`, RETENTION is
- * `retention`, BY_DATE is `date`, and UNSPECIFIED is no goal at all.
+ * Goal specifies the target metric optimized by the scheduler.
  *
  * @generated from enum numen.v1.Goal
  */
@@ -953,21 +839,21 @@ export enum Goal {
   UNSPECIFIED = 0,
 
   /**
-   * How long a day of review runs, in `minutes_a_day`.
+   * Target daily study duration in minutes.
    *
    * @generated from enum value: GOAL_MINUTES_A_DAY = 1;
    */
   MINUTES_A_DAY = 1,
 
   /**
-   * The share of cards recalled when they come round again, in `retention`.
+   * Target retention probability on review.
    *
    * @generated from enum value: GOAL_RETENTION = 2;
    */
   RETENTION = 2,
 
   /**
-   * The day the material is to be in the head, in `by_date`.
+   * Target completion date.
    *
    * @generated from enum value: GOAL_BY_DATE = 3;
    */
@@ -981,9 +867,7 @@ export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 0);
 
 /**
- * Rule is what a preset counts as learned, and is placed under `learned`. The
- * value it reads is placed under the key it names, and the other rule keeps its
- * value and takes no part.
+ * Rule specifies the condition under which a card face is classified as learned.
  *
  * @generated from enum numen.v1.Rule
  */
@@ -994,15 +878,14 @@ export enum Rule {
   UNSPECIFIED = 0,
 
   /**
-   * A card face is learned once it is sent away for `interval` days or longer.
+   * Classified as learned when review interval reaches or exceeds the interval threshold in days.
    *
    * @generated from enum value: RULE_INTERVAL = 1;
    */
   INTERVAL = 1,
 
   /**
-   * A card face is learned once the chance of recalling it today is at or above
-   * `retention`.
+   * Classified as learned when recall probability reaches or exceeds the retention threshold.
    *
    * @generated from enum value: RULE_RETENTION = 2;
    */
@@ -1016,7 +899,7 @@ export const RuleSchema: GenEnum<Rule> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 1);
 
 /**
- * BudgetUnit is what a day's budget is counted in, and is placed under `counts`.
+ * BudgetUnit defines the counting unit applied against daily limits.
  *
  * @generated from enum numen.v1.BudgetUnit
  */
@@ -1027,15 +910,14 @@ export enum BudgetUnit {
   UNSPECIFIED = 0,
 
   /**
-   * A card face is charged the first time it is answered in a review day, and
-   * comes round again in that day for nothing.
+   * Deducts budget only on the first review of a card face per review day.
    *
    * @generated from enum value: BUDGET_UNIT_CARDS = 1;
    */
   CARDS = 1,
 
   /**
-   * Every showing is charged.
+   * Deducts budget on every card face presentation.
    *
    * @generated from enum value: BUDGET_UNIT_SHOWS = 2;
    */
@@ -1049,8 +931,7 @@ export const BudgetUnitSchema: GenEnum<BudgetUnit> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 2);
 
 /**
- * StopReason is why a preset schedules nothing. The list is closed, and a
- * client maps a value to a sentence.
+ * StopReason describes why scheduling produces zero cards for a given period.
  *
  * @generated from enum numen.v1.StopReason
  */
@@ -1061,52 +942,49 @@ export enum StopReason {
   UNSPECIFIED = 0,
 
   /**
-   * The preset schedules: its decks are handed a day of review.
+   * Scheduling active; cards are available for review.
    *
    * @generated from enum value: STOP_REASON_NOTHING = 1;
    */
   NOTHING = 1,
 
   /**
-   * A goal of minutes with the minutes at zero.
+   * Study duration budget set to zero under GOAL_MINUTES_A_DAY.
    *
    * @generated from enum value: STOP_REASON_NO_MINUTES = 2;
    */
   NO_MINUTES = 2,
 
   /**
-   * A goal of retention with both card counts at zero.
+   * Both new and review card quotas set to zero under GOAL_RETENTION.
    *
    * @generated from enum value: STOP_REASON_NO_CARDS = 3;
    */
   NO_CARDS = 3,
 
   /**
-   * A goal of a date naming no day. The budget the goal names is the day, and
-   * a goal that cannot read its own budget schedules nothing.
+   * Target completion date is missing under GOAL_BY_DATE.
    *
    * @generated from enum value: STOP_REASON_NO_DAY = 4;
    */
   NO_DAY = 4,
 
   /**
-   * A goal of a date whose day is behind us.
+   * Target completion date is in the past.
    *
    * @generated from enum value: STOP_REASON_PAST_DAY = 5;
    */
   PAST_DAY = 5,
 
   /**
-   * A day of the week carrying none of the load. It is a fact about one day,
-   * so only `stops_on` ever carries it.
+   * Current weekday has load set to zero percent.
    *
    * @generated from enum value: STOP_REASON_NO_LOAD = 6;
    */
   NO_LOAD = 6,
 
   /**
-   * A week carrying none of the load: every day of it stands at nothing, so
-   * there is no next day to pick the cards up.
+   * All weekdays configured with zero load.
    *
    * @generated from enum value: STOP_REASON_NO_WEEK = 7;
    */
@@ -1120,11 +998,7 @@ export const StopReasonSchema: GenEnum<StopReason> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 3);
 
 /**
- * BudgetName is one budget of a preset, named after the key the preset writes
- * it under. The list is closed, and a client maps a value to a word.
- *
- * A day of review is closed by the budgets it ran out of. Two of these close no
- * day and stand here because a goal either reads them or leaves them idle.
+ * BudgetName identifies budget constraints that cap daily review sessions.
  *
  * @generated from enum numen.v1.BudgetName
  */
@@ -1135,42 +1009,42 @@ export enum BudgetName {
   UNSPECIFIED = 0,
 
   /**
-   * How long the day runs, under `minutes_a_day`.
+   * Daily minute quota limit.
    *
    * @generated from enum value: BUDGET_NAME_MINUTES_A_DAY = 1;
    */
   MINUTES_A_DAY = 1,
 
   /**
-   * How many cards of each kind the day holds, under `new_a_day` and
-   * `reviews_a_day`.
+   * Daily new card quota limit.
    *
    * @generated from enum value: BUDGET_NAME_NEW_A_DAY = 2;
    */
   NEW_A_DAY = 2,
 
   /**
+   * Daily review card quota limit.
+   *
    * @generated from enum value: BUDGET_NAME_REVIEWS_A_DAY = 3;
    */
   REVIEWS_A_DAY = 3,
 
   /**
-   * A day paced by the day the preset aims at, under `by_date`.
+   * Daily quota determined by target completion date.
    *
    * @generated from enum value: BUDGET_NAME_BY_DATE = 4;
    */
   BY_DATE = 4,
 
   /**
-   * The share of the day that goes to the debt, under `backlog`. It closes
-   * nothing and says what the day is spent on.
+   * Daily quota allocation dedicated to overdue backlog.
    *
    * @generated from enum value: BUDGET_NAME_BACKLOG = 5;
    */
   BACKLOG = 5,
 
   /**
-   * A preset scheduling nothing at all.
+   * Preset execution paused.
    *
    * @generated from enum value: BUDGET_NAME_PAUSED = 6;
    */
@@ -1184,16 +1058,13 @@ export const BudgetNameSchema: GenEnum<BudgetName> = /*@__PURE__*/
   enumDesc(file_numen_v1_presets, 4);
 
 /**
- * PresetsService answers about the presets of the one vault a client is looking
- * at.
+ * PresetsService manages scheduling presets and configuration within a vault.
  *
  * @generated from service numen.v1.PresetsService
  */
 export const PresetsService: GenService<{
   /**
-   * GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
-   * answered with the defaults under no path, and a deck whose link reaches
-   * something that is not a preset is answered with the defaults and told so.
+   * GetDeckPreset returns the preset configured for a deck.
    *
    * @generated from rpc numen.v1.PresetsService.GetDeckPreset
    */
@@ -1203,10 +1074,7 @@ export const PresetsService: GenService<{
     output: typeof GetDeckPresetResponseSchema;
   },
   /**
-   * ListPresets is every preset the vault holds, by path and by what it is
-   * called. It is the list a deck's preset is chosen from, and the defaults are
-   * not in it: they are what schedules a deck naming no preset, and no note
-   * holds them.
+   * ListPresets returns all presets available in the vault.
    *
    * @generated from rpc numen.v1.PresetsService.ListPresets
    */
@@ -1216,12 +1084,7 @@ export const PresetsService: GenService<{
     output: typeof ListPresetsResponseSchema;
   },
   /**
-   * CreatePreset puts a preset naming none of its settings in the vault. The
-   * file says it is a preset from the moment it exists, so it is one to
-   * everything that reads the vault before a setting has been chosen.
-   *
-   * A key the file does not carry stands at the default, so the decks pointed
-   * at it are scheduled by the defaults until the person moves one.
+   * CreatePreset creates a new preset note with default settings.
    *
    * @generated from rpc numen.v1.PresetsService.CreatePreset
    */
@@ -1231,15 +1094,7 @@ export const PresetsService: GenService<{
     output: typeof CreatePresetResponseSchema;
   },
   /**
-   * ScheduleDeck puts a deck on a preset, by writing the entry of its `links:`
-   * block that carries `type: preset`. The entry keeps the role and the words
-   * the person wrote on it, and every other entry of the block is left as the
-   * bytes it was. An empty preset takes the entry out, and the deck is
-   * scheduled by the defaults.
-   *
-   * A preset the vault holds no note at is refused `missing`, and a preset
-   * naming a note that is not one is refused `not_a_preset`. A deck that no
-   * longer holds what the caller read is left alone and refused `stale`.
+   * ScheduleDeck assigns a deck to a preset or resets it to defaults.
    *
    * @generated from rpc numen.v1.PresetsService.ScheduleDeck
    */
@@ -1249,9 +1104,7 @@ export const PresetsService: GenService<{
     output: typeof ScheduleDeckResponseSchema;
   },
   /**
-   * ReadPreset is the settings of one preset. A note that is not a preset is
-   * answered with the defaults and a problem: what is wrong with the file is
-   * settled in the editor, and nothing is guessed at here.
+   * ReadPreset returns settings and validation errors for a preset note.
    *
    * @generated from rpc numen.v1.PresetsService.ReadPreset
    */
@@ -1261,13 +1114,7 @@ export const PresetsService: GenService<{
     output: typeof ReadPresetResponseSchema;
   },
   /**
-   * WritePreset puts settings into a preset. Each key the application owns is
-   * replaced on its own, and every other key, the order they stand in and the
-   * body are left as the person wrote them.
-   *
-   * A path the vault holds no note at is refused `missing`. A note that is not
-   * a preset is refused `not_a_preset`, and one that no longer holds what the
-   * caller read is left alone and refused `stale`.
+   * WritePreset updates frontmatter configuration settings in a preset note.
    *
    * @generated from rpc numen.v1.PresetsService.WritePreset
    */
@@ -1277,8 +1124,7 @@ export const PresetsService: GenService<{
     output: typeof WritePresetResponseSchema;
   },
   /**
-   * ComputeCurve is what the settings come to over the whole range of the goal
-   * they name. The whole range is worked out in one pass.
+   * ComputeCurve calculates review projections across the parameter range of the target goal.
    *
    * @generated from rpc numen.v1.PresetsService.ComputeCurve
    */

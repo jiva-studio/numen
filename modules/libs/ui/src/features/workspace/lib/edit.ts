@@ -119,8 +119,8 @@ export function moveTabWithin(workspace: Workspace, tab: TabId, slot: number): W
 
   const from = holder.tabs.indexOf(tab)
   const rest = holder.tabs.filter((each) => each !== tab)
-  const at = Math.max(0, Math.min(slot > from ? slot - 1 : slot, rest.length))
-  const tabs = [...rest.slice(0, at), tab, ...rest.slice(at)]
+  const targetIndex = Math.max(0, Math.min(slot > from ? slot - 1 : slot, rest.length))
+  const tabs = [...rest.slice(0, targetIndex), tab, ...rest.slice(targetIndex)]
 
   return {
     ...workspace,

@@ -39,7 +39,7 @@ export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBar
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task): StatusBarTask => {
         const hasTotal = task.total > 0
-        const progress = hasTotal ? Math.round((task.done / task.total) * 100) : undefined
+        const progress = hasTotal ? Math.round((task.completedCount / task.total) * 100) : undefined
         const isFailed = task.error !== ''
         const state: TaskState = isFailed ? 'failed' : 'running'
         const group = getTaskGroup(task.label, task.about)
@@ -50,9 +50,9 @@ export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBar
           group,
           about: task.about || undefined,
           progress,
-          done: hasTotal ? task.done : undefined,
+          done: hasTotal ? task.completedCount : undefined,
           total: hasTotal ? task.total : undefined,
-          counting: task.counting === 'things' ? undefined : task.counting || undefined,
+          counting: task.counting === 'items' ? undefined : task.counting || undefined,
           state,
           canCancel: !isFailed,
           error: isFailed ? task.error : undefined,

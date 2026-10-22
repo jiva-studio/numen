@@ -192,7 +192,6 @@ type PluginLifecycleManager interface {
 	PluginAcquirer
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
-	// SetPluginVault is the vault the window is showing, as plugins work it through the host.
 	SetPluginVault(vault PluginVault)
 	// SetVaultPath is the vault the plugins' paths are inside.
 	SetVaultPath(path string)

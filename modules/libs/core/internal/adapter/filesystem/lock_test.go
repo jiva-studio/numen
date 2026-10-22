@@ -9,7 +9,6 @@ import (
 // The lock map is never pruned, so what bounds it is what can be a key. A key
 // is the folder as the filesystem resolves it, so every spelling of one vault
 // root is the one entry — and two writers on one folder spelled two ways are
-// held apart, which is what the lock is for.
 func TestEverySpellingOfAVaultRootIsTheOneLock(t *testing.T) {
 	root := t.TempDir()
 	linked := filepath.Join(t.TempDir(), "vault")

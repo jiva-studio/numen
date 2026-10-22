@@ -16,7 +16,7 @@ const bar = (player: ReturnType<typeof mountPlayer>) => player.get('input[type="
 const times = (player: ReturnType<typeof mountPlayer>) =>
   player.findAll('.player__at').map((one) => one.text())
 
-describe('what a person is told', () => {
+describe('player status notifications', () => {
   it('offers to start it while nothing is playing, and to stop it while it is', () => {
     const paused = mountPlayer()
     expect(button(paused).attributes('aria-label')).toBe('Play')

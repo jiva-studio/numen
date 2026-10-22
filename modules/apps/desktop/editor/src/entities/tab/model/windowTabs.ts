@@ -120,12 +120,12 @@ function createTabRegistry() {
 function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
   /** Where a command over a file leads, as the first kind that answers for it says. */
   const resolveCommand = async (
-    at: string,
+    targetPath: string,
     command: string,
     type: NoteType,
   ): Promise<TabResolution | null> => {
     for (const one of byKind.values()) {
-      const resolved = await one.resolveCommand?.(at, command, type)
+      const resolved = await one.resolveCommand?.(targetPath, command, type)
       if (resolved) return resolved
     }
     return null
@@ -232,12 +232,12 @@ function createTabQueries(
 
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
-  const createTab = async (kind: string, at = ''): Promise<string> => {
+  const createTab = async (kind: string, targetPath = ''): Promise<string> => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
-    const id = one.identity ? `${kind}:${one.identity(at)}` : generateId(kind)
+    const id = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
     if (ctx.open.value.has(id)) return id
     const scope = effectScope(true)
-    const state = openInScope(scope, () => one.open(at, id))
+    const state = openInScope(scope, () => one.open(targetPath, id))
     ctx.scopes.set(id, scope)
     ctx.open.value = new Map(ctx.open.value).set(id, { kind: one, state })
     return id
@@ -247,14 +247,14 @@ function createTabOpeners(ctx: TabOpenerContext) {
     ctx.layout.value = openTab(ctx.layout.value, id)
   }
 
-  const openTabOfKind = async (kind: string, at = ''): Promise<string> => {
-    const id = await createTab(kind, at)
+  const openTabOfKind = async (kind: string, target = ''): Promise<string> => {
+    const id = await createTab(kind, target)
     if (id) show(id)
     return id
   }
 
-  const openTabBesideOfKind = async (kind: string, at = ''): Promise<string> => {
-    const id = await createTab(kind, at)
+  const openTabBesideOfKind = async (kind: string, target = ''): Promise<string> => {
+    const id = await createTab(kind, target)
     if (id) {
       ctx.layout.value = openTabBeside(ctx.layout.value, id, {
         side: 'right',
@@ -323,12 +323,12 @@ function createTabNavigation(
    * The tab of a kind the person was last in, put in front and moved to the
    * path; a tab of it opened there where the window holds none.
    */
-  const navigateTab = async (kind: string, at: string): Promise<string> => {
+  const navigateTab = async (kind: string, targetPath: string): Promise<string> => {
     const last = [...open.value].filter(([, one]) => one.kind.kind === kind).at(-1)
-    if (!last) return openers.openTabOfKind(kind, at)
+    if (!last) return openers.openTabOfKind(kind, targetPath)
     const [id, one] = last
     openers.show(id)
-    await one.kind.navigate?.(one.state, at, '')
+    await one.kind.navigate?.(one.state, targetPath, '')
     return id
   }
 
@@ -359,8 +359,8 @@ function createTabNavigation(
 }
 
 interface WindowHandleDeps {
-  openTabOfKind: (kind: string, at?: string) => Promise<string>
-  openTabBesideOfKind: (kind: string, at?: string) => Promise<string>
+  openTabOfKind: (kind: string, target?: string) => Promise<string>
+  openTabBesideOfKind: (kind: string, target?: string) => Promise<string>
   show: (id: string) => void
   finishClose: (id: string) => void
   each: <T>(kind: string) => readonly KindTab<T>[]
@@ -370,8 +370,8 @@ interface WindowHandleDeps {
 
 function createWindowHandle(deps: WindowHandleDeps): WindowHandle {
   return {
-    openTab: (kind, at) => deps.openTabOfKind(kind, at),
-    openTabBeside: (kind, at) => deps.openTabBesideOfKind(kind, at),
+    openTab: (kind, target) => deps.openTabOfKind(kind, target),
+    openTabBeside: (kind, target) => deps.openTabBesideOfKind(kind, target),
     show: (id) => deps.show(id),
     closeTab: (id) => deps.finishClose(id),
     each: <T>(kind: string) => deps.each<T>(kind),

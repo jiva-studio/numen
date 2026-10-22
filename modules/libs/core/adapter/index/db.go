@@ -83,14 +83,14 @@ func SkipFlush(testonly.Grant) Option {
 func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 	// A commit waits for the disk. The index is a cache: a crash costs a
 	// rescan, never data, and NORMAL under WAL is what that is worth.
-	at := settings{synchronous: shipped}
+	pos := settings{synchronous: shipped}
 	for _, one := range opts {
-		one(&at)
+		one(&pos)
 	}
 
 	// The sqlite driver is registered by import, so sql.Open has no error to
 	// report; the first connection reports an unusable path.
-	write, _ := sql.Open("sqlite", writeDSN(path, at))
+	write, _ := sql.Open("sqlite", writeDSN(path, pos))
 	// One writer. More connections would only mean more of them failing on a
 	// busy lock.
 	write.SetMaxOpenConns(1)
@@ -100,7 +100,7 @@ func Open(ctx context.Context, path string, opts ...Option) (*DB, error) {
 		return nil, err
 	}
 
-	read, _ := sql.Open("sqlite", dsn(path, at))
+	read, _ := sql.Open("sqlite", dsn(path, pos))
 	read.SetMaxOpenConns(max(4, runtime.NumCPU()))
 	read.SetMaxIdleConns(max(2, runtime.NumCPU()/2))
 	return &DB{write: write, read: read}, nil
@@ -133,14 +133,14 @@ func (d *DB) Sources() sources {
 	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks()}
 }
 
-func dsn(path string, at settings) string {
-	return dsnOf(path, append(slices.Clone(pragmas), at.synchronous))
+func dsn(path string, pos settings) string {
+	return dsnOf(path, append(slices.Clone(pragmas), pos.synchronous))
 }
 
 // writeDSN is what the write pool opens with. Every transaction on it takes the
 // write lock at BEGIN, so one that reads before it writes waits its turn under
 // the busy timeout.
-func writeDSN(path string, at settings) string { return dsn(path, at) + "&_txlock=immediate" }
+func writeDSN(path string, pos settings) string { return dsn(path, pos) + "&_txlock=immediate" }
 
 func dsnOf(path string, pragmas []string) string {
 	q := url.Values{}

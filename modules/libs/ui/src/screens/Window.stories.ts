@@ -183,7 +183,6 @@ const WIDE = createNeighbourhood([
 ])
 
 /**
- * The headings of the notes on the map, by the node each stands in. More of
  * them than stand at once, so the mark saying there is more to wind to is
  * drawn as well.
  */
@@ -320,9 +319,9 @@ const renderPage = (page: number): string => {
   const leaf = page - BOOK_FIRST
   const lines = BOOK_PAGES[leaf] ?? []
   const activeSet = lines
-    .map((line, at) => {
-      const y = FIRST + at * LEADING
-      const weight = at === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
+    .map((line, index) => {
+      const y = FIRST + index * LEADING
+      const weight = index === 0 && leaf === 0 ? ' font-weight="600" letter-spacing="1.2"' : ''
       return `<text x="${MARGIN}" y="${y}" font-family="Georgia, serif" font-size="16"${weight} fill="#1b1b1b">${escapeHtml(line)}</text>`
     })
     .join('')
@@ -342,7 +341,7 @@ const overLines = (from: number, to: number, ends: number) => ({
 /** The passage a search found in it: the sentence the count is defined by. */
 const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
 
 const did = (id: string, text: string, subject: string, aside: string): Turn => ({
   id,
@@ -353,9 +352,8 @@ const did = (id: string, text: string, subject: string, aside: string): Turn => 
   canOpen: true,
 })
 
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
-/** A tool is named the way the panel says it: as a program is named, spoken. */
 const TURNS: readonly Turn[] = [
   createAsked('1', 'What does this note leave out?'),
   did('2', 'note neighbourhood', 'Entropy', '4 links'),
@@ -384,8 +382,8 @@ const TURNS: readonly Turn[] = [
 const marks = (title: string, word: string): Span[] => {
   const spans: Span[] = []
   const lower = title.toLowerCase()
-  for (let at = lower.indexOf(word); at >= 0; at = lower.indexOf(word, at + 1)) {
-    spans.push({ from: at, to: at + word.length })
+  for (let pos = lower.indexOf(word); pos >= 0; pos = lower.indexOf(word, pos + 1)) {
+    spans.push({ from: pos, to: pos + word.length })
   }
   return spans
 }
@@ -403,7 +401,6 @@ const createItem = (id: string, title: string): PaletteItem => ({
   actions: [TRAVEL, READ],
 })
 
-/** A heading that carries them: the heading, and the note it stands in. */
 const heading = (id: string, title: string, note: string): PaletteItem => ({
   id,
   title,
@@ -596,7 +593,6 @@ const AGENT_OPTIONS: readonly AgentModelOption[] = [
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
-  /** What stands over it: the search, the commands, or nothing. */
   readonly panel?: 'search' | 'commands' | null
   /** What the map is looking at, which follows the room it is drawn in. */
   readonly neighbourhood?: PlexNeighbourhood
@@ -633,7 +629,7 @@ const screen = ({
     const other = ref(OTHER)
     const activePrompt = ref('')
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
-    const at = ref(BOOK_FIRST)
+    const page = ref(BOOK_FIRST)
     const currentNeighbourhood = ref(neighbourhood)
 
     const onActivate = (id: string) => {
@@ -665,7 +661,7 @@ const screen = ({
       other,
       asking: activePrompt,
       typed: searchQuery,
-      at,
+      page,
       panel,
       currentNeighbourhood,
       onActivate,
@@ -678,10 +674,10 @@ const screen = ({
       groups: panel === 'commands' ? COMMANDS : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-      picture: (page: number) => renderPage(page),
-      highlightsOn: (page: number) => (page === BOOK_FIRST ? HIGHLIGHTS : []),
-      go: (page: number) => {
-        at.value = Math.min(Math.max(page, 0), BOOK_LEAVES - 1)
+      picture: (pageIndex: number) => renderPage(pageIndex),
+      highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
+      go: (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
       },
       TURNS,
       TABS,
@@ -740,7 +736,7 @@ const screen = ({
             v-else-if="id === BOOK"
             class="h-full"
             :pages="pages"
-            :at="at"
+            :at="page"
             :picture="picture"
             :highlights="highlightsOn"
             @go="go"
@@ -762,11 +758,11 @@ const screen = ({
         v-if="panel"
         v-model="typed"
         :groups="groups"
-        open
+        is-open
         :placeholder="placeholder"
       />
 
-      <Menu v-if="menu" :items="MENU" :at="menu" open name="What can be done to this note">
+      <Menu v-if="menu" :items="MENU" :at="menu" is-open name="What can be done to this note">
         <template #icon="{ id }">
           <component
             :is="menuIcon(id)"
@@ -867,7 +863,6 @@ export const Mapping: Story = {
 }
 
 /**
- * The map with a hand left on a node, which hangs the headings of its note
  * under the box.
  */
 export const Nesting: Story = {
@@ -886,7 +881,6 @@ export const Nesting: Story = {
     const canvas = within(canvasElement)
     const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
 
-    // A hand left on the node hangs the headings of its note under the box.
     // They come in one after another, so the picture is let settle first.
     const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
     const suspended = () => titles.filter((words) => canvas.queryByText(words))
@@ -907,7 +901,6 @@ export const Nesting: Story = {
   },
 }
 
-/** A note being written, with the map it stands in beside it. */
 export const Writing: Story = {
   parameters: WRITING,
   render: () =>
@@ -1069,7 +1062,6 @@ export const Filing: Story = {
           [
             pane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
-            // map stands over the note it is about.
             branch('middle', [pane('map', [PLEX]), pane('note', [NOTE, BOOK], NOTE)], [0.52, 0.48]),
             pane('aside', [AGENT]),
           ],

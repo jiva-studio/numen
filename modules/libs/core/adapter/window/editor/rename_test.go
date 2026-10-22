@@ -59,8 +59,8 @@ func TestRenamingWritesTheNoteAndMovesTheFile(t *testing.T) {
 	if title := answer.Msg.GetTitle(); title != "Entropy" {
 		t.Errorf("the note is called %q", title)
 	}
-	if by := answer.Msg.GetNameSource(); by != v1.NameSource_NAME_SOURCE_FRONTMATTER {
-		t.Errorf("the frontmatter named the note and the answer says %v", by)
+	if delta := answer.Msg.GetNameSource(); delta != v1.NameSource_NAME_SOURCE_FRONTMATTER {
+		t.Errorf("the frontmatter named the note and the answer says %v", delta)
 	}
 	moved := answer.Msg.GetMoved()
 	if moved.GetFrom() != "Old.md" || moved.GetTo() != "Entropy.md" {
@@ -82,11 +82,11 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 		sync note.SyncTitleAndFilename
 		// at is where the renamed note is filed, and called what the moved one
 		// is called.
-		at     string
+		posVal string
 		called string
 	}{
-		"one name":   {sync: true, at: "Disorder.md", called: "Warmth"},
-		"told apart": {sync: false, at: "Entropy.md", called: "Heat"},
+		"one name":   {sync: true, posVal: "Disorder.md", called: "Warmth"},
+		"told apart": {sync: false, posVal: "Entropy.md", called: "Heat"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			f := opening(t, nil, map[string]string{
@@ -103,7 +103,7 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if got := renamed.Msg.GetPath(); got != c.at {
+			if got := renamed.Msg.GetPath(); got != c.posVal {
 				t.Errorf("the note is filed at %q", got)
 			}
 
@@ -127,11 +127,11 @@ func TestTheWindowRenamesTheWayTheSettingsSay(t *testing.T) {
 
 // oneName writes into the settings whether a note's title and the name of its
 // file are kept as one name.
-func oneName(t *testing.T, f *going, kept bool) error {
+func oneName(t *testing.T, f *going, preserved bool) error {
 	t.Helper()
 	_, err := f.configuring.WriteSettings(t.Context(), connect.NewRequest(&v1.WriteSettingsRequest{
 		Settings: []*v1.Setting{
-			{At: []string{"naming", "sync_title_and_filename"}, Value: fmt.Sprint(kept)},
+			{At: []string{"naming", "sync_title_and_filename"}, Value: fmt.Sprint(preserved)},
 		},
 	}))
 	return err
@@ -251,8 +251,8 @@ func TestRenamingOntoATakenNameReturnsWhatTheNoteIsCalled(t *testing.T) {
 	if path := answer.Msg.GetPath(); path != "Old.md" {
 		t.Errorf("the note is filed at %q", path)
 	}
-	if by := answer.Msg.GetNameSource(); by != v1.NameSource_NAME_SOURCE_FILENAME {
-		t.Errorf("the filename names the note and the answer says %v", by)
+	if delta := answer.Msg.GetNameSource(); delta != v1.NameSource_NAME_SOURCE_FILENAME {
+		t.Errorf("the filename names the note and the answer says %v", delta)
 	}
 	if now := fileAt(t, f.root, "Entropy.md"); now != "# Entropy\n" {
 		t.Errorf("the note already there was written:\n%s", now)
@@ -507,46 +507,46 @@ func TestNeitherARenameNorARemoveIsTakenWhileTheWindowIsGoing(t *testing.T) {
 // whatever the note held before.
 func TestRenamingReturnsWhatANoteCannotBeCalled(t *testing.T) {
 	for name, c := range map[string]struct {
-		held  string
-		title string
-		want  v1.ErrorCode
-		file  string
+		activeItem string
+		title      string
+		want       v1.ErrorCode
+		file       string
 	}{
 		"a note carrying a heading takes the key, the heading naming nothing": {
-			held:  "# Old\n",
-			title: "C#",
-			file:  "---\ntitle: C#\n",
+			activeItem: "# Old\n",
+			title:      "C#",
+			file:       "---\ntitle: C#\n",
 		},
 		"a filename that cannot carry it hands the title to the key": {
-			held:  "A measure.\n",
-			title: "C#",
-			file:  "---\ntitle: C#\n",
+			activeItem: "A measure.\n",
+			title:      "C#",
+			file:       "---\ntitle: C#\n",
 		},
 		"a title over more than one line": {
-			held:  "---\ntitle: Old\n---\nbody\n",
-			title: "one\ntwo",
-			want:  v1.ErrorCode_ERROR_CODE_UNNAMEABLE,
+			activeItem: "---\ntitle: Old\n---\nbody\n",
+			title:      "one\ntwo",
+			want:       v1.ErrorCode_ERROR_CODE_UNNAMEABLE,
 		},
 		"the key carries the hash, so the note is renamed": {
-			held:  "---\ntitle: Old\n---\nbody\n",
-			title: "C#",
-			file:  "---\ntitle: C#\n",
+			activeItem: "---\ntitle: Old\n---\nbody\n",
+			title:      "C#",
+			file:       "---\ntitle: C#\n",
 		},
 		"a frontmatter written on one line cannot be changed a key at a time": {
-			held:  "---\n{title: Old, id: 01J8}\n---\n# Old\n",
-			title: "Entropy",
-			want:  v1.ErrorCode_ERROR_CODE_UNREADABLE,
+			activeItem: "---\n{title: Old, id: 01J8}\n---\n# Old\n",
+			title:      "Entropy",
+			want:       v1.ErrorCode_ERROR_CODE_UNREADABLE,
 		},
 		// Nothing closes the block, so nothing in the file is frontmatter and
 		// the filename names the note. The file moves and is not written to.
 		"a frontmatter block that is never closed": {
-			held:  "---\ntitle: Old\n# Old\n",
-			title: "Entropy",
-			file:  "---\ntitle: Old\n# Old\n",
+			activeItem: "---\ntitle: Old\n# Old\n",
+			title:      "Entropy",
+			file:       "---\ntitle: Old\n# Old\n",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			f := openWindow(t, nil, map[string]string{"Old.md": c.held})
+			f := openWindow(t, nil, map[string]string{"Old.md": c.activeItem})
 
 			answer, err := f.client.RenameNote(t.Context(), connect.NewRequest(&v1.RenameNoteRequest{
 				Path: "Old.md", Title: c.title,
@@ -558,7 +558,7 @@ func TestRenamingReturnsWhatANoteCannotBeCalled(t *testing.T) {
 				t.Errorf("want %v, got %v", c.want, code)
 			}
 			if c.want != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-				if now := fileAt(t, f.root, "Old.md"); now != c.held {
+				if now := fileAt(t, f.root, "Old.md"); now != c.activeItem {
 					t.Errorf("the rejected rename wrote to the note:\n%s", now)
 				}
 				return
@@ -601,7 +601,6 @@ func TestARenamedNoteIsStillLinkedTo(t *testing.T) {
 	}
 }
 
-// staleWriters is the vault's writers, with the write refused the way one is
 // when something outside this process wrote the file in the meantime.
 type staleWriters struct{ port.VaultWriters }
 

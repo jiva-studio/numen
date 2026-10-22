@@ -31,7 +31,7 @@ const resolved = {
 }
 
 /** A core that answers whatever it is told to, and records what it was asked. */
-function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
+function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
   const request: string[] = []
   return {
     asked: request,
@@ -78,11 +78,11 @@ function fake(over: Partial<Core> = {}): Core & { asked: string[] } {
     watchQuit: async function* () {},
     reportFlush: vi.fn(() => Promise.resolve()),
     detachTab: vi.fn(() => Promise.resolve()),
-    ...over,
+    ...overrides,
   }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 /**
  * What the window makes of what it is told: that the vault changed, and that a
@@ -232,7 +232,6 @@ describe('the stream of changes', () => {
 /**
  * A vault is swapped from outside this window, and the reload that says so
  * looks exactly like the one that says the whole vault changed on disk. The
- * folder it stands at is what tells them apart.
  */
 describe('another vault under this window', () => {
   /** What the window did about a reload: drew the page again, or read again. */
@@ -248,7 +247,7 @@ describe('another vault under this window', () => {
         renderedElement.push('reloaded')
       },
     })
-    return { window, drawn: renderedElement }
+    return { window, renderEvents: renderedElement }
   }
 
   /**
@@ -272,17 +271,16 @@ describe('another vault under this window', () => {
     })
 
   it('draws the page again where the reload remains at another folder', async () => {
-    /** The folder the vault stands at, which the swap moves between reads. */
     const folders = ['/vaults/Physics', '/vaults/Heat']
     const one = createWindow(
       createReloadingCore(async () => ({ ...resolved, path: folders.shift() ?? '' })),
     )
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
-    expect(one.drawn.at(-1)).toBe('reloaded')
+    expect(one.renderEvents.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -293,7 +291,6 @@ describe('another vault under this window', () => {
    * the page was drawn on is what the reload is measured against.
    */
   it('draws the page again where the vault that arrived was read first', async () => {
-    /** The folder the vault stands at: the first read is the page's own. */
     const folders = ['/vaults/Physics']
     const one = createWindow(
       createReloadingCore(
@@ -303,12 +300,12 @@ describe('another vault under this window', () => {
     )
 
     await one.window.start()
-    await nap()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
+    await flushPromises()
 
-    expect(one.drawn).toContain('changed Heat.md')
-    expect(one.drawn.at(-1)).toBe('reloaded')
+    expect(one.renderEvents).toContain('changed Heat.md')
+    expect(one.renderEvents.at(-1)).toBe('reloaded')
 
     one.window.close()
   })
@@ -324,10 +321,10 @@ describe('another vault under this window', () => {
     )
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
-    expect(one.drawn).not.toContain('reloaded')
+    expect(one.renderEvents).not.toContain('reloaded')
 
     one.window.close()
   })
@@ -336,11 +333,11 @@ describe('another vault under this window', () => {
     const one = createWindow(createReloadingCore(async () => resolved))
 
     await one.window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
-    expect(one.drawn).not.toContain('reloaded')
-    expect(one.drawn.at(-1)).toBe('changed ')
+    expect(one.renderEvents).not.toContain('reloaded')
+    expect(one.renderEvents.at(-1)).toBe('changed ')
 
     one.window.close()
   })
@@ -433,7 +430,7 @@ describe('a vault that could not be read', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(false)
     expect(window.error.value).toBe('permission denied')
@@ -446,7 +443,7 @@ describe('a vault with a note in it', () => {
     const window = useWindowDisplay(fake(), { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.hasNote.value).toBe(true)
     expect(window.error.value).toBe('')
@@ -464,7 +461,7 @@ describe('a vault that is not being followed', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.unwatched.value).toBe('too many watches')
   })
@@ -481,7 +478,7 @@ describe('chunks with nothing to embed them', () => {
     const window = useWindowDisplay(core, { wait: async () => window.close() })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.chunks.value).toBe(4823)
     expect(window.embedded.value).toBe(0)
@@ -494,9 +491,9 @@ describe('what the application is doing', () => {
     id: 'reading:library/scan.pdf',
     label: 'Recognising a scan',
     about: 'library/scan.pdf',
-    done: count,
+    completedCount: count,
     total: 400,
-    counting: 'things',
+    counting: 'items',
     error: '',
     isUserStarted: true,
   })
@@ -521,9 +518,9 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
-    expect(window.tasks.value.map((one) => one.done)).toEqual([32])
+    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([32])
 
     window.close()
   })
@@ -552,11 +549,11 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
-    await nap()
+    await flushPromises()
+    await flushPromises()
 
     expect(openedWindows).toBeGreaterThan(1)
-    expect(window.tasks.value.map((one) => one.done)).toEqual([48])
+    expect(window.tasks.value.map((one) => one.completedCount)).toEqual([48])
     // A stream taken up again is not a stream that was lost.
     expect(window.lost.value).toBe('')
 
@@ -593,7 +590,7 @@ describe('what the application is doing', () => {
     const window = useWindowDisplay(core, { wait: vi.fn(() => Promise.resolve()) })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(asks).toBeGreaterThan(1)
     expect(window.chunks.value).toBe(asks * 1000)
@@ -635,7 +632,7 @@ describe('the first note shown', () => {
     const one = createDisplay(fake())
 
     await one.window.start()
-    await nap()
+    await flushPromises()
 
     expect(one.window.isIndexing.value).toBe(false)
     expect(one.changed).toStrictEqual([''])
@@ -663,7 +660,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
     window.close()
 
     expect(response).toStrictEqual([edit])
@@ -684,7 +681,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
@@ -708,7 +705,7 @@ describe('the first note shown', () => {
     })
 
     await window.start()
-    await nap()
+    await flushPromises()
 
     expect(window.isIndexing.value).toBe(true)
     expect(changed).toStrictEqual([])
@@ -728,7 +725,7 @@ describe('a closed window', () => {
     const window = useWindowDisplay(core, { wait: waitForever })
 
     await window.start()
-    await nap()
+    await flushPromises()
     window.close()
 
     expect(signals).toHaveLength(1)

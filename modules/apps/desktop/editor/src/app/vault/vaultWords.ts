@@ -21,8 +21,8 @@ import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
  * for is counted one by one.
  */
 export const counted: Record<Units, TallyUnit> = {
-  [Units.UNSPECIFIED]: 'things',
-  [Units.THINGS]: 'things',
+  [Units.UNSPECIFIED]: 'items',
+  [Units.THINGS]: 'items',
   [Units.BYTES]: 'bytes',
   [Units.SECONDS]: 'seconds',
 }
@@ -77,7 +77,10 @@ const flushResultNames: Record<FlushResult, 'nothing' | 'written' | 'asking' | n
   [FlushResult.ASKING]: 'asking',
 }
 
-export const flushResults = getNames<NonNullable<(typeof flushResultNames)[FlushResult]>, FlushResult>(flushResultNames)
+export const flushResults = getNames<
+  NonNullable<(typeof flushResultNames)[FlushResult]>,
+  FlushResult
+>(flushResultNames)
 
 /** One vault of the list, kept as the plain value the window carries it as. */
 export const mapVault = (one: VaultMessage): Vault => ({

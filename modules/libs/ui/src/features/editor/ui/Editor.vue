@@ -121,9 +121,9 @@ onBeforeUnmount(() => {
 // is already in. The caret, the selection and the scroll offset stay where
 // they were, and the replacement is no step to undo. The string this editor
 // last emitted is the document currently.
-watch(text, (fresh) => {
-  if (!view || fresh === lastEmitted || view.state.doc.toString() === fresh) return
-  view.dispatch(replace(view.state, fresh))
+watch(text, (newText) => {
+  if (!view || newText === lastEmitted || view.state.doc.toString() === newText) return
+  view.dispatch(replace(view.state, newText))
 })
 
 watch(
@@ -182,8 +182,8 @@ defineExpose({
    */
   reveal: (line: number) => {
     if (!view || view.state.doc.length === 0) return false
-    const at = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
-    const { from } = view.state.doc.line(at)
+    const lineNumber = Math.min(Math.max(Math.trunc(line), 0) + 1, view.state.doc.lines)
+    const { from } = view.state.doc.line(lineNumber)
     view.dispatch({
       selection: { anchor: from },
       effects: EditorView.scrollIntoView(from, { y: 'start' }),

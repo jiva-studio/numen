@@ -55,9 +55,9 @@ export function useNoticeStack(
       on = null
     }
     if (focused.value && !stack.value?.contains(document.activeElement)) focused.value = false
-    const at = clock()
-    if (isHolding()) heldFor.value += at - now.value
-    now.value = at
+    const current = clock()
+    if (isHolding()) heldFor.value += current - now.value
+    now.value = current
   }
 
   /** Answered by the card the pointer went over, whatever inside it was under it. */

@@ -266,14 +266,14 @@ func makeEndpoint(
 		},
 		GetVault:       opened.GetCurrentVault,
 		SetAgent:       opened.State.SetAgent,
-		SetUnreachable: func(said string) { opened.State.Unreachable.Store(said) },
+		SetUnreachable: func(response string) { opened.State.Unreachable.Store(response) },
 		ErrorHandler:   func(err error) { fmt.Fprintln(os.Stderr, "numen:", err) },
 	}
 }
 
 func makeApplication(
-	opened *editor.Installation, pages http.Handler, behind *shutdown.Sequence,
-	going *vaultFlush, seen visibility,
+	opened *editor.Installation, pages http.Handler, shutdownSeq *shutdown.Sequence,
+	going *vaultFlush, windowVis visibility,
 ) *application.App {
 	return application.New(application.Options{
 		Name: appName,
@@ -283,9 +283,9 @@ func makeApplication(
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		PostShutdown: behind.Run,
+		PostShutdown: shutdownSeq.Run,
 		ShouldQuit: func() bool {
-			return requestQuit(going, seen, func() { application.Get().Quit() })
+			return requestQuit(going, windowVis, func() { application.Get().Quit() })
 		},
 	})
 }

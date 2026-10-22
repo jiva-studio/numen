@@ -36,7 +36,7 @@ function createDrag(
   options: {
     getTab?: typeof getTab
     hasFrame?: boolean
-    onTearOff?: (tab: string, at: { x: number; y: number }) => void
+    onTearOff?: (tab: string, pos: { x: number; y: number }) => void
   } = {},
 ) {
   const frame = createBox('div', null, [100, 50, 1000, 600])
@@ -55,7 +55,7 @@ function createDrag(
   document.body.append(frame)
 
   const state = {
-    under: (x: number, y: number): Element | null => {
+    targetElement: (x: number, y: number): Element | null => {
       const tabs = [plex, chat, notes]
       const targetTab = tabs.find((tab) => {
         const box = tab.getBoundingClientRect()
@@ -64,7 +64,7 @@ function createDrag(
       return targetTab ?? (x < 600 ? main : aside)
     },
   }
-  document.elementFromPoint = (x: number, y: number) => state.under(x, y)
+  document.elementFromPoint = (x: number, y: number) => state.targetElement(x, y)
 
   const workspace = shallowRef<Workspace>(withSpare())
   const clock: Clock = { now: () => 0, schedule: () => 0, cancel: () => {} }
@@ -225,7 +225,7 @@ describe('a tab being dragged', () => {
 
   it('lands nowhere over what is no pane', () => {
     const { drag, dragTo, state, frame } = start()
-    state.under = () => frame
+    state.targetElement = () => frame
     dragTo('plex', [350, 300], [850, 300])
 
     expect(drag.dropTarget.value).toBeNull()
@@ -234,7 +234,7 @@ describe('a tab being dragged', () => {
   it('lands nowhere over a pane that has no identity', () => {
     const { drag, dragTo, state, main } = start()
     main.setAttribute('data-workspace-pane', '')
-    state.under = () => main
+    state.targetElement = () => main
     dragTo('plex', [350, 300], [360, 300])
 
     expect(drag.dropTarget.value).toBeNull()
@@ -242,7 +242,7 @@ describe('a tab being dragged', () => {
 
   it('lands nowhere where the document has nothing under the pointer', () => {
     const { drag, dragTo, state } = start()
-    state.under = () => null
+    state.targetElement = () => null
     dragTo('plex', [350, 300], [850, 300])
 
     expect(drag.hasMoved.value).toBe(true)
@@ -302,10 +302,10 @@ describe('letting go of a tab', () => {
 
   it('counts the pane it was pressed in as the focus where the press is over no pane', () => {
     const { workspace, state, drag, release } = start()
-    const origUnder = state.under
-    state.under = () => null
+    const origTargetElement = state.targetElement
+    state.targetElement = () => null
     drag.press('plex', pointer('pointerdown', 150, 60))
-    state.under = origUnder
+    state.targetElement = origTargetElement
     window.dispatchEvent(pointer('pointermove', 610, 60))
     release(610, 60)
 
@@ -357,8 +357,8 @@ describe('letting go of a tab', () => {
     Object.defineProperty(window, 'screenY', { value: 50, configurable: true })
 
     const { dragTo, release } = start({
-      onTearOff: (tab, at) => {
-        divided = { tab, at }
+      onTearOff: (tab, targetPos) => {
+        divided = { tab, at: targetPos }
       },
     })
     dragTo('plex', [350, 300], [20, 300])

@@ -59,7 +59,7 @@ const field = computed(() =>
         groups: appendCreateOffer(props.search.groups.value, {
           text: props.search.typed.value,
           words,
-          at: props.getTarget(),
+          target: props.getTarget(),
         }),
         crumb: '',
         step: '',
@@ -153,7 +153,7 @@ function getRowIcon(id: string) {
   <Palette
     :model-value="field.typed"
     :groups="field.groups"
-    :open="field.open"
+    :is-open="field.open"
     :placeholder="field.placeholder"
     :crumb="field.crumb"
     :step="field.step"

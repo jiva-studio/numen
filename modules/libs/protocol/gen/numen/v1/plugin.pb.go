@@ -31,12 +31,10 @@ const (
 	// The person has not answered, and the plugin has not asked since the host
 	// started.
 	CompletionConsent_COMPLETION_CONSENT_UNANSWERED CompletionConsent = 1
-	// The plugin has asked since the host started, was refused for it, and the
 	// person has not answered.
 	CompletionConsent_COMPLETION_CONSENT_ASKED CompletionConsent = 2
 	// The person lets the plugin ask.
 	CompletionConsent_COMPLETION_CONSENT_ALLOWED CompletionConsent = 3
-	// The person refused it.
 	CompletionConsent_COMPLETION_CONSENT_REFUSED CompletionConsent = 4
 )
 
@@ -85,7 +83,6 @@ func (CompletionConsent) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_plugin_proto_rawDescGZIP(), []int{0}
 }
 
-// PluginEventErrorCode is why a plugin that took an event refused it. The zero
 // value means it did not.
 type PluginEventErrorCode int32
 
@@ -171,10 +168,9 @@ func (*PingRequest) Descriptor() ([]byte, []int) {
 }
 
 type PingResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	Status string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
-	// The plugin protocol version the plugin speaks. Zero means the plugin did not report one.
-	Protocol      int32 `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	Protocol      int32                  `protobuf:"varint,2,opt,name=protocol,proto3" json:"protocol,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -869,11 +865,9 @@ func (x *DeliverEventRequest) GetEvent() string {
 }
 
 type DeliverEventResponse struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Set when the plugin took the event and refused it.
-	Error PluginEventErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.PluginEventErrorCode" json:"error,omitempty"`
-	// The plugin's words for the refusal. Empty when error is unset.
-	Reason        string `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         PluginEventErrorCode   `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.PluginEventErrorCode" json:"error,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

@@ -79,7 +79,6 @@ func (x *extractor) writeNode(n *html.Node) {
 		return
 	case atom.Br:
 		x.breakLine()
-		// The line it ended is behind it, so the break stands at the line it
 		// begins.
 		if x.markup.openElement(n, len(x.out)) {
 			x.markup.close()
@@ -98,7 +97,6 @@ func (x *extractor) writeNode(n *html.Node) {
 	element := x.markup.openElement(n, len(x.out))
 	if n.DataAtom == atom.Td || n.DataAtom == atom.Th {
 		// A cell is set off from the one before it by a space, and the space
-		// stands inside the cell it opens.
 		x.write(" ")
 	}
 	x.writeChildren(n)
@@ -441,7 +439,6 @@ func isVoidTag(a atom.Atom) bool {
 	return false
 }
 
-// breakLine ends the line one block of text sits on.
 func (x *extractor) breakLine() {
 	if last, ok := x.findLastByte(); ok && last == ' ' {
 		x.out = x.out[:len(x.out)-1]

@@ -29,7 +29,7 @@ func newRegistry(t *testing.T) *tools.Registry {
 		Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Search,
 	}, func(_ context.Context, in greetIn) (greetOut, error) {
 		if in.Name == "" {
-			return greetOut{}, errors.New("nobody to greet")
+			return greetOut{}, errors.New("recipient required")
 		}
 		return greetOut{Greeting: "hello " + in.Name}, nil
 	})
@@ -87,7 +87,7 @@ func TestACallRunsTheToolOnItsArgumentsAndAnswersStructured(t *testing.T) {
 func TestAToolThatReturnsAnErrorRanAndRefused(t *testing.T) {
 	answer := call(t, newRegistry(t), "greet", `{}`)
 
-	if !answer.GetResult().GetIsRefusal() || answer.GetResult().GetText() != "nobody to greet" {
+	if !answer.GetResult().GetIsRefusal() || answer.GetResult().GetText() != "recipient required" {
 		t.Errorf("the call was answered %v", answer)
 	}
 }

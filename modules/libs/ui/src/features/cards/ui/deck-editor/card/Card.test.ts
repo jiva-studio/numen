@@ -40,7 +40,8 @@ const createTile = (
   return cardGrid
 }
 
-const write = vi.fn<(card: string, target: { field: string; nth: number }, text: string) => void>()
+const write =
+  vi.fn<(card: string, target: { field: string; index: number }, text: string) => void>()
 
 const mountCard = (tile: Tile, props: Record<string, unknown> = {}) =>
   mount(Card, {
@@ -91,25 +92,31 @@ describe('Card', () => {
     expect(press.defaultPrevented).toBe(false)
 
     await box.setValue('Llama\nand alpaca')
-    expect(write.mock.calls).toEqual([['llama', { field: 'Name', nth: 1 }, 'Llama\nand alpaca']])
+    expect(write.mock.calls).toEqual([['llama', { field: 'Name', index: 1 }, 'Llama\nand alpaca']])
   })
 
   it('says on the strip which stencil cut the card, and where none did, that none did', () => {
-    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bareCards: readonly DeckCard[] = [
+      { id: 'bare', section: null, stencil: null, filled: [] },
+    ]
     expect(mountCard(createTile('llama')).get('[data-cut-of]').text()).toBe('Animal')
-    expect(mountCard(createTile('bare', bareCards), { words: WORDS }).get('[data-cut-of]').text()).toBe(
-      'Cut by no stencil',
-    )
+    expect(
+      mountCard(createTile('bare', bareCards), { words: WORDS }).get('[data-cut-of]').text(),
+    ).toBe('Cut by no stencil')
   })
 
   it('holds nothing against a card that names no stencil, having returned so on its strip', () => {
-    const bareCards: readonly DeckCard[] = [{ id: 'bare', section: null, stencil: null, filled: [] }]
+    const bareCards: readonly DeckCard[] = [
+      { id: 'bare', section: null, stencil: null, filled: [] },
+    ]
     const card = mountCard(createTile('bare', bareCards), { words: WORDS })
     expect(card.findAll('.card__objections')).toHaveLength(0)
   })
 
   it('says which stencil a card naming one is waiting for', () => {
-    const removed: readonly DeckCard[] = [{ id: 'gone', section: null, stencil: 'Gone', filled: [] }]
+    const removed: readonly DeckCard[] = [
+      { id: 'gone', section: null, stencil: 'Gone', filled: [] },
+    ]
     const card = mountCard(createTile('gone', removed), { words: WORDS })
     expect(card.get('.card__objections').text()).toContain('No stencil called Gone')
   })

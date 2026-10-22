@@ -72,11 +72,13 @@ export function syncSetting(core: SyncDeps, words: SyncWords, write: MessageWrit
     if (now === was) return
     write('')
     isEnabled.value = now
-    const { failed, isLatest } = await guard.run(guard.beginChoice(), () => core.setSyncEnabled(now))
+    const { failed, isLatest } = await guard.run(guard.beginChoice(), () =>
+      core.setSyncEnabled(now),
+    )
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
     if (isLatest) isEnabled.value = was
   }
 
-  return { isEnabled, kept: isEnabled, start, getSyncingGroups, choose }
+  return { isEnabled, start, getSyncingGroups, choose }
 }

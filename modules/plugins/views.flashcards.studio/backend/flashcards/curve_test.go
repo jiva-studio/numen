@@ -14,7 +14,6 @@ import (
 )
 
 // newStudiedNotes is a vault of one preset, one deck of as many cards pointing
-// at it, and a second deck pointing nowhere. Nobody has answered any of it,
 // which is what a person meets the first time they open one of these controls.
 func newStudiedNotes(cards int) map[string]string {
 	deck := "---\ntype: deck\nlinks:\n  - to: Sanskrit\n    role: ref\n    type: preset\n---\n"
@@ -37,10 +36,7 @@ func newStudiedNotes(cards int) map[string]string {
 // faces answered three times each in the months before the day the curves are
 // drawn on, and the rest of them unbegun.
 //
-// A curve is worked out from what an answer has cost in this vault, so a
-// fixture nobody has answered draws every curve at the default and says nothing
-// about the arithmetic. The times are the shape answer times have — a middle of
-// a few seconds and a tail of interruptions.
+// A curve is computed from past review costs in this vault.
 func newAnsweredVault(t *testing.T, cards int) vaulted {
 	t.Helper()
 	s := openVault(t, newStudiedNotes(cards))
@@ -60,7 +56,7 @@ func newAnsweredVault(t *testing.T, cards int) vaulted {
 // curves is the simulator over one vault, on a named day.
 func (s vaulted) curves(now time.Time) flashcards.ProjectCurve {
 	u := flashcards.NewProjectCurve(
-		s.standings, s.kept, s.presets,
+		s.standings, s.schedules, s.presets,
 		today, func() time.Time { return now },
 	)
 	u.Cores = runtime.GOMAXPROCS(0)
@@ -81,7 +77,7 @@ func TestACurveWritesNoScheduleCache(t *testing.T) {
 	if _, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p); err != nil {
 		t.Fatal(err)
 	}
-	if raw, err := s.kept.Cache.Read(t.Context(), s.vault.ID); err == nil {
+	if raw, err := s.schedules.Cache.Read(t.Context(), s.vault.ID); err == nil {
 		t.Errorf("a curve wrote a cache of %d bytes", len(raw))
 	}
 }
@@ -153,8 +149,7 @@ func TestTheShortestDayThatAsksEverythingIsSuggested(t *testing.T) {
 	}
 }
 
-// A higher target is shorter intervals, so the curve of what a day costs rises
-// with it. Nothing is suggested, and the mark stands at Nowhere.
+// Higher target retention increases daily review requirements.
 func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
@@ -192,10 +187,7 @@ func TestTheCurveOfRetentionCoversTheWholeRange(t *testing.T) {
 	}
 }
 
-// A goal of a date runs from tomorrow to a day further off than the one the
-// file names, so the day a person is on stands inside the range and they can
-// always give themselves longer. A later day never costs more than an earlier
-// one.
+// A date goal range runs from tomorrow past the target date.
 func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
@@ -225,11 +217,11 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 		t.Errorf("the curve runs to %v days off, and the day named is 20 off", last)
 	}
 	if got.Now.Value != 20 || got.Now.Day != p.By.Format(review.DayLayout) {
-		t.Errorf("the preset stands at %+v, and the day it names is 20 days off", got.Now)
+		t.Errorf("got.Now = %+v, want value 20, day %s", got.Now, p.By.Format(review.DayLayout))
 	}
 	if got.Now.Index <= 0 || got.Now.Index >= len(got.Grid)-1 {
-		t.Errorf("the day named stands at place %d of %d, and is not inside the range",
-			got.Now.Index, len(got.Grid))
+		t.Errorf("got.Now.Index = %d, want inside range (0, %d)",
+			got.Now.Index, len(got.Grid)-1)
 	}
 
 	for i := 1; i < len(got.Points); i++ {
@@ -320,10 +312,10 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	if got.Now.Index < 0 {
 		t.Fatalf("the preset stands nowhere on its own curve: %+v", got.Now)
 	}
-	stands := got.Points[got.Now.Index]
-	if stands.Share < 1 || !stands.IsEnough || stands.Short != 0 {
-		t.Errorf("the day it aims at gets through %v of the material, and %d of it stands short",
-			stands.Share, stands.Short)
+	currentPoint := got.Points[got.Now.Index]
+	if currentPoint.Share < 1 || !currentPoint.IsEnough || currentPoint.Short != 0 {
+		t.Errorf("currentPoint: got Share=%v, IsEnough=%v, Short=%d; want Share>=1, IsEnough=true, Short=0",
+			currentPoint.Share, currentPoint.IsEnough, currentPoint.Short)
 	}
 	if got.Suggested == review.OutsideGrid {
 		t.Error("no day is suggested, and the day it aims at is through the material")
@@ -374,14 +366,14 @@ func TestTheCurveIsWorkedOutWithTheLoadAndAnEvenLoad(t *testing.T) {
 		}
 		inRange(t, got, "now")
 		if got.Now.Index != flat.Now.Index {
-			t.Fatalf("with %s the preset stands at place %d, and without at %d",
+			t.Fatalf("%s: got.Now.Index = %d, want %d",
 				name, got.Now.Index, flat.Now.Index)
 		}
 		one, was := got.Points[got.Now.Index], flat.Points[flat.Now.Index]
 		if one.Reviews == was.Reviews && one.Minutes == was.Minutes &&
 			one.Retained == was.Retained {
-			t.Errorf("with %s the preset comes to %+v, the same as a preset keeping neither",
-				name, one)
+			t.Errorf("%s: got point %+v, want different from flat %+v",
+				name, one, was)
 		}
 	}
 }
@@ -422,7 +414,7 @@ func TestACurveCarriesTheCardFacesBelowThePreset(t *testing.T) {
 		t.Fatal(err)
 	}
 	if full.Decks != 1 || full.Cards != 30 {
-		t.Errorf("a deck of thirty cards of a one-faced stencil came to %d decks and %d cards",
+		t.Errorf("got Decks = %d, Cards = %d; want Decks = 1, Cards = 30",
 			full.Decks, full.Cards)
 	}
 
@@ -436,7 +428,8 @@ func TestACurveCarriesTheCardFacesBelowThePreset(t *testing.T) {
 		t.Fatal(err)
 	}
 	if bare.Decks != 1 || bare.Cards != 0 {
-		t.Errorf("a deck holding no cards came to %d decks and %d cards", bare.Decks, bare.Cards)
+		t.Errorf("got Decks = %d, Cards = %d; want Decks = 1, Cards = 0",
+			bare.Decks, bare.Cards)
 	}
 }
 
@@ -460,14 +453,13 @@ func TestWorkingOutACurveWritesNothingToTheVault(t *testing.T) {
 	}
 }
 
-// inRange says the two marks fall on the curve, and that each mark named
-// relies on it at all.
-func inRange(t *testing.T, c review.Curve, stands ...string) {
+// inRange verifies that points fall within valid grid indices.
+func inRange(t *testing.T, c review.Curve, names ...string) {
 	t.Helper()
 	marks := map[string]review.CurvePoint{"now": c.Now, "suggested": c.Suggested}
-	for _, name := range stands {
+	for _, name := range names {
 		if marks[name] == review.OutsideGrid {
-			t.Errorf("the %s mark stands nowhere on a curve of %d places", name, len(c.Grid))
+			t.Errorf("point %s: got OutsideGrid, want valid index in grid of len %d", name, len(c.Grid))
 		}
 	}
 	for name, mark := range marks {
@@ -506,13 +498,12 @@ func TestANearDateStillPreservesRoomToGiveYourselfLonger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Thirty card faces nobody has answered is thirty days at one a day, which
-	// is the slowest a day of review goes.
+	// Thirty unreviewed card faces result in at least a 30-day range.
 	if last := got.Grid[len(got.Grid)-1]; last < 30 {
 		t.Errorf("a date two days off is a range of %v days, and the material is 30 cards", last)
 	}
 	if got.Now.Index < 0 {
-		t.Errorf("the day named stands nowhere on the range: %+v", got.Now)
+		t.Errorf("got.Now.Index = %d, want >= 0 (point: %+v)", got.Now.Index, got.Now)
 	}
 	if got.Points[got.Now.Index].Minutes <= got.Points[len(got.Points)-1].Minutes {
 		t.Errorf("the day named costs %v minutes a day and the furthest day %v",
@@ -606,12 +597,7 @@ func TestADayAtNoneOfTheLoadAwayFromTodayPreservesTheCurve(t *testing.T) {
 	}
 }
 
-// A date the rule cannot be met by says so on the picture.
-//
-// The number of card faces no pace reaches stands at each place of the range,
-// and falls away as the day moves off. Nothing is hidden by it: the pace beside
-// it is the one that reaches every card face that can be reached, and where
-// none can be, that is what the number says.
+// The count of card faces that cannot be learned in time is reported on the curve.
 func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
@@ -691,7 +677,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 
 	learned := getLearned(t, s, base)
 	if len(learned) != 1 || learned[0] == 0 {
-		t.Fatalf("the vault stands at %v learned, and there is nothing to hold still", learned)
+		t.Fatalf("got learned = %v, want non-empty and non-zero", learned)
 	}
 
 	for _, one := range []struct {
@@ -850,19 +836,17 @@ func TestAPlaceOfADateIsReadOnTheDayItNames(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Now.Index < 0 {
-		t.Fatal("the preset stands nowhere on its own curve")
+		t.Fatal("got.Now.Index < 0, want valid index on curve")
 	}
-	stands := got.Points[got.Now.Index]
-	if stands.Share < 1 {
-		t.Fatalf("the day it aims at gets through %v of the material", stands.Share)
+	currentPoint := got.Points[got.Now.Index]
+	if currentPoint.Share < 1 {
+		t.Fatalf("got currentPoint.Share = %v, want >= 1", currentPoint.Share)
 	}
-	if stands.Owed != 0 {
-		t.Errorf("the day it aims at is through the material and leaves %d card faces owed",
-			stands.Owed)
+	if currentPoint.Owed != 0 {
+		t.Errorf("got currentPoint.Owed = %d, want 0", currentPoint.Owed)
 	}
-	if stands.Retained < 0.5 {
-		t.Errorf("the day it aims at gets through the material and leaves %v of it in the head",
-			stands.Retained)
+	if currentPoint.Retained < 0.5 {
+		t.Errorf("got currentPoint.Retained = %v, want >= 0.5", currentPoint.Retained)
 	}
 }
 
@@ -938,12 +922,12 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 		t.Fatal(err)
 	}
 	if got.Suggested == review.OutsideGrid {
-		t.Fatal("no day is suggested, and the range holds days the material is through by")
+		t.Fatal("got.Suggested == OutsideGrid, want valid suggested point")
 	}
-	stands := got.Points[got.Suggested.Index]
-	if stands.Short != 0 || !stands.IsEnough || stands.Share < 1 {
-		t.Errorf("%s is suggested, and it leaves %d card faces out of reach and gets "+
-			"through %v of the material", got.Suggested.Day, stands.Short, stands.Share)
+	suggestedPoint := got.Points[got.Suggested.Index]
+	if suggestedPoint.Short != 0 || !suggestedPoint.IsEnough || suggestedPoint.Share < 1 {
+		t.Errorf("%s: got Short = %d, IsEnough = %v, Share = %v; want Short = 0, IsEnough = true, Share >= 1",
+			got.Suggested.Day, suggestedPoint.Short, suggestedPoint.IsEnough, suggestedPoint.Share)
 	}
 	// And it is the soonest such day.
 	for i, one := range got.Points {
@@ -997,8 +981,7 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 		t.Fatal("a day twenty years off draws no range at all, as a day already past does")
 	}
 	if got.Now != review.OutsideGrid {
-		t.Errorf("a day twenty years off stands at %+v on a range reaching %v days",
-			got.Now, got.Grid[len(got.Grid)-1])
+		t.Errorf("got.Now = %+v, want %+v", got.Now, review.OutsideGrid)
 	}
 }
 
@@ -1010,8 +993,7 @@ func TestADateFurtherOffThanTheProjectionReachesStillDrawsARange(t *testing.T) {
 func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
-	// The preset the deck points at says what the curve is asked for, so the
-	// session and the picture are held to one day.
+	// The session and curve are evaluated for one day.
 	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
 		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
 	// Every card face owed today, at six seconds an answer.
@@ -1071,7 +1053,7 @@ func TestTheMarkExistsOnTheSettingThePresetContains(t *testing.T) {
 			t.Fatal(err)
 		}
 		if got.Now.Index < 0 {
-			t.Errorf("a day of %d minutes stands nowhere on its own curve", minutes)
+			t.Errorf("minutes %d: got.Now.Index = %d, want >= 0", minutes, got.Now.Index)
 			continue
 		}
 		if got.Grid[got.Now.Index] != float64(minutes) {
@@ -1096,8 +1078,7 @@ func TestTheMarkExistsOnTheSettingThePresetContains(t *testing.T) {
 	}
 }
 
-// The curve carries why the settings it was drawn under schedule nothing, so
-// what a person is told is the verdict on the value under their hand.
+// The curve reports why settings schedule no cards.
 func TestACurveCarriesTheVerdictOnTheSettingsItWasGeneratedBelow(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 30)
@@ -1167,8 +1148,8 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 4)
 	for _, one := range []struct {
-		named string
-		said  review.Preset
+		named  string
+		preset review.Preset
 	}{
 		{"a chance of recall past one", review.Preset{
 			Goal: review.GoalRetention, NewADay: 8, ReviewsADay: 45, Retention: 5,
@@ -1180,7 +1161,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 			Goal: review.GoalMinutes, MinutesADay: 1 << 30, NewADay: 8, ReviewsADay: 45,
 		}},
 	} {
-		_, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one.said)
+		_, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", one.preset)
 		if !errors.Is(err, flashcards.ErrOutOfBounds) {
 			t.Errorf("%s draws a curve, and answered %v", one.named, err)
 		}
@@ -1192,7 +1173,7 @@ func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 4)
 	noIndex := flashcards.NewListCardFaces(s.env.Ports.Readers, nil, nil)
-	u := flashcards.NewProjectCurve(noIndex, s.kept, s.presets, today, func() time.Time { return noon })
+	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45,

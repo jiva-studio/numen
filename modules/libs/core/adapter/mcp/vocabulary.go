@@ -8,7 +8,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Tool is how one tool is spoken about to a person: what it is called, and
 // which of its arguments says what a call was about.
 //
 // Both are the tool's own declaration. A display name is the title it carries,
@@ -35,7 +34,7 @@ type Tool struct {
 //
 // The tools are written out by hand and so is this. A schema says what a call
 // takes and cannot say what taking it means.
-var doing = map[string]Tool{
+var handler = map[string]Tool{
 	"note_search":        {Kind: domain.StepSearch},
 	"note_titles":        {Kind: domain.StepRead},
 	"note_read":          {Kind: domain.StepRead},
@@ -82,7 +81,6 @@ func Vocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 }
 
 // ReadingVocabulary is the same, for a window served the tools that read. A
-// window is told about the tools it serves and no others.
 func ReadingVocabulary(ctx context.Context, core Core) (map[string]Tool, error) {
 	return vocabulary(ctx, newReading(ctx, core))
 }
@@ -117,8 +115,8 @@ func vocabulary(ctx context.Context, server *sdk.Server) (map[string]Tool, error
 			About:  about,
 			Inside: firstRequiredInside(tool.InputSchema, about),
 			Kind:   getVocabularyKind(tool),
-			Match:  doing[tool.Name].Match,
-			Text:   doing[tool.Name].Text,
+			Match:  handler[tool.Name].Match,
+			Text:   handler[tool.Name].Text,
 		}
 	}
 	return words, nil
@@ -196,5 +194,5 @@ func getVocabularyKind(tool *sdk.Tool) domain.StepKind {
 	if declared, isDeclared := tool.Meta[stepMeta].(float64); isDeclared {
 		return domain.StepKind(int(declared))
 	}
-	return doing[tool.Name].Kind
+	return handler[tool.Name].Kind
 }

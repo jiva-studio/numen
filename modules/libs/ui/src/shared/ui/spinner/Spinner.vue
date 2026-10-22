@@ -12,9 +12,6 @@
 </template>
 
 <style scoped>
-/* As tall as one line of the text it stands beside, so it sits on that line's
-   own middle. The colour is whatever it stands on, and `--spinner-size` and
-   `--spinner-thickness` are whatever holds it. */
 .spinner {
   --cycle: var(--numen-wait-spin);
 

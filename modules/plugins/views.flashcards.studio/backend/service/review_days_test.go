@@ -67,7 +67,6 @@ func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 
 // What is still to come is counted by the day it falls on, so the grid draws a
 // week ahead as well as the weeks behind. A card answered easily is sent days
-// away, and the day it is sent to is a day nobody has answered on.
 func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	api, target := newAPI(t, deck)
 	v := target[0]
@@ -137,9 +136,9 @@ func TestTheDaysComeBackOldestFirst(t *testing.T) {
 	})
 
 	want := []string{"2026-07-01", "2026-08-09", "2026-08-30", "2026-08-30", "2027-01-02"}
-	for at, one := range response {
-		if one.GetDay() != want[at] {
-			t.Errorf("the day at %d is %s, want %s", at, one.GetDay(), want[at])
+	for item, one := range response {
+		if one.GetDay() != want[item] {
+			t.Errorf("the day at %d is %s, want %s", item, one.GetDay(), want[item])
 		}
 	}
 }

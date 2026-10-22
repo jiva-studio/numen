@@ -21,7 +21,7 @@ import {
 import { BACKLOG_PLOT_HEIGHT, PLOT_HEIGHT, PLOT_WIDTH } from '../lib/plot'
 import { WORDS as words } from '../words'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -33,14 +33,14 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 /**
  * A curve of four places, the backlog running down over a fortnight. The grid
  * is what the knob walks, and the run under each place is what the backlog draws.
  */
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [0, 10, 20, 30],
   days: [],
@@ -50,14 +50,14 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80, retained: 0.88, clears: 6, backlog: [400, 300, 210, 130, 70, 20, 0] }),
     point({ reviews: 120, retained: 0.93, clears: 4, backlog: [400, 260, 140, 50, 0, 0, 0] }),
   ],
-  now: { at: 2, value: 20, day: '' },
-  suggested: { at: 3, value: 30, day: '' },
+  now: { index: 2, value: 20, day: '' },
+  suggested: { index: 3, value: 30, day: '' },
   decks: 3,
   cards: 400,
   overdue: 120,
   unbegun: 40,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 const MATERIAL: PresetCounts = { decks: 3, cards: 400, overdue: 120, unbegun: 40 }
@@ -101,8 +101,8 @@ const createPresetTab = (args: Knobs): PresetTabState => {
     hasExternalChange: ref(false),
     reload: fn(),
     chooseGoal: fn(),
-    moveSlider: (at: number) => {
-      place.value = at
+    moveSlider: (pos: number) => {
+      place.value = pos
     },
     flushPending: fn(),
     updateSetting: fn(),
@@ -307,7 +307,6 @@ export const TheBubbleStandsOverTheKnob: Story = {
 }
 
 /**
- * The plot of what stands overdue, under the picture, drawn both ways: the tab
  * with an answer on it above, and the same tab still waiting for one below.
  *
  * The plot keeps its room whether or not there is a backlog to draw, so nothing
@@ -327,7 +326,9 @@ export const TheBacklogKeepsItsRoom: Story = {
     const alongElem = canvas.getByText(words.backlogX)
     const picture = getPicture(answered!).getBoundingClientRect()
     expect(backlog.getBoundingClientRect().top).toBeGreaterThan(picture.top)
-    expect(alongElem.getBoundingClientRect().top).toBeGreaterThan(backlog.getBoundingClientRect().top)
+    expect(alongElem.getBoundingClientRect().top).toBeGreaterThan(
+      backlog.getBoundingClientRect().top,
+    )
 
     // It runs from the first day to the last of the run at this place, and the
     // two ends stand at the two ends of it.
@@ -424,7 +425,7 @@ export const TheKnobFollowsThePointer: Story = {
     // pointer leaves the knob.
     expect(picture.getScreenCTM?.()).not.toBeNull()
 
-    const at = (share: number) => ({
+    const coords = (share: number) => ({
       clientX: box.left + box.width * share,
       clientY: box.top + box.height / 2,
       pointerId: 1,
@@ -433,9 +434,9 @@ export const TheKnobFollowsThePointer: Story = {
       cancelable: true,
     })
 
-    picture.dispatchEvent(new PointerEvent('pointerdown', { ...at(0.1), button: 0 }))
-    picture.dispatchEvent(new PointerEvent('pointermove', at(0.9)))
-    picture.dispatchEvent(new PointerEvent('pointerup', at(0.9)))
+    picture.dispatchEvent(new PointerEvent('pointerdown', { ...coords(0.1), button: 0 }))
+    picture.dispatchEvent(new PointerEvent('pointermove', coords(0.9)))
+    picture.dispatchEvent(new PointerEvent('pointerup', coords(0.9)))
 
     await waitFor(() => expect(picture.getAttribute('aria-valuenow')).not.toBe(was))
   },

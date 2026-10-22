@@ -1,7 +1,3 @@
-/**
- * The words the vault speaks about notes, and what the window asks of it over
- * them.
- */
 import type { Result } from '@numen/wire'
 import type { LinkAddress, NoteContents } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
@@ -137,9 +133,7 @@ export interface RenamedNote {
 /** What renaming a note came back with. */
 export type RenameResult = Result<RenamedNote, NoteFailure>
 
-/** A note taken out of the vault, and what its going left behind. */
 export interface RemovedNote {
-  /** Where the note sits in the trash. Empty when it was destroyed. */
   readonly trashed: string
   /** The notes whose links pointed at it and now reach nothing. */
   readonly dangling: readonly string[]

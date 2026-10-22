@@ -93,7 +93,6 @@ type MoveResult struct {
 	From string
 	To   string
 	// IsLanded is whether the file is at To. It is false for a move that was
-	// refused and for one that was not needed, and it stays true once the file
 	// is there however the rest of the work goes.
 	IsLanded bool
 	// Repaired is the notes whose link stopped resolving and was written
@@ -226,7 +225,7 @@ func (u Move) getAddress(ctx context.Context, v domain.Vault, path string) (stri
 // It reports whether the link is still written there at all. One that is not
 // has been taken out since the backlinks were read, and saying where it used to
 // go would report a move that nobody made.
-func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, still bool, err error) {
+func (u Move) getLanding(ctx context.Context, v domain.Vault, was domain.ResolvedLink) (lands string, exists bool, err error) {
 	links, err := u.links.GetLinks(ctx, v.ID, was.From)
 	if err != nil {
 		return "", false, err

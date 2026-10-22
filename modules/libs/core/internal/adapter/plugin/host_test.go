@@ -693,21 +693,21 @@ func TestHostEnsureActiveContextCanceledWhileActivating(t *testing.T) {
 }
 
 type testCloser struct {
-	mu     sync.Mutex
-	closed bool
+	mu       sync.Mutex
+	isClosed bool
 }
 
 func (c *testCloser) Close() error {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.closed = true
+	c.isClosed = true
 	return nil
 }
 
-func (c *testCloser) isClosed() bool {
+func (c *testCloser) getIsClosed() bool {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.closed
+	return c.isClosed
 }
 
 type testLifecycleHandler struct {
@@ -814,7 +814,7 @@ func TestHostEvictIdleSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
 	}
 
-	if !closer.isClosed() {
+	if !closer.getIsClosed() {
 		t.Error("expected stdin closer to be closed on eviction")
 	}
 
@@ -909,7 +909,7 @@ func TestHostEvictMemoryExceeded(t *testing.T) {
 		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent")
 	}
 
-	if !closer.isClosed() {
+	if !closer.getIsClosed() {
 		t.Error("expected stdin closer to be closed on eviction")
 	}
 
@@ -1035,7 +1035,7 @@ func TestHostTeardownAllSendsRPCShutdownAndClosesStdin(t *testing.T) {
 		t.Error("expected PluginLifecycleService.Shutdown RPC to be sent during TeardownAll")
 	}
 
-	if !closer.isClosed() {
+	if !closer.getIsClosed() {
 		t.Error("expected stdin closer to be closed during TeardownAll")
 	}
 
@@ -1400,10 +1400,10 @@ func TestClosingTheStdinOfAnEvictedProcessPreservesTheNextProcessStdinOpen(t *te
 
 	host.closeStdin("p", 1)
 
-	if !oldPipe.isClosed() {
+	if !oldPipe.getIsClosed() {
 		t.Fatal("expected the evicted process stdin to be closed")
 	}
-	if newPipe.isClosed() {
+	if newPipe.getIsClosed() {
 		t.Fatal("closed the stdin of a newer process")
 	}
 	if err := host.TeardownAll(t.Context(), 10*time.Millisecond); err != nil {

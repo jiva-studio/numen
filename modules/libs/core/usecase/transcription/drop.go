@@ -114,7 +114,7 @@ func (u Drop) getProducer(
 	v domain.Vault,
 	reader port.VaultReader,
 	path string,
-) (from, hash string, stood bool, err error) {
+) (from, hash string, current bool, err error) {
 	response, target, err := u.Queries.GetSourceText(ctx, v.ID, path)
 	if err != nil {
 		return "", "", false, fmt.Errorf("read index: %w", err)

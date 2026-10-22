@@ -1,7 +1,6 @@
 /**
  * The letters the vaults are opened by, asked without a screen.
  *
- * The negatives are the ones worth having: a letter no vault stands at opens
  * nothing, and a letter typed into a field is text.
  */
 import { describe, expect, it } from 'vitest'

@@ -216,7 +216,7 @@ func getGoModRefusals(plugin string, mod goMod) []string {
 func TestWhatThePluginGoModRulesRefuse(t *testing.T) {
 	for _, one := range []struct {
 		name, text string
-		rejected    int
+		rejected   int
 	}{
 		{"a core requirement in a block", "require (\n\t" + numenModules + "libs/core v0.0.0\n)", 1},
 		{"a block opener with a comment", "require ( // deps\n\t" + numenModules + "plugins/ocr v0.0.0\n)", 1},

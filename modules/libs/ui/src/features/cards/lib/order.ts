@@ -15,14 +15,14 @@ export type InsertionPoint = string | null
 export function orderNames(
   names: readonly string[],
   dragEntry: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly string[] {
   if (!names.includes(dragEntry)) return names
 
   const remaining = names.filter((name) => name !== dragEntry)
-  if (at === null) return [...remaining, dragEntry]
+  if (targetPoint === null) return [...remaining, dragEntry]
 
-  const before = remaining.indexOf(at)
+  const before = remaining.indexOf(targetPoint)
   if (before === -1) return names
   return [...remaining.slice(0, before), dragEntry, ...remaining.slice(before)]
 }
@@ -66,25 +66,24 @@ export function getStepInsertionPoint(
   dragEntry: string,
   direction: StepDirection,
 ): InsertionPoint | undefined {
-  const at = names.indexOf(dragEntry)
-  if (at === -1) return undefined
-  if (direction === 'up') return names[at - 1]
-  if (at === names.length - 1) return undefined
-  return names[at + 2] ?? null
+  const pos = names.indexOf(dragEntry)
+  if (pos === -1) return undefined
+  if (direction === 'up') return names[pos - 1]
+  if (pos === names.length - 1) return undefined
+  return names[pos + 2] ?? null
 }
 
 /** The order a dragged field lands in, with the first field remaining where it is. */
 export const reorderFields = (
   fields: readonly string[],
   dragEntry: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly string[] =>
-  canDropField(fields, dragEntry, at) ? orderNames(fields, dragEntry, at) : fields
+  canDropField(fields, dragEntry, targetPoint) ? orderNames(fields, dragEntry, targetPoint) : fields
 
 /** Why a name cannot be used, and nothing where it can. */
 export type Objection = 'blank' | 'taken' | 'braced'
 
-/** Why a name written as a heading and in no slot is refused. */
 export type HeadingObjection = 'blank' | 'taken'
 
 /** What checking a name came back with. */
@@ -101,7 +100,8 @@ export interface NameCheckResult<Why extends Objection> {
  */
 export function checkFieldName(name: string, names: readonly string[]): NameCheckResult<Objection> {
   const cleanName = name.trim()
-  if (cleanName.includes('{') || cleanName.includes('}')) return { name: cleanName, objection: 'braced' }
+  if (cleanName.includes('{') || cleanName.includes('}'))
+    return { name: cleanName, objection: 'braced' }
   return checkHeadingName(name, names)
 }
 
@@ -115,7 +115,8 @@ export function checkHeadingName(
 ): NameCheckResult<HeadingObjection> {
   const cleanName = name.trim()
   if (cleanName === '') return { name: cleanName, objection: 'blank' }
-  if (names.some((each) => each.trim() === cleanName)) return { name: cleanName, objection: 'taken' }
+  if (names.some((each) => each.trim() === cleanName))
+    return { name: cleanName, objection: 'taken' }
   return { name: cleanName, objection: null }
 }
 
@@ -125,8 +126,8 @@ export function checkHeadingName(
  */
 export function getFreeName(names: readonly string[], stem: string): string {
   const target = new Set(names.map((name) => name.trim()))
-  for (let at = 1; ; at += 1) {
-    const tried = `${stem} ${at}`
+  for (let i = 1; ; i += 1) {
+    const tried = `${stem} ${i}`
     if (!target.has(tried)) return tried
   }
 }
@@ -148,10 +149,6 @@ export const HALVES: readonly Half[] = ['front', 'back']
 /** What is wrong with each of a number of things, under what each is known by. */
 export type Problems = ReadonlyMap<string, readonly string[]>
 
-/**
- * A map of nothing that stays a map of nothing. An empty default stands for
- * every caller at once, so putting anything into it is refused.
- */
 export function createSealedMap<K, V>(): ReadonlyMap<K, V> {
   const empty = new Map<K, V>()
   const refuse = (): never => {

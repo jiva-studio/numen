@@ -26,12 +26,12 @@ func newArtifact(one source.Artifact) Artifact {
 	return Artifact{Path: one.Path, Kind: one.Kind, Producer: one.Producer, Bytes: one.Bytes, Format: one.Format}
 }
 
-func newArtifacts(held []source.Artifact) []Artifact {
-	if held == nil {
+func newArtifacts(target []source.Artifact) []Artifact {
+	if target == nil {
 		return nil
 	}
-	out := make([]Artifact, 0, len(held))
-	for _, one := range held {
+	out := make([]Artifact, 0, len(target))
+	for _, one := range target {
 		out = append(out, newArtifact(one))
 	}
 	return out

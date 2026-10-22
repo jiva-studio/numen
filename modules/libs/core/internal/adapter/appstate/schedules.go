@@ -41,30 +41,29 @@ func OpenCounting() (*Schedules, error) {
 func SchedulesAt(dir string) *Schedules { return &Schedules{dir: dir} }
 
 func (s *Schedules) Read(_ context.Context, vaultID domain.VaultID) ([]byte, error) {
-	at, err := s.getPath(vaultID)
+	pos, err := s.getPath(vaultID)
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(at)
+	return os.ReadFile(pos)
 }
 
 // Write replaces the vault's file whole, so a second window writing the same
 // vault leaves one of the two and never half of both.
 func (s *Schedules) Write(_ context.Context, vaultID domain.VaultID, content []byte) error {
-	at, err := s.getPath(vaultID)
+	pos, err := s.getPath(vaultID)
 	if err != nil {
 		return err
 	}
-	if err := os.MkdirAll(filepath.Dir(at), privateDirMode); err != nil {
+	if err := os.MkdirAll(filepath.Dir(pos), privateDirMode); err != nil {
 		return err
 	}
-	return replace(at, content)
+	return replace(pos, content)
 }
 
 // getPath is the file one vault's schedules stand in.
 //
 // The identity is written into the name, and an identity carrying a separator
-// or a dot is refused.
 func (s *Schedules) getPath(vaultID domain.VaultID) (string, error) {
 	name := string(vaultID)
 	if name == "" || strings.ContainsAny(name, `/\.`) {

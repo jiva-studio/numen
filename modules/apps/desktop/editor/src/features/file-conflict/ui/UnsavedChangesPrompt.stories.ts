@@ -39,7 +39,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** What stands in the way of the window going, if anything does. */
 const notice = (canvas: HTMLElement) => within(canvas).queryByRole('alertdialog')
 
 /** The rows, one per note still unwritten. */
@@ -57,7 +56,6 @@ export const TwoNotes: Story = {
     await expect(notes(canvasElement)).toHaveLength(2)
     await expect(getAnswers(canvasElement)).toHaveLength(6)
 
-    // An answer is a word in the sentence it stands in, with a line under it.
     const answer = getComputedStyle(getAnswers(canvasElement)[0]!)
     await expect(answer.textDecorationLine).toBe('underline')
     await expect(answer.backgroundColor).toBe('rgba(0, 0, 0, 0)')
@@ -86,7 +84,6 @@ export const AnsweredForOneNote: Story = {
   },
 }
 
-/** A name far longer than the row it stands in. */
 export const AnUnbrokenName: Story = {
   args: { conflicts: [conflict(UNBROKEN)] },
   play: async ({ canvasElement }) => {

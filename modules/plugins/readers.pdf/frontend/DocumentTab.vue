@@ -85,8 +85,8 @@ function onGoToPage(page: number) {
   if (activeState.value) void activeState.value.goToPage(page)
 }
 
-function onWiden(wide: number) {
-  activeState.value?.widen(wide)
+function onWiden(width: number) {
+  activeState.value?.widen(width)
 }
 
 function onPageTurnKey(event: KeyboardEvent) {
@@ -104,7 +104,7 @@ function onSetPageHandle(reader: unknown) {
       v-if="activeState"
       :ref="onSetPageHandle"
       :pages="activeState.pages.value"
-      :at="activeState.pageNumber.value"
+      :page-index="activeState.pageNumber.value"
       :picture="activeState.getPageImageUrl"
       :highlights="activeState.getHighlightsOn"
       :other-highlights="activeState.getOtherHighlightsOn"

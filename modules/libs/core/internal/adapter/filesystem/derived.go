@@ -20,12 +20,10 @@ import (
 // The folders a vault's own store keeps what was made from its files in. Each
 // is a kind: what the files in it are.
 //
-// What made them is another question, and it stands in the file's own name
 // where a kind has more than one producer. A transcript is a transcript whether
 // a model here heard it or a site published it with a video, and one folder
 // holds both.
 const (
-	// OCRDir is text with the place on the page each word stands at.
 	OCRDir = domain.OCR
 	// TranscriptDir is text with the times each stretch of it was said at.
 	TranscriptDir = "transcript"
@@ -187,12 +185,12 @@ func (d *DerivedStore) Read(_ context.Context, name string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	root, at, err := d.openRoot(target)
+	root, pos, err := d.openRoot(target)
 	if err != nil {
 		return nil, err
 	}
 	defer root.Close()
-	raw, err := root.ReadFile(at)
+	raw, err := root.ReadFile(pos)
 	if err != nil {
 		return nil, wrapHeldByAnother(err)
 	}
@@ -207,12 +205,12 @@ func (d *DerivedStore) Open(_ context.Context, name string) (io.ReadSeekCloser, 
 	if err != nil {
 		return nil, 0, err
 	}
-	root, at, err := d.openRoot(target)
+	root, pos, err := d.openRoot(target)
 	if err != nil {
 		return nil, 0, err
 	}
 	defer root.Close()
-	file, err := root.Open(at)
+	file, err := root.Open(pos)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -232,19 +230,19 @@ func (d *DerivedStore) WriteStream(ctx context.Context, name string, from io.Rea
 	if err != nil {
 		return 0, err
 	}
-	root, at, err := d.createRoot(target)
+	root, pos, err := d.createRoot(target)
 	if err != nil {
 		return 0, err
 	}
 	defer root.Close()
-	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return 0, err
 	}
-	content, err := replace(ctx, root, at, from, 0o644)
+	content, err := replace(ctx, root, pos, from, 0o644)
 	if err != nil {
 		return 0, err
 	}
-	return content.Size, syncDirectory(root, filepath.Dir(at))
+	return content.Size, syncDirectory(root, filepath.Dir(pos))
 }
 
 func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) error {
@@ -252,18 +250,18 @@ func (d *DerivedStore) Write(ctx context.Context, name string, content []byte) e
 	if err != nil {
 		return err
 	}
-	root, at, err := d.createRoot(target)
+	root, pos, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
 	defer root.Close()
-	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return err
 	}
-	if _, err := replace(ctx, root, at, bytes.NewReader(content), 0o644); err != nil {
+	if _, err := replace(ctx, root, pos, bytes.NewReader(content), 0o644); err != nil {
 		return err
 	}
-	return syncDirectory(root, filepath.Dir(at))
+	return syncDirectory(root, filepath.Dir(pos))
 }
 
 // Append adds to the end of what is there, in place. What it is given lands
@@ -280,20 +278,20 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 	if err != nil {
 		return err
 	}
-	root, at, err := d.createRoot(target)
+	root, pos, err := d.createRoot(target)
 	if err != nil {
 		return err
 	}
 	defer root.Close()
-	if err := root.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := root.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		return err
 	}
-	file, err := root.OpenFile(at, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	file, err := root.OpenFile(pos, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
 	if err != nil {
 		return err
 	}
 	if n, err := file.Write(content); err != nil || n != len(content) {
-		return errors.Join(newShortAppendError(name, n, len(content), err), closeAndTruncate(root, file, at, n))
+		return errors.Join(newShortAppendError(name, n, len(content), err), closeAndTruncate(root, file, pos, n))
 	}
 	if err := file.Sync(); err != nil {
 		file.Close()
@@ -303,14 +301,13 @@ func (d *DerivedStore) Append(_ context.Context, name string, content []byte) er
 }
 
 // newShortAppendError is what an append that did not land says.
-func newShortAppendError(name string, written, wanted int, why error) error {
+func newShortAppendError(name string, output, wanted int, why error) error {
 	if why == nil {
 		why = io.ErrShortWrite
 	}
-	return fmt.Errorf("%s: %d of %d bytes: %w", name, written, wanted, why)
+	return fmt.Errorf("%s: %d of %d bytes: %w", name, output, wanted, why)
 }
 
-// closeAndTruncate removes the bytes an append left behind and closes the file. What it
 // wrote ends where the offset now stands, so the truncation is that offset less what
 // landed, and a write that landed nothing leaves the file as it found it.
 //
@@ -321,14 +318,14 @@ func closeAndTruncate(root *os.Root, file *os.File, name string, wrote int) erro
 	if wrote <= 0 {
 		return file.Close()
 	}
-	at, err := file.Seek(0, io.SeekCurrent)
+	pos, err := file.Seek(0, io.SeekCurrent)
 	if err != nil {
 		return errors.Join(err, file.Close())
 	}
 	if err := file.Close(); err != nil {
 		return err
 	}
-	return truncateFile(root, name, at-int64(wrote))
+	return truncateFile(root, name, pos-int64(wrote))
 }
 
 // truncateFile takes a file back to a length and flushes it there.
@@ -415,14 +412,14 @@ func (d *DerivedStore) Remove(_ context.Context, name string) error {
 		if err != nil {
 			return err
 		}
-		root, at, err := d.openRoot(target)
+		root, pos, err := d.openRoot(target)
 		if errors.Is(err, fs.ErrNotExist) {
 			continue
 		}
 		if err != nil {
 			return err
 		}
-		err = root.Remove(at)
+		err = root.Remove(pos)
 		root.Close()
 		if err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return err
@@ -490,7 +487,6 @@ func readIdentity(root, serviceDir string) (string, *fileInfo, error) {
 
 // openRoot is the store's folder as a handle, and a place in it as a name that
 // handle takes. Every step of a write is made through the handle, so a folder
-// swapped for a link while the write is on its way is refused by the machine
 // itself and not by a rule read a moment before. The caller closes the handle.
 func (d *DerivedStore) openRoot(target string) (*os.Root, string, error) {
 	name, err := filepath.Rel(d.root, target)

@@ -6,7 +6,6 @@
 
 // What a client may ask of a vault by typing into it.
 //
-// Two questions are asked as a person types, and they answer with different
 // things: SearchNames answers with names, and SearchPassages with the passages
 // of text a vault holds. A client drawing them apart asks each of them.
 
@@ -196,7 +195,6 @@ func (x *SearchNamesResponse) GetFound() []*NameMatch {
 
 // NameMatch is one name that matched, and the note it stands for. A note's own
 // title matched when there is no heading here; otherwise the note is what the
-// heading stands in.
 type NameMatch struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Note  *Note                  `protobuf:"bytes,1,opt,name=note,proto3" json:"note,omitempty"`
@@ -207,7 +205,6 @@ type NameMatch struct {
 	// A word reached by its prefix is marked whole.
 	Spans []*Span `protobuf:"bytes,3,rep,name=spans,proto3" json:"spans,omitempty"`
 	// The `type` key of the note's frontmatter, so a client draws a note as what it is.
-	// Empty for an ordinary note. A heading carries the type of the note it stands in.
 	Type          string `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -275,8 +272,7 @@ type SearchPassagesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Query string                 `protobuf:"bytes,1,opt,name=query,proto3" json:"query,omitempty"`
 	// How many passages to answer with. Zero takes the number the vault chooses.
-	Limit int32 `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	// How the search is asked. A request naming no mode is refused.
+	Limit         int32      `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
 	Mode          SearchMode `protobuf:"varint,3,opt,name=mode,proto3,enum=numen.v1.SearchMode" json:"mode,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -396,7 +392,6 @@ type Passage struct {
 	// What the source's own numbering calls the place, empty when the format
 	// offered none.
 	Location string `protobuf:"bytes,5,opt,name=location,proto3" json:"location,omitempty"`
-	// Where the passage stands in the text of the source it was read out of,
 	// counted in bytes. With the path above it is the place this opens, and a hit
 	// in a note carries it as every other hit does.
 	Span *Span `protobuf:"bytes,6,opt,name=span,proto3" json:"span,omitempty"`

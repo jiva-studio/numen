@@ -34,9 +34,8 @@ type DocumentText struct {
 	Text string
 	// Start and Length are the run that was read, which is what was asked for
 	// held within the text.
-	Start  int
-	Length int
-	// Location is where the run begins, as a person says it.
+	Start    int
+	Length   int
 	Location string
 	// Whole is how long the source's text is, so a caller knows whether there
 	// is more of it on either side.

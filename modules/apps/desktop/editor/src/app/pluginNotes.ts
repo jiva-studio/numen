@@ -25,7 +25,7 @@ const UNREADABLE = 'the frontmatter of this note cannot be read'
 
 interface QueuedWrite {
   body: string
-  done: Promise<void>
+  promise: Promise<void>
 }
 
 /**
@@ -42,9 +42,9 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
     const pendingItem = queued.get(path)
     if (pendingItem) {
       pendingItem.body = body
-      return pendingItem.done
+      return pendingItem.promise
     }
-    const job: QueuedWrite = { body, done: Promise.resolve() }
+    const job: QueuedWrite = { body, promise: Promise.resolve() }
     const run = async (): Promise<void> => {
       if (queued.get(path) === job) queued.delete(path)
       const reply = await deps.write(path, job.body, null)
@@ -52,14 +52,14 @@ export const createPluginNotes = (deps: PluginNotesDeps): PluginNotes => {
     }
     queued.set(path, job)
     const before = tails.get(path)
-    job.done = before ? before.then(run) : run()
-    const resolved: Promise<void> = job.done
+    job.promise = before ? before.then(run) : run()
+    const resolved: Promise<void> = job.promise
       .catch(() => undefined)
       .then(() => {
         if (tails.get(path) === resolved) tails.delete(path)
       })
     tails.set(path, resolved)
-    return job.done
+    return job.promise
   }
 
   const readNote = async (path: string): Promise<{ body: string; error?: string }> => {

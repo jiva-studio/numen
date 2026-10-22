@@ -52,7 +52,7 @@ defineExpose({ focus })
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
     tabindex="-1"
-    :disabled="item.disabled"
+    :disabled="item.isDisabled"
     @focus="$emit('focus')"
     @click="$emit('choose')"
   >
@@ -124,8 +124,6 @@ defineExpose({ focus })
   white-space: nowrap;
 }
 
-/* What an item is beside its words: the address a model is fetched from, the
-   place a file stands. */
 .menu__detail {
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);

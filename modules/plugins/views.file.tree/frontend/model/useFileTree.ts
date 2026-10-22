@@ -8,7 +8,6 @@ import type { Entry, FileTree, Folders, ListingRow } from '../types'
 
 export const ROOT = ''
 
-/** The folder a path sits in, and the root for a path at the top of the vault. */
 export const getFolderPath = (path: string): string => {
   const slashIndex = path.lastIndexOf('/')
   // Stryker disable next-line EqualityOperator: a path starting with slash produces ROOT empty string either way.
@@ -19,8 +18,8 @@ export const getFolderPath = (path: string): string => {
  * The folder a dropped row lands in: the one it went into, or the one holding
  * the row it came before. Into no row at all is the root.
  */
-export const resolveDropFolder = (at: { into: string | null } | { before: string }): string =>
-  'into' in at ? (at.into ?? ROOT) : getFolderPath(at.before)
+export const resolveDropFolder = (target: { into: string | null } | { before: string }): string =>
+  'into' in target ? (target.into ?? ROOT) : getFolderPath(target.before)
 
 /** The folders above a path, from the root down. */
 export const getParentFolders = (path: string): readonly string[] => {
@@ -39,7 +38,7 @@ const isSameEntry = (one: Entry, other: Entry): boolean =>
 const isSameEntries = (one: readonly Entry[] | undefined, other: readonly Entry[]): boolean =>
   one !== undefined &&
   one.length === other.length &&
-  one.every((entry, at) => isSameEntry(entry, other[at]!))
+  one.every((entry, index) => isSameEntry(entry, other[index]!))
 
 /**
  * Generates a name not taken in the folder.

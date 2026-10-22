@@ -11,7 +11,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 const { counted, started, waits } = vi.hoisted(() => ({
   /**
-   * What the front door answers: one vault owing nothing, and one owing on the
    * first of its two decks.
    */
   counted: {
@@ -57,7 +56,6 @@ const { counted, started, waits } = vi.hoisted(() => ({
 vi.mock('@/shared/clients', async (original) => ({
   ...(await original<typeof import('@/shared/clients')>()),
   cards: {
-    // The vaults, then each of their counts, the way the front door answers.
     watchCardsDue: async function* () {
       yield { day: counted.day, vaults: counted.vaults }
       for (const one of counted.vaults) yield { day: '', vaults: [], counted: one }
@@ -157,7 +155,7 @@ describe('a letter pressed on the decks', () => {
     return window
   }
 
-  it('sits down to the deck standing at it', async () => {
+  it('opens review for target deck', async () => {
     await openVault('b')
 
     await press('a')
@@ -165,7 +163,7 @@ describe('a letter pressed on the decks', () => {
     expect(started).toStrictEqual([{ vault: 'words', deck: 'decks/Words.md' }])
   })
 
-  it('sits down to nothing where that deck owes nothing', async () => {
+  it('does not start review when deck has no due cards', async () => {
     await openVault('b')
 
     await press('b')
@@ -173,7 +171,7 @@ describe('a letter pressed on the decks', () => {
     expect(started).toStrictEqual([])
   })
 
-  it('sits down to nothing where the whole vault owes nothing', async () => {
+  it('does not start review when vault has no due cards', async () => {
     await openVault('a')
 
     await press('Enter')
@@ -181,7 +179,7 @@ describe('a letter pressed on the decks', () => {
     expect(started).toStrictEqual([])
   })
 
-  it('sits down to the whole vault where it owes something', async () => {
+  it('starts review for vault with due cards', async () => {
     await openVault('b')
 
     await press('Enter')

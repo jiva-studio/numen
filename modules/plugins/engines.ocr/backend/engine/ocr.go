@@ -125,10 +125,10 @@ func Assemble(lines []Line) (string, []Box) {
 		} else if len(out) > 0 {
 			out = append(out, ' ')
 		}
-		at := len(out)
+		pos := len(out)
 		for _, box := range boxes {
-			box.Span.From += at
-			box.Span.To += at
+			box.Span.From += pos
+			box.Span.To += pos
 			assembledBoxes = append(assembledBoxes, box)
 		}
 		out = append(out, text...)
@@ -214,8 +214,8 @@ func writeLine(line []Line) (string, []Box) {
 		if out.Len() > 0 {
 			out.WriteString(" ")
 		}
-		at := out.Len()
-		lineBoxes = append(lineBoxes, Box{Rect: one.Box, Span: ByteSpan{From: at, To: at + len(text)}})
+		pos := out.Len()
+		lineBoxes = append(lineBoxes, Box{Rect: one.Box, Span: ByteSpan{From: pos, To: pos + len(text)}})
 		out.WriteString(text)
 	}
 	return out.String(), lineBoxes

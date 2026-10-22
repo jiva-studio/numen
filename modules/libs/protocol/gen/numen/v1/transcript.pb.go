@@ -204,7 +204,6 @@ type WriteTranscriptRequest struct {
 	// Speech runs forward: a cue ends no earlier than it begins, and begins after
 	// the one before it ends. A cue whose words trim away is dropped, and its
 	// timings still bound the cue after it. Words carrying nothing at all are
-	// refused: what was heard comes back by taking the corrections away, and
 	// writing nothing over the words would leave the recording saying nothing
 	// with nothing to edit.
 	Cues          []*Cue `protobuf:"bytes,2,rep,name=cues,proto3" json:"cues,omitempty"`

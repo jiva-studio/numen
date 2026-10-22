@@ -89,7 +89,10 @@ const strength = computed(() => (props.tone === 'plain' ? 'text-hushed' : ''))
       <span class="activity__says" :class="givesSays">{{ words }}</span>
       <span v-if="about" class="activity__about" :class="givesAbout">{{ about }}</span>
     </span>
-    <span v-if="percent || remainingText" class="activity__count flex gap-2 tabular-nums opacity-70">
+    <span
+      v-if="percent || remainingText"
+      class="activity__count flex gap-2 tabular-nums opacity-70"
+    >
       <span v-if="percent" class="activity__percent">{{ percent }}</span>
       <span v-if="remainingText" class="activity__left">{{ remainingText }}</span>
     </span>

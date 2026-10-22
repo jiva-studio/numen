@@ -57,7 +57,7 @@ const renderMenu = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(true)
-    const at = ref(args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at)
+    const pos = ref(args.at.x < 0 ? { x: window.innerWidth + args.at.x, y: args.at.y } : args.at)
     const node = ref<HTMLElement | null>(null)
     const from = ref<HTMLElement | null>(null)
 
@@ -65,12 +65,12 @@ const renderMenu = (args: Knobs) => ({
 
     const ask = (event: MouseEvent) => {
       event.preventDefault()
-      at.value = { x: event.clientX, y: event.clientY }
+      pos.value = { x: event.clientX, y: event.clientY }
       from.value = event.currentTarget as HTMLElement
       open.value = true
     }
 
-    return { args, open, at, node, from, ask }
+    return { args, open, at: pos, node, from, ask }
   },
   template: `
     <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
@@ -83,7 +83,7 @@ const renderMenu = (args: Knobs) => ({
       <Menu
         :items="args.items"
         :at="at"
-        :open="open"
+        :is-open="open"
         :from="from"
         :trigger="args.trigger"
         :current="args.current"
@@ -229,15 +229,15 @@ export const NotClipped: Story = {
     components: { Menu },
     setup() {
       const open = ref(false)
-      const at = ref({ x: 0, y: 0 })
+      const pos = ref({ x: 0, y: 0 })
       const from = ref<HTMLElement | null>(null)
       const ask = (event: MouseEvent) => {
         event.preventDefault()
-        at.value = { x: event.clientX, y: event.clientY }
+        pos.value = { x: event.clientX, y: event.clientY }
         from.value = event.currentTarget as HTMLElement
         open.value = true
       }
-      return { args, open, at, from, ask }
+      return { args, open, at: pos, from, ask }
     },
     template: `
       <div class="numen" style="height:100vh;display:grid;place-items:center;background:var(--numen-surface)">
@@ -253,7 +253,7 @@ export const NotClipped: Story = {
 
           <!-- Written where a menu would be written: inside the thing that
                asked for it, which is the thing that clips. -->
-          <Menu :items="args.items" :at="at" :open="open" :from="from" :margin="args.margin" />
+          <Menu :items="args.items" :at="at" :is-open="open" :from="from" :margin="args.margin" />
         </div>
       </div>
     `,
@@ -269,7 +269,6 @@ export const NotClipped: Story = {
     const box = menu.getBoundingClientRect()
     const clipping = canvasElement.querySelector('[data-clipping]')!
 
-    // Taller than the box it was asked from, and not standing inside it.
     await expect(box.height).toBeGreaterThan(clipping.getBoundingClientRect().height)
     await expect(clipping.contains(menu)).toBe(false)
 
@@ -329,9 +328,9 @@ export const Icons: Story = {
 /** Far more than fits: the list scrolls and the menu still relies on screen. */
 export const FarTooMany: Story = {
   args: {
-    items: Array.from({ length: 60 }, (_, at) => ({
-      id: `item-${at}`,
-      text: `Something to do (${at + 1})`,
+    items: Array.from({ length: 60 }, (_, index) => ({
+      id: `item-${index}`,
+      text: `Something to do (${index + 1})`,
     })),
   },
   play: async () => {
@@ -347,10 +346,10 @@ export const SearchStaysAboveTheList: Story = {
   args: {
     searchable: true,
     hasGroups: true,
-    items: Array.from({ length: 60 }, (_, at) => ({
-      id: `item-${at}`,
-      text: `Something to do (${at + 1})`,
-      group: at < 30 ? 'First' : 'Second',
+    items: Array.from({ length: 60 }, (_, index) => ({
+      id: `item-${index}`,
+      text: `Something to do (${index + 1})`,
+      group: index < 30 ? 'First' : 'Second',
     })),
   },
   play: async () => {
@@ -413,7 +412,6 @@ export const AskedForAtTheEdge: Story = {
       // Nothing is cut short: what the line holds fits the room it has.
       expect(line.scrollWidth).toBeLessThanOrEqual(line.clientWidth)
     }
-    // And it stands inside the page it was asked for from.
     const box = menu!.getBoundingClientRect()
     expect(box.right).toBeLessThanOrEqual(canvasElement.ownerDocument.documentElement.clientWidth)
     expect(box.left).toBeGreaterThanOrEqual(0)
@@ -446,7 +444,7 @@ export const NotChoosable: Story = {
     trigger: 'keyboard',
     items: [
       { id: 'open', text: 'Open' },
-      { id: 'ask', text: 'Ask the agent about this note', disabled: true },
+      { id: 'ask', text: 'Ask the agent about this note', isDisabled: true },
       { id: 'copy', text: 'Copy path' },
     ],
   },
@@ -481,7 +479,6 @@ export const Grouped: Story = {
   },
   play: async () => {
     const menu = within(menuElement()!)
-    // A rule stands at each of the three joins, and above none of the items
     // that carry on a group.
     await expect(menu.getAllByRole('separator')).toHaveLength(3)
     // The keyboard passes over the rules: they are drawn, not chosen.
@@ -546,20 +543,20 @@ const renderScrollingOpening = (args: Knobs) => ({
   components: { Menu },
   setup() {
     const open = ref(false)
-    const at = ref({ x: 0, y: 0 })
+    const pos = ref({ x: 0, y: 0 })
     const from = ref<HTMLElement | null>(null)
     const scroller = ref<HTMLElement | null>(null)
 
     const ask = async (event: MouseEvent) => {
       from.value = event.currentTarget as HTMLElement
       const box = from.value.getBoundingClientRect()
-      at.value = { x: box.left, y: box.bottom }
+      pos.value = { x: box.left, y: box.bottom }
       open.value = true
       await nextTick()
       scroller.value?.scrollTo({ top: scroller.value.scrollHeight })
     }
 
-    return { args, open, at, from, scroller, ask }
+    return { args, open, at: pos, from, scroller, ask }
   },
   template: `
     <div
@@ -578,7 +575,7 @@ const renderScrollingOpening = (args: Knobs) => ({
       <Menu
         :items="args.items"
         :at="at"
-        :open="open"
+        :is-open="open"
         :from="from"
         @dismiss="open = false; args.onDismiss()"
       />

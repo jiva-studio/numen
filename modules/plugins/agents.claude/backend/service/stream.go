@@ -219,9 +219,9 @@ func (p *streamParser) parseStreamEvent(_ context.Context, ev streamEvent) {
 	}
 }
 
-func (p *streamParser) parseAssistantMessage(_ context.Context, said event) {
+func (p *streamParser) parseAssistantMessage(_ context.Context, response event) {
 	// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="json.Unmarshal on an empty message returns an error and stops"
-	if p.isStreaming || len(said.Message) == 0 {
+	if p.isStreaming || len(response.Message) == 0 {
 		return
 	}
 	var msg struct {
@@ -233,7 +233,7 @@ func (p *streamParser) parseAssistantMessage(_ context.Context, said event) {
 			Input json.RawMessage `json:"input"`
 		} `json:"content"`
 	}
-	if err := json.Unmarshal(said.Message, &msg); err != nil {
+	if err := json.Unmarshal(response.Message, &msg); err != nil {
 		return
 	}
 	for _, block := range msg.Content {
@@ -270,7 +270,6 @@ func stripServerPrefix(tool string) string {
 	return tool
 }
 
-// buildCallStep is a tool call as the person is told about it.
 func (p *streamParser) buildCallStep(callID, tool, args string) *numenv1.AskAgentResponse {
 	call := toolcall.Describe(p.words, stripServerPrefix(tool), callID, args)
 	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolCall{ToolCall: call}}
@@ -308,16 +307,16 @@ func (p *streamParser) reportEdit() {
 
 // getUnreachableReason is why the vault's tools did not arrive, empty when they did and when the
 // line says nothing about servers.
-func getUnreachableReason(said event) string {
-	for _, skipped := range said.ServerErrors {
+func getUnreachableReason(response event) string {
+	for _, skipped := range response.ServerErrors {
 		if skipped.Name == serverName {
 			return fmt.Sprintf("the agent was not given this vault: %s", skipped.Message)
 		}
 	}
-	if said.Servers == nil {
+	if response.Servers == nil {
 		return ""
 	}
-	for _, server := range *said.Servers {
+	for _, server := range *response.Servers {
 		if server.Name != serverName {
 			continue
 		}
@@ -330,12 +329,12 @@ func getUnreachableReason(said event) string {
 }
 
 // getResultError is what the last line says went wrong.
-func getResultError(said event) string {
-	if text := strings.TrimSpace(said.Result); text != "" && text != said.Subtype {
+func getResultError(response event) string {
+	if text := strings.TrimSpace(response.Result); text != "" && text != response.Subtype {
 		return text
 	}
-	if said.Subtype != "" {
-		return formatSubtype(said.Subtype)
+	if response.Subtype != "" {
+		return formatSubtype(response.Subtype)
 	}
 	return "the agent stopped without finishing"
 }

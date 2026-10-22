@@ -16,12 +16,14 @@ describe('a line of work', () => {
       text: 'Proofreading the transcript',
       about: 'A Conversation in Vrindavan, 1972-11-04.md',
       isWorking: true,
-      tally: { done: 9, total: 100 },
+      tally: { completedCount: 9, total: 100 },
       left: '4:05',
     })
 
     expect(renderedLine.get('.activity__says').text()).toBe('Proofreading the transcript')
-    expect(renderedLine.get('.activity__about').text()).toBe('A Conversation in Vrindavan, 1972-11-04.md')
+    expect(renderedLine.get('.activity__about').text()).toBe(
+      'A Conversation in Vrindavan, 1972-11-04.md',
+    )
     expect(renderedLine.get('.activity__words').classes()).toContain('flex-col')
   })
 
@@ -30,7 +32,7 @@ describe('a line of work', () => {
       text: 'Learning what it says',
       about: 'Sabhaparva.epub',
       isWorking: true,
-      tally: { done: 1200, total: 36560 },
+      tally: { completedCount: 1200, total: 36560 },
       left: '1:58:20',
     })
 
@@ -42,7 +44,7 @@ describe('a line of work', () => {
     const tallyLine = line({
       text: 'Reading',
       about: 'a-note-nobody-shortened-before-they-filed-it-away.md',
-      tally: { done: 2, total: 8 },
+      tally: { completedCount: 2, total: 8 },
     })
     expect(tallyLine.get('.activity__says').classes()).toContain('truncate')
     expect(tallyLine.get('.activity__about').classes()).toContain('truncate')
@@ -72,11 +74,14 @@ describe('a line of work', () => {
       text: 'Indexing',
       about: 'Sabhaparva.epub',
       isWorking: true,
-      tally: { done: 3, total: 12 },
+      tally: { completedCount: 3, total: 12 },
     })
     expect(renderedLine.get('.activity__about').text()).toBe('Sabhaparva.epub')
 
-    await renderedLine.setProps({ about: 'notes/Vrindavan.md', tally: { done: 8, total: 12 } })
+    await renderedLine.setProps({
+      about: 'notes/Vrindavan.md',
+      tally: { completedCount: 8, total: 12 },
+    })
 
     expect(renderedLine.get('.activity__about').text()).toBe('notes/Vrindavan.md')
     expect(renderedLine.get('.activity__percent').text()).toBe('66%')

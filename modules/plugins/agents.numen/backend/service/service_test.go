@@ -48,9 +48,9 @@ func withToken() connect.ClientOption {
 }
 
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
-	at := startPlugin(t)
+	pos := startPlugin(t)
 
-	res, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, at, withToken()).
+	res, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
 		Ping(t.Context(), connect.NewRequest(&numenv1.PingRequest{}))
 	if err != nil {
 		t.Fatal(err)
@@ -69,13 +69,13 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{"data": []map[string]string{{"id": "m1"}}})
 	}))
 	defer chat.Close()
-	at := startPlugin(t)
+	pos := startPlugin(t)
 
-	if _, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, at, withToken()).
+	if _, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
 		Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
 		t.Fatal(err)
 	}
-	res, err := numenv1connect.NewAgentServiceClient(http.DefaultClient, at, withToken()).
+	res, err := numenv1connect.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
 		GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)

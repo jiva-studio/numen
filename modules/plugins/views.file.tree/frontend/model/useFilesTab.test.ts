@@ -8,13 +8,13 @@ import { getFolderPath, ROOT, useFileTree } from './useFileTree'
 import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
-const file = (path: string, over: Partial<Entry> = {}): Entry => ({
+const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
   path,
   name: path.split('/').pop() ?? path,
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 const folder = (path: string): Entry => file(path, { isFolder: true, kind: 'other' })
@@ -56,9 +56,9 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const sources: string[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = useFileTree({
-    list: async (at: string) => {
-      request.push(at)
-      return vault[at] ?? []
+    list: async (folderPath: string) => {
+      request.push(folderPath)
+      return vault[folderPath] ?? []
     },
   })
   const gestures = useFilesTab(list, {
@@ -78,7 +78,8 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       vault[path] = []
     },
     createNote: async (folderPath) => {
-      const createdItem = folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
+      const createdItem =
+        folderPath === ROOT ? 'Untitled note.md' : `${folderPath}/Untitled note.md`
       isDone.push(`writes ${createdItem}`)
       if (fails) return ''
       return createdItem
@@ -301,9 +302,9 @@ describe('rows release', () => {
   it('read the folders again once, when all of them are done', async () => {
     const request: string[] = []
     const list = useFileTree({
-      list: async (at: string) => {
-        request.push(at)
-        return target[at] ?? []
+      list: async (folderPath: string) => {
+        request.push(folderPath)
+        return target[folderPath] ?? []
       },
     })
     const one = useFilesTab(list, {
@@ -326,7 +327,7 @@ describe('rows release', () => {
 
     await one.move(['Entropy.md', 'Heat.pdf'], { into: 'notes' })
 
-    expect(request.filter((at) => at === ROOT)).toStrictEqual([ROOT])
+    expect(request.filter((itemPath) => itemPath === ROOT)).toStrictEqual([ROOT])
   })
 
   it('leave behind the one whose name that folder holds, and say which', async () => {
@@ -335,7 +336,10 @@ describe('rows release', () => {
 
     await one.move(['Entropy.md', 'Heat.pdf'], { into: 'heat' })
 
-    expect(recorded).toStrictEqual(['moves Heat.pdf heat/Heat.pdf', `says ${words.taken} Entropy.md`])
+    expect(recorded).toStrictEqual([
+      'moves Heat.pdf heat/Heat.pdf',
+      `says ${words.taken} Entropy.md`,
+    ])
   })
 
   it('ask nothing where they landed where they already were', async () => {
@@ -745,7 +749,7 @@ describe('rows release, in more detail', () => {
     ])
   })
 
-  it('say every name left behind, parted by commas', async () => {
+  it('formats remaining names as comma-separated list', async () => {
     const { recorded, one } = tab(false, {
       notes: [file('notes/Entropy.md'), file('notes/Heat.pdf')],
     })

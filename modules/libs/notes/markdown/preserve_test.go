@@ -145,7 +145,6 @@ func TestWhatTheApplicationDoesNotOwnIsCachedVerbatim(t *testing.T) {
 }
 
 // checkForeignKeysKept fails unless every line of every key the application
-// does not own still stands in the note's frontmatter, unchanged and in the
 // order it stood in.
 func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote string) {
 	t.Helper()
@@ -153,7 +152,6 @@ func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote strin
 		return
 	}
 	// The endings are the note's own, and the identity property is where they
-	// are held to. Here it is the lines and their order.
 	note = strings.ReplaceAll(strings.TrimPrefix(note, byteOrderMark), "\r\n", "\n")
 	front, _, found := strings.Cut(strings.TrimPrefix(note, "---\n"), "\n---\n")
 	if !found {
@@ -161,16 +159,16 @@ func checkForeignKeysKept(t *rapid.T, note string, foreign []string, wrote strin
 	}
 	lines := strings.Split(front, "\n")
 
-	at := 0
+	idx := 0
 	for _, one := range foreign {
 		for _, line := range strings.Split(strings.TrimSuffix(one, "\n"), "\n") {
-			for at < len(lines) && lines[at] != line {
-				at++
+			for idx < len(lines) && lines[idx] != line {
+				idx++
 			}
-			if at == len(lines) {
+			if idx == len(lines) {
 				t.Fatalf("writing %s lost the line %q, or moved it:\n%s", wrote, line, note)
 			}
-			at++
+			idx++
 		}
 	}
 }
@@ -234,8 +232,8 @@ func equal(got, want []string) bool {
 	if len(got) != len(want) {
 		return len(got) == 0 && len(want) == 0
 	}
-	for at := range got {
-		if got[at] != want[at] {
+	for idx := range got {
+		if got[idx] != want[idx] {
 			return false
 		}
 	}

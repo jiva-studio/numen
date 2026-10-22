@@ -17,10 +17,10 @@ import (
 // spelled it.
 const putRight = "The name and the named are not two, said Rupa."
 
-// shelf is a store holding what a run left, by the name it left it under.
-type shelf map[domain.ArtifactName][]byte
+// artifactMap is a store holding what a run left, by the name it left it under.
+type artifactMap map[domain.ArtifactName][]byte
 
-func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
+func (b artifactMap) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte, error) {
 	raw, target := b[name]
 	if !target {
 		return nil, fs.ErrNotExist
@@ -29,7 +29,7 @@ func (b shelf) ReadArtifact(_ context.Context, name domain.ArtifactName) ([]byte
 }
 
 // Open is one file of the store, which a copy of a video is played from.
-func (b shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
+func (b artifactMap) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error) {
 	raw, target := b[name]
 	if !target {
 		return nil, 0, fs.ErrNotExist
@@ -38,7 +38,7 @@ func (b shelf) OpenArtifact(_ context.Context, name domain.ArtifactName) (io.Rea
 }
 
 // WriteStream puts what a reader gives under a name.
-func (b shelf) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
+func (b artifactMap) WriteArtifactStream(_ context.Context, name domain.ArtifactName, from io.Reader) (int64, error) {
 	raw, err := io.ReadAll(from)
 	if err != nil {
 		return 0, err
@@ -52,22 +52,22 @@ type readingBytes struct{ *bytes.Reader }
 
 func (readingBytes) Close() error { return nil }
 
-func (b shelf) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (b artifactMap) WriteArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	b[name] = content
 	return nil
 }
 
-func (b shelf) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
+func (b artifactMap) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
 	b[name] = append(b[name], content...)
 	return nil
 }
 
-func (b shelf) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
+func (b artifactMap) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	delete(b, name)
 	return nil
 }
 
-func (b shelf) ClaimArtifact(context.Context, domain.ArtifactName) (func() error, error) {
+func (b artifactMap) ClaimArtifact(context.Context, domain.ArtifactName) (func() error, error) {
 	return func() error { return nil }, nil
 }
 
@@ -83,7 +83,7 @@ func writeCorrections() []byte {
 // The words a transcript was put right to are the words it reads as, and the
 // moments they were said at stand where they were.
 func TestATranscriptInsertRightReadsAsTheWordsItWasInsertRightTo(t *testing.T) {
-	store := shelf{
+	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
 	}
@@ -100,7 +100,7 @@ func TestATranscriptInsertRightReadsAsTheWordsItWasInsertRightTo(t *testing.T) {
 
 // Taking away what a transcript was put right to gives back what was heard.
 func TestATranscriptNothingInsertRightReadsAsWhatWasHeard(t *testing.T) {
-	store := shelf{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
+	store := artifactMap{domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"): writeTranscript()}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
 	if err != nil {
@@ -112,7 +112,7 @@ func TestATranscriptNothingInsertRightReadsAsWhatWasHeard(t *testing.T) {
 // A sweep works through the names a producer writes, and what a transcript was
 // put right to goes with the recording it belongs to.
 func TestWhatATranscriptWasInsertRightToIsSweptWithIt(t *testing.T) {
-	store := shelf{
+	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
 		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): writeCorrections(),
 	}

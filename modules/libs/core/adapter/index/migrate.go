@@ -106,7 +106,6 @@ type migration struct {
 // a failure leaves the database at the last version that fully applied rather
 // than half-way through one.
 //
-// An index at a version this build does not carry is refused, and nothing in it
 // is touched. What it holds took hours to read, and a build that cannot read its
 // schema cannot say what emptying it would cost — so it says which schema it
 // found and which it carries, and the person decides.

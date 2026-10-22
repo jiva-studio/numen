@@ -53,7 +53,7 @@ const emit = defineEmits<{
   (event: 'rename-field', field: string, name: string): void
   (event: 'remove-field', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move-field', field: string, at: InsertionPoint): void
+  (event: 'move-field', field: string, target: InsertionPoint): void
   (event: 'add-face', name: string): void
   (event: 'rename-face', id: string, name: string): void
   (event: 'remove-face', id: string): void
@@ -62,7 +62,7 @@ const emit = defineEmits<{
    * order of the faces is the order a card's repetitions are taken from it, so
    * nothing among them is fixed.
    */
-  (event: 'move-face', id: string, at: InsertionPoint): void
+  (event: 'move-face', id: string, target: InsertionPoint): void
   /** One half of one face, as it now reads. */
   (event: 'write', id: string, half: Half, text: string): void
 }>()
@@ -90,7 +90,6 @@ const {
   move: (held, lands) => emit('move-face', held, lands),
 })
 
-/** What a preview stands in the slots, which is each field under its own name. */
 const sample = computed(() => sampleValues(declaredFields.value))
 
 /** The faces as they are drawn. */
@@ -134,7 +133,10 @@ const addFace = (): void => {
     >
       <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.faces }}</h2>
 
-      <p v-if="!renderedFaces.length" class="stencil__silence caps-numen text-small text-hushed m-0">
+      <p
+        v-if="!renderedFaces.length"
+        class="stencil__silence caps-numen text-small text-hushed m-0"
+      >
         {{ words.noFaces }}
       </p>
 
@@ -169,7 +171,6 @@ const addFace = (): void => {
   /* The room between one part and the next, and between the rows of a part. */
   --part-gap: 1.5rem;
   --row-gap: 0.5rem;
-  /* The caret stands in the middle of the room between two rows. */
   --caret-out: calc(-1 * var(--row-gap) / 2);
 
   display: flex;

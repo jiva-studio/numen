@@ -37,8 +37,8 @@ export interface EditorChange {
 /** How much of a change's text is shown, and which of it arrived just now. */
 export interface Reveal {
   /** Characters from the start of the text that are shown. */
-  readonly shown: number
-  /** Where the words shown for the first time begin; `shown` when none are. */
+  readonly visibleLength: number
+  /** Where the words shown for the first time begin; `visibleLength` when none are. */
   readonly fading: number
 }
 
@@ -67,10 +67,13 @@ const boundaries = (text: string): number[] => {
 export const createReveal = (text: string, part: number): Reveal => {
   const ends = boundaries(text)
   const steps = ends.length + 1
-  const at = Math.max(0, Math.min(steps, Math.floor(part * steps)))
-  if (at === 0) return { shown: 0, fading: 0 }
-  if (at === steps) return { shown: text.length, fading: text.length }
-  return { shown: ends[at - 1] ?? text.length, fading: at > 1 ? (ends[at - 2] ?? 0) : 0 }
+  const stepIndex = Math.max(0, Math.min(steps, Math.floor(part * steps)))
+  if (stepIndex === 0) return { visibleLength: 0, fading: 0 }
+  if (stepIndex === steps) return { visibleLength: text.length, fading: text.length }
+  return {
+    visibleLength: ends[stepIndex - 1] ?? text.length,
+    fading: stepIndex > 1 ? (ends[stepIndex - 2] ?? 0) : 0,
+  }
 }
 
 /** How long the whole of `text` takes to be shown. */
@@ -117,14 +120,15 @@ const getDecorations = (
   reveal: Reveal | null,
 ): DecorationSet => {
   const { from, to } = span
-  if (!reveal) return to > from ? Decoration.set([changingDecoration.range(from, to)]) : Decoration.none
+  if (!reveal)
+    return to > from ? Decoration.set([changingDecoration.range(from, to)]) : Decoration.none
 
   const found: Range<Decoration>[] = []
-  if (reveal.shown > reveal.fading)
-    found.push(incoming.range(from + reveal.fading, from + reveal.shown))
+  if (reveal.visibleLength > reveal.fading)
+    found.push(incoming.range(from + reveal.fading, from + reveal.visibleLength))
 
   const end = from + change.text.length
-  if (end > from + reveal.shown) found.push(covered.range(from + reveal.shown, end))
+  if (end > from + reveal.visibleLength) found.push(covered.range(from + reveal.visibleLength, end))
   // Stryker disable next-line BooleanLiteral: the marks are collected in document order, which is sorted
   return Decoration.set(found, true)
 }
@@ -217,8 +221,8 @@ class Pace {
 
   private take() {
     this.stop()
-    const at = this.view.state.field(changeMarks)
-    if (!at.change || !at.reveal) return
+    const marks = this.view.state.field(changeMarks)
+    if (!marks.change || !marks.reveal) return
     this.handle = this.clock.schedule(this.step)
   }
 
@@ -231,14 +235,17 @@ class Pace {
   // Elapsed time comes from the timestamp each callback is handed.
   private readonly step = (now: number) => {
     this.handle = null
-    const at = this.view.state.field(changeMarks)
-    if (!at.change || !at.reveal) return
+    const marks = this.view.state.field(changeMarks)
+    if (!marks.change || !marks.reveal) return
 
     this.started ??= now
-    const ms = getDuration(at.change.text)
+    const ms = getDuration(marks.change.text)
     const part = ms <= 0 ? 1 : Math.min(1, (now - this.started) / ms)
-    const reveal = createReveal(at.change.text, part)
-    if (reveal.shown !== at.reveal.shown || reveal.fading !== at.reveal.fading)
+    const reveal = createReveal(marks.change.text, part)
+    if (
+      reveal.visibleLength !== marks.reveal.visibleLength ||
+      reveal.fading !== marks.reveal.fading
+    )
       this.view.dispatch({ effects: setReveal.of(reveal) })
     if (part < 1) this.handle = this.clock.schedule(this.step)
   }

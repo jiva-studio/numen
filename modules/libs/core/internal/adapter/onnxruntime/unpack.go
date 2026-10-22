@@ -17,14 +17,14 @@ import (
 // The library is looked for by name at any depth: the folder inside the archive
 // is named after the release. The plain name inside is a link to the file
 // carrying the version, and what is taken out is that file.
-func unpack(archive, name, at string) error {
+func unpack(archive, name, pos string) error {
 	if strings.HasSuffix(archive, ".zip") {
-		return unpackZip(archive, name, at)
+		return unpackZip(archive, name, pos)
 	}
-	return unpackTgz(archive, name, at)
+	return unpackTgz(archive, name, pos)
 }
 
-func unpackTgz(archive, name, at string) error {
+func unpackTgz(archive, name, pos string) error {
 	file, err := os.Open(archive)
 	if err != nil {
 		return err
@@ -48,11 +48,11 @@ func unpackTgz(archive, name, at string) error {
 		if entry.Typeflag != tar.TypeReg || !isLibrary(path.Base(entry.Name), name) {
 			continue
 		}
-		return write(at, target)
+		return write(pos, target)
 	}
 }
 
-func unpackZip(archive, name, at string) error {
+func unpackZip(archive, name, pos string) error {
 	target, err := zip.OpenReader(archive)
 	if err != nil {
 		return err
@@ -67,15 +67,15 @@ func unpackZip(archive, name, at string) error {
 			return err
 		}
 		defer file.Close()
-		return write(at, file)
+		return write(pos, file)
 	}
 	return fmt.Errorf("%s holds no %s", archive, name)
 }
 
 // write puts one file down through a name beside it, so that an unpacking
 // interrupted leaves nothing that looks finished.
-func write(at string, from io.Reader) error {
-	part := at + ".part"
+func write(pos string, from io.Reader) error {
+	part := pos + ".part"
 	file, err := os.OpenFile(part, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
 	if err != nil {
 		return err
@@ -89,7 +89,7 @@ func write(at string, from io.Reader) error {
 		os.Remove(part)
 		return err
 	}
-	return os.Rename(part, at)
+	return os.Rename(part, pos)
 }
 
 // isLibrary says whether one name in an archive is the library.

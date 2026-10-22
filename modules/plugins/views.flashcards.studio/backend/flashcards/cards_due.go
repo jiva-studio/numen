@@ -12,92 +12,66 @@ import (
 	"github.com/jiva-studio/numen/modules/plugins/views.flashcards.studio/backend/review"
 )
 
-// CardsDue is what one vault's cards come to today: what it holds, what is owed,
-// and what has never been asked.
+// CardsDue contains vault card counts, due cards, and unreviewed card statistics for the current day.
 type CardsDue struct {
-	// Faces is every card the vault holds, counted once for each face it is
-	// shown through.
+	// Faces is the total count of card faces in the vault.
 	Faces int
-	// Due is the card faces answered before and owed in the day holding now.
-	// New is the ones nobody has answered. Both are held to what the budgets of
-	// the day leave, so they are what a session will ask.
+	// Due contains the number of review card faces scheduled for today.
+	// New contains the number of unreviewed card faces allocated by today's budget.
 	Due   int
 	New   int
 	Decks []DeckCardsDue
-	// Presets is what the day evaluates to under every preset the vault holds,
-	// whether a deck points at it or not.
+	// Presets contains daily review metrics for all presets in the vault.
 	Presets []PresetCardsDue
 }
 
-// DeckCardsDue is one deck's share of it, by the path of its file.
+// DeckCardsDue tracks card counts and review status for a single deck.
 type DeckCardsDue struct {
 	Deck  string
 	Faces int
 	Due   int
 	New   int
-	// Unbegun is how many of the deck's card faces nobody has answered at all.
-	// A deck every face of which is one of these has nothing that can come
-	// round until something begins them.
+	// Unbegun is the count of card faces in the deck that have never been reviewed.
 	Unbegun int
-	// Answered is how many of the deck's cards were answered in the day holding
-	// now, counted the way its preset counts.
+	// Answered is the count of cards reviewed in the deck during the active review day.
 	Answered int
-	// Learned is how many of the deck's card faces stand learned at this
-	// instant, under the rule the preset scheduling the deck counts by. Two
-	// decks on one preset are counted under the one rule, and a deck naming no
-	// preset under the defaults.
+	// Learned is the count of card faces meeting the retention criteria of the deck's preset.
 	Learned int
 }
 
-// PresetCardsDue is one preset's day, by the path of the note it stands in. A
-// preset standing in no note schedules the decks naming none.
+// PresetCardsDue contains daily budget and review metrics for a preset.
 type PresetCardsDue struct {
 	Preset string
-	// Decks is how many decks name it, whatever they hold, and Cards is how
-	// many card faces stand in those decks. A deck holding no cards points at
-	// its preset all the same.
+	// Decks is the count of decks referencing this preset. Cards is total card faces across those decks.
 	Decks int
 	Cards int
-	// Due and New are what the day leaves under it: the card faces owed and the
-	// ones nobody has answered, held to its budget. They are what a session over
-	// this preset asks, because a preset is the whole scope of its own budget.
+	// Due and New contain review and unreviewed card counts allowed by the preset budget.
 	Due int
 	New int
-	// Answered is how many of its cards were answered in the day holding now,
-	// and Took is how long those answers took. AnsweredNew and AnsweredReviews
-	// divide that count the way a budget does, so each is weighed against the
-	// budget of its own kind.
+	// Answered is the count of cards reviewed during today's session, with Took recording total review duration.
 	Answered        int
 	AnsweredNew     int
 	AnsweredReviews int
 	Took            time.Duration
-	// Budget is what the preset keeps for this day of the week. A budget its
-	// goal does not name stands here as the person left it and closes nothing,
-	// so Due and New are held to Limits and not to all three of these.
+	// Budget defines the limits configured for this day of the week.
 	Budget review.Budget
-	// Limits is which of the three closes the day, and what each is called when
-	// it does.
+	// Limits defines the active cutoff limits for the day.
 	Limits review.Limits
-	// Stops is why the preset schedules nothing on this day, and empty where it
-	// schedules something.
+	// Stops indicates why the preset schedules no reviews today, or empty if active.
 	Stops review.StopReason
 }
 
-// CountCardsDue is what a vault owes, which is what its front door shows.
+// CountCardsDue calculates daily card review metrics across decks and presets in a vault.
 type CountCardsDue struct {
 	cardFaces ListCardFaces
 	schedules Schedules
-	// presets says which preset each deck is scheduled by. A build holding no
-	// links schedules every deck by the defaults.
+	// presets resolves presets assigned to each deck.
 	presets Presets
 	day     review.Day
 	now     ports.Clock
 }
 
-// NewCountCardsDue is what a vault's front door is counted through: what stands
-// in the vault, where the answers have left each card face, which preset each
-// deck is scheduled by, where one day of review gives way to the next, and what
-// time it is.
+// NewCountCardsDue constructs a CountCardsDue calculator.
 func NewCountCardsDue(
 	faces ListCardFaces, schedules Schedules, presets Presets,
 	day review.Day, now ports.Clock,
@@ -130,16 +104,7 @@ func (u CountCardsDue) WithNow(now ports.Clock) CountCardsDue {
 	return u
 }
 
-// Execute counts one vault.
-//
-// The log is read once here and the schedules worked out from it, so the count
-// and the session it stands for are the one read. Nothing is written into
-// the vault: the person is shown every vault they hold, and none of them is
-// written for that. What a replay came to is kept, because this is the path
-// every launch waits on.
-//
-// A count nobody is waiting for is dropped at the next phase: reading the
-// decks, reading the log and replaying it each run to their end.
+// Execute calculates daily review counts and preset metrics for the vault.
 func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, error) {
 	in, err := u.readInputs(ctx, v)
 	if err != nil {
@@ -150,7 +115,7 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	out := CardsDue{Faces: len(in.faces)}
 	rows := make(deckRows)
 	rows.countFaces(in)
-	for deck, one := range in.day.spentUnder {
+	for deck, one := range in.day.spentByDeck {
 		rows.get(deck).Answered = one.Answered
 	}
 	due, newCount := rows.countDueAndNew(in.day, holds, &out)
@@ -172,9 +137,7 @@ type dueInputs struct {
 	now       time.Time
 }
 
-// readInputs reads the cards, the log and the presets of a vault, and works out
-// the schedules and the budgets from them. One run of reads of the presets answers
-// the schedulers, the budgets and how many decks name each preset.
+// readInputs loads card faces, review logs, and presets to compute schedules and budgets.
 func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInputs, error) {
 	if err := ctx.Err(); err != nil {
 		return dueInputs{}, err
@@ -203,7 +166,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 	now := u.now()
 	day, err := getBudgets(
 		ctx, v, reads, u.day, faces, schedules, log,
-		u.schedules.by, u.schedules.getScheduler, now,
+		u.schedules.scheduler, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return dueInputs{}, err
@@ -227,8 +190,7 @@ func (r deckRows) get(deck string) *DeckCardsDue {
 	return one
 }
 
-// countFaces counts the faces each deck holds, the ones not begun and the ones
-// that stand learned, off the schedules and the presets already in hand.
+// countFaces aggregates card counts, unbegun cards, and learned cards per deck.
 func (r deckRows) countFaces(in dueInputs) {
 	for _, one := range in.faces {
 		row := r.get(one.Deck)
@@ -236,31 +198,28 @@ func (r deckRows) countFaces(in dueInputs) {
 		if in.schedules[one.ID].IsNew() {
 			row.Unbegun++
 		}
-		if in.asks.under(one.ID).Preset.IsLearned(in.schedules[one.ID], in.now) {
+		if in.asks.policy(one.ID).Preset.IsLearned(in.schedules[one.ID], in.now) {
 			row.Learned++
 		}
 	}
 }
 
-// countDueAndNew counts what the session is opened over into the deck rows and
-// the totals, and returns what is due and what is new under each preset. The
-// presets are counted from the same pass the deck rows are, so the tile over a
-// preset and the session it opens are one number.
+// countDueAndNew aggregates due and new card counts per deck and per preset.
 func (r deckRows) countDueAndNew(
 	day *budgets, holds asking, out *CardsDue,
-) (due, fresh map[string]int) {
-	due, fresh = make(map[string]int), make(map[string]int)
+) (due, newCards map[string]int) {
+	due, newCards = make(map[string]int), make(map[string]int)
 	for _, one := range holds.owed {
 		out.Due++
 		r.get(one.Deck).Due++
-		due[day.under[one.ID]]++
+		due[day.cardFacePresets[one.ID]]++
 	}
-	for _, one := range holds.fresh {
+	for _, one := range holds.newCards {
 		out.New++
 		r.get(one.Deck).New++
-		fresh[day.under[one.ID]]++
+		newCards[day.cardFacePresets[one.ID]]++
 	}
-	return due, fresh
+	return due, newCards
 }
 
 // getSorted is the rows ordered by the name of the deck.
@@ -275,17 +234,12 @@ func (r deckRows) getSorted() []DeckCardsDue {
 	return out
 }
 
-// getPresets is every preset the vault holds: the ones its decks point at, and
-// then the ones nothing points at.
-//
-// How many decks name a preset is counted over every deck the vault holds, so a
-// deck of no cards points at its preset like any other. A preset no deck names
-// stands at nothing.
+// getPresets returns daily metrics for all presets in the vault.
 func (u CountCardsDue) getPresets(
 	ctx context.Context, v domain.Vault, reads *PresetReads, day *budgets,
-	due, fresh map[string]int,
+	due, newCards map[string]int,
 ) ([]PresetCardsDue, error) {
-	out := day.getCardsDue(due, fresh)
+	out := day.getCardsDue(due, newCards)
 	if u.cardFaces.notes == nil {
 		return out, nil
 	}
@@ -304,9 +258,9 @@ func (u CountCardsDue) getPresets(
 	}
 
 	pointed := make(map[string]bool, len(out))
-	for at := range out {
-		out[at].Decks = naming[out[at].Preset]
-		pointed[out[at].Preset] = true
+	for item := range out {
+		out[item].Decks = naming[out[item].Preset]
+		pointed[out[item].Preset] = true
 	}
 
 	paths, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, format.TypePreset)
@@ -317,8 +271,7 @@ func (u CountCardsDue) getPresets(
 		if pointed[path] {
 			continue
 		}
-		// A preset no deck names has no day worked out for it, and its own
-		// settings are what say whether it would schedule anything.
+		// Presets without referencing decks have no daily activity scheduled.
 		one, err := reads.read(ctx, v, path)
 		if err != nil {
 			return nil, err
@@ -333,19 +286,17 @@ func (u CountCardsDue) getPresets(
 	return out, nil
 }
 
-// getCardsDue is what the day evaluates to under each preset the vault's decks
-// name: the budget the day of the week leaves it, and what has been answered
-// under it since the day opened.
-func (b *budgets) getCardsDue(due, fresh map[string]int) []PresetCardsDue {
+// getCardsDue calculates preset metrics from daily allowances and card counts.
+func (b *budgets) getCardsDue(due, newCards map[string]int) []PresetCardsDue {
 	out := make([]PresetCardsDue, 0, len(b.allowances))
 	for path, one := range b.allowances {
 		out = append(out, PresetCardsDue{
 			Preset: path, Cards: b.cards[path],
-			Due: due[path], New: fresh[path],
-			Answered:        one.spent.Answered,
-			AnsweredNew:     one.spent.New,
-			AnsweredReviews: one.spent.Reviews,
-			Took:            one.spent.Took,
+			Due: due[path], New: newCards[path],
+			Answered:        one.spentStats.Answered,
+			AnsweredNew:     one.spentStats.New,
+			AnsweredReviews: one.spentStats.Reviews,
+			Took:            one.spentStats.Took,
 			Budget:          one.admits.Keeps, Limits: one.admits.Limits,
 			Stops: one.admits.Stops,
 		})

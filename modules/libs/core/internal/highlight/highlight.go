@@ -28,13 +28,13 @@ func GetBoxesOver(boxes []domain.HighlightBox, span domain.ByteSpan) []domain.Hi
 
 	// The first box that reaches into the run. A box before it ends before the
 	// run begins.
-	at := sort.Search(len(boxes), func(i int) bool {
+	pos := sort.Search(len(boxes), func(i int) bool {
 		return boxes[i].To > span.From
 	})
 
 	var out []domain.HighlightBox
-	for ; at < len(boxes) && boxes[at].From < span.To; at++ {
-		out = append(out, boxes[at])
+	for ; pos < len(boxes) && boxes[pos].From < span.To; pos++ {
+		out = append(out, boxes[pos])
 	}
 	return out
 }

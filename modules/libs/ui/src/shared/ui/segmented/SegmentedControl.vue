@@ -16,10 +16,10 @@ const props = withDefaults(
   defineProps<{
     /** The choices, in the order they are offered. */
     choices: readonly SegmentedChoice[]
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { disabled: false },
+  { isDisabled: false },
 )
 
 /** Which choice is in force, by the identifier the caller gave it. */
@@ -31,7 +31,7 @@ const onChoose = (value: unknown) => {
 
 /** Home and End go to the ends of the row, and the choice follows the keyboard. */
 const onKey = (event: KeyboardEvent) => {
-  if (props.disabled) return
+  if (props.isDisabled) return
   let choice = undefined
   if (event.key === 'Home') {
     choice = props.choices[0]
@@ -47,7 +47,7 @@ const onKey = (event: KeyboardEvent) => {
     data-slot="segmented"
     orientation="horizontal"
     :model-value="model"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :loop="true"
     :class="
       cn(

@@ -32,8 +32,8 @@ export interface EdgeCurve {
 export type EdgeHeading = 'along' | 'against'
 
 /**
- * An arrowhead as it is drawn: the point of the curve it sits on, and the turn
- * that aims it along the line there, in degrees clockwise from the x axis.
+ * Rendered arrowhead geometry: position on the curve and rotation angle
+ * in degrees clockwise from the positive x axis.
  */
 export interface PlacedArrow {
   readonly at: Position
@@ -105,7 +105,9 @@ function measureAlong(edge: EdgeCurve): number[] {
   let previous = edge.fromPoint
   for (let step = 1; step <= LENGTH_SAMPLES; step += 1) {
     const point = getPoint(edge, step / LENGTH_SAMPLES)
-    alongOffset.push(alongOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y))
+    alongOffset.push(
+      alongOffset[step - 1]! + Math.hypot(point.x - previous.x, point.y - previous.y),
+    )
     previous = point
   }
   return alongOffset
@@ -119,16 +121,16 @@ export const getLength = (edge: EdgeCurve): number => measureAlong(edge)[LENGTH_
  * are chords of even parameter, so the answer walks them and lands between the
  * two the fraction falls across.
  */
-function getParameter(along: readonly number[], fraction: number): number {
-  const total = along[LENGTH_SAMPLES]!
+function getParameter(offsets: readonly number[], fraction: number): number {
+  const total = offsets[LENGTH_SAMPLES]!
   if (total <= 0) return 0
   const wanted = Math.min(Math.max(fraction, 0), 1) * total
 
   let step = 1
-  while (step < LENGTH_SAMPLES && along[step]! < wanted) step += 1
+  while (step < LENGTH_SAMPLES && offsets[step]! < wanted) step += 1
 
-  const start = along[step - 1]!
-  const span = along[step]! - start
+  const start = offsets[step - 1]!
+  const span = offsets[step]! - start
   const within = span <= 0 ? 0 : (wanted - start) / span
   return (step - 1 + within) / LENGTH_SAMPLES
 }
@@ -170,8 +172,8 @@ const getTangent = (edge: EdgeCurve, t: number): Position => {
  * one that loops out of a column arrives at its midpoint running back the way
  * it came, and one that doubles back turns twice over a short run.
  */
-export const getHeading = (edge: EdgeCurve, at: number): EdgeHeading => {
-  const way = getTangent(edge, getParameter(measureAlong(edge), at))
+export const getHeading = (edge: EdgeCurve, pos: number): EdgeHeading => {
+  const way = getTangent(edge, getParameter(measureAlong(edge), pos))
   if (way.x !== 0) return way.x < 0 ? 'against' : 'along'
   return way.y < 0 ? 'against' : 'along'
 }
@@ -180,27 +182,21 @@ export const getHeading = (edge: EdgeCurve, at: number): EdgeHeading => {
 export const ARROW_LENGTH = 15
 
 /**
- * The arrowhead at one end of a curve. It sits on the end itself and is aimed
- * out of the line.
- *
- * A head is a body and not a point, and a curve turns over the length of one.
- * It is therefore aimed along the piece of curve it covers, so that the line
- * runs into its base; the tangent at the very end is what a curve shorter than
- * the head is read by.
+ * Computes rendered position and rotation angle for an arrowhead at the specified edge endpoint.
  */
 export const getArrow = (edge: EdgeCurve, end: EdgeArrow): PlacedArrow => {
   const t = end === 'to' ? 1 : 0
-  const at = getPoint(edge, t)
+  const point = getPoint(edge, t)
 
   const alongEdge = measureAlong(edge)
   const total = alongEdge[LENGTH_SAMPLES]!
   const covered = total > ARROW_LENGTH ? ARROW_LENGTH / total : 0
   const behindPoint = getPoint(edge, getParameter(alongEdge, end === 'to' ? 1 - covered : covered))
 
-  const spanned = { x: at.x - behindPoint.x, y: at.y - behindPoint.y }
+  const spanned = { x: point.x - behindPoint.x, y: point.y - behindPoint.y }
   const way = getTangent(edge, t)
   const tangent = end === 'to' ? way : { x: -way.x, y: -way.y }
   const out = covered > 0 && (spanned.x !== 0 || spanned.y !== 0) ? spanned : tangent
 
-  return { at, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
+  return { at: point, angle: (Math.atan2(out.y, out.x) * 180) / Math.PI }
 }

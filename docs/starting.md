@@ -2,18 +2,18 @@
 
 An application starts by putting several things together: settings, a list of vaults, an index, an agent, the interface itself. Any of them can be missing or broken on somebody's machine. What the application cannot do, it says — where the person is, and with what it knows.
 
-## Refusal is for what stops the work
+## Startup errors stop the work
 
 Two states stop it:
 
-- **settings that cannot be read** — a file that is not JSON, or one naming a size the setting it sits in does not take. A size named on the command line that the setting does not take stops the launch the same way;
+- **settings that cannot be read** — a file that is not JSON, or one naming a size the setting does not accept. A size named on the command line that the setting does not accept stops the launch the same way;
 - **an index that cannot be opened.**
 
 Everything else the application starts with is something it can do without and name: a vault it does not have, an agent nobody can reach, a model that did not answer, a runtime it could not prepare, a theme whose name matches nothing, a size written under the old field name and out of range. Each is carried on without and said — in the window where the person is, or on standard error where the window is not up yet.
 
-A settings file that is not there is not a refusal. It is written, holding exactly what this run is doing.
+A settings file that is not there is not an error. It is written, holding exactly what this run is doing.
 
-## A refusal is drawn in a window
+## An error is displayed in a window
 
 The application opens one and puts in it what stopped it, the facts it holds about the state it found, and what to do about it. It writes one line to standard error as well, for a terminal and for whatever collects a process that failed to start, and leaves with a failing status.
 
@@ -30,9 +30,9 @@ sqlite answers for a folder that is a path and a folder nobody may write in with
 
 Every state carries the version of this build and the revision it was built from, and the path of whichever file it is about.
 
-The refusal window is a second interface, small and separate from the one the application serves. It has to keep working when the first one cannot be built, so it carries its own markup and its own styling, and reaches nothing shared.
+The startup error window is a second interface, small and separate from the one the application serves. It has to keep working when the first one cannot be built, so it carries its own markup and its own styling, and reaches nothing shared.
 
-## A refusal names no remedy that costs the person something
+## An error names no remedy that costs the person something
 
 "Update numen" is a remedy. "Delete your index" is a bill, and it is not this application's to write. An index is never spent to recover from a state nobody diagnosed.
 

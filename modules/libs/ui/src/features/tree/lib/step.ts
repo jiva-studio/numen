@@ -15,11 +15,10 @@ export interface Step {
   /** Where the keyboard is afterwards. Null while nothing is drawn. */
   readonly at: RowId | null
   /** The row to open, or to close, before it lands. */
-  readonly turn: { readonly row: RowId; readonly open: boolean } | null
+  readonly turn: { readonly row: RowId; readonly isOpen: boolean } | null
 }
 
-/** What one key does, told the rows, where the keyboard stands in them, and the row it relies on. */
-type Move = (visibleRows: readonly ShownRow[], at: number, here: ShownRow) => Step
+type Move = (visibleRows: readonly ShownRow[], pos: number, here: ShownRow) => Step
 
 const MOVES: Record<TreeKey, Move> = {
   Home: stepToFirst,
@@ -36,11 +35,11 @@ const MOVES: Record<TreeKey, Move> = {
  * From no row at all every key lands on the first.
  */
 export function stepTo(visibleRows: readonly ShownRow[], from: RowId | null, key: TreeKey): Step {
-  const at = visibleRows.findIndex((row) => row.id === from)
-  const here = visibleRows[at]
+  const index = visibleRows.findIndex((row) => row.id === from)
+  const here = visibleRows[index]
   if (!here) return stepToFirst(visibleRows)
 
-  return MOVES[key](visibleRows, at, here)
+  return MOVES[key](visibleRows, index, here)
 }
 
 function stepToFirst(visibleRows: readonly ShownRow[]): Step {
@@ -51,23 +50,23 @@ function stepToLast(visibleRows: readonly ShownRow[]): Step {
   return { at: visibleRows[visibleRows.length - 1]!.id, turn: null }
 }
 
-function stepDown(visibleRows: readonly ShownRow[], at: number, here: ShownRow): Step {
-  return { at: visibleRows[at + 1]?.id ?? here.id, turn: null }
+function stepDown(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {
+  return { at: visibleRows[pos + 1]?.id ?? here.id, turn: null }
 }
 
-function stepUp(visibleRows: readonly ShownRow[], at: number, here: ShownRow): Step {
-  return { at: visibleRows[at - 1]?.id ?? here.id, turn: null }
+function stepUp(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {
+  return { at: visibleRows[pos - 1]?.id ?? here.id, turn: null }
 }
 
 /** A closed row opens, an open one is descended into, and a leaf stays. */
-function stepIn(visibleRows: readonly ShownRow[], at: number, here: ShownRow): Step {
-  if (here.hasChildren && !here.open) return { at: here.id, turn: { row: here.id, open: true } }
-  if (here.open && here.hasRows) return stepDown(visibleRows, at, here)
+function stepIn(visibleRows: readonly ShownRow[], pos: number, here: ShownRow): Step {
+  if (here.hasChildren && !here.isOpen) return { at: here.id, turn: { row: here.id, isOpen: true } }
+  if (here.isOpen && here.hasRows) return stepDown(visibleRows, pos, here)
   return { at: here.id, turn: null }
 }
 
 /** An open row closes, and a closed one climbs to its holder. */
-function stepOut(_visibleRows: readonly ShownRow[], _at: number, here: ShownRow): Step {
-  if (here.open) return { at: here.id, turn: { row: here.id, open: false } }
+function stepOut(_visibleRows: readonly ShownRow[], _pos: number, here: ShownRow): Step {
+  if (here.isOpen) return { at: here.id, turn: { row: here.id, isOpen: false } }
   return { at: here.parent ?? here.id, turn: null }
 }

@@ -95,7 +95,6 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	}
 }
 
-// Taking back an answer nobody named is the caller's mistake, and fails as
 // one.
 func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	api, target := newAPI(t, deck)

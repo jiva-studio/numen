@@ -5,7 +5,6 @@ import { getFolderPath, ROOT } from './useFileTree'
 import { WORDS as words } from '../words'
 import type { FileMaker, FilesTabDeps, FileTree } from '../types'
 
-/** The folder a row stands in or sits inside, or the root when none. */
 export const getFolderFor = (list: FileTree, path: string | null): string => {
   if (path === null) return ROOT
   const entry = list.getEntryAt(path)

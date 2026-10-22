@@ -20,11 +20,11 @@ export const CREATE_NOTE_ID = 'creating'
 export const createNoteInvocation = (
   relation: string,
   name: string,
-  at: CommandTarget,
+  target: CommandTarget,
 ): CommandInvocation =>
-  NOTE_PLACEMENTS.includes(relation) && at.path
-    ? createInvocation(relation, at, name)
-    : createInvocation('note', { ...at, path: '', title: '' }, name)
+  NOTE_PLACEMENTS.includes(relation) && target.path
+    ? createInvocation(relation, target, name)
+    : createInvocation('note', { ...target, path: '', title: '' }, name)
 
 /** The relations a note the search did not find can be made in. */
 const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
@@ -36,18 +36,18 @@ const NOTE_PLACEMENTS: readonly string[] = ['child', 'parent', 'jump']
 export interface AppendCreateOfferOptions {
   readonly text: string
   readonly words: Words
-  readonly at: CommandTarget
+  readonly target: CommandTarget
 }
 
 export const appendCreateOffer = (
   groups: readonly PaletteGroup[],
   options: AppendCreateOfferOptions,
 ): readonly PaletteGroup[] => {
-  const { text, words, at } = options
+  const { text, words, target } = options
   const name = text.trim()
   const empty = groups.length > 0 && groups.every((one) => one.items.length === 0 && !one.isWorking)
   if (!name || !empty) return groups
-  const relations = at.path
+  const relations = target.path
     ? [
         { id: 'child', text: words.asChild },
         { id: 'parent', text: words.asParent },
@@ -63,7 +63,7 @@ export const appendCreateOffer = (
         {
           id: CREATE_NOTE_ID,
           title: `${words.creates} “${name}”`,
-          ...(at.path ? { detail: at.title || at.path } : {}),
+          ...(target.path ? { detail: target.title || target.path } : {}),
           actions: [{ id: CREATE_NOTE_ID, text: words.creates }, ...relations],
         },
       ],

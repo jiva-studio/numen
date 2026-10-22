@@ -23,13 +23,12 @@ export const getPointCost = (goal: Goal, point: Point): number =>
  */
 export const clearBacklog = (backlog: readonly number[]): number | null => {
   if (!backlog.some((one) => one > 0)) return null
-  const at = backlog.indexOf(0)
-  return at < 0 ? -1 : at + 1
+  const index = backlog.indexOf(0)
+  return index < 0 ? -1 : index + 1
 }
 
 /**
  * A number held inside the bounds of the setting it is. A setting the
- * application has said no bound for is held to none.
  */
 export const clamp = (value: number, within: Bounds | undefined): number =>
   within === undefined ? value : Math.min(Math.max(value, within.least), within.most)
@@ -37,21 +36,21 @@ export const clamp = (value: number, within: Bounds | undefined): number =>
 /** The place of the grid nearest a value, and the last one for an empty grid. */
 export const findNearest = (grid: readonly number[], value: number): number => {
   if (grid.length === 0) return -1
-  let at = 0
+  let nearestIndex = 0
   for (let i = 1; i < grid.length; i += 1) {
-    if (Math.abs((grid[i] ?? 0) - value) < Math.abs((grid[at] ?? 0) - value)) at = i
+    if (Math.abs((grid[i] ?? 0) - value) < Math.abs((grid[nearestIndex] ?? 0) - value))
+      nearestIndex = i
   }
-  return at
+  return nearestIndex
 }
 
 /**
- * The value the knob stands at. A preset's own value need not sit on the grid,
  * and the place it opens at is the one nearest it, so while the knob has not
  * been moved off that place the preset's own value is what is said. A knob
  * walked anywhere else relies on a place, and the place is exact.
  */
 export const getKnobValue = (curve: Curve, place: number): number =>
-  curve.now.at >= 0 && place === curve.now.at ? curve.now.value : (curve.grid[place] ?? 0)
+  curve.now.index >= 0 && place === curve.now.index ? curve.now.value : (curve.grid[place] ?? 0)
 
 /** Why a preset's goal has nothing to work on, and empty where it has. */
 export type GoalIdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''

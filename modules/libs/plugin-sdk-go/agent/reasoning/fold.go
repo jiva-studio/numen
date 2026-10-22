@@ -64,16 +64,16 @@ func SplitTitle(title string) (string, string) {
 // the first of each is listed. A title standing alone with a level in it stays as it was listed.
 func Fold(models []Listed) []Family {
 	type group struct {
-		base   string
-		listed []Listed
-		levels []string
+		base     string
+		listings []Listed
+		levels   []string
 	}
 	var groups []*group
 	byBase := map[string]*group{}
 	for _, one := range models {
 		base, level := SplitTitle(one.Title)
 		if level == "" {
-			groups = append(groups, &group{base: one.Title, listed: []Listed{one}, levels: []string{""}})
+			groups = append(groups, &group{base: one.Title, listings: []Listed{one}, levels: []string{""}})
 			continue
 		}
 		found := byBase[base]
@@ -82,46 +82,46 @@ func Fold(models []Listed) []Family {
 			byBase[base] = found
 			groups = append(groups, found)
 		}
-		found.listed = append(found.listed, one)
+		found.listings = append(found.listings, one)
 		found.levels = append(found.levels, level)
 	}
 
 	families := make([]Family, 0, len(groups))
 	for _, one := range groups {
-		if len(one.listed) == 1 {
-			only := one.listed[0]
+		if len(one.listings) == 1 {
+			only := one.listings[0]
 			families = append(families, Family{
 				Name: only.Name, Title: only.Title, variants: map[string]string{"": only.Name},
 			})
 			continue
 		}
-		families = append(families, newFamily(one.base, one.listed, one.levels))
+		families = append(families, newFamily(one.base, one.listings, one.levels))
 	}
 	return families
 }
 
 // newFamily is the family of the models listed once per level.
-func newFamily(title string, listed []Listed, names []string) Family {
+func newFamily(title string, listings []Listed, names []string) Family {
 	levels := NewLevels(names...)
 	Sort(levels)
-	variants := make(map[string]string, len(listed))
-	for place, one := range listed {
+	variants := make(map[string]string, len(listings))
+	for place, one := range listings {
 		variants[names[place]] = one.Name
 	}
 	return Family{
-		Name: getFamilyName(listed, names), Title: title, Levels: levels,
+		Name: getFamilyName(listings, names), Title: title, Levels: levels,
 		Default: GetDefault(levels), variants: variants,
 	}
 }
 
 // getFamilyName is the name the listed models share once the level is taken from the end of each,
 // else the name of the first.
-func getFamilyName(listed []Listed, levels []string) string {
+func getFamilyName(listings []Listed, levels []string) string {
 	shared := ""
-	for place, one := range listed {
+	for place, one := range listings {
 		trimmed, found := strings.CutSuffix(one.Name, "-"+levels[place])
 		if !found || trimmed == "" || (place > 0 && trimmed != shared) {
-			return listed[0].Name
+			return listings[0].Name
 		}
 		shared = trimmed
 	}

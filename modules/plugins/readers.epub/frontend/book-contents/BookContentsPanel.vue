@@ -14,7 +14,7 @@ const props = defineProps<{
   /** The places in the book worth jumping to. */
   entries: readonly ContentsEntry[]
   /** Where in the book the page being read begins. */
-  at: number
+  offset: number
 }>()
 
 const emit = defineEmits<{ go: [offset: number]; dismiss: []; escape: [] }>()
@@ -62,7 +62,12 @@ function cleanupWindowListeners() {
 <template>
   <Transition name="book-tab__over">
     <aside v-if="props.isOpen" ref="panel" class="book-tab__contents">
-      <BookContents :entries="props.entries" :at="props.at" :words="words" @go="onSelectEntry" />
+      <BookContents
+        :entries="props.entries"
+        :offset="props.offset"
+        :words="words"
+        @go="onSelectEntry"
+      />
     </aside>
   </Transition>
 </template>

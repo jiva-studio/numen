@@ -25,8 +25,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Where the recording a test asks about sits in its vault, and the bytes that
-// stand in for the sound of it.
+// Test fixture constants for recording file path and mock audio content.
 const (
 	talk  = "talks/lecture.mp3"
 	sound = "the bytes of a recording, long enough to ask for a piece of"
@@ -97,19 +96,19 @@ const (
 
 // openRecordingWindow is a window holding one recording, with what a model wrote of it
 // in the store. Nothing written down is a recording nobody has listened to.
-func openRecordingWindow(t *testing.T, held stored) (*Services, http.Handler) {
+func openRecordingWindow(t *testing.T, store stored) (*Services, http.Handler) {
 	t.Helper()
-	return windowOn(t, held)
+	return windowOn(t, store)
 }
 
 // windowOn is the same window, with whatever store the test hands it.
-func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
+func windowOn(t *testing.T, store port.DerivedStore) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound, book: "the bytes of a scan"})
 	hl := source.NewHighlight(
 		filesystem.VaultReaders{},
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
-		storing{held},
+		storing{store},
 	)
 	api := newBareServices()
 	api.readFiles(filesystem.VaultReaders{})
@@ -117,7 +116,7 @@ func windowOn(t *testing.T, held port.DerivedStore) (*Services, http.Handler) {
 	api.readTexts(source.NewTexts(
 		filesystem.VaultReaders{}, nil,
 		indexed{talk: {Fingerprint: domain.Fingerprint{Path: talk}, Producer: asr, Hash: hashed}},
-		storing{held},
+		storing{store},
 	))
 	api.state.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
@@ -185,18 +184,17 @@ func TestAPlayerAsksForOnePieceOfARecording(t *testing.T) {
 	}
 }
 
-// The words come back against the milliseconds they were spoken in, so the
 // window draws them along the recording.
 func TestTheWordsHeardComeBackAgainstTheRecording(t *testing.T) {
 	for _, one := range []struct {
-		what string
-		held stored
+		what  string
+		store stored
 	}{
 		{"a run that finished", whole(newCues())},
 		{"a run still going", newPartialStore(newCues(), 9100)},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, _ := openRecordingWindow(t, one.held)
+			api, _ := openRecordingWindow(t, one.store)
 
 			transcript := readTranscript(t, api)
 			if len(transcript.GetCues()) != 2 {
@@ -228,17 +226,17 @@ func TestARecordingNobodyHasListenedToContainsNoWords(t *testing.T) {
 // written down.
 func TestWhatARecordingIsIsHowLongItRuns(t *testing.T) {
 	for _, one := range []struct {
-		what   string
-		held   stored
-		length int32
-		heard  int32
+		what     string
+		store    stored
+		length   int32
+		progress int32
 	}{
 		{"nothing heard", nil, 0, 0},
 		{"a run that finished", whole(newCues()), 9100, 0},
 		{"a run still going", newPartialStore(newCues()[:1], 4200), 4200, 4200},
 	} {
 		t.Run(one.what, func(t *testing.T) {
-			api, _ := openRecordingWindow(t, one.held)
+			api, _ := openRecordingWindow(t, one.store)
 
 			out, err := api.Recording.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{
 				Path: talk,
@@ -291,12 +289,12 @@ func TestABuildThatServesNoArtifactPlaysTheRecording(t *testing.T) {
 // A question about a run of the words is answered with the speech those bytes
 // were said in, so a search hit is played from where it was said.
 func TestCuesNarrowToARunOfTheWords(t *testing.T) {
-	spoke := []domain.TranscriptCue{
+	cuesList := []domain.TranscriptCue{
 		{Text: "first", From: 0, To: 1000},
 		{Text: "second", From: 1000, To: 2000},
 		{Text: "third", From: 2000, To: 3000},
 	}
-	_, cues := transcript.Parse(transcript.Marshal(spoke))
+	_, cues := transcript.Parse(transcript.Marshal(cuesList))
 
 	// "second" begins after "first\n".
 	got, err := selectSpan(&v1.Span{From: 6, To: 12})(cues)
@@ -426,8 +424,7 @@ func TestATranscriptExistsWhenItCannotBeSplitAgain(t *testing.T) {
 	}
 }
 
-// The window is told the transcript as it now stands, and taking away what it
-// was put right to gives back what was heard.
+// Test that updated transcript cues take precedence over original transcript.
 func TestATranscriptInsertRightIsWhatTheWindowIsReportedNext(t *testing.T) {
 	target := whole(newCues())
 	api, _ := openRecordingWindow(t, target)
@@ -448,7 +445,7 @@ func TestATranscriptInsertRightIsWhatTheWindowIsReportedNext(t *testing.T) {
 	}
 }
 
-// readTranscript is the transcript the window is told about.
+// readTranscript fetches the transcript via the editor RPC handler.
 func readTranscript(t *testing.T, api *Services) *v1.ReadTranscriptResponse {
 	t.Helper()
 	out, err := api.Transcript.ReadTranscript(t.Context(), connect.NewRequest(&v1.ReadTranscriptRequest{
@@ -531,16 +528,16 @@ func TestATranscriptIsNotEditedWhileTheRecordingIsBeingListenedTo(t *testing.T) 
 	}
 
 	if getArtifactStates(t, api, talk)[correctedOf] != v1.State_STATE_RUNNING {
-		t.Error("the window was told it may edit a transcript a run is writing")
+		t.Error("expected running state while transcription is active")
 	}
 }
 
-// A transcript nothing is writing may be put right, and the window is told so.
+// Test that transcript can be edited when transcription is not running.
 func TestTheWindowIsReportedATranscriptMayBeInsertRight(t *testing.T) {
 	api, _ := openRecordingWindow(t, whole(newCues()))
 
 	if getArtifactStates(t, api, talk)[correctedOf] == v1.State_STATE_RUNNING {
-		t.Error("the window was told it may not edit a transcript nothing is writing")
+		t.Error("expected non-running state when transcription is idle")
 	}
 }
 

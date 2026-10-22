@@ -12,7 +12,7 @@ type transducer struct {
 	frames    int
 	blank     int
 	encoded   int
-	encoder   func(at int, frame []float32) []float32
+	encoder   func(pos int, frame []float32) []float32
 	predictor func(token int) ([]float32, error)
 	joint     func(frame, predicted []float32) ([]float32, error)
 }
@@ -21,7 +21,6 @@ type transducer struct {
 // tokens they carry.
 //
 // The joiner names a token and how many frames it covers. A token that is not
-// the blank is said and moves the predictor on; the frame is left behind either
 // way, so that a stretch is always read to its end.
 func (d transducer) decode(ctx context.Context) ([]int, error) {
 	// The predictor opens on the blank: nothing has been said yet.
@@ -35,11 +34,11 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 	// How many words one frame has given. A frame may give several: the model
 	// answers with a duration of nothing to say it has more to say here.
 	tokensInFrame := 0
-	for at := 0; at < d.frames; {
+	for pos := 0; pos < d.frames; {
 		if err := ctx.Err(); err != nil {
 			return nil, err
 		}
-		selected, err := d.choose(d.encoder(at, frame), upto)
+		selected, err := d.choose(d.encoder(pos, frame), upto)
 		if err != nil {
 			return nil, err
 		}
@@ -54,7 +53,7 @@ func (d transducer) decode(ctx context.Context) ([]int, error) {
 		if step > 0 {
 			tokensInFrame = 0
 		}
-		at += step
+		pos += step
 	}
 	return tokens, nil
 }
@@ -94,11 +93,11 @@ const mostPerFrame = 10
 
 // findLargest is where the highest of a run of scores stands.
 func findLargest(scores []float32) int {
-	at := 0
+	pos := 0
 	for i, v := range scores {
-		if v > scores[at] {
-			at = i
+		if v > scores[pos] {
+			pos = i
 		}
 	}
-	return at
+	return pos
 }

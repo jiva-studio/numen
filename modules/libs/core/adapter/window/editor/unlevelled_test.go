@@ -15,7 +15,6 @@ import (
 )
 
 // Two processes write the index, so a write that reached the vault may find the
-// index held open by the other one. The write is answered, and the answer says
 // the index is behind: the file is on disk and search does not hold what it now
 // says.
 
@@ -78,8 +77,8 @@ func TestASaveTheIndexCameLevelWithReturnsNothingIsPrior(t *testing.T) {
 	if answer.Msg.GetIsUnlevelled() {
 		t.Error("a save the index came level with is answered as behind")
 	}
-	if at := findLevellingTask(t, f); at != nil {
-		t.Errorf("a save that went through stands in the list as %+v", at)
+	if pos := findLevellingTask(t, f); pos != nil {
+		t.Errorf("a save that went through is in the list as %+v", pos)
 	}
 }
 
@@ -100,17 +99,17 @@ func TestASaveTheIndexWouldNotComeLevelWithExistsInTheList(t *testing.T) {
 	}
 
 	save()
-	at := findLevellingTask(t, f)
-	if at == nil || at.GetError() == "" {
-		t.Fatalf("what a person is shown after a save search cannot see is %+v", at)
+	pos := findLevellingTask(t, f)
+	if pos == nil || pos.GetError() == "" {
+		t.Fatalf("what a person is shown after a save search cannot see is %+v", pos)
 	}
 
 	// The index is behind until something puts it right, and the save that does
 	// is what says so. A list nothing leaves is a list nobody reads.
 	*f.installation.Services.NoteWrite() = f.installation.Services.NoteWrite().WithIndex(func(context.Context, domain.Vault, []string) error { return nil })
 	save()
-	if at := findLevellingTask(t, f); at != nil {
-		t.Errorf("the index came level and a person is still shown %+v", at)
+	if offset := findLevellingTask(t, f); offset != nil {
+		t.Errorf("the index came level and a person is still shown %+v", offset)
 	}
 }
 
@@ -122,7 +121,7 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 
 	listening, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{
 		Window: wire.Editor,
 	}))
 	if err != nil {
@@ -132,9 +131,9 @@ func findLevellingTask(t *testing.T, f *going) *v1.Task {
 	if !tasks.Receive() {
 		t.Fatalf("the tasks stream never opened: %v", tasks.Err())
 	}
-	for _, at := range tasks.Msg().GetTasks() {
-		if at.GetId() == "levelling the index" {
-			return at
+	for _, item := range tasks.Msg().GetTasks() {
+		if item.GetId() == "levelling the index" {
+			return item
 		}
 	}
 	return nil

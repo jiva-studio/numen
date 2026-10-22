@@ -16,7 +16,7 @@ var errModelGone = errors.New("the model is gone")
 
 // failWith is a model that is not on this machine, and says why.
 func failWith(why error) embedding.OpenModel {
-	return func(context.Context, func(done, total int64)) (port.Embedder, error) { return nil, why }
+	return func(context.Context, func(finished, total int64)) (port.Embedder, error) { return nil, why }
 }
 
 // failing is a provider that is reached and fails every text it is asked.
@@ -110,7 +110,7 @@ func TestAProviderLetGoOfReturnsWhatStoppedTheComparison(t *testing.T) {
 // second is release at once.
 func TestASecondProviderIsNotWaitedForOnceTheFirstNeverArrives(t *testing.T) {
 	tasks := run.NewTasks()
-	waitFn := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(completed, total int64)) (port.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
@@ -163,20 +163,20 @@ func (b blocking) Embed(ctx context.Context, texts []string) ([][]float32, error
 // the first, whichever of the two does it.
 func TestProvidersAnsweringWithOtherThanOneVectorAreNotOneModel(t *testing.T) {
 	for _, c := range []struct {
-		name         string
-		said, backed int
+		name        string
+		msg, backed int
 	}{
-		{name: "the first answers none", said: 0, backed: 1},
-		{name: "the first answers two", said: 2, backed: 1},
-		{name: "the second answers none", said: 1, backed: 0},
-		{name: "the second answers two", said: 1, backed: 2},
+		{name: "the first answers none", msg: 0, backed: 1},
+		{name: "the first answers two", msg: 2, backed: 1},
+		{name: "the second answers none", msg: 1, backed: 0},
+		{name: "the second answers two", msg: 1, backed: 2},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			first, second := newSaying("first", 1, 0, 0), newSaying("second", 1, 0, 0)
 
 			tasks := run.NewTasks()
 			_, asking, letGo := embedding.Open(t.Context(), tasks,
-				embedding.NewReached(first.model, "first", counting{saying: first, vectors: c.said}),
+				embedding.NewReached(first.model, "first", counting{saying: first, vectors: c.msg}),
 				embedding.NewReached(second.model, "second", counting{saying: second, vectors: c.backed}))
 			defer func() { _ = letGo() }()
 
@@ -195,7 +195,7 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 	second := newSaying("second", 1, 0, 0)
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	waitFn := func(ctx context.Context, _ func(done, total int64)) (port.Embedder, error) {
+	waitFn := func(ctx context.Context, _ func(processed, total int64)) (port.Embedder, error) {
 		<-ctx.Done()
 		return nil, ctx.Err()
 	}
@@ -212,9 +212,9 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 	if second.closed.Load() != 0 {
 		t.Error("the second provider was let go of by a run that was stopped")
 	}
-	for _, at := range tasks.List() {
-		if at.About == "second" && at.Error != "" {
-			t.Errorf("the second provider is in the list as %q", at.Error)
+	for _, item := range tasks.List() {
+		if item.About == "second" && item.Error != "" {
+			t.Errorf("the second provider is in the list as %q", item.Error)
 		}
 	}
 }
@@ -222,7 +222,7 @@ func TestAComparisonEndedByTheRunStoppingLetsNobodyGo(t *testing.T) {
 // A run with no list to tell opens a model that arrives, and tells nobody.
 func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 	target := newSaying("a/model", 1, 0, 0)
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
 		tell(1, 10)
 		return target, nil
 	}
@@ -239,9 +239,9 @@ func TestAModelOpenedWithNoListToTellArrives(t *testing.T) {
 // The first byte of a model that is here is a share drawn, and a line that has
 // counted nothing draws none.
 func TestTheFirstByteOfTheModelIsGeneratedAsAShare(t *testing.T) {
-	progressCh := make(chan func(done, total int64), 1)
+	progressCh := make(chan func(finishedVal, total int64), 1)
 	stop := make(chan struct{})
-	opening := func(_ context.Context, tell func(done, total int64)) (port.Embedder, error) {
+	opening := func(_ context.Context, tell func(finishedVal, total int64)) (port.Embedder, error) {
 		progressCh <- tell
 		<-stop
 		return nil, errors.New("none of the model is on this machine")
@@ -253,14 +253,14 @@ func TestTheFirstByteOfTheModelIsGeneratedAsAShare(t *testing.T) {
 	defer func() { _ = letGo() }()
 	defer close(stop)
 
-	if at := getOnlyTask(t, tasks); at.Count != 0 || at.Unit != run.Things {
-		t.Errorf("a line that has counted nothing is drawn as %d %v", at.Count, at.Unit)
+	if pos := getOnlyTask(t, tasks); pos.Count != 0 || pos.Unit != run.Things {
+		t.Errorf("a line that has counted nothing is drawn as %d %v", pos.Count, pos.Unit)
 	}
 
 	(<-progressCh)(1, 10)
-	at := getOnlyTask(t, tasks)
-	if at.Count != 1 || at.Total != 10 || at.Unit != run.Bytes {
-		t.Errorf("the first byte is drawn as %d of %d %v", at.Count, at.Total, at.Unit)
+	offset := getOnlyTask(t, tasks)
+	if offset.Count != 1 || offset.Total != 10 || offset.Unit != run.Bytes {
+		t.Errorf("the first byte is drawn as %d of %d %v", offset.Count, offset.Total, offset.Unit)
 	}
 }
 

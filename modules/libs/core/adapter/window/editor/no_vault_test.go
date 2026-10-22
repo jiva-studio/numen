@@ -27,7 +27,7 @@ import (
 type nothing struct {
 	installation *editor.Installation
 	vault        questions
-	drawn        numenv1connect.WindowServiceClient
+	canvas       numenv1connect.WindowServiceClient
 	holds        numenv1connect.VaultsServiceClient
 	server       *httptest.Server
 	cfg          container.Config
@@ -68,7 +68,7 @@ func openEmptyWindow(t *testing.T) *nothing {
 	return &nothing{
 		installation: installation,
 		vault:        newQuestionsClient(server.Client(), server.URL),
-		drawn:        numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
+		canvas:       numenv1connect.NewWindowServiceClient(server.Client(), server.URL),
 		holds:        numenv1connect.NewVaultsServiceClient(server.Client(), server.URL),
 		server:       server,
 		cfg:          cfg,
@@ -141,7 +141,7 @@ func TestTheWindowActiveOnNothingAnswersWhatItAsksAsItOpens(t *testing.T) {
 		t.Errorf("the window opens on %q, and holds no vault to hold it", note.GetPath())
 	}
 
-	displayed, err := f.drawn.GetCurrentVault(t.Context(),
+	displayed, err := f.canvas.GetCurrentVault(t.Context(),
 		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatalf("the window cannot say which vault it is showing: %v", err)
@@ -186,7 +186,7 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 		t.Fatalf("the editing stream never opened: %v", editing.Err())
 	}
 
-	tasks, err := f.drawn.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
+	tasks, err := f.canvas.WatchTasks(listening, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -225,8 +225,8 @@ func TestTheWindowActiveOnNothingIsFollowedTheWayAnyWindowIs(t *testing.T) {
 	if !focus.Receive() {
 		t.Fatalf("the focus stream said nothing: %v", focus.Err())
 	}
-	if at := focus.Msg().GetPath(); at != "Somewhere.md" {
-		t.Errorf("the window was sent to %q", at)
+	if pos := focus.Msg().GetPath(); pos != "Somewhere.md" {
+		t.Errorf("the window was sent to %q", pos)
 	}
 }
 

@@ -106,8 +106,6 @@ const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStr
   flex: 0 0 var(--carousel-side);
 }
 
-/* Too narrow for two of them at once: either side takes the window, and the
-   middle is scrolled out of it rather than squeezed into what is left. */
 @media (max-width: 68rem) {
   .carousel {
     --carousel-side: 100%;

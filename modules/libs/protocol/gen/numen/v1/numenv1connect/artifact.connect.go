@@ -57,7 +57,6 @@ type ArtifactServiceClient interface {
 	//
 	// It is asked before anything is offered over a file: whether a book has been
 	// read is a question about the book, and the only other way to ask it is to
-	// ask for the book to be read again and be refused.
 	ListArtifacts(context.Context, *connect.Request[v1.ListArtifactsRequest]) (*connect.Response[v1.ListArtifactsResponse], error)
 	// CreateArtifact asks for one to be made, and answers at once with what
 	// became of the ask. The work carries on behind the answer, and how far it
@@ -67,7 +66,6 @@ type ArtifactServiceClient interface {
 	// stands. A file a person named is never turned away for want of a turn: it
 	// waits in line and is taken up before anything the vault set itself.
 	CreateArtifact(context.Context, *connect.Request[v1.CreateArtifactRequest]) (*connect.Response[v1.CreateArtifactResponse], error)
-	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
 }
@@ -133,7 +131,6 @@ type ArtifactServiceHandler interface {
 	//
 	// It is asked before anything is offered over a file: whether a book has been
 	// read is a question about the book, and the only other way to ask it is to
-	// ask for the book to be read again and be refused.
 	ListArtifacts(context.Context, *connect.Request[v1.ListArtifactsRequest]) (*connect.Response[v1.ListArtifactsResponse], error)
 	// CreateArtifact asks for one to be made, and answers at once with what
 	// became of the ask. The work carries on behind the answer, and how far it
@@ -143,7 +140,6 @@ type ArtifactServiceHandler interface {
 	// stands. A file a person named is never turned away for want of a turn: it
 	// waits in line and is taken up before anything the vault set itself.
 	CreateArtifact(context.Context, *connect.Request[v1.CreateArtifactRequest]) (*connect.Response[v1.CreateArtifactResponse], error)
-	// DeleteArtifact takes one away, with everything cut from it. The file stands
 	// as it did before anything was made from it, and it is offered again.
 	DeleteArtifact(context.Context, *connect.Request[v1.DeleteArtifactRequest]) (*connect.Response[v1.DeleteArtifactResponse], error)
 }

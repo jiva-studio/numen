@@ -29,13 +29,13 @@ func (c Config) Downloader(_ context.Context) port.Downloader {
 
 // ImportURL is one link note's address, downloaded into the vault, with the
 // note cut again as soon as what came back is written.
-func (c Config) ImportURL(ctx context.Context, db *Index, by port.Downloader) source.ImportURL {
+func (c Config) ImportURL(ctx context.Context, db *Index, downloader port.Downloader) source.ImportURL {
 	level := c.Level(db)
 	notes := c.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), level)
 	return source.ImportURL{
 		Readers:     c.VaultReaders(),
 		Derived:     c.GetDerivedStores(),
-		By:          by,
+		By:          downloader,
 		CopyMaxSize: c.Importing.CopyBytes(),
 		IsToVault:   c.Importing.HasCopiesInVault(),
 		Writers:     c.VaultWriters(),
@@ -59,40 +59,40 @@ func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderB
 	return plugin.OpenDownloaderBridge(ctx, h.host)
 }
 
-func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, at domain.URL) (port.DownloadModel, error) {
+func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, targetURL domain.URL) (port.DownloadModel, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.DownloadModel{}, err
 	}
 	defer bridge.Close()
-	return bridge.GetDownloadModel(ctx, at)
+	return bridge.GetDownloadModel(ctx, targetURL)
 }
 
-func (h hostDownloaderPort) GetMetadata(ctx context.Context, at domain.URL) (port.Metadata, error) {
+func (h hostDownloaderPort) GetMetadata(ctx context.Context, rawURL domain.URL) (port.Metadata, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Metadata{}, err
 	}
 	defer bridge.Close()
-	return bridge.GetMetadata(ctx, at)
+	return bridge.GetMetadata(ctx, rawURL)
 }
 
-func (h hostDownloaderPort) GetText(ctx context.Context, at domain.URL, want port.PreferredCaptions) (port.Text, error) {
+func (h hostDownloaderPort) GetText(ctx context.Context, pos domain.URL, want port.PreferredCaptions) (port.Text, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Text{}, err
 	}
 	defer bridge.Close()
-	return bridge.GetText(ctx, at, want)
+	return bridge.GetText(ctx, pos, want)
 }
 
-func (h hostDownloaderPort) Download(ctx context.Context, at domain.URL, into io.Writer) (port.Copy, error) {
+func (h hostDownloaderPort) Download(ctx context.Context, offset domain.URL, into io.Writer) (port.Copy, error) {
 	bridge, err := h.openBridge(ctx)
 	if err != nil {
 		return port.Copy{}, err
 	}
 	defer bridge.Close()
-	return bridge.Download(ctx, at, into)
+	return bridge.Download(ctx, offset, into)
 }
 
 // unavailableDownloader answers every ask with why no downloader plugin is there.

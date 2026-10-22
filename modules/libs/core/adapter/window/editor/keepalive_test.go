@@ -23,33 +23,33 @@ import (
 // that fails is the one report there is, so each stream makes one.
 func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	streams := map[string]func(context.Context, connect.HTTPClient, string) error{
-		"changes": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewVaultServiceClient(http, at).
+		"changes": func(ctx context.Context, http connect.HTTPClient, pos string) error {
+			_, err := numenv1connect.NewVaultServiceClient(http, pos).
 				WatchVaultChanges(ctx, connect.NewRequest(&v1.WatchVaultChangesRequest{}))
 			return err
 		},
-		"editing": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewNoteServiceClient(http, at).
+		"editing": func(ctx context.Context, http connect.HTTPClient, offset string) error {
+			_, err := numenv1connect.NewNoteServiceClient(http, offset).
 				WatchEdits(ctx, connect.NewRequest(&v1.WatchEditsRequest{}))
 			return err
 		},
-		"focus": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewWorkspaceServiceClient(http, at).
+		"focus": func(ctx context.Context, http connect.HTTPClient, index string) error {
+			_, err := numenv1connect.NewWorkspaceServiceClient(http, index).
 				WatchFocus(ctx, connect.NewRequest(&v1.WatchFocusRequest{}))
 			return err
 		},
-		"quitting": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewWindowServiceClient(http, at).
+		"quitting": func(ctx context.Context, http connect.HTTPClient, targetPath string) error {
+			_, err := numenv1connect.NewWindowServiceClient(http, targetPath).
 				WatchQuit(ctx, connect.NewRequest(&v1.WatchQuitRequest{Window: wire.Editor}))
 			return err
 		},
-		"tasks": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewWindowServiceClient(http, at).
+		"tasks": func(ctx context.Context, http connect.HTTPClient, targetOffset string) error {
+			_, err := numenv1connect.NewWindowServiceClient(http, targetOffset).
 				WatchTasks(ctx, connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Editor}))
 			return err
 		},
-		"ask": func(ctx context.Context, http connect.HTTPClient, at string) error {
-			_, err := numenv1connect.NewAgentServiceClient(http, at).
+		"ask": func(ctx context.Context, http connect.HTTPClient, loc string) error {
+			_, err := numenv1connect.NewAgentServiceClient(http, loc).
 				AskAgent(ctx, connect.NewRequest(&v1.AskAgentRequest{Prompt: "what is here"}))
 			return err
 		},

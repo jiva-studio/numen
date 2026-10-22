@@ -34,9 +34,9 @@ func writeFingerprint(ref domain.Fingerprint) *v1.Fingerprint {
 
 // readFingerprint is what a client says a file was when it read it. Nothing said is nothing
 // compared.
-func readFingerprint(at *v1.Fingerprint) domain.Fingerprint {
-	if at == nil {
+func readFingerprint(pos *v1.Fingerprint) domain.Fingerprint {
+	if pos == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), ModTime: instant(at.GetMtime())}
+	return domain.Fingerprint{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
 }

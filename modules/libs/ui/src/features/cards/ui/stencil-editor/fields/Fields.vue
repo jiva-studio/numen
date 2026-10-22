@@ -41,14 +41,15 @@ const emit = defineEmits<{
   (event: 'rename', field: string, name: string): void
   (event: 'remove', field: string): void
   /** A field let go somewhere in the order: before another, or at the end. */
-  (event: 'move', field: string, at: InsertionPoint): void
+  (event: 'move', field: string, target: InsertionPoint): void
 }>()
 
 /** What these objections are named by, which is this list's alone. */
 const uid = useId()
 
 /** What is wrong with a name, where what it is wrong about says so. */
-const objectionsId = (over: string): string => `${uid}-${encodeURIComponent(over)}-objections`
+const objectionsId = (targetId: string): string =>
+  `${uid}-${encodeURIComponent(targetId)}-objections`
 
 /**
  * A name typed over the one a field carries. A field is named by its own name,
@@ -66,7 +67,15 @@ const naming = useNameEntry<Objection>({
  * a field, at the end, or nowhere. The first field names every card, so nothing
  * lands above it and it goes nowhere itself.
  */
-const { dragged, at, lift, hover, release, drop, step } = useDrag<InsertionPoint | undefined>({
+const {
+  dragged,
+  at: dropTarget,
+  lift,
+  hover,
+  release,
+  drop,
+  step,
+} = useDrag<InsertionPoint | undefined>({
   order: () => props.fields,
   nowhere: undefined,
   isMoved: (held, lands) => canDropField(props.fields, held, lands),
@@ -103,7 +112,7 @@ const add = (): void => {
         :naming="naming"
         :objections-id="objectionsId(row.field)"
         :wrong="wrongWith(row.field)"
-        :is-drop-above="row.field === at"
+        :is-drop-above="row.field === dropTarget"
         :words="words"
         @drag-over="hover"
         @drop="drop"

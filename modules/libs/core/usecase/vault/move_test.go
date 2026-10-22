@@ -61,12 +61,12 @@ func (f filing) move() vaults.Move { return f.newMove(true) }
 // moveApart is the move an installation that has turned the two apart does.
 func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
-func (f filing) newMove(kept note.SyncTitleAndFilename) vaults.Move {
+func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
 		f.readers, filesystem.VaultWriters{},
 		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
 	)
-	notes.Sync = func() note.SyncTitleAndFilename { return kept }
+	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
 	notes.Drawing = func(_ context.Context, went domain.Move) {
 		*f.went = append(*f.went, went)
 	}

@@ -18,12 +18,12 @@ func curveLoad(cards int) map[string]string {
 	out := loadDeck(cards)
 	out["Small.md"] = "---\ntype: preset\n" + settings + "---\n"
 	out["Large.md"] = "---\ntype: preset\n" + settings + "---\n"
-	for at := range 20 {
+	for item := range 20 {
 		to := "Large"
-		if at == 0 {
+		if item == 0 {
 			to = "Small"
 		}
-		path := fmt.Sprintf("decks/Deck%02d.md", at)
+		path := fmt.Sprintf("decks/Deck%02d.md", item)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
 			"---\ntype: deck\n"+createPresetLink(to), 1)
 	}
@@ -36,8 +36,8 @@ func curveWhole(cards int) map[string]string {
 	out := loadDeck(cards)
 	out["Whole.md"] = "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 		"new_a_day: 8\nreviews_a_day: 45\nretention: 0.87\n---\n"
-	for at := range 20 {
-		path := fmt.Sprintf("decks/Deck%02d.md", at)
+	for item := range 20 {
+		path := fmt.Sprintf("decks/Deck%02d.md", item)
 		out[path] = strings.Replace(out[path], "---\ntype: deck\n",
 			"---\ntype: deck\n"+createPresetLink("Whole"), 1)
 	}
@@ -59,7 +59,7 @@ func BenchmarkCurveCards(b *testing.B) {
 			loadAnswers(b, s, time.Now(), cards, 180, max(1, cards*150/50000))
 
 			ctx := b.Context()
-			if _, err := s.kept.Execute(ctx, s.vault); err != nil {
+			if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
 				b.Fatal(err)
 			}
 			p := review.Preset{
@@ -93,7 +93,7 @@ func BenchmarkPresetCurve(b *testing.B) {
 	loadAnswers(b, s, time.Now(), cards, 180, 150)
 
 	ctx := b.Context()
-	if _, err := s.kept.Execute(ctx, s.vault); err != nil {
+	if _, err := s.schedules.Execute(ctx, s.vault); err != nil {
 		b.Fatal(err)
 	}
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}

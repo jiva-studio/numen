@@ -8,7 +8,6 @@ import (
 )
 
 // CardMark is a mark given to a card that carried none, and where that card
-// stands in the deck, counted from its first card. A caller that has just
 // written a card learns from this what to address it by.
 type CardMark struct {
 	Card int
@@ -22,7 +21,6 @@ type CardMark struct {
 //
 // A deck passes here once, on its way to the vault.
 //
-// Stencils is the stencil each card is cut by, keyed by what stands in the
 // card's brackets. A card whose stencil is not among them, or whose stencil
 // declares no field, is not reprojected: nothing can say which of its fields is
 // first, so its heading is left exactly currently. Neither is a card that

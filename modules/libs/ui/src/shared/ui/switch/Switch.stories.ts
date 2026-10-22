@@ -16,7 +16,7 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
 
 interface Knobs {
   isOn: boolean
-  disabled: boolean
+  isDisabled: boolean
   /** What the switch is called, shown beside it. */
   label: string
 }
@@ -27,10 +27,10 @@ const meta: Meta<Knobs> = {
   parameters: { layout: 'centered' },
   argTypes: {
     isOn: { control: 'boolean' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     label: { control: 'text' },
   },
-  args: { isOn: true, disabled: false, label: 'Show the grid' },
+  args: { isOn: true, isDisabled: false, label: 'Show the grid' },
   render: (args) => ({
     components: { Switch },
     setup: () => {
@@ -41,7 +41,7 @@ const meta: Meta<Knobs> = {
     // words beside it are pointed at instead, which is how a window does it.
     template: `
       <div style="display: flex; align-items: center; gap: 0.625rem; padding: 2rem; inline-size: 20rem">
-        <Switch v-model="isOn" :disabled="args.disabled" aria-labelledby="switch-label" />
+        <Switch v-model="isOn" :is-disabled="args.isDisabled" aria-labelledby="switch-label" />
         <span id="switch-label" style="min-inline-size: 0; overflow-wrap: anywhere">{{ args.label }}</span>
       </div>
     `,
@@ -64,7 +64,7 @@ export const ASwitch: Story = {}
 export const Off: Story = { args: { isOn: false } }
 
 /** A switch nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /** A name in another script. */
 export const OtherScripts: Story = { args: { label: 'Показывать сетку' } }
@@ -85,7 +85,6 @@ export const NoTextAtAll: Story = { args: { label: '' }, parameters: { reach: fa
 
 /**
  * The switch on the dark set of tokens. Which way it stands is told by the
- * colour of the track, so the two are held apart there as well.
  */
 export const Dark: Story = {
   globals: DARK,
@@ -173,7 +172,7 @@ export const TheSpaceBarTurnsIt: Story = {
 
 /** The keyboard goes nowhere near a switch nobody may turn. */
 export const DisabledTakesNoKeyboard: Story = {
-  args: { disabled: true },
+  args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const control = getSwitch(canvasElement)
     await userEvent.tab()

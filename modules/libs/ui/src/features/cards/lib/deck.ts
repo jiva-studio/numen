@@ -25,8 +25,8 @@ const END = 'the end of '
 export const createRunEnd = (run: string): InsertionPoint => `${END}${run}`
 
 /** Which run's end a drop target is, and nothing for a drop target that is not one. */
-export const getRunEnd = (at: InsertionPoint): string | null =>
-  typeof at === 'string' && at.startsWith(END) ? at.slice(END.length) : null
+export const getRunEnd = (target: InsertionPoint): string | null =>
+  typeof target === 'string' && target.startsWith(END) ? target.slice(END.length) : null
 
 /** One card as the deck draws it. */
 export interface DeckCard {
@@ -58,7 +58,6 @@ export interface CardWords {
   readonly remove: string
   readonly drag: string
   readonly cut: string
-  /** What a card is announced by, before the place it stands in the deck. */
   readonly cardStem: string
   /** What is said of a card holding no value at all. */
   readonly nothing: string
@@ -111,7 +110,6 @@ export interface DeckProblems {
   readonly at: Problems
   /**
    * What is wrong with one value of a card, under that card's identity and then
-   * the field the value stands in.
    */
   readonly under: ReadonlyMap<string, Problems>
 }

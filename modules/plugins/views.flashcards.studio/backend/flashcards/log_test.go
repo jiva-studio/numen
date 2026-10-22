@@ -177,12 +177,12 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	for _, at := range []time.Time{
+	for _, item := range []time.Time{
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, -1),
 		time.Now(),
 	} {
-		if _, err := s.run(t, at).Answer(t.Context(), on, review.Good, 0); err != nil {
+		if _, err := s.run(t, item).Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -205,8 +205,8 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 			t.Errorf("%v is not sorted by name", one)
 		}
 	}
-	for at := range first {
-		if first[at].Name != second[at].Name {
+	for entry := range first {
+		if first[entry].Name != second[entry].Name {
 			t.Errorf("the same runs came back in another order: %v then %v", first, second)
 		}
 	}
@@ -251,7 +251,7 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.kept, today, time.Now)
+	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.schedules, today, time.Now)
 	if _, err := counter.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
@@ -307,14 +307,14 @@ func (b *brimming) Open(v domain.Vault) (ports.DerivedStore, error) {
 
 type filling struct {
 	ports.DerivedStore
-	asked int
+	callCount int
 }
 
 var errNoRoom = errors.New("no room left on the disk")
 
 func (f *filling) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
-	f.asked++
-	if f.asked > 1 {
+	f.callCount++
+	if f.callCount > 1 {
 		return errNoRoom
 	}
 	return f.DerivedStore.AppendArtifact(ctx, name, content)
@@ -343,9 +343,9 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	if _, err := writing.Answer(t.Context(), on, review.Good, 0); !errors.Is(err, errNoRoom) {
 		t.Errorf("the answer after it came back with %v", err)
 	}
-	if full.store.asked != 2 {
+	if full.store.callCount != 2 {
 		t.Errorf("the run wrote to the file %d times, want it to stop at the one that did not land",
-			full.store.asked)
+			full.store.callCount)
 	}
 
 	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)

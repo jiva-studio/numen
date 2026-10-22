@@ -7,7 +7,7 @@
  * reaches the palette underneath.
  *
  * `data-actions` names each part: `panel`, `list`, `name`, `hint`, `silence`
- * and `hunt`. An action is an option.
+ * and `search`. An action is an option.
  */
 import { computed, nextTick, ref, useId, useTemplateRef, watch } from 'vue'
 import ActionRow from './ActionRow.vue'
@@ -17,7 +17,7 @@ import { isActionsChord } from '../../lib/keys'
 
 const props = defineProps<{
   /** What the lit item offers, in the order it offers them. */
-  offered: readonly PaletteAction[]
+  actions: readonly PaletteAction[]
   words: ActionWords
 }>()
 
@@ -29,20 +29,22 @@ const emit = defineEmits<{
 }>()
 
 const uid = useId()
-const actionName = (at: number): string => `${uid}-action-${at}`
+const actionName = (pos: number): string => `${uid}-action-${pos}`
 
-const hunt = useTemplateRef<HTMLInputElement>('hunt')
+const searchInput = useTemplateRef<HTMLInputElement>('searchInput')
 
 /** What is typed here, which narrows the actions and nothing else. */
-const hunted = ref('')
+const searchQuery = ref('')
 
 /** The action the panel is on, by its identity. */
 const activeActionId = ref('')
 
-const actions = computed(() => placeActions(props.offered, hunted.value))
+const actions = computed(() => placeActions(props.actions, searchQuery.value))
 
 /** Which row that action relies on, counted over the actions the words left. */
-const here = computed(() => actions.value.findIndex((one) => one.action.id === activeActionId.value))
+const here = computed(() =>
+  actions.value.findIndex((one) => one.action.id === activeActionId.value),
+)
 
 const goTo = (to: number) => {
   activeActionId.value = actions.value[to]?.action.id ?? ''
@@ -100,18 +102,18 @@ watch(
       activeActionId.value = ''
       return
     }
-    hunted.value = ''
+    searchQuery.value = ''
     goTo(findKeptAction(actions.value, ''))
     await nextTick()
-    hunt.value?.focus()
+    searchInput.value?.focus()
   },
   { immediate: true },
 )
 
 const onKey = (event: KeyboardEvent) => {
-  const step = (by: number, from = here.value) => {
+  const step = (delta: number, from = here.value) => {
     event.preventDefault()
-    goTo(getSteppedIndex(actions.value.length, from, by))
+    goTo(getSteppedIndex(actions.value.length, from, delta))
     void reveal()
   }
   if (isActionsChord(event) || event.key === 'Escape') {
@@ -169,10 +171,10 @@ const onKey = (event: KeyboardEvent) => {
     </p>
 
     <input
-      ref="hunt"
-      v-model="hunted"
-      class="actions__hunt w-full bg-transparent"
-      data-actions="hunt"
+      ref="searchInput"
+      v-model="searchQuery"
+      class="actions__search w-full bg-transparent"
+      data-actions="search"
       type="text"
       role="combobox"
       autocomplete="off"
@@ -187,8 +189,6 @@ const onKey = (event: KeyboardEvent) => {
 </template>
 
 <style scoped>
-/* It stands over the foot of the palette, at the corner the keys are read
-   from. */
 .actions {
   /* How wide the panel is and how much of the palette its list takes. */
   --panel-width: 17.5rem;
@@ -198,7 +198,6 @@ const onKey = (event: KeyboardEvent) => {
   inset-block-end: var(--numen-inset);
   inset-inline-end: var(--numen-inset);
   inline-size: var(--panel-width);
-  /* Never past the corners of the palette it stands over. */
   max-inline-size: calc(100% - 2 * var(--numen-inset));
   max-block-size: calc(100% - 2 * var(--numen-inset));
 }
@@ -214,7 +213,7 @@ const onKey = (event: KeyboardEvent) => {
   margin: 0;
 }
 
-.actions__hunt {
+.actions__search {
   block-size: var(--numen-field-min);
   padding-inline: var(--numen-field-text-inset);
   border: 0;
@@ -224,7 +223,7 @@ const onKey = (event: KeyboardEvent) => {
   outline: none;
 }
 
-.actions__hunt::placeholder {
+.actions__search::placeholder {
   color: var(--numen-edge-label);
 }
 </style>

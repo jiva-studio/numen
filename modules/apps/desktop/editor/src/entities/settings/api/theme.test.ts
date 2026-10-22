@@ -22,7 +22,7 @@ const request = {
 const { themes } = await import('./theme')
 
 /** What the application answers about a window drawn as designed. */
-const createAnswer = (over: Record<string, unknown> = {}) => ({
+const createAnswer = (overrides: Record<string, unknown> = {}) => ({
   themes: [],
   applied: 'preset/Numen.css',
   mode: Modes.SYSTEM,
@@ -30,7 +30,7 @@ const createAnswer = (over: Record<string, unknown> = {}) => ({
   textScale: 1,
   interfaceScaleBounds: { least: 0.8, most: 2 },
   textScaleBounds: { least: 0.8, most: 1.75 },
-  ...over,
+  ...overrides,
 })
 
 describe('every theme there is', () => {
@@ -54,12 +54,12 @@ describe('every theme there is', () => {
 
 describe('which half of a colour pair is read', () => {
   it('is returned in the window’s own words', async () => {
-    for (const [said, word] of [
+    for (const [mode, word] of [
       [Modes.LIGHT, 'light'],
       [Modes.DARK, 'dark'],
       [Modes.SYSTEM, 'system'],
     ] as const) {
-      request.listThemes.mockResolvedValue(createAnswer({ mode: said }))
+      request.listThemes.mockResolvedValue(createAnswer({ mode }))
       expect((await themes.getAppearance()).mode).toBe(word)
     }
   })
@@ -142,7 +142,8 @@ describe('the rest of what is requested', () => {
     })
 
     const receivedThemes: (readonly string[])[] = []
-    for await (const names of themes.watchThemes(new AbortController().signal)) receivedThemes.push(names)
+    for await (const names of themes.watchThemes(new AbortController().signal))
+      receivedThemes.push(names)
 
     expect(receivedThemes).toEqual([['own/Dusk.css'], ['own/Dusk.css', 'own/Dawn.css']])
   })

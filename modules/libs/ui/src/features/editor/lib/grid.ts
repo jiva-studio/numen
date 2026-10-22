@@ -121,22 +121,22 @@ const place = (element: HTMLElement, cell: Cell | null, isWritable: boolean) => 
 export const isWritable = (state: EditorState) =>
   !state.readOnly && state.facet(EditorView.editable)
 
-const shiftCells = (row: Row, by: number): Row =>
-  row.map((cell) => (cell ? { ...cell, from: cell.from + by, to: cell.to + by } : null))
+const shiftCells = (row: Row, delta: number): Row =>
+  row.map((cell) => (cell ? { ...cell, from: cell.from + delta, to: cell.to + delta } : null))
 
 /** The same widget, standing where the changes have carried the table. Other widgets come back as they are. */
 export const moveBlock = (widget: WidgetType, changes: ChangeDesc): WidgetType => {
   if (!(widget instanceof Grid)) return widget
   const table = widget.table
-  const by = changes.mapPos(table.from, 1) - table.from
-  if (by === 0) return widget
+  const delta = changes.mapPos(table.from, 1) - table.from
+  if (delta === 0) return widget
   return new Grid(
     {
       ...table,
-      from: table.from + by,
-      to: table.to + by,
-      head: shiftCells(table.head, by),
-      body: table.body.map((row) => shiftCells(row, by)),
+      from: table.from + delta,
+      to: table.to + delta,
+      head: shiftCells(table.head, delta),
+      body: table.body.map((row) => shiftCells(row, delta)),
     },
     widget.isWritable,
   )

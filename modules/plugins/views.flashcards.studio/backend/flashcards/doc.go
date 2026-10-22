@@ -1,5 +1,4 @@
 // Package flashcards holds the scenarios of running a vault's cards: what
-// stands in it, what it owes today, what to show next, and what an answer is
 // written to.
 //
 // What an answer means and where a history leaves a card is the core's own

@@ -52,7 +52,6 @@ type Edit struct {
 
 	Fingerprint domain.Fingerprint
 	// ShouldOverwrite is a caller writing what is in front of the person: the note
-	// on disk is replaced without being held to a fingerprint, a note that is
 	// not there is made, and no identifier is stamped.
 	ShouldOverwrite bool
 	// Bound is the most the file may be. Zero holds it to nothing.

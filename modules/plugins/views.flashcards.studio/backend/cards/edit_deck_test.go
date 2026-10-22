@@ -59,7 +59,7 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 		t.Fatalf("the deck read as %+v", whole)
 	}
 	if whole.Fingerprint != e.version(t).Fingerprint {
-		t.Error("the fingerprint is not the one the deck stands at")
+		t.Error("fingerprint mismatch for deck")
 	}
 
 	run, err := e.page.Execute(t.Context(), e.vs.first, cards.Query{Path: mammals, From: 1, Limit: 1})
@@ -118,7 +118,7 @@ func TestAddingACardWritesItAtTheEndAndNamesItsMark(t *testing.T) {
 		t.Errorf("the card is not in the deck under its mark:\n%s", body)
 	}
 	if added.Fingerprint.Size != int64(len(body)) {
-		t.Errorf("the fingerprint handed back stands at %d bytes, and the deck is %d", added.Fingerprint.Size, len(body))
+		t.Errorf("returned fingerprint has size %d, want %d", added.Fingerprint.Size, len(body))
 	}
 }
 

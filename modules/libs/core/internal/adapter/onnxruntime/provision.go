@@ -28,7 +28,7 @@ type Config struct {
 	// Check returns an error when this machine cannot open the library at a
 	// path. Nil opens it with the platform loader and asks it for the API the
 	// plugins call.
-	Check func(at string) error
+	Check func(targetPath string) error
 }
 
 // Provisioner finds or fetches the library once per plugin folder and hands the
@@ -51,13 +51,11 @@ func New(cfg Config) *Provisioner {
 }
 
 // Provision returns the path of the library and the name of the execution
-// provider for the plugin that stands in pluginDir.
 //
 // The library is, in order: the one a person names in the environment, used as
 // given; the first one this machine holds that opens (beside the plugin or the
 // host, in the folders shared libraries live in, in the package store, in the
 // folders the platform loader searches); and last the pinned release, fetched
-// into the models home. A GPU provider is refused for the pinned release, which
 // is the CPU build. A caller that arrives while another is provisioning waits
 // for it, against its own context. A failure is returned to the caller that met
 // it and the next call tries again.
@@ -123,12 +121,12 @@ func (p *Provisioner) locate(ctx context.Context, pluginDir string) (location, e
 		check = checkLibrary
 	}
 	var found location
-	for _, at := range getCandidates(pluginDir, home, release.LibrarySum, p.cfg.Machine) {
-		if err := check(at); err != nil {
-			found.skipped = append(found.skipped, fmt.Sprintf("%s: %v", at, err))
+	for _, item := range getCandidates(pluginDir, home, release.LibrarySum, p.cfg.Machine) {
+		if err := check(item); err != nil {
+			found.skipped = append(found.skipped, fmt.Sprintf("%s: %v", item, err))
 			continue
 		}
-		found.library = at
+		found.library = item
 		return found, nil
 	}
 	library, err := p.acquire(ctx, release, home)

@@ -61,7 +61,7 @@ func verifyFile(name, sum string) error {
 
 // download writes the archive at the address to at. The bytes go through a file
 // beside at and are put in place only when they hold the pinned sum.
-func download(ctx context.Context, client *http.Client, r Release, at string) error {
+func download(ctx context.Context, client *http.Client, r Release, pos string) error {
 	ctx, cancel := context.WithTimeout(ctx, downloadTimeout)
 	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Address, nil)
@@ -77,7 +77,7 @@ func download(ctx context.Context, client *http.Client, r Release, at string) er
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
 
-	file, err := os.CreateTemp(filepath.Dir(at), filepath.Base(at)+".part-*")
+	file, err := os.CreateTemp(filepath.Dir(pos), filepath.Base(pos)+".part-*")
 	if err != nil {
 		return err
 	}
@@ -97,7 +97,7 @@ func download(ctx context.Context, client *http.Client, r Release, at string) er
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
-	if err := os.Rename(part, at); err != nil {
+	if err := os.Rename(part, pos); err != nil {
 		os.Remove(part)
 		return err
 	}

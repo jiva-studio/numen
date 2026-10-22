@@ -18,8 +18,8 @@ import (
 // back a handful of channels.
 var locks = struct {
 	sync.Mutex
-	held map[string]chan struct{}
-}{held: map[string]chan struct{}{}}
+	activeItem map[string]chan struct{}
+}{activeItem: map[string]chan struct{}{}}
 
 // Lock takes this vault's write lock, waiting for whoever holds it.
 //
@@ -42,10 +42,10 @@ func lockFor(root string) chan struct{} {
 	key := getLockKey(root)
 	locks.Lock()
 	defer locks.Unlock()
-	lock, found := locks.held[key]
+	lock, found := locks.activeItem[key]
 	if !found {
 		lock = make(chan struct{}, 1)
-		locks.held[key] = lock
+		locks.activeItem[key] = lock
 	}
 	return lock
 }

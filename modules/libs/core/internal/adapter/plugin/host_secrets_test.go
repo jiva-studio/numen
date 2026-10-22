@@ -32,14 +32,14 @@ const (
 // keys is a key store held in memory.
 type keys struct {
 	mu      sync.Mutex
-	held    map[string]string
+	item    map[string]string
 	failed  error
 	entered chan struct{}
 	gate    chan struct{}
 }
 
-func newKeys(held map[string]string) *keys {
-	return &keys{held: held}
+func newKeys(target map[string]string) *keys {
+	return &keys{item: target}
 }
 
 func (k *keys) GetKey(_ context.Context, name string) (string, error) {
@@ -48,7 +48,7 @@ func (k *keys) GetKey(_ context.Context, name string) (string, error) {
 	if k.failed != nil {
 		return "", k.failed
 	}
-	key, found := k.held[name]
+	key, found := k.item[name]
 	if !found {
 		return "", port.ErrNoKey
 	}
@@ -65,24 +65,24 @@ func (k *keys) SetKey(_ context.Context, name, key string) error {
 	if k.failed != nil {
 		return k.failed
 	}
-	k.held[name] = key
+	k.item[name] = key
 	return nil
 }
 
 func (k *keys) DeleteKey(_ context.Context, name string) error {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	if _, found := k.held[name]; !found {
+	if _, found := k.item[name]; !found {
 		return port.ErrNoKey
 	}
-	delete(k.held, name)
+	delete(k.item, name)
 	return nil
 }
 
 func (k *keys) hold(name string) (string, bool) {
 	k.mu.Lock()
 	defer k.mu.Unlock()
-	key, found := k.held[name]
+	key, found := k.item[name]
 	return key, found
 }
 
@@ -203,7 +203,6 @@ func TestASecretWithoutAKeyIsHandedOverEmpty(t *testing.T) {
 }
 
 // A key typed into the settings file under a secret's name is not a key: it
-// reaches the plugin by none of the ways the host speaks to it.
 func TestAKeyTypedIntoTheSettingsIsNotPassedOn(t *testing.T) {
 	host, probe := newSecretHost(t, newKeys(map[string]string{}))
 	host.SetSettings(map[string]map[string]any{secretPluginID: {declared: fromSettings, "model": "opus"}})
@@ -342,8 +341,8 @@ func TestOnlyADeclaredSecretIsStored(t *testing.T) {
 	if err := host.SetPluginSecret(t.Context(), "md.numen.absent", "apiKey", "value"); !errors.Is(err, errPluginNotFound) {
 		t.Errorf("an unknown plugin: error = %v", err)
 	}
-	if len(store.held) != 0 {
-		t.Errorf("the store holds %v", store.held)
+	if len(store.item) != 0 {
+		t.Errorf("the store holds %v", store.item)
 	}
 }
 

@@ -62,7 +62,7 @@ export function useConversation(options: ConversationOptions): Conversation {
 
   const ask = async (question: string, focus: string, askOptions?: AskOptions) => {
     if (!question || isWorking.value) return
-    turns.value.push({ id: nextId(), voice: 'asked', text: question })
+    turns.value.push({ id: nextId(), voice: 'prompt', text: question })
 
     const work = createWorkLine(
       { put, drop, locations, waitWords: words.thinking },
@@ -98,7 +98,7 @@ export function useConversation(options: ConversationOptions): Conversation {
       work.clear()
       answer.settle()
       if (!flight.signal.aborted) {
-        put({ id: nextId(), voice: 'answered', text: words.unreachable, state: 'failed' })
+        put({ id: nextId(), voice: 'response', text: words.unreachable, state: 'failed' })
       }
     } finally {
       endFlight(flight)
@@ -144,14 +144,14 @@ function settleTurn(options: SettleTurnOptions, put: (turn: Turn) => void, nextI
       return
     }
     answer.settle()
-    put({ id: nextId(), voice: 'answered', text: error, state: 'failed' })
+    put({ id: nextId(), voice: 'response', text: error, state: 'failed' })
     return
   }
 
   const hasContent = answer.hasContent()
   answer.settle()
   if (!hasContent) {
-    put({ id: nextId(), voice: 'answered', text: words.nothing })
+    put({ id: nextId(), voice: 'response', text: words.nothing })
   }
 }
 
@@ -161,9 +161,9 @@ function useConversationTurns() {
   let next = 0
 
   const saveTurn = (turn: Turn) => {
-    const at = turns.value.findIndex((other) => other.id === turn.id)
-    if (at < 0) turns.value.push(turn)
-    else turns.value[at] = turn
+    const index = turns.value.findIndex((other) => other.id === turn.id)
+    if (index < 0) turns.value.push(turn)
+    else turns.value[index] = turn
   }
 
   const drop = (id: string) => {

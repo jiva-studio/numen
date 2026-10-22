@@ -24,9 +24,8 @@ type TextExtractor interface {
 	// and pages are the ones wanted, by index.
 	GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error)
 
-	// ReadBook is the whole of what a book that reflows says, the parts it names
-	// and the pages of the printed edition it was set from. Bytes that are no book
-	// are refused with ErrNotADocument, and a locked book with ErrEncrypted.
+	// ReadBook extracts text, sections, and print page mapping from a book.
+	// Invalid file contents return ErrNotADocument, and encrypted files return ErrEncrypted.
 	ReadBook(ctx context.Context, raw []byte) (domain.BookText, error)
 }
 
@@ -43,11 +42,11 @@ type PageRenderer interface {
 	OpenDocument(ctx context.Context, file io.ReadSeekCloser) (OpenDocument, error)
 }
 
-// OpenDocument is a document held open, drawn a page at a time. Closing it gives back
-// the worker it holds.
+// OpenDocument represents an open document, drawn a page at a time. Closing it releases
+// the underlying worker.
 type OpenDocument interface {
 	GetPageCount() int
-	GetPageSize(index int) (wide, high float64, err error)
+	GetPageSize(index int) (width, height float64, err error)
 	RenderPage(index, dpi int) (image.Image, error)
 	Close()
 }
@@ -55,8 +54,7 @@ type OpenDocument interface {
 // DocumentRenderer is an alias for PageRenderer.
 type DocumentRenderer = PageRenderer
 
-// A document or book that cannot be read is refused with one of these, and a
-// caller says which it met.
+// Errors returned when reading documents or books fails.
 var (
 	// ErrNotADocument is bytes that are not the format at all.
 	ErrNotADocument = errors.New("not a document this reads")

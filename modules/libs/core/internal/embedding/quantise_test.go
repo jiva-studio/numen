@@ -191,7 +191,7 @@ func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
 	}
 	got := embedding.SimilarityBytes(v, raw)
 	if got < 0.999 {
-		t.Errorf("a vector against its own quantisation stands at %v", got)
+		t.Errorf("a vector against its own quantisation is at %v", got)
 	}
 }
 

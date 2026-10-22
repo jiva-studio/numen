@@ -34,11 +34,6 @@ export type PingResponse = Message<"numen.v1.PingResponse"> & {
    */
   status: string;
 
-  /**
-   * The plugin protocol version the plugin speaks. Zero means the plugin did not report one.
-   *
-   * @generated from field: int32 protocol = 2;
-   */
   protocol: number;
 };
 
@@ -369,18 +364,8 @@ export const DeliverEventRequestSchema: GenMessage<DeliverEventRequest> = /*@__P
  * @generated from message numen.v1.DeliverEventResponse
  */
 export type DeliverEventResponse = Message<"numen.v1.DeliverEventResponse"> & {
-  /**
-   * Set when the plugin took the event and refused it.
-   *
-   * @generated from field: numen.v1.PluginEventErrorCode error = 1;
-   */
   error: PluginEventErrorCode;
 
-  /**
-   * The plugin's words for the refusal. Empty when error is unset.
-   *
-   * @generated from field: string reason = 2;
-   */
   reason: string;
 };
 
@@ -412,12 +397,6 @@ export enum CompletionConsent {
    */
   UNANSWERED = 1,
 
-  /**
-   * The plugin has asked since the host started, was refused for it, and the
-   * person has not answered.
-   *
-   * @generated from enum value: COMPLETION_CONSENT_ASKED = 2;
-   */
   ASKED = 2,
 
   /**
@@ -427,11 +406,6 @@ export enum CompletionConsent {
    */
   ALLOWED = 3,
 
-  /**
-   * The person refused it.
-   *
-   * @generated from enum value: COMPLETION_CONSENT_REFUSED = 4;
-   */
   REFUSED = 4,
 }
 
@@ -441,12 +415,6 @@ export enum CompletionConsent {
 export const CompletionConsentSchema: GenEnum<CompletionConsent> = /*@__PURE__*/
   enumDesc(file_numen_v1_plugin, 0);
 
-/**
- * PluginEventErrorCode is why a plugin that took an event refused it. The zero
- * value means it did not.
- *
- * @generated from enum numen.v1.PluginEventErrorCode
- */
 export enum PluginEventErrorCode {
   /**
    * @generated from enum value: PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;

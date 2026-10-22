@@ -29,12 +29,11 @@ const props = withDefaults(
   defineProps<{
     /**
      * The groups, in the order they are offered. A group holding nothing is
-     * drawn at the foot, whatever order it was offered in, and only while it
      * is working or has something to say in place of items.
      */
     groups?: readonly PaletteGroup[]
     /** Whether it is drawn at all. */
-    open?: boolean
+    isOpen?: boolean
     /** The words standing in for what has not been typed. */
     placeholder?: string
     /**
@@ -66,7 +65,7 @@ const props = withDefaults(
   }>(),
   {
     groups: () => [],
-    open: false,
+    isOpen: false,
     placeholder: 'Search',
     crumb: '',
     step: '',
@@ -122,16 +121,16 @@ const results = useTemplateRef<InstanceType<typeof PaletteResults>>('results')
 const places = usePalettePlaces({
   groups: () => props.groups,
   typed: searchQuery,
-  tellLit: (item) => emit('light', item),
+  onItemActive: (item) => emit('light', item),
   tellChoice: (item, action) => emit('choose', item, action),
 })
-const { placed, said, here, lit, offered, held, chooseAt } = places
+const { placed, announcement, here, activeItem, actions, selectedId, chooseAt } = places
 
 /** The actions a key reaches, which is what the foot of the palette says. */
-const hinted = computed(() => getShortcuts(lit.value))
+const hinted = computed(() => getShortcuts(activeItem.value))
 
 /** What is lit is brought into sight. */
-const reveal = (): void => void results.value?.reveal(held.value)
+const reveal = (): void => void results.value?.reveal(selectedId.value)
 
 const {
   open: isPanelOpen,
@@ -139,8 +138,8 @@ const {
   onPress,
   onGround,
 } = useActionPanel({
-  getActions: () => offered.value,
-  getLit: () => lit.value?.id,
+  getActions: () => actions.value,
+  getLit: () => activeItem.value?.id,
   choose: (item, action) => emit('choose', item, action),
   dismiss: () => emit('dismiss'),
 })
@@ -150,9 +149,9 @@ const { onKey } = usePaletteKeys({
   reveal,
   places,
   isPanelOpen,
-  getOfferedActions: () => offered.value,
+  getActions: () => actions.value,
   typed: searchQuery,
-  isOpen: () => props.open,
+  isOpen: () => props.isOpen,
   getStep: () => props.step,
   getOpensOn: () => props.opensOn,
   getOpenedFrom: () => props.from,
@@ -162,14 +161,14 @@ const { onKey } = usePaletteKeys({
 
 // The action panel is about the item that was lit when it opened, and stays
 // about it while a pointer crosses the list.
-const onOver = (at: number, event: PointerEvent) => {
-  if (!isPanelOpen.value) places.lightAt(at, event)
+const onOver = (pos: number, event: PointerEvent) => {
+  if (!isPanelOpen.value) places.lightAt(pos, event)
 }
 </script>
 
 <template>
   <PaletteFrame
-    v-if="open"
+    v-if="isOpen"
     :name="name"
     :to="to"
     @keydown="onKey"
@@ -190,7 +189,7 @@ const onOver = (at: number, event: PointerEvent) => {
     <!-- What a search came back with, where it came back with nothing. It
          stands here for as long as the palette does, so what lands in it is
          read out. -->
-    <span class="sr-only" aria-live="polite" data-palette="said">{{ said }}</span>
+    <span class="sr-only" aria-live="polite" data-palette="said">{{ announcement }}</span>
 
     <PaletteResults
       v-if="placed.length"
@@ -220,7 +219,7 @@ const onOver = (at: number, event: PointerEvent) => {
     <PaletteActions
       v-if="isPanelOpen"
       v-model:open="isPanelOpen"
-      :offered="offered"
+      :actions="actions"
       :words="actionWords"
       @choose="chooseAction"
     />
@@ -228,7 +227,7 @@ const onOver = (at: number, event: PointerEvent) => {
     <!-- What the item now lit can be asked. An item offering one action says
          one key, and the last word opens the rest. -->
     <PaletteKeyHints
-      v-if="offered.length"
+      v-if="actions.length"
       :hinted="hinted"
       :action-key="actionKey"
       :name="actionWords.name"

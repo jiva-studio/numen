@@ -33,7 +33,6 @@ func (bookServer) ReadBookEntry(
 	return nil, connect.NewError(connect.CodeNotFound, errors.New("no such entry"))
 }
 
-// A book asked of an installation with no plugin that reads books is refused as
 // unavailable, whatever the ask is.
 func TestBooksAreUnavailableWhereNoPluginReadsThem(t *testing.T) {
 	for name, cfg := range map[string]Config{
@@ -55,7 +54,6 @@ func TestBooksAreUnavailableWhereNoPluginReadsThem(t *testing.T) {
 	}
 }
 
-// A book is read through the plugin, an entry it lacks is the port's own refusal,
 // and every reference taken for a call is given back.
 func TestBooksAreReadThroughThePluginAndGiveBackEveryReference(t *testing.T) {
 	mux := http.NewServeMux()

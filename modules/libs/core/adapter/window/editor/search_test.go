@@ -65,12 +65,11 @@ func TestAHeadingIsFoundWithTheLineItExistsOn(t *testing.T) {
 		t.Errorf("the answer is heading %q", heading.GetText())
 	}
 	if heading.GetLine() < 0 {
-		t.Errorf("the heading stands on line %d, which is no line", heading.GetLine())
+		t.Errorf("the heading is on line %d, which is no line", heading.GetLine())
 	}
 }
 
 // TestANameSaysWhichOfFourTheNoteIs. The palette draws a deck and a stencil as
-// what they are, and a heading is drawn as the note it stands in.
 func TestANameReturnsWhichOfFourTheNoteIs(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Entropy.md": "---\ntitle: Entropy\n---\n\n# Entropy\n",
@@ -212,7 +211,7 @@ func TestAPassageReturnsWhichNoteItCameOutOf(t *testing.T) {
 		t.Error("the passage says nothing about where it came from")
 	}
 	if len(first.GetSpans()) == 0 {
-		t.Error("the passage says nothing about where the word typed stands in it")
+		t.Error("the passage says nothing about where the word typed is in it")
 	}
 }
 
@@ -235,12 +234,12 @@ func TestAPassageReturnsWhereInItsSourceItExists(t *testing.T) {
 		t.Fatal("nothing found")
 	}
 	first := found[0]
-	at := first.GetSpan()
-	if at.GetTo() <= at.GetFrom() {
-		t.Errorf("the passage stands over no text: %d to %d", at.GetFrom(), at.GetTo())
+	pos := first.GetSpan()
+	if pos.GetTo() <= pos.GetFrom() {
+		t.Errorf("the passage is over no text: %d to %d", pos.GetFrom(), pos.GetTo())
 	}
-	if at.GetFrom() < 0 {
-		t.Errorf("the passage begins at %d", at.GetFrom())
+	if pos.GetFrom() < 0 {
+		t.Errorf("the passage begins at %d", pos.GetFrom())
 	}
 }
 
@@ -321,17 +320,17 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 			"## Recognise\n\n### Front\n\nan animal\n\n### Back\n\n{{Height}}\n",
 	})
 
-	around, err := client.GetNeighbourhood(t.Context(),
+	center, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if is := around.Msg.GetFocusType(); is != "" {
+	if is := center.Msg.GetFocusType(); is != "" {
 		t.Errorf("the note in focus is drawn as %v", is)
 	}
 	types := map[string]string{}
-	for _, one := range around.Msg.GetRelated() {
+	for _, one := range center.Msg.GetRelated() {
 		types[one.GetNote().GetPath()] = one.GetType()
 	}
 	want := map[string]string{
@@ -345,12 +344,12 @@ func TestANeighbourhoodReturnsWhichOfThreeEachNoteIs(t *testing.T) {
 	}
 
 	// And the note in focus is said the same way, a plex standing on a deck.
-	near, err := client.GetNeighbourhood(t.Context(),
+	item, err := client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "Animals.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if is := near.Msg.GetFocusType(); is != "deck" {
+	if is := item.Msg.GetFocusType(); is != "deck" {
 		t.Errorf("the deck in focus is drawn as %v", is)
 	}
 }

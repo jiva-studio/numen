@@ -10,7 +10,7 @@ import { createBookLinks } from './links'
 const props = { path: 'text/one.xhtml', span: { from: 40, to: 90 } } as SettledBookProps
 
 const setUp = () => {
-  const reportMove = vi.fn<(at: number) => void>()
+  const reportMove = vi.fn<(pos: number) => void>()
   const reportFollow = vi.fn<(path: string) => void>()
   const links = createBookLinks(props, { reportMove, reportFollow })
   const findFragmentOffset = vi.fn<(fragment: string) => number | undefined>(() => 12)

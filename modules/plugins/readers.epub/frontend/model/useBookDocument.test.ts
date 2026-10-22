@@ -30,68 +30,68 @@ const create = (open = { value: true }) => {
     writeMessage,
     isOpen: () => open.value,
   })
-  return { held: target, pending, urls, messages: content }
+  return { doc: target, pending, urls, messages: content }
 }
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 describe('a book with nothing drawn', () => {
   it('reads nowhere and names no document', () => {
-    const { held } = create()
+    const { doc } = create()
 
-    expect(held.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
-    expect(held.drawn.value).toBe('')
-    expect(held.markup.value).toBe('')
+    expect(doc.documentSpan.value).toStrictEqual({ from: 0, to: 0 })
+    expect(doc.renderedChapter.value).toBe('')
+    expect(doc.markup.value).toBe('')
   })
 })
 
 describe('a document drawn', () => {
   it('remains as the one being read, its pictures pointed where the book serves them', async () => {
-    const { held, pending, urls } = create()
+    const { doc, pending, urls } = create()
 
-    const drawTask = held.draw(FIRST)
+    const drawTask = doc.draw(FIRST)
     pending.get(FIRST.path)?.resolve('<img src="pics/a.png">')
     await drawTask
 
-    expect(held.drawn.value).toBe(FIRST.path)
-    expect(held.documentSpan.value).toStrictEqual(FIRST.span)
-    expect(held.markup.value).toContain('src="/served/pics/a.png"')
+    expect(doc.renderedChapter.value).toBe(FIRST.path)
+    expect(doc.documentSpan.value).toStrictEqual(FIRST.span)
+    expect(doc.markup.value).toContain('src="/served/pics/a.png"')
     expect(urls).toStrictEqual(['library/b.epub|pics/a.png|print-1'])
   })
 
   it('is dropped when a newer document was requested for meanwhile', async () => {
-    const { held, pending } = create()
+    const { doc, pending } = create()
 
-    const older = held.draw(FIRST)
-    const newer = held.draw(SECOND)
+    const older = doc.draw(FIRST)
+    const newer = doc.draw(SECOND)
     pending.get(SECOND.path)?.resolve('<p>second</p>')
     await newer
     pending.get(FIRST.path)?.resolve('<p>first</p>')
     await older
 
-    expect(held.drawn.value).toBe(SECOND.path)
-    expect(held.markup.value).toContain('second')
+    expect(doc.renderedChapter.value).toBe(SECOND.path)
+    expect(doc.markup.value).toContain('second')
   })
 
   it('is dropped once the tab is closed', async () => {
     const open = { value: true }
-    const { held, pending } = create(open)
+    const { doc, pending } = create(open)
 
-    const drawTask = held.draw(FIRST)
+    const drawTask = doc.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.resolve('<p>first</p>')
     await drawTask
 
-    expect(held.drawn.value).toBe('')
-    expect(held.markup.value).toBe('')
+    expect(doc.renderedChapter.value).toBe('')
+    expect(doc.markup.value).toBe('')
   })
 })
 
 describe('a document that will not be read', () => {
   it('is returned as an error', async () => {
-    const { held, pending, messages } = create()
+    const { doc, pending, messages } = create()
 
-    const drawTask = held.draw(FIRST)
+    const drawTask = doc.draw(FIRST)
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await drawTask
 
@@ -100,10 +100,10 @@ describe('a document that will not be read', () => {
   })
 
   it('is not returned when a newer document was requested for meanwhile', async () => {
-    const { held, pending, messages } = create()
+    const { doc, pending, messages } = create()
 
-    const older = held.draw(FIRST)
-    void held.draw(SECOND)
+    const older = doc.draw(FIRST)
+    void doc.draw(SECOND)
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await older
     await settle()
@@ -113,9 +113,9 @@ describe('a document that will not be read', () => {
 
   it('is not returned once the tab is closed', async () => {
     const open = { value: true }
-    const { held, pending, messages } = create(open)
+    const { doc, pending, messages } = create(open)
 
-    const drawTask = held.draw(FIRST)
+    const drawTask = doc.draw(FIRST)
     open.value = false
     pending.get(FIRST.path)?.reject(new Error('gone'))
     await drawTask

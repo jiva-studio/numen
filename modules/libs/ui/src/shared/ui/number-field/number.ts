@@ -51,8 +51,8 @@ export const isAllowed = (text: string, bounds: Bounds): boolean => {
 }
 
 /** Where an arrow key leaves the number: one step from at its current position. */
-export const stepBy = (value: number | null, by: number, bounds: Bounds): number =>
-  snapToBounds((value ?? bounds.min) + by * bounds.step, bounds)
+export const stepBy = (value: number | null, delta: number, bounds: Bounds): number =>
+  snapToBounds((value ?? bounds.min) + delta * bounds.step, bounds)
 
 /** How many steps a page key covers at once. */
 const PACES = 10
@@ -77,11 +77,8 @@ export const isTextForValue = (text: string, value: number | null): boolean =>
 
 /** What the field relies on while a person types, and what each act does with it. */
 export interface NumberEntry {
-  /** What stands in the field, which is what was typed until the field is left. */
   readonly typed: Ref<string>
-  /** Whether what stands there is refused. */
   readonly isInvalid: ComputedRef<boolean>
-  /** What a refused line is said as, so it is read out and not only marked. */
   readonly speechText: ComputedRef<string | undefined>
   /** The text now in the field. */
   readonly setText: (text: string) => void

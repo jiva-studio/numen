@@ -12,8 +12,8 @@ import (
 // elsewhere.
 func buildScores(count int, sure ...int) []float32 {
 	out := make([]float32, count)
-	for _, at := range sure {
-		out[at] = 1
+	for _, item := range sure {
+		out[item] = 1
 	}
 	return out
 }

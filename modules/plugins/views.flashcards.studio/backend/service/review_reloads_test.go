@@ -41,10 +41,10 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 			t.Fatalf("the stream ended: %v", stream.Err())
 		}
 		if !stream.Msg().GetReload() {
-			t.Error("the page was not told to ask again")
+			t.Error("did not receive refresh signal")
 		}
 	case <-time.After(5 * time.Second):
-		t.Fatal("something moved and the page was never told")
+		t.Fatal("missing update notification for moved item")
 	}
 }
 
@@ -60,16 +60,16 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 		t.Fatalf("the vault stands as %d card faces and %v", len(before), err)
 	}
 
-	at := filepath.Join(v.Path, "decks", "Words.md")
-	info, err := os.Stat(at)
+	pos := filepath.Join(v.Path, "decks", "Words.md")
+	info, err := os.Stat(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
 	edited := strings.Replace(deck["decks/Words.md"], "### Word\n\nLeaf mould", "### Word\n\nMould leaf", 1)
-	if err := os.WriteFile(at, []byte(edited), 0o600); err != nil {
+	if err := os.WriteFile(pos, []byte(edited), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chtimes(at, info.ModTime(), info.ModTime()); err != nil {
+	if err := os.Chtimes(pos, info.ModTime(), info.ModTime()); err != nil {
 		t.Fatal(err)
 	}
 
@@ -88,7 +88,7 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 	}
 	installation.Host.Move()
 	if !stream.Receive() || !stream.Msg().GetReload() {
-		t.Fatalf("the page was not told to ask again: %v", stream.Err())
+		t.Fatalf("did not receive refresh signal: %v", stream.Err())
 	}
 	fresh, err := faces.Execute(t.Context(), v)
 	if err != nil || !isFront(fresh[0], "Mould leaf") {

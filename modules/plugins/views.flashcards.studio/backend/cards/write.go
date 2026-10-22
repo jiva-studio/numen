@@ -50,7 +50,6 @@ func (u Write) WithIndex(index note.Levels) Write {
 	return u
 }
 
-// WriteResult is what a write of a deck left behind: what the file now stands at,
 // which is what the caller presents at its next write, and the mark every card
 // that carried none was given.
 type WriteResult struct {
@@ -73,13 +72,12 @@ func (u Write) Deck(
 	if err != nil {
 		return WriteResult{}, err
 	}
-	at, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
+	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
-	// The file is on disk, so what it now stands at comes back beside a
 	// levelling that failed, and the caller can tell the two apart.
-	return WriteResult{Fingerprint: at, Given: provided}, err
+	return WriteResult{Fingerprint: pos, Given: provided}, err
 }
 
 // createWholeBody returns the body with every card made whole, and the marks that
@@ -89,11 +87,11 @@ func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
 ) (string, []format.CardMark, error) {
 	read := NewRead(u.readers, u.links)
-	by, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	delta, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
 	}
-	whole, provided := format.Whole(body, by, cardid.New)
+	whole, provided := format.Whole(body, delta, cardid.New)
 	return whole, provided, nil
 }
 
@@ -131,7 +129,6 @@ func (u Write) Stencil(
 	})
 }
 
-// createNoteWriter returns the writer a deck goes to disk through, held to the size a deck is
 // read at.
 func (u Write) createNoteWriter() note.Write {
 	writing := note.NewWrite(u.readers, u.writers, u.index, u.now)

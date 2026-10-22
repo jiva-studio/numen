@@ -15,9 +15,9 @@ import { DEFAULT_OPTIONS, type PlexOptions, type Size } from '../lib/arrange'
  */
 export const DESIGNED_TYPE = 13
 
-const larger = (size: Size, by: number): Size => ({
-  width: size.width * by,
-  height: size.height * by,
+const larger = (size: Size, delta: number): Size => ({
+  width: size.width * delta,
+  height: size.height * delta,
 })
 
 /**
@@ -27,22 +27,22 @@ const larger = (size: Size, by: number): Size => ({
  * stand as they are, and so does the window, which is measured in the pixels
  * it really has.
  */
-export const scaleOptions = (options: PlexOptions, by: number): PlexOptions => ({
+export const scaleOptions = (options: PlexOptions, delta: number): PlexOptions => ({
   ...options,
-  focusSize: larger(options.focusSize, by),
-  nodeSize: larger(options.nodeSize, by),
-  minWidth: options.minWidth * by,
-  iconWidth: options.iconWidth * by,
-  headingHeight: options.headingHeight * by,
-  headingIndent: options.headingIndent * by,
-  gap: options.gap * by,
-  lineGap: options.lineGap * by,
-  focusGap: options.focusGap * by,
-  margin: options.margin * by,
+  focusSize: larger(options.focusSize, delta),
+  nodeSize: larger(options.nodeSize, delta),
+  minWidth: options.minWidth * delta,
+  iconWidth: options.iconWidth * delta,
+  headingHeight: options.headingHeight * delta,
+  headingIndent: options.headingIndent * delta,
+  gap: options.gap * delta,
+  lineGap: options.lineGap * delta,
+  focusGap: options.focusGap * delta,
+  margin: options.margin * delta,
   routing: {
     ...options.routing,
-    minReach: options.routing.minReach * by,
-    arrowRoom: options.routing.arrowRoom * by,
+    minReach: options.routing.minReach * delta,
+    arrowRoom: options.routing.arrowRoom * delta,
   },
 })
 

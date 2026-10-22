@@ -144,9 +144,6 @@ export const theme = EditorView.theme({
     borderBottomRightRadius: 'var(--numen-radius)',
   },
 
-  /* A quotation is prose a person reads, set apart by its rule and not by
-     being harder to see. The rule stands in the gutter, so the words of a
-     quotation begin where every other line's words begin. */
   '.cm-quote': {
     borderLeft: 'var(--editor-quote-rule) solid var(--numen-ring)',
     marginLeft: 'calc(var(--numen-gutter) - var(--editor-quote-room))',

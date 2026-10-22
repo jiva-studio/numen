@@ -23,19 +23,19 @@ const caret = "^"
 // only at the length and in the alphabet marks are written in. Anything else at
 // the end of a heading is heading text, and comes back as part of the text.
 func ReadHeading(heading string) (text string, carried cardid.ID) {
-	at := strings.LastIndex(heading, " ")
+	pos := strings.LastIndex(heading, " ")
 	last := heading
-	if at >= 0 {
-		last = heading[at+1:]
+	if pos >= 0 {
+		last = heading[pos+1:]
 	}
 	content, found := strings.CutPrefix(last, caret)
 	if !found || !cardid.IsValid(cardid.ID(content)) {
 		return heading, ""
 	}
-	if at < 0 {
+	if pos < 0 {
 		return "", cardid.ID(content)
 	}
-	return heading[:at], cardid.ID(content)
+	return heading[:pos], cardid.ID(content)
 }
 
 // WriteHeading is the heading a card of this text and this mark is placed under.
@@ -57,15 +57,15 @@ func WriteHeading(text string, carried cardid.ID) string {
 // are dropped. A field that is empty, or holds only spaces, projects to nothing.
 func Project(value string) string {
 	line := markdown.Normalise(value)
-	if at := strings.IndexByte(line, '\n'); at >= 0 {
-		line = line[:at]
+	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
+		line = line[:pos]
 	}
 	line = strings.TrimSpace(line)
 
 	trimmed, runes := len(line), 0
-	for at := range line {
+	for item := range line {
 		if runes == HeadingRunes {
-			trimmed = at
+			trimmed = item
 			break
 		}
 		runes++
@@ -74,7 +74,6 @@ func Project(value string) string {
 		return line
 	}
 	// The cut never falls inside one of these: it falls in front of the whole
-	// of whichever it lands in. One of them stands inside another, so the cut is
 	// moved until it stops moving.
 	spans := getUnsplittableRanges(line)
 	for moved := true; moved; {
@@ -104,15 +103,15 @@ func getUnsplittableRanges(line string) [][]int {
 	found := links(line)
 	masked := []byte(line)
 	for _, span := range found {
-		for at := span[0]; at < span[1]; at++ {
-			masked[at] = maskRune
+		for pos := span[0]; pos < span[1]; pos++ {
+			masked[pos] = maskRune
 		}
 	}
 	return append(found, emphasisRe.FindAllIndex(masked, -1)...)
 }
 
-func matchLinkEnd(line string, at int) (int, bool) {
-	depth, to := 0, at
+func matchLinkEnd(line string, pos int) (int, bool) {
+	depth, to := 0, pos
 	for to+1 < len(line) {
 		switch {
 		case line[to] == '[' && line[to+1] == '[':
@@ -130,11 +129,11 @@ func matchLinkEnd(line string, at int) (int, bool) {
 	return to, false
 }
 
-func linkStart(line string, at int) int {
-	if at > 0 && line[at-1] == '!' {
-		return at - 1
+func linkStart(line string, pos int) int {
+	if pos > 0 && line[pos-1] == '!' {
+		return pos - 1
 	}
-	return at
+	return pos
 }
 
 // links is every wikilink and embed of the line. The brackets are counted, so a
@@ -142,28 +141,27 @@ func linkStart(line string, at int) int {
 // closed is no link and neither is anything after it.
 func links(line string) [][]int {
 	var out [][]int
-	for at := 0; at+1 < len(line); {
-		if line[at] != '[' || line[at+1] != '[' {
-			at++
+	for pos := 0; pos+1 < len(line); {
+		if line[pos] != '[' || line[pos+1] != '[' {
+			pos++
 			continue
 		}
-		head := linkStart(line, at)
-		to, ok := matchLinkEnd(line, at)
+		head := linkStart(line, pos)
+		to, ok := matchLinkEnd(line, pos)
 		if !ok {
 			return out
 		}
 		out = append(out, []int{head, to})
-		at = to
+		pos = to
 	}
 	return out
 }
 
 // oneLine is what a name a caller composed a heading from stands as. A heading
-// is one line, so it holds what stands in front of the first break in it.
 func oneLine(name string) string {
 	line := markdown.Normalise(name)
-	if at := strings.IndexByte(line, '\n'); at >= 0 {
-		line = line[:at]
+	if pos := strings.IndexByte(line, '\n'); pos >= 0 {
+		line = line[:pos]
 	}
 	return strings.TrimSpace(line)
 }

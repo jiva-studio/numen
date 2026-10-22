@@ -75,15 +75,15 @@ func TestTheHistoryShowsWhatItShowed(t *testing.T) {
 // whatever the hour it is read at.
 func TestTheHistoryCountsTheSameDaysAtAnyHour(t *testing.T) {
 	t.Parallel()
-	for _, at := range []time.Time{
+	for _, item := range []time.Time{
 		time.Date(2026, time.October, 17, 23, 59, 0, 0, time.UTC),
 		time.Date(2026, time.October, 18, 0, 1, 0, 0, time.UTC),
 		time.Date(2026, time.October, 18, 3, 45, 0, 0, time.UTC),
 		time.Date(2026, time.October, 18, 4, 1, 0, 0, time.UTC),
 	} {
-		t.Run(at.Format("15:04"), func(t *testing.T) {
+		t.Run(item.Format("15:04"), func(t *testing.T) {
 			t.Parallel()
-			l := loadAt(t, func() time.Time { return at }, loadCards, loadDays, loadPerDay)
+			l := loadAt(t, func() time.Time { return item }, loadCards, loadDays, loadPerDay)
 
 			got, err := l.review.Execute(t.Context(), l.vault)
 			if err != nil {

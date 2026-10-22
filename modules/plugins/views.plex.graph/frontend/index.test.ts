@@ -6,13 +6,13 @@ import { settle } from './fixtures'
 import type { PlexTabState } from './types'
 
 const createContext = () => {
-  const { host, asked } = createHost({ opening: 'Root.md' })
+  const { host, requested } = createHost({ opening: 'Root.md' })
   const ctx = createMockPluginContext({
     pluginId: 'md.numen.views.plex.graph',
     workspace: host.workspace,
     notes: host.notes,
   })
-  return { ctx, asked }
+  return { ctx, requested }
 }
 
 describe('view-plex-graph plugin', () => {
@@ -39,18 +39,18 @@ describe('view-plex-graph plugin', () => {
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {
-    const { ctx, asked } = createContext()
+    const { ctx, requested } = createContext()
     activate(ctx)
     const kind = ctx.getRegisteredTabKinds()[0]!
     kind.open!('One.md', 'plex:1') as PlexTabState
     await settle()
-    asked.headings.length = 0
+    requested.headings.length = 0
 
     ctx.emitVaultChange({ paths: ['One.md'] })
     await settle()
     await settle()
 
-    expect(asked.headings.length).toBeGreaterThan(0)
+    expect(requested.headings.length).toBeGreaterThan(0)
   })
 
   it('refuses to activate in a window that offers no workspace or notes', () => {

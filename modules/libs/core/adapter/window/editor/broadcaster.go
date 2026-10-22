@@ -45,7 +45,7 @@ type subscriber[T any] struct {
 	waiting  []T
 	frontSeq uint64
 	notify   chan struct{}
-	done     chan struct{}
+	doneChan chan struct{}
 }
 
 // getCapacity is how many messages one subscriber may have waiting.
@@ -61,9 +61,9 @@ func (a *broadcaster[T]) subscribe() (<-chan T, func()) {
 	id := a.next
 	a.next++
 	l := &subscriber[T]{
-		out:    make(chan T),
-		notify: make(chan struct{}, 1),
-		done:   make(chan struct{}),
+		out:      make(chan T),
+		notify:   make(chan struct{}, 1),
+		doneChan: make(chan struct{}),
 	}
 	a.subscribers[id] = l
 	go a.deliver(l)
@@ -73,7 +73,7 @@ func (a *broadcaster[T]) subscribe() (<-chan T, func()) {
 		defer a.mu.Unlock()
 		if l, open := a.subscribers[id]; open {
 			delete(a.subscribers, id)
-			close(l.done)
+			close(l.doneChan)
 		}
 	}
 }
@@ -101,11 +101,11 @@ func (a *broadcaster[T]) queue(l *subscriber[T], message T) bool {
 	wasEmpty := len(l.waiting) == 0
 
 	fitted := false
-	switch at := a.findSupersededIndex(l.waiting, message); {
-	case at >= 0:
-		l.waiting[at] = message
+	switch pos := a.findSupersededIndex(l.waiting, message); {
+	case pos >= 0:
+		l.waiting[pos] = message
 		fitted = true
-		if at == 0 {
+		if pos == 0 {
 			l.frontSeq++
 		}
 	case len(l.waiting) < a.getCapacity():
@@ -131,12 +131,12 @@ func (a *broadcaster[T]) findSupersededIndex(waiting []T, message T) int {
 	if !a.isLatest {
 		return -1
 	}
-	for at, target := range waiting {
+	for item, target := range waiting {
 		if a.isRequired != nil && a.isRequired(target) {
 			continue
 		}
 		if a.getTopic == nil || a.getTopic(target) == a.getTopic(message) {
-			return at
+			return item
 		}
 	}
 	return -1
@@ -186,7 +186,7 @@ func (a *broadcaster[T]) waitForFront(l *subscriber[T]) (front[T], bool) {
 		}
 		select {
 		case <-l.notify:
-		case <-l.done:
+		case <-l.doneChan:
 			return front[T]{}, false
 		}
 	}
@@ -211,7 +211,7 @@ func (a *broadcaster[T]) offer(l *subscriber[T], head front[T]) bool {
 				return true
 			}
 			head = next
-		case <-l.done:
+		case <-l.doneChan:
 			return false
 		}
 	}

@@ -10,12 +10,12 @@ import (
 
 func TestFindLibraryReturnsTheLibraryInTheFolder(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, getLibraryName(runtime.GOOS))
-	if err := os.WriteFile(at, []byte("a library"), 0o755); err != nil {
+	targetPath := filepath.Join(dir, getLibraryName(runtime.GOOS))
+	if err := os.WriteFile(targetPath, []byte("a library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if got := FindLibrary(dir); got != at {
-		t.Errorf("FindLibrary() = %q, want %q", got, at)
+	if got := FindLibrary(dir); got != targetPath {
+		t.Errorf("FindLibrary() = %q, want %q", got, targetPath)
 	}
 }
 

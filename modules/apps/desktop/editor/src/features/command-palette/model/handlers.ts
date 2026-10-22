@@ -30,7 +30,7 @@ import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
 const HANDLERS: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
-  travel: (invocation, on) => on.goes.travel(invocation.path),
+  travel: (invocation, on) => on.navigator.travel(invocation.path),
   child: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'child', words }),
   parent: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'parent', words }),
@@ -74,18 +74,18 @@ const HANDLERS: Record<string, CommandHandler> = {
     on.runSupport.cannotRun(invocation.id)
     on.writeMessage(words.unrunnable, 'error')
   },
-  ask: (invocation, on) => on.goes.ask(`${invocation.path} — `),
+  ask: (invocation, on) => on.navigator.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copyPath(invocation.path),
-  reveal: (invocation, on) => on.goes.revealPath(invocation.path),
-  preset: (invocation, on) => on.goes.openPreset(invocation.path),
-  settings: (_, on) => on.goes.openTab(SETTINGS),
+  reveal: (invocation, on) => on.navigator.revealPath(invocation.path),
+  preset: (invocation, on) => on.navigator.openPreset(invocation.path),
+  settings: (_, on) => on.navigator.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
   createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
-  plex: (_, on) => on.goes.openTab(PLEX),
-  files: (_, on) => on.goes.openTab(FILES),
-  agent: (_, on) => on.goes.openTab(AGENT),
-  close: (invocation, on) => on.goes.closeTab(invocation.tab),
-  find: (_, on) => on.goes.search(),
+  plex: (_, on) => on.navigator.openTab(PLEX),
+  files: (_, on) => on.navigator.openTab(FILES),
+  agent: (_, on) => on.navigator.openTab(AGENT),
+  close: (invocation, on) => on.navigator.closeTab(invocation.tab),
+  find: (_, on) => on.navigator.search(),
   appearance: (invocation, on) => on.settings.chooseAppearance(invocation.name),
   mode: (invocation, on) => on.settings.chooseAppearance(invocation.name),
   interfaceScale: (invocation, on) => on.settings.chooseAppearance(invocation.name),
@@ -95,7 +95,7 @@ const HANDLERS: Record<string, CommandHandler> = {
   headings: (invocation, on) => on.settings.chooseHeadings(invocation.name),
   performanceProfile: (invocation, on) => on.settings.choosePerformance(invocation.name),
   indexingModel: (invocation, on) => on.settings.chooseIndexingModel(invocation.name),
-  first: (_, on, words) => navigateToPath(on.goes.getOpeningNote(), on, words),
+  first: (_, on, words) => navigateToPath(on.navigator.getOpeningNote(), on, words),
   goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
   newVault: (_, on, words) => addVault(on, words),
@@ -142,12 +142,9 @@ export async function runInvocation(
   }
 }
 
-/** What an artifact stands at when the ask did not come off, which is said as an error. */
 const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
 
 /**
- * An artifact asked for over a file. What it now stands at is one message,
- * which is what the person is told; a run under way shows what it is doing in
  * the work behind the window. A build that cannot make it at all is told once
  * and offers it nowhere after that.
  */
@@ -193,7 +190,7 @@ const removeFiles = async (
   const dangling: string[] = []
   const errors: string[] = []
   let isWaiting = false
-  const opening = on.goes.getOpeningNote()
+  const opening = on.navigator.getOpeningNote()
 
   for (const path of getInvocationPaths(invocation)) {
     const tab = await flushTab(path, on)
@@ -208,7 +205,7 @@ const removeFiles = async (
     }
     if (tab.tabId) on.notes.close(tab.tabId)
     dangling.push(...answer.value.dangling)
-    if (opening) await on.goes.leave(path, opening)
+    if (opening) await on.navigator.leave(path, opening)
   }
 
   if (errors.length > 0) return on.writeMessage(joinAll(...errors), 'error')

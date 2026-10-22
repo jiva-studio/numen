@@ -18,7 +18,6 @@ interface Corpus {
   readonly cut: Stencil | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
-  /** What it found wrong with one of its values, by the field it stands in. */
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
 
@@ -40,8 +39,6 @@ const CORPORA = {
       ],
     },
   },
-  /* A value with no newline in it that is far wider than the box, so what the
-     box stands at can only be worked out from where the text wraps. */
   'a value that wraps': {
     cut: { name: 'Basic', fields: ['Question', 'Answer'] },
     card: {
@@ -211,7 +208,7 @@ const meta: Meta<Knobs> = {
         },
       )
 
-      const onWrite = (field: string, nth: number, text: string) => {
+      const onWrite = (field: string, index: number, text: string) => {
         const card = target.value.card
 
         // The one written is the one counted off under its own field.
@@ -219,16 +216,16 @@ const meta: Meta<Knobs> = {
         const filled = card.filled.map((each) => {
           if (each.field !== field) return each
           underCount += 1
-          return underCount === nth ? { field, text } : each
+          return underCount === index ? { field, text } : each
         })
-        if (underCount < nth) filled.push({ field, text })
+        if (underCount < index) filled.push({ field, text })
         const content = { ...target.value, card: { ...card, filled } }
         target.value = content
         tile.value = createTile(content)
       }
 
       provide(DECK_CONTEXT, {
-        write: (_card, { field, nth }, text) => onWrite(field, nth, text),
+        write: (_card, { field, index }, text) => onWrite(field, index, text),
       })
 
       return {
@@ -291,7 +288,10 @@ export const ACard: Story = {
     for (const box of boxes) {
       const underElement = box.closest('.card__value')?.querySelector('.divider')
       if (!underElement) throw new Error('a box under no rule')
-      expect(box.getBoundingClientRect().top).toBeCloseTo(underElement.getBoundingClientRect().bottom, 0)
+      expect(box.getBoundingClientRect().top).toBeCloseTo(
+        underElement.getBoundingClientRect().bottom,
+        0,
+      )
       expect(box.closest('.card__value')?.querySelector('fieldset')).toBeNull()
     }
 
@@ -312,7 +312,6 @@ export const ACard: Story = {
     expect(tile.querySelector('[aria-expanded]')).toBeNull()
     expect(header.querySelectorAll('button')).toHaveLength(1)
 
-    // It stands in the middle of the strip, and is said more quietly than what
     // the card holds.
     const cutElement = found(canvasElement, '[data-cut-of]')
     const middle = (each: Element): number => {
@@ -343,7 +342,6 @@ export const ACard: Story = {
 
 /**
  * A first field written over several lines, which is what no heading could
- * hold. It stands in a box like any other field, and the box grows to it.
  */
 export const AFirstFieldOfManyLines: Story = {
   args: { corpus: 'a first field of many lines' },
@@ -356,7 +354,6 @@ export const AFirstFieldOfManyLines: Story = {
 }
 
 /**
- * A value with no newline in it that wraps to several lines. Its box stands at
  * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const AValueThatWraps: Story = {
@@ -364,7 +361,6 @@ export const AValueThatWraps: Story = {
   play: async ({ canvasElement }) => {
     const box = found(canvasElement, '[data-value="Answer"]')
 
-    // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
     expect(box.clientHeight).toBeGreaterThan(line * 2)
     expect(box.scrollHeight).toBeLessThanOrEqual(box.clientHeight + 1)
@@ -388,7 +384,6 @@ export const NoStencil: Story = {
     expect(tile.textContent).toContain('No stencil called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
-    // What is wrong with it stands over the edge a value would: the clearance
     // the body keeps, in from the tile's own stroke.
     const body = found(canvasElement, '.card__body')
     const clearance = Number.parseFloat(getComputedStyle(body).paddingInlineStart)
@@ -398,11 +393,10 @@ export const NoStencil: Story = {
       Math.round(tile.getBoundingClientRect().left + stroke + clearance),
     )
 
-    // What it says of holding nothing stands in the middle of the room left
     // over.
-    const silence = found(canvasElement, '.card__silence').getBoundingClientRect()
+    const gap = found(canvasElement, '.card__silence').getBoundingClientRect()
     const middle = (box: DOMRect): number => Math.round(box.left + box.width / 2)
-    expect(middle(silence)).toBe(middle(body.getBoundingClientRect()))
+    expect(middle(gap)).toBe(middle(body.getBoundingClientRect()))
   },
 }
 
@@ -429,9 +423,10 @@ export const CutByNothing: Story = {
     const response = [...tile.querySelectorAll('.card__objections')]
     expect(response).toHaveLength(1)
     expect(response[0]?.textContent).toContain('not a lone wikilink')
-    expect(getComputedStyle(cutElement).color).not.toBe(getComputedStyle(response[0] as Element).color)
+    expect(getComputedStyle(cutElement).color).not.toBe(
+      getComputedStyle(response[0] as Element).color,
+    )
 
-    // No heading stands over a body that holds something.
     expect(tile.querySelector('.card__silence')).toBeNull()
 
     // What the card wrote is read, breaks and all, and typed into nothing.
@@ -440,7 +435,6 @@ export const CutByNothing: Story = {
     expect(wrote.map((each) => each.getAttribute('data-wrote'))).toEqual(['Question', 'Answer'])
     expect(wrote[1]?.textContent).toContain('\n')
 
-    // A value stands over the edge the name it is written under relies on.
     const edge = (each: Element): number => {
       const box = each.getBoundingClientRect()
       return Math.round(box.left + Number.parseFloat(getComputedStyle(each).paddingInlineStart))

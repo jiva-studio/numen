@@ -15,7 +15,7 @@ export interface NodePressSaid {
   readonly activate: () => void
   readonly show: (showing: PlexDestination) => void
   readonly reach: (pointer: PointerEvent) => void
-  readonly menu: (at: Position, trigger: MenuTrigger) => void
+  readonly menu: (point: Position, trigger: MenuTrigger) => void
 }
 
 /** What the press reads off the node it belongs to. */
@@ -104,7 +104,7 @@ export function useNodePress(
 interface KeyPressContext {
   readonly isGhost: boolean
   readonly middleOf: () => Position | null
-  readonly onMenu: (at: Position, trigger: MenuTrigger) => void
+  readonly onMenu: (point: Position, trigger: MenuTrigger) => void
   readonly onShow: (hasModifier: boolean) => void
   readonly onActivate: () => void
 }

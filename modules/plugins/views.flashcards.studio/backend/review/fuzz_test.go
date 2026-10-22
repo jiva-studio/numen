@@ -93,8 +93,8 @@ func FuzzWriteAnswer(f *testing.F) {
 		// A stamp is written as four digits of year and read back as RFC 3339,
 		// so an instant outside the years a stamp can spell is not one a log
 		// carries.
-		at := time.UnixMilli(ms).UTC()
-		if at.Year() < 1 || at.Year() > 9999 {
+		pos := time.UnixMilli(ms).UTC()
+		if pos.Year() < 1 || pos.Year() > 9999 {
 			return
 		}
 		// JSON is text, and a string that is not UTF-8 is written as the
@@ -108,7 +108,7 @@ func FuzzWriteAnswer(f *testing.F) {
 			}
 		}
 
-		want := review.Answer{ID: id, At: at, Undoes: undoes}
+		want := review.Answer{ID: id, At: pos, Undoes: undoes}
 		if undoes == "" {
 			want.CardFace = review.CardFaceID{Card: card, Face: face}
 			want.Rating = review.Rating(rating)

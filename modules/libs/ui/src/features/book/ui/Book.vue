@@ -3,14 +3,13 @@
  * A book made for a screen, read: its text set in columns and turned a page at
  * a time.
  *
- * One column stands in a narrow reading area and two in a wide one, and a
  * spread of two turns as one. Where a person is reading is a byte offset into
  * the book's text: setting the text larger sets the columns again, and the
  * offset stays where it was.
  */
 import { useTemplateRef } from 'vue'
 
-import { keyTurn } from '@/shared/lib/turn'
+import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
 import { useBookHand } from '../model/hand'
 import { useBookLayout } from '../model/layout'
 import { createBookLinks } from '../model/links'
@@ -36,7 +35,7 @@ const props = withDefaults(defineProps<BookProps>(), {
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset now in front, in bytes of the book's text. */
-  (event: 'move', at: number): void
+  (event: 'move', pos: number): void
   /**
    * A link led to another document of the book, named as the archive names it.
    * The reader lands on the place inside it once that document is drawn.
@@ -52,7 +51,7 @@ const paper = useTemplateRef<HTMLElement>('paper')
 const getEdge = (of: HTMLElement) => of.getBoundingClientRect().left
 
 const links = createBookLinks(props, {
-  reportMove: (at) => emit('move', at),
+  reportMove: (pos) => emit('move', pos),
   reportFollow: (path) => emit('follow', path),
 })
 
@@ -60,7 +59,7 @@ const layout = useBookLayout({
   area,
   paper,
   props,
-  onMove: (at) => emit('move', at),
+  onMove: (pos) => emit('move', pos),
   takeLed: links.takeLed,
   getEdge,
 })
@@ -81,7 +80,7 @@ const follow = (press: MouseEvent) => links.follow(press, layout.findFragmentOff
  * page it turns is answered for and the key is not listened for here.
  */
 const handleKey = (event: KeyboardEvent): boolean => {
-  const way = keyTurn(event.key)
+  const way = getPageNavigationAction(event.key)
   if (!way) return false
   layout.turn(way)
   return true

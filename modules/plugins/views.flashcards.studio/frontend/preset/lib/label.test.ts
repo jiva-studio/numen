@@ -46,7 +46,12 @@ const mark = (key: string, x: number, y: number, text = key): Mark => ({
 })
 
 /** A room somewhere in the picture, to stand a word against. */
-const box = (x: number, y: number, wide: number, high: number): Box => ({ x, y, wide, high })
+const box = (x: number, y: number, width: number, height: number): Box => ({
+  x,
+  y,
+  wide: width,
+  high: height,
+})
 
 /** Whether a room is wholly inside the picture, which is what the viewBox holds. */
 const isInside = (one: Box): boolean =>
@@ -54,11 +59,11 @@ const isInside = (one: Box): boolean =>
 
 describe('where a name over a mark is set', () => {
   it('remains over the mark, and above it by the lift', () => {
-    const at = getMarkNameStyle({ x: PLOT_WIDTH / 2, y: 100 })
+    const style = getMarkNameStyle({ x: PLOT_WIDTH / 2, y: 100 })
 
-    expect(at.insetInlineStart).toBe('50%')
-    expect(at.insetBlockStart).toBe(`${((100 - AXIS_LABEL_LIFT) / PLOT_HEIGHT) * 100}%`)
-    expect(at.translate).toBe('-50% -100%')
+    expect(style.insetInlineStart).toBe('50%')
+    expect(style.insetBlockStart).toBe(`${((100 - AXIS_LABEL_LIFT) / PLOT_HEIGHT) * 100}%`)
+    expect(style.translate).toBe('-50% -100%')
   })
 
   it('is pulled back inside the picture at either end', () => {
@@ -93,11 +98,11 @@ describe('the room a name over a mark takes', () => {
 
 describe('where a number against a line is set', () => {
   it('remains at the left of the picture, at the height it is read off', () => {
-    const at = getAxisNumber(PLOT_BOTTOM, '0')
+    const style = getAxisNumber(PLOT_BOTTOM, '0')
 
-    expect(at.insetInlineStart).toBe(`${(PLOT_LEFT / PLOT_WIDTH) * 100}%`)
-    expect(at.insetBlockStart).toBe(`${(PLOT_BOTTOM / PLOT_HEIGHT) * 100}%`)
-    expect(at.translate).toBe('0 0')
+    expect(style.insetInlineStart).toBe(`${(PLOT_LEFT / PLOT_WIDTH) * 100}%`)
+    expect(style.insetBlockStart).toBe(`${(PLOT_BOTTOM / PLOT_HEIGHT) * 100}%`)
+    expect(style.translate).toBe('0 0')
   })
 
   it('is read against the room it is given, which the extent under the picture has its own of', () => {
@@ -227,8 +232,8 @@ describe('the names of the marks that fit', () => {
     { where: 'the right edge', at: { x: PLOT_RIGHT, y: 100 } },
     { where: 'the top', at: { x: PLOT_WIDTH / 2, y: PLOT_TOP } },
     { where: 'the foot', at: { x: PLOT_WIDTH / 2, y: PLOT_BOTTOM } },
-  ])('keeps the room a name takes at $where inside the picture', ({ at }) => {
-    const names = createLabels([mark('suggested', at.x, at.y)], null)
+  ])('keeps the room a name takes at $where inside the picture', ({ at: pos }) => {
+    const names = createLabels([mark('suggested', pos.x, pos.y)], null)
 
     expect(names).toHaveLength(1)
     expect(isInside(names[0]!.box)).toBe(true)
@@ -296,7 +301,7 @@ describe('the numbers read off the picture’s edges', () => {
     const calloutBox = box(PLOT_LEFT, 0, CALLOUT_WIDTH, CALLOUT_HEIGHT)
     const numbers = createAxisLabels(
       { least: 0, most: 10 },
-      { places: clear, marks: [], over: calloutBox },
+      { places: clear, marks: [], calloutBox },
       formatValue,
     )
 
@@ -324,10 +329,10 @@ describe('where the knob’s own value is set', () => {
     { where: 'the middle', x: PLOT_WIDTH / 2, back: '-50%' },
     { where: 'the right edge', x: PLOT_RIGHT, back: '-100%' },
   ])('is pulled back inside the picture at $where', ({ x, back }) => {
-    const at = getKnobValueStyle({ x, y: 100 })
+    const style = getKnobValueStyle({ x, y: 100 })
 
-    expect(at.insetInlineStart).toBe(`${(x / PLOT_WIDTH) * 100}%`)
-    expect(at.translate).toBe(`${back} 0`)
+    expect(style.insetInlineStart).toBe(`${(x / PLOT_WIDTH) * 100}%`)
+    expect(style.translate).toBe(`${back} 0`)
   })
 })
 

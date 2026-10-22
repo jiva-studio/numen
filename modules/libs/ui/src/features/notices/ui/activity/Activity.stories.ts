@@ -43,7 +43,7 @@ export const Counting: Story = {
     text: 'Learning what it says',
     about: 'Sabhaparva.epub',
     isWorking: true,
-    tally: { done: 1200, total: 36560 },
+    tally: { completedCount: 1200, total: 36560 },
     left: '1:58:20',
   },
   play: async ({ canvasElement }) => {
@@ -64,7 +64,7 @@ export const TwoLines: Story = {
     text: 'Proofreading the transcript',
     about: 'A Conversation in Vrindavan, 1972-11-04.md',
     isWorking: true,
-    tally: { done: 9, total: 100 },
+    tally: { completedCount: 9, total: 100 },
     left: '4:05',
   },
   play: async ({ canvasElement }) => {
@@ -86,7 +86,7 @@ export const TooLong: Story = {
     text: 'Learning what a very long name for a piece of work has to say about itself',
     about: 'a-note-whose-name-nobody-shortened-before-they-filed-it-away-for-good.md',
     isWorking: true,
-    tally: { done: 74, total: 100 },
+    tally: { completedCount: 74, total: 100 },
     left: '0:41',
   },
   play: async ({ canvasElement }) => {
@@ -126,7 +126,7 @@ export const Failed: Story = {
   args: {
     text: 'Reading',
     about: 'permission denied',
-    tally: { done: 2, total: 8 },
+    tally: { completedCount: 2, total: 8 },
     tone: 'alarm',
   },
   play: async ({ canvasElement }) => {

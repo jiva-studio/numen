@@ -6,7 +6,6 @@ import { type PresetChoice, type Presets, type PresetReadResult, WORDS as words 
 
 /** The preset a deck is scheduled by, as the line at the top of it draws it. */
 export interface DeckPreset {
-  /** The note the preset stands in. Empty is a deck scheduled by the defaults. */
   readonly path: string
   /** What that preset is called, in the words on the line. */
   readonly name: string
@@ -116,15 +115,14 @@ export function useDeckSchedule(presets: Presets, store: ScheduledStore) {
     return error === '' ? target : { ...target, errorMessage: error }
   }
 
-  /** What was known about a file no tab of this window stands at any longer. */
   const forgetFile = (path: string): void => {
     scheduled.value.delete(path)
   }
 
   /** The same, carried to where the file was filed instead. */
   const moveFile = (from: string, to: string): void => {
-    const by = scheduled.value.get(from)
-    if (by) scheduled.value.set(to, by)
+    const preset = scheduled.value.get(from)
+    if (preset) scheduled.value.set(to, preset)
     scheduled.value.delete(from)
   }
 

@@ -26,15 +26,15 @@ const Entries = 4096
 type folders struct {
 	reader *VaultReader
 
-	mu    sync.Mutex
-	known map[string]bool
+	mu      sync.Mutex
+	indexed map[string]bool
 }
 
 // isKnownFolder is whether this path was a folder when it was last there.
 func (f *folders) isKnownFolder(path string) bool {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return f.known[path]
+	return f.indexed[path]
 }
 
 // addFolder remembers a path as a folder, which is the one moment the question is
@@ -42,7 +42,7 @@ func (f *folders) isKnownFolder(path string) bool {
 func (f *folders) addFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.known[path] = true
+	f.indexed[path] = true
 }
 
 // readShape walks the vault once for its shape, stopping where the vault's own
@@ -51,7 +51,7 @@ func (f *folders) addFolder(path string) {
 // A folder the walk could not enter is missing from the shape, and comes back
 // as the first error it met.
 func readShape(reader *VaultReader) (*folders, error) {
-	f := &folders{reader: reader, known: map[string]bool{".": true}}
+	f := &folders{reader: reader, indexed: map[string]bool{".": true}}
 	var why error
 	walk := filepath.WalkDir(reader.Root(), func(p string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -87,16 +87,16 @@ func (f *folders) reloadShape() {
 	fresh, _ := readShape(f.reader)
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.known = fresh.known
+	f.indexed = fresh.indexed
 }
 
 func (f *folders) removeFolder(path string) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	delete(f.known, path)
-	for target := range f.known {
+	delete(f.indexed, path)
+	for target := range f.indexed {
 		if strings.HasPrefix(target, path+"/") {
-			delete(f.known, target)
+			delete(f.indexed, target)
 		}
 	}
 }
@@ -158,7 +158,7 @@ func (f *folders) getConcernedPaths(absolute string) (paths []string, whole bool
 func (f *folders) getPathsUnder(ctx context.Context, absolute string) (paths []string, whole bool) {
 	w := &underWalk{ctx: ctx, folders: f, absolute: absolute}
 	_ = filepath.WalkDir(absolute, w.visit)
-	if w.over || w.short {
+	if w.exceeded || w.short {
 		return nil, true
 	}
 	return w.discovered, false
@@ -172,8 +172,8 @@ type underWalk struct {
 	folders    *folders
 	absolute   string
 	discovered []string
-	seen       int
-	over       bool
+	entryCount int
+	exceeded   bool
 	short      bool
 }
 
@@ -188,9 +188,9 @@ func (w *underWalk) visit(p string, d fs.DirEntry, err error) error {
 		w.short = true
 		return fs.SkipDir
 	}
-	w.seen++
-	if w.seen > Entries {
-		w.over = true
+	w.entryCount++
+	if w.entryCount > Entries {
+		w.exceeded = true
 		return fs.SkipAll
 	}
 	reader := w.folders.reader

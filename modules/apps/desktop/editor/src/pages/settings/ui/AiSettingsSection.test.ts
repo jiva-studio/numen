@@ -9,7 +9,11 @@ import type { Installation, SettingsTabState } from '../types'
 import { createProgramModels, type ProgramFixture } from '@/testing/installation'
 import { pick } from '@/testing/pick'
 
-const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}): PluginInfo => ({
+const createPlugin = (
+  id: string,
+  name: string,
+  overrides: Partial<PluginInfo> = {},
+): PluginInfo => ({
   id,
   name,
   version: '1.0.0',
@@ -20,7 +24,7 @@ const createPlugin = (id: string, name: string, over: Partial<PluginInfo> = {}):
   secrets: [],
   storedSecrets: [],
   consent: 'none',
-  ...over,
+  ...overrides,
 })
 
 const AGENT_B = createPlugin('test.agent-b', 'Agent B', {
@@ -78,8 +82,8 @@ const createSection = (
   return { recordedWrites: content, secrets, wrapper }
 }
 
-const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], at: number) =>
-  pick(wrapper.findAllComponents({ name: 'Select' }), at).props('choices') as readonly {
+const getChoices = (wrapper: ReturnType<typeof createSection>['wrapper'], pos: number) =>
+  pick(wrapper.findAllComponents({ name: 'Select' }), pos).props('choices') as readonly {
     id: string
     text: string
   }[]

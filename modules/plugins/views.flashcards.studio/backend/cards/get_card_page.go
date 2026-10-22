@@ -27,11 +27,11 @@ func (u GetCardPage) Execute(ctx context.Context, v domain.Vault, in Query) (Pag
 		res.Sections = append(res.Sections, s.Name)
 	}
 	if in.Mark != "" {
-		at, err := findCard(contents.Body.Cards, in.Mark)
+		pos, err := findCard(contents.Body.Cards, in.Mark)
 		if err != nil {
 			return Page{}, err
 		}
-		res.Cards = append(res.Cards, keepFields(contents.Body.Cards[at], in.Fields))
+		res.Cards = append(res.Cards, keepFields(contents.Body.Cards[pos], in.Fields))
 		return res, nil
 	}
 	for _, card := range getCardRange(contents.Body.Cards, in.From, in.Limit) {

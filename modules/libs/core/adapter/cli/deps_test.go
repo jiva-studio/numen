@@ -122,21 +122,21 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 }
 
 // singleVaultList is a list holding a single vault, answering nothing about any other.
-type singleVaultList struct{ held domain.Vault }
+type singleVaultList struct{ targetVault domain.Vault }
 
-func (o singleVaultList) List() ([]domain.Vault, error)   { return []domain.Vault{o.held}, nil }
+func (o singleVaultList) List() ([]domain.Vault, error)   { return []domain.Vault{o.targetVault}, nil }
 func (singleVaultList) Save(domain.Vault) error           { return nil }
 func (singleVaultList) Remove(domain.VaultID) error       { return nil }
 func (singleVaultList) RecordOpened(domain.VaultID) error { return nil }
 
 func (o singleVaultList) FindVault(nameOrPath string) (domain.Vault, bool, error) {
-	if nameOrPath == o.held.Name {
-		return o.held, true, nil
+	if nameOrPath == o.targetVault.Name {
+		return o.targetVault, true, nil
 	}
 	return domain.Vault{}, false, nil
 }
 
-func (o singleVaultList) GetLastVault() (domain.Vault, bool, error) { return o.held, true, nil }
+func (o singleVaultList) GetLastVault() (domain.Vault, bool, error) { return o.targetVault, true, nil }
 
 // fixedLinkQueries answers what one note points at and what points at it, out of what the
 // test wrote down.
@@ -158,7 +158,6 @@ func (fixedLinkQueries) ResolveLinks(
 
 // A command runs on what the terminal is handed, and a test that hands it
 // values reaches no disk, no database and no model. The openers are what make
-// that possible: what stands behind one is the caller's to choose.
 func TestACommandRunsOnValuesAlone(t *testing.T) {
 	t.Parallel()
 	target := domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}

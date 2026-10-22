@@ -31,12 +31,12 @@ export interface PlacedNode extends PlexNode {
  * it. A box like any other: it is only that it has no title of its own, and
  * says the relation it would take instead.
  */
-export const ghostNode = (node: PlexNode, at: Position, size: Size): PlacedNode => ({
+export const ghostNode = (node: PlexNode, point: Position, size: Size): PlacedNode => ({
   id: node.id,
   title: node.title,
   relation: node.relation,
-  x: at.x,
-  y: at.y,
+  x: point.x,
+  y: point.y,
   width: size.width,
   height: size.height,
   order: 0,
@@ -56,7 +56,6 @@ export const isReachable = (node: PlacedNode): boolean =>
 /**
  * Whether the keyboard stops on a node.
  *
- * Wider than being choosable: the focus is stopped on although it cannot be
  * chosen, because a menu is asked for from wherever the keyboard is.
  */
 export const isStop = (node: PlacedNode): boolean => node.opacity >= 1

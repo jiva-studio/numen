@@ -10,7 +10,6 @@ import (
 )
 
 // A rename that stops because the decks cannot be named has still written the
-// stencil, and says what the stencil now stands at.
 func TestARenameWhoseDecksCannotBeNamedReturnsWhatTheStencilExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	u := newRenameField(t, vs).WithNotes(decksOf{err: errOutOfReach})
@@ -22,12 +21,11 @@ func TestARenameWhoseDecksCannotBeNamedReturnsWhatTheStencilExistsAt(t *testing.
 		t.Fatalf("rename = %v, want the index's error", err)
 	}
 	if got.Stencil.Path != "Animal.md" || got.Stencil.Size == 0 {
-		t.Errorf("stencil = %+v, want what the stencil stands at", got.Stencil)
+		t.Errorf("stencil = %+v, want current stencil state", got.Stencil)
 	}
 }
 
 // A rename whose caller has gone has still written the stencil, and says what
-// the stencil now stands at.
 func TestARenameWhoseContextEndsReturnsWhatTheStencilExistsAt(t *testing.T) {
 	vs := newVaults(t)
 	ctx, cancel := context.WithCancel(t.Context())
@@ -45,6 +43,6 @@ func TestARenameWhoseContextEndsReturnsWhatTheStencilExistsAt(t *testing.T) {
 		t.Fatalf("rename = %v, want the caller's end", err)
 	}
 	if got.Stencil.Path != "Animal.md" || got.Stencil.Size == 0 {
-		t.Errorf("stencil = %+v, want what the stencil stands at", got.Stencil)
+		t.Errorf("stencil = %+v, want current stencil state", got.Stencil)
 	}
 }

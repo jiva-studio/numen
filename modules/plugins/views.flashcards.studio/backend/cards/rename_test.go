@@ -207,7 +207,6 @@ func TestADeckTheRenameCouldNotReachKeepsTheOldHeading(t *testing.T) {
 	}
 }
 
-// A rename is the application writing a deck, so the deck it leaves behind is
 // whole: a card carrying no mark is given one, and a heading standing out of
 // step with its first field is written again from it.
 func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
@@ -236,7 +235,6 @@ func TestARenameMakesTheDeckItWritesWhole(t *testing.T) {
 	}
 }
 
-// The stencil leads. A rename the stencil refused reaches no deck.
 func TestARenameTheStencilRefusedReachesNoDeck(t *testing.T) {
 	vs := newVaults(t)
 	before := read(t, vs.first, "decks/Mammals.md")
@@ -278,14 +276,14 @@ func TestADeckOverTheBoundIsNotRenamed(t *testing.T) {
 // counting the one it may.
 type byType struct {
 	ports.NoteQueries
-	t     *testing.T
-	asked *int
+	t          *testing.T
+	queryCount *int
 }
 
 func (q byType) GetPathsOfType(
 	ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType,
 ) ([]string, error) {
-	*q.asked++
+	*q.queryCount++
 	return q.NoteQueries.GetPathsOfType(ctx, vaultID, noteType)
 }
 
@@ -303,7 +301,7 @@ func (q byType) GetTypes(
 func TestARenameAsksTheIndexForTheDecksAndNotForEveryNote(t *testing.T) {
 	vs := newVaults(t)
 	var request int
-	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, asked: &request})
+	u := newRenameField(t, vs).WithNotes(byType{NoteQueries: vs.queries, t: t, queryCount: &request})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
 		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
@@ -599,7 +597,6 @@ func TestARenameWhoseContextEndsWritesNoFurtherDeck(t *testing.T) {
 }
 
 // A deck the rename cannot reach keeps what it holds and is reported, whatever
-// stands in the way: the vault, the index, its own frontmatter, or the stencil
 // of another of its cards.
 func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 	for _, c := range []struct {
@@ -609,7 +606,7 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 		links   ports.LinkQueries
 		// written is what the deck holds by the time the rename runs, after the
 		// index read it as a deck.
-		written string
+		content string
 	}{
 		{name: "not looked at", path: "decks/Birds.md",
 			readers: faulty{stat: map[string]error{"decks/Birds.md": errOutOfReach}}},
@@ -618,18 +615,18 @@ func TestADeckOutOfReachIsReportedAndLeftAsItWas(t *testing.T) {
 		{name: "links unanswered", path: "decks/Birds.md",
 			links: unanswered{}},
 		{name: "frontmatter not YAML", path: "decks/Birds.md",
-			written: "---\ntype: [deck\n---\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Height\n\nabout 4\"\n"},
+			content: "---\ntype: [deck\n---\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Height\n\nabout 4\"\n"},
 		{name: "frontmatter not closed", path: "decks/Birds.md",
-			written: "---\ntype: deck\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Height\n\nabout 4\"\n"},
+			content: "---\ntype: deck\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Height\n\nabout 4\"\n"},
 		{name: "frontmatter on one line", path: "decks/Birds.md",
-			written: "---\n{type: deck}\n---\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n"},
+			content: "---\n{type: deck}\n---\n\n## Wren ^3f4g5h6j7k\n\n[[Animal]]\n\n### Name\n\nWren\n\n### Height\n\nabout 4\"\n"},
 		{name: "another stencil out of reach", path: "decks/Mammals.md",
 			readers: faulty{stat: map[string]error{"Term.md": errOutOfReach}}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			vs := newVaults(t)
-			if c.written != "" {
-				write(t, vs.first, c.path, c.written)
+			if c.content != "" {
+				write(t, vs.first, c.path, c.content)
 			}
 			before := read(t, vs.first, c.path)
 			readers, links := c.readers, ports.LinkQueries(vs.queries)

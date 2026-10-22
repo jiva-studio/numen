@@ -25,12 +25,12 @@ export interface PlacedGroup {
  * keyboard counts in, so a number here is a number into `flatten`.
  */
 export const placePalette = (groups: readonly PaletteGroup[]): readonly PlacedGroup[] => {
-  let at = 0
+  let index = 0
   return groups.map((group) => ({
     group,
     items: group.items.map((item) => ({
       item,
-      at: at++,
+      at: index++,
       name: getParts(item.title, item.at),
       detail: getParts(item.detail ?? '', item.detailAt),
     })),
@@ -41,4 +41,4 @@ export const placePalette = (groups: readonly PaletteGroup[]): readonly PlacedGr
 export const listId = (uid: string): string => `${uid}-list`
 
 /** What one row is addressed by, so the field can name the row that is lit. */
-export const optionId = (uid: string, at: number): string => `${uid}-option-${at}`
+export const optionId = (uid: string, pos: number): string => `${uid}-option-${pos}`

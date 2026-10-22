@@ -28,7 +28,7 @@ describe('useActionPanel', () => {
     expect(setUp('note').panel.open.value).toBe(false)
   })
 
-  it('closes when the item stops offering actions', async () => {
+  it('closes when item has no remaining actions', async () => {
     const { actions, panel } = setUp('note')
     panel.open.value = true
     actions.value = []

@@ -24,9 +24,9 @@ func TestAnswersAreCountedInTheOrderTheyWereGiven(t *testing.T) {
 	second := makeAnswer("01B", "k7m2xq9fzp", "Recognise", "2026-08-21T09:00:00Z", review.Good)
 	third := makeAnswer("01C", "k7m2xq9fzp", "Recognise", "2026-08-25T09:00:00Z", review.Good)
 
-	by := review.NewFSRS()
-	want := review.OrderAnswers([]review.Answer{first, second, third}).Replay(ahead, review.ScheduleBy(by))
-	got := review.OrderAnswers([]review.Answer{third, first, second}).Replay(ahead, review.ScheduleBy(by))
+	delta := review.NewFSRS()
+	want := review.OrderAnswers([]review.Answer{first, second, third}).Replay(ahead, review.ScheduleBy(delta))
+	got := review.OrderAnswers([]review.Answer{third, first, second}).Replay(ahead, review.ScheduleBy(delta))
 
 	cardFace := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 	if got[cardFace] != want[cardFace] {
@@ -40,10 +40,10 @@ func TestTwoAnswersOfOneInstantKeepTheirOrder(t *testing.T) {
 	early := makeAnswer("01A", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Again)
 	late := makeAnswer("01B", "k7m2xq9fzp", "Recognise", "2026-08-20T09:00:00Z", review.Easy)
 
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 	cardFace := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := review.OrderAnswers([]review.Answer{early, late}).Replay(ahead, review.ScheduleBy(by))[cardFace]
-	other := review.OrderAnswers([]review.Answer{late, early}).Replay(ahead, review.ScheduleBy(by))[cardFace]
+	one := review.OrderAnswers([]review.Answer{early, late}).Replay(ahead, review.ScheduleBy(delta))[cardFace]
+	other := review.OrderAnswers([]review.Answer{late, early}).Replay(ahead, review.ScheduleBy(delta))[cardFace]
 	if one != other {
 		t.Errorf("one history read two ways gave %+v and %+v", one, other)
 	}
@@ -91,9 +91,9 @@ func TestReplayingOneHistoryTwiceProducesOneSchedule(t *testing.T) {
 		})
 	}
 
-	by := review.NewFSRS()
+	delta := review.NewFSRS()
 	cardFace := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	if one, other := review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[cardFace], review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(by))[cardFace]; one != other {
+	if one, other := review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(delta))[cardFace], review.OrderAnswers(history).Replay(ahead, review.ScheduleBy(delta))[cardFace]; one != other {
 		t.Errorf("one history gave %+v and then %+v", one, other)
 	}
 }
@@ -107,10 +107,10 @@ func TestALineThatExistsTwiceIsCountedOnce(t *testing.T) {
 	one := makeAnswer("01A", cardFace.Card, cardFace.Face, "2026-08-20T09:00:00Z", review.Good)
 	two := makeAnswer("01B", cardFace.Card, cardFace.Face, "2026-08-21T09:00:00Z", review.Good)
 
-	by := review.NewFSRS()
-	once := review.OrderAnswers([]review.Answer{one, two}).Replay(ahead, review.ScheduleBy(by))
+	delta := review.NewFSRS()
+	once := review.OrderAnswers([]review.Answer{one, two}).Replay(ahead, review.ScheduleBy(delta))
 	// The whole run again, as a conflicted copy of the file lands beside it.
-	twice := review.OrderAnswers([]review.Answer{one, two, one, two}).Replay(ahead, review.ScheduleBy(by))
+	twice := review.OrderAnswers([]review.Answer{one, two, one, two}).Replay(ahead, review.ScheduleBy(delta))
 
 	if once[cardFace] != twice[cardFace] {
 		t.Errorf("the same run twice left the card at %+v, once leaves it at %+v",
@@ -130,11 +130,10 @@ func TestALineTakingAnAnswerBackTwiceConsumesItBackOnce(t *testing.T) {
 
 	remaining := review.OrderAnswers([]review.Answer{provided, back, provided, back}).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
 	if _, target := remaining[cardFace]; target {
-		t.Errorf("the answer was taken back and the card stands at %+v", remaining[cardFace])
+		t.Errorf("the answer was taken back and the card is at %+v", remaining[cardFace])
 	}
 }
 
-// A card face nobody has answered has no schedule, and that is what a person
 // means by a new card.
 func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 	remaining := review.OrderAnswers(nil).Replay(ahead, review.ScheduleBy(review.NewFSRS()))
@@ -142,6 +141,6 @@ func TestACardFaceNobodyAnsweredHasNoSchedule(t *testing.T) {
 		t.Errorf("no answers left %d schedules", len(remaining))
 	}
 	if !(review.Schedule{}).IsNew() {
-		t.Error("a schedule nobody has answered says it is not new")
+		t.Error("unanswered schedule marked as not new")
 	}
 }

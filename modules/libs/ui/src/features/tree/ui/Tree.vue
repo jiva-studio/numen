@@ -71,7 +71,7 @@ const emit = defineEmits<{
   /** A name typed and committed. */
   (event: 'rename', row: RowId, name: string): void
   /** The rows let go somewhere, all of them drop target in the one place. */
-  (event: 'move', rows: readonly RowId[], at: RowDropTarget): void
+  (event: 'move', rows: readonly RowId[], target: RowDropTarget): void
   /**
    * The rows lifted clear of the tree, on their way across whatever is drawn
    * beside it. Where they end up there is not the tree's to say.
@@ -82,12 +82,12 @@ const emit = defineEmits<{
   /** The selection asked to go. */
   (event: 'remove', rows: readonly RowId[]): void
   /** A menu asked for, and where the pointer was. Nothing for a press off every row. */
-  (event: 'menu', row: RowId | null, at: Position): void
+  (event: 'menu', row: RowId | null, pos: Position): void
 }>()
 
 defineSlots<{
   /** What is drawn between a row's disclosure and its name. */
-  icon(props: { id: RowId; hasChildren: boolean; open: boolean }): unknown
+  icon(props: { id: RowId; hasChildren: boolean; isOpen: boolean }): unknown
   /** What is said when there is nothing to draw. */
   silence(): unknown
 }>()
@@ -136,14 +136,14 @@ const drag = useRowDrag({
     if (!listEl || !overBox) return null
     const anyRow = listEl.querySelector('[data-tree-row]')
     const rowHeight = anyRow ? anyRow.getBoundingClientRect().height : 24
-    return { over: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
+    return { hoverRect: overBox, top: listEl.getBoundingClientRect().top, height: rowHeight }
   },
   getThreshold: () => props.threshold,
   getClock: () => props.clock,
   getCountWords: () => props.counted,
   tell: emit,
 })
-const { into, before, lifted, label, at } = drag
+const { into, before, lifted, label, at: dropTarget } = drag
 
 const {
   onContextMenu,
@@ -200,7 +200,7 @@ function getRowHeight(): number {
   <div
     ref="box"
     class="tree numen bg-surface text-ink min-h-0 font-sans text-base"
-    :data-into="at && 'into' in at && at.into === null ? '' : undefined"
+    :data-into="dropTarget && 'into' in dropTarget && dropTarget.into === null ? '' : undefined"
     v-bind="getMarkOf(marking, null)"
     @scroll.passive="virtual.onScroll"
     @contextmenu.prevent="onContextMenu"
@@ -236,7 +236,7 @@ function getRowHeight(): number {
         @abandon="onAbandon(row.id)"
         @blur="onFieldBlur"
       >
-        <slot name="icon" :id="row.id" :has-children="row.hasChildren" :open="row.open" />
+        <slot name="icon" :id="row.id" :has-children="row.hasChildren" :is-open="row.isOpen" />
       </TreeRow>
     </div>
 
@@ -273,7 +273,6 @@ function getRowHeight(): number {
 .tree[data-into] {
 }
 
-/* What is said in place of the rows stands in the middle of the tree. */
 .tree__silence {
   display: flex;
   flex: 1;

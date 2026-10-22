@@ -47,7 +47,7 @@ func TestALinkInsideACodeFenceIsAnExample(t *testing.T) {
 }
 
 func TestSchemesAreReadAndTitlesAreNot(t *testing.T) {
-	for _, c := range []struct{ written, want string }{
+	for _, c := range []struct{ rawAddress, want string }{
 		{"[[Entropy]]", "name://Entropy"},
 		{"note://01M02ACGM0FYMSXNDP29C90JNR", "note://01M02ACGM0FYMSXNDP29C90JNR"},
 		{"asset://a1b2c3d4", "asset://a1b2c3d4"},
@@ -56,8 +56,8 @@ func TestSchemesAreReadAndTitlesAreNot(t *testing.T) {
 		// address is stored with one.
 		{"[[Lecture 3: entropy]]", "name://Lecture 3: entropy"},
 	} {
-		if got := domain.ParseAddress(c.written).String(); got != c.want {
-			t.Errorf("%q parsed to %q, want %q", c.written, got, c.want)
+		if got := domain.ParseAddress(c.rawAddress).String(); got != c.want {
+			t.Errorf("%q parsed to %q, want %q", c.rawAddress, got, c.want)
 		}
 	}
 }

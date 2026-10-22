@@ -10,20 +10,18 @@ import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 // order, so pages and their lines come back in it.
 //
 // A box reaching past the prose was written for other bytes, and the
-// recognition is refused whole. So is a box on a page the recognition has
-// already left behind: a page is asked about and answered for as one, and two
 // pages under one number would write one page's corrections onto the other's
 // lines.
 func getProofreadPages(prose string, boxes []domain.HighlightBox) []domain.ProofreadPage {
 	var out []domain.ProofreadPage
-	for at, box := range boxes {
+	for item, box := range boxes {
 		if box.Empty() {
 			continue
 		}
 		if box.From < 0 || box.To > len(prose) {
 			return nil
 		}
-		line := domain.ProofreadLine{Number: at, Text: prose[box.From:box.To]}
+		line := domain.ProofreadLine{Number: item, Text: prose[box.From:box.To]}
 		if n := len(out); n > 0 {
 			switch {
 			case box.Page == out[n-1].Number:

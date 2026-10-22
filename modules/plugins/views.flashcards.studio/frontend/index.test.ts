@@ -69,7 +69,7 @@ describe('flashcards-studio plugin', () => {
     )
   })
 
-  it('lets the window ask each kind whether it owes the person an answer and to write out', () => {
+  it('queries kind handlers for pending changes before flush', () => {
     const { ctx } = createContext()
     activate(ctx)
 

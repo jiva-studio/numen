@@ -82,12 +82,12 @@ func (r *Router) Complete(ctx context.Context, pluginID string, question port.Qu
 // getReplacementModel is the model to ask the program when the model chosen is not among those it lists: the
 // one it answers with unasked, else the first. It reports false where the model is offered, none is
 // chosen, or the program lists none.
-func getReplacementModel(program port.AgentProgram, chosen string) (string, bool) {
-	if chosen == "" || len(program.Models) == 0 {
+func getReplacementModel(program port.AgentProgram, selected string) (string, bool) {
+	if selected == "" || len(program.Models) == 0 {
 		return "", false
 	}
 	for _, one := range program.Models {
-		if one.Name == chosen {
+		if one.Name == selected {
 			return "", false
 		}
 	}

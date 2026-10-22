@@ -13,10 +13,10 @@ import (
 // An address and a message both carry a modification time as nanoseconds since
 // the epoch, and as that number and no other.
 func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
-	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
+	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789
 
-	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: at}
+	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
 	if target := convertFingerprintToWire(ref).GetMtime(); target != nanos {
 		t.Errorf("the schema carries mtime %d, want %d", target, nanos)
 	}
@@ -46,15 +46,14 @@ func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
 	if !target.Comparable() {
 		t.Fatal("the window's fingerprint cannot be a map key at all")
 	}
-	for at := range target.NumField() {
-		if field := target.Field(at); field.Type == reflect.TypeOf(time.Time{}) {
+	for item := range target.NumField() {
+		if field := target.Field(item); field.Type == reflect.TypeOf(time.Time{}) {
 			t.Errorf("%s is a time.Time, and this struct is a map key", field.Name)
 		}
 	}
 }
 
 // Nothing said about a file is not the epoch: a client presenting an empty
-// fingerprint is saying it does not know, and a write is not held to 1970.
 func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
 	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
 		t.Errorf("nothing said about a file came back as %+v", back)

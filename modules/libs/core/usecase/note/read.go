@@ -34,16 +34,12 @@ const (
 type Contents = edit.Contents
 
 // Read hands over the prose of one note.
-//
-// The window and an agent read through here, so what is refused to one is
-// refused to the other, and the rules for it are written once.
 type Read struct {
 	readers port.VaultReaders
 }
 
 var errNotOpen = errors.New("this vault's files are not open")
 
-// NewRead is what a note is read out of: the vault it stands in.
 func NewRead(readers port.VaultReaders) Read {
 	return Read{readers: readers}
 }

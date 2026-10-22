@@ -60,9 +60,7 @@ func opening(tb testing.TB, path string) {
 }
 
 // MakeUnwritable makes a file nothing may save over, and lets it be saved again
-// when the test ends. The file is held open for reading and shared for reading
 // alone: it reads as it always did, and a save renaming over the name is
-// refused for as long as the handle stands.
 func MakeUnwritable(tb testing.TB, path string) {
 	tb.Helper()
 

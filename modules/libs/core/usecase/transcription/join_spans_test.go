@@ -12,11 +12,11 @@ import (
 
 // newWholeRun is a run over a transcript asked about in one window.
 func newWholeRun(
-	t *testing.T, told map[int]domain.ProofreadCorrection, words ...string,
-) (Proofread, domain.Vault, *shelf, string) {
+	t *testing.T, notified map[int]domain.ProofreadCorrection, words ...string,
+) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
-	u, v, retained, by, hash := newProofreadTranscript(t, told, words...)
-	by.limit = len(words)
+	u, v, retained, delta, hash := newProofreadTranscript(t, notified, words...)
+	delta.limit = len(words)
 	return u, v, retained, hash
 }
 
@@ -25,7 +25,7 @@ func newWholeRun(
 func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure."}
 	u, v, shelved, hash := newWholeRun(t,
-		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
+		correctionsMap(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -53,7 +53,7 @@ func TestASentenceBrokenAcrossSpansBecomesOneLine(t *testing.T) {
 func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila."}
 	u, v, shelved, hash := newWholeRun(t,
-		says(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
+		correctionsMap(joins(0, 1, "Krishna is Radha, Krishna is connected with Radhika.")),
 		words...)
 
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -69,17 +69,16 @@ func TestJoiningPreservesWhatWasHeardWhereItIs(t *testing.T) {
 // newOverlappingRun is a run over four spans, with as many lines to a call as
 // asked for.
 func newOverlappingRun(
-	t *testing.T, lines int, told map[int]domain.ProofreadCorrection,
-) (Proofread, domain.Vault, *shelf, string) {
+	t *testing.T, lines int, callback map[int]domain.ProofreadCorrection,
+) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
-	u, v, retained, by, hash := newProofreadTranscript(t,
-		told,
+	u, v, retained, delta, hash := newProofreadTranscript(t,
+		callback,
 		"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all.")
-	by.limit = lines
+	delta.limit = lines
 	return u, v, retained, hash
 }
 
-// The joined sentence, and the transcript it leaves behind it.
 const (
 	putTogether = "Krishna is Radha, Krishna is connected with Radhika."
 	onItsOwn    = "connected with Radhika."
@@ -113,10 +112,10 @@ func (s *sequenced) ProofreadSpeech(
 // a cut is taken up.
 func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	for name, one := range map[string]struct {
-		lines int
-		by    port.Proofreader
+		lines    int
+		provider port.Proofreader
 	}{
-		"in one call": {4, &corrector{says: says(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
+		"in one call": {4, &corrector{says: correctionsMap(joins(0, 1, putTogether), fixes(1, onItsOwn))}},
 		"in two calls": {2, &sequenced{replies: []domain.SpeechProofreading{
 			{Corrections: []domain.ProofreadCorrection{joins(0, 1, putTogether)}, Next: 1},
 			{Corrections: []domain.ProofreadCorrection{fixes(1, onItsOwn)}, Next: 4, IsDone: true},
@@ -124,7 +123,7 @@ func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			u, v, shelved, hash := newOverlappingRun(t, one.lines, nil)
-			u.by = one.by
+			u.provider = one.provider
 
 			if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 				t.Fatal(err)
@@ -147,7 +146,7 @@ func TestALineAlreadyInsertIntoARunIsLeftInIt(t *testing.T) {
 // Two corrections of runs over the same lines: the run standing first puts them
 // together, and the one reaching into it is dropped.
 func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
-	u, v, shelved, hash := newOverlappingRun(t, 4, says(
+	u, v, shelved, hash := newOverlappingRun(t, 4, correctionsMap(
 		joins(0, 1, putTogether),
 		joins(1, 2, "Connected with Radhika. Sure."),
 	))
@@ -173,15 +172,15 @@ func TestARunOverLinesAlreadyInsertTogetherIsDropped(t *testing.T) {
 // runJoinUntilStopped is a run over four spans, two lines to a call, that puts
 // the first two together and is stopped in its second call. It returns a run
 // taking the transcript up again with the proofreader given.
-func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *shelf, string) {
+func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domain.Vault, *fakeStorage, string) {
 	t.Helper()
 	words := []string{"Krishna is Raj. Krishna is", "connected with Raj Dila.", "Sure.", "That is all."}
-	u, v, shelved, by, hash := newProofreadTranscript(t, says(joins(0, 1, putTogether)), words...)
-	by.limit = 2
+	u, v, shelved, delta, hash := newProofreadTranscript(t, correctionsMap(joins(0, 1, putTogether)), words...)
+	delta.limit = 2
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	by.stop = func(calls int) {
+	delta.stop = func(calls int) {
 		if calls == 2 {
 			stop()
 		}
@@ -195,7 +194,6 @@ func runJoinUntilStopped(t *testing.T, again port.Proofreader) (Proofread, domai
 }
 
 // A transcript whose lines were put together is taken up again at the moment
-// the count stands at, which putting them together did not move. The numbers
 // the lines are known by are not the same ones the run before it saw.
 func TestARunConsumesUpATranscriptWhoseLinesWereInsertTogether(t *testing.T) {
 	again, v, shelved, hash := runJoinUntilStopped(t, &corrector{})
@@ -235,9 +233,9 @@ func TestARunTakingUpATranscriptRefusesACorrectionOfALineItDidNotAsk(t *testing.
 	if len(cues) != len(remaining) || cues[0].Text != putTogether {
 		t.Fatalf("the transcript says %+v", cues)
 	}
-	for at := range cues {
-		if cues[at].Text != remaining[at].Text {
-			t.Errorf("line %d says %q, the run before left %q", at, cues[at].Text, remaining[at].Text)
+	for item := range cues {
+		if cues[item].Text != remaining[item].Text {
+			t.Errorf("line %d says %q, the run before left %q", item, cues[item].Text, remaining[item].Text)
 		}
 	}
 }

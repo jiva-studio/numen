@@ -17,13 +17,13 @@ import {
 import type { Entry } from '@/entities/file'
 import { getEntryIcon } from './entryIcon'
 
-const entry = (over: Partial<Entry> = {}): Entry => ({
+const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'a',
   name: 'a',
   isFolder: false,
   kind: 'note',
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
 describe('the icon of an entry', () => {

@@ -10,9 +10,9 @@ import (
 // is a row writing a setting nothing reads.
 func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 	for _, one := range []struct {
-		in    any
-		field string
-		at    string
+		in         any
+		field      string
+		targetPath string
 	}{
 		{Settings{}, "Indexing", indexingAt},
 		{Settings{}, "Agent", agentAt},
@@ -25,8 +25,8 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 			t.Errorf("%T holds no %s", one.in, one.field)
 			continue
 		}
-		if key := field.Tag.Get("json"); key != one.at {
-			t.Errorf("%T.%s stands at %q and is read under %q", one.in, one.field, key, one.at)
+		if key := field.Tag.Get("json"); key != one.targetPath {
+			t.Errorf("%T.%s is at %q and is read under %q", one.in, one.field, key, one.targetPath)
 		}
 	}
 }

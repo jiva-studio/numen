@@ -45,7 +45,6 @@ export default tseslint.config(
     },
   },
 
-
   // Package boundaries: no reaching out of the module via relative paths
   {
     files: ['**/*.ts'],

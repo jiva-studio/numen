@@ -45,20 +45,16 @@ var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 // a schedule differing in the last place is a different schedule, and a card
 // face sent away for a different day.
 //
-// The card faces it is asked about are of two kinds. One is every card face a
-// walk of seven answers reaches, from a card nobody has answered, at a spread of
-// gaps: that is every phase the scheduler puts a card through, on the numbers
-// its own answers produce. The other is a grid of schedules made by hand,
-// standing at stabilities and difficulties and gaps far outside what a walk of
-// seven answers reaches, so that every clamp is asked about too.
+// Test coverage includes sequences generated across review phases from new
+// cards, and synthetic boundary schedules covering clamping limits.
 func TestASchedulerWorksOutWhatTheLibraryWorksOut(t *testing.T) {
 	for _, retention := range libraryRetentions {
-		by, engine := makeSchedulers(retention)
+		delta, engine := makeSchedulers(retention)
 		for _, s := range libraryWalked(engine) {
-			libraryAgrees(t, retention, by, engine, s)
+			libraryAgrees(t, retention, delta, engine, s)
 		}
 		for _, s := range libraryMade() {
-			libraryAgrees(t, retention, by, engine, s)
+			libraryAgrees(t, retention, delta, engine, s)
 		}
 	}
 }
@@ -86,7 +82,7 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 // the days that actually went by, and what the scheduler makes of such a card
 // face is written down in the test below.
 func libraryAgrees(
-	t *testing.T, retention float64, by review.FSRS, engine *fsrs.FSRS,
+	t *testing.T, retention float64, delta review.FSRS, engine *fsrs.FSRS,
 	s review.Schedule,
 ) {
 	t.Helper()
@@ -99,10 +95,10 @@ func libraryAgrees(
 	status := clampLastAnswer(s)
 	for _, r := range libraryRatings {
 		want := asSchedule(engine.Next(asCard(status), libraryNow, r).Card)
-		got := by.Next(s, libraryNow, review.Rating(r))
+		got := delta.Next(s, libraryNow, review.Rating(r))
 		sameSchedule(t, fmt.Sprintf("at %.2f, %s of %s", retention, r, describe(s)), got, want)
 	}
-	good, again := by.Endings(s, libraryNow)
+	good, again := delta.Endings(s, libraryNow)
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it came back on of %s", retention, describe(s)),
 		good, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Good).Card))
 	sameSchedule(t, fmt.Sprintf("at %.2f, the ending it did not of %s", retention, describe(s)),
@@ -125,15 +121,15 @@ func clampLastAnswer(s review.Schedule) review.Schedule {
 // is answered the same, and answered as the library answers one whose last
 // answer falls at that instant.
 func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
-	by, engine := makeSchedulers(0)
+	delta, engine := makeSchedulers(0)
 
 	// A card face the scheduler has put into review, carrying an answer given
 	// after the instant it is asked about.
-	ahead := by.Next(by.Next(review.Schedule{},
+	ahead := delta.Next(delta.Next(review.Schedule{},
 		libraryNow.AddDate(0, 0, -30), review.Good),
 		libraryNow.AddDate(0, 0, 1), review.Good)
 	if fsrs.State(ahead.Phase) != fsrs.Review {
-		t.Fatalf("the card face this is asked of stands in phase %d, want review", ahead.Phase)
+		t.Fatalf("card face phase = %d, want %d", ahead.Phase, fsrs.Review)
 	}
 
 	// The same card face as one that stood no time away.
@@ -147,7 +143,7 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 		} {
 			face := ahead
 			face.Last = libraryNow.Add(dur)
-			got := by.Next(face, libraryNow, review.Rating(r))
+			got := delta.Next(face, libraryNow, review.Rating(r))
 			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, dur), got, want)
 		}
 	}
@@ -161,19 +157,19 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 // runs forwards.
 func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
-		s  review.Schedule
-		at time.Time
+		s         review.Schedule
+		timePoint time.Time
 	}
 	out := []review.Schedule{{}}
-	frontier := []step{{at: libraryNow.Add(-libraryWalkOpens)}}
+	frontier := []step{{timePoint: libraryNow.Add(-libraryWalkOpens)}}
 	for depth := range 7 {
 		var next []step
 		for _, f := range frontier {
 			for i, r := range libraryRatings {
-				at := f.at.Add(libraryGaps[(depth+i)%len(libraryGaps)])
-				one := asSchedule(engine.Next(asCard(f.s), at, r).Card)
+				pos := f.timePoint.Add(libraryGaps[(depth+i)%len(libraryGaps)])
+				one := asSchedule(engine.Next(asCard(f.s), pos, r).Card)
 				out = append(out, one)
-				next = append(next, step{one, at})
+				next = append(next, step{one, pos})
 			}
 		}
 		frontier = next
@@ -249,18 +245,17 @@ func sameSchedule(t *testing.T, what string, got, want review.Schedule) {
 		t.Fatalf("%s has %d lapses, want %d", what, got.Lapses, want.Lapses)
 	}
 	if math.Float64bits(got.Stability) != math.Float64bits(want.Stability) {
-		t.Fatalf("%s stands at a stability of %v, want %v", what, got.Stability, want.Stability)
+		t.Fatalf("%s stability = %v, want %v", what, got.Stability, want.Stability)
 	}
 	if math.Float64bits(got.Difficulty) != math.Float64bits(want.Difficulty) {
-		t.Fatalf("%s stands at a difficulty of %v, want %v", what, got.Difficulty, want.Difficulty)
+		t.Fatalf("%s difficulty = %v, want %v", what, got.Difficulty, want.Difficulty)
 	}
 	if got.Phase != want.Phase {
 		t.Fatalf("%s is left in phase %d, want %d", what, got.Phase, want.Phase)
 	}
 }
 
-// asCard is a schedule as the library reads a card, which is how the scheduler
-// reads one. A card face nobody has answered is the card the library opens with.
+// asCard converts review.Schedule into an FSRS library Card model.
 func asCard(s review.Schedule) fsrs.Card {
 	if s.IsNew() {
 		return fsrs.NewCard()

@@ -14,9 +14,8 @@ import (
 
 // The window asks for every setting and writes one of them back.
 
-// getSetting is what stands at a path through the settings, read off the whole of
 // them. What the file leaves out stands there at its default.
-func getSetting(t *testing.T, f *going, at ...string) any {
+func getSetting(t *testing.T, f *going, pos ...string) any {
 	t.Helper()
 	response, err := f.configuring.GetSettings(t.Context(), connect.NewRequest(&v1.GetSettingsRequest{}))
 	if err != nil {
@@ -26,10 +25,10 @@ func getSetting(t *testing.T, f *going, at ...string) any {
 	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
 		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	for _, step := range at {
+	for _, step := range pos {
 		section, is := target.(map[string]any)
 		if !is {
-			t.Fatalf("%s is not a section of the settings", strings.Join(at, "."))
+			t.Fatalf("%s is not a section of the settings", strings.Join(pos, "."))
 		}
 		target = section[step]
 	}
@@ -53,7 +52,7 @@ func TestTheSettingsReadOutStandOnTheDefaults(t *testing.T) {
 	if err := json.Unmarshal([]byte(response.Msg.GetWritten()), &target); err != nil {
 		t.Fatalf("the settings read out as %q: %v", response.Msg.GetWritten(), err)
 	}
-	if _, stands := target["appearance"]; !stands {
+	if _, exists := target["appearance"]; !exists {
 		t.Errorf("the settings read out as %v", target)
 	}
 
@@ -97,9 +96,9 @@ func TestASettingSavedIsAnsweredByTheNextQuestion(t *testing.T) {
 // correct, and nothing is written.
 func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 	for _, one := range []struct {
-		what  string
-		at    []string
-		value string
+		what   string
+		posVal []string
+		value  string
 	}{
 		{"is not JSON at all", []string{"agent", "claude", "model"}, `opus`},
 		{"is of the wrong shape", []string{"agent", "claude", "model"}, `7`},
@@ -115,7 +114,7 @@ func TestAValueTheSettingsCannotHoldIsRefused(t *testing.T) {
 			_, err = f.configuring.WriteSettings(
 				t.Context(),
 				connect.NewRequest(&v1.WriteSettingsRequest{
-					Settings: []*v1.Setting{{At: one.at, Value: one.value}},
+					Settings: []*v1.Setting{{At: one.posVal, Value: one.value}},
 				}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -209,7 +208,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 
 	for _, one := range []struct {
 		name    string
-		written string
+		encoded string
 	}{
 		{"not JSON at all", `{ "agent": `},
 		{"a value of the wrong kind", `{"appearance": {"text_scale": "large"}}`},
@@ -218,7 +217,7 @@ func TestAFileTheSettingsCannotBeReadOutOfIsRefused(t *testing.T) {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := f.configuring.WriteSettingsFile(
 				t.Context(),
-				connect.NewRequest(&v1.WriteSettingsFileRequest{Written: one.written}),
+				connect.NewRequest(&v1.WriteSettingsFileRequest{Written: one.encoded}),
 			)
 			if connect.CodeOf(err) != connect.CodeInvalidArgument {
 				t.Fatalf("the file was taken as %v", err)
@@ -258,7 +257,7 @@ func TestWhatAnErrorReturnsDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 }
 
 // newString is the file a client says it last read.
-func newString(written string) *string { return &written }
+func newString(output string) *string { return &output }
 
 // The settings page and the file's own tab both write this file. A tab
 // presenting a file the settings page has since patched is answered the

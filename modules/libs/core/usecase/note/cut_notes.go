@@ -59,7 +59,7 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 		return nil
 	}
 
-	at := max(int(n.Fingerprint.Size)-len(n.Body), 0)
+	pos := max(int(n.Fingerprint.Size)-len(n.Body), 0)
 	sizes := u.Sizes
 	sizes.Large = chunking.Whole
 	body := n.Body
@@ -71,11 +71,11 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 				// The title is searched together with the body.
 				text = n.Title + "\n" + text
 			}
-			return domain.Chunk{Start: at + c.Start, Length: c.Length, Location: c.Location, Text: text}
+			return domain.Chunk{Start: pos + c.Start, Length: c.Length, Location: c.Location, Text: text}
 		})
 	if len(out) == 0 {
 		// A note of a title and no words is answered by its title.
-		out = append(out, domain.Chunk{Start: at, Length: len(body), Text: n.Title})
+		out = append(out, domain.Chunk{Start: pos, Length: len(body), Text: n.Title})
 	}
 	return out
 }
@@ -120,19 +120,19 @@ func getIndexedHeadings(n domain.Note, profile domain.NoteProfile) []domain.Head
 // withoutMark is a heading without the mark it ends in: a space, a caret and a word of letters,
 // digits and hyphens. A heading that is only a mark has no text.
 func withoutMark(heading string, mark *regexp.Regexp) string {
-	at := strings.LastIndex(heading, " ")
+	pos := strings.LastIndex(heading, " ")
 	last := heading
-	if at >= 0 {
-		last = heading[at+1:]
+	if pos >= 0 {
+		last = heading[pos+1:]
 	}
 	word, found := strings.CutPrefix(last, "^")
 	if !found || word == "" || !isMarkWord(word, mark) {
 		return heading
 	}
-	if at < 0 {
+	if pos < 0 {
 		return ""
 	}
-	return heading[:at]
+	return heading[:pos]
 }
 
 // isMarkWord says whether a word is the word of a mark: one the pattern matches whole, else any word

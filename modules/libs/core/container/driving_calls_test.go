@@ -45,11 +45,11 @@ func getPortFields(file *ast.File) []string {
 			if star, is := callType.(*ast.StarExpr); is {
 				callType = star.X
 			}
-			at, is := callType.(*ast.SelectorExpr)
+			pos, is := callType.(*ast.SelectorExpr)
 			if !is {
 				continue
 			}
-			if from, is := at.X.(*ast.Ident); is && from.Name == "port" {
+			if from, is := pos.X.(*ast.Ident); is && from.Name == "port" {
 				for _, name := range one.Names {
 					found = append(found, name.Name)
 				}
@@ -146,7 +146,6 @@ func TestNoDrivingAdapterCallsAPortOutsideItsWiring(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a file written to be refused. It finds a
 // call through a field typed port.X, and lets through a call through a field of
 // another type and a call on a value that is no field.
 func TestWhatTheDrivingCallRuleRefuses(t *testing.T) {
@@ -233,7 +232,6 @@ func TestEveryDrivingAdapterIsOnTheLintRule(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against a list written to be refused.
 func TestWhatTheLintCoverageRuleRefuses(t *testing.T) {
 	got := getUncovered([]string{"**/adapter/window/**", "**/adapter/mcp/**", "!**/adapter/cli/deps.go"})
 	if want := []string{"adapter/cli"}; !slices.Equal(got, want) {

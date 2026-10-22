@@ -30,14 +30,13 @@ export interface PanelsDeps {
 
 export const usePanels = (deps: PanelsDeps) => {
   /**
-   * Which of the card and the two panels beside it the window is showing. One
    * thing is in the window at a time, so one thing says which, and a panel coming
    * in is the other one going out.
    */
   const showing = ref<'reading' | 'here' | 'asking'>('here')
 
   /** The same thing in the words the strip stands the three in. */
-  const at = computed<PanelPlace>(() => {
+  const panelPlace = computed<PanelPlace>(() => {
     if (showing.value === 'reading') return 'before'
     if (showing.value === 'asking') return 'after'
     return 'here'
@@ -97,5 +96,5 @@ export const usePanels = (deps: PanelsDeps) => {
     else agentPanel.openPanel()
   }
 
-  return { showing, at, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent }
+  return { showing, at: panelPlace, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent }
 }

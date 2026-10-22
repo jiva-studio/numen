@@ -17,9 +17,9 @@ type EditCard struct {
 func NewEditCard(read Read, write Write) EditCard { return EditCard{read: read, write: write} }
 
 func (u EditCard) Execute(
-	ctx context.Context, v domain.Vault, at DeckVersion, mark, stencil string, values []format.Value,
+	ctx context.Context, v domain.Vault, version DeckVersion, mark, stencil string, values []format.Value,
 ) (EditResult, error) {
-	changed, err := changeDeck(ctx, u.read, u.write, v, at, func(contents DeckContents, file *format.DeckFile) error {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
 		card := cardid.ID(mark)
 		if _, err := findCard(contents.Body.Cards, mark); err != nil {
 			return err

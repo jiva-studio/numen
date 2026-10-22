@@ -71,9 +71,9 @@ func TestOneModelToASettingIsTheDefault(t *testing.T) {
 			if !one.IsInstalled {
 				continue
 			}
-			at := formatPath(modelAt(one.Name))
-			if byDefault[at] != 1 {
-				t.Errorf("%s: %s has %d models by default", name, at, byDefault[at])
+			pos := formatPath(modelAt(one.Name))
+			if byDefault[pos] != 1 {
+				t.Errorf("%s: %s has %d models by default", name, pos, byDefault[pos])
 			}
 		}
 	}
@@ -191,9 +191,9 @@ func TestAProgramThatListsNoModelsOffersTheDefaultAlone(t *testing.T) {
 
 // A program that is not installed offers no models unless the settings name it.
 func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T) {
-	at := formatPath([]string{"agent", "gamma", "model"})
+	pos := formatPath([]string{"agent", "gamma", "model"})
 	for _, one := range settings.AgentModels("agent", settings.Agent{}, listedPrograms()) {
-		if formatPath(one.Path) == at {
+		if formatPath(one.Path) == pos {
 			t.Errorf("a program that is not installed offers %+v", one)
 		}
 	}
@@ -208,10 +208,10 @@ func TestAProgramNotInstalledOffersModelsOnlyWhereTheSettingsNameIt(t *testing.T
 
 // modelsAt are the models one setting can be set to, in the order they are
 // offered.
-func modelsAt(t *testing.T, held settings.Agent, programs []port.AgentProgram, setting []string) []port.Model {
+func modelsAt(t *testing.T, target settings.Agent, programs []port.AgentProgram, setting []string) []port.Model {
 	t.Helper()
 	found := []port.Model{}
-	for _, one := range settings.AgentModels("agent", held, programs) {
+	for _, one := range settings.AgentModels("agent", target, programs) {
 		if formatPath(one.Path) == formatPath(setting) {
 			found = append(found, one)
 		}
@@ -222,7 +222,6 @@ func modelsAt(t *testing.T, held settings.Agent, programs []port.AgentProgram, s
 	return found
 }
 
-// modelAt is where the model of a program stands in the file.
 func modelAt(program string) []string { return []string{"agent", program, "model"} }
 
 // formatPath is a path through the file, as one word.

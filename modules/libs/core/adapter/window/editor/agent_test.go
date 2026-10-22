@@ -23,7 +23,7 @@ type askedAgent struct {
 	took  chan port.Task
 	takes []port.Step
 	// over is the conversations this agent was told are finished.
-	over chan string
+	overChan chan string
 	// refuses is what finishing a conversation answers with.
 	refuses error
 }
@@ -39,7 +39,7 @@ func (a *askedAgent) StartRun(_ context.Context, task port.Task) (port.Run, erro
 }
 
 func (a *askedAgent) EndConversation(_ context.Context, conversation string) error {
-	a.over <- conversation
+	a.overChan <- conversation
 	return a.refuses
 }
 
@@ -181,7 +181,7 @@ func TestACallReturnsWhereItIsWorking(t *testing.T) {
 // TestAConversationSaidToBeOverReachesTheAgent, under the name its questions
 // carried. A tab closes, and what was kept for it is release.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
-	taking := &askedAgent{over: make(chan string, 1)}
+	taking := &askedAgent{overChan: make(chan string, 1)}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	if _, err := client.FinishConversation(t.Context(),
@@ -189,7 +189,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if overVal := <-taking.over; overVal != "8f2c1e" {
+	if overVal := <-taking.overChan; overVal != "8f2c1e" {
 		t.Errorf("the conversation said to be over is %q, want %q", overVal, "8f2c1e")
 	}
 }
@@ -197,7 +197,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 // TestAConversationThatCouldNotBeFinishedSaysSo. The client hears it and the
 // agent is the one that could not let go.
 func TestAConversationThatCouldNotBeFinishedReturnsSo(t *testing.T) {
-	taking := &askedAgent{over: make(chan string, 1), refuses: errors.New("the child would not go")}
+	taking := &askedAgent{overChan: make(chan string, 1), refuses: errors.New("the child would not go")}
 	client := newAgentClient(t, newAgentAPI(taking))
 
 	_, err := client.FinishConversation(t.Context(),

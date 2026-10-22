@@ -22,7 +22,6 @@ const namedInAnError = 3
 //
 // It runs where the drop reached the application, which is off the thread the
 // page is served on, and it answers nothing: what arrived is said to everyone
-// drawing the vault, and what did not stands in the list of what is being done.
 //
 // The watcher reports a picture or an archive to nobody, so what arrived is
 // named to the listeners here.
@@ -40,24 +39,24 @@ func (o *Installation) Imports(ctx context.Context, into string, paths []string)
 	}
 	defer state.Writing.finish()
 
-	at := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
-	state.reportTask(at)
+	pos := run.Task{ID: importingFiles + " " + into, Title: "Bringing files in", About: into}
+	state.reportTask(pos)
 
 	imported, err := o.vaults.Import.Execute(ctx, showing, into, paths)
 	if direct := getDirectChildren(into, imported.Landed); len(direct) > 0 {
 		state.ChangeEvents.publish(change{paths: direct})
 	}
 	if err != nil {
-		at.Error = err.Error()
-		state.reportTask(at)
+		pos.Error = err.Error()
+		state.reportTask(pos)
 		return
 	}
 	if failureText := describeImportFailures(imported.Errors); failureText != "" {
-		at.Error = failureText
-		state.reportTask(at)
+		pos.Error = failureText
+		state.reportTask(pos)
 		return
 	}
-	state.finishTask(at.ID)
+	state.finishTask(pos.ID)
 }
 
 // getDirectChildren returns items in the target folder.

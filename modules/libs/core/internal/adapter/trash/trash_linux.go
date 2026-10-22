@@ -72,23 +72,23 @@ func getVolumeRoot(path string) (string, error) {
 	if err := syscall.Lstat(path, &folder); err != nil {
 		return "", err
 	}
-	at := path
+	pos := path
 	for {
-		parent := filepath.Dir(at)
-		if parent == at {
-			return at, nil
+		parent := filepath.Dir(pos)
+		if parent == pos {
+			return pos, nil
 		}
 		var up syscall.Stat_t
 		// A parent nothing here can look at is as far as this goes: what it is
 		// on cannot be compared, so the folder below it is the root.
 		if err := syscall.Lstat(parent, &up); errors.Is(err, syscall.EACCES) || errors.Is(err, syscall.EPERM) || errors.Is(err, fs.ErrPermission) || errors.Is(err, fs.ErrNotExist) {
-			return at, nil
+			return pos, nil
 		} else if err != nil {
 			return "", fmt.Errorf("stat parent %s: %w", parent, err)
 		} else if up.Dev != folder.Dev {
-			return at, nil
+			return pos, nil
 		}
-		at = parent
+		pos = parent
 	}
 }
 
@@ -118,8 +118,8 @@ func getVolumeTrashDir(top string, uid int) (string, error) {
 func moveIntoTrash(dir, path, from string) error {
 	files := filepath.Join(dir, "files")
 	info := filepath.Join(dir, "info")
-	for _, at := range []string{files, info} {
-		if err := os.MkdirAll(at, 0o700); err != nil {
+	for _, item := range []string{files, info} {
+		if err := os.MkdirAll(item, 0o700); err != nil {
 			return err
 		}
 	}

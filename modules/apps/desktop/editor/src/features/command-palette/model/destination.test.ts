@@ -20,14 +20,14 @@ const window = () => {
     openFile: (path, title, line) =>
       void displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
   }
-  return { places, travelled, opened: openedTab, shown: displayedItems }
+  return { places, travelled, opened: openedTab, openedFiles: displayedItems }
 }
 
-const landing = (over: Partial<SearchDestination>): SearchDestination => ({
+const landing = (overrides: Partial<SearchDestination>): SearchDestination => ({
   at: 'file',
   path: 'Note.md',
   title: 'A note',
-  ...over,
+  ...overrides,
 })
 
 describe('a name chosen', () => {
@@ -37,7 +37,7 @@ describe('a name chosen', () => {
     await openDestination(landing({ at: 'plex' }), one.places)
 
     expect(one.travelled).toStrictEqual(['Note.md'])
-    expect(one.shown).toStrictEqual([])
+    expect(one.openedFiles).toStrictEqual([])
   })
 })
 
@@ -47,7 +47,7 @@ describe('a file chosen', () => {
 
     await openDestination(landing({}), one.places)
 
-    expect(one.shown).toStrictEqual(['Note.md A note'])
+    expect(one.openedFiles).toStrictEqual(['Note.md A note'])
   })
 
   it('is called by the path it is filed at where it has no name', async () => {
@@ -55,7 +55,7 @@ describe('a file chosen', () => {
 
     await openDestination(landing({ title: '' }), one.places)
 
-    expect(one.shown).toStrictEqual(['Note.md Note.md'])
+    expect(one.openedFiles).toStrictEqual(['Note.md Note.md'])
   })
 
   it('carries the line the heading was found at', async () => {
@@ -63,7 +63,7 @@ describe('a file chosen', () => {
 
     await openDestination(landing({ line: 12 }), one.places)
 
-    expect(one.shown).toStrictEqual(['Note.md A note 12'])
+    expect(one.openedFiles).toStrictEqual(['Note.md A note 12'])
   })
 
   it('carries the top of the file for the line it opens with', async () => {
@@ -71,7 +71,7 @@ describe('a file chosen', () => {
 
     await openDestination(landing({ line: 0 }), one.places)
 
-    expect(one.shown).toStrictEqual(['Note.md A note 0'])
+    expect(one.openedFiles).toStrictEqual(['Note.md A note 0'])
   })
 })
 
@@ -85,7 +85,7 @@ describe('a passage chosen', () => {
     )
 
     expect(one.opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
-    expect(one.shown).toStrictEqual([])
+    expect(one.openedFiles).toStrictEqual([])
   })
 
   it('opens it at its first page where it names no span', async () => {
@@ -103,6 +103,6 @@ describe('nothing chosen', () => {
 
     await openDestination(null, one.places)
 
-    expect([one.travelled, one.opened, one.shown]).toStrictEqual([[], [], []])
+    expect([one.travelled, one.opened, one.openedFiles]).toStrictEqual([[], [], []])
   })
 })

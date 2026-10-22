@@ -130,8 +130,8 @@ func fetchModels(ctx context.Context, command, env []string) ([]claudeModel, err
 
 // modelList is the models of one command and when they were read.
 type modelList struct {
-	models []claudeModel
-	at     time.Time
+	models    []claudeModel
+	fetchedAt time.Time
 }
 
 // modelCache keeps the lists of models by the command that listed them.
@@ -146,7 +146,7 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	c.mu.Lock()
 	one, found := c.lists[key]
 	c.mu.Unlock()
-	if found && time.Since(one.at) < modelsLifetime {
+	if found && time.Since(one.fetchedAt) < modelsLifetime {
 		return one.models, nil
 	}
 	models, err := fetchModels(ctx, command, env)
@@ -158,7 +158,7 @@ func (c *modelCache) get(ctx context.Context, command, env []string) ([]claudeMo
 	if c.lists == nil {
 		c.lists = map[string]modelList{}
 	}
-	c.lists[key] = modelList{models: models, at: time.Now()}
+	c.lists[key] = modelList{models: models, fetchedAt: time.Now()}
 	return models, nil
 }
 

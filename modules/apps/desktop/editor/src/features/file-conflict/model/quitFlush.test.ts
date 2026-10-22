@@ -41,7 +41,6 @@ function createMockStream() {
   }
 }
 
-/** A mock core whose reads and writes a test drives, and whose quit it speaks for. */
 function createFakeCore(getQuits: () => AsyncIterable<{ token: string; flush: boolean }>) {
   const files = new Map<string, string>()
   const writtenFiles: { path: string; body: string }[] = []
@@ -103,13 +102,13 @@ function createConflict(note: string) {
       drop = raising(conflict)
     },
     /** The conflict stops standing, however that came about. */
-    answered: () => drop(),
+    dismiss: () => drop(),
   }
 }
 
-const nap = () => new Promise((wake) => setTimeout(wake, 0))
+const delay = () => new Promise((resolve) => setTimeout(resolve, 0))
 const settle = async () => {
-  for (let i = 0; i < 20; i++) await nap()
+  for (let i = 0; i < 20; i++) await delay()
 }
 
 describe('a page requested to write what it owes', () => {
@@ -313,7 +312,7 @@ describe('a page holding text the file changed under', () => {
 
     mockStream.end()
     await settle()
-    note.answered()
+    note.dismiss()
     await settle()
 
     // Nothing answers to that token now, and the page has not been asked again.
@@ -400,7 +399,7 @@ describe('a conflict put off and settled', () => {
     mockStream.send({ token: '1', flush: true })
     await settle()
     going.conflicts.value[0]?.later()
-    first.answered()
+    first.dismiss()
 
     createConflict('Again.md').raise(going.raise)
     await settle()

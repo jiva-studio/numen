@@ -26,8 +26,7 @@ type Router struct {
 	provider port.AgentProvider
 	settings settings.Agent
 	// tools are the vault tools every agent may call.
-	tools []string
-	// declarations are how those tools are spoken about.
+	tools        []string
 	declarations []port.ToolDeclaration
 	endpoint     port.ToolEndpoint
 	root         string
@@ -71,7 +70,6 @@ func getProvider(opts Options) port.AgentProvider {
 	return opts.Config.AgentProvider()
 }
 
-// getToolDeclarations is how the agent speaks about the tools the vault serves.
 func getToolDeclarations(names []string, vocabulary map[string]mcp.Tool) []port.ToolDeclaration {
 	declarations := make([]port.ToolDeclaration, 0, len(names))
 	for _, name := range names {
@@ -186,9 +184,9 @@ func (r *Router) checkLimited(ctx context.Context, use string) error {
 
 // getProgram is the program a task goes to: the one it names, else the one the settings name, else
 // the default of the plugins.
-func (r *Router) getProgram(ctx context.Context, asked string) (string, error) {
-	if asked != "" {
-		return asked, nil
+func (r *Router) getProgram(ctx context.Context, requested string) (string, error) {
+	if requested != "" {
+		return requested, nil
 	}
 	if !r.settings.IsNamed() {
 		return "", errors.New("no agent is named in the settings")

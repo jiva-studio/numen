@@ -50,7 +50,11 @@ export const notesCore: NoteOperations = {
   read: async (path) => mapNoteResult(await notes.readNote({ path })),
   write: async (path, body, observed) =>
     mapWriteResult(
-      await notes.writeNote({ path, body, ...(observed ? { baseline: mapBaseline(observed) } : {}) }),
+      await notes.writeNote({
+        path,
+        body,
+        ...(observed ? { baseline: mapBaseline(observed) } : {}),
+      }),
     ),
   create: async (note) => {
     const answer = await notes.createNote({

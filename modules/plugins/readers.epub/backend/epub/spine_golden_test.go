@@ -93,7 +93,6 @@ func TestASpineDocumentCrossesAsTheCorpusReturnsItDoes(t *testing.T) {
 	}
 }
 
-// Every offset the corpus carries is where that run stands in the book's text,
 // so the window reading them off it is reading the book's own numbers.
 func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	book := read(t, seamBook(t))
@@ -108,11 +107,11 @@ func TestTheCorpusCarriesTheBooksOwnOffsets(t *testing.T) {
 	}
 	var out strings.Builder
 	for _, run := range runs {
-		if !strings.HasPrefix(book.Text[run.at:], run.said) {
+		if !strings.HasPrefix(book.Text[run.offset:], run.text) {
 			t.Errorf("a run says it begins at %d, where the text is %q",
-				run.at, excerpt(book.Text, run.at))
+				run.offset, excerpt(book.Text, run.offset))
 		}
-		out.WriteString(run.said)
+		out.WriteString(run.text)
 	}
 	if want := book.Text[markup.Offset : markup.Offset+markup.Length]; out.String() != want {
 		t.Errorf("the runs say\n%q\nand the document is\n%q", out.String(), want)

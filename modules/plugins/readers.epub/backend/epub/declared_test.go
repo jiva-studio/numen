@@ -44,11 +44,11 @@ func TestAnEntryThatMisdeclaresItsSizeIsLeftUnread(t *testing.T) {
 			})
 
 			// The central directory entry of the lying chapter is where the size is read from.
-			at := bytes.LastIndex(raw, []byte("lying.xhtml"))
-			if at < 46 || binary.LittleEndian.Uint32(raw[at-46:]) != centralSignature {
+			pos := bytes.LastIndex(raw, []byte("lying.xhtml"))
+			if pos < 46 || binary.LittleEndian.Uint32(raw[pos-46:]) != centralSignature {
 				t.Fatal("the central directory entry was not found")
 			}
-			binary.LittleEndian.PutUint32(raw[at-46+uncompressedSizeOffset:], tt.declared)
+			binary.LittleEndian.PutUint32(raw[pos-46+uncompressedSizeOffset:], tt.declared)
 
 			book := read(t, raw)
 			if !strings.Contains(book.Text, "ordinary size") {

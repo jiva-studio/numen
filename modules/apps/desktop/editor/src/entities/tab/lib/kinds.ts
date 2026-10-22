@@ -18,7 +18,6 @@ export interface TabTarget {
 
 /**
  * What one tab holds, as whoever answers on the person's behalf is told it: the
- * file it stands at, and the document, the book or the recording it stands in.
  */
 export type OpenTab<K extends string = string> = { readonly path: string } & ProgressOf<K>
 
@@ -33,7 +32,7 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and release with the tab.
    */
-  open(at: string, id: string): TabState
+  open(targetPath: string, id: string): TabState
   /** What the tab is called, as what it holds now stands. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -45,7 +44,7 @@ export interface TabKind<TabState, K extends string = string> {
    * declares one has a tab per thing, so the same thing opened twice is the
    * tab it already has.
    */
-  identity?(at: string): string
+  identity?(targetPath: string): string
   /** The tab came on screen, where what it holds has room to measure. */
   onShow?(state: TabState, id: string): void
   /** The tab is handed text meant for it, such as a question the window puts to it. */
@@ -59,7 +58,6 @@ export interface TabKind<TabState, K extends string = string> {
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   getTarget?(state: TabState): TabTarget
-  /** What one of its tabs holds, as whoever answers for the person is told it. */
   getOpenTab?(state: TabState): OpenTab<K>
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
@@ -78,14 +76,17 @@ export interface TabKind<TabState, K extends string = string> {
   navigate?(state: TabState, path: string, title: string): void | Promise<void>
   /** Its tabs stand beside files: a file opened on a path never closes one of them. */
   readonly isTool?: boolean
-  /** Whether the tab owes the person an answer about what its file now holds. */
   isAsking?(state: TabState): boolean
   /** Writes what the tab holds out to its file; answers once nothing is on its way. */
   flushPending?(state: TabState): Promise<void>
   /** A file made in a folder under a name, as the file this kind edits. */
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
   /** Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none. */
-  resolveCommand?(at: string, command: string, type: NoteType): Promise<TabResolution | null>
+  resolveCommand?(
+    targetPath: string,
+    command: string,
+    type: NoteType,
+  ): Promise<TabResolution | null>
   /** The icon its tabs carry before their title. */
   readonly icon?: Component
   /** Where a tab of it opens in a window that starts with nothing to restore. */

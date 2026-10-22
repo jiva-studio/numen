@@ -81,8 +81,7 @@ type Host struct {
 	failedPlugins    []port.PluginFailure
 	problems         []DiscoveryProblem
 	completer        port.Completer
-	// vault is the vault the window is showing, as plugins work it through the host endpoint.
-	vault port.PluginVault
+	vault            port.PluginVault
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
 	consentAsks   map[string]bool
@@ -591,7 +590,6 @@ func (h *Host) failActivation(ctx context.Context, pluginID string, sup *Supervi
 	h.mu.Unlock()
 }
 
-// newPluginFailureLocked is the failure a person is told of for a plugin the host has given up.
 func (h *Host) newPluginFailureLocked(pluginID string, sup *Supervisor, cause error) port.PluginFailure {
 	return port.PluginFailure{
 		PluginID: pluginID,
@@ -1296,7 +1294,6 @@ func (h *Host) getPluginConfigJSONLocked(pluginID string) (string, error) {
 }
 
 // SetPluginSetting persists one setting, then writes it to memory and notifies the plugin.
-// The record of the stored secrets is the host's own and is refused.
 func (h *Host) SetPluginSetting(ctx context.Context, pluginID, key string, value any) error {
 	if key == port.SettingStoredSecrets {
 		return fmt.Errorf("plugin %s: %w: %s", pluginID, port.ErrReservedSettingKey, key)

@@ -5,7 +5,6 @@
 // What a client may ask about the tree a vault is filed in.
 //
 // A path is what the vault calls a file or a folder, and what is here is the
-// tree as a person works it: what a folder holds, what stands at a path, and
 // moving one, removing one, making one. What is inside a note is note.proto,
 // and the bytes a file of the person's own holds are asset.proto.
 package numenv1connect
@@ -65,7 +64,6 @@ type FileServiceClient interface {
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
-	// answers at once are refused, so that an answer is never cut to fit.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.
@@ -182,7 +180,6 @@ type FileServiceHandler interface {
 	// is read off the vault itself, so a path nothing has scanned is answered
 	// with what stands there. A path with nothing at it is absent from the
 	// answer, and a path named twice is answered once. More paths than the vault
-	// answers at once are refused, so that an answer is never cut to fit.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.

@@ -82,7 +82,7 @@ func TestForgetConsumesTheVaultOffTheListAndOutOfTheIndex(t *testing.T) {
 		t.Errorf("the list holds %v, want only %s", recognized, retained.Name)
 	}
 	if len(index.unregistered) != 1 || index.unregistered[0] != removed.ID {
-		t.Errorf("the index was told to forget %v, want %s", index.unregistered, removed.ID)
+		t.Errorf("forgot %v, want %s", index.unregistered, removed.ID)
 	}
 }
 
@@ -120,7 +120,7 @@ func TestForgetRefusesTheOnlyVault(t *testing.T) {
 		t.Errorf("the list holds %v, want the vault still on it", recognized)
 	}
 	if len(index.unregistered) != 0 {
-		t.Errorf("the index was told to forget %v", index.unregistered)
+		t.Errorf("forgot %v", index.unregistered)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestForgetStopsWhenTheListCannotBeRead(t *testing.T) {
 		t.Fatalf("want the rejection back, got %v", err)
 	}
 	if len(index.unregistered) != 0 {
-		t.Errorf("the index was told to forget %v", index.unregistered)
+		t.Errorf("forgot %v", index.unregistered)
 	}
 }
 

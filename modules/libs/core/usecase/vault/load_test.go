@@ -161,12 +161,12 @@ func measureUnderLoad(t *testing.T, db *container.Index, v domain.Vault, scan va
 }
 
 func touchEverything(root string) error {
-	at := time.Now()
+	pos := time.Now()
 	return filepath.WalkDir(root, func(p string, d os.DirEntry, err error) error {
 		if err != nil || d.IsDir() {
 			return err
 		}
-		return os.Chtimes(p, at, at)
+		return os.Chtimes(p, pos, pos)
 	})
 }
 

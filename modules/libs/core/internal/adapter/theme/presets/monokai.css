@@ -1,17 +1,7 @@
 /*
- * Monokai, from the original by Wimer Hazenberg, as the theme shipped inside
- * Visual Studio Code sets it.
- *
- * `color-scheme` is pinned: the palette is published dark, and there is no
- * light half for the setting to choose.
- *
- * The syntax colours are that theme's own assignments: pink keywords, green
- * names, cyan types and storage, yellow strings, purple numbers, and
- * punctuation in the text colour.
- *
- * Mixed here, because the palette does not name them: the selection where the
- * keyboard is away, which is the selection at a lower alpha, and the alpha the
- * highlight is laid on at.
+ * Monokai theme based on the Visual Studio Code implementation.
+ * Syntax tokens: pink keywords, green identifiers, cyan types,
+ * yellow strings, purple numbers, and ink punctuation.
  */
 :root {
   color-scheme: dark;
@@ -21,8 +11,7 @@
   --numen-ink: #f8f8f2;
   --numen-rule: #34352f;
 
-  /* The accent is the tone the palette fills a button and a selected row with,
-     with its focus line around what the keyboard is on. */
+  /* Accent color for controls and selection rings. */
   --numen-accent: #75715e;
   --numen-accent-ink: #f8f8f2;
 
@@ -38,13 +27,12 @@
   --numen-selection-away: #878b9140;
   --numen-selection-match: #575b6180;
   --numen-alarm: #f92672;
-  /* The band takes the ground a menu sits on, with the palette's yellow in it. */
+  /* Caution callout background and text colors. */
   --numen-caution-bg: #414339;
   --numen-caution-fg: #e6db74;
   --numen-highlight: #e6db7433;
 
-  /* Code takes the ground the window is drawn on, and a table's head row the
-     band a line is picked out with. */
+  /* Code background matches surface; table header uses active line tone. */
   --numen-syntax-mark: #75715e;
   --numen-code-bg: #1e1f1c;
   --numen-table-head-bg: #3e3d32;

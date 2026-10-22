@@ -182,7 +182,6 @@ describe('how wide a box is drawn', () => {
 
   /**
    * The document, resolving the tokens a box carries into pixels. jsdom
-   * resolves no custom property, so this stands in for the engine that does.
    */
   const stubStyles = () => {
     const engine = window.getComputedStyle.bind(window)

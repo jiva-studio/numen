@@ -183,7 +183,7 @@ describe('a link pressed in the card', () => {
   it('opens the reading on the note it names', async () => {
     const { held } = panel()
     await held.openPanel('notes/Leaf mould.md')
-    expect(held.at.value).toBe('notes/Leaf mould.md')
+    expect(held.col.value).toBe('notes/Leaf mould.md')
   })
 
   // What was sought has been scrolled to, and the next card is not scrolled to
@@ -192,7 +192,7 @@ describe('a link pressed in the card', () => {
     const { held } = panel()
     await held.openPanel('notes/Leaf mould.md')
     held.read()
-    expect(held.at.value).toBe('')
+    expect(held.col.value).toBe('')
   })
 
   it('opens on nothing in particular when the way in is the key', async () => {
@@ -200,7 +200,7 @@ describe('a link pressed in the card', () => {
     await held.openPanel('notes/Leaf mould.md')
     held.closePanel()
     await held.openPanel()
-    expect(held.at.value).toBe('')
+    expect(held.col.value).toBe('')
   })
 })
 

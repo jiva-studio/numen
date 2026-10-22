@@ -71,12 +71,12 @@ export const useWindowStreams = (deps: WindowStreamsDeps) => {
       () => windowService.watchTasks({ window: WINDOW }, { signal: abortController.signal }),
       (response) => {
         deps.setTasks(
-          response.tasks.map((at) => ({
-            id: at.id,
-            label: at.title,
-            about: at.about,
-            error: at.error,
-            isUserStarted: at.isUserStarted,
+          response.tasks.map((task) => ({
+            id: task.id,
+            label: task.title,
+            about: task.about,
+            error: task.error,
+            isUserStarted: task.isUserStarted,
           })),
         )
       },

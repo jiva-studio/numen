@@ -3,7 +3,6 @@
  * The strip a tile or a block is dragged by.
  *
  * It runs the whole width of what it heads, like the bar across the top of a
- * window: what it holds stands at its start, what it is pressed for at its end,
  * and the strip itself is what a gesture takes hold of.
  *
  * The strip holds a name box and buttons, so it is a container and not a

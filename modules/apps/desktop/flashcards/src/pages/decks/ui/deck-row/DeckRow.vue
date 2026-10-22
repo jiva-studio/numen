@@ -17,9 +17,9 @@ import type { Preset } from '../../types'
 const props = defineProps<{
   deck: DeckCardsDue
   /** at its current position in the list, which is the letter it is picked by. */
-  at: number
+  index: number
   /** The preset scheduling it, and nothing where none was read. */
-  by: Preset | undefined
+  preset: Preset | undefined
   /** Whether the vault's presets have been read, which a deck missing from them needs. */
   hasPresets: boolean
   /** Whether the vault has been counted. */
@@ -35,14 +35,14 @@ defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 /** Why the deck is not studied today, and empty while its preset schedules it. */
-const paused = computed(() => props.by?.paused ?? '')
+const paused = computed(() => props.preset?.paused ?? '')
 
 /**
  * Whether the deck's day is done, which is the day's work met and not merely
  * nothing standing: something was answered under its preset today, and its
  * preset still had room for more.
  */
-const isDone = computed(() => !!props.by && !isSpent(props.by) && props.by.answered > 0)
+const isDone = computed(() => !!props.preset && !isSpent(props.preset) && props.preset.answered > 0)
 
 /**
  * What a deck with nothing left says where the day's work was not what emptied
@@ -50,8 +50,8 @@ const isDone = computed(() => !!props.by && !isSpent(props.by) && props.by.answe
  * held nothing of this deck.
  */
 const stoppedLabel = computed(() => {
-  if (props.by && isSpent(props.by)) return STOPPED.full
-  return hasNothingToBegin(props.deck, props.by) ? STOPPED.noneToBegin : STOPPED.nothing
+  if (props.preset && isSpent(props.preset)) return STOPPED.full
+  return hasNothingToBegin(props.deck, props.preset) ? STOPPED.noneToBegin : STOPPED.nothing
 })
 
 /**
@@ -60,7 +60,7 @@ const stoppedLabel = computed(() => {
  * preset was not read has no rule to be counted by.
  */
 const share = computed(() => {
-  if (props.hasPresets && !props.by) return LEARNED.unruled
+  if (props.hasPresets && !props.preset) return LEARNED.unruled
   const of = getLearnedShare(props.deck)
   return of === null ? '' : LEARNED.share(of)
 })
@@ -70,11 +70,11 @@ const share = computed(() => {
   <Button variant="outline" class="decks__deck" :disabled="!canOpen" @click="$emit('start')">
     <!-- The letter it is picked by, where the alphabet reaches it: a
          person reads down the list and presses what they see. -->
-    <KeyCap v-if="getLetter(at)" :keys="{ icons: [], letter: getLetter(at) }" />
+    <KeyCap v-if="getLetter(index)" :keys="{ icons: [], letter: getLetter(index) }" />
     <span class="decks__name">
       {{ getDeckName(deck.deck) }}
       <!-- Which preset schedules it. -->
-      <span v-if="by" class="decks__by">{{ by.name }}</span>
+      <span v-if="preset" class="decks__by">{{ preset.name }}</span>
     </span>
     <!-- How much of the deck stands learned, under the rule its own
          preset counts by. The word is said with the figure: a bare share
@@ -96,9 +96,6 @@ const share = computed(() => {
 </template>
 
 <style scoped>
-/* A row of the list is a button the width of the list, taller than one in a row
-   of controls and reading from its start. What it is painted, how it answers a
-   hover and what it looks like with the keyboard on it are the button's own. */
 .decks__deck {
   inline-size: 100%;
   block-size: auto;
@@ -120,8 +117,6 @@ const share = computed(() => {
   font-size: var(--numen-text-1);
 }
 
-/* The share stands to the left of what the deck owes, in the screen's quiet
-   voice: it is read on the way to the counts and never instead of them. */
 .decks__learned {
   flex: none;
   color: var(--numen-hushed);

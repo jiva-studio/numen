@@ -31,11 +31,11 @@ func registryAt(t *testing.T) *appstate.VaultRegistry {
 // folder makes a directory named name, under a parent of its own.
 func folder(t *testing.T, name string) string {
 	t.Helper()
-	at := filepath.Join(t.TempDir(), name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(t.TempDir(), name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 func TestANameAnotherVaultHasGetsANumber(t *testing.T) {

@@ -36,8 +36,8 @@ func (u GetDocument) Execute(ctx context.Context, v domain.Vault, path string) (
 	err = u.documents.UseDocument(ctx, mark, openFile(reader, mark.Path), func(scan Scan) error {
 		out.Pages = make([][2]float64, scan.GetPageCount())
 		for i := range out.Pages {
-			if wide, high, err := scan.GetPageSize(i); err == nil {
-				out.Pages[i] = [2]float64{wide, high}
+			if width, height, err := scan.GetPageSize(i); err == nil {
+				out.Pages[i] = [2]float64{width, height}
 			}
 		}
 		return nil

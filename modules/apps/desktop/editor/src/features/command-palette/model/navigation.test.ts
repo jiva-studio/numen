@@ -23,19 +23,19 @@ const on: CommandTarget = {
   isReady: true,
 }
 
-const command = (over: Partial<Command> = {}): Command => ({
+const command = (overrides: Partial<Command> = {}): Command => ({
   id: 'rename',
   text: 'Rename',
   group: 'note',
   isOffered: () => true,
-  ...over,
+  ...overrides,
 })
 
-const pending = (step: PromptStep, over: Partial<PendingStep> = {}): PendingStep => ({
+const pending = (step: PromptStep, overrides: Partial<PendingStep> = {}): PendingStep => ({
   step,
   command: command(),
   on,
-  ...over,
+  ...overrides,
 })
 
 const createSteps = (groups: readonly StepGroup[] = []) => {
@@ -51,8 +51,8 @@ const createSteps = (groups: readonly StepGroup[] = []) => {
     onLights: (item) => void happened.push(`lights ${item}`),
     onLists: () => void happened.push('lists'),
     onClose: () => void happened.push('close'),
-    invocation: (id, over, name) => {
-      invoked.push([id, over, name])
+    invocation: (id, target, name) => {
+      invoked.push([id, target, name])
       return { id } as never
     },
   })

@@ -12,9 +12,9 @@ import (
 // checkLibrary opens the library at a path with the platform loader and returns
 // an error when it does not open or serves no apiVersion table. The library
 // stays loaded.
-func checkLibrary(at string) error {
+func checkLibrary(pos string) error {
 	preloadCppRuntime()
-	handle, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_LOCAL)
+	handle, err := purego.Dlopen(pos, purego.RTLD_NOW|purego.RTLD_LOCAL)
 	if err != nil {
 		return err
 	}
@@ -38,8 +38,8 @@ var preloadCppRuntime = sync.OnceFunc(func() {
 	for _, dir := range dirs {
 		matches := findMatching(filepath.Join(dir, name+"*"))
 		sortNewestFirst(matches)
-		for _, at := range matches {
-			if _, err := purego.Dlopen(at, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
+		for _, offset := range matches {
+			if _, err := purego.Dlopen(offset, purego.RTLD_NOW|purego.RTLD_GLOBAL); err == nil {
 				return
 			}
 		}

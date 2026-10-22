@@ -215,7 +215,6 @@ func (c chat) open(ctx context.Context, method, path string, body []byte) (*http
 }
 
 // newStatusError is an answer of the chat API other than 200 OK: its status and what it said. A
-// refusal of the key adds where the key is set.
 func newStatusError(resp *http.Response, answer []byte) error {
 	text := fmt.Sprintf("the chat API answered %s: %s", resp.Status, strings.TrimSpace(string(answer)))
 	if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {

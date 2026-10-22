@@ -2,13 +2,11 @@
  * The panel of actions standing over the foot of the palette.
  *
  * It is about the item that was lit when it opened, and an item that stops
- * offering anything leaves it about nothing.
  */
 import { ref, watch, type Ref } from 'vue'
 import type { PaletteAction } from '../lib/item'
 
 export interface ActionPanelState {
-  /** Whether the panel stands over the palette. */
   readonly open: Ref<boolean>
   /** An action chosen in the panel, on the item it was opened about. */
   readonly chooseAction: (action: string) => void

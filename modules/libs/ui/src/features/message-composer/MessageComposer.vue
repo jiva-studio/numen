@@ -12,7 +12,7 @@ const props = withDefaults(
     placeholder?: string
     /** An answer is being written; the disc stops it. */
     isWorking?: boolean
-    disabled?: boolean
+    isDisabled?: boolean
     /** What the disc is called while it sends. */
     sendLabel?: string
     /** What it is called while it stops. */
@@ -29,7 +29,7 @@ const props = withDefaults(
   {
     placeholder: 'Write a message',
     isWorking: false,
-    disabled: false,
+    isDisabled: false,
     sendLabel: 'Send',
     stopLabel: 'Stop',
     options: () => [],
@@ -62,7 +62,7 @@ const state = computed(() => composerState(text.value, props.isWorking))
 const descriptor = computed(() => COMPOSER_STATES[state.value])
 
 /** Nothing to say, or turned off. */
-const barred = computed(() => props.disabled || !descriptor.value.canAct)
+const barred = computed(() => props.isDisabled || !descriptor.value.canAct)
 
 /* -------------------------------- Handlers -------------------------------- */
 function act() {
@@ -104,7 +104,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
         class="composer__field resize-none overflow-y-auto rounded-none border-0 bg-transparent p-0 placeholder:text-transparent"
         :placeholder="placeholder"
         :aria-label="placeholder"
-        :disabled="disabled"
+        :disabled="isDisabled"
         @keydown="onKeydown"
       />
     </div>
@@ -117,7 +117,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
           :options="options"
           :selected-agent-id="selectedAgentId"
           :selected-model-id="selectedModelId"
-          :disabled="disabled || isWorking"
+          :is-disabled="isDisabled || isWorking"
           @select="onSelectModel"
         />
         <ReasoningSelector
@@ -125,7 +125,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
           :levels="reasoningLevels"
           :selected-id="selectedReasoningId"
           :name="reasoningName"
-          :disabled="disabled || isWorking"
+          :is-disabled="isDisabled || isWorking"
           @select="onSelectReasoning"
         />
       </div>
@@ -133,7 +133,7 @@ defineExpose({ focus: (how?: FocusOptions) => field.value?.focus(how) })
       <Disc
         class="composer__action shrink-0"
         :action="descriptor.action"
-        :disabled="barred"
+        :is-disabled="barred"
         :send-label="sendLabel"
         :stop-label="stopLabel"
         @press="act"

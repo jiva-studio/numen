@@ -33,9 +33,10 @@ export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
         }),
       ),
     removeCard: (card: string) => updateDeck(id, removeCard(getDeck(id), card)),
-    moveCard: (card: string, at: string | null) => updateDeck(id, dropCard(getDeck(id), card, at)),
-    writeCardField: (...[card, field, nth, text]: [string, string, number, string]) =>
-      updateDeck(id, replaceCardValue(getDeck(id), card, { field, nth, text })),
+    moveCard: (card: string, target: string | null) =>
+      updateDeck(id, dropCard(getDeck(id), card, target)),
+    writeCardField: (...[card, field, index, text]: [string, string, number, string]) =>
+      updateDeck(id, replaceCardValue(getDeck(id), card, { field, index, text })),
     addSection: (name: string) => updateDeck(id, addSection(getDeck(id), name)),
     renameSection: (section: string, name: string) =>
       updateDeck(id, renameSection(getDeck(id), section, name)),

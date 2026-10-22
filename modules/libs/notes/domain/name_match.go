@@ -12,7 +12,6 @@ type NameMatch struct {
 	Title string
 
 	// Type is what the note is. A heading carries the type of the note
-	// it stands in.
 	Type NoteType
 
 	// Heading is the heading that matched, empty when the note's own title did.

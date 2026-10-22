@@ -75,8 +75,7 @@ type PluginToolResult struct {
 	Text string
 	// Structured is the result as JSON. Empty where the tool listed no output schema.
 	Structured []byte
-	// IsRefusal is a tool that ran and refused, and Text says why.
-	IsRefusal bool
+	IsRefusal  bool
 }
 
 // PluginTools is what the plugins offer an agent as tools. Where no plugin offers any, nothing
@@ -87,5 +86,5 @@ type PluginTools interface {
 	ListTools(ctx context.Context) []PluginTool
 	// CallTool runs the tool the plugin listed. A plugin that no longer holds the permission, or
 	// cannot be reached, is an *UnavailableError or ErrPermissionDenied.
-	CallTool(ctx context.Context, pluginID, name string, arguments []byte, asked map[string]string) (PluginToolResult, error)
+	CallTool(ctx context.Context, pluginID, name string, arguments []byte, toolContext map[string]string) (PluginToolResult, error)
 }

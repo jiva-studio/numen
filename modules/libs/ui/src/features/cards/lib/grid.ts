@@ -21,7 +21,7 @@ export interface PlacedFieldValue extends CardFieldValue {
    */
   readonly key: string
   /** at its current position among the values the card writes under its own field, from one. */
-  readonly nth: number
+  readonly index: number
   /**
    * It is the last box standing for its field, which is where what is wrong
    * with that field is said, once.
@@ -68,7 +68,6 @@ export interface Run {
    */
   readonly isDropTarget: boolean
   /**
-   * Where this run's plus stands in the grid, counting from one, and nothing
    * where the run draws none. A card is made at the end of a run, so a run
    * cards may be put in has one: every section, and the cards before the first
    * section wherever any of them stands there.
@@ -107,9 +106,9 @@ function createTile(
   /** How many values the card writes under each field, as they are counted off. */
   const underItem = new Map<string, number>()
   const countOff = (field: string): number => {
-    const nth = (underItem.get(field) ?? 0) + 1
-    underItem.set(field, nth)
-    return nth
+    const index = (underItem.get(field) ?? 0) + 1
+    underItem.set(field, index)
+    return index
   }
 
   // A value the stencil does not name is the person's and stays in the file,
@@ -121,8 +120,8 @@ function createTile(
   const counted = getCardFieldValues(card.filled, fields)
     .filter((each) => each.isDeclared || !named)
     .map((each, place) => {
-      const nth = countOff(each.field)
-      return { ...each, at: place + 1, nth, key: `${each.field}#${nth}` }
+      const index = countOff(each.field)
+      return { ...each, at: place + 1, index, key: `${each.field}#${index}` }
     })
 
   return {
@@ -131,7 +130,7 @@ function createTile(
     stencil: card.stencil,
     filled: counted.map((each) => ({
       ...each,
-      isLast: each.nth === (underItem.get(each.field) ?? 0),
+      isLast: each.index === (underItem.get(each.field) ?? 0),
     })),
     at: 0,
     of: 0,
@@ -201,10 +200,14 @@ export function getGrid(deck: DeckGridSource, dragCard: string | null = null): G
  * stands moves nothing: the head of the deck is where the first card standing
  * under no section already is, and the end of a run is where its last card is.
  */
-export const isMoved = (runs: readonly Run[], dragCard: string, at: InsertionPoint): boolean => {
-  if (at === dragCard) return false
-  if (at === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
+export const isMoved = (
+  runs: readonly Run[],
+  dragCard: string,
+  target: InsertionPoint,
+): boolean => {
+  if (target === dragCard) return false
+  if (target === HEAD) return runs[0]?.tiles[0]?.id !== dragCard
 
-  const run = getRunEnd(at)
+  const run = getRunEnd(target)
   return runs.find((each) => each.id === run)?.tiles.at(-1)?.id !== dragCard
 }

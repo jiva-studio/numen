@@ -21,16 +21,16 @@ import (
 // hand is a watcher whose events a test writes itself, so that what happens
 // when a vault changes can be asked without a filesystem, a timer or a server.
 type hand struct {
-	changes chan []string
-	lost    chan struct{}
+	changes  chan []string
+	lostChan chan struct{}
 }
 
 func newHand() *hand {
-	return &hand{changes: make(chan []string), lost: make(chan struct{}, 1)}
+	return &hand{changes: make(chan []string), lostChan: make(chan struct{}, 1)}
 }
 
 func (h *hand) WatchVault(context.Context, domain.Vault) (<-chan []string, <-chan struct{}, error) {
-	return h.changes, h.lost, nil
+	return h.changes, h.lostChan, nil
 }
 
 // refuses is a watcher that will not start, which is what an operating system
@@ -155,7 +155,7 @@ func TestWhatCannotBeFollowedConsumesTheBooksWithIt(t *testing.T) {
 	watcher := newHand()
 	f := newFollowed(t, map[string]string{"Note.md": "# Note\n"}, watcher)
 
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 
 	if got := next(t, f.moved); !got.ShouldReload || !got.ShouldReadAssets() {
 		t.Errorf("reported %+v", got)
@@ -176,7 +176,7 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 		[]byte("---\ntitle: Later\n---\n\n# Later\n\nentropy\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 
 	got := next(t, f.moved)
 	if !got.ShouldReload {
@@ -185,7 +185,6 @@ func TestWhatCannotBeFollowedIsRead(t *testing.T) {
 	if len(got.Paths) != 0 || len(got.Assets) != 0 {
 		t.Errorf("reported %+v, and what changed cannot be known", got)
 	}
-	// The scan ran, so a note nobody named is in the index anyway.
 	if got := titles(t, f.index, f.vault, "entropy"); !slices.Contains(got, "Later") {
 		t.Errorf("the index holds %v", got)
 	}
@@ -321,7 +320,7 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	go started.Run(t.Context())
 
 	readers.refuse.Store(true)
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 	if err := next(t, reported); err == nil {
 		t.Fatal("a walk that could not open the vault was reported as working")
 	}
@@ -332,7 +331,7 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	}
 
 	readers.refuse.Store(false)
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 	if err := next(t, reported); err != nil {
 		t.Errorf("still reporting %v after the walk worked", err)
 	}

@@ -14,7 +14,6 @@ import (
 // writes a vector back. The index holds a chunk on a numbered row and the core
 // addresses it by a domain.ChunkID, so every row read is spelled out and every
 // vector written is read back in. What that costs is measured here against the
-// query and the write it sits inside.
 
 // chunksPerPage is what the walk asks for at a time, as usecase/source does.
 const chunksPerPage = 200

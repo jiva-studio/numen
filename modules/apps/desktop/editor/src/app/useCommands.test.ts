@@ -51,16 +51,16 @@ const setup = (preventHeld = false) => {
     coverage: () => ({}),
     writeMessage: (text: string, tone: string) => content.push([text, tone]),
   } as unknown as CommandsDepsOptions
-  return { written: content, press, ...useCommands(options) }
+  return { messages: content, press, ...useCommands(options) }
 }
 
-const keyEvent = (key: string, over: Partial<KeyboardEvent> = {}) => {
+const keyEvent = (key: string, overrides: Partial<KeyboardEvent> = {}) => {
   const event = {
     key,
     shiftKey: false,
     defaultPrevented: false,
     preventDefault: vi.fn(),
-    ...over,
+    ...overrides,
   }
   return event as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> }
 }
@@ -84,7 +84,7 @@ describe('running a command', () => {
       name: 'answer words',
     })
     expect(h.setPaletteOpen).not.toHaveBeenCalled()
-    expect(one.written).toStrictEqual([])
+    expect(one.messages).toStrictEqual([])
   })
 
   it('closes the search palette where the command palette is open and starts nothing', () => {
@@ -96,7 +96,7 @@ describe('running a command', () => {
 
     expect(h.runInvocation).not.toHaveBeenCalled()
     expect(h.setPaletteOpen).toHaveBeenCalledExactlyOnceWith(false)
-    expect(one.written).toStrictEqual([])
+    expect(one.messages).toStrictEqual([])
   })
 
   it('writes the objection as an error where the command palette is closed and starts nothing', () => {
@@ -109,7 +109,7 @@ describe('running a command', () => {
     expect(h.getObjection).toHaveBeenCalledWith('save', target)
     expect(h.runInvocation).not.toHaveBeenCalled()
     expect(h.setPaletteOpen).not.toHaveBeenCalled()
-    expect(one.written).toStrictEqual([['Nothing to save', 'error']])
+    expect(one.messages).toStrictEqual([['Nothing to save', 'error']])
   })
 
   it('closes the command palette and opens the search palette for the search command', () => {

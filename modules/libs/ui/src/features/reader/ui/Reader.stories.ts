@@ -2,7 +2,6 @@
  * A document read, in one piece: its pages side by side, what is highlighted
  * over them, and the controls floating over the page.
  *
- * Where the drawing is judged: whether a whole page stands in the room, whether
  * the width asked for is the width of the screen and not of the layout, whether
  * a rectangle given as a fraction lands where it belongs and stays there when
  * the page is drawn larger, and whether a book of five hundred pages draws five
@@ -29,13 +28,8 @@ type Render = NonNullable<Story['render']>
 const PAGES = 12
 const MANY = 500
 
-/**
- * How long a wait goes on where the browser sets the pace: a scroll it
- * animates itself, or a page refused four times over.
- */
 const ITS_OWN_PACE = 10_000
 
-/** Where something sits on a page, in fractions of it. */
 interface Rect {
   readonly minX: number
   readonly minY: number
@@ -57,11 +51,11 @@ const createPages = (pageCount: number) =>
  * A page, drawn to the width it was asked for. What a document does for real;
  * this one carries its own number and nothing else.
  */
-const renderPage = (label: string, wide: number): string => {
-  const tall = Math.round((wide * 792) / 612)
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${wide}" height="${tall}">
+const renderPage = (label: string, width: number): string => {
+  const tall = Math.round((width * 792) / 612)
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${tall}">
     <rect width="100%" height="100%" fill="#ffffff"/>
-    <text x="50%" y="52%" text-anchor="middle" font-family="serif" font-size="${Math.round(wide / 5)}" fill="#1d1f22">${label}</text>
+    <text x="50%" y="52%" text-anchor="middle" font-family="serif" font-size="${Math.round(width / 5)}" fill="#1d1f22">${label}</text>
   </svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
@@ -75,18 +69,18 @@ const book =
   () => ({
     components: { Reader },
     setup() {
-      const at = ref(0)
+      const page = ref(0)
       /** The width the reader last asked for, in device pixels. */
       const width = ref(0)
-      const picture = (page: number) =>
-        width.value > 0 ? renderPage(String(page + 1), width.value) : ''
-      const highlightsOn = (page: number) => (page === 0 ? highlights : [])
+      const picture = (index: number) =>
+        width.value > 0 ? renderPage(String(index + 1), width.value) : ''
+      const highlightsOn = (index: number) => (index === 0 ? highlights : [])
 
-      const go = (page: number) => {
-        at.value = Math.min(Math.max(page, 0), pageCount - 1)
+      const go = (targetPage: number) => {
+        page.value = Math.min(Math.max(targetPage, 0), pageCount - 1)
       }
 
-      return { at, width, picture, highlightsOn, pages: createPages(pageCount), go }
+      return { page, width, picture, highlightsOn, pages: createPages(pageCount), go }
     },
     template: TEMPLATE,
   })
@@ -96,7 +90,7 @@ const TEMPLATE = `
     <Reader
       class="h-full"
       :pages="pages"
-      :at="at"
+      :at="page"
       :picture="picture"
       :highlights="highlightsOn"
       @go="go"
@@ -140,7 +134,6 @@ export const Playground: Story = {
 }
 
 /**
- * A whole page stands in the room, drawn to the width of the screen and not of
  * the layout. A page cut off at the foot is a person scrolling two ways to read
  * one page.
  */
@@ -210,7 +203,6 @@ export const Turning: Story = {
 }
 
 /**
- * The strip scrolled by hand: the page in front follows the hand, so what the
  * controls say and what is on the screen are one thing.
  */
 export const Scrolling: Story = {
@@ -278,28 +270,21 @@ export const HighlightedOver: Story = {
   },
 }
 
-/**
- * A page that will not come is asked for again, and then said so.
- *
- * A document is busy while another page of it is drawing, so the first refusal
- * is ordinary. What is not ordinary is a page that stays empty for ever and
- * says nothing about why.
- */
 export const Undrawn: Story = {
   render: () => ({
     components: { Reader },
     setup() {
-      const at = ref(0)
-      const picture = (page: number) => `/assets/gone/pages/${page}?wide=400`
+      const page = ref(0)
+      const picture = (index: number) => `/assets/gone/pages/${index}?wide=400`
       return {
-        at,
+        page,
         picture,
         pages: createPages(4),
-        go: (page: number) => (at.value = page),
+        go: (index: number) => (page.value = index),
       }
     },
     template: `
-      <Reader class="h-full" :pages="pages" :at="at" :picture="picture" @go="go">
+      <Reader class="h-full" :pages="pages" :at="page" :picture="picture" @go="go">
         <template #silence>Nothing yet</template>
       </Reader>
     `,

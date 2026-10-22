@@ -3,17 +3,17 @@ import type { CommandInvocation, CommandTarget } from '../types'
 /** One command as it is carried out, over what it was asked over. */
 export const createInvocation = (
   id: string,
-  at: CommandTarget,
+  target: CommandTarget,
   ...[name = '', note = null]: [string?, (string | null)?]
 ): CommandInvocation => ({
   id,
-  path: at.path,
-  vault: at.vault,
+  path: target.path,
+  vault: target.vault,
   note,
-  title: at.title,
-  file: at.file,
-  others: at.others ?? [],
+  title: target.title,
+  file: target.file,
+  others: target.others ?? [],
   name,
-  kind: at.kind,
-  tab: at.tab,
+  kind: target.kind,
+  tab: target.tab,
 })

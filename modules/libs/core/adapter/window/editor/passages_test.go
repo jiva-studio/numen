@@ -93,7 +93,6 @@ func TestWhereTheWordsTypedStandInAPassage(t *testing.T) {
 		{
 			// Han characters either side of a match are letters by
 			// unicode.IsLetter, but Chinese holds no whitespace between words,
-			// so the character before the match is not what stands in its way.
 			name:  "a Chinese word with no space around it",
 			text:  "这是一个测试",
 			query: "测试",
@@ -159,14 +158,14 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 
 	t.Run("a passage short enough is left as it stands", func(t *testing.T) {
 		text := "no engine beats a reversible engine"
-		at := spans(text, "engine")
+		pos := spans(text, "engine")
 
-		trimmed, retainedSpans := getTextAround(text, at, 0)
+		trimmed, retainedSpans := getTextAround(text, pos, 0)
 		if trimmed != text {
 			t.Errorf("cut %q, want it whole", trimmed)
 		}
-		if len(retainedSpans) != len(at) || retainedSpans[0] != at[0] {
-			t.Errorf("kept %+v, want %+v", retainedSpans, at)
+		if len(retainedSpans) != len(pos) || retainedSpans[0] != pos[0] {
+			t.Errorf("kept %+v, want %+v", retainedSpans, pos)
 		}
 	})
 
@@ -182,7 +181,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 			t.Fatalf("kept %+v spans, want the one that is inside the window", retainedVal)
 		}
 		if got := string([]rune(trimmedVal)[retainedVal[0].From:retainedVal[0].To]); got != "engine" {
-			t.Errorf("the span stands on %q, want it still on the word", got)
+			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 		if !strings.HasPrefix(trimmedVal, "…") || !strings.HasSuffix(trimmedVal, "…") {
 			t.Errorf("cut %q…%q, want it to say it was cut at both ends",
@@ -219,7 +218,7 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 				retainedRecord[0].From, leading+1)
 		}
 		if got := string([]rune(trimmedRecord)[retainedRecord[0].From:retainedRecord[0].To]); got != "engine" {
-			t.Errorf("the span stands on %q, want it still on the word", got)
+			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 		if !strings.HasSuffix(trimmedRecord, "ends here") {
 			t.Errorf("cut ends on %q, want the end of the passage", trimmedRecord[len(trimmedRecord)-12:])
@@ -234,18 +233,18 @@ func TestAPassageIsSplitToWhatCanBeReadAtAGlance(t *testing.T) {
 			t.Fatalf("kept %+v spans, want the one that matched", retainedEntry)
 		}
 		if got := string([]rune(trimmedEntry)[retainedEntry[0].From:retainedEntry[0].To]); got != "дышать" {
-			t.Errorf("the span stands on %q, want it still on the word", got)
+			t.Errorf("the span is on %q, want it still on the word", got)
 		}
 	})
 
 	t.Run("a span left outside the window is dropped", func(t *testing.T) {
 		text := "engine " + long(600) + " engine"
-		at := spans(text, "engine")
-		if len(at) != 2 {
-			t.Fatalf("the passage holds %d spans, want 2", len(at))
+		offset := spans(text, "engine")
+		if len(offset) != 2 {
+			t.Fatalf("the passage holds %d spans, want 2", len(offset))
 		}
 
-		_, retainedData := getTextAround(text, at, 0)
+		_, retainedData := getTextAround(text, offset, 0)
 		if len(retainedData) != 1 {
 			t.Errorf("kept %+v, want only the span the window holds", retainedData)
 		}
@@ -275,7 +274,7 @@ func TestAPassageOpensOnTheHitWhenNoWordMatched(t *testing.T) {
 	trimmed, retainedSpans := getTextAround(text, nil, 501)
 
 	if !strings.Contains(trimmed, "Alice Fenn") {
-		t.Errorf("cut %q, want it to hold the words the hit stands on", trimmed[:40])
+		t.Errorf("cut %q, want it to hold the words the hit is on", trimmed[:40])
 	}
 	if len(retainedSpans) != 0 {
 		t.Errorf("kept %+v, want nothing marked: no word matched", retainedSpans)

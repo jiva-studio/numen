@@ -1,9 +1,3 @@
-/**
- * What the keyboard rule refuses, read against stops written to be refused.
- *
- * The walk itself needs a browser and is proved by the story it names; this is
- * the half that decides, and it decides from three words about a stop.
- */
 import { describe, expect, it } from 'vitest'
 import { faults, type Stop, type Walk } from './reach'
 

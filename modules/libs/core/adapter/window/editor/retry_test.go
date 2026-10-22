@@ -50,7 +50,6 @@ func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
 	}
 }
 
-// A plugin nobody installed is not found, and any other refusal is the core's.
 func TestARetryOfAPluginThatIsNotInstalledIsNotFound(t *testing.T) {
 	missing := newRetryHandler(t, func(_ context.Context, id string) (*setting.PluginFailure, error) {
 		return nil, &setting.UnavailableError{PluginID: id, Reason: setting.PluginNotInstalled}
@@ -79,14 +78,14 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 
 // The failure of a plugin travels to the window with its reason and its time, and a plugin that has not failed travels with none.
 func TestAFailedPluginTravelsWithItsReasonAndTime(t *testing.T) {
-	at := time.UnixMilli(1_700_000_000_123)
+	pos := time.UnixMilli(1_700_000_000_123)
 	infos := newWirePluginInfos([]setting.PluginInfo{
-		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "The plugin did not finish starting in time.", At: at}},
+		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "The plugin did not finish starting in time.", At: pos}},
 		{ID: "md.numen.other"},
 	})
 
 	failure := infos[0].GetFailure()
-	if failure.GetReason() != "The plugin did not finish starting in time." || failure.GetFailedAtUnixMs() != at.UnixMilli() {
+	if failure.GetReason() != "The plugin did not finish starting in time." || failure.GetFailedAtUnixMs() != pos.UnixMilli() {
 		t.Errorf("travelled as %v", failure)
 	}
 	if infos[1].GetFailure() != nil {

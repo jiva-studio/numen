@@ -15,8 +15,8 @@ import (
 // closing is the vault's files with the request cancelled at the first one
 // read, which is a person shutting the window while its decks are being read.
 type closing struct {
-	inner ports.VaultReaders
-	at    context.CancelFunc
+	inner  ports.VaultReaders
+	cancel context.CancelFunc
 }
 
 func (r closing) Open(v domain.Vault) (ports.VaultReader, error) {
@@ -24,16 +24,16 @@ func (r closing) Open(v domain.Vault) (ports.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return closingReader{VaultReader: one, at: r.at}, nil
+	return closingReader{VaultReader: one, cancel: r.cancel}, nil
 }
 
 type closingReader struct {
 	ports.VaultReader
-	at context.CancelFunc
+	cancel context.CancelFunc
 }
 
 func (r closingReader) Read(ctx context.Context, path string) ([]byte, error) {
-	r.at()
+	r.cancel()
 	return r.VaultReader.Read(ctx, path)
 }
 
@@ -45,8 +45,8 @@ func TestACurveRefusesARequestThatIsMissing(t *testing.T) {
 	s := newAnsweredVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())
 
-	customFaces := flashcards.NewListCardFaces(closing{inner: s.env.Ports.Readers, at: cancel}, s.notes, s.links)
-	curves := flashcards.NewProjectCurve(customFaces, s.kept, s.presets, today, func() time.Time { return noon })
+	customFaces := flashcards.NewListCardFaces(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
+	curves := flashcards.NewProjectCurve(customFaces, s.schedules, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)

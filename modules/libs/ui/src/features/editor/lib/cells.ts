@@ -119,14 +119,14 @@ function handleCellKeydown(event: KeyboardEvent, frame: HTMLElement, view: Edito
   if (event.key !== 'Tab') return
   event.preventDefault()
   const cells = getCells(frame)
-  const at = cells.indexOf(cell)
+  const pos = cells.indexOf(cell)
 
   if (event.shiftKey) {
-    focus(cells[Math.max(at - 1, 0)])
+    focus(cells[Math.max(pos - 1, 0)])
     return
   }
-  if (at < cells.length - 1) {
-    focus(cells[at + 1])
+  if (pos < cells.length - 1) {
+    focus(cells[pos + 1])
     return
   }
 
@@ -135,5 +135,5 @@ function handleCellKeydown(event: KeyboardEvent, frame: HTMLElement, view: Edito
   const end = view.state.doc.lineAt(range.to).to
   const columns = countColumns(frame)
   view.dispatch({ changes: { from: end, insert: emptyRow(columns) } })
-  focus(getCells(frame)[at + 1])
+  focus(getCells(frame)[pos + 1])
 }

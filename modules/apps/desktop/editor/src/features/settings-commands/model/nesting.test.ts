@@ -112,7 +112,7 @@ describe('how many headings stand under a node', () => {
     expect(groups.map((group) => group.id)).toStrictEqual([HEADINGS])
     const items = groups.flatMap((group) => group.items)
     expect(items.map((one) => one.id)).toStrictEqual(
-      Array.from({ length: 12 }, (_, at) => `${at + 1}`),
+      Array.from({ length: 12 }, (_, index) => `${index + 1}`),
     )
   })
 
@@ -221,7 +221,7 @@ describe('how many headings stand under a node', () => {
 
     const items = target.getHeadingsGroups().flatMap((group) => group.items)
     expect(items.map((one) => one.title)).toStrictEqual(
-      Array.from({ length: 12 }, (_, at) => `${at + 1}`),
+      Array.from({ length: 12 }, (_, index) => `${index + 1}`),
     )
   })
 

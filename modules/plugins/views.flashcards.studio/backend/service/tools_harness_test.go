@@ -17,7 +17,7 @@ import (
 type session struct {
 	registry *tools.Registry
 	// asked is what the host tells each tool about the window the agent was started from.
-	asked map[string]string
+	toolContext map[string]string
 }
 
 // newSession is the tools over a vault of the notes given.
@@ -39,7 +39,7 @@ func (s *session) invoke(t *testing.T, name string, args any) *v1.CallToolRespon
 		t.Fatal(err)
 	}
 	res, err := s.registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		Name: name, Arguments: raw, Context: s.asked,
+		Name: name, Arguments: raw, Context: s.toolContext,
 	}))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
@@ -74,7 +74,6 @@ func call[T any](t *testing.T, s *session, name string, args any) T {
 	return out
 }
 
-// getToolError is why a tool refused a call.
 func getToolError(t *testing.T, s *session, name string, args any) string {
 	t.Helper()
 	res := s.invoke(t, name, args).GetResult()

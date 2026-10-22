@@ -215,7 +215,6 @@ describe('safe, the styles a card may carry', () => {
 
   // A class names rules the window wrote and the deck's author never saw. The
   // declarations above are the whole of what a card says about how it looks,
-  // and they are held to what a card may say.
   it('drops a class, which names the window s own styles and not the card s', () => {
     expect(cleanHtml('<div class="fixed inset-0 bg-black">a</div>')).toBe('<div>a</div>')
   })

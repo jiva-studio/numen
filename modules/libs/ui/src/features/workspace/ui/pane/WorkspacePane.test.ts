@@ -10,7 +10,6 @@ const three = () => pane('main', ['plex', 'chat', 'notes'], 'chat')
 
 const TITLES: Readonly<Record<string, string>> = { plex: 'Plex', chat: 'Chat', notes: 'Notes' }
 
-/** The workspace a pane stands in, as far as a pane on its own asks about it. */
 const createContext = (marks: Readonly<Record<string, string>> = {}): WorkspaceContext => ({
   findTab: (id): Tab | undefined =>
     TITLES[id] === undefined
@@ -197,8 +196,8 @@ describe('the tab that is showing', () => {
   it('is returned once the panel it remains over is on screen', async () => {
     const onScreen: boolean[] = []
     const onShow = (tab: string) => {
-      const at = ['plex', 'chat', 'notes'].indexOf(tab)
-      const panel = document.getElementById(`later-panel-${at}`)
+      const index = ['plex', 'chat', 'notes'].indexOf(tab)
+      const panel = document.getElementById(`later-panel-${index}`)
       onScreen.push(panel?.hasAttribute('data-showing') ?? false)
     }
 

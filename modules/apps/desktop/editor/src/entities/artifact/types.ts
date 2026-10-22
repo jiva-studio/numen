@@ -7,7 +7,6 @@
 
 /**
  * What is made from one file of the vault, by what it is: text with the place
- * on the page each word stands at, text with the times it was said at, either
  * of those put right, the prose a page is written around, and the bytes of a
  * video kept to be played.
  *
@@ -65,7 +64,6 @@ export interface ArtifactCorrector {
   correctArtifact(path: string): Promise<Outcome>
 }
 
-/** Asks for what stands at the address a note points at. */
 export interface ArtifactFetcher {
   fetchArtifact(path: string): Promise<Outcome>
 }

@@ -32,7 +32,6 @@ const NOTED: ReadonlyMap<string, string> = new Map(
   getNoteCommands(createCommands(words)).map((one) => [one.id, one.text]),
 )
 
-/** One command over a note, in the group it stands in. */
 const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
   return [{ id, text: NOTED.get(id) ?? id, group }]
 }
@@ -95,12 +94,15 @@ const getRecordingRuns = (
 ): readonly PathItem[] => {
   const runs: PathItem[] = []
   if (canRun(TRANSCRIBE.id)) {
-    runs.push({ ...TRANSCRIBE, disabled: isBusyOrDone(createdItem?.transcript) })
+    runs.push({ ...TRANSCRIBE, isDisabled: isBusyOrDone(createdItem?.transcript) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(createdItem?.transcript, createdItem?.['transcript.corrected']),
+      isDisabled: isProofreadDisabled(
+        createdItem?.transcript,
+        createdItem?.['transcript.corrected'],
+      ),
     })
   }
   return runs
@@ -115,12 +117,12 @@ const getBookRuns = (
   if (format === 'epub') return []
   const runs: PathItem[] = []
   if (canRun(RECOGNISE.id)) {
-    runs.push({ ...RECOGNISE, disabled: isBusyOrDone(createdItem?.ocr) })
+    runs.push({ ...RECOGNISE, isDisabled: isBusyOrDone(createdItem?.ocr) })
   }
   if (canRun(PROOFREAD.id)) {
     runs.push({
       ...PROOFREAD,
-      disabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
+      isDisabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
     })
   }
   return runs
@@ -129,7 +131,6 @@ const getBookRuns = (
 /**
  * What a url offers: everything a file offers, and the runs over what is at the
  * address. A build that cannot reach one offers none of them, which is how a
- * person is told this build does not do it.
  */
 const urls = (canRun: RunGuard): readonly PathItem[] =>
   getFileMenu(

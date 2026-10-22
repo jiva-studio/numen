@@ -79,19 +79,19 @@ func (u ImportURL) Execute(
 	ctx context.Context, v domain.Vault, path string, isRepeat bool,
 ) (ImportURLResult, error) {
 	res := ImportURLResult{Path: path}
-	at, ref, store, err := u.readURLFile(ctx, v, path)
+	pos, ref, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return res, err
 	}
-	hash := text.Fingerprint([]byte(string(at)))
+	hash := text.Fingerprint([]byte(string(pos)))
 
 	// One run to an address. The name is held for as long as the download takes,
 	// and two urls on one address are one download.
-	by, err := u.By.GetDownloadModel(ctx, at)
+	delta, err := u.By.GetDownloadModel(ctx, pos)
 	if err != nil {
 		return res, err
 	}
-	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, by.Producer, hash))
+	release, err := store.ClaimArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, delta.Producer, hash))
 	if errors.Is(err, port.ErrClaimed) {
 		return res, ErrBeingDownloaded
 	}
@@ -115,7 +115,7 @@ func (u ImportURL) Execute(
 		return res, nil
 	}
 
-	extracted, err := u.By.GetText(ctx, at, port.PreferredCaptions{
+	extracted, err := u.By.GetText(ctx, pos, port.PreferredCaptions{
 		Languages: u.Languages, IsAutomatic: u.IsAutomatic,
 	})
 	switch {
@@ -124,19 +124,19 @@ func (u ImportURL) Execute(
 		// and it is written down so the address is not asked again every time
 		// the vault is scanned.
 		res.IsNothing = true
-		return res, u.silent(ctx, by, store, hash)
+		return res, u.silent(ctx, delta, store, hash)
 	case err != nil:
 		return res, err
 	}
 
-	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, by, hash, at, extracted)
+	res.Producer, res.Bytes, err = u.writeDownload(ctx, store, delta, hash, pos, extracted)
 	if err != nil {
 		return res, err
 	}
 	if err := u.cut(ctx, v, ref.Path); err != nil {
 		return res, err
 	}
-	return u.renameURL(ctx, v, ref, at, extracted.Title, res)
+	return u.renameURL(ctx, v, ref, pos, extracted.Title, res)
 }
 
 // writeDownload writes down what came back, under the name of whatever
@@ -144,9 +144,9 @@ func (u ImportURL) Execute(
 func (u ImportURL) writeDownload(
 	ctx context.Context,
 	store port.DerivedStore,
-	by port.DownloadModel,
+	delta port.DownloadModel,
 	hash string,
-	at domain.URL,
+	pos domain.URL,
 	extracted port.Text,
 ) (producer string, bytes int, err error) {
 	content := []byte(extracted.Prose)
@@ -156,7 +156,7 @@ func (u ImportURL) writeDownload(
 	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), content); err != nil {
 		return "", 0, err
 	}
-	if err := u.record(ctx, store, by, extracted.Producer, hash, at, extracted); err != nil {
+	if err := u.record(ctx, store, delta, extracted.Producer, hash, pos, extracted); err != nil {
 		return "", 0, err
 	}
 	return extracted.Producer, len(content), nil
@@ -165,9 +165,9 @@ func (u ImportURL) writeDownload(
 // silent writes down that the address published none of what was asked for, so
 // the address is not asked again every time the vault is scanned.
 func (u ImportURL) silent(
-	ctx context.Context, by port.DownloadModel, store port.DerivedStore, hash string,
+	ctx context.Context, delta port.DownloadModel, store port.DerivedStore, hash string,
 ) error {
-	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, by.Producer, hash), []byte(text.Silent+"\n"))
+	return store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactAnswer, delta.Producer, hash), []byte(text.Silent+"\n"))
 }
 
 // readURLFile is one url: where it points, the file itself, and the store what
@@ -191,7 +191,7 @@ func (u ImportURL) readURLFile(
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, fmt.Errorf("read %s: %w", path, err)
 	}
-	at, err := urlfile.Read(raw)
+	pos, err := urlfile.Read(raw)
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, fmt.Errorf("%s: %w", path, err)
 	}
@@ -199,7 +199,7 @@ func (u ImportURL) readURLFile(
 	if err != nil {
 		return none, domain.Fingerprint{}, nil, err
 	}
-	return at, ref, store, nil
+	return pos, ref, store, nil
 }
 
 // renameURL gives the url the name what is at the address calls itself.
@@ -211,7 +211,7 @@ func (u ImportURL) renameURL(
 	ctx context.Context,
 	v domain.Vault,
 	ref domain.Fingerprint,
-	at domain.URL,
+	pos domain.URL,
 	title string,
 	res ImportURLResult,
 ) (ImportURLResult, error) {
@@ -221,7 +221,7 @@ func (u ImportURL) renameURL(
 	// A file still called what the paste called it is one nobody has named. Any
 	// other name is the person's, and it stands; so does one whose address no
 	// filename can be made from, which nothing could have named it by.
-	pasted, _, err := domain.Filename(string(at))
+	pasted, _, err := domain.Filename(string(pos))
 	if errors.Is(err, domain.ErrUnnameable) || domain.Basename(ref.Path) != pasted {
 		return res, nil
 	}
@@ -245,9 +245,9 @@ func (u ImportURL) renameURL(
 func (u ImportURL) record(
 	ctx context.Context,
 	store port.DerivedStore,
-	by port.DownloadModel,
+	delta port.DownloadModel,
 	producer, hash string,
-	at domain.URL,
+	pos domain.URL,
 	extracted port.Text,
 ) error {
 	content, err := json.Marshal(struct {
@@ -257,11 +257,11 @@ func (u ImportURL) record(
 		Producer   string `json:"producer"`
 		Downloader string `json:"downloader"`
 	}{
-		Address:    string(at),
+		Address:    string(pos),
 		Title:      extracted.Title,
 		Length:     extracted.Length,
 		Producer:   producer,
-		Downloader: by.Recipe(),
+		Downloader: delta.Recipe(),
 	})
 	if err != nil {
 		return err

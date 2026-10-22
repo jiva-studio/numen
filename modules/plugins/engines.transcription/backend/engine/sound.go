@@ -15,7 +15,6 @@ import (
 
 // A recording is a file opened for listening. Its length is read out of the
 // header, and its samples are decoded when somebody asks where the speech is:
-// a person is told how long a recording is while it is still being taken apart.
 type recording struct {
 	owner  *Transcriber
 	raw    []byte
@@ -56,11 +55,11 @@ func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, 
 		if err != nil {
 			return nil, err
 		}
-		at, err := resample(ctx, sound, rate, sampleRate, r.owner.workers)
+		pos, err := resample(ctx, sound, rate, sampleRate, r.owner.workers)
 		if err != nil {
 			return nil, err
 		}
-		if r.segments, err = r.owner.splitIntoSegments(ctx, at); err != nil {
+		if r.segments, err = r.owner.splitIntoSegments(ctx, pos); err != nil {
 			return nil, err
 		}
 		r.raw, r.isCut = nil, true
@@ -191,21 +190,20 @@ const (
 // parseWav reads a parseWav file's header and finds its samples.
 //
 // A file is a run of chunks, and only two of them are wanted, so the rest are
-// stepped over by their length. Each chunk sits on an even byte.
 func parseWav(raw []byte) (riffWave, error) {
 	var out riffWave
 	var observed bool
-	for at := 12; at+8 <= len(raw); {
-		kind := string(raw[at : at+4])
-		size := int(binary.LittleEndian.Uint32(raw[at+4 : at+8]))
-		at += 8
-		if size < 0 || at+size > len(raw) {
-			size = len(raw) - at
+	for pos := 12; pos+8 <= len(raw); {
+		kind := string(raw[pos : pos+4])
+		size := int(binary.LittleEndian.Uint32(raw[pos+4 : pos+8]))
+		pos += 8
+		if size < 0 || pos+size > len(raw) {
+			size = len(raw) - pos
 		}
-		body := raw[at : at+size]
-		at += size
+		body := raw[pos : pos+size]
+		pos += size
 		if size%2 == 1 {
-			at++
+			pos++
 		}
 
 		switch kind {

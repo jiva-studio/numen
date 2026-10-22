@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// bookHandler answers what a book that reflows is, and the pictures it carries.
 type bookHandler struct {
 	numenv1connect.UnimplementedBookServiceHandler
 
@@ -27,11 +26,9 @@ type bookHandler struct {
 	getBookPicture *document.GetBookPicture
 }
 
-// A book that reflows reaches the window as words: the markup of one document
 // at a time, asked for over the schema, and beside it the pictures the archive
 // carries, answered at an address as the bytes they are.
 
-// GetBook answers what a book that reflows is: what it is called, the documents
 // it is read in, and what it names inside them.
 //
 // A window lays a chapter out itself, so it takes the whole of the book's shape

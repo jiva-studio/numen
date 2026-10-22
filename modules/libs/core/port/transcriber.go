@@ -5,7 +5,6 @@ import (
 	"fmt"
 )
 
-// TranscriptionModel names what listened to a recording. It is recorded along with what
 // it produced, as a RecognitionModel is recorded with a recognition: a text kept beyond
 // the run that made it is claimed again by what made it.
 //

@@ -10,8 +10,7 @@ import type { Conversation, Turn } from '@numen/ui'
 import type { AgentModel, Span } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 
-/** A model the window lists, found at the place given. */
-type Model = AgentModel & { readonly namedAt: readonly string[] }
+type Model = AgentModel & { readonly nameAt: readonly string[] }
 
 /** A conversation that records what it was asked, and where its lines point. */
 const createConversation = (locations: Record<string, { path: string; span: Span }> = {}) => {
@@ -28,7 +27,7 @@ const createConversation = (locations: Record<string, { path: string; span: Span
     stop: () => stopCalls.push('stop'),
     finish: () => stopCalls.push('finish'),
   }
-  return { conversation, said: turn, asked: request, stopped: stopCalls }
+  return { conversation, turns: turn, requests: request, stopped: stopCalls }
 }
 
 /**
@@ -49,20 +48,18 @@ const tab = (
       new Map(content.filter((one) => notes[one]).map((one) => [one, notes[one]!])),
     unreachable: () => '',
   })
-  return { state, opened: openedCalls, beside: besideItems, ...fake }
+  return { state, opened: openedCalls, besideItems, ...fake }
 }
 
-/** A setting the window lists, found at the place given. */
-const items = (namedAt: readonly string[], name: string, presence: Model['presence']): Model => ({
-  namedAt,
+const items = (nameAt: readonly string[], name: string, presence: Model['presence']): Model => ({
+  nameAt,
   name,
   title: name,
   isDefault: false,
   presence,
 })
 /** A line of an answer, as the panel hands one back. */
-const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'answered', state: 'settled' })
+const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
 describe('a question sent', () => {
   it('is empty currently open, which the window reports itself', () => {
@@ -70,7 +67,7 @@ describe('a question sent', () => {
 
     one.state.send('what is this about')
 
-    expect(one.asked).toEqual([['what is this about', '']])
+    expect(one.requests).toEqual([['what is this about', '']])
   })
 
   it('empties the composer, so the question is not sent twice', () => {
@@ -144,31 +141,31 @@ describe('a link inside an answer', () => {
 
   it('opens the note it names along with what the person is looking at', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
-    one.said.value = [turn('said', 'It sits under [[Thermodynamics]].')]
+    one.turns.value = [turn('said', 'It sits under [[Thermodynamics]].')]
     await nextTick()
     const press = createPress()
 
-    one.state.followLink(one.said.value[0]!, 'name://Thermodynamics', press.press)
+    one.state.followLink(one.turns.value[0]!, 'name://Thermodynamics', press.press)
 
-    expect(one.beside).toEqual(['physics/Thermodynamics.md'])
+    expect(one.besideItems).toEqual(['physics/Thermodynamics.md'])
   })
 
   it('opens nothing, and goes nowhere else, where no note answers to it', async () => {
     const one = tab()
-    one.said.value = [turn('said', 'It sits under [[Nowhere]].')]
+    one.turns.value = [turn('said', 'It sits under [[Nowhere]].')]
     await nextTick()
     const press = createPress()
 
-    one.state.followLink(one.said.value[0]!, 'name://Nowhere', press.press)
+    one.state.followLink(one.turns.value[0]!, 'name://Nowhere', press.press)
 
-    expect(one.beside).toEqual([])
+    expect(one.besideItems).toEqual([])
   })
 })
 
 describe('a turn of an answer', () => {
   it('says which of the notes it names reach nothing', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
-    one.said.value = [turn('said', 'Under [[Thermodynamics]], beside [[Nowhere]].')]
+    one.turns.value = [turn('said', 'Under [[Thermodynamics]], beside [[Nowhere]].')]
 
     await nextTick()
     await nextTick()
@@ -238,7 +235,8 @@ describe('agent model selection and settings', () => {
       resolve: async () => new Map(),
       unreachable: () => '',
       getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
-      getModelsAt: (at) => models.value.filter((one) => one.namedAt.join('.') === at.join('.')),
+      getModelsAt: (categoryPath) =>
+        models.value.filter((one) => one.nameAt.join('.') === categoryPath.join('.')),
     })
     expect(state.selectedAgentId.value).toBe('')
 
@@ -272,12 +270,12 @@ describe('agent model selection and settings', () => {
 describe('turns drawn again', () => {
   it('keeps the turn it drew while its unresolved addresses are the same', async () => {
     const one = tab()
-    one.said.value = [turn('a', 'See [[Nowhere]].'), turn('b', 'Then [[Elsewhere]].')]
+    one.turns.value = [turn('a', 'See [[Nowhere]].'), turn('b', 'Then [[Elsewhere]].')]
     await nextTick()
     await nextTick()
     const [first, second] = one.state.turns.value
 
-    one.said.value = [one.said.value[0]!, one.said.value[1]!, turn('c', 'Nothing')]
+    one.turns.value = [one.turns.value[0]!, one.turns.value[1]!, turn('c', 'Nothing')]
     await nextTick()
     await nextTick()
 
@@ -287,12 +285,12 @@ describe('turns drawn again', () => {
 
   it('draws a turn again when its unresolved addresses change', async () => {
     const one = tab({}, { 'name://Thermodynamics': 'physics/Thermodynamics.md' })
-    one.said.value = [turn('a', 'See [[Nowhere]].')]
+    one.turns.value = [turn('a', 'See [[Nowhere]].')]
     await nextTick()
     await nextTick()
     const first = one.state.turns.value[0]
 
-    one.said.value = [turn('a', 'See [[Nowhere]] and [[Elsewhere]].')]
+    one.turns.value = [turn('a', 'See [[Nowhere]] and [[Elsewhere]].')]
     await nextTick()
     await nextTick()
 

@@ -131,7 +131,6 @@ func TestARangeIsSplitAtWholeCharacters(t *testing.T) {
 		t.Errorf("a range closing inside a character came back as %+v", closed)
 	}
 
-	// The four-byte character stands at byte 9, and is closed inside at each of
 	// the three places it can be.
 	for _, length := range []int{10, 11, 12} {
 		got := read(t, u, v, "lecture.txt", 0, length)
@@ -337,7 +336,7 @@ func (r faultyReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 type shifting struct {
 	data []byte
 	size int64
-	at   int64
+	pos  int64
 	end  error
 	seek error
 	read error
@@ -348,25 +347,25 @@ func (f *shifting) Seek(offset int64, whence int) (int64, error) {
 		if f.end != nil {
 			return 0, f.end
 		}
-		f.at = f.size + offset
-		return f.at, nil
+		f.pos = f.size + offset
+		return f.pos, nil
 	}
 	if f.seek != nil {
 		return 0, f.seek
 	}
-	f.at = offset
-	return f.at, nil
+	f.pos = offset
+	return f.pos, nil
 }
 
 func (f *shifting) Read(p []byte) (int, error) {
 	if f.read != nil {
 		return 0, f.read
 	}
-	if f.at >= int64(len(f.data)) {
+	if f.pos >= int64(len(f.data)) {
 		return 0, io.EOF
 	}
-	n := copy(p, f.data[f.at:])
-	f.at += int64(n)
+	n := copy(p, f.data[f.pos:])
+	f.pos += int64(n)
 	return n, nil
 }
 

@@ -180,7 +180,6 @@ func TestDebouncingGoesOnWhileNobodyIsListening(t *testing.T) {
 
 	select {
 	case paths := <-changes:
-		// Both changes stand in the one batch, and each path stands in it once.
 		// A batch may name more than was changed: a watch just opened on a vault
 		// is told about files that were already there, and one of those cannot
 		// be told from a file that has just arrived.
@@ -313,12 +312,12 @@ func TestWhatTheVaultIgnoresIsNotReported(t *testing.T) {
 // to whoever reads it.
 func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "index.db")
-	if err := os.WriteFile(at, []byte("first"), 0o644); err != nil {
+	pos := filepath.Join(dir, "index.db")
+	if err := os.WriteFile(pos, []byte("first"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	moved, err := filesystem.Watcher{}.File(t.Context(), at)
+	moved, err := filesystem.Watcher{}.File(t.Context(), pos)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +331,7 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	}
 
 	// The journal beside it is the same file changing.
-	if err := os.WriteFile(at+"-wal", []byte("written"), 0o644); err != nil {
+	if err := os.WriteFile(pos+"-wal", []byte("written"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	waits("the journal was written and nothing was reported")
@@ -341,7 +340,7 @@ func TestAFileIsFollowedThroughBeingReplaced(t *testing.T) {
 	if err := os.WriteFile(siblingPath, []byte("second"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Rename(siblingPath, at); err != nil {
+	if err := os.Rename(siblingPath, pos); err != nil {
 		t.Fatal(err)
 	}
 	waits("the file was replaced and nothing was reported")

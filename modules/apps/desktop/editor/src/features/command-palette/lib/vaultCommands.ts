@@ -7,14 +7,14 @@ import type { Command } from '../types'
 import type { Words } from '../words'
 
 export const createVaultCommands = (words: Words, agent: string): readonly Command[] => [
-  { id: 'first', text: words.first, group: 'vault', isOffered: (at) => at.isReady },
+  { id: 'first', text: words.first, group: 'vault', isOffered: (target) => target.isReady },
   {
     id: 'goto',
     text: words.goto,
     ...createRowKeys('goto', agent),
     group: 'vault',
     needs: 'picking',
-    isOffered: (at) => at.isReady,
+    isOffered: (target) => target.isReady,
   },
   {
     id: 'openVault',
@@ -36,7 +36,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     group: 'vault',
     needs: 'naming',
     isOffered: isVaultOpen,
-    getFieldText: (at) => at.vault.name,
+    getFieldText: (target) => target.vault.name,
   },
   {
     id: 'removeVault',
@@ -47,7 +47,7 @@ export const createVaultCommands = (words: Words, agent: string): readonly Comma
     isOffered: isAlwaysOffered,
     answers: {
       keeps: words.keepsVault,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.removeVaultAction,
       detail: words.stays,
     },

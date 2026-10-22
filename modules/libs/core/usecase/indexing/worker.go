@@ -32,7 +32,7 @@ const QuietPeriod = 8 * time.Second
 type Events interface {
 	// ReportTask puts one piece of work in the list of what is being done, and
 	// FinishTask takes it out.
-	ReportTask(at run.Task)
+	ReportTask(offset run.Task)
 	FinishTask(id string)
 	// ReportError says why a pass could not run.
 	ReportError(err error)
@@ -86,7 +86,7 @@ type Worker struct {
 	wait     WaitForModel
 	owed     GetOwed
 	events   Events
-	quiet    time.Duration
+	debounce time.Duration
 	after    func(time.Duration) <-chan time.Time
 
 	sources chan struct{}
@@ -101,7 +101,7 @@ func NewWorker(cfg Config) *Worker {
 		wait:     cfg.Wait,
 		owed:     cfg.Owed,
 		events:   cfg.Events,
-		quiet:    cfg.Quiet,
+		debounce: cfg.Quiet,
 		after:    cfg.After,
 		sources:  make(chan struct{}, 1),
 		notes:    make(chan struct{}, 1),
@@ -185,7 +185,7 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 
 	// A vault whose first indexing failed is one somebody goes on writing in, so
 	// the waiting stands whatever that indexing did.
-	var quiet <-chan time.Time
+	var debounceTimer <-chan time.Time
 	for {
 		select {
 		case <-ctx.Done():
@@ -196,9 +196,9 @@ func (p *pass) run(ctx context.Context, read ReadNotes) {
 			p.embedRecognised(ctx)
 		case <-p.worker.notes:
 			// Every write puts the pass off again.
-			quiet = p.worker.after(p.worker.quiet)
-		case <-quiet:
-			quiet = nil
+			debounceTimer = p.worker.after(p.worker.debounce)
+		case <-debounceTimer:
+			debounceTimer = nil
 			p.embed(ctx)
 		}
 	}
@@ -323,17 +323,17 @@ func (p *pass) embed(ctx context.Context) {
 		return
 	}
 
-	under, stop := stopOnWake(ctx, w.read)
+	limit, stop := stopOnWake(ctx, w.read)
 	defer stop()
 
 	// Fetching the model is a step of its own, and nothing is indexed until it
 	// is over.
 	if w.wait != nil {
-		if err := w.wait(under); err != nil {
+		if err := w.wait(limit); err != nil {
 			return
 		}
 	}
-	p.makeVectors(ctx, under, owing)
+	p.makeVectors(ctx, limit, owing)
 }
 
 // getOwedVectors is what a pass owes, asked once before it starts. The pass
@@ -361,18 +361,18 @@ func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int6
 // The wake is put back where it was found, and the loop that reads it next
 // still has it.
 func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func()) {
-	under, end := context.WithCancel(ctx)
+	underCtx, end := context.WithCancel(ctx)
 	awakened := make(chan struct{})
 	go func() {
 		defer close(awakened)
 		select {
-		case <-under.Done():
+		case <-underCtx.Done():
 		case <-wake:
 			signal(wake)
 			end()
 		}
 	}()
-	return under, func() {
+	return underCtx, func() {
 		end()
 		<-awakened
 	}
@@ -380,7 +380,7 @@ func stopOnWake(ctx context.Context, wake chan struct{}) (context.Context, func(
 
 // makeVectors makes the vectors a vault owes, reporting the source it is
 // embedding as it goes.
-func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
+func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	events := p.worker.events
 	failed := func(err error) {
 		events.ReportTask(run.Task{ID: MakingVectors, Title: "Indexing", Error: err.Error()})
@@ -395,19 +395,18 @@ func (p *pass) makeVectors(ctx, under context.Context, owing int64) {
 	// The pass enters the list when it opens the first of them, and a share is
 	// drawn once a vector has been made, counted over the work in hand.
 	making.OnVectorsProgress = func(res embedding.EmbedResult) {
-		at := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
+		pos := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
-			at.Count, at.Total = int64(res.Embedded), owing
+			pos.Count, pos.Total = int64(res.Embedded), owing
 		}
-		events.ReportTask(at)
+		events.ReportTask(pos)
 	}
 
-	switch _, err := making.MakeVectors(under, p.v); {
+	switch _, err := making.MakeVectors(items, p.v); {
 	case err == nil, errors.Is(err, context.Canceled):
 		events.FinishTask(MakingVectors)
 	default:
 		// A vault short of the vectors it owes is searched by its words alone, and
-		// the reason stands in the list.
 		failed(err)
 	}
 }

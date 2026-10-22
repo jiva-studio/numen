@@ -119,7 +119,7 @@ func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
 		t.Fatal(err)
 	}
 	s.models.lists = map[string]modelList{"claude": {models: models}}
-	cases := []struct{ model, asked, want string }{
+	cases := []struct{ model, requestedLevel, want string }{
 		{"claude-sonnet-4-6", "xhigh", ""},
 		{"claude-sonnet-4-6", "max", "max"},
 		{"claude-haiku-4-5-20251001", "high", ""},
@@ -128,15 +128,15 @@ func TestTheDepthAskedIsHeldToTheLevelsOfTheModel(t *testing.T) {
 		{"unlisted", "bogus", ""},
 	}
 	for _, one := range cases {
-		if got := s.getReasoning(one.model, one.asked); got != one.want {
-			t.Errorf("%q asked for %q got %q, want %q", one.model, one.asked, got, one.want)
+		if got := s.getReasoning(one.model, one.requestedLevel); got != one.want {
+			t.Errorf("%q requested %q got %q, want %q", one.model, one.requestedLevel, got, one.want)
 		}
 	}
 }
 
 func TestACachedListIsNotAskedAgain(t *testing.T) {
 	var cache modelCache
-	cache.lists = map[string]modelList{"x": {models: []claudeModel{{Value: "m"}}, at: time.Now()}}
+	cache.lists = map[string]modelList{"x": {models: []claudeModel{{Value: "m"}}, fetchedAt: time.Now()}}
 	got, err := cache.get(context.Background(), []string{"x"}, nil)
 	if err != nil || len(got) != 1 {
 		t.Fatalf("got %v, %v", got, err)

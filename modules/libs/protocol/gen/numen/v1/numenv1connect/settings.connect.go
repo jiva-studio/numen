@@ -6,7 +6,6 @@
 // in.
 //
 // The settings belong to the installation and not to a vault: the same file
-// answers whichever vault a window is showing, and every window reads it.
 //
 // They travel as the file's own text. Their sections belong to whichever
 // adapters an installation is composed of, so the core does not know the whole
@@ -78,10 +77,8 @@ type SettingsServiceClient interface {
 	// ReadSettingsFile is that file as its person wrote it, byte for byte.
 	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
-	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
 	// standing at anything other than what the caller presents is left alone and
-	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// WritePluginSecret stores the key of a secret a plugin declares, in the
 	// system keychain and never in the file, and records that the secret is
@@ -211,10 +208,8 @@ type SettingsServiceHandler interface {
 	// ReadSettingsFile is that file as its person wrote it, byte for byte.
 	ReadSettingsFile(context.Context, *connect.Request[v1.ReadSettingsFileRequest]) (*connect.Response[v1.ReadSettingsFileResponse], error)
 	// WriteSettingsFile replaces that file whole, with the bytes as they were
-	// typed. A file the settings cannot be read out of is refused and the file is
 	// left as it was; what is said names where in the file the trouble is. A file
 	// standing at anything other than what the caller presents is left alone and
-	// refused `stale`.
 	WriteSettingsFile(context.Context, *connect.Request[v1.WriteSettingsFileRequest]) (*connect.Response[v1.WriteSettingsFileResponse], error)
 	// WritePluginSecret stores the key of a secret a plugin declares, in the
 	// system keychain and never in the file, and records that the secret is

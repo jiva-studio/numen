@@ -16,7 +16,6 @@ var (
 	ErrNoRoute = fmt.Errorf("%w: no agent answers the question", ErrUnavailable)
 
 	// ErrNoConsent means the person has not let the plugin ask for completions,
-	// or has refused it.
 	ErrNoConsent = errors.New("AI access not allowed — allow it in Settings → AI")
 
 	// ErrInvalidQuestion means the question holds nothing an agent can answer.

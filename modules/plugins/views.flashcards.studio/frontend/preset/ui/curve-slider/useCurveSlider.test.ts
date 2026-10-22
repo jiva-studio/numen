@@ -9,7 +9,7 @@ import type { Curve, Point } from '../../types'
 import { WORDS as words } from '../../words'
 import { useCurveSlider, type CurveSliderProps } from './useCurveSlider'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -21,10 +21,10 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
-const curve = (over: Partial<Curve> = {}): Curve => ({
+const curve = (overrides: Partial<Curve> = {}): Curve => ({
   goal: 'minutes',
   grid: [10, 20, 30, 40],
   days: [],
@@ -34,18 +34,18 @@ const curve = (over: Partial<Curve> = {}): Curve => ({
     point({ reviews: 80 }),
     point({ reviews: 120 }),
   ],
-  now: { at: 2, value: 30, day: '' },
-  suggested: { at: 3, value: 40, day: '' },
+  now: { index: 2, value: 30, day: '' },
+  suggested: { index: 3, value: 40, day: '' },
   decks: 1,
   cards: 400,
   overdue: 0,
   unbegun: 0,
   isHonest: true,
-  ...over,
+  ...overrides,
 })
 
 /** The control standing at a place of a curve, and everything it emitted. */
-const slider = (over: Partial<CurveSliderProps> = {}) => {
+const slider = (overrides: Partial<CurveSliderProps> = {}) => {
   const emitted: unknown[][] = []
   const props = reactive<CurveSliderProps>({
     curve: curve(),
@@ -53,7 +53,7 @@ const slider = (over: Partial<CurveSliderProps> = {}) => {
     place: 2,
     valueText: '',
     isWaiting: false,
-    ...over,
+    ...overrides,
   })
   const emit = (...args: unknown[]) => void emitted.push(args)
   const state = useCurveSlider(props, emit as unknown as Parameters<typeof useCurveSlider>[1])
@@ -105,10 +105,10 @@ describe('the marks on the picture', () => {
     const costs = [10, 10, 10, 10, 0, 20, 30, 40, 50, 100]
     const { state } = slider({
       curve: curve({
-        grid: costs.map((_, at) => at * 10),
+        grid: costs.map((_, index) => index * 10),
         at: costs.map((reviews) => point({ reviews })),
-        now: { at: 4, value: 40, day: '' },
-        suggested: { at: 5, value: 50, day: '' },
+        now: { index: 4, value: 40, day: '' },
+        suggested: { index: 5, value: 50, day: '' },
       }),
       place: 4,
     })

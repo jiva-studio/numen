@@ -111,13 +111,13 @@ func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
 		var line strings.Builder
 		type span struct{ from, to int }
 		var runs []span
-		at := 0
+		pos := 0
 		for _, one := range atoms {
 			n := len([]rune(one.text))
 			if one.isUnbroken {
-				runs = append(runs, span{at, at + n})
+				runs = append(runs, span{pos, pos + n})
 			}
-			at += n
+			pos += n
 			line.WriteString(one.text)
 		}
 		value := line.String()

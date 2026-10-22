@@ -1,6 +1,5 @@
 /**
  * The command palette: the window it opens, the commands it offers, and the
- * search that stands behind them.
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
 export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords'

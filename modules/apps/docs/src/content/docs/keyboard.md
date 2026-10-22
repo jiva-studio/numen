@@ -67,7 +67,7 @@ Saving is unasked, and everything else is the editing you already know.
 
 | | |
 | --- | --- |
-| <kbd>Ctrl</kbd> <kbd>S</kbd> | write now, rather than [waiting the second](/writing/) it would take on its own. |
+| <kbd>Ctrl</kbd> <kbd>S</kbd> | write now, rather than [waiting the second](/editor/) it would take on its own. |
 | <kbd>Ctrl</kbd> <kbd>Z</kbd> | undo. |
 | <kbd>Ctrl</kbd> <kbd>Y</kbd>, or <kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>Z</kbd> on a mac | redo. |
 | <kbd>Tab</kbd> / <kbd>⇧</kbd> <kbd>Tab</kbd> | indent the line, and take the indent back. |

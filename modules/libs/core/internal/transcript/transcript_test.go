@@ -127,7 +127,6 @@ func TestStampIsWhatTheFormatWrites(t *testing.T) {
 }
 
 // The mark a person's own words carry is a note of its own. The same words
-// spoken in a cue are speech, and a proofreader is not stopped by them.
 func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 	cuesData := transcript.Marshal([]domain.TranscriptCue{
 		{Text: transcript.HandWrittenNote, From: 0, To: 2000},
@@ -142,7 +141,6 @@ func TestTheMarkOfAPersonsWordsIsANoteAndNotSpeech(t *testing.T) {
 		t.Errorf("the mark was not read:\n%s", own)
 	}
 
-	// The note is passed over, and the words are the ones that were spoken.
 	response, cues := transcript.Parse(own)
 	if len(cues) != 2 || response != transcript.HandWrittenNote+"\nand then he said it again" {
 		t.Errorf("the words read back as %q in %d cues", response, len(cues))
@@ -185,7 +183,6 @@ func TestClockIsAMomentAsAPlayerWritesOne(t *testing.T) {
 	}
 }
 
-// A note stands at the top of its own block, so the same words spoken inside a
 // cue say nothing about how far a run got.
 func TestANoteInsideALineIsNotANote(t *testing.T) {
 	whole := transcript.Marshal([]domain.TranscriptCue{

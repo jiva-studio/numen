@@ -11,8 +11,8 @@ import (
 func TestWritePassesTheSettingsOn(t *testing.T) {
 	t.Parallel()
 	var passed []port.Setting
-	write := settings.NewWrite(func(written []port.Setting) error {
-		passed = written
+	write := settings.NewWrite(func(output []port.Setting) error {
+		passed = output
 		return port.ErrNotASetting
 	})
 

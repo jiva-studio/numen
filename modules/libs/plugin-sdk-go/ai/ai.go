@@ -33,9 +33,8 @@ var (
 	// ErrUnavailable means the agent the plugin is routed to cannot be reached or
 	// stopped without an answer.
 	ErrUnavailable = errors.New("ai: routed agent did not answer")
-	// ErrNoConsent means the person has not let the plugin ask a model, or has
-	// refused it. The window asks them in the settings.
-	ErrNoConsent = errors.New("ai: the person has not let this plugin ask a model")
+	// ErrNoConsent means user consent is required to invoke an AI model.
+	ErrNoConsent = errors.New("ai: user consent required to invoke model")
 	// ErrNoAnswer means the host replied without an answer.
 	ErrNoAnswer = errors.New("ai: host sent no answer")
 )
@@ -93,8 +92,6 @@ func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuest
 	return answer.GetText(), nil
 }
 
-// readRefusal maps the code of a refused call to its error, followed by the detail the host gave.
-// Unspecified is no refusal.
 func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 	switch code {
 	case numenv1.CompletionErrorCode_COMPLETION_ERROR_CODE_UNSPECIFIED:

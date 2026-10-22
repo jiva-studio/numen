@@ -16,7 +16,6 @@ import (
 var ErrNotOwned = fmt.Errorf("this link carries something the application does not own")
 
 // owned is every key an entry of the `links:` block may carry. Anything else
-// in there is the person's, and the entry it sits in is left alone.
 var owned = map[string]bool{
 	"to": true, "role": true, "type": true, "note": true, "label": true,
 }
@@ -82,8 +81,8 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 	var entries []entry
 	var indent string
 	for i, item := range items.Content {
-		at := item.Line
-		if at < 1 || at >= len(lines) {
+		itemLine := item.Line
+		if itemLine < 1 || itemLine >= len(lines) {
 			continue
 		}
 		var linked int
@@ -96,19 +95,19 @@ func (d *Document) readBlockEntries(items *yaml.Node, end int) ([]entry, string)
 		if last > linked {
 			last = linked
 		}
-		if last < at {
-			last = at
+		if last < itemLine {
+			last = itemLine
 		}
 		entries = append(entries, entry{
 			link:       linkOf(item),
-			start:      lines[at-1],
+			start:      lines[itemLine-1],
 			end:        lines[last],
 			isReadable: isReadable(item),
 			isOwned:    hasOnlyOwnedKeys(item),
 			address:    valueOf(item, "to"),
 		})
 		if i == 0 {
-			indent = getIndent(string(d.front[lines[at-1]:lines[at]]))
+			indent = getIndent(string(d.front[lines[itemLine-1]:lines[itemLine]]))
 		}
 	}
 	return entries, indent
@@ -189,7 +188,6 @@ func (d *Document) RemoveLink(to domain.Address, role domain.LinkRole) (int, err
 // taken out, so a note names one place under one type. An empty address takes
 // them all out, and an empty block goes with them.
 //
-// An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
 func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 	var carrying []int
@@ -208,9 +206,9 @@ func findTypedEntries(entries []entry, kind string) ([]int, int, error) {
 }
 
 func (d *Document) replaceTypedEntries(b block, carrying []int, kind string, to domain.Address) error {
-	for at := len(carrying) - 1; at >= 0; at-- {
-		e := b.entries[carrying[at]]
-		if at > 0 || to.Value == "" {
+	for idx := len(carrying) - 1; idx >= 0; idx-- {
+		e := b.entries[carrying[idx]]
+		if idx > 0 || to.Value == "" {
 			d.splice(e.start, e.end, nil)
 			continue
 		}
@@ -244,7 +242,6 @@ func (d *Document) appendEntry(b block, l domain.Link) error {
 // taken out, so a note names one place under one type. An empty address takes
 // them all out, and an empty block goes with them.
 //
-// An entry carrying a key the application does not own is refused, and one it
 // cannot read is left as it was written.
 func (d *Document) SetLinkOfType(kind string, to domain.Address, role domain.LinkRole) error {
 	b, err := d.block()
@@ -316,8 +313,6 @@ func (d *Document) collectLinkEdits(b block, to domain.Address, change domain.Li
 }
 
 // UpdateLink changes what an entry says about itself without moving where it
-// goes. An entry carrying anything the application does not own is refused,
-// and a refusal is the whole change refused.
 func (d *Document) UpdateLink(to domain.Address, change domain.Link) (int, error) {
 	b, err := d.block()
 	if err != nil {

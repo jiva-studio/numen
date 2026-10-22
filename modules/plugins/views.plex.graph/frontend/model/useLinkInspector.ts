@@ -13,7 +13,7 @@ export function useLinkInspector(
 ) {
   const linkInspector = ref<LinkInspectorRequest | null>(null)
 
-  const openLinkInspector = (pair: string, at: { x: number; y: number }) => {
+  const openLinkInspector = (pair: string, position: { x: number; y: number }) => {
     const [idA, idB] = pair.split(' ')
     const pathA = map.getNodePath(idA ?? '')
     const pathB = map.getNodePath(idB ?? '')
@@ -23,7 +23,7 @@ export function useLinkInspector(
       nodeA: { id: idA, title: getName(pathA), path: pathA },
       nodeB: { id: idB, title: getName(pathB), path: pathB },
       links: createInspectorLinks(view.neighbourhood.value, pathA, pathB),
-      at,
+      at: position,
     }
   }
 

@@ -32,7 +32,7 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     group: 'note',
     needs: 'naming',
     isOffered: isNoteOpen,
-    getFieldText: (at) => at.title,
+    getFieldText: (target) => target.title,
   },
   // The note goes to the vault's .trash folder, and putting it back is a move.
   // Destroy is the one that asks.

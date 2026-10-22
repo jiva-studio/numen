@@ -59,7 +59,6 @@ export interface FileMakers {
 
 /** The vaults this installation holds, as a command changes which one shows. */
 export interface VaultSwitcher extends Vaults {
-  /** The vault the window is showing, under the name it has now. */
   /** One vault of the list under the name it was just given. */
   setVaultName(vault: VaultRef): void
   /**
@@ -136,7 +135,7 @@ export interface VaultContext {
 export interface TabContext {
   /** The open files a command reaches, whichever store holds each. */
   readonly notes: Notes
-  readonly goes: WindowNavigator
+  readonly navigator: WindowNavigator
 }
 
 /** The runs a command asks for, and the ones this build has said it cannot do. */

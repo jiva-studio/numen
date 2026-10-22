@@ -19,7 +19,6 @@ export type SessionKeyIntent =
   | { does: 'scroll'; back: boolean }
   | { does: 'shut' }
 
-/** What the window is showing when the key is pressed. */
 export interface ScreenState {
   /** Whether the answer is already showing. */
   isShown: boolean
@@ -112,10 +111,9 @@ const LETTERS = 'abcdefghijklmnopqrstuvwxyz'
  * vault of thirty decks is a vault where the last four are picked with the
  * hand.
  */
-export const getLetter = (at: number): string => LETTERS[at] ?? ''
+export const getLetter = (index: number): string => LETTERS[index] ?? ''
 
 /**
- * The keys the decks are chosen with: enter sits down to the whole vault, a
  * letter to the deck standing at it, and escape goes back to the vaults.
  *
  * The whole vault is the daily act, so it is the key under the hand. A deck is
@@ -127,8 +125,8 @@ export function getPickerKeyIntent(press: KeyboardEvent, decks: number): PickerK
   if (press.key === 'Enter' || press.key === ' ') return { does: 'all' }
 
   if (press.key.length !== 1) return null
-  const at = LETTERS.indexOf(press.key.toLowerCase())
-  if (at >= 0 && at < decks) return { does: 'deck', at }
+  const choiceIndex = LETTERS.indexOf(press.key.toLowerCase())
+  if (choiceIndex >= 0 && choiceIndex < decks) return { does: 'deck', at: choiceIndex }
   return null
 }
 

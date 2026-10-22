@@ -19,7 +19,6 @@ const props = defineProps<{
   goal: Goal
   /** Whether an answer is being waited for. */
   isWaiting: boolean
-  /** The value the knob stands at, said in the units of the goal. */
   valueText: string
 }>()
 

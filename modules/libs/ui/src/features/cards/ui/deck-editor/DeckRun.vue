@@ -35,7 +35,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   /** A card is dragged over a place that would take it. */
-  (event: 'drag-over', at: InsertionPoint | undefined, press: DragEvent): void
+  (event: 'drag-over', target: InsertionPoint | undefined, press: DragEvent): void
   (event: 'drop'): void
   (event: 'rename-section', id: string, name: string): void
   (event: 'remove-section', id: string): void
@@ -130,7 +130,6 @@ const removeSection = (): void => {
       @dragover.stop="emit('drag-over', getRunEnd(run), $event)"
       @drop.stop="emit('drop')"
     >
-      <!-- The plus stands in the middle. -->
       <Button
         v-if="!isAsking"
         variant="ghost"
@@ -194,8 +193,6 @@ const removeSection = (): void => {
   min-inline-size: 0;
 }
 
-/* The plus is an outline until it is pressed: it holds nothing yet. What it
-   holds stands in the middle, which is where it was pressed. */
 .deck__plus {
   --plus: 2.5rem;
 

@@ -39,7 +39,7 @@ export function useCurveSlider(
     places: plot.places,
     knob: plot.knob,
     suggested: plot.suggested,
-    held: plot.held,
+    heldValue: plot.heldValue,
     isDated: annotations.isDated,
     isHonest: annotations.isHonest,
     marks: annotations.marks,

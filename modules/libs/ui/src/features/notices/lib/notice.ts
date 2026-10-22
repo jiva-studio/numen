@@ -2,7 +2,7 @@
  * What a notice is, as plain values. No DOM, no clock, no measurement.
  */
 
-import type { TallyUnit, Tone } from './tally'
+import type { Tally, TallyUnit, Tone } from './tally'
 
 export type { Tone }
 
@@ -94,10 +94,10 @@ export const getReadable = (notices: readonly Notice[]): readonly Notice[] =>
   notices.filter((notice) => notice.text !== '')
 
 /** What a notice counts against, for the ones that count anything. */
-export const findTally = (notice: Notice): { done: number; total: number } | undefined =>
-  notice.total === undefined || notice.done === undefined
+export const findTally = (notice: Notice): Tally | undefined =>
+  notice.total === undefined || notice['done'] === undefined
     ? undefined
-    : { done: notice.done, total: notice.total }
+    : { completedCount: notice['done'], total: notice.total }
 
 /**
  * What is still worth remembering as put away: the notices that are still

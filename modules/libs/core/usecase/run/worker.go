@@ -19,10 +19,8 @@ type Worker struct {
 	tasks *Tasks
 	each  func(ctx context.Context, v domain.Vault, path string)
 
-	// under is what every run is under, and going is every run that has not
-	// ended. A run outlives the question that asked for it and ends with the
-	// application, which waits in Wait for what it is still writing.
-	under context.Context
+	// ctx is the root context for runs, and going tracks active runs.
+	ctx   context.Context
 	going sync.WaitGroup
 
 	mu        sync.Mutex
@@ -43,15 +41,15 @@ func NewWorker(
 	tasks *Tasks,
 	each func(ctx context.Context, v domain.Vault, path string),
 ) *Worker {
-	return &Worker{tasks: tasks, each: each, under: ctx}
+	return &Worker{tasks: tasks, each: each, ctx: ctx}
 }
 
-// Context is what every run is under.
+// Context returns the worker's root context.
 func (w *Worker) Context() context.Context {
-	if w.under == nil {
+	if w.ctx == nil {
 		return context.Background()
 	}
-	return w.under
+	return w.ctx
 }
 
 // Wait is every run and every goroutine started through Go, ended.
@@ -186,10 +184,10 @@ func (w *Worker) RepeatRounds(ctx context.Context, wait port.Wait, every time.Du
 
 // Report puts one piece of work in the list. Work a person started is shown at
 // once, and work nobody asked for is shown once it has lasted.
-func (w *Worker) Report(at Task, isUserStarted bool) {
-	at.IsUserStarted = isUserStarted
+func (w *Worker) Report(pos Task, isUserStarted bool) {
+	pos.IsUserStarted = isUserStarted
 	if w.tasks != nil {
-		w.tasks.Set(at)
+		w.tasks.Set(pos)
 	}
 }
 

@@ -34,8 +34,8 @@ func readAnswer(batch Batch, reply string, maxDistance float64) answer {
 func getReachingRuns(batch Batch, reply string) []int {
 	var starts []int
 	for _, row := range splitRows(reply) {
-		if at, through, _, _, ok := readRow(row); ok && through > batch.Last() {
-			starts = append(starts, at)
+		if pos, through, _, _, ok := readRow(row); ok && through > batch.Last() {
+			starts = append(starts, pos)
 		}
 	}
 	return starts
@@ -47,13 +47,12 @@ func getReachingRuns(batch Batch, reply string) []int {
 //
 // Where two batches answer about one line, the correction is the one from the
 // batch in which the line stands further from the end; where they stand equally
-// far, it is the one from the later batch. A run of lines is held to this on
 // every line it covers, and a correction that takes a line from a kept run
 // takes the whole run out. No two corrections cover one line. A line no
 // accepted reply covers is not in the result.
 func gatherAnswers(answers []answer) (map[int]Line, []int) {
 	collector := gathering{
-		put:   make(map[int]Line),
+		lines: make(map[int]Line),
 		owner: make(map[int]int),
 		best:  make(map[int]int),
 	}
@@ -70,13 +69,13 @@ func gatherAnswers(answers []answer) (map[int]Line, []int) {
 			collector.offer(line, after)
 		}
 	}
-	return collector.put, past
+	return collector.lines, past
 }
 
 // gathering is the corrections kept so far.
 type gathering struct {
-	// put is the kept corrections by their first line.
-	put map[int]Line
+	// lines is the kept corrections by their first line.
+	lines map[int]Line
 	// owner is, for each line a kept correction covers, the first line of that
 	// correction.
 	owner map[int]int
@@ -89,31 +88,31 @@ type gathering struct {
 // is how many lines follow each line in the batch it came from.
 func (g *gathering) offer(line Line, after map[int]int) {
 	first, last := line.Number, max(line.Last, line.Number)
-	for at := first; at <= last; at++ {
-		if status, observed := g.best[at]; observed && after[at] < status {
+	for pos := first; pos <= last; pos++ {
+		if status, observed := g.best[pos]; observed && after[pos] < status {
 			return
 		}
 	}
-	for at := first; at <= last; at++ {
-		if target, covered := g.owner[at]; covered {
+	for offset := first; offset <= last; offset++ {
+		if target, covered := g.owner[offset]; covered {
 			g.evict(target)
 		}
 	}
-	g.put[first] = line
-	for at := first; at <= last; at++ {
-		g.owner[at], g.best[at] = first, after[at]
+	g.lines[first] = line
+	for index := first; index <= last; index++ {
+		g.owner[index], g.best[index] = first, after[index]
 	}
 }
 
 // evict takes the kept correction that begins on the line out, with every line
 // it covers.
 func (g *gathering) evict(first int) {
-	line := g.put[first]
-	for at := first; at <= max(line.Last, line.Number); at++ {
-		delete(g.owner, at)
-		delete(g.best, at)
+	line := g.lines[first]
+	for pos := first; pos <= max(line.Last, line.Number); pos++ {
+		delete(g.owner, pos)
+		delete(g.best, pos)
 	}
-	delete(g.put, first)
+	delete(g.lines, first)
 }
 
 // countRemainingLines maps each line number to the count of lines following it in the batch.
@@ -126,9 +125,9 @@ func countRemainingLines(lines []Line) map[int]int {
 }
 
 // sortLines returns the lines in the order of their numbers.
-func sortLines(put map[int]Line) []Line {
-	out := make([]Line, 0, len(put))
-	for _, line := range put {
+func sortLines(lines map[int]Line) []Line {
+	out := make([]Line, 0, len(lines))
+	for _, line := range lines {
 		out = append(out, line)
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Number < out[j].Number })

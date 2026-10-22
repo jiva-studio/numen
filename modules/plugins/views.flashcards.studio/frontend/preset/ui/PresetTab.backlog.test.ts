@@ -1,7 +1,5 @@
 /**
- * The plot of what stands overdue, drawn under the picture over the days ahead.
  *
- * It is read off the place the knob stands at and never dragged, so it is no
  * stop on the way round the screen. Nothing overdue is the floor it is read up
  * from, and the room it is drawn in is the same box in every state it has.
  */
@@ -23,7 +21,7 @@ describe('what a goal of a date draws', () => {
         grid: [4, 8, 13],
         days: ['2026-09-04', '2026-09-08', '2026-09-13'],
         cards: 79,
-        now: { at: 0, value: 4, day: '2026-09-04' },
+        now: { index: 0, value: 4, day: '2026-09-04' },
         at: [
           point({ backlog: climbing }),
           point({ backlog: climbing }),
@@ -47,7 +45,6 @@ describe('what a goal of a date draws', () => {
   })
 
   // A shorter run must not make the picture jump, so every place is drawn
-  // against the one extent: the most any of them ever stands at.
   it('keeps one height for the backlog, whatever place the knob relies on', async () => {
     const { tab } = createDatedTab()
     const control = tab.get('[data-control="picture"][role="slider"]')
@@ -69,7 +66,6 @@ describe('what a goal of a date draws', () => {
 })
 
 describe('the plot of what remains overdue', () => {
-  /** A curve whose place the knob stands at carries a backlog that climbs. */
   const createClimbingTab = (backlog: readonly number[] = [16, 21, 55, 66, 65, 78]) =>
     mountPresetTab({
       at: [point(), point(), point({ reviews: 80, backlog }), point()],
@@ -148,8 +144,8 @@ describe('the plot of what remains overdue', () => {
   // The room a plot is drawn in is the same box in every state it has, so
   // nothing under the picture moves when the answer lands.
   it('holds one room for the plot, waiting, drawn and empty areNeighbourhoodsEqual', () => {
-    const room = (over: Partial<Curve> = {}) =>
-      mountPresetTab(over)
+    const room = (overrides: Partial<Curve> = {}) =>
+      mountPresetTab(overrides)
         .tab.findAll('[data-control="room"]')
         .map((one) => one.attributes('style'))
     expect(room({ isHonest: false })).toStrictEqual(room())
@@ -184,7 +180,6 @@ describe('the plot of what remains overdue', () => {
     expect(response).toContain(words.formatBacklogCards(0))
   })
 
-  // The backlog is read off the place the knob stands at, so walking the grid
   // walks the backlog with it.
   it('follows the knob, since each place of the grid keeps its own', async () => {
     const { tab } = mountPresetTab({

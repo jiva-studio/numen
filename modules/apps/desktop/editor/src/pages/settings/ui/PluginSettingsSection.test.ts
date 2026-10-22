@@ -284,7 +284,9 @@ describe('a string setting offered the models of a program', () => {
   it('writes the model chosen', () => {
     const { wrapper, recordedWrites } = createSection({}, [MODEL_PLUGIN], LISTING)
     wrapper.findComponent({ name: 'Select' }).vm.$emit('update:modelValue', 'v/other')
-    expect(recordedWrites).toStrictEqual([{ at: ['plugins', 'test.agent', 'model'], value: '"v/other"' }])
+    expect(recordedWrites).toStrictEqual([
+      { at: ['plugins', 'test.agent', 'model'], value: '"v/other"' },
+    ])
   })
 
   it('is typed by hand where the program lists no model', () => {

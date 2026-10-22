@@ -10,7 +10,6 @@ import (
 )
 
 // A document read without complaint is one the rest of the application can
-// hold: every page and every named part stands at an offset in the text that
 // was read, in the order they are paginated, and each part carries a name on
 // one line. A document whose outline named nothing says so.
 //
@@ -60,7 +59,7 @@ func FuzzRead(f *testing.F) {
 			t.Fatal("a file was read and no document came back")
 		}
 
-		at := -1
+		pos := -1
 		for i, page := range book.Pages {
 			if page.Offset < 0 || page.Offset > len(book.Text) {
 				t.Fatalf("page %d begins at %d in %d bytes of text",
@@ -68,25 +67,25 @@ func FuzzRead(f *testing.F) {
 			}
 			// Two pages that say nothing begin in the same place, so the order
 			// is what holds and not the distance.
-			if page.Offset < at {
+			if page.Offset < pos {
 				t.Fatalf("page %d begins at %d, before page %d at %d",
-					i, page.Offset, i-1, at)
+					i, page.Offset, i-1, pos)
 			}
-			at = page.Offset
+			pos = page.Offset
 		}
 
-		at = -1
+		pos = -1
 		for _, part := range book.Parts {
 			if part.Offset < 0 || part.Offset > len(book.Text) {
 				t.Fatalf("%q begins at %d in %d bytes of text",
 					part.Title, part.Offset, len(book.Text))
 			}
-			if part.Offset < at {
-				t.Fatalf("%q begins at %d, before the part at %d", part.Title, part.Offset, at)
+			if part.Offset < pos {
+				t.Fatalf("%q begins at %d, before the part at %d", part.Title, part.Offset, pos)
 			}
-			at = part.Offset
+			pos = part.Offset
 			if part.Level < 1 {
-				t.Fatalf("%q stands at depth %d", part.Title, part.Level)
+				t.Fatalf("part %q is at depth %d", part.Title, part.Level)
 			}
 			if part.Title == "" || strings.Join(strings.Fields(part.Title), " ") != part.Title {
 				t.Fatalf("a part is named %q, which is not one line of a name", part.Title)
@@ -138,12 +137,12 @@ func hasPart(parts []pdf.Part, title string, offset int) bool {
 }
 
 // flipByte is the file with one byte of it written over by another.
-func flipByte(raw []byte, at int) []byte {
+func flipByte(raw []byte, pos int) []byte {
 	if len(raw) == 0 {
 		return raw
 	}
 	changed := make([]byte, len(raw))
 	copy(changed, raw)
-	changed[at%len(changed)] ^= 0xff
+	changed[pos%len(changed)] ^= 0xff
 	return changed
 }

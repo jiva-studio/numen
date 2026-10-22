@@ -51,7 +51,7 @@ func (v *Vault) parsed() map[string]domain.Note {
 // change. The caller holds the lock.
 func (v *Vault) rescan(paths ...string) {
 	for _, filePath := range paths {
-		at, err := v.files.stat(filePath)
+		fp, err := v.files.stat(filePath)
 		if err != nil || !isNote(filePath) || isIgnored(filePath) {
 			delete(v.indexed, filePath)
 			continue
@@ -61,7 +61,7 @@ func (v *Vault) rescan(paths ...string) {
 			delete(v.indexed, filePath)
 			continue
 		}
-		v.indexed[filePath] = markdown.Parse(at, raw)
+		v.indexed[filePath] = markdown.Parse(fp, raw)
 	}
 }
 

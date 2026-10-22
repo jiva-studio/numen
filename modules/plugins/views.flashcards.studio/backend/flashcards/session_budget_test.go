@@ -15,19 +15,19 @@ import (
 // deckLoad is one deck of a preset and what it holds: cards that are owed, and
 // cards nobody has begun.
 type deckLoad struct {
-	path        string
-	owed, fresh int
+	path          string
+	owed, unbegun int
 }
 
 // newDeckLoads generates the decks of one preset, each under a path of its own.
 func newDeckLoads(t *rapid.T) []deckLoad {
 	decks := rapid.IntRange(1, 5).Draw(t, "decks")
 	out := make([]deckLoad, decks)
-	for at := range out {
-		out[at] = deckLoad{
-			path:  fmt.Sprintf("decks/%c.md", 'A'+at),
-			owed:  rapid.IntRange(0, 8).Draw(t, "owed"),
-			fresh: rapid.IntRange(0, 8).Draw(t, "fresh"),
+	for item := range out {
+		out[item] = deckLoad{
+			path:    fmt.Sprintf("decks/%c.md", 'A'+item),
+			owed:    rapid.IntRange(0, 8).Draw(t, "owed"),
+			unbegun: rapid.IntRange(0, 8).Draw(t, "fresh"),
 		}
 	}
 	return out
@@ -45,7 +45,7 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 		limits.Minutes = review.ClosedMinutes
 	}
 	day := &budgets{
-		under: make(map[review.CardFaceID]string),
+		cardFacePresets: make(map[review.CardFaceID]string),
 		allowances: map[string]*allowance{"Preset.md": {
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
@@ -56,40 +56,40 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 			cost:   review.DefaultCost,
 			counts: review.BudgetUnitCards,
 		}},
-		decks:      make(map[string]string),
-		faced:      make(map[review.CardFaceID]bool),
-		spentUnder: make(map[string]review.Spent),
+		decks:         make(map[string]string),
+		reviewedFaces: make(map[review.CardFaceID]bool),
+		spentByDeck:   make(map[string]review.Spent),
 	}
 
-	var owed, fresh []CardFace
-	for _, at := range order {
-		one := load[at]
+	var owed, newCards []CardFace
+	for _, item := range order {
+		one := load[item]
 		day.decks[one.path] = "Preset.md"
 		for card := range one.owed {
 			face := CardFace{Deck: one.path, ID: review.CardFaceID{
 				Card: fmt.Sprintf("%s/owed/%d", one.path, card),
 			}}
-			day.under[face.ID] = "Preset.md"
+			day.cardFacePresets[face.ID] = "Preset.md"
 			owed = append(owed, face)
 		}
-		for card := range one.fresh {
+		for card := range one.unbegun {
 			face := CardFace{Deck: one.path, ID: review.CardFaceID{
 				Card: fmt.Sprintf("%s/fresh/%d", one.path, card),
 			}}
-			day.under[face.ID] = "Preset.md"
-			fresh = append(fresh, face)
+			day.cardFacePresets[face.ID] = "Preset.md"
+			newCards = append(newCards, face)
 		}
 	}
 
-	took := day.spend(owed, fresh)
+	took := day.spend(owed, newCards)
 	out := make(map[review.CardFaceID]bool)
-	for at, one := range owed {
-		if took.owed[at] {
+	for entry, one := range owed {
+		if took.owed[entry] {
 			out[one.ID] = true
 		}
 	}
-	for at, one := range fresh {
-		if took.fresh[at] {
+	for elem, one := range newCards {
+		if took.newCards[elem] {
 			out[one.ID] = true
 		}
 	}
@@ -100,8 +100,8 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 // budget.
 func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 	places := make([]int, len(load))
-	for at := range places {
-		places[at] = at
+	for item := range places {
+		places[item] = item
 	}
 	out := make(map[string]int, len(load))
 	for face := range getTakenFaces(load, places, keeps) {
@@ -127,12 +127,12 @@ func TestWhatNoDeckCouldUseGoesToTheDeckContainingMost(t *testing.T) {
 	keeps := review.Budget{New: 6, Minutes: 1}
 	one, five := "decks/a.md", "decks/b.md"
 
-	got := countHandedOver([]deckLoad{{path: one, fresh: 1}, {path: five, fresh: 5}}, keeps)
+	got := countHandedOver([]deckLoad{{path: one, unbegun: 1}, {path: five, unbegun: 5}}, keeps)
 	if want := (map[string]int{five: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute handed over %v, want %v", got, want)
 	}
 	// The same two decks under each other's names hand over the same cards.
-	got = countHandedOver([]deckLoad{{path: five, fresh: 1}, {path: one, fresh: 5}}, keeps)
+	got = countHandedOver([]deckLoad{{path: five, unbegun: 1}, {path: one, unbegun: 5}}, keeps)
 	if want := (map[string]int{one: 3}); !maps.Equal(got, want) {
 		t.Fatalf("a day of one minute over the same decks renamed handed over "+
 			"%v, want %v", got, want)
@@ -153,8 +153,8 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 			Reviews: rapid.IntRange(0, 20).Draw(t, "reviews"),
 		}
 		places := make([]int, len(load))
-		for at := range places {
-			places[at] = at
+		for item := range places {
+			places[item] = item
 		}
 
 		was := getTakenFaces(load, places, keeps)

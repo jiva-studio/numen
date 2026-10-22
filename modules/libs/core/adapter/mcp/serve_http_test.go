@@ -71,7 +71,7 @@ func listTools(t *testing.T, url string) (*sdk.ListToolsResult, error) {
 // onlyOffers is the tools an endpoint offers, as an exact set. The claim each of
 // these ports makes is about what is absent, so a list that says what is
 // present would pass with anything extra on it.
-func onlyOffers(t *testing.T, offered []*sdk.Tool, where string, want []string) {
+func onlyOffers(t *testing.T, available []*sdk.Tool, where string, want []string) {
 	t.Helper()
 
 	wanted := make(map[string]bool, len(want))
@@ -79,7 +79,7 @@ func onlyOffers(t *testing.T, offered []*sdk.Tool, where string, want []string) 
 		wanted[name] = true
 	}
 	found := map[string]bool{}
-	for _, tool := range offered {
+	for _, tool := range available {
 		if !wanted[tool.Name] {
 			t.Errorf("%s is served on %s", tool.Name, where)
 		}

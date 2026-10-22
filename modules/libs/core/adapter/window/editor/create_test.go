@@ -236,13 +236,13 @@ func TestANoteIsMadeBelowTheNoteItWasMadeFromAndNotItsNamesake(t *testing.T) {
 		t.Errorf("the link was written by a name two notes answer to:\n%s", made)
 	}
 
-	around, err := f.client.GetNeighbourhood(t.Context(),
+	center, err := f.client.GetNeighbourhood(t.Context(),
 		connect.NewRequest(&v1.GetNeighbourhoodRequest{Path: "physics/Ontology.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	var children []string
-	for _, related := range around.Msg.GetRelated() {
+	for _, related := range center.Msg.GetRelated() {
 		if related.GetRelation() == v1.Relation_RELATION_CHILD {
 			children = append(children, related.GetNote().GetPath())
 		}

@@ -1,5 +1,4 @@
 /**
- * Every road to a file, and what the window tells whoever answers for the
  * person about what they have open.
  *
  * A road holds a path and no choice, so the same file reached by the palette,
@@ -57,7 +56,7 @@ describe('the window with no note to show', () => {
   })
 })
 
-describe('every road to a file', () => {
+describe('resolves file paths', () => {
   /**
    * Each road, by what it is called, as a gesture on a window standing on one
    * file. They are listed here so that every one of them is asked the same

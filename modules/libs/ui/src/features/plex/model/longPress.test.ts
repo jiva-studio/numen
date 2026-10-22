@@ -3,8 +3,8 @@ import { effectScope } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { LONG_PRESS_DELAY, LONG_PRESS_TOLERANCE, useLongPress } from './longPress'
 
-const press = (over: Partial<PointerEvent> = {}) =>
-  ({ pointerType: 'touch', clientX: 100, clientY: 100, ...over }) as PointerEvent
+const press = (overrides: Partial<PointerEvent> = {}) =>
+  ({ pointerType: 'touch', clientX: 100, clientY: 100, ...overrides }) as PointerEvent
 
 /** A hold watched inside a scope, so what it disposes of can be tested too. */
 const createHolding = (ready = () => true) => {

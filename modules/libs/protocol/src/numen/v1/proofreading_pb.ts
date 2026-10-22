@@ -140,12 +140,6 @@ export type ProofreadTextRequest = Message<"numen.v1.ProofreadTextRequest"> & {
    */
   groups: ProofreadGroup[];
 
-  /**
-   * The settings of the kind named. A request whose options are of the other
-   * kind, or are absent, is refused.
-   *
-   * @generated from oneof numen.v1.ProofreadTextRequest.options
-   */
   options: {
     /**
      * @generated from field: numen.v1.ProofreadScanOptions scan = 3;
@@ -244,11 +238,6 @@ export const ProofreadTextResponseSchema: GenMessage<ProofreadTextResponse> = /*
  * @generated from enum numen.v1.ProofreadKind
  */
 export enum ProofreadKind {
-  /**
-   * No kind is named. A request of this kind is refused.
-   *
-   * @generated from enum value: PROOFREAD_KIND_UNSPECIFIED = 0;
-   */
   UNSPECIFIED = 0,
 
   /**
@@ -282,7 +271,6 @@ export const ProofreadKindSchema: GenEnum<ProofreadKind> = /*@__PURE__*/
 export const ProofreadingService: GenService<{
   /**
    * ProofreadText proofreads numbered lines of one kind of text and returns the
-   * corrections the proofreader stands behind. It fails with code unavailable
    * where nothing is routed to answer for the proofreading.
    *
    * @generated from rpc numen.v1.ProofreadingService.ProofreadText

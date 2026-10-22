@@ -11,9 +11,9 @@ interface Pending {
   readonly finish: () => void
 }
 
-const getPending = (pending: readonly Pending[], at: number): Pending => {
-  const one = pending[at]
-  if (!one) throw new Error(`write ${at} was not made`)
+const getPending = (pending: readonly Pending[], pos: number): Pending => {
+  const one = pending[pos]
+  if (!one) throw new Error(`write ${pos} was not made`)
   return one
 }
 

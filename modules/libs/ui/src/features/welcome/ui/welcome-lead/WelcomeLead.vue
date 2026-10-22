@@ -61,8 +61,6 @@ defineEmits<{
   gap: 0.5rem;
 }
 
-/* The glyph carries no size of its own, so it stands at the height it is given
-   and is never squeezed to fit the room. */
 .welcome-page__glyph {
   flex: none;
   inline-size: auto;

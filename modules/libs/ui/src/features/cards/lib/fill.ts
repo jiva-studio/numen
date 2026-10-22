@@ -78,8 +78,8 @@ export interface InsertResult {
  * A field written into a face at the caret, the caret landing past the closing
  * brace. A caret outside the text is taken to the end nearest it.
  */
-export function insert(template: string, at: number, field: string): InsertResult {
-  const where = Math.max(0, Math.min(at, template.length))
+export function insert(template: string, pos: number, field: string): InsertResult {
+  const where = Math.max(0, Math.min(pos, template.length))
   const content = braceField(field)
   return {
     text: template.slice(0, where) + content + template.slice(where),
@@ -94,6 +94,5 @@ export function renameField(template: string, from: string, to: string): string 
   )
 }
 
-/** What a preview stands in the slots: each field under its own name. */
 export const sampleValues = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: field }))

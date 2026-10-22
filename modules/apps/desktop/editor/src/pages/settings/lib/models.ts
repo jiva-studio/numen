@@ -37,7 +37,6 @@ const isAddress = (value: string): boolean => value.includes('/')
 
 /**
  * What a model's files are on this machine, in a word. A model reached over
- * the network is fetched from nowhere, and stands with nothing said about it.
  */
 const getPresenceWord = (presence: Presence, words: Words): string => {
   if (presence === 'present') return words.present
@@ -96,6 +95,6 @@ export const createChoices = (
 /** The choices for one setting of the fields, read from what the file holds there. */
 export const createModelChoices = (
   fields: Pick<SettingFields, 'getModels' | 'getString'>,
-  at: readonly string[],
+  path: readonly string[],
   words: Words,
-): readonly SelectChoice[] => createChoices(fields.getModels(at), fields.getString(at), words)
+): readonly SelectChoice[] => createChoices(fields.getModels(path), fields.getString(path), words)

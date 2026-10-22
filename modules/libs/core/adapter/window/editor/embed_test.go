@@ -42,22 +42,22 @@ func noteWith(vocabulary []string, n int) string {
 // asked is a model that answers a direction belonging to the text it was given.
 // It reaches nothing outside this process, and counts what it was asked, which
 // is how a test says how many passes ran.
-type asked struct {
+type fakeEmbedder struct {
 	dims int
 
-	mu    sync.Mutex
-	calls int
-	seen  []string
+	mu      sync.Mutex
+	calls   int
+	visited []string
 }
 
-func (a *asked) GetModel() port.EmbeddingModel {
+func (a *fakeEmbedder) GetModel() port.EmbeddingModel {
 	return port.EmbeddingModel{Name: "fake", Dimensions: a.dims}
 }
 
-func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
+func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	a.mu.Lock()
 	a.calls++
-	a.seen = append(a.seen, texts...)
+	a.visited = append(a.visited, texts...)
 	a.mu.Unlock()
 
 	out := make([][]float32, 0, len(texts))
@@ -67,19 +67,19 @@ func (a *asked) Embed(_ context.Context, texts []string) ([][]float32, error) {
 	return out, nil
 }
 
-func (*asked) Close() error { return nil }
+func (*fakeEmbedder) Close() error { return nil }
 
-func (a *asked) times() int {
+func (a *fakeEmbedder) times() int {
 	a.mu.Lock()
 	defer a.mu.Unlock()
 	return a.calls
 }
 
 // saw says whether a word reached the model in any text it was handed.
-func (a *asked) saw(word string) bool {
+func (a *fakeEmbedder) saw(word string) bool {
 	a.mu.Lock()
 	defer a.mu.Unlock()
-	for _, text := range a.seen {
+	for _, text := range a.visited {
 		if strings.Contains(text, word) {
 			return true
 		}
@@ -91,22 +91,22 @@ func (a *asked) saw(word string) bool {
 // service that was not answering when the window opened looks like from here.
 // What it turned down still owes a vector.
 type sulking struct {
-	*asked
+	*fakeEmbedder
 
-	mu     sync.Mutex
-	left   int
-	turned int
+	mu            sync.Mutex
+	remainingErrs int
+	turned        int
 }
 
 func newSulking(dims, errs int) *sulking {
-	return &sulking{asked: &asked{dims: dims}, left: errs}
+	return &sulking{fakeEmbedder: &fakeEmbedder{dims: dims}, remainingErrs: errs}
 }
 
 func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error) {
 	s.mu.Lock()
-	refusing := s.left > 0
+	refusing := s.remainingErrs > 0
 	if refusing {
-		s.left--
+		s.remainingErrs--
 		s.turned++
 	}
 	s.mu.Unlock()
@@ -114,7 +114,7 @@ func (s *sulking) Embed(ctx context.Context, texts []string) ([][]float32, error
 	if refusing {
 		return nil, errors.New("the model is not answering")
 	}
-	return s.asked.Embed(ctx, texts)
+	return s.fakeEmbedder.Embed(ctx, texts)
 }
 
 // getTurnedDown is how many askings it has turned down.
@@ -152,16 +152,16 @@ func (w *walking) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return counts{VaultReader: reader, at: w}, nil
+	return counts{VaultReader: reader, posVal: w}, nil
 }
 
 type counts struct {
 	port.VaultReader
-	at *walking
+	posVal *walking
 }
 
 func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
-	r.at.walks.Add(1)
+	r.posVal.walks.Add(1)
 	return r.VaultReader.WalkFiles(ctx, fn)
 }
 
@@ -181,7 +181,7 @@ func getVectorProgress(t *testing.T, f *behind, model port.Embedder) (target, em
 func TestANoteSavedGetsItsVectorsBack(t *testing.T) {
 	watcher := byHand()
 	readers := newWalking()
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
@@ -213,7 +213,7 @@ func TestTheCooldownDoesNotFirePerSave(t *testing.T) {
 
 	watcher := byHand()
 	readers := newWalking()
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
@@ -280,7 +280,7 @@ func TestASaveEmbedsWhereTheWatchNeverStarted(t *testing.T) {
 // is a vault somebody is still writing in, and what they write is embedded.
 func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 	watcher := byHand()
-	model := &asked{dims: 64}
+	model := &fakeEmbedder{dims: 64}
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),

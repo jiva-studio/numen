@@ -90,7 +90,6 @@ func TestAThemeChosenInTheWindowIsSavedIntoTheSettings(t *testing.T) {
 	if response.Appearance.Theme != "preset:nord" || response.Appearance.Mode != settings.ModeDark {
 		t.Errorf("the file says %+v", response.Appearance)
 	}
-	// The key sits in the half the settings are not on, which nothing reads
 	// through a provider. What it is still doing there is what the file says.
 	raw, err := os.ReadFile(file)
 	if err != nil {
@@ -177,7 +176,6 @@ func TestASizeOutsideWhatItGoesToIsRefusedAndNothingIsSaved(t *testing.T) {
 	}
 }
 
-// What the command line said stands over the file, and a person choosing that
 // size for themselves is what it is release for.
 func TestASizeSaidForOneLaunchExistsUntilAPersonChoosesOne(t *testing.T) {
 	cfg := newConfig(t)

@@ -68,16 +68,16 @@ func TestTheTokenTravelsInAFileOfThisUserAlone(t *testing.T) {
 		t.Errorf("the configuration stands as %q", strings.TrimSpace(string(mode)))
 	}
 
-	at := ""
+	pos := ""
 	for i, arg := range argv {
 		if arg == "--mcp-config" && i+1 < len(argv) {
-			at = argv[i+1]
+			pos = argv[i+1]
 		}
 	}
-	if at == "" {
+	if pos == "" {
 		t.Fatal("no configuration was named")
 	}
-	if _, err := os.Stat(at); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := os.Stat(pos); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("the configuration is still on disk after the run: %v", err)
 	}
 }
@@ -127,9 +127,9 @@ func echoSession(t *testing.T, dir string) string {
 }
 
 // resumed are the sessions a question was asked in, one to a task.
-func resumed(t *testing.T, dir, asked string) []string {
+func resumed(t *testing.T, dir, requested string) []string {
 	t.Helper()
-	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+asked))
+	raw, err := os.ReadFile(filepath.Join(dir, "resumed-"+requested))
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
 	}
@@ -295,7 +295,6 @@ func TestClosingEndsEveryRunStillAnswering(t *testing.T) {
 	}
 }
 
-// The stream opens, and the person is told the wait has begun, before the program has written
 // anything.
 func TestAskAgent_StreamInitialization(t *testing.T) {
 	script := writeScript(t, "silent", "sleep 120\n")
@@ -356,12 +355,12 @@ func TestFindClaude_LookupPriority(t *testing.T) {
 	}
 }
 
-func writeRunnable(t *testing.T, at string) {
+func writeRunnable(t *testing.T, pos string) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(at, []byte("#!/bin/sh\n"), 0o755); err != nil {
+	if err := os.WriteFile(pos, []byte("#!/bin/sh\n"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 }

@@ -10,8 +10,8 @@ import (
 
 // screen records the window going out of sight and coming back into it.
 type screen struct {
-	mu   sync.Mutex
-	seen []string
+	mu     sync.Mutex
+	events []string
 }
 
 func makeScreen() *screen { return &screen{} }
@@ -23,22 +23,22 @@ func (s *screen) sight() visibility {
 func (s *screen) mark(what string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.seen = append(s.seen, what)
+	s.events = append(s.events, what)
 }
 
 // was is what has happened to the window so far.
 func (s *screen) was() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return slices.Clone(s.seen)
+	return slices.Clone(s.events)
 }
 
 // settler is a vault whose settling a test writes the answers for, and which
 // records how many times it was asked.
 type settler struct {
-	mu      sync.Mutex
-	answers []bool
-	asked   int
+	mu        sync.Mutex
+	answers   []bool
+	callCount int
 	// begun is written to as each settling starts.
 	begun chan struct{}
 	// until holds each settling there until a test lets it through.
@@ -53,10 +53,10 @@ func (s *settler) settle(context.Context) bool {
 	s.mu.Lock()
 	target := s.until
 	answer := true
-	if s.asked < len(s.answers) {
-		answer = s.answers[s.asked]
+	if s.callCount < len(s.answers) {
+		answer = s.answers[s.callCount]
 	}
-	s.asked++
+	s.callCount++
 	s.mu.Unlock()
 
 	select {
@@ -72,7 +72,7 @@ func (s *settler) settle(context.Context) bool {
 func (s *settler) getSettledCount() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.asked
+	return s.callCount
 }
 
 // TestACloseCalledOffCanBeAskedForAgain. A settling that ends with a question
@@ -148,7 +148,7 @@ func TestConcurrentFlushesShareOneRun(t *testing.T) {
 		select {
 		case answer := <-answers:
 			if !answer {
-				t.Error("a waiter was told the vault had not settled")
+				t.Error("unexpected unsettled notification")
 			}
 		case <-time.After(5 * time.Second):
 			t.Fatal("a waiter was never answered")

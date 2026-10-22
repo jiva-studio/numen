@@ -2,7 +2,7 @@
  * Curve calculation, caching, and throttling for preset tabs.
  */
 import { ref, shallowRef, type Ref } from 'vue'
-import { createAnswerGuard, type AnswerGuard } from '@numen/plugin-sdk'
+import { createRequestGuard, type RequestGuard } from '@numen/plugin-sdk'
 import {
   DEFAULTS,
   type Curve,
@@ -26,7 +26,7 @@ export interface CurveState {
   shouldDrawAgain: boolean
   shape: string
   isReal: boolean
-  readonly asks: AnswerGuard
+  readonly asks: RequestGuard
   readonly answers: Map<string, Curve>
 }
 
@@ -44,19 +44,19 @@ export function createCurveState(
     shouldDrawAgain: false,
     shape: '',
     isReal: false,
-    asks: createAnswerGuard(),
+    asks: createRequestGuard(),
     answers: new Map<string, Curve>(),
   }
 }
 
 /** Whether two curves are drawn over the same range, place for place. */
 export const isSameGrid = (one: readonly number[], two: readonly number[]): boolean =>
-  one.length === two.length && one.every((value, at) => value === two[at])
+  one.length === two.length && one.every((value, index) => value === two[index])
 
 /** Where the knob relies on a curve: the preset's own place, or the nearest. */
 export const getKnobPosition = (curve: Curve, settings: Settings, today: string): number =>
-  curve.now.at >= 0
-    ? curve.now.at
+  curve.now.index >= 0
+    ? curve.now.index
     : Math.max(findNearest(curve.grid, getGoalValue(settings, today)), 0)
 
 /** Applies a landed curve and updates the material counts. */
@@ -84,7 +84,7 @@ export interface CurveContext {
 /** One curve, asked for and landed. */
 const fetchCurve = async (state: CurveState, context: CurveContext): Promise<void> => {
   const { path, getSettings, core, bounds, today, setErrorMessage } = context
-  const mine = state.asks.ask()
+  const mine = state.asks.acquireRequest()
   const settings = getSettings()
   const shape = getShapeKey(settings)
   state.shape = shape
@@ -96,7 +96,7 @@ const fetchCurve = async (state: CurveState, context: CurveContext): Promise<voi
   } else {
     const meanwhile = estimateCurve(settings, today, bounds)
     state.curve.value = meanwhile
-    state.place.value = Math.max(meanwhile.now.at, 0)
+    state.place.value = Math.max(meanwhile.now.index, 0)
   }
   state.isReal = false
   state.isWaiting.value = true
@@ -125,7 +125,7 @@ export const updateCurves = async (state: CurveState, context: CurveContext): Pr
   const shape = getShapeKey(settings)
   const heldCurve = state.answers.get(shape)
   if (heldCurve) {
-    state.asks.drop()
+    state.asks.cancel()
     state.shape = shape
     applyCurveAnswer(state, heldCurve)
     state.place.value = getKnobPosition(heldCurve, settings, today)

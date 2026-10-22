@@ -41,7 +41,6 @@ func readStated(t *testing.T, reader statedReader) (note.Contents, error) {
 
 const ceiling = 1048576
 
-// A note of exactly the ceiling is read, and one byte more is refused.
 func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	t.Parallel()
 	body := []byte("# Entropy\n")
@@ -57,18 +56,18 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 		t.Errorf("a note of exactly the ceiling is %q", atCeiling.Outcome)
 	}
 
-	over, err := readStated(t, statedReader{
+	finished, err := readStated(t, statedReader{
 		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
 		raw: body,
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if over.Outcome != note.TooLarge {
-		t.Errorf("a note one byte over the ceiling is %q", over.Outcome)
+	if finished.Outcome != note.TooLarge {
+		t.Errorf("a note one byte over the ceiling is %q", finished.Outcome)
 	}
-	if over.Body != "" {
-		t.Errorf("a note over the ceiling came back with prose: %q", over.Body)
+	if finished.Body != "" {
+		t.Errorf("a note over the ceiling came back with prose: %q", finished.Body)
 	}
 }
 
@@ -86,7 +85,6 @@ func TestAVaultThatCannotSayWhatIsAtAPathIsAnError(t *testing.T) {
 }
 
 // A file that appears between the question and the read is answered by its
-// bytes, and the vault is not held to its earlier answer.
 func TestAFileThatAppearsAfterItWasAskedAboutIsNotANote(t *testing.T) {
 	t.Parallel()
 

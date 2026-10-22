@@ -37,7 +37,6 @@ type PluginCache interface {
 	Write(ctx context.Context, pluginID string, vaultID domain.VaultID, name string, content []byte) error
 }
 
-// PluginIndexStatus is where a vault stands in the index.
 type PluginIndexStatus int
 
 const (
@@ -49,7 +48,6 @@ const (
 	PluginIndexFailed
 )
 
-// PluginIndexState is where a vault stands in the index, and why it failed when it did.
 type PluginIndexState struct {
 	Status PluginIndexStatus
 	Reason string
@@ -66,7 +64,7 @@ type PluginVaultReader interface {
 	GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error)
 	GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error)
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
-	ResolveLinks(ctx context.Context, from string, written []string) (map[string]domain.ResolvedLink, error)
+	ResolveLinks(ctx context.Context, from string, output []string) (map[string]domain.ResolvedLink, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
 }
 

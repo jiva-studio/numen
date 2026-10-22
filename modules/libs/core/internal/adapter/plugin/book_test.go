@@ -71,7 +71,6 @@ func (s *fakeBookServer) ReadBookMarkup(
 }
 
 // ExtractBookText answers by the bytes it is given: the bytes are the text, and the
-// word "locked" or "junk" names the refusal.
 func (s *fakeBookServer) ExtractBookText(
 	_ context.Context,
 	req *connect.Request[v1.ExtractBookTextRequest],

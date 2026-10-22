@@ -18,8 +18,8 @@ func ParseAfter(value string, now time.Time) time.Duration {
 		return max(0, time.Duration(seconds)*time.Second)
 	}
 	for _, layout := range dateLayouts {
-		if at, err := time.Parse(layout, value); err == nil {
-			return max(0, at.Sub(now))
+		if pos, err := time.Parse(layout, value); err == nil {
+			return max(0, pos.Sub(now))
 		}
 	}
 	return 0

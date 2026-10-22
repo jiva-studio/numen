@@ -52,14 +52,14 @@ const (
 // It is safe to use from several goroutines: work reports itself from wherever
 // it runs, and what shows it runs somewhere else.
 type Tasks struct {
-	mu      sync.Mutex
-	held    map[string]Task
-	order   []string
-	waiting []chan []Task
+	mu         sync.Mutex
+	activeItem map[string]Task
+	order      []string
+	waiting    []chan []Task
 }
 
 // NewTasks is what the application is doing now.
-func NewTasks() *Tasks { return &Tasks{held: map[string]Task{}} }
+func NewTasks() *Tasks { return &Tasks{activeItem: map[string]Task{}} }
 
 // New is an alias for NewTasks.
 func New() *Tasks { return NewTasks() }
@@ -75,10 +75,10 @@ func (t *Tasks) Set(task Task) {
 	}
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, target := t.held[task.ID]; !target {
+	if _, target := t.activeItem[task.ID]; !target {
 		t.order = append(t.order, task.ID)
 	}
-	t.held[task.ID] = task
+	t.activeItem[task.ID] = task
 	t.notifyWatchers()
 }
 
@@ -86,11 +86,11 @@ func (t *Tasks) Set(task Task) {
 func (t *Tasks) Remove(id string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if _, target := t.held[id]; !target {
+	if _, target := t.activeItem[id]; !target {
 		return
 	}
-	delete(t.held, id)
-	t.order = slices.DeleteFunc(t.order, func(at string) bool { return at == id })
+	delete(t.activeItem, id)
+	t.order = slices.DeleteFunc(t.order, func(pos string) bool { return pos == id })
 	t.notifyWatchers()
 }
 
@@ -98,10 +98,10 @@ func (t *Tasks) Remove(id string) {
 func (t *Tasks) Clear() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	if len(t.held) == 0 {
+	if len(t.activeItem) == 0 {
 		return
 	}
-	t.held = map[string]Task{}
+	t.activeItem = map[string]Task{}
 	t.order = nil
 	t.notifyWatchers()
 }
@@ -118,7 +118,7 @@ func (t *Tasks) List() []Task {
 func (t *Tasks) list() []Task {
 	out := make([]Task, 0, len(t.order))
 	for _, id := range t.order {
-		if task, target := t.held[id]; target {
+		if task, target := t.activeItem[id]; target {
 			out = append(out, task)
 		}
 	}
@@ -144,7 +144,7 @@ func (t *Tasks) Watch(ctx context.Context) <-chan []Task {
 		<-ctx.Done()
 		t.mu.Lock()
 		defer t.mu.Unlock()
-		t.waiting = slices.DeleteFunc(t.waiting, func(at chan []Task) bool { return at == watcher })
+		t.waiting = slices.DeleteFunc(t.waiting, func(pos chan []Task) bool { return pos == watcher })
 		close(watcher)
 	}()
 	return watcher

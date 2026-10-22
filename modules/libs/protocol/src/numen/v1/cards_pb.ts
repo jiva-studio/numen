@@ -6,7 +6,6 @@
 //
 // A stencil declares the fields a card has and the faces it is shown by; a
 // deck holds the cards. Both are notes, so both are addressed by the path they
-// are filed under, and both are refused for the reasons any note is.
 //
 // Nothing here is laid out. A face travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
@@ -329,15 +328,6 @@ export type Card = Message<"numen.v1.Card"> & {
    */
   mark: string;
 
-  /**
-   * Where the section this card is placed under stands in the deck's own, counted
-   * from the first. Absent for a card standing before the first section.
-   *
-   * A write naming a section the deck does not hold is refused. Nothing is
-   * written, and the card is not quietly stood somewhere else.
-   *
-   * @generated from field: optional int32 section_index = 2;
-   */
   sectionIndex?: number | undefined;
 
   /**
@@ -564,11 +554,6 @@ export const ReadStencilRequestSchema: GenMessage<ReadStencilRequest> = /*@__PUR
  * @generated from message numen.v1.ReadStencilResponse
  */
 export type ReadStencilResponse = Message<"numen.v1.ReadStencilResponse"> & {
-  /**
-   * Absent when the stencil was refused.
-   *
-   * @generated from field: optional numen.v1.Stencil stencil = 1;
-   */
   stencil?: Stencil | undefined;
 
   /**
@@ -578,12 +563,6 @@ export type ReadStencilResponse = Message<"numen.v1.ReadStencilResponse"> & {
    */
   error?: ErrorCode | undefined;
 
-  /**
-   * The file this stencil came out of, for the caller to present at its next
-   * write. Absent when the stencil was refused.
-   *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
-   */
   at?: Fingerprint | undefined;
 };
 
@@ -751,13 +730,6 @@ export type RenameStencilFieldResponse = Message<"numen.v1.RenameStencilFieldRes
    */
   notWritten: UnwrittenDeck[];
 
-  /**
-   * Set when the field was not renamed at all, and why. No deck is written
-   * where the stencil refused the rename, and a stencil that is no longer the
-   * one this caller read is ERROR_CODE_STALE.
-   *
-   * @generated from field: optional numen.v1.ErrorCode error = 4;
-   */
   error?: ErrorCode | undefined;
 
   /**
@@ -894,11 +866,6 @@ export const ReadDeckRequestSchema: GenMessage<ReadDeckRequest> = /*@__PURE__*/
  * @generated from message numen.v1.ReadDeckResponse
  */
 export type ReadDeckResponse = Message<"numen.v1.ReadDeckResponse"> & {
-  /**
-   * Absent when the deck was refused.
-   *
-   * @generated from field: optional numen.v1.Deck deck = 1;
-   */
   deck?: Deck | undefined;
 
   /**
@@ -908,12 +875,6 @@ export type ReadDeckResponse = Message<"numen.v1.ReadDeckResponse"> & {
    */
   error?: ErrorCode | undefined;
 
-  /**
-   * The file this deck came out of, for the caller to present at its next
-   * write. Absent when the deck was refused.
-   *
-   * @generated from field: optional numen.v1.Fingerprint at = 3;
-   */
   at?: Fingerprint | undefined;
 
   /**
@@ -1173,40 +1134,11 @@ export const CardsService: GenService<{
     input: typeof ReadStencilRequestSchema;
     output: typeof ReadStencilResponseSchema;
   },
-  /**
-   * WriteStencil puts fields and faces into a stencil. A path the vault holds
-   * no note at is refused `missing`; CreateStencil is what puts a stencil in
-   * the vault. Every frontmatter key but `fields` stays as the person wrote it,
-   * and a stencil that no longer holds what the caller read is left alone and
-   * refused `stale`.
-   *
-   * The preamble, the tail and each face's own preamble are written back as they
-   * arrive, so the parts of the file a client did not touch come out as the
-   * bytes they went in as.
-   *
-   * @generated from rpc numen.v1.CardsService.WriteStencil
-   */
   writeStencil: {
     methodKind: "unary";
     input: typeof WriteStencilRequestSchema;
     output: typeof WriteStencilResponseSchema;
   },
-  /**
-   * RenameStencilField gives one of a stencil's fields a different name,
-   * everywhere it is written: where the stencil declares it, in the braces of
-   * every face that places it, and as a heading in every card of every deck
-   * that stencil cuts. What is placed under each heading is left as it was.
-   *
-   * Every field a stencil declares is placed under its own heading in every card,
-   * the first included, so renaming any of them reaches every deck that
-   * stencil cuts. A deck the rename could not be written to keeps the old
-   * heading and comes back under `not_written`.
-   *
-   * A stencil that no longer holds what the caller read is left alone and
-   * refused `stale`, and then no deck is written either.
-   *
-   * @generated from rpc numen.v1.CardsService.RenameStencilField
-   */
   renameStencilField: {
     methodKind: "unary";
     input: typeof RenameStencilFieldRequestSchema;
@@ -1235,22 +1167,6 @@ export const CardsService: GenService<{
     input: typeof ReadDeckRequestSchema;
     output: typeof ReadDeckResponseSchema;
   },
-  /**
-   * WriteDeck puts sections and cards into a deck, in the order they are
-   * given. A path the vault holds no note at is refused `missing`; CreateDeck
-   * is what puts a deck in the vault. The frontmatter stays as the person wrote
-   * it, and a deck that no longer holds what the caller read is left alone and
-   * refused `stale`.
-   *
-   * A card carrying no section stands before the first one, and a section no
-   * card is placed under is written where the cards around it put it.
-   *
-   * The preamble, the tail and each card's own preamble are written back as they
-   * arrive, so the parts of the file a client did not touch come out as the
-   * bytes they went in as.
-   *
-   * @generated from rpc numen.v1.CardsService.WriteDeck
-   */
   writeDeck: {
     methodKind: "unary";
     input: typeof WriteDeckRequestSchema;

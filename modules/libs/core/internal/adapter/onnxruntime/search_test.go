@@ -9,15 +9,15 @@ import (
 )
 
 // writeConfig writes a loader configuration file and returns its path.
-func writeConfig(t *testing.T, at, content string) string {
+func writeConfig(t *testing.T, pos, content string) string {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(pos), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(at, []byte(content), 0o644); err != nil {
+	if err := os.WriteFile(pos, []byte(content), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 func TestReadLoaderConfigFollowsIncludesAndSkipsComments(t *testing.T) {
@@ -80,24 +80,24 @@ func TestCheckLibraryRefusesAFileThatIsNotALibrary(t *testing.T) {
 	default:
 		t.Skipf("%s has no loader to open a library through", runtime.GOOS)
 	}
-	at := filepath.Join(t.TempDir(), getLibraryName("linux"))
-	if err := os.WriteFile(at, []byte("not a library"), 0o755); err != nil {
+	pos := filepath.Join(t.TempDir(), getLibraryName("linux"))
+	if err := os.WriteFile(pos, []byte("not a library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := checkLibrary(at); err == nil {
+	if err := checkLibrary(pos); err == nil {
 		t.Error("checkLibrary() opened a file that is not a library")
 	}
 }
 
 func TestFindInDirsSearchesOnlyAbsoluteFolders(t *testing.T) {
 	dir := t.TempDir()
-	at := filepath.Join(dir, "libonnxruntime.so")
-	if err := os.WriteFile(at, []byte("a library"), 0o755); err != nil {
+	pos := filepath.Join(dir, "libonnxruntime.so")
+	if err := os.WriteFile(pos, []byte("a library"), 0o755); err != nil {
 		t.Fatal(err)
 	}
 	t.Chdir(dir)
-	if got := findInDirs([]string{"", ".", dir}, "libonnxruntime.so"); !slices.Equal(got, []string{at}) {
-		t.Errorf("findInDirs() = %q, want only %q", got, at)
+	if got := findInDirs([]string{"", ".", dir}, "libonnxruntime.so"); !slices.Equal(got, []string{pos}) {
+		t.Errorf("findInDirs() = %q, want only %q", got, pos)
 	}
 }
 

@@ -48,7 +48,6 @@ func (p ActivationPolicy) getBackoff(failures int) time.Duration {
 }
 
 // RecordActivationFailure counts a failed activation and reports whether the plugin has now failed for good.
-// A plugin that speaks an unsupported protocol fails for good at once.
 func (s *Supervisor) RecordActivationFailure(now time.Time, policy ActivationPolicy, cause error) bool {
 	s.mu.Lock()
 	defer s.mu.Unlock()

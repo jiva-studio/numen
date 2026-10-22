@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest'
 import { useDocumentTab, type PageHandle } from './useDocumentTab'
 import type { DocumentReaderState } from './useDocumentReader'
 
-const readItem = (path: string, close = vi.fn()) => ({ path, close }) as unknown as DocumentReaderState
+const readItem = (path: string, close = vi.fn()) =>
+  ({ path, close }) as unknown as DocumentReaderState
 
 /** The pages drawn in a tab, which record what was asked of them. */
 const createPages = (): PageHandle => ({

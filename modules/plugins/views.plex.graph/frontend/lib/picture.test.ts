@@ -31,7 +31,7 @@ const renderPicture = (neighbourhood: ReturnType<typeof createNeighbourhood>) =>
 }
 
 /**
- * Every edge, as the notes at its two ends. A ticket no note holds reads as
+ * Every edge, as the notes at its two ends. A token no note holds reads as
  * nothing, so an edge drawn under anything else says so here.
  */
 const getEdges = (neighbourhood: ReturnType<typeof createNeighbourhood>) => {
@@ -56,7 +56,8 @@ describe('what the plex is handed', () => {
 
   it('writes nothing on a line the person wrote nothing on', () => {
     // A line carries only the word the person put on it.
-    const [line] = renderPicture(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex.edges
+    const [line] = renderPicture(createNeighbourhood('Here', [['Below', 'child', '', '']])).plex
+      .edges
     expect(line?.label).toBeUndefined()
   })
 
@@ -124,7 +125,7 @@ describe('what a note is drawn under', () => {
     ['Beside', 'sibling', '', 'Above'],
   ])
 
-  it('is the ticket the note holds, and never the file it is filed under', () => {
+  it('is the token the note holds, and never the file it is filed under', () => {
     const map = createNodeIdMap()
     const plex = convertNeighbourhood(target, (path) => `#${path}`)
 
@@ -289,7 +290,11 @@ describe('what each note of a neighbourhood is', () => {
   })
 
   it('is empty for a focus with no path', () => {
-    const neighbourhood: Neighbourhood = { focus: { path: '', title: '' }, focusType: 'deck', related: [] }
+    const neighbourhood: Neighbourhood = {
+      focus: { path: '', title: '' },
+      focusType: 'deck',
+      related: [],
+    }
 
     expect(getNoteTypes(neighbourhood).size).toBe(0)
   })

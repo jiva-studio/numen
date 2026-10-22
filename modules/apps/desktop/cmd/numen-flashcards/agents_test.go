@@ -90,8 +90,8 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 func hasWrittenSecrets(t *testing.T, cfg container.Config) (token bool, announcement bool) {
 	t.Helper()
 
-	there := func(at func(container.Config) (string, error)) bool {
-		path, err := at(cfg)
+	there := func(pos func(container.Config) (string, error)) bool {
+		path, err := pos(cfg)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestAnInstallationNamingNoAgentAsksNothingAboutACard(t *testing.T) {
 		t.Error("a card can be asked about")
 	}
 	if api.Unreachable.Why() == "" {
-		t.Error("the page was told nothing about why it has no agent")
+		t.Error("expected error reason for missing agent")
 	}
 }
 
@@ -137,7 +137,7 @@ func TestTheFlagShutsTheAgentForOneLaunch(t *testing.T) {
 		t.Error("a session opening starts an agent")
 	}
 	if api.Unreachable.Why() != errNoAgentNamed {
-		t.Errorf("the page was told %q", api.Unreachable.Why())
+		t.Errorf("got error message %q", api.Unreachable.Why())
 	}
 }
 
@@ -206,7 +206,7 @@ func TestAReachableAgentClearsWhyItWasUnreachable(t *testing.T) {
 	t.Cleanup(func() { _ = away() })
 
 	if why := api.Unreachable.Why(); why != "" {
-		t.Errorf("the page was told %q", why)
+		t.Errorf("got error message %q", why)
 	}
 }
 

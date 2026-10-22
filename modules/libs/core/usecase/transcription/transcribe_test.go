@@ -25,11 +25,10 @@ type voice struct {
 	refuse error
 
 	opens int
-	heard []int // the millisecond each span handed over began at
+	spans []int // the millisecond each span handed over began at
 	stop  func(int)
 }
 
-// getSpan is where the words spoken n-th sit in the recording. Every span is
 // a second long with a fifth of a second of silence after it.
 func getSpan(n int) port.Audio {
 	return port.Audio{From: n * 1000, To: n*1000 + 800}
@@ -48,9 +47,9 @@ func (s *voice) Open(_ context.Context, _ []byte) (port.Recording, error) {
 }
 
 func (s *voice) Transcribe(ctx context.Context, audio port.Audio) (string, error) {
-	s.heard = append(s.heard, audio.From)
+	s.spans = append(s.spans, audio.From)
 	if s.stop != nil {
-		s.stop(len(s.heard))
+		s.stop(len(s.spans))
 	}
 	if err := ctx.Err(); err != nil {
 		return "", err
@@ -68,8 +67,8 @@ func (p played) GetDuration() int { return len(p.words) * 1000 }
 func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, error) {
 	var out []port.Audio
 	for n := range p.words {
-		if at := getSpan(n); at.From >= from {
-			out = append(out, at)
+		if pos := getSpan(n); pos.From >= from {
+			out = append(out, pos)
 			if len(out) == count {
 				break
 			}
@@ -80,10 +79,8 @@ func (p played) GetSegments(_ context.Context, from, count int) ([]port.Audio, e
 
 func (p played) Close() error { return nil }
 
-// recordingPath is where the recording sits in the vault under test.
 const recordingPath = "library/talk.mp3"
 
-// newRecording is the bytes of the file the words were spoken into. Nothing
 // here reads them: what the recording says comes from the model, and the model
 // is a fake.
 func newRecording(words []string) []byte {
@@ -92,7 +89,7 @@ func newRecording(words []string) []byte {
 
 // listener is a Transcribe over one vault holding one recording, and the hash
 // its artifact is named by.
-func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *shelf, *voice, string) {
+func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, *fakeStorage, *voice, string) {
 	t.Helper()
 	raw := newRecording(words)
 	shelved := newLibrary()
@@ -100,7 +97,7 @@ func listener(t *testing.T, words ...string) (Transcribe, domain.Vault, *store, 
 	index := newStore()
 	shelf := newShelf()
 	model := &voice{words: words}
-	tr := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
+	tr := NewTranscribe(vaults{first.ID: shelved}, index, fakeStores{shelf}, model)
 	tr.Batch = 1
 	return tr, first, index, shelf, model, text.Fingerprint(raw)
 }
@@ -163,8 +160,8 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 
 	ctx, stop := context.WithCancel(t.Context())
 	defer stop()
-	model.stop = func(heard int) {
-		if heard == 2 {
+	model.stop = func(recorded int) {
+		if recorded == 2 {
 			stop()
 		}
 	}
@@ -194,8 +191,8 @@ func TestARunThatStoppedIsTakenUpWhereItStopped(t *testing.T) {
 	}
 	// The stretch the stopped run did not write down is the only one heard
 	// twice.
-	if want := []int{0, 1000, 1000, 2000, 3000}; !slices.Equal(model.heard, want) {
-		t.Errorf("the model was handed %v and there are %v to hand it", model.heard, want)
+	if want := []int{0, 1000, 1000, 2000, 3000}; !slices.Equal(model.spans, want) {
+		t.Errorf("the model was handed %v and there are %v to hand it", model.spans, want)
 	}
 }
 
@@ -243,8 +240,8 @@ func TestOneRunToARecording(t *testing.T) {
 	if !res.IsBusy {
 		t.Error("a recording another run holds was listened to")
 	}
-	if len(model.heard) != 0 {
-		t.Errorf("the model was handed %d stretches", len(model.heard))
+	if len(model.spans) != 0 {
+		t.Errorf("the model was handed %d stretches", len(model.spans))
 	}
 	if names := shelf.artifactNames(); len(names) != 0 {
 		t.Errorf("it wrote %v", names)
@@ -278,7 +275,7 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 		t.Errorf("the source was pointed at %q", src.Producer)
 	}
 
-	received := len(model.heard)
+	received := len(model.spans)
 	again, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
@@ -286,8 +283,8 @@ func TestARecordingWithNothingToHearIsAnsweredOnce(t *testing.T) {
 	if !again.IsSilent {
 		t.Error("the answer was not read back")
 	}
-	if len(model.heard) != received {
-		t.Errorf("the model was handed %d more stretches", len(model.heard)-received)
+	if len(model.spans) != received {
+		t.Errorf("the model was handed %d more stretches", len(model.spans)-received)
 	}
 	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash)); err != nil {
 		t.Errorf("nothing says what the recording answered: %v", err)
@@ -334,12 +331,12 @@ func TestWhatHasBeenHeardIsSplitBeforeTheRestIs(t *testing.T) {
 	// speech is written down.
 	u, v, _, _, model, _ := listener(t, "one", "two", "three")
 
-	var cuts, at []int
+	var cuts, offset []int
 	u.Cut = func(_ context.Context, _ domain.Vault, path string) error {
 		if path != recordingPath {
 			return fmt.Errorf("cut %s", path)
 		}
-		cuts = append(cuts, len(model.heard))
+		cuts = append(cuts, len(model.spans))
 		return nil
 	}
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
@@ -349,9 +346,9 @@ func TestWhatHasBeenHeardIsSplitBeforeTheRestIs(t *testing.T) {
 	// One cut to a batch, and one more when the source is stood on the
 	// artifact.
 	for n := range model.words {
-		at = append(at, n+1)
+		offset = append(offset, n+1)
 	}
-	if want := slices.Concat(at, []int{len(model.words)}); !slices.Equal(cuts, want) {
+	if want := slices.Concat(offset, []int{len(model.words)}); !slices.Equal(cuts, want) {
 		t.Errorf("it cut after %v stretches and the batches end at %v", cuts, want)
 	}
 }
@@ -364,7 +361,7 @@ func TestWhatListenedIsCachedAdjacentWhatItHeard(t *testing.T) {
 	}
 	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactProducer, "asr", hash))
 	if err != nil {
-		t.Fatalf("nothing says what listened: %v", err)
+		t.Fatalf("transcriber returned error: %v", err)
 	}
 	if !bytes.Contains(raw, []byte(model.GetTranscriptionModel().Recipe())) {
 		t.Errorf("what is kept beside the artifact says %q", raw)
@@ -379,7 +376,7 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	first := len(model.heard)
+	first := len(model.spans)
 	if first == 0 {
 		t.Fatal("the model was handed nothing")
 	}
@@ -389,8 +386,8 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if _, err := u.Execute(t.Context(), v, recordingPath); err != nil {
 		t.Fatal(err)
 	}
-	if len(model.heard) != first {
-		t.Errorf("the model was handed %d more stretches", len(model.heard)-first)
+	if len(model.spans) != first {
+		t.Errorf("the model was handed %d more stretches", len(model.spans)-first)
 	}
 
 	u.IsRepeat = true
@@ -398,8 +395,8 @@ func TestAskingForARecordingToBeHeardAgain(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(model.heard) != first*2 {
-		t.Errorf("asked again, the model was handed %d stretches, want %d", len(model.heard), first*2)
+	if len(model.spans) != first*2 {
+		t.Errorf("asked again, the model was handed %d stretches, want %d", len(model.spans), first*2)
 	}
 	if res.Resumed != 0 {
 		t.Errorf("asked again, it took up a run at %d ms", res.Resumed)
@@ -423,14 +420,14 @@ func TestAskingAgainAfterAnAnswer(t *testing.T) {
 	if _, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactAnswer, "asr", hash)); err != nil {
 		t.Fatalf("the recording left no answer: %v", err)
 	}
-	first := len(model.heard)
+	first := len(model.spans)
 
 	u.IsRepeat = true
 	res, err := u.Execute(t.Context(), v, recordingPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(model.heard) <= first {
+	if len(model.spans) <= first {
 		t.Error("the answer stood, and the recording was not heard again")
 	}
 	if !res.IsSilent {

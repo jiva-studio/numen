@@ -36,7 +36,7 @@ type Recogniser struct {
 
 // Open loads the layout and PaddleOCR recognition models.
 func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
-	engine, at, found, err := locateModels(ctx, cfg)
+	engine, pos, found, err := locateModels(ctx, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func Open(ctx context.Context, cfg Config) (*Recogniser, error) {
 		return nil, err
 	}
 	lines, err := paddle.NewEngine(paddle.Config{
-		OnnxRuntimeLibPath:  at,
+		OnnxRuntimeLibPath:  pos,
 		DetModelPath:        found.detect,
 		RecModelPath:        found.recognise,
 		DictPath:            dict,
@@ -124,9 +124,9 @@ func (r *Recogniser) Recognise(ctx context.Context, page image.Image) ([]Block, 
 
 	results := make([]outcome, len(targets))
 
-	runBounded(ctx, len(targets), r.jobs, func(at int) {
-		found, err := r.read(targets[at].crop)
-		results[at] = outcome{found: found, err: err}
+	runBounded(ctx, len(targets), r.jobs, func(pos int) {
+		found, err := r.read(targets[pos].crop)
+		results[pos] = outcome{found: found, err: err}
 	})
 
 	if err := ctx.Err(); err != nil {

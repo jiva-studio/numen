@@ -60,20 +60,19 @@ func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlo
 
 func (s *speaker) Close() error { return nil }
 
-// documentPath is where the document sits in the vault under test.
 const documentPath = "library/scan.pdf"
 
 // recogniser is a Recognise over one vault holding one document.
 //
 // The document is four pages a reader can open and count, which is all this
 // needs — what the pages say comes from the model, and the model here is a fake.
-func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+func recogniser(t *testing.T, says string) (Recognise, domain.Vault, *store, *fakeStorage, *speaker) {
 	t.Helper()
 	return createRecognise(t, says, outline)
 }
 
 // createRecognise is a Recognise over a vault holding a document printed as these pages.
-func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *shelf, *speaker) {
+func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, domain.Vault, *store, *fakeStorage, *speaker) {
 	t.Helper()
 	raw := printPages(pages)
 	shelved := newLibrary()
@@ -83,7 +82,7 @@ func createRecognise(t *testing.T, says string, pages [][]string) (Recognise, do
 	index := newStore()
 	shelf := newShelf()
 	model := &speaker{says: says}
-	r := NewRecognise(readers, index, shelves{shelf}, documents{}, model)
+	r := NewRecognise(readers, index, fakeStores{shelf}, documents{}, model)
 	r.Batch = 1
 	return r, v, index, shelf, model
 }
@@ -263,7 +262,7 @@ func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
 		t.Errorf("noticed %d recognitions gone, want 1", res.Forgotten)
 	}
 	if got := index.sources[v.ID][documentPath].Producer; got != "" {
-		t.Errorf("the source still stands on %q", got)
+		t.Errorf("the source still is on %q", got)
 	}
 }
 
@@ -274,19 +273,18 @@ func documentHash() string { return text.Fingerprint(printPages(outline)) }
 // prose the artifact holds.
 //
 // The offsets rise, because the prose of every page written before this one
-// stands in front of it.
 func assertBoxesRead(t *testing.T, prose string, boxes []domain.HighlightBox, says string) {
 	t.Helper()
-	at := -1
+	pos := -1
 	for i, box := range boxes {
 		if box.From < 0 || box.To > len(prose) {
 			t.Errorf("box %d reaches %d of %d bytes", i, box.To, len(prose))
 			continue
 		}
-		if box.From <= at {
-			t.Errorf("box %d begins at %d, and the one before it at %d", i, box.From, at)
+		if box.From <= pos {
+			t.Errorf("box %d begins at %d, and the one before it at %d", i, box.From, pos)
 		}
-		at = box.From
+		pos = box.From
 		if got := prose[box.From:box.To]; !strings.HasPrefix(got, says) {
 			t.Errorf("box %d reads %q, and no page says that", i, got)
 		}
@@ -487,13 +485,13 @@ func TestAPartialCarryingNoCountIsReadFromTheBeginning(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var without []string
+	var override []string
 	for _, line := range strings.SplitAfter(string(target), "\n") {
 		if !strings.HasPrefix(line, resumeMark) {
-			without = append(without, line)
+			override = append(override, line)
 		}
 	}
-	if err := shelf.WriteArtifact(t.Context(), partial, []byte(strings.Join(without, ""))); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), partial, []byte(strings.Join(override, ""))); err != nil {
 		t.Fatal(err)
 	}
 
@@ -565,10 +563,10 @@ func TestCoordinatesThatDidNotLandWholeAreNotReadAsRecords(t *testing.T) {
 }
 
 // artifact is what recognition wrote for the document under test.
-func artifact(t *testing.T, v domain.Vault, index *store, written *shelf) []byte {
+func artifact(t *testing.T, v domain.Vault, index *store, output *fakeStorage) []byte {
 	t.Helper()
 	src := index.sources[v.ID][documentPath]
-	raw, err := written.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, src.Producer, src.Hash))
+	raw, err := output.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, src.Producer, src.Hash))
 	if err != nil {
 		t.Fatalf("the artifact is not where the source says: %v", err)
 	}
@@ -659,12 +657,12 @@ func TestPartsAheadOfTheCountAreDropped(t *testing.T) {
 		if !strings.HasPrefix(part.Title, "A part ") {
 			t.Errorf("part %d is called %q", i, part.Title)
 		}
-		at := part.Offset
-		if at < 0 || at+len(part.Title) > len(doc.Text) {
-			t.Fatalf("part %d begins at %d, and the prose is %d long", i, at, len(doc.Text))
+		pos := part.Offset
+		if pos < 0 || pos+len(part.Title) > len(doc.Text) {
+			t.Fatalf("part %d begins at %d, and the prose is %d long", i, pos, len(doc.Text))
 		}
-		if got := doc.Text[at : at+len(part.Title)]; got != part.Title {
-			t.Errorf("part %d begins at %d, which reads %q", i, at, got)
+		if got := doc.Text[pos : pos+len(part.Title)]; got != part.Title {
+			t.Errorf("part %d begins at %d, which reads %q", i, pos, got)
 		}
 	}
 }
@@ -685,12 +683,12 @@ func TestTheArtifactMarksOnePageForEachPageOfTheDocument(t *testing.T) {
 	if len(marks) != res.Pages {
 		t.Fatalf("the artifact marks %d pages and the document has %d", len(marks), res.Pages)
 	}
-	at := -1
+	pos := -1
 	for i, mark := range marks {
-		if mark.Offset <= at && i > 0 {
-			t.Errorf("page %d begins at %d, and the page before it at %d", i, mark.Offset, at)
+		if mark.Offset <= pos && i > 0 {
+			t.Errorf("page %d begins at %d, and the page before it at %d", i, mark.Offset, pos)
 		}
-		at = mark.Offset
+		pos = mark.Offset
 		if mark.Offset < 0 || mark.Offset > len(prose) {
 			t.Errorf("page %d begins at %d, and the prose is %d long", i, mark.Offset, len(prose))
 		}

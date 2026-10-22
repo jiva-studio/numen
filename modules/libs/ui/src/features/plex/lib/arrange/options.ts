@@ -89,7 +89,6 @@ export interface GestureOptions {
   /**
    * How much further sideways than vertical a gesture may go and still count
    * as up or down. Rows are wide and columns narrow, so the wedge that means
-   * a parent or a child is wider than a quarter turn — at one, the outermost
    * child of a wide row would be read as something off to the side.
    */
   readonly verticalBias: number

@@ -444,11 +444,11 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 // what happens when the user saves, moves or deletes a note during a scan.
 type vanishingReader struct {
 	port.VaultReader
-	gone string
+	vanishedVal string
 }
 
 func (v vanishingReader) Read(ctx context.Context, path string) ([]byte, error) {
-	if path == v.gone {
+	if path == v.vanishedVal {
 		return nil, fs.ErrNotExist
 	}
 	return v.VaultReader.Read(ctx, path)
@@ -456,7 +456,7 @@ func (v vanishingReader) Read(ctx context.Context, path string) ([]byte, error) 
 
 type vanishingReaders struct {
 	port.VaultReaders
-	gone string
+	vanishedVal string
 }
 
 func (v vanishingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
@@ -464,7 +464,7 @@ func (v vanishingReaders) Open(vault domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return vanishingReader{VaultReader: reader, gone: v.gone}, nil
+	return vanishingReader{VaultReader: reader, vanishedVal: v.vanishedVal}, nil
 }
 
 func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
@@ -473,7 +473,7 @@ func TestAFileThatDisappearsDuringAScanDoesNotStopIt(t *testing.T) {
 	v, readers := vaultAt(t, testsupport.VaultDir(t))
 	db := openIndex(t)
 
-	scan := scanner(vanishingReaders{VaultReaders: readers, gone: "notes/Entropy.md"}, db)
+	scan := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: "notes/Entropy.md"}, db)
 	res, err := scan.Execute(ctx, v)
 	if err != nil {
 		t.Fatalf("one vanished file ended the scan: %v", err)
@@ -553,7 +553,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 	}
 
 	removed := "notes/Entropy.md"
-	res, err := scanner(vanishingReaders{VaultReaders: readers, gone: removed}, db).Execute(ctx, v)
+	res, err := scanner(vanishingReaders{VaultReaders: readers, vanishedVal: removed}, db).Execute(ctx, v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -602,8 +602,8 @@ func TestNewestNotesAreIndexedFirst(t *testing.T) {
 	db := openIndex(t)
 
 	newest := filepath.Join(root, "edge", "unicode.md")
-	at := time.Now().Add(time.Hour)
-	if err := os.Chtimes(newest, at, at); err != nil {
+	pos := time.Now().Add(time.Hour)
+	if err := os.Chtimes(newest, pos, pos); err != nil {
 		t.Fatal(err)
 	}
 

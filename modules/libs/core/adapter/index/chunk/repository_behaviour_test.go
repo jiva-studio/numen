@@ -19,14 +19,14 @@ func TestTheSourceTimeColumnIsNanosecondsSinceTheEpoch(t *testing.T) {
 		t.Errorf("a time that was never set is %d, want 0", got)
 	}
 	for _, nanos := range []int64{1, -1, 1_700_000_000_123_456_789} {
-		at := chunk.ConvertNanosToTime(nanos)
-		if at.IsZero() {
+		pos := chunk.ConvertNanosToTime(nanos)
+		if pos.IsZero() {
 			t.Errorf("%d nanoseconds is a time, got the zero one", nanos)
 		}
-		if got := at.UnixNano(); got != nanos {
+		if got := pos.UnixNano(); got != nanos {
 			t.Errorf("%d nanoseconds reads back as %d", nanos, got)
 		}
-		if got := chunk.ConvertTimeToNanos(at); got != nanos {
+		if got := chunk.ConvertTimeToNanos(pos); got != nanos {
 			t.Errorf("%d nanoseconds written back as %d", nanos, got)
 		}
 	}

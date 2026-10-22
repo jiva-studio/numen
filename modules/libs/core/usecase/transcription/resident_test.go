@@ -15,7 +15,7 @@ import (
 // counted is a runtime that counts how many times the models were opened and
 // closed, and can fail on request.
 type counted struct {
-	by *deaf
+	provider *deaf
 
 	mu       sync.Mutex
 	opened   int
@@ -30,7 +30,7 @@ func (c *counted) open(context.Context, func(string, int64, int64)) (port.Transc
 		return nil, nil, c.openFail
 	}
 	c.opened++
-	return c.by, func() error {
+	return c.provider, func() error {
 		c.mu.Lock()
 		defer c.mu.Unlock()
 		c.closed++
@@ -46,9 +46,9 @@ func (c *counted) counts() (opened, closed int) {
 
 func newResidentWorker(t *testing.T, keep bool, recordings ...string) (*Worker, *counted, unheard, domain.Vault) {
 	t.Helper()
-	by := &deaf{}
-	listening, v := newTranscriptionWorker(t, by, recordings...)
-	models := &counted{by: by}
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta, recordings...)
+	models := &counted{provider: delta}
 	listening.with.Runtime.Open = models.open
 	listening.with.Runtime.CanKeep = func() bool { return keep }
 	return listening, models, unheard{recordings: recordings}, v
@@ -62,7 +62,7 @@ func TestARoundOpensTheModelsOnceAndClosesThemAtTheEnd(t *testing.T) {
 	if opened, closed := models.counts(); opened != 1 || closed != 1 {
 		t.Errorf("opened %d, closed %d", opened, closed)
 	}
-	if got := models.by.times(); got != 3 {
+	if got := models.provider.times(); got != 3 {
 		t.Errorf("%d recordings were heard", got)
 	}
 	if isHeld(listening.with.Models) {
@@ -96,7 +96,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 
 	granted := make(chan func(), 1)
 	listening.with.Runtime.Open = func(ctx context.Context, tell func(string, int64, int64)) (port.Transcriber, func() error, error) {
-		by, letGo, err := models.open(ctx, tell)
+		delta, letGo, err := models.open(ctx, tell)
 		if opened, _ := models.counts(); opened == 1 {
 			// A scan joins the line while the first recording is being heard.
 			go func() {
@@ -109,7 +109,7 @@ func TestModelsAreReleasedForARunWaitingOnTheLock(t *testing.T) {
 				time.Sleep(time.Millisecond)
 			}
 		}
-		return by, letGo, err
+		return delta, letGo, err
 	}
 
 	isDone := make(chan struct{})

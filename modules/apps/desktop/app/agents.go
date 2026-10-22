@@ -88,8 +88,8 @@ func serveAgents(ctx context.Context, cfg container.Config, opened *editor.Insta
 // lands. Where a stretch stands is the vault's to say.
 func makeEditPreview(opened *editor.Installation) agents.EditPreview {
 	return agents.EditPreview{
-		Emit: func(ctx context.Context, said domain.Edit) {
-			_ = opened.State.GetWindow().ShowEdit(ctx, said)
+		Emit: func(ctx context.Context, response domain.Edit) {
+			_ = opened.State.GetWindow().ShowEdit(ctx, response)
 		},
 		Locate: opened.DraftingLocation,
 	}

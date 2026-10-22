@@ -69,10 +69,10 @@ type valueSpan struct {
 }
 
 type deckBuilder struct {
-	deck  Deck
-	spans []cardSpan
-	read  int
-	under int
+	deck           Deck
+	spans          []cardSpan
+	read           int
+	currentSection int
 }
 
 func findNextDeckHeading(secs []section, start int, bodyLen int) int {
@@ -87,14 +87,14 @@ func findNextDeckHeading(secs []section, start int, bodyLen int) int {
 func (b *deckBuilder) addSection(s section, body []byte, end int) {
 	lead, leadEnd := readTrimmedRun(body, s.from, end)
 	b.deck.Sections = append(b.deck.Sections, Section{Name: s.name, Preamble: lead})
-	b.under = len(b.deck.Sections) - 1
+	b.currentSection = len(b.deck.Sections) - 1
 	b.read = getTrimmedEnd(body, s.head, s.from)
 	if lead != "" {
 		b.read = leadEnd
 	}
 }
 
-func (b *deckBuilder) readCardFields(body []byte, secs []section, at int, card *Card, span *cardSpan) {
+func (b *deckBuilder) readCardFields(body []byte, secs []section, pos int, card *Card, span *cardSpan) {
 	fields := map[string]bool{}
 	for _, f := range secs {
 		if f.level != FieldLevel {
@@ -108,7 +108,7 @@ func (b *deckBuilder) readCardFields(body []byte, secs []section, at int, card *
 		card.Values = append(card.Values, Value{Field: f.name, Text: value})
 		span.values = append(span.values, valueSpan{field: f.name, head: f.head, from: f.from, to: f.to})
 		if fields[f.name] {
-			problem := newCardProblem(at, FaultTwoValues, "this card writes "+f.name+" twice")
+			problem := newCardProblem(pos, FaultTwoValues, "this card writes "+f.name+" twice")
 			problem.Field = f.name
 			b.deck.Problems = append(b.deck.Problems, problem)
 		}
@@ -117,9 +117,9 @@ func (b *deckBuilder) readCardFields(body []byte, secs []section, at int, card *
 }
 
 func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end int) {
-	at := len(b.deck.Cards)
+	pos := len(b.deck.Cards)
 	heading, carried := ReadHeading(s.name)
-	card := Card{Heading: heading, Mark: carried, Section: b.under}
+	card := Card{Heading: heading, Mark: carried, Section: b.currentSection}
 	span := cardSpan{
 		name: s.name, mark: carried, head: s.head, from: s.from, end: end,
 		linkFrom: s.from, linkTo: s.from,
@@ -138,11 +138,11 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 		b.read = leadEnd
 	}
 	if target == "" {
-		b.deck.Problems = append(b.deck.Problems, newCardProblem(at, FaultNoStencil,
+		b.deck.Problems = append(b.deck.Problems, newCardProblem(pos, FaultNoStencil,
 			"the first paragraph of this card is not a lone wikilink, so it names no stencil"))
 	}
 
-	b.readCardFields(body, secsAfter, at, &card, &span)
+	b.readCardFields(body, secsAfter, pos, &card, &span)
 
 	b.deck.Cards = append(b.deck.Cards, card)
 	b.spans = append(b.spans, span)
@@ -151,8 +151,8 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 	secs := sections(body, SectionLevel, FieldLevel)
 	b := deckBuilder{
-		deck:  Deck{Ref: ref},
-		under: NoSection,
+		deck:           Deck{Ref: ref},
+		currentSection: NoSection,
 	}
 
 	first := len(body)
@@ -196,9 +196,9 @@ func findDuplicateMarks(cs []Card) []Problem {
 		}
 	}
 	var out []Problem
-	for at, c := range cs {
+	for item, c := range cs {
 		if c.Mark != "" && carried[c.Mark] > 1 {
-			out = append(out, newCardProblem(at, FaultTwoMarks,
+			out = append(out, newCardProblem(item, FaultTwoMarks,
 				"another card in this deck carries the mark "+string(c.Mark)))
 		}
 	}
@@ -210,15 +210,15 @@ func findDuplicateMarks(cs []Card) []Problem {
 // first paragraph is something else names no readStencilLink, and the whole of what is
 // under the heading is lead.
 func readStencilLink(body []byte, from, to int) (target string, leadFrom int) {
-	at := from
-	for at < to {
+	pos := from
+	for pos < to {
 		end, next := to, to
-		if i := bytes.IndexByte(body[at:to], '\n'); i >= 0 {
-			end, next = at+i, at+i+1
+		if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {
+			end, next = pos+i, pos+i+1
 		}
-		line := strings.TrimSpace(strings.TrimRight(string(body[at:end]), "\r"))
+		line := strings.TrimSpace(strings.TrimRight(string(body[pos:end]), "\r"))
 		if line == "" {
-			at = next
+			pos = next
 			continue
 		}
 		// A paragraph that is one wikilink and nothing else names the stencil.
@@ -235,13 +235,13 @@ func readStencilLink(body []byte, from, to int) (target string, leadFrom int) {
 // paragraphEnds reports whether the line just read stood on its own: the next
 // line is blank, or there is no next line. A wikilink with prose under it is a
 // paragraph that begins with a link.
-func paragraphEnds(body []byte, at, to int) bool {
-	if at >= to {
+func paragraphEnds(body []byte, pos, to int) bool {
+	if pos >= to {
 		return true
 	}
 	end := to
-	if i := bytes.IndexByte(body[at:to], '\n'); i >= 0 {
-		end = at + i
+	if i := bytes.IndexByte(body[pos:to], '\n'); i >= 0 {
+		end = pos + i
 	}
-	return strings.TrimSpace(string(body[at:end])) == ""
+	return strings.TrimSpace(string(body[pos:end])) == ""
 }

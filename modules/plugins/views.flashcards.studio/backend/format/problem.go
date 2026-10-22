@@ -6,7 +6,6 @@ package format
 type Problem struct {
 	Fault Fault
 	// Card is where the card stands, counted from the first card of the deck,
-	// and Face is where the face stands in its stencil. A card is addressed by
 	// its position because two cards of one mark is a problem, and there the
 	// mark reaches both.
 	Card int

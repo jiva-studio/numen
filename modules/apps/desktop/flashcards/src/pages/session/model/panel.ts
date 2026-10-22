@@ -1,14 +1,3 @@
-/**
- * The panel a card is asked about in: whether it is showing, what has been said
- * in it, and what is being written.
- *
- * Everything the panel is, is here. What draws it reads this and decides
- * nothing: a card that may not be asked about is refused here, and the reason
- * is said here.
- *
- * A conversation belongs to one card. Answering the card ends it, so the card
- * in front of a person is never answered out of the one behind it.
- */
 import { computed, ref, shallowRef } from 'vue'
 import { useConversation } from '@numen/ui'
 import type { AgentPort, Conversation, Turn } from '@numen/ui'
@@ -28,7 +17,6 @@ export interface AgentPanelDeps {
   readonly card: () => CardFace | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
-  /** Whether the panel is what the window is showing. */
   readonly open: () => boolean
   /**
    * The panel asked for, or put away. The window can only be showing one thing,
@@ -50,7 +38,6 @@ function createCardConversation(
 }
 
 export function useAgentPanel(deps: AgentPanelDeps) {
-  /** Whether the panel is what the window is showing, which the window holds. */
   const open = computed(() => deps.open())
 
   const content = ref('')
@@ -69,9 +56,14 @@ export function useAgentPanel(deps: AgentPanelDeps) {
 
   /** The conversation about one card, made once and release with the card. */
   const startTalk = (targetCard: CardFace) => {
-    if (card.value?.card.mark === targetCard.mark && card.value.card.face === targetCard.face) return
+    if (card.value?.card.mark === targetCard.mark && card.value.card.face === targetCard.face)
+      return
     endConversation()
-    const conversation = createCardConversation(deps.agent(targetCard), `card-${conversationCounter++}`, deps.paint)
+    const conversation = createCardConversation(
+      deps.agent(targetCard),
+      `card-${conversationCounter++}`,
+      deps.paint,
+    )
     card.value = { card: targetCard, conversation }
   }
 

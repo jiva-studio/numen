@@ -17,7 +17,7 @@ export interface CommandDepsOptions {
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   openPreset: (path: string) => Promise<void>
-  dressed: { chooseItem: (item: string) => Promise<void> | void }
+  appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   nesting: {
     choose: (item: string) => Promise<void> | void
@@ -25,7 +25,7 @@ export interface CommandDepsOptions {
   }
   rest: {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
-    getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
+    getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
@@ -87,8 +87,9 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
   }
 }
 
-function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goes'] {
-  const { files, travel, leavePath, agents, windowTabs, openPreset, getOpeningNote, search } = options
+function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
+  const { files, travel, leavePath, agents, windowTabs, openPreset, getOpeningNote, search } =
+    options
   return {
     revealPath: (path) => void files().revealPath(path),
     travel: async (path) => {
@@ -107,10 +108,10 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['goe
 }
 
 function createSettingsCommands(options: CommandDepsOptions): CommandDeps['settings'] {
-  const { dressed, oneName, nesting, rest } = options
+  const { appearance, oneName, nesting, rest } = options
   return {
     chooseAppearance: async (selected) => {
-      await dressed.chooseItem(selected)
+      await appearance.chooseItem(selected)
     },
     chooseSync: async (selected) => {
       await oneName.choose(selected)
@@ -150,7 +151,10 @@ function tabMatchesPath(
   return target?.file === path || target?.path === path
 }
 
-function findHeldTabAt(windowTabs: ReturnType<typeof useWindowTabs>, path: string): string | null {
+function findActiveTabAt(
+  windowTabs: ReturnType<typeof useWindowTabs>,
+  path: string,
+): string | null {
   if (!path || !windowTabs?.tabs?.value || typeof windowTabs.getTab !== 'function') return null
   for (const tab of windowTabs.tabs.value) {
     if (tabMatchesPath(windowTabs.getTab(tab.id), path)) return tab.id
@@ -162,11 +166,14 @@ function findHeldTabAt(windowTabs: ReturnType<typeof useWindowTabs>, path: strin
  * The open files a command reaches: those the note editors hold, and those a
  * kind of tab answers for.
  */
-export function createCommandNotes(reached: Notes, windowTabs: ReturnType<typeof useWindowTabs>): Notes {
+export function createCommandNotes(
+  reached: Notes,
+  windowTabs: ReturnType<typeof useWindowTabs>,
+): Notes {
   const getTab = (id: string) => windowTabs?.getTab?.(id) ?? null
   return {
     ...reached,
-    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findHeldTabAt(windowTabs, path),
+    getTabAt: (path: string) => reached?.getTabAt?.(path) ?? findActiveTabAt(windowTabs, path),
     getPath: (id: string) => {
       const path = reached.getPath(id)
       if (path !== id) return path
@@ -190,7 +197,8 @@ export function createCommandNotes(reached: Notes, windowTabs: ReturnType<typeof
 }
 
 export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
-  const { core, making, made, setVaultName, reload, reached, windowTabs, runs, writeMessage } = options
+  const { core, making, made, setVaultName, reload, reached, windowTabs, runs, writeMessage } =
+    options
 
   return {
     files: createFileCommands(core, making),
@@ -201,7 +209,7 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
       setVaultName,
       reload,
     },
-    goes: createNavigationCommands(options),
+    navigator: createNavigationCommands(options),
     settings: createSettingsCommands(options),
     notes: createCommandNotes(reached, windowTabs),
     runSupport: runs,

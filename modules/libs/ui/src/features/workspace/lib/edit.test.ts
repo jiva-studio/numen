@@ -1,4 +1,3 @@
-/** What each gesture leaves behind. */
 import { describe, expect, it } from 'vitest'
 import {
   activateTab,

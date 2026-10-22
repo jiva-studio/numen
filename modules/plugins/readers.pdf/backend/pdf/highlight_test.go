@@ -21,8 +21,6 @@ func fixture(t *testing.T, name string) []byte {
 
 // A page's text and the characters it is made of are one text.
 //
-// Where a word sits on the page is asked for character by character, and where a
-// chunk sits in the document is an offset into the page's text. The two are the
 // same walk, and a rectangle put against the wrong offset lands on the wrong
 // word with nothing saying so.
 func TestTheCharactersOfAPageAreItsText(t *testing.T) {
@@ -116,7 +114,7 @@ func TestEveryBoxCoversOneWord(t *testing.T) {
 				if word == "" || strings.ContainsFunc(word, isSpace) {
 					t.Errorf("a box covers %q, which is not one word", word)
 				}
-				if at := book.Pages[box.Page].Offset; box.From < at {
+				if pos := book.Pages[box.Page].Offset; box.From < pos {
 					t.Errorf("a box on page %d covers %q, which is before that page", box.Page, word)
 				}
 			}
@@ -192,7 +190,7 @@ func TestOnePageIsLitAndTheRestAreNot(t *testing.T) {
 	from, to := book.Pages[2].Offset, book.Pages[3].Offset
 	for _, box := range boxes {
 		if box.Page != 2 {
-			t.Errorf("page %d was lit and nobody asked about it", box.Page)
+			t.Errorf("unexpected highlight on page %d", box.Page)
 		}
 		if box.From < from || box.From >= to {
 			t.Errorf("a box begins at %d, outside the page's %d..%d", box.From, from, to)

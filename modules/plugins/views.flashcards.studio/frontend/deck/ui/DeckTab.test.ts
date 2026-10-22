@@ -61,7 +61,6 @@ const CARDS: readonly VaultCard[] = [
   },
 ]
 
-/** The one section the deck stands in, which every card of it is under. */
 const SECTIONS = [{ name: 'Roots', preamble: '' }]
 
 /** A window with one deck open, drawn. */
@@ -74,7 +73,6 @@ const mountDeck = async (
     by?: string
     /** What is said against what the deck names. */
     saying?: string
-    /** What putting the deck on a preset is refused for. */
     notScheduled?: ErrorCode
   } = {},
 ) => {
@@ -105,7 +103,7 @@ const mountDeck = async (
   }
 
   /** Which preset the deck names, as the vault answers it. */
-  let by = schedule.by ?? ''
+  let presetPath = schedule.by ?? ''
   /** Every deck put on a preset, as the tab asked for it. */
   const appliedPresets: string[] = []
 
@@ -125,8 +123,8 @@ const mountDeck = async (
     getDeckPreset: async () =>
       asValue({
         preset: {
-          path: by,
-          title: by === 'Sanskrit.md' ? 'Sanskrit' : '',
+          path: presetPath,
+          title: presetPath === 'Sanskrit.md' ? 'Sanskrit' : '',
           settings: DEFAULTS,
           problems: schedule.saying ? [schedule.saying] : [],
           ...SCHEDULING,
@@ -137,7 +135,7 @@ const mountDeck = async (
     scheduleDeck: async (_deck, preset) => {
       appliedPresets.push(preset)
       if (schedule.notScheduled) return asFailure(schedule.notScheduled)
-      by = preset
+      presetPath = preset
       return asValue({ at: 'scheduled' })
     },
     write: async () => asValue({ at: '' }),

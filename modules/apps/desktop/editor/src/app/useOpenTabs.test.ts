@@ -125,7 +125,10 @@ describe('the active tab', () => {
   })
 
   it('is the agent when it is the only tab', () => {
-    const target = create([{ id: 'ag', title: 'Agent', kind: 'agent' }], { id: 'ag', kind: 'agent' })
+    const target = create([{ id: 'ag', title: 'Agent', kind: 'agent' }], {
+      id: 'ag',
+      kind: 'agent',
+    })
 
     expect(target.getActiveTabId()).toBe('ag')
   })

@@ -5,9 +5,9 @@ import { getRate } from './tally'
 
 /** What one count stood at when it last moved, and when that was. */
 export interface Movement {
-  readonly done: number
+  readonly completedCount: number
   readonly rate: number
-  readonly at: number
+  readonly timestamp: number
 }
 
 /**
@@ -22,7 +22,7 @@ export interface Movement {
 export const measureMovement = (
   was: ReadonlyMap<string, Movement>,
   notices: readonly Notice[],
-  at: number,
+  timestamp: number,
 ): ReadonlyMap<string, Movement> => {
   const movements = new Map<string, Movement>()
   for (const notice of getReadable(notices)) {
@@ -30,15 +30,15 @@ export const measureMovement = (
     if (tally === undefined) continue
     const before = was.get(notice.id)
     if (before === undefined) {
-      movements.set(notice.id, { done: tally.done, rate: 0, at })
+      movements.set(notice.id, { completedCount: tally.completedCount, rate: 0, timestamp })
       continue
     }
-    if (tally.done === before.done) {
+    if (tally.completedCount === before.completedCount) {
       movements.set(notice.id, before)
       continue
     }
-    const rate = getRate(before, tally.done, (at - before.at) / 1000)
-    movements.set(notice.id, { done: tally.done, rate, at })
+    const rate = getRate(before, tally.completedCount, (timestamp - before.timestamp) / 1000)
+    movements.set(notice.id, { completedCount: tally.completedCount, rate, timestamp })
   }
   return movements
 }

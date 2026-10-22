@@ -45,8 +45,8 @@ function createPress(gestureRole: GestureRole = 'open', middle: Position | null 
   return { press, response: response, site }
 }
 
-const key = (name: string, over: KeyboardEventInit = {}) =>
-  new KeyboardEvent('keydown', { key: name, cancelable: true, ...over })
+const key = (name: string, overrides: KeyboardEventInit = {}) =>
+  new KeyboardEvent('keydown', { key: name, cancelable: true, ...overrides })
 
 describe('a node that takes a gesture', () => {
   it('is ready where it is open', () => {

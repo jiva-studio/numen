@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
  * The module's source, as text. The tokens' own file declares the ladder and
  * the root's font size, and a story draws a length on purpose.
  */
-const SOURCE = import.meta.glob<string>('../../**/*.{vue,css,ts}', {
+const SOURCE = import.meta.glob<string>('../..*.{vue,css,ts}', {
   query: '?raw',
   import: 'default',
   eager: true,

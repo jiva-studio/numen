@@ -95,7 +95,7 @@ func TestTheOpenersHandlerHearsHowFollowingTheVaultWent(t *testing.T) {
 	open := opening.Begin(t.Context(), v)
 	go open.Run(t.Context())
 
-	watcher.lost <- struct{}{}
+	watcher.lostChan <- struct{}{}
 	if err := receiveFrom(t, received, "the handler heard nothing"); err != nil {
 		t.Errorf("the handler heard %v, where the vault was read again without trouble", err)
 	}

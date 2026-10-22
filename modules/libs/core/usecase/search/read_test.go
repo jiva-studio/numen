@@ -112,10 +112,10 @@ func TestReadFillsEveryPassageOfASourceScatteredThroughFound(t *testing.T) {
 		}
 	}
 	if out[0].Line != 0 {
-		t.Errorf("the first passage of a.md stands on line %d, want 0", out[0].Line)
+		t.Errorf("the first passage of a.md is on line %d, want 0", out[0].Line)
 	}
 	if out[5].Line != 5 {
-		t.Errorf("the second passage of a.md stands on line %d, want 5", out[5].Line)
+		t.Errorf("the second passage of a.md is on line %d, want 5", out[5].Line)
 	}
 
 	// The whole point of grouping by source: a.md's prose is decoded once, not

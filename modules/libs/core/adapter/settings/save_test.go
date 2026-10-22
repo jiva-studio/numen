@@ -324,7 +324,6 @@ func TestTheSettingsAreLeftReadableByThePersonAlone(t *testing.T) {
 	if runtime.GOOS != "windows" && info.Mode().Perm() != 0o600 {
 		t.Errorf("the file is %v", info.Mode().Perm())
 	}
-	// The temporary file it was written through is not left behind.
 	entries, err := os.ReadDir(filepath.Dir(path))
 	if err != nil {
 		t.Fatal(err)
@@ -404,7 +403,6 @@ func TestAnUntouchedInstallationIsSavedThroughTheLink(t *testing.T) {
 	}
 }
 
-// A number a setting does not take is refused where it is handed in. One the
 // file already held is the person's to put right, and every other setting stays
 // reachable while they do.
 func TestASizeAlreadyInTheFileDoesNotBlockTheRest(t *testing.T) {
@@ -456,7 +454,6 @@ func TestASectionHandedInIsCheckedAtTheNumbersItContains(t *testing.T) {
 }
 
 // A name written twice is read from the last of the two and patched at the
-// first. One section holds one of a name, and a file holding two is refused.
 func TestASectionContainsOneOfAName(t *testing.T) {
 	for what, body := range map[string]string{
 		"the field being written": `{"appearance":{"theme":"preset:numen","theme":"preset:dracula"}}`,

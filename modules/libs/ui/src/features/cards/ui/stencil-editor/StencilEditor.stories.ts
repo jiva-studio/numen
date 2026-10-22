@@ -20,7 +20,7 @@ interface Corpus {
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 const many = (count: number): readonly string[] =>
-  Array.from({ length: count }, (_, at) => `Field ${at + 1}`)
+  Array.from({ length: count }, (_, index) => `Field ${index + 1}`)
 
 const CORPORA = {
   'a stencil': {
@@ -42,9 +42,9 @@ const CORPORA = {
   },
   'far too many': {
     fields: many(40),
-    faces: Array.from({ length: 12 }, (_, at) => ({
-      id: `face-${at}`,
-      name: `Face ${at + 1}`,
+    faces: Array.from({ length: 12 }, (_, index) => ({
+      id: `face-${index}`,
+      name: `Face ${index + 1}`,
       front: '{{Field 1}}',
       back: many(40)
         .map((field) => `<b>${field}:</b> {{${field}}}`)
@@ -173,8 +173,8 @@ const meta: Meta<Knobs> = {
         onRemoveField: (field: string) => {
           fields.value = fields.value.filter((each) => each !== field)
         },
-        onMoveField: (field: string, at: InsertionPoint) => {
-          fields.value = reorderFields(fields.value, field, at)
+        onMoveField: (field: string, target: InsertionPoint) => {
+          fields.value = reorderFields(fields.value, field, target)
         },
         onAddFace: (name: string) => {
           faces.value = [
@@ -189,11 +189,11 @@ const meta: Meta<Knobs> = {
           faces.value = faces.value.filter((face) => face.id !== id)
         },
         /* Nothing among the faces is fixed, so any of them lands anywhere. */
-        onMoveFace: (id: string, at: InsertionPoint) => {
+        onMoveFace: (id: string, target: InsertionPoint) => {
           const order = orderNames(
             faces.value.map((face) => face.id),
             id,
-            at,
+            target,
           )
           faces.value = order.flatMap((each) => faces.value.filter((face) => face.id === each))
         },
@@ -255,7 +255,6 @@ const getDrawnFields = (canvas: HTMLElement): readonly (string | null)[] =>
  * A field's row is one block: the line and the ground are the row's, and the
  * handle, the box and the way to remove it stand inside it carrying neither.
  * The first field names every card, so it keeps the shape the others have with
- * what it may not do turned off. What the list is added to by stands in the
  * middle of a rule as wide as the list.
  */
 export const AStencil: Story = {
@@ -267,7 +266,6 @@ export const AStencil: Story = {
     const away = row.querySelector('button')
     if (!box || !grip || !away) throw new Error('a row missing part of itself')
 
-    // The row carries the line and the ground, and what stands inside carries
     // neither.
     const renderedStyle = getComputedStyle(row)
     expect(Number.parseFloat(renderedStyle.borderTopWidth)).toBeGreaterThan(0)
@@ -279,9 +277,9 @@ export const AStencil: Story = {
     // And all three stand within the row's own bounds.
     const bounds = row.getBoundingClientRect()
     for (const part of [grip, box, away]) {
-      const at = part.getBoundingClientRect()
-      expect(at.left).toBeGreaterThanOrEqual(bounds.left - 1)
-      expect(at.right).toBeLessThanOrEqual(bounds.right + 1)
+      const rect = part.getBoundingClientRect()
+      expect(rect.left).toBeGreaterThanOrEqual(bounds.left - 1)
+      expect(rect.right).toBeLessThanOrEqual(bounds.right + 1)
     }
 
     // The first field stays first, and its row lines up with every other.
@@ -307,15 +305,17 @@ export const AStencil: Story = {
     })
     expect(getDrawnFields(canvasElement)).toEqual(['Name', 'Height', 'Weight', 'Life span'])
 
-    // What the list is added to by stands in the middle of a divider as wide as
     // the list, and the line gives way to it either side.
     const divider = found(canvasElement, '.stencil__part .divider')
     const list = found(canvasElement, '.stencil__fields')
     const adding = found(canvasElement, '.stencil__part .divider button')
     const alongRect = divider.getBoundingClientRect()
     expect(Math.round(alongRect.width)).toBe(Math.round(list.getBoundingClientRect().width))
-    const at = adding.getBoundingClientRect()
-    expect(at.left + at.width / 2).toBeCloseTo(alongRect.left + alongRect.width / 2, 0)
+    const addingRect = adding.getBoundingClientRect()
+    expect(addingRect.left + addingRect.width / 2).toBeCloseTo(
+      alongRect.left + alongRect.width / 2,
+      0,
+    )
     for (const side of ['::before', '::after']) {
       expect(Number.parseFloat(getComputedStyle(divider, side).width)).toBeGreaterThan(0)
     }

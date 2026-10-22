@@ -15,14 +15,14 @@ import { createFileCreators, type VaultCreator } from './makers'
 const maker = (
   error: ErrorCode | null = null,
   throws = false,
-): VaultCreator & { asked: string[] } => {
+): VaultCreator & { requests: string[] } => {
   const request: string[] = []
   const answer = async (path: string): Promise<CreateResult> => {
     if (throws) throw new Error('the vault is not there')
     return error ? { ok: false, error } : { ok: true, value: { path } }
   }
   return {
-    asked: request,
+    requests: request,
     createDeck: (title, folder) => {
       request.push(`deck ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
@@ -60,7 +60,7 @@ describe('a deck, a stencil or a preset made', () => {
     await createdItem.createFile('stencil', 'zoology', 'Words')
     await createdItem.createFile('preset', '', 'Slow')
 
-    expect(vault.asked).toStrictEqual([
+    expect(vault.requests).toStrictEqual([
       'deck zoology Animals',
       'stencil zoology Words',
       'preset — Slow',
@@ -135,7 +135,11 @@ describe('a file nothing offers to make', () => {
     const openedTabs: string[] = []
     tabOpeners.registerEditor('deck', (path) => openedTabs.push(path))
     const mockWriter = writer()
-    const createdItem = createCreators({ createDeck: async () => null }, tabOpeners, mockWriter.write)
+    const createdItem = createCreators(
+      { createDeck: async () => null },
+      tabOpeners,
+      mockWriter.write,
+    )
 
     expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
     expect(openedTabs).toStrictEqual([])
@@ -166,7 +170,7 @@ describe('a note pointing at an address made', () => {
 
     const path = await createdItem.createUrl('links', 'example.org')
 
-    expect(vault.asked).toStrictEqual(['link links example.org'])
+    expect(vault.requests).toStrictEqual(['link links example.org'])
     expect(path).toBe('links/example.org.md')
     expect(openedTabs).toStrictEqual(['links/example.org.md'])
   })
@@ -192,7 +196,7 @@ describe('several notes pointing at addresses made', () => {
 
     const paths = await createdItem.createUrls('links', ['example.org'])
 
-    expect(vault.asked).toStrictEqual(['link links example.org'])
+    expect(vault.requests).toStrictEqual(['link links example.org'])
     expect(paths).toStrictEqual(['links/example.org.md'])
     expect(openedTabs).toStrictEqual(['links/example.org.md'])
   })
@@ -206,7 +210,7 @@ describe('several notes pointing at addresses made', () => {
 
     const paths = await createdItem.createUrls('links', ['first.org', 'second.org'])
 
-    expect(vault.asked).toStrictEqual(['link links first.org', 'link links second.org'])
+    expect(vault.requests).toStrictEqual(['link links first.org', 'link links second.org'])
     expect(paths).toStrictEqual(['links/first.org.md', 'links/second.org.md'])
     expect(openedTabs).toStrictEqual([])
   })
@@ -217,7 +221,7 @@ describe('several notes pointing at addresses made', () => {
 
     const paths = await createdItem.createUrls('links', [])
 
-    expect(vault.asked).toStrictEqual([])
+    expect(vault.requests).toStrictEqual([])
     expect(paths).toStrictEqual([])
   })
 })

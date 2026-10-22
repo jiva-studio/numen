@@ -26,7 +26,6 @@ defineSlots<{
   default(): unknown
 }>()
 
-// What it is drawn into stands between whatever draws it and the ground, so
 // what is handed down is put on the ground itself.
 defineOptions({ inheritAttrs: false })
 </script>

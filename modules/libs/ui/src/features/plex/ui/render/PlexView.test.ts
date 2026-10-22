@@ -200,12 +200,12 @@ describe('the line under the hand', () => {
     })
 
   /** The band drawn over one line, in the order the frame gave the edges. */
-  const reach = (view: ReturnType<typeof mountTitled>, at: number) =>
-    view.findAll('.plex__edge-hit')[at]!
+  const reach = (view: ReturnType<typeof mountTitled>, pos: number) =>
+    view.findAll('.plex__edge-hit')[pos]!
 
   /** The two layers one resting title is painted in, in the same order. */
-  const title = (view: ReturnType<typeof mountTitled>, at: number) =>
-    view.findAll('.plex__edge-label').slice(2 * at, 2 * at + 2)
+  const title = (view: ReturnType<typeof mountTitled>, pos: number) =>
+    view.findAll('.plex__edge-label').slice(2 * pos, 2 * pos + 2)
 
   it('lifts the line the hand evaluates to rest on, and puts it back after', async () => {
     const view = mountTitled()
@@ -302,9 +302,9 @@ describe('the line under the hand', () => {
     const view = mountTitled()
 
     // One line down the page and one across it, and both carry their words.
-    for (const at of [down, acrossIndex]) {
-      expect(title(view, at)[0]!.find('textPath').exists()).toBe(true)
-      expect(title(view, at)[0]!.attributes('x')).toBeUndefined()
+    for (const targetIndex of [down, acrossIndex]) {
+      expect(title(view, targetIndex)[0]!.find('textPath').exists()).toBe(true)
+      expect(title(view, targetIndex)[0]!.attributes('x')).toBeUndefined()
     }
   })
 

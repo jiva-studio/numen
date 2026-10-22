@@ -47,24 +47,24 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
  * out.
  */
 const many = (count: number): readonly DeckCard[] =>
-  Array.from({ length: count }, (_, at) =>
-    at % 2 === 0
+  Array.from({ length: count }, (_, index) =>
+    index % 2 === 0
       ? {
-          id: `beast00${at}`,
+          id: `beast00${index}`,
           section: null,
           stencil: 'Animal',
           filled: [
-            { field: 'Name', text: `Beast ${at + 1}` },
+            { field: 'Name', text: `Beast ${index + 1}` },
             { field: 'Height', text: 'about 45"' },
             { field: 'Weight', text: '- bull: 350 kg\n- cow: 300 kg\n- calf: 40 kg' },
             { field: 'Life span', text: 'about 20 years' },
           ],
         }
       : {
-          id: `asked00${at}`,
+          id: `asked00${index}`,
           section: null,
           stencil: 'Basic',
-          filled: [{ field: 'Question', text: `Question ${at + 1}` }],
+          filled: [{ field: 'Question', text: `Question ${index + 1}` }],
         },
   )
 
@@ -148,8 +148,6 @@ const CORPORA = {
     ],
   },
   'far too many': { cuts: [ANIMAL, ASKED], cards: many(300) },
-  /* A value with no newline in it that is far wider than the box, so what the
-     box stands at can only be worked out from where the text wraps. */
   'a value that wraps': {
     cuts: [ASKED],
     cards: [
@@ -354,19 +352,19 @@ const meta: Meta<Knobs> = {
         onRemove: (id: string) => {
           cards.value = cards.value.filter((card) => card.id !== id)
         },
-        onMove: (id: string, at: InsertionPoint) => {
-          cards.value = moveCard(cards.value, sections.value, id, at)
+        onMove: (id: string, target: InsertionPoint) => {
+          cards.value = moveCard(cards.value, sections.value, id, target)
         },
-        onWrite: (id: string, field: string, nth: number, text: string) => {
+        onWrite: (id: string, field: string, index: number, text: string) => {
           cards.value = changeCard(id, (card) => {
             // The one written is the one counted off under its own field.
             let underCount = 0
             const filled = card.filled.map((each) => {
               if (each.field !== field) return each
               underCount += 1
-              return underCount === nth ? { field, text } : each
+              return underCount === index ? { field, text } : each
             })
-            if (underCount < nth) filled.push({ field, text })
+            if (underCount < index) filled.push({ field, text })
             return { ...card, filled }
           })
         },
@@ -419,15 +417,16 @@ const moveCard = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[],
   id: string,
-  at: InsertionPoint,
+  targetPoint: InsertionPoint,
 ): readonly DeckCard[] => {
   const card = cards.find((card) => card.id === id)
   if (!card) return cards
   const remainingCards = cards.filter((card) => card.id !== id)
 
-  if (at === HEAD) return [{ ...card, section: null }, ...remainingCards]
+  if (targetPoint === HEAD) return [{ ...card, section: null }, ...remainingCards]
 
-  const before = at === null ? -1 : remainingCards.findIndex((card) => card.id === at)
+  const before =
+    targetPoint === null ? -1 : remainingCards.findIndex((card) => card.id === targetPoint)
   if (before !== -1) {
     const underItem = { ...card, section: remainingCards[before]?.section ?? null }
     return [...remainingCards.slice(0, before), underItem, ...remainingCards.slice(before)]
@@ -436,14 +435,18 @@ const moveCard = (
   const rank = (section: string | null): number =>
     section === null ? 0 : sections.findIndex((each) => each.id === section) + 1
 
-  if (at === null) {
+  if (targetPoint === null) {
     return [...remainingCards, { ...card, section: sections.at(-1)?.id ?? null }]
   }
-  if (!sections.some((each) => each.id === at)) return cards
+  if (!sections.some((each) => each.id === targetPoint)) return cards
 
-  const seat = remainingCards.findIndex((card) => rank(card.section) >= rank(at))
+  const seat = remainingCards.findIndex((card) => rank(card.section) >= rank(targetPoint))
   const where = seat === -1 ? remainingCards.length : seat
-  return [...remainingCards.slice(0, where), { ...card, section: at }, ...remainingCards.slice(where)]
+  return [
+    ...remainingCards.slice(0, where),
+    { ...card, section: targetPoint },
+    ...remainingCards.slice(where),
+  ]
 }
 
 export default meta
@@ -510,7 +513,6 @@ export const InSections: Story = {
     )
 
     // The bin takes no room until the name is reached for, so the line runs
-    // unbroken up to it. Once it is drawn it stands inside the rule, which
     // keeps nothing that hangs past it.
     const actions = found(canvasElement, '[data-section-head="roots"] .section-heading__actions')
     expect(actions.getBoundingClientRect().width).toBe(0)
@@ -590,19 +592,20 @@ export const NothingAtAll: Story = {
     expect(middle(button.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
 
     // It is a tile like the cards are: a dashed outline, drawn no smaller than
-    // a card, and as wide as the column it stands in.
     const renderedElement = getComputedStyle(plus)
     expect(renderedElement.borderTopStyle).toBe('dashed')
     expect(Number.parseFloat(renderedElement.borderTopWidth)).toBeGreaterThan(0)
 
-    const at = plus.getBoundingClientRect()
-    expect(at.height).toBeGreaterThan(64)
-    expect(at.width).toBeGreaterThan(240)
+    const rect = plus.getBoundingClientRect()
+    expect(rect.height).toBeGreaterThan(64)
+    expect(rect.width).toBeGreaterThan(240)
 
     // What it opens stands where it was pressed, inside that same outline.
     await userEvent.click(button)
     const promptElement = found(canvasElement, '[data-plus] .deck__asking')
-    expect(middle(promptElement.getBoundingClientRect())).toEqual(middle(plus.getBoundingClientRect()))
+    expect(middle(promptElement.getBoundingClientRect())).toEqual(
+      middle(plus.getBoundingClientRect()),
+    )
     expect(getComputedStyle(found(canvasElement, '[data-plus]')).borderTopStyle).toBe('dashed')
   },
 }
@@ -670,7 +673,6 @@ const measure = (canvasElement: HTMLElement, least = 3): void => {
 
 /**
  * A window too narrow for two columns: one column, and no sideways scrolling.
- * A value with no newline in it wraps to several lines, and its box stands at
  * what the wrapping evaluates to, which is worked out by the ground behind it.
  */
 export const Narrow: Story = {
@@ -684,7 +686,6 @@ export const Narrow: Story = {
 
     const box = found(canvasElement, '[data-card="c5n8q2wxjb"] [data-value="Answer"]')
 
-    // It wrapped: the box stands taller than the one line it is written on.
     const line = Number.parseFloat(getComputedStyle(box).lineHeight)
     expect(box.clientHeight).toBeGreaterThan(line * 2)
 

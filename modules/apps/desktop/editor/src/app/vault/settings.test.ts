@@ -18,12 +18,12 @@ const request = vi.hoisted(() => ({
 vi.mock('@/shared/clients', () => ({ settingsService: request }))
 
 /** The settings as the vault answers them, over a file holding `written`. */
-const answer = (content: unknown, over: Record<string, unknown> = {}) => ({
+const answer = (content: unknown, overrides: Record<string, unknown> = {}) => ({
   written: JSON.stringify(content),
   path: '/vault/.numen/settings.json',
   models: [],
   nestedHeadingLimitBounds: { least: 2, most: 9 },
-  ...over,
+  ...overrides,
 })
 
 /** What the vault was last asked to write. */
@@ -223,7 +223,10 @@ describe('the settings file written whole', () => {
   it('presents the file as it was last read', async () => {
     await core.saveSettingsFile('{}', 'fingerprint')
 
-    expect(request.writeSettingsFile).toHaveBeenCalledWith({ written: '{}', baseline: 'fingerprint' })
+    expect(request.writeSettingsFile).toHaveBeenCalledWith({
+      written: '{}',
+      baseline: 'fingerprint',
+    })
   })
 
   it('presents nothing where nothing was read', async () => {
@@ -299,7 +302,9 @@ describe('a plugin the host suspends', () => {
   })
 
   it('is started again by its id, and the answer is why it failed again', async () => {
-    request.retryPlugin.mockResolvedValue({ failure: 'The plugin did not finish starting in time.' })
+    request.retryPlugin.mockResolvedValue({
+      failure: 'The plugin did not finish starting in time.',
+    })
 
     const failure = await core.retryPlugin('sample.plugin')
 

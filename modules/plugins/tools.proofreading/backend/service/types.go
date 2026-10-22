@@ -11,7 +11,6 @@ type Line struct {
 // IsJoined says whether the line is a correction putting more than one line together.
 func (l Line) IsJoined() bool { return l.Last > l.Number }
 
-// Batch is the lines one reply is accepted or refused as a whole.
 type Batch struct {
 	Number int
 	Lines  []Line

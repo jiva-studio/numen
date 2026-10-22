@@ -744,7 +744,6 @@ func (x *ResolvedAddress) GetIsAmbiguous() bool {
 type ListHeadingsRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Only the notes filed under these paths. A filter naming none passes none,
-	// and one naming more notes than the vault answers at once is refused.
 	Paths         []string `protobuf:"bytes,1,rep,name=paths,proto3" json:"paths,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -997,11 +996,9 @@ func (x *ReadNoteRequest) GetPath() string {
 type ReadNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The prose below the frontmatter, with line endings as LF. Empty when the
-	// note is refused.
 	Body string `protobuf:"bytes,1,opt,name=body,proto3" json:"body,omitempty"`
 	// Set when the note was not read, and why.
-	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
-	// The file this prose came out of. Absent when the note was refused.
+	Error         *ErrorCode   `protobuf:"varint,2,opt,name=error,proto3,enum=numen.v1.ErrorCode,oneof" json:"error,omitempty"`
 	At            *Fingerprint `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -1879,7 +1876,6 @@ func (x *RenameNoteRequest) GetTitle() string {
 type RenameNoteResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Where the note is filed. Empty when the note was never opened. The note is
-	// brought into line before the file is, so a refused move answers with the
 	// path the note still has.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// What the note is called. Empty when the note was never opened.
@@ -2022,7 +2018,6 @@ type WatchEditsResponse struct {
 	// What is going in where that span stands.
 	Text string `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
 	// The last report of this change, which arrives whether the change landed or
-	// was refused.
 	IsFinal       bool `protobuf:"varint,5,opt,name=is_final,json=isFinal,proto3" json:"is_final,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

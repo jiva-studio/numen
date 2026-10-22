@@ -1,5 +1,3 @@
-/* What every window stands on is the library's; this is what this one adds. */
-
 body {
   font-family: var(--numen-font-sans, system-ui, sans-serif);
   /* One size for the interface, from the tokens, so that what a person set

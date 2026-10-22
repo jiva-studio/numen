@@ -19,15 +19,15 @@ func isolateMachine(t *testing.T) (home, bin string) {
 	return home, bin
 }
 
-func writeExecutable(t *testing.T, at string, mode os.FileMode) {
+func writeExecutable(t *testing.T, targetPath string, mode os.FileMode) {
 	t.Helper()
-	if err := os.MkdirAll(filepath.Dir(at), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(at, []byte("#!/bin/sh\n"), mode); err != nil {
+	if err := os.WriteFile(targetPath, []byte("#!/bin/sh\n"), mode); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Chmod(at, mode); err != nil {
+	if err := os.Chmod(targetPath, mode); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -82,9 +82,9 @@ func TestLocateSkipsAFileWithoutAnExecuteBit(t *testing.T) {
 func TestLocateConsumesAnyExecuteBit(t *testing.T) {
 	for _, mode := range []os.FileMode{0o100, 0o010, 0o001} {
 		home, _ := isolateMachine(t)
-		at := filepath.Join(home, "tool")
-		writeExecutable(t, at, mode)
-		if got := Locate(nil, []string{at}); got != at {
+		targetPath := filepath.Join(home, "tool")
+		writeExecutable(t, targetPath, mode)
+		if got := Locate(nil, []string{targetPath}); got != targetPath {
 			t.Errorf("mode %o: found %q", mode, got)
 		}
 	}

@@ -18,7 +18,6 @@ service ArtifactService {
   //
   // It is asked before anything is offered over a file: whether a book has been
   // read is a question about the book, and the only other way to ask it is to
-  // ask for the book to be read again and be refused.
   rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse);
 
   // CreateArtifact asks for one to be made, and answers at once with what
@@ -30,7 +29,6 @@ service ArtifactService {
   // waits in line and is taken up before anything the vault set itself.
   rpc CreateArtifact(CreateArtifactRequest) returns (CreateArtifactResponse);
 
-  // DeleteArtifact takes one away, with everything cut from it. The file stands
   // as it did before anything was made from it, and it is offered again.
   rpc DeleteArtifact(DeleteArtifactRequest) returns (DeleteArtifactResponse);
 }
@@ -64,7 +62,6 @@ message Artifact {
 enum ArtifactKind {
   ARTIFACT_KIND_UNSPECIFIED = 0;
 
-  // Text with the place on the page each word stands at, read off a scan and
   // kept under `ocr`.
   ARTIFACT_KIND_OCR = 1;
 

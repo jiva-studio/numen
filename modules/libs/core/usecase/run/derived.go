@@ -11,9 +11,9 @@ import (
 
 // GetHash is the fingerprint of a source's bytes: known when it is set, read
 // from the vault otherwise.
-func GetHash(ctx context.Context, readers port.VaultReaders, v domain.Vault, path, known string) (string, error) {
-	if known != "" {
-		return known, nil
+func GetHash(ctx context.Context, readers port.VaultReaders, v domain.Vault, path, hash string) (string, error) {
+	if hash != "" {
+		return hash, nil
 	}
 	reader, err := readers.Open(v)
 	if err != nil {
@@ -27,11 +27,11 @@ func GetHash(ctx context.Context, readers port.VaultReaders, v domain.Vault, pat
 }
 
 // Cut makes a source's chunks through cut, and does nothing where none is set.
-func Cut(ctx context.Context, cut func(context.Context, domain.Vault, string) error, v domain.Vault, path string) error {
-	if cut == nil {
+func Cut(ctx context.Context, extracted func(context.Context, domain.Vault, string) error, v domain.Vault, path string) error {
+	if extracted == nil {
 		return nil
 	}
-	return cut(ctx, v, path)
+	return extracted(ctx, v, path)
 }
 
 // Stand puts the source on the text a producer made. Cutting writes which text
@@ -39,14 +39,14 @@ func Cut(ctx context.Context, cut func(context.Context, domain.Vault, string) er
 // is recorded as owing its text and the scan that cuts it writes both.
 func Stand(
 	ctx context.Context,
-	cut func(context.Context, domain.Vault, string) error,
+	splitFn func(context.Context, domain.Vault, string) error,
 	sources port.SourceRepository,
 	v domain.Vault,
 	ref domain.Fingerprint,
 	hash, from string,
 ) error {
-	if cut != nil {
-		return cut(ctx, v, ref.Path)
+	if splitFn != nil {
+		return splitFn(ctx, v, ref.Path)
 	}
 	return sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
 }

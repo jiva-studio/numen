@@ -13,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// Endpoint is the agents' endpoint on the vault a window is showing.
-//
 // What an agent is told about the vault it is working is said once, when its
 // session opens, so a window that changes vault stops the endpoint and starts
 // it again.

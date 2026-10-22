@@ -128,7 +128,6 @@ func TestADeckWhosePresetNoteIsMissingExistsOnTheDefaults(t *testing.T) {
 	}
 }
 
-// A deck naming two presets is held to the budget of the first, which is the
 // preset it is scheduled by.
 func TestADeckNamingTwoPresetsIsHeldToTheFirstsBudget(t *testing.T) {
 	t.Parallel()
@@ -162,16 +161,16 @@ func TestAPresetSavedWithNoLevellingPassesBackItsFingerprint(t *testing.T) {
 	settings := target.Settings
 	settings.MinutesADay = 35
 
-	at, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.Fingerprint)
+	pos, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, target.Fingerprint)
 	if !errors.Is(err, note.ErrUnlevelled) {
 		t.Fatalf("a levelling that failed came back as %v", err)
 	}
-	if at.IsZero() {
+	if pos.IsZero() {
 		t.Fatal("the write handed back no fingerprint")
 	}
 
 	settings.MinutesADay = 40
-	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, at); err != nil &&
+	if _, err := presets.Save(t.Context(), s.vault, "Sanskrit.md", settings, pos); err != nil &&
 		!errors.Is(err, note.ErrUnlevelled) {
 		t.Fatalf("the next save failed: %v", err)
 	}
@@ -619,7 +618,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	at := map[review.CardFaceID]review.Schedule{
+	pos := map[review.CardFaceID]review.Schedule{
 		{Card: "near", Face: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
@@ -627,7 +626,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.IsLearned(at[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
+	if p.IsLearned(pos[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
 		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
 	}
 
@@ -635,7 +634,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	run := review.Simulation{
 		By: review.NewFSRSAt(p.Retention), Day: today, Cost: review.DefaultCost, Days: 1,
 	}
-	ran, err := run.Run(t.Context(), now, p, at, 0)
+	ran, err := run.Run(t.Context(), now, p, pos, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -668,7 +667,6 @@ func TestASaveRefusesANoteOverTheBound(t *testing.T) {
 	}
 }
 
-// A setting the read could not make out stands in the file exactly as it was
 // written. The read names it as a problem and the default takes its place while
 // the file is read; the file itself is never repaired, and a save that put the
 // default down would write a value the person never chose.

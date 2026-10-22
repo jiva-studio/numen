@@ -45,7 +45,7 @@ const press = useNodePress(props, getMiddle, {
   activate: () => emit('activate'),
   show: (showing) => emit('show', showing),
   reach: (pointer) => emit('reach', pointer),
-  menu: (at, trigger) => emit('menu', at, trigger),
+  menu: (pos, trigger) => emit('menu', pos, trigger),
 })
 
 const { isGhost, canStop, isAnnounced, listening } = press
@@ -54,7 +54,7 @@ const { isGhost, canStop, isAnnounced, listening } = press
  * When there is a handle to press. Under the hand, or under the keyboard while
  * the keyboard is what is being used.
  */
-const isOffering = computed(
+const hasDropTarget = computed(
   () =>
     props.behaviour.reaching.hasHandle &&
     props.node.opacity >= 1 &&
@@ -139,7 +139,7 @@ const hue = computed(() => ({
     <!-- Reach out from here to make something. Under the hand or under the
          keyboard, so it is there when wanted and out of the way when not. -->
     <PlexNodeHandle
-      v-if="isOffering"
+      v-if="hasDropTarget"
       :at="handle"
       @reach="(pointer) => emit('reach', pointer)"
       @ask="emit('ask')"
@@ -175,10 +175,6 @@ const hue = computed(() => ({
   cursor: default;
 }
 
-/* While the plex is moving, the fill is a relation's colour too: the focused node
-   is painted from its own pair, and follows the move as the outline does.
-   The node stands between: a `:deep` with nothing of this component's in front
-   of it hangs the scope on the ancestor, which is the frame's and not ours. */
 [data-moving] .plex__node :deep(.plex__box) {
   transition:
     fill var(--numen-plex-move, var(--numen-motion)) var(--numen-easing),
@@ -229,9 +225,6 @@ const hue = computed(() => ({
   color: var(--numen-accent-ink);
 }
 
-/* The focused node is painted from its own pair, and its relation's hue is the
-   ground it stands on. What it is drawn before its title takes the ink the
-   title is set in. */
 .plex__node--focus :deep(.plex__icon) {
   color: inherit;
 }

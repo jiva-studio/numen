@@ -32,7 +32,7 @@ import { ERRORS, type ErrorCode } from '@numen/wire'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import { WORDS as words } from './words'
 
-const point = (over: Partial<Point> = {}): Point => ({
+const point = (overrides: Partial<Point> = {}): Point => ({
   reviews: 0,
   minutes: 0,
   retained: 0,
@@ -44,7 +44,7 @@ const point = (over: Partial<Point> = {}): Point => ({
   learned: 0,
   short: 0,
   backlog: [],
-  ...over,
+  ...overrides,
 })
 
 const curve: Curve = {
@@ -57,8 +57,8 @@ const curve: Curve = {
     point({ reviews: 80, retained: 0.88 }),
     point({ reviews: 120, retained: 0.93 }),
   ],
-  now: { at: 2, value: 20, day: '' },
-  suggested: { at: 3, value: 30, day: '' },
+  now: { index: 2, value: 20, day: '' },
+  suggested: { index: 3, value: 30, day: '' },
   decks: 1,
   cards: 400,
   overdue: 0,
@@ -89,12 +89,12 @@ type ReadOver = Partial<ReadPreset> & { readonly error?: ErrorCode }
 type WriteOver = { readonly error?: CardsFailure; readonly at?: string }
 
 /** A read built from what the test said of it. */
-const readAs = (base: ReadPreset, over: ReadOver): PresetReadResult =>
-  over.error ? asFailure(over.error) : asValue({ ...base, ...over })
+const readAs = (base: ReadPreset, overrides: ReadOver): PresetReadResult =>
+  overrides.error ? asFailure(overrides.error) : asValue({ ...base, ...overrides })
 
 /** A write built from what the test said of it. */
-const writeAs = (over: WriteOver): PresetWriteResult =>
-  over.error ? asFailure(over.error) : asValue({ at: over.at ?? 'two' })
+const writeAs = (overrides: WriteOver): PresetWriteResult =>
+  overrides.error ? asFailure(overrides.error) : asValue({ at: overrides.at ?? 'two' })
 
 const openPresetTab = async (
   settings: Partial<Settings> = {},
@@ -146,7 +146,7 @@ const openPresetTab = async (
     today: () => NOW,
   })
   const state = await kind.kind.open?.('Steady.md', 'preset:Steady.md')
-  if (!state) throw new Error('the preset kind opens nothing')
+  if (!state) throw new Error('card face missing')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
   await Promise.resolve()
@@ -251,7 +251,7 @@ describe('the value the goal steers', () => {
         ...curve,
         goal: 'retention',
         grid: [0.8, 0.85, 0.9, 0.95],
-        now: { at: 1, value: 0.85, day: '' },
+        now: { index: 1, value: 0.85, day: '' },
       },
     )
     state.updateSetting('retention', 0.873)
@@ -265,7 +265,7 @@ describe('the value the goal steers', () => {
   it('is the day under a goal of a date, and a day typed moves the knob', async () => {
     const { state, writtenFiles } = await openPresetTab(
       { goal: 'date', byDate: '2026-09-09' },
-      { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
+      { ...dated, now: { index: 0, value: 10, day: '2026-09-09' } },
     )
     state.updateSetting('byDate', '2026-09-29')
     state.flushPending()
@@ -278,7 +278,7 @@ describe('the value the goal steers', () => {
   it('is the day typed, and not the day the nearest place of the grid names', async () => {
     const { state, writtenFiles } = await openPresetTab(
       { goal: 'date', byDate: '2026-09-09' },
-      { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
+      { ...dated, now: { index: 0, value: 10, day: '2026-09-09' } },
     )
     state.updateSetting('byDate', '2026-09-22')
     state.flushPending()
@@ -291,7 +291,7 @@ describe('the value the goal steers', () => {
   it('leaves a field holding no day at its current position, and the knob where it is', async () => {
     const { state } = await openPresetTab(
       { goal: 'date', byDate: '2026-09-09' },
-      { ...dated, now: { at: 0, value: 10, day: '2026-09-09' } },
+      { ...dated, now: { index: 0, value: 10, day: '2026-09-09' } },
     )
     state.updateSetting('byDate', '')
     await Promise.resolve()
@@ -389,7 +389,7 @@ describe('the curve behind the knob', () => {
       ...curve,
       grid: [0, settings.minutesADay / 2, settings.minutesADay],
       at: [point(), point(), point()],
-      now: { at: 2, value: settings.minutesADay, day: '' },
+      now: { index: 2, value: settings.minutesADay, day: '' },
     })
     const { state, requests } = await openPresetTab({}, createReachingCurve)
     expect(state.curve.value.grid.at(-1)).toBe(20)
@@ -531,7 +531,7 @@ describe('a curve nobody answers', () => {
     expect(state.errorMessage.value).not.toBe('')
   })
 
-  it('is waited on again where the goal is moved to one nobody has answered', async () => {
+  it('reschedules review when target goal has no reviews', async () => {
     const { state } = await openPresetTab({}, () => new Promise<Curve>(() => {}))
     state.chooseGoal('retention')
     await flushPromises()
@@ -540,7 +540,6 @@ describe('a curve nobody answers', () => {
 })
 
 // A setting typed is written when the control is release, so at any moment
-// the last of it stands in the tab and nowhere else. The tab answers for it
 // where it is asked to go, and where the window is.
 describe('what a tab still owes the file', () => {
   it('is written before the tab goes', async () => {
@@ -702,7 +701,11 @@ describe('what the control writes', () => {
   it('is the minutes alone under a goal of minutes, whatever the counts hold', async () => {
     // The case reported: a day of minutes the card limits had been cut to
     // nothing under.
-    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 0 })
+    const { state, writtenFiles } = await openPresetTab({
+      minutesADay: 34,
+      newADay: 12,
+      reviewsADay: 0,
+    })
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
@@ -730,7 +733,11 @@ describe('what the control writes', () => {
 // in the file for the goal that names it to come round again.
 describe('a setting the goal on screen does not name', () => {
   it('is not drawn, and keeps its value in the file across a write', async () => {
-    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    const { state, writtenFiles } = await openPresetTab({
+      minutesADay: 34,
+      newADay: 12,
+      reviewsADay: 7,
+    })
     expect(getGoalFields(state.settings.value.goal, state.settings.value.learned)).not.toContain(
       'reviewsADay',
     )
@@ -743,7 +750,11 @@ describe('a setting the goal on screen does not name', () => {
   })
 
   it('arrives back the moment its own goal is chosen again', async () => {
-    const { state, writtenFiles } = await openPresetTab({ minutesADay: 34, newADay: 12, reviewsADay: 7 })
+    const { state, writtenFiles } = await openPresetTab({
+      minutesADay: 34,
+      newADay: 12,
+      reviewsADay: 7,
+    })
     state.moveSlider(3)
     state.flushPending()
     await Promise.resolve()
@@ -767,15 +778,15 @@ describe('a setting the goal on screen does not name', () => {
  */
 const createRangedCurve = (settings: Settings): Curve => {
   const top = 60 + settings.backlog
-  const grid = Array.from({ length: 7 }, (_, at) => Math.round((top * (at + 1)) / 7))
+  const grid = Array.from({ length: 7 }, (_, index) => Math.round((top * (index + 1)) / 7))
   const value = getGoalValue(settings, NOW)
   return {
     ...curve,
     goal: settings.goal,
     grid,
     at: grid.map((minutes) => point({ minutes, reviews: minutes * 4 })),
-    now: { at: findNearest(grid, value), value, day: '' },
-    suggested: { at: grid.length - 1, value: grid[grid.length - 1] ?? 0, day: '' },
+    now: { index: findNearest(grid, value), value, day: '' },
+    suggested: { index: grid.length - 1, value: grid[grid.length - 1] ?? 0, day: '' },
   }
 }
 
@@ -783,12 +794,11 @@ const createRangedCurve = (settings: Settings): Curve => {
 // steers least of all: it is what the picture is scaled to.
 describe('a field the goal does not getGoalField, typed', () => {
   // A curve asked for under a new share of the day comes back over a range of
-  // its own, and a place of the old grid stands at another value on it. The
   // knob goes back to where the preset stands, so the picture and the file say
   // one thing and the next touch of the knob writes what the file already says.
   it('leaves the knob standing where the preset remains, whatever range arrives back', async () => {
     const { state, writtenFiles } = await openPresetTab({ minutesADay: 23 }, createRangedCurve)
-    expect(state.place.value).toBe(state.curve.value.now.at)
+    expect(state.place.value).toBe(state.curve.value.now.index)
 
     state.updateSetting('backlog', 5)
     state.flushPending()
@@ -796,7 +806,7 @@ describe('a field the goal does not getGoalField, typed', () => {
     await Promise.resolve()
     await Promise.resolve()
 
-    expect(state.place.value).toBe(state.curve.value.now.at)
+    expect(state.place.value).toBe(state.curve.value.now.index)
     expect(state.settings.value.minutesADay).toBe(23)
     expect(writtenFiles.at(-1)?.minutesADay).toBe(23)
   })
@@ -816,7 +826,10 @@ describe('a field the goal does not getGoalField, typed', () => {
         const value = NEW_VALUES[field]
         if (field === getGoalField(goal) || value === undefined) continue
 
-        const { state, writtenFiles } = await openPresetTab({ goal, minutesADay: 23 }, createRangedCurve)
+        const { state, writtenFiles } = await openPresetTab(
+          { goal, minutesADay: 23 },
+          createRangedCurve,
+        )
         const was = state.settings.value
         state.updateSetting(field, value)
         state.flushPending()
@@ -841,7 +854,11 @@ describe('a field the goal does not getGoalField, typed', () => {
  */
 describe('a field moved before the first read lands', () => {
   it('leaves every other setting to the read, and writes what the read returned', async () => {
-    const { tab, written: writtenFiles, resolveRead } = await opening({
+    const {
+      tab,
+      written: writtenFiles,
+      resolveRead,
+    } = await opening({
       retention: 0.93,
       newADay: 3,
       interval: 40,
@@ -928,7 +945,6 @@ describe('a control dragged across its range', () => {
   })
 })
 
-/** A read answering a preset that stands at these settings, under this title. */
 const createPresetRead = (settings: Settings, title = 'Steady'): ReadOver => ({
   preset: {
     path: 'Steady.md',
@@ -1109,7 +1125,7 @@ describe('the knob, as a field is typed', () => {
   it('goes to the place nearest a value typed that the curve already answers', async () => {
     const { state, requests } = await openPresetTab(
       {},
-      { ...curve, now: { at: 1, value: 20, day: '' } },
+      { ...curve, now: { index: 1, value: 20, day: '' } },
     )
     expect(state.place.value).toBe(1)
     state.updateSetting('minutesADay', 20)

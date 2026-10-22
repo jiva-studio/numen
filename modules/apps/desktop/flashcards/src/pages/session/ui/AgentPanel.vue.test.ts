@@ -33,7 +33,6 @@ const agent: AgentPort = {
 
 /** The panel over one card, with the session around it standing in for it. */
 const createPanel = (unreachable = ''): AgentPanelState => {
-  // What the window is showing is the window's, and the test holds it for it.
   const open = ref(false)
   return useAgentPanel({
     agent: () => agent,

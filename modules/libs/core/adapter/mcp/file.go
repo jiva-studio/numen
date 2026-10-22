@@ -28,18 +28,18 @@ func addFileReadingTools(server *sdk.Server, core Core) {
 		Start  int    `json:"start,omitempty" jsonschema:"where the range begins in the file, in bytes; the beginning of the file by default"`
 		Length int    `json:"length,omitempty" jsonschema:"how much to read, in bytes; as much as one call carries by default"`
 	}) (*sdk.CallToolResult, struct {
-		Text    string `json:"text,omitempty"`
-		Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
-		Length  int    `json:"length" jsonschema:"how long the range is"`
-		Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-		Error string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
+		Text   string `json:"text,omitempty"`
+		Start  int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
+		Length int    `json:"length" jsonschema:"how long the range is"`
+		Size   int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
+		Error  string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 	}, error) {
 		type out = struct {
-			Text    string `json:"text,omitempty"`
-			Start   int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
-			Length  int    `json:"length" jsonschema:"how long the range is"`
-			Size    int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
-			Error string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
+			Text   string `json:"text,omitempty"`
+			Start  int    `json:"start" jsonschema:"where the range begins, which is what was asked for held within the file"`
+			Length int    `json:"length" jsonschema:"how long the range is"`
+			Size   int    `json:"size" jsonschema:"how long the whole file is, in bytes"`
+			Error  string `json:"error,omitempty" jsonschema:"why nothing came back, empty when the range did"`
 		}
 		if core.Read.Readers == nil {
 			return nil, out{}, fmt.Errorf("this vault's files are not open")

@@ -20,9 +20,9 @@ import (
 // able to say about either.
 
 // getEntries is what one folder of the vault holds, as the window asks for it.
-func getEntries(t *testing.T, f *going, at string) []*v1.Entry {
+func getEntries(t *testing.T, f *going, pos string) []*v1.Entry {
 	t.Helper()
-	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: at}))
+	answer, err := f.client.ListFiles(t.Context(), connect.NewRequest(&v1.ListFilesRequest{Path: pos}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -191,13 +191,13 @@ func TestAFolderOfNotesMovesAndIsStillLinkedTo(t *testing.T) {
 		t.Errorf("the note under the folder holds:\n%s", now)
 	}
 
-	around, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
+	center, err := f.client.GetNeighbourhood(t.Context(), connect.NewRequest(&v1.GetNeighbourhoodRequest{
 		Path: "Heat.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	related := around.Msg.GetRelated()
+	related := center.Msg.GetRelated()
 	if len(related) != 1 {
 		t.Fatalf("want the one note the link reaches, got %+v", related)
 	}
@@ -434,7 +434,6 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 	target := getKindsByPath(t, f, "Animals.md", "Animal.md", "Sanskrit.md",
 		"Entropy.md", "Physics.epub", "Scan.pdf", "Notes.txt", "Gone.md")
 
-	// One book reflows and the other is drawn as pictures, and a window opens
 	// each in the reader made for it.
 	want := map[string]struct {
 		kind   v1.SourceKind

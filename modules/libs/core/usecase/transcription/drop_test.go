@@ -15,7 +15,7 @@ import (
 // newDrop is one vault holding one recording, with the run that
 // writes its words down, the cut that follows it, and the drop that takes both
 // away.
-func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *store, *shelf, *voice, string) {
+func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *store, *fakeStorage, *voice, string) {
 	t.Helper()
 	raw := newRecording(words)
 	shelved := newLibrary()
@@ -26,7 +26,7 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 
 	cutting := source.NewExtract(vaults{first.ID: shelved}, index, index)
 	cutting.Derived = shelf
-	listen := NewTranscribe(vaults{first.ID: shelved}, index, shelves{shelf}, model)
+	listen := NewTranscribe(vaults{first.ID: shelved}, index, fakeStores{shelf}, model)
 	listen.Batch = 1
 	listen.Cut = func(ctx context.Context, v domain.Vault, path string) error {
 		_, err := cutting.ExtractOne(ctx, v, path)
@@ -36,7 +36,7 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 		Readers: vaults{first.ID: shelved},
 		Sources: index,
 		Queries: index,
-		Derived: shelves{shelf},
+		Derived: fakeStores{shelf},
 	}
 	return listen, drop, first, index, shelf, model, text.Fingerprint(raw)
 }
@@ -83,7 +83,7 @@ func TestDroppingATranscriptPreservesTheRecordingAsItWas(t *testing.T) {
 
 	src := index.sources[v.ID][recordingPath]
 	if src.Producer != "" || src.Hash != "" || src.Recipe != "" {
-		t.Errorf("the source still stands on a recognition: %+v", src)
+		t.Errorf("the source still is on a recognition: %+v", src)
 	}
 	if src.Fingerprint.Path != recordingPath || src.Fingerprint.Kind != domain.KindRecording {
 		t.Errorf("the recording is no longer a source of the vault: %+v", src.Fingerprint)
@@ -233,10 +233,10 @@ func TestARecordingWhoseStoreWasEmptiedIsDroppedFromTheIndex(t *testing.T) {
 		t.Fatal(err)
 	}
 	if res.IsNone {
-		t.Error("a recording the index stands on came back as nothing to drop")
+		t.Error("a recording the index is on came back as nothing to drop")
 	}
 	if src := index.sources[v.ID][recordingPath]; src.Producer != "" || src.Hash != "" {
-		t.Errorf("the source still stands on a recognition: %+v", src)
+		t.Errorf("the source still is on a recognition: %+v", src)
 	}
 	if chunks := cutFrom(index, v, recordingPath); len(chunks) != 0 {
 		t.Errorf("the index still holds %d chunks of words nothing holds", len(chunks))
@@ -257,7 +257,7 @@ func TestDroppingAnAnswerInsertsTheRecordingBackInReach(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !slices.Equal(cleared, []string{recordingPath}) {
-		t.Errorf("the queue was told about %v", cleared)
+		t.Errorf("the queue received about %v", cleared)
 	}
 }
 

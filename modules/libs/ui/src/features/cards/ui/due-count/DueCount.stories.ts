@@ -104,10 +104,10 @@ export const Dark: Story = {
   play: async ({ canvasElement }) => {
     await expectDark(canvasElement)
     const canvas = within(canvasElement)
-    const [plain, over] = canvas.getAllByRole('status')
+    const [plain, overflow] = canvas.getAllByRole('status')
     const button = canvas.getByRole('button')
     expect(plain).toBeDefined()
-    expect(over).toBeDefined()
+    expect(overflow).toBeDefined()
 
     // On its own the pill carries both of its own colours, and they are told
     // apart: its ground is thin, so it is read over the surface behind it, and
@@ -116,7 +116,9 @@ export const Dark: Story = {
     const behindColor = getComputedStyle(
       canvasElement.querySelector('.numen') as HTMLElement,
     ).backgroundColor
-    expect(lightness(alone.color)).toBeGreaterThan(lightness(alone.backgroundColor, behindColor) + 24)
+    expect(lightness(alone.color)).toBeGreaterThan(
+      lightness(alone.backgroundColor, behindColor) + 24,
+    )
 
     // On the button it carries neither: the ink is the button's, and the
     // ground is that ink laid thinly over the button's own.
@@ -125,7 +127,7 @@ export const Dark: Story = {
     const ground = lightness(filled.backgroundColor)
     expect(Math.abs(ink - ground)).toBeGreaterThan(24)
 
-    const pill = lightness(getComputedStyle(over!).backgroundColor, filled.backgroundColor)
+    const pill = lightness(getComputedStyle(overflow!).backgroundColor, filled.backgroundColor)
     expect(pill).toBeGreaterThan(Math.min(ink, ground))
     expect(pill).toBeLessThan(Math.max(ink, ground))
     expect(Math.abs(pill - ground)).toBeGreaterThan(2)

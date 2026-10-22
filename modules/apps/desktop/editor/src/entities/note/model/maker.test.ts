@@ -142,7 +142,7 @@ describe('making a note in a relation of another', () => {
 })
 
 describe('a vault that has filed every name offered', () => {
-  it('is requested for a hundred names, and then the person is told', async () => {
+  it('requests a hundred names and reports status', async () => {
     const { core, requests, write, messages } = fake(
       Array.from({ length: 101 }, () => ({ ok: false, error: 'occupied' }) as const),
     )

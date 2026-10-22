@@ -1,9 +1,7 @@
 /**
- * The settings the window reads out of the file whole: what stands at a path
  * through it, the models a setting that names one can be set to, and one
  * setting written at its current position.
  *
- * What the vault answers with holds the defaults under everything the file
  * leaves out.
  */
 import { ref, shallowRef } from 'vue'
@@ -30,11 +28,9 @@ export interface SettingsStoreDeps {
     readonly models: readonly Model[]
     readonly plugins?: readonly PluginInfo[] | undefined
   }>
-  /** Settings written. A value the settings cannot hold is refused. */
   updateSettings(edits: readonly SettingEdit[]): Promise<void>
 }
 
-/** What stands at a path through a tree of settings, and nothing where none does. */
 export const getSettingAt = (settings: unknown, at: readonly string[]): unknown => {
   let value = settings
   for (const step of at) {
@@ -87,7 +83,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     plugins.value = answer.plugins ?? []
   }
 
-  /** What stands at a setting, and fallback plugin default where unset. */
   const getSetting = (path: readonly string[]): unknown => {
     const value = pending.getPending(path)?.value ?? getSettingAt(target.value, path)
     return value !== undefined ? value : getPluginDefault(plugins.value, path)
@@ -97,12 +92,6 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
   const getModelsAt = (path: readonly string[]): readonly Model[] =>
     models.value.filter((one) => one.namedAt.join('.') === path.join('.'))
 
-  /**
-   * Settings written into the file, together or not at all. A write that was
-   * refused is said, and the window reads the file again either way, so what is
-   * drawn is what the settings hold. Until then a setting stands at the value
-   * last written to it, and a read that answers late does not move it.
-   */
   const writeSettings = async (edits: readonly SettingEdit[]): Promise<void> => {
     if (edits.length === 0) return
     say('')
@@ -125,7 +114,7 @@ export function createSettingsStore(core: SettingsStoreDeps, words: Words, say: 
     writeSettings([{ at: path, value: write(value) }])
 
   return {
-    held: target,
+    target: target,
     path,
     models,
     plugins,

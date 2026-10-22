@@ -204,21 +204,21 @@ func (unwilling) Close() error { return nil }
 // run gives.
 type limited struct {
 	context.Context
-	over chan struct{}
+	overChan chan struct{}
 }
 
 func limit(ctx context.Context) *limited {
-	return &limited{Context: ctx, over: make(chan struct{})}
+	return &limited{Context: ctx, overChan: make(chan struct{})}
 }
 
 // reachLimit is the limit being met.
-func (l *limited) reachLimit() { close(l.over) }
+func (l *limited) reachLimit() { close(l.overChan) }
 
-func (l *limited) Done() <-chan struct{} { return l.over }
+func (l *limited) Done() <-chan struct{} { return l.overChan }
 
 func (l *limited) Err() error {
 	select {
-	case <-l.over:
+	case <-l.overChan:
 		return context.DeadlineExceeded
 	default:
 		return l.Context.Err()

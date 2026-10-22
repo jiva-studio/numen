@@ -17,10 +17,10 @@ const props = withDefaults(
     /** How early and how late in the day the hour may stand, written as `04:00`. */
     min?: string
     max?: string
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { id: '', min: '', max: '', disabled: false },
+  { id: '', min: '', max: '', isDisabled: false },
 )
 
 /** The hour in force, written as `04:00`. An empty field holds none. */
@@ -31,7 +31,6 @@ const emit = defineEmits<{
   commit: [value: string]
 }>()
 
-/** What stands in the field, which is an hour of the day or nothing at all. */
 const inForce = computed(() => (isClockTime(model.value) ? model.value : ''))
 
 const ownId = useId()
@@ -59,7 +58,7 @@ defineExpose({
     type="time"
     data-slot="time-field"
     :value="inForce"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :min="min || undefined"
     :max="max || undefined"
     :class="

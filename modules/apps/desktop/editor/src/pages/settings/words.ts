@@ -7,7 +7,6 @@ export const WORDS = {
    * itself is named where the vault has said where it is.
    */
   file: 'One file, numen.json, in this machine’s configuration folder.',
-  /** The one way to the file itself, which every setting stands in. */
   opens: 'Open the file',
   /** The groups, in the order they are drawn. */
   window: 'The window',

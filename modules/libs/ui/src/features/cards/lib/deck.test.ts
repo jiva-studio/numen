@@ -128,7 +128,7 @@ describe('grid', () => {
       text: 'Llama',
       isDeclared: true,
       at: 1,
-      nth: 1,
+      index: 1,
       key: 'Name#1',
       isLast: true,
     })
@@ -151,7 +151,7 @@ describe('grid', () => {
       },
     ]
     const filled = getTiles(grid(response))[0]?.filled ?? []
-    expect(filled.filter((each) => each.field === 'Name').map((each) => each.nth)).toEqual([1, 2])
+    expect(filled.filter((each) => each.field === 'Name').map((each) => each.index)).toEqual([1, 2])
   })
 
   it('marks the last box standing for each field, which is where a mark is returned', () => {
@@ -181,7 +181,9 @@ describe('grid', () => {
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
-    const unstenciledCards: readonly DeckCard[] = [{ id: 'x', section: null, stencil: null, filled: [] }]
+    const unstenciledCards: readonly DeckCard[] = [
+      { id: 'x', section: null, stencil: null, filled: [] },
+    ]
     const tile = getTiles(grid(unstenciledCards))[0]
     expect(tile?.stencil).toBeNull()
     expect(tile?.isKnown).toBe(false)
@@ -243,7 +245,11 @@ describe('grid', () => {
       { id: 'llano', section: null, stencil: 'Word', filled: [] },
     ]
     const displayedGrid = grid(mixed)
-    expect(getTiles(displayedGrid).map((tile) => tile.stencil)).toEqual(['Animal', 'Animal', 'Word'])
+    expect(getTiles(displayedGrid).map((tile) => tile.stencil)).toEqual([
+      'Animal',
+      'Animal',
+      'Word',
+    ])
     expect(Object.keys(getTiles(displayedGrid)[0] ?? {})).not.toContain('cut')
   })
 
@@ -299,7 +305,9 @@ describe('grid', () => {
       const displayedGrid = grid(SECTIONED, SECTIONS)
       expect(displayedGrid.runs.map((run) => run.plusAt)).toEqual([2, 5, 6])
       expect(displayedGrid.of).toBe(6)
-      expect(displayedGrid.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([6, 6, 6])
+      expect(displayedGrid.runs.flatMap((run) => run.tiles).map((tile) => tile.of)).toEqual([
+        6, 6, 6,
+      ])
     })
 
     it('remains no plus before the first section where no card remains there', () => {
@@ -332,8 +340,8 @@ describe('NO_DECK_PROBLEMS', () => {
   })
 
   it('remains for every caller at once, so nothing can be put into it', () => {
-    const at = NO_DECK_PROBLEMS.at as Map<string, readonly string[]>
-    expect(() => at.set('llama', ['put here by one caller'])).toThrow()
+    const problems = NO_DECK_PROBLEMS.at as Map<string, readonly string[]>
+    expect(() => problems.set('llama', ['put here by one caller'])).toThrow()
     expect(NO_DECK_PROBLEMS.at.size).toBe(0)
 
     const underItem = NO_DECK_PROBLEMS.under as Map<string, ReadonlyMap<string, readonly string[]>>

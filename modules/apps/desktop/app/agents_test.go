@@ -15,7 +15,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 )
 
-// TestAnInstallationNamingNoAgentOpensNoPort. A person who asked for no agent
 // and for no tools has nothing listening and no token kept beside the vault
 // list.
 func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
@@ -39,7 +38,7 @@ func TestAnInstallationNamingNoAgentOpensNoPort(t *testing.T) {
 		t.Error("an endpoint was announced")
 	}
 	if opened.State.Unreachable.Why() == "" {
-		t.Error("the panel was told nothing about why it has no agent")
+		t.Error("expected error reason for missing agent")
 	}
 }
 
@@ -57,7 +56,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 	}
 
 	if !isListening(addr) {
-		t.Error("nothing answers where the agents are told to look")
+		t.Error("no service responding at agent endpoint")
 	}
 	if !hasToken(t, cfg) {
 		t.Error("no token was kept")
@@ -83,7 +82,7 @@ func TestTheAgentTheSettingsNameIsServedAndTakenAway(t *testing.T) {
 		t.Error("the port is still open")
 	}
 	if _, remaining := readAnnouncement(t, cfg); remaining {
-		t.Error("the announcement was left behind")
+		t.Error("expected announcement to be removed")
 	}
 }
 
@@ -100,7 +99,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 	}
 
 	if !isListening(addr) {
-		t.Error("nothing answers where the agents are told to look")
+		t.Error("no service responding at agent endpoint")
 	}
 	response, content := readAnnouncement(t, cfg)
 	if !content || response.Token == "" {
@@ -110,7 +109,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 		t.Error("the panel was given an agent the settings do not name")
 	}
 	if opened.State.Unreachable.Why() == "" {
-		t.Error("the panel was told nothing about why it has no agent")
+		t.Error("expected error reason for missing agent")
 	}
 
 	if err := shut(); err != nil {
@@ -120,7 +119,7 @@ func TestTheToolsAreServedToAnAgentAPersonRunsThemselves(t *testing.T) {
 		t.Error("the port is still open")
 	}
 	if _, remaining := readAnnouncement(t, cfg); remaining {
-		t.Error("the announcement was left behind")
+		t.Error("expected announcement to be removed")
 	}
 }
 

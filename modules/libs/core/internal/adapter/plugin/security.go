@@ -123,17 +123,17 @@ func resolveSymlinkTarget(cleanTarget string) (string, error) {
 }
 
 func resolveDeepestParent(path string) (string, error) {
-	at := filepath.Dir(path)
+	pos := filepath.Dir(path)
 	for {
-		rp, err := filepath.EvalSymlinks(at)
+		rp, err := filepath.EvalSymlinks(pos)
 		if err == nil {
 			return rp, nil
 		}
-		next := filepath.Dir(at)
-		if next == at {
+		next := filepath.Dir(pos)
+		if next == pos {
 			return "", err
 		}
-		at = next
+		pos = next
 	}
 }
 

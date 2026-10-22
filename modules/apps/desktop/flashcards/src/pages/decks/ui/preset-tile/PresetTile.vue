@@ -95,8 +95,6 @@ defineEmits<{
   align-items: end;
 }
 
-/* What a person looks for, so it carries the weight in the tile and stands at
-   the end of the line, against the middle of the two beside it. */
 .presets__done {
   font-size: var(--numen-title-size);
   font-weight: 600;

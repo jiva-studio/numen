@@ -14,7 +14,6 @@ const theCeiling = 20 * time.Minute
 
 // A goal is a ceiling over every deck the preset schedules.
 //
-// Decks are added and taken away; the goal stands. A person who asked for
 // twenty minutes gets twenty minutes, whether one deck names the preset or
 // five do.
 func TestAGoalIsACeilingOverEveryDeckOfThePreset(t *testing.T) {
@@ -50,7 +49,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	var out time.Duration
 	for range 200 {
 		sat, err := flashcards.NewSession(
-			s.marking, s.standings, s.kept,
+			s.marking, s.standings, s.schedules,
 			s.presets, day, func() time.Time { return now },
 		).Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Queue) == 0 {
@@ -95,7 +94,7 @@ func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 		cardScope := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.NewSession(
-				s.marking, s.standings, s.kept,
+				s.marking, s.standings, s.schedules,
 				s.presets, today, func() time.Time { return now },
 			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
@@ -144,11 +143,11 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 
 	s := openVault(t, files)
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
-	sits := func(over flashcards.Scope) flashcards.SessionResult {
+	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.NewSession(
-			s.marking, s.standings, s.kept,
+			s.marking, s.standings, s.schedules,
 			s.presets, today, func() time.Time { return now },
-		).Execute(t.Context(), s.vault, over)
+		).Execute(t.Context(), s.vault, scope)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -156,7 +155,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	}
 
 	whole := 0
-	for _, target := range byDeck(sits(flashcards.Scope{})) {
+	for _, target := range byDeck(runSession(flashcards.Scope{})) {
 		whole += target
 	}
 	if whole != 30 {
@@ -164,7 +163,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
-		if got := len(sits(flashcards.Scope{Deck: deck}).Queue); got > 30 {
+		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
 			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
 		}
 	}

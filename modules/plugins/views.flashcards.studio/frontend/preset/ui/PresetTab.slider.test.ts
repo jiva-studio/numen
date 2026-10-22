@@ -96,9 +96,8 @@ describe('the one slider', () => {
     expect(tab.findAll('[data-control="material"] [data-control="tile"]')).toHaveLength(2)
   })
 
-  // A card nobody has answered is new, which is what the rest of the product
   // calls it. Overdue keeps its own word, which is a distinction of its own.
-  it('calls a card nobody has answered new', () => {
+  it('classifies unreviewed card as new', () => {
     const saidText = words
       .material({ decks: 4, cards: 160, overdue: 45, unbegun: 30 })
       .map((one) => one.name)
@@ -143,7 +142,11 @@ describe('the one slider', () => {
       .get('[data-control="callout"]')
       .findAll('[data-control="bought"]')
       .map((one) => one.text())
-    expect(response).toStrictEqual(['20 minutes a day', '80 cards a session', 'overdue gone in 3 days'])
+    expect(response).toStrictEqual([
+      '20 minutes a day',
+      '80 cards a session',
+      'overdue gone in 3 days',
+    ])
     // Its own value on the width stays on its own line under the picture.
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
       words.formatGoalValue('minutes', 20),
@@ -158,16 +161,14 @@ describe('the one slider', () => {
       {
         goal: 'retention',
         grid: [0.7, 0.8, 0.9, 0.95],
-        now: { at: 2, value: 0.9, day: '' },
+        now: { index: 2, value: 0.9, day: '' },
         at: [point(), point(), point({ minutes: 14, backlog: [5, 0] }), point()],
       },
       { goal: 'retention' },
     )
-    expect(tabWrapper.tab.findAll('[data-control="bought"]').map((one) => one.text())).toStrictEqual([
-      '90% remembered',
-      '14 minutes a day',
-      'overdue gone in 2 days',
-    ])
+    expect(
+      tabWrapper.tab.findAll('[data-control="bought"]').map((one) => one.text()),
+    ).toStrictEqual(['90% remembered', '14 minutes a day', 'overdue gone in 2 days'])
 
     // Under a date every card is to be got through anyway, so when the overdue
     // goes says nothing and no line is drawn for it.
@@ -176,7 +177,7 @@ describe('the one slider', () => {
         goal: 'date',
         grid: [10, 20, 30, 40],
         days: ['2026-09-09', '2026-09-19', '2026-09-29', '2026-10-09'],
-        now: { at: 2, value: 30, day: '2026-09-29' },
+        now: { index: 2, value: 30, day: '2026-09-29' },
         at: [point(), point(), point({ minutes: 40, backlog: [9, 4, 0, 8] }), point()],
       },
       { goal: 'date', byDate: '2026-09-29' },
@@ -211,7 +212,7 @@ describe('the one slider', () => {
   // A preset's own value need not sit on the grid, and the place it opens at
   // is only the nearest one. The knob does not claim a value it is not at.
   it('reads the preset’s own value where it opens, and the place once walked', async () => {
-    const { tab } = mountPresetTab({ grid: [0, 10, 20, 30], now: { at: 2, value: 23, day: '' } })
+    const { tab } = mountPresetTab({ grid: [0, 10, 20, 30], now: { index: 2, value: 23, day: '' } })
     const first = () => tab.findAll('[data-control="bought"]')[0]?.text()
     expect(first()).toBe('23 minutes a day')
     expect(tab.get('[data-control="number"][data-at-knob]').text()).toBe(
@@ -237,7 +238,6 @@ describe('the one slider', () => {
   it('remains over the knob, and under it where over would leave the picture', async () => {
     const { tab } = mountPresetTab()
     // Which way the bubble is lifted off its anchor, which is the anchor the
-    // tail sits on.
     const lift = () =>
       /translate:[^;]*\s([^\s;]+);?/.exec(
         tab.get('[data-control="callout"]').attributes('style') ?? '',
@@ -284,7 +284,6 @@ describe('the one slider', () => {
   })
 
   // The mark keeps its short name on the picture, and the paragraph says the
-  // value it stands at and what that figure means. Nothing is captioned.
   it('draws and says nothing where the curve answers no suggestion', () => {
     for (const goal of ['minutes', 'retention', 'date'] as const) {
       const { tab } = mountPresetTab({ goal, suggested: NO_CURVE_POINT }, { goal })
@@ -311,16 +310,16 @@ describe('what a day cannot reach', () => {
   const getBoughtTexts = (tab: ReturnType<typeof mount>) =>
     tab.findAll('[data-control="bought"]').map((one) => one.text())
 
-  const createDatedTab = (over: Partial<Point> = {}) =>
+  const createDatedTab = (overrides: Partial<Point> = {}) =>
     mountPresetTab(
       {
         goal: 'date',
         grid: [14, 30, 90, 180],
         days: ['2026-09-14', '2026-09-30', '2026-11-29', '2027-02-27'],
         cards: 79,
-        now: { at: 0, value: 14, day: '2026-09-14' },
+        now: { index: 0, value: 14, day: '2026-09-14' },
         at: [
-          point({ minutes: 40, short: 38, ...over }),
+          point({ minutes: 40, short: 38, ...overrides }),
           point({ minutes: 30, short: 11 }),
           point({ minutes: 20, short: 0 }),
           point({ minutes: 15, short: 0 }),
@@ -492,7 +491,6 @@ describe('what the control remains at', () => {
   })
 
   // A caption promising work in progress is a promise, and there is nothing
-  // behind it once the vault has refused the picture.
   it('says nothing of indexing the vault where no answer is coming', () => {
     const { tab } = mountPresetTab({ isHonest: false }, {}, { isWaiting: false })
     expect(tab.findAll('[data-control="waiting"]')).toHaveLength(0)

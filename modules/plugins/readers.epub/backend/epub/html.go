@@ -6,7 +6,6 @@ import (
 	"strings"
 )
 
-// OffsetAttribute is what every run of text carries: where the run begins in the
 // book's Text. A window reads an offset off the markup and counts none itself.
 const OffsetAttribute = "data-offset"
 

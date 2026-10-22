@@ -43,7 +43,9 @@ const player = useTemplateRef<HTMLVideoElement>('player')
 
 /** How tall the player is drawn, remembered on this machine. */
 const tall = ref(props.store.read())
-const dragSession = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(null)
+const dragSession = ref<{ bar: HTMLElement; pointer: number; from: number; was: number } | null>(
+  null,
+)
 const frameStyle = computed(() =>
   tall.value === null ? undefined : { blockSize: `${tall.value}px` },
 )
@@ -60,14 +62,14 @@ onBeforeUnmount(() => onPointerUp())
  * all: a frame is a document of its own, and one dragged across takes every
  * move and the release with it.
  */
-function onPointerDown(at: PointerEvent): void {
-  const bar = at.currentTarget as HTMLElement
+function onPointerDown(event: PointerEvent): void {
+  const bar = event.currentTarget as HTMLElement
   const prevElement = bar.previousElementSibling
-  bar.setPointerCapture(at.pointerId)
+  bar.setPointerCapture(event.pointerId)
   dragSession.value = {
     bar,
-    pointer: at.pointerId,
-    from: at.clientY,
+    pointer: event.pointerId,
+    from: event.clientY,
     was: prevElement?.clientHeight ?? LEAST,
   }
   bar.addEventListener('pointermove', onPointerMove)
@@ -75,10 +77,14 @@ function onPointerDown(at: PointerEvent): void {
   bar.addEventListener('pointercancel', onPointerUp)
 }
 
-function onPointerMove(at: PointerEvent): void {
+function onPointerMove(event: PointerEvent): void {
   const currentDrag = dragSession.value
   if (!currentDrag) return
-  tall.value = getDraggedHeight(currentDrag.was, at.clientY - currentDrag.from, window.innerHeight)
+  tall.value = getDraggedHeight(
+    currentDrag.was,
+    event.clientY - currentDrag.from,
+    window.innerHeight,
+  )
 }
 
 function onPointerUp(): void {
@@ -88,7 +94,8 @@ function onPointerUp(): void {
   currentDrag.bar.removeEventListener('pointermove', onPointerMove)
   currentDrag.bar.removeEventListener('pointerup', onPointerUp)
   currentDrag.bar.removeEventListener('pointercancel', onPointerUp)
-  if (currentDrag.bar.hasPointerCapture(currentDrag.pointer)) currentDrag.bar.releasePointerCapture(currentDrag.pointer)
+  if (currentDrag.bar.hasPointerCapture(currentDrag.pointer))
+    currentDrag.bar.releasePointerCapture(currentDrag.pointer)
   if (tall.value !== null) props.store.write(tall.value)
 }
 
@@ -117,7 +124,10 @@ defineExpose({ seek })
       v-if="props.copy"
       ref="player"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--currentDrag': dragSession !== null }"
+      :class="{
+        'embed__frame--drawn': tall !== null,
+        'embed__frame--currentDrag': dragSession !== null,
+      }"
       :style="frameStyle"
       :src="props.copy"
       :title="props.words.playing"
@@ -132,7 +142,10 @@ defineExpose({ seek })
       v-else-if="props.embed"
       ref="frame"
       class="embed__frame"
-      :class="{ 'embed__frame--drawn': tall !== null, 'embed__frame--currentDrag': dragSession !== null }"
+      :class="{
+        'embed__frame--drawn': tall !== null,
+        'embed__frame--currentDrag': dragSession !== null,
+      }"
       :style="frameStyle"
       :src="props.embed"
       :title="props.words.playing"

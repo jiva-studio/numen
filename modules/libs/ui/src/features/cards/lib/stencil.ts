@@ -164,7 +164,7 @@ export function faceRows(
       at: index + 1,
       of: faces.length,
       fields,
-      taken: names.filter((_, at) => at !== index),
+      taken: names.filter((_, idx) => idx !== index),
       front: face.front,
       back: face.back,
       frontPreview: renderPreview(face.front, sample, fields),
@@ -182,13 +182,11 @@ export type PaneMode = 'written' | 'preview'
 export interface Pane {
   readonly half: Half
   readonly mode: PaneMode
-  /** What the part is called while nothing stands in it. */
-  readonly said: string
+  readonly label: string
   /** What the part is announced as. */
   readonly named: string
   /** The markup as it is written, or the sample standing in its braces. */
   readonly text: string
-  /** Nothing but space stands in it. */
   readonly isBlank: boolean
   /** The slots the half names that the fields do not, said under the markup. */
   readonly stray: readonly string[]
@@ -208,7 +206,7 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
       {
         half,
         mode: 'written',
-        said: saidText,
+        label: saidText,
         named: saidText,
         text: content,
         isBlank: content.trim() === '',
@@ -217,7 +215,7 @@ export function getPanes(face: FaceRow, words: StencilWords = STENCIL_WORDS): re
       {
         half,
         mode: 'preview',
-        said: words.preview,
+        label: words.preview,
         named: `${words.preview}: ${face.name} ${saidText}`,
         text: previewFace,
         isBlank: previewFace.trim() === '',

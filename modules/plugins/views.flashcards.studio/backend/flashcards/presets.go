@@ -94,8 +94,8 @@ func NewPresets(
 // getStopReasons is why a preset schedules nothing, and why it schedules
 // nothing today.
 func (u Presets) getStopReasons(p review.Preset) (review.StopReason, review.StopReason) {
-	at := u.now()
-	return p.GetOverallStopReason(u.day, at), p.GetStopReason(u.day, at)
+	pos := u.now()
+	return p.GetOverallStopReason(u.day, pos), p.GetStopReason(u.day, pos)
 }
 
 // PresetSummary is one preset as a person choosing between them sees it: where
@@ -158,7 +158,7 @@ func (u Presets) GetForDeck(ctx context.Context, v domain.Vault, deck string) (P
 // the file as it stood when the run began.
 type PresetReads struct {
 	Presets
-	held map[string]PresetContents
+	cachedPresets map[string]PresetContents
 	// scheduling is the preset each deck asked about is scheduled by, so a deck
 	// is asked once however many times the run comes round to it.
 	scheduling map[string]PresetContents
@@ -170,9 +170,9 @@ type PresetReads struct {
 // OpenReads opens a run of reads sharing the notes they open.
 func (u Presets) OpenReads() *PresetReads {
 	return &PresetReads{
-		Presets:    u,
-		held:       make(map[string]PresetContents),
-		scheduling: make(map[string]PresetContents),
+		Presets:       u,
+		cachedPresets: make(map[string]PresetContents),
+		scheduling:    make(map[string]PresetContents),
 	}
 }
 
@@ -202,13 +202,13 @@ func (r *PresetReads) getSchedulingPreset(
 		return PresetContents{}, fmt.Errorf("the links of %s: %w", deck, err)
 	}
 
-	var at []domain.ResolvedLink
+	var matchedLinks []domain.ResolvedLink
 	for _, link := range links {
 		if link.Type == LinkType {
-			at = append(at, link)
+			matchedLinks = append(matchedLinks, link)
 		}
 	}
-	if len(at) == 0 {
+	if len(matchedLinks) == 0 {
 		out := CreateDefaultPreset()
 		if out.Problems, err = r.readRolelessProblems(ctx, v, deck); err != nil {
 			return PresetContents{}, err
@@ -216,11 +216,11 @@ func (r *PresetReads) getSchedulingPreset(
 		return out, nil
 	}
 
-	first := at[0]
-	by := first.Target.GetWritten()
+	first := matchedLinks[0]
+	delta := first.Target.GetWritten()
 	out := CreateDefaultPreset()
 	if first.To != "" {
-		by = first.To
+		delta = first.To
 		if out, err = r.read(ctx, v, first.To); err != nil {
 			return PresetContents{}, err
 		}
@@ -230,11 +230,11 @@ func (r *PresetReads) getSchedulingPreset(
 			out.Path = ""
 		}
 	} else {
-		out.Problems = []string{by + " reaches no note, and the defaults stand"}
+		out.Problems = []string{delta + " reaches no note, and the defaults stand"}
 	}
-	if len(at) > 1 {
+	if len(matchedLinks) > 1 {
 		out.Problems = append(slices.Clone(out.Problems),
-			"this deck names more than one preset, and is scheduled by "+by)
+			"this deck names more than one preset, and is scheduled by "+delta)
 	}
 	return out, nil
 }
@@ -269,21 +269,20 @@ func (r *PresetReads) readRolelessProblems(ctx context.Context, v domain.Vault, 
 
 // read is the preset at path, opened once however many decks name it.
 func (r *PresetReads) read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
-	if target, ok := r.held[path]; ok {
+	if target, ok := r.cachedPresets[path]; ok {
 		return target, nil
 	}
 	out, err := r.Read(ctx, v, path)
 	if err != nil {
 		return PresetContents{}, err
 	}
-	r.held[path] = out
+	r.cachedPresets[path] = out
 	return out, nil
 }
 
 // Read reads the preset at path.
 //
 // An error is the vault being out of reach. What is wrong with the note itself
-// is an outcome or a problem, and the preset stands at the defaults.
 func (u Presets) Read(ctx context.Context, v domain.Vault, path string) (PresetContents, error) {
 	out, err := u.readPreset(ctx, v, path)
 	if err != nil {

@@ -6,7 +6,12 @@ import { describe, expect, it } from 'vitest'
 import type { Bounds } from '@/shared/lib/bounds'
 import { isWalkingKey, stepForKey } from './track'
 
-const bounds = (over: Partial<Bounds> = {}): Bounds => ({ min: 0, max: 100, step: 1, ...over })
+const bounds = (overrides: Partial<Bounds> = {}): Bounds => ({
+  min: 0,
+  max: 100,
+  step: 1,
+  ...overrides,
+})
 
 describe('the keys the handle walks under', () => {
   it('are the arrows, the page keys and the ends', () => {

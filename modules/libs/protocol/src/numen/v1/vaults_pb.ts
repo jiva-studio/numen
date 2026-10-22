@@ -78,7 +78,6 @@ export const ListVaultsRequestSchema: GenMessage<ListVaultsRequest> = /*@__PURE_
 
 /**
  * ListVaultsResponse is the list itself, which is the same for every window.
- * Which vault a window is showing is asked of that window.
  *
  * @generated from message numen.v1.ListVaultsResponse
  */
@@ -330,7 +329,6 @@ export const OpenVaultRequestSchema: GenMessage<OpenVaultRequest> = /*@__PURE__*
  */
 export type OpenVaultResponse = Message<"numen.v1.OpenVaultResponse"> & {
   /**
-   * Set when the window is showing what it was, and why.
    *
    * @generated from field: optional numen.v1.VaultsErrorCode error = 1;
    */
@@ -395,7 +393,6 @@ export enum VaultsErrorCode {
   LAST_VAULT = 5,
 
   /**
-   * It is the vault this window is showing.
    *
    * @generated from enum value: VAULTS_ERROR_CODE_SHOWING = 6;
    */
@@ -433,7 +430,6 @@ export const VaultsErrorCodeSchema: GenEnum<VaultsErrorCode> = /*@__PURE__*/
 
 /**
  * VaultsService answers about the vaults this installation holds, and changes
- * which of them a window is showing.
  *
  * @generated from service numen.v1.VaultsService
  */

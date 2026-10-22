@@ -38,7 +38,9 @@ describe('a frame told to play from a moment', () => {
 
   it('is sent nothing where the address has no origin or there is no frame', () => {
     const dispatched: unknown[] = []
-    const target = { postMessage: (...args: unknown[]) => dispatched.push(args) } as unknown as Window
+    const target = {
+      postMessage: (...args: unknown[]) => dispatched.push(args),
+    } as unknown as Window
 
     seekFrame(target, 'not-a-url', 1_000)
     seekFrame(null, 'http://127.0.0.1:9/x', 1_000)

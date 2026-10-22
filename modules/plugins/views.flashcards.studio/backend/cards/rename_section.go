@@ -18,9 +18,9 @@ func NewRenameSection(read Read, write Write) RenameSection {
 }
 
 func (u RenameSection) Execute(
-	ctx context.Context, v domain.Vault, at DeckVersion, section int, name string,
+	ctx context.Context, v domain.Vault, version DeckVersion, section int, name string,
 ) (EditResult, error) {
-	changed, err := changeDeck(ctx, u.read, u.write, v, at, func(_ DeckContents, file *format.DeckFile) error {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
 		return file.RenameSection(section, name)
 	})
 	return changed.result, err

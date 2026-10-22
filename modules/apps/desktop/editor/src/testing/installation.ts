@@ -4,7 +4,7 @@ import type { Model, PluginInfo } from '@/entities/settings'
 import type { Installation } from '@/pages/settings/types'
 
 /** An installation whose calls are recorded and which holds the defaults, with what a test cares about put over it. */
-export const createInstallation = (over: Partial<Installation> = {}): Installation => ({
+export const createInstallation = (overrides: Partial<Installation> = {}): Installation => ({
   getSetting: () => undefined,
   getModels: () => [],
   write: fn(),
@@ -29,14 +29,14 @@ export const createInstallation = (over: Partial<Installation> = {}): Installati
   headings: ref(6),
   headingsBounds: ref({ least: 1, most: 12 }),
   chooseHeadings: fn(),
-  ...over,
+  ...overrides,
 })
 
 /** A plugin the installation lists, with what a test cares about put over the defaults. */
 export const createPluginInfo = (
   id: string,
   name: string,
-  over: Partial<PluginInfo> = {},
+  overrides: Partial<PluginInfo> = {},
 ): PluginInfo => ({
   id,
   name,
@@ -48,7 +48,7 @@ export const createPluginInfo = (
   secrets: [],
   storedSecrets: [],
   consent: 'none',
-  ...over,
+  ...overrides,
 })
 
 /** A program a plugin lists, and the models it reports. */
@@ -60,7 +60,7 @@ export interface ProgramFixture {
   readonly models?: readonly { readonly name: string; readonly title: string }[]
 }
 
-const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
+const createModel = (at: readonly string[], overrides: Partial<Model>): Model => ({
   namedAt: at,
   name: '',
   title: '',
@@ -68,7 +68,7 @@ const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
   isDefault: false,
   writes: [],
   presence: 'nothing to fetch',
-  ...over,
+  ...overrides,
 })
 
 /**
@@ -78,24 +78,29 @@ const createModel = (at: readonly string[], over: Partial<Model>): Model => ({
  */
 export const createProgramModels =
   (programs: readonly ProgramFixture[]) =>
-  (at: readonly string[]): readonly Model[] => {
-    if (at.join('.') === 'agent.use') {
+  (settingPath: readonly string[]): readonly Model[] => {
+    if (settingPath.join('.') === 'agent.use') {
       return [
         ...programs.map((one) =>
-          createModel(at, { name: one.name, title: one.title, isDefault: one.isDefault ?? false }),
+          createModel(settingPath, {
+            name: one.name,
+            title: one.title,
+            isDefault: one.isDefault ?? false,
+          }),
         ),
-        createModel(at, {
+        createModel(settingPath, {
           title: 'Nothing answers',
           isDefault: !programs.some((one) => one.isDefault),
         }),
       ]
     }
     const program = programs.find(
-      (one) => at.length === 3 && one.name === at[1] && at[2] === 'model',
+      (one) =>
+        settingPath.length === 3 && one.name === settingPath[1] && settingPath[2] === 'model',
     )
     if (!program) return []
     return [
-      createModel(at, { title: 'Whatever this machine answers with', isDefault: true }),
-      ...(program.models ?? []).map((one) => createModel(at, one)),
+      createModel(settingPath, { title: 'Whatever this machine answers with', isDefault: true }),
+      ...(program.models ?? []).map((one) => createModel(settingPath, one)),
     ]
   }

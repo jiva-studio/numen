@@ -1,5 +1,3 @@
-/** Where rows let go at a height land, and which landings are refused. */
-
 import type { Row, RowId, ShownRow } from './row'
 
 /**
@@ -9,7 +7,8 @@ import type { Row, RowId, ShownRow } from './row'
 export type RowDropTarget = { readonly into: RowId | null } | { readonly before: RowId }
 
 /** The row a drop target names, and nothing for the top level. */
-const getTargetRow = (at: RowDropTarget): RowId | null => ('into' in at ? at.into : at.before)
+const getTargetRow = (target: RowDropTarget): RowId | null =>
+  'into' in target ? target.into : target.before
 
 export interface DropMetrics {
   readonly y: number
@@ -45,23 +44,28 @@ function findBand(
 ): RowDropTarget | null {
   if (height <= 0 || y < 0) return null
 
-  const at = Math.floor(y / height)
-  const row = visibleRows[at]
+  const index = Math.floor(y / height)
+  const row = visibleRows[index]
   if (!row) return { into: null }
 
-  const band = y - at * height
+  const band = y - index * height
   const edge = row.hasChildren ? height / 4 : height / 2
 
   if (band < edge) return { before: row.id }
   if (band < height - edge) return { into: row.id }
 
-  const next = visibleRows[at + 1]
+  const next = visibleRows[index + 1]
   return next ? { before: next.id } : { into: null }
 }
 
 /** The row a drop target puts what is held inside. Null at the top level. */
-export const findHolder = (visibleRows: readonly ShownRow[], at: RowDropTarget): RowId | null =>
-  'into' in at ? at.into : (visibleRows.find((row) => row.id === at.before)?.parent ?? null)
+export const findHolder = (
+  visibleRows: readonly ShownRow[],
+  target: RowDropTarget,
+): RowId | null =>
+  'into' in target
+    ? target.into
+    : (visibleRows.find((row) => row.id === target.before)?.parent ?? null)
 
 /**
  * Rows cannot land in one of themselves, nor in anything one of them holds.

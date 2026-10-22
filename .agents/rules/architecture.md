@@ -55,7 +55,7 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 
 ## 4. The interface hexagon & Feature-Sliced Design (FSD)
 
-**How an interface component is built*, *The component library is shadcn-vue*, *A file of the windows stands on a layer*.*
+**How an interface component is built*, *The component library is shadcn-vue*, *A file of the windows belongs to a layer*.*
 
 The frontend is structured into **six FSD layers**:
 

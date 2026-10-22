@@ -16,10 +16,10 @@ type AddCard struct {
 func NewAddCard(read Read, write Write) AddCard { return AddCard{read: read, write: write} }
 
 func (u AddCard) Execute(
-	ctx context.Context, v domain.Vault, at DeckVersion, stencil string, values []format.Value, section *int,
+	ctx context.Context, v domain.Vault, version DeckVersion, stencil string, values []format.Value, section *int,
 ) (AddedCard, error) {
 	position := 0
-	changed, err := changeDeck(ctx, u.read, u.write, v, at, func(contents DeckContents, file *format.DeckFile) error {
+	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
 		card := format.Card{StencilLink: stencil, Values: values}
 		if section == nil {
 			position = len(contents.Body.Cards)
@@ -35,5 +35,5 @@ func (u AddCard) Execute(
 	if err != nil {
 		return AddedCard{}, err
 	}
-	return AddedCard{EditResult: changed.result, Mark: getMark(changed.given, position)}, nil
+	return AddedCard{EditResult: changed.result, Mark: getMark(changed.marks, position)}, nil
 }

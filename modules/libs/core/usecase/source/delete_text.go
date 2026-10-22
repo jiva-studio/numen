@@ -14,11 +14,11 @@ import (
 // as it was, pointing where it points, and the copy downloaded for it is
 // untouched.
 func (u ImportURL) DeleteText(ctx context.Context, v domain.Vault, path string) error {
-	at, _, store, err := u.readURLFile(ctx, v, path)
+	pos, _, store, err := u.readURLFile(ctx, v, path)
 	if err != nil {
 		return err
 	}
-	if err := dropDownloads(ctx, store, text.Fingerprint([]byte(string(at)))); err != nil {
+	if err := dropDownloads(ctx, store, text.Fingerprint([]byte(string(pos)))); err != nil {
 		return err
 	}
 	return u.cut(ctx, v, path)

@@ -187,7 +187,7 @@ func TestFilenameRejectsATitleThatPreservesNoFilename(t *testing.T) {
 		if name != "" || exact {
 			t.Errorf("%q was filed as %q, exact %v", title, name, exact)
 		}
-		if err != nil && !strings.Contains(err.Error(), "nothing a file can be named after") {
+		if err != nil && !strings.Contains(err.Error(), "generates empty filename") {
 			t.Errorf("%q: the reason is lost: %v", title, err)
 		}
 	}

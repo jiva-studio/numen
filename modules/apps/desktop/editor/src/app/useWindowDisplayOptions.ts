@@ -57,7 +57,7 @@ export function createTargetResolver(
       file,
       source: on?.source ?? null,
       made: getMade(file),
-      vault: getVaults().shown.value,
+      vault: getVaults().activeVault.value,
       isReady: !window.failure.value,
     }
   }

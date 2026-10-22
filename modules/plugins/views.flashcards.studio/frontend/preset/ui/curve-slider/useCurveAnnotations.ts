@@ -17,14 +17,14 @@ import { WORDS as words } from '../../words'
 interface CalloutOptions {
   curve: Curve
   place: number
-  at: Position | null
+  position: Position | null
   value: number
 }
 
 function createCalloutData(options: CalloutOptions) {
-  const { curve, place, at, value } = options
+  const { curve, place, position, value } = options
   const point = curve.at[place]
-  if (!curve.isHonest || !at || !point) return null
+  if (!curve.isHonest || !position || !point) return null
   const backlog = getBacklogRun(curve, place)
   const lines = words.buys(curve.goal, {
     value,
@@ -35,7 +35,7 @@ function createCalloutData(options: CalloutOptions) {
     short: point.short,
     cards: curve.cards,
   })
-  return { lines, ...createCallout(at) }
+  return { lines, ...createCallout(position) }
 }
 
 function createMarks(goal: Goal, knob: Position | null, suggested: Position | null): Mark[] {
@@ -84,8 +84,8 @@ export function useCurveAnnotations(
     createCalloutData({
       curve: props.curve,
       place: props.place,
-      at: plot.knob.value,
-      value: plot.held.value,
+      position: plot.knob.value,
+      value: plot.heldValue.value,
     }),
   )
 
@@ -98,14 +98,14 @@ export function useCurveAnnotations(
         places: plot.positions.value,
         marks: marks.value.map((one) => one.at),
         // Stryker disable next-line LogicalOperator: Null coalescing preserves box bounding rect when present.
-        over: callout.value?.box ?? null,
+        calloutBox: callout.value?.box ?? null,
       },
       (value: number) => words.formatGoalCost(props.curve.goal, value),
     ),
   )
 
   const knobStyle = computed(() => getKnobValueStyle(plot.knob.value))
-  const atKnob = computed(() => words.formatGoalValue(props.curve.goal, plot.held.value))
+  const atKnob = computed(() => words.formatGoalValue(props.curve.goal, plot.heldValue.value))
   const counts = computed(() => (props.material ? words.material(props.material) : []))
   const learning = computed(() => {
     const point = props.curve.at[props.place]
@@ -128,6 +128,6 @@ export function useCurveAnnotations(
     counts,
     learning,
     ...bounds,
-    value: computed(() => plot.held.value),
+    value: computed(() => plot.heldValue.value),
   }
 }

@@ -55,11 +55,11 @@ func writeRecognition(t *testing.T) (raw []byte, parts []byte) {
 
 	var found []domain.OCRPart
 	for _, n := range named {
-		at := strings.Index(prose, n.heading)
-		if at < 0 {
+		pos := strings.Index(prose, n.heading)
+		if pos < 0 {
 			t.Fatalf("the artifact does not carry the heading %q", n.heading)
 		}
-		found = append(found, domain.OCRPart{Start: at, Length: len(n.heading), Depth: n.depth})
+		found = append(found, domain.OCRPart{Start: pos, Length: len(n.heading), Depth: n.depth})
 	}
 	return raw, ocr.Pack(found)
 }

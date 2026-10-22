@@ -12,7 +12,7 @@ import (
 // and then the lock.
 type resident struct {
 	mu       sync.Mutex
-	by       port.Transcriber
+	provider port.Transcriber
 	letGo    func() error
 	release  func()
 	isParked bool
@@ -23,10 +23,10 @@ type resident struct {
 }
 
 // hold takes the models in use.
-func (r *resident) hold(by port.Transcriber, letGo func() error, release func()) {
+func (r *resident) hold(delta port.Transcriber, letGo func() error, release func()) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	r.by, r.letGo, r.release = by, letGo, release
+	r.provider, r.letGo, r.release = delta, letGo, release
 	r.isParked = false
 }
 
@@ -34,7 +34,7 @@ func (r *resident) hold(by port.Transcriber, letGo func() error, release func())
 func (r *resident) take() (port.Transcriber, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if r.by == nil || !r.isParked {
+	if r.provider == nil || !r.isParked {
 		return nil, false
 	}
 	r.isParked = false
@@ -42,7 +42,7 @@ func (r *resident) take() (port.Transcriber, bool) {
 	if r.cancel != nil {
 		r.cancel()
 	}
-	return r.by, true
+	return r.provider, true
 }
 
 // park leaves the models loaded and closes them when idle passes with no take.
@@ -77,12 +77,12 @@ func (r *resident) closeLocked() error {
 		r.cancel()
 		r.cancel = nil
 	}
-	if r.by == nil {
+	if r.provider == nil {
 		return nil
 	}
 	err := r.letGo()
 	r.release()
-	r.by, r.letGo, r.release, r.isParked = nil, nil, nil, false
+	r.provider, r.letGo, r.release, r.isParked = nil, nil, nil, false
 	r.generation++
 	return err
 }

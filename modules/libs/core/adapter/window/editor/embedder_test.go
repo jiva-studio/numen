@@ -165,9 +165,9 @@ func TestAVaultReturnsWhatItIsDoingWhileItReadsItself(t *testing.T) {
 		t.Errorf("a vault just opened is doing %+v, want the walk of its notes", list)
 	}
 	// Nobody asked for it, so it is drawn once it has lasted.
-	for _, at := range list {
-		if at.IsUserStarted {
-			t.Errorf("%q says a person asked for it", at.Title)
+	for _, item := range list {
+		if item.IsUserStarted {
+			t.Errorf("%q says a person asked for it", item.Title)
 		}
 	}
 

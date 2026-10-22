@@ -61,7 +61,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     windowTabs,
     getTarget: deps.getTarget,
     knows: deps.knows,
-    kept: settings.kept,
+    kept: settings.paletteLists,
     runs: deps.runs,
     coverage: vaultsModule.coverage,
     making: editing.making,
@@ -72,7 +72,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reached: editing.reached,
     openPreset: (path) =>
       openCommandTab({ vaultCore: core, windowTabs, writeMessage }, path, 'preset'),
-    dressed: settings.dressed,
+    appearance: settings.appearance,
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
@@ -101,15 +101,15 @@ interface AppLifecycleDeps {
 function initAppLifecycle(deps: AppLifecycleDeps) {
   const { vaultsModule, windowTabs, settings, window, editing } = deps
   const startLayout = async () => {
-    if (!vaultsModule.shown.value.id) return
+    if (!vaultsModule.activeVault.value.id) return
     const search = typeof globalThis.location !== 'undefined' ? globalThis.location.search : ''
     const params = search ? new URLSearchParams(search) : null
     const initialTab = params?.get('tab')
     if (initialTab) {
       const colonIdx = initialTab.indexOf(':')
       const kind = colonIdx !== -1 ? initialTab.slice(0, colonIdx) : initialTab
-      const at = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
-      const openedTab = await windowTabs.openTabOfKind(kind, at)
+      const target = colonIdx !== -1 ? initialTab.slice(colonIdx + 1) : ''
+      const openedTab = await windowTabs.openTabOfKind(kind, target)
       if (openedTab) {
         windowTabs.layout.value = {
           root: { kind: 'pane', id: 'main', tabs: [openedTab], active: openedTab },
@@ -341,7 +341,7 @@ export const useWindow = () => {
     fileFlush: editing.fileFlush,
     windowTabs: base.windowTabs,
     layout: base.windowTabs.layout,
-    listed: ctx.vaults.listed,
+    vaultList: ctx.vaults.vaultList,
     log: base.log,
     notices,
     statusBar,

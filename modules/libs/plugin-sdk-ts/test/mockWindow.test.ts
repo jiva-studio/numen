@@ -5,8 +5,8 @@ const register = (window: ReturnType<typeof createMockTabWindow>, canClose = tru
   window.register({
     kind: 'sample',
     component: {},
-    open: (at) => ({ at }),
-    identity: (at) => at,
+    open: (target) => ({ target }),
+    identity: (target) => target,
     onClose: () => canClose,
   })
 }
@@ -19,7 +19,7 @@ describe('the mock tab window', () => {
     const id = await window.openTab('sample', 'a.md')
 
     expect(id).toBe('sample:a.md')
-    expect(window.getTabState(id)).toStrictEqual({ at: 'a.md' })
+    expect(window.getTabState(id)).toStrictEqual({ target: 'a.md' })
   })
 
   it('opens the same thing twice as the tab it has', async () => {

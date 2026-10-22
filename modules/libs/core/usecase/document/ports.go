@@ -11,11 +11,11 @@ import (
 // VaultReaders reads the files of a vault.
 type VaultReaders = port.VaultReaders
 
-// Scan is a document held open, for the length of one call.
+// Scan represents an open document during a single operation.
 type Scan interface {
 	GetPageCount() int
-	GetPageSize(index int) (wide, high float64, err error)
-	// Render draws one page as wide as was asked for, in pixels.
+	GetPageSize(index int) (width, height float64, err error)
+	// Render draws one page scaled to target pixel width.
 	Render(index, width int) (image.Image, error)
 }
 

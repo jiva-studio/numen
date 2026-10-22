@@ -31,30 +31,31 @@ export type BuyFact =
  * about the overdue, since every card is to be got through by that day; where
  * nothing is overdue there is no such fact either.
  */
-export function getBuyFacts(goal: Goal, at: BuyInput): readonly BuyFact[] {
+export function getBuyFacts(goal: Goal, input: BuyInput): readonly BuyFact[] {
   if (goal === 'date') {
     const facts: BuyFact[] = [
-      { kind: 'daysOff', days: at.value },
-      { kind: 'minutesADay', minutes: at.minutes },
+      { kind: 'daysOff', days: input.value },
+      { kind: 'minutesADay', minutes: input.minutes },
     ]
-    if (at.short > 0) facts.push({ kind: 'cannotGetThere', short: at.short, cards: at.cards })
+    if (input.short > 0)
+      facts.push({ kind: 'cannotGetThere', short: input.short, cards: input.cards })
     return facts
   }
   const facts: BuyFact[] =
     goal === 'minutes'
       ? [
-          { kind: 'minutesADay', minutes: at.value },
-          { kind: 'cardsASession', cards: at.reviews },
+          { kind: 'minutesADay', minutes: input.value },
+          { kind: 'cardsASession', cards: input.reviews },
         ]
       : [
-          { kind: 'remembered', share: at.value },
-          { kind: 'minutesADay', minutes: at.minutes },
+          { kind: 'remembered', share: input.value },
+          { kind: 'minutesADay', minutes: input.minutes },
         ]
-  if (at.clears === null) return facts
+  if (input.clears === null) return facts
   facts.push(
-    at.clears < 0
-      ? { kind: 'overdueStays', horizon: at.horizon }
-      : { kind: 'overdueGone', days: at.clears },
+    input.clears < 0
+      ? { kind: 'overdueStays', horizon: input.horizon }
+      : { kind: 'overdueGone', days: input.clears },
   )
   return facts
 }

@@ -31,8 +31,7 @@ type HighlightBox struct {
 const (
 	// sameLine is how much of their height two characters of one line share.
 	sameLine = 0.5
-	// wordGap is the distance a space stands in, as a fraction of that height.
-	wordGap = 0.25
+	wordGap  = 0.25
 )
 
 // Highlights is where the words of some pages of the document sit: one box a
@@ -100,15 +99,15 @@ func (d *document) words(index, offset int) []HighlightBox {
 	}
 
 	collector := &wordReading{sheet: sheet, index: index}
-	at := offset
+	pos := offset
 	for _, char := range read.Chars {
 		text := char.Text
 		// gomutants:disable-next-line BRANCH_IF reason="empty characters are skipped"
 		if text == "" {
 			continue
 		}
-		collector.add(at, len(text), char.PointPosition, strings.TrimSpace(text) == "")
-		at += len(text)
+		collector.add(pos, len(text), char.PointPosition, strings.TrimSpace(text) == "")
+		pos += len(text)
 	}
 	collector.finish()
 	return collector.boxes
@@ -128,7 +127,7 @@ type wordReading struct {
 
 // add takes the next character, which begins at the given place in the text. A
 // space ends a word, and so does a character covering nothing.
-func (r *wordReading) add(at, size int, mark responses.CharPosition, isSpace bool) {
+func (r *wordReading) add(pos, size int, mark responses.CharPosition, isSpace bool) {
 	if isSpace || mark.Right <= mark.Left || mark.Top <= mark.Bottom {
 		r.finish()
 		return
@@ -137,7 +136,7 @@ func (r *wordReading) add(at, size int, mark responses.CharPosition, isSpace boo
 		r.finish()
 	}
 	if r.length == 0 {
-		r.start, r.word = at, mark
+		r.start, r.word = pos, mark
 	} else {
 		r.word = extendWord(r.word, mark)
 	}

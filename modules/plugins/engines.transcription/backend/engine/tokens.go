@@ -34,14 +34,14 @@ func tokens(path string) (pieces, error) {
 		if len(field) != 2 {
 			continue
 		}
-		at, err := strconv.Atoi(field[1])
-		if err != nil || at < 0 {
+		pos, err := strconv.Atoi(field[1])
+		if err != nil || pos < 0 {
 			continue
 		}
-		for len(out) <= at {
+		for len(out) <= pos {
 			out = append(out, "")
 		}
-		out[at] = strings.ReplaceAll(field[0], wordMark, " ")
+		out[pos] = strings.ReplaceAll(field[0], wordMark, " ")
 	}
 	if err := lines.Err(); err != nil {
 		return nil, err
@@ -65,16 +65,16 @@ func (p pieces) getIndex(piece string) int {
 
 // text is what a run of tokens says. A token the model knows and this file does
 // not is left out.
-func (p pieces) text(said []int) string {
+func (p pieces) text(response []int) string {
 	size := 0
-	for _, token := range said {
+	for _, token := range response {
 		if token >= 0 && token < len(p) {
 			size += len(p[token])
 		}
 	}
 	var out strings.Builder
 	out.Grow(size)
-	for _, token := range said {
+	for _, token := range response {
 		if token >= 0 && token < len(p) {
 			out.WriteString(p[token])
 		}

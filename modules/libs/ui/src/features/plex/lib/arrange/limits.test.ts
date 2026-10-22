@@ -214,9 +214,11 @@ describe('given no window', () => {
 
 describe('what a column asks of the rows', () => {
   const viewport = { width: 1000, height: 800 }
-  const getRows = (jump: number, over: Partial<typeof DEFAULT_OPTIONS> = {}) =>
-    getLimits({ ...DEFAULT_OPTIONS, viewport, ...over }, { parent: 0, child: 12, jump, sibling: 0 })
-      .child.perLine
+  const getRows = (jump: number, overrides: Partial<typeof DEFAULT_OPTIONS> = {}) =>
+    getLimits(
+      { ...DEFAULT_OPTIONS, viewport, ...overrides },
+      { parent: 0, child: 12, jump, sibling: 0 },
+    ).child.perLine
 
   it.each([1, 2, 3])(
     'leaves the row whole beside a column of %i, which stays level with the focus',
@@ -255,7 +257,7 @@ describe('what a column asks of the rows', () => {
     expect(limits.child.perLine).toBe(6)
   })
 
-  it('gives a box wider than the window a row of one', () => {
+  it('assigns single row when box exceeds window width', () => {
     const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,
@@ -267,7 +269,7 @@ describe('what a column asks of the rows', () => {
     expect(limits.child.perLine).toBe(1)
   })
 
-  it('gives a focus wider than the window a row of one', () => {
+  it('assigns single row when focus exceeds window width', () => {
     const limits = getLimits(
       {
         ...DEFAULT_OPTIONS,

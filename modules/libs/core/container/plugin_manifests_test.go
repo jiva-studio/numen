@@ -593,7 +593,6 @@ var validPluginKinds = []string{
 }
 
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
-// with md.numen., the folder is the id without md.numen., no hyphen stands in the
 // id, and the kind is one of agents, readers, editors, views, engines or tools.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string

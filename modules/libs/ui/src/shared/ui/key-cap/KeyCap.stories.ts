@@ -65,7 +65,9 @@ export const EveryIcon: Story = {
       // The line the letter is set on is the middle of the box holding it,
       // which is one line-height tall whatever the face.
       const line = cap.querySelector('span[aria-hidden="true"]')!.getBoundingClientRect()
-      await expect(Math.abs(line.top + line.height / 2 - middle) / activeSet).toBeLessThanOrEqual(0.02)
+      await expect(Math.abs(line.top + line.height / 2 - middle) / activeSet).toBeLessThanOrEqual(
+        0.02,
+      )
 
       // One line: an icon's ink is centred on that line, within a fiftieth of
       // the type the cap is set in. What is left over is the asymmetry of the
@@ -112,13 +114,17 @@ export const Dark: Story = {
     // A cap keeps a ground of its own, told from the surface the row of them
     // relies on, and is read in ink standing above that ground — which is the
     // way round the dark set is written.
-    const behindColor = getComputedStyle(canvasElement.ownerDocument.documentElement).backgroundColor
+    const behindColor = getComputedStyle(
+      canvasElement.ownerDocument.documentElement,
+    ).backgroundColor
     const surface = lightness(behindColor)
     for (const cap of caps) {
       const renderedStyle = getComputedStyle(cap)
       const ground = lightness(renderedStyle.backgroundColor, behindColor)
       await expect(Math.abs(ground - surface)).toBeGreaterThan(4)
-      await expect(lightness(renderedStyle.color, renderedStyle.backgroundColor)).toBeGreaterThan(ground + 24)
+      await expect(lightness(renderedStyle.color, renderedStyle.backgroundColor)).toBeGreaterThan(
+        ground + 24,
+      )
     }
   },
 }

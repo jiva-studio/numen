@@ -23,8 +23,8 @@ export default meta
 type Story = StoryObj<typeof meta>
 type Render = NonNullable<Story['render']>
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'asked', text })
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'answered', text })
+const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
+const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
 
 /**
  * The thread takes what height is left and scrolls inside it; the composer
@@ -62,8 +62,8 @@ const conversation =
         const index = turns.value.findIndex((turn) => turn.id === id)
         if (index < 0) return
         turns.value[index] = isDone
-          ? { id, voice: 'answered', text: soFar }
-          : { id, voice: 'answered', text: soFar, state: 'arriving' }
+          ? { id, voice: 'response', text: soFar }
+          : { id, voice: 'response', text: soFar, state: 'arriving' }
       }
 
       const settle = () => {
@@ -78,14 +78,14 @@ const conversation =
         isWorking.value = true
 
         const id = `${next++}`
-        turns.value.push({ id, voice: 'answered', text: '', state: 'arriving' })
+        turns.value.push({ id, voice: 'response', text: '', state: 'arriving' })
 
         const reply = `You asked about “${message}”. ${LONG}`
-        let at = 0
+        let offset = 0
         tick = setInterval(() => {
-          at = Math.min(reply.length, at + 3)
-          const isDone = at === reply.length
-          putTurn(id, reply.slice(0, at), isDone)
+          offset = Math.min(reply.length, offset + 3)
+          const isDone = offset === reply.length
+          putTurn(id, reply.slice(0, offset), isDone)
           if (isDone) settle()
         }, 16)
       }

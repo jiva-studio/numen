@@ -18,7 +18,6 @@ import (
 var errNoMode = errors.New("a search says how it is asked")
 
 // errTooManyPaths is a filter naming more paths than are answered at once. The
-// whole filter is refused, and no part of it is answered.
 var errTooManyPaths = errors.New("that is more paths than are answered at once")
 
 // How many answers a client gets when it names no number, and the most it may
@@ -111,11 +110,11 @@ func (h *searchHandler) SearchPassages(
 		// words about the first run that matched. A hit by meaning relies on no
 		// word, and the window opens where the chunk that matched begins.
 		read, matched := nearby(p.Text, p.HitAt)
-		text, at := getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
+		text, pos := getTextAround(read, spans(read, query), markdown.CountUTF16(read, matched))
 		passage := &v1.Passage{
 			Path:     p.Source,
 			Text:     text,
-			Spans:    convertUnitSpansToWire(at),
+			Spans:    convertUnitSpansToWire(pos),
 			Location: p.Location,
 			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
@@ -156,7 +155,6 @@ func atMost(limit int32) int {
 }
 
 // eachOnce is the paths a client asked about, each named once. A filter past
-// the ceiling is refused: each path costs a round trip of its own, and an
 // answer cut to fit says nothing about which paths were left out.
 func eachOnce(paths []string) ([]string, error) {
 	observed := make(map[string]bool, len(paths))
@@ -191,17 +189,17 @@ func getPassageSources(found []domain.Passage) []string {
 // convertByteSpansToWire and convertUnitSpansToWire both write runs onto the
 // wire. They are two functions because the runs are counted in two different
 // things, and the field the answer carries them in says which.
-func convertByteSpansToWire(at []domain.ByteSpan) []*v1.Span {
-	out := make([]*v1.Span, 0, len(at))
-	for _, span := range at {
+func convertByteSpansToWire(pos []domain.ByteSpan) []*v1.Span {
+	out := make([]*v1.Span, 0, len(pos))
+	for _, span := range pos {
 		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
 	}
 	return out
 }
 
-func convertUnitSpansToWire(at []domain.UnitSpan) []*v1.Span {
-	out := make([]*v1.Span, 0, len(at))
-	for _, span := range at {
+func convertUnitSpansToWire(pos []domain.UnitSpan) []*v1.Span {
+	out := make([]*v1.Span, 0, len(pos))
+	for _, span := range pos {
 		out = append(out, &v1.Span{From: int32(span.From), To: int32(span.To)})
 	}
 	return out

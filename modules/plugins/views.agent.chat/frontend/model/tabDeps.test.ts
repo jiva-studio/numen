@@ -58,6 +58,6 @@ describe('what an agent tab asks of the window', () => {
     expect(deps.getSetting?.(['agent', 'use'])).toBe('zeta')
     expect(deps.getModelsAt?.(['agent', 'zeta', 'model'])).toStrictEqual([model])
     expect(deps.getModelsAt?.(['agent', 'nobody', 'model'])).toStrictEqual([])
-    expect(recorded.written).toStrictEqual([[['agent', 'use'], 'omega']])
+    expect(recorded.settings).toStrictEqual([[['agent', 'use'], 'omega']])
   })
 })

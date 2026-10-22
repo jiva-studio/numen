@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// spans is where each word typed stands in a passage, counted the way a client
 // counts text: in UTF-16 code units. The spans come in order and do not
 // overlap.
 //
@@ -23,7 +22,7 @@ func spans(text, query string) []domain.UnitSpan {
 	}
 	folded, units := getFoldedRunes(text)
 
-	var at []domain.UnitSpan
+	var offset []domain.UnitSpan
 	for i, word := range words {
 		wanted, _ := getFoldedRunes(word)
 		if len(wanted) == 0 {
@@ -38,10 +37,10 @@ func spans(text, query string) []domain.UnitSpan {
 			if !isWordStart(folded, from) || (whole && !isWordEnd(folded, to)) {
 				continue
 			}
-			at = append(at, domain.UnitSpan{From: units[from], To: units[to]})
+			offset = append(offset, domain.UnitSpan{From: units[from], To: units[to]})
 		}
 	}
-	return mergeSpans(at)
+	return mergeSpans(offset)
 }
 
 // isWordRune is what a word is made of, so that what stands either side of one is
@@ -58,20 +57,20 @@ func isCJKRune(r rune) bool {
 
 // isWordStart and isWordEnd say whether a span beginning or ending here is a whole
 // word's beginning or end. The ends of the text are both.
-func isWordStart(runes []rune, at int) bool { return at == 0 || !isWordRune(runes[at-1]) }
+func isWordStart(runes []rune, pos int) bool { return pos == 0 || !isWordRune(runes[pos-1]) }
 
-func isWordEnd(runes []rune, at int) bool { return at == len(runes) || !isWordRune(runes[at]) }
+func isWordEnd(runes []rune, pos int) bool { return pos == len(runes) || !isWordRune(runes[pos]) }
 
 // mergeSpans is the spans in the order they stand, with ones that touch or overlap
 // made into one. Two words typed can name the same characters.
-func mergeSpans(at []domain.UnitSpan) []domain.UnitSpan {
-	if len(at) < 2 {
-		return at
+func mergeSpans(pos []domain.UnitSpan) []domain.UnitSpan {
+	if len(pos) < 2 {
+		return pos
 	}
-	slices.SortFunc(at, func(a, b domain.UnitSpan) int { return a.From - b.From })
+	slices.SortFunc(pos, func(a, b domain.UnitSpan) int { return a.From - b.From })
 
-	out := at[:1]
-	for _, span := range at[1:] {
+	out := pos[:1]
+	for _, span := range pos[1:] {
 		last := &out[len(out)-1]
 		if span.From <= last.To {
 			last.To = max(last.To, span.To)
@@ -92,16 +91,16 @@ func getFoldedRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
-	at := 0
+	pos := 0
 	for _, r := range text {
 		runes = append(runes, unicode.ToLower(r))
-		units = append(units, at)
-		at++
+		units = append(units, pos)
+		pos++
 		if r > 0xffff {
-			at++
+			pos++
 		}
 	}
-	return runes, append(units, at)
+	return runes, append(units, pos)
 }
 
 // How much of a passage is drawn at most, and how much of that stands before
@@ -176,23 +175,23 @@ func getRunes(text string) ([]rune, []int) {
 	runes := make([]rune, 0, len(text))
 	units := make([]int, 0, len(text)+1)
 
-	at := 0
+	pos := 0
 	for _, r := range text {
 		runes = append(runes, r)
-		units = append(units, at)
-		at++
+		units = append(units, pos)
+		pos++
 		if r > 0xffff {
-			at++
+			pos++
 		}
 	}
-	return runes, append(units, at)
+	return runes, append(units, pos)
 }
 
 // getOpeningRune is the rune the window opens on: the last one beginning at or
 // before the offset given, so a cut never lands inside a character.
-func getOpeningRune(units []int, at int) int {
+func getOpeningRune(units []int, pos int) int {
 	for i := 1; i < len(units); i++ {
-		if units[i] > at {
+		if units[i] > pos {
 			return i - 1
 		}
 	}
@@ -201,9 +200,9 @@ func getOpeningRune(units []int, at int) int {
 
 // getClosingRune is the rune the window closes before: the first one beginning
 // at or after the offset given.
-func getClosingRune(units []int, at int) int {
+func getClosingRune(units []int, pos int) int {
 	for i := range units {
-		if units[i] >= at {
+		if units[i] >= pos {
 			return i
 		}
 	}
@@ -217,13 +216,12 @@ func getClosingRune(units []int, at int) int {
 const reach = 8 * glancing
 
 // nearby is the part of a passage the window is cut from, and where the hit
-// stands inside it.
 //
 // A passage is the whole of the window enclosing its hit, which for a section
 // of a book is the whole section. What is read is what a window can be cut
 // from.
-func nearby(text string, hit int) (string, int) {
-	from, to := hit-reach, hit+reach
+func nearby(text string, index int) (string, int) {
+	from, to := index-reach, index+reach
 	if from < 0 {
 		from = 0
 	}
@@ -236,5 +234,5 @@ func nearby(text string, hit int) (string, int) {
 	for to < len(text) && !utf8.RuneStart(text[to]) {
 		to++
 	}
-	return text[from:to], hit - from
+	return text[from:to], index - from
 }

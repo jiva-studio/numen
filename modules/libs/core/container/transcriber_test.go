@@ -82,9 +82,9 @@ func TestATranscriberThatCannotBeOpenedProducesTheReasonAndNothingElse(t *testin
 
 // A transcription is made with the transcriber it is given.
 func TestATranscriptionUsesTheTranscriberItIsGiven(t *testing.T) {
-	by := &struct{ port.Transcriber }{}
+	delta := &struct{ port.Transcriber }{}
 
-	if got := (Config{}).Transcribe(nil, by).By(); got != port.Transcriber(by) {
+	if got := (Config{}).Transcribe(nil, delta).By(); got != port.Transcriber(delta) {
 		t.Errorf("the transcriber is %v", got)
 	}
 }

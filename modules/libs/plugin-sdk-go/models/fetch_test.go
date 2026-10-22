@@ -46,20 +46,20 @@ func TestFetchPreservesAPinnedFileBelowItsSum(t *testing.T) {
 	r := request(t, srv.URL+"/m/model.onnx", sumOf("weights"))
 	r.Progress = func(what string, _, _ int64) { hasProgress = hasProgress || what == "model.onnx" }
 
-	at, err := Fetch(context.Background(), r)
+	modelPath, err := Fetch(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := filepath.Join(r.Dir, sumOf("weights")[:12]+"-model.onnx"); at != want {
-		t.Fatalf("Fetch() = %q, want %q", at, want)
+	if want := filepath.Join(r.Dir, sumOf("weights")[:12]+"-model.onnx"); modelPath != want {
+		t.Fatalf("Fetch() = %q, want %q", modelPath, want)
 	}
-	if got, _ := os.ReadFile(at); string(got) != "weights" {
+	if got, _ := os.ReadFile(modelPath); string(got) != "weights" {
 		t.Fatalf("file holds %q", got)
 	}
 	if !hasProgress {
 		t.Fatal("progress was not reported")
 	}
-	if _, err := os.Stat(at + ".part"); !os.IsNotExist(err) {
+	if _, err := os.Stat(modelPath + ".part"); !os.IsNotExist(err) {
 		t.Fatalf("part file remains: %v", err)
 	}
 }
@@ -82,29 +82,29 @@ func TestFetchConsumesAnUnpinnedFileAsNamed(t *testing.T) {
 	srv := serve(t, "anything")
 	r := request(t, srv.URL+"/model.onnx", "")
 
-	at, err := Fetch(context.Background(), r)
+	modelPath, err := Fetch(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if at != filepath.Join(r.Dir, GetCacheName(r.Address, "")) {
-		t.Fatalf("Fetch() = %q", at)
+	if modelPath != filepath.Join(r.Dir, GetCacheName(r.Address, "")) {
+		t.Fatalf("Fetch() = %q", modelPath)
 	}
 }
 
 func TestFetchReturnsAFileThatIsPresentWithoutTheNetwork(t *testing.T) {
 	r := request(t, "https://example.invalid/model.onnx", sumOf("weights"))
 	r.ShouldDownload = false
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(at, []byte("weights"), 0o644); err != nil {
+	if err := os.WriteFile(targetPath, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv(EnvOffline, "1")
 
 	got, err := Fetch(context.Background(), r)
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Fetch() = %q, %v", got, err)
 	}
 }
@@ -266,8 +266,8 @@ func TestFetchRejectsAPresentPinnedFileWithAnotherSum(t *testing.T) {
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
-	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(targetPath, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := Fetch(context.Background(), r); err == nil || !strings.Contains(err.Error(), "pinned") {
@@ -308,16 +308,16 @@ func TestFetchReplacesAPresentPinnedFileWithAnotherSumWhenDownloadsAreAllowed(t 
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
-	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(targetPath, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := Fetch(context.Background(), r)
-	if err != nil || got != at {
+	if err != nil || got != targetPath {
 		t.Fatalf("Fetch() = %q, %v", got, err)
 	}
-	if body, _ := os.ReadFile(at); string(body) != "weights" {
+	if body, _ := os.ReadFile(targetPath); string(body) != "weights" {
 		t.Fatalf("file holds %q", body)
 	}
 }
@@ -327,8 +327,8 @@ func TestFetchRejectsAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) 
 	if err := os.MkdirAll(r.Dir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
-	if err := os.WriteFile(at, []byte("corrupt"), 0o644); err != nil {
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	if err := os.WriteFile(targetPath, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	t.Setenv(EnvOffline, "1")
@@ -340,12 +340,12 @@ func TestFetchRejectsAPresentPinnedFileWithAnotherSumWhileOffline(t *testing.T) 
 func TestFetchNamesTheFileWithoutTheQueryOfItsAddress(t *testing.T) {
 	srv := serve(t, "weights")
 	r := request(t, srv.URL+"/model.onnx?download=true", "")
-	at, err := Fetch(context.Background(), r)
+	modelPath, err := Fetch(context.Background(), r)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.HasSuffix(at, "-model.onnx") {
-		t.Fatalf("Fetch() = %q", at)
+	if !strings.HasSuffix(modelPath, "-model.onnx") {
+		t.Fatalf("Fetch() = %q", modelPath)
 	}
 }
 

@@ -100,7 +100,6 @@ func TestAVaultsRulesNarrowAndNeverWiden(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Nothing brought into the vault is held to an extension, so a dotfile
 	// folder let back in is somewhere a program's own file lands.
 	err = writer.Import(t.Context(), ".git/hooks/pre-commit", strings.NewReader("#!/bin/sh\n"))
 	if !errors.Is(err, filesystem.ErrNotANote) {

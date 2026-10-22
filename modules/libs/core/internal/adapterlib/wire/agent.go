@@ -77,11 +77,11 @@ func convertSteps(step port.Step) []*v1.AskAgentResponse {
 		domain.StepRemove, domain.StepMove, domain.StepSearch:
 		return []*v1.AskAgentResponse{{Step: &v1.AskAgentResponse_ToolCall{
 			ToolCall: &v1.ToolCall{
-				Tool:    step.Tool,
-				About:   step.About,
-				Length:  int32(step.Count),
-				Path:    step.Place.Path,
-				Span:    convertSpan(step.Place.Spans),
+				Tool:   step.Tool,
+				About:  step.About,
+				Length: int32(step.Count),
+				Path:   step.Place.Path,
+				Span:   convertSpan(step.Place.Spans),
 			},
 		}}}
 	case domain.StepToolDone:

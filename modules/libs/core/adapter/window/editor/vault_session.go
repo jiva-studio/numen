@@ -46,7 +46,7 @@ type vaultSession struct {
 
 // errAnswerPending is a vault asked for while a page holds work a person is being
 // asked about.
-var errAnswerPending = errors.New("a page is holding work a person has to answer for")
+var errAnswerPending = errors.New("pending review confirmation")
 
 // Show puts a vault in the window: another in place of the one it has, or the
 // first where it is standing on nothing. The index and the embedder belong to
@@ -139,7 +139,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		return nil, err
 	}
 
-	watching, stop := context.WithCancel(o.under)
+	watching, stop := context.WithCancel(o.ctx)
 	recognising := o.made.OpenRecognitionWorker(watching, o.tasks, o.models)
 	sources := o.made.GetSourceQueries()
 
@@ -152,7 +152,6 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		return nil
 	}
 
-	// A proofreading stands at the page it reached, so one that ended among the
 	// batches is taken up when the application opens.
 	recognising.TakeUp(watching, sources, recognized...)
 
@@ -165,7 +164,6 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		transcribing.Queue(watching, sources, heardEvery, v)
 	}
 
-	// A transcript's proofreading stands at the line it reached, and is taken up
 	// here whether or not this installation listens to recordings on its own.
 	// Every vault this installation holds is asked after.
 	transcribing.TakeUp(watching, sources, recognized...)
@@ -212,14 +210,12 @@ func (o *Installation) stopVault() {
 	// anything reads what they wrote.
 	on.recognitionWorker.Wait()
 	on.transcriptionWorker.Wait()
-	// The documents held open go with the vault, and each gives back the worker
 	// it was holding.
 	if o.viewer != nil {
 		o.viewer.reset()
 	}
 }
 
-// resetStatus clears what the previous vault left behind: the transcript
 // about indexing it, and the entries its passes left in the list of what is
 // being done.
 //

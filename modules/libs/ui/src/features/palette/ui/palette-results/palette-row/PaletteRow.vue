@@ -37,9 +37,9 @@ defineSlots<{
     class="palette__item rounded-node flex items-center gap-2 px-2 py-1.5"
     role="option"
     :aria-selected="isCurrent"
-    :aria-disabled="row.item.disabled || undefined"
+    :aria-disabled="row.item.isDisabled || undefined"
     :data-here="isCurrent || undefined"
-    :data-disabled="row.item.disabled || undefined"
+    :data-disabled="row.item.isDisabled || undefined"
     @pointermove="emit('point-at', $event)"
     @pointerdown.prevent
     @click="emit('choose', $event.shiftKey)"
@@ -82,11 +82,6 @@ defineSlots<{
   gap: 0.1rem;
 }
 
-/* The room an icon takes, kept whether or not the row draws one, so the words
-   line up down the list. What is drawn in it is the caller's.
-
-   It stands on the name, centred against that one line, so the icons read down
-   the list beside the names on a row carrying a second line. */
 .palette__icon {
   align-self: start;
   margin-block-start: calc((1lh - var(--icon)) / 2);

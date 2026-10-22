@@ -33,7 +33,6 @@ const drawGutter = (times: { extension: Extension }) => {
 /** Everything queued as an editor attached has run. */
 const waitTick = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-/** What stands in the gutter, line by line. */
 const gutter = (view: EditorView): string[] =>
   [...view.dom.querySelectorAll('.cm-times .cm-gutterElement')].map((one) => one.textContent ?? '')
 
@@ -329,7 +328,8 @@ const recordEffects = (view: EditorView) => {
 }
 
 /** The dispatches that asked the view to move. */
-const moves = (observed: StateEffect<unknown>[][]) => observed.filter((effects) => effects.length > 1)
+const moves = (observed: StateEffect<unknown>[][]) =>
+  observed.filter((effects) => effects.length > 1)
 
 describe('an effect the times did not send', () => {
   it('leaves what is shown as it was', () => {
@@ -422,7 +422,7 @@ describe('the gutter elements', () => {
 
     const after = [...view.dom.querySelectorAll('.cm-times .cm-time')]
     expect(after).toHaveLength(3)
-    expect(after.every((one, at) => one === before[at])).toBe(true)
+    expect(after.every((one, index) => one === before[index])).toBe(true)
   })
 })
 

@@ -32,7 +32,7 @@ describe('what the menu offers', () => {
     const groups = ITEMS.map((item) => item.group)
     for (const item of ITEMS) expect(item.group).not.toBeUndefined()
     expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'agent', 'remove'])
-    expect(groups.filter((group, at) => group !== groups[at - 1])).toStrictEqual([
+    expect(groups.filter((group, index) => group !== groups[index - 1])).toStrictEqual([
       ...new Set(groups),
     ])
   })

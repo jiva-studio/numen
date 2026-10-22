@@ -67,7 +67,7 @@ export interface DeckDataState {
   readonly id: string
   readonly note: ComputedRef<OpenNote>
   readonly deck: ComputedRef<BufferDeck>
-  readonly drawn: ComputedRef<readonly DeckCard[]>
+  readonly deckCards: ComputedRef<readonly DeckCard[]>
   readonly sections: ComputedRef<readonly DeckSection[]>
   readonly stencils: ComputedRef<readonly Stencil[]>
   readonly marks: ComputedRef<Marks>
@@ -89,8 +89,8 @@ export interface DeckActions {
     section: string | null,
   ): void
   removeCard(card: string): void
-  moveCard(card: string, at: string | null): void
-  writeCardField(card: string, field: string, nth: number, text: string): void
+  moveCard(card: string, target: string | null): void
+  writeCardField(card: string, field: string, index: number, text: string): void
   addSection(name: string): void
   renameSection(section: string, name: string): void
   removeSection(section: string): void

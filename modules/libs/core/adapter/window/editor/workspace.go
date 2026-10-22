@@ -106,13 +106,13 @@ func (h *workspaceHandler) WatchFocus(
 			if err := out.Send(&v1.WatchFocusResponse{}); err != nil {
 				return err
 			}
-		case at, open := <-line:
+		case pos, open := <-line:
 			if !open {
 				return nil
 			}
 			if err := out.Send(&v1.WatchFocusResponse{
-				Path:  at.Path,
-				Spans: convertByteSpansToWire(at.Spans),
+				Path:  pos.Path,
+				Spans: convertByteSpansToWire(pos.Spans),
 			}); err != nil {
 				return err
 			}

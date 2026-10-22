@@ -9,21 +9,21 @@ const PAGES = Array.from({ length: 8 }, () => ({ width: 612, height: 792 }))
  * A reader in a room of a given size. Nothing in a test has a layout, so the
  * room says how big it is and the reader is told to take it again.
  */
-const reader = async (wide: number, high: number) => {
+const reader = async (width: number, high: number) => {
   const wrapper = mount(Reader, {
     props: { pages: PAGES, picture: (page: number) => `/p/${page}` },
     attachTo: document.body,
   })
-  await room(wrapper, wide, high)
+  await room(wrapper, width, high)
   return wrapper
 }
 
-const room = async (wrapper: ReturnType<typeof mount>, wide: number, high: number) => {
+const room = async (wrapper: ReturnType<typeof mount>, width: number, height: number) => {
   const area = wrapper.find('.reader__viewport').element as HTMLElement
   // jsdom lays nothing out and scrolls nothing.
   area.scrollTo = () => {}
-  Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
-  Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
+  Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
+  Object.defineProperty(area, 'clientHeight', { value: height, configurable: true })
   ;(wrapper.vm as unknown as { measure: () => void }).measure()
   await wrapper.vm.$nextTick()
 }

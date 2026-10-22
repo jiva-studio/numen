@@ -38,17 +38,17 @@ func makeVaultAndShape(t *testing.T) (string, *folders) {
 // unpacking an archive does.
 func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 	t.Helper()
-	at := filepath.Join(root, name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(root, name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	for i := range notes {
-		one := filepath.Join(at, "Note"+string(rune('a'+i%26))+string(rune('a'+i/26))+".md")
+		one := filepath.Join(pos, "Note"+string(rune('a'+i%26))+string(rune('a'+i/26))+".md")
 		if err := os.WriteFile(one, []byte("# One\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
-	return at
+	return pos
 }
 
 // TestAFolderNewToTheWatchIsHandedOverRatherThanWalked. The one goroutine that
@@ -56,16 +56,16 @@ func writeFolderOfNotes(t *testing.T, root, name string, notes int) string {
 // as a name, and it is walked beside the backlog that goes on emptying.
 func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
-	at := writeFolderOfNotes(t, root, "library", 3)
+	pos := writeFolderOfNotes(t, root, "library", 3)
 
-	paths, whole, walk := shape.getConcernedPaths(at)
+	paths, whole, walk := shape.getConcernedPaths(pos)
 	if whole {
 		t.Fatal("a folder that arrived was answered as the whole vault")
 	}
 	if len(paths) != 0 {
 		t.Errorf("the folder was walked where the events are drained: %v", paths)
 	}
-	if walk != at {
+	if walk != pos {
 		t.Fatalf("the folder was not handed over to be walked: %q", walk)
 	}
 
@@ -82,11 +82,11 @@ func TestAFolderNewToTheWatchIsHandedOverInsteadOfWalked(t *testing.T) {
 // on reading the disk for.
 func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
-	at := writeFolderOfNotes(t, root, "library", 3)
+	pos := writeFolderOfNotes(t, root, "library", 3)
 
 	ctx, stop := context.WithCancel(t.Context())
 	stop()
-	if target, whole := shape.getPathsUnder(ctx, at); whole || len(target) != 0 {
+	if target, whole := shape.getPathsUnder(ctx, pos); whole || len(target) != 0 {
 		t.Errorf("a walk under a context that is done found %v (whole %v)", target, whole)
 	}
 }
@@ -95,7 +95,7 @@ func TestAWalkStopsWhenTheWatchDoes(t *testing.T) {
 // the debounce, so what it finds has to come back to it.
 func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	root, shape := makeVaultAndShape(t)
-	at := writeFolderOfNotes(t, root, "library", 2)
+	pos := writeFolderOfNotes(t, root, "library", 2)
 
 	raw := make(chan notify.EventInfo, 4)
 	changes := make(chan []string)
@@ -106,7 +106,7 @@ func TestAFolderThatArrivesIsReportedThroughTheDebounce(t *testing.T) {
 	go forwardEvents(ctx, raw, queue)
 	go debounce(ctx, shape, Options{DebounceDelay: 10 * time.Millisecond}, queue, changes, missing)
 
-	raw <- event{path: at}
+	raw <- event{path: pos}
 
 	select {
 	case change := <-changes:

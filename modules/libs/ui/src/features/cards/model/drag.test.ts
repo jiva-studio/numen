@@ -25,7 +25,7 @@ const keyEvent = (): { readonly press: KeyboardEvent; readonly prevented: () => 
 }
 
 const setup = (isMoved = true) => {
-  const move = vi.fn<(dragged: string, at: InsertionPoint) => void>()
+  const move = vi.fn<(dragged: string, target: InsertionPoint) => void>()
   const deps: DragDeps<InsertionPoint | undefined> = {
     order: () => ['a', 'b', 'c'],
     nowhere: undefined,
@@ -102,7 +102,7 @@ describe('useDrag, the pointer', () => {
   })
 
   it('moves nothing dropped when nothing is retained, whatever remains for nowhere', () => {
-    const move = vi.fn<(dragged: string, at: InsertionPoint) => void>()
+    const move = vi.fn<(dragged: string, target: InsertionPoint) => void>()
     const drag = useDrag<InsertionPoint>({
       order: () => ['a'],
       nowhere: null,

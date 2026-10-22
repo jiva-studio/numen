@@ -2,7 +2,6 @@
 /**
  * What a book divides into, as a list to reach any of it by.
  *
- * Every line stands at a byte offset into the book's text, and choosing one
  * asks for that offset. The line the person is reading is marked, and the list
  * is brought to it as the reading moves.
  */
@@ -35,7 +34,7 @@ const props = withDefaults(
 /* --------------------------------- Events --------------------------------- */
 const emit = defineEmits<{
   /** The offset the person chose, in bytes of the book's text. */
-  (event: 'go', at: number): void
+  (event: 'go', pos: number): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */

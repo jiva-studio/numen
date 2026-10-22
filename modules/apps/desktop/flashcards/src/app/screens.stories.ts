@@ -39,8 +39,8 @@ const tally = (answers: number, recalls: number): HeatmapTally => ({
  * work is scattered the way a year is and not stepping with the arithmetic
  * that made it.
  */
-const scatter = (at: number, salt: number): number => {
-  let x = Math.imul(at + salt * 7919 + 1, 2654435761)
+const scatter = (index: number, salt: number): number => {
+  let x = Math.imul(index + salt * 7919 + 1, 2654435761)
   x ^= x >>> 15
   x = Math.imul(x, 2246822519)
   x ^= x >>> 13
@@ -74,7 +74,7 @@ const DUE = new Map<string, number>(
 const BY_MINUTES: BudgetKeys = { new: '', reviews: '', minutes: 'minutes_a_day' }
 const BY_CARDS: BudgetKeys = { new: 'new_a_day', reviews: 'reviews_a_day', minutes: '' }
 
-const settings = (over: Partial<Settings> = {}): Settings => ({
+const settings = (overrides: Partial<Settings> = {}): Settings => ({
   goal: 'minutes',
   byDate: '',
   minutesADay: 25,
@@ -83,10 +83,10 @@ const settings = (over: Partial<Settings> = {}): Settings => ({
   retention: 0.9,
   load: {},
   hasEvenLoad: true,
-  ...over,
+  ...overrides,
 })
 
-const preset = (over: Partial<Preset> = {}): Preset => ({
+const preset = (overrides: Partial<Preset> = {}): Preset => ({
   path: '',
   name: '',
   settings: settings(),
@@ -102,7 +102,7 @@ const preset = (over: Partial<Preset> = {}): Preset => ({
   took: 0,
   paused: '',
   wrong: '',
-  ...over,
+  ...overrides,
 })
 
 const SANSKRIT = preset({
@@ -151,14 +151,14 @@ const ANATOMY = preset({
 
 const PRESETS: readonly Preset[] = [SANSKRIT, ANATOMY]
 
-const deck = (path: string, over: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
+const deck = (path: string, overrides: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: path,
   faces: 400,
   due: 0,
   new: 0,
   learned: 0,
   unbegun: 0,
-  ...over,
+  ...overrides,
 })
 
 const DECKS: readonly DeckCardsDue[] = [

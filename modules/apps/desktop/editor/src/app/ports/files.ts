@@ -4,7 +4,6 @@ import type { CreateResult, Entry, FileKind, Movement } from '@/entities/file'
 
 export interface FilePort {
   /**
-   * What stands at each of those paths, by the path it was asked about. The
    * kind comes off the vault itself, so a path nothing has scanned is answered
    * with what stands there; a path with nothing at it is absent.
    */

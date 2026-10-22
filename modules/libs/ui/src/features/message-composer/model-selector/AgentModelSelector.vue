@@ -23,13 +23,13 @@ const props = withDefaults(
     options?: readonly AgentModelOption[]
     selectedAgentId?: string
     selectedModelId?: string
-    disabled?: boolean
+    isDisabled?: boolean
   }>(),
   {
     options: () => [],
     selectedAgentId: '',
     selectedModelId: '',
-    disabled: false,
+    isDisabled: false,
   },
 )
 
@@ -69,13 +69,13 @@ const menuItems = computed<MenuItem[]>(() =>
     id: `${one.agentId}:${one.modelId}`,
     text: one.modelTitle,
     group: one.agentTitle,
-    disabled: false,
+    isDisabled: false,
   })),
 )
 
 /* -------------------------------- Handlers -------------------------------- */
 function onToggle() {
-  if (props.disabled || props.options.length === 0) return
+  if (props.isDisabled || props.options.length === 0) return
   if (isOpen.value) {
     isOpen.value = false
     return
@@ -104,7 +104,7 @@ function onDismiss() {
       ref="trigger"
       type="button"
       class="model-selector__pill bg-bubble text-ink text-small hover:bg-surface rounded-pill inline-flex h-7 max-w-full min-w-0 cursor-pointer items-center gap-1.5 px-2.5 font-medium transition-colors disabled:pointer-events-none disabled:opacity-50"
-      :disabled="disabled || options.length === 0"
+      :disabled="isDisabled || options.length === 0"
       @click="onToggle"
     >
       <span class="model-selector__label min-w-0 flex-1 truncate">{{ label }}</span>
@@ -122,7 +122,7 @@ function onDismiss() {
     </button>
 
     <Menu
-      :open="isOpen"
+      :is-open="isOpen"
       :items="menuItems"
       :at="menuPosition"
       :current="currentKey"

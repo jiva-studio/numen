@@ -21,14 +21,14 @@ const props = withDefaults(
     placeholder?: string
     /** What the list of choices is announced as. */
     name?: string
-    disabled?: boolean
+    isDisabled?: boolean
     /** Whether the choices carry a line to search them by. */
     searchable?: boolean
     /** What the search line is announced as. */
     searchName?: string
     class?: HTMLAttributes['class']
   }>(),
-  { placeholder: '', name: 'Choices', disabled: false, searchable: false, searchName: 'Search' },
+  { placeholder: '', name: 'Choices', isDisabled: false, searchable: false, searchName: 'Search' },
 )
 
 /** Which choice is in force, by the identifier the caller gave it. */
@@ -65,7 +65,7 @@ const menuAnchor = ref<{ at: Position; wide: number } | null>(null)
  */
 const openChoices = () => {
   const line = element.value
-  if (!line || props.disabled) return
+  if (!line || props.isDisabled) return
   const box = line.getBoundingClientRect()
   menuAnchor.value = { at: { x: box.left, y: box.bottom }, wide: box.width }
 }
@@ -96,7 +96,7 @@ defineExpose({
     data-slot="select"
     aria-haspopup="menu"
     :aria-expanded="menuAnchor !== null"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :class="
       cn(
         'flex w-full max-w-full min-w-0 items-center justify-between gap-2',
@@ -133,7 +133,7 @@ defineExpose({
     has-groups
     :searchable="searchable"
     :search-name="searchName"
-    open
+    is-open
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="menuAnchor = null"
@@ -146,7 +146,6 @@ defineExpose({
 /* One line, then an ellipsis. A model is named by a word and addressed by a
    line too long to read, and the name is what the line carries. */
 .select__reading {
-  /* The line box is taller than the text, so overflow clips no descender. */
   padding-block: 0.125rem;
   line-height: 1.4;
   overflow: hidden;

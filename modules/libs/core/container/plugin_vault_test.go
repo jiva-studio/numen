@@ -116,6 +116,6 @@ func TestAWriteByAPluginIsReportedToTheWindow(t *testing.T) {
 	}
 
 	if notifyCount != 1 {
-		t.Errorf("the window was told %d times", notifyCount)
+		t.Errorf("the window received %d times", notifyCount)
 	}
 }

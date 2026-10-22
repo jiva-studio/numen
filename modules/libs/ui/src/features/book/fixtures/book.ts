@@ -35,16 +35,16 @@ const escapeHtml = (text: string): string =>
  * after it begins at and adds nothing to the stream.
  */
 export function createChapter(runs: readonly Run[], from = 0): Chapter {
-  let at = from
+  let offset = from
   const content: string[] = []
   for (const run of runs) {
     const text = run.text ?? ''
     content.push(
-      `<${run.tag} data-offset="${at}">${escapeHtml(text)}${run.inside ?? ''}</${run.tag}>`,
+      `<${run.tag} data-offset="${offset}">${escapeHtml(text)}${run.inside ?? ''}</${run.tag}>`,
     )
-    at += countBytes(text)
+    offset += countBytes(text)
   }
-  return { markup: content.join('\n'), span: { from, to: at } }
+  return { markup: content.join('\n'), span: { from, to: offset } }
 }
 
 /** A page of Sanskrit in Devanagari, its transliteration and its rendering. */

@@ -58,4 +58,3 @@ func GetProviderOr(fallback Provider) Provider {
 func GetSessionProvider() Provider {
 	return GetProviderOr(ProviderCPU)
 }
-

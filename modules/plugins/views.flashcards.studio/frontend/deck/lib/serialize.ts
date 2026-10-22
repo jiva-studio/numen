@@ -73,13 +73,13 @@ export const deserializeBufferDeckFromString = (body: string): BufferDeck =>
  * The cards of a deck, in the shape the vault takes them.
  */
 export const serializeBufferCardsToVaultCards = (deck: BufferDeck): readonly VaultCard[] => {
-  const at = new Map<string | null, number>(
+  const sectionIndices = new Map<string | null, number>(
     deck.sections.map((section, index) => [section.id, index]),
   )
   return deck.cards.map(
     ({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
       mark,
-      sectionIndex: at.get(section) ?? null,
+      sectionIndex: sectionIndices.get(section) ?? null,
       heading,
       stencilLink,
       stencilPath,

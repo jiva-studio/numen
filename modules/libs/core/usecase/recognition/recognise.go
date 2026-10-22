@@ -31,10 +31,10 @@ import (
 // again, so it is written into the vault and the source is cut from it
 // afterwards.
 type Recognise struct {
-	readers port.VaultReaders
-	sources port.SourceRepository
-	derived port.DerivedStores
-	by      port.Recogniser
+	readers  port.VaultReaders
+	sources  port.SourceRepository
+	derived  port.DerivedStores
+	provider port.Recogniser
 
 	// documents draws the pages a model is given.
 	documents port.PageRenderer
@@ -64,15 +64,15 @@ func NewRecognise(
 	sources port.SourceRepository,
 	derived port.DerivedStores,
 	documents port.PageRenderer,
-	by port.Recogniser,
+	recogniser port.Recogniser,
 ) Recognise {
 	return Recognise{
-		readers: readers, sources: sources, derived: derived, documents: documents, by: by,
+		readers: readers, sources: sources, derived: derived, documents: documents, provider: recogniser,
 	}
 }
 
 // By returns the recogniser.
-func (u Recognise) By() port.Recogniser { return u.by }
+func (u Recognise) By() port.Recogniser { return u.provider }
 
 // RecogniseResult reports what recognition did.
 type RecogniseResult struct {
@@ -267,11 +267,11 @@ func (u Recognise) readPages(
 
 // recognisePage draws one page and reads its blocks.
 func (u Recognise) recognisePage(ctx context.Context, scan port.OpenDocument, path string, index int) (ocr.Page, error) {
-	rendered, err := scan.RenderPage(index, u.by.GetRecognitionModel().DPI)
+	rendered, err := scan.RenderPage(index, u.provider.GetRecognitionModel().DPI)
 	if err != nil {
 		return ocr.Page{}, fmt.Errorf("draw page %d of %s: %w", index+1, path, err)
 	}
-	blocks, err := u.by.Recognise(ctx, rendered)
+	blocks, err := u.provider.Recognise(ctx, rendered)
 	if err != nil {
 		return ocr.Page{}, fmt.Errorf("read page %d of %s: %w", index+1, path, err)
 	}
@@ -338,7 +338,7 @@ func (u Recognise) forget(
 }
 
 // dropBoxes drops the coordinates of pages no count claims.
-func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, done int) error {
+func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.ArtifactName, finished int) error {
 	raw, err := store.ReadArtifact(ctx, name)
 	if errors.Is(err, fs.ErrNotExist) {
 		return nil
@@ -349,7 +349,7 @@ func dropBoxes(ctx context.Context, store port.DerivedStore, name domain.Artifac
 	target := highlight.Unpack(raw)
 	keptBoxes := make([]domain.HighlightBox, 0, len(target))
 	for _, box := range target {
-		if box.Page < done {
+		if box.Page < finished {
 			keptBoxes = append(keptBoxes, box)
 		}
 	}
@@ -384,7 +384,7 @@ func dropParts(ctx context.Context, store port.DerivedStore, name domain.Artifac
 // produced a text, and so that everything a recogniser now known to be bad
 // produced can be found again.
 func (u Recognise) record(ctx context.Context, store port.DerivedStore, area, hash string) error {
-	named := u.by.GetRecognitionModel()
+	named := u.provider.GetRecognitionModel()
 	raw, err := json.MarshalIndent(struct {
 		Layout     string `json:"layout"`
 		Recogniser string `json:"recogniser"`
@@ -443,18 +443,18 @@ func readResumePoint(ctx context.Context, store port.DerivedStore, partial domai
 // lastCount is the last count a partial carries and where the line holding it
 // ends. A file carrying none is a document nothing has read.
 func lastCount(raw []byte) (read, end int) {
-	at := strings.LastIndex(string(raw), resumeMark)
-	if at < 0 {
+	pos := strings.LastIndex(string(raw), resumeMark)
+	if pos < 0 {
 		return 0, 0
 	}
-	line := string(raw[at+len(resumeMark):])
+	line := string(raw[pos+len(resumeMark):])
 	stop := strings.IndexByte(line, '\n')
 	if stop < 0 {
-		return lastCount(raw[:at])
+		return lastCount(raw[:pos])
 	}
 	read, err := strconv.Atoi(strings.TrimSpace(line[:stop]))
 	if err != nil || read < 0 || read > math.MaxInt32 {
-		return lastCount(raw[:at])
+		return lastCount(raw[:pos])
 	}
-	return read, at + len(resumeMark) + stop + 1
+	return read, pos + len(resumeMark) + stop + 1
 }

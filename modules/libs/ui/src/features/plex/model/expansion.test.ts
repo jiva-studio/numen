@@ -9,7 +9,7 @@ const WINDOW = { width: 1200, height: 800 }
 const MARGIN = 16
 const BOUNDS = { viewport: WINDOW, margin: MARGIN }
 
-const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   relation: 'child',
@@ -19,13 +19,13 @@ const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: 36,
   order: 0,
   opacity: 1,
-  ...over,
+  ...overrides,
 })
 
 /** Where a widened box begins and ends, in the plex's own coordinates. */
-const getSpan = (node: PlacedNode, wide: { width: number; offset: number }) => ({
-  from: node.x + wide.offset - wide.width / 2,
-  to: node.x + wide.offset + wide.width / 2,
+const getSpan = (node: PlacedNode, expanded: { width: number; offset: number }) => ({
+  from: node.x + expanded.offset - expanded.width / 2,
+  to: node.x + expanded.offset + expanded.width / 2,
 })
 
 describe('a box with more of its title to show', () => {
@@ -50,7 +50,7 @@ describe('a box with more of its title to show', () => {
     expect(getSpan(node, wideBox)).toStrictEqual({ from: 284, to: 584 })
   })
 
-  it('grows no wider than the window, the margin kept clear', () => {
+  it('constrains width to window minus margins', () => {
     const node = createNode({ x: 500 })
     const wideBox = getWideBox(node, 2000, BOUNDS)!
     expect(wideBox.width).toBe(WINDOW.width - 2 * MARGIN)
@@ -67,7 +67,7 @@ describe('a box with nothing more to show', () => {
     expect(getWideBox(createNode(), 120, BOUNDS)).toBeNull()
   })
 
-  it('stays as it was placed when the window is no wider than it is', () => {
+  it('preserves layout when window width is constrained', () => {
     expect(
       getWideBox(createNode(), 300, { viewport: { width: 160, height: 800 }, margin: MARGIN }),
     ).toBeNull()

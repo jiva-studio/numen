@@ -27,9 +27,7 @@ var vttSeeds = []string{
 	"\x00\xff\xfe not a transcript at all",
 }
 
-// Every cue a transcript is read as stands at its own words: the offset it
 // carries is where its text is to be found in the words the transcript reads
-// as, and the cues are in the order they were spoken.
 //
 // A transcript arrives from the transcriber and may be edited by hand, so the
 // bytes are a stranger's.
@@ -39,19 +37,19 @@ func FuzzParse(f *testing.F) {
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
 		response, cues := transcript.Parse([]byte(raw))
-		at := -1
+		pos := -1
 		for _, cue := range cues {
 			if cue.Offset < 0 || cue.Offset+len(cue.Text) > len(response) {
-				t.Fatalf("a cue of %d bytes stands at %d in %d bytes of words",
+				t.Fatalf("a cue of %d bytes is at %d in %d bytes of words",
 					len(cue.Text), cue.Offset, len(response))
 			}
 			if got := response[cue.Offset : cue.Offset+len(cue.Text)]; got != cue.Text {
-				t.Fatalf("a cue reading %q stands at %q", cue.Text, got)
+				t.Fatalf("a cue reading %q is at %q", cue.Text, got)
 			}
-			if cue.Offset <= at {
-				t.Fatalf("a cue at %d follows one at %d", cue.Offset, at)
+			if cue.Offset <= pos {
+				t.Fatalf("a cue at %d follows one at %d", cue.Offset, pos)
 			}
-			at = cue.Offset
+			pos = cue.Offset
 			if strings.TrimSpace(cue.Text) != cue.Text || cue.Text == "" {
 				t.Fatalf("a cue carries %q, which is not something said", cue.Text)
 			}
@@ -103,10 +101,10 @@ func FuzzMarshal(f *testing.F) {
 		if len(got) != len(content) {
 			t.Fatalf("%d cues written came back as %d", len(content), len(got))
 		}
-		for at, cue := range got {
-			if cue.Text != content[at].Text ||
-				cue.From != content[at].From || cue.To != content[at].To {
-				t.Fatalf("a cue %+v came back as %+v", content[at], cue)
+		for item, cue := range got {
+			if cue.Text != content[item].Text ||
+				cue.From != content[item].From || cue.To != content[item].To {
+				t.Fatalf("a cue %+v came back as %+v", content[item], cue)
 			}
 		}
 	})

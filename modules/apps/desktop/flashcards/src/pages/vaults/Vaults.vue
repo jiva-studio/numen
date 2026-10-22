@@ -1,9 +1,7 @@
 <script setup lang="ts">
 /**
- * The front door: every vault the installation holds, and what each owes today.
  *
  * It is the screen the editor opens on, drawn from the same component. The
- * screen knows nothing about cards; what stands at the end of a row is put
  * there from here.
  *
  * The list is on screen before any of it is counted, and each vault's number

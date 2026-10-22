@@ -1,6 +1,5 @@
 /**
  * The words the palette is drawn in: every command as it is offered, every
- * group it stands in, what each step says while it asks, and what a command
  * that has been carried out answers in.
  *
  * Nothing here is a decision. `types.ts` says what a command is and
@@ -17,11 +16,6 @@ import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
 import type { EmptyWords } from './model/search'
 
-/**
- * What a command answers in: the window's own voice, the words a run over a
- * file is spoken about in, and the words the list of vaults reports in. Each is
- * written where it belongs, and a command is where they meet.
- */
 export const ANSWER_WORDS: AnswerWords = {
   ...WORDS,
   made: MADE,
@@ -47,9 +41,7 @@ export interface AnswerWords {
   readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
-  /** This build cannot do the run at all, and stops offering it. */
   readonly unrunnable: string
-  /** What an artifact of a file now stands at, in words a person reads. */
   readonly made: Record<Artifact, Record<ArtifactState, string>>
   /** What a run over the address a note points at came to. */
   readonly fetched: Record<ArtifactState, string>
@@ -57,10 +49,8 @@ export interface AnswerWords {
 
 /** The words the step that asks for the name typed back is drawn in. */
 export interface RetypeWords {
-  /** What it does, and what it leaves behind. */
   readonly action: string
   readonly detail: string
-  /** What stands in the field: the name of the thing, typed back. */
   readonly back: string
 }
 
@@ -68,7 +58,7 @@ export interface RetypeWords {
 export interface ConfirmWords {
   /** The answer that changes nothing, and what it leaves. */
   readonly keeps: string
-  readonly kept: string
+  readonly retainedNotice: string
   /** The answer that does it, and what it leaves. */
   readonly action: string
   readonly detail: string
@@ -162,7 +152,6 @@ export interface Words extends EmptyWords {
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   readonly noVault: string
   readonly noNote: string
-  /** The list of commands: the chip beside the field, and what stands in it. */
   readonly command: string
   readonly typeCommand: string
   /** A name asked for, and the one item it offers. */
@@ -170,7 +159,6 @@ export interface Words extends EmptyWords {
   readonly typeName: string
   readonly callIt: string
   /**
-   * An address asked for: the field, what stands in it, what Enter does, and
    * what is said of words that are no address.
    */
   readonly url: string
@@ -199,7 +187,7 @@ export interface Words extends EmptyWords {
   /** How many files a command is over, where it is over several. */
   readonly several: (files: number) => string
   readonly answer: string
-  readonly kept: string
+  readonly retainedNotice: string
   /** The two answers over a vault, whose folder is left where it is. */
   readonly keepsVault: string
   readonly removeVaultAction: string

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * What stands overdue at the end of each day ahead, at the place the knob
  * stands. Its axis is days and not the goal's range, and it keeps its room
  * whether or not there is a backlog to draw.
  *
@@ -27,7 +26,6 @@ import '../curve-slider.css'
 // --- Props & Emits ---
 const props = defineProps<{
   curve: Curve
-  /** The place of the grid the knob stands at. */
   place: number
   /** Whether the curve on screen is an answer, and not the waiting for one. */
   isHonest: boolean
@@ -39,7 +37,6 @@ const backlog = computed<readonly number[]>(() => getBacklogRun(props.curve, pro
 
 /**
  * The extent it is drawn against, which is the most any place of the curve ever
- * stands at. One extent for every place keeps the picture still while the knob
  * moves, and a place whose run is cut shorter than another's is drawn against
  * the same height as the rest.
  */

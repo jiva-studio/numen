@@ -49,7 +49,7 @@ func (r *indexRuns) clear(id domain.VaultID) {
 // window indexes nothing.
 func (r *indexRuns) tryStart(
 	v domain.Vault,
-) (read IndexVault, under context.Context, underway bool, reason string) {
+) (read IndexVault, limit context.Context, underway bool, reason string) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	if r.indexed[v.ID] {
@@ -103,12 +103,12 @@ func (a *API) SetVaultIndexer(ctx context.Context, read IndexVault) {
 // from there. One vault is indexed once at a time however many counts ask for it,
 // and an indexing that failed is not begun again until the vault moves.
 func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool, reason string) {
-	read, behind, running, reason := a.indexRuns.tryStart(v)
+	read, item, running, reason := a.indexRuns.tryStart(v)
 	if read == nil {
 		return running, reason
 	}
 	//nolint:contextcheck // a vault is indexed for the life of the window, under behind, not under the count that asked
-	go a.runIndexing(behind, read, v, a.IsVaultIndexed.Execute(ctx, v))
+	go a.runIndexing(item, read, v, a.IsVaultIndexed.Execute(ctx, v))
 	return true, ""
 }
 
@@ -120,25 +120,25 @@ func (a *API) startIndexing(ctx context.Context, v domain.Vault) (underway bool,
 // nothing to show until this is done and the person is waiting on it, so that
 // work is drawn the moment it begins; a vault it carries is work drawn once it
 // has lasted.
-func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, held bool) {
-	at := run.Task{
+func (a *API) runIndexing(ctx context.Context, read IndexVault, v domain.Vault, target bool) {
+	pos := run.Task{
 		ID:            "indexing\t" + string(v.ID),
 		Title:         "Indexing the vault",
 		About:         v.Name,
-		IsUserStarted: !held,
+		IsUserStarted: !target,
 	}
-	a.reportTask(at)
+	a.reportTask(pos)
 
 	err := read(ctx, v)
 
 	a.indexRuns.record(v, err)
 
 	if err != nil {
-		at.Error = err.Error()
-		a.reportTask(at)
+		pos.Error = err.Error()
+		a.reportTask(pos)
 		return
 	}
-	a.finishTask(at.ID)
+	a.finishTask(pos.ID)
 	a.ReportChange()
 }
 

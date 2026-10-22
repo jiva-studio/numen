@@ -1,6 +1,5 @@
 <script setup lang="ts">
 /**
- * The conversation. the transcript sits in a bubble; what came back is prose on
  * the surface; what the agent reached for is a quiet line between them.
  *
  * Scrolls on its own, and follows the foot: a turn that arrives is brought
@@ -21,7 +20,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
-  /** A link inside a turn was pressed, with the turn it stands in. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
 }>()
 

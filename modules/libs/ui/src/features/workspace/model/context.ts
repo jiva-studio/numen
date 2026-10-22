@@ -14,8 +14,8 @@ export interface WorkspaceContext {
   readonly minimum: number
   readonly choose: (tab: TabId) => void
   readonly close: (tab: TabId) => void
-  readonly lift: (tab: TabId, at: PointerEvent) => void
-  readonly menu: (tab: TabId, at: { x: number; y: number }) => void
+  readonly lift: (tab: TabId, pointer: PointerEvent) => void
+  readonly menu: (tab: TabId, pos: { x: number; y: number }) => void
   readonly claim: (pane: NodeId) => void
   readonly resize: (branch: NodeId, sizes: readonly number[]) => void
   readonly show: (tab: TabId) => void

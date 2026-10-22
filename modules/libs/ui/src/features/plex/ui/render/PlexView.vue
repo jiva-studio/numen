@@ -74,7 +74,6 @@ const restedOn = ref<string | null>(null)
 
 /**
  * The boxes in the order they are drawn, the one being rested on last. It is
- * drawn wider than it was placed, and what it covers is drawn under it.
  */
 const renderedNodes = computed(() => {
   const node = props.frame.nodes.find((each) => each.id === restedOn.value)
@@ -89,7 +88,7 @@ const thread = computed(() => getReachThread(props.frame, props.gestureFrom, pro
 const pendingThread = computed(() =>
   getPendingThread(props.frame, {
     from: props.pending?.from ?? null,
-    at: props.pending?.at ?? null,
+    position: props.pending?.at ?? null,
     viewport: props.viewport,
   }),
 )

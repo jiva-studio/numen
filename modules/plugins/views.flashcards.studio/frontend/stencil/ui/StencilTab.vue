@@ -37,8 +37,8 @@ function onRemoveField(field: string) {
   props.state.removeField(field)
 }
 
-function onMoveField(field: string, at: InsertionPoint) {
-  props.state.moveField(field, at)
+function onMoveField(field: string, target: InsertionPoint) {
+  props.state.moveField(field, target)
 }
 
 function onAddFace(name: string) {
@@ -53,8 +53,8 @@ function onRemoveFace(id: string) {
   props.state.removeFace(id)
 }
 
-function onMoveFace(id: string, at: InsertionPoint) {
-  props.state.moveFace(id, at)
+function onMoveFace(id: string, target: InsertionPoint) {
+  props.state.moveFace(id, target)
 }
 
 function onWriteFace(id: string, half: Half, text: string) {

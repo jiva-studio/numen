@@ -24,7 +24,7 @@ const zoom = defineModel<number>('zoom', { default: 1 })
       variant="ghost"
       size="icon-small"
       class="rounded-pill"
-      :aria-label="words.further"
+      :aria-label="words.zoomOut"
       :disabled="zoom <= FURTHEST"
       @click="zoom /= NEARER"
     >
@@ -43,7 +43,7 @@ const zoom = defineModel<number>('zoom', { default: 1 })
       variant="ghost"
       size="icon-small"
       class="rounded-pill"
-      :aria-label="words.closer"
+      :aria-label="words.zoomIn"
       :disabled="zoom >= CLOSEST"
       @click="zoom *= NEARER"
     >

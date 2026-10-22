@@ -39,7 +39,7 @@ const naming = useNameEntry<HeadingObjection>({
   getName: () => props.face.name,
   getTakenNames: () => props.face.taken,
   checkName: checkHeadingName,
-  rename: (_over, name) => emit('rename', name),
+  rename: (_targetId, name) => emit('rename', name),
 })
 
 /** Why what is in the name box cannot be used, and nothing while it can. */
@@ -58,7 +58,7 @@ const says = computed(() => {
       <NameBox
         class="face__title rounded-node"
         :naming="naming"
-        :over="face.id"
+        :target-id="face.id"
         :stem="`${words.faceStem} ${face.at}`"
         :described-by="says ? objectionsId : null"
       />

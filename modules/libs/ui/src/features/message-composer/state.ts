@@ -13,7 +13,6 @@ export interface ComposerStateDescriptor {
 }
 
 /**
- * Every state the composer can be in, declared once. What stands at the end
  * of the field and whether it can be pressed both read from here.
  */
 export const COMPOSER_STATES = {

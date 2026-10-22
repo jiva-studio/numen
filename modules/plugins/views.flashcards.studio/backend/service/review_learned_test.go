@@ -50,16 +50,15 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 	want := map[string]int32{"decks/Near.md": 1, "decks/Far.md": 0}
 	for _, one := range getVaultCount(t, api, v).GetDecks() {
 		if one.GetFaces() != 2 {
-			t.Errorf("%s stands at %d faces, want 2", one.GetDeck(), one.GetFaces())
+			t.Errorf("%s has %d faces, want 2", one.GetDeck(), one.GetFaces())
 		}
 		if one.GetLearned() != want[one.GetDeck()] {
-			t.Errorf("%s stands at %d learned, want %d",
+			t.Errorf("%s has %d learned, want %d",
 				one.GetDeck(), one.GetLearned(), want[one.GetDeck()])
 		}
 	}
 }
 
-// A vault nobody has answered carries no learned face on the wire, and the
 // screen has a nought to draw.
 func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
 	api, target := newAPI(t, learnedDecks)
@@ -68,7 +67,7 @@ func TestAVaultNobodyHasAnsweredCarriesNothingLearned(t *testing.T) {
 
 	for _, one := range getVaultCount(t, api, v).GetDecks() {
 		if one.GetLearned() != 0 {
-			t.Errorf("%s stands at %d learned before anything was answered",
+			t.Errorf("%s has %d learned before review",
 				one.GetDeck(), one.GetLearned())
 		}
 	}

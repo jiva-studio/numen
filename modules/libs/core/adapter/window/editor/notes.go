@@ -54,7 +54,7 @@ func (h *noteHandler) WriteNote(
 		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
 	}
 	defer h.state.Writing.finish()
-	at, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
+	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
@@ -67,7 +67,7 @@ func (h *noteHandler) WriteNote(
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFingerprintToWire(at), IsUnlevelled: unlevelled,
+			At: convertFingerprintToWire(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -140,7 +140,6 @@ func (h *noteHandler) WriteLink(
 	}
 	defer h.state.Writing.finish()
 
-	// The request names no fingerprint, so the write is held to what the note is
 	// at the moment it is made.
 	if _, err := h.editLinks.Add(
 		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
@@ -419,11 +418,11 @@ func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 
 // convertFingerprintFromWire is a fingerprint as the core holds one. The kind is left empty: what
 // the file is was decided when it was asked for.
-func convertFingerprintFromWire(at *v1.Fingerprint) domain.Fingerprint {
-	if at == nil {
+func convertFingerprintFromWire(pos *v1.Fingerprint) domain.Fingerprint {
+	if pos == nil {
 		return domain.Fingerprint{}
 	}
-	return domain.Fingerprint{Path: at.GetPath(), Size: at.GetSize(), ModTime: instant(at.GetMtime())}
+	return domain.Fingerprint{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
 }
 
 // ListHeadings hands the client the headings of the notes the filter names. A

@@ -8,32 +8,32 @@
 import { getImage } from 'astro:assets'
 import Page from '../layouts/Page.astro'
 import Carousel from '../components/Carousel.astro'
-import mappingLight from '../assets/window-mapping-light.webp'
-import mappingDark from '../assets/window-mapping-dark.webp'
-import writingLight from '../assets/window-writing-light.webp'
-import writingDark from '../assets/window-writing-dark.webp'
-import filingLight from '../assets/window-filing-light.webp'
-import filingDark from '../assets/window-filing-dark.webp'
-import searchingLight from '../assets/window-searching-light.webp'
-import searchingDark from '../assets/window-searching-dark.webp'
-import askingLight from '../assets/window-asking-light.webp'
-import askingDark from '../assets/window-asking-dark.webp'
-import hearingLight from '../assets/window-hearing-light.webp'
-import hearingDark from '../assets/window-hearing-dark.webp'
-import transcribingLight from '../assets/window-transcribing-light.webp'
-import transcribingDark from '../assets/window-transcribing-dark.webp'
-import recognisingLight from '../assets/window-recognising-light.webp'
-import recognisingDark from '../assets/window-recognising-dark.webp'
-import deckingLight from '../assets/window-decking-light.webp'
-import deckingDark from '../assets/window-decking-dark.webp'
-import cuttingLight from '../assets/window-cutting-light.webp'
-import cuttingDark from '../assets/window-cutting-dark.webp'
-import owingLight from '../assets/window-owing-light.webp'
-import owingDark from '../assets/window-owing-dark.webp'
-import reviewingLight from '../assets/window-reviewing-light.webp'
-import reviewingDark from '../assets/window-reviewing-dark.webp'
-import pacingLight from '../assets/window-pacing-light.webp'
-import pacingDark from '../assets/window-pacing-dark.webp'
+import graphLight from '../assets/window-graph-light.webp'
+import graphDark from '../assets/window-graph-dark.webp'
+import editorLight from '../assets/window-editor-light.webp'
+import editorDark from '../assets/window-editor-dark.webp'
+import filesLight from '../assets/window-files-light.webp'
+import filesDark from '../assets/window-files-dark.webp'
+import searchLight from '../assets/window-search-light.webp'
+import searchDark from '../assets/window-search-dark.webp'
+import agentLight from '../assets/window-agent-light.webp'
+import agentDark from '../assets/window-agent-dark.webp'
+import audioLight from '../assets/window-audio-light.webp'
+import audioDark from '../assets/window-audio-dark.webp'
+import transcriptLight from '../assets/window-transcript-light.webp'
+import transcriptDark from '../assets/window-transcript-dark.webp'
+import ocrLight from '../assets/window-ocr-light.webp'
+import ocrDark from '../assets/window-ocr-dark.webp'
+import deckLight from '../assets/window-deck-light.webp'
+import deckDark from '../assets/window-deck-dark.webp'
+import stencilLight from '../assets/window-stencil-light.webp'
+import stencilDark from '../assets/window-stencil-dark.webp'
+import cardsDueLight from '../assets/window-cards-due-light.webp'
+import cardsDueDark from '../assets/window-cards-due-dark.webp'
+import reviewLight from '../assets/window-review-light.webp'
+import reviewDark from '../assets/window-review-dark.webp'
+import presetLight from '../assets/window-preset-light.webp'
+import presetDark from '../assets/window-preset-dark.webp'
 
 /**
  * Where the builds are served from. A store of their own, in front of which
@@ -86,119 +86,119 @@ const STUDIO = 'https://jiva.studio'
 /** What the window is shown doing, in the order the switch offers it. */
 const SHOTS = [
   {
-    id: 'filing',
+    id: 'files',
     name: 'Files',
     caption: 'Your folders as they are on disk — move a note and its links follow.',
     alt: 'The numen window: the folders of the vault, the map over the note it '
       + 'is about, and the assistant along the edge.',
-    light: filingLight,
-    dark: filingDark,
+    light: filesLight,
+    dark: filesDark,
   },
   {
-    id: 'writing',
+    id: 'editor',
     name: 'Writing',
     caption: 'The note as you wrote it, with the map it stands in beside it.',
     alt: 'The numen window: a note being written in markdown, the map beside it.',
-    light: writingLight,
-    dark: writingDark,
+    light: editorLight,
+    dark: editorDark,
   },
   {
-    id: 'mapping',
+    id: 'graph',
     name: 'The map',
     caption: 'The note you are on in the middle, and everything joined to it around it.',
     alt: 'The numen window given over to the map: the note called Entropy in the '
       + 'middle, with everything joined to it drawn around it.',
-    light: mappingLight,
-    dark: mappingDark,
+    light: graphLight,
+    dark: graphDark,
   },
   {
-    id: 'searching',
+    id: 'search',
     name: 'Search',
     caption: 'One field over the window: the notes, and the lines inside them.',
     alt: 'The numen window with the search field open over it, showing matching '
       + 'notes and the lines inside them.',
-    light: searchingLight,
-    dark: searchingDark,
+    light: searchLight,
+    dark: searchDark,
   },
   {
-    id: 'asking',
+    id: 'agent',
     name: 'The assistant',
     caption: 'It reads, links and writes — and says what it touched as it goes.',
     alt: 'The numen window: a conversation with the assistant beside the map.',
-    light: askingLight,
-    dark: askingDark,
+    light: agentLight,
+    dark: agentDark,
   },
   {
-    id: 'hearing',
+    id: 'audio',
     name: 'A recording',
     caption: 'The words of a recording, each line against the moment it was said.',
     alt: 'The numen window: a lecture playing, with its transcript under the '
       + 'player and the line being said drawn in the accent.',
-    light: hearingLight,
-    dark: hearingDark,
+    light: audioLight,
+    dark: audioDark,
   },
   {
-    id: 'transcribing',
+    id: 'transcript',
     name: 'Transcribe',
     caption: 'Right-click a recording and the words are written down on your machine.',
     alt: 'The numen window: the menu on a recording in the file tree, offering '
       + 'to transcribe it.',
-    light: transcribingLight,
-    dark: transcribingDark,
+    light: transcriptLight,
+    dark: transcriptDark,
   },
   {
-    id: 'recognising',
+    id: 'ocr',
     name: 'Recognise',
     caption: 'Right-click a scan and the pages are read, page by page, where they are.',
     alt: 'The numen window: a scanned book open beside the file tree, with the '
       + 'menu on it offering to recognise its text.',
-    light: recognisingLight,
-    dark: recognisingDark,
+    light: ocrLight,
+    dark: ocrDark,
   },
   {
-    id: 'decking',
+    id: 'deck',
     name: 'A deck',
     caption: 'Cards as a grid, under the sections you filed them in.',
     alt: 'The numen window: a deck of Sanskrit roots as a grid of cards under '
       + 'their sections.',
-    light: deckingLight,
-    dark: deckingDark,
+    light: deckLight,
+    dark: deckDark,
   },
   {
-    id: 'cutting',
+    id: 'stencil',
     name: 'A stencil',
     caption: 'Name the fields once; every card of that kind is cut the same way.',
     alt: 'The numen window: a stencil naming four fields, and the faces that '
       + 'show them, each drawn beside its preview.',
-    light: cuttingLight,
-    dark: cuttingDark,
+    light: stencilLight,
+    dark: stencilDark,
   },
   {
-    id: 'owing',
+    id: 'cards-due',
     name: 'What is due',
     caption: 'What each deck owes today, and the year you have put in behind it.',
     alt: 'The flashcards window: a year of answering as a grid of weeks, the '
       + 'goals of the vault, and the decks with what each owes today.',
-    light: owingLight,
-    dark: owingDark,
+    light: cardsDueLight,
+    dark: cardsDueDark,
   },
   {
-    id: 'reviewing',
+    id: 'review',
     name: 'A session',
     caption: 'One card, four answers, and how long each of them buys you.',
     alt: 'The flashcards window: one card with its answer showing and the four '
       + 'ways of answering it under it.',
-    light: reviewingLight,
-    dark: reviewingDark,
+    light: reviewLight,
+    dark: reviewDark,
   },
   {
-    id: 'pacing',
+    id: 'preset',
     name: 'A preset',
     caption: 'Move the one knob and see what the year costs before you commit to it.',
     alt: 'The numen window: a preset, with the curve of its goal and the '
       + 'settings it schedules by under it.',
-    light: pacingLight,
-    dark: pacingDark,
+    light: presetLight,
+    dark: presetDark,
   },
 ]
 
@@ -257,7 +257,7 @@ const description =
         <Carousel
           name="shot"
           label="What the window is shown doing"
-          shots={['filing', 'mapping', 'searching', 'asking', 'decking', 'hearing'].map(shotOf)}
+          shots={['files', 'graph', 'search', 'agent', 'deck', 'audio'].map(shotOf)}
           eager
         />
       </div>
@@ -302,12 +302,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('writing').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('editor').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('writing').lit.src}
-              width={shotOf('writing').width}
-              height={shotOf('writing').height}
-              alt={shotOf('writing').alt}
+              src={shotOf('editor').lit.src}
+              width={shotOf('editor').width}
+              height={shotOf('editor').height}
+              alt={shotOf('editor').alt}
               loading="lazy"
             />
           </picture>
@@ -413,12 +413,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('mapping').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('graph').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('mapping').lit.src}
-              width={shotOf('mapping').width}
-              height={shotOf('mapping').height}
-              alt={shotOf('mapping').alt}
+              src={shotOf('graph').lit.src}
+              width={shotOf('graph').width}
+              height={shotOf('graph').height}
+              alt={shotOf('graph').alt}
               loading="lazy"
             />
           </picture>
@@ -459,12 +459,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('searching').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('search').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('searching').lit.src}
-              width={shotOf('searching').width}
-              height={shotOf('searching').height}
-              alt={shotOf('searching').alt}
+              src={shotOf('search').lit.src}
+              width={shotOf('search').width}
+              height={shotOf('search').height}
+              alt={shotOf('search').alt}
               loading="lazy"
             />
           </picture>
@@ -506,12 +506,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('asking').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('agent').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('asking').lit.src}
-              width={shotOf('asking').width}
-              height={shotOf('asking').height}
-              alt={shotOf('asking').alt}
+              src={shotOf('agent').lit.src}
+              width={shotOf('agent').width}
+              height={shotOf('agent').height}
+              alt={shotOf('agent').alt}
               loading="lazy"
             />
           </picture>
@@ -552,12 +552,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('transcribing').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('transcript').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('transcribing').lit.src}
-              width={shotOf('transcribing').width}
-              height={shotOf('transcribing').height}
-              alt={shotOf('transcribing').alt}
+              src={shotOf('transcript').lit.src}
+              width={shotOf('transcript').width}
+              height={shotOf('transcript').height}
+              alt={shotOf('transcript').alt}
               loading="lazy"
             />
           </picture>
@@ -599,12 +599,12 @@ const description =
           </div>
 
           <picture class="shot band__shot">
-            <source srcset={shotOf('recognising').unlit.src} media="(prefers-color-scheme: dark)" />
+            <source srcset={shotOf('ocr').unlit.src} media="(prefers-color-scheme: dark)" />
             <img
-              src={shotOf('recognising').lit.src}
-              width={shotOf('recognising').width}
-              height={shotOf('recognising').height}
-              alt={shotOf('recognising').alt}
+              src={shotOf('ocr').lit.src}
+              width={shotOf('ocr').width}
+              height={shotOf('ocr').height}
+              alt={shotOf('ocr').alt}
               loading="lazy"
             />
           </picture>
@@ -647,7 +647,7 @@ const description =
           <Carousel
             name="cards"
             label="A deck, the stencil that cuts it, and the preset that schedules it"
-            shots={['decking', 'cutting', 'pacing'].map(shotOf)}
+            shots={['deck', 'stencil', 'preset'].map(shotOf)}
             band
           />
         </div>
@@ -689,7 +689,7 @@ const description =
           <Carousel
             name="review"
             label="A day of review"
-            shots={['owing', 'reviewing'].map(shotOf)}
+            shots={['cards-due', 'review'].map(shotOf)}
             band
             narrow
           />

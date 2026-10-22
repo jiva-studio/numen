@@ -1,7 +1,6 @@
 /**
  * What is offered over what is in front, and what a command carries out of it.
  *
- * The table is read here without a palette: which group a command stands in,
  * and which of them another command's row reaches.
  */
 import { describe, expect, it } from 'vitest'

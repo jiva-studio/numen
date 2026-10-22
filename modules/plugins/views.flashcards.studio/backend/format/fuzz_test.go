@@ -90,9 +90,9 @@ func FuzzWhole(f *testing.F) {
 // createIDs creates marks a run at a time, so that what comes out of one body
 // is the same on every machine and in every run.
 func createIDs() func() cardid.ID {
-	at := 0
+	pos := 0
 	return func() cardid.ID {
-		at++
-		return cardid.ID(fmt.Sprintf("%010d", at))
+		pos++
+		return cardid.ID(fmt.Sprintf("%010d", pos))
 	}
 }

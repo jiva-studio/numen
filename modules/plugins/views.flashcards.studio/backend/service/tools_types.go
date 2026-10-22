@@ -53,7 +53,6 @@ type Fault struct {
 }
 
 // CurrentCard is the card in front of the person, as an agent is told about it. The deck is the file
-// it stands in and the mark is what every card tool addresses it by.
 type CurrentCard struct {
 	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
 	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
@@ -140,7 +139,6 @@ func fingerprintOf(ref domain.Fingerprint) string {
 }
 
 // parseFingerprint is the fingerprint a caller presents. A tool that changes what somebody may have
-// read since takes one, and a call carrying none is refused.
 func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
 		return domain.Fingerprint{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_stencil_read for a stencil")

@@ -26,15 +26,15 @@ var breaks = strings.NewReplacer("\r\n", "\n", "\r", "\n")
 // written that way as they are.
 func lineEnding(raw []byte) string {
 	crlf := false
-	for at := 0; at < len(raw); at++ {
-		switch raw[at] {
+	for pos := 0; pos < len(raw); pos++ {
+		switch raw[pos] {
 		case '\n':
-			if at == 0 || raw[at-1] != '\r' {
+			if pos == 0 || raw[pos-1] != '\r' {
 				return "\n"
 			}
 			crlf = true
 		case '\r':
-			if at+1 == len(raw) || raw[at+1] != '\n' {
+			if pos+1 == len(raw) || raw[pos+1] != '\n' {
 				return "\n"
 			}
 		}
@@ -48,21 +48,21 @@ func lineEnding(raw []byte) string {
 // breakWidth is the bytes the line break standing at one offset takes, and zero
 // where no break stands there. YAML breaks a line on a carriage return, a line
 // feed, the two together, and the Unicode NEL, LS and PS.
-func breakWidth(block []byte, at int) int {
-	switch block[at] {
+func breakWidth(block []byte, offset int) int {
+	switch block[offset] {
 	case '\r':
-		if at+1 < len(block) && block[at+1] == '\n' {
+		if offset+1 < len(block) && block[offset+1] == '\n' {
 			return 2
 		}
 		return 1
 	case '\n':
 		return 1
 	case 0xC2:
-		if at+1 < len(block) && block[at+1] == 0x85 {
+		if offset+1 < len(block) && block[offset+1] == 0x85 {
 			return 2
 		}
 	case 0xE2:
-		if at+2 < len(block) && block[at+1] == 0x80 && (block[at+2] == 0xA8 || block[at+2] == 0xA9) {
+		if offset+2 < len(block) && block[offset+1] == 0x80 && (block[offset+2] == 0xA8 || block[offset+2] == 0xA9) {
 			return 3
 		}
 	}
@@ -83,14 +83,14 @@ func endsWithBreak(block []byte) bool {
 // as a final entry, so that line n runs from offsets[n-1] to offsets[n].
 func lineOffsets(block []byte) []int {
 	offsets := []int{0}
-	for at := 0; at < len(block); {
-		width := breakWidth(block, at)
+	for pos := 0; pos < len(block); {
+		width := breakWidth(block, pos)
 		if width == 0 {
-			at++
+			pos++
 			continue
 		}
-		at += width
-		offsets = append(offsets, at)
+		pos += width
+		offsets = append(offsets, pos)
 	}
 	if offsets[len(offsets)-1] != len(block) {
 		offsets = append(offsets, len(block))
@@ -98,16 +98,14 @@ func lineOffsets(block []byte) []int {
 	return offsets
 }
 
-// columnOffset is where the column the parser reports on one line stands in the
 // block, in bytes. The parser counts a column in characters, and a column past
-// the end of its line stands at the end of it.
 func columnOffset(block []byte, lines []int, line, column int) int {
-	at, end := lines[line-1], lines[line]
-	for count := 1; count < column && at < end; count++ {
-		_, width := utf8.DecodeRune(block[at:end])
-		at += width
+	offset, end := lines[line-1], lines[line]
+	for count := 1; count < column && offset < end; count++ {
+		_, width := utf8.DecodeRune(block[offset:end])
+		offset += width
 	}
-	return at
+	return offset
 }
 
 func getIndent(line string) string {
@@ -117,8 +115,8 @@ func getIndent(line string) string {
 // offsetLine is the 1-based line that begins at or after a byte offset, or
 // len(lines) when nothing in lines reaches that far.
 func offsetLine(lines []int, offset int) int {
-	for i, at := range lines {
-		if at >= offset {
+	for i, lineStart := range lines {
+		if lineStart >= offset {
 			return i + 1
 		}
 	}

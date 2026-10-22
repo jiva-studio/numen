@@ -339,9 +339,8 @@ type PluginTool struct {
 	// hold and whether the tool is offered where nothing may be changed.
 	Effect ToolEffect `protobuf:"varint,6,opt,name=effect,proto3,enum=numen.v1.ToolEffect" json:"effect,omitempty"`
 	// The agent servers the tool is offered on. None is the full server alone.
-	Servers []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
-	// How a person is told of a call to the tool. None says what the effect says.
-	Step          ToolStep `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
+	Servers       []ToolServer `protobuf:"varint,7,rep,packed,name=servers,proto3,enum=numen.v1.ToolServer" json:"servers,omitempty"`
+	Step          ToolStep     `protobuf:"varint,8,opt,name=step,proto3,enum=numen.v1.ToolStep" json:"step,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -560,9 +559,8 @@ type ToolResult struct {
 	Text string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
 	// The structured result as JSON, meeting the output schema. Empty where the
 	// tool listed none.
-	Structured []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
-	// True where the tool ran and refused, and text says why.
-	IsRefusal     bool `protobuf:"varint,3,opt,name=is_refusal,json=isRefusal,proto3" json:"is_refusal,omitempty"`
+	Structured    []byte `protobuf:"bytes,2,opt,name=structured,proto3" json:"structured,omitempty"`
+	IsRefusal     bool   `protobuf:"varint,3,opt,name=is_refusal,json=isRefusal,proto3" json:"is_refusal,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }

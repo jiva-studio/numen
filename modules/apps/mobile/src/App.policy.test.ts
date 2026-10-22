@@ -51,11 +51,11 @@ function isAllowed(directive: string, address: string): boolean {
     const named = /^(?:([a-z]+):\/\/)?([^:/]+)(?::(\d+|\*))?$/.exec(source)
     if (!named) return false
     const [, scheme, host, port] = named
-    const at = new URL(address, PAGE)
+    const url = new URL(address, PAGE)
     return (
-      (!scheme || at.protocol === `${scheme}:`) &&
-      at.hostname === host &&
-      (port === '*' || (port ?? '') === at.port)
+      (!scheme || url.protocol === `${scheme}:`) &&
+      url.hostname === host &&
+      (port === '*' || (port ?? '') === url.port)
     )
   })
 }
@@ -103,7 +103,6 @@ describe('the policy the page carries', () => {
   })
 
   it('writes no directive a page may not give itself', () => {
-    // A policy in the document is refused these three, and saying them anyway
     // buys nothing but a warning in the log.
     for (const named of ['frame-ancestors', 'report-uri', 'sandbox']) {
       expect(policy).not.toHaveProperty(named)
@@ -137,14 +136,14 @@ describe('what the page asks for', () => {
       const css = readFileSync(from.resolve(sheet), 'utf8')
       expect([
         sheet,
-        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((at) => at[1]),
+        [...css.matchAll(/url\(\s*['"]?([^'")]*)/g)].map((match) => match[1]),
       ]).toStrictEqual([sheet, []])
     }
   })
 
   it('names no host but the core in what it is built from', () => {
     const named = readSources(join(here, 'src')).flatMap((source) =>
-      [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((at) => at[1]),
+      [...source.matchAll(/https?:\/\/([^:/'"`\s$]+)/g)].map((match) => match[1]),
     )
     expect([...new Set(named)]).toStrictEqual(['127.0.0.1'])
   })

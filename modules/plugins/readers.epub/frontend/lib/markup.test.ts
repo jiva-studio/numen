@@ -57,7 +57,9 @@ describe('the runs of the text', () => {
 describe('a document of a book as it arrives', () => {
   it('draws its picture from the entry of the archive the markup names', () => {
     const target = new DOMParser().parseFromString(spine, 'text/html')
-    const named = [...target.body.querySelectorAll('img[src]')].map((one) => one.getAttribute('src'))
+    const named = [...target.body.querySelectorAll('img[src]')].map((one) =>
+      one.getAttribute('src'),
+    )
     expect(named).not.toHaveLength(0)
 
     const resolvedMarkup = resolveImageUrls(spine, entry)

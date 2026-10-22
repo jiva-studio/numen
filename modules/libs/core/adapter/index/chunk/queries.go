@@ -23,7 +23,6 @@ func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
 // Passage is one chunk, and where its text is read from.
 //
-// `Parent` is the large chunk this one sits inside, and is zero for a large
 // chunk.
 type Passage struct {
 	Chunk    int64
@@ -174,7 +173,6 @@ func (q *Queries) FindLexical(ctx context.Context, vaultID domain.VaultID, query
 // typed, best first.
 //
 // A section answers with the chunk it opens, so what comes back stands where the
-// section begins. Asked where a book speaks about a thing, this is the half that
 // answers with the chapter about it and not with the paragraph that says its
 // name most often.
 func (q *Queries) GetNamedPassages(ctx context.Context, vaultID domain.VaultID, query string, of []domain.SourceKind, limit int, growing bool) ([]domain.Passage, error) {
@@ -240,11 +238,11 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 		return nil, err
 	}
 
-	near, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
+	item, err := q.findNearestByBits(ctx, vault, query, limit*coarseCandidates)
 	if err != nil {
 		return nil, err
 	}
-	ranked, err := q.rerank(ctx, recipe, query, near, of, floor)
+	ranked, err := q.rerank(ctx, recipe, query, item, of, floor)
 	if err != nil {
 		return nil, err
 	}
@@ -264,19 +262,18 @@ func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []fl
 	}
 	defer rows.Close()
 
-	var near []int64
+	var val []int64
 	for rows.Next() {
 		var chunk int64
 		var distance float64
 		if err := rows.Scan(&chunk, &distance); err != nil {
 			return nil, err
 		}
-		near = append(near, chunk)
+		val = append(val, chunk)
 	}
-	return near, rows.Err()
+	return val, rows.Err()
 }
 
-// getEnclosingPassages is the large chunk each chunk sits inside, in the order
 // given.
 //
 // The nearest-neighbour question is asked of the vector index alone: it takes
@@ -424,7 +421,7 @@ func (q *Queries) paths(ctx context.Context, vaultID domain.VaultID, statement s
 // does, so the pair is what says how far there is to go.
 //
 // A vault the index has never heard of has nothing and owes nothing.
-func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (held, embedded int64, err error) {
+func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recipe string) (target, embedded int64, err error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return 0, 0, nil
@@ -433,8 +430,8 @@ func (q *Queries) GetProgress(ctx context.Context, vaultID domain.VaultID, recip
 		return 0, 0, err
 	}
 	err = q.db.QueryRowContext(ctx, stmt.Get("progress"), recipe, vault).
-		Scan(&held, &embedded)
-	return held, embedded, err
+		Scan(&target, &embedded)
+	return target, embedded, err
 }
 
 // GetKeptVectors is the vectors already made for the texts given under the

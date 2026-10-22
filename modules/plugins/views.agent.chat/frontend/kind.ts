@@ -19,7 +19,7 @@ export const AGENT = 'agent'
 
 /** What an agent tab is called: the first thing asked of it, shortened. */
 const getAgentTitle = (state: AgentTabState): string =>
-  createTabTitle(state.turns.value.find((turn) => turn.voice === 'asked')?.text ?? '') ||
+  createTabTitle(state.turns.value.find((turn) => turn.voice === 'prompt')?.text ?? '') ||
   words.agent
 
 /** The agent kind as the window keeps it. Each tab holds a conversation made by `createState`. */

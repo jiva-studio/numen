@@ -24,7 +24,7 @@ describe('mock plugin context', () => {
     ctx.registerTabKind<{ here: string }>({
       kind: 'graph',
       component: {},
-      open: (at) => ({ here: at }),
+      open: (target) => ({ here: target }),
       navigate: (state, path) => {
         navigated.push(`${state.here} -> ${path}`)
       },

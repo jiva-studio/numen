@@ -7,8 +7,8 @@ import "syscall"
 // checkLibrary opens the library at a path with the platform loader and returns
 // an error when it does not open or serves no apiVersion table. The library
 // stays loaded.
-func checkLibrary(at string) error {
-	handle, err := syscall.LoadLibrary(at)
+func checkLibrary(pos string) error {
+	handle, err := syscall.LoadLibrary(pos)
 	if err != nil {
 		return err
 	}

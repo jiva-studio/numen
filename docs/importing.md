@@ -46,7 +46,7 @@ A folder is a kind, and the producer stands in the file's name where a kind has 
 | `article/<hash>.txt` | the prose of a page |
 | `copy/<hash>.mp4` | the video itself, where a copy was asked for |
 
-One language is asked for and not a list: a site that publishes a machine translation into every language it knows answers a request for the lot by refusing it. What a person published is preferred over what a machine wrote; among those, the languages `importing.captions` names, and then the language the video was spoken in.
+One language is asked for and not a list: a site that publishes a machine translation into every language it knows rejects bulk requests. What a person published is preferred over what a machine wrote; among those, the languages `importing.captions` names, and then the video's original audio language.
 
 ## What a search answers
 
@@ -60,11 +60,11 @@ An address nothing plays is the address itself, and what was fetched from it is 
 
 ## A copy
 
-**Download a copy** fetches the video itself onto this disk, and the tab plays that instead of the frame: it plays offline, and nothing of the site it came from is loaded to play it. At the command line it is `numen-cli import <vault> <url> --copy`.
+**Download a copy** fetches the video itself onto this disk, and the tab plays the local file directly: it plays offline, and nothing of the site it came from is loaded to play it. At the command line it is `numen-cli import <vault> <url> --copy`.
 
 It is asked for by hand. An hour of video on somebody's disk is not what pasting an address asks for, and `importing.copy_max_size_mb` is what a copy may run to at all.
 
-The copy is kept in the vault's own folder, named by the address like everything else fetched for it, and it is played from there — the vault's own reader is refused that folder, so what serves it is the same socket, reading the store. `importing.copies_to_vault` keeps it beside the url instead, under that file's own name, where the person sees it in their folder and every other program on the machine can play it. Taking the copy away leaves the url pointing where it pointed, and the tab frames the address again.
+The copy is kept in the vault's own folder, named by the address like everything else fetched for it, and it is played from there — the vault's reader has no direct access to that directory, so what serves it is the same socket, reading the store. `importing.copies_to_vault` stores it alongside the URL file under its own filename, where the person sees it in their folder and every other program on the machine can play it. Taking the copy away leaves the url pointing where it pointed, and the tab frames the address again.
 
 ## What goes when the file goes
 
@@ -78,7 +78,7 @@ A page is fetched in this process — an ordinary request, and the prose found b
 
 A site with an API of its own is another provider and nothing more: it says which addresses it supports, and it is written as the whole of that site's answer.
 
-A site that refuses an unattended request says so in its own words, and those are what the person is shown. What answers such a refusal — cookies from a browser, a token — is handed to every run through `importing.yt_dlp.arguments`.
+A site that rejects an unattended request returns an error message displayed to the user. Authentication options for handling such rejections — browser cookies or tokens — are passed to each run via `importing.yt_dlp.arguments`.
 
 ## Settings
 

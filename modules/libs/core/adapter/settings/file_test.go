@@ -12,11 +12,11 @@ import (
 )
 
 // writeSettingsFile makes a settings file in a folder of this test's own.
-func writeSettingsFile(t *testing.T, written string) string {
+func writeSettingsFile(t *testing.T, output string) string {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "numen.json")
-	if written != "" {
-		if err := os.WriteFile(path, []byte(written), 0o600); err != nil {
+	if output != "" {
+		if err := os.WriteFile(path, []byte(output), 0o600); err != nil {
 			t.Fatalf("writing the file: %v", err)
 		}
 	}
@@ -151,7 +151,7 @@ func TestWhatIsSaidDoesNotRepeatWhatExistsInTheFile(t *testing.T) {
 		t.Fatal("wanted an error")
 	}
 	if strings.Contains(err.Error(), secret) {
-		t.Errorf("said %q, which repeats what stands in the file", err)
+		t.Errorf("got error %q repeating file content", err)
 	}
 }
 
@@ -167,7 +167,7 @@ func TestWriteMakesTheFileWhereThereIsNone(t *testing.T) {
 }
 
 // newString is the file a caller presents as the one it last read.
-func newString(written string) *string { return &written }
+func newString(output string) *string { return &output }
 
 func TestWriteOverAFileThatMovedPastWhatWasReadIsRefused(t *testing.T) {
 	read := "{\n  \"agent\": { \"use\": \"claude\" }\n}\n"

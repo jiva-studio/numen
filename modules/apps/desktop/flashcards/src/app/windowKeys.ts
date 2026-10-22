@@ -2,7 +2,6 @@
  * What a keystroke asks of the window, screen by screen.
  *
  * Each screen reads its own keys: the vaults screen opens the vault a letter
- * stands at, the decks screen picks what to sit down to, and the session screen
  * turns cards over and answers them. What a key means is the keyboard's answer;
  * what is done about it is the window's.
  */
@@ -30,7 +29,6 @@ export interface WindowKeysDeps {
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
   /** Whether the answer is already showing. */
   readonly isShown: () => boolean
-  /** Which of the card and the two panels beside it the window is showing. */
   readonly getShowing: () => 'reading' | 'here' | 'asking'
   /** Into a vault. */
   readonly choose: (vault: string) => void
@@ -60,8 +58,8 @@ export interface WindowKeysDeps {
 
 const applyVaultKey = (press: KeyboardEvent, deps: WindowKeysDeps) => {
   const vaults = deps.getVaults()
-  const at = getVaultForKey(press, vaults.length)
-  const one = vaults[at ?? -1]
+  const vaultIndex = getVaultForKey(press, vaults.length)
+  const one = vaults[vaultIndex ?? -1]
   if (!one?.isCounted) return
   press.preventDefault()
   deps.choose(one.vault)

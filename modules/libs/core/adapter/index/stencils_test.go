@@ -35,7 +35,6 @@ func TestANoteWhoseFileReturnsNothingIsANote(t *testing.T) {
 	}
 }
 
-// One database holds every vault, so a question that forgets its vault answers with another vault's
 // notes of a type and reports nothing wrong.
 //
 // The two vaults share no word, and both directions are asserted: a leak in either is a note whose
@@ -93,7 +92,7 @@ func TestTheTypeOfEveryEntryOfAFolderIsOneQuestion(t *testing.T) {
 	// A path of another vault and a path the index holds nothing at are both
 	// absent, and a listing draws such an entry as the file it is.
 	if _, hasCard := target["cards/quasars.md"]; hasCard {
-		t.Error("a folder of one vault was told the type of another vault's note at the same path")
+		t.Error("folder received note type from different vault at same path")
 	}
 	if _, renderedVal := target["cards/llama.jpg"]; renderedVal {
 		t.Error("a file the index holds no note at was given a type")

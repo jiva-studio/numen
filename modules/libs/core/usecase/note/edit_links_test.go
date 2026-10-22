@@ -56,22 +56,21 @@ func TestCheckingALinkNamesWhatItLacks(t *testing.T) {
 	}
 }
 
-// What the caller presents is what the write is held to.
 func TestLinkEditsAreHeldToTheFingerprintTheCallerPresents(t *testing.T) {
 	t.Parallel()
-	edits := map[string]func(c changing, held domain.Fingerprint) error{
-		"adding": func(c changing, held domain.Fingerprint) error {
-			_, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", held, toEntropy(domain.RoleRef))
+	edits := map[string]func(c changing, item domain.Fingerprint) error{
+		"adding": func(c changing, activeItem domain.Fingerprint) error {
+			_, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", activeItem, toEntropy(domain.RoleRef))
 			return err
 		},
-		"pointing": func(c changing, held domain.Fingerprint) error {
+		"pointing": func(c changing, retained domain.Fingerprint) error {
 			_, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Heat.md", "series",
-				domain.Address{Scheme: domain.SchemeName, Value: "Order"}, domain.RoleParent, held)
+				domain.Address{Scheme: domain.SchemeName, Value: "Order"}, domain.RoleParent, retained)
 			return err
 		},
-		"removing": func(c changing, held domain.Fingerprint) error {
+		"removing": func(c changing, targetItem domain.Fingerprint) error {
 			_, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
-				domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, held)
+				domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, domain.RoleParent, targetItem)
 			return err
 		},
 	}

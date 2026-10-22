@@ -30,7 +30,7 @@ type indexEvents struct {
 	out   io.Writer
 }
 
-func (e indexEvents) ReportTask(at run.Task) { e.state.reportTask(at) }
+func (e indexEvents) ReportTask(pos run.Task) { e.state.reportTask(pos) }
 
 func (e indexEvents) FinishTask(id string) { e.state.finishTask(id) }
 
@@ -52,20 +52,20 @@ var errNoProgress = errors.New("nothing says how far the index has got")
 // embedder the installation holds. still is how long the vault has to have been
 // quiet before a note that was written is embedded.
 func newIndexWorker(
-	made Assembly, state *State, embedder port.Embedder, still time.Duration, out io.Writer,
+	made Assembly, state *State, embedder port.Embedder, idleDuration time.Duration, out io.Writer,
 ) *indexing.Worker {
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
 		Wait:     getModelWait(embedder),
-		Owed: func(ctx context.Context, v domain.Vault) (held, embedded int64, err error) {
+		Owed: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {
 				return 0, 0, errNoProgress
 			}
 			return state.Indexing.Progress.GetProgress(ctx, v.ID, text(&state.Indexing.Recipe))
 		},
 		Events: indexEvents{state: state, out: out},
-		Quiet:  still,
+		Quiet:  idleDuration,
 		After:  time.After,
 	})
 }

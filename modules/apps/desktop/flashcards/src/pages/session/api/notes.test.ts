@@ -1,5 +1,4 @@
 /**
- * What the window is told about a deck's notes, in the panel's own words for
  * them.
  */
 import { describe, expect, it, vi } from 'vitest'

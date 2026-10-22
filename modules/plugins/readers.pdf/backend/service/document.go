@@ -22,7 +22,6 @@ var initOnce sync.Once
 type DocumentServer struct {
 	numenv1connect.UnimplementedDocumentServiceHandler
 
-	// vaultRoot is the vault the paths of requests are held to.
 	vaultRoot func() string
 }
 

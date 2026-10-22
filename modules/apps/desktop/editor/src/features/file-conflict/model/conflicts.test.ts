@@ -138,7 +138,11 @@ describe('a window of real notes', () => {
   const createCore = (files: Map<string, string>): NotesCore => ({
     read: async (path) => asValue({ body: files.get(path) ?? '', at: `at:${files.get(path)}` }),
     write: async (path, body, observed) => {
-      if (observed && files.get(path) !== observed.prose && `at:${files.get(path)}` !== observed.fingerprint) {
+      if (
+        observed &&
+        files.get(path) !== observed.prose &&
+        `at:${files.get(path)}` !== observed.fingerprint
+      ) {
         return asFailure('changed' as const)
       }
       files.set(path, body)

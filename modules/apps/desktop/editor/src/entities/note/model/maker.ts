@@ -70,10 +70,8 @@ export const UNTITLED = 'Untitled note'
 /** How many names are asked for before the vault refusing them all is said. */
 const names = 100
 
-/** What a person is told when a note could not be made or joined. */
 const words: Record<ErrorCode, string> = ERRORS
 
-/** What a person is told when the vault took none of the names it was offered. */
 const exhausted = `every name from ${UNTITLED} onwards is taken`
 
 /** A note that now exists: where it is filed, and what it is called. */

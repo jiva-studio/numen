@@ -23,9 +23,7 @@ export interface ViewState {
   /** The notes a search turned up, and the vaults the installation holds. */
   readonly found: Readonly<Ref<readonly NameMatch[]>>
   readonly known: Readonly<Ref<readonly Vault[]>>
-  /** The vault the window is showing, which is the one it will not open again. */
   readonly showing: Readonly<Ref<string>>
-  /** Whether the vault is being asked, and what it said when it refused. */
   readonly isWorking: Readonly<Ref<boolean>>
   readonly failureMessage: Readonly<Ref<string>>
   /** What a step is over, in the words a person reads it as. */

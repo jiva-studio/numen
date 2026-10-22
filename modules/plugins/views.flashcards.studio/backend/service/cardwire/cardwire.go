@@ -1,6 +1,5 @@
-// Package cardwire carries a stencil, a deck and a card between the words the
-// flashcards speak and the words the schema does. It is the mapping alone: what
-// a window asks and what answers it stands in the package above.
+// Package cardwire provides wire conversions between flashcards domain models
+// and protobuf representations.
 package cardwire
 
 import (
@@ -41,11 +40,11 @@ func NewWireSummary(s cards.StencilSummary) *v1.StencilSummary {
 // NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func NewRenameResponse(r cards.RenameResult, at *v1.Fingerprint) *v1.RenameStencilFieldResponse {
+func NewRenameResponse(r cards.RenameResult, fingerprint *v1.Fingerprint) *v1.RenameStencilFieldResponse {
 	out := &v1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
-		At:    at,
+		At:    fingerprint,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &v1.UnwrittenDeck{
@@ -80,13 +79,13 @@ func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *
 	return out
 }
 
-func newWireCard(c format.Card, at string) *v1.Card {
+func newWireCard(c format.Card, pos string) *v1.Card {
 	out := &v1.Card{
 		Heading:      c.Heading,
 		Mark:         string(c.Mark),
 		SectionIndex: section(c.Section),
 		StencilLink:  c.StencilLink,
-		StencilPath:  at,
+		StencilPath:  pos,
 		Preamble:     c.Preamble,
 		Values:       make([]*v1.Value, 0, len(c.Values)),
 	}
@@ -96,19 +95,16 @@ func newWireCard(c format.Card, at string) *v1.Card {
 	return out
 }
 
-// section is where a card's section stands in the deck's own, as the schema
-// carries it. A card standing before the first section carries nothing.
-func section(at int) *int32 {
-	if at == format.NoSection {
+// section maps the section index to a protobuf int32 pointer, returning nil for NoSection.
+func section(pos int) *int32 {
+	if pos == format.NoSection {
 		return nil
 	}
-	index := int32(at)
+	index := int32(pos)
 	return &index
 }
 
-// sectionOf is where a card the client is writing stands, in the words the core
-// holds it in. A card the client left without one stands before the first
-// section.
+// sectionOf maps a protobuf section pointer to domain section index, returning NoSection for nil.
 func sectionOf(index *int32) int {
 	if index == nil {
 		return format.NoSection
@@ -147,14 +143,13 @@ func newWireProblem(p format.Problem) *v1.Problem {
 	}
 }
 
-// position is where a problem stands, as the schema carries it. A problem about
-// no card and no face carries nothing.
-func position(at int) *int32 {
-	if at == format.NoPosition {
+// position converts an optional integer position to an int32 pointer.
+func position(offset int) *int32 {
+	if offset == format.NoPosition {
 		return nil
 	}
-	stands := int32(at)
-	return &stands
+	pos := int32(offset)
+	return &pos
 }
 
 // newWireProblemKind is what kind of problem it is, as the schema names it, and whether the schema

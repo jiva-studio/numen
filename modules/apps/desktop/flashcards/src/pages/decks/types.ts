@@ -8,7 +8,14 @@ export const CLOSES_NOTHING: BudgetKeys = { new: '', reviews: '', minutes: '' }
 /** How the decks pointing at one preset are scheduled, as far as this screen reads it. */
 export type Settings = Pick<
   WireSettings,
-  'goal' | 'byDate' | 'minutesADay' | 'newADay' | 'reviewsADay' | 'retention' | 'load' | 'hasEvenLoad'
+  | 'goal'
+  | 'byDate'
+  | 'minutesADay'
+  | 'newADay'
+  | 'reviewsADay'
+  | 'retention'
+  | 'load'
+  | 'hasEvenLoad'
 >
 
 /**
@@ -36,7 +43,6 @@ export interface Preset {
   readonly faces: number
   /**
    * What starting a session on it would ask, as the count gives it: the cards its
-   * decks owe today, already held to the budgets that close the day.
    */
   readonly cards: number
   /** What the day holds under it, which is what today is weighed against. */

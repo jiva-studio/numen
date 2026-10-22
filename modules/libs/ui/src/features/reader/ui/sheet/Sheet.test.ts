@@ -73,7 +73,6 @@ describe('a page that has come', () => {
 })
 
 describe('a page that will not come', () => {
-  /** Asked for again as many times as it is going to be, and then refused. */
   const mountRefusedPage = async () => {
     const page = sheet()
     for (let ask = 0; ask <= 4; ask++) {
@@ -91,7 +90,6 @@ describe('a page that will not come', () => {
   })
 
   it('asks again at an address the last ask did not use', async () => {
-    // A picture at an address the browser already refused is not asked for
     // again, so each attempt has to differ.
     const page = sheet()
     const first = page.find('.reader__picture').attributes('src')

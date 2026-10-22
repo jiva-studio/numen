@@ -38,8 +38,8 @@ const agentHooksPath = computed(
   () => ['agent', activeProgram.value, 'reads_hooks_and_skills'] as const,
 )
 
-const getChoices = (at: readonly string[]): readonly SelectChoice[] =>
-  createModelChoices(fields, at, words)
+const getChoices = (path: readonly string[]): readonly SelectChoice[] =>
+  createModelChoices(fields, path, words)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onIndexingModelChange(name: string) {

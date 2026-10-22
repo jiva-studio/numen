@@ -98,7 +98,7 @@ describe('at its current position', () => {
     expect(getPlacement(tooltip).y).toBe('50px')
   })
 
-  it('remains clear of the edge it is against where it is larger than the room', async () => {
+  it('clamps tooltip position when larger than viewport bounds', async () => {
     const tooltip = await mountTooltip({
       at: createBox({ x: 10, y: 10 }),
       viewport: createViewport({ width: 60, height: 800 }),

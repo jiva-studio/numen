@@ -34,12 +34,12 @@ const ITS_OWN_PACE = 10_000
 
 /** A room of a fixed width, so a story is read at the measure it is judged at. */
 const room =
-  (wide: number): Decorator =>
+  (width: number): Decorator =>
   (story) => ({
     components: { story },
     template: `
       <div class="numen h-screen bg-surface p-6 font-sans text-base text-ink" style="user-select: none; -webkit-user-select: none">
-        <div class="mx-auto flex h-full flex-col" style="inline-size: ${wide}px; max-inline-size: 100%">
+        <div class="mx-auto flex h-full flex-col" style="inline-size: ${width}px; max-inline-size: 100%">
           <story />
         </div>
       </div>
@@ -50,7 +50,6 @@ const room =
 const NARROW = room(700)
 const WIDE = room(1200)
 
-/** A picture taller than any column it could stand in. */
 const TALL = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(
   `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="2400">
      <rect width="100%" height="100%" fill="#8a7f6d"/>
@@ -76,7 +75,7 @@ const activeReading =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.from)
+      const offset = ref(chapter.span.from)
       // How large the text is set belongs to whatever holds the reader, so the
       // story holds it, and presses its own way of setting it.
       const size = ref(1)
@@ -91,14 +90,14 @@ const activeReading =
       onBeforeUnmount(() => window.removeEventListener('keydown', turns))
 
       return {
-        at,
+        offset,
         size,
         book,
         markup: chapter.markup,
         span: chapter.span,
         highlights,
         onMove: (to: number) => {
-          at.value = to
+          offset.value = to
         },
         larger: () => {
           size.value *= 1.25
@@ -106,7 +105,7 @@ const activeReading =
       }
     },
     template: `
-      <div class="h-full" :data-front="at">
+      <div class="h-full" :data-front="offset">
         <button type="button" aria-label="Larger" class="sr-only" @click="larger">Larger</button>
         <Book
           ref="book"
@@ -114,7 +113,7 @@ const activeReading =
           :markup="markup"
           :span="span"
           :book="span"
-          :at="at"
+          :at="offset"
           :text-size="size"
           :highlights="highlights"
           @move="onMove"
@@ -132,7 +131,7 @@ const outOfSight =
   () => ({
     components: { Book },
     setup() {
-      const at = ref(chapter.span.from)
+      const offset = ref(chapter.span.from)
       const room = ref(false)
       const markup = ref('')
       onMounted(() => {
@@ -144,24 +143,24 @@ const outOfSight =
         }, 150)
       })
       return {
-        at,
+        offset,
         room,
         markup,
         span: chapter.span,
         onMove: (to: number) => {
-          at.value = to
+          offset.value = to
         },
       }
     },
     template: `
-      <div class="h-full" :data-front="at">
+      <div class="h-full" :data-front="offset">
         <div class="h-full" :style="{ display: room ? 'block' : 'none' }">
           <Book
             class="h-full"
             :markup="markup"
             :span="span"
             :book="span"
-            :at="at"
+            :at="offset"
             @move="onMove"
           />
         </div>
@@ -291,7 +290,6 @@ export const TwoColumns: Story = {
     const column = getColumnWidth(canvasElement)
     await expect(column).toBeCloseTo(area.width / 2 - GAP, -1)
 
-    // The run that stands in the second column of the first spread stands in
     // the first column of nothing after one turn: the whole spread has gone.
     const before = getRunsOf(canvasElement).map((run) => run.getClientRects()[0]?.left ?? 0)
     await userEvent.keyboard('{ArrowRight}')
@@ -308,7 +306,6 @@ export const TwoColumns: Story = {
 }
 
 /**
- * A picture taller than the column is set inside it. One left at its own height
  * is cut in half by the column edge, and half of it is on a page nobody turns
  * to.
  */
@@ -357,7 +354,6 @@ export const AWordWithNothingToBreakAt: Story = {
 }
 
 /**
- * A table wider than the column is set to the column and carries its own
  * scrollbar. One left at its own width pushes the columns apart.
  */
 export const ATableThatWillNotBreak: Story = {
@@ -418,7 +414,6 @@ export const WordsCanBeTakenUp: Story = {
   play: async ({ canvasElement }) => {
     await waitForLayout(canvasElement)
 
-    // The room this story stands in forbids it, as the window does.
     await expect(getComputedStyle(canvasElement.firstElementChild!).userSelect).toBe('none')
 
     await expect(getComputedStyle(getPaper(canvasElement)).userSelect).not.toBe('none')

@@ -9,11 +9,11 @@ import (
 
 // run is what file_read answers with.
 type run struct {
-	Text    string `json:"text"`
-	Start   int    `json:"start"`
-	Length  int    `json:"length"`
-	Size    int    `json:"size"`
-	Error string `json:"error"`
+	Text   string `json:"text"`
+	Start  int    `json:"start"`
+	Length int    `json:"length"`
+	Size   int    `json:"size"`
+	Error  string `json:"error"`
 }
 
 func runOf(t *testing.T, s *sdk.ClientSession, path string, start, length int) run {
@@ -67,7 +67,6 @@ func TestFileReadReturnsWhenThereIsNoFileAtThePath(t *testing.T) {
 }
 
 // What the vault passes over is passed over here, so an agent on this endpoint
-// reaches no further into the folder than the application itself does.
 func TestFileReadPassesOverWhatTheVaultDoes(t *testing.T) {
 	session, _ := newSession(t, map[string]string{
 		".env":              "SECRET=1\n",

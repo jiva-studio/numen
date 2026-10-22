@@ -59,7 +59,9 @@ describe('what the plex is handed', () => {
   })
 
   it('writes nothing on a line the person wrote nothing on', () => {
-    const [line] = convertNeighbourhood(createNeighbourhood('Here', [['Below', Relation.CHILD, '', '']])).edges
+    const [line] = convertNeighbourhood(
+      createNeighbourhood('Here', [['Below', Relation.CHILD, '', '']]),
+    ).edges
     expect(line?.label).toBeUndefined()
   })
 

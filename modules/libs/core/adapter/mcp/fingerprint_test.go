@@ -10,8 +10,8 @@ import (
 // The fingerprint an agent is handed and returns is the size and the
 // modification time in nanoseconds since the epoch, and no other number.
 func TestTheFingerprintAnAgentCarriesIsSizeAndNanoseconds(t *testing.T) {
-	at := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
-	ref := domain.Fingerprint{Path: "notes/Compost.md", Size: 12, ModTime: at}
+	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
+	ref := domain.Fingerprint{Path: "notes/Compost.md", Size: 12, ModTime: pos}
 
 	want := "12-1788433445123456789"
 	if target := fingerprintOf(ref); target != want {

@@ -8,12 +8,12 @@ const DOC = 'one\ntwo\nthree\nfour'
 const SEVERAL = EditorState.allowMultipleSelections.of(true)
 
 /** Where every end of every range lands, as a line and a column. */
-const replaceIn = (doc: string, selection: EditorSelection, fresh: string) => {
+const replaceIn = (doc: string, selection: EditorSelection, newText: string) => {
   const state = EditorState.create({ doc, selection, extensions: [SEVERAL] })
-  const updatedState = state.update(replace(state, fresh)).state
-  const place = (at: number) => {
-    const line = updatedState.doc.lineAt(at)
-    return [line.number, at - line.from]
+  const updatedState = state.update(replace(state, newText)).state
+  const place = (pos: number) => {
+    const line = updatedState.doc.lineAt(pos)
+    return [line.number, pos - line.from]
   }
   return {
     text: updatedState.doc.toString(),
@@ -26,11 +26,11 @@ const caret = (doc: string, line: number, column: number) =>
   EditorSelection.single(EditorState.create({ doc }).doc.line(line).from + column)
 
 /** Every stretch of text the change puts something else in the place of. */
-const applyChange = (doc: string, fresh: string) => {
+const applyChange = (doc: string, newText: string) => {
   const state = EditorState.create({ doc })
   const found: [number, number, string][] = []
   state
-    .update(replace(state, fresh))
+    .update(replace(state, newText))
     .changes.iterChanges(
       (from, to, _at, _to, insert) => void found.push([from, to, insert.toString()]),
     )
@@ -39,12 +39,14 @@ const applyChange = (doc: string, fresh: string) => {
 
 describe('a document put in over another', () => {
   it('is the text it was given', () => {
-    expect(replaceIn(DOC, caret(DOC, 1, 0), 'fresh\ntext').text).toBe('fresh\ntext')
+    expect(replaceIn(DOC, caret(DOC, 1, 0), 'replacement\ntext').text).toBe('replacement\ntext')
   })
 
   it('is no step to undo', () => {
     const state = EditorState.create({ doc: DOC })
-    expect(state.update(replace(state, 'fresh')).annotation(Transaction.addToHistory)).toBe(false)
+    expect(state.update(replace(state, 'replacement')).annotation(Transaction.addToHistory)).toBe(
+      false,
+    )
   })
 
   it('changes what differs and no more than that', () => {

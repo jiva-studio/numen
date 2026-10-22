@@ -171,7 +171,7 @@ export function createPluginSettingCommands(plugins: readonly PluginInfo[]): rea
 }
 
 interface SettingsTabConfigDeps {
-  dressed: ReturnType<typeof createWindowAppearance>
+  appearance: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
   nesting: ReturnType<typeof useNestingSetting>
   rest: ReturnType<typeof createSettingsStore>
@@ -181,15 +181,15 @@ interface SettingsTabConfigDeps {
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { dressed, sync, nesting, rest, secrets, retry, file } = deps
+  const { appearance, sync, nesting, rest, secrets, retry, file } = deps
   return {
-    themes: dressed.list,
-    applied: dressed.applied,
-    mode: dressed.mode,
-    isPinned: dressed.isPinned,
-    sizes: dressed.sized,
-    bounds: dressed.bounds,
-    choose: (item: string) => dressed.chooseItem(item),
+    themes: appearance.list,
+    applied: appearance.applied,
+    mode: appearance.mode,
+    isPinned: appearance.isPinned,
+    sizes: appearance.sized,
+    bounds: appearance.bounds,
+    choose: (item: string) => appearance.chooseItem(item),
     isSyncing: computed({
       get: () => sync.isEnabled.value,
       set: (on: boolean) => void sync.choose(on ? ON : OFF),
@@ -201,8 +201,8 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
     headings: nesting.headings,
     headingsBounds: nesting.ends,
     chooseHeadings: (count: number) => nesting.chooseCount(`${count}`),
-    getSetting: (at: readonly string[]) => rest.getSetting(at),
-    getModels: (at: readonly string[]) => rest.getModelsAt(at),
+    getSetting: (targetPath: readonly string[]) => rest.getSetting(targetPath),
+    getModels: (targetPath: readonly string[]) => rest.getModelsAt(targetPath),
     write: (content: readonly SettingEdit[]) => rest.writeSettings(content),
     writeSecret: (pluginId: string, name: string, key: string) =>
       secrets.writeSecret(pluginId, name, key),
@@ -215,7 +215,7 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
 }
 
 interface PaletteListsDeps {
-  dressed: ReturnType<typeof createWindowAppearance>
+  appearance: ReturnType<typeof createWindowAppearance>
   sync: ReturnType<typeof syncSetting>
   nesting: ReturnType<typeof useNestingSetting>
   rest: ReturnType<typeof createSettingsStore>
@@ -224,22 +224,22 @@ interface PaletteListsDeps {
 
 function getAppearanceStepGroups(
   command: string,
-  dressed: ReturnType<typeof createWindowAppearance>,
+  appearance: ReturnType<typeof createWindowAppearance>,
   typed: string,
 ) {
-  if (command === APPEARANCE) return dressed.getThemeGroups()
-  if (command === MODE) return dressed.getModeGroups()
+  if (command === APPEARANCE) return appearance.getThemeGroups()
+  if (command === MODE) return appearance.getModeGroups()
   if (command === INTERFACE_SCALE || command === TEXT_SCALE)
-    return dressed.getSizeGroups(command, typed)
+    return appearance.getSizeGroups(command, typed)
   return []
 }
 
 function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
-  const { dressed, sync, nesting, rest, words } = deps
+  const { appearance, sync, nesting, rest, words } = deps
   return {
     getStepGroups: (command, typed) => {
-      const appearance = getAppearanceStepGroups(command, dressed, typed)
-      if (appearance.length > 0) return appearance
+      const appearanceGroups = getAppearanceStepGroups(command, appearance, typed)
+      if (appearanceGroups.length > 0) return appearanceGroups
       if (command === SYNCING) return sync.getSyncingGroups()
       if (command === NESTING) return nesting.getNestingGroups()
       if (command === HEADINGS) return nesting.getHeadingsGroups()
@@ -249,14 +249,14 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
       return []
     },
     previewItem: (command, item) => {
-      if (APPEARANCE_COMMANDS.includes(command)) dressed.previewItem(item)
+      if (APPEARANCE_COMMANDS.includes(command)) appearance.previewItem(item)
     },
   }
 }
 
 export function useSettings({ core, words, log, windowTabs, onSizeChanged }: SettingsDeps) {
   const nesting = useNestingSetting(core, words, log.getWriter('nesting'))
-  const dressed = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
+  const appearance = createWindowAppearance({ core: themes, words, write: log.getWriter('worn') })
   const sync = syncSetting(core, words, log.getWriter('named'))
   const rest = createSettingsStore(core, words, log.getWriter('configured'))
   const secrets = createSecretStore(core, {
@@ -280,35 +280,35 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ dressed, sync, nesting, rest, secrets, retry, file }),
+    createSettingsTabConfig({ appearance, sync, nesting, rest, secrets, retry, file }),
   )
 
-  watch(dressed.sized, () => onSizeChanged())
+  watch(appearance.sized, () => onSizeChanged())
 
-  const retainedItem = createSettingsPaletteLists({ dressed, sync, nesting, rest, words })
+  const retainedItem = createSettingsPaletteLists({ appearance, sync, nesting, rest, words })
 
   const kinds = [configured.kind]
 
   const start = async () => {
-    void dressed.start()
+    void appearance.start()
     void sync.start()
     void nesting.start()
     void rest.start()
   }
 
   const close = () => {
-    dressed.close()
+    appearance.close()
   }
 
   return {
     nesting,
-    dressed,
+    appearance,
     sync,
     oneName: sync,
     rest,
     file,
     configured,
-    kept: retainedItem,
+    paletteLists: retainedItem,
     kinds,
     start,
     close,

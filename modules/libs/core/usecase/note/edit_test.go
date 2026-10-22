@@ -150,7 +150,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 	t.Parallel()
 	for _, tc := range []struct {
 		name      string
-		known     bool
+		existing  bool
 		overwrite bool
 		baseline  bool
 		wantStat  bool
@@ -170,7 +170,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 			edit := note.NewEdit(
 				watchedReaders{inner: filesystem.VaultReaders{}, stat: func(string) { request++ }},
 				filesystem.VaultWriters{}, c.index, time.Now)
-			if tc.known {
+			if tc.existing {
 				edit.Fingerprint = current.Fingerprint
 			}
 			edit.ShouldOverwrite = tc.overwrite
@@ -189,7 +189,6 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 	}
 }
 
-// A caller that named no fingerprint is held to the file as it stood before it
 // was read, so a save that lands in between is not written over.
 func TestAnEditThatNamedNoFingerprintIsHeldToWhatItReadJustNow(t *testing.T) {
 	t.Parallel()

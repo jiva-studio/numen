@@ -173,7 +173,7 @@ describe('panes', () => {
   })
 
   it('calls each part what it holds', () => {
-    expect(getFacePanes(FULL).map((pane) => pane.said)).toEqual([
+    expect(getFacePanes(FULL).map((pane) => pane.label)).toEqual([
       'Front',
       'Preview',
       'Back',
@@ -209,6 +209,6 @@ describe('panes', () => {
       back: 'Verso',
       preview: 'As read',
     })
-    expect(renderedRows.map((pane) => pane.said)).toEqual(['Recto', 'As read', 'Verso', 'As read'])
+    expect(renderedRows.map((pane) => pane.label)).toEqual(['Recto', 'As read', 'Verso', 'As read'])
   })
 })

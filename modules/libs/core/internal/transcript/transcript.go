@@ -127,12 +127,12 @@ func Parse(raw []byte) (string, []domain.TranscriptCue) {
 // parseBlock is one block of the file as a cue, and whether it is one. The
 // header, a note and anything a later version of the format adds are not.
 func parseBlock(lines [][]byte, outBuf []byte, cues []domain.TranscriptCue, cueLens []int) ([]byte, []domain.TranscriptCue, []int) {
-	at, from, to, ok := findTiming(lines)
+	pos, from, to, ok := findTiming(lines)
 	if !ok {
 		return outBuf, cues, cueLens
 	}
 	var offset, length int
-	outBuf, offset, length, ok = appendCueText(outBuf, lines[at+1:], len(cues) == 0)
+	outBuf, offset, length, ok = appendCueText(outBuf, lines[pos+1:], len(cues) == 0)
 	if !ok {
 		return outBuf, cues, cueLens
 	}
@@ -141,8 +141,7 @@ func parseBlock(lines [][]byte, outBuf []byte, cues []domain.TranscriptCue, cueL
 	return outBuf, cues, cueLens
 }
 
-// findTiming is where the arrow stands in a block, and the timings it connects.
-func findTiming(lines [][]byte) (at int, from, to int, ok bool) {
+func findTiming(lines [][]byte) (index int, from, to int, ok bool) {
 	for i, line := range lines {
 		before, after, found := bytes.Cut(line, []byte(arrow))
 		if !found {
@@ -348,7 +347,6 @@ func parseUint(b []byte) (int, bool) {
 }
 
 // GetCuesAt is where a run of the words sits: the cues it falls in, in the
-// order they were spoken. A run crossing a silence is in both of them.
 func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.TranscriptCue {
 	if length <= 0 || len(cues) == 0 {
 		return nil
@@ -357,13 +355,13 @@ func GetCuesAt(cues []domain.TranscriptCue, start, length int) []domain.Transcri
 
 	// The first cue that reaches into the run. A cue before it ends before the
 	// run begins.
-	at := sort.Search(len(cues), func(i int) bool {
+	pos := sort.Search(len(cues), func(i int) bool {
 		return cues[i].Offset+len(cues[i].Text) > start
 	})
 
 	var out []domain.TranscriptCue
-	for ; at < len(cues) && cues[at].Offset < end; at++ {
-		out = append(out, cues[at])
+	for ; pos < len(cues) && cues[pos].Offset < end; pos++ {
+		out = append(out, cues[pos])
 	}
 	return out
 }
@@ -396,18 +394,17 @@ func GetHandWrittenMark() []byte {
 }
 
 // IsWrittenByHand says whether a person wrote these words. The mark is a note
-// of its own, and the same words spoken in a cue are speech.
 func IsWrittenByHand(raw []byte) bool {
 	note := []byte(HandWrittenNote)
-	for at := 0; at <= len(raw)-len(note); {
-		found := bytes.Index(raw[at:], note)
+	for pos := 0; pos <= len(raw)-len(note); {
+		found := bytes.Index(raw[pos:], note)
 		if found < 0 {
 			return false
 		}
-		if found += at; isBlockStart(raw, found) {
+		if found += pos; isBlockStart(raw, found) {
 			return true
 		}
-		at = found + 1
+		pos = found + 1
 	}
 	return false
 }
@@ -416,38 +413,36 @@ func IsWrittenByHand(raw []byte) bool {
 // about it ends. A file carrying none is a recording nothing has transcribed.
 func ReadReached(raw []byte) (ms, end int) {
 	note := []byte(progressNote)
-	// Each note is looked at once, and only what stands between it and the one
 	// after it is read.
 	for end := len(raw); ; {
-		at := bytes.LastIndex(raw[:end], note)
-		if at < 0 {
+		pos := bytes.LastIndex(raw[:end], note)
+		if pos < 0 {
 			return 0, 0
 		}
-		line := raw[at+len(note) : end]
-		end = at
+		line := raw[pos+len(note) : end]
+		end = pos
 		stop := bytes.IndexByte(line, '\n')
-		if stop < 0 || !isBlockStart(raw, at) {
+		if stop < 0 || !isBlockStart(raw, pos) {
 			continue
 		}
 		ms, ok := parseUint(bytes.TrimSpace(line[:stop]))
 		if !ok {
 			continue
 		}
-		return ms, at + len(note) + stop + 1
+		return ms, pos + len(note) + stop + 1
 	}
 }
 
 // isBlockStart says whether a byte is where a block of the file starts: the top
-// of it, or the line after a blank one. A note stands at the top of its own
 // block.
-func isBlockStart(raw []byte, at int) bool {
-	if at == 0 {
+func isBlockStart(raw []byte, pos int) bool {
+	if pos == 0 {
 		return true
 	}
-	if raw[at-1] != '\n' {
+	if raw[pos-1] != '\n' {
 		return false
 	}
-	blank := at - 1
+	blank := pos - 1
 	if blank > 0 && raw[blank-1] == '\r' {
 		blank--
 	}

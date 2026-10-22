@@ -198,7 +198,6 @@ about 30"
 	}
 }
 
-// A heading is closed by a run of hashes only where whitespace stands in front
 // of them, so a name ending in one keeps it and is the whole of what the card
 // is called.
 func TestAHeadingEndingInAHash(t *testing.T) {
@@ -289,7 +288,7 @@ func TestACardNamesNoStencil(t *testing.T) {
 				t.Errorf("the value was not read: %q", got)
 			}
 			if head != "" && !strings.Contains(card.Preamble, strings.SplitN(head, "\n", 2)[0]) {
-				t.Errorf("lead = %q, want what stands under the heading", card.Preamble)
+				t.Errorf("lead = %q, want content under heading", card.Preamble)
 			}
 		})
 	}
@@ -401,12 +400,12 @@ The ones I began with.
 	}
 
 	// A card may stand before the first section, and is placed under none.
-	var under []int
+	var sections []int
 	for _, c := range deck.Cards {
-		under = append(under, c.Section)
+		sections = append(sections, c.Section)
 	}
-	if !slices.Equal(under, []int{format.NoSection, 0, 1}) {
-		t.Errorf("sections = %v, want the first card under none", under)
+	if !slices.Equal(sections, []int{format.NoSection, 0, 1}) {
+		t.Errorf("sections = %v, want the first card under none", sections)
 	}
 	if len(deck.Problems) != 0 {
 		t.Errorf("problems = %+v", deck.Problems)
@@ -434,7 +433,6 @@ func TestADeckOfSectionsAndNoCards(t *testing.T) {
 }
 
 // The format spends two heading levels and no more, so a heading below them is
-// part of the value it stands in.
 func TestAValueContainsADeeperHeading(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck

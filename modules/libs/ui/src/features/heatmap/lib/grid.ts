@@ -63,7 +63,6 @@ export function measureGrid(metrics: HeatmapMetrics): {
  *
  * A caller asks the application for the days before it knows the room it will
  * have, so it asks about the widest grid the room could hold. Every day any
- * narrower grid draws stands inside the answer.
  */
 export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; to: string } {
   const { columns } = measureGrid(metrics)
@@ -85,15 +84,14 @@ export function getStretch(metrics: HeatmapMetrics, now: Date): { from: string; 
   return { from: getDayName(behindDate), to: getDayName(ahead) }
 }
 
-/** The Monday of the week a day stands in, which is the column it opens. */
-function monday(at: Date): Date {
-  const out = new Date(at)
+function monday(date: Date): Date {
+  const out = new Date(date)
   out.setDate(out.getDate() - (weekday(out) - 1))
   return out
 }
 
 /** Monday is the first day of a week, and Sunday the seventh. */
-function weekday(at: Date): number {
-  const day = at.getDay()
+function weekday(date: Date): number {
+  const day = date.getDay()
   return day === 0 ? 7 : day
 }

@@ -36,7 +36,6 @@ var paths = []string{
 // TestOneOfTheTwoRulesAnswers is the property the pair exists for: a path is
 // the vault's or the application's and never both. Were they to overlap, a
 // writer of notes could be handed a path into the application's own folder, and
-// the refusal that keeps an artifact from being read back as a note would hold
 // only for the call sites that happen to exist today.
 func TestOneOfTheTwoRulesAnswers(t *testing.T) {
 	root := t.TempDir()

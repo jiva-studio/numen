@@ -47,7 +47,6 @@ export interface Notes {
   write(path: string, body: string, observed: NoteBaseline | null): Promise<WriteResult>
 }
 
-/** What a person is told and answers with when their tab is in conflict. */
 export interface ConflictWords {
   readonly says: string
   readonly keep: string

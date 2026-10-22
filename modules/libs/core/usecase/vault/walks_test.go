@@ -89,7 +89,6 @@ func TestOneWalkOfAVaultRunsAtATime(t *testing.T) {
 	}
 }
 
-// Two indexes are two sets of turns. Nothing process-wide stands between them,
 // so a window, a terminal and a test suite do not queue behind each other for
 // a vault they each keep their own index of.
 func TestWalksIntoTwoIndexesDoNotWaitOnEachOther(t *testing.T) {

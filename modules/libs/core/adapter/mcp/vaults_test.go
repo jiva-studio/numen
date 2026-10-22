@@ -143,11 +143,11 @@ func addVaultFolder(t *testing.T, add vaults.Add, name string) domain.Vault {
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
-	at := filepath.Join(testsupport.TempDir(t), name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(testsupport.TempDir(t), name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // answered is the list as an agent is answered with it.
@@ -367,7 +367,7 @@ func TestTheVaultTheWindowIsShowingIsNotForgotten(t *testing.T) {
 		t.Errorf("the vault in front failed with %q", why)
 	}
 	if len(f.rows.getForgotten()) != 0 {
-		t.Errorf("the index was told to forget %v", f.rows.getForgotten())
+		t.Errorf("forgot %v", f.rows.getForgotten())
 	}
 }
 
@@ -388,7 +388,7 @@ func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 		t.Errorf("the folder went with the vault: %v", err)
 	}
 	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
-		t.Errorf("the index was told to forget %v", got)
+		t.Errorf("forgot %v", got)
 	}
 	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v", err)
@@ -398,7 +398,6 @@ func TestForgettingPreservesTheFolderWhereItIs(t *testing.T) {
 // An installation keeps a vault.
 func TestTheLastVaultThisInstallationHasStays(t *testing.T) {
 	f := onTheList(t)
-	// The window is showing neither, so what is left fails for being the
 	// last one and not for being in front of anybody.
 	f.core.Showing = mcp.ShowOneVault(domain.Vault{ID: "elsewhere"}, "")
 	session := newSessionOver(t, f.core)
@@ -480,8 +479,8 @@ func TestOpeningTheVaultInFrontIsRefused(t *testing.T) {
 // serves nothing an agent could call and be rejected by.
 func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 	for _, one := range []struct {
-		tool    string
-		without func(*mcp.Core)
+		tool     string
+		override func(*mcp.Core)
 	}{
 		{"vault_list", func(c *mcp.Core) { c.Vaults.GetKnownVaults = nil }},
 		{"vault_add", func(c *mcp.Core) { c.Vaults.Add = nil }},
@@ -499,7 +498,7 @@ func TestAToolIsNotServedWithoutWhatItWorksThrough(t *testing.T) {
 			}
 
 			core := f.core
-			one.without(&core)
+			one.override(&core)
 			if hasTool(t, newSessionOver(t, core), one.tool) {
 				t.Errorf("%s is served with nothing behind it", one.tool)
 			}
@@ -519,7 +518,7 @@ func TestAddingWithNoPathAndNoFolderDialogReturnsSo(t *testing.T) {
 		t.Fatal("vault_add is missing, and a folder can be named")
 	}
 	why := getToolError(t, session, "vault_add", struct{}{})
-	if !strings.Contains(why, "pick a folder") {
+	if !strings.Contains(why, "folder selection dialog unavailable") {
 		t.Errorf("a build with no dialog failed with %q", why)
 	}
 }

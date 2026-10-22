@@ -35,7 +35,7 @@ func setPlacer(u Highlight, where func(raw []byte, pages []int) ([]domain.Highli
 //
 // The document is pages of a few words each, so a test can name a word and say
 // which page it is printed on.
-func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, document, *library) {
+func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *fakeStorage, document, *library) {
 	t.Helper()
 	raw := printPages(pages)
 	book := documentOf(raw)
@@ -43,7 +43,7 @@ func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *shelf, do
 	shelved.hold(documentPath, domain.KindBook, raw, 1)
 	index := newStore()
 	store := newShelf()
-	hl := NewHighlight(vaults{first.ID: shelved}, index, shelves{store})
+	hl := NewHighlight(vaults{first.ID: shelved}, index, fakeStores{store})
 	hl.Documents = documents{}
 	return hl, index, store, book, shelved
 }
@@ -64,11 +64,11 @@ func recordSource(t *testing.T, index *store, shelved *library, from, hash strin
 // it is.
 func locate(t *testing.T, book document, word string) (start, length int) {
 	t.Helper()
-	at := strings.Index(book.Text, word)
-	if at < 0 {
+	pos := strings.Index(book.Text, word)
+	if pos < 0 {
 		t.Fatalf("the document does not say %q", word)
 	}
-	return at, len(word)
+	return pos, len(word)
 }
 
 // litOn is where one run of a source's text sits, asked about on its own. A
@@ -260,7 +260,6 @@ func TestARunBeginningBeforeTheStartOfTheTextReadsFromTheStart(t *testing.T) {
 }
 
 // A run of negative length reads nothing, even where the byte it would
-// otherwise land on stands inside one of a run of multi-byte characters.
 func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
 	// Four copies of a four-byte character, so landing inside one and
 	// walking forward to the next whole character crosses into the next
@@ -275,7 +274,6 @@ func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
 	}
 }
 
-// A path the vault does not hold is refused, and so is one leaving it. Nothing
 // is read and nothing is lit.
 func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
 	u, index, _, _, shelved := newHighlight(t, tiny)
@@ -345,8 +343,8 @@ func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
 	}
 	start, length := locate(t, book, "Afterword")
 
-	lit := litOn(t, u, documentPath, start, length)
-	if len(lit) == 0 {
+	literal := litOn(t, u, documentPath, start, length)
+	if len(literal) == 0 {
 		t.Fatal("the recognition lit nothing, so rewriting the file proves nothing")
 	}
 

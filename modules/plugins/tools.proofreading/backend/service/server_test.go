@@ -16,12 +16,12 @@ import (
 // host is a completer that answers every question through its script and keeps
 // what it was asked.
 type host struct {
-	script func(prompt string) string
-	asked  []*numenv1.CompletionQuestion
+	script   func(prompt string) string
+	requests []*numenv1.CompletionQuestion
 }
 
 func (h *host) complete(_ context.Context, question *numenv1.CompletionQuestion) (string, error) {
-	h.asked = append(h.asked, question)
+	h.requests = append(h.requests, question)
 	return h.script(question.GetMessages()[1].GetText()), nil
 }
 
@@ -63,10 +63,10 @@ func TestTheModelIsAskedByPurposeAloneAlone(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(h.asked) != 1 {
-		t.Fatalf("asked %d times", len(h.asked))
+	if len(h.requests) != 1 {
+		t.Fatalf("asked %d times", len(h.requests))
 	}
-	q := h.asked[0]
+	q := h.requests[0]
 	if q.GetPurpose() != "proofreading" {
 		t.Errorf("purpose %q", q.GetPurpose())
 	}
@@ -101,8 +101,8 @@ func TestProofreadTextAnswersAScan(t *testing.T) {
 	if !res.Msg.GetIsDone() || res.Msg.GetUncorrected() != 0 {
 		t.Errorf("response %v", res.Msg)
 	}
-	if len(h.asked) != 2 || h.asked[0].GetMessages()[0].GetText() != scanInstruction {
-		t.Errorf("asked %d times", len(h.asked))
+	if len(h.requests) != 2 || h.requests[0].GetMessages()[0].GetText() != scanInstruction {
+		t.Errorf("asked %d times", len(h.requests))
 	}
 }
 
@@ -181,8 +181,8 @@ func TestProofreadTextRefusesARequestItCannotAnswer(t *testing.T) {
 			t.Errorf("%s: got %v, want invalid argument", name, err)
 		}
 	}
-	if len(h.asked) != 0 {
-		t.Errorf("a rejected request asked the model %d times", len(h.asked))
+	if len(h.requests) != 0 {
+		t.Errorf("a rejected request asked the model %d times", len(h.requests))
 	}
 }
 

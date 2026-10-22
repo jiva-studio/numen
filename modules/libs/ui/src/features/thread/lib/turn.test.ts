@@ -5,21 +5,21 @@ import { placeTurns, VOICES, writeCharCount, type Turn } from './turn'
 
 setFlagsFromString('--expose-gc')
 
-const createAsked = (id: string, text = 'said', state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'asked', text } : { id, voice: 'asked', text, state }
+const createPrompt = (id: string, text = 'said', state?: Turn['state']): Turn =>
+  state === undefined ? { id, voice: 'prompt', text } : { id, voice: 'prompt', text, state }
 
-const createAnswered = (id: string, text = 'back', state?: Turn['state']): Turn =>
-  state === undefined ? { id, voice: 'answered', text } : { id, voice: 'answered', text, state }
+const createResponse = (id: string, text = 'back', state?: Turn['state']): Turn =>
+  state === undefined ? { id, voice: 'response', text } : { id, voice: 'response', text, state }
 
 describe('the voices', () => {
   it('draws the transcript in a bubble and what came back on the surface', () => {
-    expect(VOICES.asked.isBubble).toBe(true)
-    expect(VOICES.answered.isBubble).toBe(false)
+    expect(VOICES.prompt.isBubble).toBe(true)
+    expect(VOICES.response.isBubble).toBe(false)
   })
 
   it('puts them on opposite sides', () => {
-    expect(VOICES.asked.against).toBe('end')
-    expect(VOICES.answered.against).toBe('start')
+    expect(VOICES.prompt.against).toBe('end')
+    expect(VOICES.response.against).toBe('start')
   })
 })
 
@@ -29,25 +29,25 @@ describe('placing the turns', () => {
   })
 
   it('carries each turn through untouched', () => {
-    const turns = [createAsked('1'), createAnswered('2')]
+    const turns = [createPrompt('1'), createResponse('2')]
     expect(placeTurns(turns).map((placed) => placed.turn)).toStrictEqual(turns)
   })
 
   it('settles a turn that does not say otherwise', () => {
-    expect(placeTurns([createAsked('1')])[0]?.state).toBe('settled')
+    expect(placeTurns([createPrompt('1')])[0]?.state).toBe('settled')
   })
 
   it('keeps the state a turn came with', () => {
-    expect(placeTurns([createAsked('1', 'gone', 'failed')])[0]?.state).toBe('failed')
+    expect(placeTurns([createPrompt('1', 'gone', 'failed')])[0]?.state).toBe('failed')
   })
 
   it('passes each turn the descriptor for its voice', () => {
-    expect(placeTurns([createAsked('1')])[0]?.voice).toBe(VOICES.asked)
-    expect(placeTurns([createAnswered('1')])[0]?.voice).toBe(VOICES.answered)
+    expect(placeTurns([createPrompt('1')])[0]?.voice).toBe(VOICES.prompt)
+    expect(placeTurns([createResponse('1')])[0]?.voice).toBe(VOICES.response)
   })
 
   it('places a turn with no text at all', () => {
-    const placedTurns = placeTurns([createAsked('1', '')])
+    const placedTurns = placeTurns([createPrompt('1', '')])
     expect(placedTurns).toHaveLength(1)
     expect(placedTurns[0]?.turn.text).toBe('')
   })
@@ -55,7 +55,7 @@ describe('placing the turns', () => {
 
 describe('placing the same turns again', () => {
   it('returns the entry a turn was given before', () => {
-    const turns = [createAsked('1'), createAnswered('2')]
+    const turns = [createPrompt('1'), createResponse('2')]
     const first = placeTurns(turns)
     const second = placeTurns([...turns])
     expect(second[0]).toBe(first[0])
@@ -63,9 +63,9 @@ describe('placing the same turns again', () => {
   })
 
   it('keeps the entries of earlier turns while the last one changes', () => {
-    const earlier = [createAsked('1'), createAnswered('2')]
-    const first = placeTurns([...earlier, createAnswered('3', 'th')])
-    const second = placeTurns([...earlier, createAnswered('3', 'thi')])
+    const earlier = [createPrompt('1'), createResponse('2')]
+    const first = placeTurns([...earlier, createResponse('3', 'th')])
+    const second = placeTurns([...earlier, createResponse('3', 'thi')])
     expect(second[0]).toBe(first[0])
     expect(second[1]).toBe(first[1])
     expect(second[2]).not.toBe(first[2])
@@ -77,7 +77,7 @@ describe('placing the same turns again', () => {
     let isCollected = false
     const registry = new FinalizationRegistry(() => (isCollected = true))
     const place = () => {
-      const turn = createAnswered('1', 'removed')
+      const turn = createResponse('1', 'removed')
       registry.register(turn, 'removed')
       placeTurns([turn])
     }

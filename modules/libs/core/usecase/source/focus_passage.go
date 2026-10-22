@@ -39,11 +39,11 @@ func (u *FocusPassage) Execute(ctx context.Context, v domain.Vault, in Passage) 
 	if err != nil {
 		return "", err
 	}
-	at, err := newPlace(in)
+	pos, err := newPlace(in)
 	if err != nil {
 		return "", err
 	}
-	if err := u.view.FocusPlace(ctx, at); err != nil {
+	if err := u.view.FocusPlace(ctx, pos); err != nil {
 		return "", err
 	}
 	return getFocusSummary(ref.Kind, in.Length), nil
@@ -78,16 +78,16 @@ func checkPassage(in Passage) error {
 
 // newPlace returns the place for the document and passages named in the input.
 func newPlace(in Passage) (domain.Place, error) {
-	at := domain.Place{Path: in.Path}
+	pos := domain.Place{Path: in.Path}
 	if in.Length > 0 {
-		at.Spans = append(at.Spans, domain.ByteSpan{From: in.Start, To: in.Start + in.Length})
+		pos.Spans = append(pos.Spans, domain.ByteSpan{From: in.Start, To: in.Start + in.Length})
 	}
 	for _, one := range in.Also {
 		if one.From < 0 || one.To <= one.From {
 			return domain.Place{}, errors.New(
 				"a passage begins at or after the start of the text, and is longer than nothing")
 		}
-		at.Spans = append(at.Spans, one)
+		pos.Spans = append(pos.Spans, one)
 	}
-	return at, nil
+	return pos, nil
 }

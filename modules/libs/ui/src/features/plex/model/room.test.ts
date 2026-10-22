@@ -61,12 +61,12 @@ function createViewport() {
 }
 
 function mountRoom(
-  over: Partial<PlexRoomProps> = {},
+  overrides: Partial<PlexRoomProps> = {},
   element: ShallowRef<HTMLElement | null> = shallowRef(document.createElement('div')),
   hasIcon: () => boolean = () => false,
 ) {
   const watched = createViewport()
-  const props: PlexRoomProps = { options: OPTIONS, viewport: watched.viewport, ...over }
+  const props: PlexRoomProps = { options: OPTIONS, viewport: watched.viewport, ...overrides }
   let result!: ReturnType<typeof useRoom>
   const wrapper = mount(
     defineComponent({

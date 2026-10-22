@@ -27,7 +27,6 @@ func (s *BookServer) readBookFile(path string) ([]byte, error) {
 type BookServer struct {
 	numenv1connect.UnimplementedBookServiceHandler
 
-	// vaultRoot is the vault the paths of requests are held to.
 	vaultRoot func() string
 
 	// books caches the books entries are read from, and closes them when the server closes.
@@ -211,7 +210,6 @@ func isFingerprintOf(named *numenv1.Fingerprint, size, mtime int64) bool {
 	return named.GetMtime() == 0 || named.GetMtime() == mtime
 }
 
-// newReadError is the status a book that could not be read is refused under: a
 // locked book is a failed precondition, and bytes that are no book are an invalid
 // argument.
 func newReadError(err error) error {

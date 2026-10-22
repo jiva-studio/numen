@@ -138,7 +138,7 @@ func TestMigrationsRunInOneTransactionEach(t *testing.T) {
 		t.Fatal(err)
 	}
 	if tables != 0 {
-		t.Error("the first half of a failed migration was left behind")
+		t.Error("failed migration partially applied")
 	}
 }
 
@@ -181,14 +181,13 @@ func TestAnIndexFromALaterBuildIsEmptiedAndBuiltAgain(t *testing.T) {
 	}
 	defer raw.Close()
 
-	// It stands at the schema this build carries, and nothing of the reading
 	// the later build left is in it.
-	var at int
-	if err := raw.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&at); err != nil {
+	var pos int
+	if err := raw.QueryRowContext(ctx, `PRAGMA user_version`).Scan(&pos); err != nil {
 		t.Fatal(err)
 	}
-	if at != getNewestVersion(t) {
-		t.Errorf("the index is at schema %d, want %d", at, getNewestVersion(t))
+	if pos != getNewestVersion(t) {
+		t.Errorf("the index is at schema %d, want %d", pos, getNewestVersion(t))
 	}
 	var vaults int
 	if err := raw.QueryRowContext(ctx, `SELECT count(*) FROM vaults`).Scan(&vaults); err != nil {
@@ -551,7 +550,7 @@ func TestRememberPreservesTheOriginalTableWhenRenamingFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	if next != 0 {
-		t.Error("schema_migrations_next was left behind by the rollback")
+		t.Error("schema_migrations_next table retained after rollback")
 	}
 }
 

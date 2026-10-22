@@ -19,7 +19,6 @@ export const PLOT_RIGHT = PLOT_WIDTH - 12
 export const PLOT_TOP = 16
 export const PLOT_BOTTOM = PLOT_HEIGHT - 16
 
-/** The height a plot's line is drawn between, and the picture it stands in. */
 export interface Plot {
   readonly high: number
   readonly top: number
@@ -68,8 +67,6 @@ export const getExtent = (curve: Curve): Extent => {
 
 /**
  * The extent a backlog is drawn against: nothing overdue at the foot, and the
- * most this pace ever stands at over the top. It is scaled to the one place
- * the knob stands at, so a day too short to carry what falls due is drawn
  * climbing over the height it has.
  */
 export const getBacklogExtent = (backlog: readonly number[]): Extent => ({
@@ -126,7 +123,9 @@ const clamp = (y: number, plot: Plot): number => Math.min(Math.max(y, plot.top),
 
 /** The line through those places. */
 export const createLinePath = (places: readonly Position[]): string =>
-  places.map((at, place) => `${place === 0 ? 'M' : 'L'}${round(at.x)} ${round(at.y)}`).join(' ')
+  places
+    .map((point, place) => `${place === 0 ? 'M' : 'L'}${round(point.x)} ${round(point.y)}`)
+    .join(' ')
 
 /**
  * The stretch the budget the preset keeps does not get through, drawn as a
@@ -136,14 +135,14 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
   const runs: string[] = []
   let run: Position[] = []
   curve.at.forEach((point, place) => {
-    const at = places[place]
-    if (!at) return
+    const pos = places[place]
+    if (!pos) return
     if (point.canLearnEveryCard) {
       if (run.length > 1) runs.push(createLinePath(run))
       run = []
       return
     }
-    run.push(at)
+    run.push(pos)
   })
   if (run.length > 1) runs.push(createLinePath(run))
   return runs.join(' ')
@@ -157,7 +156,6 @@ export const getShortPath = (curve: Curve, places: readonly Position[]): string 
 const getDayLimit = (curve: Curve, place: number): number =>
   curve.goal === 'date' ? Math.max(Math.round(curve.grid[place] ?? 0), 0) : -1
 
-/** What stands overdue day by day at one place, cut at that place's own day. */
 export const getBacklogRun = (curve: Curve, place: number): readonly number[] => {
   const run = curve.at[place]?.backlog ?? []
   const days = getDayLimit(curve, place)
@@ -175,9 +173,7 @@ export const getKeyPlace = (key: string, place: number, places: number): number 
 }
 
 /**
- * The place a pointer stands over, from at its current position across the picture in
  * the picture's own units. A pointer outside the room the line is drawn in
- * stands at the nearer end.
  */
 export const getPlaceAtX = (x: number, places: number): number => {
   const inside = (x - PLOT_LEFT) / (PLOT_RIGHT - PLOT_LEFT)

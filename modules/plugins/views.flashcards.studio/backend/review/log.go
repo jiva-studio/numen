@@ -18,7 +18,6 @@ const TimestampLayout = "2006-01-02T15:04:05.000Z"
 
 // ParseTimestamp reads an instant as a line carries it, offset and all. The file is
 // text in a person's own folder and travels between machines, so what is read
-// back is not held to the one shape this build writes.
 func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC3339, s) }
 
 // line is one line of a log, currently in the file.
@@ -99,12 +98,12 @@ func answer(raw []byte) (Answer, bool) {
 	if l.V != Version || l.ID == "" {
 		return Answer{}, false
 	}
-	at, err := ParseTimestamp(l.At)
+	pos, err := ParseTimestamp(l.At)
 	if err != nil {
 		return Answer{}, false
 	}
 	if l.Undo != "" {
-		return Answer{ID: l.ID, At: at, Undoes: l.Undo}, true
+		return Answer{ID: l.ID, At: pos, Undoes: l.Undo}, true
 	}
 	if l.Card == "" || l.Face == "" || !Rating(l.Rating).Valid() {
 		return Answer{}, false
@@ -112,7 +111,7 @@ func answer(raw []byte) (Answer, bool) {
 	return Answer{
 		ID:       l.ID,
 		CardFace: CardFaceID{Card: l.Card, Face: l.Face},
-		At:       at,
+		At:       pos,
 		Rating:   Rating(l.Rating),
 		Took:     time.Duration(l.Ms) * time.Millisecond,
 	}, true

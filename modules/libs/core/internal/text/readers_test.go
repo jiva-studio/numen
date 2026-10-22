@@ -19,7 +19,6 @@ import (
 // declared and left out of the list is one no recipe of its ever matches: every
 // source it reads is selected as owing its text on every run, read again,
 // stamped with the same unmatched recipe, and selected again — a library
-// re-extracted for ever, with nothing said anywhere.
 func TestEveryReaderDeclaredIsOneReadersAnswersWith(t *testing.T) {
 	reply := text.Readers()
 	for name, value := range findDeclaredReaders(t) {

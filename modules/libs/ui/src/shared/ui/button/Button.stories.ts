@@ -18,7 +18,7 @@ type Variant = NonNullable<ButtonVariants['variant']>
 interface Knobs {
   variant: Variant
   size: NonNullable<ButtonVariants['size']>
-  disabled: boolean
+  isDisabled: boolean
 }
 
 /** The three variants side by side, each under its own name. */
@@ -34,7 +34,7 @@ const row = (args: Knobs) => ({
         :key="variant"
         :variant="variant"
         :size="args.size"
-        :disabled="args.disabled"
+        :disabled="args.isDisabled"
       >{{ variant }}</Button>
     </div>
   `,
@@ -57,9 +57,9 @@ const meta: Meta<Knobs> = {
   argTypes: {
     variant: { control: 'inline-radio', options: VARIANTS },
     size: { control: 'inline-radio', options: ['default', 'small', 'icon', 'icon-small'] },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
   },
-  args: { variant: 'solid', size: 'default', disabled: false },
+  args: { variant: 'solid', size: 'default', isDisabled: false },
   render: row,
 }
 
@@ -74,7 +74,7 @@ export const Small: Story = { args: { size: 'small' } }
 
 /** Nothing to press: dimmed, and out of the pointer's way. */
 export const Disabled: Story = {
-  args: { disabled: true },
+  args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     for (const button of within(canvasElement).getAllByRole('button')) {
       expect(button).toBeDisabled()

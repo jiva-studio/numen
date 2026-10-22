@@ -12,10 +12,9 @@ import (
 // here is a write: the vault is what changes a note, and this only says what is on its way.
 type EditPreview struct {
 	// Emit is told each time more of the change has arrived.
-	Emit func(ctx context.Context, said domain.Edit)
-	// Locate says where a stretch stands in a note, and whether it stands in exactly one place. A
+	Emit func(ctx context.Context, edit domain.Edit)
 	// stretch that stands nowhere or twice is not drawn.
-	Locate func(ctx context.Context, path, stood string) (from, to int, unique bool)
+	Locate func(ctx context.Context, path, targetText string) (from, to int, unique bool)
 }
 
 // isEnabled reports whether anything can be drawn at all.
@@ -53,7 +52,7 @@ func (d *draftingRun) Stop() error {
 func (d *draftingRun) forward(ctx context.Context, preview EditPreview) {
 	defer close(d.steps)
 
-	previewState := drawing{drawn: make(map[string]struct{})}
+	previewState := drawing{active: make(map[string]struct{})}
 	defer previewState.finish(ctx, preview, "")
 	for step := range d.run.GetSteps() {
 		if step.Kind == domain.StepDraft {
@@ -76,25 +75,25 @@ func (d *draftingRun) forward(ctx context.Context, preview EditPreview) {
 // drawing remembers where the change being written stands, so that a stretch is looked for once
 // for each call.
 type drawing struct {
-	call, path, stood string
-	from, to          int
-	isUnique          bool
+	call, path, targetText string
+	from, to               int
+	isUnique               bool
 	// drawn are the calls a change was drawn for and that are not ended.
-	drawn map[string]struct{}
+	active map[string]struct{}
 }
 
 // finish ends the drawing of a call, or of every call where none is named.
 func (r *drawing) finish(ctx context.Context, preview EditPreview, call string) {
 	if call != "" {
-		if _, isDrawn := r.drawn[call]; isDrawn {
+		if _, isDrawn := r.active[call]; isDrawn {
 			preview.Emit(ctx, domain.Edit{Change: call, IsDone: true})
-			delete(r.drawn, call)
+			delete(r.active, call)
 		}
 		return
 	}
-	for renderedVal := range r.drawn {
+	for renderedVal := range r.active {
 		preview.Emit(ctx, domain.Edit{Change: renderedVal, IsDone: true})
-		delete(r.drawn, renderedVal)
+		delete(r.active, renderedVal)
 	}
 }
 
@@ -103,9 +102,9 @@ func (r *drawing) draw(ctx context.Context, preview EditPreview, step port.Step)
 	if !preview.isEnabled() || step.Place.Path == "" || step.Match == "" {
 		return
 	}
-	if r.call != step.Call || r.path != step.Place.Path || r.stood != step.Match {
-		r.call, r.path, r.stood = step.Call, step.Place.Path, step.Match
-		r.from, r.to, r.isUnique = preview.Locate(ctx, r.path, r.stood)
+	if r.call != step.Call || r.path != step.Place.Path || r.targetText != step.Match {
+		r.call, r.path, r.targetText = step.Call, step.Place.Path, step.Match
+		r.from, r.to, r.isUnique = preview.Locate(ctx, r.path, r.targetText)
 	}
 	if !r.isUnique {
 		return
@@ -117,5 +116,5 @@ func (r *drawing) draw(ctx context.Context, preview EditPreview, step port.Step)
 		To:     r.to,
 		Text:   step.Text,
 	})
-	r.drawn[step.Call] = struct{}{}
+	r.active[step.Call] = struct{}{}
 }

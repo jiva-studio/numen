@@ -30,7 +30,6 @@ var titleNamespaces = map[string]bool{
 // A packageDoc is the package document, read down to what a reader needs.
 type packageDoc struct {
 	title string
-	// base is the directory the package document sits in. Every href in it is
 	// relative to that.
 	base string
 	// spine is the documents of the spine, in reading order.
@@ -121,12 +120,12 @@ func readPackagePath(files map[string]*zip.File) (string, error) {
 		if root.Path == "" {
 			continue
 		}
-		at := resolve("", root.Path)
+		pos := resolve("", root.Path)
 		if root.MediaType == mediaPackage {
-			return at, nil
+			return pos, nil
 		}
 		if first == "" {
-			first = at
+			first = pos
 		}
 	}
 	if first == "" {
@@ -185,14 +184,14 @@ func readManifest(read *packageDoc, doc *rawPackageDocument) map[string]manifest
 		if entry.ID == "" || entry.Href == "" {
 			continue
 		}
-		at := resolve(read.base, entry.Href)
-		manifest[entry.ID] = manifestItem{path: at, mediaType: entry.MediaType}
+		pos := resolve(read.base, entry.Href)
+		manifest[entry.ID] = manifestItem{path: pos, mediaType: entry.MediaType}
 
 		switch {
 		case entry.MediaType == mediaNCX:
-			read.ncx = at
+			read.ncx = pos
 		case hasToken(entry.Properties, "nav"):
-			read.nav = at
+			read.nav = pos
 		}
 	}
 	if named, ok := manifest[doc.Spine.TOC]; ok && named.mediaType == mediaNCX {
@@ -283,7 +282,6 @@ func decodeXML(raw []byte, into any) error {
 }
 
 // resolve turns an href into an archive path, relative to the directory the
-// document holding it sits in.
 func resolve(base, href string) string {
 	if href == "" {
 		return ""

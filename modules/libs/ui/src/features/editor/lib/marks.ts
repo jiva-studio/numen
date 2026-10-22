@@ -1,7 +1,6 @@
 /**
  * What each mark of the markdown is drawn as.
  *
- * A construct is shown as it reads until the person stands in it, and then it
  * is shown as it is written. Standing in it means a selection touches it, so
  * the getMarks come back under the caret and nowhere else. Nothing here changes
  * the text: the file is what was typed, mark for mark.
@@ -77,14 +76,14 @@ class MarkBuilder {
   private eachLine(
     start: number,
     end: number,
-    add: (at: number, first: boolean, isLast: boolean) => void,
+    add: (pos: number, first: boolean, isLast: boolean) => void,
   ): void {
-    for (let at = start, first = true; ; first = false) {
-      const row = this.doc.lineAt(at)
+    for (let offset = start, first = true; ; first = false) {
+      const row = this.doc.lineAt(offset)
       const isLast = row.to >= end
       add(row.from, first, isLast)
       if (isLast) break
-      at = row.to + 1
+      offset = row.to + 1
     }
   }
 
@@ -120,14 +119,14 @@ class MarkBuilder {
     }
 
     if (node.name === 'Blockquote') {
-      this.eachLine(node.from, node.to, (at) => this.found.push(line('cm-quote').range(at)))
+      this.eachLine(node.from, node.to, (pos) => this.found.push(line('cm-quote').range(pos)))
       return true
     }
 
     if (node.name === 'FencedCode') {
-      this.eachLine(node.from, node.to, (at, first, isLast) => {
+      this.eachLine(node.from, node.to, (pos, first, isLast) => {
         const edge = `${first ? ' cm-code-first' : ''}${isLast ? ' cm-code-last' : ''}`
-        this.found.push(line(`cm-code${edge}`).range(at))
+        this.found.push(line(`cm-code${edge}`).range(pos))
       })
       return true
     }

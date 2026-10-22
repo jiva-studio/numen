@@ -6,13 +6,13 @@ import { areMarksEqual, createMarks } from './marks'
 import type { DeckProblem } from '../types'
 
 /** One problem as the vault reports one, against nothing in particular. */
-const problem = (over: Partial<DeckProblem> = {}): DeckProblem => ({
+const problem = (overrides: Partial<DeckProblem> = {}): DeckProblem => ({
   kind: 'cardWithoutAStencil',
   card: null,
   face: null,
   field: '',
   text: 'a card under no stencil',
-  ...over,
+  ...overrides,
 })
 
 describe('where a problem is drawn', () => {
@@ -58,7 +58,7 @@ describe('where a problem is drawn', () => {
       ['c1', 'c2'],
       [],
     )
-    expect(marks.under.get('c2')?.get('Name')).toStrictEqual(['twice'])
+    expect(marks.bySection.get('c2')?.get('Name')).toStrictEqual(['twice'])
     expect(marks.at.has('c2')).toBe(false)
   })
 
@@ -95,8 +95,8 @@ describe('where two problems of one card stand', () => {
       [],
     )
 
-    expect(marks.under.get('c1')?.get('Front')).toStrictEqual(['first'])
-    expect(marks.under.get('c1')?.get('Back')).toStrictEqual(['second'])
+    expect(marks.bySection.get('c1')?.get('Front')).toStrictEqual(['first'])
+    expect(marks.bySection.get('c1')?.get('Back')).toStrictEqual(['second'])
   })
 })
 

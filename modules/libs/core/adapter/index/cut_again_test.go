@@ -32,16 +32,16 @@ func generateChunks(t *rapid.T, name string) []chunk.Chunk {
 	})
 	out := rapid.SliceOfN(large, 0, 4).Draw(t, name)
 
-	at := 0
+	pos := 0
 	for i := range out {
-		out[i].Start, out[i].Length = at, len(out[i].Text)
-		target := at
+		out[i].Start, out[i].Length = pos, len(out[i].Text)
+		target := pos
 		for j := range out[i].Small {
 			out[i].Small[j].Start = target
 			out[i].Small[j].Length = len(out[i].Small[j].Text)
 			target += len(out[i].Small[j].Text)
 		}
-		at += len(out[i].Text)
+		pos += len(out[i].Text)
 	}
 	return out
 }
@@ -153,7 +153,7 @@ func TestSplittingASourceAgainKeepsTheRowsOfTheTextItStillContains(t *testing.T)
 
 		// The source relies on exactly the chunks this cut asked for.
 		if want := countChunks(now); !maps.Equal(countByText(after), want) {
-			t.Fatalf("%v cut again as %v stands on %v, want %v",
+			t.Fatalf("previous %v cut again as %v: got %v, want %v",
 				was, now, countByText(after), want)
 		}
 

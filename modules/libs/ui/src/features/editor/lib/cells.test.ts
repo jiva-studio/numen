@@ -34,12 +34,16 @@ const draw = (doc = TABLE) => {
   if (!node) throw new Error('no table was parsed')
   const frame = getGrid(state, node).toDOM(view) as HTMLElement
   document.body.appendChild(frame)
-  frame.querySelectorAll<HTMLElement>('.cm-cell').forEach((cell) => cell.setAttribute('tabindex', '0'))
+  frame
+    .querySelectorAll<HTMLElement>('.cm-cell')
+    .forEach((cell) => cell.setAttribute('tabindex', '0'))
   return { view, frame }
 }
 
 const getCell = (frame: HTMLElement, row: number, column: number) => {
-  const found = frame.querySelector<HTMLElement>(`tr[data-row="${row}"] .cm-cell[data-column="${column}"]`)
+  const found = frame.querySelector<HTMLElement>(
+    `tr[data-row="${row}"] .cm-cell[data-column="${column}"]`,
+  )
   if (!found) throw new Error('no such cell')
   return found
 }
@@ -178,7 +182,8 @@ describe('pasting into a cell', () => {
   const paste = (target: HTMLElement, text: string | null) => {
     const event = new Event('paste', { bubbles: true, cancelable: true })
     Object.defineProperty(event, 'clipboardData', {
-      value: text === null ? null : { getData: (type: string) => (type === 'text/plain' ? text : '') },
+      value:
+        text === null ? null : { getData: (type: string) => (type === 'text/plain' ? text : '') },
     })
     target.dispatchEvent(event)
     return event
@@ -186,7 +191,9 @@ describe('pasting into a cell', () => {
 
   it('inserts the text as one line of cell text', () => {
     const { frame } = draw()
-    const execCommand = vi.fn<(command: string, showUi?: boolean, value?: string) => boolean>(() => true)
+    const execCommand = vi.fn<(command: string, showUi?: boolean, value?: string) => boolean>(
+      () => true,
+    )
     document.execCommand = execCommand
 
     const event = paste(getCell(frame, 1, 0), 'one\ntwo | three')
@@ -197,7 +204,9 @@ describe('pasting into a cell', () => {
 
   it('leaves a paste with no clipboard to the browser', () => {
     const { frame } = draw()
-    const execCommand = vi.fn<(command: string, showUi?: boolean, value?: string) => boolean>(() => true)
+    const execCommand = vi.fn<(command: string, showUi?: boolean, value?: string) => boolean>(
+      () => true,
+    )
     document.execCommand = execCommand
 
     const event = paste(getCell(frame, 1, 0), null)

@@ -29,8 +29,8 @@ func (c Config) Recogniser(ctx context.Context) (recogniser port.Recogniser, clo
 }
 
 // Recognise is one document read with the recogniser given.
-func (c Config) Recognise(sources port.SourceRepository, by port.Recogniser) recognition.Recognise {
-	return recognition.NewRecognise(c.VaultReaders(), sources, c.GetDerivedStores(), c.PageRenderer(), by)
+func (c Config) Recognise(sources port.SourceRepository, recogniser port.Recogniser) recognition.Recognise {
+	return recognition.NewRecognise(c.VaultReaders(), sources, c.GetDerivedStores(), c.PageRenderer(), recogniser)
 }
 
 // OpenRecognitionWorker is the queue that reads this installation's scanned documents.
@@ -48,7 +48,7 @@ func (c Config) OpenRecognitionWorker(
 		Tasks:     tasks,
 		Models:    models,
 		Runtime: recognition.Runtime{
-			Open: func(ctx context.Context, _ func(what string, done, total int64)) (port.Recogniser, func() error, error) {
+			Open: func(ctx context.Context, _ func(what string, finished, total int64)) (port.Recogniser, func() error, error) {
 				return c.Recogniser(ctx)
 			},
 			Ready:    c.RecogniserReady,

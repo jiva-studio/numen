@@ -1,10 +1,3 @@
-/**
- * What a story is judged by once it has been played, wherever it was drawn.
- *
- * Every package that runs stories runs this after each of them, so a stop the
- * components refuse is refused in the windows too, and there is one walk to
- * fix when the rule changes.
- */
 import type { Preview } from '@storybook/vue3-vite'
 import { faults } from './reach'
 

@@ -11,7 +11,6 @@ import (
 // ErrNoName is a call that names no vault.
 var ErrNoName = errors.New("name the vault, as vault_list gives it")
 
-// ErrShowing is the vault the window is showing, where the vault asked for must
 // be another.
 var ErrShowing = errors.New("this is the vault the window is showing")
 

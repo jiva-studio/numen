@@ -19,7 +19,6 @@ export interface Typeahead {
 /** Nothing typed yet, which is where a menu opens. */
 export const NOTHING_TYPED: Typeahead = { word: '', struck: 0 }
 
-/** Where a letter left the keyboard, and the word it left behind. */
 export interface Jump {
   readonly typed: Typeahead
   /** The item to stand on, and nothing where no item begins with the word. */
@@ -61,10 +60,10 @@ export function jumpTo(items: readonly MenuItem[], was: Typeahead, strike: JumpS
   const start = from < 0 ? 0 : from + (drumming ? 1 : 0)
 
   for (const step of items.keys()) {
-    const at = (start + step) % items.length
-    const item = items[at]
-    if (!item || item.disabled) continue
-    if (item.text.toLowerCase().startsWith(prefix)) return { typed: nextTypeahead, at }
+    const pos = (start + step) % items.length
+    const item = items[pos]
+    if (!item || item.isDisabled) continue
+    if (item.text.toLowerCase().startsWith(prefix)) return { typed: nextTypeahead, at: pos }
   }
   return { typed: nextTypeahead, at: null }
 }

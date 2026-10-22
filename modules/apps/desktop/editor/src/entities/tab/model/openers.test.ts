@@ -2,7 +2,6 @@
  * The one place a file of the vault is opened from, asked without a window.
  *
  * A road holds a path and no choice, so what is asked here is that the path
- * alone decides the editor: the vault is asked what stands at it, and the kind
  * it answers picks the tab the file opens in.
  */
 import { describe, expect, it } from 'vitest'
@@ -23,16 +22,11 @@ const vault = (stands: Record<string, FileKind> = {}) => {
       return found
     },
   }
-  return { core, asked: request }
+  return { core, requested: request }
 }
 
-/** A note of one of three, as the vault answers what stands at its path. */
 const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
 
-/**
- * A document drawn as pictures of its pages, an epub book that reflows, a recording, and
- * a file the vault holds no source for.
- */
 const DOCUMENT: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
 const BOOK: FileKind = { kind: 'book', type: 'note', format: 'epub' }
 const TALK: FileKind = { kind: 'recording', type: 'note' }
@@ -56,13 +50,17 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
     })
   }
   tabOpeners.registerReader({ kind: 'book' }, (path, runs) =>
-    activeEditors.push(`document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
+    activeEditors.push(
+      `document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
+    ),
   )
   tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, runs) =>
     activeEditors.push(`book ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
   )
   tabOpeners.registerReader({ kind: 'recording' }, (path, runs) =>
-    activeEditors.push(`recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
+    activeEditors.push(
+      `recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
+    ),
   )
   return activeEditors
 }
@@ -154,7 +152,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animals.md')
 
-    expect(one.asked).toStrictEqual([['Animals.md']])
+    expect(one.requested).toStrictEqual([['Animals.md']])
   })
 
   it('passes an editor an empty title where the caller gave none', async () => {
@@ -304,7 +302,7 @@ describe('a file just made here', () => {
     tabOpeners.openNewFile('Animals.md', 'Animals', 'deck')
 
     expect(activeEditors).toStrictEqual(['deck Animals.md Animals here —'])
-    expect(one.asked).toStrictEqual([])
+    expect(one.requested).toStrictEqual([])
   })
 })
 
@@ -421,7 +419,9 @@ describe('an extension reader registered twice', () => {
     const one = vault({ 'a.xyz': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors: string[] = []
-    const disposeFirst = tabOpeners.registerExtensionReader('xyz', () => activeEditors.push('first'))
+    const disposeFirst = tabOpeners.registerExtensionReader('xyz', () =>
+      activeEditors.push('first'),
+    )
     tabOpeners.registerExtensionReader('xyz', () => activeEditors.push('second'))
 
     disposeFirst()

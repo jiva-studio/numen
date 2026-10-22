@@ -137,18 +137,18 @@ func checkSymlinkContainment(realVault, cleanTarget string) error {
 	parent := filepath.Dir(checkPath)
 	realParent, errP := filepath.EvalSymlinks(parent)
 	if errP != nil {
-		at := parent
+		current := parent
 		for {
-			rp, err := filepath.EvalSymlinks(at)
+			rp, err := filepath.EvalSymlinks(current)
 			if err == nil {
 				realParent = rp
 				break
 			}
-			next := filepath.Dir(at)
-			if next == at {
+			next := filepath.Dir(current)
+			if next == current {
 				return ErrPathTraversal
 			}
-			at = next
+			current = next
 		}
 	}
 

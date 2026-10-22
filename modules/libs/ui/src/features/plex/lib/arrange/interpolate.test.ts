@@ -279,7 +279,10 @@ describe('the title a line carries while the picture moves', () => {
           ...neighbourhood,
           edges: neighbourhood.edges.map((edge) => ({ ...edge, label: 'contains' })),
         },
-        { measureLabel: measureLabelWidth, options: { viewport: { width: 900, height: 800 }, spread: 1 } },
+        {
+          measureLabel: measureLabelWidth,
+          options: { viewport: { width: 900, height: 800 }, spread: 1 },
+        },
       )
 
     // A fan wide enough that its titles cannot all keep the middle.
@@ -308,9 +311,9 @@ describe('the title a line carries while the picture moves', () => {
 
     for (let t = 0.05; t < 1; t += 0.05) {
       for (const edge of interpolatePlex(start, end, t).edges) {
-        const at = resolved.get(getEdgeKey(edge))
-        if (at === undefined) continue
-        expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(at)
+        const offset = resolved.get(getEdgeKey(edge))
+        if (offset === undefined) continue
+        expect(edge.wordsAt, `${getEdgeKey(edge)} at ${t.toFixed(2)}`).toBe(offset)
       }
     }
   })

@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// spanOf is where one top-level key's value stands in the frontmatter, and the
 // bytes it occupies.
 func spanOf(t *testing.T, front, key string) (int, string, bool) {
 	t.Helper()
@@ -53,8 +52,8 @@ func TestAScalarSpanIsTheValueAndNothingBeforeIt(t *testing.T) {
 			if !ok {
 				t.Fatalf("%q has no span for %s", one.front, one.key)
 			}
-			if at := strings.LastIndex(one.front, one.want); start != at {
-				t.Errorf("the span of %s in %q opens at %d, want %d", one.key, one.front, start, at)
+			if lastIdx := strings.LastIndex(one.front, one.want); start != lastIdx {
+				t.Errorf("the span of %s in %q opens at %d, want %d", one.key, one.front, start, lastIdx)
 			}
 			if got != one.want {
 				t.Errorf("the span of %s in %q is %q, want %q", one.key, one.front, got, one.want)

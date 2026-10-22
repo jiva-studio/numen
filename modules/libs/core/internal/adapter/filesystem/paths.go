@@ -69,7 +69,6 @@ func resolveVaultPath(root, path, serviceDir string) (target, resolved string, e
 // same measures.
 //
 // The two overlap nowhere, which is what lets one type write a derived file
-// where no writer of notes can reach, without making any note's refusal weaker.
 // That property is the subject of a test. A path whose spelling and whose
 // landing disagree is neither's, and both refuse it.
 func resolveServicePath(root, path, serviceDir string) (target, resolved string, err error) {
@@ -102,7 +101,6 @@ func isOurs(clean, serviceDir string) bool {
 }
 
 // cleanPath is a path a vault could hold, in the one form the rules are written
-// against. A path that could not name anything inside a vault is refused here
 // and never reaches the filesystem.
 func cleanPath(path string) (string, error) {
 	if path == "" {
@@ -182,18 +180,18 @@ func isUnderRoot(resolved, root string) bool {
 // getDeepestExisting resolves as much of a path as exists, so that a file about to be
 // created is judged by the folder it would land in.
 func getDeepestExisting(target string) (string, error) {
-	at := target
+	pos := target
 	var missing []string
 	for {
-		resolved, err := filepath.EvalSymlinks(at)
+		resolved, err := filepath.EvalSymlinks(pos)
 		if err == nil {
 			return filepath.Join(append([]string{resolved}, missing...)...), nil
 		}
-		parent := filepath.Dir(at)
-		if parent == at {
+		parent := filepath.Dir(pos)
+		if parent == pos {
 			return "", err
 		}
-		missing = append([]string{filepath.Base(at)}, missing...)
-		at = parent
+		missing = append([]string{filepath.Base(pos)}, missing...)
+		pos = parent
 	}
 }

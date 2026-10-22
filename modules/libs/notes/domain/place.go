@@ -26,7 +26,6 @@ func (s ByteSpan) Empty() bool { return s.To <= s.From }
 func (s ByteSpan) Len() int { return s.To - s.From }
 
 // A UnitSpan is a run of text counted the way a client counts text: in UTF-16
-// code units. It is what a window is told, and markdown.CountUTF16 is the only
 // way across.
 type UnitSpan struct {
 	From int

@@ -21,7 +21,6 @@ export interface FileConflictWords {
 defineProps<{
   /** What could not be read or written, in words a person reads. */
   errorMessage: string
-  /** Which conflict the file the tab holds stands in, if it stands in one. */
   conflict: FileConflict
   words: FileConflictWords
 }>()

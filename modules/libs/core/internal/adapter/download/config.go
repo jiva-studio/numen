@@ -12,7 +12,6 @@ type Config struct {
 	AutomaticCaptions *bool `json:"automatic_captions"`
 
 	// CopyMaxSizeMB is how large a copy may be. Above it, a copy asked for says
-	// the size it was refused at and nothing is fetched.
 	CopyMaxSizeMB int `json:"copy_max_size_mb"`
 
 	// CopiesToVault is whether a copy is kept beside the note as a file of the

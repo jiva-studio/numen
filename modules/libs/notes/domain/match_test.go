@@ -10,7 +10,7 @@ func TestANameIsMatchedByTheOrderOfPriority(t *testing.T) {
 	cases := []struct {
 		name       string
 		from       string
-		written    string
+		input      string
 		candidates []string
 		want       string
 		ambiguous  bool
@@ -24,7 +24,7 @@ func TestANameIsMatchedByTheOrderOfPriority(t *testing.T) {
 	}
 	for _, one := range cases {
 		t.Run(one.name, func(t *testing.T) {
-			got, ambiguous := domain.ChooseMatch(one.from, one.written, one.candidates)
+			got, ambiguous := domain.ChooseMatch(one.from, one.input, one.candidates)
 
 			if got != one.want || ambiguous != one.ambiguous {
 				t.Errorf("got %q, %v; want %q, %v", got, ambiguous, one.want, one.ambiguous)

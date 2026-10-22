@@ -16,8 +16,8 @@ const findExtensionStart = (name: string): number => {
  * The ending a name carries, the dot with it, and nothing where it carries none.
  */
 const getExtension = (name: string): string => {
-  const at = findExtensionStart(name)
-  return at > 0 ? name.slice(at) : ''
+  const extStart = findExtensionStart(name)
+  return extStart > 0 ? name.slice(extStart) : ''
 }
 
 /**
@@ -28,7 +28,8 @@ export const resolveRenamePath = (path: string, name: string, isFolder = false):
   if (!cleanName || cleanName.includes('/')) return ''
 
   const hasExtension = findExtensionStart(cleanName) >= 0
-  const targetName = isFolder || hasExtension ? cleanName : `${cleanName}${getExtension(getFileName(path))}`
+  const targetName =
+    isFolder || hasExtension ? cleanName : `${cleanName}${getExtension(getFileName(path))}`
   if (targetName === getFileName(path)) return ''
 
   const folderPath = getFolderPath(path)

@@ -10,11 +10,10 @@ export const DEFAULT_HEADINGS = 6
 export interface NestingSettings {
   readonly isNesting: boolean
   readonly headings: number
-  /** How many the vault takes, at each end. A count outside them is refused. */
   readonly least: number
   readonly most: number
 }
 
 /** The counts offered, from one end of what the setting takes to the other. */
 export const ladder = (least: number, most: number): readonly number[] =>
-  Array.from({ length: Math.max(0, most - least + 1) }, (_, at) => least + at)
+  Array.from({ length: Math.max(0, most - least + 1) }, (_, index) => least + index)

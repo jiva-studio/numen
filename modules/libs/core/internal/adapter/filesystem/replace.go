@@ -78,11 +78,11 @@ func createTempFile(root *os.Root, dir, pattern string) (*os.File, string, error
 // ones at the target from the moment the rename lands.
 func replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
 	dir := filepath.Dir(target)
-	tmp, at, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
+	tmp, pos, err := createTempFile(root, dir, getTempPattern(filepath.Base(target)))
 	if err != nil {
 		return domain.Fingerprint{}, err
 	}
-	defer root.Remove(at)
+	defer root.Remove(pos)
 
 	if _, err := io.Copy(tmp, from); err != nil {
 		tmp.Close()
@@ -106,7 +106,7 @@ func replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 	if err := tmp.Close(); err != nil {
 		return domain.Fingerprint{}, err
 	}
-	if err := rename(ctx, root, at, target); err != nil {
+	if err := rename(ctx, root, pos, target); err != nil {
 		return domain.Fingerprint{}, err
 	}
 	content := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
@@ -118,7 +118,6 @@ func replace(ctx context.Context, root *os.Root, target string, from io.Reader, 
 // Flushing the file is what keeps its contents whole; flushing the folder is
 // what keeps the rename itself.
 //
-// Not every filesystem lets a directory be opened for this, and a refusal is
 // not an error to hand back: the note is written either way.
 func syncDirectory(root *os.Root, dir string) error {
 	folder, err := root.Open(dir)

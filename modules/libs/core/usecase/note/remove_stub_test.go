@@ -16,25 +16,25 @@ import (
 // trashSources is the index saying which sources sit under a path.
 type trashSources struct {
 	port.SourceQueries
-	under []domain.Fingerprint
-	err   error
+	underCtx []domain.Fingerprint
+	err      error
 }
 
 func (s trashSources) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
-	return s.under, s.err
+	return s.underCtx, s.err
 }
 
 // trashLinks is the index saying which notes point at a path, and recording
 // which paths it was asked about.
 type trashLinks struct {
 	port.LinkQueries
-	pointing map[string][]domain.ResolvedLink
-	err      error
-	asked    *[]string
+	pointing  map[string][]domain.ResolvedLink
+	err       error
+	requested *[]string
 }
 
 func (l trashLinks) GetBacklinks(_ context.Context, _ domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	*l.asked = append(*l.asked, to)
+	*l.requested = append(*l.requested, to)
 	return l.pointing[to], l.err
 }
 
@@ -61,20 +61,20 @@ func (w trashWriters) Open(domain.Vault) (port.VaultWriter, error) {
 
 // trashing is one removal with everything it asks of the vault faked.
 type trashing struct {
-	sources  trashSources
-	links    trashLinks
-	writers  trashWriters
-	moves    *[]string
-	asked    *[]string
-	levelled *[][]string
-	levelErr error
+	sources   trashSources
+	links     trashLinks
+	writers   trashWriters
+	moves     *[]string
+	requested *[]string
+	levelled  *[][]string
+	levelErr  error
 }
 
 func newTrashing() *trashing {
 	moves, request, levelled := &[]string{}, &[]string{}, &[][]string{}
-	tr := &trashing{moves: moves, asked: request, levelled: levelled}
+	tr := &trashing{moves: moves, requested: request, levelled: levelled}
 	tr.sources = trashSources{}
-	tr.links = trashLinks{asked: request}
+	tr.links = trashLinks{requested: request}
 	tr.writers = trashWriters{writer: trashWriter{
 		move: func(_, to string) error {
 			*moves = append(*moves, to)
@@ -117,7 +117,7 @@ func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 func TestRemovingStopsWhenTheLinksCannotBeAskedAbout(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.under = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
 	broken := errors.New("the index is gone")
 	tr.links.err = broken
 
@@ -152,7 +152,7 @@ func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 func TestOnlyNotesAreAskedWhatPointsAtThem(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.under = []domain.Fingerprint{
+	tr.sources.underCtx = []domain.Fingerprint{
 		{Path: "physics/figure.epub", Kind: domain.KindBook},
 		noteAt("physics/Entropy.md"),
 	}
@@ -164,8 +164,8 @@ func TestOnlyNotesAreAskedWhatPointsAtThem(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := []string{"physics/Entropy.md"}; !slices.Equal(*tr.asked, want) {
-		t.Errorf("asked about %v, want %v", *tr.asked, want)
+	if want := []string{"physics/Entropy.md"}; !slices.Equal(*tr.requested, want) {
+		t.Errorf("asked about %v, want %v", *tr.requested, want)
 	}
 	if len(got.Dangling) != 0 {
 		t.Errorf("a note was left pointing at a file that is not a note: %v", got.Dangling)
@@ -229,9 +229,9 @@ func TestAFullTrashRefusesTheNoteAfterAHundredNames(t *testing.T) {
 func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 	t.Parallel()
 	for name, tc := range map[string]struct {
-		path  string
-		under []domain.Fingerprint
-		want  []string
+		path     string
+		underCtx []domain.Fingerprint
+		want     []string
 	}{
 		"a note": {"Entropy.md", []domain.Fingerprint{noteAt("Entropy.md")}, []string{"Entropy.md"}},
 		"a folder with one note": {
@@ -247,7 +247,7 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 			tr := newTrashing()
-			tr.sources.under = tc.under
+			tr.sources.underCtx = tc.underCtx
 
 			if _, err := tr.remove().Execute(t.Context(), domain.Vault{}, tc.path); err != nil {
 				t.Fatal(err)
@@ -264,7 +264,7 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 func TestRemovingNamesTheNotesAfterOneThatWentWithTheFolder(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.under = []domain.Fingerprint{noteAt("physics/A.md"), noteAt("physics/B.md")}
+	tr.sources.underCtx = []domain.Fingerprint{noteAt("physics/A.md"), noteAt("physics/B.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{
 		"physics/A.md": {{From: "physics/B.md"}},
 		"physics/B.md": {{From: "Outside.md"}},
@@ -294,7 +294,7 @@ func TestAMoveThatFailsOtherwiseThanByAnOccupiedNameIsReported(t *testing.T) {
 func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.under = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
 	removing := tr.remove().WithIndex(nil)
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
@@ -316,7 +316,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 func TestAnIndexThatCannotBeLevelledIsSaidAlongsideTheRemoval(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.under = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{"Entropy.md": {{From: "Heat.md"}}}
 	broken := errors.New("the index is gone")
 	tr.levelErr = broken

@@ -18,7 +18,7 @@ func NewResolveLinks(links port.LinkQueries) *ResolveLinks {
 
 // Execute answers by the address as it was written, and leaves out one that reaches nothing.
 func (u *ResolveLinks) Execute(
-	ctx context.Context, v domain.Vault, from string, written []string,
+	ctx context.Context, v domain.Vault, from string, targets []string,
 ) (map[string]domain.ResolvedLink, error) {
-	return u.links.ResolveLinks(ctx, v.ID, from, written)
+	return u.links.ResolveLinks(ctx, v.ID, from, targets)
 }

@@ -5,13 +5,13 @@
  */
 import type { ShallowRef } from 'vue'
 
-import type { PageTurn } from '@/shared/lib/turn'
-import { handTurn } from '../lib/turn'
+import type { PageNavigationAction } from '@/shared/lib/pageNavigation'
+import { dragPage } from '../lib/pageStep'
 
 export interface BookHandOptions {
   readonly area: Readonly<ShallowRef<HTMLElement | null>>
   readonly paper: Readonly<ShallowRef<HTMLElement | null>>
-  readonly turn: (way: PageTurn) => void
+  readonly turn: (way: PageNavigationAction) => void
   readonly getEdge: (of: HTMLElement) => number
 }
 
@@ -26,7 +26,12 @@ export function useBookHand(options: BookHandOptions) {
   /** Whether words of the text stand taken up. */
   const isSelecting = (): boolean => {
     const currentSelection = window.getSelection()
-    if (!currentSelection || currentSelection.isCollapsed || currentSelection.toString().trim() === '') return false
+    if (
+      !currentSelection ||
+      currentSelection.isCollapsed ||
+      currentSelection.toString().trim() === ''
+    )
+      return false
     const text = options.paper.value
     return !!text && !!currentSelection.anchorNode && text.contains(currentSelection.anchorNode)
   }
@@ -44,7 +49,7 @@ export function useBookHand(options: BookHandOptions) {
     if ((event.target as HTMLElement | null)?.closest?.('a')) return
 
     const edge = options.getEdge(box)
-    const way = handTurn(from - edge, event.clientX - edge, {
+    const way = dragPage(from - edge, event.clientX - edge, {
       wide: box.clientWidth,
       hasSelection: isSelecting(),
     })

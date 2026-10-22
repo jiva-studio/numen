@@ -1,7 +1,7 @@
 /**
  * What a menu is, as plain values. No DOM, no measurement, no clock.
  */
-import { getPlaceBeside } from '@/shared/lib/place'
+import { getAdjacentPlace } from '@/shared/lib/place'
 import { stepTo } from '@/shared/lib/roving'
 import type { Position, Size } from '@/shared/lib/geometry'
 
@@ -16,7 +16,7 @@ export interface MenuItem {
   /** A second line under the words, in the small print. */
   readonly detail?: string
   /** Drawn and announced, and not choosable. */
-  readonly disabled?: boolean
+  readonly isDisabled?: boolean
   /**
    * The group it belongs to. Items of one group stand together, and a rule is
    * drawn where one group gives way to the next. A menu whose items name no
@@ -27,7 +27,6 @@ export interface MenuItem {
 
 /** One item as it is drawn: what it says, and the rule standing above it. */
 export interface GroupedItem extends MenuItem {
-  /** It begins a group, and a rule stands between it and what is above. */
   readonly isRule: boolean
 }
 
@@ -61,21 +60,20 @@ export interface MenuPlacement {
  * coordinates the point arrived in.
  *
  * The point is a span of no width, touching the menu: the menu runs on from it
- * and folds back over it at an edge. Wider than the area it is placed in, it
  * sits at the near edge and scrolls.
  */
-export const placeMenu = ({ at, size, viewport, margin }: MenuPlacement): Position => ({
-  x: getPlaceBeside({
-    from: at.x,
-    to: at.x,
+export const placeMenu = ({ at: point, size, viewport, margin }: MenuPlacement): Position => ({
+  x: getAdjacentPlace({
+    from: point.x,
+    to: point.x,
     size: size.width,
     room: viewport.width,
     margin,
     gap: 0,
   }),
-  y: getPlaceBeside({
-    from: at.y,
-    to: at.y,
+  y: getAdjacentPlace({
+    from: point.y,
+    to: point.y,
     size: size.height,
     room: viewport.height,
     margin,
@@ -114,12 +112,12 @@ export const getInitialIndex = (
   current: string | null = null,
 ): number => {
   if (!MENU_TRIGGERS[trigger].hasInitialFocus) return -1
-  const at = items.findIndex((item) => item.id === current && !item.disabled)
-  return stepTo(items, { from: Math.max(at, 0) - 1, by: 1 }, canLandOn)
+  const pos = items.findIndex((item) => item.id === current && !item.isDisabled)
+  return stepTo(items, { from: Math.max(pos, 0) - 1, by: 1 }, canLandOn)
 }
 
 /** Whether the keyboard may land on the item. */
-export const canLandOn = (item: MenuItem): boolean => !item.disabled
+export const canLandOn = (item: MenuItem): boolean => !item.isDisabled
 
 /**
  * The items a search words name. Every word has to be found in an item's text,

@@ -84,7 +84,7 @@ func TestExtractBookTextAnswersTheTextAndTheParts(t *testing.T) {
 	}
 	for _, part := range parts {
 		if int(part.GetOffset()) > len(resp.Msg.GetText()) {
-			t.Errorf("part %q stands at %d, outside a text of %d bytes", part.GetTitle(), part.GetOffset(), len(resp.Msg.GetText()))
+			t.Errorf("part %q is at offset %d, outside text length %d", part.GetTitle(), part.GetOffset(), len(resp.Msg.GetText()))
 		}
 	}
 	pages := resp.Msg.GetPrintedPages()

@@ -16,8 +16,8 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 	api.scenarios().day = review.Day{Starts: 4 * time.Hour, In: time.UTC}
 
 	for name, c := range map[string]struct {
-		at   time.Time
-		want string
+		currentTime time.Time
+		want        string
 	}{
 		"an hour past midnight": {
 			time.Date(2026, 9, 5, 1, 0, 0, 0, time.UTC), "2026-09-04",
@@ -30,9 +30,9 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			api.now = func() time.Time { return c.at }
+			api.now = func() time.Time { return c.currentTime }
 			if got := front(t, api).GetDay(); got != c.want {
-				t.Errorf("at %v the counts stand in %q, want %q", c.at, got, c.want)
+				t.Errorf("at %v the counts stand in %q, want %q", c.currentTime, got, c.want)
 			}
 		})
 	}

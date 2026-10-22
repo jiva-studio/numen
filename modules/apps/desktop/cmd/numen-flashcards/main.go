@@ -126,7 +126,7 @@ func run(cfg container.Config, noAgent bool) error {
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
-	api.Themes = themes.Load(cfg.Themes, func(said string) { fmt.Fprintln(os.Stderr, "themes:", said) }, os.Stderr)
+	api.Themes = themes.Load(cfg.Themes, func(response string) { fmt.Fprintln(os.Stderr, "themes:", response) }, os.Stderr)
 
 	pages, err := window.Pages()
 	if err != nil {
@@ -188,7 +188,7 @@ func followChanges(ctx context.Context, cfg container.Config, api *window.API) {
 }
 
 // runApplication opens the window and runs until it closes.
-func runApplication(api *window.API, pages http.Handler, held *shutdown.Sequence) error {
+func runApplication(api *window.API, pages http.Handler, target *shutdown.Sequence) error {
 	app := application.New(application.Options{
 		Name: "numen-flashcards",
 		Assets: application.AssetOptions{
@@ -201,7 +201,7 @@ func runApplication(api *window.API, pages http.Handler, held *shutdown.Sequence
 		// Run on the thread the window is drawn on, once the application has
 		// stopped dispatching. The walk and the watch are waited for with no
 		// bound, and a window not yet destroyed holds until they are done.
-		PostShutdown: held.Run,
+		PostShutdown: target.Run,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{
 		Title:  "numen — flashcards",

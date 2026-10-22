@@ -42,7 +42,6 @@ type State struct {
 	// A stream is not counted: it lives as long as the page that opened it.
 	questions inflight
 
-	// session is the passes behind the vault the window is showing. It is
 	// published as one after the vault, so a run, a cut and a drop reach the
 	// vault the request was answered over. Nothing while the vault is being
 	// changed.
@@ -196,7 +195,7 @@ func (s *State) getRecordingForgetter() func(domain.Vault, string) {
 
 // reportTask puts one piece of work in the list of what is being done behind the
 // window, for a build that keeps one.
-func (s *State) reportTask(at run.Task) { s.Window.AddTask(at) }
+func (s *State) reportTask(pos run.Task) { s.Window.AddTask(pos) }
 
 // finishTask takes one piece of work out of that list.
 func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
@@ -204,7 +203,6 @@ func (s *State) finishTask(id string) { s.Window.RemoveTask(id) }
 // isUnlevelled says whether a write reached the vault and the index did not
 // follow.
 // The answer goes on the wire, so the client that saved knows search has not
-// caught up with what it saved, and it stands in the list of what is being done
 // until a write levels the index again, so a person who is not looking at that
 // note is told too.
 func (s *State) isUnlevelled(err error) bool {
@@ -230,7 +228,6 @@ func (s *State) Close() {
 func (s *State) isClosed() bool { return s.closed.Load() }
 
 // getCurrentVault is the vault a question is answered over. A window standing on nothing
-// has none, and every question that would reach into a vault is refused there.
 func (s *State) getCurrentVault() (domain.Vault, error) {
 	v := s.GetCurrentVault()
 	if v.ID == "" {
@@ -271,7 +268,6 @@ func (s *State) getShownVault() (domain.Vault, error) {
 
 // getBackgroundContext is what a drawing nobody asked for runs under: the
 // context the passes behind the vault in the window run under. The vault going
-// ends it, so a window that is closing is not held open by a page nobody has
 // turned to. A window standing on no vault has no passes, and nothing to end.
 func (s *State) getBackgroundContext() context.Context {
 	if on := s.session.Load(); on != nil {

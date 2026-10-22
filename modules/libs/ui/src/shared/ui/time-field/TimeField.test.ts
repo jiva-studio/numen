@@ -67,7 +67,7 @@ describe('the ends of the day', () => {
 })
 
 it('is not typed into while nobody may turn it', () => {
-  expect(mountField({ disabled: true }).get('input').attributes('disabled')).toBeDefined()
+  expect(mountField({ isDisabled: true }).get('input').attributes('disabled')).toBeDefined()
 })
 
 describe('what the field is called', () => {

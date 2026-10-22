@@ -54,9 +54,9 @@ func (ImportedFiles) HasHandle(handle, vault string) bool {
 	if err != nil {
 		return false
 	}
-	under, err := filepath.Abs(vault)
+	limit, err := filepath.Abs(vault)
 	if err != nil {
 		return false
 	}
-	return under == from || strings.HasPrefix(under, from+string(filepath.Separator))
+	return limit == from || strings.HasPrefix(limit, from+string(filepath.Separator))
 }

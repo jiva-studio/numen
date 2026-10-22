@@ -4,7 +4,6 @@ syntax = "proto3";
 // in.
 //
 // The settings belong to the installation and not to a vault: the same file
-// answers whichever vault a window is showing, and every window reads it.
 //
 // They travel as the file's own text. Their sections belong to whichever
 // adapters an installation is composed of, so the core does not know the whole
@@ -32,10 +31,8 @@ service SettingsService {
   rpc ReadSettingsFile(ReadSettingsFileRequest) returns (ReadSettingsFileResponse);
 
   // WriteSettingsFile replaces that file whole, with the bytes as they were
-  // typed. A file the settings cannot be read out of is refused and the file is
   // left as it was; what is said names where in the file the trouble is. A file
   // standing at anything other than what the caller presents is left alone and
-  // refused `stale`.
   rpc WriteSettingsFile(WriteSettingsFileRequest) returns (WriteSettingsFileResponse);
 
   // WritePluginSecret stores the key of a secret a plugin declares, in the
@@ -68,7 +65,6 @@ message GetSettingsResponse {
   repeated Model models = 3;
 
   // How many headings may nest under a note, at each end. A number outside
-  // it is refused. A client asking a person for one says these.
   Bounds nested_heading_limit_bounds = 4;
 
   // Active plugins and their declarative settings schema.
@@ -131,7 +127,6 @@ message Setting {
   repeated string at = 1;
 
   // What to write there, as JSON. A value the settings cannot be read out of
-  // again is refused, and the file is left as it was.
   string value = 2;
 }
 

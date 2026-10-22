@@ -54,11 +54,11 @@ const isOverlapping = (one: Box, other: Box): boolean =>
 function getBox(edge: PlacedEdge, width: (label: string) => number): Box {
   const arc = getLength(edge)
   const alongEdge = createPointOnCurve(edge)
-  const at = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
+  const offset = edge.heading === 'against' ? 1 - edge.wordsAt : edge.wordsAt
   const half = width(edge.words!) / 2 / arc
   const deep = labelDepth / 2
 
-  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => alongEdge(at - half + 2 * half * step))
+  const run = [0, 0.25, 0.5, 0.75, 1].map((step) => alongEdge(offset - half + 2 * half * step))
   const box = { minX: Infinity, minY: Infinity, maxX: -Infinity, maxY: -Infinity }
 
   for (const [sample, point] of run.entries()) {
@@ -308,7 +308,7 @@ describe('a title set on a straight line', () => {
     words: string,
     extra: Partial<PlacedEdge> = {},
   ): PlacedEdge => {
-    const at = (share: number): Position => ({
+    const pointAt = (share: number): Position => ({
       x: from.x + (to.x - from.x) * share,
       y: from.y + (to.y - from.y) * share,
     })
@@ -321,8 +321,8 @@ describe('a title set on a straight line', () => {
       words,
       wordsAt: MIDDLE,
       fromPoint: from,
-      control1: at(1 / 3),
-      control2: at(2 / 3),
+      control1: pointAt(1 / 3),
+      control2: pointAt(2 / 3),
       toPoint: to,
       ...extra,
     } as PlacedEdge
@@ -396,7 +396,11 @@ describe('a title set on a straight line', () => {
 
   it('starts a title at the near end of the only clear place that is to the right of the middle', () => {
     // A box over the middle and the whole left side of the line.
-    const [resolved] = separateTitles([acrossLine('abcde')], [createBlocker('box', -204, 53)], edgeRouting)
+    const [resolved] = separateTitles(
+      [acrossLine('abcde')],
+      [createBlocker('box', -204, 53)],
+      edgeRouting,
+    )
 
     expect(resolved!.words).toBe('abcde')
     expect(getCentre(resolved!).x - 25).toBeGreaterThanOrEqual(53)

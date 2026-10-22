@@ -1,6 +1,3 @@
-/**
- * What the window is showing, and the rules for changing it.
- */
 import { ref, shallowRef } from 'vue'
 import type { NotePort } from '@/app/ports/notes'
 import type { VaultPort } from '@/app/ports/vault'
@@ -44,7 +41,6 @@ export interface DisplayOptions {
 function createDisplayState() {
   return {
     name: ref(''),
-    /** The folder the vault the window is showing sat in when the page was drawn. */
     at: ref(''),
     isIndexing: ref(true),
     /** The core could not be reached: nothing else in the window is true. */
@@ -197,4 +193,4 @@ export function useWindowDisplay(
   }
 }
 
-const sleep = (ms: number) => new Promise((wake) => setTimeout(wake, ms))
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

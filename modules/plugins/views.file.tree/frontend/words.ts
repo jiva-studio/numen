@@ -4,7 +4,6 @@ export const WORDS = {
   files: 'Files',
   /** The tree, announced to whoever is not looking at it. */
   tree: 'The folders and files of the vault',
-  /** What stands in place of the tree where the vault holds nothing. */
   empty: 'This vault holds no files',
   /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',

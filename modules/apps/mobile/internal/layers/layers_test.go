@@ -20,14 +20,13 @@ var named = []string{"bind/mobile.go"}
 
 // standing is a file of this application, parsed.
 type standing struct {
-	at   string
+	path string
 	file *ast.File
 }
 
 // readSources is every hand-written Go file of this application, parsed.
 //
 // A test file is left out: a test stands outside the package it exercises and
-// builds what stands in for the real thing.
 func readSources(t *testing.T) []standing {
 	t.Helper()
 
@@ -48,7 +47,7 @@ func readSources(t *testing.T) []standing {
 			return err
 		}
 		found = append(found, standing{
-			at:   filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
+			path: filepath.ToSlash(strings.TrimPrefix(path, root+string(filepath.Separator))),
 			file: file,
 		})
 		return nil
@@ -58,7 +57,7 @@ func readSources(t *testing.T) []standing {
 	}
 
 	for _, one := range named {
-		if !slices.ContainsFunc(found, func(held standing) bool { return held.at == one }) {
+		if !slices.ContainsFunc(found, func(target standing) bool { return target.path == one }) {
 			t.Fatalf("the walk did not read %s, so the rule stops before it", one)
 		}
 	}
@@ -88,7 +87,7 @@ func TestNoApplicationLogs(t *testing.T) {
 				t.Fatal(err)
 			}
 			if logs(to) {
-				wrong = append(wrong, target.at+" imports "+to)
+				wrong = append(wrong, target.path+" imports "+to)
 			}
 		}
 	}
@@ -97,7 +96,6 @@ func TestNoApplicationLogs(t *testing.T) {
 	}
 }
 
-// What the rule refuses, read against imports written to be refused. It has to
 // find both of the standard library's and a third party's, and let through the
 // packages whose names only begin the same way.
 func TestWhatTheLoggingRuleRefuses(t *testing.T) {

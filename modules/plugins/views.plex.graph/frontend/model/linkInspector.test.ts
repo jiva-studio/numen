@@ -71,7 +71,9 @@ describe('linkInspector helper module', () => {
     })
 
     it('finds nothing in a pair the neighbourhood does not draw', () => {
-      expect(findPairNeighbour(neighbourhood({ path: 'Other.md' }), 'Focus.md', 'Gone.md')).toBeUndefined()
+      expect(
+        findPairNeighbour(neighbourhood({ path: 'Other.md' }), 'Focus.md', 'Gone.md'),
+      ).toBeUndefined()
       expect(findPairNeighbour(null, 'Focus.md', 'Other.md')).toBeUndefined()
     })
   })
@@ -97,7 +99,11 @@ describe('linkInspector helper module', () => {
     })
 
     it('reads the same link as running in reverse when the pair is requested the other way', () => {
-      const links = createInspectorLinks(neighbourhood({ relation: 'child' }), 'Other.md', 'Focus.md')
+      const links = createInspectorLinks(
+        neighbourhood({ relation: 'child' }),
+        'Other.md',
+        'Focus.md',
+      )
 
       expect(links).toHaveLength(1)
       expect(links[0]).toMatchObject({ from: 'Focus.md', to: 'Other.md', direction: 'reverse' })
@@ -105,7 +111,12 @@ describe('linkInspector helper module', () => {
 
     it('shows both links of a mutual relationship, each with the words its note wrote', () => {
       const links = createInspectorLinks(
-        neighbourhood({ relation: 'child', isMutual: true, label: 'owns', reverseLabel: 'belongs to' }),
+        neighbourhood({
+          relation: 'child',
+          isMutual: true,
+          label: 'owns',
+          reverseLabel: 'belongs to',
+        }),
         'Focus.md',
         'Other.md',
       )

@@ -38,7 +38,7 @@ export interface PluginPaletteCommand {
   isOffered(): boolean
 }
 
-export type TabActionHandler = (at: string, ...args: unknown[]) => unknown
+export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
 
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
@@ -60,7 +60,7 @@ export interface PluginHostDeps {
   readonly closeTabsForPlugin?: (pluginId: string) => void
   readonly onError?: (pluginId: string, error: unknown) => void
   readonly tabActionHandlers?: Record<string, TabActionHandler>
-  readonly onTabAction?: (action: string, at: string, ...args: unknown[]) => unknown
+  readonly onTabAction?: (action: string, targetPath: string, ...args: unknown[]) => unknown
 
   readonly readNote?:
     ((path: string) => Promise<{ body?: string; error?: string } | string | undefined>) | undefined

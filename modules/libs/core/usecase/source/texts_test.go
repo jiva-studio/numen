@@ -18,7 +18,7 @@ const (
 // textScene is a vault holding a recording the index says a model heard, a scan and a link note, over a shelf that holds what was made from them.
 type textScene struct {
 	texts   Texts
-	shelf   *shelf
+	shelf   *fakeStorage
 	index   *store
 	readers port.VaultReaders
 	vault   domain.Vault
@@ -38,7 +38,7 @@ func newTextScene(t *testing.T) textScene {
 	shelf := newShelf()
 	readers := vaults{first.ID: library}
 	return textScene{
-		texts:   NewTexts(readers, nil, index, shelves{shelf}),
+		texts:   NewTexts(readers, nil, index, fakeStores{shelf}),
 		shelf:   shelf,
 		index:   index,
 		readers: readers,
@@ -49,7 +49,7 @@ func newTextScene(t *testing.T) textScene {
 // withoutIndex is the same scene with an index that knows nothing.
 func (s textScene) withoutIndex() textScene {
 	s.index = newStore()
-	s.texts = NewTexts(s.readers, nil, s.index, shelves{s.shelf})
+	s.texts = NewTexts(s.readers, nil, s.index, fakeStores{s.shelf})
 	return s
 }
 

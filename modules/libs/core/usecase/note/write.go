@@ -16,8 +16,8 @@ var ErrTooLarge = edit.ErrTooLarge
 
 // CheckSize holds a file to the most it may be: its frontmatter and its prose
 // together, as they are about to go to disk. Zero holds it to nothing.
-func CheckSize(path string, size, bound int) error {
-	return edit.CheckSize(path, size, bound)
+func CheckSize(path string, size, limit int) error {
+	return edit.CheckSize(path, size, limit)
 }
 
 // ErrBodyUnwritable is a body that opens with the frontmatter delimiter.
@@ -101,7 +101,7 @@ func (u Write) Execute(
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.Fingerprint = fingerprint
-	e.Bound = u.bound()
+	e.Bound = u.maxBound()
 	ends := func() {}
 	defer func() { ends() }()
 
@@ -109,17 +109,16 @@ func (u Write) Execute(
 		// A note rewritten whole is drawn as the stretch that changed, so what
 		// a person watching sees is the change and not the note.
 		was := markdown.Normalise(doc.Body())
-		at, insert := markdown.Diff(was, markdown.Normalise(body))
-		// Told after the write is settled: a refusal is not a stretch anybody
+		pos, insert := markdown.Diff(was, markdown.Normalise(body))
 		// watching should see change.
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
-		if at.From != at.To || insert != "" {
+		if pos.From != pos.To || insert != "" {
 			ends = u.Drawing.beginChange(ctx, u.now, domain.Edit{
 				Path: path,
-				From: markdown.CountUTF16(was, at.From),
-				To:   markdown.CountUTF16(was, at.To),
+				From: markdown.CountUTF16(was, pos.From),
+				To:   markdown.CountUTF16(was, pos.To),
 				Text: insert,
 			})
 		}
@@ -150,13 +149,13 @@ func (u Write) Save(
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.ShouldOverwrite = true
 	e.Baseline = baseline
-	e.Bound = u.bound()
+	e.Bound = u.maxBound()
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		return doc.SetBody(body)
 	})
 }
 
-func (u Write) bound() int {
+func (u Write) maxBound() int {
 	if u.Bound == 0 {
 		return MaxBytes
 	}

@@ -28,9 +28,9 @@ var ErrUnaskedCorrectionLine = errors.New("scan correction line was not asked")
 // corrections go beside it, so a proofreading that went wrong is a file that can
 // be deleted and a person can always ask what the machine read.
 type Proofread struct {
-	readers port.VaultReaders
-	derived port.DerivedStores
-	by      port.Proofreader
+	readers  port.VaultReaders
+	derived  port.DerivedStores
+	provider port.Proofreader
 
 	// Area is the store the recognition is kept in. Empty means the default.
 	Area string
@@ -51,15 +51,13 @@ type Proofread struct {
 // NewProofread is what a recognition is put right through: the vault it is
 // read out of, the store the recognition and its corrections are kept in, and the
 // proofreader that answers about a page.
-//
-// An installation that configured no proofreader is refused here.
 func NewProofread(
-	readers port.VaultReaders, derived port.DerivedStores, by port.Proofreader,
+	readers port.VaultReaders, derived port.DerivedStores, proofreader port.Proofreader,
 ) (Proofread, error) {
-	if err := run.CheckProofread(readers, derived, by); err != nil {
+	if err := run.CheckProofread(readers, derived, proofreader); err != nil {
 		return Proofread{}, err
 	}
-	return Proofread{readers: readers, derived: derived, by: by}, nil
+	return Proofread{readers: readers, derived: derived, provider: proofreader}, nil
 }
 
 // CreateProofread is what puts a document's recognition right, with the proofreader
@@ -73,16 +71,16 @@ func NewProofread(
 // goes belongs to whoever asked for it.
 func CreateProofread(
 	c run.ProofreadingConfig, readers port.VaultReaders, derived port.DerivedStores,
-) (right Proofread, held bool, err error) {
-	by, err := run.OpenProofreader(c.By)
+) (right Proofread, item bool, err error) {
+	delta, err := run.OpenProofreader(c.By)
 	if err != nil {
 		return Proofread{}, false, fmt.Errorf("nothing to proofread with: %w", err)
 	}
-	if by == nil {
+	if delta == nil {
 		return Proofread{}, false, nil
 	}
 
-	right, err = NewProofread(readers, derived, by)
+	right, err = NewProofread(readers, derived, delta)
 	if err != nil {
 		return Proofread{}, false, err
 	}
@@ -90,7 +88,7 @@ func CreateProofread(
 }
 
 // GetProofreaderName is what puts the words right, by the name it goes under.
-func (u Proofread) GetProofreaderName() string { return u.by.GetName() }
+func (u Proofread) GetProofreaderName() string { return u.provider.GetName() }
 
 // ProofreadResult reports what proofreading a recognition did.
 type ProofreadResult struct {
@@ -99,7 +97,7 @@ type ProofreadResult struct {
 	Read             int    // how many have been asked about, this run and before it
 	Resumed          int    // how many a run before this one had already asked about
 	Fixed            int    // lines put right
-	UncorrectedPages int    // pages replied to without a correction, left as they were read
+	UncorrectedPages int    // pages replied to without a correction, unchanged as read
 	IsNone           bool   // there is no recognition to proofread, and nothing was done
 	IsBusy           bool   // somebody else is proofreading this recognition
 }
@@ -186,17 +184,17 @@ type proofreadRecognitionJob struct {
 func (u Proofread) askPages(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	at int,
+	pos int,
 	res *ProofreadResult,
 ) error {
-	if at >= len(p.pages) {
+	if pos >= len(p.pages) {
 		return nil
 	}
 	if err := ctx.Err(); err != nil {
 		return err
 	}
-	request := p.pages[at:]
-	answer, err := u.by.ProofreadScan(ctx, request)
+	request := p.pages[pos:]
+	answer, err := u.provider.ProofreadScan(ctx, request)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -209,12 +207,12 @@ func (u Proofread) askPages(
 func (u Proofread) writeCorrections(
 	ctx context.Context,
 	p proofreadRecognitionJob,
-	asked []domain.ProofreadPage,
+	requested []domain.ProofreadPage,
 	answer domain.ScanProofreading,
 	end int,
 	res *ProofreadResult,
 ) error {
-	placed, err := getCorrectionLines(asked, answer.Corrections)
+	placed, err := getCorrectionLines(requested, answer.Corrections)
 	if err != nil {
 		return fmt.Errorf("proofread %s: %w", p.path, err)
 	}
@@ -264,7 +262,7 @@ func (u Proofread) lines(
 
 // getCorrectionLines returns the corrections as lines of the recognition, rejecting
 // any correction whose line number was not asked about or that joins lines.
-func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
+func getCorrectionLines(requested []domain.ProofreadPage, made []domain.ProofreadCorrection) ([]domain.CorrectionLine, error) {
 	out := make([]domain.CorrectionLine, len(made))
 	for i, one := range made {
 		if one.IsJoined() {
@@ -273,7 +271,7 @@ func getCorrectionLines(asked []domain.ProofreadPage, made []domain.ProofreadCor
 		out[i] = domain.CorrectionLine{Number: one.Number, Text: one.Text}
 	}
 	var lines []domain.ProofreadLine
-	for _, page := range asked {
+	for _, page := range requested {
 		lines = append(lines, page.Lines...)
 	}
 	if one, ok := domain.FindUnaskedCorrection(lines, made); ok {
@@ -301,7 +299,7 @@ func (u Proofread) readCheckpoint(
 		return checkpoint{}, err
 	}
 	var status checkpoint
-	if err := json.Unmarshal(raw, &status); err != nil || status.By != u.by.GetName() {
+	if err := json.Unmarshal(raw, &status); err != nil || status.By != u.provider.GetName() {
 		if err := store.RemoveArtifact(ctx, corrections); err != nil {
 			return checkpoint{}, err
 		}
@@ -311,16 +309,15 @@ func (u Proofread) readCheckpoint(
 }
 
 // dropCorrections drops the corrections of pages no count claims. A line is
-// numbered by where its run stands in the recognition, so the pages beyond the
 // count are the lines from the first of them onwards.
 func dropCorrections(
 	ctx context.Context,
 	store port.DerivedStore,
 	corrections domain.ArtifactName,
 	pages []domain.ProofreadPage,
-	done int,
+	finished int,
 ) error {
-	beyond, ok := opening(pages, done)
+	val, ok := opening(pages, finished)
 	if !ok {
 		return nil
 	}
@@ -334,7 +331,7 @@ func dropCorrections(
 	target := correction.Unpack(raw)
 	keptLines := make([]domain.CorrectionLine, 0, len(target))
 	for _, line := range target {
-		if line.Number < beyond {
+		if line.Number < val {
 			keptLines = append(keptLines, line)
 		}
 	}
@@ -348,8 +345,8 @@ func dropCorrections(
 }
 
 // opening is the number of the first line no count claims.
-func opening(pages []domain.ProofreadPage, done int) (int, bool) {
-	for _, page := range pages[min(done, len(pages)):] {
+func opening(pages []domain.ProofreadPage, completed int) (int, bool) {
+	for _, page := range pages[min(completed, len(pages)):] {
 		if len(page.Lines) > 0 {
 			return page.Lines[0].Number, true
 		}
@@ -360,10 +357,10 @@ func opening(pages []domain.ProofreadPage, done int) (int, bool) {
 // writeCheckpoint writes down who put this recognition right and how far they got.
 // It stands last and is what makes the batch before it count.
 func (u Proofread) writeCheckpoint(
-	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, stood checkpoint,
+	ctx context.Context, store port.DerivedStore, progressName domain.ArtifactName, current checkpoint,
 ) error {
-	stood.By = u.by.GetName()
-	raw, err := json.MarshalIndent(stood, "", "  ")
+	current.By = u.provider.GetName()
+	raw, err := json.MarshalIndent(current, "", "  ")
 	if err != nil {
 		return err
 	}

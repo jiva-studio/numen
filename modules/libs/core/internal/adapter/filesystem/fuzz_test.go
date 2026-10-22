@@ -163,7 +163,6 @@ var configSeeds = []string{
 // identity it returns is one that could have been made here.
 //
 // Bytes nobody can read out are rejected as unreadable, and Initialize leaves
-// them where they are. The file sits in a folder a person keeps in their own
 // sync, so the bytes are a stranger's.
 func FuzzReadConfig(f *testing.F) {
 	for _, seed := range configSeeds {
@@ -175,10 +174,10 @@ func FuzzReadConfig(f *testing.F) {
 	if err := os.MkdirAll(filepath.Join(root, DefaultServiceDir), 0o755); err != nil {
 		f.Fatal(err)
 	}
-	at := configAt(root, DefaultServiceDir)
+	pos := configAt(root, DefaultServiceDir)
 
 	f.Fuzz(func(t *testing.T, raw string) {
-		if err := os.WriteFile(at, []byte(raw), 0o644); err != nil {
+		if err := os.WriteFile(pos, []byte(raw), 0o644); err != nil {
 			t.Fatal(err)
 		}
 
@@ -187,7 +186,7 @@ func FuzzReadConfig(f *testing.F) {
 			t.Fatalf("a vault was read as carrying %q, which no vault carries", target.ID)
 		}
 		if errors.Is(err, ErrNotAVault) {
-			t.Fatalf("%q stands in the folder and it was read as never having been added", raw)
+			t.Fatalf("%q is in the folder and it was read as never having been added", raw)
 		}
 
 		made, adding := Initialize(root, DefaultServiceDir, time.Unix(1, 0))
@@ -197,7 +196,7 @@ func FuzzReadConfig(f *testing.F) {
 		case err != nil && adding == nil:
 			t.Fatalf("%q could not be read (%v) and the folder was added all the same", raw, err)
 		}
-		after, readErr := os.ReadFile(at)
+		after, readErr := os.ReadFile(pos)
 		if readErr != nil {
 			t.Fatal(readErr)
 		}

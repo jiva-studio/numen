@@ -38,7 +38,6 @@ type sentRequest struct {
 }
 
 // fakeChat is an OpenAI-compatible chat API that answers each request with the next reply it holds,
-// repeating the last, and keeps every request, refused ones too. A streaming request is answered
 // with the reply in pieces: its text word by word, and each tool call in three fragments. script,
 // where it is set, is the data of the events that answer the first request. refusesStream answers
 // a streaming request 400 Bad Request, and ignoresStream answers it with the whole reply.
@@ -54,7 +53,7 @@ type fakeChat struct {
 	refusesStream bool
 	ignoresStream bool
 	requests      []sentRequest
-	answered      int
+	replyCount    int
 }
 
 func (f *fakeChat) serve(t *testing.T) *httptest.Server {
@@ -88,12 +87,12 @@ func (f *fakeChat) serve(t *testing.T) *httptest.Server {
 			http.Error(w, `{"error":{"message":"stream is not supported"}}`, http.StatusBadRequest)
 			return
 		}
-		f.answered++
-		if got.Stream && f.script != nil && f.answered == 1 {
+		f.replyCount++
+		if got.Stream && f.script != nil && f.replyCount == 1 {
 			writeEvents(w, f.script)
 			return
 		}
-		reply := f.replies[min(f.answered, len(f.replies))-1]
+		reply := f.replies[min(f.replyCount, len(f.replies))-1]
 		if got.Stream && !f.ignoresStream {
 			writeEvents(w, f.getPieces(reply))
 			return
@@ -299,7 +298,7 @@ func TestAToolTheModelCallsRunsAndItsResultIsFedBack(t *testing.T) {
 	}
 	fedBack := requests[1].Messages[len(requests[1].Messages)-1]
 	if fedBack.Role != "tool" || fedBack.ToolCallID != "call-1" || *fedBack.Content != "Plan: water the garden." {
-		t.Errorf("the model was told %+v", fedBack)
+		t.Errorf("the model received %+v", fedBack)
 	}
 }
 
@@ -483,7 +482,7 @@ func TestACallWithNoArgumentsIsReportedBackWithAnEmptyObject(t *testing.T) {
 
 	messages := model.getRequests()[1].Messages
 	if args := messages[len(messages)-2].ToolCalls[0].Function.Arguments; args != "{}" {
-		t.Errorf("the call was told back with %q", args)
+		t.Errorf("call returned with %q", args)
 	}
 	if calls := vault.getCalls(); len(calls) != 1 || calls[0] != "{}" {
 		t.Errorf("the vault was called with %v", calls)

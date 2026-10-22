@@ -104,7 +104,7 @@ func FuzzSetBody(f *testing.F) {
 		if err != nil {
 			return
 		}
-		head := string(d.bom) + string(d.open) + string(d.front) + string(d.shut)
+		head := string(d.bom) + string(d.open) + string(d.front) + string(d.closeDelimiter)
 		if err := d.SetBody(body); err != nil {
 			return
 		}
@@ -156,14 +156,14 @@ func getChangedRun(before, after string) (int, int) {
 func getOwnedLines(note, key string) (start, end int, found bool) {
 	var starts []int
 	var lines []string
-	for at := 0; at < len(note); {
+	for pos := 0; pos < len(note); {
 		stop := len(note)
-		if next := strings.IndexByte(note[at:], '\n'); next >= 0 {
-			stop = at + next + 1
+		if next := strings.IndexByte(note[pos:], '\n'); next >= 0 {
+			stop = pos + next + 1
 		}
-		starts = append(starts, at)
-		lines = append(lines, strings.TrimRight(note[at:stop], "\r\n"))
-		at = stop
+		starts = append(starts, pos)
+		lines = append(lines, strings.TrimRight(note[pos:stop], "\r\n"))
+		pos = stop
 	}
 	starts = append(starts, len(note))
 	if len(lines) == 0 || lines[0] != "---" {
@@ -180,14 +180,14 @@ func getOwnedLines(note, key string) (start, end int, found bool) {
 		return 0, 0, false
 	}
 
-	margin, at, owner := "", false, 0
+	margin, foundMargin, owner := "", false, 0
 	for i := 1; i < closingLine; i++ {
 		text := strings.TrimSpace(lines[i])
 		if text == "" || strings.HasPrefix(text, "#") {
 			continue
 		}
-		if !at {
-			margin, at = getIndent(lines[i]), true
+		if !foundMargin {
+			margin, foundMargin = getIndent(lines[i]), true
 		}
 		if len(getIndent(lines[i])) == len(margin) && strings.HasPrefix(text, key+":") {
 			owner = i

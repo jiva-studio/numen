@@ -16,8 +16,8 @@ func (s *State) GetWindow() port.Window { return view{s} }
 // nobody sees.
 type view struct{ *State }
 
-func (v view) FocusPlace(_ context.Context, at domain.Place) error {
-	v.Places.publish(at)
+func (v view) FocusPlace(_ context.Context, pos domain.Place) error {
+	v.Places.publish(pos)
 	return nil
 }
 
@@ -26,7 +26,7 @@ func (v view) ShowMove(_ context.Context, went domain.Move) error {
 	return nil
 }
 
-func (v view) ShowEdit(_ context.Context, said domain.Edit) error {
-	v.Edits.publish(said)
+func (v view) ShowEdit(_ context.Context, edit domain.Edit) error {
+	v.Edits.publish(edit)
 	return nil
 }

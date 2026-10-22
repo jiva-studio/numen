@@ -25,7 +25,6 @@ import (
 )
 
 // eventRecorder serves numen.v1.PluginEventService and keeps every event it is handed. It refuses each
-// with refusal when that is set, and fails the call with failure when that is set.
 type eventRecorder struct {
 	numenv1connect.UnimplementedPluginEventServiceHandler
 	mu      sync.Mutex

@@ -27,21 +27,21 @@ func preset(front string) string {
 
 // deckOf is a deck of as many cards, pointing at the preset named. A deck
 // naming none is written with an empty name.
-func deckOf(at string, cards int, from int) string {
+func deckOf(pos string, cards int, from int) string {
 	var naming []string
-	if at != "" {
-		naming = append(naming, at)
+	if pos != "" {
+		naming = append(naming, pos)
 	}
 	return deckNaming(naming, cards, from)
 }
 
 // deckNaming is a deck of as many cards, naming these presets in the order it
 // names them.
-func deckNaming(at []string, cards int, from int) string {
+func deckNaming(pos []string, cards int, from int) string {
 	out := "---\ntype: deck\n"
-	if len(at) > 0 {
+	if len(pos) > 0 {
 		out += "links:\n"
-		for _, one := range at {
+		for _, one := range pos {
 			out += "  - to: " + one + "\n    role: ref\n    type: preset\n"
 		}
 	}
@@ -55,11 +55,10 @@ func deckNaming(at []string, cards int, from int) string {
 	return out
 }
 
-// sessionAt is what the vault asks at this instant, held to the day's budgets.
 func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.NewSession(
-		s.marking, s.standings, s.kept,
+		s.marking, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
 	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
@@ -77,7 +76,6 @@ func byDeck(sat flashcards.SessionResult) map[string]int {
 	return out
 }
 
-// unseen is how many of a session's cards nobody has answered yet.
 func unseen(sat flashcards.SessionResult) int {
 	out := 0
 	for _, one := range sat.Queue {
@@ -89,7 +87,7 @@ func unseen(sat flashcards.SessionResult) int {
 }
 
 // mark is the card of this place in a deck, as deckOf writes it.
-func mark(at int) string { return fmt.Sprintf("card%06d", at) }
+func mark(pos int) string { return fmt.Sprintf("card%06d", pos) }
 
 // Each preset turns its own minutes into a count from its own answer times, so
 // two presets of the same day hold as many cards as their cards cost.
@@ -137,8 +135,8 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		// Two in the morning of the Saturday is the Friday's review day, which
 		// carries the whole of the load.
@@ -146,9 +144,9 @@ func TestALightDayIsReadOffTheReviewDay(t *testing.T) {
 		// And two in the morning of the Sunday is the half Saturday itself.
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 4},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.at))["decks/Light.md"]
+		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/Light.md"]
 		if got != one.cards {
-			t.Errorf("at %v the deck was asked %d cards, want %d", one.at, got, one.cards)
+			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
 	}
 }
@@ -165,8 +163,8 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		// The last day of it holds all the material still to begin.
 		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 20},
@@ -174,9 +172,9 @@ func TestAPresetPastTheDayItAimsAtSchedulesNothing(t *testing.T) {
 		{time.Date(2026, 9, 6, 2, 0, 0, 0, time.Local), 20},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 	} {
-		got := byDeck(s.sessionAt(t, today, one.at))["decks/By.md"]
+		got := byDeck(s.sessionAt(t, today, one.targetTime))["decks/By.md"]
 		if got != one.cards {
-			t.Errorf("at %v the deck was asked %d cards, want %d", one.at, got, one.cards)
+			t.Errorf("at %v the deck was asked %d cards, want %d", one.targetTime, got, one.cards)
 		}
 	}
 }
@@ -609,7 +607,6 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 	}
 }
 
-// A deck pointed at another preset between sessions is held to the budget of
 // the preset it now names.
 func TestADeckRepointedBetweenSessionsIsHeldToItsNewPreset(t *testing.T) {
 	t.Parallel()
@@ -768,7 +765,6 @@ func TestADayMovedPriorUsStopsThePresetAtOnce(t *testing.T) {
 	}
 }
 
-// A goal moved off a day starts the preset again: the day stands in the file
 // and is read only while the goal names it.
 func TestAGoalMovedOffADayStartsThePresetAgain(t *testing.T) {
 	t.Parallel()
@@ -807,16 +803,16 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	}
 
 	for _, one := range []struct {
-		at    time.Time
-		fresh int
+		targetTime time.Time
+		newCount   int
 	}{
 		{evening.Add(time.Hour), 0},
 		// Three in the morning is the Friday's review day still.
 		{time.Date(2026, 9, 5, 3, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 5, 5, 0, 0, 0, time.Local), 5},
 	} {
-		if got := unseen(s.sessionAt(t, today, one.at)); got != one.fresh {
-			t.Errorf("at %v the day was asked %d new cards, want %d", one.at, got, one.fresh)
+		if got := unseen(s.sessionAt(t, today, one.targetTime)); got != one.newCount {
+			t.Errorf("at %v the day was asked %d new cards, want %d", one.targetTime, got, one.newCount)
 		}
 	}
 }
@@ -832,16 +828,16 @@ func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 	})
 
 	for _, one := range []struct {
-		at    time.Time
-		cards int
+		targetTime time.Time
+		cards      int
 	}{
 		{time.Date(2026, 9, 5, 10, 0, 0, 0, time.Local), 8},
 		{time.Date(2026, 9, 6, 10, 0, 0, 0, time.Local), 0},
 		{time.Date(2026, 9, 7, 10, 0, 0, 0, time.Local), 8},
 	} {
-		got := unseen(s.sessionAt(t, today, one.at))
+		got := unseen(s.sessionAt(t, today, one.targetTime))
 		if got != one.cards {
-			t.Errorf("%v was asked %d new cards, want %d", one.at.Weekday(), got, one.cards)
+			t.Errorf("%v was asked %d new cards, want %d", one.targetTime.Weekday(), got, one.cards)
 		}
 	}
 }
@@ -891,7 +887,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	}
 	// The working out under the old target, remembered where the next one will
 	// look for it.
-	was, err := s.kept.Execute(t.Context(), s.vault)
+	was, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -902,7 +898,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	write(t, s, "On.md", preset("retention: 0.99\nnew_a_day: 0\nreviews_a_day: 50\n"+
 		"minutes_a_day: 0\n"))
 
-	now, err := s.kept.Execute(t.Context(), s.vault)
+	now, err := s.schedules.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1137,23 +1133,23 @@ func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
 	all := s0(t, newBacklogVault(t, day+"backlog: 100\n"))
-	if all.owed != 20 || all.fresh == 0 {
+	if all.owed != 20 || all.newCount == 0 {
 		t.Errorf("giving the debt all of the day asked %+v, want every card owed and "+
 			"the rest of the day on new ones", all)
 	}
 	none := s0(t, newBacklogVault(t, day+"backlog: 0\n"))
-	if none.fresh != 20 || none.owed == 0 {
+	if none.newCount != 20 || none.owed == 0 {
 		t.Errorf("giving the debt none of the day asked %+v, want every new card and "+
 			"the rest of the day on owed ones", none)
 	}
 	// An odd day gives the extra card to the debt, so the two are never more
 	// than one apart.
 	half := s0(t, newBacklogVault(t, day+"backlog: 50\n"))
-	if half.owed-half.fresh < 0 || half.owed-half.fresh > 1 {
-		t.Errorf("splession the day evenly asked %+v", half)
+	if half.owed-half.newCount < 0 || half.owed-half.newCount > 1 {
+		t.Errorf("splitting the day evenly asked %+v", half)
 	}
-	if half.owed == 0 || half.fresh == 0 {
-		t.Errorf("splession the day evenly left one side of it unspent: %+v", half)
+	if half.owed == 0 || half.newCount == 0 {
+		t.Errorf("splitting the day evenly left one side of it unspent: %+v", half)
 	}
 }
 
@@ -1197,7 +1193,6 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 }
 
 // A goal of a date carries the whole material by its own reckoning, so the
-// share takes no part and the value stands in the file untouched.
 func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 	t.Parallel()
 	for _, share := range []string{"backlog: 0\n", "backlog: 100\n"} {
@@ -1216,13 +1211,13 @@ func TestAGoalOfADateReadsNoBacklogShare(t *testing.T) {
 }
 
 // what a session came to, of each kind.
-type session struct{ owed, fresh int }
+type session struct{ owed, newCount int }
 
 func s0(t *testing.T, s vaulted) session {
 	t.Helper()
 	sat := s.sessionAt(t, today, saturday)
 	newCards := unseen(sat)
-	return session{owed: countQueue(sat) - newCards, fresh: newCards}
+	return session{owed: countQueue(sat) - newCards, newCount: newCards}
 }
 
 // The share of the day that goes to the debt moves the day where the day is one

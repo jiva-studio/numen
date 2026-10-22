@@ -16,32 +16,32 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
-// lookAt gives the core a person to put notes and passages in front of.
-func lookAt(core *mcp.Core, queries port.NoteQueries, view port.Window) {
+// observeView configures the core with queries and a window view.
+func observeView(core *mcp.Core, queries port.NoteQueries, view port.Window) {
 	core.Notes.FocusNote = note.NewFocusNote(queries, view)
 	core.Sources.FocusPassage = source.NewFocusPassage(filesystem.VaultReaders{}, view)
 }
 
-// lookingCore is a core with nothing but a person to look.
-func lookingCore(view port.Window) mcp.Core {
+// attachViewer returns a core configured with the window view.
+func attachViewer(view port.Window) mcp.Core {
 	core := mcp.Core{}
-	lookAt(&core, nil, view)
+	observeView(&core, nil, view)
 	return core
 }
 
 // window is what an agent puts a place in front of.
 type window struct {
-	asked []domain.Place
-	drawn []domain.Edit
-	went  []domain.Move
-	fails error
+	requested []domain.Place
+	rendered  []domain.Edit
+	went      []domain.Move
+	fails     error
 }
 
-func (w *window) FocusPlace(_ context.Context, at domain.Place) error {
+func (w *window) FocusPlace(_ context.Context, pos domain.Place) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.asked = append(w.asked, at)
+	w.requested = append(w.requested, pos)
 	return nil
 }
 
@@ -51,9 +51,9 @@ func newSessionWithWindow(t *testing.T, notes map[string]string) (*sdk.ClientSes
 	t.Helper()
 	_, core, queries := newCoreWithQueries(t, notes)
 	looking := &window{}
-	lookAt(&core, queries, looking)
-	tells := note.TellEdit(func(ctx context.Context, said domain.Edit) {
-		_ = looking.ShowEdit(ctx, said)
+	observeView(&core, queries, looking)
+	tells := note.TellEdit(func(ctx context.Context, response domain.Edit) {
+		_ = looking.ShowEdit(ctx, response)
 	})
 	core.Notes.Write.Drawing = tells
 	core.Notes.Replace.Drawing = tells
@@ -81,8 +81,8 @@ func TestFocusInsertsANoteInFrontOfThePerson(t *testing.T) {
 	// A note is put in front of the person whole. Nothing about it names a
 	// span, so nothing is asked for one.
 	want := domain.Place{Path: "notes/Entropy.md"}
-	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 1 || !reflect.DeepEqual(looking.requested[0], want) {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -98,14 +98,14 @@ func TestFocusRefusesANoteTheVaultDoesNotHold(t *testing.T) {
 	if !res.IsError {
 		t.Error("a note that is not there was shown anyway")
 	}
-	if len(looking.asked) != 0 {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 0 {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
 func TestFocusReturnsSoWhenTheWindowWouldNot(t *testing.T) {
 	_, core, queries := newCoreWithQueries(t, map[string]string{"notes/Entropy.md": "# Entropy\n"})
-	lookAt(&core, queries, &window{fails: errors.New("nobody is looking")})
+	observeView(&core, queries, &window{fails: errors.New("no active view")})
 	session := newSessionOver(t, core)
 
 	res, err := session.CallTool(t.Context(), &sdk.CallToolParams{
@@ -158,8 +158,8 @@ func TestShowInsertsAPlaceInFrontOfThePerson(t *testing.T) {
 		t.Errorf("answered with %+v", out)
 	}
 	want := domain.Place{Path: "library/A Book.epub", Spans: []domain.ByteSpan{{From: 1200, To: 1280}}}
-	if len(looking.asked) != 1 || !reflect.DeepEqual(looking.asked[0], want) {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 1 || !reflect.DeepEqual(looking.requested[0], want) {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
@@ -176,18 +176,18 @@ func TestShowRefusesAPathTheVaultDoesNotHold(t *testing.T) {
 	if !res.IsError {
 		t.Error("a document that is not there was shown anyway")
 	}
-	if len(looking.asked) != 0 {
-		t.Errorf("the window was asked for %v", looking.asked)
+	if len(looking.requested) != 0 {
+		t.Errorf("the window was asked for %v", looking.requested)
 	}
 }
 
 // drawn is what the window was told about a change being made, in the order it
 // was told.
-func (w *window) ShowEdit(_ context.Context, said domain.Edit) error {
+func (w *window) ShowEdit(_ context.Context, response domain.Edit) error {
 	if w.fails != nil {
 		return w.fails
 	}
-	w.drawn = append(w.drawn, said)
+	w.rendered = append(w.rendered, response)
 	return nil
 }
 
@@ -202,7 +202,6 @@ func (w *window) ShowMove(_ context.Context, went domain.Move) error {
 
 // A person reading a note that is renamed under them is reading a name with no
 // file behind it, and every change made afterwards is made somewhere they are
-// not looking. So the window is told where the note went.
 func TestRenamingANoteReturnsWhereItWent(t *testing.T) {
 	s, looking := newSessionWithWindow(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
@@ -211,7 +210,7 @@ func TestRenamingANoteReturnsWhereItWent(t *testing.T) {
 	}](t, s, "note_rename", map[string]any{"path": "Entropy.md", "title": "Order"})
 
 	if len(looking.went) != 1 {
-		t.Fatalf("the window was told %d times, wanted once", len(looking.went))
+		t.Fatalf("got %d notifications, want 1", len(looking.went))
 	}
 	if looking.went[0].From != "Entropy.md" || looking.went[0].To == "" {
 		t.Errorf("the note went %+v", looking.went[0])

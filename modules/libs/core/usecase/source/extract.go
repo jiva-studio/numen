@@ -82,12 +82,12 @@ type ExtractResult struct {
 	Seen          int    // sources found in the vault
 	Recorded      int    // new or changed, so owing their text
 	Unchanged     int    // skipped on size and modification time alone
-	Extracted     int    // read, cut and written
+	Extracted     int    // read, chunked and written
 	Chunks        int    // chunks written, of both sizes
 	Unreadable    int    // read, and not a book
 	Removed       int    // held by the index, no longer in the vault
 	Forgotten     int    // read by a model once, and that recognition is gone
-	Vanished      int    // named by the index, gone by the time it was read
+	Vanished      int    // named by the index, vanished by the time it was read
 	CurrentSource string // the source open now
 }
 
@@ -153,12 +153,12 @@ func (u Extract) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	reader port.VaultReader,
-	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	indexed map[domain.SourceKind]map[string]domain.Fingerprint,
 	res *ExtractResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
 	err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
-		target, ours := known[ref.Kind]
+		target, ours := indexed[ref.Kind]
 		if !ours {
 			return nil
 		}
@@ -183,14 +183,14 @@ func (u Extract) walkAndRecord(
 func (u Extract) removeGone(
 	ctx context.Context,
 	v domain.Vault,
-	known map[domain.SourceKind]map[string]domain.Fingerprint,
+	existing map[domain.SourceKind]map[string]domain.Fingerprint,
 	found map[string]bool,
 	res *ExtractResult,
 	swept *[]port.SourceText,
 ) error {
 	for _, kind := range u.kinds() {
 		removed := make([]string, 0)
-		for path := range known[kind] {
+		for path := range existing[kind] {
 			if !found[path] {
 				removed = append(removed, path)
 			}
@@ -613,10 +613,8 @@ func (u Extract) progress(res ExtractResult) {
 
 // text is what a source says, and which producer made it.
 //
-// A recognition of these bytes stands in for the file's own text layer: it is
 // what a person asked for, and a document whose layer is unusable is why they
 // asked. A recognition still being written is the text of the pages read so far.
-// Where there is none, the file speaks for itself and no producer is named.
 func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
 	// A url is its address and nothing else, so whatever was fetched for that
 	// address is its text. Which producer fetched it is what the store says.
@@ -686,12 +684,12 @@ func (u Extract) fingerprint(ref domain.Fingerprint, raw []byte) (string, error)
 	if ref.Kind != domain.KindURL {
 		return text.Fingerprint(raw), nil
 	}
-	at, err := urlfile.Read(raw)
+	pos, err := urlfile.Read(raw)
 	if errors.Is(err, urlfile.ErrNoAddress) || errors.Is(err, domain.ErrNotAURL) {
 		return "", text.ErrUnreadable
 	}
 	if err != nil {
 		return "", err
 	}
-	return text.Fingerprint([]byte(string(at))), nil
+	return text.Fingerprint([]byte(string(pos))), nil
 }

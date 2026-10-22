@@ -37,9 +37,9 @@ export const rotateWeek = <One extends DayName>(
   id: string,
   week: readonly One[],
 ): readonly One[] => {
-  const at = week.findIndex((day) => day.id === id)
-  if (at <= 0) return week
-  return [...week.slice(at), ...week.slice(0, at)]
+  const index = week.findIndex((day) => day.id === id)
+  if (index <= 0) return week
+  return [...week.slice(index), ...week.slice(0, index)]
 }
 
 /**
@@ -53,7 +53,6 @@ export const getFill = (level: number): number => Math.min(Math.max(level, 0), 1
 export const getFillPercent = (level: number): string => `${Math.round(getFill(level) * 100)}%`
 
 /**
- * The levels on offer, holding the one a day stands at. A level the offer does
  * not name is added at its current position among them, so a day is never asked to
  * choose without its own level among the choices. No level in force leaves the
  * offer as it is.
@@ -63,7 +62,7 @@ export const getOfferedLevels = (
   inForce: number | null,
 ): readonly number[] => {
   if (inForce === null || levels.includes(inForce)) return levels
-  const at = levels.findIndex((one) => one > inForce)
-  if (at < 0) return [...levels, inForce]
-  return [...levels.slice(0, at), inForce, ...levels.slice(at)]
+  const index = levels.findIndex((one) => one > inForce)
+  if (index < 0) return [...levels, inForce]
+  return [...levels.slice(0, index), inForce, ...levels.slice(index)]
 }

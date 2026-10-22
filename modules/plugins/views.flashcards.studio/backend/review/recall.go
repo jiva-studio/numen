@@ -34,8 +34,8 @@ type RecallChance func(Schedule, time.Time) float64
 
 // GetModelledRecall is the chance the scheduler's own forgetting curve gives a card
 // face. A run told no other chance reads this one.
-func GetModelledRecall(c Schedule, at time.Time) float64 {
-	return Recall(at.Sub(c.Last), c.Stability)
+func GetModelledRecall(c Schedule, now time.Time) float64 {
+	return Recall(now.Sub(c.Last), c.Stability)
 }
 
 // GetFullRecall is a run in which every card face asked comes back.

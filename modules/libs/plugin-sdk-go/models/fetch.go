@@ -97,8 +97,7 @@ func VerifyFile(name, sum string) error {
 // Request is one file to find in a folder or to fetch into it.
 type Request struct {
 	// Dir is the folder the file is kept in.
-	Dir string
-	// Section is the settings block a person is told to change.
+	Dir     string
 	Section string
 	// Address is the https address the file is fetched from.
 	Address string
@@ -121,14 +120,14 @@ func (r Request) reportProgress(done, total int64) {
 // written beside its place, checked against the sum and the quota, and only
 // then put in its place.
 func Fetch(ctx context.Context, r Request) (string, error) {
-	at := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
+	targetPath := filepath.Join(r.Dir, GetCacheName(r.Address, r.Sum))
 	var corrupt error
-	if _, err := os.Stat(at); err == nil {
+	if _, err := os.Stat(targetPath); err == nil {
 		if r.Sum == "" {
-			return at, nil
+			return targetPath, nil
 		}
-		if corrupt = VerifyFile(at, r.Sum); corrupt == nil {
-			return at, nil
+		if corrupt = VerifyFile(targetPath, r.Sum); corrupt == nil {
+			return targetPath, nil
 		}
 	}
 	if !r.ShouldDownload {
@@ -148,18 +147,18 @@ func Fetch(ctx context.Context, r Request) (string, error) {
 		return "", err
 	}
 	if corrupt != nil {
-		if err := os.Remove(at); err != nil && !errors.Is(err, fs.ErrNotExist) {
+		if err := os.Remove(targetPath); err != nil && !errors.Is(err, fs.ErrNotExist) {
 			return "", err
 		}
 	}
-	return at, download(ctx, r, at)
+	return targetPath, download(ctx, r, targetPath)
 }
 
 // download writes what one address holds through a file beside at.
 //
 // The deadline is set twice: once for the host to answer, and once for the body
 // when its length is known.
-func download(ctx context.Context, r Request, at string) error {
+func download(ctx context.Context, r Request, targetPath string) error {
 	if !IsAddress(r.Address) {
 		return fmt.Errorf("%s is not an https address", r.Address)
 	}
@@ -182,7 +181,7 @@ func download(ctx context.Context, r Request, at string) error {
 		return fmt.Errorf("fetching %s: %s", r.Address, answer.Status)
 	}
 
-	file, err := os.CreateTemp(r.Dir, filepath.Base(at)+".part-*")
+	file, err := os.CreateTemp(r.Dir, filepath.Base(targetPath)+".part-*")
 	if err != nil {
 		return err
 	}
@@ -200,7 +199,7 @@ func download(ctx context.Context, r Request, at string) error {
 		os.Remove(part)
 		return fmt.Errorf("fetching %s: %w", r.Address, err)
 	}
-	if err := os.Rename(part, at); err != nil {
+	if err := os.Rename(part, targetPath); err != nil {
 		os.Remove(part)
 		return err
 	}
@@ -238,17 +237,17 @@ func write(file *os.File, body io.Reader, r Request, claim *Reservation, total i
 type progressWriter struct {
 	to         io.Writer
 	total      int64
-	done       int64
+	downloaded int64
 	last       time.Time
 	onProgress func(done, total int64)
 }
 
 func (c *progressWriter) Write(raw []byte) (int, error) {
 	n, err := c.to.Write(raw)
-	c.done += int64(n)
+	c.downloaded += int64(n)
 	if now := time.Now(); now.Sub(c.last) > time.Second {
 		c.last = now
-		c.onProgress(c.done, c.total)
+		c.onProgress(c.downloaded, c.total)
 	}
 	return n, err
 }

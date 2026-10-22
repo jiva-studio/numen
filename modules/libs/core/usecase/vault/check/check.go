@@ -45,7 +45,6 @@ type Checks struct {
 	List []Checker
 }
 
-// Standard is the set of checks a vault is held to.
 func Standard(queries port.ProblemQueries) Checks {
 	return Checks{List: []Checker{
 		parseCheck{queries},

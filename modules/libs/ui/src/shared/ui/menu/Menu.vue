@@ -2,7 +2,6 @@
 /**
  * A menu: a list of things that can be chosen, put where it was asked for.
  *
- * It is drawn at the end of the document, so nothing it stands inside can clip
  * it, and it is placed against the area it is drawn into. It takes items and a
  * point and says which item was chosen; what the items are and what choosing
  * one does are the caller's.
@@ -11,7 +10,7 @@ import { computed, nextTick, ref, useTemplateRef, watch } from 'vue'
 import MenuRow from './MenuRow.vue'
 import { filterItems, groupItems, getInitialIndex, type MenuItem, type MenuTrigger } from './item'
 import { isLetter } from './typeahead'
-import { useMenuGround } from './ground'
+import { useMenuDismissal } from './menuDismissal'
 import { useMenuKeys } from './keys'
 import { useMenuOpen } from './open'
 import { useMenuPlacement } from './place'
@@ -24,7 +23,7 @@ const props = withDefaults(
     /** Where it was asked for, in the coordinates of the area it is drawn into. */
     at: Position
     /** Whether it is drawn at all. */
-    open?: boolean
+    isOpen?: boolean
     /** What opened it. Opened by hand it appears with nothing chosen. */
     trigger?: MenuTrigger
     /**
@@ -64,7 +63,7 @@ const props = withDefaults(
     searchName?: string
   }>(),
   {
-    open: false,
+    isOpen: false,
     trigger: 'pointer',
     current: null,
     from: null,
@@ -123,12 +122,17 @@ const measure = () => {
   if (box) setSize({ width: box.width, height: box.height })
 }
 
-const { listen, release } = useMenuGround(menu, () => emit('dismiss'))
+const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'))
 
-const { here, holdRow, goTo, onKey: onRowKey } = useMenuKeys(() => visibleItems.value, menu, props.clock)
+const {
+  here,
+  holdRow,
+  goTo,
+  onKey: onRowKey,
+} = useMenuKeys(() => visibleItems.value, menu, props.clock)
 
 const choose = (item: MenuItem) => {
-  if (item.disabled) return
+  if (item.isDisabled) return
   emit('choose', item.id)
   emit('dismiss')
 }
@@ -143,7 +147,7 @@ const onKey = (event: KeyboardEvent): void => {
   if (event.target === search.value) {
     if (event.key === 'Enter') {
       event.preventDefault()
-      const first = visibleItems.value.find((one) => !one.disabled)
+      const first = visibleItems.value.find((one) => !one.isDisabled)
       if (first && query.value) choose(first)
     } else if (['ArrowDown', 'ArrowUp', 'Tab'].includes(event.key)) {
       here.value = -1
@@ -155,8 +159,10 @@ const onKey = (event: KeyboardEvent): void => {
   else onRowKey(event)
 }
 
+const isMenuVisible = computed(() => Boolean(props.isOpen))
+
 useMenuOpen({
-  isOpen: () => props.open,
+  isOpen: () => isMenuVisible.value,
   listen,
   release,
   measure,
@@ -185,7 +191,7 @@ watch(query, () => (here.value = -1))
 watch(
   () => [visibleItems.value, props.at],
   async () => {
-    if (!props.open) return
+    if (!isMenuVisible.value) return
     await nextTick()
     measure()
   },
@@ -204,7 +210,7 @@ const menuStyle = computed(() => ({
 <template>
   <Teleport :to="to">
     <div
-      v-if="open"
+      v-if="isMenuVisible"
       ref="menu"
       class="menu numen panel-numen text-ink flex flex-col p-1.5 font-sans text-base"
       role="menu"
@@ -267,8 +273,6 @@ const menuStyle = computed(() => ({
 
   position: fixed;
   z-index: var(--lift, 99999);
-  /* As wide as the longest thing it offers, within these two widths — or as
-     wide as what asked for it, where that is wider than either. */
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));

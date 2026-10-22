@@ -39,16 +39,21 @@ const addCard = (
     ...(generateCardId ? { generateCardId } : {}),
   })
 
-const replaceCardValue = (deck: BufferDeck, id: string, field: string, nth: number, text: string) =>
-  replaceCardValueInternal(deck, id, { field, nth, text })
+const replaceCardValue = (
+  deck: BufferDeck,
+  id: string,
+  field: string,
+  index: number,
+  text: string,
+) => replaceCardValueInternal(deck, id, { field, index, text })
 
 /** Identities counted out, so a test names the card it means. */
 const createIds = () => {
-  let at = 0
-  return () => `c${(at += 1)}`
+  let count = 0
+  return () => `c${(count += 1)}`
 }
 
-const readItem = (over: Partial<VaultDeck> = {}): VaultDeck => ({
+const readItem = (overrides: Partial<VaultDeck> = {}): VaultDeck => ({
   path: 'Animals.md',
   title: 'Animals',
   preamble: 'about the animals\n',
@@ -79,15 +84,15 @@ const readItem = (over: Partial<VaultDeck> = {}): VaultDeck => ({
   sections: [],
   tail: '\n',
   problems: [],
-  ...over,
+  ...overrides,
 })
 
 /** The two cards of the fixture, by the mark each carries. */
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
-const deck = (over: Partial<VaultDeck> = {}): BufferDeck =>
-  deserializeVaultDeck(readItem(over), createIds())
+const deck = (overrides: Partial<VaultDeck> = {}): BufferDeck =>
+  deserializeVaultDeck(readItem(overrides), createIds())
 
 describe('a deck as the window holds it', () => {
   it('knows every card by the mark the file carries for it', () => {
@@ -602,11 +607,13 @@ describe('a value written into a card', () => {
   it('is the one of two under a field that was typed in, and the other remains', () => {
     const twice = deck()
     const targetCard = twice.cards[0]
-    if (!targetCard) throw new Error('the fixture holds no card')
+    if (!targetCard) throw new Error('card not found')
     const updatedDeck = replaceCardValue(
       {
         ...twice,
-        cards: [{ ...targetCard, values: [...targetCard.values, { field: 'Height', text: 'about 46"' }] }],
+        cards: [
+          { ...targetCard, values: [...targetCard.values, { field: 'Height', text: 'about 46"' }] },
+        ],
       },
       LLAMA,
       'Height',

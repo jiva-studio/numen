@@ -15,7 +15,7 @@ import { stubClock } from '@/shared/fixtures/clock'
 import type { GestureRole, PlacedNode } from '../../lib/node'
 import type { PlexNodeRelation } from '../../lib/relation'
 
-const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: 'A node',
   relation: 'child',
@@ -25,11 +25,11 @@ const createNode = (over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: 36,
   order: 0,
   opacity: 1,
-  ...over,
+  ...overrides,
 })
 
-const mountNode = (over: Partial<PlacedNode> = {}) =>
-  mount(PlexNodeView, { props: { node: createNode(over) } })
+const mountNode = (overrides: Partial<PlacedNode> = {}) =>
+  mount(PlexNodeView, { props: { node: createNode(overrides) } })
 
 /** A pointer arrives, which is the only thing that offers a handle. */
 const hover = async (node: ReturnType<typeof mountNode>) => {
@@ -207,7 +207,7 @@ describe('the handle', () => {
     expect(node.find('.plex__handle').exists()).toBe(true)
   })
 
-  it('starts a gesture and not choosing the node it sits on', async () => {
+  it('initiates drag gesture without selecting node', async () => {
     const node = await hover(mountNode())
     await node.get('.plex__handle').trigger('pointerdown')
     expect(node.emitted('reach')).toHaveLength(1)
@@ -220,9 +220,9 @@ describe('the handle', () => {
     expect(node.emitted('show')).toBeUndefined()
   })
 
-  it('sits on the trailing edge, halfway down', async () => {
-    const at = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
-    expect(at.attributes('transform')).toBe('translate(72 0)')
+  it('positions at trailing edge vertical center', async () => {
+    const handle = (await hover(mountNode({ width: 144 }))).get('.plex__handle-at')
+    expect(handle.attributes('transform')).toBe('translate(72 0)')
   })
 })
 
@@ -317,14 +317,14 @@ describe('a box with more of its title to show', () => {
 
   const mountWide = (
     wide: WideBox | null = WIDE,
-    over: Partial<PlacedNode> = {},
+    overrides: Partial<PlacedNode> = {},
     gestureRole: GestureRole = 'open',
   ) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
-        node: createNode(over),
+        node: createNode(overrides),
         wide,
         behaviour: { ...DEFAULT_BEHAVIOUR, expansionDelay: WAIT, clock: world.clock },
         gestureRole,
@@ -485,19 +485,19 @@ describe('the headings a node hangs', () => {
   })
 
   const headings = (count: number): PlexHeading[] =>
-    Array.from({ length: count }, (_, at) => ({
-      id: `${at}`,
-      text: `Heading ${at}`,
+    Array.from({ length: count }, (_, index) => ({
+      id: `${index}`,
+      text: `Heading ${index}`,
       level: 1,
     }))
 
-  const mountInside = (items: readonly PlexHeading[], wide: WideBox | null = null) => {
+  const mountInside = (items: readonly PlexHeading[], expanded: WideBox | null = null) => {
     vi.useFakeTimers()
     const world = stubClock()
     const node = mount(PlexNodeView, {
       props: {
         node: createNode(),
-        wide,
+        wide: expanded,
         hung: getNodeHeadings(createNode(), items, {
           options: SIZES,
           deps: {
@@ -577,7 +577,7 @@ describe('the headings a node hangs', () => {
     await wheel(-1)
     expect(node.findAll('.plex__heading')[0]!.text()).toBe('Heading 0')
 
-    for (let at = 0; at < 5; at++) await wheel(1)
+    for (let step = 0; step < 5; step++) await wheel(1)
     expect(node.findAll('.plex__heading').at(-1)!.text()).toBe(`Heading ${MOST}`)
   })
 

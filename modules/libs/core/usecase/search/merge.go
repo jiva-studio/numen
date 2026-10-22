@@ -40,11 +40,11 @@ func merge(rankings ...[]domain.Passage) []domain.Passage {
 		fused = append(fused, p)
 	}
 	slices.SortFunc(fused, func(a, b domain.Passage) int {
-		if by := cmp.Compare(score[b.ChunkID], score[a.ChunkID]); by != 0 {
-			return by
+		if delta := cmp.Compare(score[b.ChunkID], score[a.ChunkID]); delta != 0 {
+			return delta
 		}
-		if by := cmp.Compare(a.Source, b.Source); by != 0 {
-			return by
+		if step := cmp.Compare(a.Source, b.Source); step != 0 {
+			return step
 		}
 		return cmp.Compare(a.ChunkID, b.ChunkID)
 	})
@@ -78,11 +78,11 @@ func collapse(fused, named []domain.Passage, each, limit int) []domain.Passage {
 	targetVal := map[passageID]bool{}
 
 	keep := func(p domain.Passage) bool {
-		at := passageID{p.Source, p.Start, p.Length}
-		if targetVal[at] || sourceCounts[p.Source] >= each {
+		pos := passageID{p.Source, p.Start, p.Length}
+		if targetVal[pos] || sourceCounts[p.Source] >= each {
 			return true
 		}
-		targetVal[at] = true
+		targetVal[pos] = true
 		sourceCounts[p.Source]++
 		out = append(out, p)
 		return len(out) < limit

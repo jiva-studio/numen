@@ -68,9 +68,9 @@ const isSelected = (selection: EditorSelection, node: BlockNode) =>
 /** Whether a changed range reaches the node. `start` is where the range's bounds begin in `ranges`. */
 const isTouched = (node: BlockNode, ranges: readonly number[], start: 0 | 2) => {
   // Stryker disable next-line EqualityOperator: a read past the last range is undefined, and no comparison with it holds
-  for (let at = 0; at < ranges.length; at += 4) {
-    const from = ranges[at + start] as number
-    const to = ranges[at + start + 1] as number
+  for (let i = 0; i < ranges.length; i += 4) {
+    const from = ranges[i + start] as number
+    const to = ranges[i + start + 1] as number
     if (from <= node.to && to >= node.from) return true
   }
   return false
@@ -160,7 +160,13 @@ export const live = ViewPlugin.fromClass(
       // The lines on screen, against the wider span the marks in hand were
       // drawn for. A viewport still inside them is already drawn.
       const observed = onScreen(update.view)
-      if (!afresh && this.span && observed && observed.from >= this.span.from && observed.to <= this.span.to) {
+      if (
+        !afresh &&
+        this.span &&
+        observed &&
+        observed.from >= this.span.from &&
+        observed.to <= this.span.to
+      ) {
         return
       }
 

@@ -26,10 +26,9 @@ type transcriptHandler struct {
 }
 
 // errBeingHeard is what an edit to a recording a run holds gets.
-var errBeingHeard = errors.New("this recording is being listened to")
+var errBeingHeard = errors.New("transcription already in progress")
 
 // ReadTranscript answers with the words of a file that carries times: each
-// stretch of speech against the milliseconds it was spoken in. A file nothing
 // has been heard for holds none, which is an answer.
 func (h *transcriptHandler) ReadTranscript(
 	ctx context.Context,
@@ -45,8 +44,8 @@ func (h *transcriptHandler) ReadTranscript(
 		return nil, connect.NewError(getReachCode(err), err)
 	}
 	_, cues := transcript.Parse(standing.Words)
-	if at := r.Msg.GetSpan(); at != nil {
-		if cues, err = selectSpan(at)(cues); err != nil {
+	if pos := r.Msg.GetSpan(); pos != nil {
+		if cues, err = selectSpan(pos)(cues); err != nil {
 			return nil, connect.NewError(connect.CodeInvalidArgument, err)
 		}
 	}
@@ -79,7 +78,6 @@ func (h *transcriptHandler) WriteTranscript(
 	case err != nil:
 		return nil, connect.NewError(getReachCode(err), err)
 	}
-	// A write that landed is not refused for a cut that could not be asked for.
 	if content.CutError != nil {
 		h.state.reportTask(run.Task{ID: extractingBooks, Title: "Extracting books", About: ref.Path, Error: content.CutError.Error()})
 	}
@@ -101,25 +99,20 @@ func newWireCues(cues []domain.TranscriptCue) []*v1.Cue {
 // Speech runs forward: a cue ends no earlier than it begins, and begins after
 // the one before it ends. A cue whose words trim away is dropped, and its
 // timings still bound the cue after it.
-//
-// A transcript carrying no words at all is refused.
 func parseCues(cues []*v1.Cue) ([]domain.TranscriptCue, error) {
 	out := make([]domain.TranscriptCue, 0, len(cues))
 	last := domain.TranscriptCue{From: -1, To: -1}
-	for at, one := range cues {
+	for item, one := range cues {
 		from, to := int(one.GetFrom()), int(one.GetTo())
 		switch {
 		case from < 0 || to < from:
-			return nil, fmt.Errorf("cue %d: %d to %d is not a stretch of a recording", at, from, to)
+			return nil, fmt.Errorf("cue %d: %d to %d is not a stretch of a recording", item, from, to)
 		case from < last.From:
-			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", at, from, last.From)
+			return nil, fmt.Errorf("cue %d: begins at %d, before the cue above it at %d", item, from, last.From)
 		case from < last.To:
-			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", at, from, last.To)
+			return nil, fmt.Errorf("cue %d: begins at %d, inside the cue above it ending at %d", item, from, last.To)
 		case strings.ContainsAny(one.GetText(), "\r\n"):
-			// One cue is one line of the transcript, and the window edits it as
-			// one. A cue broken over two lines is two the window would offer to
-			// edit and one the recording would play.
-			return nil, fmt.Errorf("cue %d: a cue stands on one line", at)
+			return nil, fmt.Errorf("invalid cue format: %q", one.GetText())
 		}
 		last = domain.TranscriptCue{Text: one.GetText(), From: from, To: to}
 		if strings.TrimSpace(one.GetText()) == "" {
@@ -138,9 +131,9 @@ func parseCues(cues []*v1.Cue) ([]domain.TranscriptCue, error) {
 // The run is a span of the words, which is how a passage is addressed
 // everywhere else, and what comes back is the speech those bytes were said in.
 // A search hit is played from the first of them.
-func selectSpan(at *v1.Span) func([]domain.TranscriptCue) ([]domain.TranscriptCue, error) {
+func selectSpan(pos *v1.Span) func([]domain.TranscriptCue) ([]domain.TranscriptCue, error) {
 	return func(cues []domain.TranscriptCue) ([]domain.TranscriptCue, error) {
-		span := domain.ByteSpan{From: int(at.GetFrom()), To: int(at.GetTo())}
+		span := domain.ByteSpan{From: int(pos.GetFrom()), To: int(pos.GetTo())}
 		if span.From < 0 {
 			return nil, fmt.Errorf("from: %d is not a place in the words", span.From)
 		}

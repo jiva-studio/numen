@@ -26,7 +26,7 @@ describe('ReasoningSelector', () => {
   it('is disabled with no levels, and when told so', () => {
     const none = mount(ReasoningSelector, { props: { levels: [] } })
     expect(none.get('button').attributes('disabled')).toBeDefined()
-    const off = mount(ReasoningSelector, { props: { levels: LEVELS, disabled: true } })
+    const off = mount(ReasoningSelector, { props: { levels: LEVELS, isDisabled: true } })
     expect(off.get('button').attributes('disabled')).toBeDefined()
   })
 
@@ -38,7 +38,7 @@ describe('ReasoningSelector', () => {
     await wrapper.get('button').trigger('click')
 
     const menu = wrapper.findComponent({ name: 'Menu' })
-    expect(menu.props('open')).toBe(true)
+    expect(menu.props('isOpen')).toBe(true)
     expect(menu.props('current')).toBe('medium')
     expect((menu.props('items') as { id: string }[]).map((one) => one.id)).toEqual([
       'low',
@@ -48,7 +48,7 @@ describe('ReasoningSelector', () => {
 
     await menu.vm.$emit('choose', 'low')
     expect(wrapper.emitted('select')).toEqual([['low']])
-    expect(menu.props('open')).toBe(false)
+    expect(menu.props('isOpen')).toBe(false)
     wrapper.unmount()
   })
 
@@ -71,7 +71,7 @@ describe('ReasoningSelector', () => {
     await wrapper.get('button').trigger('click')
     const menu = wrapper.findComponent({ name: 'Menu' })
     await menu.vm.$emit('dismiss')
-    expect(menu.props('open')).toBe(false)
+    expect(menu.props('isOpen')).toBe(false)
     wrapper.unmount()
   })
 })

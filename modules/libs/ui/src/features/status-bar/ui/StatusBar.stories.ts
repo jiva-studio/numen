@@ -1,6 +1,5 @@
 /**
  * Every state the status bar has to survive. Also the test corpus: each story
- * is run in a browser, which is where a label that pushes the bar wider than
  * its row, or a popover that stays open after a press elsewhere, can fail.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -112,10 +111,10 @@ export const WithAFailure: Story = {
 /** Far more tasks than the popover has room for. */
 export const FarTooMany: Story = {
   args: {
-    tasks: Array.from({ length: 40 }, (_, at) => ({
+    tasks: Array.from({ length: 40 }, (_, index) => ({
       ...INDEXING,
-      id: `task-${at}`,
-      label: `Indexing book ${at}`,
+      id: `task-${index}`,
+      label: `Indexing book ${index}`,
     })),
   },
 }

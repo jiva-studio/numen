@@ -1,7 +1,6 @@
 <script setup lang="ts">
 /**
  * The goal a preset is scheduled by, the switch that chooses it, and the curve
- * that goal draws. Where the goal has nothing to work on, a line stands in the
  * curve's place and says why.
  */
 import { computed } from 'vue'
@@ -32,10 +31,8 @@ const emptyGoalExplanation = computed(() => {
 /** The three goals, as the switch above the curve offers them. */
 const goals = computed(() => GOALS.map((one) => ({ id: one, text: words.goalName(one) })))
 
-/** The day the knob stands at, under the goal that steers one. */
 const day = computed(() => curve.value.days[place.value] ?? settings.value.byDate)
 
-/** The value the control stands at, in the units of its goal. */
 const targetValueText = computed(() =>
   words.value(curve.value.goal, getKnobValue(curve.value, place.value), day.value),
 )
@@ -48,8 +45,8 @@ function onSelectGoal(one: string) {
   props.state.chooseGoal(one as Goal)
 }
 
-function onMoveSlider(at: number) {
-  props.state.moveSlider(at)
+function onMoveSlider(pos: number) {
+  props.state.moveSlider(pos)
 }
 
 function onSliderCommit() {

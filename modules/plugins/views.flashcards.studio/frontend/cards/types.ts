@@ -223,7 +223,4 @@ export interface StencilService {
   ): Promise<StencilWriteResult>
 }
 
-/**
- * The stencils and the decks of the vault this window is showing.
- */
 export interface Cards extends DeckService, StencilService {}

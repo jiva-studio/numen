@@ -158,7 +158,7 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 		t.Errorf("indexed %v", res.Indexed)
 	}
 	if !slices.Equal(res.GetChangedPaths(), []string{"Note.md"}) {
-		t.Errorf("the caller was told to look at %v", res.GetChangedPaths())
+		t.Errorf("the caller received to look at %v", res.GetChangedPaths())
 	}
 	if got := titles(t, db, v, "entropy"); !slices.Equal(got, []string{"Note"}) {
 		t.Errorf("the index holds %v", got)
@@ -166,7 +166,6 @@ func TestARefreshDoesNotTakeABookForARemovedNote(t *testing.T) {
 }
 
 // TestABookThatWentLeavesTheIndex. A book is filed by kind and carries chunks
-// of its own, and a row left behind goes on answering searches with a passage
 // that opens nothing.
 func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	t.Parallel()
@@ -356,7 +355,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	})
 
 	refresh := vaults.NewRefresh(
-		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, gone: "Note.md"},
+		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, vanishedVal: "Note.md"},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
@@ -408,8 +407,8 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 
 func backdate(t *testing.T, v domain.Vault, name string) {
 	t.Helper()
-	at := time.Now().Add(-time.Hour)
-	if err := os.Chtimes(filepath.Join(v.Path, name), at, at); err != nil {
+	pos := time.Now().Add(-time.Hour)
+	if err := os.Chtimes(filepath.Join(v.Path, name), pos, pos); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -465,8 +464,8 @@ func TestANoteEditedOutsideTheAppWithAnotherModificationTimeIsIndexed(t *testing
 	refresh, saves, db, v := newCounted(t, map[string]string{"Note.md": settledNote})
 
 	rewrite(t, v, "Note.md", "---\ntitle: Note\n---\n\n# Note\n\nenthalpy\n")
-	at := time.Now().Add(-30 * time.Minute)
-	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+	pos := time.Now().Add(-30 * time.Minute)
+	if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), pos, pos); err != nil {
 		t.Fatal(err)
 	}
 	refreshOne(t, refresh, v, "Note.md")
@@ -594,8 +593,8 @@ func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testi
 	for i := range 10 * perWindow {
 		tick.Store(int64(step) * int64(i))
 		rewrite(t, v, "Note.md", fmt.Sprintf("---\ntitle: Note\n---\n\n# Note\n\nversion %03d\n", i))
-		at := clock()
-		if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), at, at); err != nil {
+		pos := clock()
+		if err := os.Chtimes(filepath.Join(v.Path, "Note.md"), pos, pos); err != nil {
 			t.Fatal(err)
 		}
 		refreshOne(t, refresh, v, "Note.md")

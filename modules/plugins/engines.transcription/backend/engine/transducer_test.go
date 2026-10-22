@@ -30,8 +30,8 @@ func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 		frames:  4,
 		blank:   blank,
 		encoded: 1,
-		encoder: func(at int, dst []float32) []float32 {
-			dst[0] = float32(at)
+		encoder: func(pos int, dst []float32) []float32 {
+			dst[0] = float32(pos)
 			return dst
 		},
 		predictor: func(token int) ([]float32, error) {
@@ -55,7 +55,6 @@ func TestDecodeReturnsWhatTheJoinerNames(t *testing.T) {
 	}
 }
 
-// A frame the joiner covers with nothing is still left behind, and a recording
 // of them ends.
 func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	const blank, steps = 3, 3
@@ -80,8 +79,6 @@ func TestDecodePreservesAFrameTheJoinerCoversWithNothing(t *testing.T) {
 	}
 }
 
-// A joiner answering with fewer scores than the blank stands at is not the
-// joiner these tokens came from, and is refused.
 func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	_, err := transducer{
 		frames:    1,
@@ -97,7 +94,6 @@ func TestDecodeRefusesAJoinerThatIsTooNarrow(t *testing.T) {
 	}
 }
 
-// A joiner answering with exactly blank+1 scores has no step scores and is refused.
 func TestDecodeRefusesJoinerWithNoStepScores(t *testing.T) {
 	const blank = 3
 	_, err := transducer{
@@ -196,15 +192,15 @@ func TestDecodeAdvancesAfterMostPerFrame(t *testing.T) {
 		frames:  3,
 		blank:   blank,
 		encoded: 1,
-		encoder: func(at int, dst []float32) []float32 {
-			dst[0] = float32(at)
+		encoder: func(pos int, dst []float32) []float32 {
+			dst[0] = float32(pos)
 			return dst
 		},
 		predictor: func(int) ([]float32, error) { return []float32{0}, nil },
 		joint: func(frame, _ []float32) ([]float32, error) {
-			at := int(frame[0])
-			callsPerFrame[at]++
-			if at < 2 {
+			offset := int(frame[0])
+			callsPerFrame[offset]++
+			if offset < 2 {
 				return answer(blank, 1, 0, steps), nil
 			}
 			return answer(blank, blank, 1, steps), nil
@@ -238,8 +234,8 @@ func TestDecodeBlankWithStepAdvancesByStep(t *testing.T) {
 		frames:  4,
 		blank:   blank,
 		encoded: 1,
-		encoder: func(at int, dst []float32) []float32 {
-			visited = append(visited, at)
+		encoder: func(pos int, dst []float32) []float32 {
+			visited = append(visited, pos)
 			return dst
 		},
 		predictor: func(int) ([]float32, error) { return []float32{0}, nil },
@@ -307,9 +303,9 @@ func BenchmarkTransducerDecode(b *testing.B) {
 			frames:  frames,
 			blank:   blank,
 			encoded: encoded,
-			encoder: func(at int, dst []float32) []float32 {
+			encoder: func(pos int, dst []float32) []float32 {
 				for c := range dst {
-					dst[c] = data[c*frames+at]
+					dst[c] = data[c*frames+pos]
 				}
 				return dst
 			},

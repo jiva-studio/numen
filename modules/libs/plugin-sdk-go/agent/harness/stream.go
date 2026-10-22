@@ -19,7 +19,7 @@ var (
 	// errStreamRejected is a streaming request the chat API answered 400 Bad Request or 422
 	// Unprocessable Entity.
 	errStreamRejected = errors.New("the chat API rejected a streaming request")
-	errStreamEnded   = errors.New("the chat API's stream ended before the reply did")
+	errStreamEnded    = errors.New("the chat API's stream ended before the reply did")
 )
 
 // streamChunk is one event of a streamed reply: a piece of the message, or the error that ends it.

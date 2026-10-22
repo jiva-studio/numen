@@ -36,10 +36,10 @@ type providerServer struct {
 	// onlyWith, when set, is the program the plugin lists only under a command line set for it.
 	onlyWith string
 
-	mu       sync.Mutex
-	asked    []*v1.AskAgentRequest
-	finished []string
-	commands []*v1.AgentProgramCommand
+	mu        sync.Mutex
+	requested []*v1.AskAgentRequest
+	finished  []string
+	commands  []*v1.AgentProgramCommand
 }
 
 func (s *providerServer) AskAgent(
@@ -48,7 +48,7 @@ func (s *providerServer) AskAgent(
 	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
 	s.mu.Lock()
-	s.asked = append(s.asked, req.Msg)
+	s.requested = append(s.requested, req.Msg)
 	s.mu.Unlock()
 	_ = stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Text{Text: "answer: " + req.Msg.GetPrompt()}})
 	return stream.Send(&v1.AskAgentResponse{Step: &v1.AskAgentResponse_Stopped{Stopped: "done"}})
@@ -67,7 +67,7 @@ func (s *providerServer) FinishConversation(
 func (s *providerServer) getAsked() []*v1.AskAgentRequest {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return slices.Clone(s.asked)
+	return slices.Clone(s.requested)
 }
 
 // getFinished are the conversations the plugin was told are over.
@@ -232,7 +232,7 @@ func TestTheProgramsOfEveryProviderAreListedInOrder(t *testing.T) {
 	}
 	if commands := one.getCommands(); len(commands) != 1 || commands[0].GetProgram() != "alpha" ||
 		!slices.Equal(commands[0].GetCommand(), []string{"/bin/alpha", "--x"}) {
-		t.Errorf("the provider was told %v", commands)
+		t.Errorf("the provider received %v", commands)
 	}
 }
 
@@ -284,7 +284,6 @@ func TestATaskGoesToThePluginThatRunsItsProgram(t *testing.T) {
 	}
 }
 
-// A task naming no program, or one nobody runs, is refused.
 func TestATaskNamingNoRunnableProgramIsRefused(t *testing.T) {
 	host, one, two := twoProviders(t)
 	provider := (container.Config{PluginHost: host}).AgentProvider()
@@ -396,7 +395,7 @@ func TestAPluginThatCannotListItsProgramsIsReportedToTheErrorHandler(t *testing.
 	models := cfg.Models()()
 
 	if len(notified) != 1 || !strings.Contains(notified[0].Error(), providerOne) {
-		t.Errorf("the error handler was told %v", notified)
+		t.Errorf("the error handler received %v", notified)
 	}
 	var names []string
 	for _, one := range models {

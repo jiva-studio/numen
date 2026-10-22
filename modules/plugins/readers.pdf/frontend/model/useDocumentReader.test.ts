@@ -27,7 +27,7 @@ function book(
       if (layout instanceof Error) throw layout
       return layout
     },
-    getPageUrl: (path, pageNumber, wide) => `${path} ${pageNumber} ${wide}`,
+    getPageUrl: (path, pageNumber, width) => `${path} ${pageNumber} ${width}`,
     getHighlights: async (path, requestedSpans) => {
       for (const one of requestedSpans) spans.push(`${path} ${one.from} ${one.to}`)
       return requestedSpans.map((_, i) => where[i] ?? [])
@@ -144,7 +144,7 @@ describe('the width a page is drawn at', () => {
     expect(readItem.picture.value).toBe('Book.pdf 0 1600')
   })
 
-  it('is never wider than a page is drawn', async () => {
+  it('constrains width to page boundary', async () => {
     const { documents } = book()
     const readItem = useDocumentReader(documents, 'Book.pdf')
     await readItem.goToPage(0)

@@ -18,7 +18,6 @@ import (
 const Backlog = 65536
 
 // handover is how many events the channel the watcher writes into can hold. A
-// reader that does nothing else empties it, so what stands in it is a moment of
 // scheduling; the bound that decides anything is Backlog.
 const handover = 1024
 
@@ -35,7 +34,7 @@ type Watcher struct {
 func (w Watcher) WatchVault(
 	ctx context.Context,
 	v domain.Vault,
-) (changes <-chan []string, lost <-chan struct{}, err error) {
+) (changes <-chan []string, lostChan <-chan struct{}, err error) {
 	reader, err := Open(v.Path, w.Options)
 	if err != nil {
 		return nil, nil, err
@@ -80,14 +79,14 @@ func (w Watcher) WatchVault(
 // here — a database and the journals beside it are written together and are one
 // change.
 func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error) {
-	at, err := filepath.Abs(path)
+	pos, err := filepath.Abs(path)
 	if err != nil {
 		return nil, err
 	}
-	name := filepath.Base(at)
+	name := filepath.Base(pos)
 
 	raw := make(chan notify.EventInfo, handover)
-	if err := notify.Watch(filepath.Dir(at), raw, notify.All); err != nil {
+	if err := notify.Watch(filepath.Dir(pos), raw, notify.All); err != nil {
 		return nil, fmt.Errorf("watch %s: %w", path, err)
 	}
 

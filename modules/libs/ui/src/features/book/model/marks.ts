@@ -33,14 +33,12 @@ export function useBookMarks(
     const text = paper.value
     if (!text) return
 
-    // Where a run stands is read against the columns it stands in and not against
     // the area they are carried across: a turn under way carries both, and the
     // one measured against the other is where the run will come to rest.
     runs = getRuns(text)
     marks.value = createMarks(runs, getEdge(text))
   }
 
-  /** The offset a place named inside the drawn document stands at. */
   const findFragmentOffset = (fragment: string): number | undefined => {
     const text = paper.value
     return text ? findOffset(text, runs, fragment) : undefined

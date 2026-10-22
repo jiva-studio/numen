@@ -66,9 +66,9 @@ func choose(t *testing.T, themes numenv1connect.ThemeServiceHandler, name string
 }
 
 // writeAppearance is one choice as a client makes it, whatever of it the client names.
-func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, asked *v1.WriteAppearanceRequest) {
+func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, requested *v1.WriteAppearanceRequest) {
 	t.Helper()
-	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(asked))
+	out, err := themes.WriteAppearance(t.Context(), connect.NewRequest(requested))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -78,7 +78,7 @@ func writeAppearance(t *testing.T, themes numenv1connect.ThemeServiceHandler, as
 }
 
 // size is a size a choice names.
-func size(said float64) *float64 { return &said }
+func size(response float64) *float64 { return &response }
 
 // getResponse is what comes back at exactly this path. The page is handed over as
 // the empty path as well, which no URL parses to.
@@ -90,13 +90,11 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 	return out
 }
 
-// The policy the window is held to. What each directive says is `appearance`'s
 // to say and is asserted there; what this window widens is asserted here.
 //
 // A build that opened no socket plays from nowhere, so it widens nothing. A
 // theme is an ordinary stylesheet a person may have downloaded, and the policy
 // is the whole of what stops one reaching the network: a remote `url()` is
-// refused by `img-src` and `font-src`, and the element the theme is spliced
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	target := csp.Sources{
@@ -106,7 +104,7 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css", assetURL("a.pdf")} {
 		if response := getResponse(handler, path).Header().Get("Content-Security-Policy"); response != target {
-			t.Errorf("%q is held to %q", path, response)
+			t.Errorf("%q is bound to %q", path, response)
 		}
 	}
 }
@@ -116,7 +114,6 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 // reaches that host's own machines, and nothing else about the policy moves.
 //
 // The window frames this run's own socket and no host at all. The page that
-// socket serves is what frames the host, and it is held to a policy of its own.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
 	if got := embedHosts; !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
 		t.Errorf("the window may frame %q", got)
@@ -139,7 +136,6 @@ func TestTheHostsAWindowMayFrame(t *testing.T) {
 }
 
 // TestEveryServiceTheVaultIsAskedAboutIsMounted. Four services answer about the
-// vault a window is showing, and every one of them has to be behind the one
 // handler the application hands over. A route nothing is mounted at falls
 // through to the pages and is answered not found; a route a service holds
 // answers a GET as a method that call does not take.
@@ -381,20 +377,20 @@ func (h holdingOpen) Open(v domain.Vault) (port.VaultReader, error) {
 	if err != nil {
 		return nil, err
 	}
-	return holdsOpen{VaultReader: reader, at: h}, nil
+	return holdsOpen{VaultReader: reader, posVal: h}, nil
 }
 
 type holdsOpen struct {
 	port.VaultReader
-	at holdingOpen
+	posVal holdingOpen
 }
 
 func (h holdsOpen) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
 	select {
-	case h.at.begun <- struct{}{}:
+	case h.posVal.begun <- struct{}{}:
 	default:
 	}
-	<-h.at.until
+	<-h.posVal.until
 	return h.VaultReader.GetFingerprint(ctx, path)
 }
 
@@ -421,8 +417,8 @@ func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 	reply := make(chan struct{})
 	go func() {
 		defer close(reply)
-		at := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
-		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, at, nil))
+		pos := pageURL("Note.pdf", 0, 800, document.Fingerprint{})
+		handler.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, pos, nil))
 	}()
 	<-readers.begun
 

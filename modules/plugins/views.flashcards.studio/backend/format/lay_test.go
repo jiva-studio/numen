@@ -10,7 +10,6 @@ import (
 
 // A card face is shown on two surfaces and each lays it out for itself: this
 // package for the window a card is reviewed in, and modules/libs/ui for the
-// preview beside the stencil being written. The table both are held to is one
 // file, and neither owns it.
 const corpus = "../../../../libs/protocol/testdata/faces.json"
 

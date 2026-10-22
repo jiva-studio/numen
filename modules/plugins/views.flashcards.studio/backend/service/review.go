@@ -62,7 +62,6 @@ func (s *sessions) getRun(vault domain.VaultID, name string) (*flashcards.LogWri
 	return run, nil
 }
 
-// openRun starts a run and remembers it under its own name. The host is told which vault the
 // person's session is on.
 func (h *reviewHandler) openRun(ctx context.Context, v domain.Vault) (*flashcards.LogWriter, error) {
 	run, err := h.scenarios().flash.Log.Open(ctx, v, h.now())
@@ -252,7 +251,6 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.Vaul
 // StartSession opens a session and hands over what to ask, in order.
 //
 // A session is opened over one deck, over one preset, or over the whole vault.
-// A refused session opens no run: the file a vault's answers go to is written
 // when there is something to answer.
 func (a *reviewHandler) StartSession(
 	ctx context.Context, r *connect.Request[v1.StartSessionRequest],
@@ -349,7 +347,6 @@ func (a *reviewHandler) AnswerCard(
 	return connect.NewResponse(&v1.AnswerCardResponse{Answer: provided.ID}), nil
 }
 
-// parseRating is the four a person may say. Anything else is refused by the use
 // case, which is where the rule is.
 func parseRating(r v1.Rating) review.Rating {
 	switch r {

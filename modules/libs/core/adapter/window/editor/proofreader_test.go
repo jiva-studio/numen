@@ -41,12 +41,12 @@ func (p *proofreads) Proofread(
 
 // newProofreadWindow is a window over the same vault the runs are asked for over,
 // with a proofreading a test watches.
-func newProofreadWindow(t *testing.T, held port.DerivedStore, read indexed) (*Services, http.Handler, *proofreads) {
+func newProofreadWindow(t *testing.T, target port.DerivedStore, read indexed) (*Services, http.Handler, *proofreads) {
 	t.Helper()
-	api, handler := openRunWindow(t, held, read, willRun(), willRun())
-	by := &proofreads{isReady: true}
-	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = by })
-	return api, handler, by
+	api, handler := openRunWindow(t, target, read, willRun(), willRun())
+	delta := &proofreads{isReady: true}
+	modifySession(api, func(on *vaultSession) { on.transcriptProofreader = delta })
+	return api, handler, delta
 }
 
 // onTheShelf is a store holding the transcript a model wrote of the recording.
@@ -57,7 +57,7 @@ func onTheShelf() stored {
 // A transcript the window asks for is put right, the run is told which file of
 // which vault, and the corrections are said to be under way.
 func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
-	api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
+	api, _, delta := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 
 	made := createArtifact(t, api, talk, correctedOf)
 	if made.GetState() != v1.State_STATE_RUNNING {
@@ -66,8 +66,8 @@ func TestATranscriptIsProofreadWhenTheWindowAsksForIt(t *testing.T) {
 	if made.GetKind() != v1.ArtifactKind_ARTIFACT_KIND_TRANSCRIPT_CORRECTED {
 		t.Errorf("the answer is about a %s", made.GetKind())
 	}
-	if by.times != 1 || by.path != talk || by.vault != string(api.state.GetCurrentVault().ID) {
-		t.Errorf("the run was asked for %q of %q, %d times", by.path, by.vault, by.times)
+	if delta.times != 1 || delta.path != talk || delta.vault != string(api.state.GetCurrentVault().ID) {
+		t.Errorf("the run was asked for %q of %q, %d times", delta.path, delta.vault, delta.times)
 	}
 }
 
@@ -85,8 +85,8 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 		{"a transcript holding no words", transcription.ProofreadResult{IsNone: true}, v1.State_STATE_NONE},
 	} {
 		t.Run(one.name, func(t *testing.T) {
-			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
-			by.came = one.came
+			api, _, delta := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
+			delta.came = one.came
 
 			if made := createArtifact(t, api, talk, correctedOf); made.GetState() != one.state {
 				t.Fatalf("it was answered %s", made.GetState())
@@ -98,12 +98,12 @@ func TestWhatAProofreadingCameToIsSaid(t *testing.T) {
 // A recording the index says nothing has listened to holds no words to put
 // right, and the run is never asked for.
 func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
-	api, _, by := newProofreadWindow(t, stored{}, newEmptyIndex())
+	api, _, delta := newProofreadWindow(t, stored{}, newEmptyIndex())
 
 	if code := getRefusedCode(t, api, talk, correctedOf); code != connect.CodeFailedPrecondition {
 		t.Fatalf("a recording nothing has heard failed %s", code)
 	}
-	if by.times != 0 {
+	if delta.times != 0 {
 		t.Error("a run was given a recording holding no words")
 	}
 	// Nothing stands, and the window that asked what the recording carries is
@@ -118,12 +118,12 @@ func TestARecordingNothingHasListenedToHasNothingToProofread(t *testing.T) {
 func TestOnlyARecordingsTranscriptIsProofread(t *testing.T) {
 	for _, path := range []string{book, idea} {
 		t.Run(path, func(t *testing.T) {
-			api, _, by := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
+			api, _, delta := newProofreadWindow(t, onTheShelf(), newTranscriptIndex())
 
 			if code := getRefusedCode(t, api, path, correctedOf); code != connect.CodeInvalidArgument {
 				t.Fatalf("a file of the wrong kind failed %s", code)
 			}
-			if by.times != 0 {
+			if delta.times != 0 {
 				t.Error("a run was given a file carrying no transcript")
 			}
 		})
@@ -160,7 +160,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatExists(t *testing.T) {
 	const placed = "the name and the named are not two"
 	target := onTheShelf()
 	target[domain.NewArtifactName(domain.ArtifactCorrections, asr, hashed)] = []byte(placed)
-	api, _, by := newProofreadWindow(t, target, newTranscriptIndex())
+	api, _, delta := newProofreadWindow(t, target, newTranscriptIndex())
 
 	out, err := api.Artifact.ListArtifacts(t.Context(), connect.NewRequest(&v1.ListArtifactsRequest{Path: talk}))
 	if err != nil {
@@ -178,7 +178,7 @@ func TestTheCorrectionsARecordingCarriesAreWhatExists(t *testing.T) {
 	if corrections.GetState() != v1.State_STATE_DONE {
 		t.Errorf("corrections that stand are %s", corrections.GetState())
 	}
-	if by.times != 0 {
+	if delta.times != 0 {
 		t.Error("a run was begun by a question that only asked")
 	}
 }

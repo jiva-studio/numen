@@ -26,17 +26,17 @@ const WORDS: Words = {
   notEmbedded: 'Not read for meaning yet',
 }
 
-const createName = (over: Partial<NameMatch> = {}): NameMatch => ({
+const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'physics/Ontology.md',
   title: 'Ontology',
   heading: '',
   line: 0,
   at: [],
   type: 'note',
-  ...over,
+  ...overrides,
 })
 
-const createPassage = (over: Partial<Passage> = {}): Passage => ({
+const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   path: 'physics/Ontology.md',
   title: 'Ontology',
   isNote: true,
@@ -47,10 +47,10 @@ const createPassage = (over: Partial<Passage> = {}): Passage => ({
   length: 4,
   line: 3,
   at: [],
-  ...over,
+  ...overrides,
 })
 
-const createHit = (over: Partial<SearchHit> = {}): SearchHit => ({
+const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   path: 'physics/Ontology.md',
   title: 'Ontology',
   line: -1,
@@ -59,7 +59,7 @@ const createHit = (over: Partial<SearchHit> = {}): SearchHit => ({
   offers: ['note', 'plex', 'document'],
   type: 'note',
   kind: 'note',
-  ...over,
+  ...overrides,
 })
 
 describe('a note found by its title', () => {

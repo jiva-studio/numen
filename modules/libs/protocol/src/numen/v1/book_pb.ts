@@ -2,7 +2,6 @@
 // @generated from file numen/v1/book.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client has to know before it can read a book that reflows: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //
@@ -77,12 +76,6 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
    */
   printedPages: PrintedPage[];
 
-  /**
-   * How many pages the book is read in. A book that reflows has none of its
-   * own, so they are counted over its text and not over anything drawn.
-   *
-   * @generated from field: int32 page_count = 5;
-   */
   pageCount: number;
 
   /**
@@ -103,7 +96,6 @@ export type GetBookResponse = Message<"numen.v1.GetBookResponse"> & {
   pageBytes: number;
 
   /**
-   * Which bytes the book was read from. It stands in the ask for the markup of
    * a document and in the address the bytes of a picture are answered at, so
    * both name one reading of one file.
    *
@@ -245,12 +237,6 @@ export type ReadBookEntryRequest = Message<"numen.v1.ReadBookEntryRequest"> & {
    */
   entry: string;
 
-  /**
-   * Which bytes the ask was given out for. A file that is other bytes now is
-   * refused as aborted.
-   *
-   * @generated from field: numen.v1.Fingerprint baseline = 3;
-   */
   baseline?: Fingerprint | undefined;
 };
 
@@ -281,7 +267,6 @@ export const ReadBookEntryResponseSchema: GenMessage<ReadBookEntryResponse> = /*
   messageDesc(file_numen_v1_book, 7);
 
 /**
- * SpineDocument is one document of the book, and where its text stands in the
  * book's text.
  *
  * @generated from message numen.v1.SpineDocument
@@ -372,11 +357,6 @@ export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
   messageDesc(file_numen_v1_book, 10);
 
-/**
- * BookService answers what a book that reflows is, for whatever opens one.
- *
- * @generated from service numen.v1.BookService
- */
 export const BookService: GenService<{
   /**
    * GetBook is what the book is: what it is called, the documents it is read

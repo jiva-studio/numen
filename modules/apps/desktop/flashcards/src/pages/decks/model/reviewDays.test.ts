@@ -42,7 +42,7 @@ describe('what a vault was answered on', () => {
 
     expect(one.days.value.get('2026-08-28')?.answered).toBe(12)
     expect(one.streak.value).toBe(2)
-    expect(one.answered.value).toBe(15)
+    expect(one.answerCount.value).toBe(15)
     expect(one.of.value).toBe('01VAULT')
   })
 
@@ -166,7 +166,7 @@ describe('what is retained of a vault after another answer', () => {
     expect(one.days.value.size).toBe(0)
     expect(one.due.value.size).toBe(0)
     expect(one.streak.value).toBe(0)
-    expect(one.answered.value).toBe(0)
+    expect(one.answerCount.value).toBe(0)
     expect(one.of.value).toBe('')
   })
 
@@ -187,7 +187,7 @@ describe('what is retained of a vault after another answer', () => {
     expect(one.days.value.size).toBe(0)
     expect(one.due.value.size).toBe(0)
     expect(one.streak.value).toBe(0)
-    expect(one.answered.value).toBe(0)
+    expect(one.answerCount.value).toBe(0)
   })
 
   it('keeps the vault moved to, and says nothing, when the one left fails', async () => {

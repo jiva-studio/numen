@@ -32,7 +32,7 @@ export function getReachThread(
 
 export interface PendingThreadTarget {
   readonly from: string | null
-  readonly at: Position | null
+  readonly position: Position | null
   readonly viewport: Size
 }
 
@@ -41,8 +41,8 @@ export interface PendingThreadTarget {
  * measured from its top left corner.
  */
 export function getPendingThread(frame: PlexFrame, target: PendingThreadTarget): Thread | null {
-  const { from, at, viewport } = target
-  const to = at && { x: at.x - viewport.width / 2, y: at.y - viewport.height / 2 }
+  const { from, position, viewport } = target
+  const to = position && { x: position.x - viewport.width / 2, y: position.y - viewport.height / 2 }
   return getReachThread(frame, from, to)
 }
 

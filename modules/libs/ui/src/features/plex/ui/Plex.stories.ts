@@ -42,7 +42,7 @@ interface Knobs {
   onCreate: (from: string, relation: PlexRelation) => void
   onLink: (from: string, to: string, relation: PlexRelation) => void
   onBring: (dragged: readonly string[], relation: PlexRelation) => void
-  onMenu: (id: string, at: Position, trigger: MenuTrigger) => void
+  onMenu: (id: string, point: Position, trigger: MenuTrigger) => void
   onDismiss: () => void
   headings: (id: string) => readonly PlexHeading[]
   onEnter: (id: string, heading: string) => void
@@ -495,7 +495,6 @@ export const MakingOne: Story = {
     surface.dispatchEvent(new PointerEvent('pointerup', { ...above, pointerId: 1, bubbles: true }))
     await expect(args.onCreate).toHaveBeenCalledWith(expect.any(String), 'parent')
 
-    // No handle is left behind on the node it came from. Only a browser can
     // answer it: whether letting go of a captured pointer somewhere else says
     // so to the node it was captured from.
     await expect(canvasElement.querySelector('.plex__handle')).toBeNull()
@@ -583,7 +582,6 @@ interface KeyboardFocus extends FocusOptions {
  * Only a browser can answer any of it: a click and a tab leave the same focus
  * behind, and which of them the keyboard is visibly on is the browser's own
  * reckoning. A hand driven from a story is untrusted and does not reach that
- * reckoning, so the focus a click leaves behind is named here outright.
  */
 export const OneHandleAtATime: Story = {
   args: invented.args,
@@ -607,7 +605,6 @@ export const OneHandleAtATime: Story = {
     await expect(getHandles()).toHaveLength(0)
 
     // The hand across the picture, box after box. One handle in the whole
-    // plex, on the box the hand is on, and none left behind it.
     for (const box of boxes) {
       await userEvent.hover(box)
       await expect(getHandles()).toHaveLength(1)
@@ -662,7 +659,6 @@ export const AskingForAMenu: Story = {
     )
     await expect(isPrevented).toBe(true)
 
-    // The handle sits on the trailing edge, which is where a person aims. The
     // right button over it reaches the node, and makes nothing.
     await userEvent.hover(focus)
     const handle = canvasElement.querySelector('.plex__handle')!
@@ -677,7 +673,6 @@ export const AskingForAMenu: Story = {
  * Asking for a node itself, and not travelling to it.
  *
  * Asked on the focus, which is the one node a click moves nothing on, so what
- * a double click leaves behind is the asking on its own.
  *
  * Only a browser can answer any of it: whether a double click reaches an SVG
  * group at all, and whether a modifier held over it arrives with it.
@@ -780,7 +775,6 @@ export const TitledLines: Story = {
     })
 
     // Every title is set along the line it belongs to, and none of them is
-    // drawn wider than the curve it is set on.
     const titles = [...canvasElement.querySelectorAll<SVGTextElement>('.plex__edge-label')]
     await expect(titles.length).toBeGreaterThan(0)
     for (const text of titles) {
@@ -794,9 +788,9 @@ export const TitledLines: Story = {
     await expect(title('the minutes of the meeting')).toHaveLength(0)
     const truncatedTitles = titles.filter((text) => text.textContent!.endsWith('…'))
     await expect(truncatedTitles).toHaveLength(2)
-    await expect('the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1))).toBe(
-      true,
-    )
+    await expect(
+      'the minutes of the meeting'.startsWith(truncatedTitles[0]!.textContent!.slice(0, -1)),
+    ).toBe(true)
 
     // A title is painted in two layers that land on one another.
     const [halo, letters] = title('contains')
@@ -835,7 +829,6 @@ export const TitledLines: Story = {
   },
 }
 
-/** What two things on the screen are held apart by. */
 interface Edges {
   left: number
   right: number
@@ -867,8 +860,8 @@ const expectTitlesClear = async ({ canvasElement }: { canvasElement: HTMLElement
     const onScreen = text.getScreenCTM()!
     const letters: Edges[] = []
 
-    for (let at = 0; at < text.getNumberOfChars(); at += 1) {
-      const letter = text.getExtentOfChar(at)
+    for (let charIndex = 0; charIndex < text.getNumberOfChars(); charIndex += 1) {
+      const letter = text.getExtentOfChar(charIndex)
       const corners = [
         new DOMPoint(letter.x, letter.y),
         new DOMPoint(letter.x + letter.width, letter.y),
@@ -998,8 +991,11 @@ export const ArrowedLines: Story = {
     const svg = canvasElement.querySelector('svg')!
 
     /** Whether a box holds a point, give or take a pixel. */
-    const hasPoint = (box: DOMRect, at: DOMPoint) =>
-      at.x >= box.left - 1 && at.x <= box.right + 1 && at.y >= box.top - 1 && at.y <= box.bottom + 1
+    const hasPoint = (box: DOMRect, point: DOMPoint) =>
+      point.x >= box.left - 1 &&
+      point.x <= box.right + 1 &&
+      point.y >= box.top - 1 &&
+      point.y <= box.bottom + 1
 
     /** Every line drawn, with both its ends where they land on the screen. */
     const lines = () => {
@@ -1089,8 +1085,8 @@ export const ArrowedLines: Story = {
       title.getStartPositionOfChar(0),
       title.getEndPositionOfChar(letters - 1),
     ]) {
-      const at = new DOMPoint(glyph.x, glyph.y).matrixTransform(onScreen)
-      await expect(Math.hypot(at.x - jump.end.x, at.y - jump.end.y)).toBeGreaterThan(clear)
+      const point = new DOMPoint(glyph.x, glyph.y).matrixTransform(onScreen)
+      await expect(Math.hypot(point.x - jump.end.x, point.y - jump.end.y)).toBeGreaterThan(clear)
     }
 
     // The hand on that line lifts it, and the head is brightened with it.
@@ -1151,7 +1147,6 @@ export const RestingOnATitle: Story = {
       async () => await expect(words.scrollWidth).toBeLessThanOrEqual(words.clientWidth),
     )
 
-    // Nothing else moved for it, and it stands over what it now covers.
     await expect(besideNode.getBoundingClientRect().x).toBe(nextDoor)
     const boxes = canvasElement.querySelectorAll('.plex__node')
     await expect(boxes[boxes.length - 1]).toBe(node)
@@ -1177,7 +1172,6 @@ export const Walk: Story = {
     const middle = canvasElement.getBoundingClientRect()
 
     /**
-     * The plex has arrived when the node named stands in the middle of it.
      *
      * Measured on the box and not the group around it: a node that has
      * just been clicked holds the focus, and so wears a handle that hangs off
@@ -1267,9 +1261,9 @@ const INSIDE: Record<string, readonly PlexHeading[]> = {
     { id: '11', text: 'مدخل بالعربية', level: 2 },
   ],
   // The one node there is exactly one of, so the play can find it by its relation.
-  'focus/jump-0': Array.from({ length: 30 }, (_, at) => ({
-    id: `${at}`,
-    text: `Section ${at + 1}`,
+  'focus/jump-0': Array.from({ length: 30 }, (_, index) => ({
+    id: `${index}`,
+    text: `Section ${index + 1}`,
     level: 1,
   })),
 }
@@ -1330,7 +1324,6 @@ export const HeadingsInside: Story = {
     const arrows = () => [...many.querySelectorAll('.plex__more')]
     await expect(arrows()).toHaveLength(1)
 
-    // Said in lines, which is one heading the line. A hand on a trackpad speaks
     // in pixels and scrolls when they come to a heading's height.
     const wheel = (deltaY: number) =>
       many

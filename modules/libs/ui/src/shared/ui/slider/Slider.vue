@@ -3,7 +3,6 @@
  * One value along a track, moved by a handle, with the track filled behind it.
  * It draws no number of its own.
  *
- * It stands inside the ends: a value past one of them, or one the ends move
  * under, is brought in and handed on. Moving the handle and letting it go are
  * two things said, and a walk with the keys is over when the key is.
  */
@@ -19,10 +18,10 @@ const props = withDefaults(
     min?: number
     max?: number
     step?: number
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { min: 0, max: 100, step: 1, disabled: false },
+  { min: 0, max: 100, step: 1, isDisabled: false },
 )
 
 /** Where the handle stands. */
@@ -76,7 +75,7 @@ const onKeyDown = (event: KeyboardEvent) => {
   if (!isWalkingKey(event.key)) return
   event.preventDefault()
   event.stopPropagation()
-  if (props.disabled) return
+  if (props.isDisabled) return
   if (!walking) {
     walking = true
     began = handed
@@ -116,7 +115,7 @@ const onCommit = (value: number[]) => {
     :min="min"
     :max="max"
     :step="step"
-    :disabled="disabled"
+    :disabled="isDisabled"
     :class="
       cn(
         'relative flex w-full touch-none items-center select-none',

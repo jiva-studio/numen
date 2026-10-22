@@ -15,8 +15,7 @@ vi.mock('@numen/ui', async (importOriginal) => {
 })
 
 /** A line of an answer. */
-const turn = (id: string, text: string): Turn =>
-  ({ id, text, voice: 'answered', state: 'settled' })
+const turn = (id: string, text: string): Turn => ({ id, text, voice: 'response', state: 'settled' })
 
 /** An agent tab over turns already said, and a vault that answers for the notes given. */
 const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
@@ -41,7 +40,7 @@ const open = (turn: Turn[] = [], notes: Record<string, string> = {}) => {
     },
     unreachable: () => '',
   })
-  return { state, turns, resolved, opened: openedCalls, beside: besideItems }
+  return { state, turns, resolved, opened: openedCalls, besideItems }
 }
 
 /** Lets the lookups come back and the turns be drawn. */
@@ -163,7 +162,7 @@ describe('a link inside an answer', () => {
 
     one.state.followLink(one.turns.value[0]!, 'web://page', press.press)
 
-    expect(one.beside).toEqual([])
+    expect(one.besideItems).toEqual([])
     expect(press.was()).toBe(false)
   })
 })

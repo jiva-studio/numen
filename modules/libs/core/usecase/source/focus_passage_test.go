@@ -9,10 +9,10 @@ import (
 )
 
 // glancing is a window that records what is put in front of the person.
-type glancing struct{ asked []domain.Place }
+type glancing struct{ requested []domain.Place }
 
-func (w *glancing) FocusPlace(_ context.Context, at domain.Place) error {
-	w.asked = append(w.asked, at)
+func (w *glancing) FocusPlace(_ context.Context, pos domain.Place) error {
+	w.requested = append(w.requested, pos)
 	return nil
 }
 func (w *glancing) ShowMove(context.Context, domain.Move) error { return nil }
@@ -36,8 +36,8 @@ func TestAPassageIsInsertInFrontOfThePersonWithTheOthersLit(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := domain.Place{Path: recordingPath, Spans: []domain.ByteSpan{{From: 10, To: 15}, {From: 40, To: 50}}}
-	if !strings.Contains(summary, "that passage") || len(view.asked) != 1 || !samePlace(view.asked[0], want) {
-		t.Errorf("summary %q, window asked %+v, want %+v", summary, view.asked, want)
+	if !strings.Contains(summary, "that passage") || len(view.requested) != 1 || !samePlace(view.requested[0], want) {
+		t.Errorf("summary %q, window asked %+v, want %+v", summary, view.requested, want)
 	}
 }
 
@@ -59,8 +59,8 @@ func TestADocumentWithNoLengthOpensAtItsBeginning(t *testing.T) {
 	if _, err := focus.Execute(t.Context(), first, Passage{Path: recordingPath}); err != nil {
 		t.Fatal(err)
 	}
-	if len(view.asked) != 1 || len(view.asked[0].Spans) != 0 {
-		t.Errorf("the window was asked %+v", view.asked)
+	if len(view.requested) != 1 || len(view.requested[0].Spans) != 0 {
+		t.Errorf("the window was asked %+v", view.requested)
 	}
 }
 
@@ -87,7 +87,7 @@ func TestAPassageThatCannotBeShownMovesNobody(t *testing.T) {
 			}
 		})
 	}
-	if len(view.asked) != 0 {
-		t.Errorf("the person was moved to %+v", view.asked)
+	if len(view.requested) != 0 {
+		t.Errorf("the person was moved to %+v", view.requested)
 	}
 }

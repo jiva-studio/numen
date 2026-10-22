@@ -109,7 +109,9 @@ export function useNestingSetting(core: NestingDeps, words: NestingWords, write:
     if (now === was) return
     write('')
     isNesting.value = now
-    const { failed, isLatest } = await guard.run(guard.beginChoice(), () => core.setNestingSettings(now))
+    const { failed, isLatest } = await guard.run(guard.beginChoice(), () =>
+      core.setNestingSettings(now),
+    )
     if (!failed) return
     write(`${words.unturned} ${failed}`, 'error')
     if (isLatest) isNesting.value = was

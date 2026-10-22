@@ -106,7 +106,6 @@ export type Box = Message<"numen.v1.Box"> & {
   span?: Span | undefined;
 
   /**
-   * Where the page stands in the document, counted from the first.
    *
    * @generated from field: int32 page = 2;
    */

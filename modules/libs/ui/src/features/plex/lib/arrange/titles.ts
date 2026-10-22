@@ -59,14 +59,14 @@ export function separateTitles(
   const titles: Box[] = []
   const resolved = [...edges]
 
-  for (const { edge, at, metrics } of sortTightestFirst(edges, width)) {
+  for (const { edge, index, metrics } of sortTightestFirst(edges, width)) {
     const boxAt = runBoxes(edge, routing.labelDepth + 2 * apart)
     const ends = (edge.arrow ? routing.arrowRoom : 0) / metrics.arc
     const clear = clearSpans(boxAt, [...boxes, ...titles], { ends, step: STEP / metrics.arc })
 
     const found = settle(clear, edge.words!, { metrics, width })
     if (!found) {
-      resolved[at] = { ...edge, words: undefined, wordsAt: MIDDLE }
+      resolved[index] = { ...edge, words: undefined, wordsAt: MIDDLE }
       continue
     }
 
@@ -78,7 +78,7 @@ export function separateTitles(
     // The reading direction is the tangent where the words end up, and the
     // words of a curve taken the other way round are read from its far end.
     const heading = getHeading(edge, found.at)
-    resolved[at] = {
+    resolved[index] = {
       ...edge,
       words: found.words,
       heading,
@@ -97,21 +97,21 @@ export function separateTitles(
 function sortTightestFirst(
   edges: readonly PlacedEdge[],
   width: (label: string) => number,
-): { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] {
-  const measured: { edge: PlacedEdge; at: number; metrics: TitleMetrics }[] = []
+): { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] {
+  const measured: { edge: PlacedEdge; index: number; metrics: TitleMetrics }[] = []
 
-  for (const [at, edge] of edges.entries()) {
+  for (const [index, edge] of edges.entries()) {
     if (!edge.words) continue
     const arc = getLength(edge)
     const extent = width(edge.words)
     if (arc <= 0 || extent <= 0) continue
-    measured.push({ edge, at, metrics: { arc, extent } })
+    measured.push({ edge, index, metrics: { arc, extent } })
   }
 
   return measured.sort(
     (one, other) =>
       one.metrics.arc - one.metrics.extent - (other.metrics.arc - other.metrics.extent) ||
-      one.at - other.at,
+      one.index - other.index,
   )
 }
 
@@ -145,7 +145,11 @@ function settle(
   if (availableArcLength < LEAST * metrics.extent) return null
 
   const truncatedWords = cutToFit(words, availableArcLength, width)
-  return { words: truncatedWords, at: (longest.from + longest.to) / 2, extent: width(truncatedWords) }
+  return {
+    words: truncatedWords,
+    at: (longest.from + longest.to) / 2,
+    extent: width(truncatedWords),
+  }
 }
 
 interface ClearSpanOptions {
@@ -171,13 +175,13 @@ function clearSpans(
   const spans: Span[] = []
   let open: number | null = null
 
-  for (let at = ends; at < last; at += step) {
-    const box = boxAt(at, Math.min(at + step, last))
+  for (let offset = ends; offset < last; offset += step) {
+    const box = boxAt(offset, Math.min(offset + step, last))
     if (boxes.some((other) => isOverlapping(other, box))) {
-      if (open !== null) spans.push({ from: open, to: at })
+      if (open !== null) spans.push({ from: open, to: offset })
       open = null
     } else if (open === null) {
-      open = at
+      open = offset
     }
   }
   if (open !== null) spans.push({ from: open, to: last })
@@ -195,9 +199,9 @@ function findNearestPlace(clear: readonly Span[], half: number): number | null {
 
   for (const span of clear) {
     if (getSpanLength(span) < 2 * half) continue
-    const at = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
-    if (nearest === null || Math.abs(at - MIDDLE) < Math.abs(nearest - MIDDLE)) {
-      nearest = at
+    const pos = Math.min(Math.max(MIDDLE, span.from + half), span.to - half)
+    if (nearest === null || Math.abs(pos - MIDDLE) < Math.abs(nearest - MIDDLE)) {
+      nearest = pos
     }
   }
 

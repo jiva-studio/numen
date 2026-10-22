@@ -21,7 +21,7 @@ export function useDocumentViewport(
   const { pages, pageNumber, fingerprint, isOpen } = options
   const width = ref(0)
 
-  const widen = (pixels: number) => {
+  const expandWidth = (pixels: number) => {
     if (!isOpen()) return
     width.value = Math.min(Math.max(Math.round(pixels), 0), WIDEST)
   }
@@ -35,7 +35,7 @@ export function useDocumentViewport(
 
   return {
     width,
-    widen,
+    widen: expandWidth,
     getPageImageUrl,
     picture,
   }

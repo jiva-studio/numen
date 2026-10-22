@@ -18,7 +18,6 @@ var ErrNoSuchField = errors.New("this stencil declares no field of that name")
 // face and every card, and the values under the other are held by nothing.
 var ErrFieldTaken = errors.New("this stencil already declares a field of that name")
 
-// StencilFile is a stencil held open, and what holds for a deck holds here: a
 // face is changed by replacing the run it occupies.
 type StencilFile struct {
 	doc *markdown.Document
@@ -56,7 +55,6 @@ func (f *StencilFile) SetFields(names []string) error {
 }
 
 // RenameField gives one declared field a different name and leaves it where it
-// stands in the order. ErrNoSuchField when the stencil declares no such field,
 // and ErrFieldTaken when it already declares one of the name asked for.
 //
 // A field's name is written twice in this file: where `fields` declares it, and
@@ -64,14 +62,14 @@ func (f *StencilFile) SetFields(names []string) error {
 // stencil that comes out declares what its faces place.
 func (f *StencilFile) RenameField(from, to string) error {
 	names := f.Fields()
-	at := slices.Index(names, from)
-	if at < 0 {
+	pos := slices.Index(names, from)
+	if pos < 0 {
 		return fmt.Errorf("%w: %s", ErrNoSuchField, from)
 	}
-	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != at {
+	if targetIndex := slices.Index(names, to); targetIndex >= 0 && targetIndex != pos {
 		return fmt.Errorf("%w: %s", ErrFieldTaken, to)
 	}
-	names[at] = to
+	names[pos] = to
 	if err := f.SetFields(names); err != nil {
 		return err
 	}
@@ -87,11 +85,11 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 	// Backwards, because a splice moves every byte after it.
 	found := placeholderRe.FindAllStringSubmatchIndex(body, -1)
 	for i := len(found) - 1; i >= 0; i-- {
-		at := found[i]
-		if body[at[2]:at[3]] != from {
+		pos := found[i]
+		if body[pos[2]:pos[3]] != from {
 			continue
 		}
-		if err := f.doc.SpliceBody(at[0], at[1], content); err != nil {
+		if err := f.doc.SpliceBody(pos[0], pos[1], content); err != nil {
 			return err
 		}
 	}
@@ -102,8 +100,8 @@ func (f *StencilFile) replacePlaceholders(from, to string) error {
 // through each face it carries, so two faces of one name are two faces.
 func (f *StencilFile) AddFace(face FaceTemplate) error {
 	body := []byte(f.doc.Body())
-	at := len(body)
-	return f.doc.SpliceBody(at, at, insert(body, at, formatFace(face)))
+	pos := len(body)
+	return f.doc.SpliceBody(pos, pos, insert(body, pos, formatFace(face)))
 }
 
 // formatFace is the markdown one face is written as: its heading, the lead
@@ -133,7 +131,6 @@ func formatFace(face FaceTemplate) string {
 // format itself, and the tail verbatim below the last side.
 //
 // The faces are written into a stencil of no faces, one after another, so every
-// face a caller gave stands in the file and two of one name are two faces.
 func StencilBody(preamble string, faces []FaceTemplate, tail string) (string, error) {
 	scratch, err := OpenStencil(markdown.Create("", preamble))
 	if err != nil {

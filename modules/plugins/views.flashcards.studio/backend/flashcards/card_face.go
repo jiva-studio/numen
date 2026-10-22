@@ -17,7 +17,6 @@ import (
 // CardFace is one card face as the vault holds it: a card, shown through one
 // face of the stencil that cuts it, and where both of them are written.
 type CardFace struct {
-	// Deck is the path of the file the card stands in, and Section the name of
 	// the section it is placed under. A card standing before the first section has
 	// none.
 	Deck    string
@@ -83,7 +82,6 @@ func (u ListCardFaces) WithReaders(readers ports.VaultReaders) ListCardFaces {
 // to read that vault, and a window holding one reads it.
 var ErrNotCarried = errors.New("the index does not carry this vault yet")
 
-// Execute reads every deck the vault holds and says what stands in it. A vault
 // the index does not carry gets ErrNotCarried.
 func (u ListCardFaces) Execute(ctx context.Context, v domain.Vault) ([]CardFace, error) {
 	paths, err := u.GetDeckPaths(ctx, v)
@@ -113,7 +111,6 @@ func (u ListCardFaces) GetDeckPaths(ctx context.Context, v domain.Vault) ([]stri
 	return u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 }
 
-// GetFaces reads the decks named and says what stands in them. A caller after the
 // cards of one preset hands it the decks pointing there, and the rest of the
 // vault is left unread.
 //
@@ -129,17 +126,17 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 	reader, err := u.readers.Open(v)
 	found := make([][]CardFace, len(paths))
 	var misses []int
-	for at, path := range paths {
+	for item, path := range paths {
 		if err == nil {
 			if faces, target := u.getCached(ctx, reader, v, path); target {
-				found[at] = faces
+				found[item] = faces
 				continue
 			}
 		}
-		misses = append(misses, at)
+		misses = append(misses, item)
 	}
 
-	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), by: make(map[string]stencilRead)}
+	stencils := &stencilMemo{read: cards.NewRead(u.readers, u.links), stencils: make(map[string]stencilRead)}
 	places := min(max(1, u.Cores), len(misses))
 	var running sync.WaitGroup
 	queue := make(chan int)
@@ -147,13 +144,13 @@ func (u ListCardFaces) GetFaces(ctx context.Context, v domain.Vault, paths []str
 		running.Add(1)
 		go func() {
 			defer running.Done()
-			for at := range queue {
-				found[at] = u.parseDeck(ctx, v, paths[at], epoch, stencils)
+			for entry := range queue {
+				found[entry] = u.parseDeck(ctx, v, paths[entry], epoch, stencils)
 			}
 		}()
 	}
-	for _, at := range misses {
-		queue <- at
+	for _, elem := range misses {
+		queue <- elem
 	}
 	close(queue)
 	running.Wait()
@@ -191,12 +188,12 @@ func (u ListCardFaces) getCached(
 	}
 	stencils := make(map[string]domain.Fingerprint, len(e.stencils))
 	for stencil := range e.stencils {
-		at, err := reader.GetFingerprint(ctx, stencil)
+		pos, err := reader.GetFingerprint(ctx, stencil)
 		if err != nil {
 			u.cache.drop(key)
 			return nil, false
 		}
-		stencils[stencil] = at
+		stencils[stencil] = pos
 	}
 	if !e.isCurrent(deck, stencils) {
 		u.cache.drop(key)
@@ -226,9 +223,9 @@ func (u ListCardFaces) parseDeck(
 // stencilMemo is the stencils one request has read, shared by the places
 // parsing it.
 type stencilMemo struct {
-	read cards.Read
-	mu   sync.Mutex
-	by   map[string]stencilRead
+	read     cards.Read
+	mu       sync.Mutex
+	stencils map[string]stencilRead
 }
 
 // stencilRead is a stencil as the request read it. A note that is not a stencil
@@ -242,7 +239,7 @@ type stencilRead struct {
 func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) stencilRead {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if target, observed := m.by[path]; observed {
+	if target, observed := m.stencils[path]; observed {
 		return target
 	}
 	// A card whose stencil is not one is a card no face shows. It is a problem
@@ -252,7 +249,7 @@ func (m *stencilMemo) get(ctx context.Context, v domain.Vault, path string) sten
 	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeStencil {
 		out = stencilRead{stencil: one.Body, fingerprint: one.Fingerprint, isWhole: true}
 	}
-	m.by[path] = out
+	m.stencils[path] = out
 	return out
 }
 

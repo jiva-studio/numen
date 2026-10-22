@@ -23,11 +23,11 @@ type ArtifactText struct {
 
 // GetArtifactText reads a range of one artifact as it relies on disk.
 type GetArtifactText struct {
-	shelf artifactShelf
+	store artifactStore
 }
 
 func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactText {
-	return &GetArtifactText{shelf: artifactShelf{queries: queries, derived: derived}}
+	return &GetArtifactText{store: artifactStore{queries: queries, derived: derived}}
 }
 
 // Execute reads the range of the artifact of the given kind. A length of zero
@@ -36,7 +36,7 @@ func NewGetArtifactText(queries port.SourceQueries, derived port.DerivedStores) 
 func (u *GetArtifactText) Execute(
 	ctx context.Context, v domain.Vault, path, kind string, start, length int,
 ) (ArtifactText, error) {
-	set, err := u.shelf.getArtifacts(ctx, v, path)
+	set, err := u.store.getArtifacts(ctx, v, path)
 	if err != nil {
 		return ArtifactText{}, err
 	}
@@ -48,8 +48,8 @@ func (u *GetArtifactText) Execute(
 		if err != nil {
 			return ArtifactText{}, err
 		}
-		at, run := getArtifactRange(words, start, length)
-		return ArtifactText{Artifact: one, Words: run, Start: at, Length: len(run)}, nil
+		pos, run := getArtifactRange(words, start, length)
+		return ArtifactText{Artifact: one, Words: run, Start: pos, Length: len(run)}, nil
 	}
 	return ArtifactText{}, fmt.Errorf("nothing of the kind %q was made from %s", kind, path)
 }
@@ -62,6 +62,6 @@ func getArtifactRange(words string, start, length int) (int, string) {
 	}
 	start = max(0, min(start, len(words)))
 	length = min(length, len(words)-start)
-	at, raw := text.WholeCharacters(start, []byte(words[start:start+length]), len(words))
-	return at, string(raw)
+	pos, raw := text.WholeCharacters(start, []byte(words[start:start+length]), len(words))
+	return pos, string(raw)
 }

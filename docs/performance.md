@@ -42,12 +42,12 @@ A hundred thousand notes, from the load test. Measured 2026-09-06, one run, on a
 | --- | --- | --- | --- |
 | Cold scan | 1 m 22 s (0.82 ms/note) | **8 m 52 s (5.32 ms/note, 188 notes/s)** | under 3 minutes |
 | Warm scan — what a startup pays | 0.52 s | **1.07 s** | under 1 second |
-| An edit the watcher names, until a client is told | 66 ms | not re-measured | under 100 ms |
+| An edit the watcher names, until a client is notified | 66 ms | not re-measured | under 100 ms |
 | Index size | 162 MB | **344 MB (3.4 MB per thousand notes)** | not decided |
 | Search, rare term, under load | p50 2 · p95 4 · p99 5 · max 42 ms | p50 3 · p95 6 · p99 8 · max 102 ms | p95 under 50 ms |
 | Search, term matching every note | p50 0.90 s · p95 1.01 s | p50 3.37 s · p95 4.25 s | not covered |
 
-**Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure owes nothing to a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows a note instead of one.
+**Two of these targets are now missed, and the index size says why.** It has gone from 162 MB to 344 MB over the same 164 MB of markdown, and that figure owes nothing to a busy machine. A note is now written into the passage index as well as the note index — the chunk enclosing it, the small chunks tiled inside it, each of them indexed for its words in `chunks_fts` and again in `sections_fts` — so a scan writes about twice as much, and a query that matches everything ranks several rows per note.
 
 **What a person's own search costs has held.** The rare-term row is 3 ms at the median and 6 at the ninety-fifth, well inside a target of fifty, against 2 and 4 on a quieter machine. The read side did not move; the write side and the size did.
 
@@ -94,7 +94,7 @@ A search still costs more while a scan is continuously rewriting the index. WAL 
 
 **The search figure is pessimistic.** Generated notes are built from a twenty-word vocabulary, so a two-term query matches nearly every note and the ranking has to order all of them. A real vault has a long tail of terms and a query that matches a handful of notes.
 
-**The incremental figure is a full walk**: one edited note, found by asking every file in the vault what it looks like. That is what a scan at startup pays, and it is not what an edit costs while the application is running — the watcher names the path and only that path is read. The 100 ms target is written for the watcher's path, and that path is measured further down, from the save to a client being told.
+**The incremental figure is a full walk**: one edited note, found by asking every file in the vault what it looks like. That is what a scan at startup pays, and it is not what an edit costs while the application is running — the watcher names the path and only that path is read. The 100 ms target is written for the watcher's path, and that path is measured further down, from the save to a client being notified.
 
 **The cold scan reads notes this same process wrote seconds earlier**, so the read side is measured against a warm page cache. On a real vault that has been sitting on disk, this is optimistic about I/O.
 
@@ -193,7 +193,7 @@ Embedded with `bge-m3` at 1024 dimensions, through a hosted API.
 
 The same corpus embedded on this laptop's CPU instead, with a small English-only model, runs at 10.8 chunks per second.
 
-Cut this way, the sources come to about **2 240 small chunks per megabyte of text**.
+Cut this way, the sources total about **2 240 small chunks per megabyte of text**.
 
 ### The chunk decides what can be found
 
@@ -338,7 +338,7 @@ One question was answered by seven chunks of a single note taking the top seven 
 
 **Agreement is with the model, not with a reader.** The full-precision ranking is the reference, so a representation scoring 0.975 reproduces what this model believes — including where it is wrong.
 
-**The sizes are one corpus.** Chunk sizes tuned here are not guaranteed elsewhere, which is why the acceptance set is the check rather than the sizes.
+**The sizes are one corpus.** Chunk sizes tuned here are not guaranteed elsewhere, which is why the acceptance set serves as the primary verification check.
 
 **Sanskrit is indexed and does not surface.** No question in the set returned a passage from the critical edition, in any configuration tried. Whether that is the model, the transliteration or the way verse is cut is not established.
 
@@ -470,7 +470,7 @@ Recorded 2026-10-09 on AMD Ryzen 7 6800U:
 
 ### What naming a chunk costs the walk
 
-The core addresses a chunk by an opaque `domain.ChunkID` and resumes the walk on an opaque `port.ChunkCursor`, and the index spells both out of the row number it keeps. That is one `FormatInt` per row read and one `ParseInt` per vector written, over every chunk of a vault. What it comes to was assumed and is now measured.
+The core addresses a chunk by an opaque `domain.ChunkID` and resumes the walk on an opaque `port.ChunkCursor`, and the index spells both out of the row number it keeps. That is one `FormatInt` per row read and one `ParseInt` per vector written, over every chunk of a vault. What it totals was assumed and is now measured.
 
 Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `BenchmarkSaveVectors` and `BenchmarkChunkIdentity` in `adapter/index`. Ten runs of each; the two conversions vary by under 10 % across them, and the pages by two- to fivefold, which is the shape of the answer.
 
@@ -482,9 +482,9 @@ Recorded 2026-09-05 on the same AMD Ryzen 7 6800U, from `BenchmarkUnembedded`, `
 | A row turned into a `domain.Passage`, the whole of it | 0.67 µs |
 | One vector written, in a page of 200 | 200 µs |
 
-**It is lost in the noise, and the numbers say so plainly.** Over 400 000 chunks — the vault a hundred thousand notes cut into — both conversions together come to **19 ms**. Reading those rows out of SQLite is 1.6 s, writing their vectors is 80 s, and the embedding itself is 27 minutes through a service or 36 hours on this laptop's CPU. The conversion is a thousandth of the cheapest thing it sits beside, and the row a walk resumes from is spelled once per page of 200 rather than once per row.
+**It is lost in the noise, and the numbers say so plainly.** Over 400 000 chunks — the vault a hundred thousand notes cut into — both conversions together total **19 ms**. Reading those rows out of SQLite is 1.6 s, writing their vectors is 80 s, and the embedding itself is 27 minutes through a service or 36 hours on this laptop's CPU. The conversion is a thousandth of the cheapest adjacent operation, and the row a walk resumes from is serialized once per page of 200, not on each row.
 
-The two pages are measured at a fixed number of iterations because a laptop with other work on it moves them by fivefold between runs, and a conversion two orders of magnitude smaller than the page cannot be read out of a difference of pages. It is measured on its own instead, and the row it is measured on is nine digits — longer than anything a vault of this size hands out.
+The two pages are measured at a fixed number of iterations because a laptop with other work on it moves them by fivefold between runs, and a conversion two orders of magnitude smaller than the page cannot be read out of a difference of pages. It is measured on its own instead, and the row it is measured on is nine digits — longer than anything a vault of this size produces.
 
 ### Transcribing a recording
 
@@ -574,7 +574,7 @@ NUMEN_LOAD=1 go test ./adapter/window/editor/ -run TestEditLoad -v -timeout 30m
 
 Taken 2026-08-17, same machine. This is the path the application owns: the write, the watcher noticing it, the refresh, and the change reaching a client.
 
-| vault | save | until a client is told |
+| vault | save | until a client is notified |
 |---|---|---|
 | 10 000 notes | 22 ms | 65 ms |
 | 100 000 notes | 13 ms | 66 ms |
@@ -721,7 +721,7 @@ The detector answers with the text's own outline drawn inside the letters, and t
 | 20 | 0.017 | 0.0648 |
 | 24 | 0.035 | 0.0667 |
 
-**Eighteen**, the middle of where it stops mattering rather than the edge. The body is flat from ten to twenty and begins to pay after that.
+**Eighteen**, the midpoint where improvements plateau. The body is flat from ten to twenty and begins to degrade after that.
 
 ```
 "IAYADEVA GOSVAMI'S LIFEINNABADWI"         became "JAYADEVA GOSVAMI'S LIFE INNABADWIP"
@@ -729,7 +729,7 @@ The detector answers with the text's own outline drawn inside the letters, and t
 "THELORD HELPS IAYADEVA GOSVAMIWRITE…"     became "THE LORD HELPS JAYADEVA GOSVÁMI WRITE GITA GOVINDA"
 ```
 
-Two other settings were measured and neither is worth moving. The heat a pixel carries to be part of a line gives the same boxes at 0.15, 0.20 and 0.30 — the map is as good as binary here. The longest side a part is read at costs small type when lowered and costs everything when raised, and 300 dpi beats 150, 200, 400 and 600 because detection is scaled to that side whatever the page was drawn at.
+Two other settings were measured and neither is worth moving. The pixel activation threshold to be considered part of a line gives the same boxes at 0.15, 0.20 and 0.30 — the map is as good as binary here. The longest side a part is read at costs small type when lowered and costs everything when raised, and 300 dpi beats 150, 200, 400 and 600 because detection is scaled to that side whatever the page was drawn at.
 
 What no setting reaches: a word gap in a display face no wider than its letter gaps is one line to any threshold, so the space is the recogniser's own guess. And the alphabet the model carries has `ā ī ū ñ ś` and none of the letters with a dot under them, so `Lakṣmaṇa` and `Kṛṣṇa` cannot be written whatever the boxes are.
 
@@ -741,13 +741,13 @@ Nothing is read in it. The detector draws a boundary around dark pixels and shri
 
 | what was read | pages right of 30 |
 | --- | --- |
-| the region as it stands | 0 |
+| the unmodified region | 0 |
 | the region magnified 3× to 20× | 0 |
 | the crop widened to 150, 250, 400, 640, 960 pixels | 0 to 6 |
 
 Widening the crop takes in the ornaments either side, and what they read as is not a number. Keeping only the lines whose middle falls in the region gets 30 of 30 at a margin of 150 pixels and above — and that margin is a pixel count against one book at one dpi, so it is not a default anything can carry.
 
-So nothing reads it. A page is called where it stands in the file, which is known for every page, costs nothing, and is the number the pane in front of the person is showing.
+So nothing reads it. A page is referenced by its sequential position in the file, which is known for every page, costs nothing, and is the number the pane in front of the person is showing.
 
 The margin that works is the measurement worth keeping here: it says the failure is the detector needing background around a line, not the models being unable to read two digits.
 
@@ -774,7 +774,7 @@ Recorded 2026-08-20 over the same 546-page scan. 700 questions drawn from the bo
 
 | | right section | opened at its start |
 | --- | --- | --- |
-| the words half as it stands | 307/350 | 298/350 |
+| the words half in original form | 307/350 | 298/350 |
 | the section's name in every chunk | 340/350 | 306/350 |
 | the sections findable by name | 346/350 | 346/350 |
 | both | 348/350 | 348/350 |
@@ -795,12 +795,12 @@ Recorded 2026-08-21 over the same 546-page scan, through a hosted model.
 
 **Two models, over 58 pages spread through the book.**
 
-| | pages the gates refused | output tokens | a book |
+| | pages rejected by gates | output tokens | a book |
 | --- | --- | --- | --- |
 | `gemini-2.5-flash-lite` | 67 % | 25 005 per 10 pages | $0.14 |
 | `gemini-2.5-flash` | 8.6 % | 6 919 per 20 pages | $0.29 |
 
-The cheap model reports lines it did not change, which is where its output goes. A chain running it first pays $0.14 for a reply it throws away and $0.29 for the good model after it. The good model alone is $0.29, about 1 165 000 tokens in and 194 000 out. A refused page asked again answers the same.
+The cheap model reports lines it did not change, which is where its output goes. A chain running it first pays $0.14 for a reply it throws away and $0.29 for the good model after it. The good model alone is $0.29, about 1 165 000 tokens in and 194 000 out. A rejected page queried again answers the same.
 
 **Where `max_edit_distance` comes from.** Over 931 corrections the distribution has a hole in it: 36 stand further apart than 0.50, 47 than 0.30, 49 than 0.20, 70 than 0.10. Above 0.30 every correction read was damage — text dragged in from the next line, or one corrected word in place of a whole line — and below it every one was a correction. The threshold is the hole and not a round number, and it is in the settings file because it was measured on one book.
 
@@ -844,7 +844,7 @@ Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, fr
 
 Each column is the median of three runs; the last two name the best of three on the clock, and the same allocations on all three. The allocation columns are the ones these are read on: a run of the read row spread by 10 % on the clock and not at all on the allocations. The last two columns were measured one after the other on a machine carrying a load average of 6.
 
-**The allocations have gone past where the change above started, and the reason is a containment fix.** On 2026-09-04 a name was held to the area it says it is in, because a link written into an area — by a sync client, by another tool — pointed back at the vault's identity and a transcript appended down it landed on `config.json`. The check is right and the hole was real.
+**The allocations have gone past where the change above started, and the reason is a containment fix.** On 2026-09-04 a path was constrained to its declared directory, because a link written into an area — by a sync client, by another tool — pointed back at the vault's identity and a transcript appended down it landed on `config.json`. The check is right and the hole was real.
 
 **What was not owed was doing it three times.** `DerivedStore.at` resolved symlinks on the target, then on the store's area, then on the store's own root. The last two are paths fixed for the life of the store, and `deepest` is a `filepath.EvalSymlinks` walk — one `lstat` per segment of an absolute path, every time. By allocation profile **60.5 % of one `Read` was inside `EvalSymlinks`**, which was the whole of the difference between 48 allocations and 76.
 
@@ -856,7 +856,7 @@ This is a name a person pays per card answered and per run file read. A history 
 
 **The identity was read out of the file at every name.** `config.json` opened, its bytes parsed and the identity in it checked, which is 19.9 µs and 12 allocations on its own — a fifth of a read and a quarter of a listing. It is now a stat of that file, and a file of the same length and the same age carries the identity already read out of it. A file that moved is read again, so a folder carrying another vault's identity is still refused at the first name after it arrives.
 
-**An append is what a person answering a card pays**, one file of the log to a session, and it is unchanged in every way that shows: the `fsync` at the end of it is two milliseconds of the two and a quarter.
+**An append is the cost incurred when reviewing a card**, one file of the log to a session, and it is unchanged in every way that shows: the `fsync` at the end of it is two milliseconds of the two and a quarter.
 
 **A vault carrying no identity is stated by its folder.** A store opened on a folder that never held one has none to lose, and the check now asks whether that folder is there.
 
@@ -868,7 +868,7 @@ Each row is one request through its use case. The first three are warm, which is
 
 | | Before | After | 2026-09-06 |
 | --- | --- | --- | --- |
-| The front door, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB | 1.06 s · 617 MB |
+| Initial overview, one vault counted | 0.82 s · 605 MB | 0.85 s · 605 MB | 1.06 s · 617 MB |
 | Starting a session | 1.25 s · 836 MB | 1.19 s · 793 MB | 1.46 s · 824 MB |
 | The history screen | 0.71 s · 536 MB | 0.71 s · 493 MB | 0.83 s · 502 MB |
 | The history screen, nothing counted yet | 0.78 s · 554 MB | 0.68 s · 490 MB | 0.82 s · 498 MB |
@@ -877,7 +877,7 @@ Every column is the median of two runs of five. The memory column is what a requ
 
 **The four rows hold.** Read on the memory column, which is what these are read on, every one is between 1.7 % and 3.9 % of where the change above left it. The clock is 17 % to 23 % slower and the machine carried five other agents while it was taken, so the clock says nothing here that the memory does not say better.
 
-**The front door is unchanged, and is here as the thing the others are read against.** It was already asking the schedule cache first, and nothing was taken off its path.
+**The initial overview benchmark is unchanged, and serves as the baseline.** It was already asking the schedule cache first, and nothing was taken off its path.
 
 What was counted, per warm request:
 
@@ -889,13 +889,13 @@ What was counted, per warm request:
 | Opening the history: the schedule cache written | 1 | 0 |
 | The history screen, nothing counted yet: run files opened | 360 | 180 |
 
-A session and the history screen each worked the whole log out again and wrote what it came to, whatever the cache held; both now ask it first. The history screen read the log twice — once for the days behind and once for the days ahead — and now reads it once and hands the reading on.
+A session and the history screen each recomputed the entire log and recorded the total, regardless of cache state; both now query the cache first. The history screen read the log twice — once for previous days and once for upcoming days — and now reads it once and forwards the data.
 
 **A loaded log is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `SpentUnder` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
 
 **Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
 
-By profile, over the front door on this vault: **57 % of the request is `ListCardFaces.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
+By profile, during initial overview on this vault: **57 % of the request is `ListCardFaces.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
 
 ## The curve of one preset
 
@@ -910,11 +910,11 @@ Both columns are the median of two runs of three. The memory column is the one t
 
 **A curve reads the decks pointing at its preset.** The index answers what points at one note, so a preset of one deck opens one deck file and the other nineteen are never read. The second row is the same request where there is nothing to leave out — nineteen decks of twenty — and it stands here as what the first is read against.
 
-**What the projection costs stands on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and it is what the section below takes off.
+**What the projection costs operates on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and it is what the section below takes off.
 
-**A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault stands at, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
+**A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault is set to, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
 
-**The curve of the defaults reads every deck.** Nothing points at a preset that stands in no note, so which decks name none is a question only the deck files answer, and that one curve pays what the front door pays.
+**The curve of the defaults reads every deck.** Nothing points at a preset that exists in no note, so which decks name none is a question only the deck files answer, and that one curve incurs the cost of the initial overview.
 
 ## What a curve costs as the preset grows
 
@@ -929,17 +929,17 @@ Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in
 
 Both columns are the median of two runs of three on an idle machine, where the two runs of a row landed within 7 % of each other on the clock and within 0.01 % on the memory. The memory column is the one these are read on: on a vault where a change cannot help, a row's time moves by a quarter between runs while its memory moves by tenths of a per cent. The last row is 105.1 million allocations before and 92.2 million after.
 
-**A curve is fifty-one runs of the scheduler.** One at each of twenty-five places of the grid, one more at each place for the day the material is learned, and one at the top of the range to find how far the range reaches. Each of them walks ninety days, and each of those days used to go over every card face of the preset four times: to find what was due, to count what stood learned, to count what the day left behind, and to count what comes back. At fifty thousand card faces that is nine hundred million card visits in one request.
+**A curve is fifty-one runs of the scheduler.** One at each of twenty-five places of the grid, one more at each place for the day the material is learned, and one at the top of the range to find how far the range reaches. Each of them walks ninety days, and each of those days used to go over every card face of the preset four times: to find what was due, to count what stood learned, to count what the day deferred, and to count what comes back. At fifty thousand card faces that is nine hundred million card reviews per request.
 
 **Three of the four are gone.** A card face is filed under the day of review its schedule falls in, so a day takes what fell in it: what the day before did not reach and what falls due in this one, put into one run in the order the debt fell, and the material behind them is never looked at. What the day left standing is then what fell due in it less what it reached, which is a subtraction. What stands learned under a rule of an interval is a fact about a card face's schedule, so the count is carried from day to day and asked again only of the card faces the day answered; under a rule of a chance of recall it is a fact about the instant, and is read off the same number as the share that comes back.
 
-**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises rather than a faster way to keep it, and it is the section below.
+**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises and not merely an optimization in computing it, and it is the section below.
 
 **Both endings of an answer come from one reckoning of the card.** A projection weighs the ending where the card came back against the ending where it did not, and asked the scheduler for each of them separately. A card face the scheduler has put into review is settled at every rating in one working out, so the two are asked for together and the second costs nothing. A card face it is still putting into memory is settled a rating at a time and is asked a rating at a time: asking for all four there costs more than it saves, and measured 5.40 GB against 4.86 GB at twenty thousand card faces.
 
 **What is left is the scheduler's own arithmetic.** `Simulation.Run` is 97 % of the request, and half of that is the answers themselves. Nine tenths of what a request allocates is allocated inside that call by the scheduling library, which builds a table of every rating for every card it is asked about.
 
-**What does not change over the twenty-five places was left where it stands.** The order the card faces are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and a reading handed in from outside is a second path to an answer there is one path to.
+**What does not change over the twenty-five places was left unchanged.** The order the card faces are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and an externally supplied input is a redundant second path to the answer.
 
 ## What a projection is asked to answer for
 
@@ -956,11 +956,11 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 The two runs of a row landed within 8 % of each other on the clock, and the last two rows within 1 %. Those two are what this table rests on; the 5 000 row's two runs after the change are a fifth apart, and it is the row that says least.
 
-**A projection is asked which days it must answer for.** A run is given the days whose returning share it works out, and the projection holds a share under those days and under no other. A day nobody named is answered as a day the run does not answer for, and there is no number to read off it.
+**A projection is asked which days it must answer for.** A run is given the days whose returning share it works out, and the projection holds a share under those days and under no other. An unrequested day is treated as a day the run does not compute, and yields no value.
 
 **A curve names one day a run**, which is the day the place is read on: the last day of the horizon under a goal of minutes or of retention, and the day the place stands for under a goal of a date. The twenty-five second runs that ask when the material is learned name no day at all. Fifty-one runs of ninety days were filling four and a half thousand days of it; they now fill twenty-five.
 
-**What the days that are asked for come to is unmoved.** The projections written down over four materials and eight settings — every scalar and every series, day by day — are byte-identical, their runs asking for every day of themselves.
+**What the requested days total is unchanged.** The projections written down over four materials and eight settings — every scalar and every series, day by day — are byte-identical, their runs asking for every day of themselves.
 
 **Where a card face counts as learned by a chance of recall, the walk stands.** That count is a fact about the instant and is read off the same numbers as the share, so such a day goes over the whole material whether the share was asked for or not. The saving is a preset counting by an interval, where the count is carried from day to day and the walk is made only on a day that was named.
 
@@ -983,13 +983,13 @@ Both columns are the median of two runs of three on an idle machine. **The alloc
 
 **A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now stands beside the port, on the library's own weights: at fifty thousand card faces a request allocated 92.2 million times and now allocates 3.3 million.
 
-**87 % was the estimate and 87 % is the measurement.** A profile before the change put 87 % of every byte a request allocates inside the library. The four rows came to 86.5, 88.3, 87.8 and 87.0 per cent.
+**87 % was the estimate and 87 % is the measurement.** A profile before the change put 87 % of every byte a request allocates inside the library. The four rows totaled 86.5, 88.3, 87.8 and 87.0 per cent.
 
 **Good is worked out from hard.** The interval a good answer names is held a day past the one a hard answer names, so the two endings a projection weighs cost the hard ending's stability as well. Easy is worked out only where an easy answer is asked for.
 
 **A day count does not go below none.** The days a card face stood away are the whole days gone by. A card face asked about at an instant no later than the answer it already holds stood none of them, and the forgetting curve is read at none.
 
-That is the one place the arithmetic here parts from the library, which counts those days into a whole number carrying no sign and reads such a card face as one nobody could recall. What that count comes to is the machine's, so the same card face read one way on one architecture and the other way on another.
+That is the one place the arithmetic here parts from the library, which counts those days into a whole number carrying no sign and reads such a card face as one nobody could recall. What that count totals depends on machine architecture, so the same card face may evaluate differently across architectures.
 
 **No schedule a vault can hold moves with it.** A due day is always worked out forward from the instant of an answer, so a card face is never asked about before its own last answer: over a curve of five thousand card faces the days away were read 602 102 times and not once fell below none, and the same vault with twenty answers timestamped a week ahead by a wrong clock reads the same 0. The state needs a due day standing behind the answer that produced it, which is what the written-down projections build by hand — 96 of their 10 523 readings, 36 of them where the phase makes it count.
 
@@ -1012,7 +1012,7 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 **Three and a half times, on eight cores.** The estimate before the measurement was 2.8, from the 77 % of a request that the runs are and eight cores to carry it. The measurement is 3.4 at twenty thousand card faces and 3.5 at fifty thousand, so the threads past the eight cores are worth something to arithmetic that waits for no memory.
 
-**Twenty-five places over sixteen threads is two waves, and the second is smaller.** A curve is twenty-five places and each is two runs of the scheduler, handed out a thread at a time. That unevenness, and the reading of the vault that no place shares, are most of what stands between three and a half and eight.
+**Twenty-five places over sixteen threads is two waves, and the second is smaller.** A curve is twenty-five places and each is two runs of the scheduler, allocated one thread at a time. That unevenness, and the reading of the vault that no place shares, are most of what limits scaling between 3.5× and 8×.
 
 **A place holds the preset's cards while it runs.** Peak memory at fifty thousand card faces is 164 MB with one place running at a time and 307 MB with all of them, sampled from the kernel's own high-water mark over the whole benchmark. A run holds about four and a half megabytes of cards at that size, and a request now holds as many of those as the machine has threads.
 
@@ -1032,7 +1032,7 @@ The first column is the median of two runs of five. The second is six runs of fi
 
 **Nothing here has moved.** Every row's best run lands on the figure recorded, and the whole of the spread above it is the machine: the list on screen varies threefold between runs because it is a millisecond of work, and the two counts vary by a quarter. Read the three together — they hold.
 
-The first row is the old front door, run here as it stood: the four vaults counted one after another before anything was handed over.
+The first row is the legacy initial load, run here as it stood: the four vaults counted one after another before anything was returned.
 
 **What a person waits for is a reading of the registry.** The list is names and paths, which the registry answers before any database is opened, so it is on screen in about a millisecond whatever the vaults hold. Everything after that arrives at its own row.
 

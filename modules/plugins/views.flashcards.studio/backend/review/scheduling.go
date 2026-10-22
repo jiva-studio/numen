@@ -35,18 +35,18 @@ func (s *DueByDay) Add(due time.Time) {
 }
 
 // CountOn is how many card faces fall on the day of review holding this instant.
-func (s *DueByDay) CountOn(at time.Time) int {
+func (s *DueByDay) CountOn(target time.Time) int {
 	if s == nil {
 		return 0
 	}
-	return s.on[s.number(at)]
+	return s.on[s.number(target)]
 }
 
 // number is the day of review holding an instant, as a whole number counted
 // from the day the clock is counted from. The same answers name the same days
 // in every process.
-func (s *DueByDay) number(at time.Time) int {
-	return int(s.day.GetDate(at).Unix() / int64(24*time.Hour/time.Second))
+func (s *DueByDay) number(pos time.Time) int {
+	return int(s.day.GetDate(pos).Unix() / int64(24*time.Hour/time.Second))
 }
 
 // weekday is the day of the week a numbered day of review falls on. The day the
@@ -73,8 +73,8 @@ func weekday(number int) time.Weekday {
 //
 // It is the one place a day is chosen. A session and a projection of it both
 // come here.
-func (p Preset) AssignDueDay(s *DueByDay, at, due time.Time) time.Time {
-	out := p.computeDueDay(s, at, due)
+func (p Preset) AssignDueDay(s *DueByDay, now, due time.Time) time.Time {
+	out := p.computeDueDay(s, now, due)
 	s.Add(out)
 	return out
 }
@@ -85,16 +85,16 @@ func (p Preset) AssignDueDay(s *DueByDay, at, due time.Time) time.Time {
 // The four windows put to a person are four askings of one card, and one of
 // them is answered. AssignDueDay chooses the day each of them names, so the
 // button says the day the card comes back on.
-func (p Preset) GetDueDay(s *DueByDay, at, due time.Time) time.Time {
-	return p.computeDueDay(s, at, due)
+func (p Preset) GetDueDay(s *DueByDay, now, due time.Time) time.Time {
+	return p.computeDueDay(s, now, due)
 }
 
 // computeDueDay is where the day is chosen.
-func (p Preset) computeDueDay(s *DueByDay, at, due time.Time) time.Time {
+func (p Preset) computeDueDay(s *DueByDay, pos, due time.Time) time.Time {
 	if s == nil {
 		return due
 	}
-	first, last, opens := window(due.Sub(at))
+	first, last, opens := window(due.Sub(pos))
 	if !p.ShouldBalanceLoad() || !opens {
 		return due
 	}
@@ -102,13 +102,13 @@ func (p Preset) computeDueDay(s *DueByDay, at, due time.Time) time.Time {
 	// A day is added on the clock the boundary between days is read from. The
 	// moment a card lands on is the same whichever zone the instant arrives in.
 	in := s.day.zone()
-	counted := at.In(in)
+	counted := pos.In(in)
 
-	stands := s.number(due)
+	dueDay := s.number(due)
 	from, to := s.number(counted.AddDate(0, 0, first)), s.number(counted.AddDate(0, 0, last))
-	on, heaviest := stands, -1.0
-	if stands >= from && stands <= to {
-		heaviest = p.getWeight(s, stands)
+	on, heaviest := dueDay, -1.0
+	if dueDay >= from && dueDay <= to {
+		heaviest = p.getWeight(s, dueDay)
 	}
 	for day := from; day <= to; day++ {
 		if weight := p.getWeight(s, day); weight > heaviest {
@@ -117,7 +117,7 @@ func (p Preset) computeDueDay(s *DueByDay, at, due time.Time) time.Time {
 	}
 
 	// The instant is handed back in the zone it arrived in.
-	return due.In(in).AddDate(0, 0, on-stands).In(due.Location())
+	return due.In(in).AddDate(0, 0, on-dueDay).In(due.Location())
 }
 
 // getWeight is how much a numbered day of review wants another card: the share

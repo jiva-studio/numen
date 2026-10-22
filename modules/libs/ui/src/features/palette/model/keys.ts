@@ -23,9 +23,8 @@ export interface PaletteKeysOptions {
   /** What is lit brought into sight. Only a key does this. */
   readonly reveal: () => void
   readonly places: PalettePlacesState
-  /** Whether the action panel stands over the palette. */
   readonly isPanelOpen: Ref<boolean>
-  readonly getOfferedActions: () => readonly PaletteAction[]
+  readonly getActions: () => readonly PaletteAction[]
   readonly typed: Ref<string>
   /** Whether the palette is drawn at all, and which step it is on. */
   readonly isOpen: () => boolean
@@ -56,7 +55,7 @@ interface KeyContext {
   readonly places: PalettePlacesState
   readonly isPanelOpen: { value: boolean }
   readonly options: PaletteKeysOptions
-  readonly stepBy: (by: number, from?: number) => void
+  readonly stepBy: (delta: number, from?: number) => void
   readonly openActions: (event: KeyboardEvent) => void
 }
 
@@ -106,14 +105,14 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
   })
 
   /** The keyboard moved through the places, and what it lands on brought into sight. */
-  const stepBy = (by: number, from = places.here.value): void => {
-    places.goTo(stepTo(places.places.value, { from, by }, canLandOn))
+  const stepBy = (delta: number, from = places.here.value): void => {
+    places.goTo(stepTo(places.places.value, { from, by: delta }, canLandOn))
     options.reveal()
   }
 
   /** The action panel over the palette, when there is anything to put in it. */
   const openActions = (event: KeyboardEvent): void => {
-    if (!options.getOfferedActions().length) return
+    if (!options.getActions().length) return
     event.preventDefault()
     isPanelOpen.value = true
   }
@@ -129,7 +128,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
    */
   const enter = async (): Promise<void> => {
     isPanelOpen.value = false
-    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.held.value))
+    places.goTo(findKeptPlace(places.places.value, options.getOpensOn() || places.selectedId.value))
     await nextTick()
     field.value?.focus()
     field.value?.select()
@@ -138,7 +137,7 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
 
   const leave = (): void => {
     isPanelOpen.value = false
-    places.held.value = ''
+    places.selectedId.value = ''
     const back = options.getOpenedFrom()
     if (back?.isConnected) back.focus()
   }
@@ -148,7 +147,6 @@ export function usePaletteKeys(options: PaletteKeysOptions): PaletteKeysState {
     else leave()
   })
 
-  /** A step of its own: its own question, and what stands in the field selected. */
   watch(options.getStep, () => {
     if (options.isOpen()) void enter()
   })

@@ -12,7 +12,7 @@ import type { Grade, Intervals } from '@/entities/card'
 defineProps<{
   how: Grade
   /** The number the answer is pressed with. */
-  at: number
+  shortcutNumber: number
   /** Where each of the four would leave the card. */
   ahead: Intervals | null
 }>()
@@ -25,7 +25,7 @@ defineEmits<{
 
 <template>
   <Button variant="outline" @click="$emit('answer')">
-    <KeyCap :keys="{ icons: [], letter: String(at) }" />
+    <KeyCap :keys="{ icons: [], letter: String(shortcutNumber) }" />
     {{ GRADE_LABELS[how] }}
     <!-- What the answer does to the card, said where the answer is chosen: a
          person picking between the four is picking between these. It is read off

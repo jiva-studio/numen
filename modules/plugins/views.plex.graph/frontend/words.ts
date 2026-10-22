@@ -35,7 +35,7 @@ export const WORDS = {
   /** Notice shown when all links between nodes are deleted. */
   linkWillBeRemoved: 'The link between these notes will be removed.',
   /** Button to close inspector and save changes. */
-  done: 'Done',
+  apply: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
   /** Menu command labels */

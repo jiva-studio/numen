@@ -32,8 +32,8 @@ func (b *blank) Close() error {
 // said.
 type watched struct {
 	*Worker
-	tasks *run.Tasks
-	held  *blank
+	tasks      *run.Tasks
+	activeItem *blank
 
 	mu   sync.Mutex
 	open int
@@ -50,10 +50,10 @@ func newWatched(t *testing.T, why error) *watched {
 func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 	t.Helper()
 	tasks := run.NewTasks()
-	w := &watched{tasks: tasks, held: &blank{}}
+	w := &watched{tasks: tasks, activeItem: &blank{}}
 	w.Worker = NewWorker(ctx, Config{
 		Readers:   vaults{},
-		Derived:   shelves{newShelf()},
+		Derived:   fakeStores{newShelf()},
 		Sources:   newStore(),
 		Documents: documents{},
 		Tasks:     tasks,
@@ -67,7 +67,7 @@ func newWatchedUnder(t *testing.T, ctx context.Context, why error) *watched {
 				if why != nil {
 					return nil, nil, why
 				}
-				return w.held, w.held.Close, nil
+				return w.activeItem, w.activeItem.Close, nil
 			},
 		},
 	})
@@ -170,12 +170,12 @@ func TestARecognitionThatFailedStaysInTheList(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	at, target := w.getTask(t)
+	pos, target := w.getTask(t)
 	if !target {
 		t.Fatal("the failure was not said")
 	}
-	if at.ID != "recognition-a.pdf" || at.Error == "" || at.About != "a.pdf" {
-		t.Errorf("got %+v", at)
+	if pos.ID != "recognition-a.pdf" || pos.Error == "" || pos.About != "a.pdf" {
+		t.Errorf("got %+v", pos)
 	}
 }
 
@@ -190,13 +190,13 @@ func TestTheModelsAreGotBelowTheirOwnName(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	at := w.opening(t)
-	if at.Title != "Fetching models" {
-		t.Errorf("getting the models is shown as %q", at.Title)
+	pos := w.opening(t)
+	if pos.Title != "Fetching models" {
+		t.Errorf("getting the models is shown as %q", pos.Title)
 	}
 	// Nothing has come down, so there is no share of it to draw.
-	if at.Total != 0 {
-		t.Errorf("a step that has counted nothing is drawn against %d", at.Total)
+	if pos.Total != 0 {
+		t.Errorf("a step that has counted nothing is drawn against %d", pos.Total)
 	}
 }
 
@@ -210,9 +210,9 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	at, target := w.getTask(t)
-	if !target || at.ID != "recognition-a.pdf" || at.Error == "" {
-		t.Fatalf("first failure not recorded properly: %+v", at)
+	pos, target := w.getTask(t)
+	if !target || pos.ID != "recognition-a.pdf" || pos.Error == "" {
+		t.Fatalf("first failure not recorded properly: %+v", pos)
 	}
 
 	// Now runtime and reader succeed.
@@ -221,7 +221,7 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	w.Worker.with.Readers = vaults{somewhere.ID: lib}
 	w.Worker.with.Documents = documents{}
 	w.Worker.with.Runtime.Open = func(context.Context, func(string, int64, int64)) (port.Recogniser, func() error, error) {
-		return w.held, w.held.Close, nil
+		return w.activeItem, w.activeItem.Close, nil
 	}
 
 	if w.Start(somewhere, "a.pdf") != port.Began {
@@ -229,8 +229,8 @@ func TestRetryingAFailedRecognitionClearsTheTaskOnSuccess(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	if at, targetVal := w.getTask(t); targetVal {
-		t.Errorf("task remained in list after successful retry: %+v", at)
+	if offset, targetVal := w.getTask(t); targetVal {
+		t.Errorf("task remained in list after successful retry: %+v", offset)
 	}
 }
 
@@ -273,8 +273,8 @@ func TestARecognitionStoppedIsNotAFailure(t *testing.T) {
 	}
 	w.waitUntilDone(t)
 
-	if at, target := w.getTask(t); target {
-		t.Errorf("a recognition that was stopped is in the list: %+v", at)
+	if pos, target := w.getTask(t); target {
+		t.Errorf("a recognition that was stopped is in the list: %+v", pos)
 	}
 }
 
@@ -321,7 +321,7 @@ func TestNothingIsReadThroughARuntimeMadeAfterTheWindow(t *testing.T) {
 	if w.countOpens() != 1 {
 		t.Errorf("what was missing was fetched %d times", w.countOpens())
 	}
-	if !w.held.isClosed {
+	if !w.activeItem.isClosed {
 		t.Error("what was opened was not given back")
 	}
 }
@@ -370,12 +370,12 @@ func TestAProofreaderThatFailedToOpenIsSaid(t *testing.T) {
 
 	w.proofread(t.Context(), somewhere, "a.pdf")
 
-	at, target := w.getTask(t)
+	pos, target := w.getTask(t)
 	if !target {
 		t.Fatal("a proofreader that failed to open was not said")
 	}
-	if at.Error == "" || at.About != "a.pdf" {
-		t.Errorf("got %+v", at)
+	if pos.Error == "" || pos.About != "a.pdf" {
+		t.Errorf("got %+v", pos)
 	}
 }
 
@@ -392,8 +392,8 @@ func TestAProofreadingWithoutConsentReturnsWhereToAllowIt(t *testing.T) {
 
 	w.proofread(t.Context(), somewhere, "a.pdf")
 
-	at, isFound := w.getTask(t)
-	if !isFound || at.Error != "AI access not allowed — allow it in Settings → AI" {
-		t.Errorf("got %+v", at)
+	pos, isFound := w.getTask(t)
+	if !isFound || pos.Error != "AI access not allowed — allow it in Settings → AI" {
+		t.Errorf("got %+v", pos)
 	}
 }

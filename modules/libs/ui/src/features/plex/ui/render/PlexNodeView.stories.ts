@@ -49,7 +49,7 @@ const GLYPH = `
   </svg>
 `
 
-const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
+const createNode = (a: Knobs, overrides: Partial<PlacedNode> = {}): PlacedNode => ({
   id: 'one',
   title: a.title,
   relation: a.relation,
@@ -59,7 +59,7 @@ const createNode = (a: Knobs, over: Partial<PlacedNode> = {}): PlacedNode => ({
   height: a.height,
   order: 0,
   opacity: a.opacity,
-  ...over,
+  ...overrides,
 })
 
 /**
@@ -199,7 +199,7 @@ export const EveryRelation: Story = {
       if (!node) throw new Error(`no node ${name}`)
       const icon = node.querySelector('.plex__icon')
       const title = node.querySelector('.plex__title')
-      if (!icon || !title) throw new Error(`nothing drawn before ${name}`)
+      if (!icon || !title) throw new Error('node not found')
       return [getComputedStyle(icon).color, getComputedStyle(title).color]
     }
 
@@ -215,7 +215,6 @@ export const EveryRelation: Story = {
 /**
  * The handle: absent until the node has a hand or the keyboard on it.
  *
- * The thing about it that is easy to get wrong is that it sits inside a node
  * which navigates when pressed, so pressing the handle must start a gesture
  * and must not also choose the node underneath.
  *

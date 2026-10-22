@@ -96,11 +96,10 @@ type Addition struct {
 	Link
 }
 
-// AddOutcome is what happened to one link in a batch. Refused is empty when it
 // was written.
 type AddOutcome struct {
 	From        string `json:"from"`
 	To          string `json:"to"`
 	Fingerprint string `json:"fingerprint,omitempty" jsonschema:"what the note became, to hand to its next write; absent for a link that was not written"`
-	Error string `json:"error,omitempty" jsonschema:"why this one was not written, empty when it was"`
+	Error       string `json:"error,omitempty" jsonschema:"why this one was not written, empty when it was"`
 }

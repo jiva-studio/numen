@@ -19,7 +19,6 @@ export const EXPANSION_DELAY = 500
  */
 export const EXPANSION_DURATION = 280
 
-/** A box drawn wider than it was placed. */
 export interface WideBox {
   readonly width: number
   /** How far its middle stands from where the node is placed. */
@@ -37,7 +36,6 @@ export interface WideBoxBounds {
  * where the middle leaves it no room to grow.
  *
  * Nothing where the box already holds the title, and nothing where the window
- * is no wider than the box.
  */
 export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds): WideBox | null {
   const { viewport, margin } = bounds
@@ -54,11 +52,11 @@ export function getWideBox(node: PlacedNode, room: number, bounds: WideBoxBounds
  * one it opens to as far as it has got. A node with nothing more of its title
  * to show is drawn as it was placed, however long the attention rests on it.
  */
-export function interpolateBox(node: PlacedNode, wide: WideBox | null, open: number): WideBox {
-  if (!wide) return { width: node.width, offset: 0 }
+export function interpolateBox(node: PlacedNode, expanded: WideBox | null, open: number): WideBox {
+  if (!expanded) return { width: node.width, offset: 0 }
   return {
-    width: lerp(node.width, wide.width, open),
-    offset: lerp(0, wide.offset, open),
+    width: lerp(node.width, expanded.width, open),
+    offset: lerp(0, expanded.offset, open),
   }
 }
 
@@ -139,7 +137,6 @@ export interface OpenBoxOptions {
 }
 
 /**
- * One node's box as it is drawn, and where its handle sits in it. What the
  * handle is made of is all sizes, and so all tokens.
  *
  * `on` names what the attention is on, and nothing when it is on none.
@@ -150,8 +147,8 @@ export function useOpenBox(options: OpenBoxOptions) {
   const box = computed(() => interpolateBox(node(), wide(), open.value))
 
   const handle = computed(() => {
-    const at = getHandle({ ...node(), width: box.value.width })
-    return { x: at.x + box.value.offset, y: at.y }
+    const pos = getHandle({ ...node(), width: box.value.width })
+    return { x: pos.x + box.value.offset, y: pos.y }
   })
 
   return { open, box, handle }

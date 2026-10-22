@@ -31,7 +31,6 @@ type ProjectCurve struct {
 }
 
 // NewProjectCurve is what a preset's one control is projected through: what
-// stands in the vault, where the answers have left each card face, which preset
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
@@ -44,7 +43,6 @@ func NewProjectCurve(
 }
 
 // checkGoal is what is wrong with the value the goal moves, and is nil where
-// the value stands inside its bounds. A goal of a date names a day and no
 // number.
 func checkGoal(p review.Preset) error {
 	var value float64
@@ -67,8 +65,7 @@ func checkGoal(p review.Preset) error {
 
 // Execute is the curve of the goal this preset steers.
 //
-// The preset is the settings the curve is drawn under, and need not be what its
-// note holds. Path is the note the preset stands in and names the decks it
+// The preset is the settings the curve is drawn presets, and need not be what its
 // schedules, and a preset standing in no note schedules the decks that name
 // none.
 func (u ProjectCurve) Execute(
@@ -101,7 +98,7 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return review.Curve{}, err
 	}
-	decks, at, under, unbegunCount := mine.decks, mine.at, mine.under, mine.unseen
+	decks, pos, presets, unbegunCount := mine.decks, mine.schedules, mine.presetMap, mine.unreviewed
 
 	// How many decks this preset schedules, counted over every deck that could
 	// name it: a deck of no cards points at its preset like any other.
@@ -110,7 +107,7 @@ func (u ProjectCurve) Execute(
 		return review.Curve{}, err
 	}
 
-	cost, costed := review.GetCostUnder(u.schedules.by, target.Answers, under)[path]
+	cost, costed := review.GetCostUnder(u.schedules.scheduler, target.Answers, presets)[path]
 	if !costed {
 		cost = review.DefaultCost
 	}
@@ -120,17 +117,17 @@ func (u ProjectCurve) Execute(
 	// already partway through.
 	run := review.Simulation{
 		By: u.getScheduler(p.Retention), Day: u.day, Cost: cost,
-		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, under,
+		Spent: review.GetSpentUnder(u.day, u.day.GetName(now), target.Answers, presets,
 			map[string]review.BudgetUnit{path: p.Counts})[path],
 	}
-	out, err := run.Curve(ctx, now, p, at, unbegunCount, u.getScheduler, u.computePlaces)
+	out, err := run.Curve(ctx, now, p, pos, unbegunCount, u.getScheduler, u.computePlaces)
 	if err != nil {
 		return review.Curve{}, err
 	}
 	out.Stops = p.GetOverallStopReason(u.day, now)
 	out.Decks = pointing
-	out.Cards = len(under)
-	out.Overdue = review.CountOverdue(u.day, at, now)
+	out.Cards = len(presets)
+	out.Overdue = review.CountOverdue(u.day, pos, now)
 	out.Unbegun = unbegunCount
 	return out, nil
 }
@@ -139,12 +136,12 @@ func (u ProjectCurve) Execute(
 type scheduledFaces struct {
 	// decks says for each deck asked whether the preset schedules it.
 	decks map[string]bool
-	// at is the schedule of each face that has been answered.
-	at map[review.CardFaceID]review.Schedule
-	// under is the faces the preset is costed from.
-	under map[review.CardFaceID]string
+	// schedules is the schedule of each face that has been answered.
+	schedules map[review.CardFaceID]review.Schedule
+	// presetMap is the faces the preset is costed from.
+	presetMap map[review.CardFaceID]string
 	// unseen is how many of the faces have not been answered.
-	unseen int
+	unreviewed int
 }
 
 // readScheduledFaces picks out of faces the ones the preset at path schedules.
@@ -153,9 +150,9 @@ func (u ProjectCurve) readScheduledFaces(
 	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
 ) (scheduledFaces, error) {
 	out := scheduledFaces{
-		decks: make(map[string]bool),
-		at:    make(map[review.CardFaceID]review.Schedule),
-		under: make(map[review.CardFaceID]string),
+		decks:     make(map[string]bool),
+		schedules: make(map[review.CardFaceID]review.Schedule),
+		presetMap: make(map[review.CardFaceID]string),
 	}
 	for _, one := range faces {
 		mine, request := out.decks[one.Deck]
@@ -170,13 +167,13 @@ func (u ProjectCurve) readScheduledFaces(
 		if !mine {
 			continue
 		}
-		out.under[one.ID] = path
+		out.presetMap[one.ID] = path
 		s, reply := schedules[one.ID]
 		if !reply {
-			out.unseen++
+			out.unreviewed++
 			continue
 		}
-		out.at[one.ID] = s
+		out.schedules[one.ID] = s
 	}
 	return out, nil
 }
@@ -198,12 +195,12 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 		return decks, err
 	}
 
-	at, err := u.presets.links.GetBacklinks(ctx, v.ID, path)
+	pos, err := u.presets.links.GetBacklinks(ctx, v.ID, path)
 	if err != nil {
 		return nil, fmt.Errorf("what points at %s: %w", path, err)
 	}
-	naming := make(map[string]bool, len(at))
-	for _, link := range at {
+	naming := make(map[string]bool, len(pos))
+	for _, link := range pos {
 		if link.Type == LinkType {
 			naming[link.From] = true
 		}
@@ -222,11 +219,11 @@ func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, pat
 // is what has already been worked out from the cards standing.
 func (u ProjectCurve) countPointingDecks(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
-	decks []string, asked map[string]bool,
+	decks []string, requested map[string]bool,
 ) (int, error) {
 	out := 0
 	for _, deck := range decks {
-		points, target := asked[deck]
+		points, target := requested[deck]
 		if !target {
 			p, err := reads.GetForDeck(ctx, v, deck)
 			if err != nil {
@@ -250,17 +247,17 @@ func (u ProjectCurve) countPointingDecks(
 // A place that fails is left to the places beside it, and the error handed back
 // is the earliest place's. A request nobody is waiting for is ended by the run
 // of each place reading the context it was given.
-func (u ProjectCurve) computePlaces(count int, each func(at int) error) error {
+func (u ProjectCurve) computePlaces(count int, each func(index int) error) error {
 	failed := make([]error, count)
 	room := make(chan struct{}, max(1, u.Cores))
 	var running sync.WaitGroup
-	for at := range count {
+	for item := range count {
 		room <- struct{}{}
 		running.Add(1)
 		go func() {
 			defer running.Done()
 			defer func() { <-room }()
-			failed[at] = each(at)
+			failed[item] = each(item)
 		}()
 	}
 	running.Wait()

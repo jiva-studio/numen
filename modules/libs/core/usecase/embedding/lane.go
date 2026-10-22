@@ -20,34 +20,34 @@ func getIndexLaneLimit(passes int) int {
 // holds at most getIndexLaneLimit calls in flight, and the question side is not
 // held by it.
 type indexLane struct {
-	held    *embedding.Embedder
-	waiting port.Embedder
+	activeItem *embedding.Embedder
+	waiting    port.Embedder
 
 	once  sync.Once
 	slots chan struct{}
 }
 
-func newIndexLane(held *embedding.Embedder) *indexLane {
-	return &indexLane{held: held, waiting: held.GetWaitingEmbedder()}
+func newIndexLane(target *embedding.Embedder) *indexLane {
+	return &indexLane{activeItem: target, waiting: target.GetWaitingEmbedder()}
 }
 
-func (l *indexLane) GetModel() port.EmbeddingModel { return l.held.GetModel() }
+func (l *indexLane) GetModel() port.EmbeddingModel { return l.activeItem.GetModel() }
 
 // Close lets go of the model both sides ask.
-func (l *indexLane) Close() error { return l.held.Close() }
+func (l *indexLane) Close() error { return l.activeItem.Close() }
 
 // Concurrency is how many calls the index side runs at once.
 func (l *indexLane) Concurrency() int {
-	return getIndexLaneLimit(l.held.Concurrency())
+	return getIndexLaneLimit(l.activeItem.Concurrency())
 }
 
 // Wait blocks until the model turns up, and says what stopped it.
-func (l *indexLane) Wait(ctx context.Context) error { return l.held.Wait(ctx) }
+func (l *indexLane) Wait(ctx context.Context) error { return l.activeItem.Wait(ctx) }
 
 // Embed waits for the model and for a free slot in the lane, and returns the
 // slot when the call returns or ctx ends.
 func (l *indexLane) Embed(ctx context.Context, texts []string) ([][]float32, error) {
-	if err := l.held.Wait(ctx); err != nil {
+	if err := l.activeItem.Wait(ctx); err != nil {
 		return nil, err
 	}
 	l.once.Do(func() { l.slots = make(chan struct{}, l.Concurrency()) })

@@ -42,7 +42,6 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** A talk with nothing said in it: the composer waits for the first question. */
 export const Empty: Story = {
   render: () => ({ components: { Tab: createTab([]) }, template: '<Tab />' }),
   play: async ({ canvasElement }) => {
@@ -57,10 +56,10 @@ export const Answered: Story = {
   render: () => ({
     components: {
       Tab: createTab([
-        { id: 'a', voice: 'asked', text: 'What is entropy?' },
+        { id: 'a', voice: 'prompt', text: 'What is entropy?' },
         {
           id: 'b',
-          voice: 'answered',
+          voice: 'response',
           text: 'A measure of how many ways a system can be arranged.',
         },
       ]),

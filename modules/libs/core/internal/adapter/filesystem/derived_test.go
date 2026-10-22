@@ -36,8 +36,8 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 	derived, root := store(t)
 	_ = derived
 
-	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)
-	if _, err := os.Stat(at); !errors.Is(err, fs.ErrNotExist) {
+	pos := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir)
+	if _, err := os.Stat(pos); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("opening the store made %s: %v", filesystem.OCRDir, err)
 	}
 }
@@ -118,13 +118,13 @@ func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 
 	// A synchroniser bringing another machine's vault down over this path
 	// leaves the folder where it was and the identity in it another.
-	at := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
+	pos := filepath.Join(root, filesystem.DefaultServiceDir, "config.json")
 	other := `{"v":1,"id":"01J0000000000000000000000A"}` + "\n"
-	if err := os.WriteFile(at, []byte(other), 0o644); err != nil {
+	if err := os.WriteFile(pos, []byte(other), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	when := time.Now().Add(time.Second)
-	if err := os.Chtimes(at, when, when); err != nil {
+	if err := os.Chtimes(pos, when, when); err != nil {
 		t.Fatal(err)
 	}
 
@@ -159,8 +159,8 @@ func TestWhatIsSavedIsRead(t *testing.T) {
 		t.Errorf("read %q after appending", got)
 	}
 
-	at := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir, "abc.txt")
-	if _, err := os.Stat(at); err != nil {
+	pos := filepath.Join(root, filesystem.DefaultServiceDir, filesystem.OCRDir, "abc.txt")
+	if _, err := os.Stat(pos); err != nil {
 		t.Errorf("the file is not where the store says it is: %v", err)
 	}
 }
@@ -469,7 +469,6 @@ func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	}
 }
 
-// A name that leaves the store is refused here as it is everywhere else.
 func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 	derived, _ := store(t)
 	if _, err := derived.List(t.Context(), "ocr/../.."); err == nil {
@@ -533,7 +532,6 @@ func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	}
 }
 
-// The areas of a store are each one folder, and one that is not is refused with
 // the rest of it.
 func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 	root := t.TempDir()

@@ -33,7 +33,6 @@ func IndexDeclarations(declarations []*numenv1.ToolDeclaration) map[string]Decla
 	return words
 }
 
-// Describe is a call of the tool the vault serves under name, as the person is told about it. A
 // tool the vault declared is shown by its title, with its effect and what the call is about read by
 // the arguments it declared. The arguments may not have finished arriving.
 func Describe(words map[string]Declaration, name, call, args string) *numenv1.ToolCall {

@@ -94,7 +94,8 @@ async function handleRenameField(
     return options.onChanged([target.path])
   }
   const renameSummary = answer.value
-  if (renameSummary.cards > 0) options.say(words.renamed(renameSummary.cards, renameSummary.decks.length))
+  if (renameSummary.cards > 0)
+    options.say(words.renamed(renameSummary.cards, renameSummary.decks.length))
   if (renameSummary.notWritten.length > 0) {
     options.say(words.notWritten(renameSummary.notWritten.map((one) => one.path)), 'error')
   }

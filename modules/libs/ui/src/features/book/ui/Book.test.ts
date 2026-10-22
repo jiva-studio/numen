@@ -204,8 +204,8 @@ const LAID = createChapter(
 )
 
 /** What the browser is told about the reading area, which jsdom never says. */
-const setSize = (area: HTMLElement, wide: number, high: number): void => {
-  Object.defineProperty(area, 'clientWidth', { value: wide, configurable: true })
+const setSize = (area: HTMLElement, width: number, high: number): void => {
+  Object.defineProperty(area, 'clientWidth', { value: width, configurable: true })
   Object.defineProperty(area, 'clientHeight', { value: high, configurable: true })
   Object.defineProperty(area, 'getBoundingClientRect', {
     value: () => ({ left: 0 }),
@@ -213,17 +213,16 @@ const setSize = (area: HTMLElement, wide: number, high: number): void => {
   })
 }
 
-/** What the browser is told about the laid-out text: how far it runs, where each run stands. */
-const setLayout = (paper: HTMLElement, along: number, lefts: readonly number[]): void => {
-  Object.defineProperty(paper, 'scrollWidth', { value: along, configurable: true })
+const setLayout = (paper: HTMLElement, scrollWidth: number, lefts: readonly number[]): void => {
+  Object.defineProperty(paper, 'scrollWidth', { value: scrollWidth, configurable: true })
   Object.defineProperty(paper, 'getBoundingClientRect', {
     value: () => ({ left: 0 }),
     configurable: true,
   })
   const runs = paper.querySelectorAll<HTMLElement>('[data-offset]')
-  runs.forEach((run, at) => {
+  runs.forEach((run, index) => {
     Object.defineProperty(run, 'getClientRects', {
-      value: () => [{ left: lefts[at] }],
+      value: () => [{ left: lefts[index] }],
       configurable: true,
     })
   })
@@ -248,8 +247,8 @@ const mountBook = async () => {
   ;(wrapper.vm as unknown as { measure(): void }).measure()
   // The columns are measured after the browser has laid them out, which is the
   // frame after the one that asked, and a frame jsdom draws on its own clock.
-  await new Promise((wake) => setTimeout(wake, 50))
-  await new Promise((wake) => setTimeout(wake, 50))
+  await new Promise((resolve) => setTimeout(resolve, 50))
+  await new Promise((resolve) => setTimeout(resolve, 50))
   await wrapper.vm.$nextTick()
   return wrapper
 }
@@ -293,9 +292,9 @@ describe('a document the browser has laid out', () => {
   it('is turned by a press near either edge, and by the edges alone', async () => {
     const target = await mountBook()
     const area = target.find('.book__area').element as HTMLElement
-    const press = (at: number) => {
-      area.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: at }))
-      area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: at }))
+    const press = (pos: number) => {
+      area.dispatchEvent(new MouseEvent('pointerdown', { button: 0, clientX: pos }))
+      area.dispatchEvent(new MouseEvent('pointerup', { button: 0, clientX: pos }))
     }
 
     press(1090)
@@ -340,7 +339,7 @@ describe('a document replaced while a later spread of the one before is in front
     // carried to the old spread is not shown in the meantime.
     expect(target.find('.book__paper').classes()).toContain('book__paper--unset')
 
-    await new Promise((wake) => setTimeout(wake, 50))
+    await new Promise((resolve) => setTimeout(resolve, 50))
     await target.vm.$nextTick()
 
     expect(target.find('.book__paper').classes()).not.toContain('book__paper--unset')

@@ -25,5 +25,5 @@ type VaultIdentity interface {
 	// EnsureIdentity returns the identity the folder carries, creating one if it has
 	// none. An existing identity is never replaced: it is what every row in the
 	// index points at.
-	EnsureIdentity(root string, at time.Time) (domain.VaultID, error)
+	EnsureIdentity(root string, timestamp time.Time) (domain.VaultID, error)
 }

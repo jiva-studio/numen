@@ -98,14 +98,11 @@ const FILE_WRITES: Record<string, Call> = {
 }
 
 describe('a note a plugin writes', () => {
-  it.each(Object.entries(NOTE_WRITES))(
-    'fails through %s without vault:write',
-    async (_, call) => {
-      const { context } = createContext(['vault:read'])
+  it.each(Object.entries(NOTE_WRITES))('fails through %s without vault:write', async (_, call) => {
+    const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-    },
-  )
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+  })
 
   it.each(Object.entries(NOTE_WRITES))(
     'is written through %s with vault:write',
@@ -131,14 +128,11 @@ const BUFFER_WRITES: Record<string, Call> = {
 }
 
 describe('the open files a plugin passes the window', () => {
-  it.each(Object.entries(BUFFER_WRITES))(
-    'fail through %s without vault:write',
-    async (_, call) => {
-      const { context } = createContext(['vault:read'])
+  it.each(Object.entries(BUFFER_WRITES))('fail through %s without vault:write', async (_, call) => {
+    const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-    },
-  )
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+  })
 
   it.each(Object.entries(BUFFER_WRITES))(
     'are taken through %s with vault:write',
@@ -179,14 +173,11 @@ describe('the registrations of a plugin in the open files', () => {
 })
 
 describe('a file a plugin writes', () => {
-  it.each(Object.entries(FILE_WRITES))(
-    'fails through %s without vault:write',
-    async (_, call) => {
-      const { context } = createContext(['vault:read'])
+  it.each(Object.entries(FILE_WRITES))('fails through %s without vault:write', async (_, call) => {
+    const { context } = createContext(['vault:read'])
 
-      await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
-    },
-  )
+    await expect(Promise.resolve().then(() => call(context))).rejects.toThrowError(/vault:write/)
+  })
 
   it.each(Object.entries(FILE_WRITES))(
     'is written through %s with vault:write',
@@ -210,17 +201,14 @@ describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A' }
   const row = { paths: ['a.md'], name: 'a', source: 'note' as const }
 
-  it.each(['remove', 'child', 'title', 'transcribe'])(
-    'fails for %s without vault:write',
-    (id) => {
-      const { context, workspace } = createContext(['vault:read'])
+  it.each(['remove', 'child', 'title', 'transcribe'])('fails for %s without vault:write', (id) => {
+    const { context, workspace } = createContext(['vault:read'])
 
-      expect(() => context.workspace!.runCommand(id, target)).toThrowError(/vault:write/)
-      expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(/vault:write/)
-      expect(workspace.runCommand).not.toHaveBeenCalled()
-      expect(workspace.runPathCommand).not.toHaveBeenCalled()
-    },
-  )
+    expect(() => context.workspace!.runCommand(id, target)).toThrowError(/vault:write/)
+    expect(() => context.workspace!.runPathCommand(id, row)).toThrowError(/vault:write/)
+    expect(workspace.runCommand).not.toHaveBeenCalled()
+    expect(workspace.runPathCommand).not.toHaveBeenCalled()
+  })
 
   it.each(['remove', 'child', 'title', 'transcribe'])('runs %s with vault:write', (id) => {
     const { context, workspace } = createContext(['vault:write'])

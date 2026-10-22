@@ -1,6 +1,5 @@
 /**
  * The keys of the secrets plugins declare, stored and removed through the
- * vault. A key goes one way: the window is told only which secrets have one.
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -24,10 +23,6 @@ export interface SecretOptions {
   readonly refresh: () => Promise<void>
 }
 
-/**
- * Storing and removing a key. A refusal is notified, and the settings are read
- * again either way, so what is drawn as set is what the vault records.
- */
 export function createSecretStore(core: SecretDeps, { words, notify, refresh }: SecretOptions) {
   const run = async (operation: () => Promise<void>): Promise<void> => {
     notify('')

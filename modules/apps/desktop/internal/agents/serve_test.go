@@ -116,11 +116,11 @@ func TestAnEphemeralPortIsNamedByWhatItBoundTo(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = served.Close() })
 
-	at := authority(t, served.URL)
-	if _, port, _ := net.SplitHostPort(at); port == "0" || port == "" {
+	pos := authority(t, served.URL)
+	if _, port, _ := net.SplitHostPort(pos); port == "0" || port == "" {
 		t.Fatalf("the endpoint is announced at %q", served.URL)
 	}
-	if !isListening(at) {
+	if !isListening(pos) {
 		t.Errorf("nothing answers at %q", served.URL)
 	}
 }
@@ -201,7 +201,6 @@ func TestTheAgentsGoBeforeTheEndpoint(t *testing.T) {
 
 // The panel's child is told which tools it may call, one by one, and where to reach them. The
 // endpoint in front of it serves the whole surface for an agent a person configured themselves,
-// and a name absent from the allowance is refused under the mode this runs in.
 func TestThePanelsChildIsAllowedTheToolsOfItsSurfaceByName(t *testing.T) {
 	cfg := makeInstallation(t)
 	provider := &fakeProvider{}

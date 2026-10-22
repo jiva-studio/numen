@@ -79,8 +79,8 @@ const mostAnswers = 1000
 // face nothing and counts for none of the days the pace divides by. A week
 // carrying such a day needs as many days of review as its slowest day of the
 // week does, so the pace holds for a card face begun on any of them.
-func GetDaysToLearn(by Scheduler, d Day, p Preset, now time.Time) int {
-	s := Simulation{By: by, Day: d}
+func GetDaysToLearn(scheduler Scheduler, d Day, p Preset, now time.Time) int {
+	s := Simulation{By: scheduler, Day: d}
 	from := d.GetStart(now)
 	out := 0
 	for range 7 {
@@ -145,9 +145,9 @@ func (s Simulation) getScheduleAfterDay(c Schedule, open time.Time, p Preset) Sc
 //
 // Nothing paces it: a card face this does not get there is one no pace gets
 // there, because no pace can give it more days than there are.
-func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool {
+func (s Simulation) canReachGoal(p Preset, c Schedule, open, delta time.Time) bool {
 	for range mostAnswers {
-		if !c.IsNew() && !c.Due.Before(by) {
+		if !c.IsNew() && !c.Due.Before(delta) {
 			break
 		}
 		if !c.IsNew() && !c.Due.Before(s.Day.GetEnd(open)) {
@@ -162,24 +162,24 @@ func (s Simulation) canReachGoal(p Preset, c Schedule, open, by time.Time) bool 
 		}
 		open = ends
 	}
-	return p.IsLearned(c, by)
+	return p.IsLearned(c, delta)
 }
 
 // short is how many of these card faces cannot be learned by the day the preset
 // aims at, whatever the pace, and how many of a material nobody has begun.
-func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time) int {
+func (s Simulation) short(p Preset, cards []Schedule, unreviewed int, open time.Time) int {
 	if p.Goal != GoalDate || p.By.IsZero() {
 		return 0
 	}
-	by := s.Day.GetEndOfDate(p.By)
+	delta := s.Day.GetEndOfDate(p.By)
 	out := 0
 	for _, c := range cards {
-		if !s.canReachGoal(p, c, open, by) {
+		if !s.canReachGoal(p, c, open, delta) {
 			out++
 		}
 	}
-	if unseen > 0 && !s.canReachGoal(p, Schedule{}, open, by) {
-		out += unseen
+	if unreviewed > 0 && !s.canReachGoal(p, Schedule{}, open, delta) {
+		out += unreviewed
 	}
 	return out
 }
@@ -190,87 +190,89 @@ func (s Simulation) short(p Preset, cards []Schedule, unseen int, open time.Time
 // back, which is the run's own assumption, so a projection follows one card
 // down the middle of what it may do. The phase is the one a card that came back
 // is left in.
-func (s Simulation) step(c Schedule, at time.Time, p Preset, on *DueByDay) Schedule {
+func (s Simulation) step(c Schedule, pos time.Time, p Preset, on *DueByDay) Schedule {
 	if !c.IsNew() {
 		c.Stability = math.Max(c.Stability, LeastStability)
 	}
 	if c.IsNew() {
-		good := s.By.Next(c, at, Good)
-		good.Due = p.AssignDueDay(on, at, good.Due)
+		good := s.By.Next(c, pos, Good)
+		good.Due = p.AssignDueDay(on, pos, good.Due)
 		return good
 	}
-	back := s.getRecallProbability(c, at)
-	good, again := s.By.Endings(c, at)
+	back := s.getRecallProbability(c, pos)
+	good, again := s.By.Endings(c, pos)
 
 	out := good
 	out.Stability = back*good.Stability + (1-back)*again.Stability
 	out.Difficulty = back*good.Difficulty + (1-back)*again.Difficulty
-	away := back*good.Due.Sub(at).Seconds() + (1-back)*again.Due.Sub(at).Seconds()
-	out.Due = p.AssignDueDay(on, at, at.Add(time.Duration(away*float64(time.Second))))
+	away := back*good.Due.Sub(pos).Seconds() + (1-back)*again.Due.Sub(pos).Seconds()
+	out.Due = p.AssignDueDay(on, pos, pos.Add(time.Duration(away*float64(time.Second))))
 	return out
 }
 
 // getRecallProbability is how likely a card face standing here is to come back at this
 // instant, under the assumption this run was given.
-func (s Simulation) getRecallProbability(c Schedule, at time.Time) float64 {
+func (s Simulation) getRecallProbability(c Schedule, pos time.Time) float64 {
 	if s.Recalls == nil {
-		return GetModelledRecall(c, at)
+		return GetModelledRecall(c, pos)
 	}
-	return s.Recalls(c, at)
+	return s.Recalls(c, pos)
 }
 
 // Run projects the card faces forward from now.
 //
 // The map is where the answers have left every card face the preset schedules,
-// and unseen is how many of its card faces nobody has answered. A day's answers
 // are all given at the hour the day opens, and the day asks a card face again
 // while its answer leaves it falling due before the day closes.
 //
 // A run over many days is long enough that a caller may give up on it, so the
 // day it is on is where it is left.
-// getRetainedDays returns a lookup set of days within the duration whose retention is evaluated.
-func getRetainedDays(retains []int, totalDays int) map[int]bool {
-	answers := make(map[int]bool, len(retains))
-	for _, day := range retains {
-		if day >= 0 && day < totalDays {
+func (s Simulation) Run(
+	ctx context.Context, now time.Time, p Preset, schedules map[CardFaceID]Schedule, unreviewed int,
+) (Projection, error) {
+	days := s.GetDurationDays()
+	// The days this run answers the returning share for.
+	answers := make(map[int]bool, len(s.Retains))
+	for _, day := range s.Retains {
+		if day >= 0 && day < days {
 			answers[day] = true
 		}
 	}
-	return answers
-}
 
-// getSortedCards returns the schedule cards sorted by due date.
-func getSortedCards(at map[CardFaceID]Schedule) []Schedule {
-	cards := make([]Schedule, 0, len(at))
-	for _, one := range at {
+	// The map hands its schedules over in whatever order it holds them, and a
+	// projection asked twice answers the same both times.
+	cards := make([]Schedule, 0, len(schedules))
+	for _, one := range schedules {
 		cards = append(cards, one)
 	}
 	slices.SortFunc(cards, compareByDue)
-	return cards
-}
 
-// createInitialProjection initializes the projection structure with defaults and overdue status.
-func createInitialProjection(p Preset, totalDays, totalCards, unseen int, overdue int) Projection {
+	// The day the whole material stands learned is asked of a preset counting by
+	// an interval and aiming at no date. The other two are answered by a level
+	// and by their own date.
 	rule, _, _ := p.getLearnedRule()
 	learns := NeverLearns
 	if rule != RuleInterval || p.Goal == GoalDate {
 		learns = LearnsUnasked
 	}
+
 	out := Projection{
-		Days:   totalDays,
-		Faces:  totalCards + unseen,
-		Seen:   totalCards,
-		Clears: NeverClears,
-		Learns: learns,
+		Days: days, Faces: len(schedules) + unreviewed, Seen: len(schedules),
+		Clears: NeverClears, Learns: learns,
 	}
-	if overdue == 0 {
+	// A day that begins with nothing overdue has nothing to clear.
+	if CountOverdue(s.Day, schedules, now) == 0 {
 		out.Clears = 0
 	}
-	return out
-}
+	remaining := unreviewed
+	var elapsed time.Duration
 
-// createInitialFalls distributes cards into buckets according to their due date.
-func createInitialFalls(cards []Schedule, on *DueByDay, base, days int) [][]int {
+	open := s.Day.GetStart(now)
+	// Where the answers so far have left every card face is what the days
+	// ahead are loaded with, and which day of the run first asks for it. A card
+	// face falling due past the run is asked for on none of them.
+	on := NewDueByDay(s.Day)
+	base := on.number(open)
 	falls := make([][]int, days)
 	for i, c := range cards {
 		on.Add(c.Due)
@@ -278,11 +280,204 @@ func createInitialFalls(cards []Schedule, on *DueByDay, base, days int) [][]int 
 			falls[day] = append(falls[day], i)
 		}
 	}
-	return falls
-}
+	reckoned := newLearnedCount(p, cards, open)
+	out.Learned = reckoned.count
+	// A run opening with the whole material learned has nothing left to learn.
+	if out.Learns == NeverLearns && out.Learned == out.Faces {
+		out.Learns = 0
+	}
+	// What no pace reaches, and how long a card face begun today takes to be
+	// learned. No goal but a date reads either, and neither is asked for under
+	// another.
+	out.Short = s.short(p, cards, unreviewed, open)
+	daysToLearn := 0
+	if p.Goal == GoalDate {
+		daysToLearn = GetDaysToLearn(s.By, s.Day, p, now)
+	}
+	// The card faces the day may answer, and how many of them it reached. Both
+	// are carried from one day to the next: what a day did not reach is the
+	// front of what the day after it owes.
+	var due, spare []int
+	take := 0
+	// How many times the day has asked each card face, and the faces it has
+	// still to ask again before it closes.
+	showings := make([]int, len(cards))
+	var again []int
+	for today := range days {
+		if err := ctx.Err(); err != nil {
+			return Projection{}, err
+		}
+		ends := s.Day.GetEnd(open)
+		var used time.Duration
 
-// finalizeProjection computes average review and minute rates and counts overdue cards.
-func finalizeProjection(out *Projection, cards []Schedule, elapsed time.Duration, open time.Time) {
+		// What the day admits is the one answer, and it is the answer the
+		// The first day of a run is the day holding now, which a person may be
+		// halfway through. Every day after it opens unspent.
+		removed := Spent{}
+		if today == 0 {
+			removed = s.Spent
+		}
+		admits := p.GetAllowance(s.Day, open, removed, remaining, daysToLearn)
+
+		// What has fallen due by the close of the day, the oldest debt first, so
+		// a day that cannot pay all of it leaves the cards least overdue
+		// standing: what the day before did not reach, and what falls due in
+		// this one.
+		slices.SortFunc(falls[today], func(a, b int) int { return compareByDue(cards[a], cards[b]) })
+		spare = mergeByDue(spare[:0], due[take:], falls[today], cards)
+		due, spare = spare, due
+		take = 0
+		clear(showings)
+		again = again[:0]
+		next := 0
+
+		// What closed the day is every budget that turned a card away. A day
+		// that asked for every card there was is closed by nothing.
+		var closed BudgetNames
+		if admits.IsPaused() {
+			closed = closed.add(ClosedPaused)
+		}
+
+		// The day is spent between the debt and the material it has not begun,
+		// in the share the preset names. A side the day has no more room for is
+		// done with, and the other goes on with what is left of the day.
+		// Answered is every showing the day gave; charged is the slots of the
+		// count they spent, which is the first showing of a face or every one of
+		// them, as the preset counts.
+		reply, observed, begun, charged, faced := 0, 0, 0, 0, 0
+		// Paid, settled and all are the three sides the day is done with: the
+		// debt it opened on, the cards it has answered into the day itself, and
+		// the material it has not begun.
+		paid, resolved, all := admits.IsPaused(), admits.IsPaused(), admits.IsPaused()
+		for {
+			owed := !paid && take < len(due)
+			hasNew := !all && remaining > 0
+			back := !resolved && next < len(again)
+			if !owed && !hasNew && !back {
+				break
+			}
+
+			// A day hands over everything it owes and everything it begins
+			// before it comes back to a card it has already shown, which is the
+			// order the sessions of that day put them in.
+			repeat := !owed && !hasNew
+			if repeat || admits.IsNextCardDebt(observed, begun, owed, hasNew) {
+				pos := 0
+				if repeat {
+					pos = again[next]
+				} else {
+					pos = due[take]
+				}
+				counted := p.Counts.IsCharged(showings[pos] > 0)
+				if counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews {
+					closed = closed.add(admits.Limits.Reviews)
+					if repeat {
+						resolved = true
+					} else {
+						paid = true
+					}
+					continue
+				}
+				if admits.Limits.Minutes != ClosedNothing && used+s.Cost.Review > admits.Minutes {
+					closed = closed.add(admits.Limits.Minutes)
+					if repeat {
+						resolved = true
+					} else {
+						paid = true
+					}
+					continue
+				}
+				if repeat {
+					next++
+				} else {
+					take++
+				}
+				used += s.Cost.Review
+				observed++
+				reply++
+				if counted {
+					charged++
+				}
+				if showings[pos] == 0 {
+					faced++
+				}
+				showings[pos]++
+				cards[pos] = s.getScheduleAfterShowing(cards[pos], open, ends, p, on)
+				reckoned.countAnswer(pos, cards[pos], ends)
+				if s.Day.IsOwed(cards[pos], open) && showings[pos] < MostShowings {
+					again = append(again, pos)
+					continue
+				}
+				if day := max(today+1, on.number(cards[pos].Due)-base); day < days {
+					falls[day] = append(falls[day], pos)
+				}
+				continue
+			}
+
+			if admits.Limits.New != ClosedNothing && begun >= admits.New {
+				closed, all = closed.add(admits.Limits.New), true
+				continue
+			}
+			if admits.Limits.Minutes != ClosedNothing && used+s.Cost.New > admits.Minutes {
+				closed, all = closed.add(admits.Limits.Minutes), true
+				continue
+			}
+			used += s.Cost.New
+			begun++
+			reply++
+			faced++
+			remaining--
+			out.Seen++
+			one := s.getScheduleAfterShowing(Schedule{}, open, ends, p, on)
+			cards = append(cards, one)
+			showings = append(showings, 1)
+			reckoned.countBegun(one, ends)
+			offset := len(cards) - 1
+			if s.Day.IsOwed(one, open) && showings[offset] < MostShowings {
+				again = append(again, offset)
+				continue
+			}
+			if day := max(today+1, on.number(one.Due)-base); day < days {
+				falls[day] = append(falls[day], offset)
+			}
+		}
+
+		// A card face the day put down before it settled falls due in a day that
+		// is over, so the day after it picks it up.
+		if today+1 < days {
+			falls[today+1] = append(falls[today+1], again[next:]...)
+		}
+
+		out.Answered += reply
+		elapsed += used
+		out.Load = append(out.Load, reply)
+		out.Faced = append(out.Faced, faced)
+		out.Spent = append(out.Spent, used)
+		out.Admitted = append(out.Admitted, !admits.IsPaused())
+		out.Closed = append(out.Closed, closed)
+
+		// How much of the material stands learned at the close of the day, which
+		// is how far through it the day leaves a person, and how much of it
+		// comes back at that hour.
+		stands, back := reckoned.countLearned(cards, ends, out.Faces, answers[today])
+		out.Through = append(out.Through, getLearnedShare(stands, out.Faces))
+		if out.Learns == NeverLearns && stands == out.Faces {
+			out.Learns = len(out.Load)
+		}
+
+		// What the day left standing is what fell due in it and was not reached,
+		// and the day the backlog is gone is the first day none is.
+		backlog := len(due) - take + len(again) - next
+		out.Backlog = append(out.Backlog, backlog)
+		if out.Clears == NeverClears && backlog == 0 {
+			out.Clears = len(out.Load)
+		}
+		if answers[today] {
+			out.Retained.add(today, back)
+		}
+		open = ends
+	}
+
 	if admitted := out.CountAdmitted(); admitted > 0 {
 		request := 0
 		for _, one := range out.Faced {
@@ -296,317 +491,5 @@ func finalizeProjection(out *Projection, cards []Schedule, elapsed time.Duration
 			out.Owed++
 		}
 	}
-}
-
-// recordDayMetrics records the outcome and progression of one simulated day into the projection.
-func recordDayMetrics(
-	out *Projection,
-	cards []Schedule,
-	ends time.Time,
-	answersToday bool,
-	reckoned *learnedCount,
-	d *simulationDay,
-) {
-	out.Answered += d.reply
-	out.Load = append(out.Load, d.reply)
-	out.Faced = append(out.Faced, d.faced)
-	out.Spent = append(out.Spent, d.used)
-	out.Admitted = append(out.Admitted, !d.admits.IsPaused())
-	out.Closed = append(out.Closed, d.closed)
-
-	stands, back := reckoned.countLearned(cards, ends, out.Faces, answersToday)
-	out.Through = append(out.Through, getLearnedShare(stands, out.Faces))
-	if out.Learns == NeverLearns && stands == out.Faces {
-		out.Learns = len(out.Load)
-	}
-
-	backlog := len(d.due) - d.take + len(d.again) - d.next
-	out.Backlog = append(out.Backlog, backlog)
-	if out.Clears == NeverClears && backlog == 0 {
-		out.Clears = len(out.Load)
-	}
-	if answersToday {
-		out.Retained.add(d.today, back)
-	}
-}
-
-// canSimulateDebt reports whether the next card to review is an overdue card or repeated card.
-func canSimulateDebt(repeat bool, admits Allowance, observed, begun int, owed, hasNew bool) bool {
-	return repeat || admits.IsNextCardDebt(observed, begun, owed, hasNew)
-}
-
-// isReviewCountReached reports whether the allowance for reviews has been exhausted.
-func isReviewCountReached(admits Allowance, charged int, counted bool) bool {
-	return counted && admits.Limits.Reviews != ClosedNothing && charged >= admits.Reviews
-}
-
-// isReviewTimeReached reports whether the available review time has been exceeded.
-func isReviewTimeReached(admits Allowance, used, cost time.Duration) bool {
-	return admits.Limits.Minutes != ClosedNothing && used+cost > admits.Minutes
-}
-
-// isNewCountReached reports whether the allowance for new cards has been exhausted.
-func isNewCountReached(admits Allowance, begun int) bool {
-	return admits.Limits.New != ClosedNothing && begun >= admits.New
-}
-
-// isNewTimeReached reports whether the available time for new cards has been exceeded.
-func isNewTimeReached(admits Allowance, used, cost time.Duration) bool {
-	return admits.Limits.Minutes != ClosedNothing && used+cost > admits.Minutes
-}
-
-// getSpent returns the spent budget for the given day index.
-func (s Simulation) getSpent(today int) Spent {
-	if today == 0 {
-		return s.Spent
-	}
-	return Spent{}
-}
-
-// getInitialClosed returns the initial closed status of the day.
-func getInitialClosed(admits Allowance) BudgetNames {
-	if admits.IsPaused() {
-		return BudgetNames{ClosedPaused}
-	}
-	return BudgetNames{}
-}
-
-// simulationDay tracks the state of a single day during simulation.
-type simulationDay struct {
-	today  int
-	days   int
-	base   int
-	open   time.Time
-	ends   time.Time
-	p      Preset
-	admits Allowance
-
-	due      []int
-	take     int
-	again    []int
-	next     int
-	showings []int
-
-	used     time.Duration
-	reply    int
-	observed int
-	begun    int
-	charged  int
-	faced    int
-
-	paid     bool
-	resolved bool
-	all      bool
-	closed   BudgetNames
-}
-
-func (d *simulationDay) closeReview(budget BudgetName, repeat bool) {
-	d.closed = d.closed.add(budget)
-	if repeat {
-		d.resolved = true
-		return
-	}
-	d.paid = true
-}
-
-// queueNextShowing places a reviewed card into either the same-day repetition queue or a future day bucket.
-func (s Simulation) queueNextShowing(
-	c Schedule, at int, count int, open time.Time,
-	today, days, base int, on *DueByDay, falls [][]int, again *[]int,
-) {
-	if s.Day.IsOwed(c, open) && count < MostShowings {
-		*again = append(*again, at)
-		return
-	}
-	if day := max(today+1, on.number(c.Due)-base); day < days {
-		falls[day] = append(falls[day], at)
-	}
-}
-
-// stepDebt executes one review or repetition step for an existing card.
-func (s Simulation) stepDebt(
-	d *simulationDay, cards []Schedule, reckoned *learnedCount, on *DueByDay, falls [][]int, repeat bool,
-) {
-	at := 0
-	if repeat {
-		at = d.again[d.next]
-	} else {
-		at = d.due[d.take]
-	}
-	counted := d.p.Counts.IsCharged(d.showings[at] > 0)
-	if isReviewCountReached(d.admits, d.charged, counted) {
-		d.closeReview(d.admits.Limits.Reviews, repeat)
-		return
-	}
-	if isReviewTimeReached(d.admits, d.used, s.Cost.Review) {
-		d.closeReview(d.admits.Limits.Minutes, repeat)
-		return
-	}
-	if repeat {
-		d.next++
-	} else {
-		d.take++
-	}
-	d.used += s.Cost.Review
-	d.observed++
-	d.reply++
-	if counted {
-		d.charged++
-	}
-	if d.showings[at] == 0 {
-		d.faced++
-	}
-	d.showings[at]++
-	cards[at] = s.getScheduleAfterShowing(cards[at], d.open, d.ends, d.p, on)
-	reckoned.countAnswer(at, cards[at], d.ends)
-	s.queueNextShowing(cards[at], at, d.showings[at], d.open, d.today, d.days, d.base, on, falls, &d.again)
-}
-
-// stepNew introduces and schedules one unseen card face.
-func (s Simulation) stepNew(
-	d *simulationDay, cards *[]Schedule, reckoned *learnedCount, on *DueByDay, falls [][]int,
-	remaining *int, out *Projection,
-) {
-	if isNewCountReached(d.admits, d.begun) {
-		d.closed = d.closed.add(d.admits.Limits.New)
-		d.all = true
-		return
-	}
-	if isNewTimeReached(d.admits, d.used, s.Cost.New) {
-		d.closed = d.closed.add(d.admits.Limits.Minutes)
-		d.all = true
-		return
-	}
-	d.used += s.Cost.New
-	d.begun++
-	d.reply++
-	d.faced++
-	*remaining--
-	out.Seen++
-	one := s.getScheduleAfterShowing(Schedule{}, d.open, d.ends, d.p, on)
-	*cards = append(*cards, one)
-	d.showings = append(d.showings, 1)
-	reckoned.countBegun(one, d.ends)
-	at := len(*cards) - 1
-	s.queueNextShowing(one, at, d.showings[at], d.open, d.today, d.days, d.base, on, falls, &d.again)
-}
-
-// simulateDaySession processes all reviews and new card introductions for a single day.
-func (s Simulation) simulateDaySession(
-	d *simulationDay, cards *[]Schedule, reckoned *learnedCount, on *DueByDay, falls [][]int,
-	remaining *int, out *Projection,
-) {
-	for {
-		owed := !d.paid && d.take < len(d.due)
-		hasNew := !d.all && *remaining > 0
-		back := !d.resolved && d.next < len(d.again)
-		if !owed && !hasNew && !back {
-			break
-		}
-		repeat := !owed && !hasNew
-		if canSimulateDebt(repeat, d.admits, d.observed, d.begun, owed, hasNew) {
-			s.stepDebt(d, *cards, reckoned, on, falls, repeat)
-			continue
-		}
-		s.stepNew(d, cards, reckoned, on, falls, remaining, out)
-	}
-}
-
-// Run projects the card faces forward from now.
-//
-// The map is where the answers have left every card face the preset schedules,
-// and unseen is how many of its card faces nobody has answered. A day's answers
-// are all given at the hour the day opens, and the day asks a card face again
-// while its answer leaves it falling due before the day closes.
-func (s Simulation) initLearned(
-	p Preset, cards []Schedule, open, now time.Time, unseen int, out *Projection,
-) (*learnedCount, int) {
-	reckoned := newLearnedCount(p, cards, open)
-	out.Learned = reckoned.count
-	if out.Learns == NeverLearns && out.Learned == out.Faces {
-		out.Learns = 0
-	}
-	out.Short = s.short(p, cards, unseen, open)
-	daysToLearn := 0
-	if p.Goal == GoalDate {
-		daysToLearn = GetDaysToLearn(s.By, s.Day, p, now)
-	}
-	return reckoned, daysToLearn
-}
-
-func (s Simulation) Run(
-	ctx context.Context, now time.Time, p Preset, at map[CardFaceID]Schedule, unseen int,
-) (Projection, error) {
-	days := s.GetDurationDays()
-	answers := getRetainedDays(s.Retains, days)
-	cards := getSortedCards(at)
-	out := createInitialProjection(p, days, len(cards), unseen, CountOverdue(s.Day, at, now))
-
-	open := s.Day.GetStart(now)
-	on := NewDueByDay(s.Day)
-	base := on.number(open)
-	falls := createInitialFalls(cards, on, base, days)
-
-	reckoned, daysToLearn := s.initLearned(p, cards, open, now, unseen, &out)
-
-	remaining := unseen
-	var elapsed time.Duration
-	var due, spare, again []int
-	showings := make([]int, len(cards))
-	take := 0
-
-	for today := range days {
-		if err := ctx.Err(); err != nil {
-			return Projection{}, err
-		}
-		ends := s.Day.GetEnd(open)
-		admits := p.GetAllowance(s.Day, open, s.getSpent(today), remaining, daysToLearn)
-
-		slices.SortFunc(falls[today], func(a, b int) int { return compareByDue(cards[a], cards[b]) })
-		spare = mergeByDue(spare[:0], due[take:], falls[today], cards)
-		due, spare = spare, due
-		take = 0
-		if len(showings) < len(cards) {
-			showings = make([]int, len(cards))
-		} else {
-			clear(showings)
-		}
-		again = again[:0]
-
-		day := simulationDay{
-			today:    today,
-			days:     days,
-			base:     base,
-			open:     open,
-			ends:     ends,
-			p:        p,
-			admits:   admits,
-			due:      due,
-			take:     take,
-			again:    again,
-			next:     0,
-			showings: showings,
-			paid:     admits.IsPaused(),
-			resolved: admits.IsPaused(),
-			all:      admits.IsPaused(),
-			closed:   getInitialClosed(admits),
-		}
-
-		s.simulateDaySession(&day, &cards, reckoned, on, falls, &remaining, &out)
-
-		if today+1 < days {
-			falls[today+1] = append(falls[today+1], day.again[day.next:]...)
-		}
-
-		elapsed += day.used
-		due = day.due
-		take = day.take
-		showings = day.showings
-
-		recordDayMetrics(&out, cards, ends, answers[today], reckoned, &day)
-		open = ends
-	}
-
-	finalizeProjection(&out, cards, elapsed, open)
 	return out, nil
 }

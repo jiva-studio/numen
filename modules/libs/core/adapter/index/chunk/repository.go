@@ -364,7 +364,6 @@ func getRangeUnder(folder string) (first, past string) {
 //
 // The rows in the three virtual tables go first, by the chunk's own number.
 // Nothing cascades into a virtual table, and a chunk's number is handed to the
-// next chunk that wants one, so a row left behind answers for that one.
 func Clear(ctx context.Context, tx *sqlwrite.Transaction, source int64) error {
 	for _, name := range []string{"clear_fts", "clear_vec", "clear_sections"} {
 		if err := exec(ctx, tx, name, source); err != nil {
@@ -423,11 +422,11 @@ func Replace(ctx context.Context, tx *sqlwrite.Transaction, source, vault int64,
 // A chunk inside another arrives with the row enclosing it, and a large chunk
 // with nothing, which is also what the row's `parent_id` becomes.
 func upsertChunk(
-	ctx context.Context, tx *sqlwrite.Transaction, held *rows,
+	ctx context.Context, tx *sqlwrite.Transaction, target *rows,
 	source, vault int64, c Chunk, parent any, isLeaf bool,
 ) (int64, error) {
 	key := textID{hash: computeHash(c.Text), isSmall: parent != nil}
-	if row, hasRow := held.takeUnusedRow(key); hasRow {
+	if row, hasRow := target.takeUnusedRow(key); hasRow {
 		if _, err := tx.ExecContext(ctx, stmt.Get("move_chunk"),
 			c.Start, c.Length, parent, newNullable(c.Location), row); err != nil {
 			return 0, fmt.Errorf("move a chunk to where its text now is: %w", err)
@@ -468,7 +467,6 @@ func writeSectionNames(ctx context.Context, tx *sqlwrite.Transaction, row int64,
 }
 
 // textID is what a chunk has to hold to be held on a row: the same text, cut at
-// the same size. A vector belongs to a chunk that sits inside another, so the
 // two sizes are separate populations.
 type textID struct {
 	hash    string
@@ -477,8 +475,8 @@ type textID struct {
 
 // rows is what a source's rows hold, in the shape a fresh cut asks about them.
 type rows struct {
-	candidates map[textID][]int64
-	left       map[int64]bool
+	candidates    map[textID][]int64
+	remainingErrs map[int64]bool
 	// hash is the fingerprint each row holds, so a row that goes says which
 	// text went with it.
 	hash map[int64]string
@@ -491,7 +489,7 @@ func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*row
 	}
 	defer cursor.Close()
 
-	h := &rows{candidates: map[textID][]int64{}, left: map[int64]bool{}, hash: map[int64]string{}}
+	h := &rows{candidates: map[textID][]int64{}, remainingErrs: map[int64]bool{}, hash: map[int64]string{}}
 	for cursor.Next() {
 		var row int64
 		var key textID
@@ -499,7 +497,7 @@ func chunksOf(ctx context.Context, tx *sqlwrite.Transaction, source int64) (*row
 			return nil, fmt.Errorf("the chunks this source is already cut into: %w", err)
 		}
 		h.candidates[key] = append(h.candidates[key], row)
-		h.left[row] = true
+		h.remainingErrs[row] = true
 		h.hash[row] = key.hash
 	}
 	return h, cursor.Err()
@@ -514,15 +512,15 @@ func (h *rows) takeUnusedRow(key textID) (int64, bool) {
 	}
 	row := rows[0]
 	h.candidates[key] = rows[1:]
-	delete(h.left, row)
+	delete(h.remainingErrs, row)
 	return row, true
 }
 
 // getUnusedRows is the rows of the source no chunk holds, in order, so that
 // a cut writes the same thing twice running.
 func (h *rows) getUnusedRows() []int64 {
-	out := make([]int64, 0, len(h.left))
-	for row := range h.left {
+	out := make([]int64, 0, len(h.remainingErrs))
+	for row := range h.remainingErrs {
 		out = append(out, row)
 	}
 	slices.Sort(out)
@@ -598,8 +596,8 @@ func newNullable(s string) any {
 // getRemovedHashes is the text of the rows no chunk holds: what this source
 // used to hold and does not any more.
 func (h *rows) getRemovedHashes() []string {
-	out := make([]string, 0, len(h.left))
-	for row := range h.left {
+	out := make([]string, 0, len(h.remainingErrs))
+	for row := range h.remainingErrs {
 		if hash := h.hash[row]; hash != "" {
 			out = append(out, hash)
 		}

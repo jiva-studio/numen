@@ -23,13 +23,13 @@ import (
 // points at, and fails where it is told to.
 type watchedLinks struct {
 	port.LinkQueries
-	asked        []string
+	requested    []string
 	backlinksErr error
 	linksErr     error
 }
 
 func (w *watchedLinks) GetBacklinks(ctx context.Context, id domain.VaultID, to string) ([]domain.ResolvedLink, error) {
-	w.asked = append(w.asked, to)
+	w.requested = append(w.requested, to)
 	if w.backlinksErr != nil {
 		return nil, w.backlinksErr
 	}
@@ -168,10 +168,10 @@ func TestOnlyTheNotesBelowAFolderAreAskedWhatPointsAtThem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	slices.Sort(watched.asked)
+	slices.Sort(watched.requested)
 	want := []string{"physics/Carnot.md", "physics/Entropy.md", "physics/heat/Heat.md"}
-	if !slices.Equal(watched.asked, want) {
-		t.Errorf("what points at %v was asked, want %v", watched.asked, want)
+	if !slices.Equal(watched.requested, want) {
+		t.Errorf("what points at %v was asked, want %v", watched.requested, want)
 	}
 }
 

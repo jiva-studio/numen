@@ -6,9 +6,8 @@
  * asks them without a browser.
  */
 import type { Size } from '@/shared/lib/geometry'
-import { keyTurn } from '@/shared/lib/turn'
+import { getPageNavigationAction } from '@/shared/lib/pageNavigation'
 
-/** Where something sits on a page, in fractions of it. */
 export interface Rect {
   readonly minX: number
   readonly minY: number
@@ -26,8 +25,8 @@ export interface ReaderWords {
   /** What the row of pages is called, which the keyboard scrolls. */
   readonly pages: string
   /** What drawing the page larger is called, and smaller. */
-  readonly closer: string
-  readonly further: string
+  readonly zoomIn: string
+  readonly zoomOut: string
 }
 
 export const READER_WORDS: ReaderWords = {
@@ -35,8 +34,8 @@ export const READER_WORDS: ReaderWords = {
   next: 'Next page',
   page: 'Page',
   pages: 'Pages',
-  closer: 'Closer',
-  further: 'Further',
+  zoomIn: 'Closer',
+  zoomOut: 'Further',
 }
 
 /** One page's size, in the page's own units. */
@@ -45,7 +44,6 @@ export interface Page {
   readonly height: number
 }
 
-/** What stands between two pages, and around the row, in CSS pixels. */
 export const GAP = 16
 
 /**
@@ -81,7 +79,6 @@ export interface Row {
 
 /**
  * The row a document makes in a viewport, drawn `zoom` times the size at which
- * a whole page stands in that viewport.
  *
  * A page whose size is not known takes the first page's, and a document that
  * has said nothing takes an upright page. Laying the row out on nothing would
@@ -121,9 +118,9 @@ function getSize(pages: readonly Page[], page: number): Page {
  * A book is five hundred pages and a page is half a megabyte. A row that drew
  * all of them would ask for a book's worth of pixels to show one page.
  */
-export function getPagesWithin(row: Row, viewport: Size, along: number): number[] {
-  const from = along - viewport.width * BEYOND
-  const to = along + viewport.width * (1 + BEYOND)
+export function getPagesWithin(row: Row, viewport: Size, offset: number): number[] {
+  const from = offset - viewport.width * BEYOND
+  const to = offset + viewport.width * (1 + BEYOND)
   const out: number[] = []
   for (const [page, begins] of row.starts.entries()) {
     if (begins > to) break
@@ -136,11 +133,11 @@ export function getPagesWithin(row: Row, viewport: Size, along: number): number[
  * The page in front: the one under the middle of the viewport. A page scrolled
  * halfway off is not the page a person is reading.
  */
-export function inFront(row: Row, viewport: Size, along: number): number {
-  const at = along + viewport.width / 2
+export function inFront(row: Row, viewport: Size, offset: number): number {
+  const center = offset + viewport.width / 2
   let page = 0
   for (let i = 0; i < row.starts.length; i++) {
-    if (row.starts[i]! > at) break
+    if (row.starts[i]! > center) break
     page = i
   }
   return page
@@ -168,15 +165,15 @@ export function getScrollTarget(row: Row, viewport: Size, page: number): number 
  * The page a key turns to, counted from the first. Nothing for a key that turns
  * no page, a document with no pages, or a turn that leaves the document.
  */
-export function getTurnTarget(key: string, at: number, pageCount: number): number | undefined {
-  const way = keyTurn(key)
+export function getTurnTarget(key: string, pos: number, pageCount: number): number | undefined {
+  const way = getPageNavigationAction(key)
   if (!way || pageCount === 0) return undefined
 
   const last = pageCount - 1
   let to: number
   if (way === 'first') to = 0
   else if (way === 'last') to = last
-  else to = at + (way === 'next' ? 1 : -1)
+  else to = pos + (way === 'next' ? 1 : -1)
 
   return to < 0 || to > last ? undefined : to
 }
@@ -184,7 +181,6 @@ export function getTurnTarget(key: string, at: number, pageCount: number): numbe
 /**
  * How close a page may be drawn. One is a whole page in the viewport it is read
  * in, which is the getFurthest there is: a page smaller than the viewport it
- * stands in is room going to waste.
  */
 export const FURTHEST = 1
 export const CLOSEST = 6
@@ -194,7 +190,6 @@ export const NEARER = 1.25
 
 /**
  * The widths a page is asked for, in device pixels. Dragging the edge of a pane
- * crosses a few of them, and a page drawn wider than its box is drawn down into
  * it.
  */
 export const WIDTH_STEP = 128

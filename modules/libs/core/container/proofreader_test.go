@@ -165,7 +165,7 @@ func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T
 	if speech.IsNamed || speech.IsAutomatic {
 		t.Errorf("speech proofreading %+v", speech)
 	}
-	if by, why := speech.By(); by != nil || why != nil {
-		t.Errorf("an unnamed profile opened %v, %v", by, why)
+	if delta, why := speech.By(); delta != nil || why != nil {
+		t.Errorf("an unnamed profile opened %v, %v", delta, why)
 	}
 }

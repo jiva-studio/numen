@@ -63,7 +63,9 @@ func TestAWriteThatTheDatabaseRefusesReturnsWhichStatementAndKeepsTheDatabasesRe
 		{"extraction source", func(*store) {}, func(s *store) { s.failOn("sources", "INSERT") },
 			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, nil) }, "record the source b.epub: "},
 		{"extraction chunk", func(*store) {}, func(s *store) { s.failOn("chunks", "INSERT") },
-			func(s *store) error { return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, newChunks) }, "store a chunk of this source: "},
+			func(s *store) error {
+				return s.db.Chunks().SaveExtraction(s.t.Context(), repoVaultA, source, newChunks)
+			}, "store a chunk of this source: "},
 		{"new chunk", holdsBook, func(s *store) { s.failOn("chunks", "INSERT") }, replaceWith(newChunks...), "store a chunk of this source: "},
 		{"new words", holdsBook, func(s *store) { s.failOn("chunks_fts", "INSERT") }, replaceWith(newChunks...), "index a chunk for the words in it: "},
 		{"new section names", holdsBook, func(s *store) { s.failOn("sections_fts", "INSERT") }, replaceWith(newChunks...),

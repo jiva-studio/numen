@@ -110,8 +110,8 @@ function isVerticalRun(from: PlacedNode, to: PlacedNode, routing: Routing): bool
 }
 
 /** The control point standing out from a getEdgeAnchor along the run. */
-function getControl(at: Position, vertical: boolean, reach: number): Position {
-  return vertical ? { x: at.x, y: at.y + reach } : { x: at.x + reach, y: at.y }
+function getControl(point: Position, vertical: boolean, reach: number): Position {
+  return vertical ? { x: point.x, y: point.y + reach } : { x: point.x + reach, y: point.y }
 }
 
 /** The same curve read from its other end. */
@@ -150,7 +150,6 @@ function curveBetween(from: PlacedNode, to: PlacedNode, routing: Routing): EdgeC
 
 /**
  * The words a curve carries. A title is set about the middle of its line and an
- * arrowhead sits on one end, so a line carrying one has room for fewer words.
  */
 function cutLabel(edge: PlexEdge, curve: EdgeCurve, routing: Routing): string | undefined {
   if (edge.label === undefined || !routing.labelWidth) return edge.label
@@ -176,7 +175,8 @@ export function routeEdge(
   const to = byId.get(edge.to)
   if (!from || !to || from === to) return null
 
-  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions =
+    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const opacity = 'curvature' in routingOrOptions ? 1 : (routingOrOptions.opacity ?? 1)
 
   const curve = curveBetween(from, to, routingOptions)
@@ -202,7 +202,8 @@ export function routeEdges(
   byId: ReadonlyMap<string, PlacedNode>,
   routingOrOptions: Routing | RouteEdgesOptions,
 ): PlacedEdge[] {
-  const routingOptions = 'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
+  const routingOptions =
+    'curvature' in routingOrOptions ? routingOrOptions : routingOrOptions.routing
   const getOpacity =
     'curvature' in routingOrOptions ? () => 1 : (routingOrOptions.opacity ?? (() => 1))
 

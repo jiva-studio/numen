@@ -1,8 +1,3 @@
-/**
- * What a stencil tab keeps between two readings of its body: the stencil and
- * the marks stay the same objects while what they read is the same, and every
- * gesture writes the stencil it makes back as the body.
- */
 import { describe, expect, it, vi } from 'vitest'
 import type { DeckProblem, VaultStencil } from '../../cards'
 import { serializeStencil, createBufferStencil } from '../lib/stencil'
@@ -31,9 +26,9 @@ const lacking = (face: number, text: string): DeckProblem => ({
 
 /** One stencil tab's fields over a body held in a variable, and what it asked for. */
 const create = () => {
-  let at = 0
+  let count = 0
   const state = {
-    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(at += 1)}`)),
+    body: serializeStencil(createBufferStencil(baseStencil, () => `f${(count += 1)}`)),
     problems: [] as readonly DeckProblem[],
   }
   const onType = vi.fn((_id: string, body: string) => {

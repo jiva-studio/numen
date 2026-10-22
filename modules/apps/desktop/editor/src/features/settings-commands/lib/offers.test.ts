@@ -49,13 +49,13 @@ describe('the modes offered', () => {
     const items = getModeGroups('dark', false, words).flatMap((one) => one.items)
 
     expect(items.filter((one) => one.isCurrent).map((one) => one.title)).toStrictEqual([words.dark])
-    expect(items.some((one) => one.disabled)).toBe(false)
+    expect(items.some((one) => one.isDisabled)).toBe(false)
   })
 
   it('says why none can be chosen where the theme worn pins the two halves', () => {
     const items = getModeGroups('dark', true, words).flatMap((one) => one.items)
 
-    expect(items.every((one) => one.disabled)).toBe(true)
+    expect(items.every((one) => one.isDisabled)).toBe(true)
     expect(items.every((one) => one.detail === words.pinned)).toBe(true)
   })
 })

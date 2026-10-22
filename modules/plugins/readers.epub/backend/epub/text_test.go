@@ -129,7 +129,7 @@ func TestPagesTheMarkupMarks(t *testing.T) {
 			for _, page := range book.Pages {
 				got = append(got, page.Label)
 				if page.Offset < 0 || page.Offset > len(book.Text) {
-					t.Errorf("page %q stands at %d in %d bytes", page.Label, page.Offset, len(book.Text))
+					t.Errorf("page %q is at %d in %d bytes", page.Label, page.Offset, len(book.Text))
 				}
 			}
 			if !slices.Equal(got, c.want) {
@@ -144,7 +144,7 @@ func TestPagesTheMarkupMarks(t *testing.T) {
 			t.Fatalf("pages = %v, want one", book.Pages)
 		}
 		if want := strings.Index(book.Text, "xii"); book.Pages[0].Offset != want {
-			t.Errorf("the page stands at %d, want %d", book.Pages[0].Offset, want)
+			t.Errorf("got page offset %d, want %d", book.Pages[0].Offset, want)
 		}
 	})
 }

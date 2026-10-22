@@ -28,14 +28,14 @@ var errRefused = errors.New("rejected on purpose")
 var notebook = domain.Vault{ID: "vlt-01", Name: "notebook", Path: "/nowhere/notebook"}
 
 // runWithDeps runs the terminal on the values it is handed.
-func runWithDeps(given cli.Deps, args ...string) (string, error) {
+func runWithDeps(deps cli.Deps, args ...string) (string, error) {
 	var out bytes.Buffer
-	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return given })
+	err := cli.Run(context.Background(), &out, io.Discard, args, func(cli.Locations) cli.Deps { return deps })
 	return out.String(), err
 }
 
-func createVaultList(held domain.Vault) func() (cli.Vaults, error) {
-	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{held}}, nil }
+func createVaultList(target domain.Vault) func() (cli.Vaults, error) {
+	return func() (cli.Vaults, error) { return cli.Vaults{Registry: singleVaultList{target}}, nil }
 }
 
 // failingLinkQueries answers every question about links with an error.
@@ -271,7 +271,7 @@ func TestProblemsNeedsAVault(t *testing.T) {
 func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 	t.Parallel()
 	for name, c := range map[string]struct {
-		given cli.Deps
+		input cli.Deps
 		args  []string
 	}{
 		"the list of vaults cannot be opened": {
@@ -290,7 +290,7 @@ func TestProblemsReturnsWhatWentWrong(t *testing.T) {
 			[]string{"problems", "notebook", "nonsense"},
 		},
 	} {
-		out, err := runWithDeps(c.given, c.args...)
+		out, err := runWithDeps(c.input, c.args...)
 		if err == nil {
 			t.Errorf("%s: problems succeeded", name)
 		}
@@ -448,11 +448,11 @@ type scanFixture struct {
 	rebuilt    bool
 }
 
-func (s *scanFixture) deps(t *testing.T, held domain.Vault) cli.Deps {
+func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 	t.Helper()
 	indexPath := filepath.Join(t.TempDir(), "index.db")
 	return cli.Deps{
-		Vaults: createVaultList(held),
+		Vaults: createVaultList(target),
 		Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
 			s.rebuilt = rebuild
 			db, err := index.Open(ctx, indexPath)

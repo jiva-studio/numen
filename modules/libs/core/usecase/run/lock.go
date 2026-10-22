@@ -26,10 +26,10 @@ type Lock struct {
 // Acquire waits for the lock and returns what releases it. waiting is called
 // where the lock is not free, so that a person watching is told why nothing is
 // moving. A context that ends while waiting acquires nothing.
-func (g *Lock) Acquire(ctx context.Context, asked bool, waiting func()) (func(), error) {
-	at := priorityUnasked
-	if asked {
-		at = priorityAsked
+func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (func(), error) {
+	pos := priorityUnasked
+	if requested {
+		pos = priorityAsked
 	}
 
 	g.mu.Lock()
@@ -39,7 +39,7 @@ func (g *Lock) Acquire(ctx context.Context, asked bool, waiting func()) (func(),
 		return g.release, nil
 	}
 	stand := make(chan struct{})
-	g.waiting[at] = append(g.waiting[at], stand)
+	g.waiting[pos] = append(g.waiting[pos], stand)
 	g.mu.Unlock()
 
 	if waiting != nil {
@@ -49,20 +49,19 @@ func (g *Lock) Acquire(ctx context.Context, asked bool, waiting func()) (func(),
 	case <-stand:
 		return g.release, nil
 	case <-ctx.Done():
-		g.leave(at, stand)
+		g.leave(pos, stand)
 		return nil, ctx.Err()
 	}
 }
 
 // release hands the lock to whoever has waited longest at the first priority
-// anybody stands at, and lets it go where nobody does.
 func (g *Lock) release() {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	for at := range g.waiting {
-		if len(g.waiting[at]) > 0 {
-			next := g.waiting[at][0]
-			g.waiting[at] = g.waiting[at][1:]
+	for item := range g.waiting {
+		if len(g.waiting[item]) > 0 {
+			next := g.waiting[item][0]
+			g.waiting[item] = g.waiting[item][1:]
 			close(next)
 			return
 		}
@@ -70,13 +69,12 @@ func (g *Lock) release() {
 	g.isHeld = false
 }
 
-// leave takes a run out of the line it stands in. One already handed the lock
 // holds it, and hands it on.
-func (g *Lock) leave(at int, stand chan struct{}) {
+func (g *Lock) leave(pos int, stand chan struct{}) {
 	g.mu.Lock()
-	for i, one := range g.waiting[at] {
+	for i, one := range g.waiting[pos] {
 		if one == stand {
-			g.waiting[at] = slices.Delete(g.waiting[at], i, i+1)
+			g.waiting[pos] = slices.Delete(g.waiting[pos], i, i+1)
 			g.mu.Unlock()
 			return
 		}
@@ -86,7 +84,6 @@ func (g *Lock) leave(at int, stand chan struct{}) {
 	g.release()
 }
 
-// HasWaiting says whether any run stands in line for the lock.
 func (g *Lock) HasWaiting() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()

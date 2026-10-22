@@ -16,7 +16,7 @@ withDefaults(
     /** An answer is on its way. */
     isWorking?: boolean
     placeholder?: string
-    disabled?: boolean
+    isDisabled?: boolean
     /** What the disc at the end of the field is called while it sends. */
     sendLabel?: string
     /** What it is called while it stops the answer on its way. */
@@ -31,7 +31,7 @@ withDefaults(
   {
     isWorking: false,
     placeholder: 'Write a message',
-    disabled: false,
+    isDisabled: false,
     sendLabel: 'Send',
     stopLabel: 'Stop',
     options: () => [],
@@ -52,7 +52,6 @@ const emit = defineEmits<{
   (event: 'stop'): void
   /** A turn the person pressed, which is one that says it opens something. */
   (event: 'open', turn: Turn): void
-  /** A link inside a turn was pressed, with the turn it stands in. */
   (event: 'follow', turn: Turn, href: string, press: MouseEvent): void
   /** A model/agent was selected from the dropdown. */
   (event: 'select-model', option: AgentModelOption): void
@@ -117,7 +116,7 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       class="agent__composer"
       :is-working="isWorking"
       :placeholder="placeholder"
-      :disabled="disabled"
+      :is-disabled="isDisabled"
       :send-label="sendLabel"
       :stop-label="stopLabel"
       :options="options"

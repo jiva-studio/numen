@@ -24,7 +24,6 @@ import {
 import { BOUNDS } from '../fixtures'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 
-/** The review day the window is told, which is the day holding one in the morning. */
 const DAY = '2026-09-04'
 
 /** The day the preset aims at, eight days from the one holding now. */
@@ -52,14 +51,16 @@ const point: Point = {
  * holding now, and each place names the day it falls on.
  */
 const createHonestCurve = (): Curve => {
-  const grid = Array.from({ length: PLACES }, (_, at) => Math.round(1 + (29 * at) / (PLACES - 1)))
+  const grid = Array.from({ length: PLACES }, (_, index) =>
+    Math.round(1 + (29 * index) / (PLACES - 1)),
+  )
   return {
     goal: 'date',
     grid,
     days: grid.map((one) => dayAfter(DAY, one)),
     at: grid.map(() => point),
-    now: { at: grid.indexOf(8), value: 8, day: BY },
-    suggested: { at: -1, value: 0, day: '' },
+    now: { index: grid.indexOf(8), value: 8, day: BY },
+    suggested: { index: -1, value: 0, day: '' },
     decks: 1,
     cards: 40,
     overdue: 0,
@@ -122,11 +123,11 @@ describe('a goal of a date', () => {
   it('leaves the knob at its current position when the day it already aims at is typed', async () => {
     const reply = createHonestCurve()
     const { state } = await openPresetTab({ goal: 'date', byDate: BY }, reply)
-    expect(state.place.value).toBe(reply.now.at)
+    expect(state.place.value).toBe(reply.now.index)
 
     state.updateSetting('byDate', BY)
 
-    expect(state.place.value).toBe(reply.now.at)
+    expect(state.place.value).toBe(reply.now.index)
   })
 
   it('opens on a day counted from the review day where the file names none', async () => {

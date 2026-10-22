@@ -11,7 +11,6 @@ import (
 const LongestAnswer = time.Minute
 
 // GetCountedTime is how long this answer counts for, wherever one is counted:
-// what it carries, held to LongestAnswer.
 func (a Answer) GetCountedTime() time.Duration { return min(a.Took, LongestAnswer) }
 
 // ShortestAnswer is the shortest a kind of answer is costed at. A card graded
@@ -19,7 +18,6 @@ func (a Answer) GetCountedTime() time.Duration { return min(a.Took, LongestAnswe
 const ShortestAnswer = time.Second
 
 // LeastAnswers is how many answers of a kind a history holds before it says
-// what that kind costs. A kind the history holds fewer of stands at the
 // default.
 const LeastAnswers = 10
 
@@ -27,7 +25,6 @@ const LeastAnswers = 10
 // putting into memory, and one of a card that comes round in days.
 //
 // ReadNew and ReadReview say which halves the history answered. A half it does
-// not answer stands at the default, and a caller putting the number in front of
 // a person says which of the two it is showing.
 type AnswerCost struct {
 	New, Review                     time.Duration
@@ -43,11 +40,10 @@ var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 // A preset is costed from the answers to its own card faces: a preset of long
 // cards and one of short cards turn the same minutes into different counts. A
 // card face nothing groups is left out, and a kind of answer a preset holds too
-// few of stands at the default.
-func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) map[string]AnswerCost {
+func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardFaceID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
-	walkAnswers(by, answers, func(before Schedule, a Answer) {
-		path, groups := under[a.CardFace]
+	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
+		path, groups := presetMap[a.CardFace]
 		if !groups {
 			return
 		}
@@ -56,7 +52,7 @@ func GetCostUnder(by Scheduler, answers []Answer, under map[CardFaceID]string) m
 			one = &answerTimes{}
 			target[path] = one
 		}
-		one.addAnswer(by.IsSpaced(before), a.GetCountedTime())
+		one.addAnswer(scheduler.IsSpaced(before), a.GetCountedTime())
 	})
 
 	out := make(map[string]AnswerCost, len(target))

@@ -143,7 +143,6 @@ export const Dark: Story = {
   },
 }
 
-/** A vault nobody has answered: every day drawn, none of them filled. */
 export const Nothing: Story = {
   args: { did: new Map<string, Tally>(), now, words },
   render: (args) => ({
@@ -272,7 +271,6 @@ export const ADayOfNothing: Story = {
 }
 
 /**
- * A corner of the window the grid is put in, and which of its cells stands in
  * that corner. The days run down each column, so the top of the last column is
  * a whole week back from the end.
  */

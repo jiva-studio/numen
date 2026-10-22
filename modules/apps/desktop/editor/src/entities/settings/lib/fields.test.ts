@@ -20,7 +20,7 @@ const createModel = (name: string, writes: readonly SettingEdit[]): Model => ({
 const setup = (target: Record<string, unknown> = {}, models: readonly Model[] = []) => {
   const content: SettingEdit[][] = []
   const fields = createSettingFields(() => ({
-    getSetting: (at) => target[at.join('.')],
+    getSetting: (path) => target[path.join('.')],
     getModels: () => models,
     write: (edits) => content.push([...edits]),
   }))

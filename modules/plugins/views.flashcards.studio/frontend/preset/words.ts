@@ -52,7 +52,8 @@ export const WORDS = {
    * got through by that day and the day the pile goes says nothing. Where
    * nothing is overdue there is no such line either.
    */
-  buys: (goal: Goal, at: BuyInput): readonly string[] => getBuyFacts(goal, at).map(formatBuyFact),
+  buys: (goal: Goal, input: BuyInput): readonly string[] =>
+    getBuyFacts(goal, input).map(formatBuyFact),
   /** One height of the picture, against the line it is the height of. */
   formatGoalCost: (goal: Goal, value: number) =>
     goal === 'minutes' ? many(value, 'card') : `${count(value)} min`,
@@ -92,7 +93,6 @@ export const WORDS = {
     if (goal === 'retention') return 'most kept'
     return goal === 'date' ? 'first day it fits' : 'time enough'
   },
-  /** The value the control stands at, in the units of its goal. */
   value: (goal: Goal, value: number, day: string) => {
     if (goal === 'retention') return `${percent(value)} remembered`
     if (goal === 'date') return `${many(value, 'day')} to ${day}`
@@ -125,7 +125,6 @@ export const WORDS = {
   reads: 'Read it again',
   /** What a read failed for. */
   notRead: (error: ErrorCode) => sayAsSentence(getErrorWords(error)),
-  /** What a write was refused for, and where the settings stand after it. */
   notSaved: (error: ErrorCode) =>
     `${sayAsSentence(getErrorWords(error))} These settings are still here.`,
   /** The vault answered a read with neither settings nor a reason. */

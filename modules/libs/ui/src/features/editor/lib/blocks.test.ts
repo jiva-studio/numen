@@ -99,8 +99,8 @@ describe('the marks of whole lines', () => {
     [
       'a table deleted',
       (s: EditorState) => {
-        const at = s.doc.toString().indexOf(TABLE)
-        return apply(s, { from: at, to: at + TABLE.length })
+        const pos = s.doc.toString().indexOf(TABLE)
+        return apply(s, { from: pos, to: pos + TABLE.length })
       },
     ],
     [
@@ -111,8 +111,8 @@ describe('the marks of whole lines', () => {
     [
       'a rule removed',
       (s: EditorState) => {
-        const at = s.doc.toString().indexOf('---\n')
-        return apply(s, { from: at, to: at + 4 })
+        const pos = s.doc.toString().indexOf('---\n')
+        return apply(s, { from: pos, to: pos + 4 })
       },
     ],
     ['a fence opened above a table', (s: EditorState) => apply(s, { from: 0, insert: '```\n' })],
@@ -139,8 +139,8 @@ describe('the marks of whole lines', () => {
   it('are drawn again when a change merges two tables', () => {
     const two = `${TABLE}\n\n${OTHER}\n\ntail`
     const state = create(two, two.length)
-    const at = two.indexOf(OTHER)
-    const next = apply(state, { from: TABLE.length, to: at, insert: '\n' })
+    const pos = two.indexOf(OTHER)
+    const next = apply(state, { from: TABLE.length, to: pos, insert: '\n' })
     expectRebuiltEqual(next)
   })
 
@@ -194,15 +194,15 @@ describe('the marks of whole lines under edits', () => {
       )
       for (let step = 0; step < STEPS; step++) {
         const length = state.doc.length
-        const at = random(length + 1)
+        const pos = random(length + 1)
         const kind = random(3)
         if (kind === 0) {
-          state = apply(state, { from: at, insert: FRAGMENTS[random(FRAGMENTS.length)] as string })
+          state = apply(state, { from: pos, insert: FRAGMENTS[random(FRAGMENTS.length)] as string })
         } else if (kind === 1) {
-          const to = Math.min(length, at + random(12))
-          state = apply(state, { from: at, to })
+          const to = Math.min(length, pos + random(12))
+          state = apply(state, { from: pos, to })
         } else {
-          state = apply(state, undefined, at)
+          state = apply(state, undefined, pos)
         }
         expectRebuiltEqual(state)
       }

@@ -76,10 +76,10 @@ const vault: VaultCardsDue = {
   isIndexing: false,
 }
 
-const mountDecks = (presets: readonly Preset[], over: VaultCardsDue = vault) =>
+const mountDecks = (presets: readonly Preset[], overrides: VaultCardsDue = vault) =>
   mount(Decks, {
     props: {
-      vault: over,
+      vault: overrides,
       days: new Map(),
       due: new Map(),
       presets,
@@ -118,11 +118,16 @@ describe('the decks of a vault', () => {
 
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
-  const createVault = (faces: number, due: number, fresh: number, unbegun = 0): VaultCardsDue => ({
+  const createVault = (
+    faces: number,
+    due: number,
+    freshCount: number,
+    unbegun = 0,
+  ): VaultCardsDue => ({
     ...vault,
     due,
-    new: fresh,
-    decks: [{ deck: 'decks/Words.md', faces, due, new: fresh, learned: 0, unbegun }],
+    new: freshCount,
+    decks: [{ deck: 'decks/Words.md', faces, due, new: freshCount, learned: 0, unbegun }],
   })
 
   // Something was answered under the preset today and nothing of this deck is

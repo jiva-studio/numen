@@ -11,15 +11,15 @@ import (
 // out of a scan, a recording transcribed, the words a site published with a
 // video, the prose of a page and a copy of a video.
 type GetArtifactList struct {
-	shelf artifactShelf
+	store artifactStore
 }
 
 func NewGetArtifactList(queries port.SourceQueries, derived port.DerivedStores) *GetArtifactList {
-	return &GetArtifactList{shelf: artifactShelf{queries: queries, derived: derived}}
+	return &GetArtifactList{store: artifactStore{queries: queries, derived: derived}}
 }
 
 // Execute returns the artifacts of one file, none for a file the index does not hold.
 func (u *GetArtifactList) Execute(ctx context.Context, v domain.Vault, path string) ([]Artifact, error) {
-	set, err := u.shelf.getArtifacts(ctx, v, path)
+	set, err := u.store.getArtifacts(ctx, v, path)
 	return set.Artifacts, err
 }

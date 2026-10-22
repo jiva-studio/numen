@@ -87,7 +87,6 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 }
 
 // A line nobody can act on is left out and counted, and the rest of the file is
-// read: a history is not refused because one line of it is unreadable.
 func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","face":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
 	for name, line := range map[string]string{

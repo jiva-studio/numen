@@ -12,7 +12,7 @@ import type { Flow, Mark } from '../lib/spread'
 import type { SettledBookProps } from '../lib/props'
 import { useBookTurns } from './turns'
 
-const FLOW: Flow = { along: 4000, width: 1000, gap: 0, columns: 1 }
+const FLOW: Flow = { contentWidth: 4000, width: 1000, gap: 0, columns: 1 }
 const MARKS: readonly Mark[] = [
   { at: 0, x: 0 },
   { at: 100, x: 1000 },
@@ -35,10 +35,14 @@ const paperWithStyle = () => {
   return { paper, writes }
 }
 
-const setUp = (marks: readonly Mark[] = MARKS, at = 0, rendered = true) => {
+const setUp = (marks: readonly Mark[] = MARKS, offset = 0, rendered = true) => {
   const { paper, writes } = paperWithStyle()
-  const props = { book: { from: 0, to: 400 }, span: { from: 0, to: 400 }, at } as SettledBookProps
-  const onMove = vi.fn<(at: number) => void>()
+  const props = {
+    book: { from: 0, to: 400 },
+    span: { from: 0, to: 400 },
+    at: offset,
+  } as SettledBookProps
+  const onMove = vi.fn<(pos: number) => void>()
   const turns = useBookTurns({
     paper: shallowRef<HTMLElement | null>(rendered ? paper : null),
     props,

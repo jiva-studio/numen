@@ -1,11 +1,7 @@
 /**
  * Note domain conversions between schema representations and window models.
  */
-import {
-  NameSource,
-  Role as Roles,
-  Relation as Relations,
-} from '@numen/protocol'
+import { NameSource, Role as Roles, Relation as Relations } from '@numen/protocol'
 import type {
   ErrorCode as ProtoErrorCode,
   GetNeighbourhoodResponse as NeighbourhoodMessage,
@@ -64,8 +60,7 @@ export const relationByWire: Record<Relations, NoteRelation | null> = {
 const noteTypes: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
 
 /** Which of four a note is, in the words the window uses. */
-export const mapNoteType = (of: string): NoteType =>
-  noteTypes.find((one) => one === of) ?? 'note'
+export const mapNoteType = (of: string): NoteType => noteTypes.find((one) => one === of) ?? 'note'
 
 /** A run of text, kept as the plain pair the window carries it as. */
 export const run = (span: { from: number; to: number }) => ({ from: span.from, to: span.to })
@@ -91,11 +86,11 @@ export const mapNoteResult = (from: {
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
-  const at = formatFingerprint(from.at)
+  const fingerprint = formatFingerprint(from.at)
   const link = from.url === undefined ? undefined : { url: from.url, embed: from.embed ?? '' }
   return asValue({
     body: from.body ?? '',
-    ...(at === undefined ? {} : { at }),
+    ...(fingerprint === undefined ? {} : { at: fingerprint }),
     ...(link === undefined ? {} : { link }),
   })
 }

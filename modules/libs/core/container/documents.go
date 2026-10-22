@@ -106,11 +106,9 @@ func (u unavailableDocument) OpenDocument(_ context.Context, file io.ReadSeekClo
 	return nil, u.why
 }
 
-// Books reads the books that reflow, through the book plugin looked up at each call.
 func (c Config) Books() port.Book { return hostBookPort{config: c} }
 
 // hostBookPort reaches the book plugin, looked up when it is asked. A call made
-// while none answers is refused with a *port.UnavailableError.
 type hostBookPort struct {
 	config Config
 }

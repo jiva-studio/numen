@@ -84,13 +84,13 @@ export interface TabKindRegistration<State = unknown> {
   component: unknown
   title?: string
   source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
-  actions?: Record<string, (at: string, ...args: unknown[]) => unknown>
+  actions?: Record<string, (targetPath: string, ...args: unknown[]) => unknown>
   onClose?(state: State, id: string): boolean
   // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope.
-  open?(at: string, id: string): State
+  open?(targetPath: string, id: string): State
   getTitle?(state: State): string
   // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
-  identity?(at: string): string
+  identity?(targetPath: string): string
   onShow?(state: State, id: string): void
   // The tab is handed text meant for it, such as a question the window puts to it.
   receiveText?(state: State, text: string): void
@@ -106,14 +106,17 @@ export interface TabKindRegistration<State = unknown> {
   isTool?: boolean
   // The one word its tabs carry beside their title, and nothing where a tab carries none.
   getMark?(state: State): string | undefined
-  // Whether the tab owes the person an answer about what its file now holds.
   isAsking?(state: State): boolean
   // Writes what the tab holds out to its file, and answers once nothing is on its way.
   flushPending?(state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
   // Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none.
-  resolveCommand?(at: string, command: string, type: NoteType): Promise<TabResolution | null>
+  resolveCommand?(
+    targetPath: string,
+    command: string,
+    type: NoteType,
+  ): Promise<TabResolution | null>
   // The icon its tabs carry before their title.
   icon?: unknown
   placement?: TabPlacement

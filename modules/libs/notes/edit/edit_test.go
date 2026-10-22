@@ -14,18 +14,17 @@ import (
 )
 
 // files are the files of a vault held in memory. A write moves the modification time on, and one held
-// to a fingerprint that is not the file's is refused.
 type files struct {
-	content map[string]string
-	kinds   map[string]domain.SourceKind
-	clock   time.Time
-	at      map[string]domain.Fingerprint
-	locks   int
+	content      map[string]string
+	kinds        map[string]domain.SourceKind
+	clock        time.Time
+	fingerprints map[string]domain.Fingerprint
+	locks        int
 }
 
 func newFiles(content map[string]string) *files {
 	f := &files{
-		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, at: map[string]domain.Fingerprint{},
+		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, fingerprints: map[string]domain.Fingerprint{},
 		clock: time.Unix(1_700_000_000, 0),
 	}
 	for path, body := range content {
@@ -37,19 +36,19 @@ func newFiles(content map[string]string) *files {
 func (f *files) put(path, body string) domain.Fingerprint {
 	f.clock = f.clock.Add(time.Second)
 	f.content[path] = body
-	f.at[path] = domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
-	return f.at[path]
+	f.fingerprints[path] = domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
+	return f.fingerprints[path]
 }
 
 func (f *files) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
-	at, there := f.at[path]
+	fp, there := f.fingerprints[path]
 	if !there {
 		return domain.Fingerprint{}, fs.ErrNotExist
 	}
 	if kind, set := f.kinds[path]; set {
-		at.Kind = kind
+		fp.Kind = kind
 	}
-	return at, nil
+	return fp, nil
 }
 
 func (f *files) Read(_ context.Context, path string) ([]byte, error) {
@@ -61,7 +60,7 @@ func (f *files) Read(_ context.Context, path string) ([]byte, error) {
 }
 
 func (f *files) Write(_ context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	if !fingerprint.IsZero() && !f.at[path].IsUnchanged(fingerprint) {
+	if !fingerprint.IsZero() && !f.fingerprints[path].IsUnchanged(fingerprint) {
 		return domain.Fingerprint{}, edit.ErrStale
 	}
 	return f.put(path, string(content)), nil
@@ -124,10 +123,10 @@ func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T)
 	f := newFiles(map[string]string{"A.md": "# A\n"})
 	read, _ := f.GetFingerprint(t.Context(), "A.md")
 
-	at, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if err != nil || at.IsUnchanged(read) {
-		t.Fatalf("got %+v (%v)", at, err)
+	if err != nil || res.IsUnchanged(read) {
+		t.Fatalf("got %+v (%v)", res, err)
 	}
 	if got := f.content["A.md"]; !strings.Contains(got, "id:") || !strings.HasSuffix(got, "# B\n") {
 		t.Errorf("the note is now %q", got)
@@ -211,10 +210,10 @@ func TestAWriteThatLandedIsReportedAlongsideALevellingThatFailed(t *testing.T) {
 	e := editing(f)
 	e.Index = func(context.Context, domain.Vault, []string) error { return errors.New("index is busy") }
 
-	at, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
+	res, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
-	if !errors.Is(err, edit.ErrUnlevelled) || at.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
-		t.Errorf("got %+v (%v)", at, err)
+	if !errors.Is(err, edit.ErrUnlevelled) || res.Size == 0 || !strings.HasSuffix(f.content["A.md"], "# B\n") {
+		t.Errorf("got %+v (%v)", res, err)
 	}
 }
 

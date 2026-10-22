@@ -30,7 +30,7 @@ func transcriptionID(path string) string { return "transcription-" + path }
 
 // OpenTranscriber opens what listens to a recording, when there is one to
 // listen to. It is told how far the fetching of what it needs has got.
-type OpenTranscriber func(ctx context.Context, tell func(what string, done, total int64)) (port.Transcriber, func() error, error)
+type OpenTranscriber func(ctx context.Context, tell func(what string, finished, total int64)) (port.Transcriber, func() error, error)
 
 // A Runtime is what a recording is transcribed through on this
 // machine.
@@ -95,7 +95,7 @@ type Worker struct {
 	// answered is every recording this run has had an answer about, by vault
 	// and path. Words, silence and a file that will not open are all answers,
 	// and a recording that has answered is not offered again.
-	answered map[string]bool
+	processed map[string]bool
 
 	// resident is the opened models kept loaded between the recordings of a run.
 	resident resident
@@ -113,7 +113,7 @@ func NewWorker(ctx context.Context, with Config) *Worker {
 	if with.Models == nil {
 		with.Models = &run.Lock{}
 	}
-	t := &Worker{with: with, answered: map[string]bool{}, residentIdle: defaultResidentIdle}
+	t := &Worker{with: with, processed: map[string]bool{}, residentIdle: defaultResidentIdle}
 	t.line = run.NewWorker(ctx, with.Tasks, t.transcribeNamed)
 	return t
 }
@@ -156,12 +156,12 @@ func (t *Worker) transcribeNamed(ctx context.Context, v domain.Vault, path strin
 // begins the instant this returns covers the rounds behind it.
 func (t *Worker) Queue(
 	ctx context.Context,
-	known port.SourceQueries,
+	queries port.SourceQueries,
 	every time.Duration,
 	v domain.Vault,
 ) {
 	t.line.Go(func() {
-		t.line.RepeatRounds(ctx, t.with.Wait, every, func() { t.round(ctx, known, v) })
+		t.line.RepeatRounds(ctx, t.with.Wait, every, func() { t.round(ctx, queries, v) })
 	})
 }
 
@@ -169,7 +169,7 @@ func (t *Worker) Queue(
 // their text, one after another. It ends early where what stopped a recording
 // was the machine and not the file: the rest of the round would reach the same
 // nothing.
-func (t *Worker) round(ctx context.Context, known port.SourceQueries, v domain.Vault) {
+func (t *Worker) round(ctx context.Context, indexed port.SourceQueries, v domain.Vault) {
 	mine, free := t.line.Claim()
 	if !free {
 		// The hand is transcribing something. What this round did not hand over
@@ -179,7 +179,7 @@ func (t *Worker) round(ctx context.Context, known port.SourceQueries, v domain.V
 	defer t.line.Release(mine)
 
 	t.line.Drain(ctx)
-	for _, path := range t.getUntranscribed(ctx, known, v) {
+	for _, path := range t.getUntranscribed(ctx, indexed, v) {
 		if ctx.Err() != nil {
 			break
 		}
@@ -199,15 +199,15 @@ func (t *Worker) round(ctx context.Context, known port.SourceQueries, v domain.V
 //
 // The index knows both: every recording it holds, and which of them stand on a
 // text a producer made. What is left of the first by the second is the work.
-func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries, v domain.Vault) []string {
-	if known == nil {
+func (t *Worker) getUntranscribed(ctx context.Context, existing port.SourceQueries, v domain.Vault) []string {
+	if existing == nil {
 		return nil
 	}
-	target, err := known.GetFingerprints(ctx, v.ID, domain.KindRecording)
+	target, err := existing.GetFingerprints(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
-	recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
+	recognised, err := existing.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
 	if err != nil {
 		return nil
 	}
@@ -220,7 +220,7 @@ func (t *Worker) getUntranscribed(ctx context.Context, known port.SourceQueries,
 	underVal := t.with.Unasked
 	out := make([]string, 0, len(target))
 	for path, ref := range target {
-		if t.answered[run.GetKey(v, path)] {
+		if t.processed[run.GetKey(v, path)] {
 			continue
 		}
 		if underVal > 0 && ref.Size > underVal {
@@ -275,7 +275,6 @@ func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string,
 // transcript right with. A person is offered the run where it has.
 func (t *Worker) ProofreaderReady() bool { return t.with.Proofreading.IsNamed }
 
-// Proofread puts one transcript right for a person who asked for it and says
 // what came of asking: the run began, or the transcript needed nothing of it.
 //
 // The asking waits only for what a run settles before it puts a question to the
@@ -327,7 +326,6 @@ func (t *Worker) proofread(ctx context.Context, v domain.Vault, path, hash strin
 // speech.
 //
 // A transcript whose proofreading failed is the transcript as it was
-// transcribed, and the failure stands in the list of what is being done until
 // somebody reads it. Work a person asked for is in that list from the moment
 // they asked.
 func (t *Worker) proofreadTranscript(
@@ -395,21 +393,19 @@ func (t *Worker) proofreadTranscript(
 // TakeUp puts right the transcripts of these vaults that stand short of their
 // last line, once, behind the caller.
 //
-// A proofreading stands at the line it reached, so a run that ended among the
 // batches is taken up at that line. A transcript no proofreader has been over
-// stands at its first line and is put right whole. Which transcripts a vault
 // holds is a question the index already answers.
 func (t *Worker) TakeUp(
 	ctx context.Context,
-	known port.SourceQueries,
+	sources port.SourceQueries,
 	vaults ...domain.Vault,
 ) {
-	if !t.with.Proofreading.IsAutomatic || known == nil {
+	if !t.with.Proofreading.IsAutomatic || sources == nil {
 		return
 	}
 	t.line.Go(func() {
 		for _, v := range vaults {
-			recognised, err := known.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
+			recognised, err := sources.GetRecognisedSources(ctx, v.ID, domain.KindRecording)
 			if err != nil {
 				continue
 			}
@@ -431,14 +427,14 @@ func (t *Worker) transcribe(
 	id, path string,
 	isUserStarted bool,
 ) (res TranscribeResult, err error) {
-	by, finish, err := t.acquireModels(ctx, id, path, isUserStarted)
+	delta, finish, err := t.acquireModels(ctx, id, path, isUserStarted)
 	if err != nil {
 		return res, err
 	}
 	defer func() { err = errors.Join(err, finish(err)) }()
 
 	t.reportTask(run.Task{ID: id, Title: taskTranscribingRecording, About: path}, isUserStarted)
-	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, by)
+	listen := NewTranscribe(t.with.Readers, t.with.Sources, t.with.Derived, delta)
 	listen.Cut = t.Cut
 	listen.OnProgress = func(res TranscribeResult) {
 		t.reportTask(run.Task{
@@ -463,7 +459,7 @@ func (t *Worker) acquireModels(
 	ctx context.Context,
 	id, path string,
 	isUserStarted bool,
-) (by port.Transcriber, finish func(ran error) error, err error) {
+) (delta port.Transcriber, finish func(ran error) error, err error) {
 	if retained, ok := t.resident.take(); ok {
 		return retained, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
@@ -478,12 +474,12 @@ func (t *Worker) acquireModels(
 	// Getting the models is a step of its own and is placed under its own name.
 	// Which file is coming down, and how much of it, is known once one is.
 	t.reportTask(run.Task{ID: id, Title: "Fetching models"}, isUserStarted)
-	by, letGo, err := t.with.Runtime.Open(ctx, func(what string, done, total int64) {
+	delta, letGo, err := t.with.Runtime.Open(ctx, func(what string, completed, total int64) {
 		// The count is bytes and says so, and the sizes a person reads them in
 		// are the window's to write.
 		t.reportTask(run.Task{
 			ID: id, Title: "Fetching models", About: what,
-			Count: done, Total: total, Unit: run.Bytes,
+			Count: completed, Total: total, Unit: run.Bytes,
 		}, isUserStarted)
 	})
 	if err != nil {
@@ -492,12 +488,12 @@ func (t *Worker) acquireModels(
 	}
 
 	if t.with.Runtime.CanKeep != nil && t.with.Runtime.CanKeep() {
-		t.resident.hold(by, letGo, release)
-		return by, func(ran error) error { return t.finishResident(ctx, ran) }, nil
+		t.resident.hold(delta, letGo, release)
+		return delta, func(ran error) error { return t.finishResident(ctx, ran) }, nil
 	}
 	// Letting the models go is what leaves the machine able to transcribe again.
 	// A machine that will not is worth saying, and the transcript stands.
-	return by, func(error) error {
+	return delta, func(error) error {
 		defer release()
 		if why := letGo(); why != nil {
 			return fmt.Errorf("letting the models go: %w", why)
@@ -525,7 +521,7 @@ func (t *Worker) finishResident(ctx context.Context, ran error) error {
 func (t *Worker) recordAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	t.answered[run.GetKey(v, path)] = true
+	t.processed[run.GetKey(v, path)] = true
 }
 
 // ClearAnswer puts a recording back within the queue's reach. The answer it gave is
@@ -533,14 +529,14 @@ func (t *Worker) recordAnswer(v domain.Vault, path string) {
 func (t *Worker) ClearAnswer(v domain.Vault, path string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
-	delete(t.answered, run.GetKey(v, path))
+	delete(t.processed, run.GetKey(v, path))
 }
 
 // reportTask puts this transcription in the list of what is being done. Work nobody
 // asked for is shown once it has lasted, and work a person started is shown at
 // once.
-func (t *Worker) reportTask(at run.Task, isUserStarted bool) {
-	t.line.Report(at, isUserStarted)
+func (t *Worker) reportTask(pos run.Task, isUserStarted bool) {
+	t.line.Report(pos, isUserStarted)
 }
 
 func (t *Worker) finishTask(id string) { t.line.Finish(id) }

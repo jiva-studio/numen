@@ -35,11 +35,11 @@ func waitForIndex(t *testing.T, opened *editor.Installation, v domain.Vault, pat
 // case the window does, and the tools carry the one setting to it.
 func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 	for name, c := range map[string]struct {
-		sync note.SyncTitleAndFilename
-		at   string
+		sync     note.SyncTitleAndFilename
+		filename string
 	}{
-		"one name":   {sync: true, at: "Disorder.md"},
-		"told apart": {sync: false, at: "Entropy.md"},
+		"one name":   {sync: true, filename: "Disorder.md"},
+		"told apart": {sync: false, filename: "Entropy.md"},
 	} {
 		t.Run(name, func(t *testing.T) {
 			opened, cfg := windowOn(t)
@@ -65,10 +65,10 @@ func TestTheAgentRenamesTheWayTheSettingsSay(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if renamed.Path != c.at {
+			if renamed.Path != c.filename {
 				t.Errorf("the note is filed at %q", renamed.Path)
 			}
-			body, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(c.at)))
+			body, err := os.ReadFile(filepath.Join(v.Path, filepath.FromSlash(c.filename)))
 			if err != nil {
 				t.Fatal(err)
 			}

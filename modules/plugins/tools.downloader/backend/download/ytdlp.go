@@ -39,7 +39,7 @@ func newYtDLP(c Config) *ytDLP {
 	return v
 }
 
-func (v *ytDLP) CanHandle(at string) bool { return isVideoSite(at) && v.command.isPresent() }
+func (v *ytDLP) CanHandle(target string) bool { return isVideoSite(target) && v.command.isPresent() }
 
 func (v *ytDLP) GetDownloadModel(string) DownloadModel {
 	return DownloadModel{Tool: "yt-dlp", Version: v.getVersion(), Producer: "captions"}
@@ -58,9 +58,9 @@ func (v *ytDLP) readVersion() string {
 	return strings.TrimSpace(string(output))
 }
 
-func (v *ytDLP) readInfo(ctx context.Context, at string) ([]byte, error) {
+func (v *ytDLP) readInfo(ctx context.Context, pos string) ([]byte, error) {
 	v.infoMu.Lock()
-	if cachedPath, ok := v.infoCache[at]; ok {
+	if cachedPath, ok := v.infoCache[pos]; ok {
 		v.infoMu.Unlock()
 		if raw, err := os.ReadFile(cachedPath); err == nil {
 			return raw, nil
@@ -71,7 +71,7 @@ func (v *ytDLP) readInfo(ctx context.Context, at string) ([]byte, error) {
 
 	probing, cancel := context.WithTimeout(ctx, v.probeTimeout)
 	defer cancel()
-	output, err := run(probing, v.command, nil, "--dump-single-json", "--no-playlist", at)
+	output, err := run(probing, v.command, nil, "--dump-single-json", "--no-playlist", pos)
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +80,7 @@ func (v *ytDLP) readInfo(ctx context.Context, at string) ([]byte, error) {
 		if _, writeErr := tempFile.Write(output); writeErr == nil {
 			_ = tempFile.Close()
 			v.infoMu.Lock()
-			v.infoCache[at] = tempFile.Name()
+			v.infoCache[pos] = tempFile.Name()
 			v.infoMu.Unlock()
 		} else {
 			_ = tempFile.Close()
@@ -91,20 +91,20 @@ func (v *ytDLP) readInfo(ctx context.Context, at string) ([]byte, error) {
 	return output, nil
 }
 
-func (v *ytDLP) getTarget(at string) []string {
+func (v *ytDLP) getTarget(pos string) []string {
 	v.infoMu.Lock()
-	saved, ok := v.infoCache[at]
+	saved, ok := v.infoCache[pos]
 	v.infoMu.Unlock()
 	if ok {
 		if _, err := os.Stat(saved); err == nil {
 			return []string{"--load-info-json", saved}
 		}
 	}
-	return []string{at}
+	return []string{pos}
 }
 
-func (v *ytDLP) GetMetadata(ctx context.Context, at string) (Metadata, error) {
-	output, err := v.readInfo(ctx, at)
+func (v *ytDLP) GetMetadata(ctx context.Context, target string) (Metadata, error) {
+	output, err := v.readInfo(ctx, target)
 	if err != nil {
 		return Metadata{}, err
 	}
@@ -118,7 +118,7 @@ func (v *ytDLP) GetMetadata(ctx context.Context, at string) (Metadata, error) {
 		AutomaticCaptions map[string][]struct{} `json:"automatic_captions"`
 	}
 	if err := json.Unmarshal(output, &metadata); err != nil {
-		return Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", at, err)
+		return Metadata{}, fmt.Errorf("what yt-dlp output about %s: %w", target, err)
 	}
 	return Metadata{
 		Title:       strings.TrimSpace(metadata.Title),
@@ -139,12 +139,12 @@ func getLanguages(tracks map[string][]struct{}) []string {
 	return out
 }
 
-func (v *ytDLP) GetText(ctx context.Context, at string, want PreferredCaptions) (Text, error) {
-	meta, err := v.GetMetadata(ctx, at)
+func (v *ytDLP) GetText(ctx context.Context, target string, want PreferredCaptions) (Text, error) {
+	meta, err := v.GetMetadata(ctx, target)
 	if err != nil {
 		return Text{}, err
 	}
-	cues, err := v.subtitles(ctx, at, chooseLanguage(meta, want.Languages, want.IsAutomatic))
+	cues, err := v.subtitles(ctx, target, chooseLanguage(meta, want.Languages, want.IsAutomatic))
 	if err != nil {
 		return Text{}, err
 	}
@@ -156,7 +156,7 @@ func (v *ytDLP) GetText(ctx context.Context, at string, want PreferredCaptions) 
 	}, nil
 }
 
-func (v *ytDLP) subtitles(ctx context.Context, at string, language string) ([]Cue, error) {
+func (v *ytDLP) subtitles(ctx context.Context, pos string, language string) ([]Cue, error) {
 	if language == "" {
 		return nil, ErrNothingDownloaded
 	}
@@ -170,7 +170,7 @@ func (v *ytDLP) subtitles(ctx context.Context, at string, language string) ([]Cu
 		"--skip-download", "--write-subs", "--write-auto-subs",
 		"--sub-langs", language, "--sub-format", "json3",
 		"--no-playlist", "-o", filepath.Join(into, "words"),
-	}, v.getTarget(at)...)
+	}, v.getTarget(pos)...)
 	if _, err := run(ctx, v.command, nil, arguments...); err != nil {
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (v *ytDLP) subtitles(ctx context.Context, at string, language string) ([]Cu
 const copyFormat = "bestvideo[vcodec^=avc1]+bestaudio[acodec^=mp4a]/" +
 	"best[vcodec!=none][acodec!=none]/bestvideo*+bestaudio/best"
 
-func (v *ytDLP) Download(ctx context.Context, at string, into io.Writer) (Copy, error) {
+func (v *ytDLP) Download(ctx context.Context, target string, into io.Writer) (Copy, error) {
 	folder, err := os.MkdirTemp("", "numen-copy-")
 	if err != nil {
 		return Copy{}, err
@@ -206,7 +206,7 @@ func (v *ytDLP) Download(ctx context.Context, at string, into io.Writer) (Copy, 
 		"-f", copyFormat, "--merge-output-format", "mp4", "--no-playlist",
 		"-o", filepath.Join(folder, "copy.%(ext)s"),
 	}
-	arguments = append(arguments, v.getTarget(at)...)
+	arguments = append(arguments, v.getTarget(target)...)
 	if where := v.sound.getPath(); where != "" {
 		arguments = append([]string{"--ffmpeg-location", where}, arguments...)
 	}
@@ -301,8 +301,8 @@ var videoSites = map[string]bool{
 	"youtu.be":             true,
 }
 
-func isVideoSite(at string) bool {
-	address, err := url.Parse(at)
+func isVideoSite(pos string) bool {
+	address, err := url.Parse(pos)
 	if err != nil {
 		return false
 	}

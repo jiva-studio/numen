@@ -45,7 +45,6 @@ type Settings struct {
 	Theme string
 	// InterfaceScale is how large the interface is drawn and TextScale how
 	// large the text a person reads is set, one being as designed. A size
-	// nobody named is zero and is left to `tokens.css` as well.
 	InterfaceScale float64
 	TextScale      float64
 }
@@ -72,20 +71,20 @@ func (s Settings) Styles() string {
 // AddStyles is the page carrying those elements, put where the head ends. A
 // page with no head is handed back as it was built.
 func AddStyles(text []byte, styles string) []byte {
-	at := bytes.LastIndex(text, []byte(HeadEnd))
-	if styles == "" || at < 0 {
+	pos := bytes.LastIndex(text, []byte(HeadEnd))
+	if styles == "" || pos < 0 {
 		return text
 	}
-	return slices.Concat(text[:at], []byte(styles), text[at:])
+	return slices.Concat(text[:pos], []byte(styles), text[pos:])
 }
 
 // buildSizeElement is the two multipliers as the page carries them: how large the
 // interface is drawn, which is the root's font size, and how large the text a
 // person reads is set.
-func buildSizeElement(drawn, set float64) string {
+func buildSizeElement(rendered, set float64) string {
 	var vars []string
-	if drawn > 0 {
-		vars = append(vars, "--numen-interface-scale: "+number(drawn))
+	if rendered > 0 {
+		vars = append(vars, "--numen-interface-scale: "+number(rendered))
 	}
 	if set > 0 {
 		vars = append(vars, "--numen-text-scale: "+number(set))

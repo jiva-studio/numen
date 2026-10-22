@@ -25,7 +25,11 @@ const setup = () => {
   const element = createMenuElement()
   const menu = shallowRef<HTMLElement | null>(element)
   const focusMenu = vi.spyOn(element, 'focus')
-  const keys = useMenuKeys(() => ITEMS, menu, () => 0)
+  const keys = useMenuKeys(
+    () => ITEMS,
+    menu,
+    () => 0,
+  )
   return { keys, menu, focusMenu }
 }
 

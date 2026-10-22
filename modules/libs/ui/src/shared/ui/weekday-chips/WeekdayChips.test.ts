@@ -2,8 +2,6 @@
  * What the chips are announced as, and that pressing one offers the levels a
  * day can stand at.
  *
- * Each day is handed in at the level it stands at, and what comes back is one
- * day and one level: what a level means, and what a day nobody named stands at,
  * are the caller's.
  */
 import { mount } from '@vue/test-utils'
@@ -65,7 +63,7 @@ describe('what is drawn', () => {
   // a day at nothing has none.
   it('fills a day in step with the level it remains at', () => {
     const chips = mountChips({ days: week({ sat: 0, sun: 0.75 }) }).findAll('button')
-    const getStyle = (at: number) => chips[at]?.attributes('style') ?? ''
+    const getStyle = (pos: number) => chips[pos]?.attributes('style') ?? ''
     expect(getStyle(0)).toContain('var(--numen-accent) 100%')
     expect(getStyle(5)).toContain('var(--numen-accent) 0%')
     expect(getStyle(6)).toContain('var(--numen-accent) 75%')
@@ -75,7 +73,6 @@ describe('what is drawn', () => {
     expect(mountChips().get('button').attributes('aria-haspopup')).toBe('menu')
   })
 
-  // A chip stands at a level and offers a menu. It holds nothing down, so it
   // announces no state of its own beyond the level it is labelled with.
   it('is a row of buttons offering menus, and not a set of toggles', () => {
     const row = mountChips()
@@ -124,8 +121,8 @@ describe('a day standing at a level the offer does not name', () => {
 
 describe('the keyboard while the levels are offered', () => {
   /** The chip pressed, focused as the keyboard would leave it. */
-  const openMenu = async (row: ReturnType<typeof mountChips>, at: number) => {
-    const chip = row.findAll('button')[at]
+  const openMenu = async (row: ReturnType<typeof mountChips>, pos: number) => {
+    const chip = row.findAll('button')[pos]
     const element = chip?.element as HTMLElement
     element.focus()
     await chip?.trigger('click')
@@ -202,7 +199,7 @@ describe('giving a day a level', () => {
   // A chip nobody may turn is pressed like any other and answers with nothing.
   // It keeps the keyboard, so the week is still read while it is disabled.
   it('offers nothing while nobody may turn them, and says so on every chip', async () => {
-    const row = mountChips({ disabled: true })
+    const row = mountChips({ isDisabled: true })
     const chips = row.findAll('button')
     expect(chips.map((chip) => chip.attributes('aria-disabled'))).toEqual(Array(7).fill('true'))
     expect(chips.map((chip) => chip.attributes('disabled'))).toEqual(Array(7).fill(undefined))

@@ -64,7 +64,6 @@ func FuzzExpression(f *testing.F) {
 	f.Fuzz(func(t *testing.T, typed string, growing bool) {
 		// A NUL ends a string on its way into SQLite, so what the driver would
 		// ask is not what was written. Nothing types one; the escaping is still
-		// held to the round trip below.
 		//
 		// FTS5 costs more than linearly in the number of words asked for — ten
 		// thousand of them take a third of a second — so what is put to the
@@ -124,18 +123,18 @@ func words(t *testing.T, expression string, growing bool) []string {
 		var word strings.Builder
 		rest = rest[1:]
 		for {
-			at := strings.IndexByte(rest, '"')
-			if at < 0 {
+			pos := strings.IndexByte(rest, '"')
+			if pos < 0 {
 				t.Fatalf("%q holds a literal that never closes", expression)
 			}
-			word.WriteString(rest[:at])
+			word.WriteString(rest[:pos])
 			// A doubled quote is one quote of the word; a single one closes it.
-			if strings.HasPrefix(rest[at+1:], `"`) {
+			if strings.HasPrefix(rest[pos+1:], `"`) {
 				word.WriteByte('"')
-				rest = rest[at+2:]
+				rest = rest[pos+2:]
 				continue
 			}
-			rest = rest[at+1:]
+			rest = rest[pos+1:]
 			break
 		}
 		out = append(out, word.String())

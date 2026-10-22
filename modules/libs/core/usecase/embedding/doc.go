@@ -2,7 +2,6 @@
 // what makes the vectors a vault is searched by and what makes the vector a
 // question is asked with.
 //
-// The two are asked one text and held to answering it alike. A provider that
 // disagrees is release, and a question is answered by the words.
 //
 // A model on this machine is fetched and compiled behind the window, and how far

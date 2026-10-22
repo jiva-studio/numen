@@ -116,7 +116,7 @@ describe('the headings of a node', () => {
     // The first read is the one the watcher asks for on creation, and stays held.
     await plex.readHeadings()
     fail()
-    await new Promise((wake) => setTimeout(wake, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(plex.getHeadings(node)).toStrictEqual([{ id: '3', text: 'Intro', level: 1 }])
   })

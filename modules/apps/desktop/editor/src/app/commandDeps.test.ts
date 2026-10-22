@@ -6,7 +6,7 @@ import { WORDS } from '@/shared/words'
 import type { Model } from '@/entities/settings'
 
 /** Every dependency a fake that records what it was handed. */
-const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
+const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
   const calls: unknown[][] = []
   const record =
     (name: string, answer?: unknown) =>
@@ -38,7 +38,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
       await Promise.resolve()
       record('openPreset')(path)
     },
-    dressed: { chooseItem: vi.fn() },
+    appearance: { chooseItem: vi.fn() },
     oneName: { choose: vi.fn() },
     nesting: { choose: vi.fn(), chooseCount: vi.fn() },
     rest: {
@@ -59,7 +59,7 @@ const createOptions = (over: Partial<CommandDepsOptions> = {}) => {
     getOpeningNote: () => '',
     runs: {} as never,
     writeMessage: vi.fn(),
-    ...over,
+    ...override,
   }
   return { deps: createCommandDeps(options), calls, options }
 }
@@ -250,14 +250,14 @@ describe('the commands reach the window', () => {
     expect(deps.vaults.list).toBeTypeOf('function')
   })
 
-  it('goes where a command points', async () => {
+  it('routes where a command points', async () => {
     const { deps, calls } = createOptions()
 
-    deps.goes.revealPath('Llama.md')
-    deps.goes.openTab('settings')
-    await deps.goes.openPreset('presets/Default.md')
-    deps.goes.closeTab('tab-1')
-    deps.goes.ask('what is a llama?')
+    deps.navigator.revealPath('Llama.md')
+    deps.navigator.openTab('settings')
+    await deps.navigator.openPreset('presets/Default.md')
+    deps.navigator.closeTab('tab-1')
+    deps.navigator.ask('what is a llama?')
     expect(calls).toStrictEqual([
       ['revealPath', 'Llama.md'],
       ['openTabOfKind', 'settings'],
@@ -280,8 +280,8 @@ describe('the commands reach the window', () => {
       },
     })
 
-    await deps.goes.travel('Llama.md')
-    await deps.goes.leave('Llama.md', 'Alpaca.md')
+    await deps.navigator.travel('Llama.md')
+    await deps.navigator.leave('Llama.md', 'Alpaca.md')
     expect(went).toStrictEqual(['travel Llama.md', 'leave Llama.md Alpaca.md'])
   })
 
@@ -310,9 +310,9 @@ describe('the commands reach the window', () => {
   it('searches with the search the window gave, and does nothing without one', () => {
     const search = vi.fn()
 
-    createOptions({ search }).deps.goes.search()
+    createOptions({ search }).deps.navigator.search()
     expect(search).toHaveBeenCalledOnce()
-    expect(() => createOptions().deps.goes.search()).not.toThrow()
+    expect(() => createOptions().deps.navigator.search()).not.toThrow()
   })
 
   it('copies a path to the clipboard', () => {
@@ -328,8 +328,8 @@ describe('the commands reach the window', () => {
     const { deps } = createOptions({
       rest: {
         writeSettings: async () => {},
-        getModelsAt: (at) => {
-          request.push(at)
+        getModelsAt: (categoryPath) => {
+          request.push(categoryPath)
           return []
         },
       },
@@ -393,14 +393,14 @@ describe('useSettings step groups', () => {
       onSizeChanged: () => {},
     })
 
-    const perfGroups = settings.kept.getStepGroups('performanceProfile', '')
+    const perfGroups = settings.paletteLists.getStepGroups('performanceProfile', '')
     expect(perfGroups.length).toBe(1)
     expect(perfGroups[0]?.id).toBe('performance')
 
-    const indexingGroups = settings.kept.getStepGroups('indexingModel', '')
+    const indexingGroups = settings.paletteLists.getStepGroups('indexingModel', '')
     expect(Array.isArray(indexingGroups)).toBe(true)
 
-    const unknownGroups = settings.kept.getStepGroups('unknown', '')
+    const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')
     expect(unknownGroups).toStrictEqual([])
   })
 })

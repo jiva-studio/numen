@@ -25,8 +25,8 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, at: PointerEvent): void
-  (event: 'menu', tab: TabId, at: { x: number; y: number }): void
+  (event: 'lift', tab: TabId, pointer: PointerEvent): void
+  (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
 }>()
 
 defineSlots<{
@@ -42,8 +42,8 @@ const getTitle = (tab: TabId): string => workspace?.value.findTab(tab)?.title ??
 /** What a tab is carrying, and nothing for a tab carrying nothing. */
 const getMarkOf = (tab: TabId): string | undefined => workspace?.value.findTab(tab)?.mark
 
-const tabName = (at: number): string => getTabName(props.pane.id, at)
-const panelName = (at: number): string => getPanelName(props.pane.id, at)
+const tabName = (pos: number): string => getTabName(props.pane.id, pos)
+const panelName = (pos: number): string => getPanelName(props.pane.id, pos)
 
 /** The tabs as they are drawn, each under the tab it stands for. */
 const drawnTabs = new Map<TabId, { focus: () => void }>()
@@ -62,8 +62,8 @@ function reach(tab: TabId): void {
  * The tabs are what the arrows walk; the way to a new tab is a stop of its
  * own.
  */
-function onStripKey(at: number, event: KeyboardEvent): void {
-  const next = stepTo(event.key, at, props.pane.tabs.length)
+function onStripKey(pos: number, event: KeyboardEvent): void {
+  const next = stepTo(event.key, pos, props.pane.tabs.length)
   const tab = next === null ? undefined : props.pane.tabs[next]
   if (next === null || tab === undefined) return
 
@@ -82,11 +82,11 @@ defineExpose({ reach })
     :data-workspace-strip="pane.id"
   >
     <WorkspaceTab
-      v-for="(tab, at) in pane.tabs"
-      :id="tabName(at)"
+      v-for="(tab, index) in pane.tabs"
+      :id="tabName(index)"
       :ref="(element) => holdTab(tab, element)"
       :key="tab"
-      :aria-controls="panelName(at)"
+      :aria-controls="panelName(index)"
       :tab="tab"
       :title="getTitle(tab)"
       :mark="getMarkOf(tab)"
@@ -96,7 +96,7 @@ defineExpose({ reach })
       @close="emit('close', tab)"
       @menu="emit('menu', tab, $event)"
       @click="emit('choose', tab)"
-      @keydown="(event: KeyboardEvent) => onStripKey(at, event)"
+      @keydown="(event: KeyboardEvent) => onStripKey(index, event)"
     >
       <template v-if="$slots.icon" #icon>
         <slot name="icon" :id="tab" />
@@ -110,7 +110,6 @@ defineExpose({ reach })
 </template>
 
 <style scoped>
-/* Sits on the same surface as what it stands over, told apart by one line. */
 .pane__strip {
   border-block-end: var(--numen-stroke) solid var(--numen-rule);
 }

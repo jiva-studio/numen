@@ -11,8 +11,6 @@ import (
 )
 
 // A vault the index has never read is not a vault holding no cards. The
-// difference matters at the front door: one owes nothing, the other is not
-// known yet, and a person is told which.
 func TestAVaultTheIndexHasNotReadIsNotAVaultOfNoCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
@@ -39,7 +37,6 @@ func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 	}
 
 	// The index still lists the deck; the file behind it is gone, which is what
-	// a person deleting one outside the editor leaves behind.
 	if err := os.Remove(filepath.Join(s.vault.Path, "decks", "Words.md")); err != nil {
 		t.Fatal(err)
 	}

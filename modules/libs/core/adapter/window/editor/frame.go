@@ -25,11 +25,11 @@ const embedRoute = "embed"
 // It carries the address the note points at. Which player that address is
 // played by is the domain's to say, and a host learned about later is played
 // here without this route learning anything.
-func (l *Loopback) Embed(at domain.URL) string {
-	if l == nil || l.stopped.Load() || getPlayerURL(at) == "" {
+func (l *Loopback) Embed(targetURL domain.URL) string {
+	if l == nil || l.stopped.Load() || getPlayerURL(targetURL) == "" {
 		return ""
 	}
-	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(at))
+	return l.address + "/" + l.token + "/" + embedRoute + "/" + url.PathEscape(string(targetURL))
 }
 
 // player is the page that holds one player.
@@ -60,12 +60,12 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, _ *http.Request, raw string
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	at, err := domain.ParseURL(content)
+	pos, err := domain.ParseURL(content)
 	if err != nil {
 		http.Error(w, "not an address", http.StatusBadRequest)
 		return
 	}
-	played := getPlayerURL(at)
+	played := getPlayerURL(pos)
 	if played == "" {
 		http.Error(w, "nothing plays what is at that address", http.StatusBadRequest)
 		return
@@ -80,7 +80,6 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, _ *http.Request, raw string
 	w.Header().Set("Content-Security-Policy",
 		"default-src 'none'; frame-src "+host+"; script-src 'unsafe-inline'; style-src 'unsafe-inline'")
 	// A host checks who is framing its player and is told by the address this
-	// page stands at. The policy is written here so that whatever frames this
 	// page cannot take that address away: a page that hands a host nothing plays
 	// nothing.
 	w.Header().Set("Referrer-Policy", "strict-origin-when-cross-origin")
@@ -90,16 +89,14 @@ func (l *Loopback) serveFrame(w http.ResponseWriter, _ *http.Request, raw string
 		Player template.URL
 		Host   template.JSStr
 	}{
-		Title:  string(at),
+		Title:  string(pos),
 		Player: template.URL(played + "&origin=" + url.QueryEscape(l.address)),
 		Host:   template.JSStr(host),
 	})
 }
 
 // getFrameOrigin is the origin a player is played from, and whether the window may
-// frame it at all. A player composed for a host nobody named is played nowhere:
 // the list and what composes an address are one decision, and this is where the
-// two are held to each other.
 func getFrameOrigin(played string) (string, bool) {
 	address, err := url.Parse(played)
 	if err != nil {
@@ -131,8 +128,8 @@ var videoSites = map[string]bool{
 
 // getPlayerURL is where a frame plays what is at an address, and nothing where this
 // window knows no player for it.
-func getPlayerURL(at domain.URL) string {
-	address, err := url.Parse(string(at))
+func getPlayerURL(pos domain.URL) string {
+	address, err := url.Parse(string(pos))
 	if err != nil || !videoSites[strings.TrimPrefix(address.Hostname(), "www.")] {
 		return ""
 	}

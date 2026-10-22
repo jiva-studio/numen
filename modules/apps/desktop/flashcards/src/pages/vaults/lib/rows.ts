@@ -29,7 +29,6 @@ export function getVaultRows(
  * How many cards each vault has waiting, by its identity.
  *
  * A vault still being read, or one that could not be read, is absent: what
- * stands in its row is why, and not a number. A vault counted to nothing is
  * present and owes nothing.
  */
 export function getDueByVault(

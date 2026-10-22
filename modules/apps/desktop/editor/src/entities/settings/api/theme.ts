@@ -34,7 +34,6 @@ export interface Scales<T> {
   readonly textScale: T
 }
 
-/** How far a size goes, at each end. A number outside them is refused. */
 export interface Bounds {
   readonly least: number
   readonly most: number
@@ -58,12 +57,7 @@ export interface Appearance {
 /** What the window asks about how it is drawn. */
 export interface Themes {
   getAppearance(): Promise<Appearance>
-  /** The text of one theme's file, as the file stands when it is asked for. */
   readTheme(name: string): Promise<string>
-  /**
-   * The theme, the mode and the two sizes written into the settings, and why
-   * they were not. A size outside its bounds is refused and nothing is written.
-   */
   writeAppearance(name: string, mode: Mode, sizes: Sizes): Promise<string>
   /**
    * The themes the person's folder changed, by name, for as long as the window

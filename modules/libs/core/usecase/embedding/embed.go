@@ -243,13 +243,13 @@ func (u Embed) sendBatches(
 	texts []string,
 	out chan<- preparedBatch,
 ) error {
-	at := 0
+	pos := 0
 	for _, batch := range embedding.Batches(texts, u.BatchCharacters) {
-		prep, err := u.prepareBatch(ctx, model, chunks[at:at+len(batch)], batch)
+		prep, err := u.prepareBatch(ctx, model, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err
 		}
-		at += len(batch)
+		pos += len(batch)
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
@@ -469,13 +469,13 @@ func (u Embed) prepareBatch(
 
 // queueText queues the text at index i for inference. A nil seen queues every
 // text; otherwise a key already in seen shares the position of its first text.
-func (p *preparedBatch) queueText(i int, key, value string, seen map[string]int) {
-	if seen != nil {
-		if pos, ok := seen[key]; ok {
+func (p *preparedBatch) queueText(i int, key, value string, visited map[string]int) {
+	if visited != nil {
+		if pos, ok := visited[key]; ok {
 			p.askingMap[i] = pos
 			return
 		}
-		seen[key] = len(p.asking)
+		visited[key] = len(p.asking)
 	}
 	p.askingMap[i] = len(p.asking)
 	p.asking = append(p.asking, value)
@@ -516,14 +516,14 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 
 	out := make([]port.Vector, len(prep.owing))
 	for i := range prep.owing {
-		if at := prep.askingMap[i]; at >= 0 {
+		if pos := prep.askingMap[i]; pos >= 0 {
 			out[i] = port.Vector{
 				ChunkID: prep.owing[i].ChunkID,
 				Hash:    prep.hashes[i],
 				Model:   prep.model,
 				Kind:    port.QuantisedInt8,
-				Value:   unique[at].value,
-				Coarse:  unique[at].coarse,
+				Value:   unique[pos].value,
+				Coarse:  unique[pos].coarse,
 			}
 		} else if v, ok := prep.reused[i]; ok {
 			out[i] = v

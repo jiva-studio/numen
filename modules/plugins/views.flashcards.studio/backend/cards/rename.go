@@ -32,7 +32,6 @@ type UnwrittenDeck struct {
 
 // RenameResult says what a rename reached and what it did not.
 type RenameResult struct {
-	// Stencil is the fingerprint the stencil now stands at, which is what the
 	// caller presents at its next write.
 	Stencil domain.Fingerprint
 	// Decks is every deck a heading was rewritten in, and Cards is how many
@@ -112,7 +111,6 @@ func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 
 // Execute renames the field, in the stencil first and then in the vault.
 //
-// The stencil leads: a rename the stencil refused reaches no deck. A deck it
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
 func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
@@ -273,7 +271,6 @@ type deckWriter struct {
 // A card is cut by the stencil its own wikilink lands on, which is what reading
 // the deck against its stencils holds to.
 //
-// This is the application writing the file, so the deck it leaves behind is
 // whole: it is given an identifier where it carried none, and every card
 // of it is given its mark and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
@@ -293,22 +290,22 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if err != nil {
 		return 0, err
 	}
-	at, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	pos, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
 		return 0, err
 	}
-	cards, err := f.RenameField(at, in.Stencil, in.From, in.To)
+	cards, err := f.RenameField(pos, in.Stencil, in.From, in.To)
 	if err != nil {
 		return 0, err
 	}
 	if cards == 0 {
 		return 0, nil
 	}
-	by, _, err := d.read.readStencils(ctx, d.vault, at)
+	delta, _, err := d.read.readStencils(ctx, d.vault, pos)
 	if err != nil {
 		return 0, err
 	}
-	if _, err := f.Whole(by, cardid.New); err != nil {
+	if _, err := f.Whole(delta, cardid.New); err != nil {
 		return 0, err
 	}
 	if err := d.writeIdentifier(f.WriteIdentifier); err != nil {

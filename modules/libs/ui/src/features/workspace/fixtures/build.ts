@@ -39,7 +39,9 @@ export function createIdFactory(prefix = 'made'): NodeIdFactory {
 
 /** What the desktop opens with: the plex, and the agent beside it. */
 export const sideBySide = (): Workspace =>
-  createWorkspace(splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]))
+  createWorkspace(
+    splitBranch('root', [stack('main', 'plex'), stack('aside', 'chat')], [0.72, 0.28]),
+  )
 
 /** One stack holding both, so that only one shows at a time. */
 export const oneStack = (): Workspace => createWorkspace(stack('main', 'plex', 'chat'))

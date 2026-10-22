@@ -216,7 +216,7 @@ describe('the first day a grid draws', () => {
     expect(days[0]!.day).toBe('2026-09-14')
   })
 
-  it('reaches back from four weeks ahead once the history is older than the grid', () => {
+  it('offsets history range when data exceeds grid capacity', () => {
     const days = getDays(3, friday, createTallies([['2026-01-05', 1]]))
 
     expect(days[0]!.day).toBe('2026-09-14')

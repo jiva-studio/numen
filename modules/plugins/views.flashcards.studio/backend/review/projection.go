@@ -47,7 +47,6 @@ type Projection struct {
 	// It is answered where that day is a day. An interval is passed once and
 	// stays passed, so the day the last card face passes it is one. A chance of
 	// recall falls as a card fades and rises when it is answered, so a material
-	// counted that way stands at a level and reaches no such day; and a preset
 	// aiming at a date is answered by its date. Both are LearnsUnasked.
 	Learns int
 	// Short is how many card faces cannot be learned by the day the preset aims
@@ -131,10 +130,10 @@ func (p Projection) CountAdmitted() int {
 //
 // A day the preset does not admit is no session at all and takes no part: a
 // week of five days runs its minutes over five days.
-func (p Projection) minutesADay(through int) float64 {
+func (p Projection) minutesADay(limitDay int) float64 {
 	var all time.Duration
 	days := 0
-	for i, one := range p.Spent[:through+1] {
+	for i, one := range p.Spent[:limitDay+1] {
 		if !p.Admitted[i] {
 			continue
 		}
@@ -176,12 +175,11 @@ func (p Projection) Session() (int, bool) {
 // and were not answered on it.
 //
 // A card falling due later in the day holding at is not overdue: its day is
-// this one. A card face nobody has answered is not overdue either, because it
 // has had no day.
-func CountOverdue(d Day, at map[CardFaceID]Schedule, now time.Time) int {
+func CountOverdue(d Day, schedules map[CardFaceID]Schedule, now time.Time) int {
 	startTime := d.GetStart(now)
 	out := 0
-	for _, s := range at {
+	for _, s := range schedules {
 		if !s.IsNew() && s.Due.Before(startTime) {
 			out++
 		}
@@ -226,14 +224,14 @@ type learnedCount struct {
 
 // newLearnedCount opens the count over the card faces a run begins with, at the
 // instant it opens on.
-func newLearnedCount(p Preset, cards []Schedule, at time.Time) *learnedCount {
+func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	rule, _, retention := p.getLearnedRule()
 	out := &learnedCount{preset: p, isCarried: rule == RuleInterval, target: retention}
 	if out.isCarried {
 		out.learned = make([]bool, len(cards))
 	}
 	for i, c := range cards {
-		if !p.IsLearned(c, at) {
+		if !p.IsLearned(c, pos) {
 			continue
 		}
 		out.count++
@@ -245,16 +243,16 @@ func newLearnedCount(p Preset, cards []Schedule, at time.Time) *learnedCount {
 }
 
 // countAnswer carries one card face the day has answered.
-func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
+func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, at)
-	if stands == r.learned[card] {
+	isLearned := r.preset.IsLearned(c, pos)
+	if isLearned == r.learned[card] {
 		return
 	}
-	r.learned[card] = stands
-	if stands {
+	r.learned[card] = isLearned
+	if isLearned {
 		r.count++
 		return
 	}
@@ -262,13 +260,13 @@ func (r *learnedCount) countAnswer(card int, c Schedule, at time.Time) {
 }
 
 // countBegun carries one card face the day has begun.
-func (r *learnedCount) countBegun(c Schedule, at time.Time) {
+func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
 	}
-	stands := r.preset.IsLearned(c, at)
-	r.learned = append(r.learned, stands)
-	if stands {
+	isLearned := r.preset.IsLearned(c, pos)
+	r.learned = append(r.learned, isLearned)
+	if isLearned {
 		r.count++
 	}
 }
@@ -281,7 +279,7 @@ func (r *learnedCount) countBegun(c Schedule, at time.Time) {
 // whole material is made on the days the share is wanted. A count read off the
 // chance of recall is the same walk, and the share falls out of it.
 func (r *learnedCount) countLearned(
-	cards []Schedule, at time.Time, faces int, wanted bool,
+	cards []Schedule, pos time.Time, faces int, wanted bool,
 ) (int, float64) {
 	if r.isCarried {
 		if !wanted || faces == 0 {
@@ -289,13 +287,13 @@ func (r *learnedCount) countLearned(
 		}
 		back := 0.0
 		for _, c := range cards {
-			back += Recall(at.Sub(c.Last), c.Stability)
+			back += Recall(pos.Sub(c.Last), c.Stability)
 		}
 		return r.count, back / float64(faces)
 	}
 	stands, back := 0, 0.0
 	for _, c := range cards {
-		one := Recall(at.Sub(c.Last), c.Stability)
+		one := Recall(pos.Sub(c.Last), c.Stability)
 		back += one
 		if !c.IsNew() && one >= r.target {
 			stands++

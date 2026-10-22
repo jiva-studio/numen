@@ -27,7 +27,7 @@ export type Tone = 'plain' | 'caution' | 'alarm'
 
 /** A count of things done out of things to do. */
 export interface Tally {
-  readonly done: number
+  readonly completedCount: number
   readonly total: number
 }
 
@@ -37,7 +37,7 @@ export interface Tally {
  * Bytes are read out in the sizes a person reads them in and seconds on a
  * clock. Everything else is counted one by one.
  */
-export type TallyUnit = 'things' | 'bytes' | 'seconds'
+export type TallyUnit = 'items' | 'bytes' | 'seconds'
 
 /** What a line of activity draws. */
 export interface ActivityDescriptor {
@@ -58,9 +58,9 @@ export interface ActivityDescriptor {
  */
 export const findShare = (tally: Tally): number | undefined => {
   if (tally.total <= 0) return undefined
-  if (tally.done >= tally.total) return 1
-  if (tally.done <= 0) return 0
-  return tally.done / tally.total
+  if (tally.completedCount >= tally.total) return 1
+  if (tally.completedCount <= 0) return 0
+  return tally.completedCount / tally.total
 }
 
 /**
@@ -118,26 +118,13 @@ export const getRemainingWord = (left: number, perSecond: number): string => {
 /** How long a rate is averaged over, in seconds. */
 export const SMOOTHING = 10
 
-/**
- * The rate a count is moving at, from two readings and the time between them.
- *
- * `seconds` is the time since the count last moved, so a count written in
- * groups is measured over the stretch a group took.
- *
- * Movement is smoothed towards what was known over that stretch, so a reading
- * taken a moment after the last counts for a moment and one taken a minute later
- * counts for a minute.
- *
- * A count that went backwards is a fresh start, and has no rate until it is read
- * twice.
- */
 export const getRate = (
-  previous: { readonly done: number; readonly rate: number },
+  previous: { readonly completedCount: number; readonly rate: number },
   count: number,
   seconds: number,
 ): number => {
   if (seconds <= 0) return previous.rate
-  const moved = count - previous.done
+  const moved = count - previous.completedCount
   if (moved < 0) return 0
   if (moved === 0) return previous.rate
   const now = moved / seconds

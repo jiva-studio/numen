@@ -87,15 +87,15 @@ func (u unanswered) ResolveLinks(context.Context, domain.VaultID, string, []stri
 // landing is an index that answers where each wikilink lands from a table.
 type landing struct {
 	ports.LinkQueries
-	at map[string]string
+	targets map[string]string
 }
 
 func (l landing) ResolveLinks(
-	_ context.Context, _ domain.VaultID, from string, written []string,
+	_ context.Context, _ domain.VaultID, from string, output []string,
 ) (map[string]domain.ResolvedLink, error) {
-	out := make(map[string]domain.ResolvedLink, len(written))
-	for _, raw := range written {
-		if to, ok := l.at[raw]; ok {
+	out := make(map[string]domain.ResolvedLink, len(output))
+	for _, raw := range output {
+		if to, ok := l.targets[raw]; ok {
 			out[raw] = domain.ResolvedLink{From: from, To: to}
 		}
 	}
@@ -193,11 +193,11 @@ func TestTheOneCardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 		t.Errorf("problems = %+v, want the one card naming a note that is not a stencil", got.Body.Problems)
 	}
 
-	by, err := u.GetCardStencils(t.Context(), vs.first, "decks/Rain.md", got.Body)
+	delta, err := u.GetCardStencils(t.Context(), vs.first, "decks/Rain.md", got.Body)
 	if err != nil {
 		t.Fatalf("get the card stencils: %v", err)
 	}
-	if target, ok := by["Weather"]; !ok || !reflect.DeepEqual(target, format.Stencil{}) {
+	if target, ok := delta["Weather"]; !ok || !reflect.DeepEqual(target, format.Stencil{}) {
 		t.Errorf("the card is cut by %+v, want a stencil of nothing", target)
 	}
 }
@@ -229,7 +229,7 @@ func TestAStencilNamedTwoWaysIsOpenedOnce(t *testing.T) {
 	write(t, vs.first, "decks/Pair.md", "---\ntype: deck\n---\n"+
 		"\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"+
 		"\n## Wren\n\n[[Beast]]\n\n### Name\n\nWren\n")
-	links := landing{at: map[string]string{"Animal": "Animal.md", "Beast": "Animal.md"}}
+	links := landing{targets: map[string]string{"Animal": "Animal.md", "Beast": "Animal.md"}}
 	counted := &counting{VaultReaders: vs.ports.Readers}
 
 	got, err := cards.NewRead(counted, links).Deck(t.Context(), vs.first, "decks/Pair.md")

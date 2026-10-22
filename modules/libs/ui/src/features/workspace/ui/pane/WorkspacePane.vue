@@ -22,9 +22,9 @@ const props = withDefaults(
 const emit = defineEmits<{
   (event: 'choose', tab: TabId): void
   (event: 'close', tab: TabId): void
-  (event: 'lift', tab: TabId, at: PointerEvent): void
+  (event: 'lift', tab: TabId, pointer: PointerEvent): void
   /** A menu asked for on a tab, and where on the screen. */
-  (event: 'menu', tab: TabId, at: { x: number; y: number }): void
+  (event: 'menu', tab: TabId, pos: { x: number; y: number }): void
   /** This pane asks to be the one a tab opens into. */
   (event: 'claim'): void
   /** The tab that is now the one showing, once it is on screen. */

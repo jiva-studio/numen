@@ -3,7 +3,7 @@
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { effectScope } from 'vue'
-import { SEARCH_DEBOUNCE_MS, useDebouncedAsk, useSearchResults } from './search'
+import { SEARCH_DEBOUNCE_MS, useDebouncedSearch, useSearchResults } from './search'
 
 beforeEach(() => {
   vi.useFakeTimers()
@@ -22,11 +22,11 @@ const deferred = <T>() => {
 describe('a text typed', () => {
   it('is requested once, after the pause that follows the last keystroke', async () => {
     const run = vi.fn(async (_query: string) => {})
-    const { ask } = useDebouncedAsk()
+    const { search } = useDebouncedSearch()
 
-    void ask('q', { blank: vi.fn(), run })
+    void search('q', { blank: vi.fn(), run })
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
-    void ask(' qu ', { blank: vi.fn(), run })
+    void search(' qu ', { blank: vi.fn(), run })
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS - 1)
     expect(run).not.toHaveBeenCalled()
 
@@ -39,19 +39,19 @@ describe('a text typed', () => {
     const blank = vi.fn()
     const pending = vi.fn()
     const run = vi.fn(async (_query: string) => {})
-    await useDebouncedAsk().ask('  ', { blank, pending, run })
+    await useDebouncedSearch().search('  ', { blank, pending, run })
 
     expect(blank).toHaveBeenCalledTimes(1)
     expect(pending).not.toHaveBeenCalled()
     expect(run).not.toHaveBeenCalled()
   })
 
-  it('is release by a drop', async () => {
+  it('is cancelled by a cancel call', async () => {
     const run = vi.fn(async (_query: string) => {})
-    const { ask, drop } = useDebouncedAsk()
+    const { search, cancel } = useDebouncedSearch()
 
-    void ask('q', { blank: vi.fn(), run })
-    drop()
+    void search('q', { blank: vi.fn(), run })
+    cancel()
     await vi.advanceTimersByTimeAsync(SEARCH_DEBOUNCE_MS)
 
     expect(run).not.toHaveBeenCalled()
@@ -60,24 +60,24 @@ describe('a text typed', () => {
   it('waits on the clock it is handed', async () => {
     const waited: number[] = []
     const run = vi.fn(async (_query: string) => {})
-    await useDebouncedAsk({
+    await useDebouncedSearch({
       wait: async (ms) => {
         waited.push(ms)
       },
-    }).ask('q', { blank: vi.fn(), run })
+    }).search('q', { blank: vi.fn(), run })
 
     expect(waited).toStrictEqual([SEARCH_DEBOUNCE_MS])
     expect(run).toHaveBeenCalledTimes(1)
   })
 
-  it('closes the answer guard when the scope disposes', () => {
+  it('closes the request guard when the scope disposes', () => {
     const scope = effectScope()
     let isClosed = false
     scope.run(() => {
-      useDebouncedAsk({
+      useDebouncedSearch({
         guard: {
-          ask: () => ({ isCurrent: true, claim: () => true }),
-          drop: vi.fn(),
+          acquireRequest: () => ({ isCurrent: true, claim: () => true }),
+          cancel: vi.fn(),
           close: () => {
             isClosed = true
           },

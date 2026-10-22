@@ -106,8 +106,8 @@ func TestAMigrationStepThatFailsPreservesTheIndexAtItsVersion(t *testing.T) {
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("the migration answered %v", err)
 			}
-			if at := readUserVersion(t, db); at != 1 {
-				t.Errorf("the index is at version %d, want 1", at)
+			if pos := readUserVersion(t, db); pos != 1 {
+				t.Errorf("the index is at version %d, want 1", pos)
 			}
 			if hasTable(t, db, "probe") {
 				t.Error("the failed migration left its table behind")
@@ -125,8 +125,8 @@ func TestBookkeepingInShapeIsNotRebuilt(t *testing.T) {
 		t.Fatalf("a migration over bookkeeping in shape rebuilt it: %v", err)
 	}
 	stopBreaking()
-	if at := readUserVersion(t, db); at != 2 {
-		t.Errorf("the index is at version %d, want 2", at)
+	if pos := readUserVersion(t, db); pos != 2 {
+		t.Errorf("the index is at version %d, want 2", pos)
 	}
 }
 
@@ -190,7 +190,7 @@ func TestEmptyingAnIndexReportsTheStepThatFailed(t *testing.T) {
 			if !errors.Is(err, errBroken) {
 				t.Fatalf("emptying answered %v", err)
 			}
-			if at := readUserVersion(t, db); at == 0 {
+			if pos := readUserVersion(t, db); pos == 0 {
 				t.Error("an index that was not emptied says it holds no schema")
 			}
 		})
@@ -229,8 +229,8 @@ func TestAnIndexFromALaterBuildThatCannotBeEmptiedIsReported(t *testing.T) {
 	if !errors.Is(err, errBroken) {
 		t.Fatalf("migrating answered %v", err)
 	}
-	if at := readUserVersion(t, db); at != later {
-		t.Errorf("the index is at version %d, want %d", at, later)
+	if pos := readUserVersion(t, db); pos != later {
+		t.Errorf("the index is at version %d, want %d", pos, later)
 	}
 }
 
@@ -247,8 +247,8 @@ func TestAFailedMigrationIsNamedAndCarriesItsCause(t *testing.T) {
 	if !strings.Contains(err.Error(), "0001_index.sql") {
 		t.Errorf("the report %q does not name the migration", err)
 	}
-	if at := readUserVersion(t, db); at != 0 {
-		t.Errorf("the index is at version %d, want 0", at)
+	if pos := readUserVersion(t, db); pos != 0 {
+		t.Errorf("the index is at version %d, want 0", pos)
 	}
 }
 
@@ -297,7 +297,7 @@ func TestMigrationsThatCannotBeReadMigrateNothing(t *testing.T) {
 	if err := migrate(t.Context(), db); err == nil {
 		t.Fatal("an index was migrated by nothing")
 	}
-	if at := readUserVersion(t, db); at != 0 {
-		t.Errorf("the index is at version %d, want 0", at)
+	if pos := readUserVersion(t, db); pos != 0 {
+		t.Errorf("the index is at version %d, want 0", pos)
 	}
 }

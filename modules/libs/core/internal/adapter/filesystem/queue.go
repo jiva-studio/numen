@@ -18,16 +18,16 @@ import (
 // The watcher discards an event that finds its channel full and says nothing,
 // so the channel it writes into is read by a goroutine that only reads.
 type queue struct {
-	bound  int
-	woke   chan struct{}
-	mu     sync.Mutex
-	events []notify.EventInfo
-	isOver bool
-	isDone bool
+	maxBound int
+	woke     chan struct{}
+	mu       sync.Mutex
+	events   []notify.EventInfo
+	isOver   bool
+	isDone   bool
 }
 
-func newQueue(bound int) *queue {
-	return &queue{bound: bound, woke: make(chan struct{}, 1)}
+func newQueue(limit int) *queue {
+	return &queue{maxBound: limit, woke: make(chan struct{}, 1)}
 }
 
 // put takes one event. At the bound the events waiting are dropped and the
@@ -35,7 +35,7 @@ func newQueue(bound int) *queue {
 // did not fit.
 func (q *queue) put(event notify.EventInfo) {
 	q.mu.Lock()
-	if len(q.events) >= q.bound {
+	if len(q.events) >= q.maxBound {
 		q.events, q.isOver = nil, true
 	} else {
 		q.events = append(q.events, event)
@@ -62,12 +62,12 @@ func (q *queue) wake() {
 }
 
 // take empties the queue and says whether it overflowed since the last take.
-func (q *queue) take() (events []notify.EventInfo, over, done bool) {
+func (q *queue) take() (events []notify.EventInfo, finished, completed bool) {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	events, over, done = q.events, q.isOver, q.isDone
+	events, finished, completed = q.events, q.isOver, q.isDone
 	q.events, q.isOver = nil, false
-	return events, over, done
+	return events, finished, completed
 }
 
 // forwardEvents moves events out of the watcher's channel as fast as they arrive.

@@ -15,7 +15,11 @@ const getCommand = (id: string): Command => {
   return found
 }
 
-const at = (source: Source, createdItem: ArtifactStates, isReady = true): CommandTarget => ({
+const createTarget = (
+  source: Source,
+  createdItem: ArtifactStates,
+  isReady = true,
+): CommandTarget => ({
   tab: 'tab-1',
   kind: 'file',
   path: 'talk.md',
@@ -52,51 +56,51 @@ describe('the runs over a file', () => {
 
 describe('a run over the file in front', () => {
   it('is not offered where the tab names no file', () => {
-    expect(isOffered('recognise', { ...at('book', {}), file: '' })).toBe(false)
+    expect(isOffered('recognise', { ...createTarget('book', {}), file: '' })).toBe(false)
   })
 })
 
 describe('reading a book', () => {
   it('is offered on a build that can read one', () => {
-    expect(isOffered('recognise', at('book', {}))).toBe(true)
-    expect(isOffered('recognise', at('book', {}), allBut('recognise'))).toBe(false)
+    expect(isOffered('recognise', createTarget('book', {}))).toBe(true)
+    expect(isOffered('recognise', createTarget('book', {}), allBut('recognise'))).toBe(false)
   })
 })
 
 describe('downloading the text of an address', () => {
   it('is offered on an address carrying a transcript or an article', () => {
-    expect(isOffered('downloadText', at('url', { transcript: 'none' }))).toBe(true)
-    expect(isOffered('downloadText', at('url', { article: 'done' }))).toBe(true)
+    expect(isOffered('downloadText', createTarget('url', { transcript: 'none' }))).toBe(true)
+    expect(isOffered('downloadText', createTarget('url', { article: 'done' }))).toBe(true)
   })
 
   it('is not offered on an address carrying neither', () => {
-    expect(isOffered('downloadText', at('url', { copy: 'done' }))).toBe(false)
+    expect(isOffered('downloadText', createTarget('url', { copy: 'done' }))).toBe(false)
   })
 
   it('is offered on an address alone, and on a build that can download text', () => {
-    expect(isOffered('downloadText', at('book', {}))).toBe(false)
-    expect(isOffered('downloadText', at('url', {}), allBut('downloadText'))).toBe(false)
+    expect(isOffered('downloadText', createTarget('book', {}))).toBe(false)
+    expect(isOffered('downloadText', createTarget('url', {}), allBut('downloadText'))).toBe(false)
   })
 })
 
 describe('downloading a copy of a video', () => {
   it('is offered where the address carries a copy not yet made', () => {
-    expect(isOffered('downloadCopy', at('url', { copy: 'none' }))).toBe(true)
+    expect(isOffered('downloadCopy', createTarget('url', { copy: 'none' }))).toBe(true)
   })
 
   it('is not offered while the vault cannot be requested', () => {
-    expect(isOffered('downloadCopy', at('url', { copy: 'none' }, false))).toBe(false)
+    expect(isOffered('downloadCopy', createTarget('url', { copy: 'none' }, false))).toBe(false)
   })
 
   it('is not offered on a build that cannot download a copy', () => {
-    expect(isOffered('downloadCopy', at('url', { copy: 'none' }), allBut('downloadCopy'))).toBe(
-      false,
-    )
+    expect(
+      isOffered('downloadCopy', createTarget('url', { copy: 'none' }), allBut('downloadCopy')),
+    ).toBe(false)
   })
 
   it('is not offered where the address carries no copy, or one already made', () => {
-    expect(isOffered('downloadCopy', at('url', {}))).toBe(false)
-    expect(isOffered('downloadCopy', at('url', { copy: 'done' }))).toBe(false)
+    expect(isOffered('downloadCopy', createTarget('url', {}))).toBe(false)
+    expect(isOffered('downloadCopy', createTarget('url', { copy: 'done' }))).toBe(false)
   })
 })
 
@@ -105,29 +109,31 @@ describe('deleting a copy', () => {
     expect(getCommand('deleteCopy').needs).toBe('asking')
     expect(getCommand('deleteCopy').answers).toStrictEqual({
       keeps: words.keepsCopy,
-      kept: words.kept,
+      retainedNotice: words.retainedNotice,
       action: words.deletes,
       detail: words.deletedCopy,
     })
   })
 
   it('is offered on an address whose copy remains, on a build that can delete one', () => {
-    expect(isOffered('deleteCopy', at('url', { copy: 'done' }))).toBe(true)
-    expect(isOffered('deleteCopy', at('url', { copy: 'done' }), allBut('deleteCopy'))).toBe(false)
-    expect(isOffered('deleteCopy', at('book', { copy: 'done' }))).toBe(false)
+    expect(isOffered('deleteCopy', createTarget('url', { copy: 'done' }))).toBe(true)
+    expect(
+      isOffered('deleteCopy', createTarget('url', { copy: 'done' }), allBut('deleteCopy')),
+    ).toBe(false)
+    expect(isOffered('deleteCopy', createTarget('book', { copy: 'done' }))).toBe(false)
   })
 
   it('is not offered where no copy remains', () => {
-    expect(isOffered('deleteCopy', at('url', { copy: 'none' }))).toBe(false)
+    expect(isOffered('deleteCopy', createTarget('url', { copy: 'none' }))).toBe(false)
   })
 })
 
 describe('deleting the text of an address', () => {
   it('is offered where the address carries a transcript', () => {
-    expect(isOffered('deleteText', at('url', { transcript: 'done' }))).toBe(true)
+    expect(isOffered('deleteText', createTarget('url', { transcript: 'done' }))).toBe(true)
   })
 
   it('is not offered where its transcript was never made', () => {
-    expect(isOffered('deleteText', at('url', { transcript: 'none' }))).toBe(false)
+    expect(isOffered('deleteText', createTarget('url', { transcript: 'none' }))).toBe(false)
   })
 })

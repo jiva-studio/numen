@@ -118,9 +118,9 @@ type onTheList struct {
 	first    domain.Vault
 	second   domain.Vault
 
-	mu      sync.Mutex
-	shown   []domain.Vault
-	refuses error
+	mu       sync.Mutex
+	expected []domain.Vault
+	refuses  error
 }
 
 // onAList puts two vaults on a list of its own and serves the questions about
@@ -161,7 +161,7 @@ func onAList(t *testing.T) *onTheList {
 	f.api.state.OpenVault = func(_ context.Context, v domain.Vault) error {
 		f.mu.Lock()
 		defer f.mu.Unlock()
-		f.shown = append(f.shown, v)
+		f.expected = append(f.expected, v)
 		return f.refuses
 	}
 	f.api.state.setVault(f.first)
@@ -187,7 +187,7 @@ func (f *onTheList) opening(why error) {
 func (f *onTheList) getShown() []domain.Vault {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	return append([]domain.Vault(nil), f.shown...)
+	return append([]domain.Vault(nil), f.expected...)
 }
 
 // addVault makes a folder under a parent of its own and puts it on the list.
@@ -205,11 +205,11 @@ func addVault(t *testing.T, add vaults.Add, name string) domain.Vault {
 func folderNamed(t *testing.T, name string) string {
 	t.Helper()
 
-	at := filepath.Join(t.TempDir(), name)
-	if err := os.MkdirAll(at, 0o755); err != nil {
+	pos := filepath.Join(t.TempDir(), name)
+	if err := os.MkdirAll(pos, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	return at
+	return pos
 }
 
 // getList is the list as the client is answered with it.
@@ -393,7 +393,7 @@ func TestTheVaultTheWindowIsShowingStaysOnTheList(t *testing.T) {
 
 	onList(t, f.getList(t), string(f.first.ID))
 	if got := f.rows.getForgotten(); len(got) != 0 {
-		t.Errorf("the index was told to forget %v", got)
+		t.Errorf("forgot %v", got)
 	}
 	if got := f.bin.getTrashed(); len(got) != 0 {
 		t.Errorf("trashed %v", got)
@@ -486,7 +486,7 @@ func TestAVaultGoesToTheTrashAndOffTheList(t *testing.T) {
 		t.Errorf("trashed %v, want %s", got, f.second.Path)
 	}
 	if got := f.rows.getForgotten(); len(got) != 1 || got[0] != f.second.ID {
-		t.Errorf("the index was told to forget %v, want %s", got, f.second.ID)
+		t.Errorf("forgot %v, want %s", got, f.second.ID)
 	}
 	if _, found, err := f.registry.FindVault(string(f.second.ID)); err != nil || found {
 		t.Errorf("the vault is still on the list: %v %v", found, err)
@@ -508,7 +508,7 @@ func TestAMachineWithNowhereToInsertWhatIsDeletedErasesNothing(t *testing.T) {
 	}
 	onList(t, f.getList(t), string(f.second.ID))
 	if got := f.rows.getForgotten(); len(got) != 0 {
-		t.Errorf("the index was told to forget %v", got)
+		t.Errorf("forgot %v", got)
 	}
 	if _, err := os.Stat(f.second.Path); err != nil {
 		t.Errorf("the folder is gone: %v", err)

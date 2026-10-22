@@ -82,7 +82,6 @@ func TestEveryReadingToolAnswersWithoutAWriter(t *testing.T) {
 }
 
 // One installation holds every vault in one index, so a query that forgets its
-// vault answers with another vault's notes and nothing fails. Two vaults whose
 // prose shares no words, asked in both directions, is what says so.
 func TestTheReadingToolsAnswerAboutOneVaultOnly(t *testing.T) {
 	cfg, db := openIndex(t)
@@ -204,7 +203,6 @@ func (s side) checkHoldsNothingOf(t *testing.T, other side) {
 	}
 }
 
-// getAnswer is one call as it came back, whether it answered or refused. A
 // vault leaks into any field of an answer, so the whole of it is read.
 func getAnswer(t *testing.T, session *sdk.ClientSession, name string, args any) string {
 	t.Helper()

@@ -25,7 +25,7 @@ func closeWindow(
 	ctx context.Context,
 	g *vaultFlush,
 	s visibility,
-	answered func(context.Context) bool,
+	confirm func(context.Context) bool,
 	retry func(),
 ) bool {
 	s.hide()
@@ -35,7 +35,7 @@ func closeWindow(
 	}
 	s.show()
 	go func() {
-		if answered(ctx) {
+		if confirm(ctx) {
 			retry()
 		}
 	}()
@@ -99,13 +99,13 @@ func handleWindowClosing(
 	tracker *windowTracker,
 	g *vaultFlush,
 	s visibility,
-	answered func(context.Context) bool,
+	confirm func(context.Context) bool,
 	retry func(),
 ) bool {
 	if tracker.closeSecondaryWindow() {
 		return true
 	}
-	return closeWindow(ctx, g, s, answered, retry)
+	return closeWindow(ctx, g, s, confirm, retry)
 }
 
 // requestQuit is a quit that did not come through the window, and answers with
@@ -115,7 +115,6 @@ func handleWindowClosing(
 // and the settling happens off it, and the quit is asked for again once it is
 // over. A settling that ended with a question standing puts the window back and
 // asks for nothing: the person is answering it, and that is the whole of what
-// the goroutine left behind may do.
 func requestQuit(g *vaultFlush, s visibility, quit func()) bool {
 	if g.isFlushed() {
 		return true
@@ -149,7 +148,7 @@ type vaultFlush struct {
 
 // flushAttempt is one settling, and what it answered.
 type flushAttempt struct {
-	done      chan struct{}
+	ready     chan struct{}
 	isFlushed bool
 }
 
@@ -163,13 +162,13 @@ func (g *vaultFlush) flushVault() bool {
 	}
 	this := g.turn
 	if this == nil {
-		this = &flushAttempt{done: make(chan struct{})}
+		this = &flushAttempt{ready: make(chan struct{})}
 		g.turn = this
 		go g.run(this)
 	}
 	g.mu.Unlock()
 
-	<-this.done
+	<-this.ready
 	return this.isFlushed
 }
 
@@ -181,7 +180,7 @@ func (g *vaultFlush) isFlushed() bool {
 }
 
 func (g *vaultFlush) run(this *flushAttempt) {
-	defer close(this.done)
+	defer close(this.ready)
 
 	ctx, cancel := context.WithTimeout(context.Background(), quitBound)
 	defer cancel()

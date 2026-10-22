@@ -15,7 +15,6 @@ message PingRequest {}
 
 message PingResponse {
   string status = 1;
-  // The plugin protocol version the plugin speaks. Zero means the plugin did not report one.
   int32 protocol = 2;
 }
 
@@ -96,14 +95,12 @@ enum CompletionConsent {
   // started.
   COMPLETION_CONSENT_UNANSWERED = 1;
 
-  // The plugin has asked since the host started, was refused for it, and the
   // person has not answered.
   COMPLETION_CONSENT_ASKED = 2;
 
   // The person lets the plugin ask.
   COMPLETION_CONSENT_ALLOWED = 3;
 
-  // The person refused it.
   COMPLETION_CONSENT_REFUSED = 4;
 }
 
@@ -131,13 +128,10 @@ message DeliverEventRequest {
 }
 
 message DeliverEventResponse {
-  // Set when the plugin took the event and refused it.
   PluginEventErrorCode error = 1;
-  // The plugin's words for the refusal. Empty when error is unset.
   string reason = 2;
 }
 
-// PluginEventErrorCode is why a plugin that took an event refused it. The zero
 // value means it did not.
 enum PluginEventErrorCode {
   PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED = 0;

@@ -20,7 +20,6 @@ import '../../curve-slider.css'
 // --- Props & Emits ---
 const props = defineProps<{
   state: CurveSliderState
-  /** The value the knob stands at, said in the units of the goal. */
   valueText: string
 }>()
 

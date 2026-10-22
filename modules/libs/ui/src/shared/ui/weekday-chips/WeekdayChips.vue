@@ -3,7 +3,6 @@
  * The days of the week as seven chips, each standing at a level. Pressing a day
  * offers the levels, and the day it was chosen for is handed back with it.
  *
- * A chip is filled in step with the level it stands at. A row nobody may turn
  * keeps the keyboard, says so, and offers nothing.
  */
 import { computed, ref, type HTMLAttributes } from 'vue'
@@ -15,14 +14,13 @@ import { getFill, getFillPercent, getOfferedLevels, type Day } from './week'
 
 const props = withDefaults(
   defineProps<{
-    /** The days, in the order they are drawn, each at the level it stands at. */
     days: readonly Day[]
     /** The levels offered, in the order they are offered. */
     levels: readonly number[]
-    disabled?: boolean
+    isDisabled?: boolean
     class?: HTMLAttributes['class']
   }>(),
-  { disabled: false },
+  { isDisabled: false },
 )
 
 const emit = defineEmits<{
@@ -34,8 +32,9 @@ const emit = defineEmits<{
 // names the row by is put on the row itself.
 defineOptions({ inheritAttrs: false })
 
-/** Which day is being given a level, what it stands at, and where its chip is. */
-const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(null)
+const popoverAnchor = ref<{ day: string; level: number; at: Position; from: HTMLElement } | null>(
+  null,
+)
 
 const availableLevels = computed(() =>
   getOfferedLevels(props.levels, popoverAnchor.value?.level ?? null).map((level) => ({
@@ -45,10 +44,12 @@ const availableLevels = computed(() =>
 )
 
 /** Which of the levels on offer is the one in force, as the menu names it. */
-const current = computed(() => (popoverAnchor.value === null ? null : `${popoverAnchor.value.level}`))
+const current = computed(() =>
+  popoverAnchor.value === null ? null : `${popoverAnchor.value.level}`,
+)
 
 const openLevels = (day: Day, event: Event) => {
-  if (props.disabled) return
+  if (props.isDisabled) return
   const chip = event.currentTarget
   if (!(chip instanceof HTMLElement)) return
   const box = chip.getBoundingClientRect()
@@ -92,7 +93,7 @@ const getFillStyle = (level: number) => {
     <RovingFocusItem v-for="day in days" :key="day.id" as-child>
       <button
         type="button"
-        :aria-disabled="disabled || undefined"
+        :aria-disabled="isDisabled || undefined"
         :aria-label="`${day.long}, ${getFillPercent(day.level)}`"
         aria-haspopup="menu"
         :aria-expanded="popoverAnchor?.day === day.id"
@@ -119,7 +120,7 @@ const getFillStyle = (level: number) => {
     :at="popoverAnchor.at"
     :from="popoverAnchor.from"
     :current="current"
-    open
+    is-open
     trigger="keyboard"
     @choose="onChoose"
     @dismiss="popoverAnchor = null"

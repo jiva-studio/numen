@@ -21,9 +21,9 @@ import (
 // take. What is asked of it is the hop: what the page sends arrives as a task,
 // and what the agent does arrives back as steps.
 type asking struct {
-	took  chan port.Task
-	takes []port.Step
-	over  chan string
+	took     chan port.Task
+	takes    []port.Step
+	overChan chan string
 }
 
 func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
@@ -37,7 +37,7 @@ func (a *asking) StartRun(_ context.Context, task port.Task) (port.Run, error) {
 }
 
 func (a *asking) EndConversation(_ context.Context, conversation string) error {
-	a.over <- conversation
+	a.overChan <- conversation
 	return nil
 }
 
@@ -209,7 +209,7 @@ func TestAWindowWithNoAgentAnswersNothingAboutACard(t *testing.T) {
 // A conversation said to be over reaches the agent under the name its questions
 // carried.
 func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
-	agent := &asking{over: make(chan string, 1)}
+	agent := &asking{overChan: make(chan string, 1)}
 	api := &API{}
 	api.SetAgent(agent)
 
@@ -217,7 +217,7 @@ func TestAConversationSaidToBeOverReachesTheAgent(t *testing.T) {
 		connect.NewRequest(&v1.FinishConversationRequest{Conversation: "3f4g5h6j7k"})); err != nil {
 		t.Fatal(err)
 	}
-	if overVal := <-agent.over; overVal != "3f4g5h6j7k" {
+	if overVal := <-agent.overChan; overVal != "3f4g5h6j7k" {
 		t.Errorf("finished %q", overVal)
 	}
 }
@@ -246,7 +246,6 @@ func TestWhetherACardCanBeAskedAboutIsSaid(t *testing.T) {
 }
 
 // The page asks once, as it opens, and no session is open then. An agent that
-// is started when a person sits down to a vault has not started yet, and the
 // page is not told this window can ask nothing.
 func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 	api := &API{}
@@ -257,7 +256,7 @@ func TestAWindowAskedBeforeASessionIsNotSaidToHaveNoAgent(t *testing.T) {
 		t.Fatal(err)
 	}
 	if why := response.Msg.GetUnreachable(); why != "" {
-		t.Errorf("before anybody sat down the page was told %q", why)
+		t.Errorf("before anybody sat down got error message %q", why)
 	}
 }
 
@@ -272,7 +271,7 @@ func TestWhyTheAgentCouldNotBeServedReachesThePage(t *testing.T) {
 		t.Fatal(err)
 	}
 	if why := response.Msg.GetUnreachable(); why != "claude is not on this machine" {
-		t.Errorf("the page was told %q", why)
+		t.Errorf("got error message %q", why)
 	}
 }
 

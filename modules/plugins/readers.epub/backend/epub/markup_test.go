@@ -121,7 +121,6 @@ func TestMarkup(t *testing.T) {
 }
 
 // A spine document that is an SVG is a cover drawn around a picture, and there
-// is nothing in it to reflow. What a reader draws is the picture it wraps: an
 // SVG served from the window's own origin is a document there, and its own
 // addresses reach no entry of the archive.
 func TestASpineDocumentThatIsACoverGeneratedAroundAPicture(t *testing.T) {
@@ -355,14 +354,13 @@ func TestAnElementOnASpaceTakenBackExistsAtTheLineEnd(t *testing.T) {
 		t.Fatalf("the text is %q", book.Text)
 	}
 	if got := element(t, markup.Nodes, "b").Offset; got != 1 {
-		t.Errorf("the element stands at %d, want 1", got)
+		t.Errorf("got element offset %d, want 1", got)
 	}
 	if got := getNodeText(markup.Nodes); got != book.Text {
 		t.Errorf("the markup says %q, want %q", got, book.Text)
 	}
 }
 
-// A run written in a table stands in the cell that follows it, and in the table
 // itself when no cell follows. A run written after a table is not in it.
 func TestRunsInATable(t *testing.T) {
 	for _, c := range []struct {
@@ -394,7 +392,7 @@ func TestRunsInATable(t *testing.T) {
 				t.Errorf("the %s says %q, want %q", c.in, got, c.want)
 			}
 			if len(holder.Children) > 0 && holder.Offset != holder.Children[0].Offset {
-				t.Errorf("the %s stands at %d and what it holds at %d",
+				t.Errorf("%s is at %d and content at %d",
 					c.in, holder.Offset, holder.Children[0].Offset)
 			}
 			if c.in == "td" {

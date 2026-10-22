@@ -8,7 +8,6 @@ import (
 
 // Folder is where a plugin keeps its model files and whether it may fetch them.
 type Folder struct {
-	// Section is the settings block a person is told to change.
 	Section string
 	// Dir is the folder the settings name. Empty is the shared models folder.
 	Dir string
@@ -78,4 +77,3 @@ func (f Folder) Source() Source {
 func (f Folder) Locate(ctx context.Context, pins Pins, wanted []Wanted) error {
 	return LocateAll(ctx, f.Source(), pins, wanted)
 }
-

@@ -1,4 +1,3 @@
-/** What the window asks of the vault about itself, and the streams it speaks on. */
 import type { PathRename } from '@/shared/paths'
 import type { Task } from '@/shared/notices/task'
 import type { OpenTabs } from '@/entities/tab'
@@ -10,7 +9,6 @@ export interface VaultPort {
     id: string
     /** What the person calls the vault. */
     name: string
-    /** The folder the vault sits in, absolute on this machine. */
     path: string
     /** How far indexing the vault has got. */
     scan: {
@@ -28,7 +26,6 @@ export interface VaultPort {
   /**
    * Why an agent cannot be reached, and nothing where one can. Which agent
    * answers is the installation's, so it is asked of the agent and not of the
-   * vault the window is showing.
    */
   agentUnreachable(): Promise<string>
   watchVaultChanges(signal: AbortSignal): AsyncIterable<{
@@ -65,5 +62,5 @@ export interface VaultPort {
   /** Everything this client owed has been written. */
   reportFlush(token: string, owed?: 'written' | 'asking'): Promise<void>
   /** Detach a tab into a new window at the given screen coordinates. */
-  detachTab(tabId: string, at: { x: number; y: number }): Promise<void>
+  detachTab(tabId: string, position: { x: number; y: number }): Promise<void>
 }

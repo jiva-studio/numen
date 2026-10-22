@@ -14,7 +14,6 @@ import (
 )
 
 // A Markup is one spine document as the elements a book is drawn from, with
-// every run of text at the offset it stands at in the book's Text. Reading a
 // document and reading its text are one walk, so an offset here is the offset a
 // chunk of that text carries.
 type Markup struct {
@@ -51,7 +50,7 @@ type Attribute struct {
 // A document the book was not read from is not one to ask for: what a book holds
 // beside its spine is not part of it.
 func (b *Book) Markup(docPath string) (*Markup, error) {
-	doc, ok := b.held[docPath]
+	doc, ok := b.documents[docPath]
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoDocument, docPath)
 	}
@@ -66,8 +65,8 @@ func (b *Book) Markup(docPath string) (*Markup, error) {
 	// picture, and what a reader draws is that picture. One that draws none is
 	// answered with the text it carries and nothing else.
 	if doc.mediaType == mediaSVG {
-		if at, ok := b.findSVGImage(path.Dir(docPath), raw); ok {
-			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: at}}}}, nodes...)
+		if pos, ok := b.findSVGImage(path.Dir(docPath), raw); ok {
+			nodes = append([]Node{{Name: "img", Attributes: []Attribute{{Name: "src", Value: pos}}}}, nodes...)
 		}
 	}
 	shift(nodes, doc.Offset)
@@ -95,10 +94,10 @@ func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 			if a.Name.Local != "href" {
 				continue
 			}
-			switch at := resolveImageSource(base, a.Value); {
-			case at == "":
-			case isInlineImage(at), b.files[at] != nil:
-				return at, true
+			switch pos := resolveImageSource(base, a.Value); {
+			case pos == "":
+			case isInlineImage(pos), b.files[pos] != nil:
+				return pos, true
 			}
 		}
 	}
@@ -111,7 +110,6 @@ func (b *Book) findSVGImage(base string, raw []byte) (string, bool) {
 // the text is not taken from — head, script, style and title — are dropped whole
 // by the walk that reads both.
 type builder struct {
-	// base is the directory the document sits in, which its own hrefs are
 	// written against.
 	base string
 	// stack is the elements standing open, the first being the document itself.
@@ -156,7 +154,6 @@ func (b *builder) close() {
 // markup or to end a line. What it says is filled in when the document has been
 // read, so a space taken back by the line that follows is taken back here too.
 //
-// A run written in a table stands inside a cell of it: a browser foster-parents
 // one standing between the cells out in front of the table.
 func (b *builder) run(offset int) {
 	if b == nil {
@@ -200,7 +197,6 @@ func (b *builder) appendChild(n Node) {
 	top.Children = append(top.Children, n)
 }
 
-// finish fills every run with the text it stands over and answers with the
 // document.
 //
 // A run reaches to where the next one begins, so every byte of the document is
@@ -211,15 +207,14 @@ func (b *builder) finish(text string, end int) []Node {
 
 	// The line a block ends takes back the space before it, and an element
 	// standing on that space stands where the line ends instead.
-	at := end
+	pos := end
 	for i := len(found) - 1; i >= 0; i-- {
-		found[i].Offset = min(found[i].Offset, at)
-		at = found[i].Offset
+		found[i].Offset = min(found[i].Offset, pos)
+		pos = found[i].Offset
 	}
 
 	var last *Node
 	for _, node := range found {
-		// gomutants:disable-next-line BRANCH_IF reason="an element stands at the offset of the run that follows it, so reading it as a run assigns the same text"
 		if node.Name != "" {
 			continue
 		}
@@ -244,10 +239,10 @@ func collectNodes(nodes []Node, into []*Node) []*Node {
 }
 
 // shift moves a document to at its current position in the book.
-func shift(nodes []Node, by int) {
+func shift(nodes []Node, delta int) {
 	for i := range nodes {
-		nodes[i].Offset += by
-		shift(nodes[i].Children, by)
+		nodes[i].Offset += delta
+		shift(nodes[i].Children, delta)
 	}
 }
 

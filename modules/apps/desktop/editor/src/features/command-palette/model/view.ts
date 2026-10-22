@@ -21,7 +21,7 @@ export function getPaletteView(state: ViewState) {
   const steps = createStepGroups(state)
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
-  const renderItem = (one: Command, over: CommandTarget, word: string): PaletteItem | null => {
+  const renderItem = (one: Command, target: CommandTarget, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
     const also = one.also ? byId.get(one.also) : undefined
@@ -32,24 +32,24 @@ export function getPaletteView(state: ViewState) {
       ...(one.keys ? { keys: one.keys } : {}),
       actions: [
         { id: one.id, text: one.text },
-        ...(also?.isOffered(over, runs) ? [{ id: also.id, text: also.text }] : []),
+        ...(also?.isOffered(target, runs) ? [{ id: also.id, text: also.text }] : []),
       ],
     }
   }
 
-  const getSilenceMessage = (over: CommandTarget): string => {
-    if (!over.isReady) return words.noVault
-    if (over.path) return words.noneFound
+  const getSilenceMessage = (target: CommandTarget): string => {
+    if (!target.isReady) return words.noVault
+    if (target.path) return words.noneFound
     return words.noNote
   }
 
   /** Every command offered over what is in front, in the groups it holds. */
-  const getCommandGroups = (over: CommandTarget, text: string): readonly PaletteGroup[] => {
+  const getCommandGroups = (target: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
       getGroupCommands(commands, group)
-        .filter((one) => one.isOffered(over, runs))
-        .map((one) => renderItem(one, over, word))
+        .filter((one) => one.isOffered(target, runs))
+        .map((one) => renderItem(one, target, word))
         .filter((item) => item !== null)
 
     // The runs are offered over a book and over a recording, and their group
@@ -61,7 +61,7 @@ export function getPaletteView(state: ViewState) {
         id: 'note',
         title: words.noteGroupTitle,
         items: items('note'),
-        silence: getSilenceMessage(over),
+        silence: getSilenceMessage(target),
       },
       ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
       { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
@@ -70,8 +70,8 @@ export function getPaletteView(state: ViewState) {
   }
 
   /** What the palette draws at its current position, over the words typed into it. */
-  const createGroups = (step: PendingStep | null, over: CommandTarget, text: string) => {
-    if (!step) return getCommandGroups(over, text)
+  const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
+    if (!step) return getCommandGroups(target, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]
     if (step.step === 'address') return [steps.getAddressGroup(text)]
     if (step.step === 'picking') return [steps.getPickingGroup(text)]

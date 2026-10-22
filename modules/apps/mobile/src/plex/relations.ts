@@ -9,7 +9,6 @@ import { getNames } from '@numen/wire'
 /**
  * Which relation each relationship puts a note in. Keyed by the schema, so a role
  * added to it has to be given a relation here before this compiles. A role the picture
- * draws no relation for sits in none, and a sibling is given by no role at all.
  */
 const RELATION_BY_ROLE: Record<Role, PlexRelation | null> = {
   [Role.UNSPECIFIED]: null,

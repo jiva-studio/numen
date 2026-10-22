@@ -68,7 +68,7 @@ export function useRoom(
    * A title measured at no more than the box it is already in widens nothing,
    * and where there was nothing to measure the text with, nothing widens at all.
    */
-  const widen = computed(() => {
+  const expandWidth = computed(() => {
     const measure = measures.value?.node
     if (!measure) return undefined
 
@@ -91,5 +91,5 @@ export function useRoom(
       getNodeHeadings(node, getHeadings(node.id), { options: options.value, deps })
   })
 
-  return { room, options, measures, widen, hung: suspended }
+  return { room, options, measures, widen: expandWidth, hung: suspended }
 }

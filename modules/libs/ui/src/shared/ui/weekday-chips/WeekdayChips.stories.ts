@@ -29,7 +29,6 @@ const RUSSIAN: readonly DayName[] = [
 const LEVELS: readonly number[] = [0, 0.1, 0.25, 0.5, 0.75, 0.9, 1]
 
 interface Knobs {
-  /** The level each day stands at, by its identifier. A day not named is full. */
   levelOf: Readonly<Record<string, number>>
   /** Which day the week is turned to start on. */
   startsOn: string
@@ -37,7 +36,7 @@ interface Knobs {
   names: 'English' | 'Russian'
   /** The levels a day is offered. */
   levels: readonly number[]
-  disabled: boolean
+  isDisabled: boolean
   /** The names themselves, where a story draws something other than a week. */
   named?: readonly DayName[]
 }
@@ -51,7 +50,7 @@ const meta: Meta<Knobs> = {
     startsOn: { control: 'inline-radio', options: ['mon', 'sun'] },
     names: { control: 'inline-radio', options: ['English', 'Russian'] },
     levels: { control: 'object' },
-    disabled: { control: 'boolean' },
+    isDisabled: { control: 'boolean' },
     named: { table: { disable: true } },
   },
   args: {
@@ -59,7 +58,7 @@ const meta: Meta<Knobs> = {
     startsOn: 'mon',
     names: 'English',
     levels: LEVELS,
-    disabled: false,
+    isDisabled: false,
   },
   render: (args) => ({
     components: { WeekdayChips },
@@ -81,7 +80,7 @@ const meta: Meta<Knobs> = {
           aria-label="The level each day stands at"
           :days="days"
           :levels="args.levels"
-          :disabled="args.disabled"
+          :is-disabled="args.isDisabled"
           @choose="onChoose"
         />
       </div>
@@ -125,7 +124,6 @@ export const StartingOnSunday: Story = { args: { startsOn: 'sun' } }
 /**
  * Levels the offer does not name, one of them past anything a chip can be
  * filled with. A chip says the level it is drawn at, and the levels it offers
- * hold the one the day stands at.
  */
 export const ALevelNotOnOffer: Story = {
   args: { levelOf: { sat: 0.37, sun: 4 } },
@@ -173,7 +171,6 @@ export const NoLevelsAtAll: Story = {
   args: { levels: [], levelOf: {} },
   play: async ({ canvasElement }) => {
     await userEvent.click(chips(canvasElement)[0] as HTMLElement)
-    // The level the day stands at is on offer wherever it is asked for, so a
     // day is never asked to choose without its own among the choices.
     await waitFor(() => expect(getOfferedLabels()).toEqual(['100%']))
   },
@@ -182,10 +179,10 @@ export const NoLevelsAtAll: Story = {
 /** Far more days than a week holds, each drawn at the size of the rest. */
 export const FarTooMany: Story = {
   args: {
-    named: Array.from({ length: 31 }, (_, at) => ({
-      id: `day-${at}`,
-      short: `${at + 1}`,
-      long: `Day ${at + 1}`,
+    named: Array.from({ length: 31 }, (_, index) => ({
+      id: `day-${index}`,
+      short: `${index + 1}`,
+      long: `Day ${index + 1}`,
     })),
   },
   play: async ({ canvasElement }) => {
@@ -231,14 +228,14 @@ export const AwkwardNames: Story = {
 }
 
 /** Days nobody may turn. */
-export const Disabled: Story = { args: { disabled: true } }
+export const Disabled: Story = { args: { isDisabled: true } }
 
 /**
  * A row nobody may turn is still read: the chips keep the keyboard and say
  * they are disabled, and pressing one offers nothing.
  */
 export const DisabledOffersNothing: Story = {
-  args: { disabled: true },
+  args: { isDisabled: true },
   play: async ({ canvasElement }) => {
     const chip = chips(canvasElement)[2] as HTMLElement
     expect(chip.getAttribute('aria-disabled')).toBe('true')
@@ -252,7 +249,6 @@ export const DisabledOffersNothing: Story = {
   },
 }
 
-/** Each chip says its whole name and the level that day stands at. */
 export const EachChipSaysWhereItStands: Story = {
   play: async ({ canvasElement }) => {
     expect(chips(canvasElement)).toHaveLength(7)
@@ -295,7 +291,6 @@ export const OneStopForTheWholeRow: Story = {
 }
 
 /**
- * The keyboard opens the levels on the one the day stands at, and comes back to
  * the chip it was on — whether a level was chosen or nothing was.
  */
 export const TheKeyboardComesBack: Story = {
@@ -308,7 +303,6 @@ export const TheKeyboardComesBack: Story = {
     await userEvent.keyboard(' ')
     const onOffer = () => Array.from(document.body.querySelectorAll<HTMLElement>('.menu__item'))
     await waitFor(() => expect(onOffer()).toHaveLength(7))
-    // Open on the level the day stands at, said on the item itself.
     expect(document.activeElement).toBe(onOffer()[3])
     expect(onOffer()[3]?.getAttribute('aria-checked')).toBe('true')
 
@@ -342,11 +336,10 @@ export const Dark: Story = {
     const all = chips(canvasElement)
     expect(all).toHaveLength(7)
 
-    // Saturday stands at nothing, so its chip is the plain ground the rest are
     // blended from: Friday, Thursday, Wednesday, Tuesday and Monday, in that
     // order, each one further from it.
     const ground = (chip: HTMLElement) => lightness(getComputedStyle(chip).backgroundColor)
-    const rising = [5, 4, 3, 2, 1, 0].map((at) => ground(all[at] as HTMLElement))
+    const rising = [5, 4, 3, 2, 1, 0].map((idx) => ground(all[idx] as HTMLElement))
     for (const [at, chip] of rising.slice(1).entries()) {
       expect(chip).toBeGreaterThan((rising[at] as number) + 1)
     }
