@@ -51,15 +51,25 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 
 func newEmbeddingServer() *embeddingServer {
 	info, local := engine.DefaultBGEM3Config()
+	applyModelOverrides(&info, &local)
+	applyDimensionEnv(&info)
+	applyRuntimeEnv(&local)
 
+	return &embeddingServer{
+		modelInfo:  info,
+		localModel: local,
+	}
+}
+
+func applyModelOverrides(info *engine.ModelInfo, local *engine.LocalModel) {
 	if name := os.Getenv("NUMEN_EMBEDDING_MODEL"); name != "" {
 		info.Name = name
 		if name != "bge-m3" && name != "bge-m3-int8" {
-			local = local.WithRepository(name)
+			*local = local.WithRepository(name)
 		}
 	}
 	if repo := os.Getenv("NUMEN_EMBEDDING_REPO"); repo != "" {
-		local = local.WithRepository(repo)
+		*local = local.WithRepository(repo)
 	}
 	if dir := os.Getenv("NUMEN_EMBEDDING_DIR"); dir != "" {
 		local.Dir = dir
@@ -67,19 +77,31 @@ func newEmbeddingServer() *embeddingServer {
 	if file := os.Getenv("NUMEN_EMBEDDING_FILE"); file != "" {
 		local.File = file
 	}
-	if envDim := os.Getenv("NUMEN_EMBEDDING_DIMENSIONS"); envDim != "" {
-		if d, err := strconv.Atoi(envDim); err == nil && d > 0 && d <= math.MaxInt32 {
-			info.Dimensions = d
-		}
+}
+
+func parsePositiveInt(val string) int {
+	if val == "" {
+		return 0
 	}
-	if envTokens := os.Getenv("NUMEN_EMBEDDING_MAX_TOKENS"); envTokens != "" {
-		if t, err := strconv.Atoi(envTokens); err == nil && t > 0 && t <= math.MaxInt32 {
-			info.MaxTokens = t
-		}
+	if d, err := strconv.Atoi(val); err == nil && d > 0 && d <= math.MaxInt32 {
+		return d
+	}
+	return 0
+}
+
+func applyDimensionEnv(info *engine.ModelInfo) {
+	if d := parsePositiveInt(os.Getenv("NUMEN_EMBEDDING_DIMENSIONS")); d > 0 {
+		info.Dimensions = d
+	}
+	if t := parsePositiveInt(os.Getenv("NUMEN_EMBEDDING_MAX_TOKENS")); t > 0 {
+		info.MaxTokens = t
 	}
 	if pooling := os.Getenv("NUMEN_EMBEDDING_POOLING"); pooling != "" {
 		info.Pooling = pooling
 	}
+}
+
+func applyRuntimeEnv(local *engine.LocalModel) {
 	if runtimeLib := os.Getenv("NUMEN_ONNX_RUNTIME"); runtimeLib != "" {
 		local.Runtime = runtimeLib
 	}
@@ -87,11 +109,6 @@ func newEmbeddingServer() *embeddingServer {
 		if th, err := strconv.Atoi(threads); err == nil && th > 0 {
 			local.Threads = th
 		}
-	}
-
-	return &embeddingServer{
-		modelInfo:  info,
-		localModel: local,
 	}
 }
 

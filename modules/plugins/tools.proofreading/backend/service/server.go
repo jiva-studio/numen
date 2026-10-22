@@ -65,24 +65,20 @@ func newProofreadingServer(complete completer) *proofreadingServer {
 func (s *proofreadingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if v, ok := values["batch_size"]; ok {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			s.cfg.batchSize = n
-		}
-	}
-	if v, ok := values["overlap"]; ok {
-		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
-			s.cfg.overlap = n
-		}
-	}
-	if v, ok := values["in_flight"]; ok {
-		if n, err := strconv.Atoi(v); err == nil && n > 0 {
-			s.cfg.inFlight = n
-		}
-	}
+	applyIntConfig(values, "batch_size", &s.cfg.batchSize, 1)
+	applyIntConfig(values, "overlap", &s.cfg.overlap, 0)
+	applyIntConfig(values, "in_flight", &s.cfg.inFlight, 1)
 	if v, ok := values["max_edit_distance"]; ok {
 		if d, err := strconv.ParseFloat(v, 64); err == nil && d >= 0 {
 			s.cfg.maxEditDistance = d
+		}
+	}
+}
+
+func applyIntConfig(values map[string]string, key string, target *int, minVal int) {
+	if v, ok := values[key]; ok {
+		if n, err := strconv.Atoi(v); err == nil && n >= minVal {
+			*target = n
 		}
 	}
 }
@@ -141,48 +137,68 @@ func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.Proofre
 	)
 	switch msg.GetKind() {
 	case numenv1.ProofreadKind_PROOFREAD_KIND_SCAN:
-		options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Scan)
-		if !ok {
-			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errScanOptions)
-		}
-		maxDist := options.Scan.GetMaxEditDistance()
-		if maxDist <= 0 {
-			maxDist = s.getConfig().maxEditDistance
-		}
-		result, err = proofreadScan(ctx, s.ask, groups, maxDist)
+		result, err = s.proofreadScanRequest(ctx, msg, groups)
 	case numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH:
-		options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Speech)
-		if !ok {
-			return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechOptions)
-		}
-		cfg := s.getConfig()
-		speech := options.Speech
-		size := int(speech.GetSize())
-		if size <= 0 {
-			size = cfg.batchSize
-		}
-		overlap := int(speech.GetOverlap())
-		if overlap <= 0 && speech.GetSize() <= 0 {
-			overlap = cfg.overlap
-		}
-		fromLine := int(speech.GetFromLine())
-		lineLimit := int(speech.GetLineLimit())
-		if lineLimit <= 0 {
-			lineLimit = cfg.inFlight * size
-		}
-		var lines []Line
-		for _, group := range groups {
-			lines = append(lines, group.Lines...)
-		}
-		result, err = proofreadSpeech(ctx, s.ask, lines, size, overlap, fromLine, lineLimit)
+		result, err = s.proofreadSpeechRequest(ctx, msg, groups)
 	default:
 		return textResult{}, connect.NewError(connect.CodeInvalidArgument,
 			fmt.Errorf("unknown kind %s", msg.GetKind()))
 	}
 	if err != nil {
+		var connErr *connect.Error
+		if errors.As(err, &connErr) {
+			return textResult{}, connErr
+		}
 		return textResult{}, readModelError(ctx, err)
 	}
 	return result, nil
+}
+
+func (s *proofreadingServer) proofreadScanRequest(
+	ctx context.Context,
+	msg *numenv1.ProofreadTextRequest,
+	groups []Batch,
+) (textResult, error) {
+	options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Scan)
+	if !ok {
+		return textResult{}, connect.NewError(connect.CodeInvalidArgument, errScanOptions)
+	}
+	maxDist := options.Scan.GetMaxEditDistance()
+	if maxDist <= 0 {
+		maxDist = s.getConfig().maxEditDistance
+	}
+	return proofreadScan(ctx, s.ask, groups, maxDist)
+}
+
+func (s *proofreadingServer) proofreadSpeechRequest(
+	ctx context.Context,
+	msg *numenv1.ProofreadTextRequest,
+	groups []Batch,
+) (textResult, error) {
+	options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Speech)
+	if !ok {
+		return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechOptions)
+	}
+	cfg := s.getConfig()
+	speech := options.Speech
+	size := int(speech.GetSize())
+	if size <= 0 {
+		size = cfg.batchSize
+	}
+	overlap := int(speech.GetOverlap())
+	if overlap <= 0 && speech.GetSize() <= 0 {
+		overlap = cfg.overlap
+	}
+	fromLine := int(speech.GetFromLine())
+	lineLimit := int(speech.GetLineLimit())
+	if lineLimit <= 0 {
+		lineLimit = cfg.inFlight * size
+	}
+	var lines []Line
+	for _, group := range groups {
+		lines = append(lines, group.Lines...)
+	}
+	return proofreadSpeech(ctx, s.ask, lines, size, overlap, fromLine, lineLimit)
 }
 
 var (

@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"net/http"
 	"os"
@@ -65,6 +66,47 @@ func (s *agentServer) applyConfig(values map[string]string) {
 	}
 }
 
+func combineInstructions(instructions, systemPrompt string) string {
+	if systemPrompt == "" {
+		return instructions
+	}
+	if instructions != "" {
+		return instructions + "\n" + systemPrompt
+	}
+	return systemPrompt
+}
+
+func (s *agentServer) prepareClaudeArgs(
+	msg *numenv1.AskAgentRequest, instructions, defaultModel string,
+) (claudeArgs []string, configFile string, err error) {
+	toolNames := msg.GetTools()
+	if len(toolNames) > 0 {
+		configFile, err = writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
+		if err != nil {
+			return nil, "", connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
+		}
+	}
+	model := msg.GetModel()
+	if model == "" {
+		model = defaultModel
+	}
+	level := s.getReasoning(model, msg.GetReasoning())
+	if model == defaultModelName {
+		model = ""
+	}
+	args := buildClaudeArguments(claudeArguments{
+		instructions:  instructions,
+		model:         model,
+		reasoning:     level,
+		configuration: configFile,
+		session:       s.registry.GetSession(msg.GetConversation()),
+		turns:         int(msg.GetMaxSteps()),
+		tools:         toolNames,
+		mayReadHooks:  msg.GetOptions()[readsHooksOption] == "true",
+	})
+	return args, configFile, nil
+}
+
 func (s *agentServer) AskAgent(
 	ctx context.Context,
 	req *connect.Request[numenv1.AskAgentRequest],
@@ -75,15 +117,8 @@ func (s *agentServer) AskAgent(
 	systemPrompt := s.systemPrompt
 	defaultModel := s.defaultModel
 	s.mu.RUnlock()
-	toolNames := msg.GetTools()
 
-	instructions := msg.GetInstructions()
-	if systemPrompt != "" {
-		if instructions != "" {
-			instructions += "\n"
-		}
-		instructions += systemPrompt
-	}
+	instructions := combineInstructions(msg.GetInstructions(), systemPrompt)
 
 	cmdName, cmdArgs := getCommand(msg.GetCommand())
 	if cmdName == "" {
@@ -99,36 +134,12 @@ func (s *agentServer) AskAgent(
 		})
 	}
 
-	var configFile string
-	if len(toolNames) > 0 {
-		var err error
-		configFile, err = writeMcpConfig(msg.GetToolsUrl(), msg.GetToolsToken())
-		if err != nil {
-			return connect.NewError(connect.CodeInternal, fmt.Errorf("write mcp config: %w", err))
-		}
-	}
-	model := msg.GetModel()
-	if model == "" {
-		model = defaultModel
-	}
-
-	level := s.getReasoning(model, msg.GetReasoning())
-	if model == defaultModelName {
-		model = ""
+	claudeArgs, configFile, err := s.prepareClaudeArgs(msg, instructions, defaultModel)
+	if err != nil {
+		return err
 	}
 
 	conversation := msg.GetConversation()
-	claudeArgs := buildClaudeArguments(claudeArguments{
-		instructions:  instructions,
-		model:         model,
-		reasoning:     level,
-		configuration: configFile,
-		session:       s.registry.GetSession(conversation),
-		turns:         int(msg.GetMaxSteps()),
-		tools:         toolNames,
-		mayReadHooks:  msg.GetOptions()[readsHooksOption] == "true",
-	})
-
 	runCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -149,22 +160,9 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
-	cmd := exec.CommandContext(runCtx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
-	cmd.Dir = msg.GetRoot()
-	cmd.Env = buildEnvironment(s.getEnvironment())
-	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	agentrun.Supervise(cmd)
-
-	out, err := cmd.StdoutPipe()
+	cmd, out, stderrBuf, err := s.launchAgentCmd(runCtx, cmdName, cmdArgs, claudeArgs, msg)
 	if err != nil {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("stdout pipe: %w", err))
-	}
-
-	var stderrBuf strings.Builder
-	cmd.Stderr = &stderrBuf
-
-	if err := cmd.Start(); err != nil {
-		return connect.NewError(connect.CodeInternal, fmt.Errorf("start claude: %w", err))
+		return err
 	}
 
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
@@ -173,7 +171,51 @@ func (s *agentServer) AskAgent(
 		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession)
 	}()
 
-	// A run that is closed ends here, whatever the programs the child started hold of its output.
+	stoppedReason, ok := waitAgentCompletion(runCtx, cmd, out, stderrBuf, reasons)
+	if !ok {
+		return nil
+	}
+
+	return stream.Send(&numenv1.AskAgentResponse{
+		Step: &numenv1.AskAgentResponse_Stopped{
+			Stopped: stoppedReason,
+		},
+	})
+}
+
+func (s *agentServer) launchAgentCmd(
+	ctx context.Context,
+	cmdName string,
+	cmdArgs, claudeArgs []string,
+	msg *numenv1.AskAgentRequest,
+) (*exec.Cmd, io.ReadCloser, *strings.Builder, error) {
+	cmd := exec.CommandContext(ctx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
+	cmd.Dir = msg.GetRoot()
+	cmd.Env = buildEnvironment(s.getEnvironment())
+	cmd.Stdin = strings.NewReader(msg.GetPrompt())
+	agentrun.Supervise(cmd)
+
+	out, err := cmd.StdoutPipe()
+	if err != nil {
+		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("stdout pipe: %w", err))
+	}
+
+	var stderrBuf strings.Builder
+	cmd.Stderr = &stderrBuf
+
+	if err := cmd.Start(); err != nil {
+		return nil, nil, nil, connect.NewError(connect.CodeInternal, fmt.Errorf("start claude: %w", err))
+	}
+	return cmd, out, &stderrBuf, nil
+}
+
+func waitAgentCompletion(
+	runCtx context.Context,
+	cmd *exec.Cmd,
+	out io.ReadCloser,
+	stderrBuf *strings.Builder,
+	reasons <-chan string,
+) (string, bool) {
 	var failedReason string
 	select {
 	case failedReason = <-reasons:
@@ -184,21 +226,16 @@ func (s *agentServer) AskAgent(
 
 	waitErr := cmd.Wait()
 	if runCtx.Err() != nil {
-		return nil
+		return "", false
 	}
 
-	stoppedReason := "done"
 	if failedReason != "" {
-		stoppedReason = failedReason
-	} else if waitErr != nil {
-		stoppedReason = agentrun.FailureMessage(waitErr, stderrBuf.String())
+		return failedReason, true
 	}
-
-	return stream.Send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_Stopped{
-			Stopped: stoppedReason,
-		},
-	})
+	if waitErr != nil {
+		return agentrun.FailureMessage(waitErr, stderrBuf.String()), true
+	}
+	return "done", true
 }
 
 // getCommand is the program to start and what stands before its own arguments: the command line

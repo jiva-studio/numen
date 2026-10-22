@@ -307,6 +307,22 @@ type rpcError struct {
 }
 
 // call sends a request and returns its result. What the agent sends meanwhile is handled as it
+func (s *acpSession) handleMessage(msg rpcMessage, targetID, method string) (bool, json.RawMessage, error) {
+	if msg.Method != "" && len(msg.ID) > 0 {
+		return false, nil, s.answerRequest(msg)
+	}
+	if msg.Method == "session/update" {
+		return false, nil, s.readUpdate(msg.Params)
+	}
+	if msg.Method == "" && string(msg.ID) == targetID {
+		if msg.Error != nil {
+			return true, nil, fmt.Errorf("%s answered %s with: %s", s.program, method, msg.Error.Message)
+		}
+		return true, msg.Result, nil
+	}
+	return false, nil, nil
+}
+
 // comes: session updates are read, and requests of the agent are answered.
 func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 	s.nextID++
@@ -319,20 +335,12 @@ func (s *acpSession) call(method string, params any) (json.RawMessage, error) {
 		if err := json.Unmarshal(s.lines.Bytes(), &message); err != nil {
 			continue
 		}
-		switch {
-		case message.Method != "" && len(message.ID) > 0:
-			if err := s.answerRequest(message); err != nil {
-				return nil, err
-			}
-		case message.Method == "session/update":
-			if err := s.readUpdate(message.Params); err != nil {
-				return nil, err
-			}
-		case message.Method == "" && string(message.ID) == id:
-			if message.Error != nil {
-				return nil, fmt.Errorf("%s answered %s with: %s", s.program, method, message.Error.Message)
-			}
-			return message.Result, nil
+		done, res, err := s.handleMessage(message, id, method)
+		if err != nil {
+			return nil, err
+		}
+		if done {
+			return res, nil
 		}
 	}
 	if err := s.lines.Err(); err != nil {

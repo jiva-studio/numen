@@ -117,22 +117,28 @@ func (s *transcriptionServer) readAudioFile(path string) ([]byte, error) {
 	return os.ReadFile(cleanPath)
 }
 
+func (s *transcriptionServer) loadAudioData(req *numenv1.OpenRecordingRequest) ([]byte, error) {
+	path := req.GetPath()
+	if path == "" {
+		return req.GetAudioData(), nil
+	}
+	data, err := s.readAudioFile(path)
+	if err != nil {
+		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
+			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read audio %s: %w", path, err))
+		}
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))
+	}
+	return data, nil
+}
+
 func (s *transcriptionServer) OpenRecording(
 	ctx context.Context,
 	req *connect.Request[numenv1.OpenRecordingRequest],
 ) (*connect.Response[numenv1.OpenRecordingResponse], error) {
-	var data []byte
-	if path := req.Msg.GetPath(); path != "" {
-		var err error
-		data, err = s.readAudioFile(path)
-		if err != nil {
-			if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
-				return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read audio %s: %w", path, err))
-			}
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("read audio %s: %w", path, err))
-		}
-	} else {
-		data = req.Msg.GetAudioData()
+	data, err := s.loadAudioData(req.Msg)
+	if err != nil {
+		return nil, err
 	}
 
 	if len(data) == 0 {

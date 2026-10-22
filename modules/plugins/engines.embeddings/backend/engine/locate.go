@@ -80,13 +80,41 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	}
 
 	files := selectModelFiles(folder, file)
+	release, err := reserveDownload(ctx, home, repo, cfg.Name, files, sizes, tokenizerSize, progress)
+	if err != nil {
+		return Paths{}, err
+	}
+	defer release()
+
+	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
+	if err != nil {
+		return Paths{}, err
+	}
+	p.Tokenizer, err = fetchTokenizer(ctx, repo, cfg.Name, cfg.Sums)
+	if err != nil {
+		return Paths{}, err
+	}
+	return p, nil
+}
+
+func reserveDownload(
+	ctx context.Context,
+	home string,
+	repo *hub.Repo,
+	name string,
+	files []string,
+	sizes map[string]int64,
+	tokenizerSize int64,
+	progress FetchProgress,
+) (func(), error) {
 	var total int64
-	for _, name := range files {
-		total += sizes[name]
+	for _, f := range files {
+		total += sizes[f]
 	}
 	sizes[TokenizerFile] = tokenizerSize
 	total += tokenizerSize
 	counted := append(slices.Clone(files), TokenizerFile)
+
 	dir, dirErr := repo.CacheDir()
 	need := total
 	if dirErr == nil {
@@ -94,29 +122,34 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	}
 	claim, err := models.Reserve(ctx, home, need, "")
 	if err != nil {
-		return Paths{}, fmt.Errorf("fetching %s: %w", cfg.Name, err)
-	}
-	defer claim.Release()
-	if dirErr == nil {
-		defer reportProgress(dir, counted, sizes, total, progress)()
+		return nil, fmt.Errorf("fetching %s: %w", name, err)
 	}
 
-	p, err := fetchModelFiles(ctx, repo, files, file, cfg.Sums)
+	var cancelProgress func()
+	if dirErr == nil {
+		cancelProgress = reportProgress(dir, counted, sizes, total, progress)
+	}
+	release := func() {
+		claim.Release()
+		if cancelProgress != nil {
+			cancelProgress()
+		}
+	}
+	return release, nil
+}
+
+func fetchTokenizer(ctx context.Context, repo *hub.Repo, name string, sums map[string]string) (string, error) {
+	if !repo.HasFile(TokenizerFile) {
+		return "", fmt.Errorf("%s publishes no %s", name, TokenizerFile)
+	}
+	tokenizer, err := repo.DownloadFileCtx(ctx, TokenizerFile)
 	if err != nil {
-		return Paths{}, err
+		return "", fmt.Errorf("fetching %s: %w", TokenizerFile, err)
 	}
-	if repo.HasFile(TokenizerFile) {
-		if p.Tokenizer, err = repo.DownloadFileCtx(ctx, TokenizerFile); err != nil {
-			return Paths{}, fmt.Errorf("fetching %s: %w", TokenizerFile, err)
-		}
-		if err := checkPinned(cfg.Sums, TokenizerFile, p.Tokenizer); err != nil {
-			return Paths{}, err
-		}
+	if err := checkPinned(sums, TokenizerFile, tokenizer); err != nil {
+		return "", err
 	}
-	if p.Tokenizer == "" {
-		return Paths{}, fmt.Errorf("%s publishes no %s", cfg.Name, TokenizerFile)
-	}
-	return p, nil
+	return tokenizer, nil
 }
 
 func fetchModelFiles(ctx context.Context, repo *hub.Repo, files []string, file string, sums map[string]string) (Paths, error) {

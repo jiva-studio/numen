@@ -155,10 +155,10 @@ func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
 
 func TestParseLines_VaultMcpFailure(t *testing.T) {
 	cases := map[string]string{
-		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:         "the agent could not reach this vault",
-		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                           "the agent was started without this vault",
-		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:      "",
-		`{"type":"system","subtype":"init"}`:                                                            "",
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"failed"}]}`:          "the agent could not reach this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[]}`:                                            "the agent was started without this vault",
+		`{"type":"system","subtype":"init","mcp_servers":[{"name":"numen","status":"connected"}]}`:       "",
+		`{"type":"system","subtype":"init"}`:                                                             "",
 		`{"type":"system","subtype":"init","mcp_server_errors":[{"name":"numen","message":"rejected"}]}`: "the agent was not given this vault: rejected",
 	}
 	for line, want := range cases {
