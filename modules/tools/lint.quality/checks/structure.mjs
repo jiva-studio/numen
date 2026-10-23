@@ -25,7 +25,12 @@ function isSourceFile(filename) {
   if (
     filename.endsWith(".pb.go") ||
     filename.endsWith(".connect.go") ||
-    filename.endsWith("_pb.ts")
+    filename.endsWith("_pb.ts") ||
+    filename.endsWith("_test.go") ||
+    filename.endsWith(".spec.ts") ||
+    filename.endsWith(".test.ts") ||
+    filename.endsWith(".spec.js") ||
+    filename.endsWith(".test.js")
   ) {
     return false;
   }
