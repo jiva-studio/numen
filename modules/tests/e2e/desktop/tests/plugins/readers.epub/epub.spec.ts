@@ -136,7 +136,7 @@ test.describe('EPUB Book Reader', () => {
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 
     // Switch back to Test Book tab
-    const bookTabItem = page.getByRole('tab', { name: /Test Book/i }).first()
+    const bookTabItem = page.getByRole('tab', { name: /Test Book|sample\.epub/i }).first()
     await expect(bookTabItem).toBeVisible()
     await bookTabItem.click()
 

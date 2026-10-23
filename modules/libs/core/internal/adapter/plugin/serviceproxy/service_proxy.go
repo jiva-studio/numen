@@ -41,7 +41,11 @@ func GetService(urlPath string) string {
 
 // Serves reports whether an enabled plugin serves the service the path names.
 func (p *Proxy) Serves(urlPath string) bool {
-	_, found := p.host.ResolveService(GetService(urlPath))
+	svc := GetService(urlPath)
+	if svc == "" {
+		return false
+	}
+	_, found := p.host.ResolveService(svc)
 	return found
 }
 

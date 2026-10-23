@@ -104,7 +104,7 @@ function onSetPageHandle(reader: unknown) {
       v-if="activeState"
       :ref="onSetPageHandle"
       :pages="activeState.pages.value"
-      :page-index="activeState.pageNumber.value"
+      :at="activeState.pageNumber.value"
       :picture="activeState.getPageImageUrl"
       :highlights="activeState.getHighlightsOn"
       :other-highlights="activeState.getOtherHighlightsOn"

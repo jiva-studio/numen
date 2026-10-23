@@ -625,7 +625,10 @@ func (m PluginManifest) HasCapability(capability string) bool {
 
 // HasService reports whether this plugin serves the service to the windows.
 func (m PluginManifest) HasService(service string) bool {
-	return slices.Contains(m.Services, service)
+	if service == "" {
+		return false
+	}
+	return (m.Backend.ServiceName != "" && m.Backend.ServiceName == service) || slices.Contains(m.Services, service)
 }
 
 // HasFileExtension reports whether this plugin supports the given file extension.
