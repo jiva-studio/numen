@@ -3,11 +3,14 @@ package container
 import (
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/noteport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
 // Vaults is what everything that acts on the vault list and vaults is called.
@@ -44,4 +47,30 @@ func (c Config) Vaults(registry vaultport.VaultRegistry, db *Index, notes note.M
 // AddVault registers a new vault in the registry with the given root path and name.
 func (c Config) AddVault(registry vaultport.VaultRegistry, root, name string) (domain.Vault, error) {
 	return vault.NewAdd(c.VaultIdentity(), registry, c.Clock()).Execute(root, name)
+}
+
+func (c Config) CheckRoot() *vault.CheckRoot {
+	return vault.NewCheckRoot(c.VaultIdentity(), filesystem.HomeFolder{})
+}
+
+func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vault.GetKnownVaults {
+	recognized := vault.NewGetKnownVaults(registry, c.VaultReaders())
+	return &recognized
+}
+
+// GetProblems holds the vault to the standard checks.
+func (Config) GetProblems(problems recognitionport.ProblemQueries) *vault.GetProblems {
+	return vault.NewStandardGetProblems(problems)
+}
+
+func (Config) GetSummary(queries noteport.NoteQueries) *vault.GetSummary {
+	return vault.NewGetSummary(queries)
+}
+
+func (c Config) PickFolder(dialog machineport.FolderDialog) *vault.PickFolder {
+	if dialog == nil {
+		return nil
+	}
+	pick := vault.NewPickFolder(dialog)
+	return &pick
 }
