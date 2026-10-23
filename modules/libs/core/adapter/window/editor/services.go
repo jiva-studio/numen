@@ -2,7 +2,11 @@ package editor
 
 import (
 	"context"
+	"errors"
 
+	"connectrpc.com/connect"
+
+	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
@@ -34,6 +38,7 @@ type Services struct {
 	Search    *search.Handler
 	Vaults    *vaultsHandler
 	Settings  *settings.Handler
+	Agent     *agentHandler
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
@@ -71,6 +76,7 @@ func createServices(state *State) *Services {
 		Search:    search.NewHandler(state),
 		Vaults:    &vaultsHandler{state: state},
 		Settings:  settings.NewHandler(),
+		Agent:     &agentHandler{state: state},
 		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
 		files:     files,
 		server:    &fileServer{state: state, files: files},
@@ -136,4 +142,39 @@ func (s *Services) GetPickFolder() *vaults.PickFolder {
 	}
 	pick := s.Vaults.chooseFolder.GetPickFolder()
 	return &pick
+}
+
+// agentHandler answers for the agent the panel's tasks go to.
+type agentHandler struct {
+	numenv1connect.UnimplementedAgentServiceHandler
+	state *State
+}
+
+// errNoAgent is an installation with none. Whether one can be reached is asked
+// of GetAgentState.
+var errNoAgent = errors.New("no agent is set up for this vault")
+
+// GetAgentState is whether an agent can be reached at all. Which agent answers
+// is the installation's, so every window asks it here.
+func (h *agentHandler) GetAgentState(
+	_ context.Context, _ *connect.Request[numenv1.GetAgentStateRequest],
+) (*connect.Response[numenv1.GetAgentStateResponse], error) {
+	return connect.NewResponse(&numenv1.GetAgentStateResponse{Unreachable: h.state.Unreachable.Why()}), nil
+}
+
+// AskAgent rejects questions when no agent is active.
+func (h *agentHandler) AskAgent(
+	_ context.Context,
+	_ *connect.Request[numenv1.AskAgentRequest],
+	_ *connect.ServerStream[numenv1.AskAgentResponse],
+) error {
+	return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
+}
+
+// FinishConversation ends conversation when no agent is active.
+func (h *agentHandler) FinishConversation(
+	_ context.Context,
+	_ *connect.Request[numenv1.FinishConversationRequest],
+) (*connect.Response[numenv1.FinishConversationResponse], error) {
+	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
 }

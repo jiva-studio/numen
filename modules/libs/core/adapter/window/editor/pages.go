@@ -75,17 +75,16 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
+		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
+		if len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+			s.PluginServices.ServeHTTP(w, r)
+			return
+		}
 		for _, one := range routes {
 			if strings.HasPrefix(r.URL.Path, one.posVal) {
 				one.to.ServeHTTP(w, r)
 				return
 			}
-		}
-		// A service no handler of the window answers is the plugins' to answer, in a build that
-		// answers the whole schema.
-		if len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
-			s.PluginServices.ServeHTTP(w, r)
-			return
 		}
 		s.serveBeside(w, r, files)
 	})
@@ -148,6 +147,9 @@ func (s *Services) newServices() []service {
 		}},
 		{numenv1connect.WindowServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewWindowServiceHandler(s.state.Window, c)
+		}},
+		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewAgentServiceHandler(s.Agent, c)
 		}},
 		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			if s.Plugin == nil {
