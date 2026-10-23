@@ -1,4 +1,4 @@
-package domain
+package artifacts
 
 // A TranscriptCue is one stretch of speech: the transcript, when it was said,
 // and at its current position in the words a transcript reads as. Offset is filled by

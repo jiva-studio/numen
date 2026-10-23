@@ -1,4 +1,4 @@
-package domain
+package artifacts
 
 // The producers: what made a text. A recording is heard by a model here
 // (ASR), a scan is read by one (OCR), and the address a link note points at

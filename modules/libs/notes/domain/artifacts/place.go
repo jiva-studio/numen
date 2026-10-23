@@ -1,4 +1,4 @@
-package domain
+package artifacts
 
 // Place is somewhere in the vault: a source, by the path the vault files it
 // under, and the runs of its text meant.

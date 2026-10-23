@@ -1,4 +1,4 @@
-package domain
+package artifacts
 
 // A CorrectionLine is one printed line put right: the number the line is known by in the
 // recognition, and what it should say.
