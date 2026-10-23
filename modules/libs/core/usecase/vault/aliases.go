@@ -31,6 +31,9 @@ var (
 	NewFind           = registry.NewFind
 	NewList           = registry.NewList
 
+	IsFolderDialogUnavailable = picker.IsFolderDialogUnavailable
+
+	ErrNoTrash = picker.ErrNoTrash
 	ErrNoName  = registry.ErrNoName
 	ErrShowing = registry.ErrShowing
 	ErrUnknown = registry.ErrUnknown
