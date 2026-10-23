@@ -1,4 +1,4 @@
-package note
+package query
 
 import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 
