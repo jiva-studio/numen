@@ -1,42 +1,44 @@
-package epub
+package navigation
 
 import (
 	"archive/zip"
 	"bytes"
 	"path"
 
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/archive"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/href"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/opf"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/text"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/words"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
 
-// An entry is one line of a navigation document: a name, and the href it points
-// at.
-type entry struct {
-	title string
-	href  string
-}
+// A book that names one part names its cover or its own title. Structure begins
+// at two.
+const MinimumParts = 2
 
-// readNavigationParts reads the parts a book names, from whichever navigation
+// ReadParts reads the parts a book names, from whichever navigation
 // document it carries. What counts is the entries that land in the text: a
 // document whose entries do not is a document the book does not have, so the
 // other one is read.
-func readNavigationParts(files map[string]*zip.File, read packageDoc, text *extractor) []Part {
-	if raw, ok := readArchiveEntry(files[read.ncx]); ok {
-		if parts := text.getParts(readNCXNavMap(raw, path.Dir(read.ncx))); len(parts) >= minimumParts {
+func ReadParts(files map[string]*zip.File, read opf.Package, extractor *text.Extractor) []text.Part {
+	if raw, ok := archive.ReadEntry(files[read.NCX]); ok {
+		if parts := extractor.GetParts(readNCXNavMap(raw, path.Dir(read.NCX))); len(parts) >= MinimumParts {
 			return parts
 		}
 	}
-	if raw, ok := readArchiveEntry(files[read.nav]); ok {
-		return text.getParts(readNavDocument(raw, path.Dir(read.nav)))
+	if raw, ok := archive.ReadEntry(files[read.Nav]); ok {
+		return extractor.GetParts(readNavDocument(raw, path.Dir(read.Nav)))
 	}
 	return nil
 }
 
-// readPageEntries reads the pages of the printed book from the navigation control
+// ReadPageEntries reads the pages of the printed book from the navigation control
 // file's page list.
-func readPageEntries(files map[string]*zip.File, read packageDoc) []entry {
-	raw, _ := readArchiveEntry(files[read.ncx])
-	return readNCXPageList(raw, path.Dir(read.ncx))
+func ReadPageEntries(files map[string]*zip.File, read opf.Package) []text.Entry {
+	raw, _ := archive.ReadEntry(files[read.NCX])
+	return readNCXPageList(raw, path.Dir(read.NCX))
 }
 
 // An ncxPoint is a navPoint or a pageTarget. Both carry a label, a content
@@ -52,14 +54,14 @@ type ncxPoint struct {
 
 // readNCXNavMap reads the navigation control file's navMap, depth first, which is
 // the order the entries are read in.
-func readNCXNavMap(raw []byte, base string) []entry {
+func readNCXNavMap(raw []byte, base string) []text.Entry {
 	var document struct {
 		Points []ncxPoint `xml:"navMap>navPoint"`
 	}
-	if err := decodeXML(raw, &document); err != nil {
+	if err := archive.DecodeXML(raw, &document); err != nil {
 		return nil
 	}
-	var out []entry
+	var out []text.Entry
 	for _, point := range document.Points {
 		out = appendPoint(out, point, base)
 	}
@@ -69,14 +71,14 @@ func readNCXNavMap(raw []byte, base string) []entry {
 // readNCXPageList reads the pages of the printed book. A page is named by its value
 // when it has one; the label of a page target is often decoration around the
 // number.
-func readNCXPageList(raw []byte, base string) []entry {
+func readNCXPageList(raw []byte, base string) []text.Entry {
 	var document struct {
 		Targets []ncxPoint `xml:"pageList>pageTarget"`
 	}
-	if err := decodeXML(raw, &document); err != nil {
+	if err := archive.DecodeXML(raw, &document); err != nil {
 		return nil
 	}
-	var out []entry
+	var out []text.Entry
 	for _, target := range document.Targets {
 		if target.Content == nil {
 			continue
@@ -85,15 +87,15 @@ func readNCXPageList(raw []byte, base string) []entry {
 		if name == "" {
 			name = target.Label
 		}
-		out = append(out, entry{title: name, href: resolveHref(base, target.Content.Src)})
+		out = append(out, text.Entry{Title: name, Href: href.ResolveWithFragment(base, target.Content.Src)})
 	}
 	return out
 }
 
-func appendPoint(out []entry, point ncxPoint, base string) []entry {
+func appendPoint(out []text.Entry, point ncxPoint, base string) []text.Entry {
 	// A navPoint may have no content element, and then it points nowhere.
 	if point.Content != nil {
-		out = append(out, entry{title: point.Label, href: resolveHref(base, point.Content.Src)})
+		out = append(out, text.Entry{Title: point.Label, Href: href.ResolveWithFragment(base, point.Content.Src)})
 	}
 	for _, child := range point.Children {
 		out = appendPoint(out, child, base)
@@ -104,7 +106,7 @@ func appendPoint(out []entry, point ncxPoint, base string) []entry {
 // readNavDocument reads an EPUB 3 navigation document: the links of its table of
 // contents, in document order. A document with no table of contents is read for
 // its links.
-func readNavDocument(raw []byte, base string) []entry {
+func readNavDocument(raw []byte, base string) []text.Entry {
 	root, err := html.Parse(bytes.NewReader(raw))
 	// gomutants:disable-next-line BRANCH_IF reason="html.Parse on bytes.NewReader never errors"
 	if err != nil {
@@ -121,7 +123,7 @@ func readNavDocument(raw []byte, base string) []entry {
 // and nil when there is none.
 func findTableOfContents(n *html.Node) *html.Node {
 	if n.DataAtom == atom.Nav {
-		if hasToken(getAttribute(n, "epub:type"), "toc") || hasToken(getAttribute(n, "role"), "doc-toc") {
+		if words.HasToken(text.GetAttribute(n, "epub:type"), "toc") || words.HasToken(text.GetAttribute(n, "role"), "doc-toc") {
 			return n
 		}
 	}
@@ -133,10 +135,10 @@ func findTableOfContents(n *html.Node) *html.Node {
 	return nil
 }
 
-func appendLinks(out []entry, n *html.Node, base string) []entry {
+func appendLinks(out []text.Entry, n *html.Node, base string) []text.Entry {
 	if n.DataAtom == atom.A {
-		if href := getAttribute(n, "href"); href != "" {
-			out = append(out, entry{title: collectText(n), href: resolveHref(base, href)})
+		if target := text.GetAttribute(n, "href"); target != "" {
+			out = append(out, text.Entry{Title: collectText(n), Href: href.ResolveWithFragment(base, target)})
 		}
 	}
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
@@ -159,18 +161,4 @@ func collectText(n *html.Node) string {
 	}
 	walk(n)
 	return b.String()
-}
-
-// resolveHref resolves an href against the directory of the document holding it,
-// keeping the fragment.
-func resolveHref(base, href string) string {
-	target, fragment := splitHref(href)
-	pos := resolve(base, target)
-	if pos == "" {
-		return ""
-	}
-	if fragment == "" {
-		return pos
-	}
-	return pos + "#" + fragment
 }

@@ -23,7 +23,12 @@ import (
 	"io"
 	"path"
 	"sort"
-	"strings"
+
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/archive"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/container"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/navigation"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/opf"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/text"
 )
 
 // A Book is one EPUB file, read.
@@ -57,64 +62,12 @@ type Book struct {
 
 	// files is the archive the book was read out of, which Markup reads one
 	// document out of again, and documents is the document of each name.
-	files     map[string]*zip.File
-	documents map[string]Document
+	files      map[string]*zip.File
+	documents  map[string]Document
+	mediaTypes map[string]string
 
 	// pageBytes is how many bytes of this book's text stand on one page.
 	pageBytes int
-}
-
-// A Document is one document of the spine.
-type Document struct {
-	// Path is the document's name inside the archive.
-	Path string
-	// Offset is where the document's text begins in the book's Text.
-	Offset int
-	// Length is how many bytes of Text the document contributed.
-	Length int
-	// IsLinear is false for a document the spine sets apart from the reading
-	// order: a note, an appendix, the back of a plate. Its text is in Text all
-	// the same.
-	IsLinear bool
-	Layout   Layout
-
-	// mediaType is what the manifest calls the document.
-	mediaType string
-}
-
-// drawn currently.
-type Layout string
-
-const (
-	Reflowable   Layout = "reflowable"
-	PrePaginated Layout = "pre-paginated"
-)
-
-// A Direction is the direction a book's pages progress in.
-type Direction string
-
-const (
-	// DefaultDirection: the book says nothing, and a reader lays it out the way
-	// its language is written.
-	DefaultDirection Direction = ""
-	LeftToRight      Direction = "ltr"
-	RightToLeft      Direction = "rtl"
-)
-
-// A Part is a named division of the book.
-type Part struct {
-	Title string
-	// Offset is where the named text begins in the book's Text.
-	Offset int
-	// Level is the depth of the heading a part came from, and 0 for a part that
-	// came from the navigation document.
-	Level int
-}
-
-// A Page is a page of the printed book, at the offset where it starts.
-type Page struct {
-	Label  string
-	Offset int
 }
 
 // A Structure is the tier that answered when the book was asked what its parts
@@ -130,16 +83,12 @@ const (
 	FromNothing Structure = "none"
 )
 
-// A book that names one part names its cover or its own title. Structure begins
-// at two.
-const minimumParts = 2
-
 // The four ways a file can fail to be a book, and the one way a document of one
 // can fail to be asked for.
 var (
 	ErrNotArchive  = errors.New("epub: not a zip archive")
-	ErrNoContainer = errors.New("epub: no META-INF/container.xml")
-	ErrNoPackage   = errors.New("epub: no package document")
+	ErrNoContainer = container.ErrNoContainer
+	ErrNoPackage   = opf.ErrNoPackage
 	// ErrEncrypted: a document of the spine is ciphertext, and what would be
 	// read out of it is not the book.
 	ErrEncrypted = errors.New("epub: a spine document is encrypted")
@@ -156,45 +105,47 @@ func Read(raw []byte) (*Book, error) {
 		return nil, err
 	}
 
-	text := newExtractor()
+	extractor := text.NewExtractor()
 	book := &Book{
-		Title:     pkg.title,
-		Layout:    pkg.layout,
-		Direction: pkg.direction,
-		files:     files,
-		documents: map[string]Document{},
+		Title:      pkg.Title,
+		Layout:     pkg.Layout,
+		Direction:  pkg.Direction,
+		files:      files,
+		documents:  map[string]Document{},
+		mediaTypes: map[string]string{},
 	}
-	remaining := int64(mostPerBook)
-	for _, item := range pkg.spine {
+	remaining := int64(archive.MostPerBook)
+	for _, item := range pkg.Spine {
 		if remaining <= 0 {
 			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="left never grows, so every later document also ends the iteration"
 			break
 		}
-		markup, ok := readBounded(files[item.path], min(int64(mostPerDocument), remaining))
+		raw, ok := archive.ReadBounded(files[item.Path], min(int64(archive.MostPerDocument), remaining))
 		if !ok {
 			// A manifest may name a file the archive does not hold, and one it
 			// holds may be larger than a chapter can be.
 			continue
 		}
-		remaining -= int64(len(markup))
-		doc := text.readDocument(item.path, markup)
-		doc.IsLinear, doc.Layout, doc.mediaType = item.isLinear, item.layout, item.mediaType
+		remaining -= int64(len(raw))
+		doc := extractor.ReadDocument(item.Path, raw)
+		doc.IsLinear, doc.Layout = item.IsLinear, item.Layout
 		book.Documents = append(book.Documents, doc)
 		if _, twice := book.documents[doc.Path]; !twice {
 			// A spine may read one document twice, and the first standing is the
 			// one a name is answered with.
 			book.documents[doc.Path] = doc
+			book.mediaTypes[doc.Path] = item.MediaType
 		}
 	}
-	book.Text = string(text.out)
+	book.Text = string(extractor.GetText())
 	book.pageBytes = computePageBytes(book.Text)
 
-	named := readNavigationParts(files, pkg, text)
+	named := navigation.ReadParts(files, pkg, extractor)
 	switch {
-	case len(named) >= minimumParts:
+	case len(named) >= navigation.MinimumParts:
 		book.Parts, book.Tier = named, FromNavigation
-	case len(text.headings) >= minimumParts:
-		book.Parts, book.Tier = text.headings, FromHeadings
+	case len(extractor.GetHeadings()) >= navigation.MinimumParts:
+		book.Parts, book.Tier = extractor.GetHeadings(), FromHeadings
 	default:
 		book.Tier = FromNothing
 	}
@@ -202,7 +153,7 @@ func Read(raw []byte) (*Book, error) {
 		return book.Parts[i].Offset < book.Parts[j].Offset
 	})
 
-	book.Pages = text.getPages(readPageEntries(files, pkg))
+	book.Pages = extractor.GetPages(navigation.ReadPageEntries(files, pkg))
 	sort.SliceStable(book.Pages, func(i, j int) bool {
 		return book.Pages[i].Offset < book.Pages[j].Offset
 	})
@@ -220,25 +171,25 @@ func (b *Book) Entry(name string) ([]byte, error) {
 
 // openPackage indexes the archive behind r and checks that it contains a book whose
 // spine is readable.
-func openPackage(r io.ReaderAt, size int64) (map[string]*zip.File, packageDoc, error) {
-	archive, err := zip.NewReader(r, size)
+func openPackage(r io.ReaderAt, size int64) (map[string]*zip.File, opf.Package, error) {
+	reader, err := zip.NewReader(r, size)
 	if err != nil {
-		return nil, packageDoc{}, fmt.Errorf("%w: %w", ErrNotArchive, err)
+		return nil, opf.Package{}, fmt.Errorf("%w: %w", ErrNotArchive, err)
 	}
-	files := createArchiveIndex(archive)
+	files := archive.CreateIndex(reader)
 
-	opfPath, err := readPackagePath(files)
+	opfPath, err := container.ReadPackagePath(files)
 	if err != nil {
-		return nil, packageDoc{}, err
+		return nil, opf.Package{}, err
 	}
-	pkg, err := readPackage(files, opfPath)
+	pkg, err := opf.Read(files, opfPath)
 	if err != nil {
-		return nil, packageDoc{}, err
+		return nil, opf.Package{}, err
 	}
-	locked := readEncryptedPaths(files)
-	for _, item := range pkg.spine {
-		if locked[item.path] {
-			return nil, packageDoc{}, fmt.Errorf("%w: %s", ErrEncrypted, item.path)
+	locked := container.ReadEncryptedPaths(files)
+	for _, item := range pkg.Spine {
+		if locked[item.Path] {
+			return nil, opf.Package{}, fmt.Errorf("%w: %s", ErrEncrypted, item.Path)
 		}
 	}
 	return files, pkg, nil
@@ -248,7 +199,7 @@ func readEntry(files map[string]*zip.File, name string) ([]byte, error) {
 	if name == "" {
 		return nil, fmt.Errorf("%w: the archive is not named", ErrNoEntry)
 	}
-	raw, ok := readBounded(files[path.Clean(name)], mostPerDocument)
+	raw, ok := archive.ReadBounded(files[path.Clean(name)], archive.MostPerDocument)
 	if !ok {
 		return nil, fmt.Errorf("%w: %s", ErrNoEntry, name)
 	}
@@ -309,9 +260,4 @@ func (b *Book) Locate(offset int) Location {
 // there is none. The items are ascending by offset.
 func findPreceding(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
-}
-
-// normaliseSpaces is one line of text: the words of a name, single-spaced.
-func normaliseSpaces(s string) string {
-	return strings.Join(strings.Fields(s), " ")
 }

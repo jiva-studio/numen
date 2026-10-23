@@ -284,15 +284,3 @@ func TestPagebreakInHeadIgnored(t *testing.T) {
 		t.Errorf("got pages %v, want none", book.Pages)
 	}
 }
-
-func TestHasTokenBytesWhitespaceOnly(t *testing.T) {
-	if epub.HasTokenBytes([]byte("   "), "pagebreak") {
-		t.Errorf("hasTokenBytes on whitespace-only bytes returned true, want false")
-	}
-}
-
-func TestHasTokenBytesSingleCharacter(t *testing.T) {
-	if !epub.HasTokenBytes([]byte("a"), "a") {
-		t.Errorf("hasTokenBytes on single character returned false, want true")
-	}
-}

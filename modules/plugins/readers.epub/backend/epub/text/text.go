@@ -1,4 +1,4 @@
-package epub
+package text
 
 import (
 	"bytes"
@@ -6,13 +6,15 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/href"
+	"github.com/jiva-studio/numen/modules/plugins/readers.epub/backend/epub/words"
 	"golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
 )
 
-// An extractor builds the one text of a book and remembers the offsets of the
+// An Extractor builds the one text of a book and remembers the offsets of the
 // places the markup marks.
-type extractor struct {
+type Extractor struct {
 	out []byte
 
 	// path is the document being read, and starts holds where each document
@@ -35,34 +37,34 @@ type extractor struct {
 	preformattedDepth int
 }
 
-func newExtractor() *extractor {
-	return &extractor{
+func NewExtractor() *Extractor {
+	return &Extractor{
 		starts:  map[string]int{},
 		anchors: map[string]int{},
 	}
 }
 
-// readDocument reads one spine document into the text.
+// ReadDocument reads one spine document into the text.
 //
 // The markup is parsed as HTML: a document with three opening body tags is still
 // a document a person can read.
-func (x *extractor) readDocument(docPath string, markup []byte) Document {
+func (x *Extractor) ReadDocument(docPath string, raw []byte) Document {
 	start := len(x.out)
 	x.path = docPath
 	x.starts[docPath] = start
 
 	if x.markup != nil {
-		if root, err := html.Parse(bytes.NewReader(markup)); err == nil {
+		if root, err := html.Parse(bytes.NewReader(raw)); err == nil {
 			x.writeChildren(root)
 		}
 	} else {
-		x.tokenize(markup)
+		x.tokenize(raw)
 	}
 	x.breakLine()
 	return Document{Path: docPath, Offset: start, Length: len(x.out) - start}
 }
 
-func (x *extractor) writeNode(n *html.Node) {
+func (x *Extractor) writeNode(n *html.Node) {
 	switch n.Type {
 	case html.TextNode:
 		x.write(n.Data)
@@ -113,7 +115,7 @@ func (x *extractor) writeNode(n *html.Node) {
 	}
 }
 
-func (x *extractor) writeChildren(n *html.Node) {
+func (x *Extractor) writeChildren(n *html.Node) {
 	for c := n.FirstChild; c != nil; c = c.NextSibling {
 		x.writeNode(c)
 	}
@@ -121,7 +123,7 @@ func (x *extractor) writeChildren(n *html.Node) {
 
 // write appends text. A run of space is one space, and text inside a pre element
 // is kept as it was written.
-func (x *extractor) write(text string) {
+func (x *Extractor) write(text string) {
 	start := len(x.out)
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, text...)
@@ -133,7 +135,7 @@ func (x *extractor) write(text string) {
 	}
 }
 
-func (x *extractor) writeNormalized(text string) {
+func (x *Extractor) writeNormalized(text string) {
 	for _, r := range text {
 		if unicode.IsSpace(r) {
 			if last, ok := x.findLastByte(); ok && last != ' ' && last != '\n' {
@@ -145,7 +147,7 @@ func (x *extractor) writeNormalized(text string) {
 	}
 }
 
-func (x *extractor) writeBytes(b []byte) {
+func (x *Extractor) writeBytes(b []byte) {
 	if x.preformattedDepth > 0 {
 		x.out = append(x.out, b...)
 		return
@@ -174,7 +176,7 @@ type frame struct {
 }
 
 type tokenizer struct {
-	x                  *extractor
+	x                  *Extractor
 	z                  *html.Tokenizer
 	stack              []frame
 	skipAtom           atom.Atom
@@ -197,11 +199,11 @@ func (t *tokenizer) parseTagAttrs(hasAttr bool) tagAttrs {
 		case bytes.Equal(key, []byte("id")):
 			attrs.id = string(val)
 		case bytes.Equal(key, []byte("epub:type")):
-			if hasTokenBytes(val, "pagebreak") {
+			if words.HasTokenBytes(val, "pagebreak") {
 				attrs.isPagebreak = true
 			}
 		case bytes.Equal(key, []byte("role")):
-			if hasTokenBytes(val, "doc-pagebreak") {
+			if words.HasTokenBytes(val, "doc-pagebreak") {
 				attrs.isPagebreak = true
 			}
 		case bytes.Equal(key, []byte("title")):
@@ -211,9 +213,9 @@ func (t *tokenizer) parseTagAttrs(hasAttr bool) tagAttrs {
 		}
 	}
 	if attrs.isPagebreak {
-		if s := normaliseSpaces(titleAttr); s != "" {
+		if s := words.NormaliseSpaces(titleAttr); s != "" {
 			attrs.pageLabel = s
-		} else if al := normaliseSpaces(ariaLabelAttr); al != "" {
+		} else if al := words.NormaliseSpaces(ariaLabelAttr); al != "" {
 			attrs.pageLabel = al
 		}
 	}
@@ -360,10 +362,10 @@ func (t *tokenizer) handleEndTag() {
 }
 
 // tokenize reads markup into text using a streaming HTML tokenizer.
-func (x *extractor) tokenize(markup []byte) {
+func (x *Extractor) tokenize(raw []byte) {
 	t := tokenizer{
 		x: x,
-		z: html.NewTokenizer(bytes.NewReader(markup)),
+		z: html.NewTokenizer(bytes.NewReader(raw)),
 		// gomutants:disable-next-line INTEGER_DECREMENT,INTEGER_INCREMENT reason="the capacity does not change the slice's contents"
 		stack:              make([]frame, 0, 32),
 		skipAtom:           0,
@@ -389,43 +391,24 @@ func (x *extractor) tokenize(markup []byte) {
 
 // closeFrame records the heading and the page break an element that has ended
 // carried, and leaves a pre element.
-func (x *extractor) closeFrame(f frame) {
+func (x *Extractor) closeFrame(f frame) {
 	if f.atom == atom.Pre {
 		x.preformattedDepth--
 	}
 	if f.heading > 0 {
-		if title := normaliseSpaces(string(x.out[f.start:])); title != "" {
+		if title := words.NormaliseSpaces(string(x.out[f.start:])); title != "" {
 			x.headings = append(x.headings, Part{Title: title, Offset: f.start, Level: f.heading})
 		}
 	}
 	if f.isPagebreak {
 		label := f.pageLabel
 		if label == "" {
-			label = normaliseSpaces(string(x.out[f.start:]))
+			label = words.NormaliseSpaces(string(x.out[f.start:]))
 		}
 		if label != "" {
 			x.pagebreaks = append(x.pagebreaks, Page{Label: label, Offset: f.start})
 		}
 	}
-}
-
-// hasTokenBytes reports whether a space-separated attribute carries a value.
-func hasTokenBytes(attribute []byte, token string) bool {
-	for len(attribute) > 0 {
-		for len(attribute) > 0 && (attribute[0] == ' ' || attribute[0] == '\t' || attribute[0] == '\n' || attribute[0] == '\r') {
-			attribute = attribute[1:]
-		}
-		end := 0
-		for end < len(attribute) && attribute[end] != ' ' && attribute[end] != '\t' && attribute[end] != '\n' && attribute[end] != '\r' {
-			end++
-		}
-		field := attribute[:end]
-		attribute = attribute[end:]
-		if strings.EqualFold(string(field), token) {
-			return true
-		}
-	}
-	return false
 }
 
 // isVoidTag reports whether an HTML element has no closing tag.
@@ -439,7 +422,7 @@ func isVoidTag(a atom.Atom) bool {
 	return false
 }
 
-func (x *extractor) breakLine() {
+func (x *Extractor) breakLine() {
 	if last, ok := x.findLastByte(); ok && last == ' ' {
 		x.out = x.out[:len(x.out)-1]
 	}
@@ -450,7 +433,7 @@ func (x *extractor) breakLine() {
 	}
 }
 
-func (x *extractor) findLastByte() (byte, bool) {
+func (x *Extractor) findLastByte() (byte, bool) {
 	if len(x.out) == 0 {
 		// gomutants:disable-next-line INTEGER_INCREMENT reason="the byte is read only when the second result is true"
 		return 0, false
@@ -458,16 +441,16 @@ func (x *extractor) findLastByte() (byte, bool) {
 	return x.out[len(x.out)-1], true
 }
 
-// getParts turns navigation entries into parts. An entry whose document is not in
+// GetParts turns navigation entries into parts. An entry whose document is not in
 // the book, or which carries no name, is not one.
-func (x *extractor) getParts(entries []entry) []Part {
+func (x *Extractor) GetParts(entries []Entry) []Part {
 	var out []Part
 	for _, e := range entries {
-		title := normaliseSpaces(e.title)
+		title := words.NormaliseSpaces(e.Title)
 		if title == "" {
 			continue
 		}
-		offset, ok := x.findOffset(e.href)
+		offset, ok := x.findOffset(e.Href)
 		if !ok {
 			continue
 		}
@@ -476,16 +459,16 @@ func (x *extractor) getParts(entries []entry) []Part {
 	return out
 }
 
-// getPages turns the entries of a page list into pages. A book with no page list
+// GetPages turns the entries of a page list into pages. A book with no page list
 // keeps the page breaks its markup marks.
-func (x *extractor) getPages(entries []entry) []Page {
+func (x *Extractor) GetPages(entries []Entry) []Page {
 	var out []Page
 	for _, e := range entries {
-		label := normaliseSpaces(e.title)
+		label := words.NormaliseSpaces(e.Title)
 		if label == "" {
 			continue
 		}
-		offset, ok := x.findOffset(e.href)
+		offset, ok := x.findOffset(e.Href)
 		if !ok {
 			continue
 		}
@@ -499,8 +482,8 @@ func (x *extractor) getPages(entries []entry) []Page {
 
 // findOffset returns the text offset an href names: its fragment's anchor, or
 // the start of its document. The result is false when neither is known.
-func (x *extractor) findOffset(href string) (int, bool) {
-	target, fragment := splitHref(href)
+func (x *Extractor) findOffset(ref string) (int, bool) {
+	target, fragment := href.Split(ref)
 	if fragment != "" {
 		if offset, ok := x.anchors[target+"#"+fragment]; ok {
 			return offset, true
@@ -510,10 +493,10 @@ func (x *extractor) findOffset(href string) (int, bool) {
 	return offset, ok
 }
 
-// getAttribute reads an attribute of the element by name. The markup is read as
+// GetAttribute reads an attribute of the element by name. The markup is read as
 // HTML, where a prefix is part of the name: `epub:type` is an attribute called
 // "epub:type".
-func getAttribute(n *html.Node, name string) string {
+func GetAttribute(n *html.Node, name string) string {
 	for _, a := range n.Attr {
 		if strings.EqualFold(a.Key, name) {
 			return a.Val
@@ -575,4 +558,14 @@ var blocks = map[atom.Atom]bool{
 	atom.Table:      true,
 	atom.Tr:         true,
 	atom.Ul:         true,
+}
+
+// GetText is the text of every document read so far.
+func (x *Extractor) GetText() []byte {
+	return x.out
+}
+
+// GetHeadings is the parts the headings of the markup name.
+func (x *Extractor) GetHeadings() []Part {
+	return x.headings
 }
