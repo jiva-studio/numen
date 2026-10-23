@@ -6,7 +6,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/serviceproxy"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/plugintool"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
@@ -70,7 +71,7 @@ func (c Config) StopPlugins(ctx context.Context) error {
 func (c Config) GetPluginTools() plugintool.Tools {
 	var tools pluginport.PluginTools
 	if c.PluginHost != nil {
-		tools = plugin.OpenToolsBridge(c.PluginHost)
+		tools = toolsbridge.Open(c.PluginHost)
 	}
 	return plugintool.NewTools(tools)
 }
@@ -88,7 +89,7 @@ func (c Config) GetPluginServices() PluginServices {
 	if c.PluginHost == nil {
 		return noPluginServices{}
 	}
-	return plugin.OpenServiceProxy(c.PluginHost)
+	return serviceproxy.Open(c.PluginHost)
 }
 
 // noPluginServices is the forwarding of an installation with no plugin host.

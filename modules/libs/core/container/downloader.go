@@ -4,7 +4,8 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
@@ -17,12 +18,12 @@ var _ downloadport.Downloader = (*unavailableDownloader)(nil)
 
 // DownloaderReady says whether a downloader plugin is enabled.
 func (c Config) DownloaderReady() bool {
-	return c.hasPlugin(plugin.CapabilityDownloader)
+	return c.hasPlugin(bridge.CapabilityDownloader)
 }
 
 // Downloader is what reaches an address on this machine.
 func (c Config) Downloader(_ context.Context) downloadport.Downloader {
-	host, err := c.resolvePlugin(plugin.CapabilityDownloader)
+	host, err := c.resolvePlugin(bridge.CapabilityDownloader)
 	if err != nil {
 		return unavailableDownloader{why: err}
 	}
@@ -57,8 +58,8 @@ type hostDownloaderPort struct {
 	host pluginport.PluginManager
 }
 
-func (h hostDownloaderPort) openBridge(ctx context.Context) (*plugin.DownloaderBridge, error) {
-	return plugin.OpenDownloaderBridge(ctx, h.host)
+func (h hostDownloaderPort) openBridge(ctx context.Context) (*downloaderbridge.Downloader, error) {
+	return downloaderbridge.Open(ctx, h.host)
 }
 
 func (h hostDownloaderPort) GetDownloadModel(ctx context.Context, targetURL domain.URL) (downloadport.DownloadModel, error) {

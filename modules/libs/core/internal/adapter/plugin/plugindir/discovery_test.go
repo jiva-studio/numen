@@ -1,0 +1,158 @@
+package plugindir
+
+import (
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugintest"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+func TestDiscoverPlugins(t *testing.T) {
+	tempDir := t.TempDir()
+
+	plugin1Dir := filepath.Join(tempDir, "plugin1")
+	if err := os.Mkdir(plugin1Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest1 := `{
+		"id": "md.numen.engines.ocr",
+		"name": "OCR",
+		"version": "1.0.0",
+		"description": "OCR plugin",
+		"capabilities": ["recognition"],
+		"targets": ["desktop.editor"],
+		"activationEvents": ["onFile:*.pdf"],
+		"permissions": [],
+		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 100, "keepAliveWhileVisible": false},
+		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "OcrService"},
+		"frontend": {"entrypoint": "", "styles": ""},
+		"settings": []
+	}`
+	if err := os.WriteFile(filepath.Join(plugin1Dir, "manifest.json"), []byte(manifest1), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	plugin2Dir := filepath.Join(tempDir, "plugin2")
+	if err := os.Mkdir(plugin2Dir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest2 := `{
+		"id": "md.numen.cards",
+		"name": "Cards",
+		"version": "1.0.0",
+		"description": "Cards plugin",
+		"capabilities": ["cards"],
+		"targets": ["desktop.flashcards"],
+		"activationEvents": ["*"],
+		"permissions": [],
+		"lifecycle": {"mode": "persistent", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": true},
+		"backend": {"type": "process", "entrypoint": "bin/cards", "serviceName": "CardsService"},
+		"frontend": {"entrypoint": "", "styles": ""},
+		"settings": []
+	}`
+	if err := os.WriteFile(filepath.Join(plugin2Dir, "manifest.json"), []byte(manifest2), 0o644); err != nil {
+		t.Fatal(err)
+	}
+
+	found, problems := DiscoverPlugins([]string{tempDir})
+	if len(problems) != 0 {
+		t.Fatalf("unexpected problems: %v", problems)
+	}
+	if len(found) != 2 {
+		t.Fatalf("got %d plugins, want 2", len(found))
+	}
+
+	editorPlugins := FilterPluginsByTarget(found, "desktop.editor")
+	if len(editorPlugins) != 1 || editorPlugins[0].Manifest.ID != "md.numen.engines.ocr" {
+		t.Errorf("unexpected editor plugins: %v", editorPlugins)
+	}
+
+	flashcardsPlugins := FilterPluginsByTarget(found, "desktop.flashcards")
+	if len(flashcardsPlugins) != 1 || flashcardsPlugins[0].Manifest.ID != "md.numen.cards" {
+		t.Errorf("unexpected flashcards plugins: %v", flashcardsPlugins)
+	}
+}
+
+func TestDiscoverPluginsDuplicateID(t *testing.T) {
+	tempDir1 := t.TempDir()
+	tempDir2 := t.TempDir()
+
+	manifest := `{
+		"id": "duplicate.id",
+		"name": "Dup",
+		"version": "1.0.0",
+		"description": "Dup",
+		"capabilities": [],
+		"targets": [],
+		"activationEvents": [],
+		"permissions": [],
+		"lifecycle": {"mode": "", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": false},
+		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
+		"frontend": {"entrypoint": "", "styles": ""},
+		"settings": []
+	}`
+
+	p1 := filepath.Join(tempDir1, "p1")
+	_ = os.Mkdir(p1, 0o755)
+	_ = os.WriteFile(filepath.Join(p1, "manifest.json"), []byte(manifest), 0o644)
+
+	p2 := filepath.Join(tempDir2, "p2")
+	_ = os.Mkdir(p2, 0o755)
+	_ = os.WriteFile(filepath.Join(p2, "manifest.json"), []byte(manifest), 0o644)
+
+	found, problems := DiscoverPlugins([]string{tempDir1, tempDir2})
+	if len(found) != 1 {
+		t.Fatalf("expected the first plugin with the id to be kept, got %d", len(found))
+	}
+	if len(problems) != 1 || problems[0].Dir != p2 {
+		t.Fatalf("expected the duplicate to be reported, got %v", problems)
+	}
+}
+
+func TestDiscoverPluginsSameDirectoryRepeated(t *testing.T) {
+	tempDir := t.TempDir()
+	p := filepath.Join(tempDir, "p1")
+	_ = os.Mkdir(p, 0o755)
+	manifest := `{
+		"id": "single.id",
+		"name": "Single",
+		"version": "1.0.0",
+		"description": "Single",
+		"capabilities": ["embedding"],
+		"targets": ["desktop.editor"],
+		"activationEvents": [],
+		"permissions": [],
+		"lifecycle": {"mode": "", "idleTimeoutSeconds": 0, "keepAliveWhileVisible": false},
+		"backend": {"type": "", "entrypoint": "", "serviceName": ""},
+		"frontend": {"entrypoint": "", "styles": ""},
+		"settings": []
+	}`
+	_ = os.WriteFile(filepath.Join(p, "manifest.json"), []byte(manifest), 0o644)
+
+	// Passing same directory twice (e.g. from NUMEN_PLUGINS_PATH and executable relative path)
+	found, problems := DiscoverPlugins([]string{tempDir, tempDir})
+	if len(problems) != 0 || len(found) != 1 {
+		t.Fatalf("expected one plugin and no problem when a directory is repeated, got %d and %v", len(found), problems)
+	}
+}
+
+func TestABrokenManifestDoesNotHideTheOtherPlugins(t *testing.T) {
+	tempDir := t.TempDir()
+	plugintest.CreateTestPluginTree(t, tempDir)
+	broken := filepath.Join(tempDir, "broken")
+	if err := os.Mkdir(broken, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(broken, "manifest.json"), []byte("{not json"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	found, problems := DiscoverPlugins([]string{tempDir})
+
+	if len(found) != 1 || found[0].Manifest.ID != "md.numen.engines.ocr" {
+		t.Fatalf("expected the valid plugin to be discovered, got %v", found)
+	}
+	if len(problems) != 1 || problems[0].Dir != broken || problems[0].Err == nil {
+		t.Fatalf("expected the broken manifest to be reported, got %v", problems)
+	}
+}

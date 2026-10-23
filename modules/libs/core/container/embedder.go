@@ -4,7 +4,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 
@@ -15,7 +16,7 @@ import (
 
 // EmbedderReady reports whether an embedding plugin is enabled.
 func (c Config) EmbedderReady() bool {
-	return c.hasPlugin(plugin.CapabilityEmbedding)
+	return c.hasPlugin(bridge.CapabilityEmbedding)
 }
 
 // Embedders are what makes the vectors a vault is searched by and what makes
@@ -34,14 +35,14 @@ func (c Config) Embedders(ctx context.Context, _ *run.Tasks) (indexing, asking e
 // Embedder is what makes the vectors a vault is searched by, waited for. It is
 // nil where no embedding plugin is enabled.
 func (c Config) Embedder(ctx context.Context) (embeddingport.Embedder, func() error, error) {
-	host, err := c.resolvePlugin(plugin.CapabilityEmbedding)
+	host, err := c.resolvePlugin(bridge.CapabilityEmbedding)
 	if errors.Is(err, completionport.ErrUnavailable) {
 		return nil, func() error { return nil }, nil
 	}
 	if err != nil {
 		return nil, nil, err
 	}
-	bridge, err := plugin.OpenEmbedderBridge(ctx, host)
+	bridge, err := embedderbridge.Open(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}

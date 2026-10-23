@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
 	"path/filepath"
 	"reflect"
 )
@@ -12,8 +14,8 @@ func (h *Host) Discover() error {
 	h.discoverMu.Lock()
 	defer h.discoverMu.Unlock()
 
-	all, problems := DiscoverPlugins(h.dirs)
-	discovered := FilterPluginsByTarget(all, h.target)
+	all, problems := plugindir.DiscoverPlugins(h.dirs)
+	discovered := plugindir.FilterPluginsByTarget(all, h.target)
 
 	h.mu.Lock()
 	if h.isClosed {
@@ -39,7 +41,7 @@ func (h *Host) Discover() error {
 
 // registerDiscoveredLocked registers the discovered plugins and returns the ids to stop, which are the plugins
 // that left the disk and the running ones whose manifest changed.
-func (h *Host) registerDiscoveredLocked(discovered []DiscoveredPlugin) []string {
+func (h *Host) registerDiscoveredLocked(discovered []plugindir.DiscoveredPlugin) []string {
 	present := make(map[string]bool, len(discovered))
 	var stale []string
 	for _, p := range discovered {
@@ -84,11 +86,11 @@ func (h *Host) isCoveredByProblemLocked(pluginID string) bool {
 	return false
 }
 
-func (h *Host) registerSupervisorLocked(p DiscoveredPlugin) {
+func (h *Host) registerSupervisorLocked(p plugindir.DiscoveredPlugin) {
 	id := p.Manifest.ID
 	sup, exists := h.supervisors[id]
 	if !exists {
-		sup = NewSupervisor()
+		sup = lifecycle.New()
 		sup.SetOnExit(func() { h.dropEndpointOfStoppedPlugin(id, sup) })
 		h.supervisors[id] = sup
 	}

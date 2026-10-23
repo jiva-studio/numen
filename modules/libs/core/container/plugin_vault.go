@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/vaultaccess"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
@@ -68,7 +68,7 @@ func (c Config) OpenPluginVault(
 	}
 	refresh := makeRefresh(c, db, db.Notes())
 	queries := db.Queries()
-	vaults := plugin.Vault{
+	vaults := vaultaccess.Vault{
 		Current:  current,
 		Readers:  c.VaultReaders(),
 		Writers:  c.VaultWriters(),

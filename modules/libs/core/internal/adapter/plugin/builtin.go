@@ -1,12 +1,15 @@
 package plugin
 
-import "net/http"
+import (
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
+	"net/http"
+)
 
 // builtInPlugin is a plugin linked into the host's binary: the plugin its manifest describes and
 // what makes the handler that serves its backend from the variables a launched process of it is
 // given.
 type builtInPlugin struct {
-	plugin DiscoveredPlugin
+	plugin plugindir.DiscoveredPlugin
 	serve  func(vars map[string]string) (http.Handler, error)
 }
 

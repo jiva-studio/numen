@@ -13,7 +13,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
@@ -458,14 +458,14 @@ func TestWhatTheSettingRuleRefuses(t *testing.T) {
 
 // coreCapabilities are the capabilities resolved by the core's adapters and composition root.
 var coreCapabilities = map[string]bool{
-	plugin.CapabilityDocument:      true,
-	plugin.CapabilityBook:          true,
-	plugin.CapabilityRecognition:   true,
-	plugin.CapabilityTranscription: true,
-	plugin.CapabilityEmbedding:     true,
-	plugin.CapabilityDownloader:    true,
-	plugin.CapabilityProofreading:  true,
-	plugin.CapabilityTools:         true,
+	bridge.CapabilityDocument:      true,
+	bridge.CapabilityBook:          true,
+	bridge.CapabilityRecognition:   true,
+	bridge.CapabilityTranscription: true,
+	bridge.CapabilityEmbedding:     true,
+	bridge.CapabilityDownloader:    true,
+	bridge.CapabilityProofreading:  true,
+	bridge.CapabilityTools:         true,
 	"ai.agent.provider":            true,
 }
 

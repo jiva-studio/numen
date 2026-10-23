@@ -4,7 +4,9 @@ import (
 	"context"
 	"io"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bookbridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
@@ -20,9 +22,9 @@ func (c Config) TextExtractor() sourceport.TextExtractor {
 	if c.Texts != nil {
 		return c.Texts
 	}
-	host, err := c.resolvePlugin(plugin.CapabilityDocument)
+	host, err := c.resolvePlugin(bridge.CapabilityDocument)
 	if err != nil {
-		if books, bookErr := c.resolvePlugin(plugin.CapabilityBook); bookErr == nil {
+		if books, bookErr := c.resolvePlugin(bridge.CapabilityBook); bookErr == nil {
 			return hostDocumentPort{host: books}
 		}
 		return unavailableDocument{why: err}
@@ -32,7 +34,7 @@ func (c Config) TextExtractor() sourceport.TextExtractor {
 
 // PageRenderer draws such a document's pages.
 func (c Config) PageRenderer() sourceport.PageRenderer {
-	host, err := c.resolvePlugin(plugin.CapabilityDocument)
+	host, err := c.resolvePlugin(bridge.CapabilityDocument)
 	if err != nil {
 		return unavailableDocument{why: err}
 	}
@@ -46,7 +48,7 @@ type hostDocumentPort struct {
 }
 
 func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := documentbridge.Open(ctx, h.host)
 	if err != nil {
 		return domain.TextLayer{}, err
 	}
@@ -55,7 +57,7 @@ func (h hostDocumentPort) Read(ctx context.Context, raw []byte) (domain.TextLaye
 }
 
 func (h hostDocumentPort) ReadBook(ctx context.Context, raw []byte) (domain.BookText, error) {
-	bridge, err := plugin.OpenBookBridge(ctx, h.host)
+	bridge, err := bookbridge.Open(ctx, h.host)
 	if err != nil {
 		return domain.BookText{}, err
 	}
@@ -64,7 +66,7 @@ func (h hostDocumentPort) ReadBook(ctx context.Context, raw []byte) (domain.Book
 }
 
 func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := documentbridge.Open(ctx, h.host)
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +75,7 @@ func (h hostDocumentPort) GetHighlights(ctx context.Context, raw []byte, starts 
 }
 
 func (h hostDocumentPort) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
-	bridge, err := plugin.OpenDocumentBridge(ctx, h.host)
+	bridge, err := documentbridge.Open(ctx, h.host)
 	if err != nil {
 		if file != nil {
 			_ = file.Close()
@@ -116,12 +118,12 @@ type hostBookPort struct {
 }
 
 // openBridge opens a bridge on the book plugin the host resolves now.
-func (h hostBookPort) openBridge(ctx context.Context) (*plugin.BookBridge, error) {
-	host, err := h.config.resolvePlugin(plugin.CapabilityBook)
+func (h hostBookPort) openBridge(ctx context.Context) (*bookbridge.Book, error) {
+	host, err := h.config.resolvePlugin(bridge.CapabilityBook)
 	if err != nil {
 		return nil, err
 	}
-	return plugin.OpenBookBridge(ctx, host)
+	return bookbridge.Open(ctx, host)
 }
 
 func (h hostBookPort) GetBook(ctx context.Context, path string) (domain.BookShape, error) {

@@ -17,6 +17,11 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
@@ -106,9 +111,9 @@ func registerBuiltIn(t *testing.T, host *Host, manifest []byte, serve func(map[s
 	}
 }
 
-func getAgentPrompt(t *testing.T, endpoint Endpoint) string {
+func getAgentPrompt(t *testing.T, endpoint transport.Endpoint) string {
 	t.Helper()
-	client := numenv1connect.NewAgentServiceClient(EndpointClient(endpoint), endpoint.BaseURL())
+	client := numenv1connect.NewAgentServiceClient(transport.EndpointClient(endpoint), endpoint.BaseURL())
 	res, err := client.GetAgentTools(t.Context(), connect.NewRequest(&v1.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("GetAgentTools: %v", err)
@@ -226,13 +231,13 @@ func TestABuiltInPluginIsRefusedTwiceAndForAnotherTarget(t *testing.T) {
 // A plugin found on disk with no built-in of its id is launched as a process.
 func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
 	}
 	launched := make(chan string, 1)
-	host.SetLauncher(func(_ context.Context, p DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		launched <- p.Manifest.ID
 		return nil, nil, errors.New("no process in this test")
 	})
@@ -248,7 +253,7 @@ func TestAPluginOnDiskThatIsNotBuiltInIsLaunched(t *testing.T) {
 // A built-in plugin whose copy on disk is removed is the built-in again.
 func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -284,7 +289,7 @@ func TestABuiltInPluginRemovedFromDiskIsTheBuiltInAgain(t *testing.T) {
 
 func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 	catalog := newONNXCatalog()
-	catalog.resolved[pluginport.RuntimeONNX] = pluginport.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{EnvONNXRuntimeLib: library, EnvONNXProvider: provider}}
+	catalog.resolved[pluginport.RuntimeONNX] = pluginport.ResolvedDependency{ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: library, process.EnvONNXProvider: provider}}
 	catalog.err = err
 	return catalog
 }
@@ -292,8 +297,8 @@ func newFixedCatalog(library, provider string, err error) *fakeCatalog {
 // A built-in plugin that declares the runtime finds the same variables a launched process is
 // given, in the process that is its own and among the variables it is made with.
 func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
-	t.Setenv(EnvONNXRuntimeLib, "")
-	t.Setenv(EnvONNXProvider, "")
+	t.Setenv(process.EnvONNXRuntimeLib, "")
+	t.Setenv(process.EnvONNXProvider, "")
 	host := newBuiltInHost(t)
 	host.SetDependencies(newFixedCatalog("/models/libonnxruntime.so", "coreml", nil))
 	backend := newBuiltInBackend()
@@ -302,20 +307,20 @@ func TestABuiltInPluginIsGivenTheRuntime(t *testing.T) {
 	if _, err := host.EnsureActive(t.Context(), firstBuiltInID); err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
-	if got := os.Getenv(EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
-		t.Errorf("%s = %q", EnvONNXRuntimeLib, got)
+	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "/models/libonnxruntime.so" {
+		t.Errorf("%s = %q", process.EnvONNXRuntimeLib, got)
 	}
-	if got := os.Getenv(EnvONNXProvider); got != "coreml" {
-		t.Errorf("%s = %q", EnvONNXProvider, got)
+	if got := os.Getenv(process.EnvONNXProvider); got != "coreml" {
+		t.Errorf("%s = %q", process.EnvONNXProvider, got)
 	}
-	if got := backend.lastVars(t)[EnvONNXProvider]; got != "coreml" {
-		t.Errorf("vars hold %s = %q", EnvONNXProvider, got)
+	if got := backend.lastVars(t)[process.EnvONNXProvider]; got != "coreml" {
+		t.Errorf("vars hold %s = %q", process.EnvONNXProvider, got)
 	}
 }
 
 // A built-in plugin whose runtime cannot be provisioned is not activated.
 func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
-	t.Setenv(EnvONNXRuntimeLib, "")
+	t.Setenv(process.EnvONNXRuntimeLib, "")
 	failure := errors.New("the archive is not the pinned one")
 	host := newBuiltInHost(t)
 	host.SetDependencies(newFixedCatalog("", "", failure))
@@ -325,8 +330,8 @@ func TestABuiltInPluginIsNotActivatedWithoutItsRuntime(t *testing.T) {
 	if !errors.Is(err, failure) || !strings.Contains(err.Error(), firstBuiltInID) {
 		t.Fatalf("EnsureActive() = %v, want the failure with the plugin named", err)
 	}
-	if got := os.Getenv(EnvONNXRuntimeLib); got != "" {
-		t.Errorf("%s = %q after a failed provisioning", EnvONNXRuntimeLib, got)
+	if got := os.Getenv(process.EnvONNXRuntimeLib); got != "" {
+		t.Errorf("%s = %q after a failed provisioning", process.EnvONNXRuntimeLib, got)
 	}
 }
 
@@ -341,13 +346,13 @@ func TestABuiltInActivationThatLostTheRaceWithShutdownIsRejected(t *testing.T) {
 
 	endpoint, err := host.activatePlugin(t.Context(), p, sup)
 
-	if !errors.Is(err, errActivationAborted) {
+	if !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("expected errActivationAborted, got %v", err)
 	}
 	if !isEmptyEndpoint(endpoint) {
 		t.Fatalf("expected no endpoint, got %+v", endpoint)
 	}
-	if sup.GetState() != StateDormant {
+	if sup.GetState() != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", sup.GetState())
 	}
 }
@@ -441,7 +446,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 	sup := host.supervisors[firstBuiltInID]
 	host.mu.RUnlock()
 
-	if _, err := host.activatePlugin(t.Context(), p, sup); !errors.Is(err, errActivationAborted) {
+	if _, err := host.activatePlugin(t.Context(), p, sup); !errors.Is(err, lifecycle.ErrActivationAborted) {
 		t.Fatalf("activatePlugin = %v, want errActivationAborted", err)
 	}
 
@@ -455,7 +460,7 @@ func TestABuiltInHandlerWhoseActivationFailsIsShutDown(t *testing.T) {
 // A built-in plugin's permissions are the built-in's again when its copy on disk leaves.
 func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)
@@ -477,10 +482,10 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 		t.Fatalf("Discover: %v", err)
 	}
 
-	if err := host.CheckPluginPermission("md.numen.engines.ocr", PermissionVaultWrite); err != nil {
+	if err := host.CheckPluginPermission("md.numen.engines.ocr", plugindir.PermissionVaultWrite); err != nil {
 		t.Errorf("the built-in's own permission: %v", err)
 	}
-	if err := host.CheckPluginPermission("md.numen.engines.ocr", PermissionVaultRead); err == nil {
+	if err := host.CheckPluginPermission("md.numen.engines.ocr", plugindir.PermissionVaultRead); err == nil {
 		t.Error("the permission of the copy that left is still granted")
 	}
 }
@@ -488,7 +493,7 @@ func TestABuiltInPluginRemovedFromDiskIsHeldToItsOwnPermissions(t *testing.T) {
 // A copy on disk is launched as a process, whatever built-in shares its id.
 func TestAPluginOnDiskIsLaunchedWhereABuiltInSharesItsId(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := newBuiltInHost(t, tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover: %v", err)

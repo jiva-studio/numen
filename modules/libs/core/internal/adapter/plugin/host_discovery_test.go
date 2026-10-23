@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"errors"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugintest"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -14,7 +15,7 @@ import (
 
 func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	broken := filepath.Join(tmp, "broken")
 	if err := os.Mkdir(broken, 0o755); err != nil {
 		t.Fatal(err)
@@ -49,7 +50,7 @@ func TestABrokenManifestIsSkippedAndShownAsFailed(t *testing.T) {
 
 func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -59,7 +60,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.engines.ocr")
-	exited := getExitSignal(host.supervisors["md.numen.engines.ocr"])
+	exited := host.supervisors["md.numen.engines.ocr"].GetExitSignal()
 
 	if err := os.RemoveAll(filepath.Join(tmp, "ocr")); err != nil {
 		t.Fatal(err)
@@ -79,7 +80,7 @@ func TestAPluginRemovedFromDiskIsStoppedAndForgotten(t *testing.T) {
 
 func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -90,7 +91,7 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.engines.ocr")
-	exited := getExitSignal(host.supervisors["md.numen.engines.ocr"])
+	exited := host.supervisors["md.numen.engines.ocr"].GetExitSignal()
 
 	manifestPath := filepath.Join(tmp, "ocr", "manifest.json")
 	data, err := os.ReadFile(manifestPath)
@@ -124,7 +125,7 @@ func TestAChangedManifestReplacesTheRegisteredOneAndRestartsThePlugin(t *testing
 
 func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)
 	if err := host.Discover(); err != nil {
 		t.Fatalf("Discover failed: %v", err)
@@ -154,7 +155,7 @@ func TestAPluginWhoseDirectoryCannotBeReadStaysRegistered(t *testing.T) {
 
 func TestConcurrentDiscoveriesLeaveTheRegistryConsistent(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)
 
 	var wg sync.WaitGroup
@@ -209,7 +210,7 @@ func TestEnsureActiveWaitsForADiscoveryInProgress(t *testing.T) {
 
 func TestAPluginStoppedForMemoryIsReported(t *testing.T) {
 	tmp := t.TempDir()
-	createTestPluginTree(t, tmp)
+	plugintest.CreateTestPluginTree(t, tmp)
 	host := NewHost("desktop.editor", tmp)
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
@@ -217,9 +218,8 @@ func TestAPluginStoppedForMemoryIsReported(t *testing.T) {
 		t.Fatalf("Discover failed: %v", err)
 	}
 
-	host.mu.RLock()
-	onExceeded := host.supervisors["md.numen.engines.ocr"].onMemoryExceeded
-	host.mu.RUnlock()
+	sup, _ := host.GetSupervisor("md.numen.engines.ocr")
+	onExceeded := sup.GetOnMemoryExceeded()
 	if onExceeded == nil {
 		t.Fatal("the supervisor of the plugin reports no memory stop")
 	}

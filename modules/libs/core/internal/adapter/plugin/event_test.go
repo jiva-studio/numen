@@ -20,6 +20,9 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugintest"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
@@ -82,7 +85,7 @@ func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[str
 	t.Helper()
 	host := NewHost("desktop.editor")
 	for id, events := range subscriptions {
-		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events}}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events}}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process
@@ -90,11 +93,11 @@ func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[str
 		mu.Lock()
 		defer mu.Unlock()
 		for _, proc := range procs {
-			killProcess(t, proc)
+			plugintest.KillProcess(t, proc)
 		}
 	})
-	host.SetLauncher(func(_ context.Context, p DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
-		cmd := newIdleCommand()
+	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+		cmd := plugintest.NewIdleCommand()
 		if err := cmd.Start(); err != nil {
 			return nil, nil, err
 		}
@@ -177,7 +180,7 @@ func TestAPluginThatRefusesAnEventIsReportedAndTheOthersStillReceiveIt(t *testin
 
 	_, err := host.TriggerEvent(t.Context(), "onOpen")
 
-	if !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
+	if !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "deliver onOpen to plugin a.refusing") || !strings.Contains(err.Error(), "the index is closed") {
 		t.Fatalf("TriggerEvent() = %v, want the rejection naming the event and the plugin", err)
 	}
 	if got := working.getEvents(); !slices.Equal(got, []string{"onOpen"}) {
@@ -194,20 +197,20 @@ func TestAPluginWhoseEventCallFailsIsReportedApartFromAError(t *testing.T) {
 
 	_, err := host.TriggerEvent(t.Context(), "onOpen")
 
-	if err == nil || errors.Is(err, errEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
+	if err == nil || errors.Is(err, transport.ErrEventRefused) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Fatalf("TriggerEvent() = %v, want the failed call reported as %v and not as an error", err, connect.CodeInternal)
 	}
 }
 
 func TestReadEventErrorHandlesEveryCode(t *testing.T) {
 	testsupport.CheckHandled(t, func(code v1.PluginEventErrorCode) bool {
-		err := convertEventRefusal(code, "the index is closed")
+		err := transport.ConvertEventRefusal(code, "the index is closed")
 		if code == v1.PluginEventErrorCode_PLUGIN_EVENT_ERROR_CODE_UNSPECIFIED {
 			return err == nil
 		}
-		return errors.Is(err, errEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
+		return errors.Is(err, transport.ErrEventRefused) && strings.Contains(err.Error(), "the index is closed") && !strings.Contains(err.Error(), "unknown code")
 	})
-	if err := convertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, errEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
+	if err := transport.ConvertEventRefusal(v1.PluginEventErrorCode(99), "why"); !errors.Is(err, transport.ErrEventRefused) || !strings.Contains(err.Error(), "unknown code 99") {
 		t.Fatalf("convertEventRefusal(99) = %v, want an error naming the unknown code", err)
 	}
 }

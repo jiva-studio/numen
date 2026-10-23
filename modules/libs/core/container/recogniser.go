@@ -3,7 +3,8 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/recogniserbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 
@@ -14,16 +15,16 @@ import (
 // RecogniserReady says whether a document could be read now without waiting for
 // anything to arrive.
 func (c Config) RecogniserReady() bool {
-	return c.hasPlugin(plugin.CapabilityRecognition)
+	return c.hasPlugin(bridge.CapabilityRecognition)
 }
 
 // Recogniser is what reads a scanned page on this machine, opened now.
 func (c Config) Recogniser(ctx context.Context) (recogniser recognitionport.Recogniser, closer func() error, why error) {
-	host, err := c.resolvePlugin(plugin.CapabilityRecognition)
+	host, err := c.resolvePlugin(bridge.CapabilityRecognition)
 	if err != nil {
 		return nil, nil, err
 	}
-	bridge, err := plugin.OpenRecogniserBridge(ctx, host)
+	bridge, err := recogniserbridge.Open(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}

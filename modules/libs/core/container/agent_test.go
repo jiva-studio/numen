@@ -24,6 +24,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
@@ -140,7 +141,7 @@ func hostWith(t *testing.T, capabilities map[string][]string, servers map[string
 	if err := host.Discover(); err != nil {
 		t.Fatal(err)
 	}
-	host.SetLauncher(func(_ context.Context, p plugin.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(_ context.Context, p plugindir.DiscoveredPlugin, _ int, _ string) (*os.Process, io.ReadCloser, error) {
 		serverPort, served := ports[p.Manifest.ID]
 		if !served {
 			return nil, nil, errors.New("this plugin cannot be started")

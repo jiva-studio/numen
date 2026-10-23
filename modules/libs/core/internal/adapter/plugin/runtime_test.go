@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/process"
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
@@ -32,7 +33,7 @@ func (f *fakeCatalog) Provision(_ context.Context, req pluginport.DependencyRequ
 
 func newONNXCatalog() *fakeCatalog {
 	return &fakeCatalog{resolved: map[string]pluginport.ResolvedDependency{
-		pluginport.RuntimeONNX: {ID: pluginport.RuntimeONNX, EnvVars: map[string]string{EnvONNXRuntimeLib: "/models/libonnxruntime.so", EnvONNXProvider: "coreml"}},
+		pluginport.RuntimeONNX: {ID: pluginport.RuntimeONNX, EnvVars: map[string]string{process.EnvONNXRuntimeLib: "/models/libonnxruntime.so", process.EnvONNXProvider: "coreml"}},
 	}}
 }
 
@@ -41,14 +42,14 @@ func newRuntimeRequirements(dir string) []pluginport.DependencyRequirement {
 }
 
 func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
-	runtimeVars := []string{EnvONNXRuntimeLib + "=/models/libonnxruntime.so", EnvONNXProvider + "=coreml"}
-	with := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t", runtimeVars: runtimeVars})
+	runtimeVars := []string{process.EnvONNXRuntimeLib + "=/models/libonnxruntime.so", process.EnvONNXProvider + "=coreml"}
+	with := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, Token: "t", RuntimeVars: runtimeVars})
 	for _, want := range runtimeVars {
 		if !slices.Contains(with, want) {
 			t.Errorf("environment %v lacks %s", with, want)
 		}
 	}
-	defaultVars := getPluginVars("md.numen.a", launchEnvironment{port: 5, token: "t"})
+	defaultVars := process.GetPluginVars("md.numen.a", process.LaunchEnvironment{Port: 5, Token: "t"})
 	for _, entry := range defaultVars {
 		if strings.HasPrefix(entry, "NUMEN_ONNX_") {
 			t.Errorf("environment %v names a runtime the plugin did not declare", defaultVars)

@@ -3,7 +3,8 @@ package container
 import (
 	"fmt"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/proofreaderbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
@@ -13,7 +14,7 @@ import (
 
 // ProofreaderReady says whether a proofreading plugin is available and ready.
 func (c Config) ProofreaderReady() bool {
-	return c.hasPlugin(plugin.CapabilityProofreading)
+	return c.hasPlugin(bridge.CapabilityProofreading)
 }
 
 // Proofreader is what puts a recognition right at the profile named.
@@ -24,11 +25,11 @@ func (c Config) Proofreader(name string) (recognitionport.Proofreader, error) {
 	if name == "" {
 		return nil, nil
 	}
-	host, err := c.resolvePlugin(plugin.CapabilityProofreading)
+	host, err := c.resolvePlugin(bridge.CapabilityProofreading)
 	if err != nil {
 		return nil, fmt.Errorf("proofreading %q: %w", name, err)
 	}
-	return plugin.OpenProofreaderBridge(host)
+	return proofreaderbridge.Open(host)
 }
 
 // GetScanProofreading is what a document's reading is put right with: the

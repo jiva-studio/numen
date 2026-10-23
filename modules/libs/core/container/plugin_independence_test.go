@@ -331,7 +331,7 @@ func TestWhatThePluginIDRuleRefuses(t *testing.T) {
 }
 
 // listSources is every Go file of the tree at root that is not a test, outside
-// a folder of dependencies.
+// a folder of dependencies and a folder of test fixtures (plugintest).
 func listSources(root string) ([]string, error) {
 	var sources []string
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -339,7 +339,7 @@ func listSources(root string) ([]string, error) {
 			return err
 		}
 		if entry.IsDir() {
-			if entry.Name() == "node_modules" {
+			if entry.Name() == "node_modules" || entry.Name() == "plugintest" {
 				return filepath.SkipDir
 			}
 			return nil

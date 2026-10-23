@@ -9,6 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/eventbus"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
@@ -23,7 +28,7 @@ func newRunningHost(t *testing.T) (*Host, <-chan struct{}) {
 		t.Fatalf("EnsureActive failed: %v", err)
 	}
 	host.Release("md.numen.engines.ocr")
-	return host, getExitSignal(host.supervisors["md.numen.engines.ocr"])
+	return host, host.supervisors["md.numen.engines.ocr"].GetExitSignal()
 }
 
 func waitForProcessExit(t *testing.T, exited <-chan struct{}) {
@@ -53,7 +58,7 @@ func TestAShutDownHostDoesNotStartPluginsAgain(t *testing.T) {
 }
 
 func TestClosingTheEventBusWaitsForDispatchesInFlight(t *testing.T) {
-	bus := NewEventBus(nil, time.Millisecond, 10*time.Millisecond)
+	bus := eventbus.New(nil, time.Millisecond, 10*time.Millisecond)
 	entered := make(chan struct{})
 	release := make(chan struct{})
 	bus.Subscribe("onSlow", func(_ context.Context, _ string) error {
@@ -87,7 +92,7 @@ func TestADisabledPluginIsStopped(t *testing.T) {
 	}
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateDormant {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -133,7 +138,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 	host.SetSafeMode(true)
 
 	waitForProcessExit(t, exited)
-	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateDormant {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != lifecycle.StateDormant {
 		t.Fatalf("expected StateDormant, got %v", state)
 	}
 }
@@ -141,7 +146,7 @@ func TestEnteringSafeModeStopsRunningPlugins(t *testing.T) {
 func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 	host := NewHost("desktop.editor")
 	manifest := pluginport.PluginManifest{ID: "md.numen.readers.epub", FileExtensions: []string{".epub"}}
-	host.plugins["md.numen.readers.epub"] = DiscoveredPlugin{Manifest: manifest}
+	host.plugins["md.numen.readers.epub"] = plugindir.DiscoveredPlugin{Manifest: manifest}
 
 	if _, ok := host.FindPluginByFileExtension(".epub"); !ok {
 		t.Fatal("expected an enabled plugin to be found")
@@ -166,7 +171,7 @@ func TestFindPluginByFileExtensionHonoursEnabledAndSafeMode(t *testing.T) {
 func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"md.numen.b", "md.numen.a"} {
-		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{CapabilityBook}}}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Capabilities: []string{bridge.CapabilityBook}}}
 	}
 	getReason := func(capability string) pluginport.UnavailableReason {
 		t.Helper()
@@ -178,22 +183,22 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		return missing.Reason
 	}
 
-	if found, err := host.ResolveCapability(CapabilityBook); err != nil || found.Manifest.ID != "md.numen.a" {
+	if found, err := host.ResolveCapability(bridge.CapabilityBook); err != nil || found.Manifest.ID != "md.numen.a" {
 		t.Fatalf("ResolveCapability = %q, %v, want the lowest id", found.Manifest.ID, err)
 	}
-	if got := getReason(CapabilityDocument); got != pluginport.PluginNotInstalled {
+	if got := getReason(bridge.CapabilityDocument); got != pluginport.PluginNotInstalled {
 		t.Errorf("a capability nothing declares is %v, want not installed", got)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
-	if found, err := host.ResolveCapability(CapabilityBook); err != nil || found.Manifest.ID != "md.numen.b" {
+	if found, err := host.ResolveCapability(bridge.CapabilityBook); err != nil || found.Manifest.ID != "md.numen.b" {
 		t.Fatalf("ResolveCapability = %q, %v, want the enabled one", found.Manifest.ID, err)
 	}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.b", false); err != nil {
 		t.Fatal(err)
 	}
-	if got := getReason(CapabilityBook); got != pluginport.PluginDisabled {
+	if got := getReason(bridge.CapabilityBook); got != pluginport.PluginDisabled {
 		t.Errorf("a capability every declaring plugin of is disabled is %v, want disabled", got)
 	}
 	for _, id := range []string{"md.numen.a", "md.numen.b"} {
@@ -202,10 +207,10 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 		}
 	}
 	host.SetSafeMode(true)
-	if got := getReason(CapabilityBook); got != pluginport.PluginDisabled {
+	if got := getReason(bridge.CapabilityBook); got != pluginport.PluginDisabled {
 		t.Errorf("a capability in safe mode is %v, want disabled", got)
 	}
-	if _, ok := host.FindPluginByCapability(CapabilityBook); ok {
+	if _, ok := host.FindPluginByCapability(bridge.CapabilityBook); ok {
 		t.Error("FindPluginByCapability found a plugin ResolveCapability does not")
 	}
 }
@@ -214,7 +219,7 @@ func TestResolveCapabilityReturnsWhyNoPluginAnswers(t *testing.T) {
 // or is switched off.
 func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 	host := NewHost("desktop.editor")
-	host.plugins["md.numen.a"] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
+	host.plugins["md.numen.a"] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.a"}}
 	if err := host.SetPluginEnabled(t.Context(), "md.numen.a", false); err != nil {
 		t.Fatal(err)
 	}
@@ -233,11 +238,11 @@ func TestEnsureActiveReturnsWhyAPluginIsUnavailable(t *testing.T) {
 func TestTriggerEventContinuesPastAFailingPlugin(t *testing.T) {
 	host := NewHost("desktop.editor")
 	for _, id := range []string{"a.failing", "b.working"} {
-		host.plugins[id] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}}}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: []string{"onOpen"}}}
 	}
 	var started atomic.Int32
 	working := startSleepLauncher(t, &started, nil)
-	host.SetLauncher(func(ctx context.Context, p DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
+	host.SetLauncher(func(ctx context.Context, p plugindir.DiscoveredPlugin, portNumber int, token string) (*os.Process, io.ReadCloser, error) {
 		if p.Manifest.ID == "a.failing" {
 			return nil, nil, errors.New("exec format error")
 		}
@@ -274,7 +279,7 @@ func TestADisableThatCannotBePersistedPreservesThePluginRunning(t *testing.T) {
 	if !host.IsPluginEnabled("md.numen.engines.ocr") {
 		t.Fatal("the plugin is disabled in memory although the choice was not stored")
 	}
-	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != StateIdle {
+	if state := host.supervisors["md.numen.engines.ocr"].GetState(); state != lifecycle.StateIdle {
 		t.Fatalf("expected the plugin to keep running, got state %v", state)
 	}
 	if err := host.TeardownAll(t.Context(), 50*time.Millisecond); err != nil {
@@ -286,19 +291,16 @@ func TestAFailedEvictionIsReportedAndNotCountedAsEvicted(t *testing.T) {
 	host := NewHost("desktop.editor")
 	var reported []error
 	host.SetErrorHandler(func(err error) { reported = append(reported, err) })
-	cmd := newIdleCommand()
+	cmd := plugintest.NewIdleCommand()
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("start process: %v", err)
 	}
-	t.Cleanup(func() { killProcess(t, cmd.Process) })
-	sup := NewSupervisor()
+	t.Cleanup(func() { plugintest.KillProcess(t, cmd.Process) })
+	sup := lifecycle.New()
 	if err := sup.Attach(cmd.Process, time.Now()); err != nil {
 		t.Fatalf("attach: %v", err)
 	}
-	sup.mu.Lock()
-	sup.state = StateDeactivating
-	sup.teardownBegun = true
-	sup.mu.Unlock()
+	sup.BeginTeardown()
 	canceled, cancel := context.WithCancel(t.Context())
 	cancel()
 

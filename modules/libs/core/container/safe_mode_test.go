@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
@@ -49,14 +50,14 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	t.Run("document extractor returns degraded fallback", func(t *testing.T) {
 		extractor := cfg.TextExtractor()
 		_, err := extractor.Read(ctx, []byte("fake"))
-		if !isDisabledInSafeMode(err, plugin.CapabilityDocument) {
+		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
 			t.Fatalf("got %v, want the document plugin disabled", err)
 		}
 	})
 
 	t.Run("book extractor returns degraded fallback", func(t *testing.T) {
 		_, err := cfg.TextExtractor().ReadBook(ctx, []byte("fake"))
-		if !isDisabledInSafeMode(err, plugin.CapabilityDocument) {
+		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
 			t.Fatalf("got %v, want the document plugin disabled", err)
 		}
 	})
@@ -64,7 +65,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	t.Run("page renderer returns degraded fallback", func(t *testing.T) {
 		renderer := cfg.PageRenderer()
 		_, err := renderer.OpenDocument(ctx, nil)
-		if !isDisabledInSafeMode(err, plugin.CapabilityDocument) {
+		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
 			t.Fatalf("got %v, want the document plugin disabled", err)
 		}
 	})
@@ -74,7 +75,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal("expected TranscriberReady to report false in safe mode")
 		}
 		_, _, err := cfg.Transcriber(ctx)
-		if !isDisabledInSafeMode(err, plugin.CapabilityTranscription) {
+		if !isDisabledInSafeMode(err, bridge.CapabilityTranscription) {
 			t.Fatalf("got %v, want the transcription plugin disabled", err)
 		}
 	})
@@ -84,7 +85,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			t.Fatal("expected RecogniserReady to report false in safe mode")
 		}
 		_, _, err := cfg.Recogniser(ctx)
-		if !isDisabledInSafeMode(err, plugin.CapabilityRecognition) {
+		if !isDisabledInSafeMode(err, bridge.CapabilityRecognition) {
 			t.Fatalf("got %v, want the recognition plugin disabled", err)
 		}
 	})
@@ -157,7 +158,7 @@ func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := Config{}
 	_, _, err := cfg.Recogniser(t.Context())
 	var missing *pluginport.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != plugin.CapabilityRecognition {
+	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityRecognition {
 		t.Fatalf("Recogniser = %v, want the recognition plugin not installed", err)
 	}
 	cfg.SetPluginVaultPath("vault")

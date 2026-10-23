@@ -3,7 +3,8 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/transcription"
 
@@ -14,7 +15,7 @@ import (
 // TranscriberReady says whether a recording could be listened to now without
 // waiting for anything to arrive.
 func (c Config) TranscriberReady() bool {
-	return c.IsMockML || c.hasPlugin(plugin.CapabilityTranscription)
+	return c.IsMockML || c.hasPlugin(bridge.CapabilityTranscription)
 }
 
 // Transcriber is what listens to a recording on this machine, opened now.
@@ -23,11 +24,11 @@ func (c Config) Transcriber(ctx context.Context) (transcriber transcriptionport.
 		mock := NewMockTranscriber()
 		return mock, mock.Close, nil
 	}
-	host, err := c.resolvePlugin(plugin.CapabilityTranscription)
+	host, err := c.resolvePlugin(bridge.CapabilityTranscription)
 	if err != nil {
 		return nil, nil, err
 	}
-	bridge, err := plugin.OpenTranscriberBridge(ctx, host)
+	bridge, err := transcriberbridge.Open(ctx, host)
 	if err != nil {
 		return nil, nil, err
 	}

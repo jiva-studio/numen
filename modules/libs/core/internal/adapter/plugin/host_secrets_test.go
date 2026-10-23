@@ -18,6 +18,10 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/lifecycle"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/transport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
@@ -139,17 +143,17 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 
 	host := NewHost("desktop.editor")
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
-	host.plugins[secretPluginID] = DiscoveredPlugin{Manifest: pluginport.PluginManifest{
+	host.plugins[secretPluginID] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
 		Secrets: []string{"apiKey"},
-		Settings: []Setting{
+		Settings: []plugindir.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},
 	}}
-	sup := NewSupervisor()
+	sup := lifecycle.New()
 	sup.ActivateInProcess(time.Now())
 	host.supervisors[secretPluginID] = sup
-	host.endpoints[secretPluginID] = Endpoint{
+	host.endpoints[secretPluginID] = transport.Endpoint{
 		Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port, Token: "launch-name",
 	}
 	if store != nil {
@@ -253,8 +257,8 @@ func TestNoKeyIsInTheEnvironmentOrOnTheCommandLine(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	env := sanitizeEnvironment(os.Environ(), vars, []string{"onnxruntime"})
-	args := getPluginArgs(4000)
+	env := process.SanitizeEnvironment(os.Environ(), vars, []string{"onnxruntime"})
+	args := process.GetPluginArgs(4000)
 	for _, entry := range append(env, args...) {
 		assertNoKey(t, "launch entry "+entry, entry, fromKeychain, fromSettings, fromHostEnv, fromSetting)
 		if strings.HasPrefix(entry, "NUMEN_PLUGIN_CONFIG=") {

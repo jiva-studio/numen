@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
-
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/agentbridge"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/pluginport"
 )
 
 // agentProvider is the capability of a plugin that runs agent programs.
-const agentProvider = plugin.CapabilityAgentProvider
+const agentProvider = bridge.CapabilityAgentProvider
 
 // programsLimit is how long the providers have to list the programs they run.
 const programsLimit = 8 * time.Second
@@ -101,7 +101,7 @@ func (h *hostAgentProvider) GetPrograms(
 func (h *hostAgentProvider) listPrograms(
 	ctx context.Context, id string, commands map[string][]string,
 ) ([]agentport.AgentProgram, error) {
-	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
+	bridge, err := agentbridge.OpenForPlugin(ctx, h.host, id)
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +154,7 @@ func (h *hostAgentProvider) StartRun(ctx context.Context, task agentport.Task) (
 	if err != nil {
 		return nil, err
 	}
-	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
+	bridge, err := agentbridge.OpenForPlugin(ctx, h.host, id)
 	if err != nil {
 		return nil, err
 	}
@@ -208,7 +208,7 @@ func (h *hostAgentProvider) EndConversation(ctx context.Context, conversation st
 
 // endConversationOn says a conversation is over to one plugin.
 func (h *hostAgentProvider) endConversationOn(ctx context.Context, id, conversation string) error {
-	bridge, err := plugin.OpenAgentBridgeForPlugin(ctx, h.host, id)
+	bridge, err := agentbridge.OpenForPlugin(ctx, h.host, id)
 	if err != nil {
 		return err
 	}
