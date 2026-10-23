@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -17,7 +17,7 @@ import (
 // openNoteRead is a vault on disk and the read that works on it.
 func openNoteRead(t *testing.T, notes map[string]string) (note.Read, domain.Vault) {
 	t.Helper()
-	return note.NewRead(filesystem.VaultReaders{}), testsupport.NewVault(t, notes)
+	return note.NewRead(vaultreader.Readers{}), testsupport.NewVault(t, notes)
 }
 
 func read(t *testing.T, u note.Read, v domain.Vault, path string) note.Contents {

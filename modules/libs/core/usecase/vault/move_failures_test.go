@@ -10,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/source"
@@ -78,7 +79,7 @@ func (f filing) wiring() wiring {
 		links:   f.db.Links(),
 		queries: f.db.SourcesKnown(),
 		sources: f.db.Sources(),
-		writers: filesystem.VaultWriters{},
+		writers: vaultwriter.VaultWriters{},
 		index:   f.index,
 	}
 }
@@ -87,7 +88,7 @@ func (f filing) wiring() wiring {
 // what the test gives it.
 func (f filing) moveOver(w wiring) vaults.Move {
 	notes := note.NewMove(
-		f.readers, filesystem.VaultWriters{},
+		f.readers, vaultwriter.VaultWriters{},
 		w.links, f.db.Queries(), f.db.Sources(), w.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return true }
@@ -100,7 +101,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 // recordBooks files the books the vault holds in the index.
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := source.NewExtract(filesystem.VaultReaders{}, f.db.Sources(), f.db.SourcesKnown())
+	extract := source.NewExtract(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown())
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}

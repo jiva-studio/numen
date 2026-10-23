@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -32,7 +33,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 	t.Helper()
 	db, v := newIndexedVault(t, notes)
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 	return changing{
 		db:    db,
 		vault: v,
@@ -45,28 +46,28 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
+	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, nil, 0, nil)
 }
 
 func (c changing) create() note.Create {
-	return note.NewCreate(filesystem.VaultWriters{}, c.db.Queries(), c.index, time.Now)
+	return note.NewCreate(vaultwriter.VaultWriters{}, c.db.Queries(), c.index, time.Now)
 }
 
 func (c changing) move() note.Move {
 	return note.NewMove(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{},
+		vaultreader.Readers{}, vaultwriter.VaultWriters{},
 		c.db.Links(), c.db.Queries(), c.db.Sources(), c.index, time.Now,
 	)
 }
 
 func (c changing) remove() note.Remove {
 	return note.NewRemove(
-		filesystem.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
+		vaultwriter.VaultWriters{}, c.db.Links(), c.db.SourcesKnown(), c.index)
 }
 
 func (c changing) newEditLinks() note.EditLinks {
 	return note.NewEditLinks(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 }
 
 func (c changing) read(t *testing.T, path string) string {
@@ -560,9 +561,9 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 
-	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
+	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -592,9 +593,9 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 
-	reader, err := (filesystem.VaultReaders{}).Open(c.vault)
+	reader, err := (vaultreader.Readers{}).Open(c.vault)
 	if err != nil {
 		t.Fatal(err)
 	}

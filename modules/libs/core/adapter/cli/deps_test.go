@@ -11,7 +11,9 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -25,11 +27,11 @@ import (
 
 // getDerived is the shelf this installation keeps its own files on inside a
 // vault: what a recognition wrote, and what a transcription wrote.
-func getDerived(options filesystem.Options) filesystem.DerivedStores {
-	return filesystem.DerivedStores{
+func getDerived(options vaultconfig.Options) derivedfile.DerivedStores {
+	return derivedfile.DerivedStores{
 		Options: options,
-		Area:    filesystem.OCRDir,
-		Areas:   []string{filesystem.TranscriptDir},
+		Area:    derivedfile.OCRDir,
+		Areas:   []string{derivedfile.TranscriptDir},
 	}
 }
 
@@ -37,13 +39,13 @@ func getDerived(options filesystem.Options) filesystem.DerivedStores {
 // itself: a registry and an index of its own, the folders it made, and a trash
 // nothing of this machine's is sent to.
 func (s *session) deps(where cli.Locations) cli.Deps {
-	options := filesystem.Options{ServiceDir: where.ServiceDir}
+	options := vaultconfig.Options{ServiceDir: where.ServiceDir}
 	return cli.Deps{
 		Vaults: func() (cli.Vaults, error) {
 			return cli.Vaults{
 				Registry: appstate.OpenAt(where.Registry),
-				Readers:  filesystem.VaultReaders{Options: options},
-				Identity: filesystem.VaultIdentity{Options: options},
+				Readers:  vaultreader.Readers{Options: options},
+				Identity: vaultreader.Identity{Options: options},
 				Trash:    s.bin,
 				Now:      time.Now,
 				Rows: func(ctx context.Context) (cli.VaultRows, error) {
@@ -69,7 +71,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			if err != nil {
 				return cli.Scan{}, err
 			}
-			readers := filesystem.VaultReaders{Options: options}
+			readers := vaultreader.Readers{Options: options}
 			store, err := getDerived(options).Open(v)
 			if err != nil {
 				_ = db.Close()
@@ -106,7 +108,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Search{}, err
 			}
 			return cli.Search{
-				Search: search.New(db.ChunkQueries(), filesystem.VaultReaders{Options: options},
+				Search: search.New(db.ChunkQueries(), vaultreader.Readers{Options: options},
 					getDerived(options), testsupport.Documents{}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil

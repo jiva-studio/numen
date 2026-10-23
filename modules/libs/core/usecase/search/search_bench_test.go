@@ -11,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -339,7 +339,7 @@ func BenchmarkComponents(b *testing.B) {
 				if len(c.candidates) == 0 {
 					b.Fatal("no candidate passages to read")
 				}
-				reader, err := filesystem.VaultReaders{}.Open(c.vault)
+				reader, err := vaultreader.Readers{}.Open(c.vault)
 				if err != nil {
 					b.Fatal(err)
 				}

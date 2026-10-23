@@ -7,7 +7,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -86,7 +86,7 @@ func vaultOf(t *testing.T, files map[string]string) domain.Vault {
 	return testsupport.NewVault(t, files)
 }
 
-var readers = filesystem.VaultReaders{}
+var readers = vaultreader.Readers{}
 
 const (
 	plate = "\x89PNG\r\n\x1a\npixels"

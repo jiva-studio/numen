@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -70,15 +70,15 @@ func newFollowed(t *testing.T, notes map[string]string, watcher *hand) followed 
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	moved := make(chan vaults.VaultChanges, 8)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
-		scanner(filesystem.VaultReaders{}, db),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		scanner(vaultreader.Readers{}, db),
 	)
 	follow.Changed = func(m vaults.VaultChanges) { moved <- m }
 
@@ -200,16 +200,16 @@ func TestATroubleThatIsOverStopsBeingReported(t *testing.T) {
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n\nentropy\n",
 	})
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	reported := make(chan error, 8)
-	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
+	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
 		vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
-		scanner(filesystem.VaultReaders{}, db),
+		scanner(vaultreader.Readers{}, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }
 	started, err := follow.Begin(t.Context(), v)
@@ -271,8 +271,8 @@ func TestAWatchEndsWhenTheWatcherStops(t *testing.T) {
 	db := openIndex(t)
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
-		scanner(filesystem.VaultReaders{}, db),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		scanner(vaultreader.Readers{}, db),
 	)
 	started, err := follow.Begin(t.Context(), v)
 	if err != nil {
@@ -300,16 +300,16 @@ func TestAWalkThatFailsIsReportedAndClearedByTheNextOne(t *testing.T) {
 	watcher := newHand()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": "# Note\n"})
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 
 	reported := make(chan error, 8)
 	moved := make(chan vaults.VaultChanges, 8)
-	readers := &sometimes{VaultReaders: filesystem.VaultReaders{}}
+	readers := &sometimes{VaultReaders: vaultreader.Readers{}}
 	follow := vaults.NewFollow(
 		watcher,
-		vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
+		vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now),
 		scanner(readers, db),
 	)
 	follow.ErrorHandler = func(err error) { reported <- err }

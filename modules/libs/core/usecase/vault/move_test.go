@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
@@ -38,10 +39,10 @@ func openFiling(t *testing.T, notes map[string]string) filing {
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	readers := &countingReaders{VaultReaders: filesystem.VaultReaders{}}
+	readers := &countingReaders{VaultReaders: vaultreader.Readers{}}
 	refresh := vaults.NewRefresh(readers, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 	return filing{
 		db:      db,
@@ -64,7 +65,7 @@ func (f filing) moveApart() vaults.Move { return f.newMove(false) }
 
 func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 	notes := note.NewMove(
-		f.readers, filesystem.VaultWriters{},
+		f.readers, vaultwriter.VaultWriters{},
 		f.db.Links(), f.db.Queries(), f.db.Sources(), f.index, time.Now,
 	)
 	notes.Sync = func() note.SyncTitleAndFilename { return preserved }
@@ -72,7 +73,7 @@ func (f filing) newMove(preserved note.SyncTitleAndFilename) vaults.Move {
 		*f.went = append(*f.went, went)
 	}
 	return vaults.NewMove(
-		filesystem.VaultWriters{},
+		vaultwriter.VaultWriters{},
 		f.db.Links(), f.db.SourcesKnown(), f.db.Sources(), notes,
 	)
 }
@@ -188,7 +189,7 @@ func TestWhatIsBelowAPathIsWhatAWalkFinds(t *testing.T) {
 // it, by path.
 func walkSources(t *testing.T, f filing, path string) []string {
 	t.Helper()
-	reader, err := filesystem.VaultReaders{}.Open(f.vault)
+	reader, err := vaultreader.Readers{}.Open(f.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -238,7 +239,7 @@ func TestAFolderThatMovedIsFiledWhereItIsWithoutBeingRead(t *testing.T) {
 
 	// The chunks are still the source's, so a search answers with the note at
 	// the path it is filed under now.
-	searching := search.New(f.db.Passages(), filesystem.VaultReaders{}, nil, nil, nil, 0, nil)
+	searching := search.New(f.db.Passages(), vaultreader.Readers{}, nil, nil, nil, 0, nil)
 	found, err := searching.Execute(t.Context(), f.vault, "disorder", search.Parameters{})
 	if err != nil {
 		t.Fatal(err)

@@ -10,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
@@ -125,10 +126,10 @@ func (c changing) moveOf(p moveParts) note.Move {
 		p.names = c.db.Queries()
 	}
 	if p.readers == nil {
-		p.readers = filesystem.VaultReaders{}
+		p.readers = vaultreader.Readers{}
 	}
 	if p.writers == nil {
-		p.writers = filesystem.VaultWriters{}
+		p.writers = vaultwriter.VaultWriters{}
 	}
 	if !p.hasIndex {
 		p.index = c.index
@@ -184,7 +185,7 @@ func TestAMoveThatStopsBeforeTheFileMovedReturnsSo(t *testing.T) {
 			from: "physics/Entropy.md",
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: filesystem.VaultWriters{}, openErr: boom, failOpen: 1, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 1, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -281,7 +282,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be held": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: filesystem.VaultWriters{}, holdErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{}, holdErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -293,7 +294,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the vault cannot be opened again for the repair": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: filesystem.VaultWriters{}, openErr: boom, failOpen: 2, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{}, openErr: boom, failOpen: 2, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -301,7 +302,7 @@ func TestAMoveThatFailsAfterTheFileLandedReturnsWhatFailed(t *testing.T) {
 		"the repaired note cannot be written": {
 			parts: func(changing) moveParts {
 				return moveParts{writers: failingWriters{
-					VaultWriters: filesystem.VaultWriters{}, writeErr: boom, opened: new(int),
+					VaultWriters: vaultwriter.VaultWriters{}, writeErr: boom, opened: new(int),
 				}}
 			},
 			want: boom,
@@ -506,7 +507,7 @@ func TestANoteWithInlineFrontmatterIsReportedAndNotSaved(t *testing.T) {
 // back as it was set.
 func TestAMovePassesBackTheCollaboratorsItWasGiven(t *testing.T) {
 	c := openLinked(t)
-	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: filesystem.VaultWriters{}, opened: new(int)}
+	readers, writers := brokenReaders{}, &failingWriters{VaultWriters: vaultwriter.VaultWriters{}, opened: new(int)}
 	sources := sulking{SourceRepository: c.db.Sources()}
 
 	mover := c.move().WithReaders(readers).WithWriters(writers).WithSources(sources)

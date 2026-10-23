@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -190,7 +190,7 @@ func (w *waves) WatchVault(context.Context, domain.Vault) (<-chan []string, <-ch
 // then be asked for while the first is still holding an older copy.
 func makeStagedReaders() *staged {
 	return &staged{
-		VaultReaders: filesystem.VaultReaders{},
+		VaultReaders: vaultreader.Readers{},
 		read:         make(chan string, 1),
 		first:        make(chan struct{}),
 	}
@@ -241,7 +241,7 @@ func (r stagedRead) Read(ctx context.Context, path string) ([]byte, error) {
 // hand, so a test can change the file the walk is holding a copy of.
 func makeGatedReaders() *gate {
 	return &gate{
-		VaultReaders: filesystem.VaultReaders{},
+		VaultReaders: vaultreader.Readers{},
 		begun:        make(chan string, 1),
 		until:        make(chan struct{}),
 	}

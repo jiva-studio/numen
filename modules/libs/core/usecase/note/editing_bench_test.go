@@ -6,7 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -28,7 +29,7 @@ func BenchmarkRead(b *testing.B) {
 	for _, notes := range []int{1_000, 100_000} {
 		b.Run(fmt.Sprintf("%d notes", notes), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, notes)
-			read := note.NewRead(filesystem.VaultReaders{})
+			read := note.NewRead(vaultreader.Readers{})
 			path := "01/note-000001.md"
 
 			b.ResetTimer()
@@ -53,7 +54,7 @@ func BenchmarkSave(b *testing.B) {
 		b.Run(fmt.Sprintf("%d words", size), func(b *testing.B) {
 			v := testsupport.GenerateVault(b, 100)
 			write := note.NewWrite(
-				filesystem.VaultReaders{}, filesystem.VaultWriters{}, indexNothing, time.Now)
+				vaultreader.Readers{}, vaultwriter.VaultWriters{}, indexNothing, time.Now)
 			path := "01/note-000001.md"
 
 			body := ""

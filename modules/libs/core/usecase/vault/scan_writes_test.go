@@ -10,7 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -50,7 +51,7 @@ func TestNotesAreSavedInGroups(t *testing.T) {
 	db := openIndex(t)
 
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		content,
 		db.Queries(),
@@ -93,7 +94,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	cfg, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now())
+	cfg, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +103,7 @@ func TestALongNoteClosesTheGroupEarly(t *testing.T) {
 	content := &groupedWrites{}
 	db := openIndex(t)
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		content,
 		db.Queries(),
@@ -130,7 +131,7 @@ func TestAFailedWriteCountsNothing(t *testing.T) {
 	db := openIndex(t)
 
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		&groupedWrites{fail: writeErr},
 		db.Queries(),

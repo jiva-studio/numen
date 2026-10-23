@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -48,7 +48,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(index, filesystem.VaultReaders{}, nil, nil, nil, 0, nil),
+				Search: search.New(index, vaultreader.Readers{}, nil, nil, nil, 0, nil),
 				Words:  words,
 			}, nil
 		},

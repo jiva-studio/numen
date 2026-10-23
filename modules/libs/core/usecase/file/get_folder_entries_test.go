@@ -6,7 +6,7 @@ import (
 	"io/fs"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -37,7 +37,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 	})
 	index := &typed{types: map[string]domain.NoteType{"decks/spanish.md": "deck"}}
 
-	listing, err := file.NewGetFolderEntries(filesystem.VaultReaders{}, index).Execute(t.Context(), v, "decks")
+	listing, err := file.NewGetFolderEntries(vaultreader.Readers{}, index).Execute(t.Context(), v, "decks")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +56,7 @@ func TestAFolderListsItsEntriesAndAsksTheIndexAboutTheNotes(t *testing.T) {
 func TestAFolderListsWithoutAnIndex(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# a\n"})
 
-	listing, err := file.NewGetFolderEntries(filesystem.VaultReaders{}, nil).Execute(t.Context(), v, "")
+	listing, err := file.NewGetFolderEntries(vaultreader.Readers{}, nil).Execute(t.Context(), v, "")
 	if err != nil || len(listing.Entries) == 0 || len(listing.Types) != 0 {
 		t.Fatalf("listed %v with types %v, %v", listing.Entries, listing.Types, err)
 	}
@@ -65,7 +65,7 @@ func TestAFolderListsWithoutAnIndex(t *testing.T) {
 func TestAFolderThatIsNotThereIsNotListed(t *testing.T) {
 	v := testsupport.NewVault(t, nil)
 
-	if _, err := file.NewGetFolderEntries(filesystem.VaultReaders{}, nil).Execute(t.Context(), v, "nowhere"); err == nil {
+	if _, err := file.NewGetFolderEntries(vaultreader.Readers{}, nil).Execute(t.Context(), v, "nowhere"); err == nil {
 		t.Fatal("a folder that is not there was listed")
 	}
 }
@@ -74,7 +74,7 @@ func TestAnIndexThatCannotAnswerFailsTheListing(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# a\n"})
 	failure := errors.New("index closed")
 
-	_, err := file.NewGetFolderEntries(filesystem.VaultReaders{}, &typed{err: failure}).Execute(t.Context(), v, "")
+	_, err := file.NewGetFolderEntries(vaultreader.Readers{}, &typed{err: failure}).Execute(t.Context(), v, "")
 	if err == nil || err.Error() != failure.Error() {
 		t.Fatalf("error is %v, want the index's own", err)
 	}

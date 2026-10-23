@@ -20,7 +20,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -115,7 +115,7 @@ func newListedVault(
 			t.Fatal(err)
 		}
 	}
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	v, err := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now).Execute(root, name)
@@ -388,7 +388,7 @@ func TestAVaultThatCannotBeShownIsRefusedAndTheWindowStays(t *testing.T) {
 			}
 		}},
 		{"the folder is no longer that vault", func(t *testing.T, v domain.Vault) {
-			if err := os.RemoveAll(filepath.Join(v.Path, filesystem.DefaultServiceDir)); err != nil {
+			if err := os.RemoveAll(filepath.Join(v.Path, vaultconfig.DefaultServiceDir)); err != nil {
 				t.Fatal(err)
 			}
 		}},
@@ -761,7 +761,7 @@ func openInstallation(t *testing.T) *editor.Installation {
 		t.Fatal(err)
 	}
 	root := t.TempDir()
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	add := vaults.NewAdd(cfg.VaultIdentity(), registry, time.Now)
@@ -1132,7 +1132,7 @@ func TestAVaultAddedToAWindowActiveOnNothingIsShown(t *testing.T) {
 	); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 

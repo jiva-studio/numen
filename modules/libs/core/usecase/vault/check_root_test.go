@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
@@ -55,7 +55,7 @@ func TestCheckRootRefusesWhatIsNotAFolderForNotes(t *testing.T) {
 func TestCheckRootLetsAFolderInsideTheHomeDirectoryThrough(t *testing.T) {
 	t.Parallel()
 	home := filepath.Join(string(filepath.Separator), "people", "ann")
-	check := vaults.NewCheckRoot(filesystem.VaultIdentity{}, fakeHome{path: home})
+	check := vaults.NewCheckRoot(vaultreader.Identity{}, fakeHome{path: home})
 
 	if err := check.Execute(filepath.Join(home, "notes")); err != nil {
 		t.Errorf("a folder inside the home directory failed: %v", err)
@@ -64,7 +64,7 @@ func TestCheckRootLetsAFolderInsideTheHomeDirectoryThrough(t *testing.T) {
 
 func TestCheckRootLetsAFolderThroughWhereNoHomeFolderIsKnown(t *testing.T) {
 	t.Parallel()
-	check := vaults.NewCheckRoot(filesystem.VaultIdentity{}, fakeHome{err: errors.New("no home")})
+	check := vaults.NewCheckRoot(vaultreader.Identity{}, fakeHome{err: errors.New("no home")})
 
 	if err := check.Execute(filepath.Join(string(filepath.Separator), "people", "ann")); err != nil {
 		t.Errorf("a folder failed where no home folder is known: %v", err)

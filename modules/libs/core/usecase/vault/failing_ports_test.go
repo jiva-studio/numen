@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
@@ -15,7 +15,7 @@ var errRefused = errors.New("the machine failed")
 // filesystem, with a question answered by an error or a fixed answer when a
 // test sets one.
 type refusingIdentity struct {
-	filesystem.VaultIdentity
+	vaultreader.Identity
 	checkReadable error
 	ensure        error
 	// ensureAs, when set, is the identity every folder is given.
@@ -28,7 +28,7 @@ func (r refusingIdentity) CheckReadable(root string) error {
 	if r.checkReadable != nil {
 		return r.checkReadable
 	}
-	return r.VaultIdentity.CheckReadable(root)
+	return r.Identity.CheckReadable(root)
 }
 
 func (r refusingIdentity) EnsureIdentity(root string, pos time.Time) (domain.VaultID, error) {
@@ -38,14 +38,14 @@ func (r refusingIdentity) EnsureIdentity(root string, pos time.Time) (domain.Vau
 	if r.ensureAs != "" {
 		return r.ensureAs, nil
 	}
-	return r.VaultIdentity.EnsureIdentity(root, pos)
+	return r.Identity.EnsureIdentity(root, pos)
 }
 
 func (r refusingIdentity) GetVaultID(root string) (domain.VaultID, bool, error) {
 	if r.vaultID != nil {
 		return r.vaultID(root)
 	}
-	return r.VaultIdentity.GetVaultID(root)
+	return r.Identity.GetVaultID(root)
 }
 
 // refusingRegistry is the list this installation keeps, with each question

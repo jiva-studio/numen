@@ -4,14 +4,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 )
 
 func TestRemovingANoteRefusesAFolderAndKeepsTheRestOfTheCall(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"dir/Heat.md": "# Heat\n", "Work.md": "# Work\n"})
-	remove := note.NewRemoveNote(c.remove(), filesystem.VaultReaders{})
+	remove := note.NewRemoveNote(c.remove(), vaultreader.Readers{})
 
 	if _, err := remove.Execute(t.Context(), c.vault, "dir", false); !errors.Is(err, note.ErrFolder) {
 		t.Errorf("a folder was removed: %v", err)

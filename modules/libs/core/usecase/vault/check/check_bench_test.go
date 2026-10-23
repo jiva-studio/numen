@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault/check"
@@ -73,7 +73,7 @@ func scanBenchVault(b *testing.B, notes map[string]string) (check.Checks, domain
 	b.Cleanup(func() { db.Close() })
 
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(),
+		vaultreader.Readers{}, db.Vaults(), db.Notes(),
 		db.Queries(), db.Maintenance(),
 	)
 	if _, err := scan.Execute(b.Context(), v); err != nil {

@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/appearance"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
@@ -393,7 +393,7 @@ func TestTheDoorShutsPriorTheQuestionsAlreadyTaken(t *testing.T) {
 	until := make(chan struct{})
 	b := blockingVaults{begun: begun, until: until}
 	list := vaults.NewList(b)
-	check := vaults.NewFolderCheck(filesystem.VaultReaders{})
+	check := vaults.NewFolderCheck(vaultreader.Readers{})
 	api := newBareServices()
 	api.Vaults.list = &list
 	api.Vaults.folderCheck = &check

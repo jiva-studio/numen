@@ -25,7 +25,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
@@ -165,7 +166,7 @@ type walking struct {
 	walks atomic.Int64
 }
 
-func newWalking() *walking { return &walking{VaultReaders: filesystem.VaultReaders{}} }
+func newWalking() *walking { return &walking{VaultReaders: vaultreader.Readers{}} }
 
 func (w *walking) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	reader, err := w.VaultReaders.Open(v)
@@ -304,7 +305,7 @@ func TestANoteSavedAfterTheScanFailedIsEmbedded(t *testing.T) {
 
 	f := openingWith(t, map[string]string{
 		"Note.md": noteWith(before, 200),
-	}, watcher, unwalkable{VaultReaders: filesystem.VaultReaders{}}, model, 20*time.Millisecond)
+	}, watcher, unwalkable{VaultReaders: vaultreader.Readers{}}, model, 20*time.Millisecond)
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.state.Error.Why() != ""
@@ -347,7 +348,7 @@ func (s *mockEmbeddingServer) EmbedBatch(
 func vaultConfig(t *testing.T, embedding container.EmbeddingConfig) container.Config {
 	t.Helper()
 	root := t.TempDir()
-	if _, err := filesystem.Initialize(root, filesystem.DefaultServiceDir, time.Now()); err != nil {
+	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
 	cfg := container.Config{

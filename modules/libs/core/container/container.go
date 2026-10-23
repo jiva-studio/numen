@@ -18,6 +18,11 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwatch"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -270,12 +275,12 @@ func (c Config) Registry() (vaultport.VaultRegistry, error) {
 
 // VaultReaders opens vaults for reading.
 func (c Config) VaultReaders() vaultport.VaultReaders {
-	return filesystem.VaultReaders{Options: c.vaultOptions()}
+	return vaultreader.Readers{Options: c.vaultOptions()}
 }
 
 // VaultWriters opens vaults for write operations.
 func (c Config) VaultWriters() vaultport.VaultWriters {
-	return filesystem.VaultWriters{Options: c.vaultOptions()}
+	return vaultwriter.VaultWriters{Options: c.vaultOptions()}
 }
 
 // GetImportedFiles opens files imported from outside the vault.
@@ -285,20 +290,20 @@ func (c Config) GetImportedFiles() sourceport.ImportedFiles {
 
 // VaultWatcher monitors vaults for external filesystem changes.
 func (c Config) VaultWatcher() vaultport.VaultWatcher {
-	return filesystem.Watcher{Options: c.vaultOptions()}
+	return vaultwatch.Watcher{Options: c.vaultOptions()}
 }
 
 // VaultIdentity provides vault identification.
 func (c Config) VaultIdentity() vaultport.VaultIdentity {
-	return filesystem.VaultIdentity{Options: c.vaultOptions()}
+	return vaultreader.Identity{Options: c.vaultOptions()}
 }
 
 // Trash provides trash and recycling operations.
 func (c Config) Trash() machineport.Trash { return trash.New() }
 
 // vaultOptions returns filesystem configuration for vaults.
-func (c Config) vaultOptions() filesystem.Options {
-	return filesystem.Options{
+func (c Config) vaultOptions() vaultconfig.Options {
+	return vaultconfig.Options{
 		ServiceDir:     c.ServiceDir,
 		BookExtensions: c.BookExtensions,
 	}
@@ -306,11 +311,11 @@ func (c Config) vaultOptions() filesystem.Options {
 
 // GetDerivedStores returns storage for generated artifacts (transcripts, OCR, copies).
 func (c Config) GetDerivedStores() vaultport.DerivedStores {
-	return filesystem.DerivedStores{
+	return derivedfile.DerivedStores{
 		Options: c.vaultOptions(),
-		Area:    filesystem.OCRDir,
+		Area:    derivedfile.OCRDir,
 		Areas: []string{
-			filesystem.TranscriptDir, filesystem.ArticleDir, filesystem.CopyDir, filesystem.IndexDir,
+			derivedfile.TranscriptDir, derivedfile.ArticleDir, derivedfile.CopyDir, derivedfile.IndexDir,
 		},
 	}
 }

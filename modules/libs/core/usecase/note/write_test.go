@@ -3,7 +3,8 @@ package note_test
 import (
 	"context"
 	"errors"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"strings"
 	"testing"
 	"time"
@@ -188,8 +189,8 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 	levelled := 0
 	w := note.NewWrite(brokenReaders{open: errDiskGone}, brokenWriters{hold: errDiskGone}, nil, time.Now).
-		WithReaders(filesystem.VaultReaders{}).
-		WithWriters(filesystem.VaultWriters{}).
+		WithReaders(vaultreader.Readers{}).
+		WithWriters(vaultwriter.VaultWriters{}).
 		WithIndex(func(context.Context, domain.Vault, []string) error {
 			levelled++
 			return nil

@@ -19,7 +19,8 @@ import (
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -159,8 +160,8 @@ func levelNothing(context.Context, domain.Vault, []string) error { return nil }
 func openEditor(t *testing.T, notes map[string]string) *Services {
 	t.Helper()
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
-	read := note.NewRead(filesystem.VaultReaders{})
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(vaultreader.Readers{})
 	api := newBareServices()
 	api.Note.read, api.Note.write = &read, &writing
 	api.state.setVault(testsupport.NewVault(t, notes))
@@ -293,7 +294,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 
 	var once sync.Once
 	linking := note.NewEditLinks(
-		beaten{VaultReaders: filesystem.VaultReaders{}, after: func(path string) {
+		beaten{VaultReaders: vaultreader.Readers{}, after: func(path string) {
 			if path != "Heat.md" {
 				return
 			}
@@ -303,7 +304,7 @@ func TestAJoinOverANoteThatMovedIsAnsweredChanged(t *testing.T) {
 				}
 			})
 		}},
-		filesystem.VaultWriters{},
+		vaultwriter.VaultWriters{},
 		levelNothing,
 		time.Now,
 	)
@@ -352,8 +353,8 @@ func TestEditLoad(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
-	read := note.NewRead(filesystem.VaultReaders{})
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),

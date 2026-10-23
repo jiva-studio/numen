@@ -10,7 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -21,7 +22,7 @@ import (
 // openFileRead is a vault on disk and the read that works on it.
 func openFileRead(t *testing.T, files map[string]string) (file.Read, domain.Vault) {
 	t.Helper()
-	return file.Read{Readers: filesystem.VaultReaders{}}, testsupport.NewVault(t, files)
+	return file.Read{Readers: vaultreader.Readers{}}, testsupport.NewVault(t, files)
 }
 
 func read(t *testing.T, u file.Read, v domain.Vault, path string, start, length int) file.ReadResult {
@@ -262,7 +263,7 @@ func TestAPathContainingAFolderIsSaidToBeOne(t *testing.T) {
 // of a file does not reach into it.
 func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 	u, v := openFileRead(t, map[string]string{"notes/lecture.txt": "said"})
-	keptFile := filepath.Join(v.Path, filesystem.DefaultServiceDir, "kept.txt")
+	keptFile := filepath.Join(v.Path, vaultconfig.DefaultServiceDir, "kept.txt")
 	if err := os.MkdirAll(filepath.Dir(keptFile), 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -270,7 +271,7 @@ func TestTheApplicationsOwnFolderIsNotRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := filesystem.DefaultServiceDir + "/kept.txt"
+	path := vaultconfig.DefaultServiceDir + "/kept.txt"
 	if _, err := u.Execute(t.Context(), v, path, 0, 0); err == nil {
 		t.Error("the application's own folder was read")
 	}
@@ -306,7 +307,7 @@ func (f faulty) Open(v domain.Vault) (vaultport.VaultReader, error) {
 	if f.open != nil {
 		return nil, f.open
 	}
-	reader, err := filesystem.VaultReaders{}.Open(v)
+	reader, err := vaultreader.Readers{}.Open(v)
 	if err != nil {
 		return nil, err
 	}

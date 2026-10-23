@@ -3,7 +3,7 @@ package file_test
 import (
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -17,7 +17,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 	})
 	index := &typed{types: map[string]domain.NoteType{"a.md": "stencil"}}
 
-	listing, err := file.NewGetFileKinds(filesystem.VaultReaders{}, index).Execute(
+	listing, err := file.NewGetFileKinds(vaultreader.Readers{}, index).Execute(
 		t.Context(), v, []string{"b.mp3", "missing.md", "../outside.md", "a.md"})
 	if err != nil {
 		t.Fatal(err)

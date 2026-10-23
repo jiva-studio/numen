@@ -23,7 +23,9 @@ import (
 	editorSearch "github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/search"
 	editorSettings "github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -90,7 +92,7 @@ type waiting struct {
 
 func newSlowWait() *waiting {
 	return &waiting{
-		VaultReaders: filesystem.VaultReaders{},
+		VaultReaders: vaultreader.Readers{},
 		begun:        make(chan string, 1),
 		until:        make(chan struct{}),
 	}
@@ -204,8 +206,8 @@ func openingWith(
 	t.Cleanup(func() { db.Close() })
 
 	writing := note.NewWrite(
-		filesystem.VaultReaders{}, filesystem.VaultWriters{}, levelNothing, time.Now)
-	read := note.NewRead(filesystem.VaultReaders{})
+		vaultreader.Readers{}, vaultwriter.VaultWriters{}, levelNothing, time.Now)
+	read := note.NewRead(vaultreader.Readers{})
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
 		Places:       newPlaceBroadcaster(),
@@ -423,7 +425,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, watcher, unreadable{VaultReaders: filesystem.VaultReaders{}})
+	}, watcher, unreadable{VaultReaders: vaultreader.Readers{}})
 
 	waitFor(t, "the scan was not reported as failed", func() bool {
 		return f.api.state.Error.Why() != ""
@@ -443,7 +445,7 @@ func TestAVaultWhoseScanFailedIsStillFollowed(t *testing.T) {
 func TestAVaultThatCannotBeWatchedReturnsSo(t *testing.T) {
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, unwatchable{}, filesystem.VaultReaders{})
+	}, unwatchable{}, vaultreader.Readers{})
 
 	if why := f.api.state.WatchError.Why(); why == "" {
 		t.Error("a vault whose watch never started is shown as followed")
@@ -455,7 +457,7 @@ func TestAWatchThatStopsReturnsSo(t *testing.T) {
 	watcher := byHand()
 	f := opening(t, map[string]string{
 		"Note.md": "---\ntitle: Note\n---\n\n# Note\n",
-	}, watcher, filesystem.VaultReaders{})
+	}, watcher, vaultreader.Readers{})
 
 	close(watcher.changes)
 
@@ -527,7 +529,7 @@ func TestReadingEveryFileAgainIsSpentOnOnePass(t *testing.T) {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers := filesystem.VaultReaders{}
+	readers := vaultreader.Readers{}
 	watcher := byHand()
 	api := createServices(&State{
 		ChangeEvents: newChangeBroadcaster(),
@@ -747,7 +749,7 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 // and a book the vault names with no reader behind it opens in the reader made
 // picture reader.
 func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
-	for _, extension := range filesystem.DefaultBookExtensions {
+	for _, extension := range vaultconfig.DefaultBookExtensions {
 		path := "library/a" + extension
 		if got := convertBookFormatToWire(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
 			t.Errorf("%s is a book of the vault and opens in no reader", extension)

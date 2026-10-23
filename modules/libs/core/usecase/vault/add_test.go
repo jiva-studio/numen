@@ -10,7 +10,7 @@ import (
 	"golang.org/x/text/unicode/norm"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -20,7 +20,7 @@ import (
 func newAdd(t *testing.T) (vaults.Add, *appstate.VaultRegistry) {
 	t.Helper()
 	registry := registryAt(t)
-	return vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now), registry
+	return vaults.NewAdd(vaultreader.Identity{}, registry, time.Now), registry
 }
 
 func registryAt(t *testing.T) *appstate.VaultRegistry {
@@ -97,7 +97,7 @@ func TestAVaultInsideAnotherIsRefused(t *testing.T) {
 	if _, err := add.Execute(inner, ""); !errors.Is(err, domain.ErrOverlaps) {
 		t.Errorf("a folder inside a vault was answered %v", err)
 	}
-	if _, carriesOne, err := (filesystem.VaultIdentity{}).GetVaultID(inner); err != nil || carriesOne {
+	if _, carriesOne, err := (vaultreader.Identity{}).GetVaultID(inner); err != nil || carriesOne {
 		t.Errorf("the rejected folder was given an identity: %v %v", carriesOne, err)
 	}
 }
@@ -262,7 +262,7 @@ func TestACopyOfAVaultIsRefusedAndAMoveIsFollowed(t *testing.T) {
 func TestAnOldLocationThatCannotBeReadStopsTheAdd(t *testing.T) {
 	t.Parallel()
 	registry := registryAt(t)
-	first, err := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now).Execute(folder(t, "old"), "")
+	first, err := vaults.NewAdd(vaultreader.Identity{}, registry, time.Now).Execute(folder(t, "old"), "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -303,7 +303,7 @@ func TestAnOldLocationThatIsNotThisVaultAnyMoreIsAMove(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			registry := registryAt(t)
-			first, err := vaults.NewAdd(filesystem.VaultIdentity{}, registry, time.Now).Execute(folder(t, "old"), "")
+			first, err := vaults.NewAdd(vaultreader.Identity{}, registry, time.Now).Execute(folder(t, "old"), "")
 			if err != nil {
 				t.Fatal(err)
 			}

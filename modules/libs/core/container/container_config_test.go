@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
-
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
@@ -113,14 +113,14 @@ func TestTheSettingsStandAdjacentTheRegistryWhenItIsPointedElsewhere(t *testing.
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
 	cfg := Config{ServiceDir: ".mine", BookExtensions: []string{".pdf", ".epub"}}
 
-	opened, ok := cfg.VaultWriters().(filesystem.VaultWriters)
+	opened, ok := cfg.VaultWriters().(vaultwriter.VaultWriters)
 	if !ok {
 		t.Fatalf("vaults are opened for writing by %T", cfg.VaultWriters())
 	}
 	if opened.Options.ServiceDir != ".mine" || !slices.Equal(opened.Options.BookExtensions, cfg.BookExtensions) {
 		t.Errorf("vaults are opened with %+v", opened.Options)
 	}
-	read, ok := cfg.VaultReaders().(filesystem.VaultReaders)
+	read, ok := cfg.VaultReaders().(vaultreader.Readers)
 	if !ok {
 		t.Fatalf("vaults are opened for reading by %T", cfg.VaultReaders())
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwatch"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -77,7 +77,7 @@ func (c Config) Moves(ctx context.Context) (<-chan struct{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	return filesystem.Watcher{Options: c.vaultOptions()}.File(ctx, path)
+	return vaultwatch.Watcher{Options: c.vaultOptions()}.File(ctx, path)
 }
 
 // FitVectors makes the vector index hold vectors of the width given, filled

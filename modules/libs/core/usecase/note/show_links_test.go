@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -28,7 +28,7 @@ func newIndexedVault(t *testing.T, notes map[string]string) (*container.Index, d
 	t.Cleanup(func() { db.Close() })
 
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
 		db.Queries(),
@@ -280,7 +280,7 @@ func TestAnIdentifierInAVaultThatIsNotConnectedIsNeitherResolvedNorBroken(t *tes
 func addVault(t *testing.T, db *container.Index, v domain.Vault) domain.Vault {
 	t.Helper()
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
 		db.Queries(),

@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -27,11 +27,11 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 	t.Helper()
 	v := testsupport.NewVault(t, notes)
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	return vaults.NewRefresh(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
@@ -78,7 +78,7 @@ func TestANoteIsLevelledInAVaultNothingHasWalked(t *testing.T) {
 	})
 	db := openIndex(t)
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), time.Now)
 
 	if _, err := refresh.Execute(t.Context(), v, []string{"Note.md"}); err != nil {
 		t.Fatal(err)
@@ -273,7 +273,7 @@ func TestOneUnreadableFileDoesNotCostTheRest(t *testing.T) {
 	}
 
 	refresh := vaults.NewRefresh(
-		unreadableReaders{VaultReaders: filesystem.VaultReaders{}, refuses: "Locked.md"},
+		unreadableReaders{VaultReaders: vaultreader.Readers{}, refuses: "Locked.md"},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
@@ -311,7 +311,7 @@ func TestARefreshWritesInGroups(t *testing.T) {
 	db := openIndex(t)
 	content := &countingNotes{}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), time.Now,
+		vaultreader.Readers{}, &indexRows{}, content, db.SourcesKnown(), db.Sources(), time.Now,
 	)
 
 	if _, err := refresh.Execute(t.Context(), v, paths); err != nil {
@@ -357,7 +357,7 @@ func TestANoteThatVanishesMidReadKeepsItsRow(t *testing.T) {
 	})
 
 	refresh := vaults.NewRefresh(
-		vanishingReaders{VaultReaders: filesystem.VaultReaders{}, vanishedVal: "Note.md"},
+		vanishingReaders{VaultReaders: vaultreader.Readers{}, vanishedVal: "Note.md"},
 		db.Vaults(),
 		db.Notes(),
 		db.SourcesKnown(),
@@ -397,12 +397,12 @@ func newCounted(t *testing.T, notes map[string]string) (vaults.Refresh, *savesCo
 		backdate(t, v, name)
 	}
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now,
+		vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now,
 	)
 	return refresh, saves, db, v
 }
@@ -499,11 +499,11 @@ func TestARecentNoteTheLedgerDoesNotHoldIsSaved(t *testing.T) {
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	saves := &savesCounted{NoteRepository: db.Notes()}
-	refresh := vaults.NewRefresh(filesystem.VaultReaders{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now)
+	refresh := vaults.NewRefresh(vaultreader.Readers{}, db.Vaults(), saves, db.SourcesKnown(), db.Sources(), time.Now)
 
 	refreshOne(t, refresh, v, "Note.md")
 
@@ -581,14 +581,14 @@ func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testi
 	t.Parallel()
 	v := testsupport.NewVault(t, map[string]string{"Note.md": settledNote})
 	db := openIndex(t)
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(t.Context(), v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
 	var tick atomic.Int64
 	start := time.Now()
 	clock := func() time.Time { return start.Add(time.Duration(tick.Load())) }
 	refresh := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
 
 	const perWindow = 4
 	step := vaults.TimestampGranularity / perWindow
@@ -606,7 +606,7 @@ func TestALongRunOfSavesPreservesTheLedgerContainingOnlyTheRecentWindow(t *testi
 	}
 	tick.Add(int64(2 * vaults.TimestampGranularity))
 	other := vaults.NewRefresh(
-		filesystem.VaultReaders{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
+		vaultreader.Readers{}, db.Vaults(), db.Notes(), db.SourcesKnown(), db.Sources(), clock)
 	other.Ledger = refresh.Ledger
 	refreshOne(t, other, v, "Note.md")
 	if n := refresh.Ledger.Len(); n != 0 {

@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 )
@@ -36,7 +36,7 @@ func openIndexFor(b *testing.B) *container.Index {
 
 func scanFor(db *container.Index) vaults.Scan {
 	return vaults.NewScan(
-		filesystem.VaultReaders{},
+		vaultreader.Readers{},
 		db.Vaults(),
 		db.Notes(),
 		db.Queries(),

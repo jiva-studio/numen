@@ -16,7 +16,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
@@ -131,7 +132,7 @@ func onAList(t *testing.T) *onTheList {
 	t.Helper()
 
 	registry := appstate.OpenAt(filepath.Join(t.TempDir(), "state", "vaults.json"))
-	identity := filesystem.VaultIdentity{}
+	identity := vaultreader.Identity{}
 	adding := vaults.NewAdd(identity, registry, time.Now)
 
 	rows := &vaultRows{}
@@ -149,10 +150,10 @@ func onAList(t *testing.T) *onTheList {
 	list := vaults.NewList(registry)
 	find := vaults.NewFind(registry)
 	chooseFolder := vaults.NewChooseFolder(f.dialog)
-	folderCheck := vaults.NewFolderCheck(filesystem.VaultReaders{})
+	folderCheck := vaults.NewFolderCheck(vaultreader.Readers{})
 	remove := vaults.NewRemove(find, forget, erase)
 	f.api = newBareServices()
-	f.api.readFiles(filesystem.VaultReaders{})
+	f.api.readFiles(vaultreader.Readers{})
 	f.api.Vaults.list = &list
 	f.api.Vaults.find = &find
 	f.api.Vaults.folderCheck = &folderCheck
@@ -285,11 +286,11 @@ func TestAFolderInsideAVaultOnTheListIsRefused(t *testing.T) {
 func TestACopyOfAVaultOnTheListIsRefused(t *testing.T) {
 	f := onAList(t)
 	copied := folderNamed(t, "copy")
-	service := filepath.Join(copied, filesystem.DefaultServiceDir)
+	service := filepath.Join(copied, vaultconfig.DefaultServiceDir)
 	if err := os.MkdirAll(service, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	carried, err := os.ReadFile(filepath.Join(f.second.Path, filesystem.DefaultServiceDir, "config.json"))
+	carried, err := os.ReadFile(filepath.Join(f.second.Path, vaultconfig.DefaultServiceDir, "config.json"))
 	if err != nil {
 		t.Fatal(err)
 	}

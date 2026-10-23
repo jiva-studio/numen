@@ -12,7 +12,8 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -461,8 +462,8 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			if err != nil {
 				return cli.Scan{}, err
 			}
-			options := filesystem.Options{}
-			readers := filesystem.VaultReaders{Options: options}
+			options := vaultconfig.Options{}
+			readers := vaultreader.Readers{Options: options}
 			store, err := getDerived(options).Open(v)
 			if err != nil {
 				_ = db.Close()

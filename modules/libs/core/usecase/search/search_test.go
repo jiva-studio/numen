@@ -10,7 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
@@ -58,7 +58,7 @@ func newCorpus(t *testing.T) corpus {
 	}
 	t.Cleanup(func() { db.Close() })
 
-	readers := filesystem.VaultReaders{}
+	readers := vaultreader.Readers{}
 	scan := vaults.NewScan(
 		readers, db.Vaults(), db.Notes(),
 		db.NoteQueries(), db.Maintenance(),
@@ -83,7 +83,7 @@ func newCorpus(t *testing.T) corpus {
 // each carrying its own words. A small chunk is what a vector belongs to.
 func (c corpus) cut(t *testing.T, v domain.Vault, path string, small ...string) {
 	t.Helper()
-	reader, err := filesystem.VaultReaders{}.Open(v)
+	reader, err := vaultreader.Readers{}.Open(v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +138,7 @@ func precise(v []float32) []byte {
 }
 
 func (c corpus) search(embedder embeddingport.Embedder) search.Search {
-	return search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil, embedder, 0, nil)
+	return search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, nil, embedder, 0, nil)
 }
 
 var model = embeddingport.EmbeddingModel{Name: "test", Dimensions: dimensions}
@@ -303,7 +303,7 @@ func TestAModelOutOfReachPreservesTheWordsToAnswer(t *testing.T) {
 	c := newCorpus(t)
 
 	var errs []error
-	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, nil,
 		outOfReach{why: errors.New("dial tcp: network is unreachable")}, 0,
 		func(err error) { errs = append(errs, err) })
 
@@ -325,7 +325,7 @@ func TestASearchTheCallerStoppedIsNotAnAnswer(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
 
-	finds := search.New(c.db.ChunkQueries(), filesystem.VaultReaders{}, nil, nil,
+	finds := search.New(c.db.ChunkQueries(), vaultreader.Readers{}, nil, nil,
 		outOfReach{why: context.Canceled}, 0, func(error) {})
 
 	if _, err := finds.Execute(ctx, c.first, "disorder", search.Parameters{}); !errors.Is(err, context.Canceled) {
@@ -439,7 +439,7 @@ func TestAPassageCarriesTheLineItExistsOnInTheProse(t *testing.T) {
 	const target = "The curve holds throughout."
 	v := testsupport.NewVault(t, map[string]string{path: isotherm})
 	scan := vaults.NewScan(
-		filesystem.VaultReaders{}, c.db.Vaults(), c.db.Notes(),
+		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(),
 		c.db.NoteQueries(), c.db.Maintenance(),
 	)
 	if _, err := scan.Execute(ctx, v); err != nil {

@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/document"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -28,7 +28,7 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
-	api.readFiles(filesystem.VaultReaders{})
+	api.readFiles(vaultreader.Readers{})
 	api.state.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
@@ -185,7 +185,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		"note.md": "# What a note says",
 	})
 	api := newBareServices()
-	api.readFiles(filesystem.VaultReaders{})
+	api.readFiles(vaultreader.Readers{})
 	api.state.setVault(vault)
 	back, handler := openLoopback(t, api)
 

@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/plugin/vaultaccess"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
@@ -75,7 +75,7 @@ func (c Config) OpenPluginVault(
 		Notes:    queries,
 		Links:    db.Links(),
 		Problems: db.Problems(),
-		Data:     filesystem.PluginData{Options: c.vaultOptions()},
+		Data:     derivedfile.PluginData{Options: c.vaultOptions()},
 		Cache:    cache,
 		Watcher:  c.VaultWatcher(),
 		Written:  hooks.Written,

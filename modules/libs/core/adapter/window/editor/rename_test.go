@@ -15,7 +15,7 @@ import (
 
 	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
@@ -1203,7 +1203,7 @@ func TestAListingPreservesOutWhatTheVaultPreservesAlone(t *testing.T) {
 		".hidden/Kept.md": "# Kept\n",
 	})
 	if isGone(t, f.root, ".secret.md") || !folder(t, f.root, ".hidden") ||
-		!folder(t, f.root, filesystem.DefaultServiceDir) {
+		!folder(t, f.root, vaultconfig.DefaultServiceDir) {
 		t.Fatal("the vault does not hold what the listing has to leave out")
 	}
 

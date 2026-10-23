@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/text"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/recognition"
@@ -34,7 +34,7 @@ func newDiskVault(t *testing.T, raw []byte) domain.Vault {
 }
 
 func newDiskRecognise(onPage func()) (recognition.Recognise, func(domain.VaultID, string) string) {
-	return recognition.NewMemoryRecognise(filesystem.VaultReaders{}, testsupport.Documents{}, onPage)
+	return recognition.NewMemoryRecognise(vaultreader.Readers{}, testsupport.Documents{}, onPage)
 }
 
 func TestRecognisingAFileOnDiskContainsNoCopyOfIt(t *testing.T) {

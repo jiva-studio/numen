@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
@@ -35,7 +35,7 @@ func newErase(registry *appstate.VaultRegistry) (vaults.Erase, *bin, *indexRows,
 	trash := &bin{steps: steps}
 	index := &indexRows{steps: steps}
 	return vaults.NewErase(
-		filesystem.VaultIdentity{},
+		vaultreader.Identity{},
 		trash,
 		vaults.NewUnregister(registry, index),
 	), trash, index, steps

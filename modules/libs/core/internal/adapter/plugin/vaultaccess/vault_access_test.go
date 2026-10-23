@@ -9,7 +9,10 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
@@ -23,9 +26,9 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 	v := testsupport.NewVault(t, files)
 	return Vault{
 		Current: func() (domain.Vault, bool) { return v, true },
-		Readers: filesystem.VaultReaders{},
-		Writers: filesystem.VaultWriters{},
-		Data:    filesystem.PluginData{},
+		Readers: vaultreader.Readers{},
+		Writers: vaultwriter.VaultWriters{},
+		Data:    derivedfile.PluginData{},
 		Cache:   appstate.PluginCachesAt(t.TempDir()),
 	}, v
 }
@@ -109,7 +112,7 @@ func TestTheDataOfAPluginIsCachedInItsFolderAndNoOther(t *testing.T) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
 	for _, name := range []string{"", "../run.log", "a/b", ".hidden"} {
-		if _, err := store.Read(t.Context(), name); !errors.Is(err, filesystem.ErrOutside) {
+		if _, err := store.Read(t.Context(), name); !errors.Is(err, vaultconfig.ErrOutside) {
 			t.Errorf("%q was read with %v", name, err)
 		}
 	}

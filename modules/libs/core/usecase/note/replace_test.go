@@ -6,13 +6,14 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 )
 
 func (c changing) replace() note.Replace {
-	return note.NewReplace(filesystem.VaultReaders{}, filesystem.VaultWriters{}, c.index, time.Now)
+	return note.NewReplace(vaultreader.Readers{}, vaultwriter.VaultWriters{}, c.index, time.Now)
 }
 
 // What is asked for is replaced, and what is not asked for is the bytes it was.

@@ -11,7 +11,8 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/container"
-	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/testsupport/indexfile"
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
@@ -24,12 +25,12 @@ import (
 // YAML, CRLF line endings, text that is not Latin, a PDF, and a hidden folder.
 func vaultAt(t *testing.T, root string) (domain.Vault, vaultport.VaultReaders) {
 	t.Helper()
-	cfg, err := filesystem.ReadConfig(root, filesystem.DefaultServiceDir)
+	cfg, err := vaultconfig.ReadConfig(root, vaultconfig.DefaultServiceDir)
 	if err != nil {
 		t.Fatalf("fixture vault has no identity: %v", err)
 	}
 	return domain.Vault{ID: domain.VaultID(cfg.ID), Name: "fixture", Path: root},
-		filesystem.VaultReaders{}
+		vaultreader.Readers{}
 }
 
 func openIndex(t *testing.T) *container.Index {
@@ -181,7 +182,7 @@ func TestTwoVaultsCountAndAnswerForTheirOwnSourcesOnly(t *testing.T) {
 	testsupport.WriteBook(t, second.Path, "shelf/Cosmology.epub")
 
 	db := openIndex(t)
-	scan := scanner(filesystem.VaultReaders{}, db)
+	scan := scanner(vaultreader.Readers{}, db)
 
 	one, err := scan.Execute(ctx, first)
 	if err != nil {
@@ -406,7 +407,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 		shared:     "# Entropy\n\nthe second vault\n",
 		"extra.md": "# Extra\n\nonly the second vault has this\n",
 	})
-	readers := filesystem.VaultReaders{}
+	readers := vaultreader.Readers{}
 
 	if _, err := scanner(readers, db).Execute(ctx, first); err != nil {
 		t.Fatal(err)
@@ -584,7 +585,7 @@ func TestFrontmatterThatCannotBeStoredDoesNotFailTheScan(t *testing.T) {
 		"odd.md": "---\nvalue: .nan\n---\n\n# Odd\n\nsearchable all the same\n",
 	})
 
-	if _, err := scanner(filesystem.VaultReaders{}, db).Execute(ctx, v); err != nil {
+	if _, err := scanner(vaultreader.Readers{}, db).Execute(ctx, v); err != nil {
 		t.Fatalf("a note with unstorable frontmatter ended the scan: %v", err)
 	}
 	if matches := searchNotes(t, db, v, "searchable"); len(matches) != 1 {
@@ -634,7 +635,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
 
-	scan := scanner(filesystem.VaultReaders{}, db)
+	scan := scanner(vaultreader.Readers{}, db)
 	scan.OnProgress = func(vaults.ScanResult) { cancel() }
 
 	res, err := scan.Execute(ctx, v)
@@ -665,7 +666,7 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 	t.Parallel()
 	v := testsupport.GenerateVault(t, 600)
 	db := openIndex(t)
-	scan := scanner(filesystem.VaultReaders{}, db)
+	scan := scanner(vaultreader.Readers{}, db)
 
 	if _, err := scan.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -673,7 +674,7 @@ func TestAWarmScanStopsWhenCancelled(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
-	warmScanner := scanner(&cancellingReaders{VaultReaders: filesystem.VaultReaders{}, cancel: cancel}, db)
+	warmScanner := scanner(&cancellingReaders{VaultReaders: vaultreader.Readers{}, cancel: cancel}, db)
 
 	res, err := warmScanner.Execute(ctx, v)
 	if !errors.Is(err, context.Canceled) {
