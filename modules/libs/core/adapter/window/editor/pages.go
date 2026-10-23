@@ -76,7 +76,8 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 			return
 		}
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		if len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+		isAgentState := r.URL.Path == numenv1connect.AgentServiceGetAgentStateProcedure
+		if !isAgentState && len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
 			s.PluginServices.ServeHTTP(w, r)
 			return
 		}
