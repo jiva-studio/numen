@@ -1,4 +1,4 @@
-package vault
+package registry
 
 import (
 	"context"

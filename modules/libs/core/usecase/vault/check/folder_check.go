@@ -1,4 +1,4 @@
-package vault
+package check
 
 import (
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"

@@ -1,4 +1,4 @@
-package vault
+package check
 
 import (
 	"fmt"

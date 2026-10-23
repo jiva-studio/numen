@@ -1,8 +1,9 @@
-package vault
+package registry
 
 import (
 	"slices"
 
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault/check"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
@@ -31,13 +32,13 @@ type KnownVault struct {
 // screen from marking a vault another leaves unmarked.
 type GetKnownVaults struct {
 	registry vaultport.VaultRegistry
-	folders  FolderCheck
+	folders  check.FolderCheck
 }
 
 // NewGetKnownVaults is what the list is read out of and what a vault's folder is
 // opened through.
 func NewGetKnownVaults(registry vaultport.VaultRegistry, readers vaultport.VaultReaders) GetKnownVaults {
-	return GetKnownVaults{registry: registry, folders: NewFolderCheck(readers)}
+	return GetKnownVaults{registry: registry, folders: check.NewFolderCheck(readers)}
 }
 
 // Execute is the list. showing is the vault being worked; the empty identity
