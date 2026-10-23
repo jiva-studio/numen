@@ -48,3 +48,6 @@ refactoring-plan.md
 
 # What a mutation run leaves: its reports, its cache and Stryker's sandbox.
 modules/.mutation/
+
+# built monolith binary
+modules/apps/desktop-monolith/desktop-monolith
