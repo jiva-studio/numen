@@ -1,4 +1,4 @@
-package settings
+package hardware
 
 import (
 	"runtime"
@@ -53,8 +53,8 @@ func DefaultPerformance() Performance {
 // AcceleratorCoreML names the Apple Core ML runtime, present on Apple Silicon.
 const AcceleratorCoreML = "coreml"
 
-// HardwareSpecs represents the detected host machine hardware capabilities. A zero count or size is unknown.
-type HardwareSpecs struct {
+// Specs represents the detected host machine hardware capabilities. A zero count or size is unknown.
+type Specs struct {
 	// LogicalCPUs is the number of hardware threads the process may run on.
 	LogicalCPUs int `json:"logical_cpus"`
 	// PhysicalCPUs is the number of physical cores, including efficiency cores.
@@ -86,8 +86,8 @@ type ResolvedCompute struct {
 	MemoryLimitMB int64 `json:"memory_limit_mb"`
 }
 
-// DetectHardware inspects the current host machine capabilities.
-func DetectHardware() HardwareSpecs {
+// Detect inspects the current host machine capabilities.
+func Detect() Specs {
 	hw := readPlatformHardware()
 	logical := runtime.NumCPU()
 	if hw.LogicalCPUs > 0 && hw.LogicalCPUs < logical {
@@ -98,7 +98,7 @@ func DetectHardware() HardwareSpecs {
 }
 
 // normalize makes the counts consistent: at least one logical CPU, no more cores than threads, no more performance cores than cores, no more free memory than installed.
-func (hw HardwareSpecs) normalize() HardwareSpecs {
+func (hw Specs) normalize() Specs {
 	if hw.LogicalCPUs < 1 {
 		hw.LogicalCPUs = 1
 	}
@@ -164,7 +164,7 @@ const (
 )
 
 // getFreeRAMMB is the free memory the plan sizes batches from, falling back to the installed size and then to a constant.
-func (hw HardwareSpecs) getFreeRAMMB() int64 {
+func (hw Specs) getFreeRAMMB() int64 {
 	switch {
 	case hw.AvailableRAMMB > 0:
 		return hw.AvailableRAMMB
@@ -176,7 +176,7 @@ func (hw HardwareSpecs) getFreeRAMMB() int64 {
 }
 
 // getPerformanceThreads is the number of hardware threads of the performance cores. Each core is taken to have the ratio of logical to physical CPUs, rounded up; when the counts are not known it is the logical CPU count.
-func (hw HardwareSpecs) getPerformanceThreads() int {
+func (hw Specs) getPerformanceThreads() int {
 	threadsPerCore := (hw.LogicalCPUs + hw.PhysicalCPUs - 1) / hw.PhysicalCPUs
 	threads := hw.PerformanceCPUs * threadsPerCore
 	if threads > hw.LogicalCPUs {
@@ -186,11 +186,11 @@ func (hw HardwareSpecs) getPerformanceThreads() int {
 }
 
 // getMemoryLimitMB is a share of the installed memory in megabytes, and zero when that size is unknown.
-func (hw HardwareSpecs) getMemoryLimitMB(sharePercent int64) int64 {
+func (hw Specs) getMemoryLimitMB(sharePercent int64) int64 {
 	return hw.TotalRAMMB * sharePercent / 100
 }
 
-func getBudget(hw HardwareSpecs, sharePercent int) int {
+func getBudget(hw Specs, sharePercent int) int {
 	return max(1, hw.getPerformanceThreads()*sharePercent/100)
 }
 
@@ -207,7 +207,7 @@ func getEmbeddingBatch(freeMB int64, mbPerItem int64, least, most int) int {
 }
 
 // ResolveCompute computes the active workload parameters for a given profile and hardware specs. Every pool it sizes occupies at most CoreBudget hardware threads, except a custom profile that sets both OCR counts.
-func ResolveCompute(profile PerformanceProfile, hw HardwareSpecs, custom PerformanceCustom) ResolvedCompute {
+func ResolveCompute(profile PerformanceProfile, hw Specs, custom PerformanceCustom) ResolvedCompute {
 	hw = hw.normalize()
 	freeMB := hw.getFreeRAMMB()
 
@@ -260,7 +260,7 @@ func ResolveCompute(profile PerformanceProfile, hw HardwareSpecs, custom Perform
 }
 
 // resolveCustom clamps the user's values to their bounds. A count left unset is derived from the Maximum budget; when both OCR counts are set they are kept as written.
-func resolveCustom(hw HardwareSpecs, custom PerformanceCustom) ResolvedCompute {
+func resolveCustom(hw Specs, custom PerformanceCustom) ResolvedCompute {
 	budget := getBudget(hw, maximumSharePercent)
 
 	batch := custom.EmbeddingBatchSize

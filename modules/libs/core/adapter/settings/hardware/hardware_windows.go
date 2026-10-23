@@ -1,6 +1,6 @@
 //go:build windows
 
-package settings
+package hardware
 
 import (
 	"unsafe"
@@ -28,8 +28,8 @@ type memoryStatusEx struct {
 }
 
 // readPlatformHardware reads memory with GlobalMemoryStatusEx and cores with GetLogicalProcessorInformationEx; the performance CPUs are the cores of the highest efficiency class.
-func readPlatformHardware() HardwareSpecs {
-	var hw HardwareSpecs
+func readPlatformHardware() Specs {
+	var hw Specs
 	status := memoryStatusEx{Length: uint32(unsafe.Sizeof(memoryStatusEx{}))}
 	if ret, _, _ := procGlobalMemoryStatusEx.Call(uintptr(unsafe.Pointer(&status))); ret != 0 {
 		hw.TotalRAMMB = int64(status.TotalPhys / bytesPerMB)

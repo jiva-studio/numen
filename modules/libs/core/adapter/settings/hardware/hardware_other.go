@@ -1,6 +1,6 @@
 //go:build !linux && !darwin && !windows
 
-package settings
+package hardware
 
 // readPlatformHardware reports nothing; every field it leaves at zero is unknown.
-func readPlatformHardware() HardwareSpecs { return HardwareSpecs{} }
+func readPlatformHardware() Specs { return Specs{} }

@@ -11,6 +11,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings/hardware"
 
 	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
 )
@@ -159,7 +160,7 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
 	response.Agent.Use = settings.UseProgram("claude")
 	response.Importing.Captions = []string{"sa", "en"}
-	response.Performance = settings.Performance{Profile: settings.ProfileEco}
+	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
 	got := Config{}.SetSettings(response)
 
@@ -175,13 +176,13 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	if !slices.Equal(got.Importing.Captions, []string{"sa", "en"}) {
 		t.Errorf("the captions are %v", got.Importing.Captions)
 	}
-	if got.Performance.Profile != settings.ProfileEco {
+	if got.Performance.Profile != hardware.ProfileEco {
 		t.Errorf("the performance profile is %q", got.Performance.Profile)
 	}
 	if got.Hardware.LogicalCPUs < 1 {
 		t.Errorf("the hardware was not detected: %+v", got.Hardware)
 	}
-	if got.ResolvedCompute.Profile != settings.ProfileEco || got.ResolvedCompute.OcrThreads != 1 {
+	if got.ResolvedCompute.Profile != hardware.ProfileEco || got.ResolvedCompute.OcrThreads != 1 {
 		t.Errorf("the compute plan is %+v", got.ResolvedCompute)
 	}
 }

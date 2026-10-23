@@ -1,6 +1,6 @@
 //go:build linux
 
-package settings
+package hardware
 
 import (
 	"fmt"
@@ -19,8 +19,8 @@ const (
 )
 
 // readPlatformHardware reads memory and CPU topology from procfs and sysfs. The CPUs counted are those the process may run on, limited by the cgroup v2 CPU quota of the root of the cgroup mount; cgroup v1 and memory limits are not read.
-func readPlatformHardware() HardwareSpecs {
-	var hw HardwareSpecs
+func readPlatformHardware() Specs {
+	var hw Specs
 	if content, err := os.ReadFile(linuxMeminfoPath); err == nil {
 		hw.TotalRAMMB, hw.AvailableRAMMB = parseMeminfo(string(content))
 	}

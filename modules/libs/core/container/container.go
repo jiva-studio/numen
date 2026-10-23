@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/filesystem"
@@ -59,13 +60,13 @@ type Config struct {
 	BookExtensions []string
 
 	// Performance is the active workload and compute calibration profile.
-	Performance settings.Performance
+	Performance hardware.Performance
 
 	// ResolvedCompute is the concrete calculated concurrency and batch limits.
-	ResolvedCompute settings.ResolvedCompute
+	ResolvedCompute hardware.ResolvedCompute
 
 	// Hardware specifies hardware specifications detected for the host system.
-	Hardware settings.HardwareSpecs
+	Hardware hardware.Specs
 
 	// Importing configures external URL and media download options.
 	Importing download.Config

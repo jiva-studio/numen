@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings"
+	"github.com/jiva-studio/numen/modules/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/completion"
 
@@ -48,7 +49,7 @@ type Settings struct {
 	Titles settings.Titles `json:"naming"`
 
 	// Performance is the workload and resource calibration profile.
-	Performance settings.Performance `json:"performance"`
+	Performance hardware.Performance `json:"performance"`
 
 	// Plugins is the configuration for modular plugins, keyed by plugin ID.
 	Plugins map[string]map[string]any `json:"plugins,omitempty"`
@@ -105,7 +106,7 @@ func DefaultSettings() Settings {
 		Indexing:    DefaultIndexing(),
 		Importing:   download.Defaults(),
 		Titles:      settings.DefaultTitles(),
-		Performance: settings.DefaultPerformance(),
+		Performance: hardware.DefaultPerformance(),
 	}
 }
 
@@ -145,8 +146,8 @@ func (c Config) SetSettings(s Settings) Config {
 	c.Agent = s.Agent
 	c.Importing = s.Importing
 	c.Performance = s.Performance
-	c.Hardware = settings.DetectHardware()
-	c.ResolvedCompute = settings.ResolveCompute(s.Performance.Profile, c.Hardware, s.Performance.Custom)
+	c.Hardware = hardware.Detect()
+	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware, s.Performance.Custom)
 	if c.PluginHost != nil {
 		if s.Plugins != nil {
 			c.PluginHost.SetSettings(s.Plugins)
