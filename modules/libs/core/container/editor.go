@@ -164,10 +164,6 @@ func (e EditorAssembly) OpenVaults(moves note.Move) vault.Scenarios {
 	return e.cfg.Vaults(e.registry, e.db, moves)
 }
 
-func (e EditorAssembly) OpenSourceTexts() source.Texts {
-	return e.cfg.SourceTexts(e.db.SourcesKnown())
-}
-
 func (e EditorAssembly) OpenDownloader(ctx context.Context) downloadport.Downloader {
 	return e.cfg.Downloader(ctx)
 }
