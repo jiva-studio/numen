@@ -20,10 +20,10 @@ type OpenCopy struct {
 }
 
 func (u OpenCopy) Execute(ctx context.Context, v domain.Vault, targetURL domain.URL) (CopyFile, bool) {
-	if !u.texts.isReady() {
+	if !u.texts.IsReady() {
 		return CopyFile{}, false
 	}
-	store, err := u.texts.derived.Open(v)
+	store, err := u.texts.Derived.Open(v)
 	if err != nil {
 		return CopyFile{}, false
 	}

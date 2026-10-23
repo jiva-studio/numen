@@ -12,5 +12,5 @@ type GetNoteAddress struct {
 }
 
 func (u GetNoteAddress) Execute(ctx context.Context, v domain.Vault, path string) domain.URL {
-	return u.texts.getNoteURL(ctx, v, path)
+	return u.texts.GetNoteURL(ctx, v, path)
 }

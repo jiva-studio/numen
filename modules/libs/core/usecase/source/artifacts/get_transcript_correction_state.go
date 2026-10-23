@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"
@@ -10,11 +10,11 @@ import (
 
 // GetTranscriptCorrectionState says whether the corrections of a recording's transcript are RunComplete, RunActive or RunNone.
 type GetTranscriptCorrectionState struct {
-	texts sourceTexts
+	Texts SourceTexts
 }
 
 func (u GetTranscriptCorrectionState) Execute(ctx context.Context, v domain.Vault, path string) (RunState, error) {
-	stored, err := u.texts.getStoredText(ctx, v, path)
+	stored, err := u.Texts.GetStoredText(ctx, v, path)
 	if err != nil || !stored.isStored {
 		return RunNone, err
 	}

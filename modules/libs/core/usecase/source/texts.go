@@ -25,16 +25,16 @@ func NewTexts(
 	sources sourceport.SourceQueries,
 	derived vaultport.DerivedStores,
 ) Texts {
-	shared := sourceTexts{readers: readers, sources: sources, derived: derived}
+	shared := NewSourceTexts(readers, sources, derived)
 	location := GetCopyLocation{texts: shared}
 	return Texts{
 		GetNoteAddress:                GetNoteAddress{texts: shared},
-		GetRunProgress:                GetRunProgress{texts: shared},
-		GetTranscriptCorrectionState:  GetTranscriptCorrectionState{texts: shared},
-		GetRecognitionCorrectionState: GetRecognitionCorrectionState{texts: shared},
-		GetTranscript:                 GetTranscript{texts: shared},
-		GetRawTranscript:              GetRawTranscript{texts: shared},
-		WriteTranscript:               WriteTranscript{texts: shared},
+		GetRunProgress:                GetRunProgress{Texts: shared},
+		GetTranscriptCorrectionState:  GetTranscriptCorrectionState{Texts: shared},
+		GetRecognitionCorrectionState: GetRecognitionCorrectionState{Texts: shared},
+		GetTranscript:                 GetTranscript{Texts: shared},
+		GetRawTranscript:              GetRawTranscript{Texts: shared},
+		WriteTranscript:               WriteTranscript{Texts: shared},
 		GetCopyLocation:               location,
 		RemoveCopy:                    RemoveCopy{texts: shared, location: location, writers: writers},
 		OpenCopy:                      OpenCopy{texts: shared},

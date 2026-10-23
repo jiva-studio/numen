@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"
@@ -14,11 +14,11 @@ type Transcript struct {
 
 // GetTranscript reads the text made from the file at a path, corrections first.
 type GetTranscript struct {
-	texts sourceTexts
+	Texts SourceTexts
 }
 
 func (u GetTranscript) Execute(ctx context.Context, v domain.Vault, path string) (Transcript, error) {
-	stored, err := u.texts.getStoredText(ctx, v, path)
+	stored, err := u.Texts.GetStoredText(ctx, v, path)
 	if err != nil || !stored.isStored {
 		return Transcript{}, err
 	}

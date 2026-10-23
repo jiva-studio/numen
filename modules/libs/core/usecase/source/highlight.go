@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"sort"
+	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/correction"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/highlight"
@@ -253,4 +254,25 @@ func getPages(book domain.TextLayer, start, end int) []int {
 		out = append(out, i)
 	}
 	return out
+}
+
+// getRuneBounds is a run within the text, standing on whole characters. A run
+// beginning past the end of the text is no run at all, a run beginning before
+// its start begins at its start instead, and a run of zero or negative length
+// is empty.
+func getRuneBounds(prose string, start, length int) (int, int) {
+	if start < 0 {
+		start = 0
+	}
+	if start >= len(prose) || length <= 0 {
+		return min(start, len(prose)), 0
+	}
+	end := min(start+length, len(prose))
+	for start > 0 && !utf8.RuneStart(prose[start]) {
+		start--
+	}
+	for end < len(prose) && !utf8.RuneStart(prose[end]) {
+		end++
+	}
+	return start, end - start
 }

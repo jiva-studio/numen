@@ -1,21 +1,20 @@
 package source
 
 import (
-	"errors"
-
 	"github.com/jiva-studio/numen/modules/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/modules/libs/core/usecase/source/artifacts"
 )
 
 var (
 	// ErrNotReady is a question about a vault whose index or store is not up yet.
-	ErrNotReady = errors.New("the vault is still coming up")
+	ErrNotReady = artifacts.ErrNotReady
 
 	// ErrNoTranscript is a recording without a transcript.
-	ErrNoTranscript = errors.New("transcript unavailable for recording")
+	ErrNoTranscript = artifacts.ErrNoTranscript
 
 	// ErrTranscriptBusy is a transcript a run is writing down.
-	ErrTranscriptBusy = errors.New("a run is writing this transcript down")
+	ErrTranscriptBusy = artifacts.ErrTranscriptBusy
 
 	// ErrOutside is a path that does not stay in the vault.
 	ErrOutside = vaultport.ErrOutside

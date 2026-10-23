@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import "github.com/jiva-studio/numen/modules/libs/notes/domain"
 

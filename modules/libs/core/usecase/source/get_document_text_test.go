@@ -20,7 +20,7 @@ func reader(t *testing.T) (GetDocumentText, *fakeStorage) {
 	if _, err := read.Execute(t.Context(), first, documentPath); err != nil {
 		t.Fatal(err)
 	}
-	return GetDocumentText{readers: readers, sources: index, derived: fakeStores{shelved}}, shelved
+	return *NewGetDocumentText(readers, index, fakeStores{shelved}, nil), shelved
 }
 
 func TestWhatExistsAfterAChunkIsRead(t *testing.T) {

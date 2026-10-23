@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"

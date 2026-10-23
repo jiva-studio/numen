@@ -19,7 +19,7 @@ type RemoveCopy struct {
 }
 
 func (u RemoveCopy) Execute(ctx context.Context, v domain.Vault, path string, targetURL domain.URL) error {
-	if !u.texts.isReady() {
+	if !u.texts.IsReady() {
 		return ErrNotReady
 	}
 	if location := u.location.Execute(ctx, v, path, targetURL); location.Exists && location.VaultPath != "" {
@@ -31,7 +31,7 @@ func (u RemoveCopy) Execute(ctx context.Context, v domain.Vault, path string, ta
 			return err
 		}
 	}
-	store, err := u.texts.derived.Open(v)
+	store, err := u.texts.Derived.Open(v)
 	if err != nil {
 		return err
 	}

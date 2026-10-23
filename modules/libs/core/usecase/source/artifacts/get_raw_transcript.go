@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"
@@ -8,11 +8,11 @@ import (
 
 // GetRawTranscript reads the text a model wrote from the file at a path.
 type GetRawTranscript struct {
-	texts sourceTexts
+	Texts SourceTexts
 }
 
 func (u GetRawTranscript) Execute(ctx context.Context, v domain.Vault, path string) (Transcript, error) {
-	stored, err := u.texts.getStoredText(ctx, v, path)
+	stored, err := u.Texts.GetStoredText(ctx, v, path)
 	if err != nil || !stored.isStored {
 		return Transcript{}, err
 	}

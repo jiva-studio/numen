@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"
@@ -9,20 +9,20 @@ import (
 
 // GetRunProgress says how far the run over the source at a path has got.
 type GetRunProgress struct {
-	texts sourceTexts
+	Texts SourceTexts
 }
 
 func (u GetRunProgress) Execute(
 	ctx context.Context, v domain.Vault, path string, kind domain.SourceKind,
 ) (RunProgress, error) {
-	if !u.texts.isReady() {
+	if !u.Texts.IsReady() {
 		return RunProgress{}, nil
 	}
-	if pos := u.texts.getNoteURL(ctx, v, path); string(pos) != "" {
-		_, progress, err := u.texts.getFetchedText(ctx, v, pos)
+	if pos := u.Texts.GetNoteURL(ctx, v, path); string(pos) != "" {
+		_, progress, err := u.Texts.GetFetchedText(ctx, v, pos)
 		return progress, err
 	}
-	stored, err := u.texts.getIndexedText(ctx, v, path)
+	stored, err := u.Texts.GetIndexedText(ctx, v, path)
 	if err != nil {
 		return RunProgress{}, err
 	}
@@ -33,7 +33,7 @@ func (u GetRunProgress) Execute(
 	if kind != domain.KindRecording {
 		return RunProgress{}, nil
 	}
-	reader, err := u.texts.readers.Open(v)
+	reader, err := u.Texts.Readers.Open(v)
 	if err != nil {
 		return RunProgress{}, err
 	}
@@ -41,7 +41,7 @@ func (u GetRunProgress) Execute(
 	if err != nil {
 		return RunProgress{}, err
 	}
-	store, err := u.texts.derived.Open(v)
+	store, err := u.Texts.Derived.Open(v)
 	if err != nil {
 		return RunProgress{}, err
 	}

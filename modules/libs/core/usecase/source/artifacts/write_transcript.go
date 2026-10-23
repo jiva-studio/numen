@@ -1,4 +1,4 @@
-package source
+package artifacts
 
 import (
 	"context"
@@ -10,14 +10,14 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
 
-// TranscriptWrite is a transcript that was written; CutError is why it could not be cut again, and nil when it was.
+// TranscriptWrite is how writing a transcript down finished.
 type TranscriptWrite struct {
 	CutError error
 }
 
 // WriteTranscript writes a person's words along with what the model heard, which stays under its own name.
 type WriteTranscript struct {
-	texts sourceTexts
+	Texts SourceTexts
 }
 
 // Execute writes the cues and then cuts the recording again with cut, which may be nil.
@@ -28,7 +28,7 @@ func (u WriteTranscript) Execute(
 	cues []domain.TranscriptCue,
 	extracted func(context.Context, domain.Vault, string) error,
 ) (TranscriptWrite, error) {
-	stored, err := u.texts.getStoredText(ctx, v, path)
+	stored, err := u.Texts.GetStoredText(ctx, v, path)
 	if err != nil {
 		return TranscriptWrite{}, err
 	}

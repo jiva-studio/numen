@@ -22,17 +22,17 @@ func (u GetCopyLocation) Execute(ctx context.Context, v domain.Vault, path strin
 	if targetURL == "" {
 		return CopyLocation{}
 	}
-	if u.texts.readers != nil {
-		if reader, err := u.texts.readers.Open(v); err == nil {
+	if u.texts.Readers != nil {
+		if reader, err := u.texts.Readers.Open(v); err == nil {
 			if ref, err := reader.GetFingerprint(ctx, CopyBeside(path)); err == nil {
 				return CopyLocation{VaultPath: ref.Path, Size: ref.Size, Exists: true}
 			}
 		}
 	}
-	if !u.texts.isReady() {
+	if !u.texts.IsReady() {
 		return CopyLocation{}
 	}
-	store, err := u.texts.derived.Open(v)
+	store, err := u.texts.Derived.Open(v)
 	if err != nil {
 		return CopyLocation{}
 	}
