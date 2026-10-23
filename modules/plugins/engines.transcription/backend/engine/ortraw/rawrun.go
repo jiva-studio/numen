@@ -1,4 +1,4 @@
-package engine
+package ortraw
 
 import (
 	"fmt"
@@ -8,16 +8,8 @@ import (
 	ort "github.com/getcharzp/onnxruntime_purego"
 )
 
-// The names the predictor and the joiner are run by, as the C strings the
-// runtime reads them from.
-var (
-	decoderInputNames = makeCNames(inputTargets, inputTargetN, inputState, inputCell)
-	decoderOutputs    = makeCNames(outputFrames, outputState, outputCell)
-	joinerInputNames  = makeCNames(inputEncoded, inputDecoded)
-	joinerOutputs     = makeCNames(outputFrames)
-)
-
-func makeCNames(names ...string) [][]byte {
+// MakeCNames are names as the NUL-terminated C strings the runtime reads.
+func MakeCNames(names ...string) [][]byte {
 	out := make([][]byte, len(names))
 	for i, name := range names {
 		out[i] = append([]byte(name), 0)
@@ -25,28 +17,28 @@ func makeCNames(names ...string) [][]byte {
 	return out
 }
 
-// rawCalls are the runtime entry points a rawRun uses.
-type rawCalls struct {
-	run     func(session, options, inNames, inValues, inCount, outNames, outCount, outValues uintptr) uintptr
-	getData func(value, out uintptr) uintptr
-	release func(value uintptr)
-	check   func(status uintptr) error
+// Calls are the runtime entry points a Graph uses.
+type Calls struct {
+	Run     func(session, options, inNames, inValues, inCount, outNames, outCount, outValues uintptr) uintptr
+	GetData func(value, out uintptr) uintptr
+	Release func(value uintptr)
+	Check   func(status uintptr) error
 }
 
-// getRawCalls are the runtime entry points, or false when the runtime has not
+// GetCalls are the runtime entry points, or false when the runtime has not
 // registered them.
-func getRawCalls() (rawCalls, bool) {
+func GetCalls() (Calls, bool) {
 	runnerMu.Lock()
 	defer runnerMu.Unlock()
-	calls := rawCalls{run: ortRun, getData: ortGetTensorMutableData, release: ortReleaseValue, check: checkStatus}
-	return calls, calls.run != nil && calls.getData != nil && calls.release != nil
+	calls := Calls{Run: ortRun, GetData: ortGetTensorMutableData, Release: ortReleaseValue, Check: checkStatus}
+	return calls, calls.Run != nil && calls.GetData != nil && calls.Release != nil
 }
 
-// A rawRun is one graph run over and over on the same input tensors. It owns
+// A Graph is one graph run over and over on the same input tensors. It owns
 // its output values: the first run lets the runtime create them, every later
 // run writes into them, and close releases them.
-type rawRun struct {
-	calls   rawCalls
+type Graph struct {
+	calls   Calls
 	session uintptr
 
 	inNames  []unsafe.Pointer
@@ -56,9 +48,9 @@ type rawRun struct {
 	data     unsafe.Pointer
 }
 
-// newRawRun is a rawRun of session over inputs, which are given in the order of
+// NewGraph is a Graph of session over inputs, which are given in the order of
 // inNames. It is false when the session has no handle to run by.
-func newRawRun(calls rawCalls, session *ort.Session, inNames, outNames [][]byte, inputs []*ort.Value) (*rawRun, bool) {
+func NewGraph(calls Calls, session *ort.Session, inNames, outNames [][]byte, inputs []*ort.Value) (*Graph, bool) {
 	if session == nil || len(inNames) != len(inputs) {
 		return nil, false
 	}
@@ -67,11 +59,11 @@ func newRawRun(calls rawCalls, session *ort.Session, inNames, outNames [][]byte,
 	if handle == 0 {
 		return nil, false
 	}
-	return newRawRunOf(calls, handle, inNames, outNames, getValueHandles(inputs)), true
+	return newGraphOf(calls, handle, inNames, outNames, getValueHandles(inputs)), true
 }
 
-func newRawRunOf(calls rawCalls, session uintptr, inNames, outNames [][]byte, inputs []uintptr) *rawRun {
-	r := &rawRun{
+func newGraphOf(calls Calls, session uintptr, inNames, outNames [][]byte, inputs []uintptr) *Graph {
+	r := &Graph{
 		calls:    calls,
 		session:  session,
 		inNames:  make([]unsafe.Pointer, len(inNames)),
@@ -97,11 +89,11 @@ func getValueHandles(values []*ort.Value) []uintptr {
 	return out
 }
 
-// run runs the graph once. The outputs it writes stay valid until the next run
+// Run runs the graph once. The outputs it writes stay valid until the next run
 // or close.
-func (r *rawRun) run() error {
+func (r *Graph) Run() error {
 	// The name and handle arrays and the name bytes are kept alive by r for the call.
-	status := r.calls.run(
+	status := r.calls.Run(
 		r.session,
 		0,
 		uintptr(unsafe.Pointer(&r.inNames[0])),
@@ -112,13 +104,13 @@ func (r *rawRun) run() error {
 		uintptr(unsafe.Pointer(&r.outputs[0])),
 	)
 	runtime.KeepAlive(r)
-	return r.calls.check(status)
+	return r.calls.Check(status)
 }
 
-// copyOutput copies the first len(dst) values of output i into dst. It fails
+// CopyOutput copies the first len(dst) values of output i into dst. It fails
 // when the output holds fewer.
-func (r *rawRun) copyOutput(i int, dst []float32) error {
-	if err := r.calls.check(r.calls.getData(r.outputs[i], uintptr(unsafe.Pointer(&r.data)))); err != nil {
+func (r *Graph) CopyOutput(i int, dst []float32) error {
+	if err := r.calls.Check(r.calls.GetData(r.outputs[i], uintptr(unsafe.Pointer(&r.data)))); err != nil {
 		return err
 	}
 	if r.data == nil {
@@ -129,11 +121,11 @@ func (r *rawRun) copyOutput(i int, dst []float32) error {
 	return nil
 }
 
-// close releases every output the runtime created.
-func (r *rawRun) close() {
+// Close releases every output the runtime created.
+func (r *Graph) Close() {
 	for i, value := range r.outputs {
 		if value != 0 {
-			r.calls.release(value)
+			r.calls.Release(value)
 			r.outputs[i] = 0
 		}
 	}

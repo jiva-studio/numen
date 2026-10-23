@@ -1,4 +1,4 @@
-package engine
+package segmenter
 
 import (
 	"errors"

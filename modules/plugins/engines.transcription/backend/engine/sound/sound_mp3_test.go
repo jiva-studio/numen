@@ -1,4 +1,4 @@
-package engine
+package sound
 
 import (
 	"bytes"
@@ -13,6 +13,9 @@ import (
 	"time"
 
 	"github.com/hajimehoshi/go-mp3"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/resample"
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
 )
 
 // bitWriter packs bits, most significant first.
@@ -137,7 +140,7 @@ func TestMP3IsDecodedToTheSamplesOfTheWholeOutput(t *testing.T) {
 	raw := encodeMP3(40, 2)
 	want := decodeMP3Whole(t, raw)
 
-	got, rate, err := readSamples(raw)
+	got, rate, err := Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -211,11 +214,11 @@ func TestAnMP3RecordingHonoursItsContext(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	sound, rate, err := readSamples(encodeMP3(40, 4))
+	sound, rate, err := Read(encodeMP3(40, 4))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := resample(ctx, sound, rate, sampleRate, 0); err != context.Canceled {
+	if _, err := resample.Convert(ctx, sound, rate, signal.SampleRate, 0); err != context.Canceled {
 		t.Errorf("resampling under a cancelled context returned %v", err)
 	}
 }

@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/ortraw"
 )
 
 // openCachedTranscriber is the models a machine holds, in NUMEN_MODELS or in the
@@ -98,19 +100,8 @@ func TestDecodingOnTheRawRuntimeReleasesEveryOutputItCreated(t *testing.T) {
 	delta := openCachedTranscriber(t)
 	frames := makeFrames(t, 20)
 
-	runnerMu.Lock()
-	original := ortReleaseValue
 	var released int
-	ortReleaseValue = func(value uintptr) {
-		released++
-		original(value)
-	}
-	runnerMu.Unlock()
-	t.Cleanup(func() {
-		runnerMu.Lock()
-		ortReleaseValue = original
-		runnerMu.Unlock()
-	})
+	t.Cleanup(ortraw.ObserveRelease(func(uintptr) { released++ }))
 
 	if _, err := delta.decodeWith(t.Context(), frames, true); err != nil {
 		t.Fatal(err)
@@ -128,7 +119,7 @@ type position struct {
 	prediction, frame  []float32
 	decoderInputs      map[string]*ort.Value
 	joinerInputs       map[string]*ort.Value
-	decoderRun, joiner *rawRun
+	decoderRun, joiner *ortraw.Graph
 }
 
 func openPosition(t *testing.T, delta *Transcriber) *position {
@@ -155,17 +146,17 @@ func openPosition(t *testing.T, delta *Transcriber) *position {
 	p.decoderInputs = map[string]*ort.Value{inputTargets: targetT, inputTargetN: countT, inputState: stateT, inputCell: cellT}
 	p.joinerInputs = map[string]*ort.Value{inputEncoded: frameT, inputDecoded: predictionT}
 
-	calls, ok := getRawCalls()
+	calls, ok := ortraw.GetCalls()
 	if !ok {
 		t.Skip("the raw runtime is not registered")
 	}
-	p.decoderRun, _ = newRawRun(calls, delta.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
-	p.joiner, _ = newRawRun(calls, delta.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
+	p.decoderRun, _ = ortraw.NewGraph(calls, delta.decoder, decoderInputNames, decoderOutputs, []*ort.Value{targetT, countT, stateT, cellT})
+	p.joiner, _ = ortraw.NewGraph(calls, delta.joiner, joinerInputNames, joinerOutputs, []*ort.Value{frameT, predictionT})
 	if p.decoderRun == nil || p.joiner == nil {
 		t.Skip("the sessions hold no handle to run by")
 	}
-	t.Cleanup(p.decoderRun.close)
-	t.Cleanup(p.joiner.close)
+	t.Cleanup(p.decoderRun.Close)
+	t.Cleanup(p.joiner.Close)
 	return p
 }
 

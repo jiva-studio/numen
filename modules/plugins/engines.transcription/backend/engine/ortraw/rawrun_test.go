@@ -1,4 +1,4 @@
-package engine
+package ortraw
 
 import (
 	"errors"
@@ -7,19 +7,19 @@ import (
 	"unsafe"
 )
 
-// fakeRuntime records every call a rawRun makes and answers with the outputs it
+// fakeRuntime records every call a Graph makes and answers with the outputs it
 // is given.
 type fakeRuntime struct {
 	calls    []string
 	released []uintptr
 	status   uintptr
 	output   []float32
-	run      *rawRun
+	run      *Graph
 }
 
-func (f *fakeRuntime) get() rawCalls {
-	return rawCalls{
-		run: func(_, _, _, _, _, _, _, _ uintptr) uintptr {
+func (f *fakeRuntime) get() Calls {
+	return Calls{
+		Run: func(_, _, _, _, _, _, _, _ uintptr) uintptr {
 			f.calls = append(f.calls, "run")
 			for i := range f.run.outputs {
 				if f.run.outputs[i] == 0 {
@@ -28,16 +28,16 @@ func (f *fakeRuntime) get() rawCalls {
 			}
 			return f.status
 		},
-		getData: func(_, _ uintptr) uintptr {
+		GetData: func(_, _ uintptr) uintptr {
 			f.calls = append(f.calls, "data")
 			f.run.data = unsafe.Pointer(&f.output[0])
 			return 0
 		},
-		release: func(value uintptr) {
+		Release: func(value uintptr) {
 			f.calls = append(f.calls, "release")
 			f.released = append(f.released, value)
 		},
-		check: func(status uintptr) error {
+		Check: func(status uintptr) error {
 			if status != 0 {
 				return errors.New("the run failed")
 			}
@@ -46,12 +46,12 @@ func (f *fakeRuntime) get() rawCalls {
 	}
 }
 
-func newFakeRun(f *fakeRuntime, outputs int) *rawRun {
+func newFakeRun(f *fakeRuntime, outputs int) *Graph {
 	names := make([][]byte, outputs)
 	for i := range names {
 		names[i] = []byte("out\x00")
 	}
-	f.run = newRawRunOf(f.get(), 7, [][]byte{[]byte("in\x00")}, names, []uintptr{1})
+	f.run = newGraphOf(f.get(), 7, [][]byte{[]byte("in\x00")}, names, []uintptr{1})
 	return f.run
 }
 
@@ -60,15 +60,15 @@ func TestARawRunKeepsItsOutputsAcrossRunsAndReleasesEachOnce(t *testing.T) {
 	run := newFakeRun(f, 2)
 
 	for range 3 {
-		if err := run.run(); err != nil {
+		if err := run.Run(); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if len(f.released) != 0 {
 		t.Fatalf("outputs were released while the run was in use: %v", f.released)
 	}
-	run.close()
-	run.close()
+	run.Close()
+	run.Close()
 
 	if want := []uintptr{100, 101}; !slices.Equal(f.released, want) {
 		t.Errorf("released %v, want %v once each", f.released, want)
@@ -78,12 +78,12 @@ func TestARawRunKeepsItsOutputsAcrossRunsAndReleasesEachOnce(t *testing.T) {
 func TestARawRunCopiesAnOutputOutBeforeTheNextRun(t *testing.T) {
 	f := &fakeRuntime{output: []float32{1, 2, 3}}
 	run := newFakeRun(f, 1)
-	if err := run.run(); err != nil {
+	if err := run.Run(); err != nil {
 		t.Fatal(err)
 	}
 
 	got := make([]float32, 2)
-	if err := run.copyOutput(0, got); err != nil {
+	if err := run.CopyOutput(0, got); err != nil {
 		t.Fatal(err)
 	}
 	f.output[0] = 9
@@ -99,10 +99,10 @@ func TestAFailedRawRunStillReleasesWhatItCreated(t *testing.T) {
 	f := &fakeRuntime{status: 1, output: []float32{1}}
 	run := newFakeRun(f, 3)
 
-	if err := run.run(); err == nil {
+	if err := run.Run(); err == nil {
 		t.Fatal("a failed run was taken for a good one")
 	}
-	run.close()
+	run.Close()
 
 	if len(f.released) != 3 {
 		t.Errorf("released %v after a failed run, want the 3 outputs", f.released)

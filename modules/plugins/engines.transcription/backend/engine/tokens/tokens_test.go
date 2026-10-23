@@ -1,4 +1,4 @@
-package engine
+package tokens
 
 import (
 	"fmt"
@@ -12,19 +12,19 @@ import (
 // The pieces are joined as they stand, and the mark a word opens with is the
 // space before it.
 func TestPiecesJoinIntoWords(t *testing.T) {
-	p := pieces{"<unk>", " what", " the", " page", " say", "s", "<blk>"}
-	if got := p.text([]int{1, 2, 3, 4, 5}); got != "what the page says" {
+	p := Pieces{"<unk>", " what", " the", " page", " say", "s", "<blk>"}
+	if got := p.GetText([]int{1, 2, 3, 4, 5}); got != "what the page says" {
 		t.Errorf("the tokens say %q", got)
 	}
-	if got := p.text(nil); got != "" {
+	if got := p.GetText(nil); got != "" {
 		t.Errorf("no tokens say %q", got)
 	}
 	// A number outside the file is a token this transcriber cannot write.
-	if got := p.text([]int{1, 900}); got != "what" {
+	if got := p.GetText([]int{1, 900}); got != "what" {
 		t.Errorf("an unknown token said %q", got)
 	}
-	if p.getIndex("<blk>") != 6 || p.getIndex("nothing") != -1 {
-		t.Errorf("blank token is at %d", p.getIndex("<blk>"))
+	if p.GetIndex("<blk>") != 6 || p.GetIndex("nothing") != -1 {
+		t.Errorf("blank token is at %d", p.GetIndex("<blk>"))
 	}
 }
 
@@ -33,16 +33,16 @@ func TestTokensReadsTheFilePublishedAdjacentAModel(t *testing.T) {
 	if err := os.WriteFile(pos, []byte("<unk> 0\n▁a 1\n▁b 2\n<blk> 3\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	response, err := tokens(pos)
+	response, err := Read(pos)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(response) != 4 || response[1] != " a" || response.getIndex("<blk>") != 3 {
+	if len(response) != 4 || response[1] != " a" || response.GetIndex("<blk>") != 3 {
 		t.Errorf("the file names %v", response)
 	}
 }
 
-func decodeReference(p pieces, response []int) string {
+func decodeReference(p Pieces, response []int) string {
 	var out strings.Builder
 	for _, token := range response {
 		if token < 0 || token >= len(p) {
@@ -72,7 +72,7 @@ var vocabularyWords = []string{
 }
 
 func TestTokensTextMatchesReference(t *testing.T) {
-	loaded, err := tokens(createVocabularyFile(t, vocabularyWords))
+	loaded, err := Read(createVocabularyFile(t, vocabularyWords))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -82,8 +82,8 @@ func TestTokensTextMatchesReference(t *testing.T) {
 		for i := range response {
 			response[i] = rng.Intn(len(vocabularyWords)+4) - 2
 		}
-		want := decodeReference(pieces(vocabularyWords), response)
-		if got := loaded.text(response); got != want {
+		want := decodeReference(Pieces(vocabularyWords), response)
+		if got := loaded.GetText(response); got != want {
 			t.Fatalf("tokens %v say %q, want %q", response, got, want)
 		}
 	}
@@ -103,7 +103,7 @@ func BenchmarkTokensText(b *testing.B) {
 			words[i] = "s"
 		}
 	}
-	loaded, err := tokens(createVocabularyFile(b, words))
+	loaded, err := Read(createVocabularyFile(b, words))
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -113,6 +113,6 @@ func BenchmarkTokensText(b *testing.B) {
 	}
 	b.ReportAllocs()
 	for b.Loop() {
-		_ = loaded.text(response)
+		_ = loaded.GetText(response)
 	}
 }

@@ -1,6 +1,10 @@
-package engine
+package resample
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
+)
 
 // A minute of 44.1 kHz sound, brought to what the model takes.
 func BenchmarkResampledAMinute(b *testing.B) {
@@ -10,6 +14,6 @@ func BenchmarkResampledAMinute(b *testing.B) {
 	}
 	b.ResetTimer()
 	for b.Loop() {
-		_, _ = resample(b.Context(), in, 44100, sampleRate, 0)
+		_, _ = Convert(b.Context(), in, 44100, signal.SampleRate, 0)
 	}
 }

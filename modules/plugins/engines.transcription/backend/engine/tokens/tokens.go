@@ -1,4 +1,4 @@
-package engine
+package tokens
 
 import (
 	"bufio"
@@ -13,21 +13,21 @@ import (
 // as a space is the whole of turning what it said into text.
 const wordMark = "▁"
 
-// pieces are what a model can say, at the place its own numbers put them, with
+// Pieces are what a model can say, at the place its own numbers put them, with
 // the mark already read as a space.
-type pieces []string
+type Pieces []string
 
-// tokens reads a model's pieces out of the file published beside it. Each line
+// Read reads a model's pieces out of the file published beside it. Each line
 // is a piece and the number that names it, and a number the file skips says
 // nothing.
-func tokens(path string) (pieces, error) {
+func Read(path string) (Pieces, error) {
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	var out pieces
+	var out Pieces
 	lines := bufio.NewScanner(file)
 	for lines.Scan() {
 		field := strings.Fields(lines.Text())
@@ -52,9 +52,9 @@ func tokens(path string) (pieces, error) {
 	return out, nil
 }
 
-// getIndex is the number one piece answers to, and -1 for a piece the model does
+// GetIndex is the number one piece answers to, and -1 for a piece the model does
 // not know.
-func (p pieces) getIndex(piece string) int {
+func (p Pieces) GetIndex(piece string) int {
 	for i, one := range p {
 		if one == piece {
 			return i
@@ -63,9 +63,9 @@ func (p pieces) getIndex(piece string) int {
 	return -1
 }
 
-// text is what a run of tokens says. A token the model knows and this file does
+// GetText is what a run of tokens says. A token the model knows and this file does
 // not is left out.
-func (p pieces) text(response []int) string {
+func (p Pieces) GetText(response []int) string {
 	size := 0
 	for _, token := range response {
 		if token >= 0 && token < len(p) {

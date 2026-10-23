@@ -1,4 +1,4 @@
-package engine
+package sound
 
 import (
 	"bytes"
@@ -36,7 +36,7 @@ func encodeWav(rate, channels int, samples []int16) []byte {
 // How long a recording is comes out of its header, before a sample is decoded.
 func TestDurationFromTheHeader(t *testing.T) {
 	raw := encodeWav(16000, 1, make([]int16, 8000))
-	got, err := getDuration(raw)
+	got, err := GetDuration(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -45,7 +45,7 @@ func TestDurationFromTheHeader(t *testing.T) {
 	}
 
 	raw = encodeWav(8000, 2, make([]int16, 8000))
-	if got, err = getDuration(raw); err != nil || got != 500 {
+	if got, err = GetDuration(raw); err != nil || got != 500 {
 		t.Errorf("half a second of two channels is %d ms (%v)", got, err)
 	}
 }
@@ -53,7 +53,7 @@ func TestDurationFromTheHeader(t *testing.T) {
 // A file in a container this does not read is said to be one, and is not read
 // as something else.
 func TestARecordingInNoContainerThisReads(t *testing.T) {
-	if _, err := getDuration([]byte("this is not a recording")); err == nil {
+	if _, err := GetDuration([]byte("this is not a recording")); err == nil {
 		t.Error("a file that is not a recording was read")
 	}
 }
@@ -61,7 +61,7 @@ func TestARecordingInNoContainerThisReads(t *testing.T) {
 // Two channels are heard as one: what they say at each moment, averaged.
 func TestChannelsAreHeardAsOne(t *testing.T) {
 	raw := encodeWav(16000, 2, []int16{16384, 0, -16384, 0})
-	sound, rate, err := readSamples(raw)
+	sound, rate, err := Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}

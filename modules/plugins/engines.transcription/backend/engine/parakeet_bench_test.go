@@ -38,3 +38,29 @@ func BenchmarkParakeetGreedyLoop(b *testing.B) {
 		}
 	}
 }
+
+// A run of audio cut by the segmenter, scored through Silero VAD.
+func BenchmarkSileroVAD(b *testing.B) {
+	cfg := Defaults()
+	cfg.ShouldDownload = false
+	delta, err := Open(b.Context(), cfg)
+	if err != nil {
+		b.Skipf("silero VAD model not available: %v", err)
+	}
+	defer delta.Close()
+
+	// 5 seconds of 16kHz audio = 80,000 samples (~156 windows of 512 samples)
+	audio := make([]float32, 16000*5)
+	for i := range audio {
+		audio[i] = float32((i%2001)-1000) / 1000
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for b.Loop() {
+		_, err := delta.cutter.Split(b.Context(), audio)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/segmenter"
 )
 
 // The size of the models is the sum of the files on this machine, and nothing
@@ -11,7 +13,7 @@ import (
 func TestModelBytesAreTheSumOfTheFilesHere(t *testing.T) {
 	dir := t.TempDir()
 	runtime := writeEmptyFile(t, dir, "libonnxruntime.so")
-	segmenter := writeEmptyFile(t, dir, "silero.onnx")
+	segmenterPath := writeEmptyFile(t, dir, "silero.onnx")
 	var want int64
 	for i, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile} {
 		pos := writeEmptyFile(t, dir, name)
@@ -21,7 +23,7 @@ func TestModelBytesAreTheSumOfTheFilesHere(t *testing.T) {
 		}
 		want += int64(size)
 	}
-	cfg := Config{Runtime: runtime, Dir: dir, Segmenter: SegmenterModel{Path: segmenter}}
+	cfg := Config{Runtime: runtime, Dir: dir, Segmenter: segmenter.Model{Path: segmenterPath}}
 	cfg.Model.Repo = "https://example.invalid/parakeet/"
 
 	if got := GetModelBytes(cfg); got != want {

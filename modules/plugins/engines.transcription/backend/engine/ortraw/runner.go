@@ -1,4 +1,4 @@
-package engine
+package ortraw
 
 import (
 	"fmt"
@@ -105,4 +105,24 @@ func checkStatus(status uintptr) error {
 		msg = string(b)
 	}
 	return fmt.Errorf("onnxruntime error [code %d]: %s", code, msg)
+}
+
+// ObserveRelease calls observe with every value the runtime releases, and
+// returns the function that stops it.
+func ObserveRelease(observe func(value uintptr)) (restore func()) {
+	runnerMu.Lock()
+	defer runnerMu.Unlock()
+	original := ortReleaseValue
+	if original == nil {
+		return func() {}
+	}
+	ortReleaseValue = func(value uintptr) {
+		observe(value)
+		original(value)
+	}
+	return func() {
+		runnerMu.Lock()
+		defer runnerMu.Unlock()
+		ortReleaseValue = original
+	}
 }

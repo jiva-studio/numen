@@ -1,10 +1,11 @@
-package engine
+package features
 
 import (
 	"math"
 	"math/cmplx"
-	"runtime"
 	"sync"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
 )
 
 // The features the encoder is given are NeMo's: a log-mel spectrogram of
@@ -12,11 +13,11 @@ import (
 // the whole stretch. Every number here is part of the model's identity, and a
 // model fed a spectrogram made differently writes other words.
 const (
-	sampleRate  = 16000
+	sampleRate  = signal.SampleRate
 	fftSize     = 512
 	hopSize     = 160
 	windowSize  = 400
-	melBands    = 128
+	MelBands    = 128
 	preemphasis = 0.97
 	melFloor    = 0.0
 	melCeiling  = sampleRate / 2
@@ -29,10 +30,10 @@ const (
 	deviation = 1e-5
 )
 
-// logMel is one stretch of 16 kHz mono audio as the encoder takes it: the bands
+// GetLogMel is one stretch of 16 kHz mono audio as the encoder takes it: the bands
 // one after another, each holding every frame, and how many frames there are.
 // It is computed on up to workers goroutines; zero or less is one per CPU.
-func logMel(samples []float32, workers int) ([]float32, int) {
+func GetLogMel(samples []float32, workers int) ([]float32, int) {
 	power, frames := spectrogram(applyPreemphasis(samples), workers)
 	if frames == 0 {
 		return nil, 0
@@ -40,15 +41,15 @@ func logMel(samples []float32, workers int) ([]float32, int) {
 
 	bins := fftSize/2 + 1
 	bank := filters()
-	out := make([]float32, melBands*frames)
+	out := make([]float32, MelBands*frames)
 
-	workers = getWorkerCount(workers, melBands)
+	workers = signal.GetWorkerCount(workers, MelBands)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
 	for worker := range workers {
-		start := worker * melBands / workers
-		end := (worker + 1) * melBands / workers
+		start := worker * MelBands / workers
+		end := (worker + 1) * MelBands / workers
 		go func(start, end int) {
 			defer wg.Done()
 			for band := start; band < end; band++ {
@@ -119,7 +120,7 @@ func spectrogram(x []float64, workers int) ([]float64, int) {
 	bins := fftSize/2 + 1
 
 	out := make([]float64, frames*bins)
-	workers = getWorkerCount(workers, frames)
+	workers = signal.GetWorkerCount(workers, frames)
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
@@ -198,10 +199,10 @@ type melFilter struct {
 // scaled by the width of the frequencies it spans.
 var filters = sync.OnceValue(func() []melFilter {
 	bins := fftSize/2 + 1
-	edges := make([]float64, melBands+2)
+	edges := make([]float64, MelBands+2)
 	low, high := hzToMel(melFloor), hzToMel(melCeiling)
 	for i := range edges {
-		edges[i] = melToHz(low + (high-low)*float64(i)/float64(melBands+1))
+		edges[i] = melToHz(low + (high-low)*float64(i)/float64(MelBands+1))
 	}
 
 	freq := make([]float64, bins)
@@ -209,8 +210,8 @@ var filters = sync.OnceValue(func() []melFilter {
 		freq[i] = float64(i) * sampleRate / fftSize
 	}
 
-	out := make([]melFilter, melBands)
-	for band := 0; band < melBands; band++ {
+	out := make([]melFilter, MelBands)
+	for band := 0; band < MelBands; band++ {
 		lower, centre, upper := edges[band], edges[band+1], edges[band+2]
 		scale := 2.0 / (upper - lower)
 		first := -1
@@ -294,12 +295,3 @@ var twiddles = sync.OnceValue(func() []complex128 {
 	}
 	return out
 })
-
-// getWorkerCount is how many goroutines share jobs units of work: the count
-// asked for, or one per CPU when none is, and never more than there are jobs.
-func getWorkerCount(requested, jobs int) int {
-	if requested <= 0 {
-		requested = runtime.GOMAXPROCS(0)
-	}
-	return max(1, min(requested, jobs))
-}

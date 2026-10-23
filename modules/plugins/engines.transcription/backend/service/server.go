@@ -104,7 +104,7 @@ func (s *transcriptionServer) GetTranscriptionModel(
 	return connect.NewResponse(&numenv1.GetTranscriptionModelResponse{
 		Model:     s.cfg.Model.Name,
 		Segmenter: s.cfg.Segmenter.Name,
-		Cutting:   s.cfg.Segmenter.DescribeSegmentSettings(),
+		Cutting:   s.cfg.Segmenter.DescribeSettings(),
 		From:      "builtin",
 	}), nil
 }

@@ -4,6 +4,10 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/resample"
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/sound"
 )
 
 // openTranscriber is the models a machine holds, and the recording to hear with them.
@@ -75,11 +79,11 @@ func TestHearingARecording(t *testing.T) {
 func TestHearingAWholeRecording(t *testing.T) {
 	delta, raw := openTranscriber(t)
 
-	sound, rate, err := readSamples(raw)
+	samples, rate, err := sound.Read(raw)
 	if err != nil {
 		t.Fatal(err)
 	}
-	pos, err := resample(t.Context(), sound, rate, sampleRate, 0)
+	pos, err := resample.Convert(t.Context(), samples, rate, signal.SampleRate, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

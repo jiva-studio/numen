@@ -1,9 +1,10 @@
-package engine
+package features
 
 import (
 	"bufio"
 	"math"
 	"os"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -28,7 +29,7 @@ func tone() []float32 {
 func TestLogMelMatchesReference(t *testing.T) {
 	want, bands, frames := reference(t, "testdata/features.txt")
 
-	got, made := logMel(tone(), 0)
+	got, made := GetLogMel(tone(), 0)
 	if made != frames {
 		t.Fatalf("%d frames, and the reference has %d", made, frames)
 	}
@@ -157,6 +158,16 @@ func BenchmarkLogMel(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		_, _ = logMel(audio, 0)
+		_, _ = GetLogMel(audio, 0)
+	}
+}
+func TestTheFeaturesAreTheSameWhateverTheWorkerCount(t *testing.T) {
+	sound := tone()
+	want, frames := GetLogMel(sound, 1)
+	for _, workers := range []int{0, 2, 7} {
+		got, made := GetLogMel(sound, workers)
+		if made != frames || !slices.Equal(got, want) {
+			t.Errorf("%d workers made other features than one worker did", workers)
+		}
 	}
 }

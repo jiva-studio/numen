@@ -1,12 +1,16 @@
-package engine
+package segmenter
 
 import (
 	"context"
 	"fmt"
 	"runtime"
+	"sync"
 	"unsafe"
 
 	ort "github.com/getcharzp/onnxruntime_purego"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/ortraw"
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
 )
 
 // The names the segmenter's graph gives what it is asked and what it answers.
@@ -34,33 +38,54 @@ const (
 	speechMemory = 2 * 128
 )
 
-// splitIntoSegments cuts one recording into the splitIntoSegments that carry speech.
+// Segment is one stretch of a recording that carries speech: its samples and
+// the milliseconds it spans.
+type Segment struct {
+	Samples []float32
+	From    int
+	To      int
+}
+
+// A Segmenter cuts recordings with one speech model. Cutting runs under lock,
+// which the owner shares with whatever else uses the model's runtime.
+type Segmenter struct {
+	session *ort.Session
+	model   Model
+	lock    sync.Locker
+}
+
+// New is a Segmenter running session, cutting as model says.
+func New(session *ort.Session, model Model, lock sync.Locker) *Segmenter {
+	return &Segmenter{session: session, model: model, lock: lock}
+}
+
+// Split cuts one recording into the segments that carry speech.
 //
 // The model answers for one window at a time, carrying what it made of the
 // windows before. A run of windows it is sure enough about is a segment, closed
 // by the quiet after it and widened a little at each end.
-func (t *Transcriber) splitIntoSegments(ctx context.Context, sound []float32) ([]Audio, error) {
-	scores, err := t.scoreSpeech(ctx, sound)
+func (s *Segmenter) Split(ctx context.Context, sound []float32) ([]Segment, error) {
+	scores, err := s.scoreSpeech(ctx, sound)
 	if err != nil {
 		return nil, err
 	}
 
-	windows := func(ms int) int { return ms * sampleRate / (1000 * speechWindow) }
+	windows := func(ms int) int { return ms * signal.SampleRate / (1000 * speechWindow) }
 	found := joinShortSpans(
-		getSpans(scores, t.cutting.getThreshold(),
-			windows(t.cutting.getSilenceLength()), windows(t.cutting.getPadding()),
-			windows(t.cutting.getLongestSegment()), windows(t.cutting.getShortestSegment())),
-		windows(t.cutting.getShortestPause()), windows(t.cutting.getLongestSegment()),
+		getSpans(scores, s.model.getThreshold(),
+			windows(s.model.getSilenceLength()), windows(s.model.getPadding()),
+			windows(s.model.getLongestSegment()), windows(s.model.getShortestSegment())),
+		windows(s.model.getShortestPause()), windows(s.model.getLongestSegment()),
 	)
 
-	var out []Audio
+	var out []Segment
 	for _, one := range found {
 		from := min(one.From*speechWindow, len(sound))
 		to := min(one.To*speechWindow, len(sound))
-		out = append(out, Audio{
+		out = append(out, Segment{
 			Samples: sound[from:to],
-			From:    getMillis(from, sampleRate),
-			To:      getMillis(to, sampleRate),
+			From:    signal.GetMillis(from, signal.SampleRate),
+			To:      signal.GetMillis(to, signal.SampleRate),
 		})
 	}
 	return out, nil
@@ -92,9 +117,9 @@ func joinShortSpans(found []span, least, longest int) []span {
 
 // scoreSpeech is how sure the model is that each window of the recording carries
 // speech. A last window short of the model's own is filled out with silence.
-func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float32, error) {
-	t.mu.Lock()
-	defer t.mu.Unlock()
+func (s *Segmenter) scoreSpeech(ctx context.Context, sound []float32) ([]float32, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	pass, err := newSpeechPass(sound)
 	if err != nil {
@@ -103,25 +128,16 @@ func (t *Transcriber) scoreSpeech(ctx context.Context, sound []float32) ([]float
 	defer pass.destroy()
 
 	var out []float32
-	if calls, ok := getRawCalls(); ok && t.getSessionHandle() != 0 {
-		out, err = t.scoreNative(ctx, pass, calls)
+	if calls, ok := ortraw.GetCalls(); ok && ortraw.GetSessionHandle(s.session) != 0 {
+		out, err = s.scoreNative(ctx, pass, calls)
 	} else {
-		out, err = t.scoreManaged(ctx, pass)
+		out, err = s.scoreManaged(ctx, pass)
 	}
 	if err != nil {
 		return nil, err
 	}
 	pass.keepAlive()
 	return out, nil
-}
-
-// getSessionHandle is the runtime's handle of the speech model, or nothing when
-// there is none. A Session begins with its runtime handle.
-func (t *Transcriber) getSessionHandle() uintptr {
-	if t.segmenter == nil {
-		return 0
-	}
-	return *(*uintptr)(unsafe.Pointer(t.segmenter))
 }
 
 // speechPass is the buffers and tensors the speech model reads while one
@@ -145,7 +161,7 @@ func newSpeechPass(sound []float32) (*speechPass, error) {
 		sound:  sound,
 		window: make([]float32, speechWindow),
 		state:  make([]float32, speechMemory),
-		rate:   []int64{sampleRate},
+		rate:   []int64{signal.SampleRate},
 		count:  (len(sound) + speechWindow - 1) / speechWindow,
 	}
 	var err error
@@ -188,10 +204,10 @@ func (p *speechPass) keepAlive() {
 }
 
 // scoreNative scores every window by calling the runtime directly.
-func (t *Transcriber) scoreNative(ctx context.Context, pass *speechPass, calls rawCalls) ([]float32, error) {
+func (s *Segmenter) scoreNative(ctx context.Context, pass *speechPass, calls ortraw.Calls) ([]float32, error) {
 	run := &speechRun{
 		calls:   calls,
-		session: t.getSessionHandle(),
+		session: ortraw.GetSessionHandle(s.session),
 		inNames: [3]unsafe.Pointer{
 			unsafe.Pointer(&speechInputCStr[0]),
 			unsafe.Pointer(&speechStateCStr[0]),
@@ -202,9 +218,9 @@ func (t *Transcriber) scoreNative(ctx context.Context, pass *speechPass, calls r
 			unsafe.Pointer(&speechAfterCStr[0]),
 		},
 		inputs: [3]uintptr{
-			*(*uintptr)(unsafe.Pointer(pass.input)),
-			*(*uintptr)(unsafe.Pointer(pass.memory)),
-			*(*uintptr)(unsafe.Pointer(pass.sampling)),
+			ortraw.GetValueHandle(pass.input),
+			ortraw.GetValueHandle(pass.memory),
+			ortraw.GetValueHandle(pass.sampling),
 		},
 	}
 	out := make([]float32, 0, pass.count)
@@ -223,7 +239,7 @@ func (t *Transcriber) scoreNative(ctx context.Context, pass *speechPass, calls r
 }
 
 // scoreManaged scores every window through the runtime's own binding.
-func (t *Transcriber) scoreManaged(ctx context.Context, pass *speechPass) ([]float32, error) {
+func (s *Segmenter) scoreManaged(ctx context.Context, pass *speechPass) ([]float32, error) {
 	inputs := map[string]*ort.Value{
 		speechInput: pass.input,
 		speechState: pass.memory,
@@ -235,7 +251,7 @@ func (t *Transcriber) scoreManaged(ctx context.Context, pass *speechPass) ([]flo
 			return nil, err
 		}
 		pass.load(i)
-		score, err := t.scoreWindow(inputs, pass.state)
+		score, err := s.scoreWindow(inputs, pass.state)
 		if err != nil {
 			return nil, err
 		}
@@ -247,7 +263,7 @@ func (t *Transcriber) scoreManaged(ctx context.Context, pass *speechPass) ([]flo
 // speechRun is the speech model run window after window by the runtime's own
 // entry points, over the same inputs.
 type speechRun struct {
-	calls    rawCalls
+	calls    ortraw.Calls
 	session  uintptr
 	inNames  [3]unsafe.Pointer
 	outNames [2]unsafe.Pointer
@@ -258,7 +274,7 @@ type speechRun struct {
 // score runs the model once over the window in its input, and gives how sure
 func (r *speechRun) score(state []float32) (float32, error) {
 	r.outputs = [2]uintptr{}
-	status := r.calls.run(
+	status := r.calls.Run(
 		r.session,
 		0,
 		uintptr(unsafe.Pointer(&r.inNames[0])),
@@ -268,25 +284,25 @@ func (r *speechRun) score(state []float32) (float32, error) {
 		2,
 		uintptr(unsafe.Pointer(&r.outputs[0])),
 	)
-	if err := r.calls.check(status); err != nil {
+	if err := r.calls.Check(status); err != nil {
 		return 0, err
 	}
-	defer r.calls.release(r.outputs[0])
-	defer r.calls.release(r.outputs[1])
+	defer r.calls.Release(r.outputs[0])
+	defer r.calls.Release(r.outputs[1])
 
 	var scorePtr, statePtr unsafe.Pointer
-	if err := r.calls.check(r.calls.getData(r.outputs[0], uintptr(unsafe.Pointer(&scorePtr)))); err != nil {
+	if err := r.calls.Check(r.calls.GetData(r.outputs[0], uintptr(unsafe.Pointer(&scorePtr)))); err != nil {
 		return 0, err
 	}
-	if err := r.calls.check(r.calls.getData(r.outputs[1], uintptr(unsafe.Pointer(&statePtr)))); err != nil {
+	if err := r.calls.Check(r.calls.GetData(r.outputs[1], uintptr(unsafe.Pointer(&statePtr)))); err != nil {
 		return 0, err
 	}
 	copy(state, unsafe.Slice((*float32)(statePtr), speechMemory))
 	return *(*float32)(scorePtr), nil
 }
 
-func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (float32, error) {
-	out, err := t.segmenter.Run(inputs)
+func (s *Segmenter) scoreWindow(inputs map[string]*ort.Value, dst []float32) (float32, error) {
+	out, err := s.session.Run(inputs)
 	if err != nil {
 		return 0, err
 	}
@@ -298,7 +314,7 @@ func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (
 
 	response, ok := out[speechScore]
 	if !ok {
-		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechScore)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", ortraw.GetNames(out), speechScore)
 	}
 	score, err := ort.GetTensorData[float32](response)
 	if err != nil {
@@ -309,7 +325,7 @@ func (t *Transcriber) scoreWindow(inputs map[string]*ort.Value, dst []float32) (
 	}
 	after, ok := out[speechAfter]
 	if !ok {
-		return 0, fmt.Errorf("the speech model answered with %v and not %s", getNames(out), speechAfter)
+		return 0, fmt.Errorf("the speech model answered with %v and not %s", ortraw.GetNames(out), speechAfter)
 	}
 	raw, err := ort.GetTensorData[float32](after)
 	if err != nil {

@@ -1,89 +1,17 @@
-package engine
+package sound
 
 import (
 	"bytes"
-	"context"
 	"encoding/binary"
 	"fmt"
 	"io"
 	"math"
-	"sync"
 
 	"github.com/hajimehoshi/go-mp3"
 	"github.com/mewkiz/flac"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
 )
-
-// A recording is a file opened for listening. Its length is read out of the
-// header, and its samples are decoded when somebody asks where the speech is:
-type recording struct {
-	owner  *Transcriber
-	raw    []byte
-	length int
-
-	// segments is where the speech is, and cut says the recording has been
-	// through the segmenter. A recording carrying no speech is cut and holds
-	// none.
-	segments []Audio
-	isCut    bool
-	mu       sync.Mutex
-}
-
-// Open is a recording, ready to be listened to.
-func (t *Transcriber) Open(ctx context.Context, raw []byte) (Recording, error) {
-	length, err := getDuration(raw)
-	if err != nil {
-		return nil, err
-	}
-	return &recording{owner: t, raw: raw, length: length}, nil
-}
-
-// GetDuration is how long the recording is, in milliseconds.
-func (r *recording) GetDuration() int { return r.length }
-
-// GetSegments is what the segmenter cut the recording into, from a millisecond
-// onward, at most count of them. A count of none is all of them.
-//
-// The whole file is cut at once, when the first stretch is asked for. The
-// segmenter reads it from end to end, and where one stretch ends is decided by
-// the silence after it.
-func (r *recording) GetSegments(ctx context.Context, from, count int) ([]Audio, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-
-	if !r.isCut {
-		sound, rate, err := readSamples(r.raw)
-		if err != nil {
-			return nil, err
-		}
-		pos, err := resample(ctx, sound, rate, sampleRate, r.owner.workers)
-		if err != nil {
-			return nil, err
-		}
-		if r.segments, err = r.owner.splitIntoSegments(ctx, pos); err != nil {
-			return nil, err
-		}
-		r.raw, r.isCut = nil, true
-	}
-
-	var out []Audio
-	for _, one := range r.segments {
-		if one.From < from {
-			continue
-		}
-		out = append(out, one)
-		if count > 0 && len(out) == count {
-			break
-		}
-	}
-	return out, nil
-}
-
-func (r *recording) Close() error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	r.raw, r.segments = nil, nil
-	return nil
-}
 
 // The first bytes of each container this reads.
 var (
@@ -93,16 +21,16 @@ var (
 	id3  = []byte("ID3")
 )
 
-// getDuration is how long a recording is, in milliseconds, out of its header
+// GetDuration is how long a recording is, in milliseconds, out of its header
 // alone.
-func getDuration(raw []byte) (int, error) {
+func GetDuration(raw []byte) (int, error) {
 	switch {
 	case isWav(raw):
 		found, err := parseWav(raw)
 		if err != nil {
 			return 0, err
 		}
-		return getMillis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
+		return signal.GetMillis(len(found.samples)/(found.channels*found.bits/8), found.rate), nil
 
 	case bytes.HasPrefix(raw, fLaC):
 		stream, err := flac.New(bytes.NewReader(raw))
@@ -110,7 +38,7 @@ func getDuration(raw []byte) (int, error) {
 			return 0, fmt.Errorf("the flac recording: %w", err)
 		}
 		defer stream.Close()
-		return getMillis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
+		return signal.GetMillis(int(stream.Info.NSamples), int(stream.Info.SampleRate)), nil
 
 	case isMP3(raw):
 		decoder, err := mp3.NewDecoder(bytes.NewReader(raw))
@@ -119,14 +47,14 @@ func getDuration(raw []byte) (int, error) {
 		}
 		// Every mp3 comes out as two channels of sixteen bits, whatever it was
 		// recorded as.
-		return getMillis(int(decoder.Length()/4), decoder.SampleRate()), nil
+		return signal.GetMillis(int(decoder.Length()/4), decoder.SampleRate()), nil
 	}
 	return 0, fmt.Errorf("the recording is in no container this reads: wav, mp3 and flac are")
 }
 
-// readSamples is a whole recording as one channel of floating point, at whatever
+// Read is a whole recording as one channel of floating point, at whatever
 // rate it was recorded at.
-func readSamples(raw []byte) ([]float32, int, error) {
+func Read(raw []byte) ([]float32, int, error) {
 	switch {
 	case isWav(raw):
 		found, err := parseWav(raw)
@@ -159,14 +87,6 @@ func isMP3(raw []byte) bool {
 		return true
 	}
 	return len(raw) >= 2 && raw[0] == 0xFF && raw[1]&0xE0 == 0xE0
-}
-
-// getMillis is how long a count of samples at one rate lasts.
-func getMillis(count, rate int) int {
-	if rate <= 0 {
-		return 0
-	}
-	return int(int64(count) * 1000 / int64(rate))
 }
 
 // A riffWave is what a wav file's header says, and the bytes of the samples

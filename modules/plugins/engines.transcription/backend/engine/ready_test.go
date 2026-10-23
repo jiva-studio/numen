@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/segmenter"
 )
 
 // writeEmptyFile writes an empty file under dir and answers with where it is.
@@ -22,7 +24,7 @@ func writeEmptyFile(t *testing.T, dir, name string) string {
 func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 	dir := t.TempDir()
 	runtime := writeEmptyFile(t, dir, "libonnxruntime.so")
-	segmenter := writeEmptyFile(t, dir, "silero.onnx")
+	segmenterPath := writeEmptyFile(t, dir, "silero.onnx")
 	for _, name := range []string{encoderFile, decoderFile, joinerFile, tokensFile} {
 		writeEmptyFile(t, dir, name)
 	}
@@ -61,7 +63,7 @@ func TestReadyIsAnsweredByTheModelsOnThisMachine(t *testing.T) {
 				Runtime:   runtime,
 				Dir:       dir,
 				Model:     ParakeetModel{Repo: "https://example.invalid/parakeet/"},
-				Segmenter: SegmenterModel{Path: segmenter},
+				Segmenter: segmenter.Model{Path: segmenterPath},
 			}
 			c.change(t, &cfg)
 			if got := Ready(cfg); got != c.isReady {

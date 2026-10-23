@@ -1,21 +1,23 @@
-package engine
+package resample
 
 import (
 	"context"
 	"math"
 	"sync"
+
+	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/signal"
 )
 
 // The resampler reads through a windowed sinc reaching this many of its own
 // zeroes on each side.
 const sincWidth = 16
 
-// resample is one signal at another rate.
+// Convert is one signal at another rate.
 //
 // Each output sample is what the input says at that moment, band-limited to
 // whichever of the two rates is the lower. It runs on up to workers goroutines;
 // zero or less is one per CPU.
-func resample(ctx context.Context, in []float32, from, to, workers int) ([]float32, error) {
+func Convert(ctx context.Context, in []float32, from, to, workers int) ([]float32, error) {
 	if from == to || from <= 0 || len(in) == 0 {
 		return in, nil
 	}
@@ -29,7 +31,7 @@ func resample(ctx context.Context, in []float32, from, to, workers int) ([]float
 		return out, nil
 	}
 
-	workers = getWorkerCount(workers, len(out))
+	workers = signal.GetWorkerCount(workers, len(out))
 
 	var wg sync.WaitGroup
 	wg.Add(workers)
