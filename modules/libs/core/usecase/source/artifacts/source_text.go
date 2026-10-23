@@ -22,8 +22,6 @@ type SourceTexts struct {
 	derived vaultport.DerivedStores
 }
 
-type sourceTexts = SourceTexts
-
 // StoredText is what was made from a source, the store holding it, and whether anything was.
 type StoredText struct {
 	Meta     sourceport.SourceText
@@ -35,8 +33,6 @@ type StoredText struct {
 	isStored bool
 }
 
-type storedText = StoredText
-
 func NewSourceTexts(readers vaultport.VaultReaders, sources sourceport.SourceQueries, derived vaultport.DerivedStores) SourceTexts {
 	return SourceTexts{
 		Readers: readers, Sources: sources, Derived: derived,
@@ -46,10 +42,6 @@ func NewSourceTexts(readers vaultport.VaultReaders, sources sourceport.SourceQue
 
 func (s SourceTexts) IsReady() bool {
 	return s.Readers != nil && s.Sources != nil && s.Derived != nil
-}
-
-func (s SourceTexts) isReady() bool {
-	return s.IsReady()
 }
 
 // GetStoredText is the text made from the file at a path, where there is one.
@@ -65,12 +57,6 @@ func (s SourceTexts) GetStoredText(
 		return stored, err
 	}
 	return s.GetIndexedText(ctx, v, path)
-}
-
-func (s SourceTexts) getStoredText(
-	ctx context.Context, v domain.Vault, path string,
-) (StoredText, error) {
-	return s.GetStoredText(ctx, v, path)
 }
 
 // GetIndexedText is the text the index names for the file at a path.
@@ -91,12 +77,6 @@ func (s SourceTexts) GetIndexedText(
 	}, nil
 }
 
-func (s SourceTexts) getIndexedText(
-	ctx context.Context, v domain.Vault, path string,
-) (StoredText, error) {
-	return s.GetIndexedText(ctx, v, path)
-}
-
 // GetNoteURL is the address the note at a path carries, and nothing where the file is not a note.
 func (s SourceTexts) GetNoteURL(ctx context.Context, v domain.Vault, path string) domain.URL {
 	if s.readers == nil {
@@ -115,10 +95,6 @@ func (s SourceTexts) GetNoteURL(ctx context.Context, v domain.Vault, path string
 		return domain.URL("")
 	}
 	return pos
-}
-
-func (s SourceTexts) getNoteURL(ctx context.Context, v domain.Vault, path string) domain.URL {
-	return s.GetNoteURL(ctx, v, path)
 }
 
 // GetFetchedText is the text kept under an address with how far its run has got, and a zero text where nothing was fetched.
@@ -143,10 +119,4 @@ func (s SourceTexts) GetFetchedText(
 		}
 	}
 	return StoredText{}, RunProgress{}, nil
-}
-
-func (s SourceTexts) getFetchedText(
-	ctx context.Context, v domain.Vault, pos domain.URL,
-) (StoredText, RunProgress, error) {
-	return s.GetFetchedText(ctx, v, pos)
 }

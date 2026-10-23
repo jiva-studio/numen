@@ -30,7 +30,6 @@ type (
 	Transcript = artifacts.Transcript
 
 	sourceTexts = artifacts.SourceTexts
-	storedText  = artifacts.StoredText
 )
 
 const (
