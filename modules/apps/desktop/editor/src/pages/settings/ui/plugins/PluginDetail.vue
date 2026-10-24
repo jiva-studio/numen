@@ -66,7 +66,7 @@ function onSecretDelete(name: string): void {
 </script>
 
 <template>
-  <div class="plugin-detail">
+  <div class="plugin-detail settings__plugins">
     <div class="plugin-detail__navigation">
       <Button variant="outline" size="small" class="plugin-detail__back" @click="onBack">
         &larr; {{ words.backToPlugins }}

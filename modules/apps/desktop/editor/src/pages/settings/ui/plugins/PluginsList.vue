@@ -121,7 +121,7 @@ function isPluginEnabled(pluginId: string): boolean {
 </script>
 
 <template>
-  <div class="plugins-list">
+  <div class="plugins-list settings__plugins">
     <div class="plugins-list__search">
       <input
         v-model="searchQuery"
