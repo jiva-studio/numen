@@ -22,6 +22,29 @@ type paths struct {
 	from      string
 }
 
+func findInFolder(dir, fileName string) string {
+	if dir == "" || fileName == "" {
+		return ""
+	}
+	candidate := filepath.Join(dir, fileName)
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	return ""
+}
+
+func findInHome(fileName string) string {
+	if home := os.Getenv(EnvDir); home != "" {
+		if found := findInFolder(home, fileName); found != "" {
+			return found
+		}
+	}
+	if base, err := os.UserConfigDir(); err == nil {
+		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
+	}
+	return ""
+}
+
 // locateModel finds a model file by checking:
 // 1. Explicit path in settings
 // 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
@@ -34,29 +57,15 @@ func locateModel(explicitPath, envVar, fileName, dir string) (string, error) {
 		return explicitPath, nil
 	}
 	if envVar != "" {
-		if env := os.Getenv(envVar); env != "" {
-			if _, err := os.Stat(env); err == nil {
-				return env, nil
-			}
+		if env := os.Getenv(envVar); env != "" && isPresent(env) {
+			return env, nil
 		}
 	}
-	if dir != "" {
-		candidate := filepath.Join(dir, fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
+	if found := findInFolder(dir, fileName); found != "" {
+		return found, nil
 	}
-	if home := os.Getenv("NUMEN_MODELS_DIR"); home != "" {
-		candidate := filepath.Join(home, fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
-	}
-	if base, err := os.UserConfigDir(); err == nil {
-		candidate := filepath.Join(base, "numen", "models", fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
+	if found := findInHome(fileName); found != "" {
+		return found, nil
 	}
 	return "", fmt.Errorf("model %s not found (env: %s)", fileName, envVar)
 }

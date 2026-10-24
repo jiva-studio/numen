@@ -26,6 +26,36 @@ type paths struct {
 	from      string
 }
 
+func findInFolder(dir, fileName string) string {
+	if dir == "" || fileName == "" {
+		return ""
+	}
+	candidate := filepath.Join(dir, fileName)
+	if _, err := os.Stat(candidate); err == nil {
+		return candidate
+	}
+	return ""
+}
+
+func findInHome(fileName string) string {
+	if home := os.Getenv(EnvDir); home != "" {
+		if found := findInFolder(home, fileName); found != "" {
+			return found
+		}
+	}
+	if base, err := os.UserConfigDir(); err == nil {
+		return findInFolder(filepath.Join(base, "numen", "models"), fileName)
+	}
+	return ""
+}
+
+func resolveFileName(repoAddress, defaultFileName string) string {
+	if base := filepath.Base(repoAddress); base != "" && base != "." && base != "/" && !strings.HasSuffix(repoAddress, "/") {
+		return base
+	}
+	return defaultFileName
+}
+
 // locateModel finds a model file by checking:
 // 1. Explicit path in settings
 // 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
@@ -47,27 +77,12 @@ func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string)
 	if repoAddress == "" {
 		return "", fmt.Errorf("model %s is not named: specify path or repo", defaultFileName)
 	}
-	fileName := defaultFileName
-	if base := filepath.Base(repoAddress); base != "" && base != "." && base != "/" && !strings.HasSuffix(repoAddress, "/") {
-		fileName = base
+	fileName := resolveFileName(repoAddress, defaultFileName)
+	if found := findInFolder(dir, fileName); found != "" {
+		return found, nil
 	}
-	if dir != "" {
-		candidate := filepath.Join(dir, fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
-	}
-	if home := os.Getenv("NUMEN_MODELS_DIR"); home != "" {
-		candidate := filepath.Join(home, fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
-	}
-	if base, err := os.UserConfigDir(); err == nil {
-		candidate := filepath.Join(base, "numen", "models", fileName)
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate, nil
-		}
+	if found := findInHome(fileName); found != "" {
+		return found, nil
 	}
 	return "", fmt.Errorf("model %s not found (env: %s)", fileName, envVar)
 }
