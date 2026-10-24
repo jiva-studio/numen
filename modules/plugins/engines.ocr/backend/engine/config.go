@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
@@ -19,8 +18,8 @@ type Config struct {
 }
 
 // folder is where the models are kept and whether they may be fetched.
-func (c Config) folder() models.Folder {
-	return models.NewFolder("indexing.recognition", c.Dir, c.ShouldDownload, c.Progress)
+func (c Config) folder() Folder {
+	return NewFolder("indexing.recognition", c.Dir, c.ShouldDownload, c.Progress)
 }
 
 // LayoutModel divides a page into its parts and puts them in reading order.

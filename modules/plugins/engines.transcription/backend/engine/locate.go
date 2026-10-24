@@ -8,7 +8,6 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
@@ -45,14 +44,14 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 
 // getWantedFiles is every file a transcription reads. The transducer is four of them,
 // published as four names in one folder.
-func getWantedFiles(cfg Config, into *paths) []models.Wanted {
+func getWantedFiles(cfg Config, into *paths) []Wanted {
 	underVal := func(name string) string {
 		if cfg.Model.Repo == "" {
 			return ""
 		}
 		return strings.TrimSuffix(cfg.Model.Repo, "/") + "/" + name
 	}
-	return []models.Wanted{
+	return []Wanted{
 		{Dst: &into.encoder, Path: cfg.Model.Encoder, Name: underVal(encoderFile), Kind: "encoder"},
 		{Dst: &into.decoder, Path: cfg.Model.Decoder, Name: underVal(decoderFile), Kind: "decoder"},
 		{Dst: &into.joiner, Path: cfg.Model.Joiner, Name: underVal(joinerFile), Kind: "joiner"},
@@ -71,6 +70,6 @@ func getModelName(name, pos string) string {
 	return strings.TrimSuffix(path.Base(filepath.ToSlash(pos)), filepath.Ext(pos))
 }
 
-func (c Config) source() models.Source {
+func (c Config) source() Source {
 	return c.folder().Source()
 }

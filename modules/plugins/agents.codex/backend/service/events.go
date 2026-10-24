@@ -3,16 +3,15 @@ package service
 import (
 	"encoding/json"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 // newEventHandler is what the run calls with each event of the Codex output.
-func newEventHandler(r *agentrun.Reader) func(map[string]any) {
+func newEventHandler(r *reader) func(map[string]any) {
 	return func(event map[string]any) { handleCodexEvent(r, event) }
 }
 
-func handleCodexEvent(r *agentrun.Reader, rawMap map[string]any) {
+func handleCodexEvent(r *reader, rawMap map[string]any) {
 	evType, _ := rawMap["type"].(string)
 	item, _ := rawMap["item"].(map[string]any)
 	if item == nil {

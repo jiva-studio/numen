@@ -21,6 +21,7 @@ import {
 import { type PluginInfo, type SettingEdit } from '@/entities/settings'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab, paths, createChoices } from '@/pages/settings'
+import { createSettingsFileTabKind } from '@/pages/settings-file'
 import type { SelectChoice } from '@numen/ui'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
@@ -270,13 +271,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     refresh: rest.start,
   })
 
-  const file = {
-    openSettingsFile: () => {
-      if (rest.path.value) {
-        void windowTabs.handle.openTabBeside('note', rest.path.value)
-      }
-    },
-  }
+  const file = createSettingsFileTabKind(windowTabs.handle, core, () => void rest.start())
 
   const configured = useSettingsTab(
     windowTabs.handle,
@@ -287,7 +282,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const retainedItem = createSettingsPaletteLists({ appearance, sync, nesting, rest, words })
 
-  const kinds = [configured.kind]
+  const kinds = [configured.kind, file.kind]
 
   const start = async () => {
     void appearance.start()

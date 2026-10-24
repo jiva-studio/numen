@@ -211,17 +211,10 @@ describe('the menu on a row', () => {
     expect(await getItemIds('Entropy.md')).toStrictEqual([
       'read',
       'travel',
-      'newNote',
-      'newDeck',
-      'newStencil',
-      'newPreset',
-      'newFolder',
+      'new',
       'rename',
       'copy',
-      'child',
-      'parent',
-      'jump',
-      'title',
+      'relation',
       'ask',
       'remove',
     ])
@@ -234,13 +227,6 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
-      'file',
-      'file',
-      'file',
-      'file',
-      'plex',
-      'plex',
-      'plex',
       'plex',
       'agent',
       'remove',
@@ -248,16 +234,7 @@ describe('the menu on a row', () => {
   })
 
   it('offers no command over a note on a file the vault holds no source for', async () => {
-    expect(await getItemIds('Cover.png')).toStrictEqual([
-      'newNote',
-      'newDeck',
-      'newStencil',
-      'newPreset',
-      'newFolder',
-      'rename',
-      'copy',
-      'remove',
-    ])
+    expect(await getItemIds('Cover.png')).toStrictEqual(['new', 'rename', 'copy', 'remove'])
   })
 
   it('offers no command over a note on a folder', async () => {
@@ -265,13 +242,7 @@ describe('the menu on a row', () => {
   })
 
   it('offers what can be made at the root, requested off every row', async () => {
-    expect(await getItemIds(null)).toStrictEqual([
-      'newNote',
-      'newDeck',
-      'newStencil',
-      'newPreset',
-      'newFolder',
-    ])
+    expect(await getItemIds(null)).toStrictEqual(['new'])
   })
 
   it('offers removal alone over a selection of several', async () => {

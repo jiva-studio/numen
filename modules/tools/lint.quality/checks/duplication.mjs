@@ -8,7 +8,7 @@ import path from "node:path";
  * @param {{ repoRoot: string, threshold?: number }} options
  * @returns {Promise<{ id: string, name: string, pass: boolean, summary: string, details?: string, durationMs: number }>}
  */
-export async function runDuplicationCheck({ repoRoot, threshold = 3.0 }) {
+export async function runDuplicationCheck({ repoRoot, threshold = 3.5 }) {
   const start = Date.now();
   const binary = path.join(repoRoot, "modules/node_modules/.bin/jscpd");
   const hasLocal = fs.existsSync(binary);

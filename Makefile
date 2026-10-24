@@ -47,7 +47,7 @@ compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile 
 build: interface lib_core_build app_desktop_build ## build all application artifacts
 
 .PHONY: interface
-interface: lib_ui_build app_desktop_editor_build app_desktop_flashcards_build ## build UI pages into assets
+interface: lib_ui_build app_desktop_editor_build ## build UI pages into assets
 
 .PHONY: generate
 generate: lib_protocol_generate ## generate code from schema
@@ -304,7 +304,7 @@ app_desktop_flashcards_build: lib_ui_build
 	cd $(DESKTOP)/flashcards && npm run build
 
 .PHONY: app_desktop_build
-app_desktop_build: interface ## build desktop binary
+app_desktop_build: interface plugins_build ## build desktop binary
 	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o ../../../numen ./cmd/numen
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 

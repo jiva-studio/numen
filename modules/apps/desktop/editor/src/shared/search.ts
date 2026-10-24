@@ -3,7 +3,7 @@
  * response to the latest query alone.
  */
 import { getCurrentScope, onScopeDispose, ref, shallowRef } from 'vue'
-import { createRequestGuard, type RequestGuard, type InFlightRequest } from '@numen/plugin-sdk'
+import { createRequestGuard, type RequestGuard, type InFlightRequest } from './requestGuard'
 
 /** How long a keystroke waits before anything is asked. */
 export const SEARCH_DEBOUNCE_MS = 120

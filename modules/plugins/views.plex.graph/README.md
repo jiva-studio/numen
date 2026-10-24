@@ -1,6 +1,6 @@
-# Plexus Graph Visualizer Plugin
+# Plex Graph Visualizer Plugin
 
-Knowledge graph visualization and plexus network explorer plugin for Numen.
+Knowledge graph visualization and plex explorer plugin for Numen.
 
 ## Features
 - Interactive 2D knowledge graph visualization of vault notes and relationships

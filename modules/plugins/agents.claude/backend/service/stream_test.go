@@ -168,6 +168,14 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 	}
 }
 
+func TestParseLines_NoVaultExpected(t *testing.T) {
+	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
+	reason := parseStreamWithClock(context.Background(), strings.NewReader(line+"\n"), func(*numenv1.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
+	if reason != "" {
+		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
+	}
+}
+
 func TestParseLines_ErrorResultFormatting(t *testing.T) {
 	cases := map[string]string{
 		`{"type":"result","is_error":true,"subtype":"error_max_turns"}`:                            "the agent reached the limit of steps without finishing",

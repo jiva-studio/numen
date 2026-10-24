@@ -1,7 +1,6 @@
 package engine
 
 import (
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 	"github.com/jiva-studio/numen/modules/plugins/engines.transcription/backend/engine/segmenter"
 )
@@ -40,8 +39,8 @@ type Config struct {
 }
 
 // folder is where the models are kept and whether they may be fetched.
-func (c Config) folder() models.Folder {
-	return models.NewFolder("indexing.transcription", c.Dir, c.ShouldDownload, c.Progress)
+func (c Config) folder() Folder {
+	return NewFolder("indexing.transcription", c.Dir, c.ShouldDownload, c.Progress)
 }
 
 // ParakeetModel turns speech into words. It is exported as three graphs and the

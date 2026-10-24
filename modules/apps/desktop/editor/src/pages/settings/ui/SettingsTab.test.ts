@@ -11,7 +11,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { computed, nextTick, ref } from 'vue'
 import { mount } from '@vue/test-utils'
 
-import type { Model, SettingEdit } from '@/entities/settings'
+import type { Model, PluginInfo, SettingEdit } from '@/entities/settings'
 import { getSettingAt as at } from '@/entities/settings'
 import SettingsTab from './SettingsTab.vue'
 import type { Installation } from '../types'
@@ -73,7 +73,11 @@ const MODELS: readonly Model[] = [
 ]
 
 /** An installation configured that way, and everything it was asked to change. */
-const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
+const createTab = (
+  isPinned = false,
+  file: Record<string, unknown> = {},
+  plugins: readonly PluginInfo[] = [],
+) => {
   const isDone: string[] = []
   const content: SettingEdit[] = []
   const isSyncing = ref(true)
@@ -125,6 +129,7 @@ const createTab = (isPinned = false, file: Record<string, unknown> = {}) => {
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
+    plugins: ref(plugins),
   }
   const tab = mount(SettingsTab, {
     props: { state: { installation } },
@@ -153,7 +158,7 @@ const openMenu = async (tab: Tab, id: string) => {
   await nextTick()
 }
 
-const getMenuItems = (): readonly string[] =>
+const _getMenuItems = (): readonly string[] =>
   Array.from(document.body.querySelectorAll('.menu__item .menu__text')).map(
     (one) => one.textContent?.trim() ?? '',
   )
@@ -170,24 +175,43 @@ const chooseItem = async (words: string) => {
   await nextTick()
 }
 
+const openSystemSettings = async (tab: Tab) => {
+  await tab.find('.system-row').trigger('click')
+  await nextTick()
+}
+
 describe('the settings tab', () => {
-  it('draws every group, by the part of the application it governs', () => {
+  it('draws the system settings row at the top of the list', () => {
     const { tab } = createTab()
-    const headings = tab.findAll('.settings__heading').map((one) => one.text())
-    expect(headings).toStrictEqual([
-      words.window,
-      words.naming,
-      words.transcription,
-      words.ocr,
-      words.performance,
-      words.indexing,
-      words.agent,
-      words.ai,
-    ])
+    const rows = tab.findAll('.plugin-row')
+    expect(rows.length).toBeGreaterThan(0)
+    expect(rows[0]!.text()).toContain(words.systemSettings)
+    expect(rows[0]!.text()).toContain(words.systemSettingsDetail)
+  })
+
+  it('draws plugin rows below system settings when plugins are present', () => {
+    const samplePlugin: PluginInfo = {
+      id: 'test.transcription',
+      name: 'Transcription Plugin',
+      version: '1.0.0',
+      description: 'Speech recognition engine',
+      isActive: true,
+      capabilities: [],
+      secrets: [],
+      storedSecrets: [],
+      consent: 'none',
+      settings: [],
+    }
+    const { tab } = createTab(false, {}, [samplePlugin])
+    const rows = tab.findAll('.plugin-row')
+    expect(rows.length).toBe(2)
+    expect(rows[0]!.text()).toContain(words.systemSettings)
+    expect(rows[1]!.text()).toContain('Transcription Plugin')
   })
 
   it('opens on the theme the settings name, off both groups', async () => {
     const { tab } = createTab()
+    await openSystemSettings(tab)
     expect(tab.get(control('settings-theme')).text()).toContain('numen')
 
     await openMenu(tab, 'settings-theme')
@@ -196,179 +220,90 @@ describe('the settings tab', () => {
 
   it('writes a theme the way the command of that name writes it', async () => {
     const { tab, recorded } = createTab()
+    await openSystemSettings(tab)
     await openMenu(tab, 'settings-theme')
     await chooseItem('sea')
     expect(recorded).toStrictEqual(['choose mine:sea'])
   })
 
-  it('says why the mode cannot be chosen while the theme worn pins it', () => {
-    expect(createTab(true).tab.text()).toContain(words.pinned)
-    expect(createTab().tab.text()).not.toContain(words.pinned)
+  it('says why the mode cannot be chosen while the theme worn pins it', async () => {
+    const tabPinned = createTab(true).tab
+    await openSystemSettings(tabPinned)
+    expect(tabPinned.text()).toContain(words.pinned)
+
+    const tabUnpinned = createTab().tab
+    await openSystemSettings(tabUnpinned)
+    expect(tabUnpinned.text()).not.toContain(words.pinned)
   })
 
-  it('turns the two switches the window keeps', async () => {
+  it('turns the switch the window keeps for syncing', async () => {
     const { tab, recorded } = createTab()
-    await tab.get(control('settings-nesting')).trigger('click')
+    await openSystemSettings(tab)
     await tab.get(control('settings-syncing')).trigger('click')
-    expect(recorded).toStrictEqual(['nesting false', 'syncing false'])
+    expect(recorded).toStrictEqual(['syncing false'])
   })
 
   it('names the file the settings stand in, and opens it whole', async () => {
     const { tab, recorded } = createTab()
-    expect(tab.get('.settings__file').text()).toBe('/numen.json')
+    await openSystemSettings(tab)
+    expect(tab.get('.system-detail__file').text()).toBe('/numen.json')
 
-    await tab.get('.settings__where button').trigger('click')
+    await tab.get('.system-detail__where button').trigger('click')
     expect(recorded).toStrictEqual(['opens the file'])
   })
 
-  it('carries no pencil, and no editor spliced under a row', () => {
+  it('carries no pencil, and no editor spliced under a row', async () => {
     const { tab } = createTab()
+    await openSystemSettings(tab)
     expect(tab.findAll('.cm-editor')).toHaveLength(0)
     expect(tab.text()).not.toContain('JSON5')
   })
 
-  it('draws the settings it reads out of the file, each under the group it is in', () => {
+  it('switches to dedicated system detail and returns on back', async () => {
     const { tab } = createTab()
-    expect(tab.text()).toContain(words.indexingModel)
-    expect(tab.text()).toContain(words.ocrModel)
-    expect(tab.text()).toContain(words.transcribing)
-    expect(tab.text()).toContain(words.agentUse)
+    expect(tab.find('.system-detail').exists()).toBe(false)
+    await openSystemSettings(tab)
+    expect(tab.find('.system-detail').exists()).toBe(true)
+    expect(tab.find('.system-detail__where').exists()).toBe(true)
+
+    await tab.find('.system-detail__back').trigger('click')
+    await nextTick()
+    expect(tab.find('.system-detail').exists()).toBe(false)
+    expect(tab.find('.system-row').exists()).toBe(true)
   })
 
-  it('holds the number of headings inside what the vault says it takes', () => {
-    const { tab } = createTab()
-    const headings = tab.get(control('settings-headings'))
+  it('switches to full-page plugin detail when a plugin is selected, and returns on back', async () => {
+    const samplePlugin: PluginInfo = {
+      id: 'md.numen.engines.ocr',
+      name: 'Document OCR',
+      version: '1.0.0',
+      description: 'Optical character recognition',
+      isActive: true,
+      capabilities: [],
+      secrets: [],
+      storedSecrets: [],
+      consent: 'none',
+      settings: [],
+    }
+    const { tab } = createTab(false, {}, [samplePlugin])
 
-    expect(headings.attributes('aria-valuemin')).toBe('2')
-    expect(headings.attributes('aria-valuemax')).toBe('9')
-  })
-
-  it('draws each of the two proofreadings alongside the thing it puts right', () => {
-    const { tab } = createTab()
-    const ocr = tab.get('section[aria-label="' + words.ocr + '"]')
-    const transcriptionSection = tab.get('section[aria-label="' + words.transcription + '"]')
-
-    expect(ocr.text()).toContain(words.ocrProofread)
-    expect(ocr.find(control('settings-ocr-proofread')).exists()).toBe(true)
-    expect(transcriptionSection.text()).toContain(words.transcriptProofread)
-    expect(transcriptionSection.find(control('settings-transcript-proofread')).exists()).toBe(true)
-  })
-
-  it('reads each of the two proofreadings out of its own path', () => {
-    const { tab } = createTab(false, {
-      indexing: {
-        recognition: { proofread: { with: 'careful' } },
-        transcription: { proofread: { with: 'quick' } },
-      },
-    })
-    expect(tab.get(control('settings-ocr-proofread')).text()).toContain('careful')
-    expect(tab.get(control('settings-transcript-proofread')).text()).toContain('quick')
-  })
-
-  it('writes each of the two proofreadings into its own path', async () => {
-    const { tab, recordedWrites } = createTab(false, {
-      indexing: { proofreading: { profiles: { careful: {} } } },
-    })
-    await openMenu(tab, 'settings-transcript-proofread')
-    await chooseItem('careful')
-    expect(recordedWrites).toStrictEqual([
-      { at: ['indexing', 'transcription', 'proofread', 'with'], value: '"careful"' },
-    ])
-  })
-
-  it('turns whether each of the two is put right unasked', async () => {
-    const { tab, recordedWrites } = createTab()
-    await tab.get(control('settings-ocr-always')).trigger('click')
-    await tab.get(control('settings-transcript-always')).trigger('click')
-    expect(recordedWrites).toStrictEqual([
-      { at: ['indexing', 'recognition', 'proofread', 'automatically'], value: 'true' },
-      { at: ['indexing', 'transcription', 'proofread', 'automatically'], value: 'true' },
-    ])
-  })
-
-  it('opens a model on what the file names, and says which one is the default', async () => {
-    const { tab } = createTab(false, { agent: { claude: { model: 'opus' } } })
-    expect(tab.get(control('settings-agent-model')).text()).toContain('opus')
-
-    await openMenu(tab, 'settings-agent-model')
-    expect(getMenuItems()).toContain(`Whatever this machine answers with — ${words.byDefault}`)
-  })
-
-  it('names a model by its own words, and addresses it underneath', async () => {
-    const { tab } = createTab()
-    await openMenu(tab, 'settings-ocr')
-    expect(getMenuItems()).toStrictEqual([
-      `Tiny, small — ${words.byDefault}`,
-      'eslav_rec_mobile.onnx',
-    ])
-    expect(document.body.querySelector('.menu__detail')?.textContent?.trim()).toBe(
-      `${words.present} · https://models.example/held/Tiny_rec.onnx`,
-    )
-  })
-
-  it('writes the readable name on the line, never the address it is fetched from', () => {
-    const { tab } = createTab(false, {
-      indexing: { recognition: { recognise: { name: OWN } } },
-    })
-    const line = tab.get(control('settings-ocr'))
-
-    expect(line.text()).toContain('eslav_rec_mobile.onnx')
-    expect(line.text()).not.toContain('https://')
-  })
-
-  it('draws a value the presets do not name as the person’s own, and says nothing else', async () => {
-    const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab } = createTab(false, {
-      indexing: { recognition: { recognise: { name: own } } },
-    })
-    expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
-    expect(tab.text()).not.toMatch(/not found/i)
-
-    await openMenu(tab, 'settings-ocr')
-    expect(getMenuItems()[0]).toBe('Other_rec.onnx')
-    expect(getMenuGroups()[0]).toBe(words.owned)
-  })
-
-  it('leaves a value the presets do not name alone while nothing is chosen', async () => {
-    const own = 'https://models.example/mine/Other_rec.onnx'
-    const { tab, recordedWrites } = createTab(false, {
-      indexing: { recognition: { recognise: { name: own } } },
-    })
-    await openMenu(tab, 'settings-ocr')
-    window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    // Click on the plugin row to select it
+    const rows = tab.findAll('.plugin-row')
+    expect(rows.length).toBe(2)
+    await rows[1]!.trigger('click')
     await nextTick()
 
-    expect(recordedWrites).toStrictEqual([])
-    expect(tab.get(control('settings-ocr')).text()).toContain('Other_rec.onnx')
-  })
+    // Full page plugin detail: system detail and list are gone
+    expect(tab.find('.system-row').exists()).toBe(false)
+    expect(tab.find('.plugin-detail').exists()).toBe(true)
+    expect(tab.find('.plugin-detail__title').text()).toContain('Document OCR')
 
-  it('writes everything a model decides, not its name alone', async () => {
-    const { tab, recordedWrites } = createTab()
-    await openMenu(tab, 'settings-agent-model')
-    await chooseItem('opus')
-    expect(recordedWrites).toStrictEqual([{ at: ['agent', 'claude', 'model'], value: '"opus"' }])
-  })
+    // Click back button
+    await tab.find('.plugin-detail__back').trigger('click')
+    await nextTick()
 
-  it('writes a setting it read out of the file back at its current position', async () => {
-    const { tab, recordedWrites } = createTab(false, { agent: { serve_tools: false } })
-    await tab.get(control('settings-agent-tools')).trigger('click')
-    expect(recordedWrites).toStrictEqual([{ at: ['agent', 'serve_tools'], value: 'true' }])
-  })
-
-  it('offers the profiles the file holds, and naming none', async () => {
-    const { tab } = createTab(false, {
-      indexing: { proofreading: { profiles: { careful: {}, quick: {} } } },
-    })
-    await openMenu(tab, 'settings-ocr-proofread')
-    expect(getMenuItems()).toStrictEqual([words.proofreadingNone, 'careful', 'quick'])
-  })
-
-  it('names every row by what it is, without leaning on the row above', () => {
-    const { tab } = createTab()
-    const names = tab.findAll('.settings__name').map((one) => one.text())
-    expect(names).toContain(words.transcribeUnder)
-    expect(names).not.toContain('Only under')
-    expect(names).toContain(words.agentTools)
-    expect(tab.text()).not.toContain('Tools on a port')
+    // Back to main settings page
+    expect(tab.find('.plugin-detail').exists()).toBe(false)
+    expect(tab.find('.system-row').exists()).toBe(true)
   })
 })

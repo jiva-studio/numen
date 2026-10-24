@@ -22,4 +22,24 @@ describe('createUnavailableKind', () => {
     expect(view.text()).toContain('reader:reader-pdf')
     expect(view.text()).toContain('/a.pdf')
   })
+
+  it('dispatches numen:open-settings event when Open Settings button is clicked', async () => {
+    const kind = createUnavailableKind('reader:reader-pdf')
+    const view = mount(kind.pane, { props: { state: kind.open('/a.pdf', 'tab') } })
+
+    let eventFired = false
+    const listener = () => {
+      eventFired = true
+    }
+    globalThis.addEventListener('numen:open-settings', listener)
+
+    const button = view.find('button')
+    expect(button.exists()).toBe(true)
+    expect(button.text()).toBe('Open Settings')
+
+    await button.trigger('click')
+    expect(eventFired).toBe(true)
+
+    globalThis.removeEventListener('numen:open-settings', listener)
+  })
 })

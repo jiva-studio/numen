@@ -196,6 +196,7 @@ function createWindowView(deps: {
       chosen: deps.chosen,
       today: deps.counter.day,
       reviewDays: deps.reviewDays,
+      done: deps.reviewDays,
       schedules: deps.schedules,
       start: deps.actions.start,
       startPreset: deps.actions.startPreset,
@@ -254,7 +255,7 @@ function useWindowListeners(deps: {
 }
 
 export const useWindow = () => {
-  const { vault, notices, counter, state, done, schedules, unreachable } = useWindowState()
+  const { vault, notices, counter, state, reviewDays, schedules, unreachable } = useWindowState()
   const panels = usePanels({
     card: () => state.card.value,
     unreachable: () => unreachable.value,
@@ -263,7 +264,7 @@ export const useWindow = () => {
   })
 
   const { on, goTo } = useWindowScreens({
-    done,
+    reviewDays,
     schedules,
     vault,
     state,
@@ -283,7 +284,7 @@ export const useWindow = () => {
     goTo,
     stop: counter.stop,
     count: counter.count,
-    done,
+    reviewDays,
     schedules,
     state,
     agentPanel: panels.agentPanel,
@@ -308,7 +309,7 @@ export const useWindow = () => {
     notices,
     actions,
     counter,
-    done,
+    reviewDays,
     schedules,
     chosen: selected,
     state,

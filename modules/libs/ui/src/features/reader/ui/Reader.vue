@@ -32,7 +32,7 @@ const props = withDefaults(defineProps<ReaderProps>(), {
   highlights: () => [],
   otherHighlights: () => [],
   words: () => READER_WORDS,
-  undrawn: 'This page would not come.',
+  undrawn: 'Failed to load page',
   paint: onNextFrame,
 })
 

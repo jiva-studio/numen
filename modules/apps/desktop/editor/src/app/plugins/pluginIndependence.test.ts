@@ -160,3 +160,16 @@ describe('restoring a session with a disabled plugin', () => {
     expect(window.tabs.value).toEqual([{ id, title: 'Plugin unavailable' }])
   })
 })
+
+describe('plugin autonomy', () => {
+  it('plugins directory contains no shared internal library folder', () => {
+    const sharedDir = join(pluginsDir, 'shared')
+    let isDirectoryPresent: boolean
+    try {
+      isDirectoryPresent = statSync(sharedDir).isDirectory()
+    } catch {
+      isDirectoryPresent = false
+    }
+    expect(isDirectoryPresent).toBe(false)
+  })
+})

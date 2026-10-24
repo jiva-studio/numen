@@ -75,16 +75,37 @@ export interface CommandsDepsOptions {
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
 
+  const tabRuns: RunSupport = {
+    canRun(run: string) {
+      if (run === 'plex' || run === 'files' || run === 'agent') {
+        if (!windowTabs.hasKind(run)) return false
+      }
+      return runs.canRun(run)
+    },
+    cannotRun(run: string) {
+      runs.cannotRun(run)
+    },
+  }
+
   const palette = useSearch(core, words, { coverage })
-  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
-    ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
-    ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
-      id: cmd.id,
-      text: cmd.title,
-      group: 'window' as const,
-      isOffered: () => cmd.isOffered(),
-    })) ?? []),
-  ])
+  const commands = useCommandPalette(
+    core,
+    words,
+    getTarget,
+    knows,
+    kept,
+    tabRuns,
+    undefined,
+    () => [
+      ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+      ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
+        id: cmd.id,
+        text: cmd.title,
+        group: 'window' as const,
+        isOffered: () => cmd.isOffered(),
+      })) ?? []),
+    ],
+  )
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

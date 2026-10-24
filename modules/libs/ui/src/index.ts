@@ -28,6 +28,7 @@ export { Slider } from './shared/ui/slider'
 
 /** Two to four choices side by side, one of them chosen. */
 export { SegmentedControl } from './shared/ui/segmented'
+export type { SegmentedChoice } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
 export { Select } from './shared/ui/select'

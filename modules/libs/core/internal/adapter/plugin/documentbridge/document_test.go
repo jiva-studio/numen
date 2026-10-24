@@ -215,3 +215,27 @@ func TestRemoteDocumentRenderPageRejectsOutOfRangeInputs(t *testing.T) {
 		})
 	}
 }
+
+func TestIsTempDocument(t *testing.T) {
+	//nolint:usetesting // IsTempDocument validates files directly located in os.TempDir()
+	tempDoc := filepath.Join(os.TempDir(), "numen-doc-test123.pdf")
+	if err := os.WriteFile(tempDoc, []byte("temp"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Remove(tempDoc)
+
+	if !IsTempDocument(tempDoc) {
+		t.Fatalf("expected IsTempDocument(%q) to be true", tempDoc)
+	}
+
+	//nolint:usetesting // IsTempDocument validates files directly located in os.TempDir()
+	other := filepath.Join(os.TempDir(), "other-file.pdf")
+	if IsTempDocument(other) {
+		t.Fatalf("expected IsTempDocument(%q) to be false", other)
+	}
+
+	nonTemp := filepath.Join(t.TempDir(), "numen-doc-sub.pdf")
+	if IsTempDocument(nonTemp) {
+		t.Fatalf("expected IsTempDocument(%q) in non-system temp to be false", nonTemp)
+	}
+}

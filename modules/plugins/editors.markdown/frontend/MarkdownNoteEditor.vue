@@ -2,7 +2,7 @@
 /**
  * Standalone Markdown and plain text editor tab component using CodeMirror 6.
  */
-import { computed, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef, watch } from 'vue'
 import { Editor } from '@numen/ui'
 import type { Extension } from '@codemirror/state'
 import { useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
@@ -36,6 +36,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const editorRef = useTemplateRef<EditorHandle>('editorRef')
+const isDismissed = ref(false)
 
 const {
   docContent,
@@ -47,6 +48,10 @@ const {
   onSave,
   setContent,
 } = useMarkdownDocument(props, emit, editorRef)
+
+watch(displayErrorMessage, () => {
+  isDismissed.value = false
+})
 
 const editorLanguage = computed(() => {
   const p =
@@ -62,6 +67,10 @@ const editorLanguage = computed(() => {
 })
 
 /* -------------------------------- Handlers -------------------------------- */
+function onDismiss() {
+  isDismissed.value = true
+}
+
 function onOpen(url: string) {
   emit('open', url)
 }
@@ -79,13 +88,18 @@ defineExpose({
 
 <template>
   <div class="markdown-note-editor note">
-    <p v-if="displayErrorMessage" class="caution" role="alert">{{ displayErrorMessage }}</p>
+    <div v-if="displayErrorMessage && !isDismissed" class="caution" role="alert">
+      <span class="caution__text">{{ displayErrorMessage }}</span>
+      <button type="button" class="caution__dismiss" aria-label="Dismiss banner" @click="onDismiss">
+        &times;
+      </button>
+    </div>
     <Editor
       ref="editorRef"
       :model-value="docContent"
       :language="editorLanguage"
       is-live
-      :readonly="isReadOnly || isLoading"
+      :is-readonly="isReadOnly || isLoading"
       v-bind="props.extensions ? { extensions: props.extensions as Extension } : {}"
       class="markdown-note-editor__pane note__text"
       @update:model-value="onUpdateModelValue"
@@ -104,11 +118,41 @@ defineExpose({
 }
 
 .caution {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
   margin: 0;
-  padding: 0.5rem 1rem;
-  background-color: var(--numen-warning-subtle, #fef3c7);
-  color: var(--numen-warning, #b45309);
-  font-size: 0.875rem;
+  padding: 0.4rem 1rem;
+  font-family: var(--numen-font-sans, inherit);
+  font-size: var(--numen-text-2, 0.875rem);
+  background-color: var(--numen-caution-bg, light-dark(#f7e9c8, #42321c));
+  color: var(--numen-caution-fg, light-dark(#8a5410, #eec26a));
+  overflow-wrap: break-word;
+}
+
+.caution__text {
+  flex: 1;
+}
+
+.caution__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.125rem 0.375rem;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 1.125rem;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: var(--numen-radius-pill, 9999px);
+  opacity: 0.8;
+}
+
+.caution__dismiss:hover {
+  opacity: 1;
+  background-color: var(--numen-highlight, rgba(0, 0, 0, 0.08));
 }
 
 .markdown-note-editor__pane {

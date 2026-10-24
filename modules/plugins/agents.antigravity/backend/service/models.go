@@ -8,12 +8,59 @@ import (
 	"os/exec"
 	"slices"
 	"strings"
+	"sync"
+	"time"
+)
+
+const (
+	modelListLimit = 15 * time.Second
+	failureBackoff = 30 * time.Second
 )
 
 // antigravityModel is one model the program lists.
 type antigravityModel struct {
 	Name  string
 	Title string
+}
+
+type modelCache[M any] struct {
+	mu        sync.Mutex
+	key       string
+	models    []M
+	isCached  bool
+	failedKey string
+	failedAt  time.Time
+	now       func() time.Time
+}
+
+func (c *modelCache[M]) getNow() time.Time {
+	if c.now == nil {
+		return time.Now()
+	}
+	return c.now()
+}
+
+func (c *modelCache[M]) get(ctx context.Context, key string, list func(context.Context) ([]M, error)) []M {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.isCached && c.key == key {
+		return c.models
+	}
+	if c.failedKey == key && c.getNow().Sub(c.failedAt) < failureBackoff {
+		return nil
+	}
+	asking, stop := context.WithTimeout(ctx, modelListLimit)
+	defer stop()
+	models, err := list(asking)
+	if err != nil {
+		if ctx.Err() == nil {
+			c.failedKey, c.failedAt = key, c.getNow()
+		}
+		return nil
+	}
+	c.key, c.models, c.isCached = key, models, true
+	c.failedKey = ""
+	return c.models
 }
 
 // listAntigravityModels asks the program for its models: the output of "models", one model to a

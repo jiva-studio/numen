@@ -32,6 +32,7 @@ const installation = computed(() => props.state.installation)
 
 <style scoped>
 .settings__group {
+  inline-size: 100%;
   max-inline-size: var(--settings-measure, 54rem);
   margin-block-end: var(--settings-apart, 1.75rem);
   margin-inline: auto;

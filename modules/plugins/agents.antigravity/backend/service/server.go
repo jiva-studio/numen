@@ -7,15 +7,13 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/models"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 type agentServer struct {
 	agentrun.Service
-	models models.Cache[antigravityModel]
+	models modelCache[antigravityModel]
 }
 
 func (s *agentServer) AskAgent(
@@ -32,7 +30,7 @@ func (s *agentServer) AskAgent(
 	}
 
 	s.resolveModel(ctx, req.Msg)
-	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
+	work, err := start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
 	if err != nil {
 		return stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
@@ -58,7 +56,7 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	command := programs.ProgramCommand(req.Msg.GetCommands(), "antigravity")
+	command := programCommand(req.Msg.GetCommands(), "antigravity")
 	antigravity := &numenv1.AgentProgram{
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
 	}
@@ -75,7 +73,7 @@ func (s *agentServer) GetAgentPrograms(
 // getFamilies are the models the program lists, the ones that differ by level folded into one.
 func (s *agentServer) getFamilies(ctx context.Context, command []string) []reasoning.Family {
 	list := func(ctx context.Context) ([]antigravityModel, error) { return listAntigravityModels(ctx, command) }
-	items := s.models.Get(ctx, strings.Join(command, " "), list)
+	items := s.models.get(ctx, strings.Join(command, " "), list)
 	models := make([]reasoning.Listed, 0, len(items))
 	for _, one := range items {
 		models = append(models, reasoning.Listed{Name: one.Name, Title: one.Title})

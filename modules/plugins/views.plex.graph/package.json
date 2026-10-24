@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Modular knowledge graph visualizer and plexus network explorer plugin for Numen",
+  "description": "Modular knowledge graph visualizer and plex explorer plugin for Numen",
   "main": "./frontend/index.ts",
   "types": "./frontend/index.ts",
   "scripts": {

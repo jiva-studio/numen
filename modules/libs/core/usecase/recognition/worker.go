@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
@@ -249,12 +250,34 @@ func (r *Worker) proofread(ctx context.Context, v domain.Vault, path string) {
 	_, _ = r.proofreadRecognition(ctx, v, path, nil)
 }
 
+func (r *Worker) pruneMissingBook(ctx context.Context, v domain.Vault, path string) bool {
+	if r.with.Readers == nil {
+		return false
+	}
+	reader, err := r.with.Readers.Open(v)
+	if err != nil {
+		return false
+	}
+	_, statErr := reader.GetFingerprint(ctx, path)
+	if statErr == nil || (!errors.Is(statErr, fs.ErrNotExist) && !errors.Is(statErr, vaultport.ErrNotANote)) {
+		return false
+	}
+	if r.with.Sources != nil {
+		_ = r.with.Sources.RemoveSources(ctx, v.ID, domain.KindBook, []string{path})
+	}
+	return true
+}
+
 func (r *Worker) proofreadRecognition(
 	ctx context.Context,
 	v domain.Vault,
 	path string,
 	onBegan func(ProofreadResult),
 ) (ProofreadResult, error) {
+	if r.pruneMissingBook(ctx, v, path) {
+		return ProofreadResult{Path: path, IsNone: true}, nil
+	}
+
 	proofreading := r.with.Proofreading
 	right, target, err := CreateProofread(proofreading, r.with.Readers, r.with.Derived)
 	if err != nil {
@@ -339,43 +362,55 @@ func (r *Worker) collect(
 		if ctx.Err() != nil {
 			return
 		}
-		id := run.GetProofreadID(one.Path)
-		right, err := NewProofread(r.with.Readers, r.with.Derived, delta)
-		if err != nil {
-			r.line.Report(run.Task{
-				ID: id, Title: taskProofreadingRecognition,
-				About: one.Path, Error: err.Error(),
-			}, true)
-			continue
-		}
-		right.Hash = one.Hash
-		right.Cut = r.Cut
-		right.OnProgress = func(res ProofreadResult) {
-			r.line.Report(run.Task{
-				ID: id, Title: taskProofreadingRecognition, About: one.Path,
-				Count: int64(res.Read), Total: int64(res.Pages),
-			}, false)
-		}
-		res, err := right.Execute(ctx, v, one.Path)
+		r.collectOne(ctx, v, one, delta)
+	}
+}
 
-		switch {
-		case err != nil:
-			r.line.Report(run.Task{
-				ID: id, Title: taskProofreadingRecognition,
-				About: one.Path, Error: err.Error(),
-			}, false)
-		case res.IsBusy:
-			// The recognition is held by another run, and that run is the one
-			// whose progress the list carries.
-		case res.IsNone, res.Read >= res.Pages:
-			// A recognition with nothing left to put right is a run nobody is
-			// waiting on.
-			r.finishTask(id)
-		default:
-			r.line.Report(run.Task{
-				ID: id, Title: taskProofreadingRecognition, About: one.Path,
-				Count: int64(res.Read), Total: int64(res.Pages),
-			}, false)
-		}
+func (r *Worker) collectOne(
+	ctx context.Context,
+	v domain.Vault,
+	one sourceport.SourceText,
+	delta recognitionport.Proofreader,
+) {
+	if r.pruneMissingBook(ctx, v, one.Path) {
+		return
+	}
+	id := run.GetProofreadID(one.Path)
+	right, err := NewProofread(r.with.Readers, r.with.Derived, delta)
+	if err != nil {
+		r.line.Report(run.Task{
+			ID: id, Title: taskProofreadingRecognition,
+			About: one.Path, Error: err.Error(),
+		}, true)
+		return
+	}
+	right.Hash = one.Hash
+	right.Cut = r.Cut
+	right.OnProgress = func(res ProofreadResult) {
+		r.line.Report(run.Task{
+			ID: id, Title: taskProofreadingRecognition, About: one.Path,
+			Count: int64(res.Read), Total: int64(res.Pages),
+		}, false)
+	}
+	res, err := right.Execute(ctx, v, one.Path)
+
+	switch {
+	case err != nil:
+		r.line.Report(run.Task{
+			ID: id, Title: taskProofreadingRecognition,
+			About: one.Path, Error: err.Error(),
+		}, false)
+	case res.IsBusy:
+		// The recognition is held by another run, and that run is the one
+		// whose progress the list carries.
+	case res.IsNone, res.Read >= res.Pages:
+		// A recognition with nothing left to put right is a run nobody is
+		// waiting on.
+		r.finishTask(id)
+	default:
+		r.line.Report(run.Task{
+			ID: id, Title: taskProofreadingRecognition, About: one.Path,
+			Count: int64(res.Read), Total: int64(res.Pages),
+		}, false)
 	}
 }

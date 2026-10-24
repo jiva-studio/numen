@@ -17,6 +17,7 @@ import {
   settle,
 } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
+import { WORDS } from '@/shared/words'
 
 describe('the four commands over how the window is drawn', () => {
   /** What the mode's element holds while the tokens are read as a pair. */
@@ -354,7 +355,7 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(getRemainingRows()).toStrictEqual([])
       expect(document.body.querySelector('[data-palette="silence"]')?.textContent?.trim()).toBe(
-        'Nothing',
+        WORDS.noneFound,
       )
     })
 

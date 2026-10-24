@@ -400,3 +400,45 @@ func TestAProofreadingWithoutConsentReturnsWhereToAllowIt(t *testing.T) {
 		t.Errorf("got %+v", pos)
 	}
 }
+
+// A missing book is not reported as a failed task and is pruned from the sources index.
+func TestAMissingBookIsNotReportedAsFailedAndIsPruned(t *testing.T) {
+	shelved := newLibrary()
+	v := domain.Vault{ID: "v", Path: "/vault"}
+	vStore := newStore()
+	vStore.put(v.ID, domain.Source{
+		Fingerprint: domain.Fingerprint{Path: "missing.pdf", Kind: domain.KindBook},
+		Producer:    "ocr",
+	})
+
+	delta := &puts{}
+	w := newWatched(t, nil)
+	w.Worker.with.Readers = vaults{v.ID: shelved}
+	w.Worker.with.Sources = vStore
+	w.Worker.with.Proofreading = run.ProofreadingConfig{
+		IsNamed: true, IsAutomatic: true,
+		By: func() (recognitionport.Proofreader, error) {
+			return delta, nil
+		},
+	}
+
+	w.TakeUp(t.Context(), vStore, v)
+	w.Wait()
+
+	if len(delta.lines()) != 0 {
+		t.Errorf("expected proofreader not to be asked, got %v", delta.lines())
+	}
+
+	for _, task := range w.tasks.List() {
+		if task.Error != "" {
+			t.Errorf("expected no failed task for missing book, got: %+v", task)
+		}
+	}
+	sources, err := vStore.GetRecognisedSources(t.Context(), v.ID, domain.KindBook)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(sources) != 0 {
+		t.Errorf("expected missing source to be pruned, got %v", sources)
+	}
+}

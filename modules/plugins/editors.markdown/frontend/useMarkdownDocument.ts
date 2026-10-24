@@ -48,14 +48,136 @@ function extractBodyValue(source: unknown): string {
   return ''
 }
 
-function hasInvalidBracket(rawYaml: string): boolean {
-  for (const line of rawYaml.split(/\r?\n/)) {
-    const cleanLine = line.trim()
-    if (cleanLine.includes('[') && !cleanLine.includes(']')) {
-      return true
+function extractErrorString(source: unknown): string {
+  if (typeof source === 'string') return source.trim()
+  if (typeof source === 'object' && source !== null && 'value' in source) {
+    const val = (source as { value: unknown }).value
+    if (typeof val === 'string') return val.trim()
+  }
+  return ''
+}
+
+interface DelimiterState {
+  inSingleQuote: boolean
+  inDoubleQuote: boolean
+  bracketDepth: number
+  braceDepth: number
+}
+
+function scanQuoteChar(
+  char: string,
+  nextChar: string | undefined,
+  state: DelimiterState,
+): { skipNext: boolean; isHandled: boolean } {
+  if (state.inSingleQuote) {
+    if (char === "'") {
+      if (nextChar === "'") return { skipNext: true, isHandled: true }
+      state.inSingleQuote = false
     }
+    return { skipNext: false, isHandled: true }
+  }
+  if (state.inDoubleQuote) {
+    if (char === '\\') return { skipNext: true, isHandled: true }
+    if (char === '"') state.inDoubleQuote = false
+    return { skipNext: false, isHandled: true }
+  }
+  return { skipNext: false, isHandled: false }
+}
+
+function updateBracketDepth(char: string, state: DelimiterState): void {
+  if (char === '[') state.bracketDepth++
+  else if (char === ']') state.bracketDepth--
+  else if (char === '{') state.braceDepth++
+  else if (char === '}') state.braceDepth--
+}
+
+function scanCharDelimiters(
+  char: string,
+  nextChar: string | undefined,
+  state: DelimiterState,
+): { skipNext: boolean; isDone: boolean } {
+  const quote = scanQuoteChar(char, nextChar, state)
+  if (quote.isHandled) return { skipNext: quote.skipNext, isDone: false }
+
+  if (char === '#') return { skipNext: false, isDone: true }
+  if (char === "'") state.inSingleQuote = true
+  else if (char === '"') state.inDoubleQuote = true
+  else updateBracketDepth(char, state)
+
+  return { skipNext: false, isDone: false }
+}
+
+function scanLineDelimiters(line: string, state: DelimiterState): boolean {
+  for (let i = 0; i < line.length; i++) {
+    const res = scanCharDelimiters(line[i]!, line[i + 1], state)
+    if (res.skipNext) i++
+    if (res.isDone) break
+    if (state.bracketDepth < 0 || state.braceDepth < 0) return true
   }
   return false
+}
+
+function isTopLevelKeyLine(line: string, trimmed: string): boolean {
+  return (
+    !line.startsWith(' ') &&
+    !line.startsWith('\t') &&
+    !trimmed.startsWith('#') &&
+    !trimmed.startsWith('-')
+  )
+}
+
+function checkTopLevelMappingLine(trimmed: string, topKeys: Set<string>): boolean {
+  const colonIdx = trimmed.indexOf(':')
+  if (colonIdx <= 0) return true
+  const key = trimmed.slice(0, colonIdx).trim()
+  if (topKeys.has(key)) return true
+  topKeys.add(key)
+  const after = trimmed.slice(colonIdx + 1).trim()
+  return after.endsWith(':') && !after.startsWith('{') && !after.startsWith('[')
+}
+
+function isTopLevel(state: DelimiterState): boolean {
+  return (
+    state.bracketDepth === 0 &&
+    state.braceDepth === 0 &&
+    !state.inSingleQuote &&
+    !state.inDoubleQuote
+  )
+}
+
+function isMalformedLine(
+  line: string,
+  trimmed: string,
+  state: DelimiterState,
+  topKeys: Set<string>,
+): boolean {
+  if (
+    isTopLevel(state) &&
+    isTopLevelKeyLine(line, trimmed) &&
+    checkTopLevelMappingLine(trimmed, topKeys)
+  ) {
+    return true
+  }
+  return scanLineDelimiters(line, state)
+}
+
+function hasMalformedFrontmatter(rawYaml: string): boolean {
+  const state: DelimiterState = {
+    inSingleQuote: false,
+    inDoubleQuote: false,
+    bracketDepth: 0,
+    braceDepth: 0,
+  }
+  const topKeys = new Set<string>()
+
+  for (const line of rawYaml.split(/\r?\n/)) {
+    const trimmed = line.trim()
+    if (trimmed && isMalformedLine(line, trimmed, state, topKeys)) return true
+  }
+
+  return (
+    state.inSingleQuote || state.inDoubleQuote || state.bracketDepth !== 0 || state.braceDepth !== 0
+  )
 }
 
 function checkFrontmatterError(content: string): string {
@@ -69,7 +191,7 @@ function checkFrontmatterError(content: string): string {
     return ''
   }
   const rawYaml = rest.slice(0, delimiterMatch.index)
-  if (hasInvalidBracket(rawYaml)) {
+  if (hasMalformedFrontmatter(rawYaml)) {
     return 'the frontmatter of this note cannot be read'
   }
   return ''
@@ -115,15 +237,14 @@ export function useMarkdownDocument(
     return loading === true
   })
 
-  const displayErrorMessage = computed(() => {
-    if (props.errorMessage) return props.errorMessage
-    const stateErr = props.state?.errorMessage
-    if (typeof stateErr === 'string' && stateErr) return stateErr
-    if (typeof stateErr === 'object' && stateErr !== null && 'value' in stateErr) {
-      const val = (stateErr as { value?: unknown }).value
-      if (typeof val === 'string' && val) return val
-    }
-    return frontmatterError.value
+  const displayErrorMessage = computed<string>(() => {
+    const propErr = extractErrorString(props.errorMessage)
+    if (propErr) return propErr
+    const stateErr = extractErrorString(props.state?.errorMessage)
+    if (stateErr) return stateErr
+    const fmErr = frontmatterError.value
+    if (typeof fmErr === 'string' && fmErr.trim()) return fmErr.trim()
+    return ''
   })
 
   watch(

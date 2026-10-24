@@ -27,7 +27,7 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 			"echo plain text\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -58,7 +58,7 @@ func TestTheMessagesOfCodexAreSaid(t *testing.T) {
 			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,7 +76,7 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}

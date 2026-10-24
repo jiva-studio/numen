@@ -145,6 +145,41 @@ describe('createPluginHost', () => {
     expect(closeTabsForPlugin).toHaveBeenCalledWith('test.plugin')
   })
 
+  it('registers context menu, removes it on dispose, and restores on reactivate', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    const ctx1 = host.createContext('sample.plugin')
+
+    ctx1.registerContextMenu({
+      id: 'menu-1',
+      text: 'Action 1',
+      target: 'note',
+      handler: async () => {},
+    })
+
+    expect(
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+    ).toHaveLength(1)
+
+    // Plugin is deactivated / disposed
+    host.disposePlugin('sample.plugin')
+    expect(
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+    ).toHaveLength(0)
+
+    // Plugin is reactivated (new context created and registered)
+    const ctx2 = host.createContext('sample.plugin')
+    ctx2.registerContextMenu({
+      id: 'menu-1',
+      text: 'Action 1',
+      target: 'note',
+      handler: async () => {},
+    })
+    expect(
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+    ).toHaveLength(1)
+  })
+
   it('delegates getSetting and onSettingChange through host', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)

@@ -3,47 +3,67 @@
  * The settings tab: everything in numen.json a person can change, grouped by
  * the part of the application it governs.
  */
-import { computed } from 'vue'
-import { Button } from '@numen/ui'
+import { computed, ref, watch } from 'vue'
 import type { SettingsTabState } from '../types'
-import WindowSettingsSection from './WindowSettingsSection.vue'
-import MediaSettingsSection from './MediaSettingsSection.vue'
-import PerformanceSettingsSection from './PerformanceSettingsSection.vue'
-import AgentSettingsSection from './AgentSettingsSection.vue'
-import AiSettingsSection from './AiSettingsSection.vue'
-import PluginSettingsSection from './PluginSettingsSection.vue'
-import PluginFailureSection from './PluginFailureSection.vue'
-import { WORDS as words } from '../words'
+import type { PluginInfo } from '@/entities/settings'
+import SystemDetail from './SystemDetail.vue'
+import { PluginsList, PluginDetail } from './plugins'
 
-/* ----------------------------- Props & Emits ------------------------------ */
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const installation = computed(() => props.state.installation)
+const initialPluginId = props.state.initialPluginId
+const selectedPluginId = ref<string | null>(initialPluginId?.value ?? null)
+
+watch(
+  () => initialPluginId?.value,
+  (newId) => {
+    if (newId !== undefined) {
+      selectedPluginId.value = newId
+    }
+  },
+)
+
+const plugins = computed<readonly PluginInfo[]>(() => props.state.installation.plugins?.value ?? [])
+const selectedPlugin = computed<PluginInfo | undefined>(() =>
+  plugins.value.find((one) => one.id === selectedPluginId.value),
+)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onOpenFile() {
-  installation.value.openFile()
+function onSelectPlugin(pluginId: string): void {
+  selectedPluginId.value = pluginId
+  if (initialPluginId) {
+    initialPluginId.value = pluginId
+  }
+}
+
+function onBack(): void {
+  selectedPluginId.value = null
+  if (initialPluginId) {
+    initialPluginId.value = null
+  }
 }
 </script>
 
 <template>
   <div class="settings">
     <div class="settings__page">
-      <div class="settings__where">
-        <p class="settings__file">{{ installation.file.value || words.file }}</p>
-        <Button variant="outline" size="small" @click="onOpenFile">
-          {{ words.opens }}
-        </Button>
+      <div class="settings__main">
+        <SystemDetail v-if="selectedPluginId === 'system'" :state="props.state" @back="onBack" />
+        <PluginDetail
+          v-else-if="selectedPlugin"
+          :state="props.state"
+          :plugin="selectedPlugin"
+          @back="onBack"
+        />
+        <PluginsList
+          v-else
+          :state="props.state"
+          :plugins="plugins"
+          @select-plugin="onSelectPlugin"
+        />
       </div>
-
-      <WindowSettingsSection :state="props.state" />
-      <PluginFailureSection :state="props.state" />
-      <MediaSettingsSection :state="props.state" />
-      <PerformanceSettingsSection :state="props.state" />
-      <AgentSettingsSection :state="props.state" />
-      <AiSettingsSection :state="props.state" />
-      <PluginSettingsSection :state="props.state" />
     </div>
   </div>
 </template>
@@ -71,19 +91,9 @@ function onOpenFile() {
   padding: var(--numen-gutter);
 }
 
-.settings__where {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--numen-panel-gap);
+.settings__main {
+  inline-size: 100%;
   max-inline-size: var(--settings-measure);
-  margin: 0 auto var(--settings-apart);
-}
-
-.settings__file {
-  min-inline-size: 0;
-  margin: 0;
-  color: var(--numen-hushed);
-  overflow-wrap: anywhere;
+  margin-inline: auto;
 }
 </style>

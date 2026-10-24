@@ -28,14 +28,14 @@ export const WORDS = {
   read: 'Open the note',
   readAt: 'Open at this heading',
   readDocument: 'Open the document here',
-  noneFound: 'Nothing',
+  noneFound: 'No results found',
   notAsked: 'The vault could not answer',
   notEmbedded: 'This vault has not been read for meaning yet',
   /** The commands, and the groups they are drawn in. */
-  noteGroupTitle: 'This note',
-  overFile: 'This file',
-  overWindow: 'This window',
-  overVault: 'This vault',
+  noteGroupTitle: 'Note',
+  overFile: 'File',
+  overWindow: 'General',
+  overVault: 'Vault',
   beside: 'Open beside',
   child: 'New child note',
   parent: 'New parent note',
@@ -116,7 +116,7 @@ export const WORDS = {
   eraseVault: 'Erase vault',
   /** Why nothing can be done to a note: the vault never opened, or none is in front. */
   noVault: 'The vault could not be opened',
-  noNote: 'Nothing in front of you is a note',
+  noNote: 'No active note',
   /** The steps a command asks for: the chip beside the field, and the field. */
   command: 'Command',
   typeCommand: 'Type a command',

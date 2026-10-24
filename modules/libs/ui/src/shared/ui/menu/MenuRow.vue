@@ -24,6 +24,8 @@ defineEmits<{
   (event: 'choose'): void
   /** The keyboard came onto the row. */
   (event: 'focus'): void
+  /** The pointer moved onto the row. */
+  (event: 'hover'): void
 }>()
 
 defineSlots<{
@@ -36,7 +38,7 @@ const row = useTemplateRef<HTMLElement>('row')
 /** The keyboard onto this row, which the menu asks for. */
 const focus = (): void => row.value?.focus()
 
-defineExpose({ focus })
+defineExpose({ focus, getElement: () => row.value })
 </script>
 
 <template>
@@ -51,17 +53,26 @@ defineExpose({ focus })
     type="button"
     :role="current === null ? 'menuitem' : 'menuitemradio'"
     :aria-checked="current === null ? undefined : item.id === current"
+    :aria-haspopup="item.children && item.children.length > 0 ? 'menu' : undefined"
     tabindex="-1"
     :disabled="item.isDisabled"
     @focus="$emit('focus')"
+    @mouseenter="$emit('hover')"
     @click="$emit('choose')"
   >
     <span v-if="hasIcons" class="menu__icon flex shrink-0 items-center">
       <slot />
     </span>
-    <span class="flex min-w-0 flex-col">
+    <span class="flex min-w-0 flex-1 flex-col">
       <span class="menu__text">{{ item.text }}</span>
       <span v-if="item.detail" class="menu__detail">{{ item.detail }}</span>
+    </span>
+    <span
+      v-if="item.children && item.children.length > 0"
+      class="menu__chevron text-hushed ml-auto pl-2 text-xs"
+      aria-hidden="true"
+    >
+      ›
     </span>
   </button>
 </template>

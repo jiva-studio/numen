@@ -7,8 +7,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 var sha256Hex = regexp.MustCompile(`^[0-9a-f]{64}$`)
@@ -57,7 +55,7 @@ func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 	if IsFetched(cfg, target) {
 		t.Fatal("an empty folder holds the model")
 	}
-	pos := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
+	pos := filepath.Join(dir, GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
 	if err := os.WriteFile(pos, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +67,7 @@ func TestIsFetchedFindsAPinnedModelBelowItsSum(t *testing.T) {
 func TestIsFetchedRefusesAPinnedModelWithAnotherSum(t *testing.T) {
 	pinTestModel(t, "weights")
 	dir := t.TempDir()
-	pos := filepath.Join(dir, models.GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
+	pos := filepath.Join(dir, GetCacheName(pinnedTestAddress, pinnedSums.GetSum(pinnedTestAddress)))
 	if err := os.WriteFile(pos, []byte("corrupt"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -124,7 +122,7 @@ func TestIsFetchedUnpinnedModel(t *testing.T) {
 	if IsFetched(cfg, target) {
 		t.Fatal("an unpinned model not in cache counts as fetched")
 	}
-	cacheFile := filepath.Join(dir, models.GetCacheName(address, ""))
+	cacheFile := filepath.Join(dir, GetCacheName(address, ""))
 	if err := os.WriteFile(cacheFile, []byte("unpinned-weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -138,7 +136,7 @@ func TestIsFetchedNonAddressIgnoredEvenIfCacheFileExists(t *testing.T) {
 	cfg := Config{Dir: dir}
 	name := "custom-model.onnx"
 	target := RecogniserModel{Name: name}
-	cacheFile := filepath.Join(dir, models.GetCacheName(name, ""))
+	cacheFile := filepath.Join(dir, GetCacheName(name, ""))
 	if err := os.WriteFile(cacheFile, []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +149,7 @@ func TestIsFetchedReturnsFalseWhenGetDirFails(t *testing.T) {
 	dir := t.TempDir()
 	t.Chdir(dir)
 	address := "https://example.invalid/unpinned/model.onnx"
-	cacheName := models.GetCacheName(address, "")
+	cacheName := GetCacheName(address, "")
 	if err := os.WriteFile(filepath.Join(dir, cacheName), []byte("weights"), 0o644); err != nil {
 		t.Fatal(err)
 	}

@@ -6,37 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 )
-
-var claudeSearchPlaces = []string{
-	"~/.local/bin/claude",
-	"~/.claude/local/claude",
-	"~/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"/Applications/Claude Code URL Handler.app/Contents/MacOS/claude",
-	"~/.bun/bin/claude",
-	"~/.volta/bin/claude",
-	"~/.npm-global/bin/claude",
-	"~/.nvm/versions/node/*/bin/claude",
-	"~/.nix-profile/bin/claude",
-	"/opt/homebrew/bin/claude",
-	"/usr/local/bin/claude",
-	"/run/current-system/sw/bin/claude",
-	"/nix/var/nix/profiles/default/bin/claude",
-}
-
-// findClaude returns the command the environment names, else the Claude Code CLI where it is
-// installed. Empty is a program nowhere to be found.
-func findClaude() string {
-	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
-		return cmd
-	}
-	if cmd := os.Getenv("CLAUDE_COMMAND"); cmd != "" {
-		return cmd
-	}
-	return programs.Locate([]string{"claude"}, claudeSearchPlaces)
-}
 
 func writeMcpConfig(url, token string) (string, error) {
 	if url == "" || token == "" {

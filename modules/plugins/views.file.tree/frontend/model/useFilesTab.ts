@@ -100,6 +100,9 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
     type: 'note',
   }
 
+const hasMenuId = (items: readonly MenuEntry[], id: string): boolean =>
+  items.some((one) => one.id === id || (one.children && hasMenuId(one.children, id)))
+
 function useFileMenu(options: FileMenuDeps) {
   const { list, deps, renamingPath, creators, getNameOf, getSourceOf } = options
   const menu = ref<MenuRequest | null>(null)
@@ -125,12 +128,13 @@ function useFileMenu(options: FileMenuDeps) {
   }
 
   const isOffered = (id: string, path: string | null): boolean =>
-    OWN_IDS.has(id) || getMenuItems(path).some((one) => one.id === id)
+    OWN_IDS.has(id) || hasMenuId(getMenuItems(path), id)
 
   const chooseMenuItem = (id: string) => {
     const request = menu.value
     menu.value = null
     if (!request || !isOffered(id, request.path)) return
+    if (id === 'new' || id === 'relation') return
     if (id === NEW_NOTE) return void creators.createNote(request.path)
     if (id === NEW_DECK)
       return void creators.createOne(request.path, deps.createDeck, words.newDeck)

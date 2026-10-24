@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -252,7 +251,7 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 	cfg := engine.Defaults()
 	if modelsDir != "" {
 		cfg.Dir = modelsDir
-	} else if envDir := os.Getenv(models.EnvDir); envDir != "" {
+	} else if envDir := os.Getenv(engine.EnvDir); envDir != "" {
 		cfg.Dir = envDir
 	}
 	if runtime != "" {

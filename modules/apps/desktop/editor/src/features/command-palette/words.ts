@@ -224,4 +224,5 @@ export const PATH_WORDS = {
   deleteText: 'Delete the text',
   deleteCopy: 'Delete the copy',
   remove: 'Remove',
+  relation: 'Relation',
 }

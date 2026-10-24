@@ -44,9 +44,7 @@ require (
 	github.com/jiva-studio/numen/modules/libs/notes v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent v0.0.0 // indirect
-	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0 // indirect
-	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0 // indirect
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.acp v0.0.0
 	github.com/jiva-studio/numen/modules/plugins/agents.antigravity v0.0.0
@@ -97,8 +95,6 @@ replace github.com/jiva-studio/numen/modules/plugins/readers.epub => ../../plugi
 
 replace github.com/jiva-studio/numen/modules/plugins/readers.pdf => ../../plugins/readers.pdf
 
-replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault
-
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 
 replace github.com/jiva-studio/numen/modules/plugins/agents.numen => ../../plugins/agents.numen
@@ -122,8 +118,6 @@ replace github.com/jiva-studio/numen/modules/plugins/engines.embeddings => ../..
 replace github.com/jiva-studio/numen/modules/plugins/engines.ocr => ../../plugins/engines.ocr
 
 replace github.com/jiva-studio/numen/modules/plugins/engines.transcription => ../../plugins/engines.transcription
-
-replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx
 

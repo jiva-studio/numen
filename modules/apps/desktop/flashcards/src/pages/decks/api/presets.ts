@@ -29,6 +29,13 @@ export interface PresetsClient {
 
 /** What was answered about one deck's preset. */
 export interface DeckPreset {
+  readonly activePreset: {
+    path: string
+    name: string
+    settings: Settings
+    problems: readonly string[]
+    stopsOn: StopReason
+  }
   readonly held: {
     path: string
     name: string
@@ -56,14 +63,16 @@ export const readDeckPreset = async (
     if (!answer.preset || !settings) {
       return asFailure(formatErrorCodeMessage(answer.error) || PRESET_UNREADABLE_MESSAGE)
     }
+    const preset = {
+      path: answer.preset.path,
+      name: answer.preset.title,
+      settings: parseSettings(settings),
+      problems: answer.preset.problems,
+      stopsOn: answer.preset.stopsOn,
+    }
     return asValue({
-      held: {
-        path: answer.preset.path,
-        name: answer.preset.title,
-        settings: parseSettings(settings),
-        problems: answer.preset.problems,
-        stopsOn: answer.preset.stopsOn,
-      },
+      activePreset: preset,
+      held: preset,
     })
   } catch {
     // whose settings would not read, and that is what is drawn.

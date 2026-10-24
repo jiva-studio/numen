@@ -223,7 +223,7 @@ describe('the commands as they open', () => {
 
     void commands.setTyped('child')
 
-    expect(getItemIds(commands.groups)).toStrictEqual({ note: ['child'], window: [], vault: [] })
+    expect(getItemIds(commands.groups)).toStrictEqual({ note: ['child'] })
     expect(commands.groups.value[0]?.items[0]?.at).toStrictEqual([{ from: 4, to: 9 }])
   })
 })
@@ -232,20 +232,19 @@ describe('what is in front', () => {
   it('offers nothing over a note when a document is in front', () => {
     const { commands } = createPalette({ kind: 'document', path: '', title: '' })
 
-    expect(getItemIds(commands.groups).note).toStrictEqual([])
-    expect(getEmptyMessage(commands.groups, 'note')).toBe(words.noNote)
+    expect(getItemIds(commands.groups).note).toBeUndefined()
   })
 
   it('offers nothing over a note when the tab in front is of no kind', () => {
     const { commands } = createPalette({ kind: null, path: '', title: '' })
 
-    expect(getItemIds(commands.groups).note).toStrictEqual([])
+    expect(getItemIds(commands.groups).note).toBeUndefined()
   })
 
   it('offers nothing over a note when the plex is standing nowhere', () => {
     const { commands } = createPalette({ kind: 'plex', path: '', title: '' })
 
-    expect(getItemIds(commands.groups).note).toStrictEqual([])
+    expect(getItemIds(commands.groups).note).toBeUndefined()
   })
 
   /** A vault that will not open is the one a person most needs to leave. */
@@ -253,7 +252,6 @@ describe('what is in front', () => {
     const { commands } = createPalette({ isReady: false })
 
     expect(getItemIds(commands.groups)).toStrictEqual({
-      note: [],
       window: [
         'plex',
         'files',
@@ -273,7 +271,7 @@ describe('what is in front', () => {
       ],
       vault: ['openVault', 'newVault', 'renameVault', 'removeVault', 'eraseVault'],
     })
-    expect(getEmptyMessage(commands.groups, 'note')).toBe(words.noVault)
+    expect(commands.groups.value.some((g) => g.id === 'note')).toBe(false)
   })
 
   it('offers no close where the window holds no tab at all', () => {
@@ -287,7 +285,7 @@ describe('what is in front', () => {
 
     activeTarget.value = front({ kind: 'document', path: '', title: '' })
 
-    expect(getItemIds(commands.groups).note).toStrictEqual([])
+    expect(getItemIds(commands.groups).note).toBeUndefined()
   })
 })
 

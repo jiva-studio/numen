@@ -99,10 +99,6 @@ function useAgentSelection(deps: AgentTabDeps) {
   const selectModel = (option: AgentModelOption) => {
     selectedAgentId.value = option.agentId
     selectedModelId.value = option.modelId
-    if (deps.writeSetting) {
-      void deps.writeSetting(['agent', 'use'], option.agentId)
-      void deps.writeSetting(['agent', option.agentId, 'model'], option.modelId)
-    }
   }
 
   const selection = { selectedAgentId, selectedModelId, modelOptions, selectModel }
@@ -145,7 +141,6 @@ function useReasoningSelection(
   const selectReasoning = (id: string) => {
     const agentId = selection.selectedAgentId.value
     selected.value = { agentId, id }
-    if (deps.writeSetting) void deps.writeSetting(getReasoningAt(agentId), id)
   }
 
   return { reasoningLevels, selectedReasoningId, selectReasoning }
@@ -255,7 +250,8 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     if (location) deps.openFileAt(location.path, location.span)
   }
 
-  const api = {
+  // eslint-disable-next-line numen/max-composable-return-properties
+  return {
     ...conversation,
     ...selection,
     ...addresses,
@@ -265,5 +261,4 @@ export function useAgentConversation(conversation: Conversation, deps: AgentTabD
     openTurnSource,
     unreachable: deps.unreachable,
   }
-  return api
 }

@@ -16,6 +16,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
+  (event: 'action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -38,6 +39,10 @@ function onRetry() {
 function onDismiss() {
   emit('dismiss', props.task.id)
 }
+
+function onAction() {
+  emit('action', props.task.id)
+}
 </script>
 
 <template>
@@ -52,6 +57,11 @@ function onDismiss() {
       >
         {{ subtext }}
       </span>
+      <div v-if="task.state === 'failed' && task.actionLabel" class="task-item__failure-row">
+        <button type="button" class="task-item__action-link" @click.stop="onAction">
+          {{ task.actionLabel }} &rarr;
+        </button>
+      </div>
     </div>
 
     <div class="task-item__action">

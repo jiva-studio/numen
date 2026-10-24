@@ -6,7 +6,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/programs"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
@@ -29,7 +28,7 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
-	work, err := agentrun.Start(ctx, &s.Registry, newSpec(req.Msg))
+	work, err := start(ctx, &s.Registry, newSpec(req.Msg))
 	if err != nil {
 		return stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
@@ -55,7 +54,7 @@ func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
-	command := programs.ProgramCommand(req.Msg.GetCommands(), "codex")
+	command := programCommand(req.Msg.GetCommands(), "codex")
 
 	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled() || len(command) > 0}
 	if codex.GetIsInstalled() {

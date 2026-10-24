@@ -1,11 +1,9 @@
-// Package service is the backend of the Numen Agent plugin: numen's own agent, the harness of the
-// plugin SDK, mounted on a plugin server.
+// Package service is the backend of the Numen Agent plugin: numen's own agent, mounted on a plugin server.
 package service
 
 import (
 	"net/http"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/harness"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -13,7 +11,7 @@ import (
 // Mount registers the agent's services on s and hands the settings and secrets Configure receives to
 // the agent. The agent's tasks end when s closes.
 func Mount(s *server.Server) error {
-	agent := &harness.Server{}
+	agent := &Server{}
 	s.SetUpdateConfig(agent.Configure)
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agent.Close() })

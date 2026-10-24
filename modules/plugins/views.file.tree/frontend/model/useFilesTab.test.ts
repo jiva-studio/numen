@@ -177,11 +177,9 @@ describe('a row activated', () => {
 
 describe('what the menu offers', () => {
   it('is what the tab makes off every row', () => {
-    expect(
-      tab()
-        .one.getMenuItems(null)
-        .map((one) => one.id),
-    ).toStrictEqual(['newNote', 'newDeck', 'newStencil', 'newPreset', 'newFolder'])
+    const items = tab().one.getMenuItems(null)
+    expect(items.map((one) => one.id)).toStrictEqual(['new'])
+    expect(items[0]?.children?.map((one) => one.id)).toStrictEqual(['newNote', 'newFolder'])
   })
 
   it('is the window’s commands alone over a selection of several', async () => {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/fs"
 	"slices"
 	"sync"
 	"time"
@@ -243,6 +244,25 @@ func (t *Worker) getUntranscribed(ctx context.Context, existing sourceport.Sourc
 // leaves nothing to retry.
 func (t *Worker) closeResident() { _ = t.resident.close() }
 
+func (t *Worker) pruneMissingRecording(ctx context.Context, v domain.Vault, path string) bool {
+	if t.with.Readers == nil {
+		return false
+	}
+	reader, err := t.with.Readers.Open(v)
+	if err != nil {
+		return false
+	}
+	_, statErr := reader.GetFingerprint(ctx, path)
+	if statErr == nil || (!errors.Is(statErr, fs.ErrNotExist) && !errors.Is(statErr, vaultport.ErrNotANote)) {
+		return false
+	}
+	if t.with.Sources != nil {
+		_ = t.with.Sources.RemoveSources(ctx, v.ID, domain.KindRecording, []string{path})
+	}
+	t.recordAnswer(v, path)
+	return true
+}
+
 // transcribeOne is a single recording transcribed, put right, and reported.
 //
 // isUserStarted says whether a person is waiting to be told it began. Whatever it ends
@@ -250,6 +270,10 @@ func (t *Worker) closeResident() { _ = t.resident.close() }
 // words, silence and a file nothing here can open are all answers, and only
 // bytes somebody else holds mean come back later.
 func (t *Worker) transcribeOne(ctx context.Context, v domain.Vault, path string, isUserStarted bool) error {
+	if t.pruneMissingRecording(ctx, v, path) {
+		return nil
+	}
+
 	id := transcriptionID(path)
 	t.reportTask(run.Task{ID: id, Title: taskTranscribingRecording, About: path}, isUserStarted)
 

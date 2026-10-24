@@ -189,10 +189,9 @@ const mapToFrame = (point: Position): { window: Position; story: Position } => {
  */
 const sweep = async (from: Position, to: Position): Promise<void> => {
   const context = await import('vitest/browser')
-  await (context.commands as { sweep(from: Position, to: Position): Promise<void> }).sweep(
-    mapToFrame(from).window,
-    mapToFrame(to).window,
-  )
+  await (
+    context.commands as unknown as { sweep(from: Position, to: Position): Promise<void> }
+  ).sweep(mapToFrame(from).window, mapToFrame(to).window)
   await new Promise((isDone) => setTimeout(isDone, 16))
 }
 

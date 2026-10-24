@@ -175,4 +175,8 @@ const isFocused = (pane: Pane): boolean =>
     grid-template-columns: 1fr 1fr;
   }
 }
+
+.face :deep(.card-header) {
+  position: static;
+}
 </style>

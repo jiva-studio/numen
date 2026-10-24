@@ -4,12 +4,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
 type eventReader struct {
-	reader *agentrun.Reader
+	reader *reader
 
 	// isTextStreamed is set once the agent has said any of its answer in step updates.
 	isTextStreamed bool
@@ -19,7 +18,7 @@ type eventReader struct {
 }
 
 // newEventHandler is what the run calls with each event of the Antigravity output.
-func newEventHandler(r *agentrun.Reader) func(map[string]any) {
+func newEventHandler(r *reader) func(map[string]any) {
 	return (&eventReader{reader: r}).handle
 }
 

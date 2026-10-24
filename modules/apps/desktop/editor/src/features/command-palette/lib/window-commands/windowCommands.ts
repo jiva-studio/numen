@@ -51,15 +51,20 @@ export const createWindowNavigationCommands = (words: Words, agent: string): rea
     text: words.newPlex,
     ...createRowKeys('plex', agent),
     group: 'window',
-    isOffered: isAlwaysOffered,
+    isOffered: (_target, runs) => runs.canRun('plex'),
   },
-  { id: 'files', text: words.files, group: 'window', isOffered: isAlwaysOffered },
+  {
+    id: 'files',
+    text: words.files,
+    group: 'window',
+    isOffered: (_target, runs) => runs.canRun('files'),
+  },
   {
     id: 'agent',
     text: words.newAgent,
     ...createRowKeys('agent', agent),
     group: 'window',
-    isOffered: isAlwaysOffered,
+    isOffered: (_target, runs) => runs.canRun('agent'),
   },
   {
     id: 'close',

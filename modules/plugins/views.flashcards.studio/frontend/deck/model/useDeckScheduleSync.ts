@@ -2,7 +2,8 @@
  * Stencil listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
-import type { PathRename, openNotes } from '@numen/plugin-sdk'
+import type { PathRename } from '@numen/plugin-sdk'
+import type { openNotes } from '../../buffer'
 import type { Cards, StencilSummary, Presets } from '../../cards'
 import { useDeckSchedule } from './useDeckSchedule'
 import { areOffersEqual, createStencilChoices } from '../lib/deck'

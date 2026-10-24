@@ -300,14 +300,18 @@ export function useReviewSession(deps: SessionDeps) {
   const api = {
     vault: vault as Ref<string>,
     run,
+    cardList: cards.cardList,
     asked: cards.cardList,
     cardIndex: cards.cardIndex,
+    isAnswerShown: cards.isAnswerShown,
     shown: cards.isAnswerShown,
     answers: cards.answers,
     writing,
     card: cards.card,
     left: cards.left,
+    isOver: cards.isOver,
     over: cards.isOver,
+    completedCount: cards.completedCount,
     done: cards.completedCount,
     start,
     show: () => {

@@ -15,6 +15,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
+  (event: 'action', id: string): void
 }>()
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -28,6 +29,10 @@ function onRetry(id: string) {
 
 function onDismiss(id: string) {
   emit('dismiss', id)
+}
+
+function onAction(id: string) {
+  emit('action', id)
 }
 </script>
 
@@ -46,6 +51,7 @@ function onDismiss(id: string) {
         @cancel="onCancel"
         @retry="onRetry"
         @dismiss="onDismiss"
+        @action="onAction"
       />
     </div>
   </div>

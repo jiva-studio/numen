@@ -139,6 +139,8 @@ export interface MenuEntry {
   readonly text: string
   readonly group: string
   readonly isDisabled?: boolean
+  readonly parentId?: string
+  readonly children?: readonly MenuEntry[]
 }
 
 // PathMenuRow is the row of the vault a menu is asked for on.
@@ -162,9 +164,6 @@ export interface VaultFiles {
   createFolder(path: string): Promise<void>
   // Each answers with the path of what was made, and empty where nothing was.
   createNote(folder: string): Promise<string>
-  createDeck(folder: string, name: string): Promise<string>
-  createStencil(folder: string, name: string): Promise<string>
-  createPreset(folder: string, name: string): Promise<string>
   importUrl(folder: string, url: string): Promise<string>
   importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
 }

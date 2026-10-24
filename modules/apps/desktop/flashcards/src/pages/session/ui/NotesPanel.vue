@@ -13,7 +13,7 @@ import type { Neighbour } from '../api/notes'
 import type { NotesPanelState } from '../model/notes'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ held: NotesPanelState }>()
+const props = defineProps<{ panel: NotesPanelState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const column = useTemplateRef<HTMLElement>('column')
@@ -30,7 +30,7 @@ watch(
   ([open, col, notes]) => {
     if (!open || !col || !notes.length) return
     void nextTick(() => {
-      const found = notes.find((one) => one.text === col || one.path === col)
+      const found = notes.find((one: Neighbour) => one.written === col || one.path === col)
       if (found)
         noteElements.get(getNoteKey(found))?.scrollIntoView({ block: 'start', behavior: 'auto' })
       props.panel.read()
@@ -41,7 +41,7 @@ watch(
 
 /* -------------------------------- Helpers --------------------------------- */
 /** A note is keyed by what its article is keyed by. */
-const getNoteKey = (one: Neighbour) => one.path || one.text
+const getNoteKey = (one: Neighbour) => one.path || one.written
 
 /**
  * Where each note was drawn, so the one a link named can be scrolled to. Read

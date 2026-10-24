@@ -51,6 +51,7 @@ const wire = vi.hoisted(() => {
     presetsAsked: [] as unknown[],
     notesAsked: [] as unknown[],
     answered: [] as { mark: string }[],
+    responses: [] as { mark: string }[],
     takenBack: [] as unknown[],
     scrolled: [] as boolean[],
     agent: async (): Promise<{ unreachable: string }> => ({ unreachable: '' }),

@@ -6,7 +6,8 @@
  */
 import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
-import { createRequestGuard, getRenamedPath } from '@numen/plugin-sdk'
+import { getRenamedPath } from '@numen/plugin-sdk'
+import { createRequestGuard } from '../lib/requestGuard'
 import { areNeighbourhoodsEqual } from '../lib/picture'
 import type { Neighbourhood, PathRename } from '../types'
 

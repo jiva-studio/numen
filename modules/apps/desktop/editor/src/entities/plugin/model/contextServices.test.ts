@@ -90,9 +90,6 @@ const FILE_WRITES: Record<string, Call> = {
   move: (c) => c.files!.move('a.md', 'b.md'),
   createFolder: (c) => c.files!.createFolder('dir'),
   createNote: (c) => c.files!.createNote('dir'),
-  createDeck: (c) => c.files!.createDeck('dir', 'D'),
-  createStencil: (c) => c.files!.createStencil('dir', 'S'),
-  createPreset: (c) => c.files!.createPreset('dir', 'P'),
   importUrl: (c) => c.files!.importUrl('dir', 'https://example.test'),
   importUrls: (c) => c.files!.importUrls('dir', ['https://example.test']),
 }

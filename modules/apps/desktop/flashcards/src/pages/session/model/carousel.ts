@@ -79,12 +79,12 @@ function useCarouselDrag(deps: {
   const letGo = async () => {
     if (!taking.value) return
     const place = deps.window_.value
-    const where = place ? deps.findNearest(place.scrollLeft) : deps.activeSlide.value
+    const where = place ? deps.findNearest(place.scrollLeft) : deps.shown.value
     taking.value = false
     await nextTick()
-    if (where !== deps.activeSlide.value) deps.activeSlide.value = where
+    if (where !== deps.shown.value) deps.shown.value = where
     await nextTick()
-    deps.slideTo(deps.activeSlide.value)
+    deps.slideTo(deps.shown.value)
   }
 
   return { taking, onPointerDown, onPointerMove, letGo }
@@ -147,7 +147,7 @@ function createCarouselMover(
 export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const window_ = deps.window
   const middle = deps.middle
-  const displayedItems = deps.activeSlide
+  const displayedItems = deps.shown
   const { getStops, findNearest } = createCarouselStops(window_, middle)
   const mover = createCarouselMover(window_, getStops)
 

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import { StopReason } from '@numen/protocol'
 import { DEFAULTS, NO_BOUNDS, type Cards, type Presets } from '../../cards'
-import { openNotes } from '@numen/plugin-sdk'
+import { openNotes } from '../../buffer'
 import { useDeckScheduleSync } from './useDeckScheduleSync'
 
 const OFFER = { path: 'Animal.md', title: 'Animal', fields: ['Name'] }

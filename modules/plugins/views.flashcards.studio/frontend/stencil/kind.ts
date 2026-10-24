@@ -5,14 +5,12 @@ import { computed } from 'vue'
 import { LayoutTemplate } from '@lucide/vue'
 import {
   getFileName,
-  getMarkOf,
-  openNotes,
   type BufferHost,
-  type FileBuffers,
   type MessageWriter,
   type PathRename,
   type TabKindRegistration,
 } from '@numen/plugin-sdk'
+import { getMarkOf, openNotes } from '../buffer'
 import { WORDS as words, type Cards } from '../cards'
 import StencilTab from './ui/StencilTab.vue'
 import type { StencilTabState } from './types'
@@ -38,7 +36,7 @@ type StencilWire = ReturnType<typeof createStencilWire>
 function createStencilTabItem(
   id: string,
   deps: {
-    store: FileBuffers
+    store: ReturnType<typeof openNotes>
     fields: StencilFields
     wire: StencilWire
     closeTab: (id: string) => void
@@ -74,7 +72,7 @@ function createStencilTabItem(
 }
 
 function createStencilKindDefinition(deps: {
-  store: FileBuffers
+  store: ReturnType<typeof openNotes>
   wire: StencilWire
   cards: Cards
   createStencilTabState: (id: string) => StencilTabState

@@ -1,0 +1,293 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { ref } from 'vue'
+import { mount } from '@vue/test-utils'
+import { NumberField, Select, Slider, Switch } from '@numen/ui'
+import PluginDetail from './PluginDetail.vue'
+import SettingRow from '../setting-row/SettingRow.vue'
+import { SecretField } from '../secret-field'
+import { createInstallation, createPluginInfo } from '@/testing/installation'
+import type { Installation, SettingsTabState } from '../../types'
+import { getSettingAt as at, type PluginInfo, type SettingEdit } from '@/entities/settings'
+import { WORDS as words } from '../../words'
+
+beforeEach(() => {
+  vi.stubGlobal(
+    'ResizeObserver',
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  )
+})
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
+
+const createDetail = (plugin: PluginInfo, file: Record<string, unknown> = {}) => {
+  const recordedWrites: SettingEdit[] = []
+  const retryPlugin = vi.fn()
+  const writeSecret = vi.fn()
+  const deleteSecret = vi.fn()
+  const installation: Installation = createInstallation({
+    getSetting: (path) => at(file, path),
+    write: (edits) => {
+      recordedWrites.push(...edits)
+    },
+    writeSecret,
+    deleteSecret,
+    retryPlugin,
+    plugins: ref([plugin]),
+  })
+  const state: SettingsTabState = { installation }
+  const wrapper = mount(PluginDetail, {
+    props: { state, plugin },
+  })
+  return {
+    wrapper,
+    recordedWrites,
+    retryPlugin,
+    writeSecret,
+    deleteSecret,
+    installation,
+  }
+}
+
+describe('PluginDetail', () => {
+  it('renders plugin headline information', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      version: '1.2.3',
+      description: 'Engine description text',
+    })
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('.plugin-detail__title').text()).toBe('Super Engine v1.2.3')
+    expect(wrapper.find('.plugin-detail__description').text()).toBe('Engine description text')
+  })
+
+  it('renders back button and clicking it emits back', async () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine')
+    const { wrapper } = createDetail(plugin)
+
+    const topBackButton = wrapper.find('.plugin-detail__back')
+    expect(topBackButton.exists()).toBe(true)
+    expect(topBackButton.text()).toContain(words.backToPlugins)
+
+    await topBackButton.trigger('click')
+    expect(wrapper.emitted('back')).toHaveLength(1)
+  })
+
+  it('toggles master enabled switch and writes setting', async () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine')
+    const { wrapper, recordedWrites } = createDetail(plugin)
+
+    const masterSwitch = wrapper.find('.plugin-detail__master-switch').findComponent(Switch)
+    expect(masterSwitch.exists()).toBe(true)
+    expect(masterSwitch.props('modelValue')).toBe(true)
+
+    masterSwitch.vm.$emit('update:modelValue', false)
+
+    expect(recordedWrites).toStrictEqual([
+      { at: ['plugins', 'test.plugin', 'enabled'], value: 'false' },
+    ])
+  })
+
+  it('reads master enabled switch state when disabled in settings', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine')
+    const { wrapper } = createDetail(plugin, {
+      plugins: { 'test.plugin': { enabled: false } },
+    })
+
+    const masterSwitch = wrapper.find('.plugin-detail__master-switch').findComponent(Switch)
+    expect(masterSwitch.props('modelValue')).toBe(false)
+  })
+
+  it('renders failure card, calls retryPlugin on retry, and writes disabled on disable', async () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      failure: {
+        reason: 'Connection timed out',
+        failedAt: 1_700_000_000_000,
+      },
+    })
+    const { wrapper, retryPlugin, recordedWrites } = createDetail(plugin)
+
+    const stoppedCard = wrapper.find('.plugin-detail__stopped')
+    expect(stoppedCard.exists()).toBe(true)
+    expect(stoppedCard.text()).toContain('Connection timed out')
+
+    const buttons = stoppedCard.findAll('button')
+    const retryButton = buttons.find((btn) => btn.text() === words.pluginRetry)
+    const disableButton = buttons.find((btn) => btn.text() === words.pluginDisable)
+
+    expect(retryButton?.exists()).toBe(true)
+    expect(disableButton?.exists()).toBe(true)
+
+    await retryButton!.trigger('click')
+    expect(retryPlugin).toHaveBeenCalledExactlyOnceWith('test.plugin')
+
+    await disableButton!.trigger('click')
+    expect(recordedWrites).toStrictEqual([
+      { at: ['plugins', 'test.plugin', 'enabled'], value: 'false' },
+    ])
+  })
+
+  it('renders AI consent switch and writes aiConsent change', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      consent: 'allowed',
+    })
+    const { wrapper, recordedWrites } = createDetail(plugin)
+
+    const rows = wrapper.findAllComponents(SettingRow)
+    const consentRow = rows.find((r) => r.props('at') === 'ai-consent-test.plugin')
+    expect(consentRow).toBeDefined()
+    expect(consentRow!.text()).toContain(words.consentAllowed)
+
+    const consentSwitch = consentRow!.findComponent(Switch)
+    expect(consentSwitch.props('modelValue')).toBe(true)
+
+    consentSwitch.vm.$emit('update:modelValue', false)
+
+    expect(recordedWrites).toStrictEqual([
+      { at: ['plugins', 'test.plugin', 'aiConsent'], value: 'false' },
+    ])
+  })
+
+  it('saves and deletes secret fields', () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      secrets: ['AUTH_TOKEN'],
+      storedSecrets: ['AUTH_TOKEN'],
+    })
+    const { wrapper, writeSecret, deleteSecret } = createDetail(plugin)
+
+    const secretField = wrapper.findComponent(SecretField)
+    expect(secretField.exists()).toBe(true)
+    expect(secretField.props('name')).toBe(`${words.keys}: AUTH_TOKEN`)
+    expect(secretField.props('isStored')).toBe(true)
+
+    secretField.vm.$emit('save', 'secret-key-123')
+    expect(writeSecret).toHaveBeenCalledExactlyOnceWith(
+      'test.plugin',
+      'AUTH_TOKEN',
+      'secret-key-123',
+    )
+
+    secretField.vm.$emit('delete')
+    expect(deleteSecret).toHaveBeenCalledExactlyOnceWith('test.plugin', 'AUTH_TOKEN')
+  })
+
+  it('handles declarative settings controls: Switch, NumberField, Slider, Select, text input', async () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settings: [
+        {
+          key: 'autoStart',
+          type: 'boolean',
+          title: 'Auto Start',
+          description: 'Start automatically',
+          default: false,
+        },
+        {
+          key: 'retryCount',
+          type: 'number',
+          title: 'Retry Count',
+          description: 'Number of retries',
+          default: 3,
+          min: 1,
+          max: 10,
+        },
+        {
+          key: 'confidence',
+          type: 'range',
+          title: 'Confidence Threshold',
+          description: 'Range from 0 to 100',
+          default: 80,
+          min: 0,
+          max: 100,
+        },
+        {
+          key: 'logLevel',
+          type: 'enum',
+          title: 'Log Level',
+          description: 'Severity level',
+          default: 'info',
+          options: ['debug', 'info', 'warn', 'error'],
+        },
+        {
+          key: 'endpoint',
+          type: 'string',
+          title: 'API Endpoint',
+          description: 'Server URL',
+          default: 'https://api.example.com',
+        },
+      ],
+    })
+    const { wrapper, recordedWrites } = createDetail(plugin)
+
+    // Switch
+    const rows = wrapper.findAllComponents(SettingRow)
+    const booleanRow = rows.find((r) => r.props('at') === 'test.plugin-autoStart')
+    expect(booleanRow).toBeDefined()
+    const switchComp = booleanRow!.findComponent(Switch)
+    expect(switchComp.props('modelValue')).toBe(false)
+    switchComp.vm.$emit('update:modelValue', true)
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.plugin', 'autoStart'],
+      value: 'true',
+    })
+
+    // NumberField
+    const numberRow = rows.find((r) => r.props('at') === 'test.plugin-retryCount')
+    expect(numberRow).toBeDefined()
+    const numberComp = numberRow!.findComponent(NumberField)
+    expect(numberComp.props('modelValue')).toBe(3)
+    numberComp.vm.$emit('commit', 5)
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.plugin', 'retryCount'],
+      value: '5',
+    })
+
+    // Slider
+    const rangeRow = rows.find((r) => r.props('at') === 'test.plugin-confidence')
+    expect(rangeRow).toBeDefined()
+    const sliderComp = rangeRow!.findComponent(Slider)
+    expect(sliderComp.props('modelValue')).toBe(80)
+    expect(rangeRow!.find('.settings__slider-value').text()).toBe('80')
+    sliderComp.vm.$emit('commit', 90)
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.plugin', 'confidence'],
+      value: '90',
+    })
+
+    // Select
+    const enumRow = rows.find((r) => r.props('at') === 'test.plugin-logLevel')
+    expect(enumRow).toBeDefined()
+    const selectComp = enumRow!.findComponent(Select)
+    expect(selectComp.props('modelValue')).toBe('info')
+    selectComp.vm.$emit('update:modelValue', 'debug')
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.plugin', 'logLevel'],
+      value: '"debug"',
+    })
+
+    // Text Input
+    const textRow = rows.find((r) => r.props('at') === 'test.plugin-endpoint')
+    expect(textRow).toBeDefined()
+    const textInput = textRow!.find('.settings__text-input')
+    expect((textInput.element as HTMLInputElement).value).toBe('https://api.example.com')
+    await textInput.setValue('https://custom.example.com')
+    await textInput.trigger('change')
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.plugin', 'endpoint'],
+      value: '"https://custom.example.com"',
+    })
+  })
+
+  it('renders clean detail view with switch when plugin has no additional settings', () => {
+    const plugin = createPluginInfo('test.empty', 'Empty Plugin')
+    const { wrapper } = createDetail(plugin)
+
+    expect(wrapper.find('.plugin-detail__title').text()).toContain('Empty Plugin')
+    expect(wrapper.find('.plugin-detail__master-switch').exists()).toBe(true)
+    expect(wrapper.find('.plugin-detail__empty').exists()).toBe(false)
+  })
+})

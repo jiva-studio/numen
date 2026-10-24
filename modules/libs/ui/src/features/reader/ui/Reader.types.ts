@@ -14,7 +14,7 @@ export interface ReaderProps {
   otherHighlights?: (page: number) => readonly Rect[]
   /** The words it is read with. */
   words?: ReaderWords
-  /** What is said where a page would not come. */
+  /** Text displayed when a page fails to load. */
   undrawn?: string
   /** When the row is put on the screen again. The next frame by default. */
   paint?: Paint

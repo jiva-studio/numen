@@ -1,6 +1,7 @@
 import type {
   AgentProviderRegistration,
   CommandRegistration,
+  ContextMenuRegistration,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -14,6 +15,7 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredReaders(): ReaderRegistration[]
   getRegisteredTabKinds(): TabKindRegistration[]
   getRegisteredCommands(): CommandRegistration[]
+  getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
   triggerCommand(commandId: string): Promise<void>
   setSetting<T = unknown>(key: string, value: T): void
@@ -31,6 +33,7 @@ export function createMockPluginContext(
   const readers: ReaderRegistration[] = []
   const tabKinds: TabKindRegistration[] = []
   const commands: CommandRegistration[] = []
+  const contextMenus: ContextMenuRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
   const settings = new Map<string, unknown>(Object.entries(initialValues?.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
@@ -86,6 +89,19 @@ export function createMockPluginContext(
           const idx = commands.indexOf(registration)
           if (idx !== -1) {
             commands.splice(idx, 1)
+          }
+        },
+      }
+      return addDisposable(disposable)
+    },
+
+    registerContextMenu(registration: ContextMenuRegistration): Disposable {
+      contextMenus.push(registration)
+      const disposable: Disposable = {
+        dispose: () => {
+          const idx = contextMenus.indexOf(registration)
+          if (idx !== -1) {
+            contextMenus.splice(idx, 1)
           }
         },
       }
@@ -181,6 +197,10 @@ export function createMockPluginContext(
 
     getRegisteredCommands(): CommandRegistration[] {
       return [...commands]
+    },
+
+    getRegisteredContextMenus(): ContextMenuRegistration[] {
+      return [...contextMenus]
     },
 
     getRegisteredAgentProviders(): AgentProviderRegistration[] {

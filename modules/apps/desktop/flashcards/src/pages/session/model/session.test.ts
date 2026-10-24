@@ -315,7 +315,7 @@ describe('an answer taken back', () => {
 
     await one.takeBack()
 
-    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.cardId)).toEqual([
+    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.said)).toEqual([
       { vault: '01VAULT', run: 'flashcards/01A.jsonl', answer: '011' },
     ])
   })

@@ -67,3 +67,70 @@ describe('MarkdownNoteEditor while the note is read', () => {
     expect(getEditable(wrapper)).toBe('true')
   })
 })
+
+describe('MarkdownNoteEditor error banner', () => {
+  it('displays caution banner when error is present and dismisses on click', async () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'test.md',
+        errorMessage: 'the frontmatter of this note cannot be read',
+      },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.find('.caution__text').text()).toBe(
+      'the frontmatter of this note cannot be read',
+    )
+
+    await wrapper.find('.caution__dismiss').trigger('click')
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('does not display caution banner for valid frontmatter with multiline list or wikilinks', () => {
+    const validMarkdown = `---
+title: Thermodynamics
+links:
+  - to: "[[notes/Entropy]]"
+tags: [
+  physics,
+  heat
+]
+---
+# Content`
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        modelValue: validMarkdown,
+        filePath: 'Thermodynamics.md',
+      },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+
+  it('displays caution banner for malformed frontmatter with unclosed brackets', () => {
+    const malformed = `---
+title: [unclosed bracket
+key: value:
+---
+# Content`
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        modelValue: malformed,
+        filePath: 'malformed.md',
+      },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(true)
+    expect(wrapper.find('.caution__text').text()).toBe(
+      'the frontmatter of this note cannot be read',
+    )
+  })
+
+  it('does not display caution banner when errorMessage is an empty ref or empty string', () => {
+    const wrapper = mount(MarkdownNoteEditor, {
+      props: {
+        filePath: 'test.md',
+        errorMessage: ref('') as unknown as string,
+        state: { errorMessage: ref('') },
+      },
+    })
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false)
+  })
+})

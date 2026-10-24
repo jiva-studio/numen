@@ -15,15 +15,13 @@ import (
 	"testing"
 
 	"github.com/gomlx/go-huggingface/hub"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 func TestLocateRefusesToFetchWhileOffline(t *testing.T) {
-	t.Setenv(models.EnvOffline, "1")
-	t.Setenv(models.EnvDir, t.TempDir())
+	t.Setenv(EnvOffline, "1")
+	t.Setenv(EnvDir, t.TempDir())
 	_, err := Locate(context.Background(), LocalModel{Name: "owner/repo", ShouldDownload: true}, nil)
-	if err == nil || !strings.Contains(err.Error(), models.EnvOffline) {
+	if err == nil || !strings.Contains(err.Error(), EnvOffline) {
 		t.Fatalf("Locate() error = %v", err)
 	}
 }
@@ -66,7 +64,7 @@ func TestCheckPinned(t *testing.T) {
 func cacheSnapshot(t *testing.T, revision string, files map[string]string) string {
 	t.Helper()
 	home := t.TempDir()
-	t.Setenv(models.EnvDir, home)
+	t.Setenv(EnvDir, home)
 	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(home, "huggingface"))
 	cache, err := repo.CacheDir()
 	if err != nil {
@@ -103,7 +101,7 @@ func pinnedModel(revision string) LocalModel {
 
 func TestLocateUsesAPinnedSnapshotWhileOffline(t *testing.T) {
 	cache := cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "tokens"})
-	t.Setenv(models.EnvOffline, "1")
+	t.Setenv(EnvOffline, "1")
 
 	got, err := Locate(context.Background(), pinnedModel("abc"), nil)
 	if err != nil {
@@ -133,7 +131,7 @@ func TestLocateRefusesACachedTokenizerWithAnotherSum(t *testing.T) {
 
 func TestLocateCachedIgnoresAnIncompleteSnapshot(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "weights"})
-	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(models.EnvDir), "huggingface"))
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo, pinnedModel("abc"), "model.onnx"); ok || err != nil {
 		t.Fatalf("locateCached() = %v, %v", ok, err)
 	}
@@ -152,7 +150,7 @@ func TestLocateCachedIgnoresAModelWithNoRevision(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(models.EnvDir), "huggingface"))
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo, pinnedModel(""), "model.onnx"); ok || err != nil {
 		t.Fatalf("locateCached() = %v, %v, want false, nil", ok, err)
 	}
@@ -182,7 +180,7 @@ func TestLocateFromDir(t *testing.T) {
 }
 
 func TestLocateErrorsWhenModelsHomeFails(t *testing.T) {
-	t.Setenv(models.EnvDir, "")
+	t.Setenv(EnvDir, "")
 	t.Setenv("XDG_CONFIG_HOME", "")
 	t.Setenv("HOME", "")
 	t.Setenv("APPDATA", "")
@@ -207,7 +205,7 @@ func TestLocateCachedFailsWhenCacheDirErrors(t *testing.T) {
 
 func TestLocateCachedIgnoresMissingModel(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{TokenizerFile: "tokens"})
-	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(models.EnvDir), "huggingface"))
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	cfg := LocalModel{
 		Name:     "owner/repo",
 		Revision: "abc",
@@ -220,13 +218,13 @@ func TestLocateCachedIgnoresMissingModel(t *testing.T) {
 
 func TestLocateCachedReportsFalseOnCorruptSums(t *testing.T) {
 	cacheSnapshot(t, "abc", map[string]string{"onnx/model.onnx": "corrupt", "tokenizer.json": "tokens"})
-	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(models.EnvDir), "huggingface"))
+	repo := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo, pinnedModel("abc"), "model.onnx"); ok || err == nil {
 		t.Fatalf("corrupt model: locateCached() = %v, %v, want ok=false and non-nil error", ok, err)
 	}
 
 	cacheSnapshot(t, "def", map[string]string{"onnx/model.onnx": "weights", "tokenizer.json": "corrupt"})
-	repo2 := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(models.EnvDir), "huggingface"))
+	repo2 := hub.New("owner/repo").WithCacheDir(filepath.Join(os.Getenv(EnvDir), "huggingface"))
 	if _, ok, err := locateCached(repo2, pinnedModel("def"), "model.onnx"); ok || err == nil {
 		t.Fatalf("corrupt tokenizer: locateCached() = %v, %v, want ok=false and non-nil error", ok, err)
 	}
@@ -244,8 +242,8 @@ func TestLocatePassesRevision(t *testing.T) {
 	defer srv.Close()
 
 	t.Setenv("HF_ENDPOINT", srv.URL)
-	t.Setenv(models.EnvDir, t.TempDir())
-	t.Setenv(models.EnvOffline, "")
+	t.Setenv(EnvDir, t.TempDir())
+	t.Setenv(EnvOffline, "")
 
 	getPath := func() string {
 		mu.Lock()

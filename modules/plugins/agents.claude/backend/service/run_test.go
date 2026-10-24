@@ -39,11 +39,7 @@ func TestTheTokenTravelsInAFileOfThisUserAlone(t *testing.T) {
 	}
 	collectSteps(t, stream)
 
-	raw, err := os.ReadFile(filepath.Join(dir, "argv"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	argv := strings.Split(strings.TrimSpace(string(raw)), "\n")
+	argv := readArgv(t, filepath.Join(dir, "argv"))
 	for _, arg := range argv {
 		if strings.Contains(arg, "let-me-in") {
 			t.Errorf("the token is on the command line: %q", arg)
@@ -53,6 +49,20 @@ func TestTheTokenTravelsInAFileOfThisUserAlone(t *testing.T) {
 		t.Errorf("another server's configuration may still be read: %q", argv)
 	}
 
+	verifyTokenConfigFile(t, dir, argv)
+}
+
+func readArgv(t *testing.T, path string) []string {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Split(strings.TrimSpace(string(raw)), "\n")
+}
+
+func verifyTokenConfigFile(t *testing.T, dir string, argv []string) {
+	t.Helper()
 	config, err := os.ReadFile(filepath.Join(dir, "config"))
 	if err != nil {
 		t.Fatal(err)

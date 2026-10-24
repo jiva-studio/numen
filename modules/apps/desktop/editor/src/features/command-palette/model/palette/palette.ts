@@ -8,7 +8,7 @@
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
 import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
-import { createRequestGuard as latest } from '@numen/plugin-sdk'
+import { createRequestGuard as latest } from '@/shared/requestGuard'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
 import { createCommands } from '../../lib/commands/commands'

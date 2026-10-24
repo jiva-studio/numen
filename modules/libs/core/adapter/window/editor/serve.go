@@ -361,6 +361,7 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 
 	services.Settings.Get = made.OpenGetSettings()
 	services.PluginServices = made.GetPluginServices()
+	services.Agent.getAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
 	services.Settings.GetFile = made.OpenGetSettingsFile()
 	services.Settings.WriteFile = made.OpenWriteSettingsFile()

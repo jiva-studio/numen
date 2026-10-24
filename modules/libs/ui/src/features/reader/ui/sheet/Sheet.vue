@@ -28,7 +28,7 @@ const props = withDefaults(
     otherHighlights?: readonly Rect[]
     /** What the page is called, for whoever cannot see it. */
     page?: string
-    /** What is said where it would not come. */
+    /** Error message displayed when a page fails to load. */
     undrawn?: string
   }>(),
   {
@@ -36,7 +36,7 @@ const props = withDefaults(
     highlights: () => [],
     otherHighlights: () => [],
     page: 'Page',
-    undrawn: 'This page would not come.',
+    undrawn: 'Failed to load page',
   },
 )
 
@@ -59,8 +59,7 @@ const pictureUrl = computed(() => {
 })
 
 /* ---------------------------------- Hooks --------------------------------- */
-// Another address is another question, and it is asked afresh. What would not
-// come is what would not come at that width.
+// Reset retry state when the picture URL changes.
 watch(
   () => props.picture,
   () => {

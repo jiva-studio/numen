@@ -17,7 +17,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/server"
@@ -168,7 +167,7 @@ func (s *agentServer) AskAgent(
 	recordSession := func(session string) { s.registry.SetSession(conversation, session) }
 	reasons := make(chan string, 1)
 	go func() {
-		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession)
+		reasons <- parseStream(runCtx, out, stream.Send, toolcall.IndexDeclarations(msg.GetToolDeclarations()), recordSession, configFile != "")
 	}()
 
 	stoppedReason, ok := waitAgentCompletion(runCtx, cmd, out, stderrBuf, reasons)
@@ -193,7 +192,7 @@ func (s *agentServer) launchAgentCmd(
 	cmd.Dir = msg.GetRoot()
 	cmd.Env = buildEnvironment(s.getEnvironment())
 	cmd.Stdin = strings.NewReader(msg.GetPrompt())
-	process.Supervise(cmd)
+	supervise(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {

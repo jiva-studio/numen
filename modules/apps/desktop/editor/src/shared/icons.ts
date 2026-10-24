@@ -71,6 +71,8 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['downloadCopy', HardDriveDownload],
   ['deleteText', CaptionsOff],
   ['deleteCopy', Trash2],
+  ['new', Plus],
+  ['relation', Waypoints],
   ['newNote', FilePlus],
   ['newDeck', Layers],
   ['newStencil', LayoutTemplate],

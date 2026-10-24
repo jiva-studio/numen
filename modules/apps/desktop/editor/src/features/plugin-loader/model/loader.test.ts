@@ -50,6 +50,7 @@ describe('createPluginLoader', () => {
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
           registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
+          registerContextMenu: vi.fn(() => ({ dispose: vi.fn() })),
           registerAgentProvider: vi.fn(() => ({ dispose: vi.fn() })),
           getSetting: vi.fn((key: string) =>
             getSetting(pluginId, key),
@@ -76,6 +77,9 @@ describe('createPluginLoader', () => {
       getRegisteredReaders: vi.fn(() => []),
       getRegisteredTabKinds: vi.fn(() => []),
       getRegisteredCommands: vi.fn(() => []),
+      getRegisteredContextMenus: vi.fn(() => []),
+      getContextMenuItems: vi.fn(() => []),
+      runContextMenu: vi.fn(async () => true),
       notifyVaultChange: vi.fn(),
       triggerSettingChange,
       settings,

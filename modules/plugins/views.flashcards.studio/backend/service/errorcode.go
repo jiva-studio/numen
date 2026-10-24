@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"syscall"
 
 	"connectrpc.com/connect"
@@ -75,37 +74,3 @@ func getCode(err error) connect.Code {
 
 // isUnlevelled says whether a write reached the vault and the index did not follow.
 func isUnlevelled(err error) bool { return errors.Is(err, edit.ErrUnlevelled) }
-
-// describeCode is one error code in the words a tool answers with.
-func describeCode(reason v1.ErrorCode) string {
-	switch reason {
-	case v1.ErrorCode_ERROR_CODE_MISSING:
-		return "the vault holds no note at this path"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
-		return "this is not a note the vault holds"
-	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
-		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
-		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes)
-	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
-		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
-	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
-		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	case v1.ErrorCode_ERROR_CODE_OCCUPIED:
-		return "a file is already where this note would go"
-	case v1.ErrorCode_ERROR_CODE_UNNAMEABLE:
-		return "a note cannot be called this"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
-		return "this note is not a stencil"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_DECK:
-		return "this note is not a deck"
-	case v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
-		return "this deck is larger than a deck is read at"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
-		return "this note is not a preset"
-	case v1.ErrorCode_ERROR_CODE_STALE:
-		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
-	default:
-		return reason.String()
-	}
-}

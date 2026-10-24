@@ -93,7 +93,7 @@ export function useReviewDays(deps: ReviewDaysDeps) {
     }
   }
 
-  return { days, due, streak, answered: reply, of, read: readItem, forget }
+  return { days, due, streak, answerCount: reply, answered: reply, of, read: readItem, forget }
 }
 
 /** One day as the grid holds it. */

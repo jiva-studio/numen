@@ -23,17 +23,18 @@ const reportChunk = 200
 const previewInterval = 50 * time.Millisecond
 
 type streamParser struct {
-	send        func(*numenv1.AskAgentResponse) error
-	words       map[string]toolcall.Declaration
-	now         func() time.Time
-	last        time.Time
-	record      func(string)
-	isStreaming bool
-	callID      string
-	tool        string
-	arguments   strings.Builder
-	offset      int
-	reason      string
+	send         func(*numenv1.AskAgentResponse) error
+	words        map[string]toolcall.Declaration
+	now          func() time.Time
+	last         time.Time
+	record       func(string)
+	isStreaming  bool
+	callID       string
+	tool         string
+	arguments    strings.Builder
+	offset       int
+	reason       string
+	expectsVault bool
 }
 
 type event struct {
@@ -98,8 +99,9 @@ func parseStream(
 	send func(*numenv1.AskAgentResponse) error,
 	words map[string]toolcall.Declaration,
 	record func(string),
+	expectsVault bool,
 ) string {
-	return parseStreamWithClock(ctx, r, send, words, record, time.Now)
+	return parseStreamWithClock(ctx, r, send, words, record, time.Now, expectsVault)
 }
 
 // parseStreamWithClock is parseStream with the clock that paces the reports of a change.
@@ -110,12 +112,18 @@ func parseStreamWithClock(
 	words map[string]toolcall.Declaration,
 	record func(string),
 	now func() time.Time,
+	expectsVault ...bool,
 ) string {
+	hasVault := true
+	if len(expectsVault) > 0 {
+		hasVault = expectsVault[0]
+	}
 	p := &streamParser{
-		send:   send,
-		words:  words,
-		now:    now,
-		record: record,
+		send:         send,
+		words:        words,
+		now:          now,
+		record:       record,
+		expectsVault: hasVault,
 	}
 	scanner := bufio.NewReader(r)
 	for {
@@ -152,27 +160,33 @@ func (p *streamParser) parseLine(ctx context.Context, line string) {
 			})
 		}
 	case "system":
-		switch response.Subtype {
-		case "init":
-			if response.Session != "" && p.record != nil {
-				p.record(response.Session)
-			}
-			p.setReason(getUnreachableReason(response))
-		case "status":
-			if response.Status == "requesting" {
-				_ = p.send(&numenv1.AskAgentResponse{
-					Step: &numenv1.AskAgentResponse_ModelStarted{
-						ModelStarted: &numenv1.ModelStarted{},
-					},
-				})
-			}
-		}
+		p.parseSystemEvent(response)
 	case "result":
 		if response.IsError {
 			p.setReason(getResultError(response))
 			return
 		}
 		p.setReason("")
+	}
+}
+
+func (p *streamParser) parseSystemEvent(response event) {
+	switch response.Subtype {
+	case "init":
+		if response.Session != "" && p.record != nil {
+			p.record(response.Session)
+		}
+		if p.expectsVault {
+			p.setReason(getUnreachableReason(response))
+		}
+	case "status":
+		if response.Status == "requesting" {
+			_ = p.send(&numenv1.AskAgentResponse{
+				Step: &numenv1.AskAgentResponse_ModelStarted{
+					ModelStarted: &numenv1.ModelStarted{},
+				},
+			})
+		}
 	}
 }
 

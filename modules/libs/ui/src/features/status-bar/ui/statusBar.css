@@ -207,6 +207,35 @@
   color: var(--numen-alarm);
 }
 
+.task-item__failure-row {
+  display: flex;
+  align-items: center;
+  margin-block-start: 0.25rem;
+}
+
+.task-item__action-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.125rem 0.375rem;
+  background: var(--numen-surface, rgba(125, 125, 125, 0.1));
+  border: 1px solid var(--numen-rule, rgba(125, 125, 125, 0.2));
+  border-radius: var(--numen-radius-small, 3px);
+  color: var(--numen-accent, #0066cc);
+  font-size: var(--numen-text-1, 0.75rem);
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.task-item__action-link:hover {
+  background: var(--numen-raised);
+  color: var(--numen-ink);
+}
+
 .status-bar__trailing {
   margin-left: auto;
   display: flex;

@@ -182,7 +182,7 @@ describe('agent model selection and settings', () => {
     expect(one.state.selectedModelId.value).toBe('')
   })
 
-  it('writes the agent and model chosen', () => {
+  it('selects the agent and model without mutating settings', () => {
     const fake = createConversation()
     const content: [readonly string[], unknown][] = []
     const state = useAgentConversation(fake.conversation, {
@@ -207,10 +207,7 @@ describe('agent model selection and settings', () => {
       'zeta',
       'zeta-small',
     ])
-    expect(content).toEqual([
-      [['agent', 'use'], 'zeta'],
-      [['agent', 'zeta', 'model'], 'zeta-small'],
-    ])
+    expect(content).toEqual([])
   })
 
   it('selects a model without a writeSetting dependency', () => {

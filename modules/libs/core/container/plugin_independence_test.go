@@ -496,3 +496,11 @@ func TestEveryPluginManifestPassesTheValidator(t *testing.T) {
 		}
 	}
 }
+
+// Plugins must be autonomous; modules/plugins contains no shared/ folder.
+func TestNoSharedPluginDirectoryExists(t *testing.T) {
+	sharedPath := filepath.Join(numenModulesDir, "plugins", "shared")
+	if _, err := os.Stat(sharedPath); !os.IsNotExist(err) {
+		t.Fatalf("%s exists: plugins must be autonomous and cannot share internal libraries", sharedPath)
+	}
+}

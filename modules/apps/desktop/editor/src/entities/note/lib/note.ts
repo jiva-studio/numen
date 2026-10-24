@@ -1,5 +1,5 @@
 import type { Result } from '@numen/wire'
-import type { LinkAddress, NoteContents } from '@numen/plugin-sdk'
+import type { LinkAddress, NoteContents } from '../model/buffer'
 import type { ErrorCode } from '@/shared/errors'
 import type { Span } from '@/shared/span'
 import type { MoveResult, NoteType } from '@/entities/file/@x/note'

@@ -2,7 +2,7 @@
  * Type declarations for the flashcards deck tab domain.
  */
 import type { ComputedRef } from 'vue'
-import type { OpenNote } from '@numen/plugin-sdk'
+import type { OpenNote } from '../buffer'
 import type { Marks, Surrounds, Value } from '../cards'
 import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
 import type { Choice, DeckPreset } from './model/useDeckSchedule'

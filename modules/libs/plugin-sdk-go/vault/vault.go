@@ -15,40 +15,6 @@ var (
 	ErrOutsideVault  = errors.New("path outside allowed vault root")
 )
 
-// tempDocumentPrefix starts the name of a document the host puts in the temp folder.
-const tempDocumentPrefix = "numen-doc-"
-
-// IsTempDocument reports whether a clean path is a regular document file directly
-// in the system temp directory.
-func IsTempDocument(cleanPath string) bool {
-	tempDir := filepath.Clean(os.TempDir())
-	realTemp, err := filepath.EvalSymlinks(tempDir)
-	if err != nil {
-		realTemp = tempDir
-	}
-
-	dir := filepath.Dir(cleanPath)
-	if dir != tempDir && dir != realTemp {
-		return false
-	}
-	if !strings.HasPrefix(filepath.Base(cleanPath), tempDocumentPrefix) {
-		return false
-	}
-
-	if fi, err := os.Lstat(cleanPath); err == nil && fi.Mode()&os.ModeSymlink != 0 {
-		return false
-	}
-
-	realPath, err := filepath.EvalSymlinks(cleanPath)
-	if err == nil {
-		rel, err := filepath.Rel(realTemp, realPath)
-		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-			return false
-		}
-	}
-	return true
-}
-
 // ValidatePath returns the clean path inside the vault named by NUMEN_VAULT_PATH, as
 // ValidatePathIn returns it inside that vault.
 func ValidatePath(path string, allow ...func(cleanPath string) bool) (string, error) {
@@ -71,33 +37,17 @@ func ValidatePathIn(vaultRoot, path string, allow ...func(cleanPath string) bool
 			return cleanPath, nil
 		}
 	}
-
 	if strings.TrimSpace(vaultRoot) == "" {
 		return "", ErrEmptyVault
 	}
 
-	cleanVault, err := filepath.Abs(filepath.Clean(vaultRoot))
+	cleanVault, cleanTarget, err := resolveTarget(vaultRoot, cleanPath)
 	if err != nil {
 		return "", err
 	}
 
-	var cleanTarget string
-	if filepath.IsAbs(cleanPath) {
-		cleanTarget = cleanPath
-	} else {
-		cleanTarget = filepath.Join(cleanVault, cleanPath)
-	}
-	cleanTarget, err = filepath.Abs(cleanTarget)
-	if err != nil {
+	if err := checkRelativeContainment(cleanVault, cleanTarget, path); err != nil {
 		return "", err
-	}
-
-	rel, err := filepath.Rel(cleanVault, cleanTarget)
-	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		if !filepath.IsAbs(path) || strings.Contains(path, "..") {
-			return "", ErrPathTraversal
-		}
-		return "", ErrOutsideVault
 	}
 
 	realVault, errV := filepath.EvalSymlinks(cleanVault)
@@ -112,6 +62,33 @@ func ValidatePathIn(vaultRoot, path string, allow ...func(cleanPath string) bool
 	return cleanTarget, nil
 }
 
+func resolveTarget(vaultRoot, cleanPath string) (string, string, error) {
+	cleanVault, err := filepath.Abs(filepath.Clean(vaultRoot))
+	if err != nil {
+		return "", "", err
+	}
+	cleanTarget := cleanPath
+	if !filepath.IsAbs(cleanPath) {
+		cleanTarget = filepath.Join(cleanVault, cleanPath)
+	}
+	cleanTarget, err = filepath.Abs(cleanTarget)
+	if err != nil {
+		return "", "", err
+	}
+	return cleanVault, cleanTarget, nil
+}
+
+func checkRelativeContainment(cleanVault, cleanTarget, rawPath string) error {
+	rel, err := filepath.Rel(cleanVault, cleanTarget)
+	if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		if !filepath.IsAbs(rawPath) || strings.Contains(rawPath, "..") {
+			return ErrPathTraversal
+		}
+		return ErrOutsideVault
+	}
+	return nil
+}
+
 func checkSymlinkContainment(realVault, cleanTarget string) error {
 	realTarget, err := filepath.EvalSymlinks(cleanTarget)
 	if err == nil {
@@ -122,34 +99,14 @@ func checkSymlinkContainment(realVault, cleanTarget string) error {
 		return nil
 	}
 
-	checkPath := cleanTarget
-	if fi, errL := os.Lstat(cleanTarget); errL == nil && fi.Mode()&os.ModeSymlink != 0 {
-		dest, errR := os.Readlink(cleanTarget)
-		if errR != nil {
-			return ErrPathTraversal
-		}
-		if !filepath.IsAbs(dest) {
-			dest = filepath.Join(filepath.Dir(cleanTarget), dest)
-		}
-		checkPath = filepath.Clean(dest)
+	checkPath, err := resolveSymlinkTarget(cleanTarget)
+	if err != nil {
+		return err
 	}
 
-	parent := filepath.Dir(checkPath)
-	realParent, errP := filepath.EvalSymlinks(parent)
+	realParent, errP := findExistingAncestor(filepath.Dir(checkPath))
 	if errP != nil {
-		current := parent
-		for {
-			rp, err := filepath.EvalSymlinks(current)
-			if err == nil {
-				realParent = rp
-				break
-			}
-			next := filepath.Dir(current)
-			if next == current {
-				return ErrPathTraversal
-			}
-			current = next
-		}
+		return errP
 	}
 
 	rel, errRel := filepath.Rel(realVault, realParent)
@@ -157,4 +114,40 @@ func checkSymlinkContainment(realVault, cleanTarget string) error {
 		return ErrPathTraversal
 	}
 	return nil
+}
+
+func resolveSymlinkTarget(cleanTarget string) (string, error) {
+	fi, err := os.Lstat(cleanTarget)
+	if err == nil {
+		if fi.Mode()&os.ModeSymlink == 0 {
+			return cleanTarget, nil
+		}
+		dest, errR := os.Readlink(cleanTarget)
+		if errR != nil {
+			return "", ErrPathTraversal
+		}
+		if !filepath.IsAbs(dest) {
+			dest = filepath.Join(filepath.Dir(cleanTarget), dest)
+		}
+		return filepath.Clean(dest), nil
+	}
+	if !errors.Is(err, os.ErrNotExist) {
+		return "", err
+	}
+	return cleanTarget, nil
+}
+
+func findExistingAncestor(start string) (string, error) {
+	current := start
+	for {
+		rp, err := filepath.EvalSymlinks(current)
+		if err == nil {
+			return rp, nil
+		}
+		next := filepath.Dir(current)
+		if next == current {
+			return "", ErrPathTraversal
+		}
+		current = next
+	}
 }

@@ -7,6 +7,7 @@ export const WORDS = {
   empty: 'This vault holds no files',
   /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',
+  new: 'New',
   newNote: 'New note',
   newDeck: 'New deck',
   newStencil: 'New stencil',

@@ -93,13 +93,13 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 	if err != nil {
 		return res, err
 	}
-	ref, err := reader.GetFingerprint(ctx, path)
-	if err != nil {
-		return res, fmt.Errorf("stat %s: %w", path, err)
+	ref, raw, isMissing, err := u.readRecording(ctx, v, reader, path)
+	if isMissing {
+		res.IsUnopened = true
+		return res, nil
 	}
-	raw, err := reader.Read(ctx, path)
 	if err != nil {
-		return res, fmt.Errorf("read %s: %w", path, err)
+		return res, err
 	}
 	store, err := u.derived.Open(v)
 	if err != nil {
@@ -150,6 +150,30 @@ func (u Transcribe) Execute(ctx context.Context, v domain.Vault, path string) (T
 
 	err = u.saveTranscript(ctx, v, store, ref, hash, area, &res)
 	return res, err
+}
+
+func (u Transcribe) readRecording(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, path string) (domain.Fingerprint, []byte, bool, error) {
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, vaultport.ErrNotANote) {
+			if u.sources != nil {
+				_ = u.sources.RemoveSources(ctx, v.ID, domain.KindRecording, []string{path})
+			}
+			return domain.Fingerprint{}, nil, true, nil
+		}
+		return domain.Fingerprint{}, nil, false, fmt.Errorf("stat %s: %w", path, err)
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		if errors.Is(err, fs.ErrNotExist) {
+			if u.sources != nil {
+				_ = u.sources.RemoveSources(ctx, v.ID, domain.KindRecording, []string{path})
+			}
+			return domain.Fingerprint{}, nil, true, nil
+		}
+		return domain.Fingerprint{}, nil, false, fmt.Errorf("read %s: %w", path, err)
+	}
+	return ref, raw, false, nil
 }
 
 // saveTranscript stands the source on the artifact made from the partial, or answers

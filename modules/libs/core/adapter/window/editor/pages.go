@@ -6,9 +6,12 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +19,7 @@ import (
 
 	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/modules/libs/core/internal/csp"
+	v1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -76,8 +80,8 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 			return
 		}
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
-		isAgentState := r.URL.Path == numenv1connect.AgentServiceGetAgentStateProcedure
-		if !isAgentState && len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
+		if !isAgent && len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
 			s.PluginServices.ServeHTTP(w, r)
 			return
 		}
@@ -183,6 +187,13 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, files htt
 		}
 		defer s.state.questions.finish()
 		s.servePluginAsset(w, r)
+	case strings.HasPrefix(r.URL.Path, assetsRoute):
+		if !s.state.questions.begin() {
+			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		defer s.state.questions.finish()
+		s.serveAsset(w, r)
 	case slices.Contains(wire.OpenedAt, r.URL.Path):
 		wire.WritePage(w, r, pages, s.Themes, files)
 	default:
@@ -375,4 +386,113 @@ func (s *Services) newQuestionCounter() connect.HandlerOption {
 			}
 		},
 	))
+}
+
+// assetsRoute is the path prefix where document pages and vault file assets are served.
+const assetsRoute = "/assets/"
+
+type localHTTPClient struct {
+	handler http.Handler
+}
+
+func (c *localHTTPClient) Do(req *http.Request) (*http.Response, error) {
+	rec := httptest.NewRecorder()
+	c.handler.ServeHTTP(rec, req)
+	return rec.Result(), nil
+}
+
+func parseAssetPage(r *http.Request) (string, int32, int32, bool) {
+	escaped := r.URL.EscapedPath()
+	rest := strings.TrimPrefix(escaped, assetsRoute)
+	if rest == "" || rest == escaped {
+		return "", 0, 0, false
+	}
+	idx := strings.Index(rest, "/pages/")
+	if idx == -1 {
+		return "", 0, 0, false
+	}
+	pathEscaped := rest[:idx]
+	pageStr := rest[idx+len("/pages/"):]
+	if slashIdx := strings.Index(pageStr, "/"); slashIdx != -1 {
+		pageStr = pageStr[:slashIdx]
+	}
+	pathUnescaped, err := url.PathUnescape(pathEscaped)
+	if err != nil || pathUnescaped == "" {
+		return "", 0, 0, false
+	}
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 0 {
+		return "", 0, 0, false
+	}
+	wide, _ := strconv.Atoi(r.URL.Query().Get("wide"))
+	if wide < 0 {
+		wide = 0
+	}
+	return pathUnescaped, int32(page), int32(wide), true
+}
+
+func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+	path, page, width, isPage := parseAssetPage(r)
+	if isPage {
+		s.serveDocumentPage(w, r, path, page, width)
+		return
+	}
+
+	rest := strings.TrimPrefix(r.URL.EscapedPath(), assetsRoute)
+	unescapedPath, err := url.PathUnescape(rest)
+	if err != nil || unescapedPath == "" {
+		http.Error(w, "invalid asset path", http.StatusBadRequest)
+		return
+	}
+	if s.serveVaultAsset(w, r, unescapedPath) {
+		return
+	}
+	http.Error(w, "asset not found", http.StatusNotFound)
+}
+
+func (s *Services) serveDocumentPage(w http.ResponseWriter, r *http.Request, path string, page, width int32) {
+	if s.PluginServices == nil {
+		http.Error(w, "no document plugin available", http.StatusServiceUnavailable)
+		return
+	}
+	client := numenv1connect.NewDocumentServiceClient(&localHTTPClient{handler: s.PluginServices}, "http://local")
+	resp, err := client.RenderPage(r.Context(), connect.NewRequest(&v1.RenderPageRequest{
+		Path:  path,
+		Page:  page,
+		Width: width,
+	}))
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadGateway)
+		return
+	}
+	contentType := resp.Msg.ContentType
+	if contentType == "" {
+		contentType = "image/png"
+	}
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(resp.Msg.ImageData)
+}
+
+func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {
+	vault := s.state.GetCurrentVault()
+	if vault.Path == "" {
+		return false
+	}
+	cleanVault := filepath.Clean(vault.Path)
+	cleanTarget := filepath.Clean(filepath.Join(vault.Path, unescapedPath))
+	if !strings.HasPrefix(cleanTarget, cleanVault) {
+		return false
+	}
+	info, err := os.Stat(cleanTarget)
+	if err != nil || info.IsDir() {
+		return false
+	}
+	http.ServeFile(w, r, cleanTarget)
+	return true
 }

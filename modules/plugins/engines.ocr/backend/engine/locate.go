@@ -7,7 +7,6 @@ import (
 
 	ort "github.com/getcharzp/onnxruntime_purego"
 
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
@@ -24,7 +23,7 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, string, paths, 
 		return nil, "", paths{}, err
 	}
 	found := paths{from: "settings"}
-	if err := cfg.folder().Locate(ctx, pinnedSums, []models.Wanted{
+	if err := cfg.folder().Locate(ctx, pinnedSums, []Wanted{
 		{Dst: &found.layout, Path: cfg.Layout.Path, Name: cfg.Layout.Name, Kind: "layout model"},
 		{Dst: &found.detect, Path: cfg.Detect.Path, Name: cfg.Detect.Name, Kind: "detect model"},
 		{Dst: &found.recognise, Path: cfg.Recognise.Path, Name: cfg.Recognise.Name, Kind: "recognise model"},
@@ -41,6 +40,6 @@ func name(path string) string {
 	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
-func (c Config) source() models.Source {
+func (c Config) source() Source {
 	return c.folder().Source()
 }

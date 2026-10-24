@@ -1,19 +1,14 @@
 <script setup lang="ts">
 /**
  * A menu: a list of things that can be chosen, put where it was asked for.
- *
- * it, and it is placed against the area it is drawn into. It takes items and a
- * point and says which item was chosen; what the items are and what choosing
- * one does are the caller's.
  */
-import { computed, nextTick, useTemplateRef, watch } from 'vue'
+import { computed, useTemplateRef } from 'vue'
 import MenuRow from './MenuRow.vue'
-import { getInitialIndex, groupItems, type MenuItem } from './items/item'
+import type { Position } from '@/shared/lib/math/geometry'
 import { useMenuDismissal } from './interaction/menuDismissal'
-import { useMenuKeys } from './interaction/keys'
-import { useMenuOpen } from './interaction/open'
+import { useMenuLifecycle } from './interaction/useMenuLifecycle'
+import { useMenuNavigation } from './interaction/useMenuNavigation'
 import { useMenuPlacement } from './interaction/place'
-import { useMenuSearch } from './items/search'
 import type { MenuEvents, MenuProps, MenuSlots } from './Menu.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -42,81 +37,55 @@ defineSlots<MenuSlots>()
 const menu = useTemplateRef<HTMLElement>('menu')
 const search = useTemplateRef<HTMLInputElement>('search')
 
-const { placed, setSize } = useMenuPlacement({
+const { setSize, menuStyle } = useMenuPlacement({
   at: () => props.at,
   viewport: () => props.viewport,
   margin: () => props.margin,
+  asking: () => props.asking,
 })
 
-const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'))
+const isIgnored = (event: Event): boolean =>
+  event.target instanceof Element &&
+  Boolean(event.target.closest('.menu') && event.target.closest('.menu') !== menu.value)
 
-const { query, visibleItems, onKey, focusInitial } = useMenuSearch({
-  isSearchable: () => props.isSearchable,
-  items: () => props.items,
-  searchRef: search,
-  menuRef: menu,
-  onRowKey: (event) => onRowKey(event),
-  onChoose,
-  onResetHere: () => {
-    here.value = -1
-  },
-  goToInitial: () => goTo(getInitialIndex(props.trigger, props.items, props.current)),
-})
+const { listen, release } = useMenuDismissal(menu, () => emit('dismiss'), isIgnored)
 
-/** The items shown, with the rules that stand between their groups. */
-const rows = computed(() => groupItems(visibleItems.value))
-
-const {
-  here,
-  holdRow,
-  goTo,
-  onKey: onRowKey,
-} = useMenuKeys(() => visibleItems.value, menu, props.clock)
+const { query, visibleItems, rows, here, submenu, focusInitial, onKey, onResetNavigation } =
+  useMenuNavigation({
+    items: () => props.items,
+    isSearchable: () => props.isSearchable,
+    trigger: () => props.trigger,
+    current: () => props.current,
+    clock: props.clock,
+    searchRef: search,
+    menuRef: menu,
+    getFallbackPosition: () => props.at,
+    getSubmenuPosition: (el) => getSubmenuPosition(el),
+    onEmitChoose: (id) => emit('choose', id),
+    onEmitDismiss: () => emit('dismiss'),
+    hasFrom: () => Boolean(props.from),
+  })
 
 const isMenuVisible = computed(() => Boolean(props.isOpen))
 
-const menuStyle = computed(() => ({
-  left: `${placed.value.x}px`,
-  top: `${placed.value.y}px`,
-  '--asking': `${props.asking}px`,
-  '--room': props.viewport
-    ? `${Math.max(props.viewport.height - 2 * props.margin, 0)}px`
-    : `calc(100dvh - ${2 * props.margin}px)`,
-}))
-
 /* ---------------------------------- Hooks --------------------------------- */
-useMenuOpen({
+useMenuLifecycle({
   isOpen: () => isMenuVisible.value,
   listen,
   release,
   measure,
   focusInitial,
-  reset: () => {
-    here.value = -1
-    query.value = ''
-  },
+  onReset: onResetNavigation,
   getFrom: () => props.from,
+  getWatchedDeps: () => [visibleItems.value, props.at],
 })
 
-/** Measured again when what it holds changes, and when the point does. */
-watch(
-  () => [visibleItems.value, props.at],
-  async () => {
-    if (!isMenuVisible.value) return
-    await nextTick()
-    measure()
-  },
-)
-
-/* -------------------------------- Handlers -------------------------------- */
-function onChoose(item: MenuItem): void {
-  if (item.isDisabled) return
-  emit('choose', item.id)
-  emit('dismiss')
+/* --------------------------------- Helpers -------------------------------- */
+function getSubmenuPosition(el: HTMLElement | null): Position | null {
+  const box = el?.getBoundingClientRect()
+  return box ? { x: box.right, y: box.top } : null
 }
 
-/* --------------------------------- Helpers -------------------------------- */
-/** Its own size, which only the drawing knows. */
 function measure(): void {
   const box = menu.value?.getBoundingClientRect()
   if (box) setSize({ width: box.width, height: box.height })
@@ -128,7 +97,7 @@ function measure(): void {
     <div
       v-if="isMenuVisible"
       ref="menu"
-      class="menu numen panel-numen text-ink flex flex-col p-1.5 font-sans text-base"
+      class="menu numen"
       role="menu"
       tabindex="-1"
       :aria-label="name"
@@ -139,7 +108,7 @@ function measure(): void {
         <input
           ref="search"
           v-model="query"
-          class="menu__search text-ink"
+          class="menu__search"
           type="search"
           autocomplete="off"
           spellcheck="false"
@@ -150,22 +119,43 @@ function measure(): void {
 
       <MenuRow
         v-for="(item, index) in rows"
-        :ref="(row) => holdRow(item.id, row)"
+        :ref="(row) => submenu.onRegisterRow(item.id, row)"
         :key="item.id"
         :item="item"
         :current="current"
         :has-name="hasGroups && Boolean(item.group) && (item.isRule || index === 0)"
         :has-icons="Boolean($slots.icon)"
         @focus="here = index"
-        @choose="onChoose(item)"
+        @hover="submenu.onRowHover(item)"
+        @choose="submenu.onChoose(item)"
       >
         <slot name="icon" :id="item.id" />
       </MenuRow>
 
-      <p v-if="!visibleItems.length" class="menu__silence text-hushed px-2 py-1.5">
+      <p v-if="!visibleItems.length" class="menu__silence">
         <slot name="silence">Nothing to do</slot>
       </p>
     </div>
+
+    <Menu
+      v-if="submenu.active.value"
+      :items="submenu.active.value.items"
+      :at="submenu.active.value.at"
+      :from="submenu.active.value.from"
+      :viewport="viewport"
+      :margin="margin"
+      :to="to"
+      :clock="clock"
+      :has-groups="hasGroups"
+      :trigger="submenu.trigger.value"
+      is-open
+      @choose="submenu.onSubmenuChoose"
+      @dismiss="submenu.onClose"
+    >
+      <template v-if="$slots.icon" #icon="{ id }">
+        <slot name="icon" :id="id" />
+      </template>
+    </Menu>
   </Teleport>
 </template>
 

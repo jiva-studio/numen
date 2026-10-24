@@ -23,6 +23,8 @@ export interface MenuItem {
    * group is one group and carries no rules.
    */
   readonly group?: string
+  /** Submenu items that expand from this row. */
+  readonly children?: readonly MenuItem[]
 }
 
 /** One item as it is drawn: what it says, and the rule standing above it. */

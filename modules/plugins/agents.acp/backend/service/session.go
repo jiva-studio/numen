@@ -14,7 +14,6 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun"
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/agentrun/process"
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/agent/reasoning"
 )
 
@@ -84,7 +83,7 @@ func openACPSession(ctx context.Context, agent acpAgent) (*acpSession, error) {
 	s.cmd.Dir = dir
 	s.cmd.Env = os.Environ()
 	s.cmd.Stderr = s.stderr
-	process.Supervise(s.cmd)
+	supervise(s.cmd)
 	if err := s.start(); err != nil {
 		s.close()
 		return nil, err

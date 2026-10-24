@@ -3,7 +3,7 @@
  */
 import type { ComputedRef } from 'vue'
 import type { Half } from '@numen/ui'
-import type { OpenNote } from '@numen/plugin-sdk'
+import type { OpenNote } from '../buffer'
 import type { Marks } from '../cards'
 import type { BufferStencil } from './lib/stencil'
 

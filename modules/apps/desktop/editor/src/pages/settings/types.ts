@@ -57,4 +57,5 @@ export interface Installation {
 /** What the settings tab holds. */
 export interface SettingsTabState {
   readonly installation: Installation
+  readonly initialPluginId?: Ref<string | null>
 }

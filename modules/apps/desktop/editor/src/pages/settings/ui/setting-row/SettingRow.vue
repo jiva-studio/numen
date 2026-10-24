@@ -10,7 +10,7 @@
  */
 import { computed } from 'vue'
 
-// --- Props & Emits ---
+/* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
   /** What the setting is about, which the name is addressed by. */
   at: string
@@ -24,12 +24,8 @@ defineSlots<{
   default(props: { labelledBy: string }): unknown
 }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const nameId = computed(() => `settings-${props.at}`)
-
-// --- Handlers ---
-
-// --- Helpers ---
 </script>
 
 <template>
@@ -45,47 +41,40 @@ const nameId = computed(() => `settings-${props.at}`)
 </template>
 
 <style scoped>
-/* One row: the air around it, and the space between what it is called and what
-   it means. */
 .settings__row {
-  --settings-row-air: 0.5rem;
+  --settings-row-air: 0.625rem;
   --settings-label-gap: 0.125rem;
-  --settings-label-floor: max(18rem, 40%);
-  /* The name and what it means on the left, the control at the end of the row;
-     a control that does not fit beside the text wraps under it. */
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: var(--settings-row-air) var(--numen-panel-gap);
+  justify-content: space-between;
+  gap: var(--settings-row-air) var(--numen-panel-gap, 1rem);
   padding-block: var(--settings-row-air);
-  border-block-end: var(--numen-stroke) solid var(--numen-rule);
+  border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
 }
 
-/* What the row is called, and under it what it means. */
+.settings__row:last-child {
+  border-block-end: none;
+}
+
 .settings__label {
   display: flex;
   flex-direction: column;
   gap: var(--settings-label-gap);
-  flex: 1 1 var(--settings-label-floor);
-  min-inline-size: min(100%, var(--settings-label-floor));
+  flex: 1 1 auto;
+  min-inline-size: 0;
 }
 
-/* The name of a row and what it means are one size, and the name carries the
-   weight and the colour that tell them apart. */
 .settings__name {
   color: var(--numen-ink);
   font-weight: 500;
 }
 
-/* Controls of every width end at the one edge. */
 .settings__value {
   display: flex;
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   min-inline-size: 0;
-  max-inline-size: 100%;
-  margin-inline-start: auto;
   align-items: center;
-  justify-content: end;
+  justify-content: flex-end;
 }
 
 .settings__detail {

@@ -5,6 +5,7 @@
  * What the window is made of is `window.ts`. What is here is what a person
  * sees of it, and the binding between the two.
  */
+import { onMounted, onUnmounted } from 'vue'
 import { Notices, StatusBar, WorkspaceLayout } from '@numen/ui'
 import '@numen/ui/styles.css'
 import './app.css'
@@ -56,6 +57,19 @@ const linkMenu = useTabLinkMenu({
   isLinkable: (id) => windowTabs.getTab(id)?.kind.navigate !== undefined,
 })
 const writeMessage = log.getWriter('window')
+
+/* --------------------------------- Hooks ---------------------------------- */
+function onOpenSettings(): void {
+  runCommand('settings', getTarget())
+}
+
+onMounted(() => {
+  globalThis.addEventListener('numen:open-settings', onOpenSettings)
+})
+
+onUnmounted(() => {
+  globalThis.removeEventListener('numen:open-settings', onOpenSettings)
+})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onCloseTab(id: string, hold?: () => void) {
@@ -146,6 +160,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
       @cancel="statusBar.onCancelTask"
       @retry="statusBar.onRetryTask"
       @dismiss="statusBar.onDismissTask"
+      @action="statusBar.onActionTask"
     >
       <template #trailing>
         <UpdateIndicator />

@@ -11,6 +11,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -340,14 +341,52 @@ func (d *remoteDocument) Close() {
 }
 
 func (b *Document) resolveNamedPath(rawPath string) (string, error) {
+	clean := filepath.Clean(rawPath)
+	if IsTempDocument(clean) {
+		return clean, nil
+	}
 	if b.host == nil {
 		return "", security.ErrEmptyVaultRoot
 	}
 	return b.host.ValidatePluginPath(b.pluginID, rawPath)
 }
 
+// tempDocumentPrefix starts the name of a document the host puts in the temp folder.
+const tempDocumentPrefix = "numen-doc-"
+
+// IsTempDocument reports whether a clean path is a regular document file directly
+// in the system temp directory.
+func IsTempDocument(cleanPath string) bool {
+	tempDir := filepath.Clean(os.TempDir())
+	realTemp, err := filepath.EvalSymlinks(tempDir)
+	if err != nil {
+		realTemp = tempDir
+	}
+
+	dir := filepath.Dir(cleanPath)
+	if dir != tempDir && dir != realTemp {
+		return false
+	}
+	if !strings.HasPrefix(filepath.Base(cleanPath), tempDocumentPrefix) {
+		return false
+	}
+
+	if fi, err := os.Lstat(cleanPath); err == nil && fi.Mode()&os.ModeSymlink != 0 {
+		return false
+	}
+
+	realPath, err := filepath.EvalSymlinks(cleanPath)
+	if err == nil {
+		rel, err := filepath.Rel(realTemp, realPath)
+		if err != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return false
+		}
+	}
+	return true
+}
+
 func bufferTempDocument(file io.Reader) (string, func(), error) {
-	tmp, err := os.CreateTemp("", "numen-doc-*.pdf")
+	tmp, err := os.CreateTemp("", tempDocumentPrefix+"*.pdf")
 	if err != nil {
 		return "", nil, err
 	}

@@ -14,7 +14,7 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     text: words.travel,
     ...createRowKeys('travel', agent),
     group: 'note',
-    isOffered: isNoteOpen,
+    isOffered: (target, runs) => isNoteOpen(target) && runs.canRun('plex'),
   },
   {
     id: 'child',
@@ -45,8 +45,18 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     isOffered: isNoteOpen,
     warns: { action: words.destroys, detail: words.forever, back: words.typeBack },
   },
-  { id: 'ask', text: words.ask, group: 'note', isOffered: isNoteOpen },
+  {
+    id: 'ask',
+    text: words.ask,
+    group: 'note',
+    isOffered: (target, runs) => isNoteOpen(target) && runs.canRun('agent'),
+  },
   { id: 'copy', text: words.copy, group: 'note', isOffered: isNoteOpen },
-  { id: 'reveal', text: words.reveal, group: 'note', isOffered: isNoteOpen },
+  {
+    id: 'reveal',
+    text: words.reveal,
+    group: 'note',
+    isOffered: (target, runs) => isNoteOpen(target) && runs.canRun('files'),
+  },
   { id: 'preset', text: words.preset, group: 'note', isOffered: isNoteOpen },
 ]

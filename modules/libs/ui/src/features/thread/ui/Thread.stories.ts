@@ -192,10 +192,9 @@ const dragAcross = async (from: Position, to: Position): Promise<string | null> 
   if (!context) return null
 
   window.getSelection()?.removeAllRanges()
-  await (context.commands as { sweep(from: Position, to: Position): Promise<void> }).sweep(
-    mapToFrame(from),
-    mapToFrame(to),
-  )
+  await (
+    context.commands as unknown as { sweep(from: Position, to: Position): Promise<void> }
+  ).sweep(mapToFrame(from), mapToFrame(to))
   await new Promise((isDone) => setTimeout(isDone, 16))
 
   return String(window.getSelection() ?? '')

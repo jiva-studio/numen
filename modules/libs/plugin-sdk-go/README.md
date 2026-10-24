@@ -8,12 +8,10 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 
 | Module | Packages | Used by |
 |---|---|---|
-| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall` | every native plugin; `ai` by proofreading; `tools` by a plugin that offers an agent tools; `hostcall` by the clients of the host |
+| `plugin-sdk-go` | `server`, `ai`, `tools`, `hostcall`, `vault` | every native plugin; `ai` by proofreading; `tools` by a plugin that offers an agent tools; `hostcall` by the clients of the host; `vault` by readers and transcription |
 | `plugin-sdk-go/host` | `host`, `host/hosttest` | a plugin that works the vault through the host |
-| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/harness`, `agent/toolcall` | agent, agent-acp, agent-antigravity, agent-claude, agent-codex |
-| `plugin-sdk-go/models` | `models` | embeddings, ocr, transcription |
+| `plugin-sdk-go/agent` | `agent/agentrun`, `agent/reasoning`, `agent/toolcall` | agent, agent-acp, agent-antigravity, agent-claude, agent-codex |
 | `plugin-sdk-go/onnx` | `onnx` | embeddings, ocr, transcription |
-| `plugin-sdk-go/vault` | `vault` | reader-epub, reader-pdf, transcription |
 
 `make lib_plugin_sdk_go_lint`, `lib_plugin_sdk_go_build` and `lib_plugin_sdk_go_test` run over every module.
 
@@ -30,23 +28,11 @@ The SDK is a base module and a feature module in each folder that has a `go.mod`
 - `agentrun`: `Discover` finds a program on the path or in the standard and program places; `Locate` finds an agent program on the path or in the places it is installed to; `CreateTempDir` creates a temporary folder with a clean-up function; the registry of the runs an agent plugin has started and the session each conversation is on, and the supervision that ends a child and everything it started. `Start` runs a child that writes one JSON event per line and returns the work that reads it, `ForwardResponses` sends the work to an `AskAgent` stream, and `Service` answers `RegisterTool`, `ExtendSystemPrompt`, `GetAgentTools` and `FinishConversation` for a plugin that embeds it.
 - `ai.Complete(ctx, question)` asks the host for a model completion (needs the `ai:complete` permission); the host answers from the agent the plugin's `agent` setting names, else the default, and returns `ai.ErrNoConsent` until the person lets the plugin ask. The host endpoint comes from `NUMEN_HOST_PORT` and the token from `NUMEN_PLUGIN_TOKEN`.
 - `agentrun.HasTools(req)` is whether a task names a tool of the vault: a task naming none is a single answer, and the program is given no tool. `agentrun.WritePrompt(instructions, prompt)` puts the instructions before the prompt for a program that takes no system prompt.
-- `harness.Server` is numen's own agent, served by the agent plugin and linkable into any process that hosts a vault: it answers `AgentService` from an OpenAI-compatible chat API whose base URL (OpenRouter by default), key and model `Configure` hands over. A task lists the vault's tools over MCP at `tools_url` with `tools_token`, offers the model the ones the task names as function tools, calls each one the model asks for through MCP and feeds the result back, for `max_steps` requests to the model (25 by default). It starts no process and builds for android and ios.
 - `tools.Registry` is the tools a plugin offers an agent, served as `PluginToolService` once `Mount`ed (the manifest declares the `tools` capability). `tools.Add(registry, spec, run)` adds a tool from a function of a struct of arguments that answers with a struct: the schemas an agent is told come from the two structs, an error the function returns is a tool that ran and failed, and `spec` names the tool, its effect (`Reads` needs `vault:read`, `Writes` needs `vault:write`), the servers it is offered on and how a call is shown. The host lists the tools of every running plugin that declares the capability and holds each to the permission its effect needs.
 - `host.Client` works the vault the window is showing through `HostVaultService`: files with fingerprints (`Write` returns `ErrStale` for a file that moved past its baseline), the notes, types and links the index holds, the plugin's data folder, its cache and a watch. It returns the `notes/domain` types. `hosttest.Vault` is a vault in memory that answers the same `host.Vault` interface for tests. `hostcall` reads the host endpoint and the token from the environment and presents the token on unary and streaming calls.
 - `toolcall.Describe(words, name, call, args)` is a call of a vault tool as a person is told about it, read by the `ToolDeclaration`s of the task; `toolcall.ReadPartialField` reads a field of arguments still arriving.
-
-## Models
-
-The `models` package is the one place plugins keep and fetch models.
-
-- `GetHome` is the folder every plugin shares: `NUMEN_MODELS_DIR`, or `numen/models` under the application data directory.
-- `Fetch` downloads over https into that folder, checks the bytes against the pinned sha256 while they arrive, and puts the file in place only when they match. A file with no pin is fetched as named.
-- `Folder` carries the settings block, folder, download switch and progress listener of a plugin; it fetches through them, lists where a model file may be beside the application, and gives the `Source` that `Locate` takes.
 - The `onnx` package reads what the host sets for a plugin that declares `runtimes: ["onnxruntime"]`: `NUMEN_ONNX_RUNTIME_LIB`, the library to open sessions on, and `NUMEN_ONNX_PROVIDER`, the execution provider. `ResolveLibrary(configured, dir)` returns the library a plugin opens: its own `runtime` setting, else the library `FindLibrary` finds in the models folder its settings name, else the host's library. `FindInstalled` finds the C++ runtime the library is linked against on the loader path. It also holds what every ONNX plugin shares: the `Provider` and `ComputeUnits` settings and their parsing, the default thread count, the CoreML cache folder and options, `Open`, the one engine of the `onnxruntime_purego` binding a process opens, and `NewSessionOptions` and `NewSession`, which enable the execution provider with the CPU fallback and open a model. The `onnx` module is the one SDK module that links the binding, and only the ONNX plugins require it.
-- `NUMEN_OFFLINE=1` forbids every fetch, and `NUMEN_MODELS_QUOTA` caps the bytes the folder holds (32 GiB by default).
-- A plugin that downloads declares `network:outbound` in its manifest.
 
-## Pins and vault paths
+## Vault paths
 
-- `models.Pins` maps a model address to its pinned sha256. `models.Locate` returns where a model file is: a path as written, a file in the places a `models.Source` names (a pinned file only when it holds its sum), or a fetch.
-- `vault.ValidatePath` returns the clean path of a file inside the vault named by `NUMEN_VAULT_PATH`, and refuses an empty path, a traversal and a path outside the vault. `vault.IsTempDocument` lets a document the host put in the temp folder through.
+- `vault.ValidatePath` returns the clean path of a file inside the vault named by `NUMEN_VAULT_PATH`, and refuses an empty path, a traversal and a path outside the vault.

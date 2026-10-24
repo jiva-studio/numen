@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { cardBlanks, cardFields, DeckEditor, type InsertionPoint } from '@numen/ui'
-import { parseFileConflict } from '@numen/plugin-sdk'
+import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { DeckTabState } from '../types'
 import DeckScheduleBar from './DeckScheduleBar.vue'

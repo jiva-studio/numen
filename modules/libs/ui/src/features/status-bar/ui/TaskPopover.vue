@@ -28,6 +28,7 @@ const emit = defineEmits<{
   (event: 'cancel', id: string): void
   (event: 'retry', id: string): void
   (event: 'dismiss', id: string): void
+  (event: 'action', id: string): void
 }>()
 
 /* --------------------------------- State ---------------------------------- */
@@ -45,6 +46,10 @@ function onRetry(id: string) {
 
 function onDismiss(id: string) {
   emit('dismiss', id)
+}
+
+function onAction(id: string) {
+  emit('action', id)
 }
 
 function onClose() {
@@ -71,6 +76,7 @@ function onClose() {
           @cancel="onCancel"
           @retry="onRetry"
           @dismiss="onDismiss"
+          @action="onAction"
         />
         <TaskItem
           v-for="task in group.tasks"
@@ -80,6 +86,7 @@ function onClose() {
           @cancel="onCancel"
           @retry="onRetry"
           @dismiss="onDismiss"
+          @action="onAction"
         />
       </template>
     </div>

@@ -3,7 +3,12 @@
  * the files made and moved, and the window's commands over a row.
  */
 import { asFailure, formatErrorMessage, getKnownErrorCode } from '@numen/wire'
-import type { VaultFiles, WorkspaceHost } from '@numen/plugin-sdk'
+import type {
+  ContextMenuRegistration,
+  ContextMenuTarget,
+  VaultFiles,
+  WorkspaceHost,
+} from '@numen/plugin-sdk'
 import { running, type ArtifactStates } from '@/entities/artifact'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
@@ -127,6 +132,9 @@ export interface VaultFilesDeps {
 
 export function createVaultFiles(deps: VaultFilesDeps): VaultFiles & {
   createFile(kind: string, folder: string, name: string): Promise<string>
+  createDeck(folder: string, name: string): Promise<string>
+  createStencil(folder: string, name: string): Promise<string>
+  createPreset(folder: string, name: string): Promise<string>
 } {
   const { core, made, making, getTarget, commandDeps } = deps
   const run = (id: string, target: CommandTarget, name: string) =>
@@ -151,16 +159,26 @@ export interface PathCommandDeps {
   readonly vaults: { readonly makes: { readonly value: ReadonlyMap<string, ArtifactStates> } }
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget) => void
+  readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
+  readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
 }
 
 /** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
 export function createPathCommandHost(
   deps: PathCommandDeps,
 ): Pick<WorkspaceHost, 'getPathCommands' | 'runPathCommand' | 'getCommandIcon' | 'getEntryIcon'> {
-  const { runs, vaults, getTarget, runCommand } = deps
+  const { runs, vaults, getTarget, runCommand, getContextMenuItems, runContextMenu } = deps
   return {
-    getPathCommands: ({ entry, isSeveral }) =>
-      createPathCommands(
+    getPathCommands: ({ entry, isSeveral }) => {
+      const target: ContextMenuTarget = {
+        path: entry.path,
+        name: entry.name,
+        isFolder: entry.isFolder,
+        kind: entry.kind,
+        isSeveral,
+      }
+      const contributions = getContextMenuItems ? getContextMenuItems(target) : []
+      return createPathCommands(
         {
           source: entry.kind,
           isFolder: entry.isFolder,
@@ -169,9 +187,34 @@ export function createPathCommandHost(
         },
         isSeveral,
         (id) => runs.canRun(id),
-      ),
+        contributions,
+      )
+    },
     runPathCommand: (id, { paths, name, source }) => {
       const path = paths[0] ?? ''
+      const target: ContextMenuTarget = {
+        path,
+        name,
+        isFolder: false,
+        kind: source,
+        isSeveral: paths.length > 1,
+      }
+      if (runContextMenu) {
+        void runContextMenu(id, target).then((handled) => {
+          if (!handled) {
+            runCommand(id, {
+              ...getTarget(),
+              path,
+              title: name,
+              file: path,
+              source,
+              made: vaults.makes.value.get(path) ?? {},
+              others: paths.slice(1),
+            })
+          }
+        })
+        return
+      }
       runCommand(id, {
         ...getTarget(),
         path,

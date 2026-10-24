@@ -2,13 +2,15 @@
  * Adapts domain background tasks into status bar representations and handles interactions.
  */
 import { computed, ref, type Ref } from 'vue'
-import type { StatusBarTask, TaskState } from '@numen/ui'
+import type { StatusBarTask } from '@numen/ui'
 import type { Task } from '@/shared/notices/task'
 
 export interface WindowStatusBarDeps {
   tasks: Ref<readonly Task[]>
   onCancel?(id: string): void
   onRetry?(id: string): void
+  onAction?(id: string): void
+  resolveAction?: (task: Task) => { label?: string; pluginId?: string | undefined } | undefined
 }
 
 const GROUP_PATTERNS: readonly { readonly group: string; readonly pattern: RegExp }[] = [
@@ -32,32 +34,50 @@ function getTaskGroup(label: string, about: string): string {
   return label || 'Background Tasks'
 }
 
-export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBarDeps) {
+function getTaskCounting(counting: string): string | undefined {
+  if (!counting || counting === 'items') return undefined
+  return counting
+}
+
+function createStatusBarTask(
+  task: Task,
+  action?: { label?: string; pluginId?: string | undefined },
+): StatusBarTask {
+  const hasTotal = task.total > 0
+  const isFailed = Boolean(task.error)
+
+  return {
+    id: task.id,
+    label: task.label,
+    group: getTaskGroup(task.label, task.about),
+    about: task.about || undefined,
+    progress: hasTotal ? Math.round((task.completedCount / task.total) * 100) : undefined,
+    done: hasTotal ? task.completedCount : undefined,
+    total: hasTotal ? task.total : undefined,
+    counting: getTaskCounting(task.counting),
+    state: isFailed ? 'failed' : 'running',
+    canCancel: !isFailed,
+    error: isFailed ? task.error : undefined,
+    actionLabel: action ? action.label : undefined,
+    actionId: action ? action.pluginId : undefined,
+  }
+}
+
+export function useWindowStatusBar({
+  tasks,
+  onCancel,
+  onRetry,
+  onAction,
+  resolveAction,
+}: WindowStatusBarDeps) {
   const dismissedIds = ref(new Set<string>())
 
   const statusBarTasks = computed<readonly StatusBarTask[]>(() => {
     return tasks.value
       .filter((task) => !dismissedIds.value.has(task.id))
       .map((task): StatusBarTask => {
-        const hasTotal = task.total > 0
-        const progress = hasTotal ? Math.round((task.completedCount / task.total) * 100) : undefined
-        const isFailed = task.error !== ''
-        const state: TaskState = isFailed ? 'failed' : 'running'
-        const group = getTaskGroup(task.label, task.about)
-
-        return {
-          id: task.id,
-          label: task.label,
-          group,
-          about: task.about || undefined,
-          progress,
-          done: hasTotal ? task.completedCount : undefined,
-          total: hasTotal ? task.total : undefined,
-          counting: task.counting === 'items' ? undefined : task.counting || undefined,
-          state,
-          canCancel: !isFailed,
-          error: isFailed ? task.error : undefined,
-        }
+        const action = task.error && resolveAction ? resolveAction(task) : undefined
+        return createStatusBarTask(task, action)
       })
   })
 
@@ -73,10 +93,15 @@ export function useWindowStatusBar({ tasks, onCancel, onRetry }: WindowStatusBar
     dismissedIds.value.add(id)
   }
 
+  function onActionTask(id: string) {
+    onAction?.(id)
+  }
+
   return {
     tasks: statusBarTasks,
     onCancelTask,
     onRetryTask,
     onDismissTask,
+    onActionTask,
   }
 }

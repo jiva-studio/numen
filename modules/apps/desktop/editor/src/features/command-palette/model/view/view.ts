@@ -37,7 +37,7 @@ export function getPaletteView(state: ViewState) {
     }
   }
 
-  const getSilenceMessage = (target: CommandTarget): string => {
+  const _getSilenceMessage = (target: CommandTarget): string => {
     if (!target.isReady) return words.noVault
     if (target.path) return words.noneFound
     return words.noNote
@@ -52,21 +52,25 @@ export function getPaletteView(state: ViewState) {
         .map((one) => renderItem(one, target, word))
         .filter((item) => item !== null)
 
-    // The runs are offered over a book and over a recording, and their group
-    // stands where one of them is in front.
-    const overFile = items('file')
+    const note = items('note')
+    const file = items('file')
+    const window = items('window')
+    const vault = items('vault')
 
-    return [
-      {
-        id: 'note',
-        title: words.noteGroupTitle,
-        items: items('note'),
-        silence: getSilenceMessage(target),
-      },
-      ...(overFile.length === 0 ? [] : [{ id: 'file', title: words.overFile, items: overFile }]),
-      { id: 'window', title: words.overWindow, items: items('window'), silence: words.noneFound },
-      { id: 'vault', title: words.overVault, items: items('vault'), silence: words.noneFound },
-    ]
+    const groups: PaletteGroup[] = []
+    if (note.length > 0) {
+      groups.push({ id: 'note', title: words.noteGroupTitle, items: note })
+    }
+    if (file.length > 0) {
+      groups.push({ id: 'file', title: words.overFile, items: file })
+    }
+    if (window.length > 0) {
+      groups.push({ id: 'window', title: words.overWindow, items: window })
+    }
+    if (vault.length > 0) {
+      groups.push({ id: 'vault', title: words.overVault, items: vault })
+    }
+    return groups
   }
 
   /** What the palette draws at its current position, over the words typed into it. */

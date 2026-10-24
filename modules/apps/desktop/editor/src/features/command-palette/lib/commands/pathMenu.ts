@@ -6,6 +6,7 @@
  * its own in the palette; any other row offers what can be done to a file, and
  * a recording or a scanned document the run over it.
  */
+import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import type { MenuItem } from '@numen/ui'
 import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
 import type { BookFormat, DocumentFormat, Source } from '@/entities/file'
@@ -15,7 +16,11 @@ import { createCommands } from './table'
 import { PATH_WORDS as own } from '../../words'
 
 /** One command the menu offers, in the group it is drawn in. */
-export type PathItem = MenuItem & { readonly group: string }
+export type PathItem = MenuItem & {
+  readonly group: string
+  readonly parentId?: string
+  readonly children?: readonly PathItem[]
+}
 
 /** The groups the items stand in, in the order they are drawn. */
 const GROUP = {
@@ -32,25 +37,97 @@ const NOTED: ReadonlyMap<string, string> = new Map(
   getNoteCommands(createCommands(words)).map((one) => [one.id, one.text]),
 )
 
+export type PathContribution = {
+  readonly id: string
+  readonly text: string
+  readonly group?: string
+  readonly parentId?: string
+  readonly isDisabled?: boolean | ((target: ContextMenuTarget) => boolean)
+  readonly children?: readonly PathItem[]
+}
+
 const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
   return [{ id, text: NOTED.get(id) ?? id, group }]
 }
 
-/** What a row standing for a note offers. */
-const NOTE: readonly PathItem[] = [
+/** What a row standing for a note offers out of core. */
+const _CORE_NOTE: readonly PathItem[] = [
   ...getNoteCommand('read', GROUP.open),
-  ...getNoteCommand('travel', GROUP.open),
   ...getNoteCommand('copy', GROUP.file),
-  ...getNoteCommand('child', GROUP.plex),
-  ...getNoteCommand('parent', GROUP.plex),
-  ...getNoteCommand('jump', GROUP.plex),
-  ...getNoteCommand('title', GROUP.plex),
   ...getNoteCommand('ask', GROUP.agent),
   ...getNoteCommand('remove', GROUP.remove),
 ]
 
 /** The removal of a file or of several. */
 const REMOVE: PathItem = { id: 'remove', text: own.remove, group: GROUP.remove }
+
+const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly PathItem[] => {
+  const openContributed = contributions
+    .filter((one) => one.group === GROUP.open)
+    .map((one) => ({
+      id: one.id,
+      text: one.text,
+      group: GROUP.open,
+      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+    }))
+
+  const relationContributed = contributions.filter(
+    (one) => one.parentId === 'relation' || one.group === GROUP.plex,
+  )
+
+  const relationSubmenu: PathItem[] =
+    relationContributed.length > 0
+      ? [
+          {
+            id: 'relation',
+            text: own.relation,
+            group: GROUP.plex,
+            children: relationContributed.map((one) => ({
+              id: one.id,
+              text: one.text,
+              group: GROUP.plex,
+              isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+            })),
+          },
+        ]
+      : []
+
+  const newContributed = contributions
+    .filter((one) => one.parentId === 'new')
+    .map((one) => ({
+      id: one.id,
+      text: one.text,
+      group: GROUP.file,
+      parentId: 'new',
+      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+    }))
+
+  const otherContributed = contributions
+    .filter(
+      (one) =>
+        one.group !== GROUP.open &&
+        one.parentId !== 'relation' &&
+        one.group !== GROUP.plex &&
+        one.parentId !== 'new',
+    )
+    .map((one) => ({
+      id: one.id,
+      text: one.text,
+      group: one.group ?? GROUP.file,
+      isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+    }))
+
+  return [
+    ...getNoteCommand('read', GROUP.open),
+    ...openContributed,
+    ...getNoteCommand('copy', GROUP.file),
+    ...newContributed,
+    ...otherContributed,
+    ...relationSubmenu,
+    ...getNoteCommand('ask', GROUP.agent),
+    REMOVE,
+  ]
+}
 
 /**
  * What a row standing for anything but a note offers, with the runs its kind
@@ -159,10 +236,22 @@ export const createPathCommands = (
   on: MenuRow,
   hasSeveral: boolean,
   canRun: RunGuard,
+  contributions: readonly PathContribution[] = [],
 ): readonly PathItem[] => {
   if (hasSeveral) return [REMOVE]
-  if (on.isFolder) return FILED
-  if (on.source === 'note') return NOTE
+  if (on.isFolder) {
+    const folderContributed = contributions
+      .filter((one) => one.parentId === 'new' || one.group === GROUP.file)
+      .map((one) => ({
+        id: one.id,
+        text: one.text,
+        group: GROUP.file,
+        ...(one.parentId ? { parentId: one.parentId } : {}),
+        isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
+      }))
+    return [...folderContributed, ...FILED]
+  }
+  if (on.source === 'note') return getNoteMenu(contributions)
   if (on.source === 'url') return urls(canRun)
   if (on.source === 'recording') return getFileMenu(...getRecordingRuns(on.made, canRun))
   if (on.source === 'book') return getFileMenu(...getBookRuns(on.format, on.made, canRun))

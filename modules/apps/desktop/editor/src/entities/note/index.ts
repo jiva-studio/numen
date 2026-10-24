@@ -16,13 +16,8 @@ export type {
   PairLink,
   WriteResult,
 } from './lib/note'
-export { convertErrorCode, ERROR_MESSAGES, getMarkOf, openNotes } from '@numen/plugin-sdk'
-export type {
-  NoteBaseline,
-  NoteCore as Notes,
-  NoteState as State,
-  OpenNote,
-} from '@numen/plugin-sdk'
+export { convertErrorCode, ERROR_MESSAGES, getMarkOf, openNotes } from './model/buffer'
+export type { NoteBaseline, NoteCore as Notes, NoteState as State, OpenNote } from './model/buffer'
 export { CREATABLE, UNTITLED, createNoteWriter } from './model/maker'
 export type { NoteCreator, NoteMaker, NoteRef } from './model/maker'
 export { WORDS } from './words'

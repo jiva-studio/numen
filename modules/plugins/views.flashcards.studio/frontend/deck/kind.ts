@@ -2,7 +2,8 @@
  * The deck tab kind: a deck edited as a grid of cards, a tab to a file.
  */
 import { Layers } from '@lucide/vue'
-import { getMarkOf, type TabKindRegistration } from '@numen/plugin-sdk'
+import type { TabKindRegistration } from '@numen/plugin-sdk'
+import { getMarkOf } from '../buffer'
 import type { Cards } from '../cards'
 import DeckTab from './ui/DeckTab.vue'
 import type { DeckTabState } from './types'

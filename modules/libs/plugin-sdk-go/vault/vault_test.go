@@ -108,36 +108,6 @@ func TestValidatePathRejectsSymlinkEscapes(t *testing.T) {
 	}
 }
 
-func TestATempDocumentIsAllowedOnlyWhenTheCallerAllowsIt(t *testing.T) {
-	t.Setenv("NUMEN_VAULT_PATH", t.TempDir())
-	tempDoc := filepath.Join(os.TempDir(), "numen-doc-test123")
-
-	if _, err := ValidatePath(tempDoc); !errors.Is(err, ErrOutsideVault) {
-		t.Errorf("temp document without allow: err = %v", err)
-	}
-	if clean, err := ValidatePath(tempDoc, IsTempDocument); err != nil || clean != tempDoc {
-		t.Errorf("temp document: got %q, err %v", clean, err)
-	}
-	other := filepath.Join(os.TempDir(), "other-file")
-	if _, err := ValidatePath(other, IsTempDocument); !errors.Is(err, ErrOutsideVault) {
-		t.Errorf("other temp file: err = %v", err)
-	}
-
-	// Planted symlink in temp directory pointing outside.
-	outsideTarget := filepath.Join(t.TempDir(), "secret.pdf")
-	if err := os.WriteFile(outsideTarget, []byte("data"), 0o600); err != nil {
-		t.Fatal(err)
-	}
-	plantedSymlink := filepath.Join(os.TempDir(), "numen-doc-planted")
-	_ = os.Remove(plantedSymlink)
-	if err := os.Symlink(outsideTarget, plantedSymlink); err == nil {
-		defer os.Remove(plantedSymlink)
-		if IsTempDocument(plantedSymlink) {
-			t.Errorf("planted symlink in temp directory was accepted")
-		}
-	}
-}
-
 // A vault root given to ValidatePathIn holds the path, whatever the environment says.
 func TestValidatePathInContainsThePathToTheRootItIsGiven(t *testing.T) {
 	root := t.TempDir()

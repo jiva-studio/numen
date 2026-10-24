@@ -108,7 +108,6 @@ const says = computed(() => {
 <style scoped>
 /* The strip is the face's own, so its name leads it and the fields follow. */
 .face__said {
-  position: relative;
   inline-size: 100%;
 }
 
@@ -149,19 +148,22 @@ const says = computed(() => {
   outline: none;
 }
 
-/* What is wrong with the face is placed under the strip and over the window,
-   taking no room from it. A press meant for what is underneath reaches it. */
+/* What is wrong with the face is placed at the bottom right, stacked over any pane errors. */
 .face__amiss {
   position: absolute;
-  z-index: 1;
-  inset-block-start: 100%;
-  inset-inline-end: var(--box-pad-inline);
+  z-index: 5;
+  inset-block-end: var(--box-air, 0.5rem);
+  inset-inline-end: var(--box-pad-inline, 0.5rem);
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.125rem;
-  max-inline-size: calc(100% - 2 * var(--box-pad-inline));
+  max-inline-size: calc(100% - 2 * var(--box-pad-inline, 0.5rem));
   pointer-events: none;
+}
+
+:global(.face:has(.face__pane .face__amiss)) .face__amiss {
+  inset-block-end: calc(var(--box-air, 0.5rem) + 1.875rem);
 }
 
 /* What is wrong is read over whatever it covers, so it carries a ground. */

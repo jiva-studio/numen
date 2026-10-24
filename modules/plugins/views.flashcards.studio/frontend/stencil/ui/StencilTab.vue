@@ -4,7 +4,7 @@
  */
 import { computed } from 'vue'
 import { StencilEditor, type InsertionPoint, type Half } from '@numen/ui'
-import { parseFileConflict } from '@numen/plugin-sdk'
+import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { StencilTabState } from '../types'
 import { WORDS as words } from '../../cards'

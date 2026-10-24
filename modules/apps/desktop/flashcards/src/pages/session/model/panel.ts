@@ -115,6 +115,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const api = {
     open,
     written: content,
+    text: content,
     about,
     turns,
     isWorking,

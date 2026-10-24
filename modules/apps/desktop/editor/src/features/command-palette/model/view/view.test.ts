@@ -83,7 +83,7 @@ describe('the commands as the words typed leave them', () => {
   })
 
   it('leaves out every command the words typed are not in', () => {
-    expect(getNoteGroup(view, front(), 'zzzqqq')?.items).toStrictEqual([])
+    expect(getNoteGroup(view, front(), 'zzzqqq')).toBeUndefined()
   })
 
   it('reads the words typed around spaces and in any case', () => {
@@ -120,19 +120,12 @@ describe('the command reached on the same row', () => {
   })
 })
 
-describe('what the group over a note says while it holds nothing', () => {
+describe('empty command groups', () => {
   const view = createView(createCommands(words))
 
-  it('says the vault could not be opened where it is not ready', () => {
-    expect(getNoteGroup(view, front({ isReady: false }), '')?.silence).toBe(words.noVault)
-  })
-
-  it('says nothing was found where a note is in front', () => {
-    expect(getNoteGroup(view, front(), '')?.silence).toBe(words.noneFound)
-  })
-
-  it('says no note is in front where none is', () => {
-    expect(getNoteGroup(view, front({ path: '' }), '')?.silence).toBe(words.noNote)
+  it('omits groups that hold no commands', () => {
+    expect(getNoteGroup(view, front({ isReady: false }), '')).toBeUndefined()
+    expect(getNoteGroup(view, front({ path: '' }), '')).toBeUndefined()
   })
 })
 

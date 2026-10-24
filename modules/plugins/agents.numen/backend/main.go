@@ -1,4 +1,4 @@
-// Command agent serves numen's own agent, the harness of the plugin SDK, as a plugin process.
+// Command agent serves numen's own agent as a plugin process.
 package main
 
 import (

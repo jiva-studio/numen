@@ -6,6 +6,8 @@ import type {
   AgentProviderRegistration,
   BufferHost,
   CommandRegistration,
+  ContextMenuRegistration,
+  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -22,6 +24,8 @@ import type { AnyTabKind, SourceReader } from '@/entities/tab/@x/plugin'
 export type {
   AgentProviderRegistration,
   CommandRegistration,
+  ContextMenuRegistration,
+  ContextMenuTarget,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -81,6 +85,7 @@ export interface PluginContextHost {
   registerReader(pluginId: string, registration: ReaderRegistration): Disposable
   registerTabKind(pluginId: string, registration: TabKindRegistration): Disposable
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
+  registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
   getSetting<T = unknown>(pluginId: string, key: string): T | undefined
   onSettingChange<T = unknown>(

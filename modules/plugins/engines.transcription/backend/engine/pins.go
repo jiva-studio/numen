@@ -1,7 +1,5 @@
 package engine
 
-import "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
-
 // The models the defaults fetch, each at a fixed revision and with the sha256
 // its bytes must hold.
 const (
@@ -9,7 +7,7 @@ const (
 	segmenterDefault = "https://huggingface.co/onnx-community/silero-vad/resolve/e71cae966052b992a7eca6b17738916ce0eca4ec/onnx/model.onnx"
 )
 
-var pinnedSums = models.Pins{
+var pinnedSums = Pins{
 	parakeetDefault + encoderFile: "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247",
 	parakeetDefault + decoderFile: "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e",
 	parakeetDefault + joinerFile:  "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3",

@@ -6,6 +6,7 @@ import {
 } from '@numen/plugin-sdk/testing'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
 import plugin, { activate, DECK, PRESET, STENCIL } from './index'
+import { cards, presets } from './cards'
 
 const createContext = () => {
   const writers: string[] = []
@@ -112,5 +113,39 @@ describe('flashcards-studio plugin', () => {
     await plugin.activate(ctx)
 
     expect(ctx.getRegisteredTabKinds()).toHaveLength(3)
+  })
+
+  it('registers context menu items when files service is available', async () => {
+    const createDeck = vi
+      .spyOn(cards, 'createDeck')
+      .mockResolvedValue({ ok: true, value: { path: 'Decks/New deck.md' } } as never)
+    const createStencil = vi
+      .spyOn(cards, 'createStencil')
+      .mockResolvedValue({ ok: true, value: { path: 'Stencils/New stencil.md' } } as never)
+    const createPreset = vi
+      .spyOn(presets, 'createPreset')
+      .mockResolvedValue({ ok: true, value: { path: 'Presets/New preset.md' } } as never)
+    const { ctx } = createContext()
+    ;(ctx as unknown as { files: unknown }).files = {}
+
+    activate(ctx)
+
+    const menus = ctx.getRegisteredContextMenus()
+    expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newStencil', 'newPreset'])
+    expect(menus.every((m) => m.parentId === 'new')).toBe(true)
+
+    await menus[0]?.handler({ path: 'Decks', isFolder: true, kind: 'other', isSeveral: false })
+    expect(createDeck).toHaveBeenCalledWith('New deck', 'Decks')
+
+    await menus[1]?.handler({
+      path: 'Decks/One.md',
+      isFolder: false,
+      kind: 'note',
+      isSeveral: false,
+    })
+    expect(createStencil).toHaveBeenCalledWith('New stencil', 'Decks', [])
+
+    await menus[2]?.handler({ path: '', isFolder: false, kind: 'other', isSeveral: false })
+    expect(createPreset).toHaveBeenCalledWith('New preset', '')
   })
 })

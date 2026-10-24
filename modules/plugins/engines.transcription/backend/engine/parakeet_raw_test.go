@@ -171,38 +171,52 @@ func TestEveryPositionOnTheRawRuntimeAnswersBitForBitWhatTheLibraryAnswers(t *te
 
 	var libraryScores, rawScores []float32
 	for step, token := range []int{delta.blank, 3, 17, 250, 9, 1024, 4, 4, 77, 600, 12, 5} {
-		library.target[0], raw.target[0] = int32(token), int32(token)
-		if _, err := delta.predict(library.decoderInputs, library.prediction, library.state, library.cell); err != nil {
-			t.Fatal(err)
-		}
-		if step == 0 {
-			if _, err := delta.predict(raw.decoderInputs, raw.prediction, raw.state, raw.cell); err != nil {
-				t.Fatal(err)
-			}
-		} else if _, err := delta.predictRaw(raw.decoderRun, raw.prediction, raw.state, raw.cell); err != nil {
-			t.Fatal(err)
-		}
-		for name, pair := range map[string][2][]float32{
-			"prediction": {library.prediction, raw.prediction}, "state": {library.state, raw.state}, "cell": {library.cell, raw.cell},
-		} {
-			if !slices.Equal(pair[0], pair[1]) {
-				t.Fatalf("step %d: the raw runtime left a different %s", step, name)
-			}
-		}
+		libraryScores, rawScores = compareStepInTest(t, delta, library, raw, step, token, data, libraryScores, rawScores)
+	}
+}
 
-		if libraryScores, err = delta.computeJoint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
+func compareStepInTest(
+	t *testing.T,
+	delta *Transcriber,
+	library, raw *position,
+	step, token int,
+	data []float32,
+	libraryScores, rawScores []float32,
+) ([]float32, []float32) {
+	t.Helper()
+	library.target[0], raw.target[0] = int32(token), int32(token)
+	if _, err := delta.predict(library.decoderInputs, library.prediction, library.state, library.cell); err != nil {
+		t.Fatal(err)
+	}
+	if step == 0 {
+		if _, err := delta.predict(raw.decoderInputs, raw.prediction, raw.state, raw.cell); err != nil {
 			t.Fatal(err)
 		}
-		if step == 0 {
-			rawScores, err = delta.computeJoint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
-		} else {
-			rawScores, err = delta.computeJointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
-		}
-		if err != nil {
-			t.Fatal(err)
-		}
-		if !slices.Equal(libraryScores, rawScores) {
-			t.Fatalf("step %d: the raw runtime scored differently", step)
+	} else if _, err := delta.predictRaw(raw.decoderRun, raw.prediction, raw.state, raw.cell); err != nil {
+		t.Fatal(err)
+	}
+	for name, pair := range map[string][2][]float32{
+		"prediction": {library.prediction, raw.prediction}, "state": {library.state, raw.state}, "cell": {library.cell, raw.cell},
+	} {
+		if !slices.Equal(pair[0], pair[1]) {
+			t.Fatalf("step %d: the raw runtime left a different %s", step, name)
 		}
 	}
+
+	var err error
+	if libraryScores, err = delta.computeJoint(library.joinerInputs, library.frame, data[:encoded], libraryScores); err != nil {
+		t.Fatal(err)
+	}
+	if step == 0 {
+		rawScores, err = delta.computeJoint(raw.joinerInputs, raw.frame, data[:encoded], rawScores)
+	} else {
+		rawScores, err = delta.computeJointRaw(raw.joiner, raw.frame, data[:encoded], rawScores)
+	}
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(libraryScores, rawScores) {
+		t.Fatalf("step %d: the raw runtime scored differently", step)
+	}
+	return libraryScores, rawScores
 }

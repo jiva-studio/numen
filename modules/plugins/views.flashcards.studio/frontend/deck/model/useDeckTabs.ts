@@ -3,7 +3,8 @@
  */
 import { computed } from 'vue'
 import { asFailure, asValue } from '@numen/wire'
-import { openNotes, type BufferHost, type FileBuffers, type PathRename } from '@numen/plugin-sdk'
+import type { BufferHost, PathRename } from '@numen/plugin-sdk'
+import { openNotes } from '../../buffer'
 import { getFailureCode, type Cards, type Presets } from '../../cards'
 import { createDeckAnswers } from './answers'
 import { createDeckReader } from './reader'
@@ -81,7 +82,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
 function createDeckNoteStore(
   cards: Cards,
   vaultAnswers: ReturnType<typeof createDeckAnswers>,
-): FileBuffers {
+): ReturnType<typeof openNotes> {
   return openNotes({
     read: async (path) => {
       const answer = await cards.readDeck(path)
@@ -130,7 +131,7 @@ function createDeckNoteStore(
 }
 
 interface DeckTabStateFactoryDeps {
-  store: FileBuffers
+  store: ReturnType<typeof openNotes>
   read: ReturnType<typeof createDeckReader>
   vaultAnswers: ReturnType<typeof createDeckAnswers>
   wiring: ReturnType<typeof useDeckScheduleSync>

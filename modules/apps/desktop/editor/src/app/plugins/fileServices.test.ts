@@ -116,9 +116,9 @@ describe('the files of the vault a plugin is handed', () => {
       Promise.resolve({ ok: true, value: { path: `dir/${kind}.md` } }),
     )
 
-    expect(await files.createDeck('dir', 'D')).toBe('dir/deck.md')
-    expect(await files.createStencil('dir', 'S')).toBe('dir/stencil.md')
-    expect(await files.createPreset('dir', 'P')).toBe('dir/preset.md')
+    expect(await files.createFile('deck', 'dir', 'D')).toBe('dir/deck.md')
+    expect(await files.createFile('stencil', 'dir', 'S')).toBe('dir/stencil.md')
+    expect(await files.createFile('preset', 'dir', 'P')).toBe('dir/preset.md')
 
     expect(createFileOfKind.mock.calls).toStrictEqual([
       ['deck', 'dir', 'D'],
@@ -131,7 +131,7 @@ describe('the files of the vault a plugin is handed', () => {
   it('make no deck, and say so, where no kind of tab makes one', async () => {
     const { files, writeMessage } = setup()
 
-    expect(await files.createDeck('dir', 'D')).toBe('')
+    expect(await files.createFile('deck', 'dir', 'D')).toBe('')
 
     expect(writeMessage.mock.calls).toEqual([[words.unavailable, 'error']])
   })
@@ -140,7 +140,7 @@ describe('the files of the vault a plugin is handed', () => {
     const { files, createFileOfKind, writeMessage } = setup()
     createFileOfKind.mockResolvedValue({ ok: false, error: 'occupied' })
 
-    expect(await files.createStencil('dir', 'S')).toBe('')
+    expect(await files.createFile('stencil', 'dir', 'S')).toBe('')
 
     expect(writeMessage.mock.calls).toEqual([[words.errors.occupied, 'error']])
   })

@@ -1,9 +1,9 @@
 {
   "id": "md.numen.views.plex.graph",
-  "name": "Plexus Graph Visualizer",
+  "name": "Plex Graph",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Modular knowledge graph visualizer and plexus network explorer",
+  "description": "Modular knowledge graph visualizer and plex explorer",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],

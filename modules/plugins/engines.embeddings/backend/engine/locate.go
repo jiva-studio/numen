@@ -2,8 +2,11 @@ package engine
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -12,8 +15,6 @@ import (
 	"time"
 
 	"github.com/gomlx/go-huggingface/hub"
-
-	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models"
 )
 
 // FetchProgress reports progress while downloading models.
@@ -56,8 +57,54 @@ func locateInDir(dir, file string) (Paths, error) {
 	return p, nil
 }
 
+const (
+	// EnvDir names the folder plugins keep their models in.
+	EnvDir = "NUMEN_MODELS_DIR"
+	// EnvOffline forbids fetching a model when set.
+	EnvOffline = "NUMEN_OFFLINE"
+	homeDir    = "numen/models"
+)
+
+// GetHome returns the shared models folder.
+func GetHome() (string, error) {
+	if dir := os.Getenv(EnvDir); dir != "" {
+		return dir, nil
+	}
+	base, err := os.UserConfigDir()
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(base, filepath.FromSlash(homeDir)), nil
+}
+
+// IsOffline reports whether EnvOffline forbids fetching.
+func IsOffline() bool {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv(EnvOffline))) {
+	case "1", "true", "yes", "on":
+		return true
+	}
+	return false
+}
+
+func verifyFile(path, wantSum string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	h := sha256.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return err
+	}
+	if found := hex.EncodeToString(h.Sum(nil)); !strings.EqualFold(found, wantSum) {
+		return fmt.Errorf("%s holds %s, and %s is pinned", path, found, wantSum)
+	}
+	return nil
+}
+
 func downloadModel(ctx context.Context, cfg LocalModel, file string, progress FetchProgress) (Paths, error) {
-	home, err := models.GetHome()
+	home, err := GetHome()
 	if err != nil {
 		return Paths{}, fmt.Errorf("models folder: %w", err)
 	}
@@ -68,8 +115,8 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 	if p, ok, err := locateCached(repo, cfg, file); err != nil || ok {
 		return p, err
 	}
-	if models.IsOffline() {
-		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, models.EnvOffline)
+	if IsOffline() {
+		return Paths{}, fmt.Errorf("%s is not on this machine, and %s forbids fetching it", cfg.Name, EnvOffline)
 	}
 	folder, sizes, tokenizerSize, err := listRepoFiles(repo)
 	if err != nil {
@@ -98,10 +145,10 @@ func downloadModel(ctx context.Context, cfg LocalModel, file string, progress Fe
 }
 
 func reserveDownload(
-	ctx context.Context,
-	home string,
+	_ context.Context,
+	_ string,
 	repo *hub.Repo,
-	name string,
+	_ string,
 	files []string,
 	sizes map[string]int64,
 	tokenizerSize int64,
@@ -116,21 +163,11 @@ func reserveDownload(
 	counted := append(slices.Clone(files), TokenizerFile)
 
 	dir, dirErr := repo.CacheDir()
-	need := total
-	if dirErr == nil {
-		need = max(total-sumBytes(dir, counted, sizes), 0)
-	}
-	claim, err := models.Reserve(ctx, home, need, "")
-	if err != nil {
-		return nil, fmt.Errorf("fetching %s: %w", name, err)
-	}
-
 	var cancelProgress func()
 	if dirErr == nil {
 		cancelProgress = reportProgress(dir, counted, sizes, total, progress)
 	}
 	release := func() {
-		claim.Release()
 		if cancelProgress != nil {
 			cancelProgress()
 		}
@@ -277,7 +314,7 @@ func checkPinned(sums map[string]string, name, path string) error {
 	if !ok {
 		return nil
 	}
-	if err := models.VerifyFile(path, sum); err != nil {
+	if err := verifyFile(path, sum); err != nil {
 		return fmt.Errorf("%s: %w", name, err)
 	}
 	return nil

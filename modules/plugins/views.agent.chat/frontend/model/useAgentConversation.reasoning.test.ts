@@ -103,11 +103,11 @@ describe('the level selected', () => {
     expect(open({ 'agent/alpha/reasoning': 'max' }).state.selectedReasoningId.value).toBe('low')
   })
 
-  it('is the one chosen, and the choice is kept for the agent', () => {
+  it('is the one chosen without mutating settings', () => {
     const { state, writtenSettings } = open()
     state.selectReasoning('high')
     expect(state.selectedReasoningId.value).toBe('high')
-    expect(writtenSettings).toEqual([['agent/alpha/reasoning', 'high']])
+    expect(writtenSettings).toEqual([])
   })
 
   it('does not follow an agent other than the one it was chosen for', () => {

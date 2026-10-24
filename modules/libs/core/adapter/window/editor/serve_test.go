@@ -35,6 +35,7 @@ import (
 	vaults "github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/settingsport"
@@ -957,5 +958,152 @@ func TestAWindowWithNoCatalogueAnswersThatItHasNone(t *testing.T) {
 	client := numenv1connect.NewThemeServiceClient(server.Client(), server.URL)
 	if _, err := client.ListThemes(t.Context(), connect.NewRequest(&v1.ListThemesRequest{})); err == nil {
 		t.Error("a build with no catalogue listed themes")
+	}
+}
+
+type testAgentRun struct {
+	steps chan agentport.Step
+}
+
+func (r *testAgentRun) GetSteps() <-chan agentport.Step { return r.steps }
+func (r *testAgentRun) Stop() error                     { return nil }
+
+type testAgentProvider struct {
+	agentport.Agent
+	asked chan agentport.Task
+}
+
+func (m *testAgentProvider) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+	m.asked <- task
+	run := &testAgentRun{steps: make(chan agentport.Step, 2)}
+	run.steps <- agentport.Step{Kind: domain.StepSay, Text: "hello from agent"}
+	run.steps <- agentport.Step{Kind: domain.StepStop, Detail: "done"}
+	close(run.steps)
+	return run, nil
+}
+
+func (m *testAgentProvider) EndConversation(ctx context.Context, _ string) error {
+	return nil
+}
+
+type testInterceptingPlugins struct {
+	servedPaths []string
+}
+
+func (p *testInterceptingPlugins) Serves(_ string) bool {
+	return true
+}
+
+func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.servedPaths = append(p.servedPaths, r.URL.Path)
+	http.Error(w, "should not be called for AgentService", http.StatusInternalServerError)
+}
+
+func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
+	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+	services := createServices(state)
+	agent := &testAgentProvider{asked: make(chan agentport.Task, 1)}
+	services.Agent.getAgent = func() agentport.Agent { return agent }
+	plugins := &testInterceptingPlugins{}
+	services.PluginServices = plugins
+
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	client := numenv1connect.NewAgentServiceClient(server.Client(), server.URL)
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
+		Prompt: "test question",
+		Agent:  "claude",
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var gotText string
+	for stream.Receive() {
+		if text := stream.Msg().GetText(); text != "" {
+			gotText += text
+		}
+	}
+	if err := stream.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if gotText != "hello from agent" {
+		t.Errorf("got %q, want %q", gotText, "hello from agent")
+	}
+	if len(plugins.servedPaths) != 0 {
+		t.Errorf("plugin services was erroneously called: %v", plugins.servedPaths)
+	}
+	select {
+	case task := <-agent.asked:
+		if task.Agent != "claude" || task.Question != "test question" {
+			t.Errorf("unexpected task: %+v", task)
+		}
+	default:
+		t.Fatal("agent was not asked")
+	}
+}
+
+type testDocumentService struct {
+	numenv1connect.UnimplementedDocumentServiceHandler
+	renderedPath string
+	renderedPage int32
+	renderedWide int32
+}
+
+func (s *testDocumentService) RenderPage(ctx context.Context, req *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
+	s.renderedPath = req.Msg.GetPath()
+	s.renderedPage = req.Msg.GetPage()
+	s.renderedWide = req.Msg.GetWidth()
+	return connect.NewResponse(&v1.RenderPageResponse{
+		ImageData:   []byte("fake-png-bytes"),
+		ContentType: "image/png",
+		Width:       800,
+		Height:      600,
+	}), nil
+}
+
+type testDocumentPluginServices struct {
+	mux *http.ServeMux
+}
+
+func (p *testDocumentPluginServices) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	p.mux.ServeHTTP(w, r)
+}
+
+func (p *testDocumentPluginServices) Serves(urlPath string) bool {
+	return strings.HasPrefix(urlPath, "/numen.v1.DocumentService/")
+}
+
+func TestServeAssetRendersPageFromDocumentService(t *testing.T) {
+	docService := &testDocumentService{}
+	path, handler := numenv1connect.NewDocumentServiceHandler(docService)
+	mux := http.NewServeMux()
+	mux.Handle(path, handler)
+
+	services := newBareServices()
+	services.PluginServices = &testDocumentPluginServices{mux: mux}
+
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	resp, err := server.Client().Get(server.URL + "/assets/books%2Fpaper.pdf/pages/2?wide=1024")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("status %d, want 200", resp.StatusCode)
+	}
+	if ct := resp.Header.Get("Content-Type"); ct != "image/png" {
+		t.Errorf("content-type %q, want image/png", ct)
+	}
+	body, _ := io.ReadAll(resp.Body)
+	if string(body) != "fake-png-bytes" {
+		t.Errorf("body %q, want fake-png-bytes", string(body))
+	}
+	if docService.renderedPath != "books/paper.pdf" || docService.renderedPage != 2 || docService.renderedWide != 1024 {
+		t.Errorf("unexpected render request: path=%q, page=%d, width=%d", docService.renderedPath, docService.renderedPage, docService.renderedWide)
 	}
 }

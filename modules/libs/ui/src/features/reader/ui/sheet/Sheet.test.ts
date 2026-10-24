@@ -85,7 +85,7 @@ describe('a page that will not come', () => {
   it('says so, once it has been requested for enough times', async () => {
     const page = await mountRefusedPage()
 
-    expect(page.text()).toContain('This page would not come.')
+    expect(page.text()).toContain('Failed to load page')
     expect(page.find('.spinner').exists()).toBe(false)
   })
 
@@ -106,8 +106,7 @@ describe('a page that will not come', () => {
 
 describe('a page pointed somewhere else', () => {
   it('is requested for afresh', async () => {
-    // Another address is another question. What would not come is what would
-    // not come at that width.
+    // Reset retry state when the picture URL changes.
     const page = sheet()
     await page.find('.reader__picture').trigger('error')
     await page.find('.reader__picture').trigger('load')

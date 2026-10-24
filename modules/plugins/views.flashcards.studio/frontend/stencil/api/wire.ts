@@ -2,7 +2,8 @@
  * Wire adapters and vault communication for flashcard stencil tabs.
  */
 import { asFailure, asValue, type ErrorCode, ERRORS } from '@numen/wire'
-import type { NoteBaseline, PathRename, MessageWriter } from '@numen/plugin-sdk'
+import type { PathRename, MessageWriter } from '@numen/plugin-sdk'
+import type { NoteBaseline } from '../../buffer'
 import { type Cards, type DeckProblem, getFailureCode, WORDS as words } from '../../cards'
 import {
   createVaultFaces,

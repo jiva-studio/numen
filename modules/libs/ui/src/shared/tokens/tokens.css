@@ -28,9 +28,9 @@
 
   --numen-edge: light-dark(#d8ccb8, #423a31);
 
-  --numen-hushed: light-dark(#8a7f70, #a1968a);
+  --numen-edge-label: light-dark(#8a7f70, #a1968a);
   /* The name written along an edge of a plex is said in that voice. */
-  --numen-edge-label: var(--numen-hushed);
+  --numen-hushed: var(--numen-edge-label);
   --numen-ring: light-dark(#b45f16, #e9a23b);
   /* The ground under selected text. The second is the same selection where the
      keyboard is somewhere else, the third every other place that text stands. */

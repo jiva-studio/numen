@@ -54,17 +54,7 @@ func encodeMP3(count int, seed int64) []byte {
 		var lengths [4]int
 		for part := range lengths {
 			before := main.count
-			for range 100 {
-				x, y := random.Intn(2), random.Intn(2)
-				code := pairCodes[x][y]
-				main.write(code[0], int(code[1]))
-				if x == 1 {
-					main.write(uint32(random.Intn(2)), 1)
-				}
-				if y == 1 {
-					main.write(uint32(random.Intn(2)), 1)
-				}
-			}
+			writeGranules(random, &main)
 			lengths[part] = main.count - before
 		}
 
@@ -93,6 +83,20 @@ func encodeMP3(count int, seed int64) []byte {
 		out.Write(frame)
 	}
 	return out.Bytes()
+}
+
+func writeGranules(random *rand.Rand, main *bitWriter) {
+	for range 100 {
+		x, y := random.Intn(2), random.Intn(2)
+		code := pairCodes[x][y]
+		main.write(code[0], int(code[1]))
+		if x == 1 {
+			main.write(uint32(random.Intn(2)), 1)
+		}
+		if y == 1 {
+			main.write(uint32(random.Intn(2)), 1)
+		}
+	}
 }
 
 // decodeMP3Whole is the whole stereo output of the decoder, averaged to one

@@ -28,7 +28,7 @@ defineProps<{
 }>()
 
 /** Which of the card and the panels either side of it is in the window. */
-const _place = defineModel<PanelPlace>('at', { required: true })
+const at = defineModel<PanelPlace>('at', { required: true })
 
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{

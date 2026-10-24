@@ -158,6 +158,29 @@ export interface FileSelectEvent {
   readonly title?: string
 }
 
+// ContextMenuTarget describes the subject the context menu is opened on.
+export interface ContextMenuTarget {
+  readonly path: string
+  readonly name?: string
+  readonly isFolder: boolean
+  readonly kind: 'note' | 'book' | 'recording' | 'url' | 'other' | string
+  readonly isSeveral?: boolean
+}
+
+// ContextMenuRegistration registers an item to be contributed to the context menu.
+export interface ContextMenuRegistration {
+  readonly id: string
+  readonly text: string
+  readonly group?: string
+  /** Submenu parent identifier (e.g. 'new' or 'relation'). */
+  readonly parentId?: string
+  /** Which target kinds this item applies to. */
+  readonly target?: 'all' | 'file' | 'folder' | 'root' | 'note' | readonly string[]
+  readonly order?: number
+  readonly isDisabled?: boolean | ((target: ContextMenuTarget) => boolean)
+  readonly handler: (target: ContextMenuTarget) => void | Promise<void>
+}
+
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
@@ -165,6 +188,7 @@ export interface PluginContext {
   registerReader(registration: ReaderRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable
   registerCommand(registration: CommandRegistration): Disposable
+  registerContextMenu(registration: ContextMenuRegistration): Disposable
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
   getSetting<T = unknown>(key: string): T | undefined
   onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable

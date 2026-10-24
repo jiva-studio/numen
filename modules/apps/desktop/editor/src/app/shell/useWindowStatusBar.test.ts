@@ -187,4 +187,33 @@ describe('a proofreading the person has not allowed', () => {
 
     expect(taskItem).toMatchObject({ state: 'failed', error: reason, canCancel: false })
   })
+
+  it('populates action and triggers onAction callback when onActionTask is called', () => {
+    const onAction = vi.fn()
+    const task: Task = {
+      id: 'task-err',
+      label: 'Proofreading a recognition',
+      about: 'doc.pdf',
+      completedCount: 0,
+      total: 0,
+      counting: 'items',
+      error: 'OAuth session expired',
+      isUserStarted: true,
+    }
+    const statusBar = useWindowStatusBar({
+      tasks: ref([task]),
+      resolveAction: (_t) => ({
+        label: 'Configure in settings',
+        pluginId: 'md.numen.agents.claude',
+      }),
+      onAction,
+    })
+
+    const [item] = statusBar.tasks.value
+    expect(item?.actionLabel).toBe('Configure in settings')
+    expect(item?.actionId).toBe('md.numen.agents.claude')
+
+    statusBar.onActionTask('task-err')
+    expect(onAction).toHaveBeenCalledWith('task-err')
+  })
 })

@@ -3,6 +3,7 @@ package assembly
 import (
 	"net/http"
 
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/settings"
 )
@@ -21,6 +22,9 @@ type PluginAssembly interface {
 	// GetPluginServices is where this window forwards the calls it receives for the services plugins
 	// serve.
 	GetPluginServices() PluginServices
+
+	// GetAgent returns the agent provider for running tasks.
+	GetAgent() agentport.Agent
 
 	// EmitEvent sends an event notification to listeners and registered plugins.
 	EmitEvent(event string)

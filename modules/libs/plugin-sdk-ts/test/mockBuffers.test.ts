@@ -1,12 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
+import type { FileBuffers } from '../src/buffers'
 import { createMockBufferHost } from '../src/testing/mockBuffers'
-import { openNotes } from '../src/notes/notes'
 
-const createBuffers = () =>
-  openNotes({
-    read: async () => ({ ok: true, value: { body: 'text', at: '1' } }),
-    write: async () => ({ ok: true, value: { body: '', at: '2' } }),
-  })
+const createBuffers = (): FileBuffers => ({
+  flush: vi.fn(async () => {}),
+})
 
 describe('the mock buffer host', () => {
   it('holds the buffers handed over until they are release', () => {

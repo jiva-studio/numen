@@ -3,7 +3,7 @@
  * Settings for the window appearance and the naming of notes.
  */
 import { computed } from 'vue'
-import { NumberField, SegmentedControl, Select, Switch } from '@numen/ui'
+import { NumberField, SegmentedControl, Select } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { NamingSettings } from './naming-settings'
@@ -12,10 +12,10 @@ import type { Mode } from '@/entities/settings'
 import { INTERFACE_SCALE, MODE, TEXT_SCALE } from '@/features/settings-commands'
 import { WORDS as words } from '../words'
 
-// --- Props & Emits ---
+/* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ state: SettingsTabState }>()
 
-// --- State ---
+/* --------------------------------- State ---------------------------------- */
 const installation = computed(() => props.state.installation)
 
 const bounds = computed(() => installation.value.bounds.value)
@@ -38,7 +38,7 @@ const themes = computed<readonly SelectChoice[]>(() =>
 
 const STEP = 0.1
 
-// --- Handlers ---
+/* -------------------------------- Handlers -------------------------------- */
 function onThemeChange(name: string) {
   installation.value.choose(name)
 }
@@ -58,14 +58,6 @@ function onTextScaleChange(size: number | null) {
     installation.value.choose(`${TEXT_SCALE}:${size}`)
   }
 }
-
-function onPartsChange(count: number | null) {
-  if (count !== null) {
-    installation.value.chooseHeadings(count)
-  }
-}
-
-// --- Helpers ---
 </script>
 
 <template>
@@ -131,32 +123,6 @@ function onPartsChange(count: number | null) {
         @update:model-value="onTextScaleChange"
       />
     </SettingRow>
-
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="nesting"
-      :name="words.nesting"
-      :detail="words.nestingDetail"
-    >
-      <Switch v-model="installation.isNesting.value" :aria-labelledby="labelledBy" />
-    </SettingRow>
-
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="headings"
-      :name="words.headings"
-      :detail="words.headingsDetail"
-    >
-      <NumberField
-        :model-value="installation.headings.value"
-        :min="installation.headingsBounds.value.least"
-        :max="installation.headingsBounds.value.most"
-        :step="1"
-        :aria-labelledby="labelledBy"
-        class="settings__number"
-        @update:model-value="onPartsChange"
-      />
-    </SettingRow>
   </section>
 
   <NamingSettings :state="props.state" />
@@ -164,6 +130,7 @@ function onPartsChange(count: number | null) {
 
 <style scoped>
 .settings__group {
+  inline-size: 100%;
   max-inline-size: var(--settings-measure, 54rem);
   margin-block-end: var(--settings-apart, 1.75rem);
   margin-inline: auto;

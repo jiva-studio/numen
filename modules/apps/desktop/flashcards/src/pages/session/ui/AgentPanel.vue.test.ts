@@ -56,7 +56,7 @@ const createOpenPanel = (unreachable = ''): AgentPanelState => {
   return panel
 }
 
-const mountPanel = (panel: AgentPanelState) => mount(AgentPanel, { props: { held: panel } })
+const mountPanel = (panel: AgentPanelState) => mount(AgentPanel, { props: { panel } })
 
 describe('the panel a card is requested about in', () => {
   // The card it is about is the card the session is on, and the session says
@@ -76,7 +76,7 @@ describe('the panel a card is requested about in', () => {
   // A panel opened is a panel opened to write in.
   it('takes the keyboard into the field when it arrives up', async () => {
     const panel = createPanel()
-    const one = mount(AgentPanel, { props: { held: panel }, attachTo: document.body })
+    const one = mount(AgentPanel, { props: { panel }, attachTo: document.body })
 
     panel.openPanel()
     await nextTick()

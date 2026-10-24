@@ -62,7 +62,9 @@ vi.mock('./useWindowKinds', () => ({
     return h.f.kinds
   },
 }))
-vi.mock('../shell/useWindowStatusBar', () => ({ useWindowStatusBar: () => ({ name: 'statusBar' }) }))
+vi.mock('../shell/useWindowStatusBar', () => ({
+  useWindowStatusBar: () => ({ name: 'statusBar' }),
+}))
 vi.mock('../commands/useAppHotkeys', () => ({ useAppHotkeys: vi.fn() }))
 vi.mock('../plugins/useWindowPlugins', () => ({
   createPluginSupport: (args: unknown) => {

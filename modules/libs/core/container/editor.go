@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/modules/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/indexport"
@@ -229,3 +230,6 @@ func (e EditorAssembly) StartVault(
 // GetPluginServices is where the window forwards the calls it receives for the services plugins
 // serve.
 func (e EditorAssembly) GetPluginServices() PluginServices { return e.cfg.GetPluginServices() }
+
+// GetAgent returns the agent provider for running tasks.
+func (e EditorAssembly) GetAgent() agentport.Agent { return e.cfg.AgentProvider() }

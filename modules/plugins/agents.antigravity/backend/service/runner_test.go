@@ -38,7 +38,7 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 			`echo '{"tool_calls":[{"name":"read_note","arguments":{"path":"a.md"}}]}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+	w, err := start(t.Context(), &reg, newSpec(
 		&numenv1.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
 	setUnusableTempDir(t)
 	var reg agentrun.Registry
 
-	_, err := agentrun.Start(t.Context(), &reg, newSpec(
+	_, err := start(t.Context(), &reg, newSpec(
 		&numenv1.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
 
 	if err == nil || !strings.Contains(err.Error(), "set up the Antigravity home") {
@@ -74,7 +74,7 @@ func TestTheToolCallsOfAntigravityAreCountedAgainstTheStepLimit(t *testing.T) {
 		`while true; do echo '{"tool_calls":[{"name":"read_note","arguments":{}}]}'; done`+"\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+	w, err := start(t.Context(), &reg, newSpec(
 		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -96,7 +96,7 @@ echo '{"type":"stream_event","event":{"type":"content_block_stop"}}'
 done`+"\n")
 	var reg agentrun.Registry
 
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+	w, err := start(t.Context(), &reg, newSpec(
 		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
 	if err != nil {
 		t.Fatal(err)
@@ -123,7 +123,7 @@ func setUnusableTempDir(t *testing.T) {
 func collect(t *testing.T, script string) ([]*numenv1.AskAgentResponse, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry
-	w, err := agentrun.Start(t.Context(), &reg, newSpec(
+	w, err := start(t.Context(), &reg, newSpec(
 		&numenv1.AskAgentRequest{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
 	if err != nil {
 		t.Fatal(err)

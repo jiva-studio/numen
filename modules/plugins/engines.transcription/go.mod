@@ -8,9 +8,7 @@ require (
 	github.com/getcharzp/onnxruntime_purego v1.25.0
 	github.com/hajimehoshi/go-mp3 v0.3.4
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go v0.0.0
-	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models v0.0.0
 	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx v0.0.0
-	github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault v0.0.0
 	github.com/jiva-studio/numen/modules/libs/protocol v0.0.0
 	github.com/mewkiz/flac v1.0.14
 )
@@ -25,10 +23,6 @@ require (
 
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
 
-replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/models => ../../libs/plugin-sdk-go/models
-
 replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx
-
-replace github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/vault => ../../libs/plugin-sdk-go/vault
 
 replace github.com/jiva-studio/numen/modules/libs/protocol => ../../libs/protocol

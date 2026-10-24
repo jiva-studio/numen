@@ -126,6 +126,7 @@ export const WORDS = {
   pluginStoppedAt: (when: string) => `Stopped ${when}`,
   pluginRetry: 'Retry',
   pluginDisable: 'Disable',
+  pluginEnable: 'Enable',
   pluginRetryFor: (name: string) => `Retry ${name}`,
   pluginDisableFor: (name: string) => `Disable ${name}`,
   /** The keys of the secrets plugins declare. */
@@ -139,10 +140,29 @@ export const WORDS = {
   keyDelete: 'Delete',
   /** What is said on the row an installation nobody has configured runs on. */
   byDefault: 'the default',
-  /**
-   * What a model's files are on this machine. A model reached over the network
+  /** What a model's files are on this machine. A model reached over the network
    * is fetched from nowhere, and stands with neither of these said about it.
    */
   present: 'on this machine',
   notFetched: 'not fetched yet',
+  /** Plugin registry and detail navigation. */
+  plugins: 'Plugins',
+  pluginsDetail: 'Installed engines and extensions.',
+  configure: 'Configure',
+  backToPlugins: 'All plugins',
+  pluginEnabled: 'Enabled',
+  pluginDisabled: 'Disabled',
+  pluginNoSettings: 'This plugin has no additional settings.',
+  noPlugins: 'No plugins installed.',
+  categoryAll: 'All',
+  categoryAgents: 'Agents',
+  categoryEditors: 'Editors',
+  categoryEngines: 'Engines',
+  categoryReaders: 'Readers',
+  categoryTools: 'Tools',
+  categoryViews: 'Views',
+  systemSettings: 'System',
+  systemSettingsDetail: 'Window appearance, theme, scale, and filename syncing.',
+  searchPlugins: 'Search plugins…',
+  noPluginsFound: 'No plugins found.',
 }

@@ -6,6 +6,7 @@ import type {
   AgentProviderRegistration,
   BufferHost,
   CommandRegistration,
+  ContextMenuRegistration,
   Disposable,
   FileSelectEvent,
   PluginContext,
@@ -74,7 +75,18 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
   }
 }
 
-function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void): VaultFiles {
+function guardFiles(
+  files: VaultFiles & {
+    createDeck?(folder: string, name: string): Promise<string>
+    createStencil?(folder: string, name: string): Promise<string>
+    createPreset?(folder: string, name: string): Promise<string>
+  },
+  requireWrite: (operation: string) => void,
+): VaultFiles & {
+  createDeck?(folder: string, name: string): Promise<string>
+  createStencil?(folder: string, name: string): Promise<string>
+  createPreset?(folder: string, name: string): Promise<string>
+} {
   return {
     ...files,
     move: async (from, to) => {
@@ -89,18 +101,30 @@ function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void
       requireWrite('files.createNote')
       return files.createNote(folder)
     },
-    createDeck: async (folder, name) => {
-      requireWrite('files.createDeck')
-      return files.createDeck(folder, name)
-    },
-    createStencil: async (folder, name) => {
-      requireWrite('files.createStencil')
-      return files.createStencil(folder, name)
-    },
-    createPreset: async (folder, name) => {
-      requireWrite('files.createPreset')
-      return files.createPreset(folder, name)
-    },
+    ...(files.createDeck
+      ? {
+          createDeck: async (folder: string, name: string) => {
+            requireWrite('files.createDeck')
+            return files.createDeck!(folder, name)
+          },
+        }
+      : {}),
+    ...(files.createStencil
+      ? {
+          createStencil: async (folder: string, name: string) => {
+            requireWrite('files.createStencil')
+            return files.createStencil!(folder, name)
+          },
+        }
+      : {}),
+    ...(files.createPreset
+      ? {
+          createPreset: async (folder: string, name: string) => {
+            requireWrite('files.createPreset')
+            return files.createPreset!(folder, name)
+          },
+        }
+      : {}),
     importUrl: async (folder, url) => {
       requireWrite('files.importUrl')
       return files.importUrl(folder, url)
@@ -232,6 +256,8 @@ export function createPluginContext(
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>
       add(host.registerTabKind(pluginId, reg)),
     registerCommand: (reg: CommandRegistration) => add(host.registerCommand(pluginId, reg)),
+    registerContextMenu: (reg: ContextMenuRegistration) =>
+      add(host.registerContextMenu(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
     getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),

@@ -53,7 +53,7 @@ describe('the settings as they are put together', () => {
   it('opens the settings tab as kind of tab', () => {
     const { settings } = createSettings()
 
-    expect(settings.kinds).toStrictEqual([settings.configured.kind])
+    expect(settings.kinds).toStrictEqual([settings.configured.kind, settings.file.kind])
   })
 
   it('puts the appearance away when it is put away', () => {
@@ -70,7 +70,7 @@ describe('the settings as they are put together', () => {
     await settings.rest.start()
     settings.file.openSettingsFile()
 
-    expect(handle.openTabBeside).toHaveBeenCalledWith('note', '/vault/.numen/settings.json')
+    expect(handle.openTabBeside).toHaveBeenCalledWith('settings-file')
   })
 })
 

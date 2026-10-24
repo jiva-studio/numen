@@ -1,8 +1,9 @@
 import type { Disposable } from './types'
-import type { openNotes } from './notes'
 
 // FileBuffers are the open files of one kind a plugin's tabs edit.
-export type FileBuffers = ReturnType<typeof openNotes>
+export interface FileBuffers {
+  flush(): Promise<void>
+}
 
 // BufferHost carries what a window does with the files its tabs hold open, when it quits.
 export interface BufferHost {

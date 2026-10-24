@@ -1,6 +1,7 @@
 package agentrun
 
 import (
+	"context"
 	"sync"
 
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
@@ -53,5 +54,27 @@ func stopAll(works []*Work) {
 	}
 	for _, w := range works {
 		w.reader.Wait()
+	}
+}
+
+// ForwardResponses sends the responses of the work to the stream until the work is done, and stops the work
+// when the stream or the call ends first.
+func ForwardResponses(ctx context.Context, work *Work, stream interface {
+	Send(*numenv1.AskAgentResponse) error
+}) error {
+	for {
+		select {
+		case <-ctx.Done():
+			_ = work.Stop()
+			return ctx.Err()
+		case resp, ok := <-work.Output:
+			if !ok {
+				return nil
+			}
+			if err := stream.Send(resp); err != nil {
+				_ = work.Stop()
+				return err
+			}
+		}
 	}
 }

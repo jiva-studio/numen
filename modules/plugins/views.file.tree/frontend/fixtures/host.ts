@@ -10,7 +10,6 @@ import type {
   PathCommandTarget,
   PathMenuRow,
   VaultEntry,
-  VaultFiles,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { FileTreeHost } from '../model/tabDeps'
@@ -101,7 +100,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     return `${folder}${name ?? what}`
   }
 
-  const files: VaultFiles = {
+  const files: FileTreeHost['files'] = {
     list: async (folder) => folders[folder] ?? [],
     move: async (from, to) => void recorded.made.push(`move ${from} ${to}`),
     createFolder: async (path) => void recorded.made.push(`folder ${path}`),

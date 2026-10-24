@@ -15,6 +15,7 @@ export interface MenuPlacementOptions {
   readonly viewport: () => Size | null
   /** Kept clear of that area's edges. */
   readonly margin: () => number
+  readonly asking?: () => number
 }
 
 export interface MenuPlacementState {
@@ -22,6 +23,7 @@ export interface MenuPlacementState {
   readonly placed: ComputedRef<Position>
   /** How big the menu turned out to be, as the drawing measured it. */
   readonly setSize: (size: Size) => void
+  readonly menuStyle: ComputedRef<Record<string, string>>
 }
 
 export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementState {
@@ -41,9 +43,18 @@ export function useMenuPlacement(options: MenuPlacementOptions): MenuPlacementSt
     }),
   )
 
+  const menuStyle = computed(() => ({
+    left: `${placement.value.x}px`,
+    top: `${placement.value.y}px`,
+    '--asking': `${options.asking?.() ?? 0}px`,
+    '--room': options.viewport()
+      ? `${Math.max(options.viewport()!.height - 2 * options.margin(), 0)}px`
+      : `calc(100dvh - ${2 * options.margin()}px)`,
+  }))
+
   const setSize = (now: Size): void => {
     size.value = now
   }
 
-  return { placed: placement, setSize }
+  return { placed: placement, setSize, menuStyle }
 }

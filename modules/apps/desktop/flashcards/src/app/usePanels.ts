@@ -96,5 +96,14 @@ export const usePanels = (deps: PanelsDeps) => {
     else agentPanel.openPanel()
   }
 
-  return { showing, at: panelPlace, moveTo, agentPanel, notesPanel, toggleNotes, toggleAgent }
+  return {
+    showing,
+    at: panelPlace,
+    targetPanel: panelPlace,
+    moveTo,
+    agentPanel,
+    notesPanel,
+    toggleNotes,
+    toggleAgent,
+  }
 }

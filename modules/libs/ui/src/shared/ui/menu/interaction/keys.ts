@@ -26,11 +26,17 @@ export interface MenuKeysState {
   readonly onKey: (event: KeyboardEvent) => void
 }
 
+export interface MenuSubmenuActions {
+  readonly onOpenSubmenu?: ((item: MenuItem) => void) | undefined
+  readonly onDismissSubmenu?: (() => void) | undefined
+}
+
 export function useMenuKeys(
   items: () => readonly MenuItem[],
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   /** What the moment is, which the word being typed is carried on by. */
   now: () => number,
+  submenuActions?: MenuSubmenuActions,
 ): MenuKeysState {
   const here = ref(-1)
 
@@ -59,6 +65,51 @@ export function useMenuKeys(
     if (jumped.at !== null) goTo(jumped.at)
   }
 
+  const onSubmenuKey = (event: KeyboardEvent): boolean => {
+    if (event.key === 'ArrowRight' && submenuActions?.onOpenSubmenu) {
+      const item = items()[here.value]
+      if (item && item.children && item.children.length > 0) {
+        event.preventDefault()
+        submenuActions.onOpenSubmenu(item)
+        return true
+      }
+    }
+    if (event.key === 'ArrowLeft' && submenuActions?.onDismissSubmenu) {
+      event.preventDefault()
+      submenuActions.onDismissSubmenu()
+      return true
+    }
+    return false
+  }
+
+  const onStepKey = (
+    event: KeyboardEvent,
+    stepForward: () => void,
+    stepBack: () => void,
+    step: (delta: number, from: number) => void,
+  ): boolean => {
+    switch (event.key) {
+      case 'ArrowDown':
+        stepForward()
+        return true
+      case 'ArrowUp':
+        stepBack()
+        return true
+      case 'Home':
+        step(1, -1)
+        return true
+      case 'End':
+        step(-1, 0)
+        return true
+      case 'Tab':
+        if (event.shiftKey) stepBack()
+        else stepForward()
+        return true
+      default:
+        return false
+    }
+  }
+
   const onKey = (event: KeyboardEvent): void => {
     const step = (delta: number, from: number): void => {
       event.preventDefault()
@@ -67,14 +118,10 @@ export function useMenuKeys(
     const stepForward = (): void => step(1, here.value)
     // Counting back from no item is counting back from the first.
     const stepBack = (): void => step(-1, Math.max(here.value, 0))
-    if (event.key === 'ArrowDown') stepForward()
-    else if (event.key === 'ArrowUp') stepBack()
-    else if (event.key === 'Home') step(1, -1)
-    else if (event.key === 'End') step(-1, 0)
-    else if (event.key === 'Tab') {
-      if (event.shiftKey) stepBack()
-      else stepForward()
-    } else if (isLetter(event)) {
+
+    if (onSubmenuKey(event)) return
+    if (onStepKey(event, stepForward, stepBack, step)) return
+    if (isLetter(event)) {
       event.preventDefault()
       jump(event.key)
     }

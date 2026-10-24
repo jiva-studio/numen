@@ -294,8 +294,7 @@ export const Undrawn: Story = {
 
     // The address is not one anything answers, so every ask fails.
     await waitFor(
-      async () =>
-        await expect(canvas.getAllByText('This page would not come.')[0]).toBeInTheDocument(),
+      async () => await expect(canvas.getAllByText('Failed to load page')[0]).toBeInTheDocument(),
       { timeout: ITS_OWN_PACE },
     )
   },

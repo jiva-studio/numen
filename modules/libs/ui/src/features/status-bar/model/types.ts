@@ -17,6 +17,8 @@ export interface StatusBarTask {
   readonly state: TaskState
   readonly canCancel?: boolean | undefined
   readonly error?: string | undefined
+  readonly actionLabel?: string | undefined
+  readonly actionId?: string | undefined
 }
 
 export interface TaskGroupData {

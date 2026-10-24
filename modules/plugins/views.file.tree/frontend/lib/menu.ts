@@ -26,9 +26,6 @@ const FILE_GROUP = 'file'
 /** What the tab makes, offered wherever the menu was asked for. */
 export const MADE: readonly MenuEntry[] = [
   { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
-  { id: NEW_DECK, text: own.newDeck, group: FILE_GROUP },
-  { id: NEW_STENCIL, text: own.newStencil, group: FILE_GROUP },
-  { id: NEW_PRESET, text: own.newPreset, group: FILE_GROUP },
   { id: NEW_FOLDER, text: own.newFolder, group: FILE_GROUP },
 ]
 
@@ -36,7 +33,23 @@ export const MADE: readonly MenuEntry[] = [
 const OWN: readonly MenuEntry[] = [...MADE, { id: RENAME, text: own.rename, group: FILE_GROUP }]
 
 /** What the tab does itself anywhere. A choice outside this is the window's. */
-export const OWN_IDS: ReadonlySet<string> = new Set(OWN.map((one) => one.id))
+export const OWN_IDS: ReadonlySet<string> = new Set([
+  ...OWN.map((one) => one.id),
+  NEW_DECK,
+  NEW_STENCIL,
+  NEW_PRESET,
+])
+
+export const createNewSubmenu = (contributed: readonly MenuEntry[] = []): MenuEntry => ({
+  id: 'new',
+  text: own.new,
+  group: FILE_GROUP,
+  children: [
+    { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
+    { id: NEW_FOLDER, text: own.newFolder, group: FILE_GROUP },
+    ...contributed,
+  ],
+})
 
 /**
  * What the menu offers, in the order it is drawn: what the tab makes where it
@@ -47,11 +60,53 @@ export const createMenuItems = (
   hosted: readonly MenuEntry[] | null,
   hasSeveral: boolean,
 ): readonly MenuEntry[] => {
-  if (!hosted) return MADE
+  if (!hosted) return [createNewSubmenu()]
   if (hasSeveral) return hosted
+
+  const newContributed = hosted.filter((one) => one.parentId === 'new')
+  const newSubmenu = createNewSubmenu(newContributed)
+  const ownItems: readonly MenuEntry[] = [
+    newSubmenu,
+    { id: RENAME, text: own.rename, group: FILE_GROUP },
+  ]
+
+  // Any flat relation items (e.g. from fixtures or non-grouped hosts) are grouped into relation submenu
+  const relationItems = hosted.filter(
+    (one) => one.parentId === 'relation' || (one.group === 'plex' && one.id !== 'relation'),
+  )
+  const relationSubmenu: MenuEntry[] =
+    relationItems.length > 0 && !hosted.some((one) => one.id === 'relation')
+      ? [
+          {
+            id: 'relation',
+            text: 'Relation',
+            group: 'plex',
+            children: relationItems.map((one) => ({
+              id: one.id,
+              text: one.text,
+              group: 'plex',
+              ...(one.isDisabled !== undefined ? { isDisabled: one.isDisabled } : {}),
+            })),
+          },
+        ]
+      : []
+
+  const nonNewHosted = hosted.filter(
+    (one) =>
+      one.parentId !== 'new' &&
+      (relationSubmenu.length === 0 || (one.parentId !== 'relation' && one.group !== 'plex')),
+  )
+
+  const fileHosted = nonNewHosted.filter((one) => one.group === FILE_GROUP)
+  const otherHosted = nonNewHosted.filter(
+    (one) => one.group !== OPEN_GROUP && one.group !== FILE_GROUP,
+  )
+
   return [
-    ...hosted.filter((one) => one.group === OPEN_GROUP),
-    ...OWN,
-    ...hosted.filter((one) => one.group !== OPEN_GROUP),
+    ...nonNewHosted.filter((one) => one.group === OPEN_GROUP),
+    ...ownItems,
+    ...fileHosted,
+    ...relationSubmenu,
+    ...otherHosted,
   ]
 }

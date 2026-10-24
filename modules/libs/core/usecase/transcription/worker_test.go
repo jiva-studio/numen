@@ -505,3 +505,20 @@ func TestTakingUpTranscriptProofreadingDoesNotReadTheSourceFileWhenHashIsKnown(t
 		t.Errorf("expected proofreader to be asked, got %v", corr.froms)
 	}
 }
+
+func TestAMissingRecordingIsNotReportedAsFailedAndIsPruned(t *testing.T) {
+	delta := &deaf{}
+	listening, v := newTranscriptionWorker(t, delta)
+	recognized := unheard{recordings: []string{"missing.mp3"}}
+
+	listening.round(t.Context(), recognized, v)
+
+	if delta.times() != 0 {
+		t.Errorf("expected transcriber not to be opened, got %d", delta.times())
+	}
+	for _, task := range listening.with.Tasks.List() {
+		if task.Error != "" {
+			t.Errorf("expected no failed task for missing file, got: %+v", task)
+		}
+	}
+}

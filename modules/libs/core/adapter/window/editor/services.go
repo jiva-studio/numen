@@ -19,6 +19,8 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/modules/libs/core/adapter/window/editor/settings"
 
+	"github.com/jiva-studio/numen/modules/libs/core/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/modules/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/modules/libs/core/port/vaultport"
 )
@@ -147,7 +149,8 @@ func (s *Services) GetPickFolder() *vaults.PickFolder {
 // agentHandler answers for the agent the panel's tasks go to.
 type agentHandler struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	state *State
+	state    *State
+	getAgent func() agentport.Agent
 }
 
 // errNoAgent is an installation with none. Whether one can be reached is asked
@@ -162,19 +165,46 @@ func (h *agentHandler) GetAgentState(
 	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: h.state.Unreachable.Why()}), nil
 }
 
-// AskAgent rejects questions when no agent is active.
+// AskAgent runs the task on the agent provider.
 func (h *agentHandler) AskAgent(
-	_ context.Context,
-	_ *connect.Request[v1.AskAgentRequest],
-	_ *connect.ServerStream[v1.AskAgentResponse],
+	ctx context.Context,
+	r *connect.Request[v1.AskAgentRequest],
+	stream *connect.ServerStream[v1.AskAgentResponse],
 ) error {
-	return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
+	var taking agentport.Agent
+	if h.getAgent != nil {
+		taking = h.getAgent()
+	}
+	if taking == nil {
+		return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
+	}
+
+	root := r.Msg.GetRoot()
+	if root == "" && h.state != nil {
+		root = h.state.GetCurrentVault().Path
+	}
+
+	task := agentport.Task{
+		Question:     r.Msg.GetPrompt(),
+		Focus:        r.Msg.GetFocus(),
+		Conversation: r.Msg.GetConversation(),
+		Agent:        r.Msg.GetAgent(),
+		Model:        r.Msg.GetModel(),
+		Reasoning:    r.Msg.GetReasoning(),
+		Root:         root,
+	}
+	return wire.StreamAgentTask(ctx, taking, task, stream)
 }
 
-// FinishConversation ends conversation when no agent is active.
+// FinishConversation ends conversation with the agent provider.
 func (h *agentHandler) FinishConversation(
-	_ context.Context,
-	_ *connect.Request[v1.FinishConversationRequest],
+	ctx context.Context,
+	r *connect.Request[v1.FinishConversationRequest],
 ) (*connect.Response[v1.FinishConversationResponse], error) {
+	if h.getAgent != nil {
+		if taking := h.getAgent(); taking != nil && r.Msg.GetConversation() != "" {
+			_ = taking.EndConversation(ctx, r.Msg.GetConversation())
+		}
+	}
 	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }

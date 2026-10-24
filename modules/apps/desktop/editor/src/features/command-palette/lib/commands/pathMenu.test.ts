@@ -96,18 +96,35 @@ describe('the commands over a row standing for anything else', () => {
 })
 
 describe('the commands over a note', () => {
-  it('are the palette’s, in the groups the menu draws them in', () => {
-    expect(getGroupedIds('note')).toStrictEqual([
+  it('offers core note commands without plugin contributions', () => {
+    expect(getGroupedIds('note')).toStrictEqual(['read', '— copy', '— ask', '— remove'])
+  })
+
+  it('includes plugin contributions when provided', () => {
+    const plexContributions = [
+      { id: 'travel', text: 'Show in plex', group: 'open' },
+      { id: 'child', text: 'New child note', parentId: 'relation' },
+      { id: 'parent', text: 'New parent note', parentId: 'relation' },
+      { id: 'jump', text: 'New jump note', parentId: 'relation' },
+    ]
+    const grouped = groupItems(
+      createPathCommands(
+        { source: 'note', isFolder: false },
+        false,
+        canRunAnything,
+        plexContributions,
+      ),
+    )
+    expect(grouped.map((one) => `${one.isRule ? '— ' : ''}${one.id}`)).toStrictEqual([
       'read',
       'travel',
       '— copy',
-      '— child',
-      'parent',
-      'jump',
-      'title',
+      '— relation',
       '— ask',
       '— remove',
     ])
+    const relationItem = grouped.find((one) => one.id === 'relation')
+    expect(relationItem?.children?.map((c) => c.id)).toStrictEqual(['child', 'parent', 'jump'])
   })
 })
 

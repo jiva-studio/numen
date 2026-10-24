@@ -21,12 +21,14 @@ export interface MenuDismissalState {
 export function useMenuDismissal(
   menu: Readonly<ShallowRef<HTMLElement | null>>,
   dismiss: () => void,
+  isIgnored?: (event: Event) => boolean,
 ): MenuDismissalState {
   /**
    * A pointer, or a scroll, that did not happen inside the menu. A scroll of
    * the menu's own list is not the ground moving, and everything else is.
    */
   const dismissOutside = (event: Event): void => {
+    if (isIgnored?.(event)) return
     if (isInside(menu.value, event)) return
     dismiss()
   }

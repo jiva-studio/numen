@@ -41,7 +41,7 @@ const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
 const mountPanel = async (neighbourhood: DeckNeighbourhood) => {
   const panel = createPanel(neighbourhood)
   await panel.openPanel()
-  return mount(NotesPanel, { props: { held: panel } })
+  return mount(NotesPanel, { props: { panel } })
 }
 
 describe('the panel the deck is read in', () => {
@@ -120,7 +120,7 @@ describe('a reading opened on one note', () => {
       notes: [createNeighbour(), createNeighbour({ title: 'Humus', path: 'notes/Humus.md' })],
       unread: 0,
     })
-    const one = mount(NotesPanel, { props: { held: panel } })
+    const one = mount(NotesPanel, { props: { panel } })
 
     await panel.openPanel('notes/Humus.md')
     await nextTick()

@@ -13,7 +13,7 @@ import { WORDS as words } from '../lib/agentWords'
 import type { AgentPanelState } from '../model/panel'
 
 /* --------------------------------- Props ---------------------------------- */
-const props = defineProps<{ held: AgentPanelState }>()
+const props = defineProps<{ panel: AgentPanelState }>()
 
 /* --------------------------------- State ---------------------------------- */
 const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
@@ -48,7 +48,7 @@ watch(
     >
       <template #silence>{{ props.panel.unreachable() || words.nothingSaid }}</template>
       <template #failure="{ turn }">
-        {{ turn.voice === 'asked' ? words.unsent : words.stopped }}
+        {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
       </template>
     </Agent>
   </section>

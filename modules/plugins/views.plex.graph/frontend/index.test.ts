@@ -27,15 +27,19 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds two subscriptions, the tab kind and the vault, and releases both', () => {
+  it('holds subscriptions for tab kind, vault, and context menus, and releases all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(2)
+    expect(ctx.subscriptions).toHaveLength(6)
+    const menus = ctx.getRegisteredContextMenus()
+    expect(menus).toHaveLength(4)
+    expect(menus.map((m) => m.id)).toEqual(['travel', 'child', 'parent', 'jump'])
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
+    expect(ctx.getRegisteredContextMenus()).toHaveLength(0)
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {

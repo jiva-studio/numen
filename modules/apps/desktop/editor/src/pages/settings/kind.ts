@@ -10,13 +10,17 @@ import { WORDS as words } from './words'
 
 export function useSettingsTab(handle: WindowHandle, installation: Installation) {
   const isOpen = ref(false)
-  const state: SettingsTabState = { installation }
+  const initialPluginId = ref<string | null>(null)
+  const state: SettingsTabState = { installation, initialPluginId }
 
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
     kind: SETTINGS,
-    open: () => {
+    open: (at?: string) => {
       isOpen.value = true
+      if (at) {
+        initialPluginId.value = at
+      }
       return state
     },
     getTitle: () => words.settings,
@@ -26,9 +30,12 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
   }
 
   /** The settings put in front of the person. */
-  const openSettings = (): void => {
+  const openSettings = (pluginId?: string): void => {
     isOpen.value = true
-    void handle.openTab(SETTINGS)
+    if (pluginId !== undefined) {
+      initialPluginId.value = pluginId
+    }
+    void handle.openTab(SETTINGS, pluginId)
   }
 
   return { kind, state, openSettings, isOpen }

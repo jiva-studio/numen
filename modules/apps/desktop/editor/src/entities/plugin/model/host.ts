@@ -5,6 +5,8 @@ import { shallowRef } from 'vue'
 import type {
   AgentProviderRegistration,
   CommandRegistration,
+  ContextMenuRegistration,
+  ContextMenuTarget,
   Disposable,
   PluginContext,
   PluginManifest,
@@ -40,6 +42,11 @@ interface RegisteredCommand {
   reg: CommandRegistration
 }
 
+interface RegisteredContextMenu {
+  pluginId: string
+  reg: ContextMenuRegistration
+}
+
 interface RegisteredAgentProvider {
   pluginId: string
   reg: AgentProviderRegistration
@@ -51,6 +58,7 @@ interface HostRegistry {
   readonly readers: Map<string, RegisteredReader>
   readonly tabKinds: Map<string, RegisteredTabKind>
   readonly commands: { value: ReadonlyMap<string, RegisteredCommand> }
+  readonly contextMenus: { value: ReadonlyMap<string, RegisteredContextMenu> }
   readonly agentProviders: Map<string, RegisteredAgentProvider>
   readonly contexts: Map<string, PluginContext>
   readonly manifests: Map<string, PluginManifest>
@@ -99,6 +107,12 @@ function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: Plu
     if (item.pluginId === pluginId) nextCommands.delete(id)
   }
   registry.commands.value = nextCommands
+
+  const nextContextMenus = new Map(registry.contextMenus.value)
+  for (const [id, item] of nextContextMenus) {
+    if (item.pluginId === pluginId) nextContextMenus.delete(id)
+  }
+  registry.contextMenus.value = nextContextMenus
 }
 
 function resolveCommand(
@@ -245,6 +259,18 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
         },
       }
     },
+    registerContextMenu: (pluginId, registration) => {
+      const entry = { pluginId, reg: registration }
+      registry.contextMenus.value = new Map(registry.contextMenus.value).set(registration.id, entry)
+      return {
+        dispose: () => {
+          if (registry.contextMenus.value.get(registration.id) !== entry) return
+          const updated = new Map(registry.contextMenus.value)
+          updated.delete(registration.id)
+          registry.contextMenus.value = updated
+        },
+      }
+    },
     registerAgentProvider: (pluginId, registration) => {
       const entry = { pluginId, reg: registration }
       registry.agentProviders.set(registration.id, entry)
@@ -292,12 +318,33 @@ function createServiceBridge(
   }
 }
 
+function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolean {
+  if (pattern === 'all') return true
+  if (pattern === 'root') return actual.path === '' || actual.path === null
+  if (pattern === 'folder') return actual.isFolder
+  if (pattern === 'file') return !actual.isFolder
+  if (pattern === 'note') return !actual.isFolder && actual.kind === 'note'
+  return actual.kind === pattern
+}
+
+function matchesContextMenuTarget(
+  targetPattern: ContextMenuRegistration['target'],
+  actual: ContextMenuTarget,
+): boolean {
+  if (!targetPattern || targetPattern === 'all') return true
+  if (typeof targetPattern === 'string') {
+    return matchesSingleTarget(targetPattern, actual)
+  }
+  return targetPattern.some((p) => matchesSingleTarget(p, actual))
+}
+
 function disposeAllEntries(registry: HostRegistry, deps: PluginHostDeps) {
   const allPluginIds = new Set<string>([
     ...registry.contexts.keys(),
     ...[...registry.readers.values()].map((r) => r.pluginId),
     ...[...registry.tabKinds.values()].map((t) => t.pluginId),
     ...[...registry.commands.value.values()].map((c) => c.pluginId),
+    ...[...registry.contextMenus.value.values()].map((c) => c.pluginId),
     ...[...registry.agentProviders.values()].map((p) => p.pluginId),
   ])
   for (const pluginId of allPluginIds) disposePluginEntry(pluginId, registry, deps)
@@ -308,6 +355,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     readers: new Map(),
     tabKinds: new Map(),
     commands: shallowRef(new Map()),
+    contextMenus: shallowRef(new Map()),
     agentProviders: new Map(),
     contexts: new Map(),
     manifests: new Map(),
@@ -345,6 +393,21 @@ export function createPluginHost(deps: PluginHostDeps) {
       await runCommand(deps, entry.pluginId, entry.reg)
       return true
     },
+    getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
+      const items: ContextMenuRegistration[] = []
+      for (const { reg } of registry.contextMenus.value.values()) {
+        if (matchesContextMenuTarget(reg.target, target)) {
+          items.push(reg)
+        }
+      }
+      return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+    },
+    runContextMenu: async (id: string, target: ContextMenuTarget): Promise<boolean> => {
+      const entry = registry.contextMenus.value.get(id)
+      if (!entry) return false
+      await entry.reg.handler(target)
+      return true
+    },
     handleShortcut: (event: KeyboardEvent): boolean => {
       for (const { pluginId, reg } of registry.commands.value.values()) {
         if (matchesShortcut(event, reg.shortcut)) {
@@ -364,6 +427,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     getRegisteredReaders: () => [...registry.readers.values()].map((r) => r.reg),
     getRegisteredTabKinds: () => [...registry.tabKinds.values()].map((t) => t.reg),
     getRegisteredCommands: () => [...registry.commands.value.values()].map((c) => c.reg),
+    getRegisteredContextMenus: () => [...registry.contextMenus.value.values()].map((c) => c.reg),
   }
 }
 

@@ -55,7 +55,7 @@ func (s *DocumentServer) GetDocument(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path, vault.IsTempDocument)
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
@@ -99,7 +99,7 @@ func (s *DocumentServer) RenderPage(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path, vault.IsTempDocument)
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
@@ -151,7 +151,7 @@ func (s *DocumentServer) ExtractText(
 		if path == "" {
 			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path or data required"))
 		}
-		cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path, vault.IsTempDocument)
+		cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 		if err != nil {
 			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 		}
@@ -187,7 +187,7 @@ func (s *DocumentServer) GetHighlights(
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path, vault.IsTempDocument)
+	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
 	if err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}

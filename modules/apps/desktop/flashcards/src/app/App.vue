@@ -67,10 +67,10 @@ const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
       @read="session.toggleNotes"
     >
       <template #reading>
-        <NotesPanel :held="session.notesPanel" />
+        <NotesPanel :panel="session.notesPanel" />
       </template>
       <template #panel>
-        <AgentPanel :held="session.agentPanel" />
+        <AgentPanel :panel="session.agentPanel" />
       </template>
     </Session>
   </main>
