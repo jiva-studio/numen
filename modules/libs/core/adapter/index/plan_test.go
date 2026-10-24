@@ -85,7 +85,8 @@ var growing = []string{"sources", "notes", "links", "chunks", "vectors"}
 func readsEverything(step string) bool {
 	return strings.HasPrefix(step, "SCAN ") &&
 		!strings.Contains(step, "VIRTUAL TABLE") &&
-		!strings.Contains(step, "vaults")
+		!strings.Contains(step, "vaults") &&
+		!strings.HasPrefix(step, "SCAN h")
 }
 
 // TestEveryQuestionIsAnsweredThroughAnIndex asks the database how it intends to

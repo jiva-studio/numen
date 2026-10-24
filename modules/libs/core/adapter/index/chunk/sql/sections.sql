@@ -4,15 +4,22 @@
 -- passage standing where the section begins. The shape is the same as a search
 -- asked by words, so both are read back the same way and both fuse into one
 -- order.
+WITH hits AS (
+    SELECT sections_fts.rowid, bm25(sections_fts) AS rank
+    FROM sections_fts
+    JOIN chunks c ON c.id = sections_fts.rowid
+    WHERE sections_fts MATCH ?1
+      AND c.vault_id = ?2
+    ORDER BY rank
+    LIMIT ?3
+)
 SELECT c.id, s.path, s.kind, COALESCE(s.producer, ''), COALESCE(s.hash, ''),
        c.start,
        c.length,
        COALESCE(c.location, ''),
        0
-FROM sections_fts
-JOIN chunks c ON c.id = sections_fts.rowid
+FROM hits h
+JOIN chunks c ON c.id = h.rowid
 JOIN sources s ON s.id = c.source_id
-WHERE sections_fts MATCH ?1
-  AND c.vault_id = ?2
-ORDER BY bm25(sections_fts)
-LIMIT ?3;
+ORDER BY h.rank;
+

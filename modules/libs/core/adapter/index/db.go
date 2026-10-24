@@ -58,6 +58,11 @@ var pragmas = []string{
 	// waited for may be in another process, and a write that waited it out asks
 	// again.
 	"busy_timeout(5000)",
+	// Pages are read from the mapped file, shared by every connection, up to
+	// 256 MiB of it.
+	"mmap_size(268435456)",
+	// Intermediate sort B-trees and temporary tables stay in memory.
+	"temp_store(MEMORY)",
 	"cache_size(-65536)",
 }
 

@@ -26,6 +26,11 @@ const measure = "PRAGMA optimize = 0x10012"
 
 // ReportChanges says what the database knows about itself is out of date.
 func (m DatabaseMaintenance) ReportChanges(ctx context.Context) error {
-	_, err := sqlwrite.Exec(ctx, m.db, measure)
-	return err
+	if _, err := sqlwrite.Exec(ctx, m.db, measure); err != nil {
+		return err
+	}
+	for _, fts := range []string{"chunks_fts", "sections_fts", "titles_fts", "headings_fts"} {
+		_, _ = sqlwrite.Exec(ctx, m.db, "INSERT INTO "+fts+"("+fts+") VALUES('optimize')")
+	}
+	return nil
 }
