@@ -17,7 +17,7 @@ on:
       - "!modules/libs/wire/**/*.md"
       - "modules/libs/protocol/**"
       - "!modules/libs/protocol/**/*.md"
-      - "modules/tools/ci.stories/**"
+      - "modules/tools/ci-stories/**"
       - "!docs/**"
       - ".github/workflows/desktop-frontend.yml"
 
@@ -77,7 +77,7 @@ jobs:
         run: npm run build --prefix modules/libs/ui
 
       - name: Verify story references
-        run: npm run check --prefix modules/tools/ci.stories
+        run: npm run check --prefix modules/tools/ci-stories
 
       - name: Lint editor and flashcards
         run: |

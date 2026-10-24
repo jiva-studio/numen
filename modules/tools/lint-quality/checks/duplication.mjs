@@ -15,7 +15,7 @@ export async function runDuplicationCheck({ repoRoot, threshold = 3.5 }) {
   const cmd = hasLocal ? binary : "npx";
   const args = hasLocal ? [] : ["--yes", "jscpd"];
 
-  const outDir = path.join(repoRoot, "modules/tools/lint.quality/.jscpd-report");
+  const outDir = path.join(repoRoot, "modules/tools/lint-quality/.jscpd-report");
 
   args.push(
     "modules/libs",

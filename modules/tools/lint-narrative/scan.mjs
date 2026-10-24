@@ -56,7 +56,7 @@ Detects narrative slop, participles, prepositions as variables, 3rd-person funct
 literary metaphors, forbidden domain terms, and Anglish prose across Frontend (TS/Vue) & Backend (Go).
 
 Usage:
-  node modules/tools/lint.narrative/scan.mjs [path] [options]
+  node modules/tools/lint-narrative/scan.mjs [path] [options]
 
 Options:
   --staged              Scan only files currently staged in git

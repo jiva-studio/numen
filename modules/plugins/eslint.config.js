@@ -1,4 +1,4 @@
-import { createBaseConfig } from '../tools/lint.layers/base-eslint.mjs'
+import { createBaseConfig } from '../tools/lint-layers/base-eslint.mjs'
 
 /** The packages a plugin frontend names besides its own directory and third-party code. */
 const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']

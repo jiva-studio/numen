@@ -7,7 +7,7 @@
 // package: an application is the thing that knows what a vault is.
 
 import tseslint from 'typescript-eslint'
-import { createBaseConfig, lifetimes } from '../../tools/lint.layers/base-eslint.mjs'
+import { createBaseConfig, lifetimes } from '../../tools/lint-layers/base-eslint.mjs'
 
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {

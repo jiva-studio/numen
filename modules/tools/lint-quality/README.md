@@ -41,18 +41,18 @@ make check_quality opts="--warn"         # Non-blocking / advisory mode
 
 ```bash
 # Run all checks in parallel
-node modules/tools/lint.quality/check.mjs
+node modules/tools/lint-quality/check.mjs
 
 # Run specific checks
-node modules/tools/lint.quality/check.mjs --check=duplication
-node modules/tools/lint.quality/check.mjs --check=complexity,deadcode
+node modules/tools/lint-quality/check.mjs --check=duplication
+node modules/tools/lint-quality/check.mjs --check=complexity,deadcode
 
 # Run only on changed files (fast pre-push mode)
-node modules/tools/lint.quality/check.mjs --changed-only
+node modules/tools/lint-quality/check.mjs --changed-only
 
 # Advisory / warning mode (exit 0)
-node modules/tools/lint.quality/check.mjs --warn
+node modules/tools/lint-quality/check.mjs --warn
 
 # Output machine-readable JSON
-node modules/tools/lint.quality/check.mjs --json
+node modules/tools/lint-quality/check.mjs --json
 ```

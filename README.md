@@ -1,6 +1,6 @@
 <div align="center">
 
-<img alt="Numen" src="modules/tools/build.icons/icon.svg" width="96">
+<img alt="Numen" src="modules/tools/build-icons/icon.svg" width="96">
 
 **Numen — Markdown notes with a connection graph, an AI agent and spaced repetition.**
 

@@ -16,10 +16,10 @@ MOBILE   := modules/apps/mobile
 DOCS     := modules/apps/docs
 LANDING  := modules/apps/landing
 
-ICON     := modules/tools/build.icons
-STORIES  := modules/tools/ci.stories
-LAYERS   := modules/tools/lint.layers
-QUALITY  := modules/tools/lint.quality
+ICON     := modules/tools/build-icons
+STORIES  := modules/tools/ci-stories
+LAYERS   := modules/tools/lint-layers
+QUALITY  := modules/tools/lint-quality
 PLUGINS  := modules/plugins
 PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
 

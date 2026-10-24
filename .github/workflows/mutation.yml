@@ -16,7 +16,7 @@ name: Mutation
 # survivors that are new, and it closes when none is left.
 #
 # The targets and their shards are found in the tree by
-# `modules/tools/ci.mutation/shards.mjs`: every Go module with tests and every
+# `modules/tools/ci-mutation/shards.mjs`: every Go module with tests and every
 # workspace package with a Vitest config.
 on:
   schedule:
@@ -25,7 +25,7 @@ on:
   workflow_dispatch:
     inputs:
       target:
-        description: "Target, as `node modules/tools/ci.mutation/shards.mjs` names it, or all"
+        description: "Target, as `node modules/tools/ci-mutation/shards.mjs` names it, or all"
         type: string
         default: all
 
@@ -52,7 +52,7 @@ jobs:
       - id: list
         env:
           TARGET: ${{ inputs.target || 'all' }}
-        run: node modules/tools/ci.mutation/shards.mjs "$TARGET" >> "$GITHUB_OUTPUT"
+        run: node modules/tools/ci-mutation/shards.mjs "$TARGET" >> "$GITHUB_OUTPUT"
 
   mutate:
     name: Mutate ${{ matrix.name }}
@@ -140,7 +140,7 @@ jobs:
             --uid="$(id -u)" --gid="$(id -g)" \
             -p MemoryMax=12G -p MemorySwapMax=0 -p OOMPolicy=continue \
             -- env "PATH=$PATH" "HOME=$HOME" \
-            node modules/tools/ci.mutation/mutate.mjs "$TARGET" --shard "$SHARD"
+            node modules/tools/ci-mutation/mutate.mjs "$TARGET" --shard "$SHARD"
 
       - name: Upload the cache
         if: always()
@@ -193,7 +193,7 @@ jobs:
       - name: Merge the shards
         env:
           TARGET: ${{ matrix.target }}
-        run: node modules/tools/ci.mutation/cache.mjs "$TARGET" modules/.mutation/shards
+        run: node modules/tools/ci-mutation/cache.mjs "$TARGET" modules/.mutation/shards
 
       - name: Save the target's cache
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
@@ -230,7 +230,7 @@ jobs:
         run: |
           failed=0
           for target in $(echo "$TARGETS" | jq -r '.[]'); do
-            node modules/tools/ci.mutation/issue.mjs "$target" || failed=1
+            node modules/tools/ci-mutation/issue.mjs "$target" || failed=1
           done
           exit "$failed"
 
@@ -239,4 +239,4 @@ jobs:
         env:
           GIST_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
           GH_TOKEN: ${{ secrets.GIST_TOKEN || github.token }}
-        run: node modules/tools/ci.mutation/badge.mjs
+        run: node modules/tools/ci-mutation/badge.mjs

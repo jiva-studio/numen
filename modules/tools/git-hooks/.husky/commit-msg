@@ -6,4 +6,4 @@ set -e
 [ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
 
 root=$(git rev-parse --show-toplevel)
-node "$root/modules/tools/git.hooks/check-commit.mjs" "$1"
+node "$root/modules/tools/git-hooks/check-commit.mjs" "$1"

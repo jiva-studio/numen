@@ -5,12 +5,12 @@ name: Mutation tool
 on:
   pull_request:
     paths:
-      - "modules/tools/ci.mutation/**"
+      - "modules/tools/ci-mutation/**"
       - ".github/workflows/mutation*.yml"
   push:
     branches: [main]
     paths:
-      - "modules/tools/ci.mutation/**"
+      - "modules/tools/ci-mutation/**"
       - ".github/workflows/mutation*.yml"
 
 concurrency:
@@ -31,4 +31,4 @@ jobs:
           persist-credentials: false
 
       - name: Test the tool
-        run: node --test modules/tools/ci.mutation/*.test.mjs
+        run: node --test modules/tools/ci-mutation/*.test.mjs
