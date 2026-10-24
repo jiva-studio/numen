@@ -17,8 +17,8 @@ import {
   WorkspaceLayout,
   type Workspace,
 } from '@numen/ui'
-import { DocumentTab } from '@plugins/readers.pdf/frontend'
-import { AudioPlayerTab } from '@plugins/views.media.player/frontend'
+import { DocumentTab } from '@plugins/readers-pdf/frontend'
+import { AudioPlayerTab } from '@plugins/views-media-player/frontend'
 import {
   requests,
   cards,

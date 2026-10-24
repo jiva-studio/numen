@@ -594,20 +594,19 @@ var validPluginKinds = []string{
 }
 
 // listPluginNamingIssues lists what a plugin folder and id break: the id starts
-// id, and the kind is one of agents, readers, editors, views, engines or tools.
+// with md.numen., matches the folder name (with hyphens mapped to dots),
+// and the kind is one of agents, readers, editors, views, engines or tools.
 func listPluginNamingIssues(folder, id string) []string {
 	var issues []string
 	if !strings.HasPrefix(id, "md.numen.") {
 		issues = append(issues, fmt.Sprintf("id %q does not start with md.numen.", id))
 	}
-	if strings.Contains(id, "-") {
-		issues = append(issues, fmt.Sprintf("id %q contains a hyphen", id))
-	}
-	expectedID := "md.numen." + folder
-	if id != expectedID {
+	dotFolder := strings.ReplaceAll(folder, "-", ".")
+	expectedID := "md.numen." + dotFolder
+	if id != expectedID && id != "md.numen."+folder {
 		issues = append(issues, fmt.Sprintf("folder %q differs from id %q without md.numen.", folder, id))
 	}
-	parts := strings.Split(folder, ".")
+	parts := strings.Split(dotFolder, ".")
 	if len(parts) < 2 || !slices.Contains(validPluginKinds, parts[0]) {
 		issues = append(issues, fmt.Sprintf("kind %q in folder %q is not a known plugin kind", parts[0], folder))
 	}
@@ -629,11 +628,11 @@ func TestWhatThePluginNamingRuleRefuses(t *testing.T) {
 		id     string
 		issues int
 	}{
-		"valid plugin":            {"views.file.tree", "md.numen.views.file.tree", 0},
-		"folder differs from id":  {"views.file.tree", "md.numen.views.other", 1},
-		"id contains hyphen":      {"views.file-tree", "md.numen.views.file-tree", 1},
-		"unknown kind":            {"widgets.tree", "md.numen.widgets.tree", 1},
-		"missing md.numen prefix": {"views.file.tree", "views.file.tree", 2},
+		"valid kebab plugin":      {"views-file-tree", "md.numen.views.file.tree", 0},
+		"valid dot plugin":        {"views.file.tree", "md.numen.views.file.tree", 0},
+		"folder differs from id":  {"views-file-tree", "md.numen.views.other", 1},
+		"unknown kind":            {"widgets-tree", "md.numen.widgets.tree", 1},
+		"missing md.numen prefix": {"views-file-tree", "views.file.tree", 2},
 		"no name segment":         {"views", "md.numen.views", 1},
 	} {
 		if got := listPluginNamingIssues(one.folder, one.id); len(got) != one.issues {

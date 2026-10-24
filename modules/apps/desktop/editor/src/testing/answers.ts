@@ -6,7 +6,7 @@
  */
 import { asValue } from '@numen/wire'
 import type { Entry } from '@/entities/file'
-import type { FieldRenameResult } from '@plugins/views.flashcards.studio/frontend/cards'
+import type { FieldRenameResult } from '@plugins/views-flashcards-studio/frontend/cards'
 
 interface MockVaultState {
   isReady: boolean

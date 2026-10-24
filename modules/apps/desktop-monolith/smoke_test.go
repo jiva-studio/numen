@@ -25,8 +25,8 @@ import (
 )
 
 const (
-	agentID    = "md.numen.agent"
-	readerID   = "md.numen.pdf"
+	agentID    = "md.numen.agents.numen"
+	readerID   = "md.numen.readers.pdf"
 	modelReply = "The vault holds three notes."
 )
 
@@ -117,10 +117,10 @@ func newLaunchedHost(t *testing.T) pluginport.PluginManager {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(folder) })
-	buildPlugin(t, folder, "agent")
-	buildPlugin(t, folder, "reader-pdf")
+	buildPlugin(t, folder, "agents-numen")
+	buildPlugin(t, folder, "readers-pdf")
 	for _, id := range codingAgentIDs {
-		buildPlugin(t, folder, strings.TrimPrefix(id, "md.numen."))
+		buildPlugin(t, folder, strings.ReplaceAll(strings.TrimPrefix(id, "md.numen."), ".", "-"))
 	}
 	host := container.NewPluginHost("desktop.editor", folder)
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), 2*time.Second) })
@@ -130,7 +130,7 @@ func newLaunchedHost(t *testing.T) pluginport.PluginManager {
 // askBuild puts a chat, a single answer and a document to the plugins of a host.
 func askBuild(t *testing.T, host pluginport.PluginManager, chatURL string) answers {
 	t.Helper()
-	host.SetKeyStore(heldKeys{"md.numen.agent/apiKey": "chat-key"})
+	host.SetKeyStore(heldKeys{"md.numen.agents.numen/apiKey": "chat-key"})
 	host.SetSettings(map[string]map[string]any{
 		agentID: {"baseUrl": chatURL, "model": "small-model", pluginport.SettingStoredSecrets: []any{"apiKey"}},
 	})
@@ -162,7 +162,7 @@ func askBuild(t *testing.T, host pluginport.PluginManager, chatURL string) answe
 	if err != nil {
 		t.Fatalf("activate the reader: %v", err)
 	}
-	path, err := filepath.Abs(filepath.Join("..", "..", "plugins", "reader-pdf", "backend", "pdf", "testdata", "tiny.pdf"))
+	path, err := filepath.Abs(filepath.Join("..", "..", "plugins", "readers-pdf", "backend", "pdf", "testdata", "tiny.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -264,7 +264,7 @@ func TestBothBuildsAnswerAlike(t *testing.T) {
 
 // codingAgentIDs are the plugins that run a coding agent program. The folder of each is its id without
 // the md.numen. prefix.
-var codingAgentIDs = []string{"md.numen.agent-acp", "md.numen.agent-antigravity", "md.numen.agent-claude", "md.numen.agent-codex"}
+var codingAgentIDs = []string{"md.numen.agents.acp", "md.numen.agents.antigravity", "md.numen.agents.claude", "md.numen.agents.codex"}
 
 // listCodingAgentPrograms asks each coding agent plugin of a host for the names of its programs. A
 // program is listed whether or not its command is installed on the machine.

@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest'
 import { findIcon } from '@/shared/icons'
 import { getNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
-import { createMenuItems } from '@plugins/views.file.tree/frontend'
-import { ITEMS, NONE } from '@plugins/views.plex.graph/frontend'
-import { activate, PRESET } from '@plugins/views.flashcards.studio/frontend'
+import { createMenuItems } from '@plugins/views-file-tree/frontend'
+import { ITEMS, NONE } from '@plugins/views-plex-graph/frontend'
+import { activate, PRESET } from '@plugins/views-flashcards-studio/frontend'
 import {
   createMockBufferHost,
   createMockPluginContext,

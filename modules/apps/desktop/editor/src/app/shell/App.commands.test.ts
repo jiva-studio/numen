@@ -24,10 +24,10 @@ import {
 } from '@/testing/window'
 import { type VueWrapper } from '@vue/test-utils'
 import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
-import { AgentTab } from '@plugins/views.agent.chat/frontend'
-import { DeckTab } from '@plugins/views.flashcards.studio/frontend'
-import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/views.file.tree/frontend'
-import { PlexTab, WORDS as plexWords } from '@plugins/views.plex.graph/frontend'
+import { AgentTab } from '@plugins/views-agent-chat/frontend'
+import { DeckTab } from '@plugins/views-flashcards-studio/frontend'
+import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/views-file-tree/frontend'
+import { PlexTab, WORDS as plexWords } from '@plugins/views-plex-graph/frontend'
 import { ERRORS, WORDS } from '@/shared/words'
 
 describe('the palette', () => {

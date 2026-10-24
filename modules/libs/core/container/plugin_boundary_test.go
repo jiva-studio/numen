@@ -83,7 +83,7 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 		{"apps/desktop", false},
 		{"apps/mobile", false},
 		{"apps/desktop-monolith", true},
-		{"plugins/readers.epub", false},
+		{"plugins/readers-epub", false},
 		{"pluginsx", false},
 	} {
 		if got := mayNamePlugins(one.dir); got != one.may {
@@ -92,7 +92,7 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 	}
 
 	require := "module example.com/x\n\nrequire (\n\t" + pluginsPrefix + "readers.epub v0.0.0\n)\n"
-	replace := "module example.com/x\n\nreplace " + pluginsPrefix + "readers.epub => ../../plugins/readers.epub\n"
+	replace := "module example.com/x\n\nreplace " + pluginsPrefix + "readers.epub => ../../plugins/readers-epub\n"
 	for name, gomod := range map[string]string{"a require": require, "a replace": replace} {
 		if len(getPluginRequirements(gomod)) == 0 {
 			t.Errorf("%s of a plugin is not found", name)

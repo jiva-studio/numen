@@ -1,0 +1,203 @@
+package format_test
+
+import (
+	"errors"
+	"strings"
+	"testing"
+
+	"pgregory.net/rapid"
+
+	"github.com/jiva-studio/numen/modules/libs/notes/markdown"
+	"github.com/jiva-studio/numen/modules/plugins/views-flashcards-studio/backend/cardid"
+	"github.com/jiva-studio/numen/modules/plugins/views-flashcards-studio/backend/format"
+)
+
+func TestACardActiveBeforeEverySectionIsNotAtAnyOfThem(t *testing.T) {
+	if format.NoSection >= 0 {
+		t.Errorf("NoSection is %d, which is a position among the sections", format.NoSection)
+	}
+}
+
+func TestACardContainsNoValueBelowAFieldItDoesNotHave(t *testing.T) {
+	card := format.Card{Values: []format.Value{{Field: "Front", Text: "ant"}}}
+
+	if text, ok := card.Value("Back"); ok || text != "" {
+		t.Errorf("Value(Back) = %q, %v; want no value", text, ok)
+	}
+	if text, ok := card.Value("Front"); !ok || text != "ant" {
+		t.Errorf("Value(Front) = %q, %v; want ant", text, ok)
+	}
+}
+
+func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
+	deck := format.Deck{Cards: []format.Card{{Mark: "aaaaaaaaaa", Heading: "ant"}}}
+
+	got, err := deck.Card("bbbbbbbbbb")
+
+	if !errors.Is(err, format.ErrNoSuchCard) {
+		t.Fatalf("Card(bbbbbbbbbb) error = %v, want ErrNoSuchCard", err)
+	}
+	if got.Heading != "" || got.Mark != "" {
+		t.Errorf("Card(bbbbbbbbbb) = %+v, want no card", got)
+	}
+}
+
+func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
+	deck := format.Deck{Cards: []format.Card{
+		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "ant"},
+		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "bee"},
+	}}
+
+	if _, err := deck.Card("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {
+		t.Fatalf("Card(aaaaaaaaaa) error = %v, want ErrTwoCards", err)
+	}
+}
+
+// A card's heading is the first line of its first field, cut to fit one line.
+// It stops at the first break and at format.HeadingRunes characters, counted as
+// a person counts them, and the spaces at either end are dropped.
+//
+// The value is a stranger's: it is HTML a person wrote, in a file another
+// editor may have written.
+func TestAProjectedHeadingIsOneLineOfCharactersTheFieldOpensWith(t *testing.T) {
+	t.Parallel()
+	rapid.Check(t, func(t *rapid.T) {
+		value := rapid.String().Draw(t, "value")
+		got := format.Project(value)
+
+		if strings.ContainsAny(got, "\n\r") {
+			t.Fatalf("%q projects to %q, which is more than one line", value, got)
+		}
+		if n := len([]rune(got)); n > format.HeadingRunes {
+			t.Fatalf("%q projects to %d characters, and %d is the most a heading is",
+				value, n, format.HeadingRunes)
+		}
+		if got != strings.TrimSpace(got) {
+			t.Fatalf("%q projects to %q, which is not trimmed", value, got)
+		}
+		// A heading holds nothing of its own: every character of it comes off
+		// the front of the field's first line.
+		line, _, _ := strings.Cut(markdown.Normalise(value), "\n")
+		if opens := strings.TrimSpace(line); !strings.HasPrefix(opens, got) {
+			t.Fatalf("%q opens with %q and projects to %q, which is not its own",
+				value, opens, got)
+		}
+	})
+}
+
+// atom is one piece of a field's first line, and unbroken says whether the cut
+// may fall inside it.
+type atom struct {
+	text       string
+	isUnbroken bool
+}
+
+// drawAtoms generates a first line as a run of pieces the test knows the bounds
+// of: prose the cut may fall anywhere in, and the runs it may not — a wikilink,
+// an embed, a run of emphasis, and the shapes that stand one inside another.
+//
+// The prose carries no bracket, no star, no underscore and no exclamation mark,
+// so a piece the cut may fall inside can neither open a run of its own nor
+// close one an earlier piece opened. That is what lets the test say where every
+// unbroken run is without working it out the way the code under test does.
+func drawAtoms(t *rapid.T) []atom {
+	prose := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,40}`)
+	target := rapid.StringMatching(`[\p{L}\p{N} .-]{4,30}`)
+	inner := rapid.StringMatching(`[\p{L}\p{N} ,.;:()-]{4,30}`)
+	emphasis := rapid.SampledFrom([]string{"*", "**", "***", "_", "__", "___"})
+
+	link := rapid.Custom(func(t *rapid.T) string {
+		open := rapid.SampledFrom([]string{"[[", "![["}).Draw(t, "opens")
+		return open + target.Draw(t, "target") + "]]"
+	})
+	run := rapid.Custom(func(t *rapid.T) string {
+		mark := emphasis.Draw(t, "emphasis")
+		return mark + inner.Draw(t, "held") + mark
+	})
+	// A link inside a run of emphasis is the link's, and the run around it is
+	// one run; a link's brackets hold whatever a person wrote, an embed
+	// included, and the link closes at its own last pair.
+	nested := rapid.Custom(func(t *rapid.T) string {
+		mark := emphasis.Draw(t, "emphasis")
+		return mark + inner.Draw(t, "before") + link.Draw(t, "link") + mark
+	})
+	targetVal := rapid.Custom(func(t *rapid.T) string {
+		return "[[" + target.Draw(t, "target") + " ![[" +
+			target.Draw(t, "embedded") + "]] " + target.Draw(t, "after") + "]]"
+	})
+
+	piece := rapid.Custom(func(t *rapid.T) atom {
+		switch rapid.IntRange(0, 4).Draw(t, "kind") {
+		case 0:
+			return atom{text: link.Draw(t, "link"), isUnbroken: true}
+		case 1:
+			return atom{text: run.Draw(t, "run"), isUnbroken: true}
+		case 2:
+			return atom{text: nested.Draw(t, "nested"), isUnbroken: true}
+		case 3:
+			return atom{text: targetVal.Draw(t, "held"), isUnbroken: true}
+		}
+		return atom{text: prose.Draw(t, "prose")}
+	})
+	return rapid.SliceOfN(piece, 2, 24).Draw(t, "line")
+}
+
+// The cut never falls inside a wikilink, an embed or a run of emphasis: it
+// falls in front of the whole of whichever it lands in. A heading ending inside
+// a link is markup a person is shown as the name of their card.
+func TestTheSplitNeverFallsInsideALinkOrARunOfEmphasis(t *testing.T) {
+	t.Parallel()
+	var trimmed, straddled int
+	rapid.Check(t, func(t *rapid.T) {
+		atoms := drawAtoms(t)
+
+		var line strings.Builder
+		type span struct{ from, to int }
+		var runs []span
+		pos := 0
+		for _, one := range atoms {
+			n := len([]rune(one.text))
+			if one.isUnbroken {
+				runs = append(runs, span{pos, pos + n})
+			}
+			pos += n
+			line.WriteString(one.text)
+		}
+		value := line.String()
+		got := format.Project(value)
+
+		// The spaces at either end are dropped, so the heading is counted from
+		// the first character the line has, and so are the runs.
+		shift := len([]rune(value)) - len([]rune(strings.TrimLeft(value, " ")))
+		for i := range runs {
+			runs[i].from -= shift
+			runs[i].to -= shift
+		}
+
+		whole := len([]rune(strings.TrimSpace(value)))
+		if whole > format.HeadingRunes {
+			trimmed++
+			for _, one := range runs {
+				if one.from < format.HeadingRunes && format.HeadingRunes < one.to {
+					straddled++
+					break
+				}
+			}
+		}
+
+		fell := len([]rune(got))
+		for _, one := range runs {
+			if one.from < fell && fell < one.to {
+				t.Fatalf("%q projects to %q, which stops inside the run at %d:%d",
+					value, got, one.from, one.to)
+			}
+		}
+	})
+	// The property says where a cut may fall, so a run of it that never cut
+	// anything, or never met a link straddling the place the cut falls, has
+	// asked nothing.
+	if trimmed < 25 || straddled < 15 {
+		t.Fatalf("%d lines were cut and %d of those had a run standing across the cut",
+			trimmed, straddled)
+	}
+}

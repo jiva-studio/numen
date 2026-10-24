@@ -8,10 +8,10 @@
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
 import { Plex, Tree, WelcomePage, WorkspaceLayout } from '@numen/ui'
-import { AgentTab } from '@plugins/views.agent.chat/frontend'
-import { DocumentTab } from '@plugins/readers.pdf/frontend'
-import { FilesTab } from '@plugins/views.file.tree/frontend'
-import { PlexTab } from '@plugins/views.plex.graph/frontend'
+import { AgentTab } from '@plugins/views-agent-chat/frontend'
+import { DocumentTab } from '@plugins/readers-pdf/frontend'
+import { FilesTab } from '@plugins/views-file-tree/frontend'
+import { PlexTab } from '@plugins/views-plex-graph/frontend'
 import { getPanes } from '@numen/ui'
 import {
   requests,

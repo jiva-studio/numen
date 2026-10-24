@@ -10,7 +10,12 @@ import (
 
 // absentPlugins are the ids of the plugins with a backend that this binary does
 // not link in.
-var absentPlugins = []string{}
+var absentPlugins = []string{
+	"md.numen.agents.mcp.server",
+	"md.numen.agents.tools.vault",
+	"md.numen.agents.tools.window",
+	"md.numen.views.flashcards.studio",
+}
 
 // getUnaccountedPlugins lists the plugins with a backend that are neither
 // registered nor listed as absent, and the absent ones that are registered or

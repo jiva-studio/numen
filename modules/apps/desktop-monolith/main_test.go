@@ -53,8 +53,8 @@ func TestEachPluginIsRegisteredOnceByItsOwnManifest(t *testing.T) {
 
 	slices.Sort(ids)
 	if want := []string{
-		"md.numen.agent", "md.numen.agent-acp", "md.numen.agent-antigravity", "md.numen.agent-claude", "md.numen.agent-codex",
-		"md.numen.downloader", "md.numen.embeddings", "md.numen.epub", "md.numen.ocr", "md.numen.pdf", "md.numen.proofreading", "md.numen.transcription",
+		"md.numen.agents.acp", "md.numen.agents.antigravity", "md.numen.agents.claude", "md.numen.agents.codex", "md.numen.agents.numen",
+		"md.numen.engines.embeddings", "md.numen.engines.ocr", "md.numen.engines.transcription", "md.numen.readers.epub", "md.numen.readers.pdf", "md.numen.tools.media.importer", "md.numen.tools.proofreading",
 	}; !slices.Equal(ids, want) {
 		t.Fatalf("registered %v, want %v", ids, want)
 	}
@@ -62,7 +62,7 @@ func TestEachPluginIsRegisteredOnceByItsOwnManifest(t *testing.T) {
 
 // A document is read by the PDF reader linked into this binary, through the plugin host.
 func TestADocumentIsReadByTheLinkedReader(t *testing.T) {
-	raw, err := os.ReadFile(filepath.Join("..", "..", "plugins", "reader-pdf", "backend", "pdf", "testdata", "tiny.pdf"))
+	raw, err := os.ReadFile(filepath.Join("..", "..", "plugins", "readers-pdf", "backend", "pdf", "testdata", "tiny.pdf"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,12 +99,12 @@ func TestNumenAgentIsConfiguredWithItsBaseURLAndKey(t *testing.T) {
 	}))
 	defer chat.Close()
 	host := newLinkedConfig(t).PluginHost
-	host.SetKeyStore(heldKeys{"md.numen.agent/apiKey": "chat-key"})
+	host.SetKeyStore(heldKeys{"md.numen.agents.numen/apiKey": "chat-key"})
 	host.SetSettings(map[string]map[string]any{
-		"md.numen.agent": {"baseUrl": chat.URL, pluginport.SettingStoredSecrets: []any{"apiKey"}},
+		"md.numen.agents.numen": {"baseUrl": chat.URL, pluginport.SettingStoredSecrets: []any{"apiKey"}},
 	})
 
-	endpoint, err := host.EnsureActive(t.Context(), "md.numen.agent")
+	endpoint, err := host.EnsureActive(t.Context(), "md.numen.agents.numen")
 	if err != nil {
 		t.Fatalf("EnsureActive: %v", err)
 	}
