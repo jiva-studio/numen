@@ -60,12 +60,12 @@ desktop: app_desktop_build ## build desktop application
 
 .PHONY: desktop_monolith
 desktop_monolith: interface ## build desktop application in monolithic mode
-	cd $(DESKTOP_MONOLITH) && CGO_ENABLED=1 go build -tags plugins_monolith -o ../../../numen .
+	cd $(DESKTOP_MONOLITH) && CGO_ENABLED=1 go build -tags plugins_monolith -o $(CURDIR)/numen .
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: desktop_modular
 desktop_modular: interface plugins_build ## build desktop application in modular mode
-	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o ../../../numen ./cmd/numen
+	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o $(CURDIR)/numen ./cmd/numen
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: plugins
@@ -305,7 +305,7 @@ app_desktop_flashcards_build: lib_ui_build
 
 .PHONY: app_desktop_build
 app_desktop_build: interface plugins_build ## build desktop binary
-	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o ../../../numen ./cmd/numen
+	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o $(CURDIR)/numen ./cmd/numen
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: app_desktop_pgo
@@ -318,7 +318,7 @@ app_desktop_pgo_check: ## fail when the desktop PGO profile names a local path
 
 .PHONY: app_desktop_flashcards_bin
 app_desktop_flashcards_bin: interface ## build desktop flashcards binary
-	cd $(DESKTOP) && CGO_ENABLED=1 go build -o ../../../numen-flashcards ./cmd/numen-flashcards
+	cd $(DESKTOP) && CGO_ENABLED=1 go build -o $(CURDIR)/numen-flashcards ./cmd/numen-flashcards
 	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns)
 
 .PHONY: app_desktop_compile
@@ -469,7 +469,7 @@ $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))): plugin_%_test:
 
 .PHONY: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))): plugin_%_package: plugin_%_build
-	cd $(DESKTOP) && go run ./cmd/numen-plugin package ../../../$(PLUGINS)/$*
+	cd $(DESKTOP) && go run ./cmd/numen-plugin package $(CURDIR)/$(PLUGINS)/$*
 
 .PHONY: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES)))
 $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))): plugin_%_clean:
