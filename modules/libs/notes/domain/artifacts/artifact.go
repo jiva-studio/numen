@@ -1,3 +1,4 @@
+// Package artifacts defines generated source media, transcripts, OCR recognition, and proofreading files attached to notes.
 package artifacts
 
 // The producers: what made a text. A recording is heard by a model here

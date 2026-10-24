@@ -1,3 +1,4 @@
+// Package name provides note titling, file naming normalization, and name matching.
 package name
 
 import (
