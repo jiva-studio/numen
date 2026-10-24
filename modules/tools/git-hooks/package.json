@@ -3,7 +3,8 @@
   "private": true,
   "description": "Git hooks configuration.",
   "scripts": {
-    "prepare": "cd ../../.. && husky modules/tools/git-hooks/.husky && git config commit.template \"$(git rev-parse --show-toplevel)/modules/tools/git-hooks/.gitmessage\""
+    "prepare": "cd ../../.. && husky modules/tools/git-hooks/.husky && git config commit.template \"$(git rev-parse --show-toplevel)/modules/tools/git-hooks/.gitmessage\"",
+    "test": "node --test *.test.mjs"
   },
   "devDependencies": {
     "husky": "^9.1.7"
