@@ -27,13 +27,21 @@ var antigravityProgram = program{
 }
 
 // IsAntigravityInstalled checks whether Antigravity CLI is available on this machine.
-func IsAntigravityInstalled() bool {
+func IsAntigravityInstalled(customPath ...string) bool {
+	if len(customPath) > 0 && customPath[0] != "" {
+		return isRunnable(customPath[0])
+	}
 	_, ok := discover(antigravityProgram)
 	return ok
 }
 
 // FindAntigravity returns the path of the Antigravity CLI, or the bare name where not found.
-func FindAntigravity() string {
+func FindAntigravity(customPath ...string) string {
+	if len(customPath) > 0 && customPath[0] != "" {
+		if isRunnable(customPath[0]) {
+			return customPath[0]
+		}
+	}
 	path, _ := discover(antigravityProgram)
 	return path
 }

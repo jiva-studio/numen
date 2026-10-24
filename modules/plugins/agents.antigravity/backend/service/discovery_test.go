@@ -34,3 +34,17 @@ func TestDiscoveryWithoutAgents(t *testing.T) {
 		t.Errorf("expected bare 'agy', got %q", got)
 	}
 }
+
+func TestDiscoveryWithCustomPath(t *testing.T) {
+	tmp := t.TempDir()
+	custom := filepath.Join(tmp, "my-agy")
+	if err := os.WriteFile(custom, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if !IsAntigravityInstalled(custom) {
+		t.Error("expected custom Antigravity to be installed")
+	}
+	if got := FindAntigravity(custom); got != custom {
+		t.Errorf("expected %s, got %s", custom, got)
+	}
+}

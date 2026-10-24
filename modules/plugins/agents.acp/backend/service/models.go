@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -22,7 +23,25 @@ func (s *agentServer) getACPAgents() []acpAgent {
 	}
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	return getACPAgentsFromCommands(s.commands)
+	agents := getACPAgentsFromCommands(s.commands)
+	if s.executablePath != "" {
+		hasCustom := false
+		for _, a := range agents {
+			if a.Program == "acp" || (len(a.Command) > 0 && a.Command[0] == s.executablePath) {
+				hasCustom = true
+				break
+			}
+		}
+		if !hasCustom {
+			agents = append(agents, acpAgent{
+				Program: "acp",
+				Title:   "ACP Agent",
+				Command: []string{s.executablePath},
+			})
+			slices.SortFunc(agents, func(a, b acpAgent) int { return strings.Compare(a.Program, b.Program) })
+		}
+	}
+	return agents
 }
 
 // acpListing is what an agent reports for a session: its models and the one it answers with.

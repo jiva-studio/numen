@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"strings"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -13,7 +14,23 @@ import (
 
 type agentServer struct {
 	agentrun.Service
-	models modelCache[antigravityModel]
+	mu             sync.RWMutex
+	executablePath string
+	models         modelCache[antigravityModel]
+}
+
+func (s *agentServer) applyConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if execPath, ok := values["executable_path"]; ok {
+		s.executablePath = strings.TrimSpace(execPath)
+	}
+}
+
+func (s *agentServer) getExecutablePath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.executablePath
 }
 
 func (s *agentServer) AskAgent(
@@ -30,7 +47,7 @@ func (s *agentServer) AskAgent(
 	}
 
 	s.resolveModel(ctx, req.Msg)
-	work, err := start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry))
+	work, err := start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry, s.getExecutablePath()))
 	if err != nil {
 		return stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
@@ -43,7 +60,7 @@ func (s *agentServer) GetAgentState(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetAgentStateRequest],
 ) (*connect.Response[numenv1.GetAgentStateResponse], error) {
-	if !IsAntigravityInstalled() {
+	if !IsAntigravityInstalled(s.getExecutablePath()) {
 		return connect.NewResponse(&numenv1.GetAgentStateResponse{
 			Unreachable: "Antigravity was not found on this machine",
 		}), nil
@@ -57,8 +74,12 @@ func (s *agentServer) GetAgentPrograms(
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
 	command := programCommand(req.Msg.GetCommands(), "antigravity")
+	customPath := s.getExecutablePath()
+	if len(command) == 0 && customPath != "" {
+		command = []string{customPath}
+	}
 	antigravity := &numenv1.AgentProgram{
-		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled() || len(command) > 0,
+		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled(customPath) || len(command) > 0,
 	}
 	if antigravity.GetIsInstalled() {
 		for _, one := range s.getFamilies(ctx, command) {

@@ -189,7 +189,11 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec is the run of the Antigravity CLI the request asks for.
-func newSpec(req *numenv1.AskAgentRequest, reg *agentrun.Registry) spec {
+func newSpec(req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
+	execPath := ""
+	if len(customPath) > 0 {
+		execPath = customPath[0]
+	}
 	s := spec{
 		Conversation: req.GetConversation(),
 		MaxSteps:     int(req.GetMaxSteps()),
@@ -200,25 +204,25 @@ func newSpec(req *numenv1.AskAgentRequest, reg *agentrun.Registry) spec {
 		s.Token = req.GetToolsToken()
 	}
 	s.Build = func(ctx context.Context) (*exec.Cmd, func(), error) {
-		return makeAntigravityCommand(ctx, req, reg)
+		return makeAntigravityCommand(ctx, req, reg, execPath)
 	}
 	return s
 }
 
-func resolveCommand(command []string) (string, []string) {
+func resolveCommand(command []string, customPath ...string) (string, []string) {
 	if len(command) > 0 {
 		return command[0], command[1:]
 	}
-	return FindAntigravity(), nil
+	return FindAntigravity(customPath...), nil
 }
 
 func makeAntigravityCommand(
-	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry,
+	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func(), error) {
 	if !agentrun.HasTools(req) {
-		return makeAnswerCommand(runCtx, req, reg)
+		return makeAnswerCommand(runCtx, req, reg, customPath...)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand())
+	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"-p", req.GetPrompt(),
@@ -248,7 +252,7 @@ func makeAntigravityCommand(
 // permission granted beforehand, and an empty folder to run in. The home and the folder go when the
 // run does.
 func makeAnswerCommand(
-	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry,
+	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func(), error) {
 	tempHome, cleanHome, err := setupAntigravityHome(nil)
 	if err != nil {
@@ -259,7 +263,7 @@ func makeAnswerCommand(
 		cleanHome()
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand())
+	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"-p", agentrun.WritePrompt(req.GetInstructions(), req.GetPrompt()),

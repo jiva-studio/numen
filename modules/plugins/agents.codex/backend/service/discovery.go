@@ -26,13 +26,21 @@ var codexProgram = program{
 }
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
-func IsCodexInstalled() bool {
+func IsCodexInstalled(customPath ...string) bool {
+	if len(customPath) > 0 && customPath[0] != "" {
+		return isRunnable(customPath[0])
+	}
 	_, ok := discover(codexProgram)
 	return ok
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
-func FindCodex() string {
+func FindCodex(customPath ...string) string {
+	if len(customPath) > 0 && customPath[0] != "" {
+		if isRunnable(customPath[0]) {
+			return customPath[0]
+		}
+	}
 	path, _ := discover(codexProgram)
 	return path
 }

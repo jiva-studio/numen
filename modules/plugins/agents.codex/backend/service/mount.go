@@ -11,6 +11,7 @@ import (
 func Mount(s *server.Server) error {
 	agent := &agentServer{}
 	s.OnClose(func() { _ = agent.Close() })
+	s.SetUpdateConfig(agent.applyConfig)
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	return nil
 }

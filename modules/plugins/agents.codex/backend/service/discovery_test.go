@@ -34,3 +34,17 @@ func TestDiscoveryWithoutAgents(t *testing.T) {
 		t.Errorf("expected bare 'codex', got %q", got)
 	}
 }
+
+func TestDiscoveryWithCustomPath(t *testing.T) {
+	tmp := t.TempDir()
+	custom := filepath.Join(tmp, "my-codex")
+	if err := os.WriteFile(custom, []byte("#!/bin/sh\nexit 0\n"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if !IsCodexInstalled(custom) {
+		t.Error("expected custom Codex to be installed")
+	}
+	if got := FindCodex(custom); got != custom {
+		t.Errorf("expected %s, got %s", custom, got)
+	}
+}

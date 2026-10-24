@@ -17,5 +17,14 @@
     "type": "process",
     "entrypoint": "bin/agents.claude",
     "serviceName": "numen.v1.AgentService"
-  }
+  },
+  "settings": [
+    {
+      "key": "executable_path",
+      "type": "string",
+      "title": "Executable Path",
+      "description": "Path to the Claude Code CLI executable. If empty, the agent is discovered automatically.",
+      "default": ""
+    }
+  ]
 }

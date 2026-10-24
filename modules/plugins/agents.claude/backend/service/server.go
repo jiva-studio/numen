@@ -35,11 +35,12 @@ const programTitle = "Claude Code"
 
 type agentServer struct {
 	numenv1connect.UnimplementedAgentServiceHandler
-	mu           sync.RWMutex
-	systemPrompt string
-	tools        []*numenv1.AgentToolDefinition
-	registry     agentrun.Registry
-	defaultModel string
+	mu             sync.RWMutex
+	systemPrompt   string
+	tools          []*numenv1.AgentToolDefinition
+	registry       agentrun.Registry
+	defaultModel   string
+	executablePath string
 
 	// environ is the variables a program of the agent is started with; nil is those of this process.
 	environ []string
@@ -56,13 +57,23 @@ func (s *agentServer) getEnvironment() []string {
 	return os.Environ()
 }
 
-// applyConfig keeps the model that answers a task naming none.
+// applyConfig keeps the model that answers a task naming none, and optional executable path.
 func (s *agentServer) applyConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if model, ok := values["model"]; ok && model != "" {
-		s.mu.Lock()
 		s.defaultModel = model
-		s.mu.Unlock()
 	}
+	if execPath, ok := values["executable_path"]; ok {
+		s.executablePath = strings.TrimSpace(execPath)
+	}
+}
+
+func (s *agentServer) findClaude() string {
+	s.mu.RLock()
+	custom := s.executablePath
+	s.mu.RUnlock()
+	return findClaude(custom)
 }
 
 func combineInstructions(instructions, systemPrompt string) string {
@@ -119,7 +130,7 @@ func (s *agentServer) AskAgent(
 
 	instructions := combineInstructions(msg.GetInstructions(), systemPrompt)
 
-	cmdName, cmdArgs := getCommand(msg.GetCommand())
+	cmdName, cmdArgs := s.getCommand(msg.GetCommand())
 	if cmdName == "" {
 		_ = stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Text{
@@ -239,11 +250,11 @@ func waitAgentCompletion(
 
 // getCommand is the program to start and what stands before its own arguments: the command line
 // the installation set, else the program where it is found. Empty is a program nowhere to be found.
-func getCommand(command []string) (string, []string) {
+func (s *agentServer) getCommand(command []string) (string, []string) {
 	if len(command) > 0 {
 		return command[0], command[1:]
 	}
-	return findClaude(), nil
+	return s.findClaude(), nil
 }
 
 func (s *agentServer) FinishConversation(
@@ -261,7 +272,7 @@ func (s *agentServer) GetAgentState(
 	_ *connect.Request[numenv1.GetAgentStateRequest],
 ) (*connect.Response[numenv1.GetAgentStateResponse], error) {
 	var unreachable string
-	if findClaude() == "" {
+	if s.findClaude() == "" {
 		unreachable = "Claude Code CLI not found"
 	}
 	return connect.NewResponse(&numenv1.GetAgentStateResponse{Unreachable: unreachable}), nil
@@ -279,7 +290,7 @@ func (s *agentServer) GetAgentPrograms(
 			configured = one.GetCommand()
 		}
 	}
-	command, extra := getCommand(configured)
+	command, extra := s.getCommand(configured)
 	program := &numenv1.AgentProgram{
 		Name:        programName,
 		Title:       programTitle,

@@ -31,3 +31,15 @@ func TestNoACPAgentIsNamedWithoutCommands(t *testing.T) {
 		t.Errorf("got %v", got)
 	}
 }
+
+func TestACPAgentFromConfig(t *testing.T) {
+	s := &agentServer{}
+	s.applyConfig(map[string]string{"executable_path": "/usr/bin/my-acp"})
+	agents := s.getACPAgents()
+	if len(agents) != 1 {
+		t.Fatalf("expected 1 agent, got %d", len(agents))
+	}
+	if agents[0].Program != "acp" || agents[0].Command[0] != "/usr/bin/my-acp" {
+		t.Errorf("got %+v", agents[0])
+	}
+}

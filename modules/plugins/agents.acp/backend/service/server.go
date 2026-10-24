@@ -1,6 +1,7 @@
 package service
 
 import (
+	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1/numenv1connect"
@@ -12,7 +13,16 @@ type agentServer struct {
 	acpAgents func() []acpAgent
 	acpModels acpModelCache
 
-	mu sync.RWMutex
+	mu             sync.RWMutex
+	executablePath string
 	// commands are the command lines the settings gave at the last program listing, by program.
 	commands map[string][]string
+}
+
+func (s *agentServer) applyConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if execPath, ok := values["executable_path"]; ok {
+		s.executablePath = strings.TrimSpace(execPath)
+	}
 }

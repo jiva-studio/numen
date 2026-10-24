@@ -25,9 +25,14 @@ var claudeSearchPlaces = []string{
 	"/nix/var/nix/profiles/default/bin/claude",
 }
 
-// findClaude returns the command the environment names, else the Claude Code CLI where it is
-// installed. Empty is a program nowhere to be found.
-func findClaude() string {
+// findClaude returns the custom path if specified and runnable, else the command the environment
+// names, else the Claude Code CLI where it is installed. Empty is a program nowhere to be found.
+func findClaude(customPath ...string) string {
+	if len(customPath) > 0 && customPath[0] != "" {
+		if isRunnable(customPath[0]) {
+			return customPath[0]
+		}
+	}
 	if cmd := os.Getenv("NUMEN_CLAUDE_COMMAND"); cmd != "" {
 		return cmd
 	}

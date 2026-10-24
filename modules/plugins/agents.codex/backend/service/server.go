@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"strings"
+	"sync"
 
 	"connectrpc.com/connect"
 
@@ -12,7 +14,23 @@ import (
 
 type agentServer struct {
 	agentrun.Service
-	codexModels codexModelCache
+	mu             sync.RWMutex
+	executablePath string
+	codexModels    codexModelCache
+}
+
+func (s *agentServer) applyConfig(values map[string]string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if execPath, ok := values["executable_path"]; ok {
+		s.executablePath = strings.TrimSpace(execPath)
+	}
+}
+
+func (s *agentServer) getExecutablePath() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.executablePath
 }
 
 func (s *agentServer) AskAgent(
@@ -28,7 +46,7 @@ func (s *agentServer) AskAgent(
 		return err
 	}
 
-	work, err := start(ctx, &s.Registry, newSpec(req.Msg))
+	work, err := start(ctx, &s.Registry, newSpec(req.Msg, s.getExecutablePath()))
 	if err != nil {
 		return stream.Send(&numenv1.AskAgentResponse{
 			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
@@ -41,7 +59,7 @@ func (s *agentServer) GetAgentState(
 	_ context.Context,
 	_ *connect.Request[numenv1.GetAgentStateRequest],
 ) (*connect.Response[numenv1.GetAgentStateResponse], error) {
-	if !IsCodexInstalled() {
+	if !IsCodexInstalled(s.getExecutablePath()) {
 		return connect.NewResponse(&numenv1.GetAgentStateResponse{
 			Unreachable: "OpenAI Codex was not found on this machine",
 		}), nil
@@ -55,8 +73,12 @@ func (s *agentServer) GetAgentPrograms(
 	req *connect.Request[numenv1.GetAgentProgramsRequest],
 ) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
 	command := programCommand(req.Msg.GetCommands(), "codex")
+	customPath := s.getExecutablePath()
+	if len(command) == 0 && customPath != "" {
+		command = []string{customPath}
+	}
 
-	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled() || len(command) > 0}
+	codex := &numenv1.AgentProgram{Name: "codex", Title: "OpenAI Codex", IsInstalled: IsCodexInstalled(customPath) || len(command) > 0}
 	if codex.GetIsInstalled() {
 		for _, one := range s.codexModels.get(ctx, command) {
 			codex.Models = append(codex.Models, &numenv1.AgentModel{

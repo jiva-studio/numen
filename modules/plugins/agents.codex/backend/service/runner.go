@@ -190,7 +190,11 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec is the run of the Codex CLI the request asks for.
-func newSpec(req *numenv1.AskAgentRequest) spec {
+func newSpec(req *numenv1.AskAgentRequest, customPath ...string) spec {
+	execPath := ""
+	if len(customPath) > 0 {
+		execPath = customPath[0]
+	}
 	s := spec{
 		Conversation: req.GetConversation(),
 		MaxSteps:     int(req.GetMaxSteps()),
@@ -200,25 +204,25 @@ func newSpec(req *numenv1.AskAgentRequest) spec {
 		s.Root = req.GetRoot()
 		s.Token = req.GetToolsToken()
 		s.Build = func(ctx context.Context) (*exec.Cmd, func(), error) {
-			return makeCodexCommand(ctx, req), nil, nil
+			return makeCodexCommand(ctx, req, execPath), nil, nil
 		}
 		return s
 	}
 	s.Build = func(ctx context.Context) (*exec.Cmd, func(), error) {
-		return makeAnswerCommand(ctx, req)
+		return makeAnswerCommand(ctx, req, execPath)
 	}
 	return s
 }
 
-func resolveCommand(command []string) (string, []string) {
+func resolveCommand(command []string, customPath ...string) (string, []string) {
 	if len(command) > 0 {
 		return command[0], command[1:]
 	}
-	return FindCodex(), nil
+	return FindCodex(customPath...), nil
 }
 
-func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest) *exec.Cmd {
-	binName, baseArgs := resolveCommand(req.GetCommand())
+func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest, customPath ...string) *exec.Cmd {
+	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"exec",
@@ -238,12 +242,12 @@ func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest) *exe
 // makeAnswerCommand is the run of the Codex CLI that gives one answer: no MCP server, none of the
 // tools Codex has of its own that can be turned off, nothing the user's configuration adds, a
 // sandbox that writes nothing and an empty folder to run in. The folder goes when the run does.
-func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest) (*exec.Cmd, func(), error) {
+func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest, customPath ...string) (*exec.Cmd, func(), error) {
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
 	}
-	binName, baseArgs := resolveCommand(req.GetCommand())
+	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
 		"exec",

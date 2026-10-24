@@ -13,6 +13,7 @@ func Mount(s *server.Server) error {
 }
 
 func mount(s *server.Server, agent *agentServer) error {
+	s.SetUpdateConfig(agent.applyConfig)
 	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	return nil
 }
