@@ -167,7 +167,7 @@ function measure(): void {
      scrolls, and how far above the page it stands. The two widths are set in
      the interface's own units, so they grow with everything drawn beside them. */
   --narrowest: 11.25rem;
-  --widest: 20rem;
+  --widest: 22rem;
   /* What asked for it, which it is never narrower than. */
   --asking: 0px;
   /* The room the area leaves it, set by the component. */
@@ -176,14 +176,18 @@ function measure(): void {
      beyond it. */
   --tallest: min(24rem, var(--room));
   --lift: var(--numen-lift-menu, 99999);
+  --inset: 0.375rem;
 
+  box-sizing: border-box;
   position: fixed;
   z-index: var(--lift, 99999);
+  padding: var(--inset);
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));
   max-block-size: var(--tallest);
   overflow-y: auto;
+  overflow-x: hidden;
   overscroll-behavior: contain;
   background-color: var(--numen-raised, #27221d);
   border: 1px solid var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
@@ -205,28 +209,38 @@ function measure(): void {
   /* The room the menu keeps around what it holds. */
   --inset: 0.375rem;
 
+  box-sizing: border-box;
   position: sticky;
   inset-block-start: calc(-1 * var(--inset));
   z-index: 1;
   flex-shrink: 0;
   margin: calc(-1 * var(--inset)) calc(-1 * var(--inset)) 0.25rem;
-  padding: var(--inset);
+  padding: 0.375rem 0.5rem;
   background-color: var(--numen-raised, #27221d);
   border-block-end: 1px solid
     var(--numen-panel-border, var(--numen-rule, rgba(255, 255, 255, 0.15)));
 }
 
 .menu__search {
+  box-sizing: border-box;
   inline-size: 100%;
-  padding: 0.375rem 0.5rem;
+  padding: 0.125rem 0.25rem;
   font: inherit;
-  background-color: var(--numen-raised, #27221d);
-  border: 1px solid var(--numen-field-rule, var(--numen-rule, rgba(255, 255, 255, 0.15)));
-  border-radius: var(--numen-radius-small, 4px);
+  color: var(--numen-ink);
+  background: transparent;
+  border: none;
   outline: none;
+  box-shadow: none;
 }
 
+.menu__search::placeholder {
+  color: var(--numen-hushed);
+}
+
+.menu__search:focus,
 .menu__search:focus-visible {
-  border-color: var(--numen-accent, currentColor);
+  outline: none;
+  border: none;
+  box-shadow: none;
 }
 </style>

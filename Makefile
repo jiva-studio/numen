@@ -445,7 +445,7 @@ $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))): plugin_%_build: plugin
 $(addprefix plugin_,$(addsuffix _backend_build,$(PLUGIN_NAMES))): plugin_%_backend_build:
 	@if [ -d $(PLUGINS)/$*/backend ]; then \
 		mkdir -p $(PLUGINS)/$*/bin && \
-		cd $(PLUGINS)/$* && go build -o bin/$*$(EXE) ./backend ; \
+		cd $(PLUGINS)/$* && go build -ldflags="-s -w" -o bin/$*$(EXE) ./backend ; \
 	fi
 
 .PHONY: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES)))

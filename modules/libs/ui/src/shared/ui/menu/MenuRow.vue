@@ -100,6 +100,8 @@ defineExpose({ focus, getElement: () => row.value })
 }
 
 .menu__item {
+  box-sizing: border-box;
+  max-inline-size: 100%;
   cursor: default;
   user-select: none;
   -webkit-user-select: none;
