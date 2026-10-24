@@ -38,36 +38,26 @@ func newRecognitionServer(eng *engine.Recogniser, cfg engine.Config) *recognitio
 	}
 }
 
+func updateField(target *string, values map[string]string, key string) bool {
+	if val, ok := values[key]; ok && *target != val {
+		*target = val
+		return true
+	}
+	return false
+}
+
 func (s *recognitionServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	changed := false
 	if dpiStr, ok := values["dpi"]; ok {
 		if dpi, err := strconv.Atoi(dpiStr); err == nil && dpi > 0 {
 			s.cfg.Recognise.DPI = dpi
 		}
 	}
-	if lang, ok := values["language"]; ok && lang != "" {
-		if s.cfg.Recognise.Name != lang {
-			s.cfg.Recognise.Name = lang
-			changed = true
-		}
-	}
-	if profile, ok := values["model_profile"]; ok && profile != "" {
-		_ = profile
-	}
-	if path, ok := values["custom_model_path"]; ok {
-		if s.cfg.Recognise.Path != path {
-			s.cfg.Recognise.Path = path
-			changed = true
-		}
-	}
-	if dict, ok := values["custom_dict_path"]; ok {
-		if s.cfg.Recognise.Dict != dict {
-			s.cfg.Recognise.Dict = dict
-			changed = true
-		}
-	}
+	_ = values["model_profile"]
+	changed := updateField(&s.cfg.Recognise.Name, values, "language")
+	changed = updateField(&s.cfg.Recognise.Path, values, "custom_model_path") || changed
+	changed = updateField(&s.cfg.Recognise.Dict, values, "custom_dict_path") || changed
 	if changed && s.engine != nil {
 		_ = s.engine.Close()
 		s.engine = nil
