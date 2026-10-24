@@ -1,202 +1,282 @@
 /**
- * The notes the window has open, and what turns the state model.
- *
- * Coordinates open note tabs, executing reads, writes, timers, and holding note state.
+ * Open deck and stencil buffer store for flashcards studio.
  */
 import { shallowReactive } from 'vue'
-import {
-  openTab,
-  getState,
-  transitionTab,
-  DEFAULT_WRITE_LIMITS,
-  type Effect,
-  type Event,
-  type Move,
-  type Tab,
-} from './tab'
-import type { LinkAddress, OpenNote, Notes, OpenNotesOptions } from './types'
-import { createNoteQueue } from './queue'
-import { createConflictCoordinator } from './conflict'
+import type { PathRename } from '@numen/plugin-sdk'
+import type {
+  ConflictWords,
+  NoteBaseline,
+  NoteErrorCode,
+  Notes,
+  OpenNote,
+  OpenNotesOptions,
+  State,
+} from './types'
+import { convertErrorCode, STALE_CONFLICT } from './words'
 
-export * from './types'
-
-interface NoteStoreContext {
-  tabs: Map<string, Tab>
-  bodies: Map<string, string>
-  addresses: Map<string, LinkAddress>
-  reportedIds: Set<string>
-  closeCallbacks: Map<string, (removed: boolean) => void>
-  queue: ReturnType<typeof createNoteQueue>
-  onReplaced: (path: string) => void
+interface BufferTab {
+  readonly id: string
+  path: string
+  filePath: string
+  body: string
+  state: State
+  error: NoteErrorCode | null
+  baseline: NoteBaseline | null
+  keepOverride: boolean
 }
 
-function discardTab(context: NoteStoreContext, id: string): void {
-  context.queue.discard(id)
-  context.tabs.delete(id)
-  context.bodies.delete(id)
-  context.addresses.delete(id)
-  context.closeCallbacks.get(id)?.(true)
-  context.closeCallbacks.delete(id)
-  context.reportedIds.delete(id)
-}
+export function openNotes(notes: Notes, options?: OpenNotesOptions) {
+  const tabs = new Map<string, BufferTab>()
+  const timers = new Map<string, ReturnType<typeof setTimeout>>()
+  const firstChangeTime = new Map<string, number>()
 
-// Stryker disable next-line all: effects handled by queue do not overlap with outer effect switch.
-function executeQueueEffect(queue: NoteStoreContext['queue'], id: string, effect: Effect): boolean {
-  switch (effect.kind) {
-    case 'read':
-      void queue.read(id, effect.path, effect.generation)
-      return true
-    case 'write':
-      void queue.write(id, { path: effect.path, body: effect.body, baseline: effect.baseline })
-      return true
-    case 'startTimer':
-      queue.startTimer(id, effect.after)
-      return true
-    case 'cancelTimer':
-      queue.cancelTimer(id)
-      return true
-    default:
-      return false
-  }
-}
+  const debounceMs = options?.limits?.debounceMs ?? 1000
+  const maxWaitMs = options?.limits?.maxWaitMs ?? 5000
 
-function executeEffect(context: NoteStoreContext, id: string, effect: Effect): void {
-  if (executeQueueEffect(context.queue, id, effect)) return
-  switch (effect.kind) {
-    case 'replace':
-      context.bodies.set(id, effect.body)
-      context.onReplaced(context.tabs.get(id)?.path ?? id)
-      return
-    // Stryker disable next-line StringLiteral: keepOpen is checked at transition level, no-op in effect execution.
-    case 'keepOpen':
-      return
-    case 'reportError':
-      context.reportedIds.add(id)
-      return
-    case 'close':
-      discardTab(context, id)
-      return
-  }
-}
-
-function applyTabTransition(
-  context: NoteStoreContext,
-  id: string,
-  next: ReturnType<typeof transitionTab>,
-): void {
-  context.tabs.set(id, next.tab)
-  for (const effect of next.effects) executeEffect(context, id, effect)
-
-  const isKeptOpen = next.effects.some((effect) => effect.kind === 'keepOpen')
-  const isWriting = next.effects.some((effect) => effect.kind === 'write')
-  // Stryker disable next-line OptionalChaining: closeCallbacks entry is deleted only after close dispatch completes.
-  if (isKeptOpen && !isWriting) context.closeCallbacks.get(id)?.(false)
-
-  if (next.tab.pendingWrite === null) context.queue.resolveFlush(id)
-}
-
-function createNoteStoreContext(
-  core: Notes,
-  limits: Parameters<typeof transitionTab>[2],
-  onReplaced: (path: string) => void,
-) {
-  const tabs = shallowReactive(new Map<string, Tab>())
-  const bodies = shallowReactive(new Map<string, string>())
-  const addresses = shallowReactive(new Map<string, LinkAddress>())
-  const reportedIds = new Set<string>()
-  const closeCallbacks = new Map<string, (removed: boolean) => void>()
-
-  const context: NoteStoreContext = {
-    tabs,
-    bodies,
-    addresses,
-    reportedIds,
-    closeCallbacks,
-    queue: createNoteQueue(core, {
-      dispatch: (id, event) => dispatch(id, event),
-      hasTab: (id) => tabs.has(id),
-      setAddress: (id, addr) => {
-        // Stryker disable next-line ConditionalExpression: deleted key and key set to undefined both evaluate to null via link() fallback.
-        if (addr) addresses.set(id, addr)
-        else addresses.delete(id)
-      },
-      resumeClosing: (id) => {
-        if (closeCallbacks.has(id)) dispatch(id, { kind: 'close' })
-      },
-    }),
-    onReplaced,
+  function clearTimer(id: string): void {
+    const timer = timers.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      timers.delete(id)
+    }
+    firstChangeTime.delete(id)
   }
 
-  function dispatch(id: string, event: Event): void {
+  function scheduleFlush(id: string): void {
+    const existing = timers.get(id)
+    if (existing) {
+      clearTimeout(existing)
+    }
+    const now = Date.now()
+    if (!firstChangeTime.has(id)) {
+      firstChangeTime.set(id, now)
+    }
+    const first = firstChangeTime.get(id)!
+    const remaining = Math.max(0, maxWaitMs - (now - first))
+    const wait = Math.min(debounceMs, remaining)
+
+    const timer = setTimeout(() => {
+      clearTimer(id)
+      void writeTab(id)
+    }, wait)
+    timers.set(id, timer)
+  }
+
+  async function writeTab(id: string): Promise<void> {
+    const tab = tabs.get(id)
+    if (!tab || tab.state !== 'unsaved') return
+    clearTimer(id)
+    tab.state = 'saving'
+    const observed = tab.keepOverride ? null : tab.baseline
+    try {
+      const res = await notes.write(tab.path, tab.body, observed)
+      if (!tabs.has(id)) return
+      if (res.ok) {
+        tab.state = 'clean'
+        tab.error = null
+        tab.keepOverride = false
+        tab.filePath = res.value.at ?? tab.filePath
+        tab.baseline = { prose: tab.body, fingerprint: res.value.at ?? '' }
+      } else {
+        if (res.error === 'changed') {
+          tab.state = 'stale'
+        } else {
+          tab.state = 'error'
+          tab.error = convertErrorCode(res.error)
+        }
+      }
+    } catch {
+      if (!tabs.has(id)) return
+      tab.state = 'error'
+      tab.error = 'unreachable'
+    }
+  }
+
+  function open(id: string, path: string): void {
+    const tab: BufferTab = shallowReactive({
+      id,
+      path,
+      filePath: path,
+      body: '',
+      state: 'loading',
+      error: null,
+      baseline: null,
+      keepOverride: false,
+    })
+    tabs.set(id, tab)
+    void notes
+      .read(path)
+      .then((res) => {
+        if (!tabs.has(id)) return
+        if (res.ok) {
+          tab.body = res.value.body
+          tab.filePath = res.value.at ?? path
+          tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+          tab.state = 'clean'
+          tab.error = null
+        } else {
+          tab.state = 'error'
+          tab.error = convertErrorCode(res.error)
+        }
+      })
+      .catch(() => {
+        if (!tabs.has(id)) return
+        tab.state = 'error'
+        tab.error = 'unreachable'
+      })
+  }
+
+  function getOpenIds(): string[] {
+    return Array.from(tabs.keys())
+  }
+
+  function getPath(id: string): string {
+    return tabs.get(id)?.path ?? ''
+  }
+
+  function getFilePath(id: string): string {
+    return tabs.get(id)?.filePath ?? tabs.get(id)?.path ?? ''
+  }
+
+  function getOpenNote(id: string): OpenNote {
+    const tab = tabs.get(id)
+    if (!tab) {
+      return { path: '', body: '', state: 'loading', error: null }
+    }
+    return {
+      path: tab.path,
+      body: tab.body,
+      state: tab.state,
+      error: tab.error,
+    }
+  }
+
+  function setBody(id: string, body: string): void {
     const tab = tabs.get(id)
     if (!tab) return
-    applyTabTransition(context, id, transitionTab(tab, event, limits))
+    tab.body = body
+    if (tab.state === 'clean' || tab.state === 'saving') {
+      tab.state = 'unsaved'
+    }
   }
 
-  return { context, dispatch }
-}
+  function saveBody(id: string, body: string): void {
+    const tab = tabs.get(id)
+    if (!tab) return
+    tab.body = body
+    if (tab.state === 'clean' || tab.state === 'saving') {
+      tab.state = 'unsaved'
+    }
+    scheduleFlush(id)
+  }
 
-export function openNotes(core: Notes, how: OpenNotesOptions = {}) {
-  const limits = how.limits ?? DEFAULT_WRITE_LIMITS
-  const onReplaced = how.onReplaced ?? (() => {})
-  const now = how.now ?? (() => performance.now())
+  async function flushPending(id: string): Promise<void> {
+    await writeTab(id)
+  }
 
-  const { context, dispatch } = createNoteStoreContext(core, limits, onReplaced)
-  const { tabs, bodies, addresses, queue, reportedIds, closeCallbacks } = context
+  async function flush(): Promise<void> {
+    const pending = Array.from(tabs.keys()).map((id) => writeTab(id))
+    await Promise.all(pending)
+  }
 
-  const conflicts = createConflictCoordinator(dispatch, (id) => tabs.get(id))
-  const getOpenIds = (): readonly string[] => [...tabs.keys()]
+  function keep(id: string): void {
+    const tab = tabs.get(id)
+    if (!tab) return
+    tab.keepOverride = true
+    tab.state = 'unsaved'
+    void writeTab(id)
+  }
 
-  const close = (id: string): Promise<boolean> =>
-    new Promise((isDone) => {
-      if (!tabs.has(id)) return isDone(true)
-      if (reportedIds.has(id)) {
-        discardTab(context, id)
-        return isDone(true)
+  function take(id: string): void {
+    const tab = tabs.get(id)
+    if (!tab) return
+    void notes
+      .read(tab.path)
+      .then((res) => {
+        if (!tabs.has(id)) return
+        if (res.ok) {
+          tab.body = res.value.body
+          tab.filePath = res.value.at ?? tab.path
+          tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+          tab.state = 'clean'
+          tab.error = null
+          tab.keepOverride = false
+          options?.onReplaced?.(tab.path)
+        } else {
+          tab.state = 'error'
+          tab.error = convertErrorCode(res.error)
+        }
+      })
+      .catch(() => {
+        if (!tabs.has(id)) return
+        tab.state = 'error'
+        tab.error = 'unreachable'
+      })
+  }
+
+  function stale(id: string): ConflictWords | null {
+    const tab = tabs.get(id)
+    return tab && tab.state === 'stale' ? STALE_CONFLICT : null
+  }
+
+  async function close(id: string): Promise<boolean> {
+    const tab = tabs.get(id)
+    if (!tab) return true
+    if (tab.state === 'stale') return false
+    clearTimer(id)
+    tabs.delete(id)
+    return true
+  }
+
+  function discard(id: string): void {
+    clearTimer(id)
+    tabs.delete(id)
+  }
+
+  function applyPathChanges(paths: readonly string[], renames: readonly PathRename[] = []): void {
+    for (const rename of renames) {
+      for (const tab of tabs.values()) {
+        if (tab.path === rename.from) {
+          tab.path = rename.to
+          tab.filePath = rename.to
+        }
       }
-      closeCallbacks.set(id, isDone)
-      dispatch(id, { kind: 'close' })
-    })
+    }
+    for (const path of paths) {
+      for (const tab of tabs.values()) {
+        if (tab.path === path) {
+          if (tab.state === 'unsaved') {
+            tab.state = 'stale'
+          } else if (tab.state === 'clean') {
+            void notes.read(tab.path).then((res) => {
+              if (res.ok) {
+                tab.body = res.value.body
+                tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+                tab.filePath = res.value.at ?? tab.filePath
+                options?.onReplaced?.(tab.path)
+              }
+            })
+          }
+        }
+      }
+    }
+  }
 
   return {
-    open: (id: string, path: string = id) => {
-      if (!tabs.has(id)) applyTabTransition(context, id, openTab(path))
-    },
-    reload: (id: string, path: string = id) => {
-      discardTab(context, id)
-      applyTabTransition(context, id, openTab(path))
-    },
+    open,
     close,
-    flushPending: queue.flushPending,
-    getPath: (id: string): string => tabs.get(id)?.path ?? id,
-    has: (id: string): boolean => tabs.has(id),
-    getFilePath: (id: string): string => tabs.get(id)?.filePath ?? '',
-    setBody: (id: string, body: string) => {
-      bodies.set(id, body)
-      dispatch(id, { kind: 'edited', body, at: now() })
-    },
-    // Stryker disable next-line ArrayDeclaration: an entry that is not a rename names no file, and every walk over renames skips it.
-    applyPathChanges: (paths: readonly string[], renamed: readonly Move[] = []) =>
-      conflicts.notifyChanged(getOpenIds, paths, renamed),
-    save: (id: string) => dispatch(id, { kind: 'save' }),
-    keep: conflicts.keep,
-    take: conflicts.take,
-    getOpenNote: (id: string): OpenNote => {
-      const tab = tabs.get(id)
-      return {
-        path: tab?.path ?? id,
-        body: bodies.get(id) ?? '',
-        state: tab ? getState(tab) : 'loading',
-        error: tab?.error ?? null,
-      }
-    },
-    link: (id: string): LinkAddress | null => addresses.get(id) ?? null,
+    discard,
     getOpenIds,
-    getErrorMessage: conflicts.getErrorMessage,
-    stale: conflicts.stale,
-    flush: async () => {
-      await Promise.all(getOpenIds().map(close))
-    },
-    tabs,
+    getPath,
+    getFilePath,
+    getOpenNote,
+    setBody,
+    saveBody,
+    flushPending,
+    flush,
+    keep,
+    take,
+    stale,
+    applyPathChanges,
   }
 }

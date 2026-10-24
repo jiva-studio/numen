@@ -1,8 +1,12 @@
 export { openNotes } from './notes'
-export { convertErrorCode } from './queue'
-export { getMarkOf } from './tabState'
-export { parseFileConflict, type FileConflict } from './conflict'
-export { ERROR_MESSAGES, STALE_CONFLICT } from './words'
+export {
+  convertErrorCode,
+  getMarkOf,
+  parseFileConflict,
+  type FileConflict,
+  ERROR_MESSAGES,
+  STALE_CONFLICT,
+} from './words'
 export type {
   ConflictWords,
   LinkAddress,
@@ -12,5 +16,7 @@ export type {
   OpenNote,
   OpenNotesOptions,
   WriteResult as NoteWriteResult,
+  NoteBaseline,
+  NoteErrorCode,
+  State as NoteState,
 } from './types'
-export type { NoteBaseline, NoteErrorCode, State as NoteState } from './tabState'

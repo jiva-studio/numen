@@ -1,37 +1,32 @@
 /**
- * Domain types for open notes and their storage.
+ * Domain types for flashcard deck and stencil open buffers.
  */
 import type { Result } from '@numen/wire'
-import type { NoteBaseline, NoteErrorCode, State, DEFAULT_WRITE_LIMITS } from './tabState'
 
-/** Where a link note points: the web address (URL) and embed player URL. */
+export type NoteErrorCode =
+  'tooLarge' | 'bodyUnwritable' | 'notANote' | 'notText' | 'unreadable' | 'unreachable'
+
+export type State = 'loading' | 'clean' | 'unsaved' | 'saving' | 'stale' | 'gone' | 'error'
+
+export interface NoteBaseline {
+  readonly prose?: string
+  readonly fingerprint: string
+}
+
 export interface LinkAddress {
   readonly url: string
   readonly embed: string
 }
 
-/** The prose a read gave back, and what the vault says came with it. */
 export interface NoteContents {
   readonly body: string
-  /** Where a link note points, and nothing on every other note. */
   readonly link?: LinkAddress
-  /** The file the prose came out of, as the next write presents it again. */
   readonly at?: string
 }
 
-/**
- * What a read came back with: the contents, or the code of why there are none.
- * A file that is not there is `missing`.
- */
 export type NoteResult = Result<NoteContents, string>
-
-/**
- * What a write came back with. A file that changed under the writer is
- * `changed`, and nothing was written to it.
- */
 export type WriteResult = Result<NoteContents, string>
 
-/** One open note as the window draws it. */
 export interface OpenNote {
   readonly path: string
   readonly body: string
@@ -39,9 +34,6 @@ export interface OpenNote {
   readonly error: NoteErrorCode | null
 }
 
-/**
- * The core as a tab reads and writes through it.
- */
 export interface Notes {
   read(path: string): Promise<NoteResult>
   write(path: string, body: string, observed: NoteBaseline | null): Promise<WriteResult>
@@ -53,12 +45,7 @@ export interface ConflictWords {
   readonly take: string
 }
 
-/** What the window hands the store of open notes, beside the vault itself. */
 export interface OpenNotesOptions {
-  /** How long the typing settles for, and how long a note may go unwritten. */
-  limits?: typeof DEFAULT_WRITE_LIMITS
-  /** What hears that a note on screen was replaced by what its file holds. */
-  onReplaced?(path: string): void
-  /** When it is now. */
-  now?(): number
+  limits?: { debounceMs?: number; maxWaitMs?: number }
+  onReplaced?: (path: string) => void
 }
