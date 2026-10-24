@@ -22,5 +22,15 @@
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
-  }
+  },
+  "settings": [
+    {
+      "key": "default_zoom",
+      "type": "enum",
+      "title": "Default Zoom",
+      "description": "Initial zoom level when opening a PDF document",
+      "options": ["page", "width", "100%"],
+      "default": "page"
+    }
+  ]
 }

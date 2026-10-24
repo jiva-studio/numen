@@ -16,5 +16,30 @@
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
-  }
+  },
+  "settings": [
+    {
+      "key": "soft_wrap",
+      "type": "boolean",
+      "title": "Soft Wrap",
+      "description": "Wrap long lines to fit the editor viewport",
+      "default": true
+    },
+    {
+      "key": "line_numbers",
+      "type": "boolean",
+      "title": "Line Numbers",
+      "description": "Show line numbers in the editor margin",
+      "default": true
+    },
+    {
+      "key": "tab_size",
+      "type": "number",
+      "title": "Tab Size",
+      "description": "Number of spaces per indentation level",
+      "default": 2,
+      "min": 2,
+      "max": 8
+    }
+  ]
 }
