@@ -1,5 +1,10 @@
 modules/libs/protocol/src/
 modules/libs/protocol/gen/
-dist/
-coverage/
-storybook-static/
+libs/protocol/src/
+libs/protocol/gen/
+**/dist/**
+**/coverage/**
+**/storybook-static/**
+**/testdata/**
+**/.tmp/**
+**/node_modules/**
