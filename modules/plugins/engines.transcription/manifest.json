@@ -14,7 +14,59 @@
     "onCommand:transcribe"
   ],
   "permissions": ["vault:read", "network:outbound"],
-  "dependencies": [{ "id": "onnxruntime", "kind": "runtime" }],
+  "dependencies": [
+    { "id": "onnxruntime", "kind": "runtime" },
+    {
+      "id": "parakeet-encoder",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/encoder.int8.onnx",
+      "checksumSha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247",
+      "metadata": {
+        "fileName": "encoder.int8.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PARAKEET_ENCODER"
+      }
+    },
+    {
+      "id": "parakeet-decoder",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/decoder.int8.onnx",
+      "checksumSha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e",
+      "metadata": {
+        "fileName": "decoder.int8.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PARAKEET_DECODER"
+      }
+    },
+    {
+      "id": "parakeet-joiner",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/joiner.int8.onnx",
+      "checksumSha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3",
+      "metadata": {
+        "fileName": "joiner.int8.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PARAKEET_JOINER"
+      }
+    },
+    {
+      "id": "parakeet-tokens",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8/resolve/2bda32ec70b097a55adaa07d9a7173915b43cc78/tokens.txt",
+      "checksumSha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+      "metadata": {
+        "fileName": "tokens.txt",
+        "envVar": "NUMEN_DEPENDENCY_PARAKEET_TOKENS"
+      }
+    },
+    {
+      "id": "silero-vad",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/onnx-community/silero-vad/resolve/e71cae966052b992a7eca6b17738916ce0eca4ec/onnx/model.onnx",
+      "checksumSha256": "a4a068cd6cf1ea8355b84327595838ca748ec29a25bc91fc82e6c299ccdc5808",
+      "metadata": {
+        "fileName": "silero-vad.onnx",
+        "envVar": "NUMEN_DEPENDENCY_SILERO_VAD"
+      }
+    }
+  ],
   "lifecycle": {
     "idleTimeoutSeconds": 600,
     "keepAliveWhileVisible": false,

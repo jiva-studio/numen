@@ -2,6 +2,8 @@ package engine
 
 import (
 	"context"
+	"fmt"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -11,8 +13,10 @@ import (
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
+// EnvDir names the folder plugins keep their models in.
+const EnvDir = "NUMEN_MODELS_DIR"
+
 // paths are the files this run listens through, and where they were found.
-// Nothing here is open: they are names until something reads them.
 type paths struct {
 	encoder   string
 	decoder   string
@@ -22,19 +26,85 @@ type paths struct {
 	from      string
 }
 
-// locateModels opens the runtime and finds the models.
-//
-// Three places are tried in order and each is a setting: a path written down,
-// the folder the application was installed into, and what was downloaded. A
-// path that is written down is used as given, and its absence is an error.
+// locateModel finds a model file by checking:
+// 1. Explicit path in settings
+// 2. Provisioned environment variable (NUMEN_DEPENDENCY_*)
+// 3. Plugin directory / models folder fallback (only if repo address is provided)
+func locateModel(explicitPath, repoAddress, envVar, defaultFileName, dir string) (string, error) {
+	if explicitPath != "" {
+		if _, err := os.Stat(explicitPath); err != nil {
+			return "", fmt.Errorf("configured model path not found: %w", err)
+		}
+		return explicitPath, nil
+	}
+	if envVar != "" {
+		if env := os.Getenv(envVar); env != "" {
+			if _, err := os.Stat(env); err == nil {
+				return env, nil
+			}
+		}
+	}
+	if repoAddress == "" {
+		return "", fmt.Errorf("model %s is not named: specify path or repo", defaultFileName)
+	}
+	fileName := defaultFileName
+	if base := filepath.Base(repoAddress); base != "" && base != "." && base != "/" && !strings.HasSuffix(repoAddress, "/") {
+		fileName = base
+	}
+	if dir != "" {
+		candidate := filepath.Join(dir, fileName)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+	if home := os.Getenv("NUMEN_MODELS_DIR"); home != "" {
+		candidate := filepath.Join(home, fileName)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+	if base, err := os.UserConfigDir(); err == nil {
+		candidate := filepath.Join(base, "numen", "models", fileName)
+		if _, err := os.Stat(candidate); err == nil {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("model %s not found (env: %s)", fileName, envVar)
+}
+
 func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 	engine, _, err := onnx.Open(ctx, onnx.ResolveLibrary(cfg.Runtime, cfg.Dir))
 	if err != nil {
 		return nil, paths{}, err
 	}
-	found := paths{from: "settings"}
-	if err := cfg.folder().Locate(ctx, pinnedSums, getWantedFiles(cfg, &found)); err != nil {
-		return nil, paths{}, err
+	encoder, err := locateModel(cfg.Model.Encoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_ENCODER", encoderFile, cfg.Dir)
+	if err != nil {
+		return nil, paths{}, fmt.Errorf("encoder model: %w", err)
+	}
+	decoder, err := locateModel(cfg.Model.Decoder, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_DECODER", decoderFile, cfg.Dir)
+	if err != nil {
+		return nil, paths{}, fmt.Errorf("decoder model: %w", err)
+	}
+	joiner, err := locateModel(cfg.Model.Joiner, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_JOINER", joinerFile, cfg.Dir)
+	if err != nil {
+		return nil, paths{}, fmt.Errorf("joiner model: %w", err)
+	}
+	tokens, err := locateModel(cfg.Model.Tokens, cfg.Model.Repo, "NUMEN_DEPENDENCY_PARAKEET_TOKENS", tokensFile, cfg.Dir)
+	if err != nil {
+		return nil, paths{}, fmt.Errorf("tokens file: %w", err)
+	}
+	segmenterPath, err := locateModel(cfg.Segmenter.Path, cfg.Segmenter.Repo, "NUMEN_DEPENDENCY_SILERO_VAD", "silero.onnx", cfg.Dir)
+	if err != nil {
+		return nil, paths{}, fmt.Errorf("segmenter model: %w", err)
+	}
+
+	found := paths{
+		encoder:   encoder,
+		decoder:   decoder,
+		joiner:    joiner,
+		tokens:    tokens,
+		segmenter: segmenterPath,
+		from:      "provisioned",
 	}
 	if cfg.Dir != "" {
 		found.from = cfg.Dir
@@ -42,34 +112,9 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 	return engine, found, nil
 }
 
-// getWantedFiles is every file a transcription reads. The transducer is four of them,
-// published as four names in one folder.
-func getWantedFiles(cfg Config, into *paths) []Wanted {
-	underVal := func(name string) string {
-		if cfg.Model.Repo == "" {
-			return ""
-		}
-		return strings.TrimSuffix(cfg.Model.Repo, "/") + "/" + name
-	}
-	return []Wanted{
-		{Dst: &into.encoder, Path: cfg.Model.Encoder, Name: underVal(encoderFile), Kind: "encoder"},
-		{Dst: &into.decoder, Path: cfg.Model.Decoder, Name: underVal(decoderFile), Kind: "decoder"},
-		{Dst: &into.joiner, Path: cfg.Model.Joiner, Name: underVal(joinerFile), Kind: "joiner"},
-		{Dst: &into.tokens, Path: cfg.Model.Tokens, Name: underVal(tokensFile), Kind: "tokens"},
-		{Dst: &into.segmenter, Path: cfg.Segmenter.Path, Name: cfg.Segmenter.Repo, Kind: "segmenter model"},
-	}
-}
-
-// getModelName is what a model is called, for the record kept along with what it produced.
-// A name in the settings stands, and a model without one is called after the
-// file it was loaded from.
 func getModelName(name, pos string) string {
 	if name != "" {
 		return name
 	}
 	return strings.TrimSuffix(path.Base(filepath.ToSlash(pos)), filepath.Ext(pos))
-}
-
-func (c Config) source() Source {
-	return c.folder().Source()
 }

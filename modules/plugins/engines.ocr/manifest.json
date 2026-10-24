@@ -8,7 +8,39 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
   "permissions": ["vault:read", "network:outbound"],
-  "dependencies": [{ "id": "onnxruntime", "kind": "runtime" }],
+  "dependencies": [
+    { "id": "onnxruntime", "kind": "runtime" },
+    {
+      "id": "pp-doclayout",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/PaddlePaddle/PP-DocLayoutV3_onnx/resolve/46bbdf188bb0a772c08aed74882ce7e51a8f1ea6/inference.onnx",
+      "checksumSha256": "45bf71750b00739a41fc209f132eb104a4d6b5bb29483c9078164d8b87cf28ba",
+      "metadata": {
+        "fileName": "pp-doclayout.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_DOCLAYOUT"
+      }
+    },
+    {
+      "id": "pp-ocr-det",
+      "kind": "model",
+      "sourceUrl": "https://huggingface.co/PaddlePaddle/PP-OCRv5_mobile_det_onnx/resolve/e6f4fa85f00e168c862bc462aebca69eef9b3d3d/inference.onnx",
+      "checksumSha256": "a431985659dc921974177a95adcfbb90fd9e51989a5e04d70d0b75f597b6e61d",
+      "metadata": {
+        "fileName": "pp-ocr-det.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_DET"
+      }
+    },
+    {
+      "id": "pp-ocr-rec",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
+      "checksumSha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    }
+  ],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,

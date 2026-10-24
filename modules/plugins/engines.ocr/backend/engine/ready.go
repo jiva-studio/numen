@@ -1,25 +1,22 @@
 package engine
 
 import (
-	"context"
-
 	"github.com/jiva-studio/numen/modules/libs/plugin-sdk-go/onnx"
 )
 
 // Ready says whether everything recognising a page needs is already on this machine.
 func Ready(cfg Config) bool {
-	cfg.ShouldDownload = false
 	if !onnx.IsAvailable(onnx.ResolveLibrary(cfg.Runtime, cfg.Dir)) {
 		return false
 	}
-	for _, one := range []struct{ path, name, what string }{
-		{cfg.Layout.Path, cfg.Layout.Name, "layout model"},
-		{cfg.Detect.Path, cfg.Detect.Name, "detect model"},
-		{cfg.Recognise.Path, cfg.Recognise.Name, "recognise model"},
-	} {
-		if _, err := Locate(context.Background(), cfg.source(), pinnedSums, one.path, one.name, one.what); err != nil {
-			return false
-		}
+	if _, err := locateModel(cfg.Layout.Path, "NUMEN_DEPENDENCY_PP_DOCLAYOUT", "pp-doclayout.onnx", cfg.Dir); err != nil {
+		return false
+	}
+	if _, err := locateModel(cfg.Detect.Path, "NUMEN_DEPENDENCY_PP_OCR_DET", "pp-ocr-det.onnx", cfg.Dir); err != nil {
+		return false
+	}
+	if _, err := locateModel(cfg.Recognise.Path, "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir); err != nil {
+		return false
 	}
 	return true
 }

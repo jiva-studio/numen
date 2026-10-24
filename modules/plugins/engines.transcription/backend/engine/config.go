@@ -38,11 +38,6 @@ type Config struct {
 	Progress func(what string, done, total int64) `json:"-"`
 }
 
-// folder is where the models are kept and whether they may be fetched.
-func (c Config) folder() Folder {
-	return NewFolder("indexing.transcription", c.Dir, c.ShouldDownload, c.Progress)
-}
-
 // ParakeetModel turns speech into words. It is exported as three graphs and the
 // pieces they write, and all four are one model: three graphs from two exports
 // answer with nothing anybody can read.

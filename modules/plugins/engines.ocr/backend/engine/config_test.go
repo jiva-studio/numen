@@ -214,23 +214,13 @@ func TestThePartsOfAPageAreTheOnesTheModelKnowsUnlessTheFileReturnsOtherwise(t *
 }
 
 func TestTheModelsAreFoundWhereTheConfigurationReturns(t *testing.T) {
-	var progressItem string
 	cfg := Config{
 		Runtime:        "lib.so",
 		Dir:            "models",
 		ShouldDownload: true,
-		Progress:       func(what string, _, _ int64) { progressItem = what },
 	}
 	if got := onnx.ResolveLibrary(cfg.Runtime, cfg.Dir); got != "lib.so" {
 		t.Errorf("runtime = %q, want lib.so", got)
-	}
-	got := cfg.folder()
-	if got.Section != "indexing.recognition" || got.Dir != "models" || !got.ShouldDownload {
-		t.Errorf("got %+v", got)
-	}
-	got.Progress("a model", 1, 2)
-	if progressItem != "a model" {
-		t.Error("a download does not reach whoever is listening")
 	}
 }
 

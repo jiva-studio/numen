@@ -2,17 +2,17 @@ package ocr
 
 import (
 	"encoding/json"
+	"slices"
 	"testing"
 )
 
-// The plugin declares the ONNX Runtime as a runtime dependency and no legacy runtimes list.
-func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
+// The plugin declares the ONNX Runtime as a runtime dependency and model dependencies.
+func TestManifestDeclaresDependencies(t *testing.T) {
 	var manifest struct {
 		Runtimes     []string `json:"runtimes"`
 		Dependencies []struct {
-			ID        string `json:"id"`
-			Kind      string `json:"kind"`
-			SourceURL string `json:"sourceUrl"`
+			ID   string `json:"id"`
+			Kind string `json:"kind"`
 		} `json:"dependencies"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
@@ -21,7 +21,13 @@ func TestManifestDeclaresONNXRuntimeDependency(t *testing.T) {
 	if len(manifest.Runtimes) != 0 {
 		t.Errorf("runtimes = %v, want none", manifest.Runtimes)
 	}
-	if len(manifest.Dependencies) != 1 || manifest.Dependencies[0].ID != "onnxruntime" || manifest.Dependencies[0].Kind != "runtime" || manifest.Dependencies[0].SourceURL != "" {
-		t.Errorf("dependencies = %+v, want one onnxruntime runtime", manifest.Dependencies)
+	var ids []string
+	for _, dep := range manifest.Dependencies {
+		ids = append(ids, dep.ID)
+	}
+	for _, expected := range []string{"onnxruntime", "pp-doclayout", "pp-ocr-det", "pp-ocr-rec"} {
+		if !slices.Contains(ids, expected) {
+			t.Errorf("dependencies missing %s: got %v", expected, ids)
+		}
 	}
 }

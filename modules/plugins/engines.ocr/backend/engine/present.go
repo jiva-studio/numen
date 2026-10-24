@@ -1,35 +1,14 @@
 package engine
 
-import (
-	"os"
-	"path/filepath"
-)
+import "os"
 
-// IsFetched says whether one recogniser model file is on this machine, by the
-// same rule model() finds it.
+// IsFetched says whether one recogniser model file is on this machine.
 func IsFetched(cfg Config, model RecogniserModel) bool {
 	if model.Path != "" {
 		return isPresent(model.Path)
 	}
-	if model.Name == "" {
-		return false
-	}
-	if _, ok := FindLocal(cfg.source(), pinnedSums, model.Name); ok {
-		return true
-	}
-	if !IsAddress(model.Name) {
-		return false
-	}
-	dir, err := cfg.folder().GetDir()
-	if err != nil {
-		return false
-	}
-	sum := pinnedSums.GetSum(model.Name)
-	pos := filepath.Join(dir, GetCacheName(model.Name, sum))
-	if !isPresent(pos) {
-		return false
-	}
-	return sum == "" || VerifyFile(pos, sum) == nil
+	_, err := locateModel("", "NUMEN_DEPENDENCY_PP_OCR_REC", "pp-ocr-rec.onnx", cfg.Dir)
+	return err == nil
 }
 
 func isPresent(pos string) bool {
