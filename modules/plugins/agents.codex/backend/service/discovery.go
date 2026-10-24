@@ -11,18 +11,15 @@ import (
 	numenv1 "github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1"
 )
 
-type program struct {
-	Names  []string
-	Places []string
-}
-
-var codexProgram = program{
-	Names: []string{"codex"},
-	Places: []string{
-		"~/.codex/bin/codex",
-		"~/.npm-global/bin/codex",
-		"~/.bun/bin/codex",
-	},
+var codexPlaces = []string{
+	"~/.local/bin/codex",
+	"~/.codex/bin/codex",
+	"~/.npm-global/bin/codex",
+	"~/.bun/bin/codex",
+	"/opt/homebrew/bin/codex",
+	"/usr/local/bin/codex",
+	"~/.nix-profile/bin/codex",
+	"/run/current-system/sw/bin/codex",
 }
 
 // IsCodexInstalled checks whether OpenAI Codex CLI is available on this machine.
@@ -30,8 +27,8 @@ func IsCodexInstalled(customPath ...string) bool {
 	if len(customPath) > 0 && customPath[0] != "" {
 		return isRunnable(customPath[0])
 	}
-	_, ok := discover(codexProgram)
-	return ok
+	p := FindCodex()
+	return isRunnable(p)
 }
 
 // FindCodex returns the path of the Codex CLI, or the bare name where not found.
@@ -41,8 +38,20 @@ func FindCodex(customPath ...string) string {
 			return customPath[0]
 		}
 	}
-	path, _ := discover(codexProgram)
-	return path
+	if found, err := exec.LookPath("codex"); err == nil {
+		return found
+	}
+	home, _ := os.UserHomeDir()
+	for _, p := range codexPlaces {
+		resolved := p
+		if strings.HasPrefix(p, "~/") && home != "" {
+			resolved = filepath.Join(home, p[2:])
+		}
+		if isRunnable(resolved) {
+			return resolved
+		}
+	}
+	return "codex"
 }
 
 func programCommand(commands []*numenv1.AgentProgramCommand, name string) []string {
@@ -52,78 +61,6 @@ func programCommand(commands []*numenv1.AgentProgramCommand, name string) []stri
 		}
 	}
 	return nil
-}
-
-func discover(p program) (string, bool) {
-	var places []string
-	for _, name := range p.Names {
-		places = append(places, "~/.local/bin/"+name)
-	}
-	places = append(places, p.Places...)
-	for _, name := range p.Names {
-		places = append(places,
-			"/opt/homebrew/bin/"+name,
-			"/usr/local/bin/"+name,
-			"~/.nix-profile/bin/"+name,
-			"/run/current-system/sw/bin/"+name,
-		)
-	}
-	if found := locate(p.Names, places); found != "" {
-		return found, true
-	}
-	if len(p.Names) > 0 {
-		return p.Names[0], false
-	}
-	return "", false
-}
-
-func locate(names, places []string) string {
-	for _, name := range names {
-		if found, err := exec.LookPath(name); err == nil {
-			return found
-		}
-	}
-	return findInPlaces(places)
-}
-
-func findInPlaces(places []string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		home = ""
-	}
-	for _, place := range places {
-		if strings.HasPrefix(place, "~/") {
-			if home == "" {
-				continue
-			}
-			place = filepath.Join(escapeGlob(home), place[2:])
-		}
-		matches, err := filepath.Glob(place)
-		if err != nil {
-			continue
-		}
-		for _, match := range matches {
-			if isRunnable(match) {
-				return match
-			}
-		}
-	}
-	return ""
-}
-
-func escapeGlob(path string) string {
-	var pattern strings.Builder
-	for _, r := range path {
-		switch {
-		case r == '*' || r == '?' || r == '[':
-			pattern.WriteString("[" + string(r) + "]")
-		case r == '\\' && runtime.GOOS != "windows":
-			pattern.WriteString(`\\`)
-		default:
-			pattern.WriteRune(r)
-		}
-	}
-	return pattern.String()
 }
 
 func isRunnable(path string) bool {
