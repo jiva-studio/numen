@@ -22,7 +22,7 @@ export async function runDuplicationCheck({ repoRoot, threshold = 3.5 }) {
     "modules/apps",
     "modules/plugins",
     "--ignore",
-    "**/*.test.*,**/*_test.go,**/*.spec.*,**/*.stories.*,**/fixtures/**,**/testdata/**,**/node_modules/**,**/dist/**,**/.claude/**,**/gen/**",
+    "**/*.test.*,**/*_test.go,**/*.spec.*,**/*.stories.*,**/fixtures/**,**/testdata/**,**/node_modules/**,**/dist/**,**/.claude/**,**/gen/**,**/*.yml,**/*.yaml,**/Makefile,**/go.mod,**/go.sum",
     "--reporters",
     "json",
     "--output",
