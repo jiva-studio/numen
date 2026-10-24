@@ -242,21 +242,25 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         }
       }
     }
+    const notifyPathChange = (tab: BufferTab): void => {
+      if (tab.state === 'unsaved') {
+        tab.state = 'stale'
+      } else if (tab.state === 'clean') {
+        void notes.read(tab.path).then((res) => {
+          if (res.ok) {
+            tab.body = res.value.body
+            tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+            tab.filePath = res.value.at ?? tab.filePath
+            options?.onReplaced?.(tab.path)
+          }
+        })
+      }
+    }
+
     for (const path of paths) {
       for (const tab of tabs.values()) {
         if (tab.path === path) {
-          if (tab.state === 'unsaved') {
-            tab.state = 'stale'
-          } else if (tab.state === 'clean') {
-            void notes.read(tab.path).then((res) => {
-              if (res.ok) {
-                tab.body = res.value.body
-                tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
-                tab.filePath = res.value.at ?? tab.filePath
-                options?.onReplaced?.(tab.path)
-              }
-            })
-          }
+          notifyPathChange(tab)
         }
       }
     }

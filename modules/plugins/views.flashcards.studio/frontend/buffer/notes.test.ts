@@ -6,7 +6,7 @@ import type { Notes } from './types'
 describe('openNotes for flashcards studio', () => {
   it('opens note and loads body asynchronously', async () => {
     const notes: Notes = {
-      read: vi.fn(async (path) => asValue({ body: 'deck content', at: 'v1' })),
+      read: vi.fn(async (_path) => asValue({ body: 'deck content', at: 'v1' })),
       write: vi.fn(async () => asValue({ body: '', at: 'v2' })),
     }
     const store = openNotes(notes)
@@ -86,7 +86,7 @@ describe('openNotes for flashcards studio', () => {
           at: `v${readCount}`,
         })
       }),
-      write: vi.fn(async (path, body, observed) => {
+      write: vi.fn(async (_path, _body, _observed) => {
         writeCount++
         if (writeCount === 1) {
           return asFailure('changed')
