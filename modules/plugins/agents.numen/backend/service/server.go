@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -25,9 +26,11 @@ const programTitle = "Numen Agent"
 
 // The settings Configure reads.
 const (
-	SettingBaseURL = "baseUrl"
-	SettingModel   = "model"
-	SettingAPIKey  = "apiKey"
+	SettingBaseURL     = "baseUrl"
+	SettingModel       = "model"
+	SettingAPIKey      = "apiKey"
+	SettingTemperature = "temperature"
+	SettingMaxTokens   = "max_tokens"
 )
 
 // modelsLimit is how long the chat API has to list its models.
@@ -49,6 +52,8 @@ type Server struct {
 	baseURL       string
 	key           string
 	model         string
+	temperature   *float64
+	maxTokens     *int
 	conversations map[string][]message
 	models        []model
 	isListed      bool
@@ -71,6 +76,16 @@ func (s *Server) Configure(values map[string]string) {
 	if name, ok := values[SettingModel]; ok {
 		s.model = name
 	}
+	if tempStr, ok := values[SettingTemperature]; ok && tempStr != "" {
+		if val, err := strconv.ParseFloat(tempStr, 64); err == nil {
+			s.temperature = &val
+		}
+	}
+	if maxStr, ok := values[SettingMaxTokens]; ok && maxStr != "" {
+		if val, err := strconv.Atoi(maxStr); err == nil {
+			s.maxTokens = &val
+		}
+	}
 	s.models, s.isListed = nil, false
 }
 
@@ -78,7 +93,13 @@ func (s *Server) Configure(values map[string]string) {
 func (s *Server) getChat() chat {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return chat{baseURL: s.baseURL, key: s.key, client: s.Client}
+	return chat{
+		baseURL:     s.baseURL,
+		key:         s.key,
+		client:      s.Client,
+		temperature: s.temperature,
+		maxTokens:   s.maxTokens,
+	}
 }
 
 // getModel is the model asked: the one named, else the configured one, else the default.

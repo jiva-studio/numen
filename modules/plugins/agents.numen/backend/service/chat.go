@@ -76,10 +76,12 @@ type model struct {
 
 // chatRequest is what the chat API is asked for the next message of a conversation.
 type chatRequest struct {
-	Model    string         `json:"model"`
-	Messages []message      `json:"messages"`
-	Tools    []functionTool `json:"tools,omitempty"`
-	Stream   bool           `json:"stream,omitempty"`
+	Model       string         `json:"model"`
+	Messages    []message      `json:"messages"`
+	Tools       []functionTool `json:"tools,omitempty"`
+	Stream      bool           `json:"stream,omitempty"`
+	Temperature *float64       `json:"temperature,omitempty"`
+	MaxTokens   *int           `json:"max_tokens,omitempty"`
 	// ReasoningEffort and Reasoning are the two forms in which a chat API takes the depth of reasoning.
 	ReasoningEffort string            `json:"reasoning_effort,omitempty"`
 	Reasoning       *reasoningRequest `json:"reasoning,omitempty"`
@@ -88,9 +90,11 @@ type chatRequest struct {
 // chat is an OpenAI-compatible chat API: its base URL and the key presented to it, empty for an
 // endpoint that asks for none.
 type chat struct {
-	baseURL string
-	key     string
-	client  *http.Client
+	baseURL     string
+	key         string
+	client      *http.Client
+	temperature *float64
+	maxTokens   *int
 }
 
 // newText is a pointer to the text, for the content of a message.
@@ -102,7 +106,10 @@ func (c chat) send(ctx context.Context, model string, effort effort, messages []
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
 	}
-	body, err := json.Marshal(newChatRequest(model, effort, messages, tools, false))
+	req := newChatRequest(model, effort, messages, tools, false)
+	req.Temperature = c.temperature
+	req.MaxTokens = c.maxTokens
+	body, err := json.Marshal(req)
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}

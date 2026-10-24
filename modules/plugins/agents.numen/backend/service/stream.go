@@ -68,7 +68,10 @@ func (c chat) stream(
 	if err := c.checkKey(); err != nil {
 		return message{}, "", err
 	}
-	body, err := json.Marshal(newChatRequest(model, effort, messages, tools, true))
+	req := newChatRequest(model, effort, messages, tools, true)
+	req.Temperature = c.temperature
+	req.MaxTokens = c.maxTokens
+	body, err := json.Marshal(req)
 	if err != nil {
 		return message{}, "", fmt.Errorf("marshal chat request: %w", err)
 	}

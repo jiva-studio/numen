@@ -33,11 +33,15 @@ type embeddingServer struct {
 	embedder *engine.Embedder
 	apiKey   string
 	baseURL  string
+	provider string
 }
 
 func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if provider, ok := values["provider"]; ok && provider != "" {
+		s.provider = provider
+	}
 	if model, ok := values["model"]; ok && model != "" {
 		s.modelInfo.Name = model
 	}
@@ -233,9 +237,17 @@ type openAIEmbeddingResponse struct {
 func (s *embeddingServer) getService() (key, baseURL string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if s.provider == "local" {
+		return "", ""
+	}
 	baseURL = s.baseURL
 	if baseURL == "" {
 		baseURL = os.Getenv("NUMEN_EMBEDDING_URL")
+	}
+	if s.provider == "openai" && baseURL == "" {
+		baseURL = "https://api.openai.com/v1"
+	} else if s.provider == "openrouter" && baseURL == "" {
+		baseURL = "https://openrouter.ai/api/v1"
 	}
 	return s.apiKey, baseURL
 }

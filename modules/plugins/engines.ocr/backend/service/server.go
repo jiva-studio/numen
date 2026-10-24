@@ -41,10 +41,27 @@ func newRecognitionServer(eng *engine.Recogniser, cfg engine.Config) *recognitio
 func (s *recognitionServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	changed := false
 	if dpiStr, ok := values["dpi"]; ok {
 		if dpi, err := strconv.Atoi(dpiStr); err == nil && dpi > 0 {
 			s.cfg.Recognise.DPI = dpi
 		}
+	}
+	if path, ok := values["custom_model_path"]; ok {
+		if s.cfg.Recognise.Path != path {
+			s.cfg.Recognise.Path = path
+			changed = true
+		}
+	}
+	if dict, ok := values["custom_dict_path"]; ok {
+		if s.cfg.Recognise.Dict != dict {
+			s.cfg.Recognise.Dict = dict
+			changed = true
+		}
+	}
+	if changed && s.engine != nil {
+		_ = s.engine.Close()
+		s.engine = nil
 	}
 }
 

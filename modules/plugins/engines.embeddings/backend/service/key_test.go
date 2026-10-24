@@ -56,3 +56,31 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) 
 		t.Errorf("key = %q after Configure dropped it", key)
 	}
 }
+
+func TestProviderSetting(t *testing.T) {
+	emb := newEmbeddingServer()
+	emb.updateConfig(map[string]string{
+		server.SecretAPIKey: "key",
+		"baseUrl":           "https://custom.com",
+		"provider":          "local",
+	})
+	if key, url := emb.getService(); key != "" || url != "" {
+		t.Errorf("expected local provider to disable service, got %q, %q", key, url)
+	}
+
+	emb.updateConfig(map[string]string{
+		"provider": "openrouter",
+		"baseUrl":  "",
+	})
+	if _, url := emb.getService(); url != "https://openrouter.ai/api/v1" {
+		t.Errorf("expected openrouter default URL, got %q", url)
+	}
+
+	emb.updateConfig(map[string]string{
+		"provider": "openai",
+		"baseUrl":  "",
+	})
+	if _, url := emb.getService(); url != "https://api.openai.com/v1" {
+		t.Errorf("expected openai default URL, got %q", url)
+	}
+}

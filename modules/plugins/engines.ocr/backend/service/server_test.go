@@ -77,6 +77,23 @@ func TestLifecycleConfigure(t *testing.T) {
 	if recog.cfg.Recognise.DPI != 1 {
 		t.Errorf("expected DPI 1, got %d", recog.cfg.Recognise.DPI)
 	}
+
+	reqCustom := connect.NewRequest(&numenv1.ConfigureRequest{
+		PluginId: "md.numen.engines.ocr",
+		Values: map[string]string{
+			"custom_model_path": "/opt/models/my_rec.onnx",
+			"custom_dict_path":  "/opt/models/my_dict.txt",
+		},
+	})
+	if _, err := life.Configure(context.Background(), reqCustom); err != nil {
+		t.Fatalf("configure custom paths failed: %v", err)
+	}
+	if recog.cfg.Recognise.Path != "/opt/models/my_rec.onnx" {
+		t.Errorf("expected custom model path, got %s", recog.cfg.Recognise.Path)
+	}
+	if recog.cfg.Recognise.Dict != "/opt/models/my_dict.txt" {
+		t.Errorf("expected custom dict path, got %s", recog.cfg.Recognise.Dict)
+	}
 }
 
 func TestGetRecognitionModelDefault(t *testing.T) {

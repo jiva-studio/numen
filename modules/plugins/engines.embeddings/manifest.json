@@ -27,21 +27,25 @@
   "settings": [
     {
       "key": "provider",
-      "type": "string",
+      "type": "enum",
       "title": "Embedding Provider",
-      "description": "Embedding provider engine (local or service)",
-      "default": "local",
-      "palette": false,
-      "options": [
-        {
-          "value": "local",
-          "label": "Local (On-device)"
-        },
-        {
-          "value": "service",
-          "label": "Remote Service (OpenAI / OpenRouter)"
-        }
-      ]
+      "description": "Embedding provider engine (local on-device or remote service)",
+      "options": ["local", "openrouter", "openai", "custom"],
+      "default": "local"
+    },
+    {
+      "key": "baseUrl",
+      "type": "string",
+      "title": "Service URL",
+      "description": "Base URL for OpenAI-compatible embeddings API",
+      "default": "https://openrouter.ai/api/v1"
+    },
+    {
+      "key": "model",
+      "type": "string",
+      "title": "Model",
+      "description": "Model name for embeddings",
+      "default": "text-embedding-3-small"
     }
   ]
 }

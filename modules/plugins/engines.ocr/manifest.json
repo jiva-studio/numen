@@ -26,11 +26,39 @@
       "title": "Scan DPI",
       "description": "Image rendering DPI before OCR extraction",
       "default": 300,
-      "palette": false,
-      "options": [],
       "min": 150,
       "max": 600,
       "step": 50
+    },
+    {
+      "key": "language",
+      "type": "enum",
+      "title": "Language",
+      "description": "Primary recognition language model",
+      "options": ["auto", "cyrillic", "latin", "ch"],
+      "default": "auto"
+    },
+    {
+      "key": "model_profile",
+      "type": "enum",
+      "title": "Model Profile",
+      "description": "Mobile (fast, low memory) or Server (higher accuracy)",
+      "options": ["mobile", "server"],
+      "default": "mobile"
+    },
+    {
+      "key": "custom_model_path",
+      "type": "string",
+      "title": "Custom Model Path",
+      "description": "Path to custom ONNX recognition model file",
+      "default": ""
+    },
+    {
+      "key": "custom_dict_path",
+      "type": "string",
+      "title": "Custom Dictionary Path",
+      "description": "Path to custom character dictionary file",
+      "default": ""
     }
   ]
 }
