@@ -75,7 +75,7 @@ function onSecretDelete(name: string): void {
 
     <div class="plugin-detail__header">
       <h2 class="plugin-detail__title">
-        {{ props.plugin.name }}
+        <span>{{ props.plugin.name }}</span>
         <span v-if="props.plugin.version" class="plugin-version-badge">
           v{{ props.plugin.version }}
         </span>
