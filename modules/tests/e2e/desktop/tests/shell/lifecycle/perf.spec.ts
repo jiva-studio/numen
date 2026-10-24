@@ -43,10 +43,15 @@ test.describe('App Updates, Performance Profiles and OCR Settings', () => {
 
     await expect(page.getByRole('tab', { name: /Settings/i })).toBeVisible({ timeout: 10_000 })
 
+    // In master-detail settings, click Document OCR row
+    const ocrButton = page.getByRole('button', { name: /Document OCR/i }).first()
+    await expect(ocrButton).toBeVisible({ timeout: 10_000 })
+    await ocrButton.click()
+
     // Verify OCR settings section is rendered
     const ocrSection = page
-      .getByRole('region', { name: /Optical character recognition|OCR/i })
-      .or(page.getByRole('heading', { name: /Optical character recognition|OCR/i }))
+      .getByRole('region', { name: /Optical character recognition|Document OCR|OCR/i })
+      .or(page.getByRole('heading', { name: /Optical character recognition|Document OCR|OCR/i }))
       .first()
     await expect(ocrSection).toBeVisible({ timeout: 10_000 })
   })

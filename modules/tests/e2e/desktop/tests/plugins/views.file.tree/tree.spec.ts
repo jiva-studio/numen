@@ -14,7 +14,12 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     await expect(notesRow).toBeVisible()
     await notesRow.click({ button: 'right' })
 
-    // 3. Click New folder option in menu
+    // 3. Click New folder option in menu (under New submenu)
+    const newSubmenu = page.getByRole('menuitem', { name: /^New$/i }).first()
+    if (await newSubmenu.isVisible()) {
+      await newSubmenu.hover({ force: true })
+    }
+
     const newFolderItem = page
       .getByRole('menuitem', { name: /New folder/i })
       .or(page.getByText('New folder'))

@@ -29,6 +29,9 @@ test.describe('Plugin Settings and Configuration', () => {
 
     // Verify declarative plugin settings are rendered
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
+    await pluginRow.click()
     await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
   })
 
@@ -45,11 +48,11 @@ test.describe('Plugin Settings and Configuration', () => {
     await page.keyboard.press('Enter')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
+    await pluginRow.click()
 
-    const language = page
-      .getByRole('region', { name: 'Audio/Video Transcription' })
-      .locator('.settings__choice')
-      .first()
+    const language = page.locator('.settings__choice').first()
     await expect(language).toBeVisible()
     await expect(language).toHaveText('auto')
   })
@@ -67,6 +70,9 @@ test.describe('Plugin Settings and Configuration', () => {
     await page.keyboard.press('Enter')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
+    await pluginRow.click()
 
     // Select container for language enum setting is rendered
     const choiceEl = page.locator('.settings__choice').first()
@@ -79,11 +85,11 @@ test.describe('Plugin Settings and Configuration', () => {
     await runPaletteCommand(page, 'Settings', 'Settings')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
+    await pluginRow.click()
 
-    const language = page
-      .getByRole('region', { name: 'Audio/Video Transcription' })
-      .locator('.settings__choice')
-      .first()
+    const language = page.locator('.settings__choice').first()
     await expect(language).toBeVisible()
     await expect(language).toHaveText('auto')
     await language.click()
@@ -100,14 +106,13 @@ test.describe('Plugin Settings and Configuration', () => {
     await runPaletteCommand(page, 'Settings', 'Settings')
 
     await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+    const pluginRow2 = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+    if (await pluginRow2.isVisible()) {
+      await pluginRow2.click()
+    }
 
     // Verify the changed language persisted
-    await expect(
-      page
-        .getByRole('region', { name: 'Audio/Video Transcription' })
-        .locator('.settings__choice')
-        .first(),
-    ).toHaveText('es')
+    await expect(page.locator('.settings__choice').first()).toHaveText('es')
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {

@@ -56,6 +56,12 @@ test.describe('Theming and Display Scaling', () => {
     await paletteInput.fill('Settings')
     await page.keyboard.press('Enter')
 
+    // In master-detail settings, open System settings
+    const systemButton = page.getByRole('button', { name: /^System/i }).first()
+    if (await systemButton.isVisible()) {
+      await systemButton.click()
+    }
+
     // Verify Settings tab opened
     await expect(page.getByRole('spinbutton', { name: 'Interface size' }).first()).toBeVisible({
       timeout: 10_000,
