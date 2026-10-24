@@ -47,6 +47,15 @@ func (s *recognitionServer) updateConfig(values map[string]string) {
 			s.cfg.Recognise.DPI = dpi
 		}
 	}
+	if lang, ok := values["language"]; ok && lang != "" {
+		if s.cfg.Recognise.Name != lang {
+			s.cfg.Recognise.Name = lang
+			changed = true
+		}
+	}
+	if profile, ok := values["model_profile"]; ok && profile != "" {
+		_ = profile
+	}
 	if path, ok := values["custom_model_path"]; ok {
 		if s.cfg.Recognise.Path != path {
 			s.cfg.Recognise.Path = path

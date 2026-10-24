@@ -18,6 +18,22 @@ export {
 }
 export type { WikilinkOption, WikilinkOptions, FrontmatterResult }
 
+export interface MarkdownEditorPreferences {
+  softWrap?: boolean
+  lineNumbers?: boolean
+  tabSize?: number
+}
+
+export function readMarkdownEditorPreferences(
+  getSetting?: (path: readonly string[]) => unknown,
+): MarkdownEditorPreferences {
+  return {
+    softWrap: (getSetting?.(['soft_wrap']) as boolean | undefined) ?? true,
+    lineNumbers: (getSetting?.(['line_numbers']) as boolean | undefined) ?? true,
+    tabSize: (getSetting?.(['tab_size']) as number | undefined) ?? 2,
+  }
+}
+
 export function activate(context: PluginContext): void {
   context.registerReader({
     id: 'editor-markdown',
