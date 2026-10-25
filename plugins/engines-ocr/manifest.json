@@ -16,7 +16,8 @@
     {
       "id": "recognise",
       "title": "Recognise the text of a scan",
-      "fileExtensions": ["pdf", "png", "jpg", "jpeg", "gif", "webp"]
+      "fileExtensions": ["pdf", "png", "jpg", "jpeg", "gif", "webp"],
+      "hiddenInPalette": true
     }
   ],
   "dependencies": [
@@ -63,7 +64,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-ocr",
-    "serviceName": "numen.v1.OcrService"
+    "serviceName": "numen.v1.TextProviderService"
   },
   "settings": [
     {

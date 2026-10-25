@@ -1,5 +1,5 @@
 // Package service is the backend of the OCR plugin: the text provider the host asks for the
-// recognition of a file, the highlighting a window asks of the live text, and the recognise command.
+// recognition of a file, and the recognise command.
 package service
 
 import (
@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
-	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/highlight"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
@@ -152,7 +151,6 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	}
 	s.SetUpdateConfig(models.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
-	s.Register(numenv1connect.NewOcrServiceHandler(highlight.Service{Texts: h.Texts}, s.HandlerOptions()...))
 	command.Mount(s, commands)
 	s.OnClose(func() {
 		provider.Close()
