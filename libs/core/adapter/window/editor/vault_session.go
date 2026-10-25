@@ -4,10 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -19,8 +17,7 @@ import (
 type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
-	refresh             vaults.Refresh
-	transcriptionWorker *transcription.Worker
+	refresh vaults.Refresh
 
 	// ctx is what every pass behind this vault runs under, and what work
 	// nobody is waiting for is started under. cancel ends them, and wait waits
@@ -117,49 +114,25 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 }
 
 // buildSession builds the half of the window that belongs to one vault: the scan
-// and the watch behind it, the extraction of the documents it holds, and the
-// batches left with a proofreader.
+// and the watch behind it.
 func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
-	recognized, err := o.vaults.List.Execute()
-	if err != nil {
-		return nil, err
-	}
-
 	watching, stop := context.WithCancel(o.ctx)
-	sources := o.made.GetSourceQueries()
 
-	// What a transcription writes down is cut where every other cut happens. A
-	// recording being heard and a vault being scanned are then never two passes
+	// What a plugin writes as a text version is cut where every other cut happens.
+	// A version being made and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
 	o.made.SetTextVersionListener(indexed)
-
-	// A recording says nothing until a model has listened to it, so the ones
-	// this vault holds no transcript for are work whether or not anybody asks.
-	// What it writes is cut where every other cut happens.
-	transcribing := o.made.OpenTranscriptionWorker(watching, o.tasks, o.models)
-	transcribing.Cut = func(_ context.Context, of domain.Vault, path string) error {
-		indexed.RequestCut(of, path)
-		return nil
-	}
-	if o.made.IsTranscribingUnasked() {
-		transcribing.Queue(watching, sources, heardEvery, v)
-	}
-
-	// here whether or not this installation listens to recordings on its own.
-	// Every vault this installation holds is asked after.
-	transcribing.TakeUp(watching, sources, recognized...)
 
 	// Indexing every file again belongs to the vault this window was opened on,
 	// and to nothing built for a vault that arrives later.
 	refresh, ended := startIndexing(watching, v, o.made, o.State, rebuild, o.indexer, indexed, o.out)
 
 	return &vaultSession{
-		refresh:             refresh,
-		transcriptionWorker: transcribing,
-		ctx:                 watching,
-		cancel:              stop,
-		wait:                ended,
+		refresh: refresh,
+		ctx:     watching,
+		cancel:  stop,
+		wait:    ended,
 	}, nil
 }
 
@@ -172,9 +145,6 @@ func (o *Installation) stopVault() {
 	}
 	on.cancel()
 	on.wait()
-	// A transcription writes to the index, so it ends before anything reads
-	// what it wrote.
-	on.transcriptionWorker.Wait()
 }
 
 // about indexing it, and the entries its passes left in the list of what is
@@ -194,8 +164,3 @@ func (o *Installation) resetStatus() {
 		o.State.reportTask(run.Task{ID: makingVectors, Title: "Indexing", Error: o.embedderError.Error()})
 	}
 }
-
-// heardEvery is how often the vault is asked which recordings owe their text. A
-// recording is dropped into a folder by hand, and one arriving a minute after a
-// round is heard by the next.
-const heardEvery = time.Minute

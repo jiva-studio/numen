@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/internal/text"
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -153,7 +152,7 @@ func (u ImportURL) writeDownload(
 ) (producer string, bytes int, err error) {
 	content := []byte(extracted.Prose)
 	if len(extracted.Cues) > 0 {
-		content = transcript.Marshal(extracted.Cues)
+		content = text.MarshalWebVTT(extracted.Cues)
 	}
 	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, extracted.Producer, hash), content); err != nil {
 		return "", 0, err

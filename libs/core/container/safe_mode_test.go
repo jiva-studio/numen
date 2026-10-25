@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 
-	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -45,16 +44,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 	ctx := t.Context()
 
-	t.Run("transcriber reports not ready", func(t *testing.T) {
-		if cfg.TranscriberReady() {
-			t.Fatal("expected TranscriberReady to report false in safe mode")
-		}
-		_, _, err := cfg.Transcriber(ctx)
-		if !isDisabledInSafeMode(err, bridge.CapabilityTranscription) {
-			t.Fatalf("got %v, want the transcription plugin disabled", err)
-		}
-	})
-
 	t.Run("embedder reports not ready", func(t *testing.T) {
 		if cfg.EmbedderReady() {
 			t.Fatal("expected EmbedderReady to report false in safe mode")
@@ -78,12 +67,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		_ = closer()
 	})
 
-	t.Run("proofreader reports not ready", func(t *testing.T) {
-		if cfg.ProofreaderReady() {
-			t.Fatal("expected ProofreaderReady to report false in safe mode")
-		}
-	})
-
 	t.Run("plugin processes were never started", func(t *testing.T) {
 		for _, info := range cfg.PluginHost.GetPluginInfos() {
 			if info.IsActive {
@@ -93,22 +76,14 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	})
 }
 
-// isDisabledInSafeMode is whether the error says the capability's plugin is
-// disabled by safe mode, and is ErrUnavailable.
-func isDisabledInSafeMode(err error, capability string) bool {
-	var missing *pluginport.UnavailableError
-	return errors.As(err, &missing) && missing.Reason == pluginport.PluginDisabled &&
-		missing.Capability == capability && errors.Is(err, errSafeMode) && errors.Is(err, completionport.ErrUnavailable)
-}
-
 // An installation without a plugin host has no plugin installed, and its
 // plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := Config{}
-	_, err := cfg.Proofreader("profile")
+	_, err := cfg.resolvePlugin(bridge.CapabilityEmbedding)
 	var missing *pluginport.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityProofreading {
-		t.Fatalf("Proofreader = %v, want the proofreading plugin not installed", err)
+	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityEmbedding {
+		t.Fatalf("resolvePlugin = %v, want the embedding plugin not installed", err)
 	}
 	cfg.SetPluginVaultPath("vault")
 	if err := cfg.StopPlugins(t.Context()); err != nil {
@@ -126,7 +101,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["proofreading"],
+	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["embedding"],
 		"targets": ["desktop.editor"], "backend": {"type": "process", "entrypoint": "bin/engines.ocr"}}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -138,18 +113,18 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if got := host.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
-	if !cfg.ProofreaderReady() {
+	if !cfg.EmbedderReady() {
 		t.Fatal("an installed plugin is not ready")
 	}
 	safe := cfg.SetSafeMode(true)
 	cfg.SafeMode = false
-	if cfg.ProofreaderReady() {
+	if cfg.EmbedderReady() {
 		t.Error("the host started a plugin in safe mode")
 	}
 	if !safe.SafeMode {
 		t.Error("safe mode was not set")
 	}
-	if !cfg.SetSafeMode(false).ProofreaderReady() {
+	if !cfg.SetSafeMode(false).EmbedderReady() {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

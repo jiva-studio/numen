@@ -8,8 +8,8 @@ import (
 	"io"
 	"io/fs"
 	"strings"
+	"time"
 
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -93,10 +93,10 @@ func readOptional(ctx context.Context, store vaultport.DerivedStore, name domain
 // A transcript names no parts: the cues are where the speech was, and a chunk
 // is located by when what it holds was said.
 func ReadTranscript(raw []byte) *Document {
-	prose, cues := transcript.Parse(raw)
+	prose, cues := ParseWebVTT(raw)
 	doc := &Document{Text: prose}
 	for _, cue := range cues {
-		doc.paged = append(doc.paged, namedPlace{Offset: cue.Offset, Name: transcript.Clock(cue.From)})
+		doc.paged = append(doc.paged, namedPlace{Offset: cue.Offset, Name: domain.FormatClock(time.Duration(cue.From) * time.Millisecond)})
 	}
 	return doc
 }

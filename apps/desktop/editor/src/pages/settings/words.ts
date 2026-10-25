@@ -11,7 +11,6 @@ export const WORDS = {
   /** The groups, in the order they are drawn. */
   window: 'The window',
   naming: 'What a note is called',
-  transcription: 'Transcribing recordings',
   ocr: 'OCR',
   indexing: 'Indexing',
   performance: 'Performance',
@@ -39,18 +38,6 @@ export const WORDS = {
   headingsDetail: 'How many of them stand under a node at once.',
   syncing: 'Sync title and filename',
   syncingDetail: 'Whether renaming either of the two brings the other into line.',
-  /** Transcribing a recording, and putting the transcript right. */
-  transcribing: 'Transcribe recordings',
-  transcribingDetail:
-    'Whether a recording the vault holds no transcript for is listened to unasked.',
-  transcribeUnder: 'Largest recording transcribed',
-  transcribeUnderDetail:
-    'How large a recording may be, in megabytes, and still be listened to unasked. Below nothing is no limit.',
-  transcriptProofread: 'Proofreading a transcript',
-  transcriptProofreadDetail: 'The profile a transcript of a recording is put right at.',
-  transcriptProofreadAlways: 'Proofread every transcript',
-  transcriptProofreadAlwaysDetail:
-    'Whether a transcript is put right as it is made, without being asked.',
   /** The profile naming none, which is what proofreads nothing. */
   proofreadingNone: 'Nothing',
   /** Turning the vault into vectors. */

@@ -10,7 +10,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
-	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -145,8 +144,7 @@ func (e EditorAssembly) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	e.cfg.SetPluginWork(tasks, models)
 }
 
-func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
-func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
+func (e EditorAssembly) IsRebuildingIndex() bool { return e.cfg.ShouldRebuildIndex }
 
 func (e EditorAssembly) OpenEmbedders(
 	ctx context.Context, tasks *run.Tasks,
@@ -176,12 +174,6 @@ func (e EditorAssembly) OpenImportURL(
 	ctx context.Context, downloader downloadport.Downloader,
 ) source.ImportURL {
 	return e.cfg.ImportURL(ctx, e.db, downloader)
-}
-
-func (e EditorAssembly) OpenTranscriptionWorker(
-	ctx context.Context, tasks *run.Tasks, models *run.Lock,
-) *transcription.Worker {
-	return e.cfg.OpenTranscriptionWorker(ctx, e.db.Sources(), tasks, models)
 }
 
 func (e EditorAssembly) GetRefresh() vault.Refresh {

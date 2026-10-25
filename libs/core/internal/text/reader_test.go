@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/text"
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -18,7 +17,7 @@ const (
 
 // writeTranscript is the artifact a transcription of the talk leaves.
 func writeTranscript() []byte {
-	return transcript.Marshal([]domain.TranscriptCue{
+	return text.MarshalWebVTT([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: middle, From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
@@ -59,14 +58,14 @@ func TestATranscriptIsComposedFromItsOwnBytes(t *testing.T) {
 // A transcript is composed from what it was put right to, and what was heard
 // is placed under its own name.
 func TestATranscriptIsComposedFromWhatItWasInsertRightTo(t *testing.T) {
-	cuesData := transcript.Marshal([]domain.TranscriptCue{
+	cuesData := text.MarshalWebVTT([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: "The name and the Named are not two.", From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
 	})
 	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.ASR, "abc123"):        writeTranscript(),
-		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(cuesData, transcript.GetHandWrittenMark()...),
+		domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, "abc123"): append(cuesData, []byte("\nNOTE by hand\n")...),
 	}
 
 	doc, err := text.ReadComposed(t.Context(), store, domain.ASR, "abc123", writeTranscript())
@@ -77,7 +76,7 @@ func TestATranscriptIsComposedFromWhatItWasInsertRightTo(t *testing.T) {
 	if strings.Contains(doc.Text, middle) {
 		t.Errorf("what was heard is still the text:\n%s", doc.Text)
 	}
-	if strings.Contains(doc.Text, transcript.HandWrittenNote) {
+	if strings.Contains(doc.Text, "NOTE by hand") {
 		t.Errorf("the mark of a person's own words is in the text:\n%s", doc.Text)
 	}
 }
@@ -90,7 +89,7 @@ func TestATranscriptInsertRightToNothingIsWhatWasHeard(t *testing.T) {
 		applied []byte
 	}{
 		{"a file holding no bytes", nil},
-		{"a file holding no cues", []byte(transcript.Head + "\n")},
+		{"a file holding no cues", []byte("WEBVTT\n")},
 	} {
 		t.Run(one.what, func(t *testing.T) {
 			store := artifactMap{

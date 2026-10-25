@@ -256,8 +256,6 @@ func (h *LeaseHost) CheckPluginPermission(_, _ string) error { return nil }
 
 func (h *LeaseHost) GetVaultPath() string { return "" }
 
-func (h *LeaseHost) ValidatePluginPath(_, target string) (string, error) { return target, nil }
-
 func (h *LeaseHost) ResolveNoteProfile(domain.NoteType) (domain.NoteProfile, bool) {
 	return domain.NoteProfile{}, false
 }

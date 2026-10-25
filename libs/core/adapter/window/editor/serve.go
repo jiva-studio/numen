@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
-	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
@@ -231,17 +230,6 @@ func (o *Installation) Refresh() vaults.Refresh {
 		return on.refresh
 	}
 	return o.made.GetRefresh()
-}
-
-// GetTranscriptionWorker hears a recording, for whoever asks and for the queue
-// behind the vault. It is one job for the window and for an agent alike, so
-// that what a person started through one of them is shown by the other. Nothing
-// while the window has no vault.
-func (o *Installation) GetTranscriptionWorker() *transcription.Worker {
-	if on := o.State.session.Load(); on != nil {
-		return on.transcriptionWorker
-	}
-	return nil
 }
 
 // level brings named notes up to date in the index, through whatever is

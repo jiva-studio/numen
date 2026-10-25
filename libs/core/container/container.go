@@ -41,8 +41,6 @@ import (
 // Config is what the user may point somewhere else. Empty fields mean the
 // platform's own locations.
 type Config struct {
-	// IsMockML uses fast synthetic stubs for automated test runs.
-	IsMockML     bool
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
@@ -73,20 +71,11 @@ type Config struct {
 	// Importing configures external URL and media download options.
 	Importing download.Config
 
-	// ShouldTranscribe enables automatic transcription for vault recordings without transcripts.
-	ShouldTranscribe bool
-
-	// TranscribesUnder defines the maximum byte size for automatic transcription. Zero means no limit.
-	TranscribesUnder int64
-
 	// Embedding configures the model used to generate vector embeddings.
 	Embedding EmbeddingConfig
 
 	// Proofreading configures the recognition proofreading pipeline.
 	Proofreading ProofreadingConfig
-
-	// TranscriptProofreading configures the automatic proofreading profile of a transcript.
-	TranscriptProofreading Proofread
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager

@@ -142,9 +142,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
 	c.Proofreading = s.Indexing.Proofreading
-	c.TranscriptProofreading = s.Indexing.Transcription.Proofread
-	c.ShouldTranscribe = s.Indexing.CanTranscribe()
-	c.TranscribesUnder = s.Indexing.GetTranscribeLimit()
 	c.Agent = s.Agent
 	c.Importing = s.Importing
 	c.Performance = s.Performance

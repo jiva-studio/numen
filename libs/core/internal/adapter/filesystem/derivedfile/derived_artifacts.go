@@ -65,11 +65,6 @@ func (d *DerivedStore) WriteArtifactStream(
 	return d.WriteStream(ctx, getKey(name), from)
 }
 
-// AppendArtifact adds to what is under a name.
-func (d *DerivedStore) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
-	return d.Append(ctx, getKey(name), content)
-}
-
 // RemoveArtifact takes a name out of the store.
 func (d *DerivedStore) RemoveArtifact(ctx context.Context, name domain.ArtifactName) error {
 	return d.Remove(ctx, getKey(name))

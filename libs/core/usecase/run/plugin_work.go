@@ -153,9 +153,10 @@ func (w *PluginWork) getStateLocked(pluginID string) *pluginState {
 	return state
 }
 
-func getPluginTaskID(pluginID, taskID string) string {
-	return pluginTaskPrefix + pluginID + ":" + taskID
-}
+// GetPluginTaskPrefix starts the id of every task the plugin reports.
+func GetPluginTaskPrefix(pluginID string) string { return pluginTaskPrefix + pluginID + ":" }
+
+func getPluginTaskID(pluginID, taskID string) string { return GetPluginTaskPrefix(pluginID) + taskID }
 
 // units are the units of the list, by the unit a plugin counts in.
 var units = map[pluginport.TaskUnit]Unit{

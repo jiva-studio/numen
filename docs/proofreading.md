@@ -128,15 +128,12 @@ Each consumer names its profile and says whether it runs on its own:
 ```json
 {
   "indexing": {
-    "recognition":   { "proofread": { "with": "scans",      "automatically": true } },
-    "transcription": { "proofread": { "with": "speech",     "automatically": true } }
+    "recognition": { "proofread": { "with": "scans", "automatically": true } }
   }
 }
 ```
 
-`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them. A transcript asked for either way is put right by the profile `indexing.transcription.proofread.with` names; `indexing.recognition.proofread.with` is the profile a scanned reading is put right by, and is not read for a transcript.
-
-`indexing.transcribe_recordings` is a different flag, and the two are easily taken for one another. It says whether a recording nobody asked about is listened to at all; `transcription.proofread.automatically` says whether a transcript that already exists is put right by itself.
+`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them.
 
 A `with` naming a profile the map does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run for a week quietly proofreading nothing.
 
@@ -168,4 +165,4 @@ A **follow** toggle says whether the view moves with the recording. On, the line
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `batch_size`, `overlap` and `in_flight`, with `indexing.recognition.proofread` and `indexing.transcription.proofread` naming one of those profiles under `with` and saying `automatically`.
+Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `batch_size`, `overlap` and `in_flight`, with `indexing.recognition.proofread` naming one of those profiles under `with` and saying `automatically`.

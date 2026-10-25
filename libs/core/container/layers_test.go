@@ -28,13 +28,13 @@ var driving = map[string]bool{
 }
 
 // pure are the packages holding what is true of a note, of a
-// highlight, a transcript or a proofread line, and the
+// highlight, or a proofread line, and the
 // arithmetic over them. Nothing they answer waits on a disk, a database or a
 // clock, and the way that is held is that a pure package reaches only another
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
-	"internal/highlight", "internal/transcript",
+	"internal/highlight",
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -134,11 +134,10 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	}
 
 	// A walk that read no test of a pure package is a rule checked against
-	// nothing, and it passes. A count cannot say which of them it read, and
-	// four of the five would clear any floor the fifth is left out of, so each
-	// is named: a package that moved is a package this rule stopped at.
-	if read < 3 {
-		t.Fatalf("%d tests of the pure packages read: the walk is not reading them", read)
+	// nothing, and it passes. Each package is named below as well: a package
+	// that moved is a package this rule stopped at.
+	if read == 0 {
+		t.Fatal("no test of the pure packages read: the walk is not reading them")
 	}
 	for _, one := range pure {
 		if !reached[one] {
@@ -759,7 +758,7 @@ var _, _ vaultport.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 var storePort vaultport.DerivedStore
 
 func mount() {
-	var _ transcriptionport.Recording = (*sound)(nil)
+	var _ noteport.NoteQueries = (*sound)(nil)
 	var agentPort agentport.Agent
 	_, _ = storePort, agentPort
 }
@@ -767,7 +766,7 @@ func mount() {
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []string{"VaultReader", "VaultWriter", "Recording"}
+	want := []string{"VaultReader", "VaultWriter", "NoteQueries"}
 	if got := getClaimedPorts(file); !slices.Equal(got, want) {
 		t.Errorf("the rule refuses %v, want %v", got, want)
 	}
@@ -898,7 +897,7 @@ func TestWhatThePortMethodRuleRefuses(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, one := range []string{"NoteQueries.GetNameMatches", "Transcriber.GetTranscriptionModel"} {
+	for _, one := range []string{"NoteQueries.GetNameMatches"} {
 		if !slices.Contains(uncalled, one) {
 			t.Errorf("nothing outside calls %s and the rule does not refuse it", one)
 		}
@@ -1387,8 +1386,7 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 
 		// What is true of a note is worked out from what is true of a note.
 		{"internal/highlight", "internal/epub", true},
-		{"internal/ocrartifact", "internal/highlight", false},
-		{"internal/transcript", "port", true},
+		{"internal/highlight", "port", true},
 
 		// The composition root does none of the core's work.
 		{"container", "internal/adapterlib/wire", true},

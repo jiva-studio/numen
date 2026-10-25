@@ -5,9 +5,10 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
-	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -30,7 +31,7 @@ type Locations struct {
 // command, and nothing opened until the command that needs it asks.
 //
 // A command pays only for its own machinery: listing vaults opens no index, a
-// search opens no provider that fills one, and transcribing a recording opens
+// search opens no provider that fills one, and asking for the text of a file opens
 // no index of another vault.
 type Deps struct {
 	// Vaults is the list of vaults this installation keeps and what the vault
@@ -53,16 +54,13 @@ type Deps struct {
 	// Problems opens what a scan could not act on.
 	Problems func(ctx context.Context) (Problems, error)
 
-	// Transcribe opens what listens to a recording. fetching is called before
-	// anything is waited for, where a model has to arrive first.
-	Transcribe func(ctx context.Context, v domain.Vault, fetching func()) (Transcribe, error)
+	// TextMenu opens the menu a file offers about its text, carried out by the
+	// plugins that make text.
+	TextMenu func(ctx context.Context, v domain.Vault) (TextMenu, error)
 
 	// ImportURL opens what reaches the address a link note points at. A machine
 	// holding neither of the tools that reach one opens nothing.
 	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
-
-	// ProofreadTranscript opens what puts a recording's transcript right.
-	ProofreadTranscript func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
 
 	// PluginCommands opens the commands the enabled plugins declare. Left nil, there are none.
 	PluginCommands func() PluginCommands
@@ -137,27 +135,10 @@ type Problems struct {
 	Close    func() error
 }
 
-// Transcribe is one recording listened to with a model.
-type Transcribe struct {
-	Transcribe transcription.Transcribe
-	// Cut makes the speech already written down searchable while the rest is
-	// still being heard.
-	Cut   source.Extract
-	Close func() error
-}
-
 // ImportURL is what is at the address a link note points at, fetched into the
 // vault.
 type ImportURL struct {
 	ImportURL source.ImportURL
-	Close     func() error
-}
-
-// ProofreadTranscript is one recording's transcript put right with a model.
-type ProofreadTranscript struct {
-	Proofread transcription.Proofread
-	Cut       source.Extract
-	IsHeld    bool
 	Close     func() error
 }
 
@@ -167,4 +148,19 @@ func closeIfOpen(closer func() error) {
 	if closer != nil {
 		_ = closer()
 	}
+}
+
+// TextMenu is the menu the files of one vault offer about their text, the tasks the plugins report
+// while they carry an entry out, and the cut that makes a file searchable from its live text.
+type TextMenu struct {
+	Menu  TextMenuRunner
+	Tasks *run.Tasks
+	Cut   func(ctx context.Context, v domain.Vault, path string) error
+	Close func() error
+}
+
+// TextMenuRunner is what a file's menu offers about its text, and the entry carried out.
+type TextMenuRunner interface {
+	GetMenu(ctx context.Context, v domain.Vault, path string) ([]textversion.MenuEntry, error)
+	RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry textversion.MenuEntry) error
 }

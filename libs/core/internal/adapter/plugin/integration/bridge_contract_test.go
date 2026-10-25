@@ -14,21 +14,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/transcriptionport"
 )
 
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
 	embedderbridge.Host
-	transcriberbridge.Host
 	downloaderbridge.Host
 	agentbridge.Host
-	proofreaderbridge.Host
 	toolsbridge.Host
 }
 
@@ -42,8 +37,8 @@ type bridgeContract struct {
 	open func(ctx context.Context, host bridgeHost) (io.Closer, bridgeCall, error)
 }
 
-// isLeased says whether opening the bridge takes a reference on its plugin. A proofreader and the tools take one only for the length of a call.
-func (c bridgeContract) isLeased() bool { return c.name != "proofreader" && c.name != "tools" }
+// isLeased says whether opening the bridge takes a reference on its plugin. The tools take one only for the length of a call.
+func (c bridgeContract) isLeased() bool { return c.name != "tools" }
 
 // isZeroResult reports whether a call returned the zero value of its type.
 func isZeroResult[T any](value T, err error) (bool, error) {
@@ -68,12 +63,6 @@ var bridgeContracts = []bridgeContract{
 			return isZeroResult(b.Embed(ctx, []string{"a"}))
 		})
 	}},
-	{"transcriber", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := transcriberbridge.Open(ctx, h)
-		return createContract(b, err, func(b *transcriberbridge.Transcriber, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Transcribe(ctx, transcriptionport.Audio{}))
-		})
-	}},
 	{"downloader", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := downloaderbridge.Open(ctx, h)
 		return createContract(b, err, func(b *downloaderbridge.Downloader, ctx context.Context) (bool, error) {
@@ -84,12 +73,6 @@ var bridgeContracts = []bridgeContract{
 		b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
 		return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
 			return isZeroResult(b.GetPrograms(ctx, nil))
-		})
-	}},
-	{"proofreader", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := proofreaderbridge.Open(h)
-		return createContract(b, err, func(b *proofreaderbridge.Proofreader, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ProofreadSpeech(ctx, nil, 0))
 		})
 	}},
 	{"tools", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {

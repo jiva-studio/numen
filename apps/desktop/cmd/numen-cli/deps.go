@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
@@ -38,17 +37,12 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 				cfg.SetPluginVaultPath(v.Path)
 				return createScan(ctx, cfg, v, rebuild)
 			},
-			Transcribe: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Transcribe, error) {
-				cfg.SetPluginVaultPath(v.Path)
-				return createTranscription(ctx, cfg, v, fetching)
+			TextMenu: func(ctx context.Context, v domain.Vault) (cli.TextMenu, error) {
+				return createTextMenu(ctx, cfg, v)
 			},
 			ImportURL: func(ctx context.Context, v domain.Vault) (cli.ImportURL, error) {
 				cfg.SetPluginVaultPath(v.Path)
 				return createImportURL(ctx, cfg)
-			},
-			ProofreadTranscript: func(ctx context.Context, v domain.Vault) (cli.ProofreadTranscript, error) {
-				cfg.SetPluginVaultPath(v.Path)
-				return createProofreadTranscript(ctx, cfg, v)
 			},
 			Search: func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 				return createSearch(ctx, cfg, errorHandler)
@@ -132,57 +126,13 @@ func closeIfOpen(closeFn func() error) {
 	}
 }
 
-// createTranscription is the transcription of recordings with the models on this
-// downloaded first.
-func createTranscription(
-	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
-) (cli.Transcribe, error) {
-	cfg.SetPluginVaultPath(v.Path)
-	if !cfg.TranscriberReady() {
-		fetching()
-	}
-	models, closeModels, why := cfg.Transcriber(ctx)
-	if why != nil {
-		return cli.Transcribe{}, why
-	}
-	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
+// createTextMenu is the menu the files of a vault offer about their text.
+func createTextMenu(ctx context.Context, cfg container.Config, v domain.Vault) (cli.TextMenu, error) {
+	opened, err := cfg.OpenTextMenu(ctx, v)
 	if err != nil {
-		_ = closeModels()
-		return cli.Transcribe{}, err
+		return cli.TextMenu{}, err
 	}
-	db, cutFn := indexed.db, indexed.extractor
-	return cli.Transcribe{
-		Transcribe: cfg.Transcribe(db.Sources(), models),
-		Cut:        cutFn,
-		Close: func() error {
-			_ = closeModels()
-			return db.Close()
-		},
-	}, nil
-}
-
-// indexedCut is the index and the extraction of a vault's sources over it.
-type indexedCut[C any] struct {
-	db        *container.Index
-	extractor C
-}
-
-// createCut opens the index and makes the extraction over it. The index is
-// closed when the extraction cannot be made.
-func createCut[C any](
-	ctx context.Context, cfg container.Config, v domain.Vault,
-	extract func(sourceport.SourceRepository, sourceport.SourceQueries, domain.Vault) (C, error),
-) (indexedCut[C], error) {
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return indexedCut[C]{}, err
-	}
-	extractor, err := extract(db.Sources(), db.SourcesKnown(), v)
-	if err != nil {
-		_ = db.Close()
-		return indexedCut[C]{}, err
-	}
-	return indexedCut[C]{db: db, extractor: extractor}, nil
+	return cli.TextMenu{Menu: opened.Menu, Tasks: opened.Tasks, Cut: opened.Cut, Close: opened.Close}, nil
 }
 
 // createImportURL is the download of an address into the vault.
@@ -192,25 +142,6 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 		return cli.ImportURL{}, err
 	}
 	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, cfg.Downloader(ctx)), Close: db.Close}, nil
-}
-
-// createProofreadTranscript is the proofreading of transcripts, when it is
-// configured.
-func createProofreadTranscript(
-	ctx context.Context, cfg container.Config, v domain.Vault,
-) (cli.ProofreadTranscript, error) {
-	cfg.SetPluginVaultPath(v.Path)
-	proofread, target, err := cfg.CreateTranscriptProofread()
-	if err != nil || !target {
-		return cli.ProofreadTranscript{}, err
-	}
-	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
-	if err != nil {
-		return cli.ProofreadTranscript{}, err
-	}
-	return cli.ProofreadTranscript{
-		Proofread: proofread, Cut: indexed.extractor, IsHeld: true, Close: indexed.db.Close,
-	}, nil
 }
 
 // createSearch is the search over the index. Only the provider that embeds

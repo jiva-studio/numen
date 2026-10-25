@@ -39,14 +39,12 @@ func RegisterDebugFlags(fs *flag.FlagSet, opts *Options) {
 	fs.BoolVar(&opts.Debug.IsMockML, "debug-mock-ml", false, "use fast mock ML models for automated testing")
 }
 
-// apply sets the configuration the debug flags name. The plugin processes are launched with the
-// host's environment, so the mock models reach them through NUMEN_MOCK_ML.
-func (d *DebugOptions) apply(cfg *container.Config) error {
-	if d.IsMockML || os.Getenv("NUMEN_MOCK_ML") == "true" {
-		cfg.IsMockML = true
-		return os.Setenv("NUMEN_MOCK_ML", "true")
+// apply has the plugins this run starts answer with mock models where the flag asks for them.
+func (d *DebugOptions) apply() error {
+	if !d.IsMockML {
+		return nil
 	}
-	return nil
+	return os.Setenv("NUMEN_MOCK_ML", "true")
 }
 
 func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error {

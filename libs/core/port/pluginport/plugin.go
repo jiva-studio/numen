@@ -150,19 +150,9 @@ type PluginActivator interface {
 	Release(pluginID string)
 }
 
-// PluginAcquirer increments the active reference count for a plugin.
-type PluginAcquirer interface {
-	Acquire(pluginID string)
-}
-
 // PluginAuthorizer verifies plugin permissions.
 type PluginAuthorizer interface {
 	CheckPluginPermission(pluginID, permission string) error
-}
-
-// PluginPathValidator validates paths within the vault boundary for plugins.
-type PluginPathValidator interface {
-	ValidatePluginPath(pluginID, targetPath string) (string, error)
 }
 
 // PluginDiscoverer scans for available plugins and returns their metadata in the order of their ids.
@@ -191,7 +181,6 @@ type PluginEventEmitter interface {
 // PluginLifecycleManager coordinates process lifecycle, failure handling, and teardown for plugins.
 type PluginLifecycleManager interface {
 	PluginActivator
-	PluginAcquirer
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
 	SetPluginVault(vault PluginVault)
@@ -219,7 +208,6 @@ type PluginRegistryManager interface {
 	PluginConfigurator
 	PluginEventEmitter
 	PluginAuthorizer
-	PluginPathValidator
 }
 
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.

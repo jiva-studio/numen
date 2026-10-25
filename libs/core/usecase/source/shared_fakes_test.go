@@ -9,7 +9,7 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -96,13 +96,6 @@ func (s *fakeStorage) WriteArtifact(_ context.Context, name domain.ArtifactName,
 	return nil
 }
 
-func (s *fakeStorage) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.files[name] = append(s.files[name], content...)
-	return nil
-}
-
 // Remove takes a name out of the store, along with the claim on it: a claim is
 // held on a file, and taking that file away frees the name.
 func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
@@ -128,13 +121,6 @@ func (s *fakeStorage) ClaimArtifact(_ context.Context, name domain.ArtifactName)
 	}, nil
 }
 
-// hold takes a name the way another run holds it.
-func (s *fakeStorage) hold(name domain.ArtifactName) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.item[name] = true
-}
-
 const documentPath = "library/scan.pdf"
 
 const recordingPath = "library/talk.mp3"
@@ -148,7 +134,7 @@ func newRecording(words []string) []byte {
 // getWords is the words of an artifact, in the order they were said.
 func getWords(t *testing.T, raw []byte) []string {
 	t.Helper()
-	_, cues := transcript.Parse(raw)
+	_, cues := text.ParseWebVTT(raw)
 	out := make([]string, 0, len(cues))
 	for _, cue := range cues {
 		out = append(out, cue.Text)

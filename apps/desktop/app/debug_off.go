@@ -17,7 +17,7 @@ type DebugOptions struct{}
 // RegisterDebugFlags registers debug flags on the flag set.
 func RegisterDebugFlags(*flag.FlagSet, *Options) {}
 
-func (d *DebugOptions) apply(*container.Config) error { return nil }
+func (d *DebugOptions) apply() error { return nil }
 
 func (d *DebugOptions) ensureVault(container.Config, string) error { return nil }
 

@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -49,8 +48,6 @@ func (h *stubModelHost) Release(string)                          { h.released.Ad
 func (h *stubModelHost) CheckPluginPermission(_, _ string) error { return nil }
 func (h *stubModelHost) GetVaultPath() string                    { return "" }
 
-func (h *stubModelHost) ValidatePluginPath(_, target string) (string, error) { return target, nil }
-
 // newDownModelHost is a host whose plugin process is not listening.
 func newDownModelHost(t *testing.T) *stubModelHost {
 	t.Helper()
@@ -79,13 +76,6 @@ func modelOpeners() []modelOpener {
 	return []modelOpener{
 		{"embedder", func(ctx context.Context, h *stubModelHost) error {
 			b, err := embedderbridge.Open(ctx, h)
-			if b != nil {
-				return errors.New("a bridge was returned with the error")
-			}
-			return err
-		}},
-		{"transcriber", func(ctx context.Context, h *stubModelHost) error {
-			b, err := transcriberbridge.Open(ctx, h)
 			if b != nil {
 				return errors.New("a bridge was returned with the error")
 			}

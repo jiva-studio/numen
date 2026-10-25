@@ -675,20 +675,6 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 	}
 }
 
-// Which profile puts a transcript right, and whether it happens without anybody
-// asking, is said where the transcript is configured.
-func TestATranscriptNamesTheProfileThatInsertsItRight(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{
-		"transcription": {"proofread":{"with":"agent","automatically":false}}
-	}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.IsAutomatic {
-		t.Errorf("a transcript is put right by %+v", got)
-	}
-}
-
 // A setting that is on where a file says nothing is read through a pointer:
 // leaving the section out, leaving the field out and writing false are three
 // different things a person can write, and the last of them is the only one

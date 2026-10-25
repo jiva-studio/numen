@@ -1,9 +1,5 @@
 {
   "indexingModel": ["indexing", "embedding", "model", "name"],
-  "transcribing": ["indexing", "transcribe_recordings"],
-  "transcribeUnder": ["indexing", "transcribe_under_mb"],
-  "transcriptProofread": ["indexing", "transcription", "proofread", "with"],
-  "transcriptProofreadAlways": ["indexing", "transcription", "proofread", "automatically"],
   "profiles": ["indexing", "proofreading", "profiles"],
   "agent": ["agent", "use"],
   "agentTools": ["agent", "serve_tools"],

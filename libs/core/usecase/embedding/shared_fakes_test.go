@@ -80,13 +80,6 @@ func (s *fakeStorage) WriteArtifact(_ context.Context, name domain.ArtifactName,
 	return nil
 }
 
-func (s *fakeStorage) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.files[name] = append(s.files[name], content...)
-	return nil
-}
-
 // Remove takes a name out of the store, along with the claim on it: a claim is
 // held on a file, and taking that file away frees the name.
 func (s *fakeStorage) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {

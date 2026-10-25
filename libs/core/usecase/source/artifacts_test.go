@@ -1,11 +1,10 @@
 package source
 
 import (
-	"errors"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -24,18 +23,10 @@ func newArtifactStore(t *testing.T, cues ...domain.TranscriptCue) (*store, *fake
 		},
 	}
 	shelf := newShelf()
-	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, artifactHash), transcript.Marshal(cues)); err != nil {
+	if err := shelf.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, domain.ASR, artifactHash), text.MarshalWebVTT(cues)); err != nil {
 		t.Fatal(err)
 	}
 	return index, shelf
-}
-
-func getCueTexts(cues []domain.TranscriptCue) []string {
-	out := make([]string, 0, len(cues))
-	for _, one := range cues {
-		out = append(out, one.Text)
-	}
-	return out
 }
 
 func TestListingArtifactsNamesWhatWasMadeFromAFile(t *testing.T) {
@@ -111,86 +102,5 @@ func TestReadingAKindNothingWasMadeAsIsRefused(t *testing.T) {
 	_, err := NewGetArtifactText(index, fakeStores{shelf}).Execute(t.Context(), first, recordingPath, KindArticle, 0, 0)
 	if err == nil || !strings.Contains(err.Error(), "nothing of the kind") {
 		t.Errorf("an article that was never made read as %v", err)
-	}
-}
-
-func TestACorrectionReplacesTheCuesBeginningInsideItsSpan(t *testing.T) {
-	index, shelf := newArtifactStore(t,
-		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
-		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
-		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
-	)
-	var changed []string
-	write := NewWriteCorrections(index, fakeStores{shelf}, func(path string) { changed = append(changed, path) })
-
-	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "B", From: 1000, To: 2000}}))
-	n, err := write.Execute(t.Context(), first, Correction{Path: recordingPath, Kind: KindTranscript, Words: words})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 3 {
-		t.Errorf("the transcript holds %d cues, want 3", n)
-	}
-	raw, err := shelf.ReadArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, domain.ASR, artifactHash))
-	if err != nil {
-		t.Fatal(err)
-	}
-	_, got := transcript.Parse(raw)
-	if texts := getCueTexts(got); strings.Join(texts, "") != "aBc" {
-		t.Errorf("the corrections read %v", texts)
-	}
-	if !transcript.IsWrittenByHand(raw) {
-		t.Error("the corrections are not marked as written by hand")
-	}
-	if len(changed) != 1 || changed[0] != recordingPath {
-		t.Errorf("the change received as %v", changed)
-	}
-}
-
-func TestACorrectionNamingASpanReplacesEveryCueInIt(t *testing.T) {
-	index, shelf := newArtifactStore(t,
-		domain.TranscriptCue{Text: "a", From: 0, To: 1000},
-		domain.TranscriptCue{Text: "b", From: 1000, To: 2000},
-		domain.TranscriptCue{Text: "c", From: 2000, To: 3000},
-	)
-	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "X", From: 0, To: 1000}}))
-
-	n, err := NewWriteCorrections(index, fakeStores{shelf}, nil).Execute(t.Context(), first, Correction{
-		Path: recordingPath, Kind: KindTranscript, Words: words, Start: 0, Length: 2000,
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if n != 2 {
-		t.Errorf("the transcript holds %d cues, want the one sent and the one after the span", n)
-	}
-}
-
-func TestACorrectionIsRefusedWhereItCannotBeSaved(t *testing.T) {
-	index, shelf := newArtifactStore(t, domain.TranscriptCue{Text: "a", From: 0, To: 1000})
-	write := NewWriteCorrections(index, fakeStores{shelf}, nil)
-	words := string(transcript.Marshal([]domain.TranscriptCue{{Text: "A", From: 0, To: 1000}}))
-
-	if _, err := write.Execute(t.Context(), first, Correction{
-		Path: recordingPath, Kind: KindRecognition, Words: words,
-	}); !errors.Is(err, ErrNotCorrectable) {
-		t.Errorf("a recognition was written: %v", err)
-	}
-	if _, err := write.Execute(t.Context(), first, Correction{
-		Path: recordingPath, Kind: KindTranscript, Words: "nothing timed",
-	}); !errors.Is(err, ErrNoCue) {
-		t.Errorf("words with no cue were written: %v", err)
-	}
-	if _, err := write.Execute(t.Context(), first, Correction{
-		Path: "library/other.mp3", Kind: KindTranscript, Words: words,
-	}); err == nil {
-		t.Error("a file nothing was made from was written")
-	}
-
-	shelf.hold(domain.NewArtifactName(domain.ArtifactPartial, domain.ASR, artifactHash))
-	if _, err := write.Execute(t.Context(), first, Correction{
-		Path: recordingPath, Kind: KindTranscript, Words: words,
-	}); !errors.Is(err, ErrTranscriptBusy) {
-		t.Errorf("a transcript a run is writing was corrected: %v", err)
 	}
 }

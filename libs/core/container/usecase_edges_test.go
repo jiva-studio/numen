@@ -14,17 +14,16 @@ import (
 // useCaseEdges are the use cases each use case may build on. A use case listed
 // with nothing depends on no other.
 var useCaseEdges = map[string][]string{
-	"note":          nil,
-	"settings":      nil,
-	"run":           nil,
-	"source":        nil,
-	"transcription": {"run"},
-	"embedding":     {"run"},
-	"file":          nil,
-	"search":        nil,
-	"vault":         {"embedding", "note", "source"},
-	"indexing":      {"embedding", "run", "source", "vault"},
-	"completion":    {"agent"},
+	"note":       nil,
+	"settings":   nil,
+	"run":        nil,
+	"source":     nil,
+	"embedding":  {"run"},
+	"file":       nil,
+	"search":     nil,
+	"vault":      {"embedding", "note", "source"},
+	"indexing":   {"embedding", "run", "source", "vault"},
+	"completion": {"agent"},
 }
 
 // getUseCaseName is the use case a package belongs to, and whether it is one.
@@ -121,14 +120,10 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		{"usecase/vault", "usecase/note", false},
 		{"usecase/vault", "usecase/source", false},
 		{"usecase/vault", "usecase/embedding", false},
-		{"usecase/transcription", "usecase/run", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/source", "usecase/vault", true},
-		{"usecase/run", "usecase/transcription", true},
-		{"usecase/embedding", "usecase/transcription", true},
-		{"usecase/transcription", "usecase/embedding", true},
 		{"usecase/source", "usecase/run", true},
 		{"usecase/embedding", "usecase/vault", true},
 

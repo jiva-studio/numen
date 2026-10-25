@@ -308,19 +308,6 @@ func (h *Host) CheckPluginPermission(pluginID, permission string) error {
 	return sup.CheckPermission(permission)
 }
 
-// ValidatePluginPath verifies that targetPath is within the active vault and permitted for the plugin.
-func (h *Host) ValidatePluginPath(pluginID, targetPath string) (string, error) {
-	h.mu.RLock()
-	sup, ok := h.supervisors[pluginID]
-	vaultPath := h.vaultPath
-	h.mu.RUnlock()
-
-	if !ok {
-		return "", errPluginNotFound
-	}
-	return sup.ValidatePath(vaultPath, targetPath)
-}
-
 // EmitEvent queues an event into the debounced and throttled event bus.
 func (h *Host) EmitEvent(event string) {
 	h.mu.RLock()

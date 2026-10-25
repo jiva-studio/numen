@@ -150,8 +150,17 @@ function verifyPluginsReachNoApp() {
 }
 
 /** The packages of the core that belong to a plugin, as directories, and as files of `container`. */
-const CORE_MOVED_DIRS = ["usecase/document", "usecase/recognition", "internal/ocrartifact"];
-const CORE_MOVED_CONTAINER_FILES = ["recogniser"];
+const CORE_MOVED_DIRS = [
+  "usecase/document",
+  "usecase/recognition",
+  "usecase/transcription",
+  "internal/ocrartifact",
+  "internal/transcript",
+  "port/transcriptionport",
+  "internal/adapter/plugin/transcriberbridge",
+  "internal/adapter/plugin/proofreaderbridge",
+];
+const CORE_MOVED_CONTAINER_FILES = ["recogniser", "transcriber", "proofreader"];
 
 /** Every file under `dir` in the working tree, relative to the repository root. */
 function listFiles(dir) {
@@ -224,7 +233,7 @@ const VERIFIERS = [
     id: "core-holds-no-plugin-package",
     scope: "libs",
     module: "core",
-    name: "Core Holds No Plugin Package (document, recognition)",
+    name: "Core Holds No Plugin Package (document, recognition, transcription)",
     run: verifyCoreHoldsNoPluginPackage,
   },
   {

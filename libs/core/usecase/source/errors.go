@@ -10,12 +10,6 @@ var (
 	// ErrNotReady is a question about a vault whose index or store is not up yet.
 	ErrNotReady = artifacts.ErrNotReady
 
-	// ErrNoTranscript is a recording without a transcript.
-	ErrNoTranscript = artifacts.ErrNoTranscript
-
-	// ErrTranscriptBusy is a transcript a run is writing down.
-	ErrTranscriptBusy = artifacts.ErrTranscriptBusy
-
 	// ErrOutside is a path that does not stay in the vault.
 	ErrOutside = vaultport.ErrOutside
 

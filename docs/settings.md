@@ -301,38 +301,9 @@ A vault searched by its words. Nothing is fetched, nothing is asked of a network
 | `proofread.with` | which profile under `indexing.proofreading.profiles` puts a recognition right. Empty proofreads nothing, and a recognition is used exactly as it was read. A name no profile carries is an error at startup. |
 | `proofread.automatically` | whether a recognition is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
 
-## Listening to a recording
-
-`indexing.transcription` is how a recording is transcribed. A recording carries no text of its own, so its transcript is the only text there is: a recording the vault holds none for is transcribed without anybody asking, and `indexing.transcribe_recordings` is what stops that. What a transcript is and where it is kept is in [Transcribing](transcribing.md).
-
-```json
-{
-  "indexing": {
-    "transcribe_recordings": true,
-    "transcribe_under_mb": 300,
-    "transcription": {
-      "proofread": { "with": "", "automatically": false }
-    }
-  }
-}
-```
-
-| | |
-| --- | --- |
-| `transcribe_recordings` | whether a recording the vault holds no transcript for is transcribed on its own. On. A vault of a hundred hours is a day of a machine, and turning this off leaves it to the hand — the command line's `transcribe`, and the tool an agent asks through. |
-| `transcribe_under_mb` | how large a recording may be and still be transcribed unasked, in megabytes. 300, which is a talk of a few hours. A larger one waits to be asked for by name, because a folder of albums is days of a machine. A negative number is no limit. |
-| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a transcript right. Empty proofreads nothing, and a transcript is used exactly as it was transcribed. A name no profile carries is an error at startup. |
-| `proofread.automatically` | whether a transcript is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the recording in front of them. |
-
-`transcribe_recordings` and `transcription.proofread.automatically` are two flags about two things. The first decides whether a recording nobody asked about is listened to at all. The second decides whether a transcript that already exists is put right by itself. An installation can hear every recording unasked and proofread none of them, and it can proofread every transcript it has while listening to nothing new.
-
-Recognising a scan and transcribing a recording each hold the models and the processor, so they take turns: an explicit user request for a scan to be read waits for it before a recording is transcribed, and the waiting job indicates its status in the job queue.
-
-Every recording handed over ends in an answer, and only one of them is "later". Words are an answer, a recording carrying no speech is an answer, and a file nothing here can open is an answer; all three are written down and the recording is not listened to again. Bytes another run holds are the one ending that means come back later. Asking for a recording to be tried again is taking its answer away.
-
 ## Putting a text right
 
-`indexing.proofreading` is what corrects a text a model produced — a recognition of a scan, a transcript of a recording. It stands beside `recognition` and `transcription` because a text put right is a text searched, and it holds the profiles both of them name. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
+`indexing.proofreading` is what corrects a text a model produced — a recognition of a scan, a transcript of a recording. It stands beside `recognition` because a text put right is a text searched, and it holds the profiles it names. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
 
 An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
 
@@ -371,7 +342,7 @@ A profile of an older file that names `use`, `name`, `base_url`, `batch_url`, `k
 
 ## Worked example, proofreading
 
-Scans and transcripts through the `claude` command line on this machine, two questions at once. Both run on their own: a book read is a book proofread, and a recording transcribed is a recording proofread, with nobody asked.
+Scans through the `claude` command line on this machine, two questions at once. It runs on its own: a book read is a book proofread, with nobody asked.
 
 ```json
 {
@@ -390,8 +361,7 @@ Scans and transcripts through the `claude` command line on this machine, two que
       }
     },
 
-    "recognition":   { "proofread": { "with": "scans",  "automatically": true } },
-    "transcription": { "proofread": { "with": "speech", "automatically": true } }
+    "recognition": { "proofread": { "with": "scans", "automatically": true } }
   }
 }
 ```

@@ -7,7 +7,6 @@ import (
 type (
 	Artifact                      = artifacts.Artifact
 	ArtifactText                  = artifacts.ArtifactText
-	Correction                    = artifacts.Correction
 	Document                      = artifacts.Document
 	GetArtifactList               = artifacts.GetArtifactList
 	GetArtifactText               = artifacts.GetArtifactText
@@ -22,8 +21,6 @@ type (
 	SourceTexts                   = artifacts.SourceTexts
 	StartOutcome                  = artifacts.StartOutcome
 	StoredText                    = artifacts.StoredText
-	WriteCorrections              = artifacts.WriteCorrections
-	WriteTranscript               = artifacts.WriteTranscript
 
 	Transcript = artifacts.Transcript
 
@@ -47,12 +44,8 @@ const (
 )
 
 var (
-	ErrNotCorrectable = artifacts.ErrNotCorrectable
-	ErrNoCue          = artifacts.ErrNoCue
-
-	NewGetArtifactList  = artifacts.NewGetArtifactList
-	NewGetArtifactText  = artifacts.NewGetArtifactText
-	NewGetDocumentList  = artifacts.NewGetDocumentList
-	NewWriteCorrections = artifacts.NewWriteCorrections
-	NewSourceTexts      = artifacts.NewSourceTexts
+	NewGetArtifactList = artifacts.NewGetArtifactList
+	NewGetArtifactText = artifacts.NewGetArtifactText
+	NewGetDocumentList = artifacts.NewGetDocumentList
+	NewSourceTexts     = artifacts.NewSourceTexts
 )

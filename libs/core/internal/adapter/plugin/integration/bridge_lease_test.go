@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -39,41 +38,15 @@ func (stubEmbeddingServer) GetEmbeddingModel(
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
 }
 
-type stubTranscriptionServer struct {
-	numenv1connect.UnimplementedTranscriptionServiceHandler
-}
-
-func (stubTranscriptionServer) GetTranscriptionModel(
-	context.Context, *connect.Request[v1.GetTranscriptionModelRequest],
-) (*connect.Response[v1.GetTranscriptionModelResponse], error) {
-	return connect.NewResponse(&v1.GetTranscriptionModelResponse{}), nil
-}
-
 func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&plugintest.MockAgentServer{}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
-	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(stubTranscriptionServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 	return &plugintest.LeaseHost{Endpoint: pluginport.Endpoint{Host: "127.0.0.1", Port: server.Listener.Addr().(*net.TCPAddr).Port}}
-}
-
-func TestEveryProofreadingProducesItsReferenceBack(t *testing.T) {
-	host := newLeaseHost(t)
-	bridge, err := proofreaderbridge.Open(host)
-	if err != nil {
-		t.Fatal(err)
-	}
-	for range 3 {
-		_, _ = bridge.ProofreadSpeech(t.Context(), nil, 0)
-	}
-	_ = bridge.Close()
-	if host.Acquired.Load() != 3 || host.Released.Load() != 3 {
-		t.Errorf("acquired %d, released %d, want 3 and 3", host.Acquired.Load(), host.Released.Load())
-	}
 }
 
 func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {

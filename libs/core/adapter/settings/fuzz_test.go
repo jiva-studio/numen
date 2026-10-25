@@ -3,7 +3,6 @@ package settings_test
 import (
 	"encoding/json"
 	"errors"
-	"math"
 	"os"
 	"path/filepath"
 	"testing"
@@ -16,8 +15,7 @@ import (
 // A file naming settings is answered for either with settings this build can be
 // run on or with what is wrong with the file. Both sizes and the count are
 // numbers their settings take, the version is one the file is read at, the mode
-// is a word the window draws, and how large a recording may be is a size at
-// least as large as the megabytes the person named.
+// is a word the window draws.
 //
 // Where the file names a setting this build cannot use and the defaults stand,
 // the reader says so.
@@ -27,22 +25,21 @@ import (
 func FuzzAt(f *testing.F) {
 	// The file the application writes, a size the setting does not go to, a
 	// word no half of a colour pair is called, a theme named nothing at all, an
-	// hour that is no hour and one with spaces around it, a version the file
-	// was never written at, more megabytes than a size in bytes reaches, and no
-	// limit at all.
-	f.Add(1, "system", "preset:numen", "04:00", 1.0, 1.0, 6, 300)
-	f.Add(1, "dark", "mine:dracula", "23:59", 2.0, 1.75, 12, 1)
-	f.Add(1, "light", "preset:numen", "04:00", 9.0, 1.0, 6, 300)
-	f.Add(1, "purple", "preset:numen", "04:00", 1.0, 1.0, 6, 300)
-	f.Add(1, "", "", "", 1.0, 1.0, 6, 300)
-	f.Add(1, "system", "preset:numen", "99:99", 1.0, 1.0, 6, 300)
-	f.Add(1, "system", "preset:numen", "  07:30  ", 1.0, 1.0, 6, 300)
-	f.Add(0, "system", "preset:numen", "04:00", 1.0, 1.0, 6, math.MaxInt64)
-	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8, 1, -1)
+	// hour that is no hour and one with spaces around it, and a version the file
+	// was never written at.
+	f.Add(1, "system", "preset:numen", "04:00", 1.0, 1.0, 6)
+	f.Add(1, "dark", "mine:dracula", "23:59", 2.0, 1.75, 12)
+	f.Add(1, "light", "preset:numen", "04:00", 9.0, 1.0, 6)
+	f.Add(1, "purple", "preset:numen", "04:00", 1.0, 1.0, 6)
+	f.Add(1, "", "", "", 1.0, 1.0, 6)
+	f.Add(1, "system", "preset:numen", "99:99", 1.0, 1.0, 6)
+	f.Add(1, "system", "preset:numen", "  07:30  ", 1.0, 1.0, 6)
+	f.Add(0, "system", "preset:numen", "04:00", 1.0, 1.0, 6)
+	f.Add(1, "system", "preset:numen", "04:00", 0.8, 0.8, 1)
 
 	path := filepath.Join(f.TempDir(), "numen.json")
 	f.Fuzz(func(t *testing.T, version int, mode, theme, dayStartTime string,
-		interfaceScale, textScale float64, headings, mb int) {
+		interfaceScale, textScale float64, headings int) {
 		raw, err := json.Marshal(file{
 			Version: version,
 			Appearance: appearance{
@@ -52,8 +49,7 @@ func FuzzAt(f *testing.F) {
 				Theme:              theme,
 				NestedHeadingLimit: headings,
 			},
-			Indexing: indexing{TranscribeUnderMB: mb},
-			Review:   review{DayStartTime: dayStartTime},
+			Review: review{DayStartTime: dayStartTime},
 		})
 		if err != nil {
 			// A size that is not a number is not something a file can hold.
@@ -84,9 +80,6 @@ func FuzzAt(f *testing.F) {
 			t.Fatalf("%s was read as wearing %q, which is no half of a colour pair",
 				raw, target.Appearance.Mode)
 		}
-		if mb > 0 && target.Indexing.GetTranscribeLimit() < int64(mb) {
-			t.Fatalf("%d megabytes was read as %d bytes", mb, target.Indexing.GetTranscribeLimit())
-		}
 	})
 }
 
@@ -95,7 +88,6 @@ func FuzzAt(f *testing.F) {
 type file struct {
 	Version    int        `json:"v"`
 	Appearance appearance `json:"appearance"`
-	Indexing   indexing   `json:"indexing"`
 	Review     review     `json:"review"`
 }
 
@@ -105,10 +97,6 @@ type appearance struct {
 	Mode               string  `json:"mode"`
 	Theme              string  `json:"theme"`
 	NestedHeadingLimit int     `json:"nested_heading_limit"`
-}
-
-type indexing struct {
-	TranscribeUnderMB int `json:"transcribe_under_mb"`
 }
 
 type review struct {

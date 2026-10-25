@@ -53,12 +53,6 @@ type DerivedStore interface {
 	// written.
 	WriteArtifactStream(ctx context.Context, name domain.ArtifactName, from io.Reader) (int64, error)
 
-	// AppendArtifact adds to what is under a name, creating it when there is
-	// nothing. A recognition is written as it is read, over an hour, and
-	// reading a growing file back in order to rewrite it costs the square of
-	// its pages.
-	AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error
-
 	// RemoveArtifact takes a name out of the store. A name already gone is the
 	// outcome that was asked for.
 	RemoveArtifact(ctx context.Context, name domain.ArtifactName) error

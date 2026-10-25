@@ -13,7 +13,6 @@ type Texts struct {
 	GetRecognitionCorrectionState GetRecognitionCorrectionState
 	GetTranscript                 GetTranscript
 	GetRawTranscript              GetRawTranscript
-	WriteTranscript               WriteTranscript
 	GetCopyLocation               GetCopyLocation
 	RemoveCopy                    RemoveCopy
 	OpenCopy                      OpenCopy
@@ -34,7 +33,6 @@ func NewTexts(
 		GetRecognitionCorrectionState: GetRecognitionCorrectionState{Texts: shared},
 		GetTranscript:                 GetTranscript{Texts: shared},
 		GetRawTranscript:              GetRawTranscript{Texts: shared},
-		WriteTranscript:               WriteTranscript{Texts: shared},
 		GetCopyLocation:               location,
 		RemoveCopy:                    RemoveCopy{texts: shared, location: location, writers: writers},
 		OpenCopy:                      OpenCopy{texts: shared},

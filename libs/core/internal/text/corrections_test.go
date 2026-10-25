@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/text"
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -57,11 +56,6 @@ func (b artifactMap) WriteArtifact(_ context.Context, name domain.ArtifactName, 
 	return nil
 }
 
-func (b artifactMap) AppendArtifact(_ context.Context, name domain.ArtifactName, content []byte) error {
-	b[name] = append(b[name], content...)
-	return nil
-}
-
 func (b artifactMap) RemoveArtifact(_ context.Context, name domain.ArtifactName) error {
 	delete(b, name)
 	return nil
@@ -73,7 +67,7 @@ func (b artifactMap) ClaimArtifact(context.Context, domain.ArtifactName) (func()
 
 // writeCorrections is the transcript of the talk as somebody put it right.
 func writeCorrections() []byte {
-	return transcript.Marshal([]domain.TranscriptCue{
+	return text.MarshalWebVTT([]domain.TranscriptCue{
 		{Text: opening, From: 1500, To: 4200},
 		{Text: putRight, From: 5025000, To: 5028000},
 		{Text: closing, From: 5400000, To: 5403500},
