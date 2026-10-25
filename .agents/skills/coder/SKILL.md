@@ -35,7 +35,7 @@ flowchart TD
    - Backend (Go): [`.agents/rules/coding-style-backend.md`](../../rules/coding-style-backend.md)
    - Frontend (Vue/TS): [`.agents/rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md)
    - Architecture & Layers: [`.agents/rules/architecture.md`](../../rules/architecture.md)
-   - Rule 13 of `AGENTS.md`: Absolute ban on narrative slop, irregular past participles (`held`, `said`, `written`, `asked`) and bare prepositions (`beside`, `under`) as identifiers.
+   - Rule 13 of `AGENTS.md`: plain technical names — nouns for values (`entries`, `request`, `draft`), base-form verbs for functions (`listCommands`). Run `node tools/lint-narrative/scan.mjs <files>` before committing.
 
 ---
 
