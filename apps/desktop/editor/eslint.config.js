@@ -14,9 +14,8 @@ import { createLayerElements, createLayerPolicies } from '../../../tools/lint-la
 const layerOrder = ['shared', 'entities', 'features', 'widgets', 'pages', 'app']
 const sliceLayers = ['entities', 'features', 'widgets', 'pages']
 
-// A plugin is an element of its own. A plugin reaches the host and another
-// plugin through no policy, so both directions are refused wherever a plugin
-// file is linted; the host reaches a plugin through the policy below.
+// A plugin is an element of its own, and no policy reaches it: the window
+// loads a plugin over HTTP and imports nothing of it.
 const pluginElement = { type: 'plugin', pattern: '../../../plugins/*', capture: ['name'] }
 
 const layerElements = createLayerElements({
@@ -31,15 +30,6 @@ const layerPolicies = createLayerPolicies({
   extra: [
     { allow: { to: { element: { type: 'testing' } } } },
     { from: { element: { type: 'testing' } }, allow: { to: { element: { type: layerOrder } } } },
-    {
-      from: { file: { categories: 'composition' } },
-      allow: { to: { element: { type: 'plugin' } } },
-    },
-    {
-      from: { file: { categories: ['test', 'story'] } },
-      allow: { to: { element: { type: 'plugin' } } },
-    },
-    { from: { element: { type: 'testing' } }, allow: { to: { element: { type: 'plugin' } } } },
   ],
 })
 
@@ -56,7 +46,6 @@ export default tseslint.config(
       'boundaries/files': [
         { category: 'crossImport', pattern: 'src/*/*/@x/*' },
         { category: 'entry', pattern: 'src/main.ts' },
-        { category: 'composition', pattern: 'src/app/plugins/pluginCatalog.ts' },
         { category: 'test', pattern: 'src/**/*.test.ts' },
         { category: 'story', pattern: 'src/**/*.stories.ts' },
       ],

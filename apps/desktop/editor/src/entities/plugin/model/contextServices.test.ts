@@ -2,8 +2,6 @@
  * What a plugin may do through the window, the notes and the files it is
  * handed: the reads are open, the writes need `vault:write`.
  */
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it, vi } from 'vitest'
 import type {
   AgentHost,
@@ -304,38 +302,5 @@ describe('the agent a plugin asks', () => {
     await expect(request.writeSetting(elsewhere, false)).rejects.toThrowError(/agent settings/)
     expect(agent.getSetting).toHaveBeenCalledTimes(1)
     expect(agent.writeSetting).toHaveBeenCalledTimes(1)
-  })
-})
-
-const PLUGINS = resolve(import.meta.dirname, '../../../../../../../plugins')
-
-const readPermissions = (plugin: string): readonly string[] =>
-  JSON.parse(readFileSync(resolve(PLUGINS, plugin, 'manifest.json'), 'utf8')).permissions
-
-describe('the manifest of a plugin that writes through the window', () => {
-  it('view-file-tree declares what the files it moves and makes need', async () => {
-    const { context } = createContext(readPermissions('views-file-tree'))
-
-    await Promise.all(Object.values(FILE_WRITES).map((call) => call(context)))
-    context.workspace!.runPathCommand('remove', {
-      paths: ['a.md'],
-      name: 'a',
-      source: 'note',
-    })
-  })
-
-  it('view-agent-chat declares what the agent it asks needs', async () => {
-    const { context } = createContext(readPermissions('views-agent-chat'))
-
-    await expect(
-      Promise.all(Object.values(ASKING).map(([, call]) => call(context))),
-    ).resolves.toHaveLength(Object.keys(ASKING).length)
-  })
-
-  it('view-plex-graph declares what the notes it joins and makes need', async () => {
-    const { context } = createContext(readPermissions('views-plex-graph'))
-
-    await Promise.all(Object.values(NOTE_WRITES).map((call) => call(context)))
-    context.workspace!.runCommand('child', { path: 'a.md', title: 'A' })
   })
 })

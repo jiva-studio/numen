@@ -16,8 +16,6 @@ export interface PluginLoaderDeps {
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
-  readonly loaders?: Record<string, () => Promise<unknown>>
-  readonly manifests?: Record<string, PluginManifest>
   readonly onError?: (pluginId: string, error: unknown) => void
 }
 
@@ -62,7 +60,7 @@ async function activateEntry(
     const resolved = await resolveModule(pluginId, pluginModule, ctx)
     if (!resolved) return false
 
-    const manifest = ctx.manifests.get(pluginId) ?? ctx.catalogManifests[pluginId]
+    const manifest = ctx.manifests.get(pluginId)
     const { activate, deactivate } = getLifecycleHooks(resolved)
     if (activate) {
       await activate(host.createContext(pluginId, manifest))
@@ -196,7 +194,6 @@ function createActivation(deps: PluginLoaderDeps, state: LoaderState) {
   const activateContext: ActivateContext = {
     host,
     loaders: moduleLoaders,
-    catalogManifests: deps.manifests ?? {},
     activePlugins,
     failures,
     manifests,
@@ -288,7 +285,7 @@ export function createPluginLoader(deps: PluginLoaderDeps) {
     activePlugins: shallowRef(new Map()),
     failures: shallowRef(new Map()),
     manifests: new Map(),
-    moduleLoaders: new Map(Object.entries(deps.loaders ?? {})),
+    moduleLoaders: new Map(),
   }
   const { activePlugins, failures, manifests } = state
   const activation = createActivation(deps, state)

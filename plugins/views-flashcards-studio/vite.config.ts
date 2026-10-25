@@ -7,6 +7,5 @@ export default defineConfig(
     root: import.meta.dirname,
     plugins: [vue()],
     aliases: ['@numen/plugin-sdk', '@numen/ui', '@numen/wire', '@numen/protocol'],
-    external: ['vue', '@numen/plugin-sdk', '@numen/ui'],
   }),
 )

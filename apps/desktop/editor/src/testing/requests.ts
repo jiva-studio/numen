@@ -12,12 +12,6 @@ export const requests = {
   moved: [] as string[],
   folders: [] as string[],
   urls: [] as string[],
-  /** The decks and the stencils the window asked for, in the order it asked. */
-  cards: [] as string[],
-  /** Each field rename the window asked the vault for. */
-  renamedField: [] as string[],
-  /** The cards each of those deck writes carried, by name. */
-  wrote: [] as string[],
   worn: [] as string[],
   /** How often an open editor was told to take its measurements again. */
   measured: 0,
@@ -38,9 +32,6 @@ export const requests = {
 /** Nothing asked yet, which is where every test begins. */
 export const forgetRequests = () => {
   requests.made = []
-  requests.cards = []
-  requests.renamedField = []
-  requests.wrote = []
   requests.renamed = []
   requests.removed = []
   requests.moved = []

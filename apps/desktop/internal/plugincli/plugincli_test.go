@@ -236,34 +236,6 @@ func TestPluginCLI_Run(t *testing.T) {
 	}
 }
 
-func TestValidateExistingRepoPlugins(t *testing.T) {
-	pluginsDir := "../../../../plugins"
-	entries, err := os.ReadDir(pluginsDir)
-	if err != nil {
-		t.Skip("plugins directory not found relative to test")
-		return
-	}
-
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		pluginPath := filepath.Join(pluginsDir, entry.Name())
-		if _, err := os.Stat(filepath.Join(pluginPath, "manifest.json")); err != nil {
-			continue
-		}
-
-		issues, err := Validate(pluginPath)
-		if err != nil {
-			t.Errorf("error validating %s: %v", entry.Name(), err)
-			continue
-		}
-		if len(issues) > 0 {
-			t.Errorf("validation issues in existing plugin %s: %v", entry.Name(), issues)
-		}
-	}
-}
-
 func writeManifestFile(t *testing.T, manifest string) string {
 	t.Helper()
 	dir := t.TempDir()

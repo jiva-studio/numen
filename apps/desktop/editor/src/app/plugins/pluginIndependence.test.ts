@@ -6,27 +6,8 @@ import { join, resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
 import { getTabs, mountWindow } from '@/testing/window'
-import { pluginCatalog } from './pluginCatalog'
 
 const editorSrcDir = resolve(import.meta.dirname, '../..')
-const pluginsDir = resolve(import.meta.dirname, '../../../../../../plugins')
-
-/** Every plugin id from the manifests in modules/plugins. */
-function listPluginIds(): string[] {
-  const ids: string[] = []
-  for (const entry of readdirSync(pluginsDir)) {
-    const manifestPath = join(pluginsDir, entry, 'manifest.json')
-    try {
-      if (statSync(manifestPath).isFile()) {
-        const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { id?: string }
-        if (manifest.id) ids.push(manifest.id)
-      }
-    } catch {
-      // Skip non-plugin directories
-    }
-  }
-  return ids
-}
 
 /** Lists all files under dir recursively, skipping tests, stories, and testing mocks. */
 function listHostSources(dir: string): string[] {
@@ -50,16 +31,11 @@ function listHostSources(dir: string): string[] {
 const pluginIdRegex = /md\.numen\.[a-zA-Z0-9_-]+/
 const readerKindRegex = /['"]reader:[a-zA-Z0-9_-]+['"]/
 
-function findForbiddenLiterals(content: string, pluginIds: readonly string[]): string[] {
+function findForbiddenLiterals(content: string): string[] {
   const found: string[] = []
   const idMatch = content.match(pluginIdRegex)
   if (idMatch) {
     found.push(`spells out plugin id ${idMatch[0]}`)
-  }
-  for (const id of pluginIds) {
-    if (content.includes(id) && !found.some((msg) => msg.includes(id))) {
-      found.push(`spells out plugin id ${id}`)
-    }
   }
   const readerMatch = content.match(readerKindRegex)
   if (readerMatch) {
@@ -69,20 +45,15 @@ function findForbiddenLiterals(content: string, pluginIds: readonly string[]): s
 }
 
 describe('host and plugin independence', () => {
-  it('host sources outside the composition file name no plugin id or plugin tab kind', () => {
-    const pluginIds = listPluginIds()
-    expect(pluginIds.length).toBeGreaterThan(0)
-
+  it('host sources name no plugin id or plugin tab kind', () => {
     const hostSources = listHostSources(editorSrcDir)
     expect(hostSources.length).toBeGreaterThan(10)
 
-    const compositionFile = resolve(editorSrcDir, 'app/plugins/pluginCatalog.ts')
     const violations: { file: string; issues: string[] }[] = []
 
     for (const source of hostSources) {
-      if (source === compositionFile) continue
       const content = readFileSync(source, 'utf8')
-      const issues = findForbiddenLiterals(content, pluginIds)
+      const issues = findForbiddenLiterals(content)
       if (issues.length > 0) {
         violations.push({ file: source.replace(editorSrcDir, 'src'), issues })
       }
@@ -92,42 +63,9 @@ describe('host and plugin independence', () => {
   })
 
   it('boundary check detects forbidden literals in sample input', () => {
-    expect(findForbiddenLiterals("const id = 'md.numen.sample'", ['md.numen.sample'])).toHaveLength(
-      1,
-    )
-    expect(
-      findForbiddenLiterals("const kind = 'reader:reader-pdf'", ['md.numen.sample']),
-    ).toHaveLength(1)
-    expect(findForbiddenLiterals("const clean = 'note'", ['md.numen.sample'])).toHaveLength(0)
-  })
-})
-
-describe('plugin frontend loading', () => {
-  it('loads the frontend of every plugin declaring one', async () => {
-    const frontendPlugins = readdirSync(pluginsDir).filter((name) => {
-      const frontendDir = join(pluginsDir, name, 'frontend')
-      try {
-        return statSync(frontendDir).isDirectory()
-      } catch {
-        return false
-      }
-    })
-
-    expect(frontendPlugins.length).toBeGreaterThan(0)
-    for (const name of frontendPlugins) {
-      const manifestPath = join(pluginsDir, name, 'manifest.json')
-      const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { id: string }
-      const loader = pluginCatalog.loaders[manifest.id]
-      expect(loader, `missing loader for plugin ${name} (${manifest.id})`).toBeDefined()
-      const loaded = (await loader!()) as {
-        activate?: unknown
-        default?: { activate?: unknown }
-      }
-      expect(
-        typeof (loaded.activate ?? loaded.default?.activate),
-        `plugin ${name} does not export activate function`,
-      ).toBe('function')
-    }
+    expect(findForbiddenLiterals("const id = 'md.numen.sample'")).toHaveLength(1)
+    expect(findForbiddenLiterals("const kind = 'reader:reader-pdf'")).toHaveLength(1)
+    expect(findForbiddenLiterals("const clean = 'note'")).toHaveLength(0)
   })
 })
 
@@ -158,18 +96,5 @@ describe('restoring a session with a disabled plugin', () => {
 
     expect(id).toBe('disabled-plugin:/docs/sample.pdf')
     expect(window.tabs.value).toEqual([{ id, title: 'Plugin unavailable' }])
-  })
-})
-
-describe('plugin autonomy', () => {
-  it('plugins directory contains no shared internal library folder', () => {
-    const sharedDir = join(pluginsDir, 'shared')
-    let isDirectoryPresent: boolean
-    try {
-      isDirectoryPresent = statSync(sharedDir).isDirectory()
-    } catch {
-      isDirectoryPresent = false
-    }
-    expect(isDirectoryPresent).toBe(false)
   })
 })

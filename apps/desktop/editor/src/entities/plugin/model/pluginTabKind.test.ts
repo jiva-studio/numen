@@ -3,6 +3,7 @@ import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
+import { registerPluginStyle, unregisterPluginStyle } from './styles'
 import {
   createDeclaredPane,
   createDeclaredTabKind,
@@ -118,6 +119,20 @@ describe('the pane of a declared kind', () => {
     expect(view.find('.held').text()).toBe('Graph.md')
     expect(view.element.shadowRoot).toBeNull()
     expect(view.find('.held').attributes()).toStrictEqual({ class: 'held' })
+  })
+
+  it('draws the stylesheet the plugin registered beside the component', () => {
+    registerPluginStyle('md.numen.sample', '/api/plugins/md.numen.sample/dist/styles.css')
+    const view = mount(createDeclaredPane('md.numen.sample', Pane), {
+      props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
+    })
+    unregisterPluginStyle('md.numen.sample')
+
+    const link = view.find('link[rel="stylesheet"]')
+    expect(link.attributes('href')).toBe('/api/plugins/md.numen.sample/dist/styles.css')
+    expect(link.attributes('data-plugin-id')).toBe('md.numen.sample')
+    expect(view.find('.held').text()).toBe('Graph.md')
+    expect(document.head.querySelector('link[data-plugin-id="md.numen.sample"]')).toBeNull()
   })
 
   it('says the plugin failed where the component throws', async () => {

@@ -288,7 +288,8 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     void appearance.start()
     void sync.start()
     void nesting.start()
-    void rest.start()
+    // The plugins the window starts are named by what this read answers.
+    await rest.start()
   }
 
   const close = () => {

@@ -8,12 +8,12 @@
 import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
+import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
 
 const modules = resolve(import.meta.dirname, '..')
 
 /** Every alias a plugin may resolve, in the order Vite tries them. */
 const ALIASES = {
-  '@': resolve(modules, 'apps/desktop/editor/src'),
   '@plugins': import.meta.dirname,
   '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk-ts/src/testing/index.ts'),
   '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
@@ -53,11 +53,12 @@ export interface PluginBuildOptions {
   /** The plugins of the build ahead of the stylesheet one, such as `vue()`. */
   readonly plugins: readonly PluginOption[]
   readonly aliases: readonly AliasName[]
-  /** The modules the host provides at runtime, left out of the bundle. */
-  readonly external: readonly string[]
 }
 
-/** The build of one plugin frontend into `dist/index.js` and `dist/styles.css`. */
+/**
+ * The build of one plugin frontend into `dist/index.js` and `dist/styles.css`. The modules the
+ * window serves are left out of the bundle and imported from their paths in `HOST_MODULES`.
+ */
 export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig {
   return {
     plugins: [...options.plugins, createStylesPlugin(options.root)],
@@ -72,8 +73,9 @@ export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig
         cssFileName: 'styles',
       },
       rollupOptions: {
-        external: [...options.external],
+        external: Object.keys(HOST_MODULES),
         output: {
+          paths: HOST_MODULES,
           assetFileNames: (assetInfo) => {
             if (assetInfo.name?.endsWith('.css')) return 'styles.css'
             return assetInfo.name || 'asset'

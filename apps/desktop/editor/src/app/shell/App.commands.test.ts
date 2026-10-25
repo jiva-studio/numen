@@ -10,25 +10,17 @@ import { describe, expect, it } from 'vitest'
 import {
   requests,
   cards,
-  maker,
   DEBOUNCE,
   mountWindow,
   mountWindowWithPalette,
   nameAnswer,
-  nodeInPlex,
-  paneKinds,
   passageAnswer,
   said,
   settle,
   sourceAnswer,
 } from '@/testing/window'
-import { type VueWrapper } from '@vue/test-utils'
-import { branch, pane, Palette, Tree, WorkspaceLayout, type PaletteGroup } from '@numen/ui'
-import { AgentTab } from '@plugins/views-agent-chat/frontend'
-import { DeckTab } from '@plugins/views-flashcards-studio/frontend'
-import { FilesTab, NEW_DECK, NEW_STENCIL } from '@plugins/views-file-tree/frontend'
-import { PlexTab, WORDS as plexWords } from '@plugins/views-plex-graph/frontend'
-import { ERRORS, WORDS } from '@/shared/words'
+import { Palette, type PaletteGroup } from '@numen/ui'
+import { WORDS } from '@/shared/words'
 
 describe('the palette', () => {
   /** A keystroke taken on the window, and whether the window took it. */
@@ -43,17 +35,6 @@ describe('the palette', () => {
       (one) => one.id,
     )
 
-  it('opens on the commands for what is in front, and prints nothing', async () => {
-    const window = await mountWindow()
-
-    const event = pressKey('p')
-    await settle()
-
-    expect(event.defaultPrevented).toBe(true)
-    expect(window.findComponent(Palette).props('isOpen')).toBe(true)
-    expect(getGroups(window)).toStrictEqual(['note', 'window', 'vault'])
-  })
-
   it('opens on the search under its own keystroke', async () => {
     const window = await mountWindow()
 
@@ -63,17 +44,6 @@ describe('the palette', () => {
     expect(window.findComponent(Palette).props('isOpen')).toBe(true)
     expect(getGroups(window)).toStrictEqual([])
   })
-
-  /** A name the search turned up, chosen to be read. */
-  const openFromSearch = async (window: Awaited<ReturnType<typeof mountWindow>>, path: string) => {
-    pressKey('k')
-    await settle()
-    window.findComponent(Palette).vm.$emit('update:modelValue', 'ani')
-    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
-    window.findComponent(Palette).vm.$emit('choose', path, 'note')
-    await settle()
-    await settle()
-  }
 
   /** The words typed into the search, with the answers back. */
   const runSearch = async (window: Awaited<ReturnType<typeof mountWindowWithPalette>>) => {
@@ -162,103 +132,6 @@ describe('the palette', () => {
       WORDS.notEmbedded,
     )
   })
-
-  it('opens a deck it turned up in the editor of its cards', async () => {
-    said.names = [nameAnswer('Animals.md', 'Animals', 'deck')]
-    said.types = { 'Animals.md': 'deck' }
-    const window = await mountWindow()
-
-    await openFromSearch(window, 'Animals.md')
-
-    expect(paneKinds(window).flat()).toContain('deck')
-    expect(paneKinds(window).flat()).not.toContain('note')
-  })
-
-  it('opens a stencil it turned up in the editor of its fields and faces', async () => {
-    said.names = [nameAnswer('Animal.md', 'Animal', 'stencil')]
-    said.types = { 'Animal.md': 'stencil' }
-    const window = await mountWindow()
-
-    await openFromSearch(window, 'Animal.md')
-
-    expect(paneKinds(window).flat()).toContain('stencil')
-    expect(paneKinds(window).flat()).not.toContain('note')
-  })
-
-  it('opens an ordinary note the same search turned up in a note tab', async () => {
-    said.names = [nameAnswer('Animals.md', 'Animals')]
-    const window = await mountWindow()
-
-    await openFromSearch(window, 'Animals.md')
-
-    expect(paneKinds(window).flat()).not.toContain('deck')
-    expect(paneKinds(window).flat()).toContain('note')
-  })
-
-  it('turns from the search to the commands on the character that means them', async () => {
-    const window = await mountWindow()
-    pressKey('k')
-    await settle()
-
-    window.findComponent(Palette).vm.$emit('update:modelValue', '>')
-    await settle()
-
-    expect(getGroups(window)).toStrictEqual(['note', 'window', 'vault'])
-  })
-
-  /** The note the commands are over, which the step that renames one opens on. */
-  const overNote = async (window: Awaited<ReturnType<typeof mountWindow>>) => {
-    window.findComponent(Palette).vm.$emit('choose', 'title', 'title')
-    await settle()
-    return window.findComponent(Palette).props('modelValue')
-  }
-
-  /** The tab of the plex standing on that note, as the window calls it. */
-  const plexTab = (window: Awaited<ReturnType<typeof mountWindow>>, note: string): string =>
-    (
-      window.findComponent(WorkspaceLayout).props('tabs') as readonly {
-        id: string
-        title: string
-      }[]
-    ).find((one) => one.title === (note || plexWords.plex))?.id ?? ''
-
-  it('is over the plex in the tab in front, not the plex last put in front', async () => {
-    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
-    const window = await mountWindow()
-
-    // A second plex, standing on a note of its own, put in front last.
-    pressKey('p')
-    await settle()
-    window.findComponent(Palette).vm.$emit('choose', 'plex', 'plex')
-    await settle()
-    pressKey('k')
-    await settle()
-    window.findComponent(Palette).vm.$emit('update:modelValue', 'en')
-    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
-    window.findComponent(Palette).vm.$emit('choose', 'physics/Entropy.md', 'plex')
-    await settle()
-
-    // Each of the two dragged into a pane of its own. The pane the person is in
-    // is the one holding the plex on the note the vault opens with.
-    window.findComponent(WorkspaceLayout).vm.$emit('update:modelValue', {
-      root: branch(
-        'root',
-        [
-          pane('main', [plexTab(window, 'Root')]),
-          pane('aside', [plexTab(window, 'physics/Entropy')]),
-        ],
-        [0.5, 0.5],
-      ),
-      axis: 'horizontal',
-      focus: 'main',
-    })
-    await settle()
-
-    pressKey('p')
-    await settle()
-
-    expect(await overNote(window)).toBe('Root')
-  })
 })
 
 /**
@@ -332,91 +205,6 @@ describe('a command reached by its own keystroke', () => {
     expect(requests.made).toStrictEqual(['Entropy'])
   })
 
-  it('makes a deck under the name typed, and opens it in the editor of its cards', async () => {
-    const window = await mountWindowWithPalette()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type('New deck')
-    await press('Enter')
-    await type('Animals')
-    await press('Enter')
-    await settle()
-
-    expect(requests.cards).toStrictEqual(['deck / Animals'])
-    expect(paneKinds(window).flat()).toContain('deck')
-  })
-
-  it('opens the deck where the vault filed it, and at no path of its own making', async () => {
-    const window = await mountWindowWithPalette()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type('New deck')
-    await press('Enter')
-    await type('Animals')
-    await press('Enter')
-    await settle()
-
-    const deck = window.findComponent(DeckTab).props('state') as {
-      note: { value: { path: string } }
-    }
-    expect(deck.note.value.path).toBe('Animals.note')
-    expect(deck.note.value.path).not.toBe('Animals.md')
-  })
-
-  it('says the error and opens nothing where the name is taken already', async () => {
-    const window = await mountWindowWithPalette()
-
-    const createDeck = async () => {
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settle()
-      await type('New deck')
-      await press('Enter')
-      await type('Animals')
-      await press('Enter')
-      await settle()
-    }
-    await createDeck()
-    await createDeck()
-
-    expect(
-      paneKinds(window)
-        .flat()
-        .filter((kind) => kind === 'deck'),
-    ).toHaveLength(1)
-    expect(window.text()).toContain(ERRORS.occupied)
-  })
-
-  it('makes a stencil the same way, and opens no deck', async () => {
-    const window = await mountWindowWithPalette()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type('New stencil')
-    await press('Enter')
-    await type('Animal')
-    await press('Enter')
-    await settle()
-
-    expect(requests.cards).toStrictEqual(['stencil / Animal [Field 1]'])
-    expect(paneKinds(window).flat()).not.toContain('deck')
-  })
-
-  it('makes the stencil carrying the field its cards are named by, and not none', async () => {
-    await mountWindowWithPalette()
-
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type('New stencil')
-    await press('Enter')
-    await type('Animal')
-    await press('Enter')
-    await settle()
-
-    expect(requests.cards).not.toStrictEqual(['stencil / Animal []'])
-  })
-
   it('opens the step that picks a note, on the keystroke going to one draws', async () => {
     said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
     const window = await mountWindowWithPalette()
@@ -426,23 +214,6 @@ describe('a command reached by its own keystroke', () => {
 
     expect(event.defaultPrevented).toBe(true)
     expect(window.findComponent(Palette).props('crumb')).toBe('Go to a note')
-  })
-
-  it('travels to the note picked on that step', async () => {
-    said.names = [nameAnswer('physics/Entropy.md', 'Entropy')]
-    const window = await mountWindowWithPalette()
-
-    pressKey('g')
-    await settle()
-    await type('en')
-    await new Promise((isDone) => setTimeout(isDone, DEBOUNCE))
-    await press('Enter')
-    await settle()
-
-    const plex = window.findComponent(PlexTab).props('state') as {
-      view: { here: { value: string } }
-    }
-    expect(plex.view.here.value).toBe('physics/Entropy.md')
   })
 
   it('leaves a keystroke alone while Alt is retained with it', async () => {
@@ -481,9 +252,6 @@ describe('a command reached by a keystroke holding Shift', () => {
     return event
   }
 
-  const tabs = (window: Awaited<ReturnType<typeof mountWindow>>) =>
-    (window.findComponent(WorkspaceLayout).props('tabs') as readonly { id: string }[]) ?? []
-
   it('no longer puts the palette up on the letter that puts it up alone', async () => {
     const window = await mountWindow()
 
@@ -503,111 +271,6 @@ describe('a command reached by a keystroke holding Shift', () => {
     // The plex the window opened with is the one it is standing on, which is
     // what showing the note in the plex leaves in front.
     expect(window.findComponent(Palette).props('groups')).toStrictEqual([])
-  })
-
-  it('opens an agent in a tab of its own', async () => {
-    const window = await mountWindow()
-    const before = window.findAllComponents(AgentTab).length
-
-    const event = pressKey('A', { shiftKey: true })
-    await settle()
-
-    expect(event.defaultPrevented).toBe(true)
-    expect(window.findAllComponents(AgentTab).length).toBe(before + 1)
-  })
-
-  it('closes the tab in front', async () => {
-    const window = await mountWindow()
-    const before = tabs(window).length
-
-    const event = pressKey('W', { shiftKey: true })
-    await settle()
-
-    expect(event.defaultPrevented).toBe(true)
-    expect(tabs(window).length).toBe(before - 1)
-  })
-
-  it('makes a child note of the note in front, under the name typed', async () => {
-    const window = await mountWindowWithPalette()
-
-    const event = pressKey('C', { shiftKey: true })
-    await settle()
-    expect(window.findComponent(Palette).props('crumb')).toBe('New child note')
-
-    const field = document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-    if (field) {
-      field.value = 'Entropy'
-      field.dispatchEvent(new Event('input'))
-      await settle()
-      field.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }))
-      await settle()
-    }
-
-    expect(event.defaultPrevented).toBe(true)
-    expect(requests.made).toStrictEqual(['Entropy'])
-  })
-
-  it('shows the note in front in the plex', async () => {
-    const window = await mountWindow()
-
-    const event = pressKey('P', { shiftKey: true })
-    await settle()
-
-    expect(event.defaultPrevented).toBe(true)
-    const plex = window.findComponent(PlexTab).props('state') as {
-      view: { here: { value: string } }
-    }
-    expect(plex.view.here.value).toBe('Root.md')
-  })
-
-  it('draws every keystroke that holds Shift on the row that names it', async () => {
-    const window = await mountWindow()
-
-    pressKey('p')
-    await settle()
-
-    const groups = window.findComponent(Palette).props('groups') as readonly PaletteGroup[]
-    const drawnKeys = Object.fromEntries(
-      groups.flatMap((group) => group.items).map((one) => [one.id, one.keys]),
-    )
-    expect(drawnKeys['travel']).toEqual({ icons: ['control', 'shift'], letter: 'P' })
-    expect(drawnKeys['child']).toEqual({ icons: ['control', 'shift'], letter: 'C' })
-    expect(drawnKeys['agent']).toEqual({ icons: ['control', 'shift'], letter: 'A' })
-    expect(drawnKeys['close']).toEqual({ icons: ['control', 'shift'], letter: 'W' })
-  })
-})
-
-describe('a command requested for on a node of the plex', () => {
-  /** The menu on a node, and an item of it chosen. */
-  const chooseOnNode = async (window: Awaited<ReturnType<typeof mountWindow>>, id: string) => {
-    const plex = window.findComponent(PlexTab).props('state') as {
-      openMenu: (one: unknown) => void
-      chooseMenuItem: (id: string) => void
-    }
-    plex.openMenu({ node: nodeInPlex(window), at: { x: 0, y: 0 }, from: null, opening: 'below' })
-    plex.chooseMenuItem(id)
-    await settle()
-  }
-
-  it('says in the tab what that tab could not show', async () => {
-    const window = await mountWindow()
-    const tab = window.findComponent(PlexTab)
-    const state = tab.props('state') as { view: { error: { value: string } } }
-
-    state.view.error.value = 'Gone.md is not in the vault'
-    await settle()
-
-    expect(tab.find('.caution').text()).toBe('Gone.md is not in the vault')
-    expect(cards(window)).toStrictEqual([])
-  })
-
-  it('says nothing where it was taken up', async () => {
-    const window = await mountWindow()
-
-    await chooseOnNode(window, 'title')
-
-    expect(cards(window)).toStrictEqual([])
-    expect(window.findComponent(Palette).props('crumb')).toBe('Change title')
   })
 })
 
@@ -648,152 +311,6 @@ describe('a command requested for while the vault is being read', () => {
 
     expect(requests.made).toStrictEqual(['Entropy'])
     expect(cards(window)).toStrictEqual(['indexing the vault…'])
-  })
-})
-
-/** The palette drawn as a person meets it, with nothing of it stubbed. */
-/** The note goes to the vault's .trash folder, so nothing is asked over it. */
-describe('the keyboard on the command that removes a note', () => {
-  const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-
-  const press = async (key: string) => {
-    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
-    await settle()
-  }
-
-  const type = async (text: string) => {
-    const into = field()
-    if (!into) return
-    into.value = text
-    into.dispatchEvent(new Event('input'))
-    await settle()
-  }
-
-  /** The commands open, with the one that removes a note lit and taken. */
-  const overRemove = async () => {
-    const window = await mountWindowWithPalette()
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type('remove')
-    await press('Enter')
-    return window
-  }
-
-  it('removes the note the moment the command is chosen', async () => {
-    await overRemove()
-
-    expect(requests.removed).toStrictEqual(['Root.md false'])
-  })
-
-  it('relies on no step, and the palette goes with the choice', async () => {
-    const window = await overRemove()
-
-    expect(document.body.textContent).not.toContain('Keep the note')
-    expect(window.findComponent(Palette).props('isOpen')).toBe(false)
-  })
-})
-
-/** A deck and a stencil answer a removal the way a note does. */
-describe('a file the window has open in an editor of cards, removed from the tree', () => {
-  const field = () => document.body.querySelector<HTMLInputElement>('[data-palette="field"]')
-
-  const press = async (key: string) => {
-    field()?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
-    await settle()
-  }
-
-  const type = async (text: string) => {
-    const into = field()
-    if (!into) return
-    into.value = text
-    into.dispatchEvent(new Event('input'))
-    await settle()
-  }
-
-  /** The window with one deck or one stencil made and put in front. */
-  const makeFile = async (command: string, name: string) => {
-    const window = await mountWindowWithPalette()
-    globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-    await settle()
-    await type(command)
-    await press('Enter')
-    await type(name)
-    await press('Enter')
-    await settle()
-    return window
-  }
-
-  /** A row taken out of the vault, as the tree asks for it. */
-  const removeRow = async (window: VueWrapper, path: string) => {
-    window.findComponent(Tree).vm.$emit('remove', [path])
-    await settle()
-    await settle()
-  }
-
-  it('lets go of the tab holding a deck', async () => {
-    const window = await makeFile('New deck', 'Animals')
-    expect(paneKinds(window).flat()).toContain('deck')
-
-    await removeRow(window, 'Animals.note')
-
-    expect(requests.removed).toStrictEqual(['Animals.note false'])
-    expect(paneKinds(window).flat()).not.toContain('deck')
-  })
-
-  it('lets go of the tab holding a stencil', async () => {
-    const window = await makeFile('New stencil', 'Animal')
-    expect(paneKinds(window).flat()).toContain('stencil')
-
-    await removeRow(window, 'Animal.note')
-
-    expect(requests.removed).toStrictEqual(['Animal.note false'])
-    expect(paneKinds(window).flat()).not.toContain('stencil')
-  })
-
-  it('writes the card nobody had saved before the file goes', async () => {
-    const window = await makeFile('New deck', 'Animals')
-    const state = window.findComponent(DeckTab).props('state') as {
-      addCard(
-        stencil: string,
-        values: readonly { field: string; text: string }[],
-        section: string | null,
-      ): void
-    }
-
-    state.addCard('Animal', [{ field: 'Name', text: 'Vicuña' }], null)
-    await removeRow(window, 'Animals.note')
-
-    // Making the deck is no write, so the only one is what the person added.
-    expect(requests.wrote).toStrictEqual(['Vicuña'])
-  })
-})
-
-/** The tree makes one where the row stands, and the vault may answer nothing. */
-describe('a deck or a stencil the file tree requested the vault for', () => {
-  /** What a row of the tree asks for, on the row the menu was opened on. */
-  const askForFile = async (stencil: boolean) => {
-    const window = await mountWindow()
-    const tree = window.findComponent(FilesTab).props('state') as {
-      openMenu(request: { path: string | null; at: { x: number; y: number } }): void
-      chooseMenuItem(id: string): void
-    }
-    maker.fail()
-    tree.openMenu({ path: null, at: { x: 0, y: 0 } })
-    tree.chooseMenuItem(stencil ? NEW_STENCIL : NEW_DECK)
-    await settle()
-    return window
-  }
-
-  it('says why no deck was made, where the vault could not be reached', async () => {
-    const window = await askForFile(false)
-
-    expect(cards(window).join(' ')).toContain('numen did not answer')
-  })
-
-  it('says why no stencil was made, the same way', async () => {
-    const window = await askForFile(true)
-
-    expect(cards(window).join(' ')).toContain('numen did not answer')
   })
 })
 

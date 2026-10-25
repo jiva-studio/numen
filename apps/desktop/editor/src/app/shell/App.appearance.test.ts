@@ -7,15 +7,7 @@
  * wearing once they leave it.
  */
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Plex } from '@numen/ui'
-import {
-  requests,
-  cards,
-  mountWindowWithPalette,
-  nodeInPlex,
-  mockVaultState,
-  settle,
-} from '@/testing/window'
+import { requests, cards, mountWindowWithPalette, mockVaultState, settle } from '@/testing/window'
 import { IS_MODE, IS_SIZES, IS_THEME, MARKER } from '@/features/settings-commands'
 import { WORDS } from '@/shared/words'
 
@@ -414,53 +406,6 @@ describe('the four commands over how the window is drawn', () => {
 
       expect(cards(window).join(' ')).toContain('outside 0.8 to 1.5')
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
-    })
-  })
-
-  describe('the editor of an open note', () => {
-    /** A note in a tab of its own, with the editor's measurements taken. */
-    const openNote = async () => {
-      const window = await mountWindowWithPalette()
-      window.findComponent(Plex).vm.$emit('show', nodeInPlex(window), 'here')
-      await settle()
-      requests.measured = 0
-      globalThis.dispatchEvent(new KeyboardEvent('keydown', { key: 'p', ctrlKey: true }))
-      await settle()
-      return window
-    }
-
-    it('takes its measurements again at the size the keyboard is retained on', async () => {
-      await openNote()
-      await type('interface')
-      await press('Enter')
-
-      await press('End')
-      await wait()
-
-      expect(requests.measured).toBe(1)
-    })
-
-    it('takes them again at the size that was chosen', async () => {
-      await openNote()
-      await type('reading')
-      await press('Enter')
-
-      await press('End')
-      await press('Enter')
-      await settle()
-
-      expect(requests.measured).toBe(1)
-    })
-
-    it('is left alone while the keyboard is walking rows, and by a theme', async () => {
-      await openNote()
-      await type('theme')
-      await press('Enter')
-
-      await press('ArrowDown')
-      await waitUnderHold()
-
-      expect(requests.measured).toBe(0)
     })
   })
 

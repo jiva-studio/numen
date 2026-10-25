@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
-import type { AgentHost, WorkspaceHost } from '@numen/plugin-sdk'
-import { activate } from '@plugins/views-agent-chat/frontend'
-import manifest from '@plugins/views-agent-chat/manifest.json'
+import type { AgentHost, PluginContext, PluginManifest, WorkspaceHost } from '@numen/plugin-sdk'
 import { createPluginSupport } from './useWindowPlugins'
 
 const createSupport = () => {
@@ -69,27 +67,38 @@ describe('closing the tabs of a plugin', () => {
   })
 })
 
-describe('the agent chat tab', () => {
+/** A plugin that adds one tab kind to the window. */
+const manifest: PluginManifest = {
+  id: 'md.numen.sample.chat',
+  name: 'Chat',
+  version: '1.0.0',
+}
+
+const activate = (context: PluginContext) => {
+  context.registerTabKind({ kind: 'chat', component: null, title: 'Chat' })
+}
+
+describe('the tab kind a plugin adds', () => {
   const activateChat = async () => {
     const { windowTabs, support } = createSupport()
-    await activate(support.pluginHost.createContext(manifest.id, manifest))
+    activate(support.pluginHost.createContext(manifest.id, manifest))
     return { windowTabs, support }
   }
 
   it('is a kind of the window while the plugin is active', async () => {
     const { windowTabs } = await activateChat()
 
-    expect(windowTabs.hasKind('agent')).toBe(true)
-    expect(windowTabs.getTab(await windowTabs.createTab('agent', ''))).not.toBeNull()
+    expect(windowTabs.hasKind('chat')).toBe(true)
+    expect(windowTabs.getTab(await windowTabs.createTab('chat', ''))).not.toBeNull()
   })
 
   it('goes, with its open tabs, when the plugin is disabled', async () => {
     const { windowTabs, support } = await activateChat()
-    const id = await windowTabs.createTab('agent', '')
+    const id = await windowTabs.createTab('chat', '')
 
     support.pluginHost.disposePlugin(manifest.id)
 
-    expect(windowTabs.hasKind('agent')).toBe(false)
+    expect(windowTabs.hasKind('chat')).toBe(false)
     expect(windowTabs.getTab(id)).toBeNull()
   })
 })

@@ -130,7 +130,10 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     loadVaults: () => vaultsModule.loadVaults(),
     startSettings: () => settings.start(),
     startLayout,
+    // The plugins the settings name are active before the layout opens the tabs of their kinds.
     startPlugins: async () => {
+      const plugins = settings.rest?.plugins?.value ?? []
+      await deps.pluginLoader?.trackPlugins(plugins.map((plugin) => plugin.id))
       await deps.pluginLoader?.start()
     },
     startWindow: () => window.start(),

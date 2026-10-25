@@ -51,7 +51,12 @@ function verifyPluginsStatic() {
     }
   }
 
-  // 2. Verify no plugin imports core
+  // 2. Verify plugins share no internal library folder
+  if (fs.existsSync(path.join(pluginsDir, "shared"))) {
+    throw new Error("plugins/shared exists: a plugin shares code only through the SDK");
+  }
+
+  // 3. Verify no plugin imports core
   const coreLeak = spawnSync("git", ["grep", "-rn", "github.com/jiva-studio/numen/libs/core", "plugins/"], { cwd: REPO_ROOT });
   const lines = (coreLeak.stdout ? coreLeak.stdout.toString() : "").split("\n").filter(Boolean);
   const nonCommentLeaks = lines.filter((l) => !l.includes(".golangci.yml") && !l.includes("README"));
@@ -59,7 +64,7 @@ function verifyPluginsStatic() {
     throw new Error("Plugin imports core package:\n" + nonCommentLeaks.join("\n"));
   }
 
-  // 3. Verify no cross-plugin imports
+  // 4. Verify no cross-plugin imports
   for (const plugin of pluginNames) {
     for (const other of pluginNames) {
       if (plugin === other) continue;
@@ -69,6 +74,78 @@ function verifyPluginsStatic() {
         throw new Error("Cross-plugin import detected: " + plugin + " imports " + other + "\n" + leaks);
       }
     }
+  }
+}
+
+/** The files that state the boundary between applications and plugins, and so name both sides. */
+const BOUNDARY_RULES = new Set([
+  "apps/desktop/editor/eslint.config.js",
+  "apps/desktop/internal/layers/linked_test.go",
+  "plugins/eslint.config.js",
+]);
+
+/**
+ * The directories a relative path in `file` is read from: the file's own directory, and every
+ * package root above it, which is where a script or a test runs.
+ */
+function getPathBases(file) {
+  const bases = [path.join(REPO_ROOT, path.dirname(file))];
+  for (let dir = path.dirname(file); dir !== "."; dir = path.dirname(dir)) {
+    const abs = path.join(REPO_ROOT, dir);
+    if (fs.existsSync(path.join(abs, "package.json")) || fs.existsSync(path.join(abs, "go.mod"))) {
+      bases.push(abs);
+    }
+  }
+  return bases;
+}
+
+/**
+ * Every tracked line under `from` that reaches the top-level tree `to`: a relative path that
+ * resolves into it, or a match of one of `patterns`. The files in BOUNDARY_RULES are not read.
+ */
+function findCrossings(from, to, patterns) {
+  const relative = `(\\.\\./)+${to}([/'"\`*]|$)`;
+  const grep = spawnSync(
+    "git",
+    ["grep", "-nE", "-e", relative, ...patterns.flatMap((p) => ["-e", p]), "--", from],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  const target = path.join(REPO_ROOT, to);
+  const named = patterns.map((p) => new RegExp(p));
+  return (grep.stdout || "").split("\n").filter(Boolean).filter((line) => {
+    const [file, , ...rest] = line.split(":");
+    if (BOUNDARY_RULES.has(file)) return false;
+    const text = rest.join(":");
+    if (named.some((p) => p.test(text))) return true;
+    const bases = getPathBases(file);
+    for (const match of text.matchAll(new RegExp(`((?:\\.\\./)+)${to}\\b`, "g"))) {
+      if (bases.some((base) => path.resolve(base, match[1] + to) === target)) return true;
+    }
+    return false;
+  });
+}
+
+/** An application knows no plugin: it compiles, imports, aliases and reads nothing under `plugins/`. */
+function verifyAppsReachNoPlugin() {
+  const crossings = findCrossings("apps", "plugins", [
+    "@plugins\\b",
+    "github\\.com/jiva-studio/numen/plugins\\b",
+  ]);
+  if (crossings.length > 0) {
+    throw new Error("An application reaches into plugins/:\n" + crossings.join("\n"));
+  }
+}
+
+/** A plugin knows no application: it compiles, imports, aliases and reads nothing under `apps/`. */
+function verifyPluginsReachNoApp() {
+  const crossings = findCrossings("plugins", "apps", [
+    "github\\.com/jiva-studio/numen/apps\\b",
+    "['\"]apps/",
+    "['\"]@/",
+    "['\"]@['\"]",
+  ]);
+  if (crossings.length > 0) {
+    throw new Error("A plugin reaches into apps/:\n" + crossings.join("\n"));
   }
 }
 
@@ -145,6 +222,13 @@ const VERIFIERS = [
     run: verifyPluginsStatic,
   },
   {
+    id: "plugins-reach-no-app",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Reach No Application (no path, alias or import into apps/)",
+    run: verifyPluginsReachNoApp,
+  },
+  {
     id: "plugins-frontend",
     scope: "plugins",
     module: "plugins",
@@ -152,6 +236,13 @@ const VERIFIERS = [
     run: () => {
       exec("../node_modules/.bin/eslint .", path.join(MODULES_DIR, "plugins"));
     },
+  },
+  {
+    id: "apps-reach-no-plugin",
+    scope: "apps",
+    module: "apps",
+    name: "Applications Reach No Plugin (no path, alias, glob or import into plugins/)",
+    run: verifyAppsReachNoPlugin,
   },
   {
     id: "desktop-editor-fsd",
@@ -241,6 +332,7 @@ function getChangedModules() {
     if (file.startsWith("libs/ui/")) matched.add("ui");
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");
+    if (file.startsWith("apps/")) matched.add("apps");
   }
   return Array.from(matched);
 }

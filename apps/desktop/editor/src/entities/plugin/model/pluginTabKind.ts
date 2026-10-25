@@ -5,7 +5,7 @@
 import { defineComponent, h, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
-import { renderFallback, resolvePluginComponent } from './styles'
+import { getPluginStyle, renderFallback, resolvePluginComponent } from './styles'
 
 /** A registration that says what its tabs hold. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {
@@ -48,8 +48,9 @@ export function pickDeclaredHooks(registration: TabKindRegistration): Partial<An
 }
 
 /**
- * The pane of a declared kind: its component, given the tab's state and nothing
- * else. A component that fails is replaced by the plugin's failure.
+ * The pane of a declared kind: its component, given the tab's state, beside the
+ * stylesheet the plugin's manifest names. A component that fails is replaced by
+ * the plugin's failure.
  */
 export function createDeclaredPane(pluginId: string, rawComponent: unknown): Component {
   const component = resolvePluginComponent(rawComponent)
@@ -64,7 +65,11 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
       })
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
-        return component ? h(component, { state: props.state }) : null
+        if (!component) return null
+        const styleUrl = getPluginStyle(pluginId)
+        const drawn = h(component, { state: props.state })
+        if (!styleUrl) return drawn
+        return [h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': pluginId }), drawn]
       }
     },
   })

@@ -13,7 +13,6 @@ import { getStoryBrowser } from '../libs/ui/.storybook/browser'
 import { getPluginAliases } from './vite.shared'
 
 const alias = getPluginAliases([
-  '@',
   '@plugins',
   '@numen/plugin-sdk/testing',
   '@numen/plugin-sdk',

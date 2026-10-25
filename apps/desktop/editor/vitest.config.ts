@@ -15,7 +15,6 @@ import { getStoryBrowser } from '../../../libs/ui/.storybook/browser'
 
 const alias = {
   '@': fileURLToPath(new URL('./src', import.meta.url)),
-  '@plugins': fileURLToPath(new URL('../../../plugins', import.meta.url)),
   '@numen/plugin-sdk': fileURLToPath(
     new URL('../../../libs/plugin-sdk-ts/src/index.ts', import.meta.url),
   ),

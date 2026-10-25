@@ -4,9 +4,7 @@
  *
  * the vaults this installation holds, and `folders` what each folder holds.
  */
-import { asValue } from '@numen/wire'
 import type { Entry } from '@/entities/file'
-import type { FieldRenameResult } from '@plugins/views-flashcards-studio/frontend/cards'
 
 interface MockVaultState {
   isReady: boolean
@@ -42,14 +40,6 @@ interface MockVaultState {
   sizes: { interfaceScale: number; textScale: number }
   carries: Record<string, Record<string, string>>
   carrying: boolean
-  renaming: FieldRenameResult
-}
-
-const initialRenamedField = {
-  decks: [] as string[],
-  cards: 0,
-  notWritten: [] as { path: string; text: string }[],
-  at: 'a2',
 }
 
 /** What the mocked vault answers about itself, set before the window draws. */
@@ -83,8 +73,6 @@ export const mockVaultState: MockVaultState = {
   carries: {},
   /** Whether the application answers what a file carries at all. */
   carrying: true,
-  /** What renaming a field of a stencil comes back with. */
-  renaming: asValue(initialRenamedField),
 }
 
 export const mockVaultList = {
@@ -246,7 +234,6 @@ export const forgetAnswers = () => {
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
   mockVaultState.carries = {}
   mockVaultState.carrying = true
-  mockVaultState.renaming = asValue({ decks: [], cards: 0, notWritten: [], at: 'a2' })
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [

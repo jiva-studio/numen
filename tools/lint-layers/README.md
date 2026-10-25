@@ -13,8 +13,10 @@ libraries, plugins, and desktop applications.
    - Sandbox & isolation: zero cross-plugin imports, zero core imports.
    - Manifest validation: valid ID, name, version.
    - Frontend boundaries: zero `@/**` or `@plugins/**` imports; contract only.
+   - No plugin reaches `apps/`: no relative path, alias or import into it.
 3. **Applications (`apps`)**:
    - Feature-Sliced Design (FSD) layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`).
+   - No application reaches `plugins/`: no relative path, alias, `import.meta.glob`, tsconfig path or Go import into it. A path is resolved from the file and from every package root above it.
 
 ## Usage
 

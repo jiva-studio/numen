@@ -6,7 +6,6 @@ import {
   createPluginLoader,
   type PluginLoader,
 } from '@/features/plugin-loader'
-import { pluginCatalog } from './pluginCatalog'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { useSettings } from '../window/useSettings'
@@ -89,8 +88,6 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   const pluginLoader = createPluginLoader({
     host: pluginHost,
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
-    loaders: pluginCatalog.loaders,
-    manifests: pluginCatalog.manifests,
   })
 
   return { pluginHost, pluginLoader }

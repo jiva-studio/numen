@@ -9,14 +9,6 @@ import { describe, expect, it } from 'vitest'
 import { findIcon } from '@/shared/icons'
 import { getNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
-import { createMenuItems } from '@plugins/views-file-tree/frontend'
-import { ITEMS, NONE } from '@plugins/views-plex-graph/frontend'
-import { activate, PRESET } from '@plugins/views-flashcards-studio/frontend'
-import {
-  createMockBufferHost,
-  createMockPluginContext,
-  type WorkspaceHost,
-} from '@numen/plugin-sdk'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import type { NoteType, Source } from '@/entities/file'
@@ -24,35 +16,26 @@ import type { NoteType, Source } from '@/entities/file'
 /** A window that has been told nothing, which can do every run. */
 const canRunAnything = () => true
 
-/** The menu the tree draws on a row: what the tab does, among the window's commands. */
-const getTreeMenu = (source: Source, isFolder: boolean, isSeveral = false) =>
-  createMenuItems(createPathCommands({ source, isFolder }, isSeveral, canRunAnything), isSeveral)
+/** An item of a menu, and the items it opens. */
+type Item = { readonly id: string; readonly children?: readonly Item[] | undefined }
 
-/** Every menu the tree draws: off every row, and on a row of each kind. */
-const inTheTree = [
-  createMenuItems(null, false),
-  ...(['note', 'book', 'recording', 'url', 'other'] as Source[]).flatMap((source) => [
-    getTreeMenu(source, false),
-    getTreeMenu(source, true),
-  ]),
-  getTreeMenu('note', false, true),
-].flat()
+const flatten = (items: readonly Item[]): readonly Item[] =>
+  items.flatMap((item) => [item, ...flatten(item.children ?? [])])
+
+/** The window's commands over a row: on a row of each kind, and over several rows. */
+const onARow = flatten(
+  [
+    ...(['note', 'book', 'recording', 'url', 'other'] as Source[]).flatMap((source) => [
+      createPathCommands({ source, isFolder: false }, false, canRunAnything),
+      createPathCommands({ source, isFolder: true }, false, canRunAnything),
+    ]),
+    createPathCommands({ source: 'note', isFolder: false }, true, canRunAnything),
+  ].flat(),
+)
 
 describe('the icon a command is drawn with', () => {
-  it('is there for every item the tree offers', () => {
-    for (const item of inTheTree) expect(findIcon(item.id), item.id).not.toBeNull()
-  })
-
-  it('is there for every item the plex offers, on a node and off every node', () => {
-    for (const item of [...ITEMS, ...NONE]) expect(findIcon(item.id), item.id).not.toBeNull()
-  })
-
-  it('is the same one wherever a command is offered', () => {
-    const onANode = new Map(ITEMS.map((item) => [item.id, findIcon(item.id)]))
-    for (const item of inTheTree) {
-      const renderedElement = onANode.get(item.id)
-      if (renderedElement) expect(findIcon(item.id), item.id).toBe(renderedElement)
-    }
+  it('is there for every command the window offers over a row', () => {
+    for (const item of onARow) expect(findIcon(item.id), item.id).not.toBeNull()
   })
 
   it('is there for every command the palette draws', () => {
@@ -70,8 +53,7 @@ describe('the icon a command is drawn with', () => {
   })
 })
 
-// One mark to a kind: a preset is the same thing in the tree, in the plex and
-// in the tab it opens in.
+// One mark to a kind.
 describe('the icon of a kind of note', () => {
   const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
 
@@ -81,20 +63,5 @@ describe('the icon of a kind of note', () => {
 
   it('notifies the five kinds apart', () => {
     expect(new Set(kinds.map(getNoteIcon)).size).toBe(kinds.length)
-  })
-
-  it('draws a preset as the tab that opens it does', () => {
-    const context = createMockPluginContext({
-      workspace: {
-        getMessageWriter: () => () => undefined,
-        getToday: () => '2026-09-04',
-      } as unknown as WorkspaceHost,
-      buffers: createMockBufferHost(),
-    })
-    activate(context)
-
-    const kind = context.getRegisteredTabKinds().find((one) => one.kind === PRESET)
-
-    expect(getNoteIcon('preset')).toBe(kind?.icon)
   })
 })

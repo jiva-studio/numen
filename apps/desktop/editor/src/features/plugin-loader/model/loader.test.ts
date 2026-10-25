@@ -3,6 +3,15 @@ import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
 import { getPluginStyle, type PluginHost } from '@/entities/plugin'
 import { createPluginLoader } from './loader'
 
+/** The loader, with a module registered under each plugin id. */
+function registerModules(
+  loader: ReturnType<typeof createPluginLoader>,
+  modules: Record<string, () => Promise<unknown>>,
+) {
+  for (const [id, load] of Object.entries(modules)) loader.registerPluginModule(id, load)
+  return loader
+}
+
 describe('createPluginLoader', () => {
   function createMockHost(): PluginHost & {
     triggerSettingChange: (pluginId: string, key: string, value: unknown) => void
@@ -96,7 +105,7 @@ describe('createPluginLoader', () => {
     host: PluginHost,
     extra: Partial<Omit<Parameters<typeof createPluginLoader>[0], 'host'>> = {},
   ) {
-    return createPluginLoader({ host, loaders: {}, ...extra })
+    return createPluginLoader({ host, ...extra })
   }
 
   it('activates and deactivates plugins with lifecycle hooks', async () => {
@@ -305,7 +314,7 @@ describe('createPluginLoader', () => {
 })
 
 describe('createPluginLoader catalog manifests', () => {
-  it('passes the catalog manifest to the context of a plugin, on every activation', async () => {
+  it('passes the registered manifest to the context of a plugin', async () => {
     const createContext = vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext)
     const host = {
       createContext,
@@ -313,16 +322,12 @@ describe('createPluginLoader catalog manifests', () => {
       disposeAll: vi.fn(),
     } as unknown as PluginHost
     const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
-    const loader = createPluginLoader({
-      host,
-      loaders: { 'cat.plugin': async () => ({ activate: () => {} }) },
-      manifests: { 'cat.plugin': manifest as never },
+    const loader = registerModules(createPluginLoader({ host }), {
+      'cat.plugin': async () => ({ activate: () => {} }),
     })
+    loader.registerPluginManifest('cat.plugin', manifest)
     await loader.activatePlugin('cat.plugin')
-    await loader.deactivatePlugin('cat.plugin')
-    await loader.activatePlugin('cat.plugin')
-    expect(createContext).toHaveBeenNthCalledWith(1, 'cat.plugin', manifest)
-    expect(createContext).toHaveBeenNthCalledWith(2, 'cat.plugin', manifest)
+    expect(createContext).toHaveBeenCalledWith('cat.plugin', manifest)
   })
 })
 
@@ -348,17 +353,19 @@ describe('createPluginLoader failures, order and toggles', () => {
     const { host } = createHost()
     const onError = vi.fn()
     const fault = new Error('activate exploded')
-    const loader = createPluginLoader({
-      host,
-      onError,
-      loaders: {
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+        onError,
+      }),
+      {
         bad: async () => ({
           activate: () => {
             throw fault
           },
         }),
       },
-    })
+    )
 
     await loader.start()
 
@@ -371,17 +378,19 @@ describe('createPluginLoader failures, order and toggles', () => {
   it('clears the failure when the plugin activates later', async () => {
     const { host } = createHost()
     let shouldFail = true
-    const loader = createPluginLoader({
-      host,
-      onError: vi.fn(),
-      loaders: {
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+        onError: vi.fn(),
+      }),
+      {
         flaky: async () => ({
           activate: () => {
             if (shouldFail) throw new Error('first try')
           },
         }),
       },
-    })
+    )
     await loader.activatePlugin('flaky')
     shouldFail = false
     await loader.activatePlugin('flaky')
@@ -392,20 +401,22 @@ describe('createPluginLoader failures, order and toggles', () => {
 
   it('does not call a failed plugin active when its module cannot be loaded', async () => {
     const { host } = createHost()
-    const loader = createPluginLoader({
-      host,
-      onError: vi.fn(),
-      loaders: {
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+        onError: vi.fn(),
+      }),
+      {
         gone: async () => {
           throw new Error('chunk missing')
         },
       },
-    })
+    )
     await loader.activatePlugin('gone')
     expect(loader.getPluginFailure('gone')).toBe('chunk missing')
   })
 
-  it('activates in the order of the loaders, one after the other', async () => {
+  it('activates in the order the modules were registered, one after the other', async () => {
     const { host } = createHost()
     const log: string[] = []
     const make = (id: string) => async () => ({
@@ -415,7 +426,7 @@ describe('createPluginLoader failures, order and toggles', () => {
         log.push(`${id}:end`)
       },
     })
-    const loader = createPluginLoader({ host, loaders: { a: make('a'), b: make('b') } })
+    const loader = registerModules(createPluginLoader({ host }), { a: make('a'), b: make('b') })
 
     await loader.start()
 
@@ -427,7 +438,7 @@ describe('createPluginLoader failures, order and toggles', () => {
     const activate = vi.fn(async () => {
       await Promise.resolve()
     })
-    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate }) } })
+    const loader = registerModules(createPluginLoader({ host }), { p: async () => ({ activate }) })
 
     await Promise.all([loader.activatePlugin('p'), loader.activatePlugin('p')])
 
@@ -437,9 +448,11 @@ describe('createPluginLoader failures, order and toggles', () => {
   it('runs a deactivation requested during an activation after it', async () => {
     const { host } = createHost()
     const log: string[] = []
-    const loader = createPluginLoader({
-      host,
-      loaders: {
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+      }),
+      {
         p: async () => ({
           activate: async () => {
             await Promise.resolve()
@@ -450,7 +463,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           },
         }),
       },
-    })
+    )
 
     await Promise.all([loader.activatePlugin('p'), loader.deactivatePlugin('p')])
 
@@ -461,17 +474,19 @@ describe('createPluginLoader failures, order and toggles', () => {
   it('treats a plugin with no enabled setting as enabled', async () => {
     const { host } = createHost()
     const activate = vi.fn()
-    const loader = createPluginLoader({ host, loaders: { p: async () => ({ activate }) } })
+    const loader = registerModules(createPluginLoader({ host }), { p: async () => ({ activate }) })
     await loader.start()
     expect(activate).toHaveBeenCalledTimes(1)
   })
 
   it('follows the enabled setting through one subscription per plugin', async () => {
     const { host, listeners } = createHost()
-    const loader = createPluginLoader({
-      host,
-      loaders: { p: async () => ({ activate: () => {} }) },
-    })
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+      }),
+      { p: async () => ({ activate: () => {} }) },
+    )
     await loader.start()
     await loader.trackPlugins(['p'])
 
@@ -562,17 +577,19 @@ describe('createPluginLoader failure state', () => {
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
     } as unknown as PluginHost
-    const loader = createPluginLoader({
-      host,
-      onError: vi.fn(),
-      loaders: {
+    const loader = registerModules(
+      createPluginLoader({
+        host,
+        onError: vi.fn(),
+      }),
+      {
         bad: async () => ({
           activate: () => {
             throw new Error('no start')
           },
         }),
       },
-    })
+    )
     await loader.activatePlugin('bad')
 
     await loader.deactivatePlugin('bad')

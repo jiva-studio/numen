@@ -75,7 +75,6 @@ async function loadDynamicModule(
 
 export interface ResolveModuleContext extends LoadModuleOptions {
   readonly loaders: Map<string, () => Promise<unknown>>
-  readonly catalogManifests: Readonly<Record<string, PluginManifest>>
 }
 
 export async function resolveModule(

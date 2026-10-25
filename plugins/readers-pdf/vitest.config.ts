@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     alias: getPluginAliases([
-      '@',
       '@plugins',
       '@numen/plugin-sdk/testing',
       '@numen/plugin-sdk',

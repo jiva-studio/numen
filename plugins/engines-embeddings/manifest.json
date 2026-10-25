@@ -25,10 +25,6 @@
     "entrypoint": "bin/engines-embeddings",
     "serviceName": "numen.v1.EmbeddingService"
   },
-  "frontend": {
-    "entrypoint": "dist/index.js",
-    "styles": "dist/styles.css"
-  },
   "settings": [
     {
       "key": "provider",
