@@ -1,5 +1,11 @@
 import { test, expect } from 'playwright/test'
-import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
+import {
+  getPaletteField,
+  openVaultFile,
+  openWorkspace,
+  runCommand,
+  waitForPassage,
+} from '../support/workspace.js'
 
 test.describe('A scanned document', () => {
   test.describe.configure({ timeout: 180_000 })
@@ -24,5 +30,15 @@ test.describe('A scanned document', () => {
     const reader = page.getByRole('tabpanel', { name: /regenerative-braking/i })
     await expect(reader.getByRole('img', { name: 'Page 1' })).toBeVisible()
     await expect(reader.locator('.reader__highlight').first()).toBeVisible()
+  })
+
+  test('is offered the recognise command of the OCR plugin once', async ({ page }) => {
+    await openWorkspace(page)
+    await openVaultFile(page, 'assets', 'regenerative-braking.pdf')
+
+    await page.keyboard.press('Control+p')
+    await getPaletteField(page).fill('Recognise')
+
+    await expect(page.getByRole('option', { name: /Document OCR/ })).toHaveCount(1)
   })
 })
