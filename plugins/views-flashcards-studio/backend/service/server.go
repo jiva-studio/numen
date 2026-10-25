@@ -13,14 +13,18 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// Mount registers the services of the plugin on s, working the vault through the host the
-// environment names.
+// Mount registers the services of the plugin on s, working the vault and the plugin's folder of its
+// store through the host the environment names.
 func Mount(s *server.Server) error {
 	client, err := host.NewClientFromEnv()
 	if err != nil {
 		return err
 	}
-	return mount(s, client)
+	store, err := host.NewStoreClientFromEnv()
+	if err != nil {
+		return err
+	}
+	return mount(s, client, store)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
@@ -32,12 +36,16 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
-		return mount(s, client)
+		store, err := host.NewStoreClientFromVars(vars)
+		if err != nil {
+			return err
+		}
+		return mount(s, client, store)
 	})
 }
 
-func mount(s *server.Server, vault host.Vault) error {
-	backend := New(Config{Vault: vault})
+func mount(s *server.Server, vault host.Vault, store host.Store) error {
+	backend := New(Config{Vault: vault, Store: store})
 	s.SetConfigure(func(_ context.Context, values map[string]string) error {
 		backend.Configure(values)
 		return nil

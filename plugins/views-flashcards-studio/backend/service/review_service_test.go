@@ -156,7 +156,7 @@ func (unreadable) GetVaults(context.Context) ([]domain.Vault, error) {
 // vaults are gone.
 func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	_, _, installation := newAPIOn(t)
-	api := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}})}
+	api := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store()})}
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(t.Context(),
 		connect.NewRequest(&v1.WatchCardsDueRequest{}))

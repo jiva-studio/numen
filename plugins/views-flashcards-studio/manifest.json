@@ -13,7 +13,6 @@
     "keepAliveWhileVisible": true,
     "memoryLimitBytes": 1073741824
   },
-  "data": "flashcards",
   "services": ["numen.v1.CardsService", "numen.v1.PresetsService", "numen.v1.FlashcardsService"],
   "noteTypes": [
     {

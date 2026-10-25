@@ -378,7 +378,7 @@ func TestARunThatCannotBeOpenedIsCountedAndTheRestAreRead(t *testing.T) {
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
-	s.env.Host.RefuseData(yesterdayRun.GetName()+".jsonl", fs.ErrPermission)
+	s.env.Store.Refuse(yesterdayRun.GetName()+".jsonl", fs.ErrPermission)
 
 	target, err := flashcards.Log{Stores: s.logs}.Read(t.Context(), s.vault)
 	if err != nil {

@@ -30,7 +30,7 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	t.Helper()
 
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vault: env.Host})
+	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
 
 	route, handler := numenv1connect.NewCardsServiceHandler(backend.Cards())
 	mux := http.NewServeMux()

@@ -948,14 +948,11 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	if len(target) != 1 {
 		t.Fatalf("the vault holds %v", target)
 	}
-	divided := filepath.Join(s.vault.Path, ".numen", "flashcards", target[0])
-	was, err := os.ReadFile(divided)
+	was, err := s.env.Store.Read(t.Context(), target[0])
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(divided, spaces(len(was)), 0o644); err != nil {
-		t.Fatal(err)
-	}
+	s.env.Store.File(target[0], spaces(len(was)))
 
 	got, err := s.counted.Execute(t.Context(), s.vault)
 	if err != nil {
@@ -1030,30 +1027,27 @@ func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 // synchroniser that met a conflict leaves.
 func writeConflictedCopies(t *testing.T, s vaulted) {
 	t.Helper()
-	pos := filepath.Join(s.vault.Path, ".numen", "flashcards")
 	for _, name := range getRunFiles(t, s) {
-		raw, err := os.ReadFile(filepath.Join(pos, name))
+		raw, err := s.env.Store.Read(t.Context(), name)
 		if err != nil {
 			t.Fatal(err)
 		}
 		stem := strings.TrimSuffix(name, ".jsonl") +
 			" (conflicted copy).jsonl"
-		if err := os.WriteFile(filepath.Join(pos, stem), raw, 0o644); err != nil {
-			t.Fatal(err)
-		}
+		s.env.Store.File(stem, raw)
 	}
 }
 
-// getRunFiles is the files the vault's answers folder holds.
+// getRunFiles is the files the plugin's folder of the vault holds.
 func getRunFiles(t *testing.T, s vaulted) []string {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(s.vault.Path, ".numen", "flashcards"))
+	entries, err := s.env.Store.List(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out []string
 	for _, one := range entries {
-		out = append(out, one.Name())
+		out = append(out, one.Name)
 	}
 	return out
 }

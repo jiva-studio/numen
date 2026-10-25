@@ -31,7 +31,7 @@ func newScheduling(t *testing.T, notes map[string]string) *scheduling {
 	t.Helper()
 
 	env := vaulttest.New(t, notes)
-	backend := service.New(service.Config{Vault: env.Host})
+	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
 
 	route, handler := numenv1connect.NewPresetsServiceHandler(backend.Presets())
 	mux := http.NewServeMux()

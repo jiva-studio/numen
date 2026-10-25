@@ -16,7 +16,8 @@ import (
 // reviewLogSuffix is what a file of review answers is named with.
 const reviewLogSuffix = ".jsonl"
 
-// Ports is every port the use cases take, answered by one host vault.
+// Ports is every port the use cases take, answered by one host vault and the plugin's folder of its
+// store.
 type Ports struct {
 	Readers   ports.VaultReaders
 	Writers   ports.VaultWriters
@@ -27,16 +28,16 @@ type Ports struct {
 	Schedules func(name string) ports.ScheduleStore
 }
 
-// New answers the ports from the host vault. A call on a vault names it by identity, so that the
-// same ports serve a window showing one vault and a window counting them all.
-func New(vault host.Vault) Ports {
+// New answers the ports from the host vault and the plugin's folder. A call on a vault names it by
+// identity, so that the same ports serve a window showing one vault and a window counting them all.
+func New(vault host.Vault, store host.Store) Ports {
 	return Ports{
 		Readers:   Readers{Vault: vault},
 		Writers:   Writers{Vault: vault},
 		Notes:     Notes{Vault: vault},
 		Links:     Links{Vault: vault},
 		Problems:  Problems{Vault: vault},
-		Logs:      Logs{Vault: vault},
+		Logs:      Logs{Store: store},
 		Schedules: func(name string) ports.ScheduleStore { return Schedules{Vault: vault, Name: name} },
 	}
 }
@@ -163,14 +164,14 @@ func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]do
 	return p.Vault.With(id).GetParseProblems(ctx)
 }
 
-// Logs opens the folder the plugin keeps its answers in.
-type Logs struct{ Vault host.Vault }
+// Logs opens the plugin's folder of a vault's store, which the answers are kept in.
+type Logs struct{ Store host.Store }
 
 func (l Logs) Open(v domain.Vault) (ports.DerivedStore, error) {
-	return store{vault: l.Vault.With(v.ID)}, nil
+	return store{folder: l.Store.With(v.ID)}, nil
 }
 
-type store struct{ vault host.Vault }
+type store struct{ folder host.Store }
 
 // fileOf is the file a review log is kept in.
 func fileOf(name domain.ArtifactName) (string, error) {
@@ -185,7 +186,7 @@ func (s store) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]by
 	if err != nil {
 		return nil, err
 	}
-	content, err := s.vault.ReadData(ctx, file)
+	content, err := s.folder.Read(ctx, file)
 	return content, readError(err)
 }
 
@@ -194,11 +195,11 @@ func (s store) AppendArtifact(ctx context.Context, name domain.ArtifactName, con
 	if err != nil {
 		return err
 	}
-	return readError(s.vault.AppendData(ctx, file, content))
+	return readError(s.folder.Append(ctx, file, content))
 }
 
 func (s store) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	target, err := s.vault.ListData(ctx)
+	target, err := s.folder.List(ctx)
 	if err != nil {
 		return nil, readError(err)
 	}

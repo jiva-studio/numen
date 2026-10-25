@@ -24,6 +24,8 @@ type Queries struct {
 type Env struct {
 	// Host is the vault as the host works it.
 	Host *hosttest.Vault
+	// Store is the plugin's folder of the vault's store.
+	Store *hosttest.Store
 	// Vault is the vault as the use cases name it.
 	Vault domain.Vault
 	// Ports answers every port the use cases take.
@@ -32,24 +34,21 @@ type Env struct {
 	Queries Queries
 }
 
-// DataFolder is the folder of the vault's own store the plugin keeps its answers in, which its manifest
-// names.
-const DataFolder = "flashcards"
-
 var made atomic.Int64
 
 // New is a vault of the notes given.
 func New(tb testing.TB, notes map[string]string) Env {
 	tb.Helper()
-	host := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes, hosttest.DataFolder(DataFolder))
+	host := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes)
 	return Of(host)
 }
 
 // Of is the ports over a vault the test made.
 func Of(host *hosttest.Vault) Env {
-	ports := hostports.New(host)
+	ports := hostports.New(host, host.Store())
 	return Env{
 		Host:    host,
+		Store:   host.Store(),
 		Vault:   host.Vault(),
 		Ports:   ports,
 		Queries: Queries{Notes: ports.Notes.(hostports.Notes), Links: ports.Links.(hostports.Links), Problems: ports.Problems.(hostports.Problems)},
@@ -71,7 +70,7 @@ type Installation struct {
 func NewInstallation() Installation {
 	host := hosttest.New("installation")
 	host.Hide()
-	ports := hostports.New(host)
+	ports := hostports.New(host, host.Store())
 	return Installation{
 		vaults:  map[domain.VaultID]*hosttest.Vault{},
 		Host:    host,
@@ -83,7 +82,7 @@ func NewInstallation() Installation {
 // Add makes a vault of the notes given, known to the host.
 func (i Installation) Add(tb testing.TB, notes map[string]string) domain.Vault {
 	tb.Helper()
-	added := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes, hosttest.DataFolder(DataFolder))
+	added := hosttest.OnDisk(tb, fmt.Sprintf("vault-%d", made.Add(1)), notes)
 	i.Host.Beside(added)
 	i.vaults[added.Vault().ID] = added
 	return added.Vault()

@@ -24,7 +24,7 @@ type session struct {
 func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) {
 	t.Helper()
 	env := vaulttest.New(t, notes)
-	registry, err := service.New(service.Config{Vault: env.Host}).Tools()
+	registry, err := service.New(service.Config{Vault: env.Host, Store: env.Store}).Tools()
 	if err != nil {
 		t.Fatal(err)
 	}

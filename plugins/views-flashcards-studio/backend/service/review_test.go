@@ -65,7 +65,7 @@ func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, v
 	for _, one := range notes {
 		target = append(target, installation.Add(t, one))
 	}
-	backend := New(Config{Vault: installation.Host})
+	backend := New(Config{Vault: installation.Host, Store: installation.Host.Store()})
 	return &reviewHandler{Backend: backend}, target, installation
 }
 
@@ -150,7 +150,7 @@ func startSession(t *testing.T, api *API, v domain.Vault) *v1.StartSessionRespon
 // A run belongs to the vault it was opened on, and an answer naming another
 // vault's run fails.
 func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
-	api, target := newAPI(t, deck, other)
+	api, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
 
 	session := startSession(t, api, one)
@@ -174,24 +174,21 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	}
 
 	// And nothing of it reached the other vault's folder.
-	if targetVal := getRunFiles(t, two); len(targetVal) != 0 {
+	if targetVal := getRunFiles(t, installation.Host.Store().With(two.ID)); len(targetVal) != 0 {
 		t.Errorf("the vault holds %v", targetVal)
 	}
 }
 
-// getRunFiles is the files the vault's answers folder holds.
-func getRunFiles(t *testing.T, v domain.Vault) []string {
+// getRunFiles is the files the plugin's folder of a vault holds.
+func getRunFiles(t *testing.T, store host.Store) []string {
 	t.Helper()
-	entries, err := os.ReadDir(filepath.Join(v.Path, ".numen", "flashcards"))
-	if errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
+	entries, err := store.List(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out []string
 	for _, e := range entries {
-		out = append(out, e.Name())
+		out = append(out, e.Name)
 	}
 	return out
 }
@@ -228,7 +225,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 // owes, and the two vaults here share no mark, no face and no word, so nothing
 // could pass between them by looking alike.
 func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
-	api, target := newAPI(t, deck, other)
+	api, target, installation := newAPIOn(t, deck, other)
 	one, two := target[0], target[1]
 
 	was := findVaultCount(t, front(t, api), string(two.ID))
@@ -253,7 +250,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 		t.Errorf("the answered vault still owes %+v", now)
 	}
 	// Nothing was written into the other vault's folder either.
-	if names := getRunFiles(t, two); len(names) != 0 {
+	if names := getRunFiles(t, installation.Host.Store().With(two.ID)); len(names) != 0 {
 		t.Errorf("the other vault holds %v", names)
 	}
 }
@@ -273,7 +270,7 @@ func findVaultCount(t *testing.T, resp *v1.WatchCardsDueResponse, id string) *v1
 // An answer is written to the run's own file, and the identifier it comes back
 // with is what taking it back names.
 func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
-	api, target := newAPI(t, deck)
+	api, target, installation := newAPIOn(t, deck)
 	v := target[0]
 
 	session := startSession(t, api, v)
@@ -302,7 +299,7 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if names := getRunFiles(t, v); len(names) != 1 {
+	if names := getRunFiles(t, installation.Host.Store().With(v.ID)); len(names) != 1 {
 		t.Errorf("a session writes one file, the vault holds %v", names)
 	}
 }

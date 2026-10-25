@@ -35,6 +35,8 @@ var errNoVault = errors.New("no vault is open")
 type Config struct {
 	// Vault is the vault the host lets the plugin work.
 	Vault host.Vault
+	// Store is the plugin's own folder of the store of each vault.
+	Store host.Store
 	// DayStart is how long past midnight a day of review begins. Left nil, it is the default.
 	DayStart func() time.Duration
 	// Now is what time it is. Left nil, it is this machine's clock.
@@ -74,7 +76,7 @@ func (b *Backend) scenarios() *Scenarios { return b.scenariosStore.Load() }
 
 // New makes the backend over the host's vault.
 func New(cfg Config) *Backend {
-	wired := hostports.New(cfg.Vault)
+	wired := hostports.New(cfg.Vault, cfg.Store)
 	now := cfg.Now
 	if now == nil {
 		now = time.Now
