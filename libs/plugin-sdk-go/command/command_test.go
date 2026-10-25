@@ -15,21 +15,20 @@ import (
 func newRegistry(t *testing.T) *command.Registry {
 	t.Helper()
 	registry := command.New()
-	err := registry.Add("greet", func(_ context.Context, request command.Request) (string, error) {
-		times, _ := request.Arguments.GetNumber("times")
-		if times < 0 {
-			return "", fmt.Errorf("%w: times cannot be negative", command.ErrBadArguments)
+	err := registry.Add("greet", func(_ context.Context, request command.Request) (command.Result, error) {
+		if request.Arguments.GetString("times") == "-1" {
+			return command.Result{}, fmt.Errorf("%w: times cannot be negative", command.ErrBadArguments)
 		}
-		if request.Arguments.GetBool("loud") {
-			return "HELLO " + request.Arguments.GetString("name") + " in " + request.Path, nil
+		if request.Arguments.GetString("loud") == "true" {
+			return command.Result{Message: "HELLO " + request.Arguments.GetString("name"), OpenedPath: request.Path}, nil
 		}
-		return "hello " + request.Arguments.GetString("name"), nil
+		return command.Result{Message: "hello " + request.Arguments.GetString("name")}, nil
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := registry.Add("fail", func(context.Context, command.Request) (string, error) {
-		return "", errors.New("the disk is full")
+	if err := registry.Add("fail", func(context.Context, command.Request) (command.Result, error) {
+		return command.Result{}, errors.New("the disk is full")
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -50,7 +49,7 @@ func TestACommandRunsWithItsFileAndArgumentsAndAnswersWhatItSaid(t *testing.T) {
 		Command: "greet", Path: "a.md", Arguments: map[string]string{"name": "Ann", "loud": "true"},
 	})
 
-	if res.GetError() != numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann in a.md" {
+	if res.GetError() != numenv1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED || res.GetMessage() != "HELLO Ann" || res.GetOpenedPath() != "a.md" {
 		t.Errorf("the command answered %v", res)
 	}
 }
@@ -88,20 +87,9 @@ func TestACommandThatDidNotSucceedIsAnsweredWithItsCodeAndItsWords(t *testing.T)
 func TestACommandIsAddedUnderAnIDOnce(t *testing.T) {
 	registry := newRegistry(t)
 
-	err := registry.Add("greet", func(context.Context, command.Request) (string, error) { return "", nil })
+	err := registry.Add("greet", func(context.Context, command.Request) (command.Result, error) { return command.Result{}, nil })
 
 	if !errors.Is(err, command.ErrDuplicate) {
 		t.Errorf("a second command under the id is %v, want ErrDuplicate", err)
-	}
-}
-
-func TestAnArgumentLeftOutIsAbsent(t *testing.T) {
-	arguments := command.Arguments{"name": "Ann"}
-
-	if !arguments.Has("name") || arguments.Has("times") || arguments.GetBool("loud") || arguments.GetString("label") != "" {
-		t.Error("an argument left out is read as given")
-	}
-	if _, isGiven := arguments.GetNumber("times"); isGiven {
-		t.Error("a number left out is read as given")
 	}
 }

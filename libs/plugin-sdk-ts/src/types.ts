@@ -240,27 +240,4 @@ export interface PluginManifest {
     styles?: string
   }
   settings?: SettingDeclaration[]
-  /** The commands the backend runs, which the palette and the command line offer. */
-  commands?: CommandDeclaration[]
-}
-
-/**
- * One command the backend of a plugin runs. `id` and the name of each argument
- * are lowercase words joined by hyphens; `fileExtensions`, without the dot, are
- * the files the command runs over, and none is a command over no file.
- */
-export interface CommandDeclaration {
-  id: string
-  title: string
-  description?: string
-  fileExtensions?: string[]
-  arguments?: CommandArgumentDeclaration[]
-}
-
-// CommandArgumentDeclaration is one argument a command takes, asked for in the order declared.
-export interface CommandArgumentDeclaration {
-  name: string
-  title: string
-  type: 'string' | 'number' | 'boolean'
-  required?: boolean
 }

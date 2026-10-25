@@ -10,7 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -34,27 +33,9 @@ var (
 // decimal, a boolean as true or false. An optional argument left out is absent.
 type Arguments map[string]string
 
-// Has reports whether the argument was given.
-func (a Arguments) Has(name string) bool {
-	_, isGiven := a[name]
-	return isGiven
-}
-
 // GetString returns the argument, empty where it was not given.
 func (a Arguments) GetString(name string) string {
 	return a[name]
-}
-
-// GetNumber returns the argument as a number, and false where it was not given.
-func (a Arguments) GetNumber(name string) (float64, bool) {
-	value, err := strconv.ParseFloat(a[name], 64)
-	return value, err == nil
-}
-
-// GetBool returns the argument as a boolean, false where it was not given.
-func (a Arguments) GetBool(name string) bool {
-	value, _ := strconv.ParseBool(a[name])
-	return value
 }
 
 // Request is one run of a command.
@@ -67,15 +48,24 @@ type Request struct {
 	Arguments Arguments
 }
 
-// Handler runs the commands a plugin declares. It returns what a person reads about the outcome, and
-// on failure an error whose text a person reads: ErrUnknownCommand for a command it does not run and
-// ErrBadArguments for arguments it cannot run with.
+// Result is what a command that ran answers.
+type Result struct {
+	// Message is what a person reads about the outcome.
+	Message string
+	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
+	// for a command that leaves nothing to open.
+	OpenedPath string
+}
+
+// Handler runs the commands a plugin declares. On failure it returns an error whose text a person
+// reads: ErrUnknownCommand for a command it does not run and ErrBadArguments for arguments it cannot
+// run with.
 type Handler interface {
-	RunCommand(ctx context.Context, request Request) (string, error)
+	RunCommand(ctx context.Context, request Request) (Result, error)
 }
 
 // Run is a function that runs one command.
-type Run func(ctx context.Context, request Request) (string, error)
+type Run func(ctx context.Context, request Request) (Result, error)
 
 // Registry is a Handler of the commands added to it by id.
 type Registry struct {
@@ -100,12 +90,12 @@ func (r *Registry) Add(id string, run Run) error {
 }
 
 // RunCommand runs the command added under the request's id.
-func (r *Registry) RunCommand(ctx context.Context, request Request) (string, error) {
+func (r *Registry) RunCommand(ctx context.Context, request Request) (Result, error) {
 	r.mu.RLock()
 	run, isAdded := r.runs[request.Command]
 	r.mu.RUnlock()
 	if !isAdded {
-		return "", fmt.Errorf("%w: %s", ErrUnknownCommand, request.Command)
+		return Result{}, fmt.Errorf("%w: %s", ErrUnknownCommand, request.Command)
 	}
 	return run(ctx, request)
 }
@@ -127,13 +117,15 @@ type Service struct {
 func (s Service) RunCommand(
 	ctx context.Context, req *connect.Request[numenv1.RunCommandRequest],
 ) (*connect.Response[numenv1.RunCommandResponse], error) {
-	message, err := s.Handler.RunCommand(ctx, Request{
+	result, err := s.Handler.RunCommand(ctx, Request{
 		Command:   req.Msg.GetCommand(),
 		Path:      req.Msg.GetPath(),
 		Arguments: Arguments(req.Msg.GetArguments()),
 	})
 	if err == nil {
-		return connect.NewResponse(&numenv1.RunCommandResponse{Message: message}), nil
+		return connect.NewResponse(&numenv1.RunCommandResponse{
+			Message: result.Message, OpenedPath: result.OpenedPath,
+		}), nil
 	}
 	if ctxErr := ctx.Err(); ctxErr != nil {
 		return nil, connect.NewError(connect.CodeCanceled, ctxErr)
