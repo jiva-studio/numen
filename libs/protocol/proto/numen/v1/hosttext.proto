@@ -1,0 +1,92 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/textprovider.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// HostTextService is what the host answers for a plugin about the text
+// versions of the vault it shows. The host knows the plugin by its token; a
+// call that reads needs vault:read and one that changes a version vault:write.
+//
+// A version made by the calling plugin is named by its key; any version is
+// named by its id, which is the plugin id and the key joined by "/".
+service HostTextService {
+  // PutTextVersion records a version of the calling plugin, or replaces the
+  // record of one it already has under the key. Every put tells the host the
+  // text of the file changed.
+  rpc PutTextVersion(PutTextVersionRequest) returns (PutTextVersionResponse);
+
+  // RemoveTextVersion removes the record of a version of the calling plugin.
+  rpc RemoveTextVersion(RemoveTextVersionRequest) returns (RemoveTextVersionResponse);
+
+  // ListTextVersions lists the versions of a file, and names the live one.
+  rpc ListTextVersions(ListTextVersionsRequest) returns (ListTextVersionsResponse);
+
+  // ReadText answers one page of any version's text, asked of the plugin that
+  // made it.
+  rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
+}
+
+// TextVersion is the host's record of one text of a file. input_version_id is
+// empty for a version made from the file. input_hash is the SHA-256, in hex, of
+// the file's bytes for such a version, and the hash of the input version
+// otherwise. hash is the version's own text as it is now.
+message TextVersion {
+  string id = 1;
+  string path = 2;
+  string plugin_id = 3;
+  string key = 4;
+  string input_version_id = 5;
+  TextFormat format = 6;
+  string input_hash = 7;
+  string hash = 8;
+  int64 create_time_unix_ms = 9;
+}
+
+message PutTextVersionRequest {
+  string path = 1;
+  string key = 2;
+  string input_version_id = 3;
+  TextFormat format = 4;
+  string input_hash = 5;
+  string hash = 6;
+}
+
+message PutTextVersionResponse {
+  TextVersion version = 1;
+  TextErrorCode error = 2;
+}
+
+message RemoveTextVersionRequest {
+  string path = 1;
+  string key = 2;
+}
+
+message RemoveTextVersionResponse {
+  TextErrorCode error = 1;
+}
+
+message ListTextVersionsRequest {
+  string path = 1;
+}
+
+message ListTextVersionsResponse {
+  repeated TextVersion versions = 1;
+  // live_version_id is the version shown and indexed, and empty where none is live.
+  string live_version_id = 2;
+  TextErrorCode error = 3;
+}
+
+message ReadTextRequest {
+  string path = 1;
+  string version_id = 2;
+  string cursor = 3;
+}
+
+message ReadTextResponse {
+  repeated TextPart parts = 1;
+  string next_cursor = 2;
+  TextErrorCode error = 3;
+}
