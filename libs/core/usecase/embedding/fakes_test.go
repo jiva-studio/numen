@@ -584,10 +584,6 @@ func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 	return out, nil
 }
 
-func (l *library) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return l.Open(ctx, path)
-}
-
 // bookOf is the bytes of a book whose spine is the parts given, each under a
 // heading of its own, so that the book names its places.
 func bookOf(t testing.TB, title string, parts ...string) []byte {

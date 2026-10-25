@@ -45,14 +45,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 
 	ctx := t.Context()
 
-	t.Run("page renderer returns degraded fallback", func(t *testing.T) {
-		renderer := cfg.PageRenderer()
-		_, err := renderer.OpenDocument(ctx, nil)
-		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
-			t.Fatalf("got %v, want the document plugin disabled", err)
-		}
-	})
-
 	t.Run("transcriber reports not ready", func(t *testing.T) {
 		if cfg.TranscriberReady() {
 			t.Fatal("expected TranscriberReady to report false in safe mode")

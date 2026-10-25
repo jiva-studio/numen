@@ -5,7 +5,6 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
@@ -14,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
@@ -107,36 +105,5 @@ func TestEveryRunOfAnAgentContainsAndProducesBackItsOwnReference(t *testing.T) {
 	_ = bridge.Close()
 	if got := host.Released.Load(); got != 1+runs {
 		t.Errorf("gave back %d after Close, want %d", got, 1+runs)
-	}
-}
-
-type seekCloser struct {
-	*strings.Reader
-}
-
-func (seekCloser) Close() error { return nil }
-
-func TestEveryOpenDocumentContainsAndProducesBackItsOwnReference(t *testing.T) {
-	host := newLeaseHost(t)
-	bridge, err := documentbridge.Open(t.Context(), host)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	const documents = 2
-	for range documents {
-		doc, err := bridge.OpenDocument(t.Context(), seekCloser{strings.NewReader("%PDF")})
-		if err != nil {
-			t.Fatal(err)
-		}
-		doc.Close()
-		doc.Close()
-	}
-	_ = bridge.Close()
-	_ = bridge.Close()
-
-	if host.Acquired.Load() != 1+documents || host.Released.Load() != 1+documents {
-		t.Errorf("acquired %d, released %d, want %d and %d",
-			host.Acquired.Load(), host.Released.Load(), 1+documents, 1+documents)
 	}
 }

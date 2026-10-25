@@ -7,7 +7,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"image"
 	"io"
 	"io/fs"
 	"maps"
@@ -372,55 +371,8 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 	return out
 }
 
-// A document is one of those read back: the whole of what it says, where each
-// page begins in that text, and the words each page is printed with.
-type document struct {
-	Text  string
-	Pages []int
-	pages [][]string
-}
-
-// documentOf is the document those bytes are.
-func documentOf(raw []byte) document {
-	var read document
-	for _, line := range strings.Split(strings.TrimRight(string(raw), "\n"), "\n") {
-		words := strings.Fields(line)
-		response := strings.Join(words, " ") + "\n"
-		read.pages = append(read.pages, words)
-		read.Pages = append(read.Pages, len(read.Text))
-		read.Text += response
-	}
-	return read
-}
-
-// documents reads and draws the documents a test prints.
+// documents reads the books bookOf writes.
 type documents struct{}
-
-func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
-	defer file.Close()
-	raw, err := io.ReadAll(file)
-	if err != nil {
-		return nil, err
-	}
-	return scanned{read: documentOf(raw)}, nil
-}
-
-// scanned represents an open test document with stub page count and geometry.
-type scanned struct{ read document }
-
-func (s scanned) GetPageCount() int { return len(s.read.pages) }
-
-func (scanned) RenderPage(int, int) (image.Image, error) {
-	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil
-}
-
-func (scanned) Close() {}
-
-// The size of a drawn page, which every coordinate a model reads is a place in.
-const (
-	pageWide = 612
-	pageHigh = 792
-)
 
 // library is one vault as a set of files. It counts what was read, so a test can
 // say that an unchanged file was not opened.
@@ -579,10 +531,6 @@ func (w writers) Open(vault domain.Vault) (vaultport.VaultWriter, error) {
 
 func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
 	return func() {}, nil
-}
-
-func (l *library) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return l.Open(ctx, path)
 }
 
 // bookOf is the bytes of a book whose spine is the parts given, each under a

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
@@ -185,55 +184,6 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 	if len(vectors[0]) != model.Dimensions {
 		t.Fatalf("expected vector length %d, got %d", model.Dimensions, len(vectors[0]))
-	}
-}
-
-func TestRealDocumentPluginProcessE2E(t *testing.T) {
-	pluginsDir, err := filepath.Abs("../../../../../plugins")
-	if err != nil {
-		t.Fatalf("resolve plugins dir: %v", err)
-	}
-
-	pdfBin := filepath.Join(pluginsDir, "reader-pdf", "bin", "reader-pdf")
-	if _, err := os.Stat(pdfBin); os.IsNotExist(err) {
-		t.Skipf("reader-pdf binary not found at %s; skipping real process E2E test", pdfBin)
-	}
-
-	host := plugin.NewHost("desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	ctx := t.Context()
-	bridge, err := documentbridge.Open(ctx, host)
-	if err != nil {
-		t.Fatalf("OpenDocumentBridge with real binary failed: %v", err)
-	}
-	defer func() {
-		_ = bridge.Close()
-		_ = host.TeardownAll(ctx, 1*time.Second)
-	}()
-
-	testPDF := filepath.Join(pluginsDir, "reader-pdf", "backend", "pdf", "testdata", "tiny.pdf")
-	file, err := os.Open(testPDF)
-	if err != nil {
-		t.Fatalf("open test pdf: %v", err)
-	}
-	doc, err := bridge.OpenDocument(ctx, file)
-	if err != nil {
-		t.Fatalf("OpenDocument failed: %v", err)
-	}
-	defer doc.Close()
-
-	if doc.GetPageCount() != 2 {
-		t.Fatalf("expected 2 pages, got %d", doc.GetPageCount())
-	}
-	img, err := doc.RenderPage(0, 150)
-	if err != nil {
-		t.Fatalf("RenderPage failed: %v", err)
-	}
-	if img == nil {
-		t.Fatal("expected non-nil rendered image")
 	}
 }
 

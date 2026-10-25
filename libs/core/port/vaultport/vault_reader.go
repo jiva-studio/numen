@@ -60,8 +60,6 @@ type VaultReader interface {
 	//
 	// The same errors as Read. Whoever opens it closes it.
 	Open(ctx context.Context, path string) (io.ReadSeekCloser, error)
-	// allows, the file can be renamed or deleted while it is open.
-	OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error)
 	// GetFingerprint answers what a walk reports about one path: its kind, its size and
 	// when it changed. It reads no bytes, so it is what a caller asks about a
 	// file it does not want to open.

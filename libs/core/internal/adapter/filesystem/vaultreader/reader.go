@@ -288,12 +288,6 @@ func (s *VaultReader) Open(ctx context.Context, path string) (io.ReadSeekCloser,
 	return s.openWith(ctx, path, openReadable)
 }
 
-// OpenShared is Open for a file that stays open for a long time: where the
-// platform allows, the file can be renamed or deleted while it is open.
-func (s *VaultReader) OpenShared(ctx context.Context, path string) (io.ReadSeekCloser, error) {
-	return s.openWith(ctx, path, openShared)
-}
-
 func (s *VaultReader) openWith(
 	ctx context.Context,
 	path string,

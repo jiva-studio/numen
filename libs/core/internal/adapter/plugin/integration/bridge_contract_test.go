@@ -1,7 +1,6 @@
 package integration
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,11 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
@@ -31,7 +27,6 @@ type bridgeHost interface {
 	embedderbridge.Host
 	transcriberbridge.Host
 	downloaderbridge.Host
-	documentbridge.Host
 	agentbridge.Host
 	proofreaderbridge.Host
 	toolsbridge.Host
@@ -83,17 +78,6 @@ var bridgeContracts = []bridgeContract{
 		b, err := downloaderbridge.Open(ctx, h)
 		return createContract(b, err, func(b *downloaderbridge.Downloader, ctx context.Context) (bool, error) {
 			return isZeroResult(b.GetMetadata(ctx, "https://example.org"))
-		})
-	}},
-	{"document", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := documentbridge.Open(ctx, h)
-		return createContract(b, err, func(b *documentbridge.Document, ctx context.Context) (bool, error) {
-			doc, err := b.OpenDocument(ctx, readSeekNopCloser{bytes.NewReader([]byte("%PDF"))})
-			if doc == nil {
-				return true, err
-			}
-			doc.Close()
-			return false, err
 		})
 	}},
 	{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
@@ -269,10 +253,3 @@ func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
 		})
 	}
 }
-
-// readSeekNopCloser is bytes in memory, as a file a document is opened from.
-type readSeekNopCloser struct {
-	*bytes.Reader
-}
-
-func (readSeekNopCloser) Close() error { return nil }
