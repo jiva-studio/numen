@@ -78,7 +78,7 @@ A deck joined to a great many notes has the text of the first thirty read and th
 ## Where the answers are kept
 
 ```
-<vault>/.numen/flashcards/<ulid>.jsonl
+<vault>/.numen/md.numen.views.flashcards.studio/<ulid>.jsonl
 ```
 
 One session writes one file and nothing ever appends to it again. The whole history is those files put together, so a vault carried between a phone and a desktop comes away with one history and one set of counts, and no file is ever written by two machines.
