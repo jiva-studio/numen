@@ -56,10 +56,12 @@ func (c Commands) ListCommands() []pluginport.PluginCommandEntry {
 
 // RunCommand starts the plugin where it is not running and runs the command in its backend, holding
 // its reference for the length of the call.
-func (c Commands) RunCommand(ctx context.Context, call pluginport.PluginCommandCall) (string, error) {
+func (c Commands) RunCommand(
+	ctx context.Context, call pluginport.PluginCommandCall,
+) (pluginport.PluginCommandResult, error) {
 	client, lease, err := bridge.Open(ctx, c.host, call.PluginID, numenv1connect.NewPluginCommandServiceClient)
 	if err != nil {
-		return "", err
+		return pluginport.PluginCommandResult{}, err
 	}
 	defer func() { _ = lease.Close() }()
 
@@ -67,21 +69,21 @@ func (c Commands) RunCommand(ctx context.Context, call pluginport.PluginCommandC
 		Command: call.Command, Path: call.Path, Arguments: call.Arguments,
 	}))
 	if err != nil {
-		return "", readCommandError(ctx, call.PluginID, err)
+		return pluginport.PluginCommandResult{}, readCommandError(ctx, call.PluginID, err)
 	}
 	message := res.Msg.GetMessage()
 	switch res.Msg.GetError() {
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED:
-		return message, nil
+		return pluginport.PluginCommandResult{Message: message, OpenedPath: res.Msg.GetOpenedPath()}, nil
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNKNOWN_COMMAND:
-		return "", fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
+		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s", ErrUnknownCommand, call.Command)
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_BAD_ARGUMENTS:
-		return "", fmt.Errorf("%w: %s", ErrBadArguments, message)
+		return pluginport.PluginCommandResult{}, fmt.Errorf("%w: %s", ErrBadArguments, message)
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_UNAVAILABLE:
-		return "", &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginFailed, Err: errors.New(message)}
+		return pluginport.PluginCommandResult{}, &pluginport.UnavailableError{PluginID: call.PluginID, Reason: pluginport.PluginFailed, Err: errors.New(message)}
 	case v1.CommandErrorCode_COMMAND_ERROR_CODE_FAILED:
 	}
-	return "", &pluginport.CommandFailedError{Message: message}
+	return pluginport.PluginCommandResult{}, &pluginport.CommandFailedError{Message: message}
 }
 
 // readCommandError sorts the failure of a call: the end of the caller's context is the caller's own,

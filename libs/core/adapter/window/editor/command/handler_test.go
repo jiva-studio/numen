@@ -15,8 +15,8 @@ import (
 
 // pluginCommands declares one command and answers every run with the outcome it is given.
 type pluginCommands struct {
-	message string
-	err     error
+	result plugincommand.Result
+	err    error
 }
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
@@ -26,8 +26,8 @@ func (p pluginCommands) ListCommands() []plugincommand.Entry {
 	}}}
 }
 
-func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (string, error) {
-	return p.message, p.err
+func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
+	return p.result, p.err
 }
 
 func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequest) *v1.RunPluginCommandResponse {
@@ -53,7 +53,7 @@ func TestTheCommandsAreListedAsTheManifestsDeclareThem(t *testing.T) {
 	one := listed[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "md.numen.cards" || one.GetId() != "create-deck" || one.GetFileExtensions()[0] != "md" ||
-		argument.GetType() != v1.CommandArgumentType_COMMAND_ARGUMENT_TYPE_NUMBER || !argument.GetIsRequired() {
+		!argument.GetIsRequired() {
 		t.Errorf("listed %v", one)
 	}
 }
@@ -69,7 +69,7 @@ func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 		message  string
 	}{
 		"a command that ran": {
-			pluginCommands{message: "made a.md"}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
+			pluginCommands{result: plugincommand.Result{Message: "made a.md", OpenedPath: "a.md"}}, valid, v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED, "made a.md",
 		},
 		"a command no plugin declares": {
 			pluginCommands{}, &v1.RunPluginCommandRequest{PluginId: "md.numen.cards", Command: "shred"},
@@ -97,6 +97,9 @@ func TestARunIsAnsweredWithWhatAPersonReadsAndWhyItDidNotSucceed(t *testing.T) {
 			}
 			if one.message != "" && res.GetMessage() != one.message {
 				t.Errorf("message = %q, want %q", res.GetMessage(), one.message)
+			}
+			if one.want == v1.CommandErrorCode_COMMAND_ERROR_CODE_UNSPECIFIED && res.GetOpenedPath() != "a.md" {
+				t.Errorf("opened path = %q", res.GetOpenedPath())
 			}
 			if res.GetMessage() == "" {
 				t.Error("the answer says nothing")

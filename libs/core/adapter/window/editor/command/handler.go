@@ -41,7 +41,7 @@ func (h *Handler) ListCommands(
 func (h *Handler) RunPluginCommand(
 	ctx context.Context, r *connect.Request[v1.RunPluginCommandRequest],
 ) (*connect.Response[v1.RunPluginCommandResponse], error) {
-	message, err := h.run.Execute(ctx, plugincommand.Call{
+	result, err := h.run.Execute(ctx, plugincommand.Call{
 		PluginID:  r.Msg.GetPluginId(),
 		Command:   r.Msg.GetCommand(),
 		Path:      r.Msg.GetPath(),
@@ -53,7 +53,9 @@ func (h *Handler) RunPluginCommand(
 		}
 		return connect.NewResponse(&v1.RunPluginCommandResponse{Error: getErrorCode(err), Message: err.Error()}), nil
 	}
-	return connect.NewResponse(&v1.RunPluginCommandResponse{Message: message}), nil
+	return connect.NewResponse(&v1.RunPluginCommandResponse{
+		Message: result.Message, OpenedPath: result.OpenedPath,
+	}), nil
 }
 
 func getErrorCode(err error) v1.CommandErrorCode {
@@ -75,7 +77,6 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		arguments = append(arguments, &v1.CommandArgument{
 			Name:       one.Name,
 			Title:      one.Title,
-			Type:       getWireArgumentType(one.Type),
 			IsRequired: one.IsRequired,
 		})
 	}
@@ -83,20 +84,7 @@ func newWireCommand(entry plugincommand.Entry) *v1.PluginCommand {
 		PluginId:       entry.PluginID,
 		Id:             entry.Command.ID,
 		Title:          entry.Command.Title,
-		Description:    entry.Command.Description,
 		FileExtensions: entry.Command.FileExtensions,
 		Arguments:      arguments,
 	}
-}
-
-func getWireArgumentType(argumentType string) v1.CommandArgumentType {
-	switch argumentType {
-	case plugincommand.ArgumentString:
-		return v1.CommandArgumentType_COMMAND_ARGUMENT_TYPE_STRING
-	case plugincommand.ArgumentNumber:
-		return v1.CommandArgumentType_COMMAND_ARGUMENT_TYPE_NUMBER
-	case plugincommand.ArgumentBoolean:
-		return v1.CommandArgumentType_COMMAND_ARGUMENT_TYPE_BOOLEAN
-	}
-	return v1.CommandArgumentType_COMMAND_ARGUMENT_TYPE_UNSPECIFIED
 }

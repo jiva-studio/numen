@@ -17,9 +17,9 @@ type declaredCommands struct {
 
 func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.listed }
 
-func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (string, error) {
+func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	d.calls = append(d.calls, call)
-	return "ran " + call.Command, nil
+	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
 func newDeclared() *declaredCommands {
@@ -39,13 +39,13 @@ func newDeclared() *declaredCommands {
 func TestACallThatMeetsItsDeclarationIsRunWithItsBooleansWrittenOneWay(t *testing.T) {
 	declared := newDeclared()
 
-	message, err := plugincommand.NewCommands(declared).Run.Execute(t.Context(), plugincommand.Call{
+	result, err := plugincommand.NewCommands(declared).Run.Execute(t.Context(), plugincommand.Call{
 		PluginID: "md.numen.a", Command: "convert", Path: "books/Some.PDF",
 		Arguments: map[string]string{"pages": "12", "again": "1"},
 	})
 
-	if err != nil || message != "ran convert" {
-		t.Fatalf("the run answered %q, %v", message, err)
+	if err != nil || result.Message != "ran convert" || result.OpenedPath != "books/Some.PDF" {
+		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 	sent := declared.calls[0]
 	if sent.Path != "books/Some.PDF" || sent.Arguments["pages"] != "12" || sent.Arguments["again"] != "true" {

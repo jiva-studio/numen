@@ -137,17 +137,17 @@ func TestTheCommandsOfTheEnabledPluginsAreListedFromTheirManifestsWithNoPluginSt
 }
 
 func TestACommandIsSentToItsPluginWithItsFileAndArgumentsAndAnswersWhatThePluginSaid(t *testing.T) {
-	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it"}}
+	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
 		endpoints: map[string]pluginport.Endpoint{"md.numen.a": serveCommandPlugin(t, plugin)},
 	}
 
-	message, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{
+	result, err := Open(host).RunCommand(t.Context(), pluginport.PluginCommandCall{
 		PluginID: "md.numen.a", Command: "make", Path: "a.pdf", Arguments: map[string]string{"title": "T"},
 	})
-	if err != nil || message != "made it" {
-		t.Fatalf("the run answered %q, %v", message, err)
+	if err != nil || result.Message != "made it" || result.OpenedPath != "Made.md" {
+		t.Fatalf("the run answered %+v, %v", result, err)
 	}
 	sent := plugin.received[0]
 	if sent.GetCommand() != "make" || sent.GetPath() != "a.pdf" || sent.GetArguments()["title"] != "T" {

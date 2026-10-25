@@ -35,6 +35,10 @@ message RunCommandResponse {
 
   // What a person reads about the outcome.
   string message = 2;
+
+  // The file a window opens once the command ran, as a path relative to the
+  // vault folder. Empty for a command that leaves nothing to open.
+  string opened_path = 3;
 }
 
 // CommandErrorCode is why a command was served and did not succeed.
@@ -82,14 +86,12 @@ message PluginCommand {
   // What a person reads the command as.
   string title = 3;
 
-  string description = 4;
-
   // The file extensions, without the dot, the command runs over. None is a
   // command over no file.
-  repeated string file_extensions = 5;
+  repeated string file_extensions = 4;
 
   // The arguments, in the order a person is asked for them.
-  repeated CommandArgument arguments = 6;
+  repeated CommandArgument arguments = 5;
 }
 
 // CommandArgument is one argument a command takes.
@@ -99,18 +101,7 @@ message CommandArgument {
   // What a person is asked for.
   string title = 2;
 
-  CommandArgumentType type = 3;
-
-  bool is_required = 4;
-}
-
-// CommandArgumentType is the type of the value an argument holds. The zero
-// value names no type, and no declaration holds it.
-enum CommandArgumentType {
-  COMMAND_ARGUMENT_TYPE_UNSPECIFIED = 0;
-  COMMAND_ARGUMENT_TYPE_STRING = 1;
-  COMMAND_ARGUMENT_TYPE_NUMBER = 2;
-  COMMAND_ARGUMENT_TYPE_BOOLEAN = 3;
+  bool is_required = 3;
 }
 
 message RunPluginCommandRequest {
@@ -129,4 +120,7 @@ message RunPluginCommandResponse {
 
   // What a person reads about the outcome.
   string message = 2;
+
+  // The file the window opens once the command ran. Empty for none.
+  string opened_path = 3;
 }

@@ -24,13 +24,12 @@ type (
 	Argument = pluginport.PluginCommandArgument
 	// Call is one run of a command.
 	Call = pluginport.PluginCommandCall
-	// FailedError is a command that ran and failed.
-	FailedError = pluginport.CommandFailedError
+	// Result is what a command that ran answered.
+	Result = pluginport.PluginCommandResult
 )
 
 // The types an argument holds.
 const (
-	ArgumentString  = pluginport.CommandArgumentString
 	ArgumentNumber  = pluginport.CommandArgumentNumber
 	ArgumentBoolean = pluginport.CommandArgumentBoolean
 )
@@ -85,23 +84,22 @@ type Run struct {
 	commands pluginport.PluginCommands
 }
 
-// Execute checks the call against the declaration and runs it, returning what a person reads about
-// the outcome. A call that does not meet the declaration is ErrBadArguments, saying what is wrong,
+// Execute checks the call against the declaration and runs it. A call that does not meet the declaration is ErrBadArguments, saying what is wrong,
 // and nothing is run.
-func (u Run) Execute(ctx context.Context, call Call) (string, error) {
+func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 	if u.commands == nil {
-		return "", ErrUnavailable
+		return Result{}, ErrUnavailable
 	}
 	listed := u.commands.ListCommands()
 	index := slices.IndexFunc(listed, func(one Entry) bool {
 		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
-		return "", fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
+		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
 	declared := listed[index].Command
 	if err := checkCall(declared, call); err != nil {
-		return "", err
+		return Result{}, err
 	}
 	normalized := call
 	normalized.Arguments = normalizeArguments(declared, call.Arguments)

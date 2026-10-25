@@ -19,9 +19,9 @@ type pluginCommands struct {
 
 func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.listed }
 
-func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (string, error) {
+func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	p.calls = append(p.calls, call)
-	return "ran " + call.Command, nil
+	return plugincommand.Result{Message: "ran " + call.Command, OpenedPath: call.Path}, nil
 }
 
 // createPluginCommandDeps is a terminal over the notebook whose plugins declare a command over no
@@ -31,8 +31,8 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{
 			ID: "create-deck", Title: "Create a deck",
 			Arguments: []plugincommand.Argument{
-				{Name: "title", Title: "Title", Type: plugincommand.ArgumentString, IsRequired: true},
-				{Name: "folder", Title: "Folder", Type: plugincommand.ArgumentString},
+				{Name: "title", Title: "Title", Type: "string", IsRequired: true},
+				{Name: "folder", Title: "Folder", Type: "string"},
 				{Name: "open", Title: "Open", Type: plugincommand.ArgumentBoolean},
 			},
 		}},
@@ -75,11 +75,13 @@ func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.
 	}
 }
 
-func TestACommandOverAFileTakesTheFileAfterTheVault(t *testing.T) {
+func TestACommandOverAFileTakesTheFileAfterTheVaultAndSaysTheFileItOpens(t *testing.T) {
 	deps, declared, _ := createPluginCommandDeps()
 
-	if _, err := runWithDeps(deps, "count-pages", "notebook", "books/Bees.pdf"); err != nil {
-		t.Fatal(err)
+	out, err := runWithDeps(deps, "count-pages", "notebook", "books/Bees.pdf")
+
+	if err != nil || out != "ran count-pages\nbooks/Bees.pdf\n" {
+		t.Fatalf("the command answered %q, %v", out, err)
 	}
 
 	if declared.calls[0].Path != "books/Bees.pdf" {

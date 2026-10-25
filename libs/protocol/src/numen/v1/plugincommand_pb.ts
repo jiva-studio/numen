@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/plugincommand.proto.
  */
 export const file_numen_v1_plugincommand: GenFile = /*@__PURE__*/
-  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiUAoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIpkBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRITCgtkZXNjcmlwdGlvbhgEIAEoCRIXCg9maWxlX2V4dGVuc2lvbnMYBSADKAkSLAoJYXJndW1lbnRzGAYgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50InAKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEisKBHR5cGUYAyABKA4yHS5udW1lbi52MS5Db21tYW5kQXJndW1lbnRUeXBlEhMKC2lzX3JlcXVpcmVkGAQgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiVgoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBCqjAQoTQ29tbWFuZEFyZ3VtZW50VHlwZRIlCiFDT01NQU5EX0FSR1VNRU5UX1RZUEVfVU5TUEVDSUZJRUQQABIgChxDT01NQU5EX0FSR1VNRU5UX1RZUEVfU1RSSU5HEAESIAocQ09NTUFORF9BUkdVTUVOVF9UWVBFX05VTUJFUhACEiEKHUNPTU1BTkRfQVJHVU1FTlRfVFlQRV9CT09MRUFOEAMyXwoUUGx1Z2luQ29tbWFuZFNlcnZpY2USRwoKUnVuQ29tbWFuZBIbLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0GhwubnVtZW4udjEuUnVuQ29tbWFuZFJlc3BvbnNlMroBCg5Db21tYW5kU2VydmljZRJNCgxMaXN0Q29tbWFuZHMSHS5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXF1ZXN0Gh4ubnVtZW4udjEuTGlzdENvbW1hbmRzUmVzcG9uc2USWQoQUnVuUGx1Z2luQ29tbWFuZBIhLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0GiIubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChxudW1lbi92MS9wbHVnaW5jb21tYW5kLnByb3RvEghudW1lbi52MSKjAQoRUnVuQ29tbWFuZFJlcXVlc3QSDwoHY29tbWFuZBgBIAEoCRIMCgRwYXRoGAIgASgJEj0KCWFyZ3VtZW50cxgDIAMoCzIqLm51bWVuLnYxLlJ1bkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiZQoSUnVuQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJIhUKE0xpc3RDb21tYW5kc1JlcXVlc3QiQQoUTGlzdENvbW1hbmRzUmVzcG9uc2USKQoIY29tbWFuZHMYASADKAsyFy5udW1lbi52MS5QbHVnaW5Db21tYW5kIoQBCg1QbHVnaW5Db21tYW5kEhEKCXBsdWdpbl9pZBgBIAEoCRIKCgJpZBgCIAEoCRINCgV0aXRsZRgDIAEoCRIXCg9maWxlX2V4dGVuc2lvbnMYBCADKAkSLAoJYXJndW1lbnRzGAUgAygLMhkubnVtZW4udjEuQ29tbWFuZEFyZ3VtZW50IkMKD0NvbW1hbmRBcmd1bWVudBIMCgRuYW1lGAEgASgJEg0KBXRpdGxlGAIgASgJEhMKC2lzX3JlcXVpcmVkGAMgASgIIsIBChdSdW5QbHVnaW5Db21tYW5kUmVxdWVzdBIRCglwbHVnaW5faWQYASABKAkSDwoHY29tbWFuZBgCIAEoCRIMCgRwYXRoGAMgASgJEkMKCWFyZ3VtZW50cxgEIAMoCzIwLm51bWVuLnYxLlJ1blBsdWdpbkNvbW1hbmRSZXF1ZXN0LkFyZ3VtZW50c0VudHJ5GjAKDkFyZ3VtZW50c0VudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAEiawoYUnVuUGx1Z2luQ29tbWFuZFJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQ29tbWFuZEVycm9yQ29kZRIPCgdtZXNzYWdlGAIgASgJEhMKC29wZW5lZF9wYXRoGAMgASgJKscBChBDb21tYW5kRXJyb3JDb2RlEiIKHkNPTU1BTkRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiYKIkNPTU1BTkRfRVJST1JfQ09ERV9VTktOT1dOX0NPTU1BTkQQARIkCiBDT01NQU5EX0VSUk9SX0NPREVfQkFEX0FSR1VNRU5UUxACEh0KGUNPTU1BTkRfRVJST1JfQ09ERV9GQUlMRUQQAxIiCh5DT01NQU5EX0VSUk9SX0NPREVfVU5BVkFJTEFCTEUQBDJfChRQbHVnaW5Db21tYW5kU2VydmljZRJHCgpSdW5Db21tYW5kEhsubnVtZW4udjEuUnVuQ29tbWFuZFJlcXVlc3QaHC5udW1lbi52MS5SdW5Db21tYW5kUmVzcG9uc2UyugEKDkNvbW1hbmRTZXJ2aWNlEk0KDExpc3RDb21tYW5kcxIdLm51bWVuLnYxLkxpc3RDb21tYW5kc1JlcXVlc3QaHi5udW1lbi52MS5MaXN0Q29tbWFuZHNSZXNwb25zZRJZChBSdW5QbHVnaW5Db21tYW5kEiEubnVtZW4udjEuUnVuUGx1Z2luQ29tbWFuZFJlcXVlc3QaIi5udW1lbi52MS5SdW5QbHVnaW5Db21tYW5kUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.RunCommandRequest
@@ -66,6 +66,14 @@ export type RunCommandResponse = Message<"numen.v1.RunCommandResponse"> & {
    * @generated from field: string message = 2;
    */
   message: string;
+
+  /**
+   * The file a window opens once the command ran, as a path relative to the
+   * vault folder. Empty for a command that leaves nothing to open.
+   *
+   * @generated from field: string opened_path = 3;
+   */
+  openedPath: string;
 };
 
 /**
@@ -131,22 +139,17 @@ export type PluginCommand = Message<"numen.v1.PluginCommand"> & {
   title: string;
 
   /**
-   * @generated from field: string description = 4;
-   */
-  description: string;
-
-  /**
    * The file extensions, without the dot, the command runs over. None is a
    * command over no file.
    *
-   * @generated from field: repeated string file_extensions = 5;
+   * @generated from field: repeated string file_extensions = 4;
    */
   fileExtensions: string[];
 
   /**
    * The arguments, in the order a person is asked for them.
    *
-   * @generated from field: repeated numen.v1.CommandArgument arguments = 6;
+   * @generated from field: repeated numen.v1.CommandArgument arguments = 5;
    */
   arguments: CommandArgument[];
 };
@@ -177,12 +180,7 @@ export type CommandArgument = Message<"numen.v1.CommandArgument"> & {
   title: string;
 
   /**
-   * @generated from field: numen.v1.CommandArgumentType type = 3;
-   */
-  type: CommandArgumentType;
-
-  /**
-   * @generated from field: bool is_required = 4;
+   * @generated from field: bool is_required = 3;
    */
   isRequired: boolean;
 };
@@ -243,6 +241,13 @@ export type RunPluginCommandResponse = Message<"numen.v1.RunPluginCommandRespons
    * @generated from field: string message = 2;
    */
   message: string;
+
+  /**
+   * The file the window opens once the command ran. Empty for none.
+   *
+   * @generated from field: string opened_path = 3;
+   */
+  openedPath: string;
 };
 
 /**
@@ -297,40 +302,6 @@ export enum CommandErrorCode {
  */
 export const CommandErrorCodeSchema: GenEnum<CommandErrorCode> = /*@__PURE__*/
   enumDesc(file_numen_v1_plugincommand, 0);
-
-/**
- * CommandArgumentType is the type of the value an argument holds. The zero
- * value names no type, and no declaration holds it.
- *
- * @generated from enum numen.v1.CommandArgumentType
- */
-export enum CommandArgumentType {
-  /**
-   * @generated from enum value: COMMAND_ARGUMENT_TYPE_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: COMMAND_ARGUMENT_TYPE_STRING = 1;
-   */
-  STRING = 1,
-
-  /**
-   * @generated from enum value: COMMAND_ARGUMENT_TYPE_NUMBER = 2;
-   */
-  NUMBER = 2,
-
-  /**
-   * @generated from enum value: COMMAND_ARGUMENT_TYPE_BOOLEAN = 3;
-   */
-  BOOLEAN = 3,
-}
-
-/**
- * Describes the enum numen.v1.CommandArgumentType.
- */
-export const CommandArgumentTypeSchema: GenEnum<CommandArgumentType> = /*@__PURE__*/
-  enumDesc(file_numen_v1_plugincommand, 1);
 
 /**
  * PluginCommandService is what the backend of a plugin that declares commands

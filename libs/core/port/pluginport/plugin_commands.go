@@ -29,9 +29,8 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 
 // PluginCommand is one command a manifest declares, which the plugin's backend runs.
 type PluginCommand struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	Description string `json:"description,omitempty"`
+	ID    string `json:"id"`
+	Title string `json:"title"`
 	// FileExtensions are the extensions, without the dot, of the files the command runs over. None is
 	// a command over no file.
 	FileExtensions []string                `json:"fileExtensions,omitempty"`
@@ -68,17 +67,6 @@ func (c PluginCommand) GetArgument(name string) (PluginCommandArgument, bool) {
 		}
 	}
 	return PluginCommandArgument{}, false
-}
-
-// GetCommand returns the declaration of the command of the id, and false where the manifest declares
-// none.
-func (m PluginManifest) GetCommand(id string) (PluginCommand, bool) {
-	for _, one := range m.Commands {
-		if one.ID == id {
-			return one, true
-		}
-	}
-	return PluginCommand{}, false
 }
 
 // listCommandIssues checks the commands, and that a plugin declaring any has a backend to run them.
@@ -147,6 +135,15 @@ type PluginCommandCall struct {
 	Arguments map[string]string
 }
 
+// PluginCommandResult is what a command that ran answered.
+type PluginCommandResult struct {
+	// Message is what a person reads about the outcome.
+	Message string
+	// OpenedPath is the file a window opens once the command ran, relative to the vault folder. Empty
+	// for a command that leaves nothing to open.
+	OpenedPath string
+}
+
 // CommandFailedError is a command the plugin ran and that failed, with what the plugin said.
 type CommandFailedError struct {
 	Message string
@@ -162,8 +159,7 @@ type PluginCommands interface {
 	// ListCommands lists the commands of every enabled plugin, in the order of the plugins' ids and
 	// then of each manifest.
 	ListCommands() []PluginCommandEntry
-	// RunCommand runs the command in the backend of its plugin and returns what a person reads about
-	// it. A plugin that cannot be started or reached is an *UnavailableError, and a command that ran
-	// and failed a *CommandFailedError.
-	RunCommand(ctx context.Context, call PluginCommandCall) (string, error)
+	// RunCommand runs the command in the backend of its plugin. A plugin that cannot be started or
+	// reached is an *UnavailableError, and a command that ran and failed a *CommandFailedError.
+	RunCommand(ctx context.Context, call PluginCommandCall) (PluginCommandResult, error)
 }
