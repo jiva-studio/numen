@@ -47,6 +47,8 @@ type Callers interface {
 	GetPluginTexts() pluginport.PluginTexts
 	// GetDependencies is what provisions the dependencies, or nil.
 	GetDependencies() pluginport.DependencyCatalog
+	// GetPluginWork is the queue and the list of tasks the plugins use, or nil.
+	GetPluginWork() pluginport.PluginWork
 }
 
 // Endpoint answers the calls plugins make to the host. It listens on the
@@ -81,6 +83,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		// Serve returns http.ErrServerClosed after Close.

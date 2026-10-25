@@ -80,7 +80,7 @@ func (h *Host) openHostEndpoint(ctx context.Context) (int, error) {
 	if h.hostEndpoint != nil {
 		return h.hostEndpoint.GetPort(), nil
 	}
-	if (h.completer == nil && h.vault == nil && h.dependencies == nil) || h.isClosed {
+	if (h.completer == nil && h.vault == nil && h.dependencies == nil && h.work == nil) || h.isClosed {
 		return 0, nil
 	}
 	endpoint, err := hostendpoint.Open(ctx, h.hostAddress, h)
@@ -159,4 +159,25 @@ func (h *Host) getOnEnabledChanged() func(pluginID string) {
 	h.mu.RLock()
 	defer h.mu.RUnlock()
 	return h.onEnabledChanged
+}
+
+// SetPluginWork sets the queue and the list of tasks the plugins use.
+func (h *Host) SetPluginWork(work pluginport.PluginWork) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.work = work
+}
+
+func (h *Host) GetPluginWork() pluginport.PluginWork {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.work
+}
+
+// clearPluginWork takes out the tasks and ends the turns of a plugin that
+// stopped.
+func (h *Host) clearPluginWork(pluginID string) {
+	if work := h.GetPluginWork(); work != nil {
+		work.ClearPlugin(pluginID)
+	}
 }
