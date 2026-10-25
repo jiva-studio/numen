@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
@@ -232,16 +231,6 @@ func (o *Installation) Refresh() vaults.Refresh {
 		return on.refresh
 	}
 	return o.made.GetRefresh()
-}
-
-// GetRecognitionWorker reads a scanned document for whoever asks. It is one job
-// for the window and for an agent alike, so that what a person started through
-// one of them is shown by the other. Nothing while the window has no vault.
-func (o *Installation) GetRecognitionWorker() *recognition.Worker {
-	if on := o.State.session.Load(); on != nil {
-		return on.recognitionWorker
-	}
-	return nil
 }
 
 // GetTranscriptionWorker hears a recording, for whoever asks and for the queue

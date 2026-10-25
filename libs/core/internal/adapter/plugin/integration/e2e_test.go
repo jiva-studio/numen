@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"image"
 	"os"
 	"path/filepath"
 	"testing"
@@ -15,60 +14,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/recogniserbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 )
-
-func TestRealPluginProcessE2E(t *testing.T) {
-	pluginsDir, err := filepath.Abs("../../../../../plugins")
-	if err != nil {
-		t.Fatalf("resolve plugins dir: %v", err)
-	}
-
-	ocrBin := filepath.Join(pluginsDir, "ocr", "bin", "ocr")
-	if _, err := os.Stat(ocrBin); os.IsNotExist(err) {
-		t.Skipf("OCR binary not found at %s; skipping real process E2E test", ocrBin)
-	}
-
-	host := plugin.NewHost("desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	plugins := host.GetPlugins()
-	if len(plugins) == 0 {
-		t.Fatal("expected to discover OCR plugin in real modules/plugins")
-	}
-
-	ctx := t.Context()
-	bridge, err := recogniserbridge.Open(ctx, host)
-	if err != nil {
-		t.Fatalf("OpenRecogniserBridge with real binary failed: %v", err)
-	}
-	defer func() {
-		_ = bridge.Close()
-		_ = host.TeardownAll(ctx, 1*time.Second)
-	}()
-
-	model := bridge.GetRecognitionModel()
-	if model.Layout == "" || model.Recogniser == "" {
-		t.Fatalf("expected valid model from real OCR plugin, got %+v", model)
-	}
-
-	img := image.NewRGBA(image.Rect(0, 0, 50, 50))
-	blocks, err := bridge.Recognise(ctx, img)
-	if err != nil {
-		t.Fatalf("Recognise with real plugin failed: %v", err)
-	}
-	for _, b := range blocks {
-		if b.Text == "" {
-			t.Fatal("expected non-empty text in recognised block")
-		}
-	}
-}
 
 func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 	pluginsDir, err := filepath.Abs("../../../../../plugins")
@@ -98,12 +48,10 @@ func TestRealProofreadingPluginProcessE2E(t *testing.T) {
 
 	// The host has no model routed for proofreading, so the plugin has nothing to
 	// ask and invents no text.
-	pages := []domain.ProofreadPage{
-		{Number: 1, Lines: []domain.ProofreadLine{{Number: 0, Text: "This is test sentence."}}},
-	}
-	res, err := bridge.ProofreadScan(ctx, pages)
+	lines := []domain.ProofreadLine{{Number: 0, Text: "This is test sentence."}}
+	res, err := bridge.ProofreadSpeech(ctx, lines, 0)
 	if !errors.Is(err, completionport.ErrUnavailable) {
-		t.Fatalf("ProofreadScan with real plugin: got %v, want %v", err, completionport.ErrUnavailable)
+		t.Fatalf("ProofreadSpeech with real plugin: got %v, want %v", err, completionport.ErrUnavailable)
 	}
 	if len(res.Corrections) != 0 {
 		t.Fatalf("expected no corrections, got %v", res.Corrections)

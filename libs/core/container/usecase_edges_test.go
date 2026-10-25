@@ -18,7 +18,6 @@ var useCaseEdges = map[string][]string{
 	"settings":      nil,
 	"run":           nil,
 	"source":        nil,
-	"recognition":   {"run"},
 	"transcription": {"run"},
 	"embedding":     {"run"},
 	"file":          nil,
@@ -122,15 +121,14 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		{"usecase/vault", "usecase/note", false},
 		{"usecase/vault", "usecase/source", false},
 		{"usecase/vault", "usecase/embedding", false},
-		{"usecase/recognition", "usecase/run", false},
 		{"usecase/transcription", "usecase/run", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/source", "usecase/vault", true},
-		{"usecase/run", "usecase/recognition", true},
-		{"usecase/recognition", "usecase/transcription", true},
-		{"usecase/transcription", "usecase/recognition", true},
+		{"usecase/run", "usecase/transcription", true},
+		{"usecase/embedding", "usecase/transcription", true},
+		{"usecase/transcription", "usecase/embedding", true},
 		{"usecase/source", "usecase/run", true},
 		{"usecase/embedding", "usecase/vault", true},
 

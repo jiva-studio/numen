@@ -28,13 +28,13 @@ var driving = map[string]bool{
 }
 
 // pure are the packages holding what is true of a note, of a
-// highlight, a recognised page, a transcript or a proofread line, and the
+// highlight, a transcript or a proofread line, and the
 // arithmetic over them. Nothing they answer waits on a disk, a database or a
 // clock, and the way that is held is that a pure package reaches only another
 // pure one: naming no port and no scenario is not enough on its own, because a
 // sibling of the core carries goroutines, channels and a schema.
 var pure = []string{
-	"internal/highlight", "internal/ocrartifact", "internal/transcript",
+	"internal/highlight", "internal/transcript",
 }
 
 // The core is reached by the adapters and reaches none of them, an adapter is
@@ -137,7 +137,7 @@ func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
 	// nothing, and it passes. A count cannot say which of them it read, and
 	// four of the five would clear any floor the fifth is left out of, so each
 	// is named: a package that moved is a package this rule stopped at.
-	if read < 5 {
+	if read < 3 {
 		t.Fatalf("%d tests of the pure packages read: the walk is not reading them", read)
 	}
 	for _, one := range pure {

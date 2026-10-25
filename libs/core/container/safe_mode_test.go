@@ -29,7 +29,7 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		"id": "md.numen.pdf",
 		"name": "PDF",
 		"version": "1.0.0",
-		"capabilities": ["document", "recognition", "transcription", "proofreading", "embedding"],
+		"capabilities": ["document", "transcription", "proofreading", "embedding"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
 		"backend": {"type": "process", "entrypoint": "bin/doc", "serviceName": "numen.v1.DocumentService"}
@@ -60,16 +60,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		_, _, err := cfg.Transcriber(ctx)
 		if !isDisabledInSafeMode(err, bridge.CapabilityTranscription) {
 			t.Fatalf("got %v, want the transcription plugin disabled", err)
-		}
-	})
-
-	t.Run("recogniser reports not ready", func(t *testing.T) {
-		if cfg.RecogniserReady() {
-			t.Fatal("expected RecogniserReady to report false in safe mode")
-		}
-		_, _, err := cfg.Recogniser(ctx)
-		if !isDisabledInSafeMode(err, bridge.CapabilityRecognition) {
-			t.Fatalf("got %v, want the recognition plugin disabled", err)
 		}
 	})
 
@@ -123,10 +113,10 @@ func isDisabledInSafeMode(err error, capability string) bool {
 // plugins are set and stopped without one.
 func TestAnInstallationWithoutAPluginHostHasNoPluginInstalled(t *testing.T) {
 	cfg := Config{}
-	_, _, err := cfg.Recogniser(t.Context())
+	_, err := cfg.Proofreader("profile")
 	var missing *pluginport.UnavailableError
-	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityRecognition {
-		t.Fatalf("Recogniser = %v, want the recognition plugin not installed", err)
+	if !errors.As(err, &missing) || missing.Reason != pluginport.PluginNotInstalled || missing.Capability != bridge.CapabilityProofreading {
+		t.Fatalf("Proofreader = %v, want the proofreading plugin not installed", err)
 	}
 	cfg.SetPluginVaultPath("vault")
 	if err := cfg.StopPlugins(t.Context()); err != nil {
@@ -144,7 +134,7 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if err := os.MkdirAll(pDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["recognition"],
+	manifest := `{"id": "md.numen.engines.ocr", "name": "OCR", "version": "1.0.0", "capabilities": ["proofreading"],
 		"targets": ["desktop.editor"], "backend": {"type": "process", "entrypoint": "bin/engines.ocr"}}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
@@ -156,18 +146,18 @@ func TestTheConfigurationSetsItsPluginHost(t *testing.T) {
 	if got := host.GetVaultPath(); got != "vault" {
 		t.Errorf("the host holds the vault %q", got)
 	}
-	if !cfg.RecogniserReady() {
+	if !cfg.ProofreaderReady() {
 		t.Fatal("an installed plugin is not ready")
 	}
 	safe := cfg.SetSafeMode(true)
 	cfg.SafeMode = false
-	if cfg.RecogniserReady() {
+	if cfg.ProofreaderReady() {
 		t.Error("the host started a plugin in safe mode")
 	}
 	if !safe.SafeMode {
 		t.Error("safe mode was not set")
 	}
-	if !cfg.SetSafeMode(false).RecogniserReady() {
+	if !cfg.SetSafeMode(false).ProofreaderReady() {
 		t.Error("the host stayed in safe mode once it was left")
 	}
 }

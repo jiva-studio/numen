@@ -156,7 +156,6 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 // plan is resolved from the performance section.
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
-	response.Indexing.Recognition.Proofread = Proofread{Profile: "for scans", IsAutomatic: true}
 	response.Indexing.Transcription.Proofread = Proofread{Profile: "for speech"}
 	response.Agent.Use = settings.UseProgram("claude")
 	response.Importing.Captions = []string{"sa", "en"}
@@ -164,9 +163,6 @@ func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 
 	got := Config{}.SetSettings(response)
 
-	if got.ScanProofreading != response.Indexing.Recognition.Proofread {
-		t.Errorf("scans are put right with %+v", got.ScanProofreading)
-	}
 	if got.TranscriptProofreading != response.Indexing.Transcription.Proofread {
 		t.Errorf("speech is put right with %+v", got.TranscriptProofreading)
 	}

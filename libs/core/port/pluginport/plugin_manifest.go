@@ -45,7 +45,6 @@ func PluginCapabilities() []string {
 	return []string{
 		"document",
 		"book",
-		"recognition",
 		"transcription",
 		"embedding",
 		"downloader",

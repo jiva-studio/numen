@@ -144,56 +144,6 @@ func openTestProofreader(t *testing.T, mock *mockProofreadingServer) (*Proofread
 	return bridge, host
 }
 
-func TestProofreaderBridgeSendsAScanAndReadsTheCorrections(t *testing.T) {
-	mock := &mockProofreadingServer{response: &v1.ProofreadTextResponse{
-		Corrections: []*v1.ProofreadCorrection{{Number: 10, Last: 10, Text: "the cat sat"}},
-		Uncorrected: 1,
-	}}
-	bridge, host := openTestProofreader(t, mock)
-
-	if name := bridge.GetName(); name != "Proofreading Plugin" {
-		t.Fatalf("unexpected name: %s", name)
-	}
-
-	pages := []domain.ProofreadPage{
-		{Number: 3, Lines: []domain.ProofreadLine{{Number: 10, Text: "the cta sat"}, {Number: 11, Text: "on the mat"}}},
-		{Number: 4, Lines: []domain.ProofreadLine{{Number: 12, Text: "the dgo ran"}}},
-	}
-	got, err := bridge.ProofreadScan(t.Context(), pages)
-	if err != nil {
-		t.Fatalf("ProofreadScan failed: %v", err)
-	}
-
-	want := domain.ScanProofreading{
-		Corrections: []domain.ProofreadCorrection{{Number: 10, Last: 10, Text: "the cat sat"}},
-		Uncorrected: 1,
-	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %+v, want %+v", got, want)
-	}
-
-	req := mock.lastRequest(t)
-	if req.GetKind() != v1.ProofreadKind_PROOFREAD_KIND_SCAN {
-		t.Errorf("kind %v", req.GetKind())
-	}
-	if req.GetScan().GetMaxEditDistance() != 0 || req.GetSpeech() != nil {
-		t.Errorf("options %v", req.GetOptions())
-	}
-	if len(req.GetGroups()) != 2 || req.GetGroups()[0].GetNumber() != 3 ||
-		req.GetGroups()[0].GetLines()[1].GetNumber() != 11 || req.GetGroups()[0].GetLines()[1].GetText() != "on the mat" ||
-		req.GetGroups()[1].GetLines()[0].GetText() != "the dgo ran" {
-		t.Errorf("groups %v", req.GetGroups())
-	}
-
-	sup, ok := host.GetSupervisor("md.numen.tools.proofreading")
-	if !ok {
-		t.Fatalf("supervisor not found")
-	}
-	if !sup.IsIdle(0, time.Now()) {
-		t.Fatalf("expected supervisor to be idle after the proofreading returned")
-	}
-}
-
 func TestProofreaderBridgeSendsSpeechAsOneGroupWithItsWindow(t *testing.T) {
 	mock := &mockProofreadingServer{response: &v1.ProofreadTextResponse{
 		Corrections: []*v1.ProofreadCorrection{{Number: 0, Last: 1, Text: "We should go."}},
@@ -201,7 +151,10 @@ func TestProofreaderBridgeSendsSpeechAsOneGroupWithItsWindow(t *testing.T) {
 		NextLine:    7,
 		IsDone:      true,
 	}}
-	bridge, _ := openTestProofreader(t, mock)
+	bridge, host := openTestProofreader(t, mock)
+	if name := bridge.GetName(); name != "Proofreading Plugin" {
+		t.Fatalf("unexpected name: %s", name)
+	}
 
 	lines := []domain.ProofreadLine{{Number: 0, Text: "we should"}, {Number: 1, Text: "go"}}
 	got, err := bridge.ProofreadSpeech(t.Context(), lines, 3)
@@ -231,19 +184,23 @@ func TestProofreaderBridgeSendsSpeechAsOneGroupWithItsWindow(t *testing.T) {
 		req.GetGroups()[0].GetLines()[1].GetText() != "go" {
 		t.Errorf("groups %v", req.GetGroups())
 	}
+
+	sup, ok := host.GetSupervisor("md.numen.tools.proofreading")
+	if !ok {
+		t.Fatalf("supervisor not found")
+	}
+	if !sup.IsIdle(0, time.Now()) {
+		t.Fatalf("expected supervisor to be idle after the proofreading returned")
+	}
 }
 
 func TestProofreaderBridgeReadsAPluginWithNothingToAskAsUnavailable(t *testing.T) {
 	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodeUnavailable, errors.New("no route"))}
 	bridge, _ := openTestProofreader(t, mock)
 
-	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
+	_, err := bridge.ProofreadSpeech(t.Context(), nil, 0)
 	if !errors.Is(err, completionport.ErrUnavailable) {
-		t.Errorf("scan: got %v, want %v", err, completionport.ErrUnavailable)
-	}
-	_, err = bridge.ProofreadSpeech(t.Context(), nil, 0)
-	if !errors.Is(err, completionport.ErrUnavailable) {
-		t.Errorf("speech: got %v, want %v", err, completionport.ErrUnavailable)
+		t.Errorf("got %v, want %v", err, completionport.ErrUnavailable)
 	}
 }
 
@@ -251,7 +208,7 @@ func TestProofreaderBridgeKeepsAnyOtherFailureAsItIs(t *testing.T) {
 	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodeInternal, errors.New("boom"))}
 	bridge, _ := openTestProofreader(t, mock)
 
-	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
+	_, err := bridge.ProofreadSpeech(t.Context(), nil, 0)
 
 	if err == nil || errors.Is(err, completionport.ErrUnavailable) || connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("got %v", err)
@@ -307,13 +264,9 @@ func TestProofreaderBridgeReadsAPluginThatCannotStartAsUnavailable(t *testing.T)
 		t.Fatal(err)
 	}
 
-	_, err = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
-	if !errors.Is(err, completionport.ErrUnavailable) {
-		t.Errorf("scan: got %v, want %v", err, completionport.ErrUnavailable)
-	}
 	_, err = bridge.ProofreadSpeech(t.Context(), nil, 0)
 	if !errors.Is(err, completionport.ErrUnavailable) {
-		t.Errorf("speech: got %v, want %v", err, completionport.ErrUnavailable)
+		t.Errorf("got %v, want %v", err, completionport.ErrUnavailable)
 	}
 }
 
@@ -337,7 +290,7 @@ func TestProofreaderBridgeReadsAModelThePersonHasNotAllowedAsNoConsent(t *testin
 	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodePermissionDenied, errors.New("not allowed"))}
 	bridge, _ := openTestProofreader(t, mock)
 
-	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
+	_, err := bridge.ProofreadSpeech(t.Context(), nil, 0)
 	if !errors.Is(err, completionport.ErrNoConsent) {
 		t.Errorf("got %v, want %v", err, completionport.ErrNoConsent)
 	}
@@ -348,7 +301,7 @@ func TestProofreaderBridgeStatesAnUnavailablePluginOnce(t *testing.T) {
 	mock := &mockProofreadingServer{failure: connect.NewError(connect.CodeUnavailable, errors.New("ai: routed agent did not answer: boom"))}
 	bridge, _ := openTestProofreader(t, mock)
 
-	_, err := bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
+	_, err := bridge.ProofreadSpeech(t.Context(), nil, 0)
 	if !errors.Is(err, completionport.ErrUnavailable) {
 		t.Fatalf("got %v, want %v", err, completionport.ErrUnavailable)
 	}

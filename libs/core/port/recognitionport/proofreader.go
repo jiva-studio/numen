@@ -10,15 +10,12 @@ import (
 // not know which plugin answers, which model it asks, or how it cuts the text
 // into requests.
 //
-// An installation that configured none has no proofreader, and a recognition is
-// used exactly as it was read. A proofreader with nothing routed to answer for
+// An installation that configured none has no proofreader, and a transcript is
+// used exactly as it was heard. A proofreader with nothing routed to answer for
 // it fails with ErrUnavailable.
 type Proofreader interface {
 	// GetName is what made a correction, recorded beside it.
 	GetName() string
-
-	// ProofreadScan puts right the lines of printed pages.
-	ProofreadScan(ctx context.Context, pages []domain.ProofreadPage) (domain.ScanProofreading, error)
 
 	// ProofreadSpeech puts right the lines of a transcript that fall in the
 	// window from the line numbered from onwards. The lines are the whole

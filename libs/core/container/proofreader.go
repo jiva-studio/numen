@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 
@@ -32,13 +31,8 @@ func (c Config) Proofreader(name string) (recognitionport.Proofreader, error) {
 	return proofreaderbridge.Open(host)
 }
 
-// GetScanProofreading is what a document's reading is put right with: the
-// profile the settings name for a scan.
-func (c Config) GetScanProofreading() run.ProofreadingConfig {
-	return c.getProofreading(c.ScanProofreading)
-}
-
-// GetSpeechProofreading is the same for what a model heard.
+// GetSpeechProofreading is what a transcript is put right with: the profile the
+// settings name for speech.
 func (c Config) GetSpeechProofreading() run.ProofreadingConfig {
 	return c.getProofreading(c.TranscriptProofreading)
 }
@@ -51,12 +45,6 @@ func (c Config) getProofreading(config Proofread) run.ProofreadingConfig {
 		IsAutomatic: config.IsAutomatic,
 		By:          func() (recognitionport.Proofreader, error) { return c.Proofreader(config.Profile) },
 	}
-}
-
-// CreateRecognitionProofread is what puts a document's recognition right, and
-// whether the installation named a proofreader for a scan.
-func (c Config) CreateRecognitionProofread() (recognition.Proofread, bool, error) {
-	return recognition.CreateProofread(c.GetScanProofreading(), c.VaultReaders(), c.GetDerivedStores())
 }
 
 // CreateTranscriptProofread is what puts a transcript right, and whether the

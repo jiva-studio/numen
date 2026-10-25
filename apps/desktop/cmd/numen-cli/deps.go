@@ -38,10 +38,6 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 				cfg.SetPluginVaultPath(v.Path)
 				return createScan(ctx, cfg, v, rebuild)
 			},
-			Recognise: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Recognise, error) {
-				cfg.SetPluginVaultPath(v.Path)
-				return createRecognition(ctx, cfg, v, fetching)
-			},
 			Transcribe: func(ctx context.Context, v domain.Vault, fetching func()) (cli.Transcribe, error) {
 				cfg.SetPluginVaultPath(v.Path)
 				return createTranscription(ctx, cfg, v, fetching)
@@ -49,10 +45,6 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			ImportURL: func(ctx context.Context, v domain.Vault) (cli.ImportURL, error) {
 				cfg.SetPluginVaultPath(v.Path)
 				return createImportURL(ctx, cfg)
-			},
-			ProofreadRecognition: func(ctx context.Context, v domain.Vault) (cli.ProofreadRecognition, error) {
-				cfg.SetPluginVaultPath(v.Path)
-				return createProofreadRecognition(ctx, cfg, v)
 			},
 			ProofreadTranscript: func(ctx context.Context, v domain.Vault) (cli.ProofreadTranscript, error) {
 				cfg.SetPluginVaultPath(v.Path)
@@ -140,34 +132,6 @@ func closeIfOpen(closeFn func() error) {
 	}
 }
 
-// createRecognition is the reading of scans with the models on this machine. The
-func createRecognition(
-	ctx context.Context, cfg container.Config, v domain.Vault, fetching func(),
-) (cli.Recognise, error) {
-	cfg.SetPluginVaultPath(v.Path)
-	if !cfg.RecogniserReady() {
-		fetching()
-	}
-	models, closeModels, why := cfg.Recogniser(ctx)
-	if why != nil {
-		return cli.Recognise{}, why
-	}
-	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
-	if err != nil {
-		_ = closeModels()
-		return cli.Recognise{}, err
-	}
-	db, cutFn := indexed.db, indexed.extractor
-	return cli.Recognise{
-		Recognise: cfg.Recognise(db.Sources(), models),
-		Cut:       cutFn,
-		Close: func() error {
-			_ = closeModels()
-			return db.Close()
-		},
-	}, nil
-}
-
 // createTranscription is the transcription of recordings with the models on this
 // downloaded first.
 func createTranscription(
@@ -228,25 +192,6 @@ func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, 
 		return cli.ImportURL{}, err
 	}
 	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, cfg.Downloader(ctx)), Close: db.Close}, nil
-}
-
-// createProofreadRecognition is the proofreading of recognized scans, when it is
-// configured.
-func createProofreadRecognition(
-	ctx context.Context, cfg container.Config, v domain.Vault,
-) (cli.ProofreadRecognition, error) {
-	cfg.SetPluginVaultPath(v.Path)
-	proofread, target, err := cfg.CreateRecognitionProofread()
-	if err != nil || !target {
-		return cli.ProofreadRecognition{}, err
-	}
-	indexed, err := createCut(ctx, cfg, v, cfg.Extract)
-	if err != nil {
-		return cli.ProofreadRecognition{}, err
-	}
-	return cli.ProofreadRecognition{
-		Proofread: proofread, Cut: indexed.extractor, IsHeld: true, Close: indexed.db.Close,
-	}, nil
 }
 
 // createProofreadTranscript is the proofreading of transcripts, when it is

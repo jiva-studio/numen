@@ -20,11 +20,10 @@ import (
 // other section belongs to the adapter it configures, and is put beside them
 // here, where every adapter is bound.
 const (
-	indexingAt    = "indexing"
-	embeddingAt   = "embedding"
-	recognitionAt = "recognition"
-	agentAt       = "agent"
-	importingAt   = "importing"
+	indexingAt  = "indexing"
+	embeddingAt = "embedding"
+	agentAt     = "agent"
+	importingAt = "importing"
 )
 
 // Settings is the file a person configures this installation in: one object
@@ -143,7 +142,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
 	c.Proofreading = s.Indexing.Proofreading
-	c.ScanProofreading = s.Indexing.Recognition.Proofread
 	c.TranscriptProofreading = s.Indexing.Transcription.Proofread
 	c.ShouldTranscribe = s.Indexing.CanTranscribe()
 	c.TranscribesUnder = s.Indexing.GetTranscribeLimit()

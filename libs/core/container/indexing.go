@@ -6,18 +6,14 @@ import (
 )
 
 // Indexing is how a vault is made searchable. It is one section of the settings
-// file and the union of what four adapters are configured with, which is why it
+// file and the union of what the adapters are configured with, which is why it
 // stands where every adapter is bound.
 type Indexing struct {
 	// Embedding is which model turns text into vectors, and how it is reached.
 	Embedding EmbeddingConfig `json:"embedding"`
 
-	// Recognition is how a scanned document is read when a person asks for it.
-	// Nothing here runs on its own.
-	Recognition Recognition `json:"recognition"`
-
-	// Proofreading is what puts a recognition right. Naming no profile here is
-	// naming no proofreader, and a recognition is used as it was read.
+	// Proofreading is what puts a transcript right. Naming no profile here is
+	// naming no proofreader, and a transcript is used as it was heard.
 	Proofreading ProofreadingConfig `json:"proofreading"`
 
 	// Transcription is how a recording is listened to: which models hear it,
@@ -38,23 +34,6 @@ type Indexing struct {
 	//
 	// Zero takes the default. A negative number is no limit at all.
 	TranscribeUnderMB int `json:"transcribe_under_mb"`
-}
-
-// Recognition is how a scanned document is read, and which profile puts that
-// recognition right afterwards.
-type Recognition struct {
-	// Recognise names the OCR model that reads scanned pages.
-	Recognise RecogniseConfig `json:"recognise"`
-
-	// Proofread names the profile a recognition is put right at. Automatically
-	// there says whether a recognition just made is put right without anybody
-	// asking.
-	Proofread Proofread `json:"proofread"`
-}
-
-// RecogniseConfig is the optical character recognition model setting.
-type RecogniseConfig struct {
-	Name string `json:"name"`
 }
 
 // Transcription is how a recording is listened to, and which profile puts what
@@ -98,13 +77,6 @@ func DefaultIndexing() Indexing {
 	set := true
 	return Indexing{
 		Embedding: DefaultEmbedding(),
-		Recognition: Recognition{
-			Recognise: RecogniseConfig{Name: ""},
-			Proofread: Proofread{
-				Profile:     "",
-				IsAutomatic: false,
-			},
-		},
 		Proofreading: ProofreadingConfig{
 			Profiles: map[string]any{},
 		},

@@ -4,7 +4,6 @@ package bridge
 const (
 	CapabilityDocument      = "document"
 	CapabilityBook          = "book"
-	CapabilityRecognition   = "recognition"
 	CapabilityTranscription = "transcription"
 	CapabilityEmbedding     = "embedding"
 	CapabilityDownloader    = "downloader"

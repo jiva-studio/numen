@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"image"
 	"io"
 	"reflect"
 	"strings"
@@ -20,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/proofreaderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/recogniserbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
@@ -31,7 +29,6 @@ import (
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
 	embedderbridge.Host
-	recogniserbridge.Host
 	transcriberbridge.Host
 	downloaderbridge.Host
 	documentbridge.Host
@@ -76,12 +73,6 @@ var bridgeContracts = []bridgeContract{
 			return isZeroResult(b.Embed(ctx, []string{"a"}))
 		})
 	}},
-	{"recogniser", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := recogniserbridge.Open(ctx, h)
-		return createContract(b, err, func(b *recogniserbridge.Recogniser, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Recognise(ctx, image.NewRGBA(image.Rect(0, 0, 1, 1))))
-		})
-	}},
 	{"transcriber", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := transcriberbridge.Open(ctx, h)
 		return createContract(b, err, func(b *transcriberbridge.Transcriber, ctx context.Context) (bool, error) {
@@ -114,7 +105,7 @@ var bridgeContracts = []bridgeContract{
 	{"proofreader", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := proofreaderbridge.Open(h)
 		return createContract(b, err, func(b *proofreaderbridge.Proofreader, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ProofreadScan(ctx, []domain.ProofreadPage{{Number: 1}}))
+			return isZeroResult(b.ProofreadSpeech(ctx, nil, 0))
 		})
 	}},
 	{"tools", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {

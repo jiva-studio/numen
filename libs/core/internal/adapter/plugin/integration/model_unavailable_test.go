@@ -14,7 +14,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/recogniserbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/transcriberbridge"
 	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -80,13 +79,6 @@ func modelOpeners() []modelOpener {
 	return []modelOpener{
 		{"embedder", func(ctx context.Context, h *stubModelHost) error {
 			b, err := embedderbridge.Open(ctx, h)
-			if b != nil {
-				return errors.New("a bridge was returned with the error")
-			}
-			return err
-		}},
-		{"recogniser", func(ctx context.Context, h *stubModelHost) error {
-			b, err := recogniserbridge.Open(ctx, h)
 			if b != nil {
 				return errors.New("a bridge was returned with the error")
 			}

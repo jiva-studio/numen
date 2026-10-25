@@ -5,7 +5,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
@@ -177,12 +176,6 @@ func (e EditorAssembly) OpenImportURL(
 	ctx context.Context, downloader downloadport.Downloader,
 ) source.ImportURL {
 	return e.cfg.ImportURL(ctx, e.db, downloader)
-}
-
-func (e EditorAssembly) OpenRecognitionWorker(
-	ctx context.Context, tasks *run.Tasks, models *run.Lock,
-) *recognition.Worker {
-	return e.cfg.OpenRecognitionWorker(ctx, e.db.Sources(), tasks, models)
 }
 
 func (e EditorAssembly) OpenTranscriptionWorker(

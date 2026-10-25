@@ -46,24 +46,6 @@ func (p *restartedPlugin) EmbedBatch(
 	return connect.NewResponse(&v1.EmbedBatchResponse{}), nil
 }
 
-type restartedRecognition struct {
-	numenv1connect.UnimplementedRecognitionServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedRecognition) GetRecognitionModel(
-	context.Context, *connect.Request[v1.GetRecognitionModelRequest],
-) (*connect.Response[v1.GetRecognitionModelResponse], error) {
-	return connect.NewResponse(&v1.GetRecognitionModelResponse{}), nil
-}
-
-func (r restartedRecognition) RecognisePage(
-	context.Context, *connect.Request[v1.RecognisePageRequest],
-) (*connect.Response[v1.RecognisePageResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.RecognisePageResponse{}), nil
-}
-
 type restartedTranscription struct {
 	numenv1connect.UnimplementedTranscriptionServiceHandler
 	plugin *restartedPlugin
@@ -124,7 +106,6 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	plugin := &restartedPlugin{}
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
-	mux.Handle(numenv1connect.NewRecognitionServiceHandler(restartedRecognition{plugin: plugin}))
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(restartedTranscription{plugin: plugin}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(restartedDocument{plugin: plugin}))
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
@@ -187,7 +168,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "recognition", "transcription", "document", "book", "downloader", "proofreading", "tools"],
+		"capabilities": ["embedding", "transcription", "document", "book", "downloader", "proofreading", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
 		"backend": {"type": "process", "entrypoint": "bin/stub"}

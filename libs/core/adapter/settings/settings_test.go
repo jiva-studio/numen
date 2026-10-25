@@ -675,18 +675,14 @@ func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
 	}
 }
 
-// Which profile puts each kind of text right, and whether it happens without
-// anybody asking, is said where the text is configured.
-func TestEachKindOfTextNamesTheProfileThatInsertsItRight(t *testing.T) {
+// Which profile puts a transcript right, and whether it happens without anybody
+// asking, is said where the transcript is configured.
+func TestATranscriptNamesTheProfileThatInsertsItRight(t *testing.T) {
 	cfg, err := openAt(write(t, `{"indexing":{
-		"recognition":   {"proofread":{"with":"openrouter","automatically":true}},
 		"transcription": {"proofread":{"with":"agent","automatically":false}}
 	}}`))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Recognition.Proofread; got.Profile != "openrouter" || !got.IsAutomatic {
-		t.Errorf("a scan is put right by %+v", got)
 	}
 	if got := cfg.Indexing.Transcription.Proofread; got.Profile != "agent" || got.IsAutomatic {
 		t.Errorf("a transcript is put right by %+v", got)

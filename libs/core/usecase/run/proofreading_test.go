@@ -17,10 +17,6 @@ type answering struct{}
 
 func (answering) GetName() string { return "answering" }
 
-func (answering) ProofreadScan(context.Context, []domain.ProofreadPage) (domain.ScanProofreading, error) {
-	return domain.ScanProofreading{}, nil
-}
-
 func (answering) ProofreadSpeech(
 	context.Context, []domain.ProofreadLine, int,
 ) (domain.SpeechProofreading, error) {

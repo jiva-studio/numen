@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -21,7 +20,6 @@ type vaultSession struct {
 	// refresh brings a note of this vault up to date through the opening it is
 	// being followed by.
 	refresh             vaults.Refresh
-	recognitionWorker   *recognition.Worker
 	transcriptionWorker *transcription.Worker
 
 	// ctx is what every pass behind this vault runs under, and what work
@@ -128,27 +126,22 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	}
 
 	watching, stop := context.WithCancel(o.ctx)
-	recognising := o.made.OpenRecognitionWorker(watching, o.tasks, o.models)
 	sources := o.made.GetSourceQueries()
 
-	// What a recognition writes down is cut where every other cut happens. A
-	// document being read and a vault being scanned are then never two passes
+	// What a transcription writes down is cut where every other cut happens. A
+	// recording being heard and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
 	o.made.SetTextVersionListener(indexed)
-	recognising.Cut = func(_ context.Context, of domain.Vault, path string) error {
-		indexed.RequestCut(of, path)
-		return nil
-	}
-
-	// batches is taken up when the application opens.
-	recognising.TakeUp(watching, sources, recognized...)
 
 	// A recording says nothing until a model has listened to it, so the ones
 	// this vault holds no transcript for are work whether or not anybody asks.
 	// What it writes is cut where every other cut happens.
 	transcribing := o.made.OpenTranscriptionWorker(watching, o.tasks, o.models)
-	transcribing.Cut = recognising.Cut
+	transcribing.Cut = func(_ context.Context, of domain.Vault, path string) error {
+		indexed.RequestCut(of, path)
+		return nil
+	}
 	if o.made.IsTranscribingUnasked() {
 		transcribing.Queue(watching, sources, heardEvery, v)
 	}
@@ -163,7 +156,6 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 
 	return &vaultSession{
 		refresh:             refresh,
-		recognitionWorker:   recognising,
 		transcriptionWorker: transcribing,
 		ctx:                 watching,
 		cancel:              stop,
@@ -180,9 +172,8 @@ func (o *Installation) stopVault() {
 	}
 	on.cancel()
 	on.wait()
-	// A recognition and a transcription both write to the index, so they end before
-	// anything reads what they wrote.
-	on.recognitionWorker.Wait()
+	// A transcription writes to the index, so it ends before anything reads
+	// what it wrote.
 	on.transcriptionWorker.Wait()
 }
 

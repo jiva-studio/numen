@@ -18,7 +18,7 @@ func TestHostSafeMode(t *testing.T) {
 		"id": "md.numen.engines.ocr",
 		"name": "OCR",
 		"version": "1.0.0",
-		"capabilities": ["recognition"],
+		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": ["vault:read"],
@@ -48,7 +48,7 @@ func TestHostSafeMode(t *testing.T) {
 		t.Fatal("expected GetPlugin to report false in safe mode")
 	}
 
-	if _, ok := host.FindPluginByCapability("recognition"); ok {
+	if _, ok := host.FindPluginByCapability("embedding"); ok {
 		t.Fatal("expected FindPluginByCapability to report false in safe mode")
 	}
 

@@ -460,7 +460,6 @@ func TestWhatTheSettingRuleRefuses(t *testing.T) {
 var coreCapabilities = map[string]bool{
 	bridge.CapabilityDocument:      true,
 	bridge.CapabilityBook:          true,
-	bridge.CapabilityRecognition:   true,
 	bridge.CapabilityTranscription: true,
 	bridge.CapabilityEmbedding:     true,
 	bridge.CapabilityDownloader:    true,

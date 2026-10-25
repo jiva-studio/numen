@@ -133,11 +133,9 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 		t.Errorf("got name %q, want %q", got, "test-model")
 	}
 
-	res, err := proofreader.ProofreadScan(t.Context(), []domain.ProofreadPage{
-		{Number: 1, Lines: []domain.ProofreadLine{{Number: 4, Text: "wrods"}}},
-	})
+	res, err := proofreader.ProofreadSpeech(t.Context(), []domain.ProofreadLine{{Number: 4, Text: "wrods"}}, 0)
 	if err != nil {
-		t.Fatalf("ProofreadScan failed: %v", err)
+		t.Fatalf("ProofreadSpeech failed: %v", err)
 	}
 	if len(res.Corrections) != 1 || res.Corrections[0].Number != 4 || res.Corrections[0].Text != "fixed: wrods" {
 		t.Errorf("corrections %+v", res.Corrections)
@@ -147,27 +145,22 @@ func TestTheProofreadingPluginWiredViaHostAnswersProofreader(t *testing.T) {
 // The settings of a kind of text reach the run: whether it was named, whether
 // it is automatic, and what opens the proofreader.
 func TestTheProofreadingOfAKindOfTextCarriesTheSettingsOfItsProfile(t *testing.T) {
-	cfg := container.Config{
-		ScanProofreading:       container.Proofread{Profile: "careful", IsAutomatic: true},
-		TranscriptProofreading: container.Proofread{},
+	named := container.Config{TranscriptProofreading: container.Proofread{Profile: "careful", IsAutomatic: true}}.GetSpeechProofreading()
+	if !named.IsNamed || !named.IsAutomatic {
+		t.Errorf("speech proofreading %+v", named)
 	}
-
-	scan := cfg.GetScanProofreading()
-	if !scan.IsNamed || !scan.IsAutomatic {
-		t.Errorf("scan proofreading %+v", scan)
-	}
-	if scan.By == nil {
+	if named.By == nil {
 		t.Fatal("a named profile opens nothing")
 	}
-	if _, why := scan.By(); !errors.Is(why, completionport.ErrUnavailable) {
+	if _, why := named.By(); !errors.Is(why, completionport.ErrUnavailable) {
 		t.Errorf("a profile with no plugin opened with %v", why)
 	}
 
-	speech := cfg.GetSpeechProofreading()
-	if speech.IsNamed || speech.IsAutomatic {
-		t.Errorf("speech proofreading %+v", speech)
+	unnamed := container.Config{}.GetSpeechProofreading()
+	if unnamed.IsNamed || unnamed.IsAutomatic {
+		t.Errorf("speech proofreading %+v", unnamed)
 	}
-	if delta, why := speech.By(); delta != nil || why != nil {
+	if delta, why := unnamed.By(); delta != nil || why != nil {
 		t.Errorf("an unnamed profile opened %v, %v", delta, why)
 	}
 }

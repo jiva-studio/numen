@@ -85,8 +85,7 @@ type Config struct {
 	// Proofreading configures the recognition proofreading pipeline.
 	Proofreading ProofreadingConfig
 
-	// ScanProofreading and TranscriptProofreading configure automatic proofreading profiles.
-	ScanProofreading       Proofread
+	// TranscriptProofreading configures the automatic proofreading profile of a transcript.
 	TranscriptProofreading Proofread
 
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.

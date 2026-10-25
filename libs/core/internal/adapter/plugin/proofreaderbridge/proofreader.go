@@ -49,30 +49,6 @@ func (b *Proofreader) GetName() string {
 	return b.name
 }
 
-// ProofreadScan hands the pages over and answers with what the plugin corrected.
-func (b *Proofreader) ProofreadScan(
-	ctx context.Context, pages []domain.ProofreadPage,
-) (domain.ScanProofreading, error) {
-	groups := make([]*v1.ProofreadGroup, len(pages))
-	for i, page := range pages {
-		groups[i] = &v1.ProofreadGroup{Number: int32(page.Number), Lines: writeWireLines(page.Lines)}
-	}
-	res, err := b.proofreadText(ctx, &v1.ProofreadTextRequest{
-		Kind:   v1.ProofreadKind_PROOFREAD_KIND_SCAN,
-		Groups: groups,
-		Options: &v1.ProofreadTextRequest_Scan{
-			Scan: &v1.ProofreadScanOptions{},
-		},
-	})
-	if err != nil {
-		return domain.ScanProofreading{}, err
-	}
-	return domain.ScanProofreading{
-		Corrections: readWireCorrections(res.GetCorrections()),
-		Uncorrected: int(res.GetUncorrected()),
-	}, nil
-}
-
 // ProofreadSpeech hands the lines of the transcript over and answers with what
 // the plugin corrected from the line numbered from onwards.
 func (b *Proofreader) ProofreadSpeech(

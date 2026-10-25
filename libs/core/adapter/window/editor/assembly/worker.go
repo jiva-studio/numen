@@ -3,7 +3,6 @@ package assembly
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
@@ -31,13 +30,9 @@ type WorkerAssembly interface {
 	OpenDownloader(ctx context.Context) downloadport.Downloader
 	OpenImportURL(ctx context.Context, downloader downloadport.Downloader) source.ImportURL
 
-	// OpenRecognitionWorker reads a scanned document and
-	// OpenTranscriptionWorker hears a recording, each for whoever asks. models
-	// is what the two take turns at: one run holds this machine's models at a
-	// time.
-	OpenRecognitionWorker(
-		ctx context.Context, tasks *run.Tasks, models *run.Lock,
-	) *recognition.Worker
+	// OpenTranscriptionWorker hears a recording for whoever asks. models is
+	// what it takes turns at with the plugins: one run holds this machine's
+	// models at a time.
 	OpenTranscriptionWorker(
 		ctx context.Context, tasks *run.Tasks, models *run.Lock,
 	) *transcription.Worker

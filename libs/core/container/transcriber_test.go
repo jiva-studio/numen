@@ -12,12 +12,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/transcriptionport"
 )
 
-// A transcript is put right at the profile the settings name for speech. The
-// profile named for a scanned reading is another setting and is not read here.
+// A transcript is put right at the profile the settings name for speech.
 func TestATranscriptIsInsertRightWithTheProfileNamedForSpeech(t *testing.T) {
 	cfg := Config{ServiceDir: ".numen"}
 	cfg.TranscriptProofreading = Proofread{Profile: "speech"}
-	cfg.ScanProofreading = Proofread{Profile: "scans", IsAutomatic: true}
 
 	target := cfg.OpenTranscriptionWorker(t.Context(), nil, run.NewTasks(), nil)
 	_, err := target.Proofread(t.Context(), domain.Vault{ID: "v", Path: t.TempDir()}, "talks/one.mp3")

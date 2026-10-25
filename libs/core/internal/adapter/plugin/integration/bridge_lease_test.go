@@ -13,8 +13,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugintest"
@@ -43,16 +41,6 @@ func (stubEmbeddingServer) GetEmbeddingModel(
 	return connect.NewResponse(&v1.GetEmbeddingModelResponse{}), nil
 }
 
-type stubRecognitionServer struct {
-	numenv1connect.UnimplementedRecognitionServiceHandler
-}
-
-func (stubRecognitionServer) GetRecognitionModel(
-	context.Context, *connect.Request[v1.GetRecognitionModelRequest],
-) (*connect.Response[v1.GetRecognitionModelResponse], error) {
-	return connect.NewResponse(&v1.GetRecognitionModelResponse{}), nil
-}
-
 type stubTranscriptionServer struct {
 	numenv1connect.UnimplementedTranscriptionServiceHandler
 }
@@ -69,7 +57,6 @@ func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&plugintest.MockAgentServer{}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
-	mux.Handle(numenv1connect.NewRecognitionServiceHandler(stubRecognitionServer{}))
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(stubTranscriptionServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
@@ -83,7 +70,7 @@ func TestEveryProofreadingProducesItsReferenceBack(t *testing.T) {
 		t.Fatal(err)
 	}
 	for range 3 {
-		_, _ = bridge.ProofreadScan(t.Context(), []domain.ProofreadPage{{Number: 1}})
+		_, _ = bridge.ProofreadSpeech(t.Context(), nil, 0)
 	}
 	_ = bridge.Close()
 	if host.Acquired.Load() != 3 || host.Released.Load() != 3 {

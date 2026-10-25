@@ -21,9 +21,6 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 	if !reflect.DeepEqual(cfg.Proofreading, response.Proofreading) {
 		t.Error("the proofreading section did not arrive")
 	}
-	if !reflect.DeepEqual(cfg.ScanProofreading, response.Recognition.Proofread) {
-		t.Error("what puts a recognition right did not arrive")
-	}
 	if !reflect.DeepEqual(cfg.TranscriptProofreading, response.Transcription.Proofread) {
 		t.Error("what puts a transcript right did not arrive")
 	}
@@ -42,7 +39,7 @@ func TestEverySectionOfTheSettingsIsCarried(t *testing.T) {
 // until it is carried, which is the failure the sections themselves cannot
 // have: an unconfigured model is a model nobody asked for.
 func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
-	if target := reflect.TypeOf(container.Indexing{}).NumField(); target != 6 {
+	if target := reflect.TypeOf(container.Indexing{}).NumField(); target != 5 {
 		t.Errorf("indexing holds %d sections; carry the new one in Config.SetSettings", target)
 	}
 	// The document holds the sections the file does, and the line a person is

@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
@@ -31,8 +30,8 @@ type Locations struct {
 // command, and nothing opened until the command that needs it asks.
 //
 // A command pays only for its own machinery: listing vaults opens no index, a
-// search opens no provider that fills one, and recognising a scan opens no
-// transcriber.
+// search opens no provider that fills one, and transcribing a recording opens
+// no index of another vault.
 type Deps struct {
 	// Vaults is the list of vaults this installation keeps and what the vault
 	// commands work on. Every command opens it: what a person typed is a name,
@@ -54,24 +53,16 @@ type Deps struct {
 	// Problems opens what a scan could not act on.
 	Problems func(ctx context.Context) (Problems, error)
 
-	// Recognise opens what reads a scanned document. fetching is called before
+	// Transcribe opens what listens to a recording. fetching is called before
 	// anything is waited for, where a model has to arrive first.
-	Recognise func(ctx context.Context, v domain.Vault, fetching func()) (Recognise, error)
-
-	// Transcribe opens what listens to a recording, and calls fetching the way
-	// Recognise does.
 	Transcribe func(ctx context.Context, v domain.Vault, fetching func()) (Transcribe, error)
 
 	// ImportURL opens what reaches the address a link note points at. A machine
 	// holding neither of the tools that reach one opens nothing.
 	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
 
-	// ProofreadRecognition opens what puts a document's recognition right, and
-	// ProofreadTranscript what puts a recording's transcript right. They are
-	// two openers because a file is one or the other and nothing opens for the
-	// kind it is not.
-	ProofreadRecognition func(ctx context.Context, v domain.Vault) (ProofreadRecognition, error)
-	ProofreadTranscript  func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
+	// ProofreadTranscript opens what puts a recording's transcript right.
+	ProofreadTranscript func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
 
 	// PluginCommands opens the commands the enabled plugins declare. Left nil, there are none.
 	PluginCommands func() PluginCommands
@@ -146,21 +137,11 @@ type Problems struct {
 	Close    func() error
 }
 
-// Recognise is one scanned document read with a model.
-type Recognise struct {
-	Recognise recognition.Recognise
-	// Cut makes what a batch of pages wrote searchable before the next batch is
-	// read, so a document stopped part way through answers to the page it
-	// reached.
-	Cut   source.Extract
-	Close func() error
-}
-
 // Transcribe is one recording listened to with a model.
 type Transcribe struct {
 	Transcribe transcription.Transcribe
-	// Cut is what it is for a recognition: the speech already written down is
-	// searchable while the rest is still being heard.
+	// Cut makes the speech already written down searchable while the rest is
+	// still being heard.
 	Cut   source.Extract
 	Close func() error
 }
@@ -170,16 +151,6 @@ type Transcribe struct {
 type ImportURL struct {
 	ImportURL source.ImportURL
 	Close     func() error
-}
-
-// ProofreadRecognition is one document's recognition put right with a model.
-type ProofreadRecognition struct {
-	Proofread recognition.Proofread
-	Cut       source.Extract
-	// IsHeld says whether anything is configured to proofread with. Nothing else
-	// here is opened where nothing is.
-	IsHeld bool
-	Close  func() error
 }
 
 // ProofreadTranscript is one recording's transcript put right with a model.

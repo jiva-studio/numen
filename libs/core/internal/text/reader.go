@@ -9,9 +9,6 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/internal/correction"
-	"github.com/jiva-studio/numen/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -51,12 +48,11 @@ func ReadDownloaded(
 	return "", "", nil
 }
 
-// ReadComposed is a recognition and everything kept beside it, as the text a
+// ReadComposed is an artifact and everything kept beside it, as the text a
 // source's chunks are places in.
 //
-// The corrections are read before the coordinates, and a recognition nothing
-// proofread is composed from its own bytes alone. A transcript is composed from
-// what it was put right to, and from its own bytes where nothing put it right.
+// A transcript is composed from what it was put right to, and from its own
+// bytes where nothing put it right. Any other artifact is its own bytes.
 func ReadComposed(
 	ctx context.Context,
 	store vaultport.DerivedStore,
@@ -75,21 +71,7 @@ func ReadComposed(
 		}
 		return ReadTranscript(raw), nil
 	}
-	parts, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactParts, producer, hash))
-	if err != nil {
-		return nil, err
-	}
-	corrections, err := readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactCorrections, producer, hash))
-	if err != nil {
-		return nil, err
-	}
-	var boxes []byte
-	if len(corrections) > 0 {
-		if boxes, err = readOptional(ctx, store, domain.NewArtifactName(domain.ArtifactBoxes, producer, hash)); err != nil {
-			return nil, err
-		}
-	}
-	return ReadRecognition(raw, parts, boxes, corrections), nil
+	return &Document{Text: string(raw)}, nil
 }
 
 // readOptional is what is kept under a name, and nothing where the store holds
@@ -105,32 +87,6 @@ func readOptional(ctx context.Context, store vaultport.DerivedStore, name domain
 	return raw, nil
 }
 
-// ReadRecognition is a recognition, as the text its chunks are places in, the
-// parts that text is divided into, and the pages it names.
-//
-// The parts are what a layout model called a heading, written beside the
-// artifact when it was read. A recognition that names none is a document with
-// no parts, and is located by its pages alone.
-//
-// A recognition that was proofread is composed with its corrections in it, and the
-// pages and the parts stand where they now are.
-func ReadRecognition(raw, parts, boxes, corrections []byte) *Document {
-	prose, marks := ocrartifact.Read(raw)
-	named := ocrartifact.Unpack(parts)
-	if correctionsList := correction.Unpack(corrections); len(correctionsList) > 0 {
-		prose, marks, named = domain.GetCorrectedProse(prose, marks, highlight.Unpack(boxes), named, correctionsList)
-	}
-	doc := &Document{Text: prose}
-	for _, p := range getPartStarts(prose, named) {
-		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
-	}
-	for i, m := range marks {
-		doc.paged = append(doc.paged, namedPlace{Offset: m.Offset, Name: page(i)})
-	}
-	return doc
-}
-
 // ReadTranscript is what a model heard, as the text its chunks are places in
 // and the moments of the recording those places stand at.
 //
@@ -143,28 +99,6 @@ func ReadTranscript(raw []byte) *Document {
 		doc.paged = append(doc.paged, namedPlace{Offset: cue.Offset, Name: transcript.Clock(cue.From)})
 	}
 	return doc
-}
-
-// getPartStarts is the parts a sidecar names, as parts of the prose. A part is
-// named by its heading run as the scan was read, mangled or not.
-//
-// The parts of one artifact begin in the order the prose is read and end within
-// it. A sidecar that says otherwise was written for other bytes, and none of it
-// is used.
-func getPartStarts(prose string, parts []domain.OCRPart) []domain.PartStart {
-	out := make([]domain.PartStart, 0, len(parts))
-	pos := 0
-	for _, p := range parts {
-		if p.Start < pos || p.Length <= 0 || p.Start+p.Length > len(prose) {
-			return nil
-		}
-		pos = p.Start
-		out = append(out, domain.PartStart{
-			Title:  prose[p.Start : p.Start+p.Length],
-			Offset: p.Start,
-		})
-	}
-	return out
 }
 
 // Fingerprint addresses the content of a file. Everything one run wrote about
