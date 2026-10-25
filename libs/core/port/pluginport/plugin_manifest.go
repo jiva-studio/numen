@@ -241,6 +241,8 @@ type PluginManifest struct {
 	// NoteTypes are the types of note the plugin gives meaning to, and how the index keeps the notes of
 	// each. A note of a type no plugin declares is kept as an ordinary note is.
 	NoteTypes []PluginNoteType `json:"noteTypes,omitempty"`
+	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
+	Commands []PluginCommand `json:"commands,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -302,6 +304,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
+	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }

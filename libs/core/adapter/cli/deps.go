@@ -72,6 +72,9 @@ type Deps struct {
 	// kind it is not.
 	ProofreadRecognition func(ctx context.Context, v domain.Vault) (ProofreadRecognition, error)
 	ProofreadTranscript  func(ctx context.Context, v domain.Vault) (ProofreadTranscript, error)
+
+	// PluginCommands opens the commands the enabled plugins declare. Left nil, there are none.
+	PluginCommands func() PluginCommands
 }
 
 // Vaults is what the vault commands work on: the list this installation keeps,

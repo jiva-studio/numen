@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
@@ -230,6 +231,9 @@ func (e EditorAssembly) StartVault(
 // GetPluginServices is where the window forwards the calls it receives for the services plugins
 // serve.
 func (e EditorAssembly) GetPluginServices() PluginServices { return e.cfg.GetPluginServices() }
+
+// GetPluginCommands is the use cases over the commands the enabled plugins declare.
+func (e EditorAssembly) GetPluginCommands() plugincommand.Commands { return e.cfg.GetPluginCommands() }
 
 // GetAgent returns the agent provider for running tasks.
 func (e EditorAssembly) GetAgent() agentport.Agent { return e.cfg.AgentProvider() }

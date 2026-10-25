@@ -156,6 +156,9 @@ func (s *Services) newServices() []service {
 		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewAgentServiceHandler(s.Agent, c)
 		}},
+		{numenv1connect.CommandServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewCommandServiceHandler(s.Command, c)
+		}},
 		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			if s.Plugin == nil {
 				return numenv1connect.NewPluginServiceHandler(numenv1connect.UnimplementedPluginServiceHandler{}, c)

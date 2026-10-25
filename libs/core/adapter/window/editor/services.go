@@ -12,10 +12,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
 
@@ -41,6 +43,7 @@ type Services struct {
 	Vaults    *vaultsHandler
 	Settings  *settings.Handler
 	Agent     *agentHandler
+	Command   *command.Handler
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
@@ -79,6 +82,7 @@ func createServices(state *State) *Services {
 		Vaults:    &vaultsHandler{state: state},
 		Settings:  settings.NewHandler(),
 		Agent:     &agentHandler{state: state},
+		Command:   command.NewHandler(plugincommand.NewCommands(nil)),
 		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
 		files:     files,
 		server:    &fileServer{state: state, files: files},

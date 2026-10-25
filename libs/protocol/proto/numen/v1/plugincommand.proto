@@ -1,0 +1,132 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// PluginCommandService is what the backend of a plugin that declares commands
+// in its manifest serves. The host checks a call against the declaration before
+// it forwards it: the command is declared, every required argument is given,
+// every argument is declared and holds a value of its type, and a command over
+// files is given a file of a declared extension.
+service PluginCommandService {
+  // RunCommand runs one command the manifest declares.
+  rpc RunCommand(RunCommandRequest) returns (RunCommandResponse);
+}
+
+message RunCommandRequest {
+  // The id the manifest declares the command under.
+  string command = 1;
+
+  // The file the command runs over, as a path relative to the vault folder.
+  // Empty for a command that declares no file extensions.
+  string path = 2;
+
+  // The arguments by their declared names, each written as text: a number in
+  // decimal, a boolean as true or false. An optional argument left out is
+  // absent.
+  map<string, string> arguments = 3;
+}
+
+message RunCommandResponse {
+  // Set when the command was served and did not run, or ran and failed. The
+  // message then says why.
+  CommandErrorCode error = 1;
+
+  // What a person reads about the outcome.
+  string message = 2;
+}
+
+// CommandErrorCode is why a command was served and did not succeed.
+enum CommandErrorCode {
+  COMMAND_ERROR_CODE_UNSPECIFIED = 0;
+
+  // No plugin declares a command of that id.
+  COMMAND_ERROR_CODE_UNKNOWN_COMMAND = 1;
+
+  // The arguments or the file do not meet the declaration.
+  COMMAND_ERROR_CODE_BAD_ARGUMENTS = 2;
+
+  // The command ran and failed.
+  COMMAND_ERROR_CODE_FAILED = 3;
+
+  // The plugin that declares the command cannot be started or reached.
+  COMMAND_ERROR_CODE_UNAVAILABLE = 4;
+}
+
+// CommandService is what a window asks the host about the commands the enabled
+// plugins declare.
+service CommandService {
+  // ListCommands lists the commands of every enabled plugin, in the order of
+  // the plugins' ids and then the order each manifest declares them in.
+  rpc ListCommands(ListCommandsRequest) returns (ListCommandsResponse);
+
+  // RunPluginCommand runs one of them in the backend of the plugin that
+  // declares it.
+  rpc RunPluginCommand(RunPluginCommandRequest) returns (RunPluginCommandResponse);
+}
+
+message ListCommandsRequest {}
+
+message ListCommandsResponse {
+  repeated PluginCommand commands = 1;
+}
+
+// PluginCommand is one command as a manifest declares it.
+message PluginCommand {
+  string plugin_id = 1;
+
+  // The id the manifest declares the command under, unique within the plugin.
+  string id = 2;
+
+  // What a person reads the command as.
+  string title = 3;
+
+  string description = 4;
+
+  // The file extensions, without the dot, the command runs over. None is a
+  // command over no file.
+  repeated string file_extensions = 5;
+
+  // The arguments, in the order a person is asked for them.
+  repeated CommandArgument arguments = 6;
+}
+
+// CommandArgument is one argument a command takes.
+message CommandArgument {
+  string name = 1;
+
+  // What a person is asked for.
+  string title = 2;
+
+  CommandArgumentType type = 3;
+
+  bool is_required = 4;
+}
+
+// CommandArgumentType is the type of the value an argument holds. The zero
+// value names no type, and no declaration holds it.
+enum CommandArgumentType {
+  COMMAND_ARGUMENT_TYPE_UNSPECIFIED = 0;
+  COMMAND_ARGUMENT_TYPE_STRING = 1;
+  COMMAND_ARGUMENT_TYPE_NUMBER = 2;
+  COMMAND_ARGUMENT_TYPE_BOOLEAN = 3;
+}
+
+message RunPluginCommandRequest {
+  string plugin_id = 1;
+
+  string command = 2;
+
+  // The file the command runs over, relative to the vault the window shows.
+  string path = 3;
+
+  map<string, string> arguments = 4;
+}
+
+message RunPluginCommandResponse {
+  CommandErrorCode error = 1;
+
+  // What a person reads about the outcome.
+  string message = 2;
+}

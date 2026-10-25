@@ -81,6 +81,7 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 	rest := fs.Args()
 	if len(rest) == 0 {
 		fmt.Fprint(out, usage)
+		writePluginCommandUsage(out, deps)
 		return errors.New("no command given")
 	}
 
@@ -105,8 +106,12 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return runProblemsCommand(ctx, out, deps, rest[1:])
 	case "help", "-h", "--help":
 		fmt.Fprint(out, usage)
+		writePluginCommandUsage(out, deps)
 		return nil
 	default:
+		if entry, isDeclared := findPluginCommand(deps, rest[0]); isDeclared {
+			return runPluginCommand(ctx, out, deps, entry, rest[1:])
+		}
 		return fmt.Errorf("unknown command %q", rest[0])
 	}
 }

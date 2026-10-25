@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 )
@@ -32,6 +33,9 @@ type PluginAssembly interface {
 	// The use cases that store and remove the key of a secret a plugin declares.
 	OpenWritePluginSecret() *settings.WriteSecret
 	OpenDeletePluginSecret() *settings.DeleteSecret
+	// GetPluginCommands is the use cases over the commands the enabled plugins declare.
+	GetPluginCommands() plugincommand.Commands
+
 	// OpenRetryPlugin starts a plugin the host suspends once more.
 	OpenRetryPlugin() *settings.RetryPlugin
 	// ReportPluginFailures puts a task in the list for each plugin the host suspends.

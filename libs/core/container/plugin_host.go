@@ -12,11 +12,13 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/keychain"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/serviceproxy"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugintool"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -85,6 +87,15 @@ func (c Config) GetPluginTools() plugintool.Tools {
 		tools = toolsbridge.Open(c.PluginHost)
 	}
 	return plugintool.NewTools(tools)
+}
+
+// GetPluginCommands is the use cases over the commands the plugins declare. Where there is no plugin
+// host they list none.
+func (c Config) GetPluginCommands() plugincommand.Commands {
+	if c.PluginHost == nil {
+		return plugincommand.NewCommands(nil)
+	}
+	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost))
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
