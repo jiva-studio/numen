@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
 // PluginServices is where this window forwards the calls it receives for the services plugins serve.
@@ -43,7 +42,4 @@ type PluginAssembly interface {
 	ReportPluginFailures(tasks *run.Tasks)
 	// SetPluginWork lets the plugins wait for the models and report their tasks into the list.
 	SetPluginWork(tasks *run.Tasks, models *run.Lock)
-	// OpenFileMenu is the menu the text versions make of a vault's files, and nil where the
-	// installation keeps no text versions.
-	OpenFileMenu() *textversion.FileMenu
 }

@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -91,8 +90,8 @@ func (h *Handler) RunFileMenuEntry(
 	switch {
 	case err == nil:
 		return connect.NewResponse(&v1.RunFileMenuEntryResponse{}), nil
-	case errors.Is(err, textport.ErrInvalidVersion), errors.Is(err, textport.ErrInputNotAccepted),
-		errors.Is(err, textport.ErrNotTextPlugin), errors.Is(err, textport.ErrNoText):
+	case errors.Is(err, textversion.ErrInvalidVersion), errors.Is(err, textversion.ErrInputNotAccepted),
+		errors.Is(err, textversion.ErrNotTextPlugin), errors.Is(err, textversion.ErrNoText):
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	return nil, connect.NewError(connect.CodeInternal, err)

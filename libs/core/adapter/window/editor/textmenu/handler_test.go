@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -111,7 +110,7 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 }
 
 func TestRunFileMenuEntryMapsErrors(t *testing.T) {
-	for _, why := range []error{textport.ErrInvalidVersion, textport.ErrInputNotAccepted, textport.ErrNotTextPlugin, textport.ErrNoText} {
+	for _, why := range []error{textversion.ErrInvalidVersion, textversion.ErrInputNotAccepted, textversion.ErrNotTextPlugin, textversion.ErrNoText} {
 		h := NewHandler(vault, &menu{runErr: fmt.Errorf("run: %w", why)})
 		_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf"}))
 		if connect.CodeOf(err) != connect.CodeInvalidArgument {

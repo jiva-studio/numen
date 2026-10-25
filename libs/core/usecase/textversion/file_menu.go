@@ -7,6 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -42,3 +43,11 @@ func (u *FileMenu) GetMenu(ctx context.Context, v domain.Vault, path string) ([]
 func (u *FileMenu) RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry MenuEntry) error {
 	return u.versions.RunMenuEntry(ctx, v, path, entry)
 }
+
+// The errors of a menu entry the file's menu does not hold, for a driving adapter.
+var (
+	ErrNoText           = textport.ErrNoText
+	ErrNotTextPlugin    = textport.ErrNotTextPlugin
+	ErrInvalidVersion   = textport.ErrInvalidVersion
+	ErrInputNotAccepted = textport.ErrInputNotAccepted
+)
