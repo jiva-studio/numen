@@ -5,21 +5,12 @@ import { createArtifactOffer, isArtifactMissing } from '../commands/availability
 import type { Command, CommandTarget, RunSupport } from '../../types'
 import type { Words } from '../../words'
 
-const isRecordingProofreadOffered = createArtifactOffer(
+const isProofreadOffered = createArtifactOffer(
   'proofread',
   'recording',
   (createdItem) =>
     createdItem.transcript === 'done' && isArtifactMissing(createdItem['transcript.corrected']),
 )
-
-const isBookProofreadOffered = createArtifactOffer(
-  'proofread',
-  'book',
-  (createdItem) => createdItem.ocr === 'done' && isArtifactMissing(createdItem['ocr.corrected']),
-)
-
-const isProofreadOffered = (target: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingProofreadOffered(target, runs) || isBookProofreadOffered(target, runs)
 
 const isRecordingDeleteTextOffered = createArtifactOffer(
   'deleteText',
@@ -43,14 +34,6 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
     group: 'file',
     isOffered: createArtifactOffer('transcribe', 'recording', (createdItem) =>
       isArtifactMissing(createdItem.transcript),
-    ),
-  },
-  {
-    id: 'recognise',
-    text: words.recognise,
-    group: 'file',
-    isOffered: createArtifactOffer('recognise', 'book', (createdItem) =>
-      isArtifactMissing(createdItem.ocr),
     ),
   },
   {

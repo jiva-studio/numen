@@ -105,7 +105,6 @@ type ArtifactAction = (runs: CommandDeps['runs'], file: string) => Promise<Outco
 
 const DYNAMIC_ARTIFACTS: Record<string, ArtifactAction> = {
   transcribe: (runs, file) => runs.createArtifact(file, 'transcript'),
-  recognise: (runs, file) => runs.createArtifact(file, 'ocr'),
   downloadText: (runs, file) => runs.fetchArtifact(file),
   downloadCopy: (runs, file) => runs.createArtifact(file, 'copy'),
   proofread: (runs, file) => runs.correctArtifact(file),

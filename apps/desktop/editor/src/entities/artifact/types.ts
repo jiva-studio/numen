@@ -16,8 +16,7 @@
 export type Artifact = string
 
 /** The artifacts the window itself registers, before any plugin adds its own. */
-export type BuiltInArtifact =
-  'ocr' | 'ocr.corrected' | 'transcript' | 'transcript.corrected' | 'article' | 'copy'
+export type BuiltInArtifact = 'transcript' | 'transcript.corrected' | 'article' | 'copy'
 
 /**
  * One artifact the window knows: its name, the words each state is told in, and
@@ -76,7 +75,7 @@ export interface ArtifactProducer {
   createArtifact(path: string, of: Artifact): Promise<Outcome>
 }
 
-/** Asks for a file's reading or transcript to be put right. */
+/** Asks for a recording's transcript to be put right. */
 export interface ArtifactCorrector {
   correctArtifact(path: string): Promise<Outcome>
 }

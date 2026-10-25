@@ -21,6 +21,7 @@ import {
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
 import type { DeclaredCommands } from './declaredCommands'
+import type { FileMenuCommands } from './fileMenuCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
@@ -75,6 +76,8 @@ export interface CommandsDepsOptions {
   pluginHost?: import('@/entities/plugin').PluginHost | undefined
   /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
+  /** The menu the text versions of the file in front make, read each time the palette opens. */
+  fileMenuCommands?: FileMenuCommands
 }
 
 export function useCommands(options: CommandsDepsOptions) {
@@ -104,6 +107,7 @@ export function useCommands(options: CommandsDepsOptions) {
     () => [
       ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
       ...(options.declaredCommands?.paletteCommands.value ?? []),
+      ...(options.fileMenuCommands?.paletteCommands.value ?? []),
       ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
         id: cmd.id,
         text: cmd.title,
@@ -123,6 +127,16 @@ export function useCommands(options: CommandsDepsOptions) {
     loadDeclared()
     watch(commands.open, (isOpen) => {
       if (isOpen) loadDeclared()
+    })
+  }
+
+  const { fileMenuCommands } = options
+  if (fileMenuCommands) {
+    watch(commands.open, (isOpen) => {
+      if (!isOpen) return
+      fileMenuCommands
+        .load(getTarget().file)
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     })
   }
 

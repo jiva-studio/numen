@@ -56,14 +56,15 @@ describe('the runs over a file', () => {
 
 describe('a run over the file in front', () => {
   it('is not offered where the tab names no file', () => {
-    expect(isOffered('recognise', { ...createTarget('book', {}), file: '' })).toBe(false)
+    expect(isOffered('transcribe', { ...createTarget('recording', {}), file: '' })).toBe(false)
   })
 })
 
-describe('reading a book', () => {
-  it('is offered on a build that can read one', () => {
-    expect(isOffered('recognise', createTarget('book', {}))).toBe(true)
-    expect(isOffered('recognise', createTarget('book', {}), allBut('recognise'))).toBe(false)
+describe('scanned documents', () => {
+  it('offers no artifact command', () => {
+    for (const one of createFileCommands(words)) {
+      expect(one.isOffered(createTarget('book', {}), allBut(''))).toBe(false)
+    }
   })
 })
 

@@ -457,15 +457,6 @@ describe('an artifact requested for over a file', () => {
     expect(one.notices).toStrictEqual([`${getMadeWords('transcript', 'failed')} ${reason}`])
   })
 
-  it('says the same of a scan already recognised', async () => {
-    const one = window({ outcome: outcome('ocr', 'done') })
-
-    await carry(createInvocation('recognise', front({ file: 'books/Ants.pdf' })), one.on)
-
-    expect(one.actions).toStrictEqual(['makes ocr books/Ants.pdf'])
-    expect(one.notices).toStrictEqual([getMadeWords('ocr', 'done')])
-  })
-
   // No two of them may say the same thing: a person reads the sentence and not
   // the word behind it.
   it('says something of its own for every artifact and every state', () => {
@@ -482,7 +473,7 @@ describe('an artifact requested for over a file', () => {
 
     expect(one.notices).toStrictEqual([words.unrunnable])
     expect(one.runs.canRun('transcribe')).toBe(false)
-    expect(one.runs.canRun('recognise')).toBe(true)
+    expect(one.runs.canRun('downloadCopy')).toBe(true)
   })
 
   it('is returned only in the window it was requested in', async () => {

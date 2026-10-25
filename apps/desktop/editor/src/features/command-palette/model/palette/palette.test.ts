@@ -556,7 +556,7 @@ const scanned: Partial<CommandTarget> = {
 }
 
 describe('the runs over the file in front', () => {
-  it('offers a recording to be transcribed, put right and dropped, and nothing to recognise', () => {
+  it('offers transcribe, proofread and delete over a recording', () => {
     const { commands } = createPalette(recording)
 
     expect(getItemIds(commands.groups).file).toStrictEqual([
@@ -566,10 +566,10 @@ describe('the runs over the file in front', () => {
     ])
   })
 
-  it('offers a scan to be recognised and proofread, and nothing to transcribe', () => {
+  it('offers no artifact run over a scan', () => {
     const { commands } = createPalette(scanned)
 
-    expect(getItemIds(commands.groups).file).toStrictEqual(['recognise', 'proofread'])
+    expect(getItemIds(commands.groups).file).toBeUndefined()
   })
 
   // The group stands where there is something in it, so a note is offered no
@@ -600,47 +600,6 @@ describe('the runs over the file in front', () => {
 
     expect(
       getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file,
-    ).toBeUndefined()
-    expect(
-      getItemIds(createPalette(scanned, [], {}, undefined, runs).commands.groups).file,
-    ).toStrictEqual(['recognise'])
-  })
-
-  // A run is offered on what has been made from the file and not on its kind.
-  // The window can ask what a book carries, so a book already read is not
-  // offered to be read again.
-  it('offers a scan to be recognised only where nothing has read it', () => {
-    for (const [made, isOffered] of [
-      ['none', true],
-      ['stopped', true],
-      ['queued', false],
-      ['running', false],
-      ['done', false],
-      ['empty', false],
-      ['failed', false],
-    ] as const) {
-      const { commands } = createPalette({ ...scanned, made: { ocr: made } })
-
-      expect(getItemIds(commands.groups).file, made).toStrictEqual(
-        isOffered ? ['recognise'] : made === 'done' ? ['proofread'] : undefined,
-      )
-    }
-  })
-
-  it('offers a scan reading to be put right once one remains, and not before', () => {
-    expect(
-      getItemIds(createPalette({ ...scanned, made: { ocr: 'none' } }).commands.groups).file,
-    ).toStrictEqual(['recognise'])
-    expect(
-      getItemIds(createPalette({ ...scanned, made: { ocr: 'done' } }).commands.groups).file,
-    ).toStrictEqual(['proofread'])
-    expect(
-      getItemIds(
-        createPalette({
-          ...scanned,
-          made: { ocr: 'done', 'ocr.corrected': 'done' },
-        }).commands.groups,
-      ).file,
     ).toBeUndefined()
   })
 

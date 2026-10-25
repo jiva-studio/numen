@@ -12,10 +12,10 @@ import {
   DocumentService,
   FileService,
   NoteService,
-  OcrService,
   RecordingService,
   SearchService,
   SettingsService,
+  TextVersionService,
   ThemeService,
   TranscriptService,
   VaultService,
@@ -70,8 +70,8 @@ export const books = createClient(BookService, transport)
 /** The pages a document is laid out in. */
 export const documents = createClient(DocumentService, transport)
 
-/** Where the text of a document relies on its pages. */
-export const ocr = createClient(OcrService, transport)
+/** The menu a file's text versions make, and running one of its entries. */
+export const textVersions = createClient(TextVersionService, transport)
 
 /** The commands the enabled plugins declare, and running one in the plugin's backend. */
 export const pluginCommands = createClient(CommandService, transport)

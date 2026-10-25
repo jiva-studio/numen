@@ -4,8 +4,6 @@ import type { ArtifactDefinition, BuiltInArtifact } from './types'
 import { BUILT_IN_WORDS } from './words'
 
 const WIRE_KINDS: Readonly<Record<BuiltInArtifact, Kinds>> = {
-  ocr: Kinds.OCR,
-  'ocr.corrected': Kinds.OCR_CORRECTED,
   transcript: Kinds.TRANSCRIPT,
   'transcript.corrected': Kinds.TRANSCRIPT_CORRECTED,
   article: Kinds.ARTICLE,

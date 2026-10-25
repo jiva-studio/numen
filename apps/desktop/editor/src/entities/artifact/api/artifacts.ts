@@ -45,13 +45,7 @@ export const running: ArtifactRunner = {
       throw error
     }
   },
-  correctArtifact: async (path) => {
-    // Which text is put right follows from the file: a recording carries a
-    // transcript and a scan carries a reading.
-    const target = await running.getArtifactStates(path)
-    const of: Artifact = target.transcript === undefined ? 'ocr.corrected' : 'transcript.corrected'
-    return running.createArtifact(path, of)
-  },
+  correctArtifact: (path) => running.createArtifact(path, 'transcript.corrected'),
   fetchArtifact: async (path) => {
     // Which of the two the text at an address is, is the vault's to say: it
     // knows the address, and this asks for the one it says the note carries.

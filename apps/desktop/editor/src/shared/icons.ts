@@ -66,7 +66,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['destroy', Trash2],
   ['transcribe', Captions],
   ['proofread', SpellCheck],
-  ['recognise', ScanText],
   ['downloadText', RefreshCw],
   ['downloadCopy', HardDriveDownload],
   ['deleteText', CaptionsOff],
@@ -106,8 +105,16 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['eraseVault', Trash2],
 ])
 
+/** The icons of the entries of a file's menu, by what each does. */
+const FILE_MENU_ICONS: ReadonlyMap<string, LucideIcon> = new Map([
+  ['recognise', ScanText],
+  ['proofread', SpellCheck],
+  ['delete-version', Trash2],
+])
+
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
   if (id.startsWith('plugin-setting:')) return SlidersHorizontal
+  if (id.startsWith('file-menu:')) return FILE_MENU_ICONS.get(id.split(':')[1] ?? '') ?? null
   return ICONS.get(id) ?? null
 }

@@ -248,16 +248,14 @@ describe('the window’s commands over a row', () => {
     ])
   })
 
-  it('are the removal alone over several, and the scan runs only on a document that is no book', () => {
+  it('offers removal over several rows and file commands over a document', () => {
     const { host } = createCommands()
 
     expect(
       host.getPathCommands({ entry: entry('a.md'), isSeveral: true }).map((one) => one.id),
     ).toStrictEqual(['remove'])
     const pdf = host.getPathCommands({ entry: entry('Heat.pdf', 'book'), isSeveral: false })
-    const epub = host.getPathCommands({ entry: entry('Heat.epub', 'book'), isSeveral: false })
-    expect(pdf.map((one) => one.id)).toContain('recognise')
-    expect(epub.map((one) => one.id)).not.toContain('recognise')
+    expect(pdf.map((one) => one.id)).toStrictEqual(['copy', 'remove'])
   })
 
   it('run over the first path, with the rest as the others and what the vault made', () => {

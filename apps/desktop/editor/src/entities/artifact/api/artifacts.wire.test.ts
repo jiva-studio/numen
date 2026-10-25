@@ -71,15 +71,15 @@ describe('what a file carries', () => {
   })
 
   it('is nothing made where the answer names no state', async () => {
-    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_OCR' }] })
+    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_TRANSCRIPT' }] })
 
-    expect(await running.getArtifactStates('Scan.pdf')).toEqual({ ocr: 'none' })
+    expect(await running.getArtifactStates('Talk.mp3')).toEqual({ transcript: 'none' })
   })
 
   it('is nothing made where the answer names a state this window has no word for', async () => {
-    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_OCR', state: 99 }] })
+    answerWith({ artifacts: [{ kind: 'ARTIFACT_KIND_TRANSCRIPT', state: 99 }] })
 
-    expect(await running.getArtifactStates('Scan.pdf')).toEqual({ ocr: 'none' })
+    expect(await running.getArtifactStates('Talk.mp3')).toEqual({ transcript: 'none' })
   })
 })
 
@@ -87,21 +87,21 @@ describe('beginning a run', () => {
   it('names the artifact by the number the schema gave it', async () => {
     answerWith({ artifact: { state: 'STATE_QUEUED' } })
 
-    expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
+    expect(await running.createArtifact('Talk.mp3', 'transcript')).toEqual({
       able: true,
-      of: 'ocr',
+      of: 'transcript',
       made: 'queued',
       error: '',
     })
-    expect(request[0]).toEqual({ path: 'Scan.pdf', kind: 'ARTIFACT_KIND_OCR' })
+    expect(request[0]).toEqual({ path: 'Talk.mp3', kind: 'ARTIFACT_KIND_TRANSCRIPT' })
   })
 
   it('is nothing made, and no error, where the answer names no artifact', async () => {
     answerWith({})
 
-    expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
+    expect(await running.createArtifact('Talk.mp3', 'transcript')).toEqual({
       able: true,
-      of: 'ocr',
+      of: 'transcript',
       made: 'none',
       error: '',
     })
@@ -110,9 +110,9 @@ describe('beginning a run', () => {
   it('carries back what went wrong with it', async () => {
     answerWith({ artifact: { state: 'STATE_FAILED', error: 'the model is not here' } })
 
-    expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({
+    expect(await running.createArtifact('Talk.mp3', 'transcript')).toEqual({
       able: true,
-      of: 'ocr',
+      of: 'transcript',
       made: 'failed',
       error: 'the model is not here',
     })
@@ -121,30 +121,22 @@ describe('beginning a run', () => {
   it('fails by a build that cannot do it at all', async () => {
     stubError('unimplemented')
 
-    expect(await running.createArtifact('Scan.pdf', 'ocr')).toEqual({ able: false })
+    expect(await running.createArtifact('Talk.mp3', 'transcript')).toEqual({ able: false })
   })
 
   it('throws where the run failed for any other reason', async () => {
     stubError('internal')
 
-    await expect(running.createArtifact('Scan.pdf', 'ocr')).rejects.toThrow()
+    await expect(running.createArtifact('Talk.mp3', 'transcript')).rejects.toThrow()
   })
 })
 
 describe('putting a text right', () => {
-  it('corrects the transcript of a file carrying one', async () => {
-    answerWith({
-      artifacts: [{ kind: 'ARTIFACT_KIND_TRANSCRIPT', state: 'STATE_DONE' }],
-      artifact: { state: 'STATE_QUEUED' },
-    })
+  it('requests the corrected transcript', async () => {
+    answerWith({ artifact: { state: 'STATE_QUEUED' } })
 
-    expect(await running.correctArtifact('Talk.url')).toMatchObject({ of: 'transcript.corrected' })
-  })
-
-  it('corrects the reading of a file carrying no transcript', async () => {
-    answerWith({ artifacts: [], artifact: { state: 'STATE_QUEUED' } })
-
-    expect(await running.correctArtifact('Scan.pdf')).toMatchObject({ of: 'ocr.corrected' })
+    expect(await running.correctArtifact('Talk.mp3')).toMatchObject({ of: 'transcript.corrected' })
+    expect(request[0]).toEqual({ path: 'Talk.mp3', kind: 'ARTIFACT_KIND_TRANSCRIPT_CORRECTED' })
   })
 })
 

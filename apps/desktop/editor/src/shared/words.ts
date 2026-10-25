@@ -45,9 +45,14 @@ export const WORDS = {
   destroy: 'Destroy note',
   ask: 'Ask the agent',
   copy: 'Copy path',
-  /** The two runs over the file in front: a recording transcribed, a scan recognised. */
+  /** The run over the recording in front. */
   transcribe: 'Transcribe this recording',
-  recognise: 'Recognise the text of this document',
+  /** The menu the text versions of the file in front make, each entry by the plugin that does it. */
+  recogniseWith: (plugin: string) => `Recognise the text with ${plugin}`,
+  proofreadWith: (plugin: string) => `Proofread the text with ${plugin}`,
+  deleteVersionOf: (plugin: string) => `Delete the text ${plugin} made`,
+  /** What the corner says once a plugin was asked to make or delete a text. */
+  textAsked: (plugin: string) => `${plugin} is working on it`,
   /** The transcript of the recording in front, put right by a proofreader. */
   proofread: 'Proofread the transcript of this recording',
   /** The text at the address a url points at, fetched again. */

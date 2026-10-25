@@ -182,7 +182,6 @@ export function createPathCommandHost(
         {
           source: entry.kind,
           isFolder: entry.isFolder,
-          format: entry.path.endsWith('.epub') ? 'epub' : 'pdf',
           made: vaults.makes.value.get(entry.path),
         },
         isSeveral,

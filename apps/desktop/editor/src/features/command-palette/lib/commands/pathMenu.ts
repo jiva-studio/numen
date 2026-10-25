@@ -4,12 +4,12 @@
  *
  * A row standing for a note offers every command over a note that has a row of
  * its own in the palette; any other row offers what can be done to a file, and
- * a recording or a scanned document the run over it.
+ * a recording the run over it.
  */
 import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import type { MenuItem } from '@numen/ui'
 import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
-import type { BookFormat, DocumentFormat, Source } from '@/entities/file'
+import type { Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'
 import { createCommands } from './table'
@@ -141,9 +141,8 @@ const getFileMenu = (...runs: readonly PathItem[]): readonly PathItem[] => [
 
 const FILED = getFileMenu()
 
-/** The runs a recording or a scan can be put through. */
+/** The runs a recording can be put through. */
 const TRANSCRIBE: PathItem = { id: 'transcribe', text: own.transcribe, group: GROUP.run }
-const RECOGNISE: PathItem = { id: 'recognise', text: own.recognise, group: GROUP.run }
 const PROOFREAD: PathItem = { id: 'proofread', text: own.proofread, group: GROUP.run }
 
 /**
@@ -185,26 +184,6 @@ const getRecordingRuns = (
   return runs
 }
 
-/** What a book offers: recognise and proofread, disabled once done. */
-const getBookRuns = (
-  format: DocumentFormat | BookFormat | undefined,
-  createdItem: ArtifactStates | undefined,
-  canRun: RunGuard,
-): readonly PathItem[] => {
-  if (format === 'epub') return []
-  const runs: PathItem[] = []
-  if (canRun(RECOGNISE.id)) {
-    runs.push({ ...RECOGNISE, isDisabled: isBusyOrDone(createdItem?.ocr) })
-  }
-  if (canRun(PROOFREAD.id)) {
-    runs.push({
-      ...PROOFREAD,
-      isDisabled: isProofreadDisabled(createdItem?.ocr, createdItem?.['ocr.corrected']),
-    })
-  }
-  return runs
-}
-
 /**
  * What a url offers: everything a file offers, and the runs over what is at the
  * address. A build that cannot reach one offers none of them, which is how a
@@ -221,7 +200,6 @@ const urls = (canRun: RunGuard): readonly PathItem[] =>
 export interface MenuRow {
   readonly source: Source
   readonly isFolder: boolean
-  readonly format?: DocumentFormat | BookFormat | undefined
   readonly made?: ArtifactStates | undefined
 }
 
@@ -254,6 +232,5 @@ export const createPathCommands = (
   if (on.source === 'note') return getNoteMenu(contributions)
   if (on.source === 'url') return urls(canRun)
   if (on.source === 'recording') return getFileMenu(...getRecordingRuns(on.made, canRun))
-  if (on.source === 'book') return getFileMenu(...getBookRuns(on.format, on.made, canRun))
   return FILED
 }

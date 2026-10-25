@@ -1,6 +1,6 @@
 /**
  * What the window says about a run, in the words of the thing being run over: a
- * scan is recognised, a recording is transcribed, an address is fetched.
+ * recording is transcribed, an address is fetched.
  */
 // Stryker disable StringLiteral: interface copy
 import type { ArtifactState, BuiltInArtifact } from './types'
@@ -16,15 +16,6 @@ export const FETCHED: Record<ArtifactState, string> = {
 }
 
 export const BUILT_IN_WORDS: Record<BuiltInArtifact, Record<ArtifactState, string>> = {
-  ocr: {
-    none: 'This scan has not been recognised.',
-    queued: 'This scan is in line, behind the one being recognised now.',
-    running: 'This scan is being recognised now.',
-    stopped: 'Recognising this scan stopped part way.',
-    done: 'This scan has already been recognised.',
-    empty: 'Nothing was read in this scan.',
-    failed: 'This scan could not be opened:',
-  },
   transcript: {
     none: 'This recording has not been transcribed.',
     queued: 'This recording is in line, behind the one being transcribed now.',
@@ -42,15 +33,6 @@ export const BUILT_IN_WORDS: Record<BuiltInArtifact, Record<ArtifactState, strin
     done: 'This transcript has already been put right.',
     empty: 'There were no words in this transcript to put right.',
     failed: 'This transcript could not be put right:',
-  },
-  'ocr.corrected': {
-    none: 'Nothing has been recognised here, so there is nothing to proofread.',
-    queued: 'This reading is in line, behind the one being put right now.',
-    running: 'This reading is being put right now.',
-    stopped: 'Putting this reading right stopped part way.',
-    done: 'This reading has already been put right.',
-    empty: 'There were no words in this reading to put right.',
-    failed: 'This reading could not be put right:',
   },
   copy: {
     none: 'No copy of this is on this disk.',

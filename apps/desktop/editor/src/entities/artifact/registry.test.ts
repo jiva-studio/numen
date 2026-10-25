@@ -48,14 +48,7 @@ describe('artifact registry', () => {
       .listArtifacts()
       .map((one) => one.id)
 
-    expect(ids).toStrictEqual([
-      'ocr',
-      'ocr.corrected',
-      'transcript',
-      'transcript.corrected',
-      'article',
-      'copy',
-    ])
+    expect(ids).toStrictEqual(['transcript', 'transcript.corrected', 'article', 'copy'])
   })
 
   it('offers a plugin artifact to the palette words', () => {

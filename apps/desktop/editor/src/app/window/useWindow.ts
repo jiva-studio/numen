@@ -21,6 +21,7 @@ import { useVaults } from './useVaults'
 import { useOpenTabs } from '../tabs/useOpenTabs'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
+import { useFileMenuCommands } from '../commands/fileMenuCommands'
 import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowNotices } from '../shell/useWindowNotices'
 import { useWindowKinds } from './useWindowKinds'
@@ -59,6 +60,7 @@ function initWindowCommands(deps: WindowCommandsOptions) {
   const { windowTabs, settings, vaultsModule, editing, kinds, window, writeMessage } = deps
   return useCommands({
     declaredCommands: useDeclaredCommands(),
+    fileMenuCommands: useFileMenuCommands(),
     core,
     words,
     log: deps.log,
