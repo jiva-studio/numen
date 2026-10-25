@@ -27,8 +27,7 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     } as never,
     making: { createWithTitle: record('createWithTitle', 'created') } as never,
     made: {
-      createStencil: record('createStencil', 'stencilled'),
-      createDeck: record('createDeck', 'decked'),
+      createUrl: record('createUrl', 'pointed'),
     } as never,
     setVaultName: record('setVaultName'),
     reload: record('reload'),
@@ -234,12 +233,8 @@ describe('the commands reach the window', () => {
   it('makes every file as the makers make it', async () => {
     const { deps, calls } = createOptions()
 
-    expect(await deps.makers.createStencil('stencils', 'Animal')).toBe('stencilled')
-    expect(await deps.makers.createDeck('decks', 'Animals')).toBe('decked')
-    expect(calls).toStrictEqual([
-      ['createStencil', 'stencils', 'Animal'],
-      ['createDeck', 'decks', 'Animals'],
-    ])
+    expect(await deps.makers.createUrl('links', 'example.org')).toBe('pointed')
+    expect(calls).toStrictEqual([['createUrl', 'links', 'example.org']])
   })
 
   it('names and reloads the vault through the window, and lists vaults through the service', () => {

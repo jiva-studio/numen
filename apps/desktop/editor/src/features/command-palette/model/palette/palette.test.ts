@@ -168,9 +168,6 @@ describe('the commands as they open', () => {
       ],
       window: [
         'note',
-        'deck',
-        'stencil',
-        'newPreset',
         'importUrl',
         'plex',
         'files',
@@ -334,21 +331,6 @@ describe('a command that asks for a name', () => {
     expect(commands.startCommand('child', front())).toBeNull()
     expect(commands.crumb.value).toBe(words.child)
     expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
-  })
-
-  it('asks for one before a preset is made, as it does before a deck', () => {
-    const { commands } = createPalette()
-
-    expect(commands.startCommand('newPreset', front())).toBeNull()
-    expect(commands.groups.value.map((group) => group.id)).toStrictEqual(['naming'])
-  })
-
-  it('carries the name a preset was requested for under', () => {
-    const { commands } = createPalette()
-    commands.startCommand('newPreset', front())
-    void commands.setTyped('Sanskrit')
-
-    expect(commands.chooseItem('name', 'name')?.name).toBe('Sanskrit')
   })
 
   it('offers what was typed as the name, and nothing before anything is', () => {

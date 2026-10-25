@@ -170,18 +170,6 @@ const window = (
       },
     },
     makers: {
-      createDeck: async (folder, name) => {
-        isDone.push(`decks ${folder || '—'} ${name}`)
-        return folder ? `${folder}/${name}` : name
-      },
-      createStencil: async (folder, name) => {
-        isDone.push(`stencils ${folder || '—'} ${name}`)
-        return folder ? `${folder}/${name}` : name
-      },
-      createPreset: async (folder, name) => {
-        isDone.push(`presets ${folder || '—'} ${name}`)
-        return folder ? `${folder}/${name}` : name
-      },
       createUrl: async (folder, address) => {
         isDone.push(`imports ${folder || '—'} ${address}`)
         return folder ? `${folder}/note.md` : 'note.md'
@@ -338,50 +326,6 @@ describe('a note put in front of the person', () => {
     await carry(createInvocation('travel', front()), one.on)
 
     expect(one.actions).toStrictEqual(['travel physics/Ontology.md'])
-  })
-})
-
-describe('a deck, a stencil or a preset made', () => {
-  it('is made at the top of the vault, under the name as it was typed', async () => {
-    const one = window()
-
-    await carry(createInvocation('deck', front(), 'Animals'), one.on)
-
-    // The vault names the file, so nothing here puts an ending on the name.
-    expect(one.actions).toStrictEqual(['decks — Animals'])
-  })
-
-  it('passes a name that carries an ending over unchanged', async () => {
-    const one = window()
-
-    await carry(createInvocation('deck', front(), 'Animals.md'), one.on)
-
-    expect(one.actions).toStrictEqual(['decks — Animals.md'])
-  })
-
-  it('is a stencil where that is what was requested for', async () => {
-    const one = window()
-
-    await carry(createInvocation('stencil', front(), 'Animal'), one.on)
-
-    expect(one.actions).toStrictEqual(['stencils — Animal'])
-  })
-
-  it('is a preset where that is what was requested for', async () => {
-    const one = window()
-
-    await carry(createInvocation('newPreset', front(), 'Sanskrit'), one.on)
-
-    expect(one.actions).toStrictEqual(['presets — Sanskrit'])
-  })
-
-  it('is nothing at all where nothing was typed', async () => {
-    const one = window()
-
-    await carry(createInvocation('deck', front(), ''), one.on)
-    await carry(createInvocation('newPreset', front(), ''), one.on)
-
-    expect(one.actions).toStrictEqual([])
   })
 })
 
@@ -1267,11 +1211,10 @@ describe('a note made in a relation of another', () => {
   })
 })
 
-describe('a stencil or an address made', () => {
+describe('an address made', () => {
   it('is nothing at all where nothing was typed', async () => {
     const one = window()
 
-    await carry(createInvocation('stencil', front(), ''), one.on)
     await carry(createInvocation('importUrl', front(), ''), one.on)
 
     expect(one.actions).toStrictEqual([])

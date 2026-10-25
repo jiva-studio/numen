@@ -70,10 +70,6 @@ export const WORDS = {
   unavailable:
     'That action is unavailable: the plugin providing it is disabled or failed to start.',
   newNote: 'New note',
-  newDeck: 'New deck',
-  newStencil: 'New stencil',
-  /** The note that says how the decks pointing at it are scheduled. */
-  newPreset: 'New preset',
   /** The note that points at a web address. */
   importUrl: 'Import an address',
   newPlex: 'New plex',

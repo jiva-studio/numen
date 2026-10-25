@@ -81,8 +81,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['newFolder', FolderPlus],
   ['rename', PenLine],
   ['note', FilePlus],
-  ['deck', Layers],
-  ['stencil', LayoutTemplate],
   ['plex', Waypoints],
   ['agent', Bot],
   ['files', FolderTree],

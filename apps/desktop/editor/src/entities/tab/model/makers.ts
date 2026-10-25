@@ -8,22 +8,18 @@ import type { MessageWriter } from '@/shared/notices/messages'
 import type { CreateResult } from '@/entities/file/@x/tab'
 import type { FileOpeners } from './openers'
 
-/** Which of the four a file is created as. */
-export type CreateKind = 'deck' | 'stencil' | 'preset' | 'url' | (string & {})
+/** What a file is created as: a note pointing at an address, or a kind that makes files. */
+export type CreateKind = 'url' | (string & {})
 
 /**
  * What the window asks the vault to create from nothing. A creator that answers
  * nothing has already told the person why none was made.
  */
 export interface VaultCreator {
-  createFile?(kind: string, title: string, folder: string): Promise<CreateResult | null>
-  createDeck?(title: string, folder: string): Promise<CreateResult | null>
-  createStencil?(title: string, folder: string): Promise<CreateResult | null>
-  createPreset?(title: string, folder: string): Promise<CreateResult | null>
-  createUrl?(address: string, folder: string): Promise<CreateResult | null>
+  createFile(kind: string, title: string, folder: string): Promise<CreateResult | null>
 }
 
-/** What creating one of the four says in the window's voice. */
+/** What creating a file says in the window's voice. */
 export interface CreateWords {
   /** What the vault reported as error, in words a person reads. */
   readonly errors: Record<ErrorCode, string>
@@ -31,24 +27,13 @@ export interface CreateWords {
 
 export type CreateTarget = string
 
-/** What creating each of the four asks of the vault, each entry naming its own. */
-const createByKind: Record<
-  string,
-  (vault: VaultCreator, folder: string, name: string) => Promise<CreateResult | null> | null
-> = {
-  deck: (vault, folder, name) => vault.createDeck?.call(vault, name, folder) ?? null,
-  stencil: (vault, folder, name) => vault.createStencil?.call(vault, name, folder) ?? null,
-  preset: (vault, folder, name) => vault.createPreset?.call(vault, name, folder) ?? null,
-  url: (vault, folder, name) => vault.createUrl?.call(vault, name, folder) ?? null,
-}
-
 export interface FileCreatorsOptions {
   words: CreateWords
   write: MessageWriter
 }
 
 /**
- * A deck, a stencil, a preset or a note pointing at an address made in a
+ * A file of a kind, or a note pointing at an address, made in a
  * folder under the name it is given. The vault names the file after it and
  * answers at its current position. A vault that answers nothing at all is said here,
  */
@@ -65,10 +50,8 @@ export function createFileCreators(
     name: CreateTarget,
   ): Promise<string> => {
     try {
-      const answer = vault.createFile
-        ? await vault.createFile(what, name, folder)
-        : await createByKind[what]?.(vault, folder, name)
-      if (answer === null || answer === undefined) return ''
+      const answer = await vault.createFile(what, name, folder)
+      if (answer === null) return ''
       if (!answer.ok) {
         write(words.errors[answer.error], 'error')
         return ''
@@ -95,9 +78,6 @@ export function createFileCreators(
   return {
     createFile,
     createAndOpenFile,
-    createDeck: (folder: string, name: string) => createAndOpenFile('deck', folder, name),
-    createStencil: (folder: string, name: string) => createAndOpenFile('stencil', folder, name),
-    createPreset: (folder: string, name: string) => createAndOpenFile('preset', folder, name),
     createUrl: (folder: string, address: string) => createAndOpenFile('url', folder, address),
     createUrls: async (
       folder: string,

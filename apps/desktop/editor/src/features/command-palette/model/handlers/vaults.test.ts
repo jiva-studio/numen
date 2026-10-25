@@ -54,9 +54,6 @@ const createWindow = (
       createFolder: unused,
     },
     makers: {
-      createDeck: unused,
-      createStencil: unused,
-      createPreset: unused,
       createUrl: unused,
     },
     vaults: {

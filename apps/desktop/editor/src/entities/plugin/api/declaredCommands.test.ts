@@ -3,7 +3,7 @@
  * window hands it over and reads what came of it.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { CommandArgumentType, CommandErrorCode } from '@numen/protocol'
+import { CommandErrorCode } from '@numen/protocol'
 
 vi.mock('@/shared/clients', () => ({ pluginCommands: request }))
 
@@ -18,25 +18,22 @@ const convert = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  description: '',
   fileExtensions: ['pdf'],
   arguments: [],
 }
 
 describe('the commands the plugins declare', () => {
-  it('are read with the types of their arguments', async () => {
+  it('are read with their arguments in order', async () => {
     request.listCommands.mockResolvedValue({
       commands: [
         {
           pluginId: 'md.numen.cards',
           id: 'create-deck',
           title: 'Create a deck',
-          description: 'Makes one.',
           fileExtensions: [],
           arguments: [
-            { name: 'title', title: 'Title', type: CommandArgumentType.STRING, isRequired: true },
-            { name: 'size', title: 'Size', type: CommandArgumentType.NUMBER, isRequired: false },
-            { name: 'open', title: 'Open', type: CommandArgumentType.BOOLEAN, isRequired: false },
+            { name: 'title', title: 'Title', isRequired: true },
+            { name: 'folder', title: 'Folder', isRequired: false },
           ],
         },
       ],
@@ -45,12 +42,10 @@ describe('the commands the plugins declare', () => {
     const [one] = await listDeclaredCommands()
 
     expect(one?.pluginId).toBe('md.numen.cards')
-    expect(one?.arguments.map((argument) => argument.type)).toStrictEqual([
-      'string',
-      'number',
-      'boolean',
+    expect(one?.arguments).toStrictEqual([
+      { name: 'title', title: 'Title', isRequired: true },
+      { name: 'folder', title: 'Folder', isRequired: false },
     ])
-    expect(one?.arguments[0]?.isRequired).toBe(true)
   })
 
   it('run over a file of one of their extensions, by the name of the file alone', () => {
@@ -66,11 +61,15 @@ describe('a run', () => {
     request.runPluginCommand.mockResolvedValue({
       error: CommandErrorCode.UNSPECIFIED,
       message: 'Converted 3 pages',
+      openedPath: 'a.md',
     })
 
     const outcome = await runDeclaredCommand(convert, { path: 'a.pdf', values: { pages: '3' } })
 
-    expect(outcome).toStrictEqual({ ok: true, value: 'Converted 3 pages' })
+    expect(outcome).toStrictEqual({
+      ok: true,
+      value: { message: 'Converted 3 pages', openedPath: 'a.md' },
+    })
     expect(request.runPluginCommand).toHaveBeenLastCalledWith({
       pluginId: 'md.numen.pages',
       command: 'convert',
@@ -80,7 +79,11 @@ describe('a run', () => {
   })
 
   it('of a command over no file is handed none', async () => {
-    request.runPluginCommand.mockResolvedValue({ error: CommandErrorCode.UNSPECIFIED, message: '' })
+    request.runPluginCommand.mockResolvedValue({
+      error: CommandErrorCode.UNSPECIFIED,
+      message: '',
+      openedPath: '',
+    })
 
     await runDeclaredCommand({ ...convert, fileExtensions: [] }, { path: 'a.md', values: {} })
 

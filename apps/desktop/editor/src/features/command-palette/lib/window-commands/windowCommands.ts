@@ -16,27 +16,6 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
     isOffered: (target) => target.isReady,
   },
   {
-    id: 'deck',
-    text: words.newDeck,
-    group: 'window',
-    needs: 'naming',
-    isOffered: (target) => target.isReady,
-  },
-  {
-    id: 'stencil',
-    text: words.newStencil,
-    group: 'window',
-    needs: 'naming',
-    isOffered: (target) => target.isReady,
-  },
-  {
-    id: 'newPreset',
-    text: words.newPreset,
-    group: 'window',
-    needs: 'naming',
-    isOffered: (target) => target.isReady,
-  },
-  {
     id: 'importUrl',
     text: words.importUrl,
     group: 'window',

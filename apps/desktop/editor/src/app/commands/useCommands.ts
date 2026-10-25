@@ -73,7 +73,7 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@/entities/plugin').PluginHost | undefined
-  /** The commands the enabled plugins declare, read again each time the palette opens. */
+  /** The commands the enabled plugins declare, read as the window starts and each time the palette opens. */
   declaredCommands?: DeclaredCommands
 }
 
@@ -115,11 +115,14 @@ export function useCommands(options: CommandsDepsOptions) {
 
   const { declaredCommands } = options
   if (declaredCommands) {
-    watch(commands.open, (isOpen) => {
-      if (!isOpen) return
+    const loadDeclared = () => {
       declaredCommands
         .load()
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+    }
+    loadDeclared()
+    watch(commands.open, (isOpen) => {
+      if (isOpen) loadDeclared()
     })
   }
 

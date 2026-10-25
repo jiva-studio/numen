@@ -29,7 +29,7 @@ const setup = (load: () => Promise<void>) => {
 }
 
 describe('the declared commands', () => {
-  it('are read each time the palette opens, and not as it closes', async () => {
+  it('are read as the window starts and each time the palette opens, and not as it closes', async () => {
     isOpen.value = false
     const load = vi.fn(async () => {})
     setup(load)
@@ -41,7 +41,7 @@ describe('the declared commands', () => {
     isOpen.value = true
     await nextTick()
 
-    expect(load).toHaveBeenCalledTimes(2)
+    expect(load).toHaveBeenCalledTimes(3)
   })
 
   it('that cannot be read say why', async () => {
@@ -54,6 +54,6 @@ describe('the declared commands', () => {
     await nextTick()
     await nextTick()
 
-    expect(messages.map(([, kind]) => kind)).toStrictEqual(['error'])
+    expect(messages.map(([, kind]) => kind)).toStrictEqual(['error', 'error'])
   })
 })

@@ -49,8 +49,8 @@ export interface DeclaredCommandsDeps {
 }
 
 /**
- * The declared commands, read again by `load`, each with a handler that runs it
- * and writes what the plugin said.
+ * The declared commands, read again by `load`, each with a handler that runs it,
+ * writes what the plugin said and opens the file it names.
  */
 export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
   const list = deps.list ?? listDeclaredCommands
@@ -64,8 +64,10 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
     unregisterAll = listed.map((one) =>
       registerCommand(getPaletteId(one), async (invocation, on) => {
         const outcome = await run(one, { path: invocation.file, values: invocation.values ?? {} })
-        if (outcome.ok) on.writeMessage(outcome.value, 'report')
-        else on.writeMessage(outcome.error, 'error')
+        if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
+        const { message, openedPath } = outcome.value
+        if (message) on.writeMessage(message, 'report')
+        if (openedPath) on.notes.openFile(openedPath, '', 'here')
       }),
     )
     declared.value = listed

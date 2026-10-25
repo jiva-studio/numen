@@ -1,5 +1,5 @@
 /**
- * What making one of the four asks of the vault, and what it says when the
+ * What making a file of a kind or a note pointing at an address asks of the vault, and what it says when the
  * vault refuses or cannot be asked at all.
  */
 import { describe, expect, it } from 'vitest'
@@ -23,26 +23,14 @@ const maker = (
   }
   return {
     requests: request,
-    createDeck: (title, folder) => {
-      request.push(`deck ${folder || '—'} ${title}`)
+    createFile: (kind, title, folder) => {
+      request.push(`${kind === 'url' ? 'link' : kind} ${folder || '—'} ${title}`)
       return answer(`${folder}/${title}.md`)
-    },
-    createStencil: (title, folder) => {
-      request.push(`stencil ${folder || '—'} ${title}`)
-      return answer(`${folder}/${title}.md`)
-    },
-    createPreset: (title, folder) => {
-      request.push(`preset ${folder || '—'} ${title}`)
-      return answer(`${folder}/${title}.md`)
-    },
-    createUrl: (address, folder) => {
-      request.push(`link ${folder || '—'} ${address}`)
-      return answer(`${folder}/${address}.md`)
     },
   }
 }
 
-/** Everything making one of the four says. */
+/** Everything making a file says. */
 const MAKING = { errors: ERRORS }
 
 const createCreators = (
@@ -51,7 +39,7 @@ const createCreators = (
   write: MessageWriter = () => {},
 ) => createFileCreators(vault, tabOpeners, { words: MAKING, write })
 
-describe('a deck, a stencil or a preset made', () => {
+describe('a file of a kind made', () => {
   it('is requested of the vault under the name and the folder it was given', async () => {
     const vault = maker()
     const createdItem = createCreators(vault)
@@ -81,9 +69,9 @@ describe('a deck, a stencil or a preset made', () => {
     }
     const createdItem = createCreators(maker(), tabOpeners)
 
-    await createdItem.createDeck('zoology', 'Animals')
-    await createdItem.createStencil('zoology', 'Words')
-    await createdItem.createPreset('', 'Slow')
+    await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')
+    await createdItem.createAndOpenFile('stencil', 'zoology', 'Words')
+    await createdItem.createAndOpenFile('preset', '', 'Slow')
 
     expect(openedTabs).toStrictEqual([
       'deck zoology/Animals.md',
@@ -97,7 +85,7 @@ describe('a deck, a stencil or a preset made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker('occupied'), tabOpeners, mockWriter.write)
 
-    expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
     expect(mockWriter.messagesText).toStrictEqual([ERRORS.occupied])
   })
 
@@ -105,7 +93,7 @@ describe('a deck, a stencil or a preset made', () => {
     const mockWriter = writer()
     const createdItem = createCreators(maker(null, true), undefined, mockWriter.write)
 
-    expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
     expect(mockWriter.messagesText.join(' ')).not.toContain('the vault is not there')
     expect(mockWriter.messagesText.join(' ')).toContain('numen did not answer')
   })
@@ -136,12 +124,12 @@ describe('a file nothing offers to make', () => {
     tabOpeners.registerEditor('deck', (path) => openedTabs.push(path))
     const mockWriter = writer()
     const createdItem = createCreators(
-      { createDeck: async () => null },
+      { createFile: async () => null },
       tabOpeners,
       mockWriter.write,
     )
 
-    expect(await createdItem.createDeck('zoology', 'Animals')).toBe('')
+    expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
     expect(openedTabs).toStrictEqual([])
     expect(mockWriter.messagesText).toStrictEqual([])
   })
@@ -154,7 +142,7 @@ describe('a file made and put in front of the person', () => {
     tabOpeners.registerEditor('deck', (_path, title) => titles.push(title))
     const createdItem = createCreators(maker(), tabOpeners)
 
-    await createdItem.createDeck('zoology', 'Animals')
+    await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')
 
     expect(titles).toStrictEqual([''])
   })

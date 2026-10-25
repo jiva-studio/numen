@@ -41,15 +41,6 @@ export interface VaultWriter {
 /** The files a command makes from nothing, each put in front of the person. */
 export interface FileMakers {
   /**
-   * A deck made in a folder under the name it is given. The path it landed at,
-   * and nothing where none was made.
-   */
-  createDeck(folder: string, name: string): Promise<string>
-  /** A stencil made the same way. */
-  createStencil(folder: string, name: string): Promise<string>
-  /** A preset made the same way, naming none of its settings. */
-  createPreset(folder: string, name: string): Promise<string>
-  /**
    * A note pointing at an address, named by the address until what is at it
    * says what it is called. The path it landed at, and nothing where none was
    * made.

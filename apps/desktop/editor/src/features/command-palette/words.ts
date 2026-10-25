@@ -103,11 +103,6 @@ export interface Words extends EmptyWords {
   /** The preset the note in front is, or the one the deck in front is scheduled by. */
   readonly preset: string
   readonly newNote: string
-  /** The two files a card is written in: the deck it is one of, and what cuts it. */
-  readonly newDeck: string
-  readonly newStencil: string
-  /** The note that says how the decks pointing at it are scheduled. */
-  readonly newPreset: string
   /** The note that points at a web address, made from the address. */
   readonly importUrl: string
   readonly newPlex: string

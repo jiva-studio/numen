@@ -115,33 +115,6 @@ const DYNAMIC_CREATORS: Record<
   string,
   (makers: CommandDeps['makers'], name: string) => Promise<unknown>
 > = {
-  deck: (makers, name) =>
-    'createAndOpenFile' in makers &&
-    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
-      ? (
-          makers as {
-            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
-          }
-        ).createAndOpenFile('deck', '', name)
-      : makers.createDeck('', name),
-  stencil: (makers, name) =>
-    'createAndOpenFile' in makers &&
-    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
-      ? (
-          makers as {
-            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
-          }
-        ).createAndOpenFile('stencil', '', name)
-      : makers.createStencil('', name),
-  newPreset: (makers, name) =>
-    'createAndOpenFile' in makers &&
-    typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'
-      ? (
-          makers as {
-            createAndOpenFile: (k: string, f: string, n: string) => Promise<unknown>
-          }
-        ).createAndOpenFile('preset', '', name)
-      : makers.createPreset('', name),
   importUrl: (makers, name) =>
     'createAndOpenFile' in makers &&
     typeof (makers as Record<string, unknown>).createAndOpenFile === 'function'

@@ -3,19 +3,12 @@
  * plugins' backends run. The application checks a run against the declaration
  * before it reaches the plugin.
  */
-import {
-  CommandArgumentType,
-  CommandErrorCode,
-  type PluginCommand as WireCommand,
-} from '@numen/protocol'
+import { CommandErrorCode, type PluginCommand as WireCommand } from '@numen/protocol'
 import { pluginCommands } from '@/shared/clients'
 
-export type DeclaredArgumentType = 'string' | 'number' | 'boolean'
-
-export interface DeclaredArgument {
+interface DeclaredArgument {
   readonly name: string
   readonly title: string
-  readonly type: DeclaredArgumentType
   readonly isRequired: boolean
 }
 
@@ -24,7 +17,6 @@ export interface DeclaredCommand {
   readonly pluginId: string
   readonly id: string
   readonly title: string
-  readonly description: string
   readonly fileExtensions: readonly string[]
   readonly arguments: readonly DeclaredArgument[]
 }
@@ -35,26 +27,22 @@ export interface DeclaredCommandRun {
   readonly values: Readonly<Record<string, string>>
 }
 
-/** What a run came to: what the plugin said, or why it did not succeed. */
-export type DeclaredCommandOutcome = { ok: true; value: string } | { ok: false; error: string }
-
-const ARGUMENT_TYPES: Record<CommandArgumentType, DeclaredArgumentType> = {
-  [CommandArgumentType.UNSPECIFIED]: 'string',
-  [CommandArgumentType.STRING]: 'string',
-  [CommandArgumentType.NUMBER]: 'number',
-  [CommandArgumentType.BOOLEAN]: 'boolean',
-}
+/**
+ * What a run came to: what the plugin said and the file to open once it ran,
+ * either of them empty, or why it did not succeed.
+ */
+export type DeclaredCommandOutcome =
+  | { ok: true; value: { readonly message: string; readonly openedPath: string } }
+  | { ok: false; error: string }
 
 const readCommand = (wire: WireCommand): DeclaredCommand => ({
   pluginId: wire.pluginId,
   id: wire.id,
   title: wire.title,
-  description: wire.description,
   fileExtensions: wire.fileExtensions,
   arguments: wire.arguments.map((one) => ({
     name: one.name,
     title: one.title,
-    type: ARGUMENT_TYPES[one.type],
     isRequired: one.isRequired,
   })),
 })
@@ -76,7 +64,9 @@ export async function runDeclaredCommand(
     path: command.fileExtensions.length > 0 ? run.path : '',
     arguments: { ...run.values },
   })
-  if (answer.error === CommandErrorCode.UNSPECIFIED) return { ok: true, value: answer.message }
+  if (answer.error === CommandErrorCode.UNSPECIFIED) {
+    return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
+  }
   return { ok: false, error: answer.message }
 }
 
