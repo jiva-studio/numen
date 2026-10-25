@@ -477,8 +477,11 @@ type TextProviderServiceCreateTextRequest struct {
 	// input_version_id is the version the text is made from, and empty for the
 	// file itself.
 	InputVersionId string `protobuf:"bytes,3,opt,name=input_version_id,json=inputVersionId,proto3" json:"input_version_id,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// is_user_started is set for a text a person asked for, which runs before
+	// text nobody asked for.
+	IsUserStarted bool `protobuf:"varint,4,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *TextProviderServiceCreateTextRequest) Reset() {
@@ -530,6 +533,13 @@ func (x *TextProviderServiceCreateTextRequest) GetInputVersionId() string {
 		return x.InputVersionId
 	}
 	return ""
+}
+
+func (x *TextProviderServiceCreateTextRequest) GetIsUserStarted() bool {
+	if x != nil {
+		return x.IsUserStarted
+	}
+	return false
 }
 
 type TextProviderServiceCreateTextResponse struct {
@@ -708,11 +718,12 @@ const file_numen_v1_textprovider_proto_rawDesc = "" +
 	"\x05parts\x18\x01 \x03(\v2\x12.numen.v1.TextPartR\x05parts\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
 	"nextCursor\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\x7f\n" +
+	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\xa7\x01\n" +
 	"$TextProviderServiceCreateTextRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12(\n" +
-	"\x10input_version_id\x18\x03 \x01(\tR\x0einputVersionId\"V\n" +
+	"\x10input_version_id\x18\x03 \x01(\tR\x0einputVersionId\x12&\n" +
+	"\x0fis_user_started\x18\x04 \x01(\bR\risUserStarted\"V\n" +
 	"%TextProviderServiceCreateTextResponse\x12-\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"g\n" +
 	"$TextProviderServiceDeleteTextRequest\x12\x19\n" +

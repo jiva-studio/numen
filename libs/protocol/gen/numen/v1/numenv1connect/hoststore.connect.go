@@ -42,6 +42,12 @@ const (
 	// HostStoreServiceListStoreFilesProcedure is the fully-qualified name of the HostStoreService's
 	// ListStoreFiles RPC.
 	HostStoreServiceListStoreFilesProcedure = "/numen.v1.HostStoreService/ListStoreFiles"
+	// HostStoreServiceWriteStoreFileProcedure is the fully-qualified name of the HostStoreService's
+	// WriteStoreFile RPC.
+	HostStoreServiceWriteStoreFileProcedure = "/numen.v1.HostStoreService/WriteStoreFile"
+	// HostStoreServiceDeleteStoreFileProcedure is the fully-qualified name of the HostStoreService's
+	// DeleteStoreFile RPC.
+	HostStoreServiceDeleteStoreFileProcedure = "/numen.v1.HostStoreService/DeleteStoreFile"
 )
 
 // HostStoreServiceClient is a client for the numen.v1.HostStoreService service.
@@ -54,6 +60,11 @@ type HostStoreServiceClient interface {
 	// ListStoreFiles lists the files of the plugin's folder, sorted by name. A
 	// folder that is not there holds no files.
 	ListStoreFiles(context.Context, *connect.Request[v1.ListStoreFilesRequest]) (*connect.Response[v1.ListStoreFilesResponse], error)
+	// WriteStoreFile replaces a whole file, making it when it is not there. The
+	// content lands whole or not at all.
+	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
+	// DeleteStoreFile removes a file. A file that is not there is removed.
+	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
 }
 
 // NewHostStoreServiceClient constructs a client for the numen.v1.HostStoreService service. By
@@ -85,6 +96,18 @@ func NewHostStoreServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostStoreServiceMethods.ByName("ListStoreFiles")),
 			connect.WithClientOptions(opts...),
 		),
+		writeStoreFile: connect.NewClient[v1.WriteStoreFileRequest, v1.WriteStoreFileResponse](
+			httpClient,
+			baseURL+HostStoreServiceWriteStoreFileProcedure,
+			connect.WithSchema(hostStoreServiceMethods.ByName("WriteStoreFile")),
+			connect.WithClientOptions(opts...),
+		),
+		deleteStoreFile: connect.NewClient[v1.DeleteStoreFileRequest, v1.DeleteStoreFileResponse](
+			httpClient,
+			baseURL+HostStoreServiceDeleteStoreFileProcedure,
+			connect.WithSchema(hostStoreServiceMethods.ByName("DeleteStoreFile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -93,6 +116,8 @@ type hostStoreServiceClient struct {
 	readStoreFile   *connect.Client[v1.ReadStoreFileRequest, v1.ReadStoreFileResponse]
 	appendStoreFile *connect.Client[v1.AppendStoreFileRequest, v1.AppendStoreFileResponse]
 	listStoreFiles  *connect.Client[v1.ListStoreFilesRequest, v1.ListStoreFilesResponse]
+	writeStoreFile  *connect.Client[v1.WriteStoreFileRequest, v1.WriteStoreFileResponse]
+	deleteStoreFile *connect.Client[v1.DeleteStoreFileRequest, v1.DeleteStoreFileResponse]
 }
 
 // ReadStoreFile calls numen.v1.HostStoreService.ReadStoreFile.
@@ -110,6 +135,16 @@ func (c *hostStoreServiceClient) ListStoreFiles(ctx context.Context, req *connec
 	return c.listStoreFiles.CallUnary(ctx, req)
 }
 
+// WriteStoreFile calls numen.v1.HostStoreService.WriteStoreFile.
+func (c *hostStoreServiceClient) WriteStoreFile(ctx context.Context, req *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error) {
+	return c.writeStoreFile.CallUnary(ctx, req)
+}
+
+// DeleteStoreFile calls numen.v1.HostStoreService.DeleteStoreFile.
+func (c *hostStoreServiceClient) DeleteStoreFile(ctx context.Context, req *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error) {
+	return c.deleteStoreFile.CallUnary(ctx, req)
+}
+
 // HostStoreServiceHandler is an implementation of the numen.v1.HostStoreService service.
 type HostStoreServiceHandler interface {
 	// ReadStoreFile reads a whole file.
@@ -120,6 +155,11 @@ type HostStoreServiceHandler interface {
 	// ListStoreFiles lists the files of the plugin's folder, sorted by name. A
 	// folder that is not there holds no files.
 	ListStoreFiles(context.Context, *connect.Request[v1.ListStoreFilesRequest]) (*connect.Response[v1.ListStoreFilesResponse], error)
+	// WriteStoreFile replaces a whole file, making it when it is not there. The
+	// content lands whole or not at all.
+	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
+	// DeleteStoreFile removes a file. A file that is not there is removed.
+	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
 }
 
 // NewHostStoreServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -147,6 +187,18 @@ func NewHostStoreServiceHandler(svc HostStoreServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostStoreServiceMethods.ByName("ListStoreFiles")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostStoreServiceWriteStoreFileHandler := connect.NewUnaryHandler(
+		HostStoreServiceWriteStoreFileProcedure,
+		svc.WriteStoreFile,
+		connect.WithSchema(hostStoreServiceMethods.ByName("WriteStoreFile")),
+		connect.WithHandlerOptions(opts...),
+	)
+	hostStoreServiceDeleteStoreFileHandler := connect.NewUnaryHandler(
+		HostStoreServiceDeleteStoreFileProcedure,
+		svc.DeleteStoreFile,
+		connect.WithSchema(hostStoreServiceMethods.ByName("DeleteStoreFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostStoreService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostStoreServiceReadStoreFileProcedure:
@@ -155,6 +207,10 @@ func NewHostStoreServiceHandler(svc HostStoreServiceHandler, opts ...connect.Han
 			hostStoreServiceAppendStoreFileHandler.ServeHTTP(w, r)
 		case HostStoreServiceListStoreFilesProcedure:
 			hostStoreServiceListStoreFilesHandler.ServeHTTP(w, r)
+		case HostStoreServiceWriteStoreFileProcedure:
+			hostStoreServiceWriteStoreFileHandler.ServeHTTP(w, r)
+		case HostStoreServiceDeleteStoreFileProcedure:
+			hostStoreServiceDeleteStoreFileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -174,4 +230,12 @@ func (UnimplementedHostStoreServiceHandler) AppendStoreFile(context.Context, *co
 
 func (UnimplementedHostStoreServiceHandler) ListStoreFiles(context.Context, *connect.Request[v1.ListStoreFilesRequest]) (*connect.Response[v1.ListStoreFilesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostStoreService.ListStoreFiles is not implemented"))
+}
+
+func (UnimplementedHostStoreServiceHandler) WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostStoreService.WriteStoreFile is not implemented"))
+}
+
+func (UnimplementedHostStoreServiceHandler) DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostStoreService.DeleteStoreFile is not implemented"))
 }

@@ -96,6 +96,9 @@ message TextProviderServiceCreateTextRequest {
   // input_version_id is the version the text is made from, and empty for the
   // file itself.
   string input_version_id = 3;
+  // is_user_started is set for a text a person asked for, which runs before
+  // text nobody asked for.
+  bool is_user_started = 4;
 }
 
 message TextProviderServiceCreateTextResponse {

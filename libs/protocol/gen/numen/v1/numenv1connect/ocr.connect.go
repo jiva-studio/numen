@@ -28,8 +28,6 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// OcrServiceName is the fully-qualified name of the OcrService service.
 	OcrServiceName = "numen.v1.OcrService"
-	// RecognitionServiceName is the fully-qualified name of the RecognitionService service.
-	RecognitionServiceName = "numen.v1.RecognitionService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -42,12 +40,6 @@ const (
 const (
 	// OcrServiceReadOcrProcedure is the fully-qualified name of the OcrService's ReadOcr RPC.
 	OcrServiceReadOcrProcedure = "/numen.v1.OcrService/ReadOcr"
-	// RecognitionServiceGetRecognitionModelProcedure is the fully-qualified name of the
-	// RecognitionService's GetRecognitionModel RPC.
-	RecognitionServiceGetRecognitionModelProcedure = "/numen.v1.RecognitionService/GetRecognitionModel"
-	// RecognitionServiceRecognisePageProcedure is the fully-qualified name of the RecognitionService's
-	// RecognisePage RPC.
-	RecognitionServiceRecognisePageProcedure = "/numen.v1.RecognitionService/RecognisePage"
 )
 
 // OcrServiceClient is a client for the numen.v1.OcrService service.
@@ -126,104 +118,4 @@ type UnimplementedOcrServiceHandler struct{}
 
 func (UnimplementedOcrServiceHandler) ReadOcr(context.Context, *connect.Request[v1.ReadOcrRequest]) (*connect.Response[v1.ReadOcrResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.OcrService.ReadOcr is not implemented"))
-}
-
-// RecognitionServiceClient is a client for the numen.v1.RecognitionService service.
-type RecognitionServiceClient interface {
-	// GetRecognitionModel returns the identity and configuration of the active recognition model.
-	GetRecognitionModel(context.Context, *connect.Request[v1.GetRecognitionModelRequest]) (*connect.Response[v1.GetRecognitionModelResponse], error)
-	// RecognisePage extracts text blocks and bounding boxes from a single page image.
-	RecognisePage(context.Context, *connect.Request[v1.RecognisePageRequest]) (*connect.Response[v1.RecognisePageResponse], error)
-}
-
-// NewRecognitionServiceClient constructs a client for the numen.v1.RecognitionService service. By
-// default, it uses the Connect protocol with the binary Protobuf Codec, asks for gzipped responses,
-// and sends uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the
-// connect.WithGRPC() or connect.WithGRPCWeb() options.
-//
-// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
-// http://api.acme.com or https://acme.com/grpc).
-func NewRecognitionServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) RecognitionServiceClient {
-	baseURL = strings.TrimRight(baseURL, "/")
-	recognitionServiceMethods := v1.File_numen_v1_ocr_proto.Services().ByName("RecognitionService").Methods()
-	return &recognitionServiceClient{
-		getRecognitionModel: connect.NewClient[v1.GetRecognitionModelRequest, v1.GetRecognitionModelResponse](
-			httpClient,
-			baseURL+RecognitionServiceGetRecognitionModelProcedure,
-			connect.WithSchema(recognitionServiceMethods.ByName("GetRecognitionModel")),
-			connect.WithClientOptions(opts...),
-		),
-		recognisePage: connect.NewClient[v1.RecognisePageRequest, v1.RecognisePageResponse](
-			httpClient,
-			baseURL+RecognitionServiceRecognisePageProcedure,
-			connect.WithSchema(recognitionServiceMethods.ByName("RecognisePage")),
-			connect.WithClientOptions(opts...),
-		),
-	}
-}
-
-// recognitionServiceClient implements RecognitionServiceClient.
-type recognitionServiceClient struct {
-	getRecognitionModel *connect.Client[v1.GetRecognitionModelRequest, v1.GetRecognitionModelResponse]
-	recognisePage       *connect.Client[v1.RecognisePageRequest, v1.RecognisePageResponse]
-}
-
-// GetRecognitionModel calls numen.v1.RecognitionService.GetRecognitionModel.
-func (c *recognitionServiceClient) GetRecognitionModel(ctx context.Context, req *connect.Request[v1.GetRecognitionModelRequest]) (*connect.Response[v1.GetRecognitionModelResponse], error) {
-	return c.getRecognitionModel.CallUnary(ctx, req)
-}
-
-// RecognisePage calls numen.v1.RecognitionService.RecognisePage.
-func (c *recognitionServiceClient) RecognisePage(ctx context.Context, req *connect.Request[v1.RecognisePageRequest]) (*connect.Response[v1.RecognisePageResponse], error) {
-	return c.recognisePage.CallUnary(ctx, req)
-}
-
-// RecognitionServiceHandler is an implementation of the numen.v1.RecognitionService service.
-type RecognitionServiceHandler interface {
-	// GetRecognitionModel returns the identity and configuration of the active recognition model.
-	GetRecognitionModel(context.Context, *connect.Request[v1.GetRecognitionModelRequest]) (*connect.Response[v1.GetRecognitionModelResponse], error)
-	// RecognisePage extracts text blocks and bounding boxes from a single page image.
-	RecognisePage(context.Context, *connect.Request[v1.RecognisePageRequest]) (*connect.Response[v1.RecognisePageResponse], error)
-}
-
-// NewRecognitionServiceHandler builds an HTTP handler from the service implementation. It returns
-// the path on which to mount the handler and the handler itself.
-//
-// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
-// and JSON codecs. They also support gzip compression.
-func NewRecognitionServiceHandler(svc RecognitionServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
-	recognitionServiceMethods := v1.File_numen_v1_ocr_proto.Services().ByName("RecognitionService").Methods()
-	recognitionServiceGetRecognitionModelHandler := connect.NewUnaryHandler(
-		RecognitionServiceGetRecognitionModelProcedure,
-		svc.GetRecognitionModel,
-		connect.WithSchema(recognitionServiceMethods.ByName("GetRecognitionModel")),
-		connect.WithHandlerOptions(opts...),
-	)
-	recognitionServiceRecognisePageHandler := connect.NewUnaryHandler(
-		RecognitionServiceRecognisePageProcedure,
-		svc.RecognisePage,
-		connect.WithSchema(recognitionServiceMethods.ByName("RecognisePage")),
-		connect.WithHandlerOptions(opts...),
-	)
-	return "/numen.v1.RecognitionService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case RecognitionServiceGetRecognitionModelProcedure:
-			recognitionServiceGetRecognitionModelHandler.ServeHTTP(w, r)
-		case RecognitionServiceRecognisePageProcedure:
-			recognitionServiceRecognisePageHandler.ServeHTTP(w, r)
-		default:
-			http.NotFound(w, r)
-		}
-	})
-}
-
-// UnimplementedRecognitionServiceHandler returns CodeUnimplemented from all methods.
-type UnimplementedRecognitionServiceHandler struct{}
-
-func (UnimplementedRecognitionServiceHandler) GetRecognitionModel(context.Context, *connect.Request[v1.GetRecognitionModelRequest]) (*connect.Response[v1.GetRecognitionModelResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.RecognitionService.GetRecognitionModel is not implemented"))
-}
-
-func (UnimplementedRecognitionServiceHandler) RecognisePage(context.Context, *connect.Request[v1.RecognisePageRequest]) (*connect.Response[v1.RecognisePageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.RecognitionService.RecognisePage is not implemented"))
 }

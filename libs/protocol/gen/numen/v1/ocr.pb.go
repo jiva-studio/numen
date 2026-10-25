@@ -314,350 +314,6 @@ func (x *Rect) GetMaxY() float32 {
 	return 0
 }
 
-type GetRecognitionModelRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetRecognitionModelRequest) Reset() {
-	*x = GetRecognitionModelRequest{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetRecognitionModelRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetRecognitionModelRequest) ProtoMessage() {}
-
-func (x *GetRecognitionModelRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetRecognitionModelRequest.ProtoReflect.Descriptor instead.
-func (*GetRecognitionModelRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{5}
-}
-
-type GetRecognitionModelResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Layout        string                 `protobuf:"bytes,1,opt,name=layout,proto3" json:"layout,omitempty"`
-	Recogniser    string                 `protobuf:"bytes,2,opt,name=recogniser,proto3" json:"recogniser,omitempty"`
-	Dpi           int32                  `protobuf:"varint,3,opt,name=dpi,proto3" json:"dpi,omitempty"`
-	From          string                 `protobuf:"bytes,4,opt,name=from,proto3" json:"from,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetRecognitionModelResponse) Reset() {
-	*x = GetRecognitionModelResponse{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetRecognitionModelResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetRecognitionModelResponse) ProtoMessage() {}
-
-func (x *GetRecognitionModelResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetRecognitionModelResponse.ProtoReflect.Descriptor instead.
-func (*GetRecognitionModelResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *GetRecognitionModelResponse) GetLayout() string {
-	if x != nil {
-		return x.Layout
-	}
-	return ""
-}
-
-func (x *GetRecognitionModelResponse) GetRecogniser() string {
-	if x != nil {
-		return x.Recogniser
-	}
-	return ""
-}
-
-func (x *GetRecognitionModelResponse) GetDpi() int32 {
-	if x != nil {
-		return x.Dpi
-	}
-	return 0
-}
-
-func (x *GetRecognitionModelResponse) GetFrom() string {
-	if x != nil {
-		return x.From
-	}
-	return ""
-}
-
-type RecognisePageRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ImageData     []byte                 `protobuf:"bytes,1,opt,name=image_data,json=imageData,proto3" json:"image_data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RecognisePageRequest) Reset() {
-	*x = RecognisePageRequest{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RecognisePageRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RecognisePageRequest) ProtoMessage() {}
-
-func (x *RecognisePageRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecognisePageRequest.ProtoReflect.Descriptor instead.
-func (*RecognisePageRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *RecognisePageRequest) GetImageData() []byte {
-	if x != nil {
-		return x.ImageData
-	}
-	return nil
-}
-
-type RecognisePageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Blocks        []*OcrBlock            `protobuf:"bytes,1,rep,name=blocks,proto3" json:"blocks,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *RecognisePageResponse) Reset() {
-	*x = RecognisePageResponse{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *RecognisePageResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*RecognisePageResponse) ProtoMessage() {}
-
-func (x *RecognisePageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use RecognisePageResponse.ProtoReflect.Descriptor instead.
-func (*RecognisePageResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *RecognisePageResponse) GetBlocks() []*OcrBlock {
-	if x != nil {
-		return x.Blocks
-	}
-	return nil
-}
-
-type OcrBlock struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Label         string                 `protobuf:"bytes,1,opt,name=label,proto3" json:"label,omitempty"`
-	Text          string                 `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
-	IsHeading     bool                   `protobuf:"varint,3,opt,name=is_heading,json=isHeading,proto3" json:"is_heading,omitempty"`
-	Depth         int32                  `protobuf:"varint,4,opt,name=depth,proto3" json:"depth,omitempty"`
-	Boxes         []*OcrBox              `protobuf:"bytes,5,rep,name=boxes,proto3" json:"boxes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *OcrBlock) Reset() {
-	*x = OcrBlock{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OcrBlock) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OcrBlock) ProtoMessage() {}
-
-func (x *OcrBlock) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OcrBlock.ProtoReflect.Descriptor instead.
-func (*OcrBlock) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *OcrBlock) GetLabel() string {
-	if x != nil {
-		return x.Label
-	}
-	return ""
-}
-
-func (x *OcrBlock) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
-func (x *OcrBlock) GetIsHeading() bool {
-	if x != nil {
-		return x.IsHeading
-	}
-	return false
-}
-
-func (x *OcrBlock) GetDepth() int32 {
-	if x != nil {
-		return x.Depth
-	}
-	return 0
-}
-
-func (x *OcrBlock) GetBoxes() []*OcrBox {
-	if x != nil {
-		return x.Boxes
-	}
-	return nil
-}
-
-type OcrBox struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MinX          int32                  `protobuf:"varint,1,opt,name=min_x,json=minX,proto3" json:"min_x,omitempty"`
-	MinY          int32                  `protobuf:"varint,2,opt,name=min_y,json=minY,proto3" json:"min_y,omitempty"`
-	MaxX          int32                  `protobuf:"varint,3,opt,name=max_x,json=maxX,proto3" json:"max_x,omitempty"`
-	MaxY          int32                  `protobuf:"varint,4,opt,name=max_y,json=maxY,proto3" json:"max_y,omitempty"`
-	Span          *Span                  `protobuf:"bytes,5,opt,name=span,proto3" json:"span,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *OcrBox) Reset() {
-	*x = OcrBox{}
-	mi := &file_numen_v1_ocr_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *OcrBox) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*OcrBox) ProtoMessage() {}
-
-func (x *OcrBox) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_ocr_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use OcrBox.ProtoReflect.Descriptor instead.
-func (*OcrBox) Descriptor() ([]byte, []int) {
-	return file_numen_v1_ocr_proto_rawDescGZIP(), []int{10}
-}
-
-func (x *OcrBox) GetMinX() int32 {
-	if x != nil {
-		return x.MinX
-	}
-	return 0
-}
-
-func (x *OcrBox) GetMinY() int32 {
-	if x != nil {
-		return x.MinY
-	}
-	return 0
-}
-
-func (x *OcrBox) GetMaxX() int32 {
-	if x != nil {
-		return x.MaxX
-	}
-	return 0
-}
-
-func (x *OcrBox) GetMaxY() int32 {
-	if x != nil {
-		return x.MaxY
-	}
-	return 0
-}
-
-func (x *OcrBox) GetSpan() *Span {
-	if x != nil {
-		return x.Span
-	}
-	return nil
-}
-
 var File_numen_v1_ocr_proto protoreflect.FileDescriptor
 
 const file_numen_v1_ocr_proto_rawDesc = "" +
@@ -679,39 +335,10 @@ const file_numen_v1_ocr_proto_rawDesc = "" +
 	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
 	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
 	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY\"\x1c\n" +
-	"\x1aGetRecognitionModelRequest\"{\n" +
-	"\x1bGetRecognitionModelResponse\x12\x16\n" +
-	"\x06layout\x18\x01 \x01(\tR\x06layout\x12\x1e\n" +
-	"\n" +
-	"recogniser\x18\x02 \x01(\tR\n" +
-	"recogniser\x12\x10\n" +
-	"\x03dpi\x18\x03 \x01(\x05R\x03dpi\x12\x12\n" +
-	"\x04from\x18\x04 \x01(\tR\x04from\"5\n" +
-	"\x14RecognisePageRequest\x12\x1d\n" +
-	"\n" +
-	"image_data\x18\x01 \x01(\fR\timageData\"C\n" +
-	"\x15RecognisePageResponse\x12*\n" +
-	"\x06blocks\x18\x01 \x03(\v2\x12.numen.v1.OcrBlockR\x06blocks\"\x91\x01\n" +
-	"\bOcrBlock\x12\x14\n" +
-	"\x05label\x18\x01 \x01(\tR\x05label\x12\x12\n" +
-	"\x04text\x18\x02 \x01(\tR\x04text\x12\x1d\n" +
-	"\n" +
-	"is_heading\x18\x03 \x01(\bR\tisHeading\x12\x14\n" +
-	"\x05depth\x18\x04 \x01(\x05R\x05depth\x12&\n" +
-	"\x05boxes\x18\x05 \x03(\v2\x10.numen.v1.OcrBoxR\x05boxes\"\x80\x01\n" +
-	"\x06OcrBox\x12\x13\n" +
-	"\x05min_x\x18\x01 \x01(\x05R\x04minX\x12\x13\n" +
-	"\x05min_y\x18\x02 \x01(\x05R\x04minY\x12\x13\n" +
-	"\x05max_x\x18\x03 \x01(\x05R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x05R\x04maxY\x12\"\n" +
-	"\x04span\x18\x05 \x01(\v2\x0e.numen.v1.SpanR\x04span2L\n" +
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2L\n" +
 	"\n" +
 	"OcrService\x12>\n" +
-	"\aReadOcr\x12\x18.numen.v1.ReadOcrRequest\x1a\x19.numen.v1.ReadOcrResponse2\xca\x01\n" +
-	"\x12RecognitionService\x12b\n" +
-	"\x13GetRecognitionModel\x12$.numen.v1.GetRecognitionModelRequest\x1a%.numen.v1.GetRecognitionModelResponse\x12P\n" +
-	"\rRecognisePage\x12\x1e.numen.v1.RecognisePageRequest\x1a\x1f.numen.v1.RecognisePageResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\aReadOcr\x12\x18.numen.v1.ReadOcrRequest\x1a\x19.numen.v1.ReadOcrResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_ocr_proto_rawDescOnce sync.Once
@@ -725,41 +352,28 @@ func file_numen_v1_ocr_proto_rawDescGZIP() []byte {
 	return file_numen_v1_ocr_proto_rawDescData
 }
 
-var file_numen_v1_ocr_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_numen_v1_ocr_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_numen_v1_ocr_proto_goTypes = []any{
-	(*ReadOcrRequest)(nil),              // 0: numen.v1.ReadOcrRequest
-	(*ReadOcrResponse)(nil),             // 1: numen.v1.ReadOcrResponse
-	(*Run)(nil),                         // 2: numen.v1.Run
-	(*Box)(nil),                         // 3: numen.v1.Box
-	(*Rect)(nil),                        // 4: numen.v1.Rect
-	(*GetRecognitionModelRequest)(nil),  // 5: numen.v1.GetRecognitionModelRequest
-	(*GetRecognitionModelResponse)(nil), // 6: numen.v1.GetRecognitionModelResponse
-	(*RecognisePageRequest)(nil),        // 7: numen.v1.RecognisePageRequest
-	(*RecognisePageResponse)(nil),       // 8: numen.v1.RecognisePageResponse
-	(*OcrBlock)(nil),                    // 9: numen.v1.OcrBlock
-	(*OcrBox)(nil),                      // 10: numen.v1.OcrBox
-	(*Span)(nil),                        // 11: numen.v1.Span
+	(*ReadOcrRequest)(nil),  // 0: numen.v1.ReadOcrRequest
+	(*ReadOcrResponse)(nil), // 1: numen.v1.ReadOcrResponse
+	(*Run)(nil),             // 2: numen.v1.Run
+	(*Box)(nil),             // 3: numen.v1.Box
+	(*Rect)(nil),            // 4: numen.v1.Rect
+	(*Span)(nil),            // 5: numen.v1.Span
 }
 var file_numen_v1_ocr_proto_depIdxs = []int32{
-	11, // 0: numen.v1.ReadOcrRequest.spans:type_name -> numen.v1.Span
-	2,  // 1: numen.v1.ReadOcrResponse.runs:type_name -> numen.v1.Run
-	3,  // 2: numen.v1.Run.boxes:type_name -> numen.v1.Box
-	11, // 3: numen.v1.Box.span:type_name -> numen.v1.Span
-	4,  // 4: numen.v1.Box.rect:type_name -> numen.v1.Rect
-	9,  // 5: numen.v1.RecognisePageResponse.blocks:type_name -> numen.v1.OcrBlock
-	10, // 6: numen.v1.OcrBlock.boxes:type_name -> numen.v1.OcrBox
-	11, // 7: numen.v1.OcrBox.span:type_name -> numen.v1.Span
-	0,  // 8: numen.v1.OcrService.ReadOcr:input_type -> numen.v1.ReadOcrRequest
-	5,  // 9: numen.v1.RecognitionService.GetRecognitionModel:input_type -> numen.v1.GetRecognitionModelRequest
-	7,  // 10: numen.v1.RecognitionService.RecognisePage:input_type -> numen.v1.RecognisePageRequest
-	1,  // 11: numen.v1.OcrService.ReadOcr:output_type -> numen.v1.ReadOcrResponse
-	6,  // 12: numen.v1.RecognitionService.GetRecognitionModel:output_type -> numen.v1.GetRecognitionModelResponse
-	8,  // 13: numen.v1.RecognitionService.RecognisePage:output_type -> numen.v1.RecognisePageResponse
-	11, // [11:14] is the sub-list for method output_type
-	8,  // [8:11] is the sub-list for method input_type
-	8,  // [8:8] is the sub-list for extension type_name
-	8,  // [8:8] is the sub-list for extension extendee
-	0,  // [0:8] is the sub-list for field type_name
+	5, // 0: numen.v1.ReadOcrRequest.spans:type_name -> numen.v1.Span
+	2, // 1: numen.v1.ReadOcrResponse.runs:type_name -> numen.v1.Run
+	3, // 2: numen.v1.Run.boxes:type_name -> numen.v1.Box
+	5, // 3: numen.v1.Box.span:type_name -> numen.v1.Span
+	4, // 4: numen.v1.Box.rect:type_name -> numen.v1.Rect
+	0, // 5: numen.v1.OcrService.ReadOcr:input_type -> numen.v1.ReadOcrRequest
+	1, // 6: numen.v1.OcrService.ReadOcr:output_type -> numen.v1.ReadOcrResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_ocr_proto_init() }
@@ -774,9 +388,9 @@ func file_numen_v1_ocr_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_ocr_proto_rawDesc), len(file_numen_v1_ocr_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   11,
+			NumMessages:   5,
 			NumExtensions: 0,
-			NumServices:   2,
+			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_ocr_proto_goTypes,
 		DependencyIndexes: file_numen_v1_ocr_proto_depIdxs,

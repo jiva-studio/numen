@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hoststore.proto.
  */
 export const file_numen_v1_hoststore: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0c3RvcmUucHJvdG8SCG51bWVuLnYxIiQKFFJlYWRTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiVQoVUmVhZFN0b3JlRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFN0b3JlRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwiNwoWQXBwZW5kU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiRgoXQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUiFwoVTGlzdFN0b3JlRmlsZXNSZXF1ZXN0IisKDUhvc3RTdG9yZUZpbGUSDAoEbmFtZRgBIAEoCRIMCgRzaXplGAIgASgDIm0KFkxpc3RTdG9yZUZpbGVzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUSJgoFZmlsZXMYAiADKAsyFy5udW1lbi52MS5Ib3N0U3RvcmVGaWxlKtABChJIb3N0U3RvcmVFcnJvckNvZGUSJQohSE9TVF9TVE9SRV9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9TVE9SRV9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIQodSE9TVF9TVE9SRV9FUlJPUl9DT0RFX01JU1NJTkcQAhIhCh1IT1NUX1NUT1JFX0VSUk9SX0NPREVfT1VUU0lERRADEikKJUhPU1RfU1RPUkVfRVJST1JfQ09ERV9IRUxEX0JZX0FOT1RIRVIQBDKRAgoQSG9zdFN0b3JlU2VydmljZRJQCg1SZWFkU3RvcmVGaWxlEh4ubnVtZW4udjEuUmVhZFN0b3JlRmlsZVJlcXVlc3QaHy5udW1lbi52MS5SZWFkU3RvcmVGaWxlUmVzcG9uc2USVgoPQXBwZW5kU3RvcmVGaWxlEiAubnVtZW4udjEuQXBwZW5kU3RvcmVGaWxlUmVxdWVzdBohLm51bWVuLnYxLkFwcGVuZFN0b3JlRmlsZVJlc3BvbnNlElMKDkxpc3RTdG9yZUZpbGVzEh8ubnVtZW4udjEuTGlzdFN0b3JlRmlsZXNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdFN0b3JlRmlsZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
+  fileDesc("ChhudW1lbi92MS9ob3N0c3RvcmUucHJvdG8SCG51bWVuLnYxIiQKFFJlYWRTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiVQoVUmVhZFN0b3JlRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFN0b3JlRXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwiNwoWQXBwZW5kU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiRgoXQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUiFwoVTGlzdFN0b3JlRmlsZXNSZXF1ZXN0IisKDUhvc3RTdG9yZUZpbGUSDAoEbmFtZRgBIAEoCRIMCgRzaXplGAIgASgDIm0KFkxpc3RTdG9yZUZpbGVzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUSJgoFZmlsZXMYAiADKAsyFy5udW1lbi52MS5Ib3N0U3RvcmVGaWxlIjYKFVdyaXRlU3RvcmVGaWxlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiRQoWV3JpdGVTdG9yZUZpbGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RTdG9yZUVycm9yQ29kZSImChZEZWxldGVTdG9yZUZpbGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiRgoXRGVsZXRlU3RvcmVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0U3RvcmVFcnJvckNvZGUq0AEKEkhvc3RTdG9yZUVycm9yQ29kZRIlCiFIT1NUX1NUT1JFX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIiCh5IT1NUX1NUT1JFX0VSUk9SX0NPREVfTk9fVkFVTFQQARIhCh1IT1NUX1NUT1JFX0VSUk9SX0NPREVfTUlTU0lORxACEiEKHUhPU1RfU1RPUkVfRVJST1JfQ09ERV9PVVRTSURFEAMSKQolSE9TVF9TVE9SRV9FUlJPUl9DT0RFX0hFTERfQllfQU5PVEhFUhAEMr4DChBIb3N0U3RvcmVTZXJ2aWNlElAKDVJlYWRTdG9yZUZpbGUSHi5udW1lbi52MS5SZWFkU3RvcmVGaWxlUmVxdWVzdBofLm51bWVuLnYxLlJlYWRTdG9yZUZpbGVSZXNwb25zZRJWCg9BcHBlbmRTdG9yZUZpbGUSIC5udW1lbi52MS5BcHBlbmRTdG9yZUZpbGVSZXF1ZXN0GiEubnVtZW4udjEuQXBwZW5kU3RvcmVGaWxlUmVzcG9uc2USUwoOTGlzdFN0b3JlRmlsZXMSHy5udW1lbi52MS5MaXN0U3RvcmVGaWxlc1JlcXVlc3QaIC5udW1lbi52MS5MaXN0U3RvcmVGaWxlc1Jlc3BvbnNlElMKDldyaXRlU3RvcmVGaWxlEh8ubnVtZW4udjEuV3JpdGVTdG9yZUZpbGVSZXF1ZXN0GiAubnVtZW4udjEuV3JpdGVTdG9yZUZpbGVSZXNwb25zZRJWCg9EZWxldGVTdG9yZUZpbGUSIC5udW1lbi52MS5EZWxldGVTdG9yZUZpbGVSZXF1ZXN0GiEubnVtZW4udjEuRGVsZXRlU3RvcmVGaWxlUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * @generated from message numen.v1.ReadStoreFileRequest
@@ -151,6 +151,79 @@ export const ListStoreFilesResponseSchema: GenMessage<ListStoreFilesResponse> = 
   messageDesc(file_numen_v1_hoststore, 6);
 
 /**
+ * @generated from message numen.v1.WriteStoreFileRequest
+ */
+export type WriteStoreFileRequest = Message<"numen.v1.WriteStoreFileRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: bytes content = 2;
+   */
+  content: Uint8Array;
+};
+
+/**
+ * Describes the message numen.v1.WriteStoreFileRequest.
+ * Use `create(WriteStoreFileRequestSchema)` to create a new message.
+ */
+export const WriteStoreFileRequestSchema: GenMessage<WriteStoreFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hoststore, 7);
+
+/**
+ * @generated from message numen.v1.WriteStoreFileResponse
+ */
+export type WriteStoreFileResponse = Message<"numen.v1.WriteStoreFileResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   */
+  error: HostStoreErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.WriteStoreFileResponse.
+ * Use `create(WriteStoreFileResponseSchema)` to create a new message.
+ */
+export const WriteStoreFileResponseSchema: GenMessage<WriteStoreFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hoststore, 8);
+
+/**
+ * @generated from message numen.v1.DeleteStoreFileRequest
+ */
+export type DeleteStoreFileRequest = Message<"numen.v1.DeleteStoreFileRequest"> & {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+};
+
+/**
+ * Describes the message numen.v1.DeleteStoreFileRequest.
+ * Use `create(DeleteStoreFileRequestSchema)` to create a new message.
+ */
+export const DeleteStoreFileRequestSchema: GenMessage<DeleteStoreFileRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hoststore, 9);
+
+/**
+ * @generated from message numen.v1.DeleteStoreFileResponse
+ */
+export type DeleteStoreFileResponse = Message<"numen.v1.DeleteStoreFileResponse"> & {
+  /**
+   * @generated from field: numen.v1.HostStoreErrorCode error = 1;
+   */
+  error: HostStoreErrorCode;
+};
+
+/**
+ * Describes the message numen.v1.DeleteStoreFileResponse.
+ * Use `create(DeleteStoreFileResponseSchema)` to create a new message.
+ */
+export const DeleteStoreFileResponseSchema: GenMessage<DeleteStoreFileResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_hoststore, 10);
+
+/**
  * HostStoreErrorCode is why a call on the plugin's folder was refused. The
  * zero value means it was not.
  *
@@ -242,6 +315,27 @@ export const HostStoreService: GenService<{
     methodKind: "unary";
     input: typeof ListStoreFilesRequestSchema;
     output: typeof ListStoreFilesResponseSchema;
+  },
+  /**
+   * WriteStoreFile replaces a whole file, making it when it is not there. The
+   * content lands whole or not at all.
+   *
+   * @generated from rpc numen.v1.HostStoreService.WriteStoreFile
+   */
+  writeStoreFile: {
+    methodKind: "unary";
+    input: typeof WriteStoreFileRequestSchema;
+    output: typeof WriteStoreFileResponseSchema;
+  },
+  /**
+   * DeleteStoreFile removes a file. A file that is not there is removed.
+   *
+   * @generated from rpc numen.v1.HostStoreService.DeleteStoreFile
+   */
+  deleteStoreFile: {
+    methodKind: "unary";
+    input: typeof DeleteStoreFileRequestSchema;
+    output: typeof DeleteStoreFileResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_hoststore, 0);

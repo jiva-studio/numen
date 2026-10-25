@@ -24,6 +24,13 @@ service HostStoreService {
   // ListStoreFiles lists the files of the plugin's folder, sorted by name. A
   // folder that is not there holds no files.
   rpc ListStoreFiles(ListStoreFilesRequest) returns (ListStoreFilesResponse);
+
+  // WriteStoreFile replaces a whole file, making it when it is not there. The
+  // content lands whole or not at all.
+  rpc WriteStoreFile(WriteStoreFileRequest) returns (WriteStoreFileResponse);
+
+  // DeleteStoreFile removes a file. A file that is not there is removed.
+  rpc DeleteStoreFile(DeleteStoreFileRequest) returns (DeleteStoreFileResponse);
 }
 
 // HostStoreErrorCode is why a call on the plugin's folder was refused. The
@@ -74,4 +81,21 @@ message HostStoreFile {
 message ListStoreFilesResponse {
   HostStoreErrorCode error = 1;
   repeated HostStoreFile files = 2;
+}
+
+message WriteStoreFileRequest {
+  string name = 1;
+  bytes content = 2;
+}
+
+message WriteStoreFileResponse {
+  HostStoreErrorCode error = 1;
+}
+
+message DeleteStoreFileRequest {
+  string name = 1;
+}
+
+message DeleteStoreFileResponse {
+  HostStoreErrorCode error = 1;
 }

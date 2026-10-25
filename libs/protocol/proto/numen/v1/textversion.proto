@@ -1,0 +1,57 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// TextVersionService is what a window asks about the text versions of a file of
+// the vault it shows: what the file's menu offers, and running one of its
+// entries. The entries follow from the enabled plugins and the versions the
+// file has.
+service TextVersionService {
+  // GetFileMenu lists the entries of a file's menu.
+  rpc GetFileMenu(GetFileMenuRequest) returns (GetFileMenuResponse);
+
+  // RunFileMenuEntry does what an entry offers, as work a person started. The
+  // plugin goes on with the work after the call returns.
+  rpc RunFileMenuEntry(RunFileMenuEntryRequest) returns (RunFileMenuEntryResponse);
+}
+
+// FileMenuAction is what an entry of a file's menu does. UNSPECIFIED means
+// nothing.
+enum FileMenuAction {
+  FILE_MENU_ACTION_UNSPECIFIED = 0;
+  // A plugin that reads the file's type makes text of the file.
+  FILE_MENU_ACTION_RECOGNISE = 1;
+  // A plugin that reads the live version's format makes a version of it.
+  FILE_MENU_ACTION_PROOFREAD = 2;
+  // The plugin that made a version deletes it.
+  FILE_MENU_ACTION_DELETE_VERSION = 3;
+}
+
+// FileMenuEntry is one entry of a file's menu. version_id is the input of a
+// proofreading and the target of a deletion, and empty for a recognition.
+// plugin_name is the plugin's name as its manifest gives it.
+message FileMenuEntry {
+  FileMenuAction action = 1;
+  string plugin_id = 2;
+  string plugin_name = 3;
+  string version_id = 4;
+}
+
+message GetFileMenuRequest {
+  string path = 1;
+}
+
+message GetFileMenuResponse {
+  repeated FileMenuEntry entries = 1;
+}
+
+message RunFileMenuEntryRequest {
+  string path = 1;
+  FileMenuAction action = 2;
+  string plugin_id = 3;
+  string version_id = 4;
+}
+
+message RunFileMenuEntryResponse {}
