@@ -149,6 +149,31 @@ function verifyPluginsReachNoApp() {
   }
 }
 
+/** The packages of the core that belong to a plugin, as directories. */
+const CORE_MOVED_DIRS = ["usecase/document"];
+
+/** Every file under `dir` in the working tree, relative to the repository root. */
+function listFiles(dir) {
+  const abs = path.join(REPO_ROOT, dir);
+  if (!fs.existsSync(abs)) return [];
+  return fs
+    .readdirSync(abs, { recursive: true, withFileTypes: true })
+    .filter((e) => e.isFile())
+    .map((e) => path.relative(REPO_ROOT, path.join(e.parentPath, e.name)));
+}
+
+/** The core holds none of the packages a domain plugin owns. */
+function verifyCoreHoldsNoPluginPackage() {
+  const found = [];
+  for (const dir of CORE_MOVED_DIRS) {
+    const files = listFiles(path.join("libs/core", dir));
+    if (files.length > 0) found.push(`libs/core/${dir}/ (${files.length} files)`);
+  }
+  if (found.length > 0) {
+    throw new Error("The core holds packages a plugin owns:\n" + found.join("\n"));
+  }
+}
+
 function verifyUiDomainIsolation() {
   const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
@@ -188,6 +213,13 @@ const VERIFIERS = [
     run: () => {
       exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/notes"));
     },
+  },
+  {
+    id: "core-holds-no-plugin-package",
+    scope: "libs",
+    module: "core",
+    name: "Core Holds No Plugin Package (document)",
+    run: verifyCoreHoldsNoPluginPackage,
   },
   {
     id: "sdk-isolation",

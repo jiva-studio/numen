@@ -9,6 +9,7 @@ libraries, plugins, and desktop applications.
    - Go Hexagonal Architecture: core purity, inward dependencies, no machine ports in domain.
    - Depguard rules: core, notes, and plugin SDK Go isolation.
    - UI library isolation: zero domain, protocol, wire, or application imports.
+   - The core holds no package a domain plugin owns (`usecase/document`).
 2. **Plugins (`plugins`)**:
    - Sandbox & isolation: zero cross-plugin imports, zero core imports.
    - Manifest validation: valid ID, name, version.
