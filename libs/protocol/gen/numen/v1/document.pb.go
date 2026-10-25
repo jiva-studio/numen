@@ -8,8 +8,7 @@
 // many pages it has and how large each of them is.
 //
 // The pages themselves are pictures at addresses of their own, because a
-// browser's own elements speak bytes and not this. What a model read off them
-// is OcrService.
+// browser's own elements speak bytes and not this.
 
 package numenv1
 
@@ -319,120 +318,19 @@ func (x *RenderPageResponse) GetHeight() float64 {
 	return 0
 }
 
-type ExtractTextRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Data          []byte                 `protobuf:"bytes,2,opt,name=data,proto3" json:"data,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ExtractTextRequest) Reset() {
-	*x = ExtractTextRequest{}
-	mi := &file_numen_v1_document_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ExtractTextRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExtractTextRequest) ProtoMessage() {}
-
-func (x *ExtractTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_document_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExtractTextRequest.ProtoReflect.Descriptor instead.
-func (*ExtractTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_document_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ExtractTextRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *ExtractTextRequest) GetData() []byte {
-	if x != nil {
-		return x.Data
-	}
-	return nil
-}
-
-type ExtractTextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	PageStarts    []int32                `protobuf:"varint,2,rep,packed,name=page_starts,json=pageStarts,proto3" json:"page_starts,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ExtractTextResponse) Reset() {
-	*x = ExtractTextResponse{}
-	mi := &file_numen_v1_document_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ExtractTextResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ExtractTextResponse) ProtoMessage() {}
-
-func (x *ExtractTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_document_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ExtractTextResponse.ProtoReflect.Descriptor instead.
-func (*ExtractTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_document_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *ExtractTextResponse) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
-func (x *ExtractTextResponse) GetPageStarts() []int32 {
-	if x != nil {
-		return x.PageStarts
-	}
-	return nil
-}
-
 type GetHighlightsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The file, as the vault holds it.
+	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	// The runs of the live text version to answer about, in bytes of its text.
+	Spans         []*Span `protobuf:"bytes,2,rep,name=spans,proto3" json:"spans,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetHighlightsRequest) Reset() {
 	*x = GetHighlightsRequest{}
-	mi := &file_numen_v1_document_proto_msgTypes[7]
+	mi := &file_numen_v1_document_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -444,7 +342,7 @@ func (x *GetHighlightsRequest) String() string {
 func (*GetHighlightsRequest) ProtoMessage() {}
 
 func (x *GetHighlightsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_document_proto_msgTypes[7]
+	mi := &file_numen_v1_document_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -457,7 +355,7 @@ func (x *GetHighlightsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHighlightsRequest.ProtoReflect.Descriptor instead.
 func (*GetHighlightsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_document_proto_rawDescGZIP(), []int{7}
+	return file_numen_v1_document_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetHighlightsRequest) GetPath() string {
@@ -467,84 +365,24 @@ func (x *GetHighlightsRequest) GetPath() string {
 	return ""
 }
 
-type DocumentHighlight struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	PageNumber    uint32                 `protobuf:"varint,1,opt,name=page_number,json=pageNumber,proto3" json:"page_number,omitempty"`
-	QuadPoints    []float32              `protobuf:"fixed32,2,rep,packed,name=quad_points,json=quadPoints,proto3" json:"quad_points,omitempty"`
-	Color         string                 `protobuf:"bytes,3,opt,name=color,proto3" json:"color,omitempty"`
-	Text          string                 `protobuf:"bytes,4,opt,name=text,proto3" json:"text,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *DocumentHighlight) Reset() {
-	*x = DocumentHighlight{}
-	mi := &file_numen_v1_document_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *DocumentHighlight) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*DocumentHighlight) ProtoMessage() {}
-
-func (x *DocumentHighlight) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_document_proto_msgTypes[8]
+func (x *GetHighlightsRequest) GetSpans() []*Span {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use DocumentHighlight.ProtoReflect.Descriptor instead.
-func (*DocumentHighlight) Descriptor() ([]byte, []int) {
-	return file_numen_v1_document_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *DocumentHighlight) GetPageNumber() uint32 {
-	if x != nil {
-		return x.PageNumber
-	}
-	return 0
-}
-
-func (x *DocumentHighlight) GetQuadPoints() []float32 {
-	if x != nil {
-		return x.QuadPoints
+		return x.Spans
 	}
 	return nil
 }
 
-func (x *DocumentHighlight) GetColor() string {
-	if x != nil {
-		return x.Color
-	}
-	return ""
-}
-
-func (x *DocumentHighlight) GetText() string {
-	if x != nil {
-		return x.Text
-	}
-	return ""
-}
-
 type GetHighlightsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Highlights    []*DocumentHighlight   `protobuf:"bytes,1,rep,name=highlights,proto3" json:"highlights,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// One answer per run asked about, in that order.
+	Runs          []*DocumentRun `protobuf:"bytes,1,rep,name=runs,proto3" json:"runs,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetHighlightsResponse) Reset() {
 	*x = GetHighlightsResponse{}
-	mi := &file_numen_v1_document_proto_msgTypes[9]
+	mi := &file_numen_v1_document_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -556,7 +394,7 @@ func (x *GetHighlightsResponse) String() string {
 func (*GetHighlightsResponse) ProtoMessage() {}
 
 func (x *GetHighlightsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_document_proto_msgTypes[9]
+	mi := &file_numen_v1_document_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -569,12 +407,58 @@ func (x *GetHighlightsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHighlightsResponse.ProtoReflect.Descriptor instead.
 func (*GetHighlightsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_document_proto_rawDescGZIP(), []int{9}
+	return file_numen_v1_document_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *GetHighlightsResponse) GetHighlights() []*DocumentHighlight {
+func (x *GetHighlightsResponse) GetRuns() []*DocumentRun {
 	if x != nil {
-		return x.Highlights
+		return x.Runs
+	}
+	return nil
+}
+
+// A DocumentRun is where one run of the text stands: the rectangles it covers,
+// a place a page. A run standing nowhere has no places.
+type DocumentRun struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Places        []*TextPlace           `protobuf:"bytes,1,rep,name=places,proto3" json:"places,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DocumentRun) Reset() {
+	*x = DocumentRun{}
+	mi := &file_numen_v1_document_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DocumentRun) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DocumentRun) ProtoMessage() {}
+
+func (x *DocumentRun) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_document_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DocumentRun.ProtoReflect.Descriptor instead.
+func (*DocumentRun) Descriptor() ([]byte, []int) {
+	return file_numen_v1_document_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *DocumentRun) GetPlaces() []*TextPlace {
+	if x != nil {
+		return x.Places
 	}
 	return nil
 }
@@ -583,7 +467,7 @@ var File_numen_v1_document_proto protoreflect.FileDescriptor
 
 const file_numen_v1_document_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/document.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
+	"\x17numen/v1/document.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x1bnumen/v1/textprovider.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"t\n" +
 	"\x13GetDocumentResponse\x12$\n" +
@@ -602,32 +486,18 @@ const file_numen_v1_document_proto_rawDesc = "" +
 	"image_data\x18\x01 \x01(\fR\timageData\x12!\n" +
 	"\fcontent_type\x18\x02 \x01(\tR\vcontentType\x12\x14\n" +
 	"\x05width\x18\x03 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x04 \x01(\x01R\x06height\"<\n" +
-	"\x12ExtractTextRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"J\n" +
-	"\x13ExtractTextResponse\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\x12\x1f\n" +
-	"\vpage_starts\x18\x02 \x03(\x05R\n" +
-	"pageStarts\"*\n" +
+	"\x06height\x18\x04 \x01(\x01R\x06height\"P\n" +
 	"\x14GetHighlightsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x7f\n" +
-	"\x11DocumentHighlight\x12\x1f\n" +
-	"\vpage_number\x18\x01 \x01(\rR\n" +
-	"pageNumber\x12\x1f\n" +
-	"\vquad_points\x18\x02 \x03(\x02R\n" +
-	"quadPoints\x12\x14\n" +
-	"\x05color\x18\x03 \x01(\tR\x05color\x12\x12\n" +
-	"\x04text\x18\x04 \x01(\tR\x04text\"T\n" +
-	"\x15GetHighlightsResponse\x12;\n" +
-	"\n" +
-	"highlights\x18\x01 \x03(\v2\x1b.numen.v1.DocumentHighlightR\n" +
-	"highlights2\xc4\x02\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
+	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"B\n" +
+	"\x15GetHighlightsResponse\x12)\n" +
+	"\x04runs\x18\x01 \x03(\v2\x15.numen.v1.DocumentRunR\x04runs\":\n" +
+	"\vDocumentRun\x12+\n" +
+	"\x06places\x18\x01 \x03(\v2\x13.numen.v1.TextPlaceR\x06places2\xf8\x01\n" +
 	"\x0fDocumentService\x12J\n" +
 	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12G\n" +
 	"\n" +
-	"RenderPage\x12\x1b.numen.v1.RenderPageRequest\x1a\x1c.numen.v1.RenderPageResponse\x12J\n" +
-	"\vExtractText\x12\x1c.numen.v1.ExtractTextRequest\x1a\x1d.numen.v1.ExtractTextResponse\x12P\n" +
+	"RenderPage\x12\x1b.numen.v1.RenderPageRequest\x1a\x1c.numen.v1.RenderPageResponse\x12P\n" +
 	"\rGetHighlights\x12\x1e.numen.v1.GetHighlightsRequest\x1a\x1f.numen.v1.GetHighlightsResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -642,37 +512,37 @@ func file_numen_v1_document_proto_rawDescGZIP() []byte {
 	return file_numen_v1_document_proto_rawDescData
 }
 
-var file_numen_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_numen_v1_document_proto_goTypes = []any{
 	(*GetDocumentRequest)(nil),    // 0: numen.v1.GetDocumentRequest
 	(*GetDocumentResponse)(nil),   // 1: numen.v1.GetDocumentResponse
 	(*Page)(nil),                  // 2: numen.v1.Page
 	(*RenderPageRequest)(nil),     // 3: numen.v1.RenderPageRequest
 	(*RenderPageResponse)(nil),    // 4: numen.v1.RenderPageResponse
-	(*ExtractTextRequest)(nil),    // 5: numen.v1.ExtractTextRequest
-	(*ExtractTextResponse)(nil),   // 6: numen.v1.ExtractTextResponse
-	(*GetHighlightsRequest)(nil),  // 7: numen.v1.GetHighlightsRequest
-	(*DocumentHighlight)(nil),     // 8: numen.v1.DocumentHighlight
-	(*GetHighlightsResponse)(nil), // 9: numen.v1.GetHighlightsResponse
-	(*Fingerprint)(nil),           // 10: numen.v1.Fingerprint
+	(*GetHighlightsRequest)(nil),  // 5: numen.v1.GetHighlightsRequest
+	(*GetHighlightsResponse)(nil), // 6: numen.v1.GetHighlightsResponse
+	(*DocumentRun)(nil),           // 7: numen.v1.DocumentRun
+	(*Fingerprint)(nil),           // 8: numen.v1.Fingerprint
+	(*Span)(nil),                  // 9: numen.v1.Span
+	(*TextPlace)(nil),             // 10: numen.v1.TextPlace
 }
 var file_numen_v1_document_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.Page
-	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	8,  // 2: numen.v1.GetHighlightsResponse.highlights:type_name -> numen.v1.DocumentHighlight
-	0,  // 3: numen.v1.DocumentService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	3,  // 4: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderPageRequest
-	5,  // 5: numen.v1.DocumentService.ExtractText:input_type -> numen.v1.ExtractTextRequest
-	7,  // 6: numen.v1.DocumentService.GetHighlights:input_type -> numen.v1.GetHighlightsRequest
-	1,  // 7: numen.v1.DocumentService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	4,  // 8: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderPageResponse
-	6,  // 9: numen.v1.DocumentService.ExtractText:output_type -> numen.v1.ExtractTextResponse
-	9,  // 10: numen.v1.DocumentService.GetHighlights:output_type -> numen.v1.GetHighlightsResponse
-	7,  // [7:11] is the sub-list for method output_type
-	3,  // [3:7] is the sub-list for method input_type
-	3,  // [3:3] is the sub-list for extension type_name
-	3,  // [3:3] is the sub-list for extension extendee
-	0,  // [0:3] is the sub-list for field type_name
+	8,  // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	9,  // 2: numen.v1.GetHighlightsRequest.spans:type_name -> numen.v1.Span
+	7,  // 3: numen.v1.GetHighlightsResponse.runs:type_name -> numen.v1.DocumentRun
+	10, // 4: numen.v1.DocumentRun.places:type_name -> numen.v1.TextPlace
+	0,  // 5: numen.v1.DocumentService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	3,  // 6: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderPageRequest
+	5,  // 7: numen.v1.DocumentService.GetHighlights:input_type -> numen.v1.GetHighlightsRequest
+	1,  // 8: numen.v1.DocumentService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	4,  // 9: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderPageResponse
+	6,  // 10: numen.v1.DocumentService.GetHighlights:output_type -> numen.v1.GetHighlightsResponse
+	8,  // [8:11] is the sub-list for method output_type
+	5,  // [5:8] is the sub-list for method input_type
+	5,  // [5:5] is the sub-list for extension type_name
+	5,  // [5:5] is the sub-list for extension extendee
+	0,  // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_document_proto_init() }
@@ -681,13 +551,14 @@ func file_numen_v1_document_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
+	file_numen_v1_textprovider_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_document_proto_rawDesc), len(file_numen_v1_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   10,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

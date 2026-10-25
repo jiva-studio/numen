@@ -3,13 +3,17 @@ package service
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image/jpeg"
 	"os"
 	"runtime"
+	"slices"
 	"sync"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -23,27 +27,28 @@ type DocumentServer struct {
 	numenv1connect.UnimplementedDocumentServiceHandler
 
 	vaultRoot func() string
+	texts     host.Texts
 }
 
 // NewDocumentServer configures the worker pool and returns a DocumentServer that holds paths to the
-// vault NUMEN_VAULT_PATH names.
-func NewDocumentServer() *DocumentServer {
-	return newDocumentServer(func() string { return os.Getenv("NUMEN_VAULT_PATH") })
+// vault NUMEN_VAULT_PATH names and reads the text versions of its files from texts.
+func NewDocumentServer(texts host.Texts) *DocumentServer {
+	return newDocumentServer(func() string { return os.Getenv("NUMEN_VAULT_PATH") }, texts)
 }
 
 // NewDocumentServerIn configures the worker pool and returns a DocumentServer that holds paths to
-// the vault at vaultRoot.
-func NewDocumentServerIn(vaultRoot string) *DocumentServer {
-	return newDocumentServer(func() string { return vaultRoot })
+// the vault at vaultRoot and reads the text versions of its files from texts.
+func NewDocumentServerIn(vaultRoot string, texts host.Texts) *DocumentServer {
+	return newDocumentServer(func() string { return vaultRoot }, texts)
 }
 
-func newDocumentServer(vaultRoot func() string) *DocumentServer {
+func newDocumentServer(vaultRoot func() string, texts host.Texts) *DocumentServer {
 	initOnce.Do(func() {
 		pdf.SetWorkers(runtime.NumCPU())
 		pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
 		go pdf.Warmup()
 	})
-	return &DocumentServer{vaultRoot: vaultRoot}
+	return &DocumentServer{vaultRoot: vaultRoot, texts: texts}
 }
 
 // GetDocument returns metadata and dimensions for each page in the PDF.
@@ -140,98 +145,91 @@ func (s *DocumentServer) RenderPage(
 	}), nil
 }
 
-// ExtractText extracts text and page offset markers from the PDF.
-func (s *DocumentServer) ExtractText(
-	_ context.Context,
-	req *connect.Request[numenv1.ExtractTextRequest],
-) (*connect.Response[numenv1.ExtractTextResponse], error) {
-	raw := req.Msg.GetData()
-	if len(raw) == 0 {
-		path := req.Msg.GetPath()
-		if path == "" {
-			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path or data required"))
-		}
-		cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
-		if err != nil {
-			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
-		}
-		var readErr error
-		raw, readErr = os.ReadFile(cleanPath)
-		if readErr != nil {
-			return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read file: %w", readErr))
-		}
-	}
+// mostSpans is the most runs one question about highlights may name.
+const mostSpans = 64
 
-	book, err := pdf.Read(raw)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("parse pdf: %w", err))
-	}
-
-	starts := make([]int32, len(book.Pages))
-	for i, p := range book.Pages {
-		starts[i] = int32(p.Offset)
-	}
-
-	return connect.NewResponse(&numenv1.ExtractTextResponse{
-		Text:       book.Text,
-		PageStarts: starts,
-	}), nil
-}
-
-// GetHighlights returns extracted annotations from the PDF.
+// GetHighlights answers where runs of the file's live text version stand on its pages. A file with
+// no live version, or one whose version has no places, stands nowhere.
 func (s *DocumentServer) GetHighlights(
-	_ context.Context,
+	ctx context.Context,
 	req *connect.Request[numenv1.GetHighlightsRequest],
 ) (*connect.Response[numenv1.GetHighlightsResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
-	if err != nil {
+	if _, err := vault.ValidatePathIn(s.vaultRoot(), path); err != nil {
 		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
 	}
-
-	raw, err := os.ReadFile(cleanPath)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read file: %w", err))
+	spans := req.Msg.GetSpans()
+	if len(spans) == 0 || len(spans) > mostSpans {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("ask about between one and %d runs, not %d", mostSpans, len(spans)))
 	}
-
-	book, err := pdf.Read(raw)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("parse pdf: %w", err))
-	}
-
-	pages := make([]int, len(book.Pages))
-	for i := range pages {
-		pages[i] = i
-	}
-
-	boxes, err := book.Highlights(raw, pages)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("extract highlights: %w", err))
-	}
-
-	highlights := make([]*numenv1.DocumentHighlight, 0, len(boxes))
-	for _, box := range boxes {
-		var text string
-		if box.From >= 0 && box.To <= len(book.Text) && box.From <= box.To {
-			text = book.Text[box.From:box.To]
+	runs := make([]domain.ByteSpan, 0, len(spans))
+	end := 0
+	for _, one := range spans {
+		run := domain.ByteSpan{From: int(one.GetFrom()), To: int(one.GetTo())}
+		if run.From < 0 || run.To <= run.From {
+			return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("%d..%d is not a run of the text", run.From, run.To))
 		}
-		highlights = append(highlights, &numenv1.DocumentHighlight{
-			PageNumber: uint32(box.Page),
-			QuadPoints: []float32{
-				box.MinX, box.MinY,
-				box.MaxX, box.MinY,
-				box.MinX, box.MaxY,
-				box.MaxX, box.MaxY,
-			},
-			Color: "#ffff00",
-			Text:  text,
-		})
+		runs = append(runs, run)
+		end = max(end, run.To)
 	}
 
-	return connect.NewResponse(&numenv1.GetHighlightsResponse{
-		Highlights: highlights,
-	}), nil
+	text, err := readLiveText(ctx, s.texts, path, end)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read the text of %s: %w", path, err))
+	}
+	out := &numenv1.GetHighlightsResponse{Runs: make([]*numenv1.DocumentRun, 0, len(runs))}
+	for _, run := range runs {
+		out.Runs = append(out.Runs, &numenv1.DocumentRun{Places: writePlaces(text.GetBoxes(run))})
+	}
+	return connect.NewResponse(out), nil
+}
+
+// readLiveText is the live text version of a file, read until it holds the offset end. A file with
+// no live version has an empty text.
+func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (domain.VersionText, error) {
+	listing, err := texts.ListVersions(ctx, path)
+	if errors.Is(err, host.ErrNotExist) {
+		return domain.VersionText{}, nil
+	}
+	if err != nil {
+		return domain.VersionText{}, err
+	}
+	i := slices.IndexFunc(listing.Versions, func(v domain.TextVersion) bool { return v.GetID() == listing.Live })
+	if listing.Live == "" || i < 0 {
+		return domain.VersionText{}, nil
+	}
+	live := listing.Versions[i]
+	var parts []domain.TextPart
+	size, cursor := 0, ""
+	for {
+		page, err := texts.ReadText(ctx, path, live.GetID(), cursor)
+		if err != nil {
+			return domain.VersionText{}, err
+		}
+		parts = append(parts, page.Parts...)
+		for _, part := range page.Parts {
+			size += len(part.Text)
+		}
+		if page.NextCursor == "" || page.NextCursor == cursor || size >= end {
+			return domain.NewVersionText(live, parts), nil
+		}
+		cursor = page.NextCursor
+	}
+}
+
+// writePlaces is the boxes of a run as places, one a page, in the order the pages come.
+func writePlaces(boxes []domain.HighlightBox) []*numenv1.TextPlace {
+	var places []*numenv1.TextPlace
+	for _, box := range boxes {
+		rect := &numenv1.TextRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+		if n := len(places); n > 0 && places[n-1].GetPage() == int32(box.Page) {
+			places[n-1].Rects = append(places[n-1].Rects, rect)
+			continue
+		}
+		places = append(places, &numenv1.TextPlace{Page: int32(box.Page), Rects: []*numenv1.TextRect{rect}})
+	}
+	return places
 }

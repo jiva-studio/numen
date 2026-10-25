@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/service"
@@ -22,7 +23,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
 	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := service.NewDocumentServer()
+	server := service.NewDocumentServer(hosttest.NewTexts("vault", "md.numen.readers.pdf"))
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied
@@ -39,14 +40,6 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for RenderPage outside vault, got %v", err)
-	}
-
-	// 3. ExtractText outside vault -> PermissionDenied
-	_, err = server.ExtractText(ctx, connect.NewRequest(&numenv1.ExtractTextRequest{
-		Path: outsidePath,
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied for ExtractText outside vault, got %v", err)
 	}
 
 	// 4. Traversal path -> PermissionDenied

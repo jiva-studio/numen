@@ -1,12 +1,11 @@
 /**
- * Wire adapter for DocumentService and OcrService.
+ * Wire adapter for DocumentService.
  */
 import { createClient } from '@connectrpc/connect'
 import {
   DocumentService,
-  OcrService,
-  type Box as BoxMessage,
-  type Run as RunMessage,
+  type DocumentRun as DocumentRunMessage,
+  type TextRect as TextRectMessage,
 } from '@numen/protocol'
 import {
   formatFingerprint,
@@ -19,30 +18,19 @@ import type { Documents, PageHighlight, Rect } from '../types'
 
 export const client = {
   documents: createClient(DocumentService, transport),
-  ocr: createClient(OcrService, transport),
 }
 
-/** The corners of one box, in the page's own numbers. */
-const toRect = (box: BoxMessage): Rect => ({
-  minX: box.rect?.minX ?? 0,
-  minY: box.rect?.minY ?? 0,
-  maxX: box.rect?.maxX ?? 0,
-  maxY: box.rect?.maxY ?? 0,
+/** The corners of one rectangle, in fractions of its page. */
+const toRect = (rect: TextRectMessage): Rect => ({
+  minX: rect.minX,
+  minY: rect.minY,
+  maxX: rect.maxX,
+  maxY: rect.maxY,
 })
 
-/**
- * Where one run of the text stands, page by page.
- */
-const toHighlightedPages = (run: RunMessage): PageHighlight[] => {
-  const pages: { page: number; rects: Rect[] }[] = []
-  for (const box of run.boxes) {
-    const rect = toRect(box)
-    const last = pages.at(-1)
-    if (last && last.page === box.page) last.rects.push(rect)
-    else pages.push({ page: box.page, rects: [rect] })
-  }
-  return pages
-}
+/** Where one run of the text stands, page by page. */
+const toHighlightedPages = (run: DocumentRunMessage): PageHighlight[] =>
+  run.places.map((place) => ({ page: place.page, rects: place.rects.map(toRect) }))
 
 export const documents: Documents = {
   getDocumentLayout: async (path) => {
@@ -55,7 +43,9 @@ export const documents: Documents = {
   getPageUrl: (...[path, pageNumber, width, fingerprint = '']: [string, number, number, string?]) =>
     `${getAssetUrl(path)}/pages/${pageNumber}?wide=${width}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
-    const answer = await retryWhileBusy(() => client.ocr.readOcr({ path, spans: [...spans] }))
+    const answer = await retryWhileBusy(() =>
+      client.documents.getHighlights({ path, spans: [...spans] }),
+    )
     return spans.map((_, index) => {
       const run = answer.runs[index]
       return run ? toHighlightedPages(run) : []

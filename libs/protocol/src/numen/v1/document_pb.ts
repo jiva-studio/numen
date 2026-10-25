@@ -6,20 +6,21 @@
 // many pages it has and how large each of them is.
 //
 // The pages themselves are pictures at addresses of their own, because a
-// browser's own elements speak bytes and not this. What a model read off them
-// is OcrService.
+// browser's own elements speak bytes and not this.
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Fingerprint } from "./shared_pb.js";
+import type { Fingerprint, Span } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
+import type { TextPlace } from "./textprovider_pb.js";
+import { file_numen_v1_textprovider } from "./textprovider_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/document.proto.
  */
 export const file_numen_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiMAoSRXh0cmFjdFRleHRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZGF0YRgCIAEoDCI4ChNFeHRyYWN0VGV4dFJlc3BvbnNlEgwKBHRleHQYASABKAkSEwoLcGFnZV9zdGFydHMYAiADKAUiJAoUR2V0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChFEb2N1bWVudEhpZ2hsaWdodBITCgtwYWdlX251bWJlchgBIAEoDRITCgtxdWFkX3BvaW50cxgCIAMoAhINCgVjb2xvchgDIAEoCRIMCgR0ZXh0GAQgASgJIkgKFUdldEhpZ2hsaWdodHNSZXNwb25zZRIvCgpoaWdobGlnaHRzGAEgAygLMhsubnVtZW4udjEuRG9jdW1lbnRIaWdobGlnaHQyxAIKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlEkoKC0V4dHJhY3RUZXh0EhwubnVtZW4udjEuRXh0cmFjdFRleHRSZXF1ZXN0Gh0ubnVtZW4udjEuRXh0cmFjdFRleHRSZXNwb25zZRJQCg1HZXRIaWdobGlnaHRzEh4ubnVtZW4udjEuR2V0SGlnaGxpZ2h0c1JlcXVlc3QaHy5udW1lbi52MS5HZXRIaWdobGlnaHRzUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiQwoUR2V0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iPAoVR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlEiMKBHJ1bnMYASADKAsyFS5udW1lbi52MS5Eb2N1bWVudFJ1biIyCgtEb2N1bWVudFJ1bhIjCgZwbGFjZXMYASADKAsyEy5udW1lbi52MS5UZXh0UGxhY2Uy+AEKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlElAKDUdldEhpZ2hsaWdodHMSHi5udW1lbi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBofLm51bWVuLnYxLkdldEhpZ2hsaWdodHNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared, file_numen_v1_textprovider]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -158,57 +159,22 @@ export const RenderPageResponseSchema: GenMessage<RenderPageResponse> = /*@__PUR
   messageDesc(file_numen_v1_document, 4);
 
 /**
- * @generated from message numen.v1.ExtractTextRequest
- */
-export type ExtractTextRequest = Message<"numen.v1.ExtractTextRequest"> & {
-  /**
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * @generated from field: bytes data = 2;
-   */
-  data: Uint8Array;
-};
-
-/**
- * Describes the message numen.v1.ExtractTextRequest.
- * Use `create(ExtractTextRequestSchema)` to create a new message.
- */
-export const ExtractTextRequestSchema: GenMessage<ExtractTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 5);
-
-/**
- * @generated from message numen.v1.ExtractTextResponse
- */
-export type ExtractTextResponse = Message<"numen.v1.ExtractTextResponse"> & {
-  /**
-   * @generated from field: string text = 1;
-   */
-  text: string;
-
-  /**
-   * @generated from field: repeated int32 page_starts = 2;
-   */
-  pageStarts: number[];
-};
-
-/**
- * Describes the message numen.v1.ExtractTextResponse.
- * Use `create(ExtractTextResponseSchema)` to create a new message.
- */
-export const ExtractTextResponseSchema: GenMessage<ExtractTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 6);
-
-/**
  * @generated from message numen.v1.GetHighlightsRequest
  */
 export type GetHighlightsRequest = Message<"numen.v1.GetHighlightsRequest"> & {
   /**
+   * The file, as the vault holds it.
+   *
    * @generated from field: string path = 1;
    */
   path: string;
+
+  /**
+   * The runs of the live text version to answer about, in bytes of its text.
+   *
+   * @generated from field: repeated numen.v1.Span spans = 2;
+   */
+  spans: Span[];
 };
 
 /**
@@ -216,48 +182,18 @@ export type GetHighlightsRequest = Message<"numen.v1.GetHighlightsRequest"> & {
  * Use `create(GetHighlightsRequestSchema)` to create a new message.
  */
 export const GetHighlightsRequestSchema: GenMessage<GetHighlightsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 7);
-
-/**
- * @generated from message numen.v1.DocumentHighlight
- */
-export type DocumentHighlight = Message<"numen.v1.DocumentHighlight"> & {
-  /**
-   * @generated from field: uint32 page_number = 1;
-   */
-  pageNumber: number;
-
-  /**
-   * @generated from field: repeated float quad_points = 2;
-   */
-  quadPoints: number[];
-
-  /**
-   * @generated from field: string color = 3;
-   */
-  color: string;
-
-  /**
-   * @generated from field: string text = 4;
-   */
-  text: string;
-};
-
-/**
- * Describes the message numen.v1.DocumentHighlight.
- * Use `create(DocumentHighlightSchema)` to create a new message.
- */
-export const DocumentHighlightSchema: GenMessage<DocumentHighlight> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 8);
+  messageDesc(file_numen_v1_document, 5);
 
 /**
  * @generated from message numen.v1.GetHighlightsResponse
  */
 export type GetHighlightsResponse = Message<"numen.v1.GetHighlightsResponse"> & {
   /**
-   * @generated from field: repeated numen.v1.DocumentHighlight highlights = 1;
+   * One answer per run asked about, in that order.
+   *
+   * @generated from field: repeated numen.v1.DocumentRun runs = 1;
    */
-  highlights: DocumentHighlight[];
+  runs: DocumentRun[];
 };
 
 /**
@@ -265,7 +201,27 @@ export type GetHighlightsResponse = Message<"numen.v1.GetHighlightsResponse"> & 
  * Use `create(GetHighlightsResponseSchema)` to create a new message.
  */
 export const GetHighlightsResponseSchema: GenMessage<GetHighlightsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_document, 9);
+  messageDesc(file_numen_v1_document, 6);
+
+/**
+ * A DocumentRun is where one run of the text stands: the rectangles it covers,
+ * a place a page. A run standing nowhere has no places.
+ *
+ * @generated from message numen.v1.DocumentRun
+ */
+export type DocumentRun = Message<"numen.v1.DocumentRun"> & {
+  /**
+   * @generated from field: repeated numen.v1.TextPlace places = 1;
+   */
+  places: TextPlace[];
+};
+
+/**
+ * Describes the message numen.v1.DocumentRun.
+ * Use `create(DocumentRunSchema)` to create a new message.
+ */
+export const DocumentRunSchema: GenMessage<DocumentRun> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 7);
 
 /**
  * DocumentService answers what a document is, for whatever opens one.
@@ -304,17 +260,8 @@ export const DocumentService: GenService<{
     output: typeof RenderPageResponseSchema;
   },
   /**
-   * ExtractText extracts text and page boundaries from a document.
-   *
-   * @generated from rpc numen.v1.DocumentService.ExtractText
-   */
-  extractText: {
-    methodKind: "unary";
-    input: typeof ExtractTextRequestSchema;
-    output: typeof ExtractTextResponseSchema;
-  },
-  /**
-   * GetHighlights extracts quotation highlights from a document.
+   * GetHighlights is where runs of the document's live text version stand on
+   * its pages, in the order the runs were asked about.
    *
    * @generated from rpc numen.v1.DocumentService.GetHighlights
    */

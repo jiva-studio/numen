@@ -6,8 +6,7 @@
 // many pages it has and how large each of them is.
 //
 // The pages themselves are pictures at addresses of their own, because a
-// browser's own elements speak bytes and not this. What a model read off them
-// is OcrService.
+// browser's own elements speak bytes and not this.
 package numenv1connect
 
 import (
@@ -45,9 +44,6 @@ const (
 	// DocumentServiceRenderPageProcedure is the fully-qualified name of the DocumentService's
 	// RenderPage RPC.
 	DocumentServiceRenderPageProcedure = "/numen.v1.DocumentService/RenderPage"
-	// DocumentServiceExtractTextProcedure is the fully-qualified name of the DocumentService's
-	// ExtractText RPC.
-	DocumentServiceExtractTextProcedure = "/numen.v1.DocumentService/ExtractText"
 	// DocumentServiceGetHighlightsProcedure is the fully-qualified name of the DocumentService's
 	// GetHighlights RPC.
 	DocumentServiceGetHighlightsProcedure = "/numen.v1.DocumentService/GetHighlights"
@@ -65,9 +61,8 @@ type DocumentServiceClient interface {
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
 	// RenderPage draws one page of a document and answers with the drawn image bytes.
 	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
-	// ExtractText extracts text and page boundaries from a document.
-	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
-	// GetHighlights extracts quotation highlights from a document.
+	// GetHighlights is where runs of the document's live text version stand on
+	// its pages, in the order the runs were asked about.
 	GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error)
 }
 
@@ -94,12 +89,6 @@ func NewDocumentServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(documentServiceMethods.ByName("RenderPage")),
 			connect.WithClientOptions(opts...),
 		),
-		extractText: connect.NewClient[v1.ExtractTextRequest, v1.ExtractTextResponse](
-			httpClient,
-			baseURL+DocumentServiceExtractTextProcedure,
-			connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
-			connect.WithClientOptions(opts...),
-		),
 		getHighlights: connect.NewClient[v1.GetHighlightsRequest, v1.GetHighlightsResponse](
 			httpClient,
 			baseURL+DocumentServiceGetHighlightsProcedure,
@@ -113,7 +102,6 @@ func NewDocumentServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 type documentServiceClient struct {
 	getDocument   *connect.Client[v1.GetDocumentRequest, v1.GetDocumentResponse]
 	renderPage    *connect.Client[v1.RenderPageRequest, v1.RenderPageResponse]
-	extractText   *connect.Client[v1.ExtractTextRequest, v1.ExtractTextResponse]
 	getHighlights *connect.Client[v1.GetHighlightsRequest, v1.GetHighlightsResponse]
 }
 
@@ -125,11 +113,6 @@ func (c *documentServiceClient) GetDocument(ctx context.Context, req *connect.Re
 // RenderPage calls numen.v1.DocumentService.RenderPage.
 func (c *documentServiceClient) RenderPage(ctx context.Context, req *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
 	return c.renderPage.CallUnary(ctx, req)
-}
-
-// ExtractText calls numen.v1.DocumentService.ExtractText.
-func (c *documentServiceClient) ExtractText(ctx context.Context, req *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error) {
-	return c.extractText.CallUnary(ctx, req)
 }
 
 // GetHighlights calls numen.v1.DocumentService.GetHighlights.
@@ -149,9 +132,8 @@ type DocumentServiceHandler interface {
 	GetDocument(context.Context, *connect.Request[v1.GetDocumentRequest]) (*connect.Response[v1.GetDocumentResponse], error)
 	// RenderPage draws one page of a document and answers with the drawn image bytes.
 	RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error)
-	// ExtractText extracts text and page boundaries from a document.
-	ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error)
-	// GetHighlights extracts quotation highlights from a document.
+	// GetHighlights is where runs of the document's live text version stand on
+	// its pages, in the order the runs were asked about.
 	GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error)
 }
 
@@ -174,12 +156,6 @@ func NewDocumentServiceHandler(svc DocumentServiceHandler, opts ...connect.Handl
 		connect.WithSchema(documentServiceMethods.ByName("RenderPage")),
 		connect.WithHandlerOptions(opts...),
 	)
-	documentServiceExtractTextHandler := connect.NewUnaryHandler(
-		DocumentServiceExtractTextProcedure,
-		svc.ExtractText,
-		connect.WithSchema(documentServiceMethods.ByName("ExtractText")),
-		connect.WithHandlerOptions(opts...),
-	)
 	documentServiceGetHighlightsHandler := connect.NewUnaryHandler(
 		DocumentServiceGetHighlightsProcedure,
 		svc.GetHighlights,
@@ -192,8 +168,6 @@ func NewDocumentServiceHandler(svc DocumentServiceHandler, opts ...connect.Handl
 			documentServiceGetDocumentHandler.ServeHTTP(w, r)
 		case DocumentServiceRenderPageProcedure:
 			documentServiceRenderPageHandler.ServeHTTP(w, r)
-		case DocumentServiceExtractTextProcedure:
-			documentServiceExtractTextHandler.ServeHTTP(w, r)
 		case DocumentServiceGetHighlightsProcedure:
 			documentServiceGetHighlightsHandler.ServeHTTP(w, r)
 		default:
@@ -211,10 +185,6 @@ func (UnimplementedDocumentServiceHandler) GetDocument(context.Context, *connect
 
 func (UnimplementedDocumentServiceHandler) RenderPage(context.Context, *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.RenderPage is not implemented"))
-}
-
-func (UnimplementedDocumentServiceHandler) ExtractText(context.Context, *connect.Request[v1.ExtractTextRequest]) (*connect.Response[v1.ExtractTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.DocumentService.ExtractText is not implemented"))
 }
 
 func (UnimplementedDocumentServiceHandler) GetHighlights(context.Context, *connect.Request[v1.GetHighlightsRequest]) (*connect.Response[v1.GetHighlightsResponse], error) {

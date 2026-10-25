@@ -8,7 +8,11 @@
   "targets": ["desktop.editor"],
   "fileExtensions": [".pdf"],
   "activationEvents": ["onFile:*.pdf"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "vault:write"],
+  "textInput": {
+    "files": [".pdf"],
+    "autoRun": true
+  },
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,

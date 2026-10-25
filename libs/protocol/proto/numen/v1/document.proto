@@ -4,11 +4,11 @@ syntax = "proto3";
 // many pages it has and how large each of them is.
 //
 // The pages themselves are pictures at addresses of their own, because a
-// browser's own elements speak bytes and not this. What a model read off them
-// is OcrService.
+// browser's own elements speak bytes and not this.
 package numen.v1;
 
 import "numen/v1/shared.proto";
+import "numen/v1/textprovider.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
@@ -30,10 +30,8 @@ service DocumentService {
   // RenderPage draws one page of a document and answers with the drawn image bytes.
   rpc RenderPage(RenderPageRequest) returns (RenderPageResponse);
 
-  // ExtractText extracts text and page boundaries from a document.
-  rpc ExtractText(ExtractTextRequest) returns (ExtractTextResponse);
-
-  // GetHighlights extracts quotation highlights from a document.
+  // GetHighlights is where runs of the document's live text version stand on
+  // its pages, in the order the runs were asked about.
   rpc GetHighlights(GetHighlightsRequest) returns (GetHighlightsResponse);
 }
 
@@ -73,27 +71,21 @@ message RenderPageResponse {
   double height = 4;
 }
 
-message ExtractTextRequest {
-  string path = 1;
-  bytes data = 2;
-}
-
-message ExtractTextResponse {
-  string text = 1;
-  repeated int32 page_starts = 2;
-}
-
 message GetHighlightsRequest {
+  // The file, as the vault holds it.
   string path = 1;
-}
 
-message DocumentHighlight {
-  uint32 page_number = 1;
-  repeated float quad_points = 2;
-  string color = 3;
-  string text = 4;
+  // The runs of the live text version to answer about, in bytes of its text.
+  repeated Span spans = 2;
 }
 
 message GetHighlightsResponse {
-  repeated DocumentHighlight highlights = 1;
+  // One answer per run asked about, in that order.
+  repeated DocumentRun runs = 1;
+}
+
+// A DocumentRun is where one run of the text stands: the rectangles it covers,
+// a place a page. A run standing nowhere has no places.
+message DocumentRun {
+  repeated TextPlace places = 1;
 }

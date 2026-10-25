@@ -19,6 +19,7 @@ func TestTheLinkedHandlerAnswersTheDocumentService(t *testing.T) {
 	}
 	handler, err := NewHandler(map[string]string{
 		"NUMEN_PLUGIN_TOKEN": "linked-token",
+		"NUMEN_HOST_PORT":    "1",
 		"NUMEN_VAULT_PATH":   filepath.Dir(path),
 	})
 	if err != nil {
@@ -42,7 +43,7 @@ func TestTheLinkedHandlerAnswersTheDocumentService(t *testing.T) {
 // A linked handler holds the paths of requests to the vault of its variables.
 func TestTheLinkedHandlerRefusesADocumentOutsideTheVaultOfItsVariables(t *testing.T) {
 	t.Setenv("NUMEN_VAULT_PATH", "")
-	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_VAULT_PATH": t.TempDir()})
+	handler, err := NewHandler(map[string]string{"NUMEN_PLUGIN_TOKEN": "linked-token", "NUMEN_HOST_PORT": "1", "NUMEN_VAULT_PATH": t.TempDir()})
 	if err != nil {
 		t.Fatalf("NewHandler: %v", err)
 	}

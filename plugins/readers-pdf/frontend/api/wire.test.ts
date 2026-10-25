@@ -2,19 +2,18 @@
  * The pages of a document and where the text relies on them.
  *
  * What is proved here is the crossing: a layout comes back as the sizes and the
- * one string the window carries a file as, and the boxes of a run gather into
- * one entry for each page they fall on.
+ * one string the window carries a file as, and a run comes back as the places it
+ * stands on, a page each.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { client, documents } from './wire'
 
 const request = {
   getDocument: vi.fn(),
-  readOcr: vi.fn(),
+  getHighlights: vi.fn(),
 }
 
 client.documents = request as unknown as typeof client.documents
-client.ocr = request as unknown as typeof client.ocr
 
 describe('the layout of a document', () => {
   it('arrives back as the size of every page and the file it was read from', async () => {
@@ -58,13 +57,19 @@ describe('the address a page is drawn from', () => {
 })
 
 describe('where a run of text remains', () => {
-  it('gathers the boxes of one page into a single entry', async () => {
-    request.readOcr.mockResolvedValue({
+  it('stands on the pages and in the rectangles the answer names', async () => {
+    request.getHighlights.mockResolvedValue({
       runs: [
         {
-          boxes: [
-            { page: 2, rect: { minX: 0.1, minY: 0.2, maxX: 0.3, maxY: 0.4 } },
-            { page: 2, rect: { minX: 0.5, minY: 0.6, maxX: 0.7, maxY: 0.8 } },
+          places: [
+            {
+              page: 2,
+              rects: [
+                { minX: 0.1, minY: 0.2, maxX: 0.3, maxY: 0.4 },
+                { minX: 0.5, minY: 0.6, maxX: 0.7, maxY: 0.8 },
+              ],
+            },
+            { page: 3, rects: [{ minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 }] },
           ],
         },
       ],
@@ -79,47 +84,24 @@ describe('where a run of text remains', () => {
             { minX: 0.5, minY: 0.6, maxX: 0.7, maxY: 0.8 },
           ],
         },
+        { page: 3, rects: [{ minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 }] },
       ],
     ])
-    expect(request.readOcr).toHaveBeenCalledWith({ path: 'Book.pdf', spans: [{ from: 0, to: 9 }] })
-  })
-
-  it('opens a new entry where a box falls on another page', async () => {
-    request.readOcr.mockResolvedValue({
-      runs: [
-        {
-          boxes: [
-            { page: 2, rect: { minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 } },
-            { page: 3, rect: { minX: 0.3, minY: 0.3, maxX: 0.4, maxY: 0.4 } },
-            { page: 2, rect: { minX: 0.5, minY: 0.5, maxX: 0.6, maxY: 0.6 } },
-          ],
-        },
-      ],
+    expect(request.getHighlights).toHaveBeenCalledWith({
+      path: 'Book.pdf',
+      spans: [{ from: 0, to: 9 }],
     })
-
-    const [pages = []] = await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])
-
-    expect(pages.map((one) => one.page)).toEqual([2, 3, 2])
-    expect(pages.map((one) => one.rects.length)).toEqual([1, 1, 1])
   })
 
-  it('remains nowhere where the run carries no boxes', async () => {
-    request.readOcr.mockResolvedValue({ runs: [{ boxes: [] }] })
+  it('remains nowhere where the run stands nowhere', async () => {
+    request.getHighlights.mockResolvedValue({ runs: [{ places: [] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([[]])
   })
 
-  it('remains at the corner where a box carries no rectangle', async () => {
-    request.readOcr.mockResolvedValue({ runs: [{ boxes: [{ page: 1 }] }] })
-
-    expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([
-      [{ page: 1, rects: [{ minX: 0, minY: 0, maxX: 0, maxY: 0 }] }],
-    ])
-  })
-
   it('answers one span at a time, and nothing for a span the answer skipped', async () => {
-    request.readOcr.mockResolvedValue({
-      runs: [{ boxes: [{ page: 1, rect: { minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 } }] }],
+    request.getHighlights.mockResolvedValue({
+      runs: [{ places: [{ page: 1, rects: [{ minX: 0.1, minY: 0.1, maxX: 0.2, maxY: 0.2 }] }] }],
     })
 
     expect(
