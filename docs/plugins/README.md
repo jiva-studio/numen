@@ -129,7 +129,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   - **`agent`**: which agent program answers the plugin's completions, and with which model. A plugin that holds `ai:complete` may declare one, with no `default`: the person chooses it in the plugin's settings page, from "Default (<the agent answering now>)" and the programs the agent plugins list, then from "Agent default" and the models that program lists in `GetAgentPrograms`. Its value is `{ "agent": "<program name>", "model": "<model id>" }`; an empty `agent` is the default of the settings (`ai.default`), an empty `model` the model `agent.<program>.model` names in the settings, else the program's own. The core stores it with the plugin's other settings, the settings window alone writes it, and the host routes by it: nothing in a request names an agent. The plugin is handed it in `Configure` like any setting, and reads nothing from it to route.
 - **`services`**: The services the plugin serves to the windows, by their full names (`numen.v1.CardsService`). A window that receives a call for one forwards it to the plugin with the token the plugin knows the host by, whole and unchanged, streams included; the host activates the plugin for the length of the call. A service the host serves itself is never forwarded.
 - **`secrets`**: The names of the secrets, such as an API key, the plugin asks the host to keep (letters, digits, `_` and `-`; a name is not also a setting). The host keeps them in the system keychain, never in the settings file, and hands each to the plugin as a `Configure` value under its name: an empty value when no key is stored, which clears the key the plugin holds. A secret the host cannot read is left out of that `Configure` call, and the plugin keeps the key it holds. A secret is never in the environment or on the command line. The host records the names of the secrets that have a key under `storedSecrets` in the plugin's settings (names only; neither a setting nor a secret may take that name) and reads the keychain only for those, so a plugin whose key was never stored causes no keychain access. On a machine without a keychain the plugin is configured with the secret left out, and the host reports it once. A plugin reads a secret from the `Configure` values only, with `server.ReadSecret` of `plugin-sdk-go` (`server.SecretAPIKey` names the `apiKey` secret), and reads no key from its environment.
-- **`commands`**: The commands the plugin's backend runs, which the palette of the window and `numen-cli` both offer (see [Commands](#commands)). A command has an `id` and argument `name`s of lowercase words joined by hyphens (`create-deck`), a `title`, an optional `description`, `fileExtensions` (lowercase, without the dot) when it runs over a file, and `arguments`, each with a `name`, a `title`, a `type` (`string`, `number` or `boolean`) and `required`. A plugin that declares commands has a `backend`.
+- **`commands`**: The commands the plugin's backend runs, which the palette of the window and `numen-cli` both offer (see [Commands](#commands)). A command has an `id` and argument `name`s of lowercase words joined by hyphens (`create-deck`), a `title`, `fileExtensions` (lowercase, without the dot) when it runs over a file, and `arguments`, each with a `name`, a `title`, a `type` (`string`, `number` or `boolean`) and `required`. A plugin that declares commands has a `backend`.
 
 ---
 
@@ -283,28 +283,25 @@ A plugin declares its commands in `commands` of the manifest and runs them in it
 "commands": [
   {
     "id": "create-deck",
-    "title": "Create a deck",
-    "arguments": [
-      { "name": "title", "title": "Title", "type": "string", "required": true },
-      { "name": "folder", "title": "Folder", "type": "string" }
-    ]
+    "title": "New deck",
+    "arguments": [{ "name": "title", "title": "What is it called", "type": "string", "required": true }]
   }
 ]
 ```
 
-The host lists the commands of the enabled plugins from their manifests without starting any. Before it runs one it checks the call against the declaration: every required argument is given, no undeclared one is, a `number` parses as a decimal and a `boolean` as true or false (written on to the plugin as `true` or `false`), and a command with `fileExtensions` is given a file of one of them while one without is given none. A call that fails the check is answered with the reason and never reaches the plugin. Otherwise the host starts the plugin where it is not running and calls `numen.v1.PluginCommandService.RunCommand` with the command id, the file as a path relative to the vault and the arguments as text by name; the plugin answers with a message a person reads, or an error code (`UNKNOWN_COMMAND`, `BAD_ARGUMENTS`, `FAILED`) with the message saying why.
+The host lists the commands of the enabled plugins from their manifests without starting any. Before it runs one it checks the call against the declaration: every required argument is given, no undeclared one is, a `number` parses as a decimal and a `boolean` as true or false (written on to the plugin as `true` or `false`), and a command with `fileExtensions` is given a file of one of them while one without is given none. A call that fails the check is answered with the reason and never reaches the plugin. Otherwise the host starts the plugin where it is not running and calls `numen.v1.PluginCommandService.RunCommand` with the command id, the file as a path relative to the vault and the arguments as text by name; the plugin answers with a message a person reads and the file a window opens once the command ran (`opened_path`), either of them empty, or with an error code (`UNKNOWN_COMMAND`, `BAD_ARGUMENTS`, `FAILED`) with the message saying why.
 
-In Go, a backend implements `command.Handler` of `plugin-sdk-go` and serves it with `command.Mount(s, handler)`; `command.Registry` is a handler of functions added by id, and `command.Arguments` reads the values with `GetString`, `GetNumber`, `GetBool` and `Has`. The handler knows nothing of the transport, and RPC is the one the host uses now.
+In Go, a backend implements `command.Handler` of `plugin-sdk-go` and serves it with `command.Mount(s, handler)`; `command.Registry` is a handler of functions added by id. A run answers a `command.Result` of the message and the opened path, and reads its arguments, as text, from `command.Arguments`. The handler knows nothing of the transport, and RPC is the one the host uses now.
 
-The window lists the commands through `numen.v1.CommandService.ListCommands` each time the palette opens. A command over files is offered over a file of one of its extensions, and one over none anywhere; it asks for its arguments one step each, in the order declared, and an optional one is left out by choosing to leave it blank. `RunPluginCommand` runs it, and what the plugin answered is written in the corner of the window.
+The window lists the commands through `numen.v1.CommandService.ListCommands` as it starts and each time the palette opens. A command over files is offered over a file of one of its extensions, and one over none anywhere; it asks for its arguments one step each, in the order declared, and an optional one is left out by choosing to leave it blank. `RunPluginCommand` runs it; a message the plugin answered is written in the corner of the window, and the file it names is opened in the editor of its kind. The flashcards plugin makes its decks, stencils and presets this way (`create-deck`, `create-stencil`, `create-preset`, shown as New deck, New stencil and New preset).
 
 `numen-cli` offers each command as a subcommand under its id, after its own commands, which a plugin cannot take. The vault comes first, then the file for a command over files, then one flag for each argument (`--title Verbs`; a `boolean` flag alone is true):
 
 ```bash
-numen-cli create-deck notebook --title "Spanish verbs" --folder decks
+numen-cli create-deck notebook --title "Spanish verbs"
 ```
 
-It starts the plugin host without a window, lets the plugins work the vault through the host, prints what the plugin answered, and `numen-cli help` lists the commands the enabled plugins declare. Of two plugins that declare one id, the command line runs that of the lower plugin id; the palette offers both.
+It starts the plugin host without a window, lets the plugins work the vault through the host, prints what the plugin answered and the file it names, and `numen-cli help` lists the commands the enabled plugins declare. Of two plugins that declare one id, the command line runs that of the lower plugin id; the palette offers both.
 
 ## Asking the host
 

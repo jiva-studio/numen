@@ -34,11 +34,23 @@
   "commands": [
     {
       "id": "create-deck",
-      "title": "Create a deck",
-      "description": "Make a deck of no cards, named after its title, in a folder of the vault or at its root.",
+      "title": "New deck",
       "arguments": [
-        { "name": "title", "title": "Title", "type": "string", "required": true },
-        { "name": "folder", "title": "Folder", "type": "string" }
+        { "name": "title", "title": "What is it called", "type": "string", "required": true }
+      ]
+    },
+    {
+      "id": "create-stencil",
+      "title": "New stencil",
+      "arguments": [
+        { "name": "title", "title": "What is it called", "type": "string", "required": true }
+      ]
+    },
+    {
+      "id": "create-preset",
+      "title": "New preset",
+      "arguments": [
+        { "name": "title", "title": "What is it called", "type": "string", "required": true }
       ]
     }
   ],
