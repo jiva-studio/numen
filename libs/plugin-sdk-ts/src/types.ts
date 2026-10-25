@@ -1,5 +1,6 @@
 import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
+import type { TextInput, VaultTexts } from './texts'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
@@ -209,6 +210,8 @@ export interface PluginContext {
   readonly agent?: AgentHost
   // The open files of the window, where the host offers them.
   readonly buffers?: BufferHost
+  // The text versions of the vault the window shows, where the host offers them.
+  readonly texts?: VaultTexts
 }
 
 // PluginManifest describes the metadata in manifest.json.
@@ -239,5 +242,7 @@ export interface PluginManifest {
     entrypoint: string
     styles?: string
   }
+  /** What the plugin makes text from; a plugin that makes no text declares none. */
+  textInput?: TextInput
   settings?: SettingDeclaration[]
 }
