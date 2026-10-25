@@ -26,6 +26,7 @@ func TestEnvironmentSanitization(t *testing.T) {
 		"LANG", "lang",
 		"LC_ALL", "lc_ctype", "LC_MESSAGES",
 		"SSL_CERT_FILE", "SSL_CERT_DIR",
+		"NUMEN_MOCK_ML",
 	}
 	for _, key := range allowed {
 		if !IsWhitelistedEnv(key) {
