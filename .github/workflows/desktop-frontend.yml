@@ -101,4 +101,3 @@ jobs:
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage
-          npm run test:stories --prefix apps/desktop/flashcards

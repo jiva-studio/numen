@@ -3,7 +3,11 @@
   "compilerOptions": {
     "jsx": "preserve",
     "types": ["vite/client"],
-    "paths": { "@/*": ["./src/*"] }
+    "paths": {
+      "@/*": ["./src/*"],
+      "@numen/plugin-sdk": ["../../../libs/plugin-sdk-ts/src/index.ts"],
+      "@numen/plugin-sdk/*": ["../../../libs/plugin-sdk-ts/src/*"]
+    }
   },
   "include": ["src/**/*.ts", "src/**/*.vue", "vite.config.ts"]
 }

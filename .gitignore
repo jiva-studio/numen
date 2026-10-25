@@ -24,7 +24,8 @@ playwright-report/
 /numen-flashcards
 /numen-desktop
 /numen-debug
-modules/apps/desktop/numen-debug
+/apps/desktop/numen-debug
+/apps/desktop/numen-flashcards-debug
 /Numen.app/
 /Numen Flashcards.app/
 

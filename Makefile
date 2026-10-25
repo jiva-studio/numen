@@ -331,7 +331,7 @@ app_desktop_pgo_check: ## fail when the desktop PGO profile names a local path
 	$(DESKTOP)/build/pgo.sh --check
 
 .PHONY: app_desktop_flashcards_bin
-app_desktop_flashcards_bin: interface ## build desktop flashcards binary
+app_desktop_flashcards_bin: app_desktop_flashcards_build plugins_build ## build desktop flashcards binary
 	cd $(DESKTOP) && CGO_ENABLED=1 go build -o $(CURDIR)/numen-flashcards ./cmd/numen-flashcards
 	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns)
 
@@ -348,17 +348,17 @@ app_desktop_test: lib_ui_build ## run desktop tests
 	cd $(DESKTOP)/flashcards && npm test
 
 .PHONY: app_desktop_stories
-app_desktop_stories: lib_ui_build ## draw the stories of both desktop windows, one engine at a time
-	@set -e; for window in editor flashcards; do \
-		for engine in chromium webkit; do \
-			(cd $(DESKTOP)/$$window && npx vitest run --project "stories ($$engine)"); \
-		done; \
+app_desktop_stories: lib_ui_build ## draw the stories of the editor, one engine at a time
+	@set -e; for engine in chromium webkit; do \
+		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
 	done
 
 .PHONY: app_desktop_e2e
-app_desktop_e2e: lib_ui_build app_desktop_editor_build plugins_build ## run desktop end-to-end tests
+app_desktop_e2e: lib_ui_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
 	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
+	cd $(DESKTOP) && go build -tags debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd $(TESTS)/e2e/desktop && npx playwright test
+	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module

@@ -8,5 +8,11 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["tests/**/*", "scripts/**/*", "playwright.config.ts"]
+  "include": [
+    "tests/**/*",
+    "flashcards/**/*",
+    "scripts/**/*",
+    "playwright.config.ts",
+    "playwright.flashcards.config.ts"
+  ]
 }

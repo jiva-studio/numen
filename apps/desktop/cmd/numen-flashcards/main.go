@@ -76,6 +76,9 @@ func run(cfg container.Config, debug debugOptions) error {
 		return err
 	}
 	cfg = cfg.SetSettings(selected)
+	if err := debug.registerVault(cfg); err != nil {
+		return err
+	}
 
 	registry, err := cfg.Registry()
 	if err != nil {

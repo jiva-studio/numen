@@ -5,7 +5,7 @@ import {
   createMockTabWindow,
 } from '@numen/plugin-sdk/testing'
 import type { WorkspaceHost } from '@numen/plugin-sdk'
-import plugin, { activate, DECK, PRESET, STENCIL } from './index'
+import plugin, { activate, DECK, PRESET, REVIEW, STENCIL } from './index'
 import { cards, presets } from './cards'
 
 const createContext = () => {
@@ -30,6 +30,15 @@ const createContext = () => {
 }
 
 describe('flashcards-studio plugin', () => {
+  it('draws only the review in the window of the flashcards target', () => {
+    const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+    activate(ctx)
+
+    const kinds = ctx.getRegisteredTabKinds()
+    expect(kinds.map((one) => one.kind)).toStrictEqual([REVIEW])
+    expect(kinds[0]?.placement).toStrictEqual({ pane: 'main', order: 0 })
+  })
+
   it('registers the deck, stencil and preset tab kinds upon activation', () => {
     const { ctx } = createContext()
     activate(ctx)

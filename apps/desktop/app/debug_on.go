@@ -7,7 +7,6 @@ import (
 	"flag"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
@@ -36,39 +35,7 @@ func (d *DebugOptions) apply() error {
 }
 
 func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error {
-	if vaultPath == "" {
-		return nil
-	}
-	abs, err := filepath.Abs(vaultPath)
-	if err != nil {
-		return err
-	}
-	info, err := os.Stat(abs)
-	if err != nil || !info.IsDir() {
-		return nil
-	}
-	reg, err := cfg.Registry()
-	if err != nil {
-		return err
-	}
-	_, found, err := reg.FindVault(abs)
-	if err != nil {
-		return err
-	}
-	if !found {
-		v := domain.Vault{
-			ID:   domain.VaultID("01E2ETESTVAULT000000000000"),
-			Name: filepath.Base(abs),
-			Path: abs,
-		}
-		if err := reg.Save(v); err != nil {
-			return err
-		}
-		if err := reg.RecordOpened(v.ID); err != nil {
-			return err
-		}
-	}
-	return nil
+	return debugserve.RegisterVault(cfg, vaultPath)
 }
 
 func (d *DebugOptions) isServingHTTP() bool {

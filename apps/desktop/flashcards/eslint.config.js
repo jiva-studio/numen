@@ -3,8 +3,8 @@
 // formatting is done by hand and a rule with an opinion about it would start
 // rewriting files nobody asked it to.
 //
-// The library's ban on importing the domain is the one rule that stops at this
-// package: a window is the thing that knows what a vault is.
+// The library's ban on importing the protocol stops at this package: the shell
+// asks the window for the plugins of its target.
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
@@ -43,13 +43,7 @@ export default tseslint.config(
   // what time it is, what the window measures, or what comes next.
   {
     files: ['src/**/*.ts'],
-    ignores: [
-      'src/**/*.test.ts',
-      'src/**/*.stories.ts',
-      // A port's own default, which is where the browser is allowed in.
-      'src/pages/session/model/session.ts',
-      'src/pages/decks/model/reviewDays.ts',
-    ],
+    ignores: ['src/**/*.test.ts'],
     rules: {
       'no-restricted-globals': [
         'error',

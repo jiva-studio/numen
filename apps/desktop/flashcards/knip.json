@@ -1,7 +1,7 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
-  "entry": ["src/**/*.stories.ts", "src/**/*.test.ts", ".storybook/**/*.{ts,js}"],
-  "project": ["src/**/*.{ts,vue}", ".storybook/**/*.{ts,js}"],
+  "entry": ["src/**/*.test.ts"],
+  "project": ["src/**/*.{ts,vue}"],
   "rules": {
     "files": "error",
     "dependencies": "warn",

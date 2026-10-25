@@ -3,6 +3,7 @@ import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { useStencilTabs } from './stencil/kind'
 import { usePresetTab } from './preset/kind'
+import { createReviewKind, FLASHCARDS_TARGET } from './review'
 
 export { DECK } from './deck/kind'
 export { STENCIL } from './stencil/kind'
@@ -17,7 +18,13 @@ export type { DeckTabState } from './deck/types'
 export type { StencilTabState } from './stencil/types'
 export type { PresetTabState } from './preset/types'
 
+export { REVIEW } from './review'
+
 export function activate(context: PluginContext): void {
+  if (context.target === FLASHCARDS_TARGET) {
+    context.registerTabKind(createReviewKind())
+    return
+  }
   const { workspace, buffers, files } = context
   if (!workspace || !buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
