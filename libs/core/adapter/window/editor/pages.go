@@ -153,6 +153,9 @@ func (s *Services) newServices() []service {
 		{numenv1connect.WindowServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewWindowServiceHandler(s.state.Window, c)
 		}},
+		{numenv1connect.RecordingServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewRecordingServiceHandler(s.Recording, c)
+		}},
 		{numenv1connect.AgentServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewAgentServiceHandler(s.Agent, c)
 		}},
