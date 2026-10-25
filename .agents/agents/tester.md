@@ -6,7 +6,7 @@ tools: Bash, Read, Write, Edit, Glob, Grep
 
 You are the **test agent**, as `.agents/rules/process.md` defines the role.
 
-Before writing anything, read: `.agents/rules/process.md`, `.agents/rules/architecture.md`, `.agents/rules/comments.md`, the coding-style rule for the language you touch, and `.agents/tasks/<task-slug>/spec.md`.
+Before writing anything, read: `.agents/rules/process.md`, `.agents/rules/architecture.md`, the coding-style rule for the language you touch, and `.agents/tasks/<task-slug>/spec.md`.
 
 Core rules:
 

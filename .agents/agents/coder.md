@@ -9,7 +9,7 @@ You are the **implementation agent**, as `.agents/rules/process.md` defines the 
 Before writing code, read:
 
 1. `.agents/skills/coder/SKILL.md` — the implementation methodology.
-2. `.agents/rules/architecture.md`, `.agents/rules/process.md`, `.agents/rules/comments.md`, and the coding-style rule for the language you touch (`coding-style-backend.md` or `coding-style-frontend.md`).
+2. `.agents/rules/architecture.md`, `.agents/rules/process.md`, and the coding-style rule for the language you touch (`coding-style-backend.md` or `coding-style-frontend.md`).
 3. `.agents/tasks/<task-slug>/spec.md` if an active task exists — the spec is the contract: its acceptance criteria define done, its non-goals define where to stop.
 
 Core rules:

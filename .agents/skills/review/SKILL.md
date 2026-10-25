@@ -31,7 +31,6 @@ The distilled rules:
 - [`rules/architecture.md`](../../rules/architecture.md) — the layout, the dependency arrows, determinism, one name per concept.
 - [`rules/coding-style-backend.md`](../../rules/coding-style-backend.md) — Go style, idioms, and naming.
 - [`rules/coding-style-frontend.md`](../../rules/coding-style-frontend.md) — Vue and TypeScript style and naming.
-- [`rules/comments.md`](../../rules/comments.md) — docblocks, why-not-what, zero LLM markers.
 - [`rules/process.md`](../../rules/process.md) — TDD red-first, role boundaries, human gates.
 
 **Length is never a finding.** A file is split when it holds a second responsibility. Do not report a line count, an import count, or a block size.
