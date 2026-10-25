@@ -29,11 +29,39 @@ type embeddingServer struct {
 	modelInfo  engine.ModelInfo
 	localModel engine.LocalModel
 
+	open   openEmbedder
+	isMock bool
+
 	mu       sync.Mutex
-	embedder *engine.Embedder
+	embedder textEmbedder
 	apiKey   string
 	baseURL  string
 	provider string
+}
+
+// textEmbedder is a model that turns texts into vectors.
+type textEmbedder interface {
+	Embed(ctx context.Context, texts []string) ([][]float32, error)
+	Concurrency() int
+	Close() error
+}
+
+// openEmbedder loads the model a server embeds with.
+type openEmbedder func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error)
+
+// envMockML names the variable that selects the mock embedder for automated tests.
+const envMockML = "NUMEN_MOCK_ML"
+
+func openLocalModel(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error) {
+	emb, err := engine.Open(ctx, info, local, nil)
+	if err != nil {
+		return nil, err
+	}
+	return emb, nil
+}
+
+func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEmbedder, error) {
+	return engine.MockEmbedder{}, nil
 }
 
 func (s *embeddingServer) updateConfig(values map[string]string) {
@@ -54,6 +82,9 @@ func (s *embeddingServer) updateConfig(values map[string]string) {
 }
 
 func newEmbeddingServer() *embeddingServer {
+	if os.Getenv(envMockML) == "true" {
+		return &embeddingServer{modelInfo: engine.GetMockModel(), open: openMockModel, isMock: true}
+	}
 	info, local := engine.DefaultBGEM3Config()
 	applyModelOverrides(&info, &local)
 	applyDimensionEnv(&info)
@@ -62,6 +93,7 @@ func newEmbeddingServer() *embeddingServer {
 	return &embeddingServer{
 		modelInfo:  info,
 		localModel: local,
+		open:       openLocalModel,
 	}
 }
 
@@ -116,7 +148,7 @@ func applyRuntimeEnv(local *engine.LocalModel) {
 	}
 }
 
-func (s *embeddingServer) getEmbedder(ctx context.Context) (*engine.Embedder, error) {
+func (s *embeddingServer) getEmbedder(ctx context.Context) (textEmbedder, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -124,7 +156,7 @@ func (s *embeddingServer) getEmbedder(ctx context.Context) (*engine.Embedder, er
 		return s.embedder, nil
 	}
 
-	emb, err := engine.Open(ctx, s.modelInfo, s.localModel, nil)
+	emb, err := s.open(ctx, s.modelInfo, s.localModel)
 	if err != nil {
 		return nil, fmt.Errorf("opening onnx embedding engine: %w", err)
 	}
@@ -152,9 +184,9 @@ func (s *embeddingServer) GetEmbeddingModel(
 	s.mu.Lock()
 	info := s.modelInfo
 	s.mu.Unlock()
-	concurrency := info.Concurrency
-	if concurrency <= 0 {
-		concurrency = 4
+	passes := info.Concurrency
+	if passes <= 0 {
+		passes = 4
 	}
 	return connect.NewResponse(&numenv1.GetEmbeddingModelResponse{
 		Name:        info.Name,
@@ -162,8 +194,15 @@ func (s *embeddingServer) GetEmbeddingModel(
 		MaxTokens:   int32(info.MaxTokens),
 		Pooling:     info.Pooling,
 		From:        info.From,
-		Concurrency: int32(concurrency),
+		Concurrency: int32(getIndexShare(passes)),
 	}), nil
+}
+
+// getIndexShare returns how many calls the index may have in flight on a model
+// that runs passes at once: one fewer, and never fewer than one, so a question
+// asked of the same model finds a pass free.
+func getIndexShare(passes int) int {
+	return max(passes-1, 1)
 }
 
 func (s *embeddingServer) EmbedBatch(
@@ -237,7 +276,7 @@ type openAIEmbeddingResponse struct {
 func (s *embeddingServer) getService() (key, baseURL string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.provider == "local" {
+	if s.isMock || s.provider == "local" {
 		return "", ""
 	}
 	baseURL = s.baseURL

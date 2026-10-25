@@ -101,3 +101,36 @@ func TestEmbeddingServerDefaultModelIsPinned(t *testing.T) {
 		t.Errorf("localModel = %+v", srv.localModel)
 	}
 }
+
+func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
+	t.Setenv(envMockML, "true")
+	srv := newEmbeddingServer()
+
+	model, err := srv.GetEmbeddingModel(t.Context(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Msg.GetFrom() != "mock" {
+		t.Errorf("the model is from %q, want mock", model.Msg.GetFrom())
+	}
+
+	resp, err := srv.EmbedBatch(t.Context(), connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"boat", "ferry"}}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	vectors := resp.Msg.GetVectors()
+	if len(vectors) != 2 {
+		t.Fatalf("got %d vectors for 2 texts", len(vectors))
+	}
+	if got := len(vectors[0].GetValues()); got != int(model.Msg.GetDimensions()) {
+		t.Errorf("got %d dimensions, want %d", got, model.Msg.GetDimensions())
+	}
+}
+
+func TestTheIndexLeavesAQuestionOnePassOfTheModel(t *testing.T) {
+	for _, tc := range []struct{ passes, want int }{{1, 1}, {2, 1}, {4, 3}} {
+		if got := getIndexShare(tc.passes); got != tc.want {
+			t.Errorf("a model of %d passes gives the index %d, want %d", tc.passes, got, tc.want)
+		}
+	}
+}
