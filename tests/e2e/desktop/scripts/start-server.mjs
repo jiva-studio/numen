@@ -48,7 +48,7 @@ createSampleWav(path.join(tmpVault, 'assets', 'sample.wav'))
 // Copy dynamic fixtures into isolated vault to prevent template fixture pollution.
 fs.copyFileSync(path.join(fixturesDir, 'sample.pdf'), path.join(tmpVault, 'assets', 'sample.pdf'))
 fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'assets', 'sample.epub'))
-for (const name of ['regenerative-braking.pdf', 'flywheel.pdf']) {
+for (const name of ['regenerative-braking.pdf', 'flywheel.pdf', 'lecture.wav']) {
   fs.copyFileSync(path.join(fixturesDir, name), path.join(tmpVault, 'assets', name))
 }
 fs.writeFileSync(path.join(tmpVault, 'assets', 'corrupted.pdf'), 'INVALID_PDF_HEADER')
