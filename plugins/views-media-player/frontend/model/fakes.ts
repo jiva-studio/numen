@@ -15,7 +15,6 @@ export const TRANSCRIBE_ENTRY: MenuEntry = {
   action: 'recognise',
   pluginId: 'md.numen.engines.transcription',
   versionId: '',
-  isFromFile: false,
   isLive: false,
 }
 
@@ -23,7 +22,6 @@ export const DELETE_ENTRY: MenuEntry = {
   action: 'deleteVersion',
   pluginId: 'md.numen.engines.transcription',
   versionId: 'md.numen.engines.transcription/abc',
-  isFromFile: true,
   isLive: true,
 }
 

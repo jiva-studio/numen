@@ -1,11 +1,11 @@
 /**
- * Wire adapter for RecordingService, TranscriptService, TextMenuService and the window's tasks.
+ * Wire adapter for RecordingService, TranscriptService, TextVersionService and the window's tasks.
  */
 import { createClient } from '@connectrpc/connect'
 import {
   RecordingService,
-  TextMenuAction,
-  TextMenuService,
+  FileMenuAction,
+  TextVersionService,
   TranscriptService,
   WindowService,
   type Cue as CueMessage,
@@ -18,30 +18,29 @@ import { createWorkWatcher } from './work'
 export const client = {
   recordings: createClient(RecordingService, transport),
   transcripts: createClient(TranscriptService, transport),
-  textMenu: createClient(TextMenuService, transport),
+  textVersions: createClient(TextVersionService, transport),
   window: createClient(WindowService, transport),
 }
 
 /** The window the player's tabs are drawn in. */
 const WINDOW = 'editor'
 
-const ACTIONS: ReadonlyMap<TextMenuAction, MenuAction> = new Map([
-  [TextMenuAction.RECOGNISE, 'recognise'],
-  [TextMenuAction.PROOFREAD, 'proofread'],
-  [TextMenuAction.DELETE_VERSION, 'deleteVersion'],
+const ACTIONS: ReadonlyMap<FileMenuAction, MenuAction> = new Map([
+  [FileMenuAction.RECOGNISE, 'recognise'],
+  [FileMenuAction.PROOFREAD, 'proofread'],
+  [FileMenuAction.DELETE_VERSION, 'deleteVersion'],
 ])
 
 /** The action of the schema an entry's action is. */
-export const writeMenuAction = (action: MenuAction): TextMenuAction =>
-  [...ACTIONS].find(([, one]) => one === action)?.[0] ?? TextMenuAction.UNSPECIFIED
+export const writeMenuAction = (action: MenuAction): FileMenuAction =>
+  [...ACTIONS].find(([, one]) => one === action)?.[0] ?? FileMenuAction.UNSPECIFIED
 
 /** The entries of the schema the tab reads, leaving out an action it does not know. */
 export const readMenuEntries = (
   entries: readonly {
-    action: TextMenuAction
+    action: FileMenuAction
     pluginId: string
     versionId: string
-    isFromFile: boolean
     isLive: boolean
   }[],
 ): readonly MenuEntry[] =>
@@ -53,7 +52,6 @@ export const readMenuEntries = (
             action,
             pluginId: one.pluginId,
             versionId: one.versionId,
-            isFromFile: one.isFromFile,
             isLive: one.isLive,
           },
         ]
@@ -85,19 +83,15 @@ export const recordings: Recordings = {
     return answer.cues[0]?.from ?? null
   },
   getMenu: async (path) => {
-    const answer = await retryWhileBusy(() => client.textMenu.getTextMenu({ path }))
+    const answer = await retryWhileBusy(() => client.textVersions.getFileMenu({ path }))
     return readMenuEntries(answer.entries)
   },
   runMenuEntry: async (path, entry) => {
-    await client.textMenu.runTextMenuEntry({
+    await client.textVersions.runFileMenuEntry({
       path,
-      entry: {
-        action: writeMenuAction(entry.action),
-        pluginId: entry.pluginId,
-        versionId: entry.versionId,
-        isFromFile: entry.isFromFile,
-        isLive: entry.isLive,
-      },
+      action: writeMenuAction(entry.action),
+      pluginId: entry.pluginId,
+      versionId: entry.versionId,
     })
   },
   watchWork: (path, onChange) => work.watch(path, onChange),

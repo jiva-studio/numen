@@ -13,18 +13,17 @@ export interface Span {
   readonly to: number
 }
 
-/** What an entry of a file's text menu does. */
+/** What an entry of a file's menu does. */
 export type MenuAction = 'recognise' | 'proofread' | 'deleteVersion'
 
 /**
- * One entry of the menu the core derives for a file. `versionId` is the version it works on;
- * `isFromFile` and `isLive` describe that version.
+ * One entry of the menu the core makes for a file. `versionId` is the version it works on;
+ * `isLive` says that version is the one shown and indexed now.
  */
 export interface MenuEntry {
   readonly action: MenuAction
   readonly pluginId: string
   readonly versionId: string
-  readonly isFromFile: boolean
   readonly isLive: boolean
 }
 

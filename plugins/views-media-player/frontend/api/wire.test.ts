@@ -1,22 +1,21 @@
 /** The entries of a file's menu, as the schema carries them and as the tab reads them. */
 import { describe, expect, it } from 'vitest'
-import { TextMenuAction } from '@numen/protocol'
+import { FileMenuAction } from '@numen/protocol'
 import { readMenuEntries, writeMenuAction } from './wire'
 
-const entry = (action: TextMenuAction) => ({
+const entry = (action: FileMenuAction) => ({
   action,
   pluginId: 'md.numen.engines.transcription',
   versionId: 'md.numen.engines.transcription/abc',
-  isFromFile: true,
   isLive: true,
 })
 
 describe('a menu entry', () => {
   it('crosses the wire and back as the action it is', () => {
     for (const action of [
-      TextMenuAction.RECOGNISE,
-      TextMenuAction.PROOFREAD,
-      TextMenuAction.DELETE_VERSION,
+      FileMenuAction.RECOGNISE,
+      FileMenuAction.PROOFREAD,
+      FileMenuAction.DELETE_VERSION,
     ]) {
       const [read] = readMenuEntries([entry(action)])
       expect(read && writeMenuAction(read.action)).toBe(action)
@@ -24,6 +23,6 @@ describe('a menu entry', () => {
   })
 
   it('is left out where the tab knows no such action', () => {
-    expect(readMenuEntries([entry(TextMenuAction.UNSPECIFIED)])).toStrictEqual([])
+    expect(readMenuEntries([entry(FileMenuAction.UNSPECIFIED)])).toStrictEqual([])
   })
 })
