@@ -39,6 +39,7 @@ type Vault struct {
 	state      host.IndexState
 	inUse      int
 	moves      []chan struct{}
+	folder     *folder
 }
 
 var _ host.Vault = (*Vault)(nil)
@@ -617,6 +618,11 @@ func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 func (v *Vault) With(id domain.VaultID) host.Vault {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
+	return v.find(id)
+}
+
+// find is the vault of the identity among those the host knows. The caller holds the world's lock.
+func (v *Vault) find(id domain.VaultID) *Vault {
 	if v.vault.ID == id {
 		return v
 	}
