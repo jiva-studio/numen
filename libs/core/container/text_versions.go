@@ -118,13 +118,13 @@ func (p pluginTexts) getShownVault() (domain.Vault, error) {
 	return v, nil
 }
 
-func (p pluginTexts) PutVersion(ctx context.Context, pluginID string, put pluginport.PluginTextPut) (domain.TextVersion, error) {
+func (p pluginTexts) PutVersion(ctx context.Context, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
 	v, err := p.getShownVault()
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
 	return p.versions.PutVersion(ctx, v, pluginID, textversion.VersionPut{
-		Path: put.Path, Key: put.Key, Input: put.Input, Format: put.Format, InputHash: put.InputHash, Hash: put.Hash,
+		Path: params.Path, Key: params.Key, Input: params.Input, Format: params.Format, InputHash: params.InputHash, Hash: params.Hash,
 	})
 }
 

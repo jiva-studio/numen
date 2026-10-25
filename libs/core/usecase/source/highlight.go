@@ -27,16 +27,15 @@ type Highlight struct {
 	texts   textport.TextReaders
 }
 
-// A Run is one run of a source's text: what it says, and where it stands on the
-// pages of the file.
+// A Run is one run of a source's text with its boxes on the pages of the file.
 type Run struct {
 	Text  string
 	Boxes []domain.HighlightBox
 }
 
-// NewHighlight is what a run of text says and where it stands: the vault the
-// file is read out of, what says which version the index cut it from, and the
-// text versions of the vault.
+// NewHighlight reads files from the vault readers, looks up which version the
+// index extracted a source from in the source queries, and reads the text
+// versions of the vault.
 func NewHighlight(readers vaultport.VaultReaders, sources sourceport.SourceQueries, texts textport.TextReaders) Highlight {
 	return Highlight{readers: readers, sources: sources, texts: texts}
 }

@@ -236,36 +236,36 @@ func (u Extract) recordIfOutdated(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	cut sourceport.SourceText,
+	source sourceport.SourceText,
 	res *ExtractResult,
 ) error {
-	fileHash := cut.Hash
-	if cut.Kind == domain.KindURL {
-		raw, err := on.files.Read(ctx, cut.Path)
+	fileHash := source.Hash
+	if source.Kind == domain.KindURL {
+		raw, err := on.files.Read(ctx, source.Path)
 		if errors.Is(err, fs.ErrNotExist) || vaultport.IsNoNote(err) {
 			return nil
 		}
 		if err != nil {
-			return fmt.Errorf("read %s: %w", cut.Path, err)
+			return fmt.Errorf("read %s: %w", source.Path, err)
 		}
 		fileHash = domain.HashContent(raw)
 	}
-	live, err := on.texts.FindLiveVersion(ctx, cut.Path, fileHash)
+	live, err := on.texts.FindLiveVersion(ctx, source.Path, fileHash)
 	switch {
-	case err == nil && string(live) == cut.Producer:
+	case err == nil && string(live) == source.Producer:
 		return nil
 	case err != nil && !errors.Is(err, textport.ErrNoText):
-		return fmt.Errorf("find the live version of %s: %w", cut.Path, err)
+		return fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
-	ref, err := on.files.GetFingerprint(ctx, cut.Path)
+	ref, err := on.files.GetFingerprint(ctx, source.Path)
 	if vaultport.IsNoNote(err) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("stat %s: %w", cut.Path, err)
+		return fmt.Errorf("stat %s: %w", source.Path, err)
 	}
 	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
-		return fmt.Errorf("record %s: %w", cut.Path, err)
+		return fmt.Errorf("record %s: %w", source.Path, err)
 	}
 	res.Outdated++
 	return nil

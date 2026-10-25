@@ -11,7 +11,7 @@ var epoch = time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
 
 func allEnabled(string) bool { return true }
 
-func TestFindLiveVersionTakesTheNewestLiveVersion(t *testing.T) {
+func TestFindLiveVersionReturnsTheNewestLiveVersion(t *testing.T) {
 	versions := []domain.TextVersion{
 		{Path: "a.pdf", PluginID: "reader", Key: "a", InputHash: "file-1", Hash: "ha", CreateTime: epoch},
 		{Path: "a.pdf", PluginID: "fixer", Key: "b", Input: "reader/a", InputHash: "ha", Hash: "hb", CreateTime: epoch.Add(time.Minute)},
@@ -137,9 +137,9 @@ func TestVersionTextLocatesSectionsPagesAndMoments(t *testing.T) {
 }
 
 func TestFormatClock(t *testing.T) {
-	for at, want := range map[time.Duration]string{0: "0:00", 65 * time.Second: "1:05", 3600 * time.Second: "1:00:00", -time.Second: "0:00"} {
-		if got := domain.FormatClock(at); got != want {
-			t.Errorf("FormatClock(%v) = %q, want %q", at, got, want)
+	for offset, want := range map[time.Duration]string{0: "0:00", 65 * time.Second: "1:05", 3600 * time.Second: "1:00:00", -time.Second: "0:00"} {
+		if got := domain.FormatClock(offset); got != want {
+			t.Errorf("FormatClock(%v) = %q, want %q", offset, got, want)
 		}
 	}
 }

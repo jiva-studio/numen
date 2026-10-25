@@ -382,8 +382,8 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 
 const talkPath = "talks/a lecture.mp3"
 
-// heardParts is the text a transcription plugin gives of one talk.
-func heardParts() []domain.TextPart {
+// timedParts is the text a transcription plugin gives of one talk.
+func timedParts() []domain.TextPart {
 	return []domain.TextPart{
 		{Text: words(sanskrit, 200) + "\n", Place: domain.TextPlace{Start: 1500 * time.Millisecond}},
 		{Text: words(latin, 200) + "\n", Place: domain.TextPlace{Start: 5025 * time.Second}},
@@ -424,7 +424,7 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
 	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
-	heard := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
+	transcript := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -433,8 +433,8 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 		t.Fatalf("the run reports %+v, want the recording cut into chunks", res)
 	}
 	src := index.sources[first.ID][talkPath]
-	if src.Producer != string(heard.GetID()) {
-		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, heard.GetID())
+	if src.Producer != string(transcript.GetID()) {
+		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, transcript.GetID())
 	}
 	if want := recipe(versionReader, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
@@ -452,13 +452,13 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 
 // A version that stops being the live one leaves its chunks owed: the next run
 // cuts the file from the version that is live now, or keeps no chunks of it.
-func TestASourceCutFromAVersionNoLongerLiveIsCutAgain(t *testing.T) {
+func TestSourceExtractedFromOutdatedVersionIsExtractedAgain(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
 	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
-	texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
+	texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
@@ -483,7 +483,7 @@ func TestASourceCutFromAVersionNoLongerLiveIsCutAgain(t *testing.T) {
 }
 
 // ExtractOne is the cut the index makes when a file's versions change.
-func TestExtractOneCutsTheVersionThatIsLiveNow(t *testing.T) {
+func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
@@ -492,12 +492,12 @@ func TestExtractOneCutsTheVersionThatIsLiveNow(t *testing.T) {
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	heard := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
+	transcript := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
 	if _, err := extract.ExtractOne(ctx, first, talkPath); err != nil {
 		t.Fatal(err)
 	}
-	if got := index.sources[first.ID][talkPath].Producer; got != string(heard.GetID()) {
-		t.Fatalf("the source names %q, want %q", got, heard.GetID())
+	if got := index.sources[first.ID][talkPath].Producer; got != string(transcript.GetID()) {
+		t.Fatalf("the source names %q, want %q", got, transcript.GetID())
 	}
 	if !index.cut(first.ID, talkPath) {
 		t.Fatal("the new version was not cut")
@@ -513,14 +513,14 @@ func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
 
 	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
 	texts.failure = errors.New("the plugin is not running")
-	var heard []error
-	extract.ErrorHandler = func(err error) { heard = append(heard, err) }
+	var errs []error
+	extract.ErrorHandler = func(err error) { errs = append(errs, err) }
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatalf("a provider that failed ended the run: %v", err)
 	}
-	if res.Unreadable != 1 || len(heard) != 1 {
-		t.Fatalf("the run reports %+v and the handler heard %v, want one unreadable source reported", res, heard)
+	if res.Unreadable != 1 || len(errs) != 1 {
+		t.Fatalf("the run reports %+v and the handler got %v, want one unreadable source reported", res, errs)
 	}
 	if got := texts.getRequested(); len(got) != 0 {
 		t.Fatalf("text was asked for %v while a provider failed", got)

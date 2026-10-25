@@ -26,15 +26,15 @@ type memoryTexts struct {
 	versions []domain.TextVersion
 }
 
-func (m *memoryTexts) PutVersion(_ context.Context, pluginID string, put pluginport.PluginTextPut) (domain.TextVersion, error) {
-	if put.Key == "" || !put.Format.IsValid() {
+func (m *memoryTexts) PutVersion(_ context.Context, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
+	if params.Key == "" || !params.Format.IsValid() {
 		return domain.TextVersion{}, textport.ErrInvalidVersion
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	version := domain.TextVersion{
-		Path: put.Path, PluginID: pluginID, Key: put.Key, Input: put.Input, Format: put.Format,
-		InputHash: put.InputHash, Hash: put.Hash,
+		Path: params.Path, PluginID: pluginID, Key: params.Key, Input: params.Input, Format: params.Format,
+		InputHash: params.InputHash, Hash: params.Hash,
 	}
 	m.versions = append(m.versions, version)
 	return version, nil
@@ -82,7 +82,7 @@ func newTextClient(t *testing.T, fakeCallers *callers, token string) numenv1conn
 	return numenv1connect.NewHostTextServiceClient(server.Client(), server.URL, connect.WithInterceptors(transport.AuthInterceptor(token)))
 }
 
-func TestAPluginPutsListsReadsAndRemovesItsVersions(t *testing.T) {
+func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	ctx := t.Context()
 	fakeCallers := newCallers(nil)
 	fakeCallers.texts = &memoryTexts{}

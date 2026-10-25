@@ -2,8 +2,8 @@
  * The pages of a document and where the text relies on them.
  *
  * What is proved here is the crossing: a layout comes back as the sizes and the
- * one string the window carries a file as, and a run comes back as the places it
- * stands on, a page each.
+ * one string the window carries a file as, and a run comes back as its places,
+ * a page each.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { client, documents } from './wire'
@@ -56,8 +56,8 @@ describe('the address a page is drawn from', () => {
   })
 })
 
-describe('where a run of text remains', () => {
-  it('stands on the pages and in the rectangles the answer names', async () => {
+describe('where a run of text is placed', () => {
+  it('places a run on the pages and in the rectangles the answer lists', async () => {
     request.getHighlights.mockResolvedValue({
       runs: [
         {
@@ -93,7 +93,7 @@ describe('where a run of text remains', () => {
     })
   })
 
-  it('remains nowhere where the run stands nowhere', async () => {
+  it('places a run nowhere when the answer lists no places', async () => {
     request.getHighlights.mockResolvedValue({ runs: [{ places: [] }] })
 
     expect(await documents.getHighlights('Book.pdf', [{ from: 0, to: 9 }])).toEqual([[]])

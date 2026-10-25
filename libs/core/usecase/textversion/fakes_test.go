@@ -177,30 +177,30 @@ func (f *fakeProvider) GetText(_ context.Context, req textport.TextRequest) (tex
 }
 
 func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation) error {
-	put := textversion.VersionPut{Path: req.Path, Input: req.Input, Format: f.format}
+	params := textversion.VersionPut{Path: req.Path, Input: req.Input, Format: f.format}
 	var parts []domain.TextPart
 	if req.Input == "" {
-		put.InputHash = domain.HashContent(f.files[req.Path])
-		put.Key = "file-" + put.InputHash[:8]
+		params.InputHash = domain.HashContent(f.files[req.Path])
+		params.Key = "file-" + params.InputHash[:8]
 		parts = f.make(req.Path, domain.VersionText{}, false)
 	} else {
 		input, err := f.versions.GetVersionText(ctx, f.vault, req.Path, req.Input)
 		if err != nil {
 			return err
 		}
-		put.InputHash = input.Version.Hash
-		put.Key = "from-" + strings.ReplaceAll(string(req.Input), "/", "-")
+		params.InputHash = input.Version.Hash
+		params.Key = "from-" + strings.ReplaceAll(string(req.Input), "/", "-")
 		parts = f.make(req.Path, input, true)
 	}
-	put.Hash = domain.HashContent([]byte(domain.NewVersionText(domain.TextVersion{}, parts).Text))
+	params.Hash = domain.HashContent([]byte(domain.NewVersionText(domain.TextVersion{}, parts).Text))
 	f.mu.Lock()
 	if f.texts == nil {
 		f.texts = map[string][]domain.TextPart{}
 	}
-	f.texts[req.Path+"|"+put.Key] = parts
+	f.texts[req.Path+"|"+params.Key] = parts
 	f.created++
 	f.mu.Unlock()
-	_, err := f.versions.PutVersion(ctx, f.vault, f.pluginID, put)
+	_, err := f.versions.PutVersion(ctx, f.vault, f.pluginID, params)
 	return err
 }
 
@@ -221,11 +221,11 @@ func (f *fakeProvider) getCreated() int {
 // steppingClock is an instant a minute later at every reading.
 func steppingClock() func() time.Time {
 	var mu sync.Mutex
-	at := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
+	now := time.Date(2026, 3, 1, 9, 0, 0, 0, time.UTC)
 	return func() time.Time {
 		mu.Lock()
 		defer mu.Unlock()
-		at = at.Add(time.Minute)
-		return at
+		now = now.Add(time.Minute)
+		return now
 	}
 }

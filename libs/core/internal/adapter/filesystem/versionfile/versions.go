@@ -104,8 +104,8 @@ func (r repository) RemoveVersion(ctx context.Context, path string, id domain.Te
 	if err != nil {
 		return err
 	}
-	kept := slices.DeleteFunc(all, func(v domain.TextVersion) bool { return isSame(v, path, id) })
-	return r.write(ctx, kept)
+	rest := slices.DeleteFunc(all, func(v domain.TextVersion) bool { return isSame(v, path, id) })
+	return r.write(ctx, rest)
 }
 
 func isSame(v domain.TextVersion, path string, id domain.TextVersionID) bool {

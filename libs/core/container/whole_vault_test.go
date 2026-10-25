@@ -76,7 +76,7 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 		t.Fatal(err)
 	}
 	if trimmed.ErrorHandler == nil {
-		t.Error("a source whose text could not be read is told to no one")
+		t.Error("the error handler was not set for a source whose text could not be read")
 	}
 	if !trimmed.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")

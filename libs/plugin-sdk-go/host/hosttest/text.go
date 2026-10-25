@@ -75,21 +75,21 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
-func (t *Texts) PutVersion(_ context.Context, put host.TextPut) (domain.TextVersion, error) {
+func (t *Texts) PutVersion(_ context.Context, params host.TextPut) (domain.TextVersion, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if put.Path == "" || put.Key == "" || !put.Format.IsValid() {
+	if params.Path == "" || params.Key == "" || !params.Format.IsValid() {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	version := domain.TextVersion{
-		Path: put.Path, PluginID: t.pluginID, Key: put.Key, Input: put.Input, Format: put.Format,
-		InputHash: put.InputHash, Hash: put.Hash,
+		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Input: params.Input, Format: params.Format,
+		InputHash: params.InputHash, Hash: params.Hash,
 	}
-	if put.Input == version.GetID() || (put.Input != "" && w.indexOf(put.Path, put.Input) < 0) {
+	if params.Input == version.GetID() || (params.Input != "" && w.indexOf(params.Path, params.Input) < 0) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
-	if i := w.indexOf(put.Path, version.GetID()); i >= 0 {
+	if i := w.indexOf(params.Path, version.GetID()); i >= 0 {
 		version.CreateTime = w.versions[i].CreateTime
 		w.versions[i] = version
 	} else {
@@ -97,7 +97,7 @@ func (t *Texts) PutVersion(_ context.Context, put host.TextPut) (domain.TextVers
 		version.CreateTime = w.clock
 		w.versions = append(w.versions, version)
 	}
-	w.changes = append(w.changes, put.Path)
+	w.changes = append(w.changes, params.Path)
 	return version, nil
 }
 

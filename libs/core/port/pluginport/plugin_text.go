@@ -9,7 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// ErrInvalidTextInput is a text input that names nothing to read, or names it wrongly.
+// ErrInvalidTextInput is a text input that points at no version, or at the wrong one.
 var ErrInvalidTextInput = errors.New("invalid text input")
 
 // PluginTextInput is what a plugin makes text from: files of the types Files
@@ -78,7 +78,7 @@ type PluginTextPage struct {
 // that call the host work them.
 type PluginTexts interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key.
-	PutVersion(ctx context.Context, pluginID string, put PluginTextPut) (domain.TextVersion, error)
+	PutVersion(ctx context.Context, pluginID string, params PluginTextPut) (domain.TextVersion, error)
 	// RemoveVersion removes the record of a version of the plugin.
 	RemoveVersion(ctx context.Context, pluginID, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.
@@ -87,7 +87,7 @@ type PluginTexts interface {
 	ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (PluginTextPage, error)
 }
 
-// PluginTextHost is what the host is told about the text versions plugins work.
+// PluginTextHost receives the text versions that plugins work on.
 type PluginTextHost interface {
 	// SetPluginTexts is the text versions of the shown vault the plugins work. Nil is none.
 	SetPluginTexts(texts PluginTexts)

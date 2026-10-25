@@ -88,35 +88,35 @@ type VersionPut struct {
 // PutVersion records a version of the plugin, or replaces the record of the
 // one it has under the key. A replaced version keeps the time it was first
 // made.
-func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, put VersionPut) (domain.TextVersion, error) {
+func (u *Versions) PutVersion(ctx context.Context, v domain.Vault, pluginID string, params VersionPut) (domain.TextVersion, error) {
 	if _, ok := u.findPlugin(pluginID); !ok {
 		return domain.TextVersion{}, fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
 	}
-	if put.Path == "" || put.Key == "" || !put.Format.IsValid() {
-		return domain.TextVersion{}, fmt.Errorf("%w: path %q, key %q, format %q", textport.ErrInvalidVersion, put.Path, put.Key, put.Format)
+	if params.Path == "" || params.Key == "" || !params.Format.IsValid() {
+		return domain.TextVersion{}, fmt.Errorf("%w: path %q, key %q, format %q", textport.ErrInvalidVersion, params.Path, params.Key, params.Format)
 	}
 	repo, err := u.repos.Open(v)
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
-	versions, err := repo.GetVersions(ctx, put.Path)
+	versions, err := repo.GetVersions(ctx, params.Path)
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
 	version := domain.TextVersion{
-		Path: put.Path, PluginID: pluginID, Key: put.Key, Input: put.Input,
-		Format: put.Format, InputHash: put.InputHash, Hash: put.Hash, CreateTime: u.clock(),
+		Path: params.Path, PluginID: pluginID, Key: params.Key, Input: params.Input,
+		Format: params.Format, InputHash: params.InputHash, Hash: params.Hash, CreateTime: u.clock(),
 	}
-	if put.Input == version.GetID() || (put.Input != "" && !hasVersion(versions, put.Input)) {
-		return domain.TextVersion{}, fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, put.Input, put.Path)
+	if params.Input == version.GetID() || (params.Input != "" && !hasVersion(versions, params.Input)) {
+		return domain.TextVersion{}, fmt.Errorf("%w: %s is no other version of %s", textport.ErrInvalidVersion, params.Input, params.Path)
 	}
 	if i := indexOf(versions, version.GetID()); i >= 0 {
 		version.CreateTime = versions[i].CreateTime
 	}
 	if err := repo.SaveVersion(ctx, version); err != nil {
-		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), put.Path, err)
+		return domain.TextVersion{}, fmt.Errorf("save version %s of %s: %w", version.GetID(), params.Path, err)
 	}
-	u.reportChanged(v, put.Path)
+	u.reportChanged(v, params.Path)
 	return version, nil
 }
 

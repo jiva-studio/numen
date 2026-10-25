@@ -625,8 +625,8 @@ func newExtract(shelves vaults, sources sourceport.SourceRepository, queries sou
 }
 
 // newExtractWithTexts is newExtract, and the text versions a test puts more of.
-func newExtractWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Extract, *shelfTexts) {
-	texts := newShelfTexts(shelves)
+func newExtractWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Extract, *libraryTexts) {
+	texts := newLibraryTexts(shelves)
 	return NewExtract(shelves, sources, queries, texts), texts
 }
 

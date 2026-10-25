@@ -21,13 +21,13 @@ import (
 // textHost answers HostTextService with what a test set, and records what it was put.
 type textHost struct {
 	numenv1connect.UnimplementedHostTextServiceHandler
-	code v1.TextErrorCode
-	put  *v1.PutTextVersionRequest
-	auth string
+	code    v1.TextErrorCode
+	request *v1.PutTextVersionRequest
+	auth    string
 }
 
 func (h *textHost) PutTextVersion(_ context.Context, req *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error) {
-	h.put, h.auth = req.Msg, req.Header().Get("Authorization")
+	h.request, h.auth = req.Msg, req.Header().Get("Authorization")
 	if h.code != v1.TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED {
 		return connect.NewResponse(&v1.PutTextVersionResponse{Error: h.code}), nil
 	}
@@ -61,7 +61,7 @@ func newTextClient(t *testing.T, h *textHost) *host.TextClient {
 	return host.NewTextClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"})
 }
 
-func TestTheTextClientPutsListsAndReadsThroughTheHost(t *testing.T) {
+func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 	ctx := t.Context()
 	h := &textHost{}
 	client := newTextClient(t, h)
@@ -70,8 +70,8 @@ func TestTheTextClientPutsListsAndReadsThroughTheHost(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.put.GetFormat() != v1.TextFormat_TEXT_FORMAT_TIMED || h.put.GetInputVersionId() != "q/x" || h.auth != "Bearer tok" {
-		t.Fatalf("the host was put %v with %q", h.put, h.auth)
+	if h.request.GetFormat() != v1.TextFormat_TEXT_FORMAT_TIMED || h.request.GetInputVersionId() != "q/x" || h.auth != "Bearer tok" {
+		t.Fatalf("the host received %v with %q", h.request, h.auth)
 	}
 	if version.GetID() != "p/k" || version.Format != domain.TextFormatTimed || !version.CreateTime.Equal(time.UnixMilli(1_700_000_000_000)) {
 		t.Fatalf("version %+v", version)

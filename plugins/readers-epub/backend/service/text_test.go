@@ -123,7 +123,7 @@ func TestTheBookReaderMakesTextOfFilesOnly(t *testing.T) {
 	}
 }
 
-func TestALongTextIsCutIntoPartsOnWholeCharacters(t *testing.T) {
+func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	text := strings.Repeat("ж", partBytes) + "end"
 	sections := []epub.Part{{Title: "One", Offset: 0}, {Title: "Inner", Offset: 0}, {Title: "Two", Offset: 2 * partBytes}}
 

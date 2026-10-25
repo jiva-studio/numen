@@ -526,7 +526,7 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 	}
 }
 
-func TestAChangeOfVersionsAsksForTheFileToBeCutAgain(t *testing.T) {
+func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 	worker := NewWorker(Config{Quiet: time.Hour, After: time.After})
 	session := worker.NewSession()
 	v := domain.Vault{ID: "v1"}

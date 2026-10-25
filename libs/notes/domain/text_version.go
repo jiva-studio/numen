@@ -85,13 +85,13 @@ func IsLiveVersion(
 	for _, v := range versions {
 		byID[v.GetID()] = v
 	}
-	seen := map[TextVersionID]bool{}
+	visited := map[TextVersionID]bool{}
 	for {
 		v, ok := byID[id]
-		if !ok || seen[id] || !isEnabled(v.PluginID) {
+		if !ok || visited[id] || !isEnabled(v.PluginID) {
 			return false
 		}
-		seen[id] = true
+		visited[id] = true
 		if v.IsFromFile() {
 			return v.InputHash == fileHash
 		}
@@ -134,16 +134,16 @@ func HasPluginInChain(versions []TextVersion, id TextVersionID, pluginID string)
 	for _, v := range versions {
 		byID[v.GetID()] = v
 	}
-	seen := map[TextVersionID]bool{}
+	visited := map[TextVersionID]bool{}
 	for {
 		v, ok := byID[id]
-		if !ok || seen[id] {
+		if !ok || visited[id] {
 			return false
 		}
 		if v.PluginID == pluginID {
 			return true
 		}
-		seen[id] = true
+		visited[id] = true
 		id = v.Input
 	}
 }

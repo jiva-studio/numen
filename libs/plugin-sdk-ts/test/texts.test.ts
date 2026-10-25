@@ -58,7 +58,7 @@ describe('the text versions of a vault', () => {
     })
   })
 
-  it('tells a handler of every file whose versions change, until it is disposed', async () => {
+  it('notifies a handler of every file whose versions change, until it is disposed', async () => {
     const texts = createMockVaultTexts()
     const changed: string[] = []
     const subscription = texts.onVersionsChange((path) => changed.push(path))

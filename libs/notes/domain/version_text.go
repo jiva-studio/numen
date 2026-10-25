@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-// TextPlace is where a part of a text stands in the file it was made from: on
+// TextPlace is where a part of a text lies in the file it was made from: on
 // a page and inside rectangles of it, for positioned text; between two moments,
 // for timed text. Plain text has no place.
 //
@@ -20,7 +20,7 @@ type TextPlace struct {
 	End   time.Duration
 }
 
-// TextPart is one run of a version's text and where it stands. Section names
+// TextPart is one run of a version's text and its place. Section names
 // the section the part opens, and is empty for a part inside one.
 type TextPart struct {
 	Text    string
@@ -71,8 +71,8 @@ func (t VersionText) GetNamesAt(offset int) []string {
 	return names
 }
 
-// Locate is what a person is told an offset is at: the section it falls in,
-// and the page or the moment its part stands at. Empty where the version names
+// Locate describes an offset: the section it falls in, and the page or the
+// moment of its part. Empty where the version names
 // neither.
 func (t VersionText) Locate(offset int) string {
 	i := sort.Search(len(t.offsets), func(i int) bool { return t.offsets[i] > offset }) - 1
@@ -117,8 +117,8 @@ func (t VersionText) GetBoxes(run ByteSpan) []HighlightBox {
 
 // FormatClock is a moment of a recording as a person reads it: minutes and
 // seconds, with hours in front once there are any.
-func FormatClock(at time.Duration) string {
-	whole := max(int64(at/time.Second), 0)
+func FormatClock(offset time.Duration) string {
+	whole := max(int64(offset/time.Second), 0)
 	m, s := whole/60%60, whole%60
 	if hours := whole / 3600; hours > 0 {
 		return strconv.FormatInt(hours, 10) + fmt.Sprintf(":%02d:%02d", m, s)

@@ -66,10 +66,10 @@ func failText(code v1.TextErrorCode) error {
 	return fmt.Errorf("host: rejected with code %s", code)
 }
 
-func (c *TextClient) PutVersion(ctx context.Context, put TextPut) (domain.TextVersion, error) {
+func (c *TextClient) PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error) {
 	res, err := c.rpc.PutTextVersion(ctx, connect.NewRequest(&v1.PutTextVersionRequest{
-		Path: put.Path, Key: put.Key, InputVersionId: string(put.Input), Format: writeTextFormat(put.Format),
-		InputHash: put.InputHash, Hash: put.Hash,
+		Path: params.Path, Key: params.Key, InputVersionId: string(params.Input), Format: writeTextFormat(params.Format),
+		InputHash: params.InputHash, Hash: params.Hash,
 	}))
 	if err != nil {
 		return domain.TextVersion{}, err

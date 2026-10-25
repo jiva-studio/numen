@@ -158,7 +158,7 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	for page := range book.Pages {
 		for _, part := range getLayerParts(book, page, page+1, boxes) {
 			if part.Place.Page != page {
-				t.Errorf("a part of page %d stands on page %d", page, part.Place.Page)
+				t.Errorf("a part of page %d is placed on page %d", page, part.Place.Page)
 			}
 			if part.Section != "" {
 				sections++
@@ -242,11 +242,11 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 		t.Fatalf("%d runs, want the 2 asked about", len(runs))
 	}
 	if places := runs[0].GetPlaces(); len(places) != 1 || places[0].GetPage() != 1 || len(places[0].GetRects()) != 1 {
-		t.Errorf("zeta stands at %v, want one rectangle on page 1", places)
+		t.Errorf("zeta is placed at %v, want one rectangle on page 1", places)
 	}
 	places := runs[1].GetPlaces()
 	if len(places) != 2 || places[0].GetPage() != 0 || places[1].GetPage() != 1 {
-		t.Fatalf("beta to zeta stands at %v, want pages 0 and 1", places)
+		t.Fatalf("beta to zeta is placed at %v, want pages 0 and 1", places)
 	}
 	if len(places[0].GetRects()) != 2 || len(places[1].GetRects()) != 3 {
 		t.Errorf("beta to zeta covers %d and %d words, want 2 and 3", len(places[0].GetRects()), len(places[1].GetRects()))

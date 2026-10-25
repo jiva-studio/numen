@@ -46,7 +46,7 @@ type TextPage struct {
 type Texts interface {
 	// PutVersion records a version of the plugin, or replaces the one it has under the key, and tells
 	// the host the text of the file changed.
-	PutVersion(ctx context.Context, put TextPut) (domain.TextVersion, error)
+	PutVersion(ctx context.Context, params TextPut) (domain.TextVersion, error)
 	// RemoveVersion removes the record of a version of the plugin.
 	RemoveVersion(ctx context.Context, path, key string) error
 	// ListVersions is the versions of a file and which of them is live.

@@ -24,13 +24,13 @@ func positioned(words ...string) []domain.TextPart {
 
 // newHighlight is a Highlight over one vault holding one scanned document, the
 // text versions of it, and the vault itself.
-func newHighlight(t *testing.T) (Highlight, *store, *shelfTexts, *library) {
+func newHighlight(t *testing.T) (Highlight, *store, *libraryTexts, *library) {
 	t.Helper()
 	shelved := newLibrary()
 	shelved.hold(documentPath, domain.KindBook, []byte("%PDF the first printing"), 1)
 	index := newStore()
 	shelves := vaults{first.ID: shelved}
-	texts := newShelfTexts(shelves)
+	texts := newLibraryTexts(shelves)
 	return NewHighlight(shelves, index, texts), index, texts, shelved
 }
 
@@ -63,7 +63,7 @@ func getPages(boxes []domain.HighlightBox) []int {
 	return out
 }
 
-func TestARunIsLitOnThePagesOfTheVersionItWasCutFrom(t *testing.T) {
+func TestRunIsHighlightedOnThePagesOfTheIndexedVersion(t *testing.T) {
 	hl, index, texts, shelved := newHighlight(t)
 	version := texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana", "vrksa", "bija"))
 	recordCut(t, index, shelved, version)
@@ -93,10 +93,10 @@ func TestARunIsLitOnThePagesOfTheVersionItWasCutFrom(t *testing.T) {
 
 // The runs are places in the version the index cut, and a newer version of the
 // same bytes has other words at those places.
-func TestARunIsReadFromTheVersionTheIndexCutAndNotTheNewestOne(t *testing.T) {
+func TestRunIsReadFromTheIndexedVersionNotTheNewestOne(t *testing.T) {
 	hl, index, texts, shelved := newHighlight(t)
-	cut := texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana", "vrksa"))
-	recordCut(t, index, shelved, cut)
+	indexed := texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana", "vrksa"))
+	recordCut(t, index, shelved, indexed)
 	texts.put(first, documentPath, "test.proofreader", domain.TextFormatPositioned, positioned("jala", "grama"))
 
 	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 0, To: 6}})
@@ -108,7 +108,7 @@ func TestARunIsReadFromTheVersionTheIndexCutAndNotTheNewestOne(t *testing.T) {
 	}
 }
 
-func TestAFileRewrittenSinceItWasCutIsLitFromItsLiveVersion(t *testing.T) {
+func TestRewrittenFileIsHighlightedFromItsLiveVersion(t *testing.T) {
 	hl, index, texts, shelved := newHighlight(t)
 	recordCut(t, index, shelved, texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana")))
 
@@ -149,7 +149,7 @@ func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
 	}
 }
 
-func TestASourceWhoseVersionIsGoneIsLitNowhere(t *testing.T) {
+func TestSourceWithoutVersionIsNotHighlighted(t *testing.T) {
 	hl, index, texts, shelved := newHighlight(t)
 	recordCut(t, index, shelved, texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana")))
 	texts.drop(documentPath)

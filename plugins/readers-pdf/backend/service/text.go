@@ -160,10 +160,10 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 	if last < len(book.Pages) {
 		end = book.Pages[last].Offset
 	}
-	cut := layerCut{text: book.Text}
+	layers := layerCut{text: book.Text}
 	for _, part := range book.Parts {
 		if part.Offset >= book.Pages[first].Offset && part.Offset < end {
-			cut.sections = append(cut.sections, part)
+			layers.sections = append(layers.sections, part)
 		}
 	}
 	for page := first; page < last; page++ {
@@ -171,9 +171,9 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 		if page+1 < len(book.Pages) {
 			pageEnd = book.Pages[page+1].Offset
 		}
-		boxes = cut.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
+		boxes = layers.addPage(page, book.Pages[page].Offset, pageEnd, boxes)
 	}
-	return cut.parts
+	return layers.parts
 }
 
 // layerCut is the parts of a text layer cut so far, and the outline entries still to open.

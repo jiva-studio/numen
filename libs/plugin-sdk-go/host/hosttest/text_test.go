@@ -11,7 +11,7 @@ import (
 )
 
 // A proofreader reads the live version another plugin made, and puts its own made from it.
-func TestAProofreaderReadsTheLiveVersionAndPutsItsOwn(t *testing.T) {
+func TestHostTestTextsReadLiveVersionAndSaveOwn(t *testing.T) {
 	ctx := t.Context()
 	file := []byte("%PDF")
 	ocr := hosttest.NewTexts("v1", "org.example.ocr")
@@ -52,12 +52,12 @@ func TestAProofreaderReadsTheLiveVersionAndPutsItsOwn(t *testing.T) {
 
 func TestAVersionThatIsNotOneIsRefused(t *testing.T) {
 	texts := hosttest.NewTexts("v1", "org.example.ocr")
-	for name, put := range map[string]host.TextPut{
+	for name, params := range map[string]host.TextPut{
 		"no key":             {Path: "a.pdf", Format: domain.TextFormatPlain},
 		"no format":          {Path: "a.pdf", Key: "k"},
 		"an input not there": {Path: "a.pdf", Key: "k", Format: domain.TextFormatPlain, Input: "x/y"},
 	} {
-		if _, err := texts.PutVersion(t.Context(), put); !errors.Is(err, host.ErrInvalidVersion) {
+		if _, err := texts.PutVersion(t.Context(), params); !errors.Is(err, host.ErrInvalidVersion) {
 			t.Errorf("%s: got %v", name, err)
 		}
 	}

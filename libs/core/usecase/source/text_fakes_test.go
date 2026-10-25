@@ -14,10 +14,10 @@ import (
 // bookReader is the plugin whose version every book the stand-in reads has.
 const bookReader = "test.books"
 
-// shelfTexts is the text versions of the libraries a test holds. A book the
+// libraryTexts is the text versions of the libraries a test holds. A book the
 // stand-in reads has a version of bookReader, made from the bytes it holds now;
 // a test puts any other version with put.
-type shelfTexts struct {
+type libraryTexts struct {
 	shelves vaults
 
 	mu    sync.Mutex
@@ -33,12 +33,12 @@ type placedVersion struct {
 	parts   []domain.TextPart
 }
 
-func newShelfTexts(shelves vaults) *shelfTexts {
-	return &shelfTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}}
+func newLibraryTexts(shelves vaults) *libraryTexts {
+	return &libraryTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}}
 }
 
 // put gives a file a version made from its bytes as they are now. The newest put is live.
-func (s *shelfTexts) put(v domain.Vault, path, pluginID string, format domain.TextFormat, parts []domain.TextPart) domain.TextVersion {
+func (s *libraryTexts) put(v domain.Vault, path, pluginID string, format domain.TextFormat, parts []domain.TextPart) domain.TextVersion {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw := s.shelves[v.ID].files[path].raw
@@ -50,29 +50,29 @@ func (s *shelfTexts) put(v domain.Vault, path, pluginID string, format domain.Te
 }
 
 // drop removes every version a test put on a file.
-func (s *shelfTexts) drop(path string) {
+func (s *libraryTexts) drop(path string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	delete(s.extra, path)
 }
 
-func (s *shelfTexts) getRequested() []string {
+func (s *libraryTexts) getRequested() []string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	return slices.Clone(s.requested)
 }
 
-func (s *shelfTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
-	return shelfVaultTexts{texts: s, vault: v}, nil
+func (s *libraryTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
+	return libraryVaultTexts{texts: s, vault: v}, nil
 }
 
-type shelfVaultTexts struct {
-	texts *shelfTexts
+type libraryVaultTexts struct {
+	texts *libraryTexts
 	vault domain.Vault
 }
 
 // findLive is the live version of a file and its parts.
-func (t shelfVaultTexts) findLive(ctx context.Context, path, fileHash string) (placedVersion, error) {
+func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) (placedVersion, error) {
 	s := t.texts
 	s.mu.Lock()
 	failure := s.failure
@@ -116,7 +116,7 @@ func (t shelfVaultTexts) findLive(ctx context.Context, path, fileHash string) (p
 	return made, nil
 }
 
-func (t shelfVaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
+func (t libraryVaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
 	live, err := t.findLive(ctx, path, fileHash)
 	if err != nil {
 		return "", err
@@ -124,7 +124,7 @@ func (t shelfVaultTexts) FindLiveVersion(ctx context.Context, path, fileHash str
 	return live.version.GetID(), nil
 }
 
-func (t shelfVaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
+func (t libraryVaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
 	live, err := t.findLive(ctx, path, fileHash)
 	if err != nil {
 		return domain.VersionText{}, err
@@ -132,7 +132,7 @@ func (t shelfVaultTexts) GetLiveText(ctx context.Context, path, fileHash string)
 	return domain.NewVersionText(live.version, live.parts), nil
 }
 
-func (t shelfVaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
+func (t libraryVaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	t.texts.mu.Lock()
 	extra := slices.Clone(t.texts.extra[path])
 	t.texts.mu.Unlock()
@@ -152,7 +152,7 @@ func (t shelfVaultTexts) GetVersionText(ctx context.Context, path string, id dom
 	return domain.NewVersionText(live.version, live.parts), nil
 }
 
-func (t shelfVaultTexts) RequestText(_ context.Context, path, _ string) error {
+func (t libraryVaultTexts) RequestText(_ context.Context, path, _ string) error {
 	t.texts.mu.Lock()
 	defer t.texts.mu.Unlock()
 	t.texts.requested = append(t.texts.requested, path)

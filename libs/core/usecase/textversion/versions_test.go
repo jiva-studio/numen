@@ -282,12 +282,12 @@ func TestDeleteVersionAsksTheOwningPlugin(t *testing.T) {
 	}
 }
 
-func TestPutVersionRefusesWhatIsNotAVersion(t *testing.T) {
+func TestSaveVersionRejectsInvalidVersions(t *testing.T) {
 	s := newScene(t)
 	ctx := t.Context()
 	cases := map[string]struct {
 		pluginID string
-		put      textversion.VersionPut
+		params   textversion.VersionPut
 		want     error
 	}{
 		"a plugin that makes no text": {"org.numen.other", textversion.VersionPut{Path: scanPath, Key: "k", Format: domain.TextFormatPlain}, textport.ErrNotTextPlugin},
@@ -297,7 +297,7 @@ func TestPutVersionRefusesWhatIsNotAVersion(t *testing.T) {
 		"itself as its input":         {ocr, textversion.VersionPut{Path: scanPath, Key: "k", Format: domain.TextFormatPlain, Input: domain.NewTextVersionID(ocr, "k")}, textport.ErrInvalidVersion},
 	}
 	for name, c := range cases {
-		if _, err := s.versions.PutVersion(ctx, s.vault, c.pluginID, c.put); !errors.Is(err, c.want) {
+		if _, err := s.versions.PutVersion(ctx, s.vault, c.pluginID, c.params); !errors.Is(err, c.want) {
 			t.Errorf("%s: got %v, want %v", name, err, c.want)
 		}
 	}
@@ -306,15 +306,15 @@ func TestPutVersionRefusesWhatIsNotAVersion(t *testing.T) {
 	}
 }
 
-func TestPutVersionKeepsTheTimeAVersionWasFirstMade(t *testing.T) {
+func TestSaveVersionPreservesCreateTime(t *testing.T) {
 	s := newScene(t)
-	put := textversion.VersionPut{Path: scanPath, Key: "k", Format: domain.TextFormatPositioned, InputHash: s.fileHash(), Hash: "1"}
-	first, err := s.versions.PutVersion(t.Context(), s.vault, ocr, put)
+	params := textversion.VersionPut{Path: scanPath, Key: "k", Format: domain.TextFormatPositioned, InputHash: s.fileHash(), Hash: "1"}
+	first, err := s.versions.PutVersion(t.Context(), s.vault, ocr, params)
 	if err != nil {
 		t.Fatal(err)
 	}
-	put.Hash = "2"
-	second, err := s.versions.PutVersion(t.Context(), s.vault, ocr, put)
+	params.Hash = "2"
+	second, err := s.versions.PutVersion(t.Context(), s.vault, ocr, params)
 	if err != nil {
 		t.Fatal(err)
 	}

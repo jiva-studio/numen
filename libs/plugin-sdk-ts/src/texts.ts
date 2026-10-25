@@ -1,6 +1,6 @@
 import type { Disposable, Result } from './types'
 
-// TextFormat is the shape of a text version's places: plain text has none, timed text stands at
+// TextFormat is the shape of a text version's places: plain text has none, timed text is placed at
 // moments of a recording, positioned text in rectangles on pages.
 export type TextFormat = 'plain' | 'timed' | 'positioned'
 
