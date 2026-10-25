@@ -1,4 +1,4 @@
-package embedding
+package vectors
 
 import (
 	"cmp"
@@ -12,7 +12,7 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -245,7 +245,7 @@ func (u Embed) sendBatches(
 	out chan<- preparedBatch,
 ) error {
 	pos := 0
-	for _, batch := range embedding.Batches(texts, u.BatchCharacters) {
+	for _, batch := range splitBatches(texts, u.BatchCharacters) {
 		prep, err := u.prepareBatch(ctx, model, chunks[pos:pos+len(batch)], batch)
 		if err != nil {
 			return err
@@ -461,7 +461,7 @@ func (u Embed) prepareBatch(
 			Model:   model,
 			Kind:    embeddingport.QuantisedInt8,
 			Value:   value,
-			Coarse:  embedding.Coarse(embedding.Dimensions(value)),
+			Coarse:  vector.Coarse(vector.Dimensions(value)),
 		}
 		prep.reusedCount++
 	}
@@ -506,11 +506,11 @@ func (u Embed) inferBatch(ctx context.Context, prep preparedBatch) (completedBat
 			if len(v) != prep.model.Dimensions {
 				return completedBatch{}, fmt.Errorf("%s answered with %d dimensions", prep.model, len(v))
 			}
-			v = embedding.Normalise(v)
-			quantised := embedding.Bytes(v)
+			v = vector.Normalise(v)
+			quantised := vector.Bytes(v)
 			unique[i] = uniqueVector{
 				value:  packVector(quantised),
-				coarse: embedding.Coarse(quantised),
+				coarse: vector.Coarse(quantised),
 			}
 		}
 	}

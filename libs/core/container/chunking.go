@@ -3,10 +3,10 @@ package container
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -55,11 +55,11 @@ func (c Config) ReadWholeVault(
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	vectors, err := c.Embed(db, embedder, v)
+	embed, err := c.Embed(db, embedder, v)
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	return vault.NewReadWholeVault(c.Scan(db), books, vectors), nil
+	return vault.NewReadWholeVault(c.Scan(db), books, embed), nil
 }
 
 // syncVectorIndex fits the vector index to the model's width, and on a rebuild
@@ -82,12 +82,12 @@ func (c Config) syncVectorIndex(ctx context.Context, db *Index, model embeddingp
 }
 
 // Embed gives a vault's chunks the vectors they owe.
-func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault) (embedding.Embed, error) {
+func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectors.Embed, error) {
 	derived, err := c.GetDerivedStores().Open(v)
 	if err != nil {
-		return embedding.Embed{}, err
+		return vectors.Embed{}, err
 	}
-	embed := embedding.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
+	embed := vectors.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
 	embed.Derived = derived
 	embed.Texts = c.getTextReaders()
 	embed.Embedder = embedder

@@ -8,14 +8,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 const dimensions = 1024
 
 func preciseBytes(v []float32) []byte {
-	q := embedding.Bytes(embedding.Normalise(v))
+	q := vector.Bytes(vector.Normalise(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

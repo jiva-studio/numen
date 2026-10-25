@@ -11,9 +11,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport/indexfile"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -119,7 +119,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: raw, Recipe: model.Recipe(),
-			Value: precise(direction), Coarse: embedding.Bits(direction),
+			Value: precise(direction), Coarse: vector.Bits(direction),
 		})
 	}
 	if err := c.db.Chunks().SaveVectors(t.Context(), vectors); err != nil {
@@ -129,7 +129,7 @@ func (c corpus) vectorise(t *testing.T, v domain.Vault, direction []float32) {
 
 // precise is the full-precision half of a vector, one signed byte per dimension.
 func precise(v []float32) []byte {
-	q := embedding.Bytes(embedding.Normalise(slices.Clone(v)))
+	q := vector.Bytes(vector.Normalise(slices.Clone(v)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

@@ -15,11 +15,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
@@ -88,11 +88,11 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
-			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
-			vectors.Derived, vectors.Texts = store, testsupport.Texts{Readers: readers}
+			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
+			embed.Derived, embed.Texts = store, testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
-				Read: vaults.NewReadWholeVault(notes, books, vectors),
+				Read: vaults.NewReadWholeVault(notes, books, embed),
 				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
 					return db.NoteQueries().GetSummary(ctx, v.ID)
 				},

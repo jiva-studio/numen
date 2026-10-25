@@ -9,7 +9,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	_ "modernc.org/sqlite"
 )
@@ -111,8 +111,8 @@ func setupTestDB(t testing.TB, count int, dims int) (*Queries, []int64, []float3
 				vec[d] = -1.0
 			}
 		}
-		norm := embedding.Normalise(vec)
-		qBytes := embedding.Bytes(norm)
+		norm := vector.Normalise(vec)
+		qBytes := vector.Bytes(norm)
 		stored := make([]byte, len(qBytes))
 		for d, v := range qBytes {
 			stored[d] = byte(v)

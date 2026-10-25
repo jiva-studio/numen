@@ -13,8 +13,8 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -53,7 +53,7 @@ func getVectorForSeed(seed byte) []float32 {
 
 // getPreciseBytes is the full-precision half of a vector, one signed byte per dimension.
 func getPreciseBytes(v []float32) []byte {
-	q := embedding.Bytes(embedding.Normalise(v))
+	q := vector.Bytes(vector.Normalise(v))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

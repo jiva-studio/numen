@@ -9,7 +9,7 @@ import (
 	"strconv"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/sqlwrite"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 )
 
 // declaredWidth reads the width out of the statement the table was created by,
@@ -108,7 +108,7 @@ func fillCoarse(ctx context.Context, tx *sqlwrite.Transaction, dims int, recipe 
 		if err := rows.Scan(&one.chunk, &one.vault, &value); err != nil {
 			return fmt.Errorf("the vectors the recipe holds: %w", err)
 		}
-		one.bits = embedding.Coarse(embedding.Dimensions(value))
+		one.bits = vector.Coarse(vector.Dimensions(value))
 		target = append(target, one)
 	}
 	if err := rows.Err(); err != nil {

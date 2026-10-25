@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -55,7 +55,7 @@ func embedFromKeptVectors(t *testing.T, db *DB, vault domain.Vault) int {
 		}
 		vectors = append(vectors, chunk.Vector{
 			Chunk: p.Chunk, Hash: hashes[i], Recipe: testRecipe,
-			Value: value, Coarse: embedding.Coarse(embedding.Dimensions(value)),
+			Value: value, Coarse: vector.Coarse(vector.Dimensions(value)),
 		})
 	}
 	if err := db.Chunks().SaveVectors(ctx, vectors); err != nil {

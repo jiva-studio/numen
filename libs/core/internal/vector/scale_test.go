@@ -1,4 +1,4 @@
-package embedding_test
+package vector_test
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 
 	"pgregory.net/rapid"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
@@ -29,7 +29,7 @@ func unit(rng *rand.Rand, d int) []float32 {
 	for i := range v {
 		v[i] = float32(rng.NormFloat64())
 	}
-	return embedding.Normalise(v)
+	return vector.Normalise(v)
 }
 
 // exact is the cosine of two vectors before either is quantised, which is what
@@ -61,7 +61,7 @@ func TestOneScaleServesEveryWidth(t *testing.T) {
 		const trials = 200
 		for range trials {
 			query, doc := unit(rng, d), unit(rng, d)
-			stored := embedding.Bytes(doc)
+			stored := vector.Bytes(doc)
 			for _, q := range stored {
 				levels += math.Abs(float64(q))
 			}
@@ -99,7 +99,7 @@ func TestQuantisingCostsTheSameAtEveryWidth(t *testing.T) {
 		rng := rand.New(rand.NewPCG(rapid.Uint64().Draw(t, "seed"), 1))
 
 		query, doc := unit(rng, d), unit(rng, d)
-		stored := embedding.Bytes(doc)
+		stored := vector.Bytes(doc)
 		for i, q := range stored {
 			if q == 127 || q == -127 {
 				t.Fatalf("dimension %d of a unit vector of %d reached the scale", i, d)
@@ -118,5 +118,5 @@ func similarity(query []float32, stored []int8) float64 {
 	for i, q := range stored {
 		raw[i] = byte(q)
 	}
-	return embedding.SimilarityBytes(query, raw)
+	return vector.SimilarityBytes(query, raw)
 }

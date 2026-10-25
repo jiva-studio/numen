@@ -1,4 +1,4 @@
-package embedding
+package vectors
 
 func (*embedder) Concurrency() int { return 1 }
 

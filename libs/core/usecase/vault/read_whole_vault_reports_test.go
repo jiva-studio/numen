@@ -8,9 +8,9 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
@@ -74,17 +74,17 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	if err := db.FitVectors(t.Context(), width, pointing{}.GetModel().Recipe()); err != nil {
 		t.Fatal(err)
 	}
-	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = pointing{}
+	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
-		vectors,
+		embed,
 	)
 	var notes, books, made atomic.Int32
 	making.OnNotesProgress = func(vaults.ScanResult) { notes.Add(1) }
 	making.OnBooksProgress = func(source.ExtractResult) { books.Add(1) }
-	making.OnVectorsProgress = func(embedding.EmbedResult) { made.Add(1) }
+	making.OnVectorsProgress = func(vectors.EmbedResult) { made.Add(1) }
 
 	result, err := making.Execute(t.Context(), v)
 	if err != nil {
@@ -117,7 +117,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	making := vaults.NewReadWholeVault(
 		notes,
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
-		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
+		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
 	result, err := making.Execute(t.Context(), v)
@@ -139,7 +139,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr}, nil),
-		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
+		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
@@ -164,12 +164,12 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 		t.Fatal(err)
 	}
 	stopErr := errors.New("the model has stopped")
-	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = failing{err: stopErr}
+	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	embed.Embedder = failing{err: stopErr}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
-		vectors,
+		embed,
 	)
 
 	result, err := making.Execute(t.Context(), v)
@@ -192,12 +192,12 @@ func TestARunThatEndedInTheBooksIsReportedWhatTheBooksHadCompleted(t *testing.T)
 	stopErr := errors.New("the books cannot be cut")
 	uncutter := uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr, onUnchunked: cancel}
 	counted := &counting{VaultReaders: readers}
-	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = pointing{}
+	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
+	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), uncutter, nil),
-		vectors,
+		embed,
 	)
 
 	result, err := making.Execute(ctx, v)
@@ -224,9 +224,9 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	books := source.NewExtract(readers, db.Sources(), uncutter, nil)
 	books.Kinds = []domain.SourceKind{domain.KindBook}
 	counted := &counting{VaultReaders: readers}
-	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = pointing{}
-	making := vaults.NewReadWholeVault(scanner(readers, db), books, vectors)
+	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
+	embed.Embedder = pointing{}
+	making := vaults.NewReadWholeVault(scanner(readers, db), books, embed)
 
 	_, _ = making.Execute(ctx, v)
 
@@ -259,7 +259,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	cutting := vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(unreadable{err: stopErr}, db.Sources(), db.SourcesKnown(), nil),
-		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
+		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
 	if !errors.Is(err, stopErr) {

@@ -7,9 +7,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 )
 
 func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
@@ -54,7 +54,7 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 			fmt.Fprintf(out, "  extracting %s\r", res.CurrentSource)
 		}
 	}
-	making.OnVectorsProgress = func(res embedding.EmbedResult) {
+	making.OnVectorsProgress = func(res vectors.EmbedResult) {
 		fmt.Fprintf(out, "  %d embedded\r", res.Embedded)
 	}
 

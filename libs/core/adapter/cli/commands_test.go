@@ -15,10 +15,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -468,16 +468,16 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 				db.Notes(),
 				db.NoteQueries(), db.Maintenance())
 			books := source.NewExtract(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
-			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
+			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {
 					_ = db.Close()
 					return cli.Scan{}, err
 				}
-				vectors.Embedder = s.embedder
+				embed.Embedder = s.embedder
 			}
 			return cli.Scan{
-				Read: vaults.NewReadWholeVault(notes, books, vectors),
+				Read: vaults.NewReadWholeVault(notes, books, embed),
 				Summary: func(ctx context.Context) (domain.VaultSummary, error) {
 					if s.summary != nil {
 						return domain.VaultSummary{}, s.summary

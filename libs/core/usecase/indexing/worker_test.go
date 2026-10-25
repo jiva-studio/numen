@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
@@ -73,14 +72,6 @@ func reading(t *testing.T) (container.EditorAssembly, *container.Index) {
 	return container.NewEditorAssembly(cfg, nil, db), db
 }
 
-// getModelWait blocks until the model behind an embedder has turned up.
-func getModelWait(embedder embeddingport.Embedder) WaitForModel {
-	if waiting, ok := embedder.(embedding.WaitingEmbedder); ok {
-		return waiting.Wait
-	}
-	return nil
-}
-
 // newPass is the indexing of one vault over an embedder, reporting into events.
 func newPass(
 	made container.EditorAssembly, db *container.Index, events Events, embedder embeddingport.Embedder, recipe string,
@@ -89,7 +80,6 @@ func newPass(
 	worker := NewWorker(Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
-		Wait:     getModelWait(embedder),
 		Owed: func(ctx context.Context, v domain.Vault) (int64, int64, error) {
 			return db.Progress().GetProgress(ctx, v.ID, recipe)
 		},
@@ -125,13 +115,10 @@ func fit(t *testing.T, db *container.Index, model embeddingport.Embedder) {
 	}
 }
 
-// asked is a model that answers a direction belonging to the text it was given.
-// It reaches nothing outside this process, and counts what it was asked.
+// fakeEmbedder is a model that answers a direction belonging to the text it was
+// given. It reaches nothing outside this process.
 type fakeEmbedder struct {
 	dims int
-
-	mu    sync.Mutex
-	calls int
 }
 
 func (a *fakeEmbedder) GetModel() embeddingport.EmbeddingModel {
@@ -139,10 +126,6 @@ func (a *fakeEmbedder) GetModel() embeddingport.EmbeddingModel {
 }
 
 func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, error) {
-	a.mu.Lock()
-	a.calls++
-	a.mu.Unlock()
-
 	out := make([][]float32, 0, len(texts))
 	for _, text := range texts {
 		out = append(out, direction(text, a.dims))
@@ -153,12 +136,6 @@ func (a *fakeEmbedder) Embed(_ context.Context, texts []string) ([][]float32, er
 func (*fakeEmbedder) Close() error { return nil }
 
 func (*fakeEmbedder) Concurrency() int { return 1 }
-
-func (a *fakeEmbedder) times() int {
-	a.mu.Lock()
-	defer a.mu.Unlock()
-	return a.calls
-}
 
 // direction is a vector that belongs to one text and no other.
 func direction(text string, dims int) []float32 {
@@ -278,71 +255,6 @@ func TestIndexingNamesTheSourceItIsOn(t *testing.T) {
 	}
 }
 
-// Every path into the pass runs on the one goroutine that also reads the books
-// and cuts what a recognition wrote, and a model is fetched and compiled in
-// minutes. A vault that owes nothing holds that goroutine for nothing.
-func TestAVaultOwingNoVectorWaitsForNoModel(t *testing.T) {
-	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
-
-	// The notes are on disk and nothing has cut them, so the index holds no
-	// chunk and owes no vector.
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-
-	// The weights are still coming down, and in this test they never land.
-	incoming := embedding.NewDeferredEmbedder(model.GetModel())
-
-	doneCh := make(chan struct{})
-	go func() {
-		defer close(doneCh)
-		newPass(made, db, newRecorder(), incoming.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
-			embed(t.Context())
-	}()
-
-	select {
-	case <-doneCh:
-	case <-time.After(10 * time.Second):
-		t.Fatal("the pass is waiting for a model to embed nothing with")
-	}
-}
-
-// Fetching a model is not indexing. A row that calls it by the name of the work
-// that follows sits at no share of nothing while the weights come down.
-func TestNothingIsIndexedWhileTheModelIsOnItsWay(t *testing.T) {
-	model := &fakeEmbedder{dims: 64}
-	made, db := reading(t)
-	fit(t, db, model)
-
-	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
-	cut(t, made, db, v)
-	events := newRecorder()
-
-	incoming := embedding.NewDeferredEmbedder(model.GetModel())
-	doneCh := make(chan struct{})
-	go func() {
-		defer close(doneCh)
-		newPass(made, db, events, incoming.GetWaitingEmbedder(), model.GetModel().Recipe(), v).
-			embed(t.Context())
-	}()
-
-	for range 20 {
-		if pos := findTask(t, events, MakingVectors); pos != nil {
-			t.Fatalf("a model still on its way is shown as indexing: %+v", *pos)
-		}
-		time.Sleep(time.Millisecond)
-	}
-
-	incoming.SetModel(model, nil)
-	<-doneCh
-
-	if offset := findTask(t, events, MakingVectors); offset != nil {
-		t.Errorf("the pass that embedded what was owed is still being done: %+v", *offset)
-	}
-	if model.times() == 0 {
-		t.Error("the model landed and nothing was embedded")
-	}
-}
-
 // A library that would not be read is a vault searching less than it holds, and
 // the pass is left standing under what stopped it.
 func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
@@ -415,13 +327,9 @@ func TestIndexingIsNeverAWordWithNothingBelowIt(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
 	cut(t, made, db, v)
 
-	// A provider that answers over a network is here the moment it is made, so
-	// there is no arrival to wait for and the pass begins at once.
 	overVal := &overheard{fakeEmbedder: model, tasks: events.tasks}
-	target := embedding.NewDeferredEmbedder(model.GetModel())
-	target.SetModel(overVal, nil)
 
-	newPass(made, db, events, target.GetWaitingEmbedder(), model.GetModel().Recipe(), v).embed(t.Context())
+	newPass(made, db, events, overVal, model.GetModel().Recipe(), v).embed(t.Context())
 
 	for _, list := range overVal.lists() {
 		for _, item := range list {

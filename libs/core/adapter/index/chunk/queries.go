@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -256,7 +256,7 @@ func (q *Queries) FindNearest(ctx context.Context, vaultID domain.VaultID, recip
 // findNearestByBits is the pass over the bit vectors: the chunks of one vault whose signs
 // stand nearest the query's, by Hamming distance, k of them.
 func (q *Queries) findNearestByBits(ctx context.Context, vault int64, query []float32, k int) ([]int64, error) {
-	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), embedding.Bits(query), vault, k)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("coarse"), vector.Bits(query), vault, k)
 	if err != nil {
 		return nil, err
 	}

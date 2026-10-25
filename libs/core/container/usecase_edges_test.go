@@ -18,11 +18,11 @@ var useCaseEdges = map[string][]string{
 	"settings":   nil,
 	"run":        nil,
 	"source":     nil,
-	"embedding":  {"run"},
+	"vectors":    nil,
 	"file":       nil,
 	"search":     nil,
-	"vault":      {"embedding", "note", "source"},
-	"indexing":   {"embedding", "run", "source", "vault"},
+	"vault":      {"note", "source", "vectors"},
+	"indexing":   {"run", "source", "vault", "vectors"},
 	"completion": {"agent"},
 }
 
@@ -119,20 +119,20 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 		// The declared edges.
 		{"usecase/vault", "usecase/note", false},
 		{"usecase/vault", "usecase/source", false},
-		{"usecase/vault", "usecase/embedding", false},
+		{"usecase/vault", "usecase/vectors", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/vault", true},
 		{"usecase/source", "usecase/vault", true},
 		{"usecase/source", "usecase/run", true},
-		{"usecase/embedding", "usecase/vault", true},
+		{"usecase/vectors", "usecase/vault", true},
 
 		// A use case that builds on none.
-		{"usecase/embedding", "usecase/note", true},
+		{"usecase/vectors", "usecase/note", true},
 		{"usecase/file", "usecase/note", true},
 		{"usecase/search", "usecase/note", true},
 		{"usecase/note", "usecase/search", true},
-		{"usecase/note", "usecase/embedding", true},
+		{"usecase/note", "usecase/vectors", true},
 
 		// A package under a use case is that use case.
 		{"usecase/note/sub", "usecase/vault", true},

@@ -1,4 +1,4 @@
-package embedding_test
+package vector_test
 
 import (
 	"math"
@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
@@ -27,7 +27,7 @@ func TestBitsKeepTheSign(t *testing.T) {
 		{"no dimensions", []float32{}, []byte{}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := embedding.Bits(c.in); !slices.Equal(got, c.want) {
+			if got := vector.Bits(c.in); !slices.Equal(got, c.want) {
 				t.Errorf("got %08b, want %08b", got, c.want)
 			}
 		})
@@ -50,7 +50,7 @@ func TestCoarseKeepsTheSignOfAQuantisedVector(t *testing.T) {
 		{"no dimensions", []int8{}, []byte{}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := embedding.Coarse(c.in); got == nil || !slices.Equal(got, c.want) {
+			if got := vector.Coarse(c.in); got == nil || !slices.Equal(got, c.want) {
 				t.Errorf("got %#v, want %08b", got, c.want)
 			}
 		})
@@ -74,7 +74,7 @@ func TestBytesRoundTrip(t *testing.T) {
 		{"negative rounds the same way", float32(-step * 2.7), -3},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			got := embedding.Bytes([]float32{c.in})
+			got := vector.Bytes([]float32{c.in})
 			if got[0] != c.want {
 				t.Fatalf("got %d, want %d", got[0], c.want)
 			}
@@ -94,10 +94,10 @@ func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
 		stored[i] = byte(i)
 		want[i] = int8(i)
 	}
-	if got := embedding.Dimensions(stored); !slices.Equal(got, want) {
+	if got := vector.Dimensions(stored); !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}
-	if got := embedding.Dimensions(nil); len(got) != 0 {
+	if got := vector.Dimensions(nil); len(got) != 0 {
 		t.Errorf("got %v for no vector", got)
 	}
 }
@@ -106,24 +106,24 @@ func TestDimensionsReadEveryStoredByteBack(t *testing.T) {
 // This is the property that keeps a vector stored today comparable with one
 // stored after a book in another language is added.
 func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
-	vector := embedding.Normalise([]float32{0.1, -0.4, 0.02, 0.9, -0.01, 0.3, 0.0, -0.7})
+	unit := vector.Normalise([]float32{0.1, -0.4, 0.02, 0.9, -0.01, 0.3, 0.0, -0.7})
 
-	first := embedding.Bytes(vector)
-	firstBits := embedding.Bits(vector)
+	first := vector.Bytes(unit)
+	firstBits := vector.Bits(unit)
 
 	// A second run over a corpus with a different spread — every other vector
 	// far larger, as a book of another language would be.
 	crowd := rand.New(rand.NewPCG(7, 11))
 	for range 100 {
-		other := make([]float32, len(vector))
+		other := make([]float32, len(unit))
 		for i := range other {
 			other[i] = float32(crowd.Float64()*40 - 20)
 		}
-		embedding.Bytes(other)
-		embedding.Bits(other)
+		vector.Bytes(other)
+		vector.Bits(other)
 	}
-	second := embedding.Bytes(vector)
-	secondBits := embedding.Bits(vector)
+	second := vector.Bytes(unit)
+	secondBits := vector.Bits(unit)
 
 	if !slices.Equal(first, second) {
 		t.Errorf("bytes moved: %v then %v", first, second)
@@ -134,14 +134,14 @@ func TestQuantisationDoesNotDependOnTheRestOfTheCorpus(t *testing.T) {
 }
 
 func TestNormaliseProducesUnitLength(t *testing.T) {
-	got := embedding.Normalise([]float32{3, 4})
+	got := vector.Normalise([]float32{3, 4})
 	if !slices.Equal(got, []float32{0.6, 0.8}) {
 		t.Errorf("got %v", got)
 	}
 }
 
 func TestNormaliseKeepsAllZeros(t *testing.T) {
-	if got := embedding.Normalise([]float32{0, 0}); !slices.Equal(got, []float32{0, 0}) {
+	if got := vector.Normalise([]float32{0, 0}); !slices.Equal(got, []float32{0, 0}) {
 		t.Errorf("got %v", got)
 	}
 }
@@ -166,7 +166,7 @@ func TestSimilarityIsTheAngleBetweenTwoVectors(t *testing.T) {
 			for i, v := range c.stored {
 				bytes[i] = byte(v)
 			}
-			gotBytes := embedding.SimilarityBytes(c.query, bytes)
+			gotBytes := vector.SimilarityBytes(c.query, bytes)
 			if math.Abs(gotBytes-c.want) > 1e-9 {
 				t.Errorf("gotBytes %v, want %v", gotBytes, c.want)
 			}
@@ -183,14 +183,14 @@ func TestSimilarityIsOneForAVectorWithItself(t *testing.T) {
 	for i := range v {
 		v[i] = random.Float32()*2 - 1
 	}
-	embedding.Normalise(v)
+	vector.Normalise(v)
 
-	quantised := embedding.Bytes(v)
+	quantised := vector.Bytes(v)
 	raw := make([]byte, len(quantised))
 	for i, q := range quantised {
 		raw[i] = byte(q)
 	}
-	got := embedding.SimilarityBytes(v, raw)
+	got := vector.SimilarityBytes(v, raw)
 	if got < 0.999 {
 		t.Errorf("a vector against its own quantisation is at %v", got)
 	}
@@ -206,7 +206,7 @@ func BenchmarkDimensions(b *testing.B) {
 			b.ResetTimer()
 			b.ReportAllocs()
 			for b.Loop() {
-				_ = embedding.Dimensions(raw)
+				_ = vector.Dimensions(raw)
 			}
 		})
 	}
@@ -228,7 +228,7 @@ func TestBytesClampAtTheLastLevelEitherSide(t *testing.T) {
 		{"one step past the last level, negative", float32(-step * 128), -127},
 	} {
 		t.Run(c.name, func(t *testing.T) {
-			if got := embedding.Bytes([]float32{c.in}); got[0] != c.want {
+			if got := vector.Bytes([]float32{c.in}); got[0] != c.want {
 				t.Errorf("got %d, want %d", got[0], c.want)
 			}
 		})
@@ -236,10 +236,10 @@ func TestBytesClampAtTheLastLevelEitherSide(t *testing.T) {
 }
 
 func TestDimensionsOfAnEmptyVectorAreNone(t *testing.T) {
-	if got := embedding.Dimensions([]byte{}); got != nil {
+	if got := vector.Dimensions([]byte{}); got != nil {
 		t.Errorf("got %#v for an empty stored vector, want nil", got)
 	}
-	if got := embedding.Dimensions([]byte{0xff}); !slices.Equal(got, []int8{-1}) {
+	if got := vector.Dimensions([]byte{0xff}); !slices.Equal(got, []int8{-1}) {
 		t.Errorf("got %v for one stored byte, want [-1]", got)
 	}
 }
@@ -261,7 +261,7 @@ func TestSimilarityIsTheCosineAtEveryWidth(t *testing.T) {
 			raw[i] = byte(stored[i])
 		}
 		want := getCosine(query, stored)
-		if got := embedding.SimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
+		if got := vector.SimilarityBytes(query, raw); !(math.Abs(got-want) <= 1e-5) {
 			t.Errorf("width %d: SimilarityBytes = %v, want %v", width, got, want)
 		}
 	}
@@ -286,7 +286,7 @@ func TestSimilarityWithNoDirectionIsZero(t *testing.T) {
 			for i, v := range c.stored {
 				raw[i] = byte(v)
 			}
-			if got := embedding.SimilarityBytes(c.query, raw); got != c.want {
+			if got := vector.SimilarityBytes(c.query, raw); got != c.want {
 				t.Errorf("SimilarityBytes = %v, want %v", got, c.want)
 			}
 		})
@@ -310,7 +310,7 @@ func getCosine(query []float32, stored []int8) float64 {
 func TestSimilaritySumsFourElementsAStepInSinglePrecision(t *testing.T) {
 	query := []float32{1 << 24, 1, 0, 0}
 	want := math.Sqrt2 / 2
-	if got := embedding.SimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
+	if got := vector.SimilarityBytes(query, []byte{1, 1, 0, 0}); math.Abs(got-want) > 1e-12 {
 		t.Errorf("SimilarityBytes = %v, want %v", got, want)
 	}
 }

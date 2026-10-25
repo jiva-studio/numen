@@ -6,10 +6,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -55,16 +55,10 @@ type ReadNotes func(ctx context.Context, during func()) (int, error)
 // many carry one.
 type GetOwed func(ctx context.Context, v domain.Vault) (held, embedded int64, err error)
 
-// WaitForModel blocks until the embedder's model has turned up, and says what
-// stopped it.
-type WaitForModel func(ctx context.Context) error
-
 // Config is what a worker is made from.
 type Config struct {
 	Reading  OpenReading
 	Embedder embeddingport.Embedder
-	// Wait is nil for an embedder whose model is always there.
-	Wait WaitForModel
 	// Owed is nil where nothing says how many vectors a vault owes, and then
 	// every pass assumes it owes some.
 	Owed   GetOwed
@@ -84,7 +78,6 @@ type Config struct {
 type Worker struct {
 	reading  OpenReading
 	embedder embeddingport.Embedder
-	wait     WaitForModel
 	owed     GetOwed
 	events   Events
 	debounce time.Duration
@@ -99,7 +92,6 @@ func NewWorker(cfg Config) *Worker {
 	return &Worker{
 		reading:  cfg.Reading,
 		embedder: cfg.Embedder,
-		wait:     cfg.Wait,
 		owed:     cfg.Owed,
 		events:   cfg.Events,
 		debounce: cfg.Quiet,
@@ -333,23 +325,12 @@ func (p *pass) embed(ctx context.Context) {
 	limit, stop := stopOnWake(ctx, w.read)
 	defer stop()
 
-	// Fetching the model is a step of its own, and nothing is indexed until it
-	// is over.
-	if w.wait != nil {
-		if err := w.wait(limit); err != nil {
-			return
-		}
-	}
 	p.makeVectors(ctx, limit, owing)
 }
 
 // getOwedVectors is what a pass owes, asked once before it starts. The pass
 // finds the chunks a few hundred at a time, and a total that grows as it goes
 // is a count that never settles.
-//
-// It is asked before the model is waited for: every path into the pass runs on
-// the one goroutine that also reads the books, and a vault owing no vector
-// holds that goroutine for nothing.
 func (w *Worker) getOwedVectors(ctx context.Context, v domain.Vault) (owing int64, owes bool) {
 	if w.owed == nil {
 		return 0, true
@@ -401,7 +382,7 @@ func (p *pass) makeVectors(ctx, items context.Context, owing int64) {
 	// Indexing is always of something, and the source open now is what it is of.
 	// The pass enters the list when it opens the first of them, and a share is
 	// drawn once a vector has been made, counted over the work in hand.
-	making.OnVectorsProgress = func(res embedding.EmbedResult) {
+	making.OnVectorsProgress = func(res vectors.EmbedResult) {
 		pos := run.Task{ID: MakingVectors, Title: "Indexing", About: res.CurrentSource}
 		if res.Embedded > 0 {
 			pos.Count, pos.Total = int64(res.Embedded), owing

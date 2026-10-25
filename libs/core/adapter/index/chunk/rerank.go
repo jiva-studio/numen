@@ -7,7 +7,7 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -56,7 +56,7 @@ func (q *Queries) rerank(ctx context.Context, recipe string, query []float32, ca
 			return nil, fmt.Errorf("chunk %d holds %d dimensions where the query has %d",
 				chunk, len(stored), len(query))
 		}
-		sim := embedding.SimilarityBytes(query, stored)
+		sim := vector.SimilarityBytes(query, stored)
 		if sim >= floor {
 			keptCandidates = append(keptCandidates, candidate{
 				chunk:      chunk,

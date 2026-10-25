@@ -8,9 +8,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -57,10 +57,10 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
 	books := source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil)
 	books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
-	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = pointing{}
-	vectors.OnProgress = func(embedding.EmbedResult) { order = append(order, "vectors") }
-	making := vaults.NewReadWholeVault(notes, books, vectors)
+	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	embed.Embedder = pointing{}
+	embed.OnProgress = func(vectors.EmbedResult) { order = append(order, "vectors") }
+	making := vaults.NewReadWholeVault(notes, books, embed)
 
 	if _, err := making.Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
@@ -90,8 +90,8 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
 	books := source.NewExtract(counted, db.Sources(), db.SourcesKnown(), nil)
-	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
-	making := vaults.NewReadWholeVault(notes, books, vectors)
+	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	making := vaults.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v)
 	if err == nil || !strings.Contains(err.Error(), "not here") {
@@ -115,9 +115,9 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 
 	notes := scanner(readers, db)
 	books := source.NewExtract(refusing{}, db.Sources(), db.SourcesKnown(), nil)
-	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = unwilling{}
-	making := vaults.NewReadWholeVault(notes, books, vectors)
+	embed := vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors())
+	embed.Embedder = unwilling{}
+	making := vaults.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(t.Context(), v)
 	if err == nil {
@@ -147,9 +147,9 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 	notes := scanner(readers, db)
 	books := source.NewExtract(timedOut{limit: limitCtx}, db.Sources(), db.SourcesKnown(), nil)
 	counted := &counting{VaultReaders: readers}
-	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
-	vectors.Embedder = unwilling{}
-	making := vaults.NewReadWholeVault(notes, books, vectors)
+	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
+	embed.Embedder = unwilling{}
+	making := vaults.NewReadWholeVault(notes, books, embed)
 
 	_, err := making.Execute(limitCtx, v)
 	if !errors.Is(err, context.DeadlineExceeded) {
@@ -257,6 +257,6 @@ func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaul
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
 		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
-		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
+		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 }

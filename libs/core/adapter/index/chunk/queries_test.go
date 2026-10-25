@@ -14,8 +14,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -58,7 +58,7 @@ func seedVector(seed byte) []float32 {
 }
 
 func seedBytes(seed byte) []byte {
-	q := embedding.Bytes(embedding.Normalise(seedVector(seed)))
+	q := vector.Bytes(vector.Normalise(seedVector(seed)))
 	out := make([]byte, len(q))
 	for i, x := range q {
 		out[i] = byte(x)

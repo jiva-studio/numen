@@ -5,8 +5,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -20,7 +20,7 @@ import (
 type ReadWholeVault struct {
 	notes   Scan
 	books   source.Extract
-	vectors embedding.Embed
+	vectors vectors.Embed
 
 	// OnNotesProgress, if set, is called as notes are scanned.
 	OnNotesProgress func(ScanResult)
@@ -30,12 +30,12 @@ type ReadWholeVault struct {
 	OnBooksProgress func(source.ExtractResult)
 
 	// OnVectorsProgress, if set, is called as each source is embedded.
-	OnVectorsProgress func(embedding.EmbedResult)
+	OnVectorsProgress func(vectors.EmbedResult)
 }
 
 // NewReadWholeVault is the three passes, in the order they stand in: the notes
 // walked, the books read, and the vectors made.
-func NewReadWholeVault(notes Scan, books source.Extract, vectors embedding.Embed) ReadWholeVault {
+func NewReadWholeVault(notes Scan, books source.Extract, vectors vectors.Embed) ReadWholeVault {
 	return ReadWholeVault{notes: notes, books: books, vectors: vectors}
 }
 
@@ -44,7 +44,7 @@ func NewReadWholeVault(notes Scan, books source.Extract, vectors embedding.Embed
 type ReadWholeVaultResult struct {
 	Notes   ScanResult
 	Books   source.ExtractResult
-	Vectors embedding.EmbedResult
+	Vectors vectors.EmbedResult
 }
 
 // Execute reads the whole vault, in the order the three passes stand in.
@@ -91,7 +91,7 @@ func (u ReadWholeVault) ReadBooks(ctx context.Context, v domain.Vault) (source.E
 }
 
 // MakeVectors gives every chunk that owes a vector one.
-func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (embedding.EmbedResult, error) {
+func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (vectors.EmbedResult, error) {
 	if u.OnVectorsProgress != nil {
 		u.vectors.OnProgress = u.OnVectorsProgress
 	}

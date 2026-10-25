@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	embedmodel "github.com/jiva-studio/numen/libs/core/internal/embedding"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
@@ -59,7 +58,6 @@ func newIndexWorker(
 	return indexing.NewWorker(indexing.Config{
 		Reading:  made.ReadWholeVault,
 		Embedder: embedder,
-		Wait:     getModelWait(embedder),
 		Owed: func(ctx context.Context, v domain.Vault) (activeItem, embedded int64, err error) {
 			if state.Indexing.Progress == nil {
 				return 0, 0, errNoProgress
@@ -70,15 +68,6 @@ func newIndexWorker(
 		Quiet:  idleDuration,
 		After:  time.After,
 	})
-}
-
-// getModelWait is what blocks until the model behind an embedder has turned up,
-// and nothing for an embedder whose model is always there.
-func getModelWait(embedder embeddingport.Embedder) indexing.WaitForModel {
-	if waiting, ok := embedder.(embedmodel.WaitingEmbedder); ok {
-		return waiting.Wait
-	}
-	return nil
 }
 
 // startIndexing starts the watch and the first scan together, and answers with

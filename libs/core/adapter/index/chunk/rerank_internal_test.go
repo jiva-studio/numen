@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/embedding"
+	"github.com/jiva-studio/numen/libs/core/internal/vector"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -142,7 +142,7 @@ func TestRerankKeepsTheArrivalOrderAmongEqualSimilarities(t *testing.T) {
 
 func TestRerankKeepsACandidateAtTheFloor(t *testing.T) {
 	stored := signed(127, 127, 0, 0)
-	pos := embedding.SimilarityBytes(scriptedQuery, stored)
+	pos := vector.SimilarityBytes(scriptedQuery, stored)
 	q := scripted(t, [][]driver.Value{{int64(1), stored}}, nil)
 
 	got, err := q.rerank(t.Context(), "r", scriptedQuery, idsOf(1), nil, pos)
