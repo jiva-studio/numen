@@ -1,4 +1,4 @@
-package flashcards
+package shell
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -137,7 +136,7 @@ func TestAWindowDoingNothingPriorItselfStillAnswers(t *testing.T) {
 	api.Window.Tasking = nil
 
 	stream, err := newWindowClient(t, api).WatchTasks(
-		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: wire.Review}),
+		t.Context(), connect.NewRequest(&v1.WatchTasksRequest{Window: testWindow}),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -231,17 +230,5 @@ func TestAVaultReadWakesTheListeners(t *testing.T) {
 	case <-moves:
 	case <-time.After(testsupport.Patience):
 		t.Fatal("nobody received the vault was read")
-	}
-}
-
-// What the person is looking at is told to the plugins as data about the call.
-func TestWhatThePersonIsLookingAtIsReportedAsWhatItIs(t *testing.T) {
-	api := newAPI(t)
-	api.currentCard.Store(&CurrentCard{Deck: "decks/Words.md", Card: "3f4g5h6j7k", Face: "Say it"})
-
-	got := api.GetAsked()
-
-	if got["focus"] != "decks/Words.md" || got["mark"] != "3f4g5h6j7k" || got["face"] != "Say it" {
-		t.Errorf("the plugins are told %v", got)
 	}
 }

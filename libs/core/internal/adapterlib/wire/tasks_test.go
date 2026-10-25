@@ -72,12 +72,11 @@ func TestOneChangeIsSaidTwice(t *testing.T) {
 	}
 }
 
-// The editor and the window a person runs their cards in are open on the same
-// vault, so a question about a window says which. One naming the other window
-// is not answered with this one's.
+// Two windows can be open on the same vault, so a question about a window says which. One naming
+// another window is not answered with this one's.
 func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 	route, handler := numenv1connect.NewWindowServiceHandler(
-		&Window{Named: Review, Tasking: run.NewTasks()},
+		&Window{Named: "another", Tasking: run.NewTasks()},
 	)
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
@@ -91,7 +90,7 @@ func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = stream.Close() })
 	if stream.Receive() {
-		t.Fatalf("the review window answered for the editor: %v", stream.Msg().GetTasks())
+		t.Fatalf("another window answered for the editor: %v", stream.Msg().GetTasks())
 	}
 	if connect.CodeOf(stream.Err()) != connect.CodeNotFound {
 		t.Errorf("the answer was %v", stream.Err())

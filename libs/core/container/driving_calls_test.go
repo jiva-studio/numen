@@ -23,8 +23,6 @@ var wiring = []string{
 	"adapter/window/editor/services.go",
 	"adapter/window/editor/index.go",
 	"adapter/window/editor/serve.go",
-	"adapter/window/flashcards/agent.go",
-	"adapter/window/flashcards/api.go",
 }
 
 // getPortFields are the names of the struct fields a file types port.X.

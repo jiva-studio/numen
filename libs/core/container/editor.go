@@ -60,16 +60,7 @@ func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) 
 	return EditorAssembly{cfg: cfg, registry: registry, db: db}
 }
 
-func (e EditorAssembly) GetPluginDir(id string) (string, bool) {
-	if e.cfg.PluginHost == nil {
-		return "", false
-	}
-	p, ok := e.cfg.PluginHost.GetPlugin(id)
-	if !ok {
-		return "", false
-	}
-	return p.Dir, true
-}
+func (e EditorAssembly) GetPluginDir(id string) (string, bool) { return e.cfg.GetPluginDir(id) }
 
 func (e EditorAssembly) EmitEvent(event string) {
 	if e.cfg.PluginHost != nil {

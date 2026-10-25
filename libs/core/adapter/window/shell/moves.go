@@ -1,4 +1,4 @@
-package flashcards
+package shell
 
 import (
 	"context"

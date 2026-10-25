@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"io"
 	"os"
 	"path/filepath"
@@ -9,27 +8,25 @@ import (
 	"testing"
 	"time"
 
-	window "github.com/jiva-studio/numen/libs/core/adapter/window/flashcards"
+	"github.com/jiva-studio/numen/apps/desktop/internal/platform"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// deck is a vault holding one stencil and one deck.
-var deck = map[string]string{
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
-		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
-	"decks/Words.md": "---\ntype: deck\n---\n" +
-		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
-		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
+// notes is a vault holding two notes.
+var notes = map[string]string{
+	"Leaf mould.md":  "# Leaf mould\n\nCompost made of fallen leaves alone.\n",
+	"garden/Beds.md": "# Beds\n\n[[Leaf mould]] goes on in autumn.\n",
 }
 
-// makeWindow is this window as the binary builds it: an installation of its
-// own, an index it may write, and two vaults to sit down to.
+// makeWindow is this window as the binary builds it: an installation of its own, an index it may
+// write, and two vaults.
 func makeWindow(
 	t *testing.T,
-) (container.Config, *container.Index, *container.OpenVaults, *window.API, []domain.Vault) {
+) (container.Config, *container.Index, *container.OpenVaults, *shell.API, []domain.Vault) {
 	t.Helper()
 
 	state := t.TempDir()
@@ -52,10 +49,10 @@ func makeWindow(
 		RecordVault: func(domain.Vault) {}, Out: io.Discard,
 	}
 	t.Cleanup(vaults.CloseAndWait)
-	return cfg, db, vaults, &window.API{}, target
+	return cfg, db, vaults, &shell.API{}, target
 }
 
-// vaultOf is a folder holding one stencil and one deck, as a vault.
+// vaultOf is a folder holding the notes, as a vault.
 func vaultOf(t *testing.T, cfg container.Config) string {
 	t.Helper()
 
@@ -63,7 +60,7 @@ func vaultOf(t *testing.T, cfg container.Config) string {
 	if _, err := cfg.VaultIdentity().EnsureIdentity(root, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	for name, body := range deck {
+	for name, body := range notes {
 		path := filepath.Join(root, filepath.FromSlash(name))
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			t.Fatal(err)
@@ -140,8 +137,6 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	}
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	api.SetVaultIndexer(t.Context(), nil)
-	var notified []domain.VaultID
-	api.Opened = func(_ context.Context, v domain.Vault) { notified = append(notified, v.ID) }
 
 	lent, err := openPluginVault(cfg, registry, db, api)
 	if err != nil {
@@ -151,16 +146,25 @@ func TestThePluginsAreLentTheVaultsOfTheInstallation(t *testing.T) {
 	recognized, listErr := lent.GetVaults()
 	linked, withErr := lent.With(target[1].ID)
 	_, hasVault := lent.GetVault()
-	inUse := linked.SetInUse(t.Context())
 	state, stateErr := linked.EnsureIndexed(t.Context())
 
 	if listErr != nil || len(recognized) != 2 || withErr != nil || hasVault {
 		t.Fatalf("got %v (%v), %v and the window showing a vault: %v", recognized, listErr, withErr, hasVault)
 	}
-	if inUse != nil || len(notified) != 1 || notified[0] != target[1].ID {
-		t.Errorf("got window update %v (%v)", notified, inUse)
-	}
 	if stateErr != nil || state.Status != pluginport.PluginIndexFailed {
 		t.Errorf("a vault nothing reads into the index stands as %+v (%v)", state, stateErr)
+	}
+}
+
+// The page is told the plugins of the flashcards target, and is served the files of their frontends.
+func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
+	cfg, db, vaults, _, _ := makeWindow(t)
+	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
+
+	if api.GetPluginIDs == nil || api.GetPluginDir == nil {
+		t.Error("the page is not told the plugins it loads")
+	}
+	if api.Window.Named != platform.TargetFlashcards {
+		t.Errorf("the window answers as %q", api.Window.Named)
 	}
 }

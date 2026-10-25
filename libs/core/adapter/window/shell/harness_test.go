@@ -1,4 +1,4 @@
-package flashcards
+package shell
 
 import (
 	"context"
@@ -24,6 +24,9 @@ func (c carrying) Has(_ context.Context, id domain.VaultID) (bool, error) {
 	return c.targetVault[id], nil
 }
 
+// testWindow is the name the window under test answers to.
+const testWindow = "test"
+
 // newAPI is the window over an index that holds the vaults named.
 func newAPI(t testing.TB, target ...domain.Vault) *API {
 	t.Helper()
@@ -31,7 +34,7 @@ func newAPI(t testing.TB, target ...domain.Vault) *API {
 	for _, v := range target {
 		index.targetVault[v.ID] = true
 	}
-	return &API{Window: NewWindow(run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}
+	return &API{Window: NewWindow(testWindow, run.NewTasks()), IsVaultIndexed: note.NewIsVaultIndexed(index)}
 }
 
 // newWindowClient is the window itself, over the handler it answers with.

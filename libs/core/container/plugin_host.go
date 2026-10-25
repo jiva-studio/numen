@@ -315,3 +315,28 @@ func (c Config) GetPluginSecretDeleter() func(ctx context.Context, pluginID, nam
 		return c.PluginHost.DeletePluginSecret(ctx, pluginID, name)
 	}
 }
+
+// GetPluginDir is the folder of an installed plugin, and false for one not installed.
+func (c Config) GetPluginDir(id string) (string, bool) {
+	if c.PluginHost == nil {
+		return "", false
+	}
+	p, ok := c.PluginHost.GetPlugin(id)
+	if !ok {
+		return "", false
+	}
+	return p.Dir, true
+}
+
+// GetPluginIDs are the plugins of the host's target, in the order of their ids.
+func (c Config) GetPluginIDs() []string {
+	if c.PluginHost == nil {
+		return nil
+	}
+	infos := c.PluginHost.GetPluginInfos()
+	ids := make([]string, 0, len(infos))
+	for _, info := range infos {
+		ids = append(ids, info.ID)
+	}
+	return ids
+}

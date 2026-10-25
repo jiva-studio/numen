@@ -19,12 +19,12 @@ const module = "github.com/jiva-studio/numen/libs/core/"
 
 // driving lists driving adapters that expose external interfaces and call use cases.
 var driving = map[string]bool{
-	"adapter/cli":               true,
-	"adapter/window/editor":     true,
-	"adapter/window/flashcards": true,
-	"internal/adapter/plugin":   true,
-	"internal/adapter/theme":    true,
-	"internal/adapterlib/wire":  true,
+	"adapter/cli":              true,
+	"adapter/window/editor":    true,
+	"adapter/window/shell":     true,
+	"internal/adapter/plugin":  true,
+	"internal/adapter/theme":   true,
+	"internal/adapterlib/wire": true,
 }
 
 // pure are the packages holding what is true of a note, of a
@@ -1288,7 +1288,7 @@ func getAdaptersIn(dir, pos string) ([]string, error) {
 // something through, and the two it composes or configures.
 var public = []string{
 	"cli", "index", "settings",
-	"window/editor", "window/flashcards",
+	"window/editor", "window/shell",
 }
 
 // The core's surface is these adapters and no others. A driven adapter nothing
@@ -1354,8 +1354,8 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 
 		// The folder holding one adapter to a window is not an adapter, so the
 		// two windows are two adapters and neither is given the other.
-		{"adapter/window/editor", "adapter/window/flashcards", true},
-		{"adapter/window/flashcards", "adapter/window/editor", true},
+		{"adapter/window/editor", "adapter/window/shell", true},
+		{"adapter/window/shell", "adapter/window/editor", true},
 		{"adapter/window/editor/pages", "adapter/window/editor", false},
 
 		// A driven adapter runs no scenario, and takes no other adapter. Which

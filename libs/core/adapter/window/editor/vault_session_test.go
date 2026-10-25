@@ -187,7 +187,7 @@ func TestTheWindowReturnsWhichVaultItIsShowing(t *testing.T) {
 	// And the question is the window's, so another window's name reaches
 	// nothing here.
 	_, err := f.canvas.GetCurrentVault(t.Context(),
-		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: wire.Review}))
+		connect.NewRequest(&v1.GetCurrentVaultRequest{Window: "another"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("err = %v, want the question about another window turned away", err)
 	}

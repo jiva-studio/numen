@@ -4,24 +4,12 @@ package app
 
 import (
 	"context"
-	"crypto/ecdsa"
-	"crypto/elliptic"
-	"crypto/rand"
-	"crypto/tls"
-	"crypto/x509"
-	"crypto/x509/pkix"
-	"errors"
 	"flag"
-	"fmt"
-	"math/big"
-	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
-	"time"
 
+	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -93,93 +81,10 @@ func (d *DebugOptions) serveHTTP(
 	opened *editor.Installation,
 	pages http.Handler,
 ) error {
-	server := &http.Server{
-		Addr:    d.HttpAddr,
-		Handler: opened.Services.NewHandler(pages),
-	}
-
-	ln, err := net.Listen("tcp", d.HttpAddr)
-	if err != nil {
-		return fmt.Errorf("listen %s: %w", d.HttpAddr, err)
-	}
-	defer ln.Close()
-
-	var tlsConf *tls.Config
-	if os.Getenv("NUMEN_DEBUG_TLS") != "false" {
-		cert, err := generateSelfSignedCert()
-		if err != nil {
-			return fmt.Errorf("generate debug tls cert: %w", err)
-		}
-		tlsConf = &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			NextProtos:   []string{"h2", "http/1.1"},
-		}
-		ln = tls.NewListener(ln, tlsConf)
-	}
-
-	naming := func(open domain.OpenTabs) {}
-	opened.State.NotifyOpenTabs = naming
+	opened.State.NotifyOpenTabs = func(domain.OpenTabs) {}
 	opened.State.OpenVault = func(ctx context.Context, v domain.Vault) error {
 		cfg.SetPluginVaultPath(v.Path)
-		err := opened.Show(ctx, v)
-		naming(opened.State.GetOpenTabs())
-		return err
+		return opened.Show(ctx, v)
 	}
-
-	scheme := "http"
-	if tlsConf != nil {
-		scheme = "https"
-	}
-	fmt.Fprintf(os.Stdout, "numen debug server listening on %s://%s\n", scheme, ln.Addr())
-	_ = os.Stdout.Sync()
-
-	sigCh := make(chan os.Signal, 1)
-	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
-
-	errCh := make(chan error, 1)
-	go func() {
-		if err := server.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			errCh <- err
-		}
-	}()
-
-	select {
-	case <-ctx.Done():
-	case <-sigCh:
-	case err := <-errCh:
-		return err
-	}
-
-	shutdownCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 2*time.Second)
-	defer cancel()
-	return server.Shutdown(shutdownCtx)
-}
-
-func generateSelfSignedCert() (tls.Certificate, error) {
-	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{"Numen Debug"},
-			CommonName:   "127.0.0.1",
-		},
-		IPAddresses:           []net.IP{net.ParseIP("127.0.0.1"), net.IPv6loopback},
-		DNSNames:              []string{"localhost"},
-		NotBefore:             time.Now().Add(-1 * time.Hour),
-		NotAfter:              time.Now().Add(24 * time.Hour),
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageKeyEncipherment,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
-		BasicConstraintsValid: true,
-	}
-	certDER, err := x509.CreateCertificate(rand.Reader, &template, &template, &key.PublicKey, key)
-	if err != nil {
-		return tls.Certificate{}, err
-	}
-	return tls.Certificate{
-		Certificate: [][]byte{certDER},
-		PrivateKey:  key,
-	}, nil
+	return debugserve.Serve(ctx, d.HttpAddr, opened.Services.NewHandler(pages), os.Stdout)
 }

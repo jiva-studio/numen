@@ -1,14 +1,8 @@
 // Command numen-flashcards is the window a person runs their cards in.
 //
-// It stands beside the editor and over the same core: writing cards is
-// occasional and running them is daily, and the daily act is not reached
-// through the application built for the other one.
-//
-// It writes into the vault its session is on — a mark for a card that carries
-// none — and the answers, which go to the vault's own folder. Each write is
-// levelled in the index before it returns, so what the window draws next is
-// what it just wrote. A vault the index does not carry at all is read into it
-// here.
+// It is a shell over the plugins whose manifests name the desktop.flashcards target: it loads their
+// frontends over HTTP, forwards the calls for the services they serve, and lends them every vault of
+// the installation. A vault the index does not carry is read into it when a plugin asks about it.
 package main
 
 import (
@@ -25,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	window "github.com/jiva-studio/numen/libs/core/adapter/window/flashcards"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/shell"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -33,46 +27,44 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
+const appName = "numen-flashcards"
+
 func main() {
 	cfg := makeConfig(os.Stderr)
-	var showVersion, noAgent bool
+	var showVersion bool
+	var debug debugOptions
 	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
-	flag.BoolVar(&noAgent, "no-agent", false, "do not let a card be asked about")
 	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
+	registerDebugFlags(flag.CommandLine, &debug)
 	flag.Parse()
 
 	if showVersion {
-		fmt.Println(version.GetVersionLine("numen-flashcards"))
+		fmt.Println(version.GetVersionLine(appName))
 		return
 	}
 
-	if err := run(cfg); err != nil {
-		fmt.Fprintln(os.Stderr, "numen-flashcards:", err)
+	if err := run(cfg, debug); err != nil {
+		fmt.Fprintln(os.Stderr, appName+":", err)
 		os.Exit(1)
 	}
 }
 
-// makeConfig is what this binary starts from: where the core says what it went
-// wrong at and carried on past, which is the same place everything else this
-// binary could not do is said.
+// makeConfig is the configuration of the window of the desktop.flashcards target, which reports what
+// the core carried on past to out.
 func makeConfig(out io.Writer) container.Config {
 	cfg := platform.GetConfigFor(platform.TargetFlashcards)
-	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, "numen-flashcards:", err) }
+	cfg.ErrorHandler = func(err error) { fmt.Fprintln(out, appName+":", err) }
 	return cfg
 }
 
-// makeNotes is everything that acts on the vault's notes, built once and in one place. The page and
-// the tools an agent calls are served these and build none of their own, so a dependency named here
-// is named for both.
-//
-// What a write touched is levelled through the opening the vault was opened with, which is what the
-// walk and the watch also go through.
+// makeNotes is everything that acts on the vault's notes. What a write touched is brought up to date
+// in the index through the opening the vault was opened with.
 func makeNotes(cfg container.Config, db *container.Index, vaults *container.OpenVaults) container.Notes {
 	return cfg.Notes(db.Queries(), db.Links(), db.Sources(), db.SourcesKnown(), vaults.UpdateIndex)
 }
 
-func run(cfg container.Config) error {
+func run(cfg container.Config, debug debugOptions) error {
 	ctx, stop := context.WithCancel(context.Background())
 	defer stop()
 
@@ -90,23 +82,17 @@ func run(cfg container.Config) error {
 		return err
 	}
 
-	// The index is opened to be written as well as read: a note this window
-	// writes is levelled here, and the editor's window may be open over the same
-	// file at the same time.
+	// The editor's window may write the same index at the same time.
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Every vault this window shows is opened the way the editor opens the one
-	// it shows: watched from the moment it is opened, walked into the index, and
-	// levelled by the paths a write touches.
 	vaults := &container.OpenVaults{
-		Config: cfg, Index: db, Lifetime: ctx, Out: os.Stderr, Label: "numen-flashcards",
+		Config: cfg, Index: db, Lifetime: ctx, Out: os.Stderr, Label: appName,
 	}
 
-	notes := makeNotes(cfg, db, vaults)
-	api := makeWindowAPI(cfg, notes)
+	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 	bindVaultIndexer(ctx, api, vaults)
 	lent, err := openPluginVault(cfg, registry, db, api)
 	if err != nil {
@@ -114,56 +100,58 @@ func run(cfg container.Config) error {
 	}
 	cfg.SetPluginVault(lent)
 
-	// The walk and the watch, then the index they write to closes.
 	target := shutdown.NewSequence(
 		stop,
+		shutdown.Report(appName, os.Stderr, "plugins", func() error {
+			return cfg.StopPlugins(context.Background())
+		}),
 		vaults.CloseAndWait,
-		shutdown.Report("numen-flashcards", os.Stderr, "", db.Close),
+		shutdown.Report(appName, os.Stderr, "", db.Close),
 	)
 	defer target.Run()
 
 	followChanges(ctx, cfg, api)
 	api.Themes = themes.Load(cfg.Themes, func(response string) { fmt.Fprintln(os.Stderr, "themes:", response) }, os.Stderr)
 
-	pages, err := window.Pages()
+	pages, err := shell.Pages()
 	if err != nil {
 		return err
 	}
-	return runApplication(api, pages, target)
+	handler := api.NewHandler(pages)
+	if debug.isServingHTTP() {
+		return debug.serveHTTP(ctx, handler)
+	}
+	return runApplication(handler, target)
 }
 
-// makeWindowAPI is the window's API: the notes it answers about and the plugins' services it forwards.
-func makeWindowAPI(cfg container.Config, notes container.Notes) *window.API {
-	return &window.API{
+// makeWindowAPI is the window of the desktop.flashcards target: its plugins, the services they serve,
+// and whether the index carries a vault.
+func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
+	return &shell.API{
 		IsVaultIndexed: notes.IsVaultIndexed,
-		Window:         window.NewWindow(nil),
+		Window:         shell.NewWindow(platform.TargetFlashcards, nil),
+		GetPluginIDs:   cfg.GetPluginIDs,
+		GetPluginDir:   cfg.GetPluginDir,
 		PluginServices: cfg.GetPluginServices(),
 	}
 }
 
-// openPluginVault is the vault the plugins work through the host. The window shows none of its own,
-// so a plugin names the vault of each call; the host reads a vault into the index when it is asked
-// about one the index does not carry, and tells the plugin when something moved.
+// openPluginVault is every vault of the installation, lent to the plugins. The window shows none of
+// its own, so a plugin names the vault of each call.
 func openPluginVault(
-	cfg container.Config, registry vaultport.VaultRegistry, db *container.Index, api *window.API,
+	cfg container.Config, registry vaultport.VaultRegistry, db *container.Index, api *shell.API,
 ) (pluginport.PluginVault, error) {
 	return cfg.OpenPluginVault(registry, db,
 		func() (domain.Vault, bool) { return domain.Vault{}, false },
 		container.PluginVaultHooks{
 			IndexState: api.EnsureIndexed,
 			Moved:      api.WatchMoves,
-			InUse: func(ctx context.Context, v domain.Vault) {
-				if openedVault := api.Opened; openedVault != nil {
-					openedVault(ctx, v)
-				}
-			},
 		})
 }
 
-// bindVaultIndexer connects the walk of a vault into the index to the API.
-// The walk outlives the count that asked for it, and a vault that moved is
-// counted again and walked again where the last walk failed.
-func bindVaultIndexer(ctx context.Context, api *window.API, vaults *container.OpenVaults) {
+// bindVaultIndexer connects the walk of a vault into the index to the API. A vault that moved is
+// walked again where the last walk failed.
+func bindVaultIndexer(ctx context.Context, api *shell.API, vaults *container.OpenVaults) {
 	vaults.RecordVault = func(v domain.Vault) {
 		api.ClearIndexFailure(v.ID)
 		api.ReportChange()
@@ -171,33 +159,28 @@ func bindVaultIndexer(ctx context.Context, api *window.API, vaults *container.Op
 	api.SetVaultIndexer(ctx, vaults.IndexVault)
 }
 
-// followChanges counts again what the window draws from when it changes, so a
-// card changed or a deck written is counted without a person asking. The index
-// is followed for which files are decks, and another window writing it changes
-// that answer.
-func followChanges(ctx context.Context, cfg container.Config, api *window.API) {
+// followChanges tells the plugins that something moved each time the index changes, which another
+// window writing it also does.
+func followChanges(ctx context.Context, cfg container.Config, api *shell.API) {
 	moves, err := cfg.Moves(ctx)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "numen-flashcards: the index is not being followed:", err)
+		fmt.Fprintln(os.Stderr, appName+": the index is not being followed:", err)
 		return
 	}
 	api.ReportChangesFrom(ctx, moves)
 }
 
 // runApplication opens the window and runs until it closes.
-func runApplication(api *window.API, pages http.Handler, target *shutdown.Sequence) error {
+func runApplication(handler http.Handler, target *shutdown.Sequence) error {
 	app := application.New(application.Options{
-		Name: "numen-flashcards",
+		Name: appName,
 		Assets: application.AssetOptions{
-			Handler: api.NewHandler(pages),
+			Handler: handler,
 		},
-		// The application ends when its last window closes.
 		Mac: application.MacOptions{
 			ApplicationShouldTerminateAfterLastWindowClosed: true,
 		},
-		// Run on the thread the window is drawn on, once the application has
-		// stopped dispatching. The walk and the watch are waited for with no
-		// bound, and a window not yet destroyed holds until they are done.
+		// Runs on the thread the window is drawn on, once the application has stopped dispatching.
 		PostShutdown: target.Run,
 	})
 	app.Window.NewWithOptions(application.WebviewWindowOptions{

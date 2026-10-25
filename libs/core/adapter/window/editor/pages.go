@@ -174,9 +174,6 @@ func (s *Services) newServices() []service {
 	}
 }
 
-// pluginAssetsRoute is the path prefix where plugin bundles and assets are served.
-const pluginAssetsRoute = "/api/plugins/"
-
 // updateRoute is the endpoint the window asks for release updates.
 const updateRoute = "/api/app-update/latest.json"
 
@@ -189,13 +186,13 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, files htt
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)
-	case strings.HasPrefix(r.URL.Path, pluginAssetsRoute):
+	case strings.HasPrefix(r.URL.Path, wire.PluginAssetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
 		defer s.state.questions.finish()
-		s.servePluginAsset(w, r)
+		wire.ServePluginAsset(w, r, s.getPluginDir)
 	case strings.HasPrefix(r.URL.Path, assetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
@@ -235,147 +232,6 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(resp.StatusCode)
 	_, _ = io.Copy(w, resp.Body)
-}
-
-func setPluginAssetContentType(w http.ResponseWriter, path string) {
-	switch filepath.Ext(path) {
-	case ".js", ".mjs":
-		w.Header().Set("Content-Type", "application/javascript")
-	case ".css":
-		w.Header().Set("Content-Type", "text/css")
-	case ".json":
-		w.Header().Set("Content-Type", "application/json")
-	case ".svg":
-		w.Header().Set("Content-Type", "image/svg+xml")
-	case ".png":
-		w.Header().Set("Content-Type", "image/png")
-	case ".wasm":
-		w.Header().Set("Content-Type", "application/wasm")
-	}
-}
-
-// servePluginAsset writes the bytes of a plugin's frontend bundle or stylesheet.
-func (s *Services) servePluginAsset(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet && r.Method != http.MethodHead {
-		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
-	}
-	if s.getPluginDir == nil {
-		http.Error(w, "plugin manager not configured", http.StatusNotFound)
-		return
-	}
-	assetPath := strings.TrimPrefix(r.URL.Path, pluginAssetsRoute)
-	parts := strings.SplitN(assetPath, "/", 2)
-	if len(parts) < 2 || parts[0] == "" || parts[1] == "" || !filepath.IsLocal(parts[1]) {
-		http.Error(w, "invalid plugin asset path", http.StatusBadRequest)
-		return
-	}
-
-	pluginDir, ok := s.getPluginDir(parts[0])
-	if !ok {
-		http.Error(w, "plugin not found", http.StatusNotFound)
-		return
-	}
-
-	file, info, err := openPluginAsset(r.Context(), pluginDir, parts[1])
-	if err != nil {
-		switch {
-		case errors.Is(err, os.ErrNotExist):
-			http.Error(w, "plugin asset not found", http.StatusNotFound)
-		case errors.Is(err, os.ErrPermission), errors.Is(err, errPluginAssetEscapes):
-			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
-		default:
-			http.Error(w, "cannot read plugin asset", http.StatusInternalServerError)
-		}
-		return
-	}
-	defer file.Close()
-
-	setPluginAssetContentType(w, parts[1])
-	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
-}
-
-// errPluginAssetEscapes marks a link that leads out of the plugin directory.
-var errPluginAssetEscapes = errors.New("plugin asset path escapes the plugin directory")
-
-// openPluginAsset opens a regular file below pluginDir. The directory is opened once and
-// the name is resolved inside it, so no link can lead out of it.
-func openPluginAsset(ctx context.Context, pluginDir, name string) (*os.File, os.FileInfo, error) {
-	if err := ctx.Err(); err != nil {
-		return nil, nil, err
-	}
-	root, err := os.OpenRoot(pluginDir)
-	if err != nil {
-		return nil, nil, err
-	}
-	defer root.Close()
-	file, err := root.Open(name)
-	if err != nil {
-		return nil, nil, classifyPluginAssetError(root, name, err)
-	}
-	info, err := file.Stat()
-	if err != nil {
-		_ = file.Close()
-		return nil, nil, err
-	}
-	if info.IsDir() {
-		_ = file.Close()
-		return nil, nil, os.ErrNotExist
-	}
-	return file, info, nil
-}
-
-// classifyPluginAssetError names the reason root.Open failed. A name whose links lead out of
-// the plugin directory is an escape; every other failure keeps its own error.
-func classifyPluginAssetError(root *os.Root, name string, openErr error) error {
-	if errors.Is(openErr, os.ErrNotExist) || errors.Is(openErr, os.ErrPermission) {
-		return openErr
-	}
-	if isPluginAssetEscape(root, name) {
-		return errPluginAssetEscapes
-	}
-	return openErr
-}
-
-// maxPluginAssetLinks bounds the links followed while checking one name.
-const maxPluginAssetLinks = 40
-
-// isPluginAssetEscape follows the links on name one component at a time and reports whether
-// the walk reaches an absolute target or climbs above the root.
-func isPluginAssetEscape(root *os.Root, name string) bool {
-	pending := strings.Split(filepath.ToSlash(name), "/")
-	var resolved []string
-	links := 0
-	for len(pending) > 0 {
-		component := pending[0]
-		pending = pending[1:]
-		switch component {
-		case "", ".":
-			continue
-		case "..":
-			if len(resolved) == 0 {
-				return true
-			}
-			resolved = resolved[:len(resolved)-1]
-			continue
-		}
-		path := strings.Join(append(resolved, component), "/")
-		target, err := root.Readlink(path)
-		if err != nil {
-			resolved = append(resolved, component)
-			continue
-		}
-		links++
-		if links > maxPluginAssetLinks {
-			return false
-		}
-		target = filepath.ToSlash(target)
-		if filepath.IsAbs(target) || strings.HasPrefix(target, "/") {
-			return true
-		}
-		pending = append(strings.Split(target, "/"), pending...)
-	}
-	return false
 }
 
 // newQuestionCounter takes every question a client asks and gives it back when it is

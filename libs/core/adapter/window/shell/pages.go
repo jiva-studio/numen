@@ -1,4 +1,4 @@
-package flashcards
+package shell
 
 import (
 	"embed"
@@ -14,38 +14,35 @@ import (
 //go:embed all:pages
 var pages embed.FS
 
-// policy is what this window may load.
-//
-// A card is HTML, and a deck may have come from another person, so the page
-// that. A picture written into a card is a `data:` URI, which is the card's own
-// bytes and no request at all.
+// policy is what this window may load. A plugin draws pictures it carries as `data:` URIs.
 var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 
-// Pages is the interface itself, built by `make interface` and carried inside
-// the binary. A binary built without it says so.
+// Pages is the interface itself, built by `make interface` and carried inside the binary. A binary
+// built without it says so.
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
-// NewHandler is the whole of what this window answers: the agent a card is asked about through,
-// the window itself, the themes it is dressed from, the services the plugins serve, which it
-// forwards, and the files the page is made of.
+// NewHandler is everything this window answers: the window itself, its themes, its plugins and the
+// files of their frontends, the services they serve, and the files the page is made of.
 func (a *API) NewHandler(files http.Handler) http.Handler {
-	asking, agent := numenv1connect.NewAgentServiceHandler(a)
-	rendered, itself := numenv1connect.NewWindowServiceHandler(a.Window)
-	var dressing string
+	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
+	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetPluginIDs})
+	var themesRoute string
 	var themes http.Handler
 	if a.Themes != nil {
-		dressing, themes = numenv1connect.NewThemeServiceHandler(a.Themes)
+		themesRoute, themes = numenv1connect.NewThemeServiceHandler(a.Themes)
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		switch {
-		case strings.HasPrefix(r.URL.Path, asking):
-			agent.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, rendered):
-			itself.ServeHTTP(w, r)
-		case themes != nil && strings.HasPrefix(r.URL.Path, dressing):
+		case strings.HasPrefix(r.URL.Path, windowRoute):
+			window.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, pluginsRoute):
+			plugins.ServeHTTP(w, r)
+		case themes != nil && strings.HasPrefix(r.URL.Path, themesRoute):
 			themes.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, wire.PluginAssetsRoute):
+			wire.ServePluginAsset(w, r, a.GetPluginDir)
 		case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
 			a.PluginServices.ServeHTTP(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):

@@ -147,11 +147,12 @@ linters:
 
         # The files named with ! below hold a port in their signature; each one
         # is on the list for one reason:
-        # editor/assembly.go, serve.go, state.go, services.go, index.go and flashcards/api.go
-        # bind the window to the ports the container hands it; editor/agent.go,
-        # flashcards/agent.go and focus.go hand port.Task and port.Window across
-        # the wire; editor/viewer.go and pool/documents.go hold
-        # the open document and the vault readers the viewer reads through;
+        # editor/assembly.go, serve.go, state.go, services.go and index.go
+        # bind the window to the ports the container hands it; shell/index.go
+        # answers the plugins in pluginport.PluginIndexState; editor/agent.go
+        # and focus.go hand port.Task and port.Window across the wire;
+        # editor/viewer.go and pool/documents.go hold the open document and the
+        # vault readers the viewer reads through;
         # cli/deps.go holds the ports the command line is handed.
         driving-adapter:
           list-mode: lax
@@ -165,9 +166,7 @@ linters:
             - "!**/adapter/window/editor/state.go"
             - "!**/adapter/window/editor/index.go"
             - "!**/adapter/window/editor/services.go"
-            - "!**/adapter/window/flashcards/api.go"
-            - "!**/adapter/window/flashcards/agent.go"
-            - "!**/adapter/window/flashcards/index.go"
+            - "!**/adapter/window/shell/index.go"
             - "!**/adapter/cli/deps.go"
           deny:
             - pkg: "github.com/jiva-studio/numen/libs/core/port"

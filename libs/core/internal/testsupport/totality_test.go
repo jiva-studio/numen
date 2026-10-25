@@ -40,7 +40,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.NameSource":           "adapter/window/editor: written by newWireNameSource",
 	"numen.v1.PluginEventErrorCode": "internal/adapter/plugin: read by readEventRefusal",
 	"numen.v1.Presence":             "adapter/window/editor: written by the presences table",
-	"numen.v1.Rating":               "adapter/window/flashcards: read by rating",
+	"numen.v1.Rating":               "plugins/views-flashcards-studio: read by parseRating",
 	"numen.v1.Role":                 "adapter/window/editor: read by roleOf",
 	"numen.v1.Rule":                 "internal/adapterlib/wire: round trip through RuleIn and RuleOf",
 	"numen.v1.SearchMode":           "adapter/window/editor: read by modeOf",

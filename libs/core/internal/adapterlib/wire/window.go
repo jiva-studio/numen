@@ -15,15 +15,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 )
 
-// The windows this application opens. A question is asked of one of them by
-// name, so that the two, which are open on the same vault at once, are never
-// answered for each other.
-const (
-	// Editor is the window a person writes in.
-	Editor = "editor"
-	// Review is the window a person runs their cards in.
-	Review = "review"
-)
+// Editor is the name of the window a person writes in. A question names the window it is asked of,
+// and a window answers only questions naming it.
+const Editor = "editor"
 
 // ErrAnotherWindow is a question naming a window other than the one it reached.
 var ErrAnotherWindow = errors.New("that is another window")
@@ -50,7 +44,7 @@ func (r *Reason) Why() string {
 // Both windows answer this from here, so what is being done reaches a person in
 // one shape and the drain that holds a window back is one piece of code.
 type Window struct {
-	// Named is the window this answers for, which is Editor or Review.
+	// Named is the window this answers for, which a question names to reach it.
 	Named string
 
 	// Tasking is everything being done behind the window. A window holding none
