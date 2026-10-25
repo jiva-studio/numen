@@ -111,7 +111,6 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE:           host.ErrStale,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED:        host.ErrOccupied,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER: host.ErrHeldByAnother,
-		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER:  host.ErrNoDataFolder,
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:      host.ErrNotANote,
 	}
 	for code, want := range cases {

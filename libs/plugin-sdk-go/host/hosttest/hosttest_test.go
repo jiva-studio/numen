@@ -48,19 +48,6 @@ func TestAHiddenVaultAnswersNoVault(t *testing.T) {
 	}
 }
 
-func TestADataFileGrowsByAppending(t *testing.T) {
-	ctx := context.Background()
-	v := hosttest.New("Physics")
-	_ = v.AppendData(ctx, "log", []byte("a"))
-	_ = v.AppendData(ctx, "log", []byte("b"))
-
-	got, err := v.ReadData(ctx, "log")
-
-	if err != nil || string(got) != "ab" {
-		t.Errorf("got %q (%v)", got, err)
-	}
-}
-
 func TestAnotherVaultIsWorkedByItsIdentity(t *testing.T) {
 	ctx := context.Background()
 	physics, chemistry := hosttest.New("Physics"), hosttest.New("Chemistry")
@@ -230,7 +217,7 @@ func TestVaultsMadeKnownToOneAnotherAreKnownToAll(t *testing.T) {
 	}
 }
 
-func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsData(t *testing.T) {
+func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"a.md": "x"})
 	if err := os.RemoveAll(v.Vault().Path); err != nil {
@@ -238,40 +225,11 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsData(t *testing.T) {
 	}
 
 	_, _, readErr := v.Read(ctx, "a.md")
-	appendErr := v.AppendData(ctx, "log", []byte("x"))
-	_, listErr := v.ListData(ctx)
+	appendErr := v.Store().Append(ctx, "log", []byte("x"))
+	_, listErr := v.Store().List(ctx)
 	notes, _ := v.GetNotes(ctx, []string{"a.md"})
 
 	if readErr == nil || errors.Is(readErr, host.ErrNotExist) || appendErr == nil || listErr == nil || len(notes) != 1 {
 		t.Errorf("got %v, %v, %v and %v", readErr, appendErr, listErr, notes)
-	}
-}
-
-func TestTheDataFolderIsAFolderOfTheVaultsOwnStoreWhereATestCanLookAndInsert(t *testing.T) {
-	ctx := context.Background()
-	v := hosttest.OnDisk(t, "Physics", nil, hosttest.DataFolder("flashcards"))
-	folder := filepath.Join(v.Vault().Path, ".numen", "flashcards")
-	if err := os.MkdirAll(folder, 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(folder, "beside.jsonl"), []byte("x\n"), 0o644); err != nil {
-		t.Fatal(err)
-	}
-
-	appendErr := v.AppendData(ctx, "run.jsonl", []byte("a\n"))
-	again := v.AppendData(ctx, "run.jsonl", []byte("b\n"))
-	items, listErr := v.ListData(ctx)
-	read, readErr := v.ReadData(ctx, "run.jsonl")
-	_, outside := v.ReadData(ctx, "../a.md")
-	_, missing := v.ReadData(ctx, "none.jsonl")
-
-	if appendErr != nil || again != nil || listErr != nil || readErr != nil || string(read) != "a\nb\n" {
-		t.Fatalf("got %v, %v, %v, %v and %q", appendErr, again, listErr, readErr, read)
-	}
-	if len(items) != 2 || items[0].Name != "beside.jsonl" || items[1].Size != 4 {
-		t.Errorf("the folder held %v", items)
-	}
-	if !errors.Is(outside, host.ErrOutside) || !errors.Is(missing, host.ErrNotExist) {
-		t.Errorf("got %v and %v", outside, missing)
 	}
 }

@@ -87,8 +87,6 @@ func fail(code v1.HostVaultErrorCode) error {
 		return ErrOccupied
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER:
 		return ErrHeldByAnother
-	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER:
-		return ErrNoDataFolder
 	case v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:
 		return ErrNotANote
 	}
@@ -308,40 +306,6 @@ func (c *Client) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, e
 	out := make([]domain.VaultProblem, 0, len(res.Msg.GetProblems()))
 	for _, one := range res.Msg.GetProblems() {
 		out = append(out, domain.VaultProblem{Path: one.GetPath(), Kind: domain.CheckParse, Detail: one.GetDetail()})
-	}
-	return out, nil
-}
-
-func (c *Client) ReadData(ctx context.Context, name string) ([]byte, error) {
-	res, err := c.rpc.ReadData(ctx, request(c, &v1.ReadDataRequest{Name: name}))
-	if err != nil {
-		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
-	}
-	return res.Msg.GetContent(), nil
-}
-
-func (c *Client) AppendData(ctx context.Context, name string, content []byte) error {
-	res, err := c.rpc.AppendData(ctx, request(c, &v1.AppendDataRequest{Name: name, Content: content}))
-	if err != nil {
-		return readError(err)
-	}
-	return fail(res.Msg.GetError())
-}
-
-func (c *Client) ListData(ctx context.Context) ([]DataFile, error) {
-	res, err := c.rpc.ListData(ctx, request(c, &v1.ListDataRequest{}))
-	if err != nil {
-		return nil, readError(err)
-	}
-	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, err
-	}
-	out := make([]DataFile, 0, len(res.Msg.GetFiles()))
-	for _, one := range res.Msg.GetFiles() {
-		out = append(out, DataFile{Name: one.GetName(), Size: one.GetSize()})
 	}
 	return out, nil
 }

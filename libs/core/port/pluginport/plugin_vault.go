@@ -6,26 +6,26 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// PluginDataFile is a file in the folder a plugin keeps its own data in.
-type PluginDataFile struct {
+// PluginStoreFile is a file of a plugin's folder: its name, and how many bytes it holds.
+type PluginStoreFile struct {
 	Name string
-	Size int
+	Size int64
 }
 
-// PluginDataStore is the folder one plugin keeps what it cannot make again in, inside a vault's
-// own store. It answers for that folder and no other.
-type PluginDataStore interface {
+// PluginStore is one plugin's own folder in a vault's store, `.numen/<plugin id>/`. A name is a file
+// directly in that folder; one that holds a slash or begins with a dot gets vaultport.ErrOutside.
+type PluginStore interface {
 	// Read returns what is kept under the name, or fs.ErrNotExist.
 	Read(ctx context.Context, name string) ([]byte, error)
-	// Append adds to the file of that name, making it if it is not there.
+	// Append adds to the end of the file, making it when it is not there.
 	Append(ctx context.Context, name string, content []byte) error
-	// List returns the files directly in the folder, sorted by name.
-	List(ctx context.Context) ([]PluginDataFile, error)
+	// List returns the files of the folder, sorted by name.
+	List(ctx context.Context) ([]PluginStoreFile, error)
 }
 
-// PluginDataStores opens the folder of a plugin in the store of a vault.
-type PluginDataStores interface {
-	Open(v domain.Vault, folder string) (PluginDataStore, error)
+// PluginStores opens a plugin's folder in the store of a vault.
+type PluginStores interface {
+	Open(v domain.Vault, pluginID string) (PluginStore, error)
 }
 
 // PluginCache keeps what a plugin worked out for a vault between launches. It belongs to the
@@ -79,10 +79,10 @@ type PluginVaultWriter interface {
 	Scan(ctx context.Context, paths []string) error
 }
 
-// PluginVaultStore provides access to plugin persistent data folders and cache.
+// PluginVaultStore provides the plugin folders of the vault's store and the cache.
 type PluginVaultStore interface {
-	// OpenData opens the folder of the store of the vault.
-	OpenData(folder string) (PluginDataStore, error)
+	// OpenStore opens the folder of the plugin in the store of the vault.
+	OpenStore(pluginID string) (PluginStore, error)
 	ReadCache(ctx context.Context, pluginID, name string) ([]byte, bool, error)
 	WriteCache(ctx context.Context, pluginID, name string, content []byte) error
 }
@@ -108,7 +108,7 @@ type PluginVaultLifecycle interface {
 }
 
 // PluginVault is the vault the window is showing, as the host works it for a plugin: its files,
-// what the index says of its notes and links, the folder of its store a plugin keeps data in, and
+// what the index says of its notes and links, the plugin's folder in its store, and
 // the cache the installation keeps for a plugin.
 type PluginVault interface {
 	PluginVaultReader

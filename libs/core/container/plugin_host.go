@@ -201,7 +201,7 @@ func (c Config) OpenPluginVault(
 		Notes:    queries,
 		Links:    db.Links(),
 		Problems: db.Problems(),
-		Data:     derivedfile.PluginData{Options: c.vaultOptions()},
+		Stores:   derivedfile.PluginStores{Options: c.vaultOptions()},
 		Cache:    cache,
 		Watcher:  c.VaultWatcher(),
 		Written:  hooks.Written,

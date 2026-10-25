@@ -87,15 +87,6 @@ const (
 	// HostVaultServiceGetParseProblemsProcedure is the fully-qualified name of the HostVaultService's
 	// GetParseProblems RPC.
 	HostVaultServiceGetParseProblemsProcedure = "/numen.v1.HostVaultService/GetParseProblems"
-	// HostVaultServiceReadDataProcedure is the fully-qualified name of the HostVaultService's ReadData
-	// RPC.
-	HostVaultServiceReadDataProcedure = "/numen.v1.HostVaultService/ReadData"
-	// HostVaultServiceAppendDataProcedure is the fully-qualified name of the HostVaultService's
-	// AppendData RPC.
-	HostVaultServiceAppendDataProcedure = "/numen.v1.HostVaultService/AppendData"
-	// HostVaultServiceListDataProcedure is the fully-qualified name of the HostVaultService's ListData
-	// RPC.
-	HostVaultServiceListDataProcedure = "/numen.v1.HostVaultService/ListData"
 	// HostVaultServiceReadCacheProcedure is the fully-qualified name of the HostVaultService's
 	// ReadCache RPC.
 	HostVaultServiceReadCacheProcedure = "/numen.v1.HostVaultService/ReadCache"
@@ -161,14 +152,6 @@ type HostVaultServiceClient interface {
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
-	// ReadData reads a file of the folder the plugin's manifest names in the
-	// vault's own store. The store keeps what the plugin made and cannot make
-	// again; the host answers for no other folder.
-	ReadData(context.Context, *connect.Request[v1.ReadDataRequest]) (*connect.Response[v1.ReadDataResponse], error)
-	// AppendData adds to a file of that folder, making it if it is not there.
-	AppendData(context.Context, *connect.Request[v1.AppendDataRequest]) (*connect.Response[v1.AppendDataResponse], error)
-	// ListData lists the files of that folder.
-	ListData(context.Context, *connect.Request[v1.ListDataRequest]) (*connect.Response[v1.ListDataResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
 	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
@@ -306,24 +289,6 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
 			connect.WithClientOptions(opts...),
 		),
-		readData: connect.NewClient[v1.ReadDataRequest, v1.ReadDataResponse](
-			httpClient,
-			baseURL+HostVaultServiceReadDataProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("ReadData")),
-			connect.WithClientOptions(opts...),
-		),
-		appendData: connect.NewClient[v1.AppendDataRequest, v1.AppendDataResponse](
-			httpClient,
-			baseURL+HostVaultServiceAppendDataProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("AppendData")),
-			connect.WithClientOptions(opts...),
-		),
-		listData: connect.NewClient[v1.ListDataRequest, v1.ListDataResponse](
-			httpClient,
-			baseURL+HostVaultServiceListDataProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("ListData")),
-			connect.WithClientOptions(opts...),
-		),
 		readCache: connect.NewClient[v1.ReadCacheRequest, v1.ReadCacheResponse](
 			httpClient,
 			baseURL+HostVaultServiceReadCacheProcedure,
@@ -377,9 +342,6 @@ type hostVaultServiceClient struct {
 	getBacklinks       *connect.Client[v1.GetBacklinksRequest, v1.GetBacklinksResponse]
 	resolveLinks       *connect.Client[v1.ResolveLinksRequest, v1.ResolveLinksResponse]
 	getParseProblems   *connect.Client[v1.GetParseProblemsRequest, v1.GetParseProblemsResponse]
-	readData           *connect.Client[v1.ReadDataRequest, v1.ReadDataResponse]
-	appendData         *connect.Client[v1.AppendDataRequest, v1.AppendDataResponse]
-	listData           *connect.Client[v1.ListDataRequest, v1.ListDataResponse]
 	readCache          *connect.Client[v1.ReadCacheRequest, v1.ReadCacheResponse]
 	writeCache         *connect.Client[v1.WriteCacheRequest, v1.WriteCacheResponse]
 	setVaultInUse      *connect.Client[v1.SetVaultInUseRequest, v1.SetVaultInUseResponse]
@@ -477,21 +439,6 @@ func (c *hostVaultServiceClient) GetParseProblems(ctx context.Context, req *conn
 	return c.getParseProblems.CallUnary(ctx, req)
 }
 
-// ReadData calls numen.v1.HostVaultService.ReadData.
-func (c *hostVaultServiceClient) ReadData(ctx context.Context, req *connect.Request[v1.ReadDataRequest]) (*connect.Response[v1.ReadDataResponse], error) {
-	return c.readData.CallUnary(ctx, req)
-}
-
-// AppendData calls numen.v1.HostVaultService.AppendData.
-func (c *hostVaultServiceClient) AppendData(ctx context.Context, req *connect.Request[v1.AppendDataRequest]) (*connect.Response[v1.AppendDataResponse], error) {
-	return c.appendData.CallUnary(ctx, req)
-}
-
-// ListData calls numen.v1.HostVaultService.ListData.
-func (c *hostVaultServiceClient) ListData(ctx context.Context, req *connect.Request[v1.ListDataRequest]) (*connect.Response[v1.ListDataResponse], error) {
-	return c.listData.CallUnary(ctx, req)
-}
-
 // ReadCache calls numen.v1.HostVaultService.ReadCache.
 func (c *hostVaultServiceClient) ReadCache(ctx context.Context, req *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error) {
 	return c.readCache.CallUnary(ctx, req)
@@ -565,14 +512,6 @@ type HostVaultServiceHandler interface {
 	ResolveLinks(context.Context, *connect.Request[v1.ResolveLinksRequest]) (*connect.Response[v1.ResolveLinksResponse], error)
 	// GetParseProblems lists what parsing each file of the vault turned up.
 	GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error)
-	// ReadData reads a file of the folder the plugin's manifest names in the
-	// vault's own store. The store keeps what the plugin made and cannot make
-	// again; the host answers for no other folder.
-	ReadData(context.Context, *connect.Request[v1.ReadDataRequest]) (*connect.Response[v1.ReadDataResponse], error)
-	// AppendData adds to a file of that folder, making it if it is not there.
-	AppendData(context.Context, *connect.Request[v1.AppendDataRequest]) (*connect.Response[v1.AppendDataResponse], error)
-	// ListData lists the files of that folder.
-	ListData(context.Context, *connect.Request[v1.ListDataRequest]) (*connect.Response[v1.ListDataResponse], error)
 	// ReadCache reads what the plugin kept for this vault under a name. The cache
 	// belongs to the installation and not to the vault, and can be made again.
 	ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error)
@@ -706,24 +645,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("GetParseProblems")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceReadDataHandler := connect.NewUnaryHandler(
-		HostVaultServiceReadDataProcedure,
-		svc.ReadData,
-		connect.WithSchema(hostVaultServiceMethods.ByName("ReadData")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceAppendDataHandler := connect.NewUnaryHandler(
-		HostVaultServiceAppendDataProcedure,
-		svc.AppendData,
-		connect.WithSchema(hostVaultServiceMethods.ByName("AppendData")),
-		connect.WithHandlerOptions(opts...),
-	)
-	hostVaultServiceListDataHandler := connect.NewUnaryHandler(
-		HostVaultServiceListDataProcedure,
-		svc.ListData,
-		connect.WithSchema(hostVaultServiceMethods.ByName("ListData")),
-		connect.WithHandlerOptions(opts...),
-	)
 	hostVaultServiceReadCacheHandler := connect.NewUnaryHandler(
 		HostVaultServiceReadCacheProcedure,
 		svc.ReadCache,
@@ -792,12 +713,6 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceResolveLinksHandler.ServeHTTP(w, r)
 		case HostVaultServiceGetParseProblemsProcedure:
 			hostVaultServiceGetParseProblemsHandler.ServeHTTP(w, r)
-		case HostVaultServiceReadDataProcedure:
-			hostVaultServiceReadDataHandler.ServeHTTP(w, r)
-		case HostVaultServiceAppendDataProcedure:
-			hostVaultServiceAppendDataHandler.ServeHTTP(w, r)
-		case HostVaultServiceListDataProcedure:
-			hostVaultServiceListDataHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadCacheProcedure:
 			hostVaultServiceReadCacheHandler.ServeHTTP(w, r)
 		case HostVaultServiceWriteCacheProcedure:
@@ -887,18 +802,6 @@ func (UnimplementedHostVaultServiceHandler) ResolveLinks(context.Context, *conne
 
 func (UnimplementedHostVaultServiceHandler) GetParseProblems(context.Context, *connect.Request[v1.GetParseProblemsRequest]) (*connect.Response[v1.GetParseProblemsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetParseProblems is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) ReadData(context.Context, *connect.Request[v1.ReadDataRequest]) (*connect.Response[v1.ReadDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ReadData is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) AppendData(context.Context, *connect.Request[v1.AppendDataRequest]) (*connect.Response[v1.AppendDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.AppendData is not implemented"))
-}
-
-func (UnimplementedHostVaultServiceHandler) ListData(context.Context, *connect.Request[v1.ListDataRequest]) (*connect.Response[v1.ListDataResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.ListData is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) ReadCache(context.Context, *connect.Request[v1.ReadCacheRequest]) (*connect.Response[v1.ReadCacheResponse], error) {

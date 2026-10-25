@@ -90,7 +90,6 @@ var (
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
 	ErrInvalidAgentSetting    = errors.New("invalid agent setting")
 	ErrInvalidModelsOf        = errors.New("only a string setting is offered the models of a program")
-	ErrInvalidData            = errors.New("invalid data folder")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
 )
@@ -235,9 +234,6 @@ type PluginManifest struct {
 	// host to keep. The host hands them over as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
 	Secrets []string `json:"secrets,omitempty"`
-	// Data is the folder, inside the store the host keeps in each vault, where the plugin keeps what
-	// it cannot make again. The host answers for that folder and no other.
-	Data string `json:"data,omitempty"`
 	// Services are the services the plugin serves to the windows, by their full names. A window that
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
@@ -304,7 +300,6 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
-	issues = append(issues, m.listDataIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
@@ -383,15 +378,6 @@ func (m PluginManifest) GetNoteType(noteType string) (PluginNoteType, bool) {
 		}
 	}
 	return PluginNoteType{}, false
-}
-
-// listDataIssues checks that the folder the plugin keeps its data in is a name of letters, digits,
-// _ and -.
-func (m PluginManifest) listDataIssues() []error {
-	if m.Data != "" && !manifestSecretPattern.MatchString(m.Data) {
-		return []error{fmt.Errorf("%w: %q", ErrInvalidData, m.Data)}
-	}
-	return nil
 }
 
 // listAgentSettingIssues checks the setting that chooses the agent: one at most,

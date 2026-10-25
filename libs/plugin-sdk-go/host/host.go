@@ -1,8 +1,10 @@
 // Package host is the vault as a plugin works it through the host: its files, its notes and links
-// as the index knows them, the folder of its own data, and the cache the installation keeps for it.
+// as the index knows them, the cache the installation keeps for it, and its own folder of the
+// vault's store.
 //
-// The host answers each call as the plugin it knows by its token, and holds a call that reads to
-// vault:read and a call that changes anything to vault:write.
+// The host answers each call as the plugin it knows by its token. It holds a call on the vault that
+// reads to vault:read and one that changes anything to vault:write; the plugin's own folder takes
+// no permission.
 package host
 
 import (
@@ -25,8 +27,6 @@ var (
 	ErrOccupied = errors.New("host: a file is already there")
 	// ErrHeldByAnother is what a name gets when another program holds the file.
 	ErrHeldByAnother = errors.New("host: the file is held by another program")
-	// ErrNoDataFolder is what a data call gets when the manifest names no data folder.
-	ErrNoDataFolder = errors.New("host: the manifest names no data folder")
 	// ErrNotANote is what a path gets when the file is not a note the vault holds.
 	ErrNotANote = edit.ErrNotANote
 	// ErrUnknownVault is what a call gets when it names a vault the installation does not know.
@@ -34,12 +34,6 @@ var (
 	// ErrNotExist is fs.ErrNotExist: a file, a note or a name that is not there.
 	ErrNotExist = fs.ErrNotExist
 )
-
-// DataFile is a file in the folder the plugin keeps its data in.
-type DataFile struct {
-	Name string
-	Size int64
-}
 
 type IndexStatus int
 
@@ -104,11 +98,6 @@ type Vault interface {
 	GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error)
 	ResolveLinks(ctx context.Context, from string, targets []string) (map[string]domain.ResolvedLink, error)
 	GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error)
-
-	// ReadData reads a file of the plugin's folder in the vault's own store.
-	ReadData(ctx context.Context, name string) ([]byte, error)
-	AppendData(ctx context.Context, name string, content []byte) error
-	ListData(ctx context.Context) ([]DataFile, error)
 
 	// ReadCache returns what the plugin kept for this vault under the name, and false where nothing is.
 	ReadCache(ctx context.Context, name string) ([]byte, bool, error)

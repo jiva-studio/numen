@@ -26,7 +26,7 @@ type Vault struct {
 	Links   noteport.LinkQueries
 	// Problems answers what parsing turned up. Without it nothing is.
 	Problems recognitionport.ProblemQueries
-	Data     pluginport.PluginDataStores
+	Stores   pluginport.PluginStores
 	Cache    pluginport.PluginCache
 	Watcher  vaultport.VaultWatcher
 	// Vaults lists every vault the installation knows, and Find returns the vault of an identity or
@@ -273,12 +273,12 @@ func (a Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, err
 	return a.Problems.GetParseProblems(ctx, v.ID)
 }
 
-func (a Vault) OpenData(folder string) (pluginport.PluginDataStore, error) {
+func (a Vault) OpenStore(pluginID string) (pluginport.PluginStore, error) {
 	v, err := a.open()
 	if err != nil {
 		return nil, err
 	}
-	return a.Data.Open(v, folder)
+	return a.Stores.Open(v, pluginID)
 }
 
 func (a Vault) ReadCache(ctx context.Context, pluginID, name string) ([]byte, bool, error) {

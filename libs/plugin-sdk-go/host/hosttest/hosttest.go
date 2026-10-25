@@ -26,11 +26,8 @@ type Vault struct {
 	files    store
 	indexed  map[string]domain.Note
 	rejected map[string]error
-	// unwritable are the files that may be read and not written, and unreadData the data files that may
-	// not be read.
+	// unwritable are the files that may be read and not written.
 	unwritable map[string]error
-	unreadData map[string]error
-	data       dataStore
 	cache      map[string][]byte
 	locked     chan struct{}
 	scanned    [][]string
@@ -51,7 +48,7 @@ func New(name string) *Vault {
 
 // OnDisk is a vault of the notes given, written into a folder of the test's own. The notes are
 // files there, and a test that changes them changes the vault.
-func OnDisk(tb testing.TB, name string, notes map[string]string, options ...Option) *Vault {
+func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 	tb.Helper()
 	root := tb.TempDir()
 	for filePath, body := range notes {
@@ -64,9 +61,6 @@ func OnDisk(tb testing.TB, name string, notes map[string]string, options ...Opti
 		}
 	}
 	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, disk{root: root})
-	for _, option := range options {
-		option(v)
-	}
 	v.Reindex()
 	return v
 }
@@ -80,8 +74,6 @@ func newVault(v domain.Vault, files store) *Vault {
 		rejected: map[string]error{},
 
 		unwritable: map[string]error{},
-		unreadData: map[string]error{},
-		data:       memoryData{files: map[string][]byte{}},
 		cache:      map[string][]byte{},
 		locked:     make(chan struct{}, 1),
 		state:      host.IndexState{Status: host.Indexed},
@@ -94,20 +86,6 @@ func newVault(v domain.Vault, files store) *Vault {
 type world struct {
 	mu      sync.Mutex
 	members []*Vault
-}
-
-// Option changes how a vault on disk is made.
-type Option func(*Vault)
-
-// DataFolder keeps the plugin's data in the folder of that name in the vault's own store, as the host
-// does for the plugin whose manifest names it, so that a test can put files there and read what the
-// plugin wrote.
-func DataFolder(folder string) Option {
-	return func(v *Vault) {
-		if on, isDisk := v.files.(disk); isDisk {
-			v.data = diskData{dir: filepath.Join(on.root, ".numen", folder)}
-		}
-	}
 }
 
 // Vault is the vault as the host names it: its identity, its name and where it is.
@@ -123,18 +101,6 @@ func (v *Vault) RefuseWriting(filePath string, err error) {
 		return
 	}
 	v.unwritable[filePath] = err
-}
-
-// RefuseData makes the reading of a file of the plugin's data folder fail with err. A nil err lets it
-// be read again.
-func (v *Vault) RefuseData(name string, err error) {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err == nil {
-		delete(v.unreadData, name)
-		return
-	}
-	v.unreadData[name] = err
 }
 
 // Refuse makes every read and write of the file fail with err, as a file the host may not open
@@ -505,45 +471,6 @@ func (v *Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, er
 		}
 	}
 	return out, nil
-}
-
-func (v *Vault) ReadData(ctx context.Context, name string) ([]byte, error) {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
-		return nil, err
-	}
-	if err := v.reach(); err != nil {
-		return nil, err
-	}
-	if failErr := v.unreadData[name]; failErr != nil {
-		return nil, failErr
-	}
-	return v.data.read(name)
-}
-
-func (v *Vault) AppendData(ctx context.Context, name string, content []byte) error {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
-		return err
-	}
-	if err := v.reach(); err != nil {
-		return err
-	}
-	return v.data.append(name, content)
-}
-
-func (v *Vault) ListData(ctx context.Context) ([]host.DataFile, error) {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	if err := v.gate(ctx); err != nil {
-		return nil, err
-	}
-	if err := v.reach(); err != nil {
-		return nil, err
-	}
-	return v.data.list()
 }
 
 func (v *Vault) ReadCache(ctx context.Context, name string) ([]byte, bool, error) {

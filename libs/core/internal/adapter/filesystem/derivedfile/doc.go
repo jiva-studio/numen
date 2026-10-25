@@ -1,2 +1,2 @@
-// Package derivedfile keeps the files derived from a vault outside it: artifacts and the data of plugins.
+// Package derivedfile keeps the files derived from a vault outside it: artifacts and the folders of plugins.
 package derivedfile

@@ -43,13 +43,6 @@ func (h *Host) GetPluginVault() pluginport.PluginVault {
 	return h.vault
 }
 
-// GetPluginData is the folder of the store of a vault that the plugin keeps its data in.
-func (h *Host) GetPluginData(pluginID string) string {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.plugins[pluginID].Manifest.Data
-}
-
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer completionport.Completer) {

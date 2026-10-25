@@ -51,16 +51,26 @@ func (e *vaultEndpoint) begin(header http.Header, permission string) (string, pl
 	if err != nil {
 		return "", nil, err
 	}
-	vault := e.endpoint.callers.GetPluginVault()
+	vault, err := e.endpoint.getVault(header)
+	if err != nil {
+		return "", nil, err
+	}
+	return pluginID, vault, nil
+}
+
+// getVault is the vault a call works: the one its Numen-Vault header names, else the one the host
+// shows. It is nil where the host has no vault to offer.
+func (e *Endpoint) getVault(header http.Header) (pluginport.PluginVault, error) {
+	vault := e.callers.GetPluginVault()
 	named := header.Get(vaultHeader)
 	if vault == nil || named == "" {
-		return pluginID, vault, nil
+		return vault, nil
 	}
 	linked, err := vault.With(domain.VaultID(named))
 	if err != nil {
-		return "", nil, connect.NewError(connect.CodeNotFound, err)
+		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	return pluginID, linked, nil
+	return linked, nil
 }
 
 // answer, the end of the caller's context is cancelled, and anything else is internal.
@@ -524,80 +534,6 @@ func (e *vaultEndpoint) GetParseProblems(
 		problems = append(problems, &v1.HostParseProblem{Path: one.Path, Detail: one.Detail})
 	}
 	return connect.NewResponse(&v1.GetParseProblemsResponse{Problems: problems}), nil
-}
-
-// openData opens the folder the plugin's manifest names in the store of the vault.
-func (e *vaultEndpoint) openData(ctx context.Context, pluginID string, vault pluginport.PluginVault) (pluginport.PluginDataStore, v1.HostVaultErrorCode, error) {
-	if vault == nil {
-		return nil, noVault, nil
-	}
-	folder := e.endpoint.callers.GetPluginData(pluginID)
-	if folder == "" {
-		return nil, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER, nil
-	}
-	store, err := vault.OpenData(folder)
-	if err != nil {
-		code, failure := answer(ctx, err)
-		return nil, code, failure
-	}
-	return store, v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED, nil
-}
-
-func (e *vaultEndpoint) ReadData(
-	ctx context.Context, req *connect.Request[v1.ReadDataRequest],
-) (*connect.Response[v1.ReadDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	store, code, err := e.openData(ctx, pluginID, vault)
-	if err != nil || store == nil {
-		return connect.NewResponse(&v1.ReadDataResponse{Error: code}), err
-	}
-	content, err := store.Read(ctx, req.Msg.GetName())
-	code, err = answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ReadDataResponse{Error: code}), err
-	}
-	return connect.NewResponse(&v1.ReadDataResponse{Content: content}), nil
-}
-
-func (e *vaultEndpoint) AppendData(
-	ctx context.Context, req *connect.Request[v1.AppendDataRequest],
-) (*connect.Response[v1.AppendDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultWrite)
-	if err != nil {
-		return nil, err
-	}
-	store, code, err := e.openData(ctx, pluginID, vault)
-	if err != nil || store == nil {
-		return connect.NewResponse(&v1.AppendDataResponse{Error: code}), err
-	}
-	code, err = answer(ctx, store.Append(ctx, req.Msg.GetName(), req.Msg.GetContent()))
-	return connect.NewResponse(&v1.AppendDataResponse{Error: code}), err
-}
-
-func (e *vaultEndpoint) ListData(
-	ctx context.Context, req *connect.Request[v1.ListDataRequest],
-) (*connect.Response[v1.ListDataResponse], error) {
-	pluginID, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
-	if err != nil {
-		return nil, err
-	}
-	store, code, err := e.openData(ctx, pluginID, vault)
-	if err != nil || store == nil {
-		return connect.NewResponse(&v1.ListDataResponse{Error: code}), err
-	}
-	target, err := store.List(ctx)
-	code, err = answer(ctx, err)
-	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.ListDataResponse{Error: code}), err
-	}
-	files := make([]*v1.HostDataFile, 0, len(target))
-	for _, one := range target {
-		files = append(files, &v1.HostDataFile{Name: one.Name, Size: int64(one.Size)})
-	}
-	return connect.NewResponse(&v1.ListDataResponse{Files: files}), nil
 }
 
 func (e *vaultEndpoint) ReadCache(

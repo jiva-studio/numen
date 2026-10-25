@@ -38,8 +38,6 @@ const (
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED HostVaultErrorCode = 5
 	// Another program holds the file.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER HostVaultErrorCode = 6
-	// The plugin's manifest names no folder in the vault's store.
-	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER HostVaultErrorCode = 7
 	// The path is not a note this vault holds.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE HostVaultErrorCode = 8
 )
@@ -54,7 +52,6 @@ var (
 		4: "HOST_VAULT_ERROR_CODE_STALE",
 		5: "HOST_VAULT_ERROR_CODE_OCCUPIED",
 		6: "HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER",
-		7: "HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER",
 		8: "HOST_VAULT_ERROR_CODE_NOT_A_NOTE",
 	}
 	HostVaultErrorCode_value = map[string]int32{
@@ -65,7 +62,6 @@ var (
 		"HOST_VAULT_ERROR_CODE_STALE":           4,
 		"HOST_VAULT_ERROR_CODE_OCCUPIED":        5,
 		"HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER": 6,
-		"HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER":  7,
 		"HOST_VAULT_ERROR_CODE_NOT_A_NOTE":      8,
 	}
 )
@@ -2378,340 +2374,6 @@ func (x *GetParseProblemsResponse) GetProblems() []*HostParseProblem {
 	return nil
 }
 
-type ReadDataRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// The name of a file inside the folder.
-	Name          string `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadDataRequest) Reset() {
-	*x = ReadDataRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[45]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadDataRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadDataRequest) ProtoMessage() {}
-
-func (x *ReadDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[45]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadDataRequest.ProtoReflect.Descriptor instead.
-func (*ReadDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{45}
-}
-
-func (x *ReadDataRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-type ReadDataResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReadDataResponse) Reset() {
-	*x = ReadDataResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[46]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReadDataResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReadDataResponse) ProtoMessage() {}
-
-func (x *ReadDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[46]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReadDataResponse.ProtoReflect.Descriptor instead.
-func (*ReadDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{46}
-}
-
-func (x *ReadDataResponse) GetError() HostVaultErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
-}
-
-func (x *ReadDataResponse) GetContent() []byte {
-	if x != nil {
-		return x.Content
-	}
-	return nil
-}
-
-type AppendDataRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AppendDataRequest) Reset() {
-	*x = AppendDataRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[47]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AppendDataRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AppendDataRequest) ProtoMessage() {}
-
-func (x *AppendDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[47]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AppendDataRequest.ProtoReflect.Descriptor instead.
-func (*AppendDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{47}
-}
-
-func (x *AppendDataRequest) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *AppendDataRequest) GetContent() []byte {
-	if x != nil {
-		return x.Content
-	}
-	return nil
-}
-
-type AppendDataResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *AppendDataResponse) Reset() {
-	*x = AppendDataResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[48]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *AppendDataResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*AppendDataResponse) ProtoMessage() {}
-
-func (x *AppendDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[48]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use AppendDataResponse.ProtoReflect.Descriptor instead.
-func (*AppendDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{48}
-}
-
-func (x *AppendDataResponse) GetError() HostVaultErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
-}
-
-type ListDataRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListDataRequest) Reset() {
-	*x = ListDataRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[49]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListDataRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListDataRequest) ProtoMessage() {}
-
-func (x *ListDataRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[49]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListDataRequest.ProtoReflect.Descriptor instead.
-func (*ListDataRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{49}
-}
-
-// HostDataFile is a file of the plugin's folder in the vault's store.
-type HostDataFile struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HostDataFile) Reset() {
-	*x = HostDataFile{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[50]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HostDataFile) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HostDataFile) ProtoMessage() {}
-
-func (x *HostDataFile) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[50]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HostDataFile.ProtoReflect.Descriptor instead.
-func (*HostDataFile) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{50}
-}
-
-func (x *HostDataFile) GetName() string {
-	if x != nil {
-		return x.Name
-	}
-	return ""
-}
-
-func (x *HostDataFile) GetSize() int64 {
-	if x != nil {
-		return x.Size
-	}
-	return 0
-}
-
-type ListDataResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Files         []*HostDataFile        `protobuf:"bytes,2,rep,name=files,proto3" json:"files,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListDataResponse) Reset() {
-	*x = ListDataResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[51]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListDataResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListDataResponse) ProtoMessage() {}
-
-func (x *ListDataResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[51]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListDataResponse.ProtoReflect.Descriptor instead.
-func (*ListDataResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{51}
-}
-
-func (x *ListDataResponse) GetError() HostVaultErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
-}
-
-func (x *ListDataResponse) GetFiles() []*HostDataFile {
-	if x != nil {
-		return x.Files
-	}
-	return nil
-}
-
 type ReadCacheRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -2721,7 +2383,7 @@ type ReadCacheRequest struct {
 
 func (x *ReadCacheRequest) Reset() {
 	*x = ReadCacheRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[52]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[45]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2733,7 +2395,7 @@ func (x *ReadCacheRequest) String() string {
 func (*ReadCacheRequest) ProtoMessage() {}
 
 func (x *ReadCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[52]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[45]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2746,7 +2408,7 @@ func (x *ReadCacheRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadCacheRequest.ProtoReflect.Descriptor instead.
 func (*ReadCacheRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{52}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{45}
 }
 
 func (x *ReadCacheRequest) GetName() string {
@@ -2769,7 +2431,7 @@ type ReadCacheResponse struct {
 
 func (x *ReadCacheResponse) Reset() {
 	*x = ReadCacheResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[53]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[46]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2781,7 +2443,7 @@ func (x *ReadCacheResponse) String() string {
 func (*ReadCacheResponse) ProtoMessage() {}
 
 func (x *ReadCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[53]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[46]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2794,7 +2456,7 @@ func (x *ReadCacheResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadCacheResponse.ProtoReflect.Descriptor instead.
 func (*ReadCacheResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{53}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{46}
 }
 
 func (x *ReadCacheResponse) GetError() HostVaultErrorCode {
@@ -2828,7 +2490,7 @@ type WriteCacheRequest struct {
 
 func (x *WriteCacheRequest) Reset() {
 	*x = WriteCacheRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[54]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[47]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2840,7 +2502,7 @@ func (x *WriteCacheRequest) String() string {
 func (*WriteCacheRequest) ProtoMessage() {}
 
 func (x *WriteCacheRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[54]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[47]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2853,7 +2515,7 @@ func (x *WriteCacheRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteCacheRequest.ProtoReflect.Descriptor instead.
 func (*WriteCacheRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{54}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{47}
 }
 
 func (x *WriteCacheRequest) GetName() string {
@@ -2879,7 +2541,7 @@ type WriteCacheResponse struct {
 
 func (x *WriteCacheResponse) Reset() {
 	*x = WriteCacheResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[55]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[48]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2891,7 +2553,7 @@ func (x *WriteCacheResponse) String() string {
 func (*WriteCacheResponse) ProtoMessage() {}
 
 func (x *WriteCacheResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[55]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[48]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2904,7 +2566,7 @@ func (x *WriteCacheResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WriteCacheResponse.ProtoReflect.Descriptor instead.
 func (*WriteCacheResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{55}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{48}
 }
 
 func (x *WriteCacheResponse) GetError() HostVaultErrorCode {
@@ -2922,7 +2584,7 @@ type WatchVaultRequest struct {
 
 func (x *WatchVaultRequest) Reset() {
 	*x = WatchVaultRequest{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[56]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[49]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2934,7 +2596,7 @@ func (x *WatchVaultRequest) String() string {
 func (*WatchVaultRequest) ProtoMessage() {}
 
 func (x *WatchVaultRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[56]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[49]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2947,7 +2609,7 @@ func (x *WatchVaultRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultRequest.ProtoReflect.Descriptor instead.
 func (*WatchVaultRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{56}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{49}
 }
 
 type WatchVaultResponse struct {
@@ -2964,7 +2626,7 @@ type WatchVaultResponse struct {
 
 func (x *WatchVaultResponse) Reset() {
 	*x = WatchVaultResponse{}
-	mi := &file_numen_v1_hostvault_proto_msgTypes[57]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[50]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2976,7 +2638,7 @@ func (x *WatchVaultResponse) String() string {
 func (*WatchVaultResponse) ProtoMessage() {}
 
 func (x *WatchVaultResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_hostvault_proto_msgTypes[57]
+	mi := &file_numen_v1_hostvault_proto_msgTypes[50]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2989,7 +2651,7 @@ func (x *WatchVaultResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use WatchVaultResponse.ProtoReflect.Descriptor instead.
 func (*WatchVaultResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{57}
+	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{50}
 }
 
 func (x *WatchVaultResponse) GetPaths() []string {
@@ -3136,24 +2798,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x06detail\x18\x02 \x01(\tR\x06detail\"\x86\x01\n" +
 	"\x18GetParseProblemsResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x126\n" +
-	"\bproblems\x18\x02 \x03(\v2\x1a.numen.v1.HostParseProblemR\bproblems\"%\n" +
-	"\x0fReadDataRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\"`\n" +
-	"\x10ReadDataResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"A\n" +
-	"\x11AppendDataRequest\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\"H\n" +
-	"\x12AppendDataResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\"\x11\n" +
-	"\x0fListDataRequest\"6\n" +
-	"\fHostDataFile\x12\x12\n" +
-	"\x04name\x18\x01 \x01(\tR\x04name\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\x03R\x04size\"t\n" +
-	"\x10ListDataResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12,\n" +
-	"\x05files\x18\x02 \x03(\v2\x16.numen.v1.HostDataFileR\x05files\"&\n" +
+	"\bproblems\x18\x02 \x03(\v2\x1a.numen.v1.HostParseProblemR\bproblems\"&\n" +
 	"\x10ReadCacheRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"w\n" +
 	"\x11ReadCacheResponse\x122\n" +
@@ -3168,7 +2813,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x11WatchVaultRequest\"T\n" +
 	"\x12WatchVaultResponse\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\x12(\n" +
-	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xe5\x02\n" +
+	"\x10is_vault_changed\x18\x02 \x01(\bR\x0eisVaultChanged*\xbb\x02\n" +
 	"\x12HostVaultErrorCode\x12%\n" +
 	"!HOST_VAULT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
@@ -3176,14 +2821,13 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x1dHOST_VAULT_ERROR_CODE_OUTSIDE\x10\x03\x12\x1f\n" +
 	"\x1bHOST_VAULT_ERROR_CODE_STALE\x10\x04\x12\"\n" +
 	"\x1eHOST_VAULT_ERROR_CODE_OCCUPIED\x10\x05\x12)\n" +
-	"%HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER\x10\x06\x12(\n" +
-	"$HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER\x10\a\x12$\n" +
+	"%HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER\x10\x06\x12$\n" +
 	" HOST_VAULT_ERROR_CODE_NOT_A_NOTE\x10\b*\x8c\x01\n" +
 	"\x0eHostIndexState\x12 \n" +
 	"\x1cHOST_INDEX_STATE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18HOST_INDEX_STATE_INDEXED\x10\x01\x12\x1d\n" +
 	"\x19HOST_INDEX_STATE_INDEXING\x10\x02\x12\x1b\n" +
-	"\x17HOST_INDEX_STATE_FAILED\x10\x032\xe6\x0f\n" +
+	"\x17HOST_INDEX_STATE_FAILED\x10\x032\x97\x0e\n" +
 	"\x10HostVaultService\x12M\n" +
 	"\fGetHostVault\x12\x1d.numen.v1.GetHostVaultRequest\x1a\x1e.numen.v1.GetHostVaultResponse\x12S\n" +
 	"\x0eListHostVaults\x12\x1f.numen.v1.ListHostVaultsRequest\x1a .numen.v1.ListHostVaultsResponse\x12_\n" +
@@ -3203,11 +2847,7 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\bGetLinks\x12\x19.numen.v1.GetLinksRequest\x1a\x1a.numen.v1.GetLinksResponse\x12M\n" +
 	"\fGetBacklinks\x12\x1d.numen.v1.GetBacklinksRequest\x1a\x1e.numen.v1.GetBacklinksResponse\x12M\n" +
 	"\fResolveLinks\x12\x1d.numen.v1.ResolveLinksRequest\x1a\x1e.numen.v1.ResolveLinksResponse\x12Y\n" +
-	"\x10GetParseProblems\x12!.numen.v1.GetParseProblemsRequest\x1a\".numen.v1.GetParseProblemsResponse\x12A\n" +
-	"\bReadData\x12\x19.numen.v1.ReadDataRequest\x1a\x1a.numen.v1.ReadDataResponse\x12G\n" +
-	"\n" +
-	"AppendData\x12\x1b.numen.v1.AppendDataRequest\x1a\x1c.numen.v1.AppendDataResponse\x12A\n" +
-	"\bListData\x12\x19.numen.v1.ListDataRequest\x1a\x1a.numen.v1.ListDataResponse\x12D\n" +
+	"\x10GetParseProblems\x12!.numen.v1.GetParseProblemsRequest\x1a\".numen.v1.GetParseProblemsResponse\x12D\n" +
 	"\tReadCache\x12\x1a.numen.v1.ReadCacheRequest\x1a\x1b.numen.v1.ReadCacheResponse\x12G\n" +
 	"\n" +
 	"WriteCache\x12\x1b.numen.v1.WriteCacheRequest\x1a\x1c.numen.v1.WriteCacheResponse\x12P\n" +
@@ -3230,7 +2870,7 @@ func file_numen_v1_hostvault_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hostvault_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_hostvault_proto_msgTypes = make([]protoimpl.MessageInfo, 60)
+var file_numen_v1_hostvault_proto_msgTypes = make([]protoimpl.MessageInfo, 53)
 var file_numen_v1_hostvault_proto_goTypes = []any{
 	(HostVaultErrorCode)(0),            // 0: numen.v1.HostVaultErrorCode
 	(HostIndexState)(0),                // 1: numen.v1.HostIndexState
@@ -3279,21 +2919,14 @@ var file_numen_v1_hostvault_proto_goTypes = []any{
 	(*GetParseProblemsRequest)(nil),    // 44: numen.v1.GetParseProblemsRequest
 	(*HostParseProblem)(nil),           // 45: numen.v1.HostParseProblem
 	(*GetParseProblemsResponse)(nil),   // 46: numen.v1.GetParseProblemsResponse
-	(*ReadDataRequest)(nil),            // 47: numen.v1.ReadDataRequest
-	(*ReadDataResponse)(nil),           // 48: numen.v1.ReadDataResponse
-	(*AppendDataRequest)(nil),          // 49: numen.v1.AppendDataRequest
-	(*AppendDataResponse)(nil),         // 50: numen.v1.AppendDataResponse
-	(*ListDataRequest)(nil),            // 51: numen.v1.ListDataRequest
-	(*HostDataFile)(nil),               // 52: numen.v1.HostDataFile
-	(*ListDataResponse)(nil),           // 53: numen.v1.ListDataResponse
-	(*ReadCacheRequest)(nil),           // 54: numen.v1.ReadCacheRequest
-	(*ReadCacheResponse)(nil),          // 55: numen.v1.ReadCacheResponse
-	(*WriteCacheRequest)(nil),          // 56: numen.v1.WriteCacheRequest
-	(*WriteCacheResponse)(nil),         // 57: numen.v1.WriteCacheResponse
-	(*WatchVaultRequest)(nil),          // 58: numen.v1.WatchVaultRequest
-	(*WatchVaultResponse)(nil),         // 59: numen.v1.WatchVaultResponse
-	nil,                                // 60: numen.v1.GetNoteTypesResponse.TypesEntry
-	nil,                                // 61: numen.v1.ResolveLinksResponse.LinksEntry
+	(*ReadCacheRequest)(nil),           // 47: numen.v1.ReadCacheRequest
+	(*ReadCacheResponse)(nil),          // 48: numen.v1.ReadCacheResponse
+	(*WriteCacheRequest)(nil),          // 49: numen.v1.WriteCacheRequest
+	(*WriteCacheResponse)(nil),         // 50: numen.v1.WriteCacheResponse
+	(*WatchVaultRequest)(nil),          // 51: numen.v1.WatchVaultRequest
+	(*WatchVaultResponse)(nil),         // 52: numen.v1.WatchVaultResponse
+	nil,                                // 53: numen.v1.GetNoteTypesResponse.TypesEntry
+	nil,                                // 54: numen.v1.ResolveLinksResponse.LinksEntry
 }
 var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.ListHostVaultsResponse.error:type_name -> numen.v1.HostVaultErrorCode
@@ -3315,7 +2948,7 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,  // 16: numen.v1.GetNoteRefsResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	28, // 17: numen.v1.GetNoteRefsResponse.notes:type_name -> numen.v1.HostNoteRef
 	0,  // 18: numen.v1.GetNoteTypesResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	60, // 19: numen.v1.GetNoteTypesResponse.types:type_name -> numen.v1.GetNoteTypesResponse.TypesEntry
+	53, // 19: numen.v1.GetNoteTypesResponse.types:type_name -> numen.v1.GetNoteTypesResponse.TypesEntry
 	0,  // 20: numen.v1.GetNamedPathsResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	0,  // 21: numen.v1.GetPathsOfTypeResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	0,  // 22: numen.v1.GetLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
@@ -3323,73 +2956,63 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,  // 24: numen.v1.GetBacklinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	37, // 25: numen.v1.GetBacklinksResponse.links:type_name -> numen.v1.HostLink
 	0,  // 26: numen.v1.ResolveLinksResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	61, // 27: numen.v1.ResolveLinksResponse.links:type_name -> numen.v1.ResolveLinksResponse.LinksEntry
+	54, // 27: numen.v1.ResolveLinksResponse.links:type_name -> numen.v1.ResolveLinksResponse.LinksEntry
 	0,  // 28: numen.v1.GetParseProblemsResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	45, // 29: numen.v1.GetParseProblemsResponse.problems:type_name -> numen.v1.HostParseProblem
-	0,  // 30: numen.v1.ReadDataResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 31: numen.v1.AppendDataResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 32: numen.v1.ListDataResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	52, // 33: numen.v1.ListDataResponse.files:type_name -> numen.v1.HostDataFile
-	0,  // 34: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 35: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	37, // 36: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
-	12, // 37: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
-	3,  // 38: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
-	6,  // 39: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
-	14, // 40: numen.v1.HostVaultService.GetFileFingerprint:input_type -> numen.v1.GetFileFingerprintRequest
-	16, // 41: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
-	18, // 42: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
-	20, // 43: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
-	22, // 44: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
-	24, // 45: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
-	26, // 46: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
-	29, // 47: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
-	31, // 48: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
-	33, // 49: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
-	35, // 50: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
-	38, // 51: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
-	40, // 52: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
-	42, // 53: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
-	44, // 54: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
-	47, // 55: numen.v1.HostVaultService.ReadData:input_type -> numen.v1.ReadDataRequest
-	49, // 56: numen.v1.HostVaultService.AppendData:input_type -> numen.v1.AppendDataRequest
-	51, // 57: numen.v1.HostVaultService.ListData:input_type -> numen.v1.ListDataRequest
-	54, // 58: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
-	56, // 59: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
-	8,  // 60: numen.v1.HostVaultService.SetVaultInUse:input_type -> numen.v1.SetVaultInUseRequest
-	10, // 61: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
-	58, // 62: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
-	13, // 63: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
-	5,  // 64: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
-	7,  // 65: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
-	15, // 66: numen.v1.HostVaultService.GetFileFingerprint:output_type -> numen.v1.GetFileFingerprintResponse
-	17, // 67: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
-	19, // 68: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
-	21, // 69: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
-	23, // 70: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
-	25, // 71: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
-	27, // 72: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
-	30, // 73: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
-	32, // 74: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
-	34, // 75: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
-	36, // 76: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
-	39, // 77: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
-	41, // 78: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
-	43, // 79: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
-	46, // 80: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
-	48, // 81: numen.v1.HostVaultService.ReadData:output_type -> numen.v1.ReadDataResponse
-	50, // 82: numen.v1.HostVaultService.AppendData:output_type -> numen.v1.AppendDataResponse
-	53, // 83: numen.v1.HostVaultService.ListData:output_type -> numen.v1.ListDataResponse
-	55, // 84: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
-	57, // 85: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
-	9,  // 86: numen.v1.HostVaultService.SetVaultInUse:output_type -> numen.v1.SetVaultInUseResponse
-	11, // 87: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
-	59, // 88: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
-	63, // [63:89] is the sub-list for method output_type
-	37, // [37:63] is the sub-list for method input_type
-	37, // [37:37] is the sub-list for extension type_name
-	37, // [37:37] is the sub-list for extension extendee
-	0,  // [0:37] is the sub-list for field type_name
+	0,  // 30: numen.v1.ReadCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	0,  // 31: numen.v1.WriteCacheResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	37, // 32: numen.v1.ResolveLinksResponse.LinksEntry.value:type_name -> numen.v1.HostLink
+	12, // 33: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
+	3,  // 34: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
+	6,  // 35: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
+	14, // 36: numen.v1.HostVaultService.GetFileFingerprint:input_type -> numen.v1.GetFileFingerprintRequest
+	16, // 37: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
+	18, // 38: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
+	20, // 39: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
+	22, // 40: numen.v1.HostVaultService.LockVault:input_type -> numen.v1.LockVaultRequest
+	24, // 41: numen.v1.HostVaultService.UnlockVault:input_type -> numen.v1.UnlockVaultRequest
+	26, // 42: numen.v1.HostVaultService.ScanFiles:input_type -> numen.v1.ScanFilesRequest
+	29, // 43: numen.v1.HostVaultService.GetNoteRefs:input_type -> numen.v1.GetNoteRefsRequest
+	31, // 44: numen.v1.HostVaultService.GetNoteTypes:input_type -> numen.v1.GetNoteTypesRequest
+	33, // 45: numen.v1.HostVaultService.GetNamedPaths:input_type -> numen.v1.GetNamedPathsRequest
+	35, // 46: numen.v1.HostVaultService.GetPathsOfType:input_type -> numen.v1.GetPathsOfTypeRequest
+	38, // 47: numen.v1.HostVaultService.GetLinks:input_type -> numen.v1.GetLinksRequest
+	40, // 48: numen.v1.HostVaultService.GetBacklinks:input_type -> numen.v1.GetBacklinksRequest
+	42, // 49: numen.v1.HostVaultService.ResolveLinks:input_type -> numen.v1.ResolveLinksRequest
+	44, // 50: numen.v1.HostVaultService.GetParseProblems:input_type -> numen.v1.GetParseProblemsRequest
+	47, // 51: numen.v1.HostVaultService.ReadCache:input_type -> numen.v1.ReadCacheRequest
+	49, // 52: numen.v1.HostVaultService.WriteCache:input_type -> numen.v1.WriteCacheRequest
+	8,  // 53: numen.v1.HostVaultService.SetVaultInUse:input_type -> numen.v1.SetVaultInUseRequest
+	10, // 54: numen.v1.HostVaultService.WatchMoves:input_type -> numen.v1.WatchMovesRequest
+	51, // 55: numen.v1.HostVaultService.WatchVault:input_type -> numen.v1.WatchVaultRequest
+	13, // 56: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
+	5,  // 57: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
+	7,  // 58: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
+	15, // 59: numen.v1.HostVaultService.GetFileFingerprint:output_type -> numen.v1.GetFileFingerprintResponse
+	17, // 60: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
+	19, // 61: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
+	21, // 62: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse
+	23, // 63: numen.v1.HostVaultService.LockVault:output_type -> numen.v1.LockVaultResponse
+	25, // 64: numen.v1.HostVaultService.UnlockVault:output_type -> numen.v1.UnlockVaultResponse
+	27, // 65: numen.v1.HostVaultService.ScanFiles:output_type -> numen.v1.ScanFilesResponse
+	30, // 66: numen.v1.HostVaultService.GetNoteRefs:output_type -> numen.v1.GetNoteRefsResponse
+	32, // 67: numen.v1.HostVaultService.GetNoteTypes:output_type -> numen.v1.GetNoteTypesResponse
+	34, // 68: numen.v1.HostVaultService.GetNamedPaths:output_type -> numen.v1.GetNamedPathsResponse
+	36, // 69: numen.v1.HostVaultService.GetPathsOfType:output_type -> numen.v1.GetPathsOfTypeResponse
+	39, // 70: numen.v1.HostVaultService.GetLinks:output_type -> numen.v1.GetLinksResponse
+	41, // 71: numen.v1.HostVaultService.GetBacklinks:output_type -> numen.v1.GetBacklinksResponse
+	43, // 72: numen.v1.HostVaultService.ResolveLinks:output_type -> numen.v1.ResolveLinksResponse
+	46, // 73: numen.v1.HostVaultService.GetParseProblems:output_type -> numen.v1.GetParseProblemsResponse
+	48, // 74: numen.v1.HostVaultService.ReadCache:output_type -> numen.v1.ReadCacheResponse
+	50, // 75: numen.v1.HostVaultService.WriteCache:output_type -> numen.v1.WriteCacheResponse
+	9,  // 76: numen.v1.HostVaultService.SetVaultInUse:output_type -> numen.v1.SetVaultInUseResponse
+	11, // 77: numen.v1.HostVaultService.WatchMoves:output_type -> numen.v1.WatchMovesResponse
+	52, // 78: numen.v1.HostVaultService.WatchVault:output_type -> numen.v1.WatchVaultResponse
+	56, // [56:79] is the sub-list for method output_type
+	33, // [33:56] is the sub-list for method input_type
+	33, // [33:33] is the sub-list for extension type_name
+	33, // [33:33] is the sub-list for extension extendee
+	0,  // [0:33] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hostvault_proto_init() }
@@ -3403,7 +3026,7 @@ func file_numen_v1_hostvault_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hostvault_proto_rawDesc), len(file_numen_v1_hostvault_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   60,
+			NumMessages:   53,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

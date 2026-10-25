@@ -30,7 +30,6 @@ type memoryVault struct {
 	vault       *domain.Vault
 	files       map[string]string
 	stamp       int64
-	data        map[string][]byte
 	cache       map[string][]byte
 	scanned     [][]string
 	locks       int
@@ -41,13 +40,14 @@ type memoryVault struct {
 	state  pluginport.PluginIndexState
 	inUse  int
 	moves  chan struct{}
+	// storeRoot is the folder the plugins' folders of the store are kept under.
+	storeRoot string
 }
 
 func newMemoryVault(files map[string]string) *memoryVault {
 	return &memoryVault{
 		vault:       &domain.Vault{ID: "v1", Name: "Physics", Path: "/vaults/Physics"},
 		files:       files,
-		data:        map[string][]byte{},
 		cache:       map[string][]byte{},
 		changes:     make(chan []string, 4),
 		droppedChan: make(chan struct{}),
@@ -247,40 +247,6 @@ func (m *memoryVault) GetParseProblems(context.Context) ([]domain.VaultProblem, 
 	return []domain.VaultProblem{{Path: "decks/A.md", Detail: "an entry has no role"}}, nil
 }
 
-type memoryData struct{ vault *memoryVault }
-
-func (d memoryData) Read(_ context.Context, name string) ([]byte, error) {
-	d.vault.mu.Lock()
-	defer d.vault.mu.Unlock()
-	content, there := d.vault.data[name]
-	if !there {
-		return nil, fs.ErrNotExist
-	}
-	return content, nil
-}
-
-func (d memoryData) Append(_ context.Context, name string, content []byte) error {
-	d.vault.mu.Lock()
-	defer d.vault.mu.Unlock()
-	d.vault.data[name] = append(d.vault.data[name], content...)
-	return nil
-}
-
-func (d memoryData) List(context.Context) ([]pluginport.PluginDataFile, error) {
-	d.vault.mu.Lock()
-	defer d.vault.mu.Unlock()
-	var out []pluginport.PluginDataFile
-	for name, content := range d.vault.data {
-		out = append(out, pluginport.PluginDataFile{Name: name, Size: len(content)})
-	}
-	slices.SortFunc(out, func(a, b pluginport.PluginDataFile) int { return len(a.Name) - len(b.Name) })
-	return out, nil
-}
-
-func (m *memoryVault) OpenData(string) (pluginport.PluginDataStore, error) {
-	return memoryData{vault: m}, nil
-}
-
 func (m *memoryVault) ReadCache(_ context.Context, pluginID, name string) ([]byte, bool, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -315,7 +281,6 @@ func newVaultFixture(t *testing.T) (numenv1connect.HostVaultServiceClient, *memo
 	vault := newMemoryVault(map[string]string{"decks/A.md": "body", "Animal.md": "stencil"})
 	hosted := newCallers(nil)
 	hosted.vault = vault
-	hosted.data = map[string]string{"md.numen.a": "flashcards"}
 	return newVaultClient(t, hosted, "token-a"), vault
 }
 
@@ -478,39 +443,6 @@ func TestWhatTheIndexReturnsOfTheNotesAndTheirLinksIsAnswered(t *testing.T) {
 	problems, err := client.GetParseProblems(ctx, connect.NewRequest(&v1.GetParseProblemsRequest{}))
 	if err != nil || len(problems.Msg.GetProblems()) != 1 || problems.Msg.GetProblems()[0].GetDetail() != "an entry has no role" {
 		t.Errorf("the problems were %v (%v)", problems.Msg, err)
-	}
-}
-
-func TestADataFolderIsCachedOnlyWhereTheManifestNamesOne(t *testing.T) {
-	client, vault := newVaultFixture(t)
-	ctx := t.Context()
-
-	if _, err := client.AppendData(ctx, connect.NewRequest(&v1.AppendDataRequest{Name: "run.log", Content: []byte("one\n")})); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := client.AppendData(ctx, connect.NewRequest(&v1.AppendDataRequest{Name: "run.log", Content: []byte("two\n")})); err != nil {
-		t.Fatal(err)
-	}
-	read, err := client.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
-	items, listErr := client.ListData(ctx, connect.NewRequest(&v1.ListDataRequest{}))
-	missing, missingErr := client.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "other.log"}))
-
-	if err != nil || string(read.Msg.GetContent()) != "one\ntwo\n" {
-		t.Errorf("the data read back was %q (%v)", read.Msg.GetContent(), err)
-	}
-	if listErr != nil || len(items.Msg.GetFiles()) != 1 || items.Msg.GetFiles()[0].GetSize() != 8 {
-		t.Errorf("the files were %v (%v)", items.Msg, listErr)
-	}
-	if missingErr != nil || missing.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING {
-		t.Errorf("a missing file was answered %v (%v)", missing.Msg, missingErr)
-	}
-
-	hosted := newCallers(nil)
-	hosted.vault = vault
-	bareClient := newVaultClient(t, hosted, "token-a")
-	none, err := bareClient.ReadData(ctx, connect.NewRequest(&v1.ReadDataRequest{Name: "run.log"}))
-	if err != nil || none.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER {
-		t.Errorf("a plugin with no folder was answered %v (%v)", none.Msg, err)
 	}
 }
 

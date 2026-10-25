@@ -28,7 +28,7 @@ func diskVault(t *testing.T, files map[string]string) (Vault, domain.Vault) {
 		Current: func() (domain.Vault, bool) { return v, true },
 		Readers: vaultreader.Readers{},
 		Writers: vaultwriter.VaultWriters{},
-		Data:    derivedfile.PluginData{},
+		Stores:  derivedfile.PluginStores{},
 		Cache:   appstate.PluginCachesAt(t.TempDir()),
 	}, v
 }
@@ -89,40 +89,29 @@ func TestAFileIsMadeOnlyWhereNoneExistsAndTheWritersAreHeldAndLetGo(t *testing.T
 	release()
 }
 
-func TestTheDataOfAPluginIsCachedInItsFolderAndNoOther(t *testing.T) {
-	access, _ := diskVault(t, nil)
-	store, err := access.OpenData("flashcards")
+func TestAPluginsFolderIsTheFolderOfItsIdentityInTheVaultsStore(t *testing.T) {
+	access, v := diskVault(t, nil)
+	store, err := access.OpenStore("md.numen.a")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if err := store.Append(t.Context(), "run.log", []byte("one\n")); err != nil {
+	if err := store.Append(t.Context(), "one.log", []byte("one\n")); err != nil {
 		t.Fatal(err)
 	}
-	if err := store.Append(t.Context(), "run.log", []byte("two\n")); err != nil {
-		t.Fatal(err)
-	}
-	content, err := store.Read(t.Context(), "run.log")
+	on, err := os.ReadFile(filepath.Join(v.Path, ".numen", "md.numen.a", "one.log"))
 	items, listErr := store.List(t.Context())
 
-	if err != nil || string(content) != "one\ntwo\n" {
-		t.Errorf("read %q (%v)", content, err)
+	if err != nil || string(on) != "one\n" {
+		t.Errorf("the folder holds %q (%v)", on, err)
 	}
-	if listErr != nil || !slices.Equal(items, []pluginport.PluginDataFile{{Name: "run.log", Size: 8}}) {
+	if listErr != nil || !slices.Equal(items, []pluginport.PluginStoreFile{{Name: "one.log", Size: 4}}) {
 		t.Errorf("listed %v (%v)", items, listErr)
 	}
-	for _, name := range []string{"", "../run.log", "a/b", ".hidden"} {
-		if _, err := store.Read(t.Context(), name); !errors.Is(err, vaultconfig.ErrOutside) {
-			t.Errorf("%q was read with %v", name, err)
+	for _, id := range []string{"", "flashcards", "index", "..", "a/b.c", ".a.b"} {
+		if _, err := access.OpenStore(id); !errors.Is(err, vaultconfig.ErrOutside) {
+			t.Errorf("the folder of %q was opened with %v", id, err)
 		}
-	}
-	for _, folder := range []string{"", "a/b", "..", "a.b"} {
-		if _, err := access.OpenData(folder); err == nil {
-			t.Errorf("the folder %q was opened", folder)
-		}
-	}
-	if _, err := store.Read(t.Context(), "other.log"); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("a file that is not there was read with %v", err)
 	}
 }
 
@@ -158,10 +147,10 @@ func TestAHostShowingNoVaultAnswersEveryCallThatWorksOneWithErrNoVault(t *testin
 	_, writeErr := access.Write(t.Context(), "a.md", nil, domain.Fingerprint{})
 	_, lockErr := access.Lock(t.Context())
 	_, notesErr := access.GetNotes(t.Context(), nil)
-	_, openErr := access.OpenData("flashcards")
+	_, openErr := access.OpenStore("md.numen.a")
 	_, _, watchErr := access.Watch(t.Context())
 
-	for name, err := range map[string]error{"read": readErr, "write": writeErr, "lock": lockErr, "notes": notesErr, "data": openErr, "watch": watchErr} {
+	for name, err := range map[string]error{"read": readErr, "write": writeErr, "lock": lockErr, "notes": notesErr, "store": openErr, "watch": watchErr} {
 		if !errors.Is(err, ErrNoVault) {
 			t.Errorf("%s was %v", name, err)
 		}

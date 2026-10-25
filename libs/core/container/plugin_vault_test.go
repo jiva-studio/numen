@@ -51,13 +51,13 @@ func TestAPluginNoteIsInTheIndexOnceItsFileIsScanned(t *testing.T) {
 	}
 }
 
-func TestAPluginKeepsItsDataAndItsCacheApart(t *testing.T) {
+func TestAPluginKeepsItsFolderAndItsCacheApart(t *testing.T) {
 	_, current, assembly := openPluginVault(t, note)
 	shared, err := assembly.OpenPluginVault(current, container.PluginVaultHooks{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	data, err := shared.OpenData("flashcards")
+	data, err := shared.OpenStore("md.numen.flashcards")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,12 +65,12 @@ func TestAPluginKeepsItsDataAndItsCacheApart(t *testing.T) {
 	if err := data.Append(t.Context(), "log", []byte("a")); err != nil {
 		t.Fatal(err)
 	}
-	if err := shared.WriteCache(t.Context(), "flashcards", "due", []byte("3")); err != nil {
+	if err := shared.WriteCache(t.Context(), "md.numen.flashcards", "due", []byte("3")); err != nil {
 		t.Fatal(err)
 	}
 
 	got, err := data.Read(t.Context(), "log")
-	cached, found, cacheErr := shared.ReadCache(t.Context(), "flashcards", "due")
+	cached, found, cacheErr := shared.ReadCache(t.Context(), "md.numen.flashcards", "due")
 	_, missing := data.Read(t.Context(), "due")
 	if err != nil || string(got) != "a" || cacheErr != nil || !found || string(cached) != "3" || !errors.Is(missing, fs.ErrNotExist) {
 		t.Errorf("data %q (%v), cache %q %v (%v), missing %v", got, err, cached, found, cacheErr, missing)

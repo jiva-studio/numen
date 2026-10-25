@@ -80,17 +80,6 @@ service HostVaultService {
   // GetParseProblems lists what parsing each file of the vault turned up.
   rpc GetParseProblems(GetParseProblemsRequest) returns (GetParseProblemsResponse);
 
-  // ReadData reads a file of the folder the plugin's manifest names in the
-  // vault's own store. The store keeps what the plugin made and cannot make
-  // again; the host answers for no other folder.
-  rpc ReadData(ReadDataRequest) returns (ReadDataResponse);
-
-  // AppendData adds to a file of that folder, making it if it is not there.
-  rpc AppendData(AppendDataRequest) returns (AppendDataResponse);
-
-  // ListData lists the files of that folder.
-  rpc ListData(ListDataRequest) returns (ListDataResponse);
-
   // ReadCache reads what the plugin kept for this vault under a name. The cache
   // belongs to the installation and not to the vault, and can be made again.
   rpc ReadCache(ReadCacheRequest) returns (ReadCacheResponse);
@@ -134,9 +123,6 @@ enum HostVaultErrorCode {
 
   // Another program holds the file.
   HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER = 6;
-
-  // The plugin's manifest names no folder in the vault's store.
-  HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER = 7;
 
   // The path is not a note this vault holds.
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
@@ -371,38 +357,6 @@ message HostParseProblem {
 message GetParseProblemsResponse {
   HostVaultErrorCode error = 1;
   repeated HostParseProblem problems = 2;
-}
-
-message ReadDataRequest {
-  // The name of a file inside the folder.
-  string name = 1;
-}
-
-message ReadDataResponse {
-  HostVaultErrorCode error = 1;
-  bytes content = 2;
-}
-
-message AppendDataRequest {
-  string name = 1;
-  bytes content = 2;
-}
-
-message AppendDataResponse {
-  HostVaultErrorCode error = 1;
-}
-
-message ListDataRequest {}
-
-// HostDataFile is a file of the plugin's folder in the vault's store.
-message HostDataFile {
-  string name = 1;
-  int64 size = 2;
-}
-
-message ListDataResponse {
-  HostVaultErrorCode error = 1;
-  repeated HostDataFile files = 2;
 }
 
 message ReadCacheRequest {

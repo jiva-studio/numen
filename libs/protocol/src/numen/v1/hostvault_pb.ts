@@ -10,7 +10,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hostvault.proto.
  */
 export const file_numen_v1_hostvault: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIk0KD0hvc3RGaW5nZXJwcmludBIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSEAoIbW9kX3RpbWUYAyABKAMSDAoEa2luZBgEIAEoCSIXChVMaXN0SG9zdFZhdWx0c1JlcXVlc3QiNwoNSG9zdFZhdWx0SW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkibgoWTGlzdEhvc3RWYXVsdHNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRInCgZ2YXVsdHMYAiADKAsyFy5udW1lbi52MS5Ib3N0VmF1bHRJbmZvIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QiggEKGkVuc3VyZVZhdWx0SW5kZXhlZFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEicKBXN0YXRlGAIgASgOMhgubnVtZW4udjEuSG9zdEluZGV4U3RhdGUSDgoGcmVhc29uGAMgASgJIhYKFFNldFZhdWx0SW5Vc2VSZXF1ZXN0IkQKFVNldFZhdWx0SW5Vc2VSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZSITChFXYXRjaE1vdmVzUmVxdWVzdCIUChJXYXRjaE1vdmVzUmVzcG9uc2UiFQoTR2V0SG9zdFZhdWx0UmVxdWVzdCJrChRHZXRIb3N0VmF1bHRSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIMCgRwYXRoGAIgASgJEgoKAmlkGAMgASgJEgwKBG5hbWUYBCABKAkiKQoZR2V0RmlsZUZpbmdlcnByaW50UmVxdWVzdBIMCgRwYXRoGAEgASgJInkKGkdldEZpbGVGaW5nZXJwcmludFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEi4KC2ZpbmdlcnByaW50GAIgASgLMhkubnVtZW4udjEuSG9zdEZpbmdlcnByaW50Ih8KD1JlYWRGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIoABChBSZWFkRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSLgoLZmluZ2VycHJpbnQYAyABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQiXgoQV3JpdGVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2NvbnRlbnQYAiABKAwSKwoIYmFzZWxpbmUYAyABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQicAoRV3JpdGVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSLgoLZmluZ2VycHJpbnQYAiABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQiMgoRQ3JlYXRlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMIkEKEkNyZWF0ZUZpbGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZSISChBMb2NrVmF1bHRSZXF1ZXN0Ik4KEUxvY2tWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBGxvY2sYAiABKAkiIgoSVW5sb2NrVmF1bHRSZXF1ZXN0EgwKBGxvY2sYASABKAkiFQoTVW5sb2NrVmF1bHRSZXNwb25zZSIhChBTY2FuRmlsZXNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIkAKEVNjYW5GaWxlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlIioKC0hvc3ROb3RlUmVmEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiIwoSR2V0Tm90ZVJlZnNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJImgKE0dldE5vdGVSZWZzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSJAoFbm90ZXMYAiADKAsyFS5udW1lbi52MS5Ib3N0Tm90ZVJlZiIkChNHZXROb3RlVHlwZXNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIqsBChRHZXROb3RlVHlwZXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRI4CgV0eXBlcxgCIAMoCzIpLm51bWVuLnYxLkdldE5vdGVUeXBlc1Jlc3BvbnNlLlR5cGVzRW50cnkaLAoKVHlwZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiQKFEdldE5hbWVkUGF0aHNSZXF1ZXN0EgwKBG5hbWUYASABKAkiUwoVR2V0TmFtZWRQYXRoc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg0KBXBhdGhzGAIgAygJIiUKFUdldFBhdGhzT2ZUeXBlUmVxdWVzdBIMCgR0eXBlGAEgASgJIlQKFkdldFBhdGhzT2ZUeXBlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDQoFcGF0aHMYAiADKAkimwEKCEhvc3RMaW5rEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIdG9fdmF1bHQYAyABKAkSEQoJbGlua190eXBlGAQgASgJEhUKDXRhcmdldF9zY2hlbWUYBSABKAkSFAoMdGFyZ2V0X3ZhbHVlGAYgASgJEg0KBWxhYmVsGAcgASgJEhQKDGlzX2FtYmlndW91cxgIIAEoCCIfCg9HZXRMaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJiChBHZXRMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiEKBWxpbmtzGAIgAygLMhIubnVtZW4udjEuSG9zdExpbmsiIwoTR2V0QmFja2xpbmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJImYKFEdldEJhY2tsaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiEKBWxpbmtzGAIgAygLMhIubnVtZW4udjEuSG9zdExpbmsiNAoTUmVzb2x2ZUxpbmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB3dyaXR0ZW4YAiADKAkivwEKFFJlc29sdmVMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjgKBWxpbmtzGAIgAygLMikubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVzcG9uc2UuTGlua3NFbnRyeRpACgpMaW5rc0VudHJ5EgsKA2tleRgBIAEoCRIhCgV2YWx1ZRgCIAEoCzISLm51bWVuLnYxLkhvc3RMaW5rOgI4ASIZChdHZXRQYXJzZVByb2JsZW1zUmVxdWVzdCIwChBIb3N0UGFyc2VQcm9ibGVtEgwKBHBhdGgYASABKAkSDgoGZGV0YWlsGAIgASgJInUKGEdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RQYXJzZVByb2JsZW0iHwoPUmVhZERhdGFSZXF1ZXN0EgwKBG5hbWUYASABKAkiUAoQUmVhZERhdGFSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIPCgdjb250ZW50GAIgASgMIjIKEUFwcGVuZERhdGFSZXF1ZXN0EgwKBG5hbWUYASABKAkSDwoHY29udGVudBgCIAEoDCJBChJBcHBlbmREYXRhUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUiEQoPTGlzdERhdGFSZXF1ZXN0IioKDEhvc3REYXRhRmlsZRIMCgRuYW1lGAEgASgJEgwKBHNpemUYAiABKAMiZgoQTGlzdERhdGFSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIlCgVmaWxlcxgCIAMoCzIWLm51bWVuLnYxLkhvc3REYXRhRmlsZSIgChBSZWFkQ2FjaGVSZXF1ZXN0EgwKBG5hbWUYASABKAkiYAoRUmVhZENhY2hlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDQoFZm91bmQYAiABKAgSDwoHY29udGVudBgDIAEoDCIyChFXcml0ZUNhY2hlUmVxdWVzdBIMCgRuYW1lGAEgASgJEg8KB2NvbnRlbnQYAiABKAwiQQoSV3JpdGVDYWNoZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlIhMKEVdhdGNoVmF1bHRSZXF1ZXN0Ij0KEldhdGNoVmF1bHRSZXNwb25zZRINCgVwYXRocxgBIAMoCRIYChBpc192YXVsdF9jaGFuZ2VkGAIgASgIKuUCChJIb3N0VmF1bHRFcnJvckNvZGUSJQohSE9TVF9WQVVMVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASIgoeSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PX1ZBVUxUEAESIQodSE9TVF9WQVVMVF9FUlJPUl9DT0RFX01JU1NJTkcQAhIhCh1IT1NUX1ZBVUxUX0VSUk9SX0NPREVfT1VUU0lERRADEh8KG0hPU1RfVkFVTFRfRVJST1JfQ09ERV9TVEFMRRAEEiIKHkhPU1RfVkFVTFRfRVJST1JfQ09ERV9PQ0NVUElFRBAFEikKJUhPU1RfVkFVTFRfRVJST1JfQ09ERV9IRUxEX0JZX0FOT1RIRVIQBhIoCiRIT1NUX1ZBVUxUX0VSUk9SX0NPREVfTk9fREFUQV9GT0xERVIQBxIkCiBIT1NUX1ZBVUxUX0VSUk9SX0NPREVfTk9UX0FfTk9URRAIKowBCg5Ib3N0SW5kZXhTdGF0ZRIgChxIT1NUX0lOREVYX1NUQVRFX1VOU1BFQ0lGSUVEEAASHAoYSE9TVF9JTkRFWF9TVEFURV9JTkRFWEVEEAESHQoZSE9TVF9JTkRFWF9TVEFURV9JTkRFWElORxACEhsKF0hPU1RfSU5ERVhfU1RBVEVfRkFJTEVEEAMy5g8KEEhvc3RWYXVsdFNlcnZpY2USTQoMR2V0SG9zdFZhdWx0Eh0ubnVtZW4udjEuR2V0SG9zdFZhdWx0UmVxdWVzdBoeLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlc3BvbnNlElMKDkxpc3RIb3N0VmF1bHRzEh8ubnVtZW4udjEuTGlzdEhvc3RWYXVsdHNSZXF1ZXN0GiAubnVtZW4udjEuTGlzdEhvc3RWYXVsdHNSZXNwb25zZRJfChJFbnN1cmVWYXVsdEluZGV4ZWQSIy5udW1lbi52MS5FbnN1cmVWYXVsdEluZGV4ZWRSZXF1ZXN0GiQubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVzcG9uc2USXwoSR2V0RmlsZUZpbmdlcnByaW50EiMubnVtZW4udjEuR2V0RmlsZUZpbmdlcnByaW50UmVxdWVzdBokLm51bWVuLnYxLkdldEZpbGVGaW5nZXJwcmludFJlc3BvbnNlEkEKCFJlYWRGaWxlEhkubnVtZW4udjEuUmVhZEZpbGVSZXF1ZXN0GhoubnVtZW4udjEuUmVhZEZpbGVSZXNwb25zZRJECglXcml0ZUZpbGUSGi5udW1lbi52MS5Xcml0ZUZpbGVSZXF1ZXN0GhsubnVtZW4udjEuV3JpdGVGaWxlUmVzcG9uc2USRwoKQ3JlYXRlRmlsZRIbLm51bWVuLnYxLkNyZWF0ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuQ3JlYXRlRmlsZVJlc3BvbnNlEkQKCUxvY2tWYXVsdBIaLm51bWVuLnYxLkxvY2tWYXVsdFJlcXVlc3QaGy5udW1lbi52MS5Mb2NrVmF1bHRSZXNwb25zZRJKCgtVbmxvY2tWYXVsdBIcLm51bWVuLnYxLlVubG9ja1ZhdWx0UmVxdWVzdBodLm51bWVuLnYxLlVubG9ja1ZhdWx0UmVzcG9uc2USRAoJU2NhbkZpbGVzEhoubnVtZW4udjEuU2NhbkZpbGVzUmVxdWVzdBobLm51bWVuLnYxLlNjYW5GaWxlc1Jlc3BvbnNlEkoKC0dldE5vdGVSZWZzEhwubnVtZW4udjEuR2V0Tm90ZVJlZnNSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0Tm90ZVJlZnNSZXNwb25zZRJNCgxHZXROb3RlVHlwZXMSHS5udW1lbi52MS5HZXROb3RlVHlwZXNSZXF1ZXN0Gh4ubnVtZW4udjEuR2V0Tm90ZVR5cGVzUmVzcG9uc2USUAoNR2V0TmFtZWRQYXRocxIeLm51bWVuLnYxLkdldE5hbWVkUGF0aHNSZXF1ZXN0Gh8ubnVtZW4udjEuR2V0TmFtZWRQYXRoc1Jlc3BvbnNlElMKDkdldFBhdGhzT2ZUeXBlEh8ubnVtZW4udjEuR2V0UGF0aHNPZlR5cGVSZXF1ZXN0GiAubnVtZW4udjEuR2V0UGF0aHNPZlR5cGVSZXNwb25zZRJBCghHZXRMaW5rcxIZLm51bWVuLnYxLkdldExpbmtzUmVxdWVzdBoaLm51bWVuLnYxLkdldExpbmtzUmVzcG9uc2USTQoMR2V0QmFja2xpbmtzEh0ubnVtZW4udjEuR2V0QmFja2xpbmtzUmVxdWVzdBoeLm51bWVuLnYxLkdldEJhY2tsaW5rc1Jlc3BvbnNlEk0KDFJlc29sdmVMaW5rcxIdLm51bWVuLnYxLlJlc29sdmVMaW5rc1JlcXVlc3QaHi5udW1lbi52MS5SZXNvbHZlTGlua3NSZXNwb25zZRJZChBHZXRQYXJzZVByb2JsZW1zEiEubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1JlcXVlc3QaIi5udW1lbi52MS5HZXRQYXJzZVByb2JsZW1zUmVzcG9uc2USQQoIUmVhZERhdGESGS5udW1lbi52MS5SZWFkRGF0YVJlcXVlc3QaGi5udW1lbi52MS5SZWFkRGF0YVJlc3BvbnNlEkcKCkFwcGVuZERhdGESGy5udW1lbi52MS5BcHBlbmREYXRhUmVxdWVzdBocLm51bWVuLnYxLkFwcGVuZERhdGFSZXNwb25zZRJBCghMaXN0RGF0YRIZLm51bWVuLnYxLkxpc3REYXRhUmVxdWVzdBoaLm51bWVuLnYxLkxpc3REYXRhUmVzcG9uc2USRAoJUmVhZENhY2hlEhoubnVtZW4udjEuUmVhZENhY2hlUmVxdWVzdBobLm51bWVuLnYxLlJlYWRDYWNoZVJlc3BvbnNlEkcKCldyaXRlQ2FjaGUSGy5udW1lbi52MS5Xcml0ZUNhY2hlUmVxdWVzdBocLm51bWVuLnYxLldyaXRlQ2FjaGVSZXNwb25zZRJQCg1TZXRWYXVsdEluVXNlEh4ubnVtZW4udjEuU2V0VmF1bHRJblVzZVJlcXVlc3QaHy5udW1lbi52MS5TZXRWYXVsdEluVXNlUmVzcG9uc2USSQoKV2F0Y2hNb3ZlcxIbLm51bWVuLnYxLldhdGNoTW92ZXNSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hNb3Zlc1Jlc3BvbnNlMAESSQoKV2F0Y2hWYXVsdBIbLm51bWVuLnYxLldhdGNoVmF1bHRSZXF1ZXN0GhwubnVtZW4udjEuV2F0Y2hWYXVsdFJlc3BvbnNlMAFCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChhudW1lbi92MS9ob3N0dmF1bHQucHJvdG8SCG51bWVuLnYxIk0KD0hvc3RGaW5nZXJwcmludBIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSEAoIbW9kX3RpbWUYAyABKAMSDAoEa2luZBgEIAEoCSIXChVMaXN0SG9zdFZhdWx0c1JlcXVlc3QiNwoNSG9zdFZhdWx0SW5mbxIKCgJpZBgBIAEoCRIMCgRuYW1lGAIgASgJEgwKBHBhdGgYAyABKAkibgoWTGlzdEhvc3RWYXVsdHNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRInCgZ2YXVsdHMYAiADKAsyFy5udW1lbi52MS5Ib3N0VmF1bHRJbmZvIhsKGUVuc3VyZVZhdWx0SW5kZXhlZFJlcXVlc3QiggEKGkVuc3VyZVZhdWx0SW5kZXhlZFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEicKBXN0YXRlGAIgASgOMhgubnVtZW4udjEuSG9zdEluZGV4U3RhdGUSDgoGcmVhc29uGAMgASgJIhYKFFNldFZhdWx0SW5Vc2VSZXF1ZXN0IkQKFVNldFZhdWx0SW5Vc2VSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZSITChFXYXRjaE1vdmVzUmVxdWVzdCIUChJXYXRjaE1vdmVzUmVzcG9uc2UiFQoTR2V0SG9zdFZhdWx0UmVxdWVzdCJrChRHZXRIb3N0VmF1bHRSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIMCgRwYXRoGAIgASgJEgoKAmlkGAMgASgJEgwKBG5hbWUYBCABKAkiKQoZR2V0RmlsZUZpbmdlcnByaW50UmVxdWVzdBIMCgRwYXRoGAEgASgJInkKGkdldEZpbGVGaW5nZXJwcmludFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEi4KC2ZpbmdlcnByaW50GAIgASgLMhkubnVtZW4udjEuSG9zdEZpbmdlcnByaW50Ih8KD1JlYWRGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJIoABChBSZWFkRmlsZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg8KB2NvbnRlbnQYAiABKAwSLgoLZmluZ2VycHJpbnQYAyABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQiXgoQV3JpdGVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2NvbnRlbnQYAiABKAwSKwoIYmFzZWxpbmUYAyABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQicAoRV3JpdGVGaWxlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSLgoLZmluZ2VycHJpbnQYAiABKAsyGS5udW1lbi52MS5Ib3N0RmluZ2VycHJpbnQiMgoRQ3JlYXRlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdjb250ZW50GAIgASgMIkEKEkNyZWF0ZUZpbGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZSISChBMb2NrVmF1bHRSZXF1ZXN0Ik4KEUxvY2tWYXVsdFJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEgwKBGxvY2sYAiABKAkiIgoSVW5sb2NrVmF1bHRSZXF1ZXN0EgwKBGxvY2sYASABKAkiFQoTVW5sb2NrVmF1bHRSZXNwb25zZSIhChBTY2FuRmlsZXNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIkAKEVNjYW5GaWxlc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlIioKC0hvc3ROb3RlUmVmEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkiIwoSR2V0Tm90ZVJlZnNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJImgKE0dldE5vdGVSZWZzUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSJAoFbm90ZXMYAiADKAsyFS5udW1lbi52MS5Ib3N0Tm90ZVJlZiIkChNHZXROb3RlVHlwZXNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIqsBChRHZXROb3RlVHlwZXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRI4CgV0eXBlcxgCIAMoCzIpLm51bWVuLnYxLkdldE5vdGVUeXBlc1Jlc3BvbnNlLlR5cGVzRW50cnkaLAoKVHlwZXNFbnRyeRILCgNrZXkYASABKAkSDQoFdmFsdWUYAiABKAk6AjgBIiQKFEdldE5hbWVkUGF0aHNSZXF1ZXN0EgwKBG5hbWUYASABKAkiUwoVR2V0TmFtZWRQYXRoc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg0KBXBhdGhzGAIgAygJIiUKFUdldFBhdGhzT2ZUeXBlUmVxdWVzdBIMCgR0eXBlGAEgASgJIlQKFkdldFBhdGhzT2ZUeXBlUmVzcG9uc2USKwoFZXJyb3IYASABKA4yHC5udW1lbi52MS5Ib3N0VmF1bHRFcnJvckNvZGUSDQoFcGF0aHMYAiADKAkimwEKCEhvc3RMaW5rEgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIdG9fdmF1bHQYAyABKAkSEQoJbGlua190eXBlGAQgASgJEhUKDXRhcmdldF9zY2hlbWUYBSABKAkSFAoMdGFyZ2V0X3ZhbHVlGAYgASgJEg0KBWxhYmVsGAcgASgJEhQKDGlzX2FtYmlndW91cxgIIAEoCCIfCg9HZXRMaW5rc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSJiChBHZXRMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiEKBWxpbmtzGAIgAygLMhIubnVtZW4udjEuSG9zdExpbmsiIwoTR2V0QmFja2xpbmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJImYKFEdldEJhY2tsaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEiEKBWxpbmtzGAIgAygLMhIubnVtZW4udjEuSG9zdExpbmsiNAoTUmVzb2x2ZUxpbmtzUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB3dyaXR0ZW4YAiADKAkivwEKFFJlc29sdmVMaW5rc1Jlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEjgKBWxpbmtzGAIgAygLMikubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVzcG9uc2UuTGlua3NFbnRyeRpACgpMaW5rc0VudHJ5EgsKA2tleRgBIAEoCRIhCgV2YWx1ZRgCIAEoCzISLm51bWVuLnYxLkhvc3RMaW5rOgI4ASIZChdHZXRQYXJzZVByb2JsZW1zUmVxdWVzdCIwChBIb3N0UGFyc2VQcm9ibGVtEgwKBHBhdGgYASABKAkSDgoGZGV0YWlsGAIgASgJInUKGEdldFBhcnNlUHJvYmxlbXNSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZRIsCghwcm9ibGVtcxgCIAMoCzIaLm51bWVuLnYxLkhvc3RQYXJzZVByb2JsZW0iIAoQUmVhZENhY2hlUmVxdWVzdBIMCgRuYW1lGAEgASgJImAKEVJlYWRDYWNoZVJlc3BvbnNlEisKBWVycm9yGAEgASgOMhwubnVtZW4udjEuSG9zdFZhdWx0RXJyb3JDb2RlEg0KBWZvdW5kGAIgASgIEg8KB2NvbnRlbnQYAyABKAwiMgoRV3JpdGVDYWNoZVJlcXVlc3QSDAoEbmFtZRgBIAEoCRIPCgdjb250ZW50GAIgASgMIkEKEldyaXRlQ2FjaGVSZXNwb25zZRIrCgVlcnJvchgBIAEoDjIcLm51bWVuLnYxLkhvc3RWYXVsdEVycm9yQ29kZSITChFXYXRjaFZhdWx0UmVxdWVzdCI9ChJXYXRjaFZhdWx0UmVzcG9uc2USDQoFcGF0aHMYASADKAkSGAoQaXNfdmF1bHRfY2hhbmdlZBgCIAEoCCq7AgoSSG9zdFZhdWx0RXJyb3JDb2RlEiUKIUhPU1RfVkFVTFRfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiIKHkhPU1RfVkFVTFRfRVJST1JfQ09ERV9OT19WQVVMVBABEiEKHUhPU1RfVkFVTFRfRVJST1JfQ09ERV9NSVNTSU5HEAISIQodSE9TVF9WQVVMVF9FUlJPUl9DT0RFX09VVFNJREUQAxIfChtIT1NUX1ZBVUxUX0VSUk9SX0NPREVfU1RBTEUQBBIiCh5IT1NUX1ZBVUxUX0VSUk9SX0NPREVfT0NDVVBJRUQQBRIpCiVIT1NUX1ZBVUxUX0VSUk9SX0NPREVfSEVMRF9CWV9BTk9USEVSEAYSJAogSE9TVF9WQVVMVF9FUlJPUl9DT0RFX05PVF9BX05PVEUQCCqMAQoOSG9zdEluZGV4U3RhdGUSIAocSE9TVF9JTkRFWF9TVEFURV9VTlNQRUNJRklFRBAAEhwKGEhPU1RfSU5ERVhfU1RBVEVfSU5ERVhFRBABEh0KGUhPU1RfSU5ERVhfU1RBVEVfSU5ERVhJTkcQAhIbChdIT1NUX0lOREVYX1NUQVRFX0ZBSUxFRBADMpcOChBIb3N0VmF1bHRTZXJ2aWNlEk0KDEdldEhvc3RWYXVsdBIdLm51bWVuLnYxLkdldEhvc3RWYXVsdFJlcXVlc3QaHi5udW1lbi52MS5HZXRIb3N0VmF1bHRSZXNwb25zZRJTCg5MaXN0SG9zdFZhdWx0cxIfLm51bWVuLnYxLkxpc3RIb3N0VmF1bHRzUmVxdWVzdBogLm51bWVuLnYxLkxpc3RIb3N0VmF1bHRzUmVzcG9uc2USXwoSRW5zdXJlVmF1bHRJbmRleGVkEiMubnVtZW4udjEuRW5zdXJlVmF1bHRJbmRleGVkUmVxdWVzdBokLm51bWVuLnYxLkVuc3VyZVZhdWx0SW5kZXhlZFJlc3BvbnNlEl8KEkdldEZpbGVGaW5nZXJwcmludBIjLm51bWVuLnYxLkdldEZpbGVGaW5nZXJwcmludFJlcXVlc3QaJC5udW1lbi52MS5HZXRGaWxlRmluZ2VycHJpbnRSZXNwb25zZRJBCghSZWFkRmlsZRIZLm51bWVuLnYxLlJlYWRGaWxlUmVxdWVzdBoaLm51bWVuLnYxLlJlYWRGaWxlUmVzcG9uc2USRAoJV3JpdGVGaWxlEhoubnVtZW4udjEuV3JpdGVGaWxlUmVxdWVzdBobLm51bWVuLnYxLldyaXRlRmlsZVJlc3BvbnNlEkcKCkNyZWF0ZUZpbGUSGy5udW1lbi52MS5DcmVhdGVGaWxlUmVxdWVzdBocLm51bWVuLnYxLkNyZWF0ZUZpbGVSZXNwb25zZRJECglMb2NrVmF1bHQSGi5udW1lbi52MS5Mb2NrVmF1bHRSZXF1ZXN0GhsubnVtZW4udjEuTG9ja1ZhdWx0UmVzcG9uc2USSgoLVW5sb2NrVmF1bHQSHC5udW1lbi52MS5VbmxvY2tWYXVsdFJlcXVlc3QaHS5udW1lbi52MS5VbmxvY2tWYXVsdFJlc3BvbnNlEkQKCVNjYW5GaWxlcxIaLm51bWVuLnYxLlNjYW5GaWxlc1JlcXVlc3QaGy5udW1lbi52MS5TY2FuRmlsZXNSZXNwb25zZRJKCgtHZXROb3RlUmVmcxIcLm51bWVuLnYxLkdldE5vdGVSZWZzUmVxdWVzdBodLm51bWVuLnYxLkdldE5vdGVSZWZzUmVzcG9uc2USTQoMR2V0Tm90ZVR5cGVzEh0ubnVtZW4udjEuR2V0Tm90ZVR5cGVzUmVxdWVzdBoeLm51bWVuLnYxLkdldE5vdGVUeXBlc1Jlc3BvbnNlElAKDUdldE5hbWVkUGF0aHMSHi5udW1lbi52MS5HZXROYW1lZFBhdGhzUmVxdWVzdBofLm51bWVuLnYxLkdldE5hbWVkUGF0aHNSZXNwb25zZRJTCg5HZXRQYXRoc09mVHlwZRIfLm51bWVuLnYxLkdldFBhdGhzT2ZUeXBlUmVxdWVzdBogLm51bWVuLnYxLkdldFBhdGhzT2ZUeXBlUmVzcG9uc2USQQoIR2V0TGlua3MSGS5udW1lbi52MS5HZXRMaW5rc1JlcXVlc3QaGi5udW1lbi52MS5HZXRMaW5rc1Jlc3BvbnNlEk0KDEdldEJhY2tsaW5rcxIdLm51bWVuLnYxLkdldEJhY2tsaW5rc1JlcXVlc3QaHi5udW1lbi52MS5HZXRCYWNrbGlua3NSZXNwb25zZRJNCgxSZXNvbHZlTGlua3MSHS5udW1lbi52MS5SZXNvbHZlTGlua3NSZXF1ZXN0Gh4ubnVtZW4udjEuUmVzb2x2ZUxpbmtzUmVzcG9uc2USWQoQR2V0UGFyc2VQcm9ibGVtcxIhLm51bWVuLnYxLkdldFBhcnNlUHJvYmxlbXNSZXF1ZXN0GiIubnVtZW4udjEuR2V0UGFyc2VQcm9ibGVtc1Jlc3BvbnNlEkQKCVJlYWRDYWNoZRIaLm51bWVuLnYxLlJlYWRDYWNoZVJlcXVlc3QaGy5udW1lbi52MS5SZWFkQ2FjaGVSZXNwb25zZRJHCgpXcml0ZUNhY2hlEhsubnVtZW4udjEuV3JpdGVDYWNoZVJlcXVlc3QaHC5udW1lbi52MS5Xcml0ZUNhY2hlUmVzcG9uc2USUAoNU2V0VmF1bHRJblVzZRIeLm51bWVuLnYxLlNldFZhdWx0SW5Vc2VSZXF1ZXN0Gh8ubnVtZW4udjEuU2V0VmF1bHRJblVzZVJlc3BvbnNlEkkKCldhdGNoTW92ZXMSGy5udW1lbi52MS5XYXRjaE1vdmVzUmVxdWVzdBocLm51bWVuLnYxLldhdGNoTW92ZXNSZXNwb25zZTABEkkKCldhdGNoVmF1bHQSGy5udW1lbi52MS5XYXRjaFZhdWx0UmVxdWVzdBocLm51bWVuLnYxLldhdGNoVmF1bHRSZXNwb25zZTABQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * HostFingerprint is what a file was at a moment: at its current position, how large it
@@ -968,145 +968,6 @@ export const GetParseProblemsResponseSchema: GenMessage<GetParseProblemsResponse
   messageDesc(file_numen_v1_hostvault, 44);
 
 /**
- * @generated from message numen.v1.ReadDataRequest
- */
-export type ReadDataRequest = Message<"numen.v1.ReadDataRequest"> & {
-  /**
-   * The name of a file inside the folder.
-   *
-   * @generated from field: string name = 1;
-   */
-  name: string;
-};
-
-/**
- * Describes the message numen.v1.ReadDataRequest.
- * Use `create(ReadDataRequestSchema)` to create a new message.
- */
-export const ReadDataRequestSchema: GenMessage<ReadDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 45);
-
-/**
- * @generated from message numen.v1.ReadDataResponse
- */
-export type ReadDataResponse = Message<"numen.v1.ReadDataResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
-   */
-  error: HostVaultErrorCode;
-
-  /**
-   * @generated from field: bytes content = 2;
-   */
-  content: Uint8Array;
-};
-
-/**
- * Describes the message numen.v1.ReadDataResponse.
- * Use `create(ReadDataResponseSchema)` to create a new message.
- */
-export const ReadDataResponseSchema: GenMessage<ReadDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 46);
-
-/**
- * @generated from message numen.v1.AppendDataRequest
- */
-export type AppendDataRequest = Message<"numen.v1.AppendDataRequest"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * @generated from field: bytes content = 2;
-   */
-  content: Uint8Array;
-};
-
-/**
- * Describes the message numen.v1.AppendDataRequest.
- * Use `create(AppendDataRequestSchema)` to create a new message.
- */
-export const AppendDataRequestSchema: GenMessage<AppendDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 47);
-
-/**
- * @generated from message numen.v1.AppendDataResponse
- */
-export type AppendDataResponse = Message<"numen.v1.AppendDataResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
-   */
-  error: HostVaultErrorCode;
-};
-
-/**
- * Describes the message numen.v1.AppendDataResponse.
- * Use `create(AppendDataResponseSchema)` to create a new message.
- */
-export const AppendDataResponseSchema: GenMessage<AppendDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 48);
-
-/**
- * @generated from message numen.v1.ListDataRequest
- */
-export type ListDataRequest = Message<"numen.v1.ListDataRequest"> & {
-};
-
-/**
- * Describes the message numen.v1.ListDataRequest.
- * Use `create(ListDataRequestSchema)` to create a new message.
- */
-export const ListDataRequestSchema: GenMessage<ListDataRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 49);
-
-/**
- * HostDataFile is a file of the plugin's folder in the vault's store.
- *
- * @generated from message numen.v1.HostDataFile
- */
-export type HostDataFile = Message<"numen.v1.HostDataFile"> & {
-  /**
-   * @generated from field: string name = 1;
-   */
-  name: string;
-
-  /**
-   * @generated from field: int64 size = 2;
-   */
-  size: bigint;
-};
-
-/**
- * Describes the message numen.v1.HostDataFile.
- * Use `create(HostDataFileSchema)` to create a new message.
- */
-export const HostDataFileSchema: GenMessage<HostDataFile> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 50);
-
-/**
- * @generated from message numen.v1.ListDataResponse
- */
-export type ListDataResponse = Message<"numen.v1.ListDataResponse"> & {
-  /**
-   * @generated from field: numen.v1.HostVaultErrorCode error = 1;
-   */
-  error: HostVaultErrorCode;
-
-  /**
-   * @generated from field: repeated numen.v1.HostDataFile files = 2;
-   */
-  files: HostDataFile[];
-};
-
-/**
- * Describes the message numen.v1.ListDataResponse.
- * Use `create(ListDataResponseSchema)` to create a new message.
- */
-export const ListDataResponseSchema: GenMessage<ListDataResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 51);
-
-/**
  * @generated from message numen.v1.ReadCacheRequest
  */
 export type ReadCacheRequest = Message<"numen.v1.ReadCacheRequest"> & {
@@ -1121,7 +982,7 @@ export type ReadCacheRequest = Message<"numen.v1.ReadCacheRequest"> & {
  * Use `create(ReadCacheRequestSchema)` to create a new message.
  */
 export const ReadCacheRequestSchema: GenMessage<ReadCacheRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 52);
+  messageDesc(file_numen_v1_hostvault, 45);
 
 /**
  * @generated from message numen.v1.ReadCacheResponse
@@ -1151,7 +1012,7 @@ export type ReadCacheResponse = Message<"numen.v1.ReadCacheResponse"> & {
  * Use `create(ReadCacheResponseSchema)` to create a new message.
  */
 export const ReadCacheResponseSchema: GenMessage<ReadCacheResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 53);
+  messageDesc(file_numen_v1_hostvault, 46);
 
 /**
  * @generated from message numen.v1.WriteCacheRequest
@@ -1173,7 +1034,7 @@ export type WriteCacheRequest = Message<"numen.v1.WriteCacheRequest"> & {
  * Use `create(WriteCacheRequestSchema)` to create a new message.
  */
 export const WriteCacheRequestSchema: GenMessage<WriteCacheRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 54);
+  messageDesc(file_numen_v1_hostvault, 47);
 
 /**
  * @generated from message numen.v1.WriteCacheResponse
@@ -1190,7 +1051,7 @@ export type WriteCacheResponse = Message<"numen.v1.WriteCacheResponse"> & {
  * Use `create(WriteCacheResponseSchema)` to create a new message.
  */
 export const WriteCacheResponseSchema: GenMessage<WriteCacheResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 55);
+  messageDesc(file_numen_v1_hostvault, 48);
 
 /**
  * @generated from message numen.v1.WatchVaultRequest
@@ -1203,7 +1064,7 @@ export type WatchVaultRequest = Message<"numen.v1.WatchVaultRequest"> & {
  * Use `create(WatchVaultRequestSchema)` to create a new message.
  */
 export const WatchVaultRequestSchema: GenMessage<WatchVaultRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 56);
+  messageDesc(file_numen_v1_hostvault, 49);
 
 /**
  * @generated from message numen.v1.WatchVaultResponse
@@ -1231,7 +1092,7 @@ export type WatchVaultResponse = Message<"numen.v1.WatchVaultResponse"> & {
  * Use `create(WatchVaultResponseSchema)` to create a new message.
  */
 export const WatchVaultResponseSchema: GenMessage<WatchVaultResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_hostvault, 57);
+  messageDesc(file_numen_v1_hostvault, 50);
 
 /**
  * means it was not.
@@ -1285,13 +1146,6 @@ export enum HostVaultErrorCode {
    * @generated from enum value: HOST_VAULT_ERROR_CODE_HELD_BY_ANOTHER = 6;
    */
   HELD_BY_ANOTHER = 6,
-
-  /**
-   * The plugin's manifest names no folder in the vault's store.
-   *
-   * @generated from enum value: HOST_VAULT_ERROR_CODE_NO_DATA_FOLDER = 7;
-   */
-  NO_DATA_FOLDER = 7,
 
   /**
    * The path is not a note this vault holds.
@@ -1549,38 +1403,6 @@ export const HostVaultService: GenService<{
     methodKind: "unary";
     input: typeof GetParseProblemsRequestSchema;
     output: typeof GetParseProblemsResponseSchema;
-  },
-  /**
-   * ReadData reads a file of the folder the plugin's manifest names in the
-   * vault's own store. The store keeps what the plugin made and cannot make
-   * again; the host answers for no other folder.
-   *
-   * @generated from rpc numen.v1.HostVaultService.ReadData
-   */
-  readData: {
-    methodKind: "unary";
-    input: typeof ReadDataRequestSchema;
-    output: typeof ReadDataResponseSchema;
-  },
-  /**
-   * AppendData adds to a file of that folder, making it if it is not there.
-   *
-   * @generated from rpc numen.v1.HostVaultService.AppendData
-   */
-  appendData: {
-    methodKind: "unary";
-    input: typeof AppendDataRequestSchema;
-    output: typeof AppendDataResponseSchema;
-  },
-  /**
-   * ListData lists the files of that folder.
-   *
-   * @generated from rpc numen.v1.HostVaultService.ListData
-   */
-  listData: {
-    methodKind: "unary";
-    input: typeof ListDataRequestSchema;
-    output: typeof ListDataResponseSchema;
   },
   /**
    * ReadCache reads what the plugin kept for this vault under a name. The cache

@@ -43,9 +43,6 @@ type Callers interface {
 	GetCompleter() completionport.Completer
 	// none to offer it returns nil.
 	GetPluginVault() pluginport.PluginVault
-	// GetPluginData is the folder, inside the store of a vault, that the plugin's manifest keeps its
-	// data in. It is empty where the manifest names none.
-	GetPluginData(pluginID string) string
 	// GetDependencies is what provisions the dependencies, or nil.
 	GetDependencies() pluginport.DependencyCatalog
 }
@@ -79,6 +76,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostServiceHandler(endpoint))
 	mux.Handle(numenv1connect.NewHostVaultServiceHandler(newVaultEndpoint(endpoint)))
+	mux.Handle(numenv1connect.NewHostStoreServiceHandler(&storeEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
