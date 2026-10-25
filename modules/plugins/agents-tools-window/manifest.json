@@ -13,6 +13,6 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/agents.tools.window"
+    "entrypoint": "bin/agents-tools-window"
   }
 }

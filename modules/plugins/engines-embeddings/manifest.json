@@ -8,7 +8,12 @@
   "targets": ["desktop.editor"],
   "activationEvents": ["*"],
   "permissions": ["vault:read", "network:outbound"],
-  "dependencies": [{ "id": "onnxruntime", "kind": "runtime" }],
+  "dependencies": [
+    {
+      "id": "onnxruntime",
+      "kind": "runtime"
+    }
+  ],
   "secrets": ["apiKey"],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
@@ -17,7 +22,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/engines.embeddings",
+    "entrypoint": "bin/engines-embeddings",
     "serviceName": "numen.v1.EmbeddingService"
   },
   "frontend": {

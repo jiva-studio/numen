@@ -35,8 +35,8 @@ func TestManifest(t *testing.T) {
 	if m.ID != "md.numen.agents.tools.vault" {
 		t.Errorf("manifest id = %q, want %q", m.ID, "md.numen.agents.tools.vault")
 	}
-	if m.Backend.Entrypoint != "bin/agents.tools.vault" {
-		t.Errorf("manifest entrypoint = %q, want %q", m.Backend.Entrypoint, "bin/agents.tools.vault")
+	if m.Backend.Entrypoint != "bin/agents-tools-vault" {
+		t.Errorf("manifest entrypoint = %q, want %q", m.Backend.Entrypoint, "bin/agents-tools-vault")
 	}
 	if len(m.Capabilities) == 0 || m.Capabilities[0] != "tools" {
 		t.Errorf("manifest capabilities = %v, want [tools]", m.Capabilities)

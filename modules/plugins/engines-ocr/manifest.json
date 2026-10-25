@@ -9,7 +9,10 @@
   "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
   "permissions": ["vault:read", "network:outbound"],
   "dependencies": [
-    { "id": "onnxruntime", "kind": "runtime" },
+    {
+      "id": "onnxruntime",
+      "kind": "runtime"
+    },
     {
       "id": "pp-doclayout",
       "kind": "model",
@@ -48,7 +51,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/engines.ocr",
+    "entrypoint": "bin/engines-ocr",
     "serviceName": "numen.v1.RecognitionService"
   },
   "settings": [

@@ -13,7 +13,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/agents.mcp.server",
+    "entrypoint": "bin/agents-mcp-server",
     "serviceName": "numen.v1.McpServerService"
   }
 }

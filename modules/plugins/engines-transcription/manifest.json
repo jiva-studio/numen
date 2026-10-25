@@ -15,7 +15,10 @@
   ],
   "permissions": ["vault:read", "network:outbound"],
   "dependencies": [
-    { "id": "onnxruntime", "kind": "runtime" },
+    {
+      "id": "onnxruntime",
+      "kind": "runtime"
+    },
     {
       "id": "parakeet-encoder",
       "kind": "model",
@@ -74,7 +77,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/engines.transcription",
+    "entrypoint": "bin/engines-transcription",
     "serviceName": "numen.v1.TranscriptionService"
   },
   "settings": [

@@ -15,7 +15,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/agents.claude",
+    "entrypoint": "bin/agents-claude",
     "serviceName": "numen.v1.AgentService"
   },
   "settings": [

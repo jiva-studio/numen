@@ -16,7 +16,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/readers.pdf",
+    "entrypoint": "bin/readers-pdf",
     "serviceName": "numen.v1.DocumentService"
   },
   "frontend": {

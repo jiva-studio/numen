@@ -15,7 +15,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/tools.media.importer",
+    "entrypoint": "bin/tools-media-importer",
     "serviceName": "numen.v1.DownloadService"
   },
   "frontend": {
@@ -26,12 +26,18 @@
     {
       "id": "yt-dlp",
       "kind": "binary",
-      "metadata": { "binary": "yt-dlp", "envVar": "NUMEN_DEPENDENCY_YT_DLP" }
+      "metadata": {
+        "binary": "yt-dlp",
+        "envVar": "NUMEN_DEPENDENCY_YT_DLP"
+      }
     },
     {
       "id": "ffmpeg",
       "kind": "binary",
-      "metadata": { "binary": "ffmpeg", "envVar": "NUMEN_DEPENDENCY_FFMPEG" }
+      "metadata": {
+        "binary": "ffmpeg",
+        "envVar": "NUMEN_DEPENDENCY_FFMPEG"
+      }
     }
   ],
   "settings": [

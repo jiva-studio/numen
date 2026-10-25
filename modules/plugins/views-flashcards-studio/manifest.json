@@ -44,7 +44,7 @@
   ],
   "backend": {
     "type": "process",
-    "entrypoint": "bin/views.flashcards.studio",
+    "entrypoint": "bin/views-flashcards-studio",
     "serviceName": "numen.v1.CardsService"
   },
   "frontend": {

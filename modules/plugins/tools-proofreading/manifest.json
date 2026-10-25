@@ -52,7 +52,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/tools.proofreading",
+    "entrypoint": "bin/tools-proofreading",
     "serviceName": "numen.v1.ProofreadingService"
   }
 }

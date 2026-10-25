@@ -314,7 +314,7 @@ const readPermissions = (plugin: string): readonly string[] =>
 
 describe('the manifest of a plugin that writes through the window', () => {
   it('view-file-tree declares what the files it moves and makes need', async () => {
-    const { context } = createContext(readPermissions('views.file.tree'))
+    const { context } = createContext(readPermissions('views-file-tree'))
 
     await Promise.all(Object.values(FILE_WRITES).map((call) => call(context)))
     context.workspace!.runPathCommand('remove', {
@@ -325,7 +325,7 @@ describe('the manifest of a plugin that writes through the window', () => {
   })
 
   it('view-agent-chat declares what the agent it asks needs', async () => {
-    const { context } = createContext(readPermissions('views.agent.chat'))
+    const { context } = createContext(readPermissions('views-agent-chat'))
 
     await expect(
       Promise.all(Object.values(ASKING).map(([, call]) => call(context))),
@@ -333,7 +333,7 @@ describe('the manifest of a plugin that writes through the window', () => {
   })
 
   it('view-plex-graph declares what the notes it joins and makes need', async () => {
-    const { context } = createContext(readPermissions('views.plex.graph'))
+    const { context } = createContext(readPermissions('views-plex-graph'))
 
     await Promise.all(Object.values(NOTE_WRITES).map((call) => call(context)))
     context.workspace!.runCommand('child', { path: 'a.md', title: 'A' })

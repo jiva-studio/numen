@@ -19,7 +19,7 @@ function listFrontendPlugins(): string[] {
 describe('pluginCatalog', () => {
   it('has a loader for every plugin directory that has a frontend directory', () => {
     const directories = listFrontendPlugins()
-    expect(directories).toContain('engines.embeddings')
+    expect(directories).toContain('engines-embeddings')
     expect(Object.keys(pluginCatalog.loaders)).toHaveLength(directories.length)
   })
 

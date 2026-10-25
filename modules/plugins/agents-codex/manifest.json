@@ -15,7 +15,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/agents.codex",
+    "entrypoint": "bin/agents-codex",
     "serviceName": "numen.v1.AgentService"
   },
   "settings": [

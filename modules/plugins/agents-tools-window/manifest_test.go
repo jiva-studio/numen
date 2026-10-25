@@ -36,7 +36,7 @@ func TestManifestIsValid(t *testing.T) {
 	if !slices.Contains(manifest.Permissions, "vault:read") {
 		t.Errorf("permissions %v does not contain vault:read", manifest.Permissions)
 	}
-	if manifest.Backend.Entrypoint != "bin/agents.tools.window" {
-		t.Errorf("backend.entrypoint = %q, want bin/agents.tools.window", manifest.Backend.Entrypoint)
+	if manifest.Backend.Entrypoint != "bin/agents-tools-window" {
+		t.Errorf("backend.entrypoint = %q, want bin/agents-tools-window", manifest.Backend.Entrypoint)
 	}
 }
