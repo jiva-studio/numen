@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// HostStoreService is the calling plugin's own folder in a vault's store,
+// `.numen/<plugin id>/`. The host serves a plugin that folder and no other, and
+// serves it to every running plugin without a vault permission.
+//
+// A name is a file directly in the folder: it holds no slash and does not
+// begin with a dot.
+//
+// Numen-Vault works the vault of that identity; without it a call works the
+// vault the host is showing.
+service HostStoreService {
+  // ReadStoreFile reads a whole file.
+  rpc ReadStoreFile(ReadStoreFileRequest) returns (ReadStoreFileResponse);
+
+  // AppendStoreFile adds to the end of a file, making it when it is not there.
+  // The content lands whole or not at all.
+  rpc AppendStoreFile(AppendStoreFileRequest) returns (AppendStoreFileResponse);
+
+  // ListStoreFiles lists the files of the plugin's folder, sorted by name. A
+  // folder that is not there holds no files.
+  rpc ListStoreFiles(ListStoreFilesRequest) returns (ListStoreFilesResponse);
+}
+
+// HostStoreErrorCode is why a call on the plugin's folder was refused. The
+// zero value means it was not.
+enum HostStoreErrorCode {
+  HOST_STORE_ERROR_CODE_UNSPECIFIED = 0;
+
+  // The host is showing no vault.
+  HOST_STORE_ERROR_CODE_NO_VAULT = 1;
+
+  // The file is not there.
+  HOST_STORE_ERROR_CODE_MISSING = 2;
+
+  // The name is not a file of the plugin's folder.
+  HOST_STORE_ERROR_CODE_OUTSIDE = 3;
+
+  // Another program holds the file.
+  HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER = 4;
+}
+
+message ReadStoreFileRequest {
+  string name = 1;
+}
+
+message ReadStoreFileResponse {
+  HostStoreErrorCode error = 1;
+  bytes content = 2;
+}
+
+message AppendStoreFileRequest {
+  string name = 1;
+  bytes content = 2;
+}
+
+message AppendStoreFileResponse {
+  HostStoreErrorCode error = 1;
+}
+
+message ListStoreFilesRequest {}
+
+// HostStoreFile is a file of the plugin's folder: its name, and how many bytes
+// it holds.
+message HostStoreFile {
+  string name = 1;
+  int64 size = 2;
+}
+
+message ListStoreFilesResponse {
+  HostStoreErrorCode error = 1;
+  repeated HostStoreFile files = 2;
+}
