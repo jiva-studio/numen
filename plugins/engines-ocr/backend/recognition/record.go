@@ -34,13 +34,13 @@ type part struct {
 	Section string       `json:"section,omitempty"`
 }
 
-// getRecordName is the file of the plugin's folder the recognition of a path is kept in.
+// getRecordName returns the store file name of the recognition of a path.
 func getRecordName(path string) string {
 	sum := sha256.Sum256([]byte(path))
 	return hex.EncodeToString(sum[:]) + ".json"
 }
 
-// readRecord is the record kept for the path, and nil where none is kept.
+// readRecord returns the stored record of the path, or nil when there is none.
 func readRecord(ctx context.Context, store host.Store, path string) (*record, error) {
 	raw, err := store.Read(ctx, getRecordName(path))
 	if errors.Is(err, host.ErrNotExist) {
@@ -49,31 +49,30 @@ func readRecord(ctx context.Context, store host.Store, path string) (*record, er
 	if err != nil {
 		return nil, fmt.Errorf("read the recognition of %s: %w", path, err)
 	}
-	var kept record
-	if err := json.Unmarshal(raw, &kept); err != nil {
+	var rec record
+	if err := json.Unmarshal(raw, &rec); err != nil {
 		return nil, fmt.Errorf("read the recognition of %s: %w", path, err)
 	}
-	return &kept, nil
+	return &rec, nil
 }
 
-func writeRecord(ctx context.Context, store host.Store, kept *record) error {
-	raw, err := json.Marshal(kept)
+func writeRecord(ctx context.Context, store host.Store, rec *record) error {
+	raw, err := json.Marshal(rec)
 	if err != nil {
 		return err
 	}
-	if err := store.Write(ctx, getRecordName(kept.Path), raw); err != nil {
-		return fmt.Errorf("keep the recognition of %s: %w", kept.Path, err)
+	if err := store.Write(ctx, getRecordName(rec.Path), raw); err != nil {
+		return fmt.Errorf("keep the recognition of %s: %w", rec.Path, err)
 	}
 	return nil
 }
 
-// isFor reports whether the record was read from the content by what the recipe names. No record is
-// read from nothing.
+// isFor reports whether the record was made from the content hash with the recipe.
 func (r *record) isFor(inputHash, recipe string) bool {
 	return r != nil && r.InputHash == inputHash && r.Recipe == recipe
 }
 
-// isCompleteFor reports whether the record holds every page of the content.
+// isCompleteFor reports whether the record holds every page of the content hash.
 func (r *record) isCompleteFor(inputHash string) bool {
 	return r != nil && r.InputHash == inputHash && r.IsComplete
 }
@@ -100,13 +99,12 @@ func (r *record) getText() domain.VersionText {
 	return domain.NewVersionText(domain.TextVersion{Format: domain.TextFormatPositioned}, parts)
 }
 
-// blockGap closes every block of a page, so the blocks and the pages read apart.
+// blockGap ends every block of a page.
 const blockGap = "\n\n"
 
-// newPage is the parts of one page the recogniser read. A block is cut at the start of each of its
-// boxes, so a part stands in the rectangle of the line it holds; the text before its first box goes
-// with the first, and a block with no box is one part standing nowhere. A heading block opens a
-// section named by its text.
+// newPage returns the parts of one recognised page. Each block is split at the start of each box, so
+// every part has the rectangle of its line; a block without boxes is one part without rectangles. A
+// heading block starts a section named by its text.
 func newPage(bounds image.Rectangle, blocks []engine.Block) []part {
 	var out []part
 	for _, block := range blocks {
@@ -123,7 +121,7 @@ func newPage(bounds image.Rectangle, blocks []engine.Block) []part {
 	return out
 }
 
-// newBlockParts is the parts of one block that says something, cut at the start of each box.
+// newBlockParts returns the parts of one non-empty block, split at the start of each box.
 func newBlockParts(bounds image.Rectangle, block engine.Block) []part {
 	boxes := append([]engine.Box(nil), block.Boxes...)
 	sort.SliceStable(boxes, func(i, j int) bool { return boxes[i].Span.From < boxes[j].Span.From })
@@ -146,8 +144,8 @@ func newBlockParts(bounds image.Rectangle, block engine.Block) []part {
 	return out
 }
 
-func clampSpan(at, length int) int {
-	return min(max(at, 0), length)
+func clampSpan(offset, length int) int {
+	return min(max(offset, 0), length)
 }
 
 // getFractions is a rectangle of the page in fractions of it.

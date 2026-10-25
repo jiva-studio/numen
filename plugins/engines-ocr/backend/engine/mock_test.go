@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestTheMockReadsItsTextInABoxInsideEveryPage(t *testing.T) {
+func TestMockRecogniserReturnsTextInsidePage(t *testing.T) {
 	page := image.NewGray(image.Rect(0, 0, 200, 100))
 
 	blocks, err := MockRecogniser{}.Recognise(t.Context(), page)

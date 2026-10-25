@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 )
 
-func TestAPageIsItsBlocksCutAtEachBoxAndKeptWhole(t *testing.T) {
+func TestNewPageSplitsBlocksByBox(t *testing.T) {
 	bounds := image.Rect(0, 0, 100, 200)
 	blocks := []engine.Block{
 		{Text: "Chapter One", IsHeading: true, Boxes: []engine.Box{{Rect: image.Rect(10, 0, 90, 20), Span: engine.ByteSpan{To: 11}}}},
@@ -40,7 +40,7 @@ func TestAPageIsItsBlocksCutAtEachBoxAndKeptWhole(t *testing.T) {
 	}
 }
 
-func TestARectangleOfAPageOfNoSizeStandsNowhere(t *testing.T) {
+func TestGetFractionsOfEmptyPage(t *testing.T) {
 	if got := getFractions(image.Rectangle{}, image.Rect(0, 0, 5, 5)); got != [4]float32{} {
 		t.Fatalf("got %v", got)
 	}

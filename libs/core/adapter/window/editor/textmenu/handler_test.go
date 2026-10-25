@@ -42,20 +42,20 @@ func (m *menu) RunMenuEntry(_ context.Context, _ domain.Vault, _ string, entry t
 
 var vault = shown{ID: "v1", Name: "Physics"}
 
-func TestEveryActionOfTheSchemaIsOneOfTheMenu(t *testing.T) {
-	written := map[v1.FileMenuAction]bool{}
+func TestActionsCoverEveryFileMenuAction(t *testing.T) {
+	mapped := map[v1.FileMenuAction]bool{}
 	for _, wire := range actions {
-		written[wire] = true
+		mapped[wire] = true
 	}
 	for value := range v1.FileMenuAction_name {
 		action := v1.FileMenuAction(value)
-		if action != v1.FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED && !written[action] {
-			t.Errorf("%s is written for no entry of the menu", action)
+		if action != v1.FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED && !mapped[action] {
+			t.Errorf("%s is mapped for no entry of the menu", action)
 		}
 	}
 }
 
-func TestTheMenuOfAFileIsAnsweredEntryByEntry(t *testing.T) {
+func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
 		{Action: textversion.ActionRecognise, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR"},
 		{Action: textversion.ActionDeleteVersion, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Version: "md.numen.engines.ocr/recognition"},
@@ -77,7 +77,7 @@ func TestTheMenuOfAFileIsAnsweredEntryByEntry(t *testing.T) {
 	}
 }
 
-func TestAWindowShowingNoVaultIsOfferedNothingAndRunsNothing(t *testing.T) {
+func TestFileMenuWithoutVaultIsEmpty(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{{Action: textversion.ActionRecognise, PluginID: "p"}}}
 	h := NewHandler(shown{}, m)
 
@@ -94,7 +94,7 @@ func TestAWindowShowingNoVaultIsOfferedNothingAndRunsNothing(t *testing.T) {
 	}
 }
 
-func TestAnEntryIsRunAsTheWindowNamedIt(t *testing.T) {
+func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 	m := &menu{}
 	h := NewHandler(vault, m)
 
@@ -110,7 +110,7 @@ func TestAnEntryIsRunAsTheWindowNamedIt(t *testing.T) {
 	}
 }
 
-func TestAnEntryTheMenuDoesNotHoldIsAnInvalidArgument(t *testing.T) {
+func TestRunFileMenuEntryMapsErrors(t *testing.T) {
 	for _, why := range []error{textport.ErrInvalidVersion, textport.ErrInputNotAccepted, textport.ErrNotTextPlugin, textport.ErrNoText} {
 		h := NewHandler(vault, &menu{runErr: fmt.Errorf("run: %w", why)})
 		_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf"}))

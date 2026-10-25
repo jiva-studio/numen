@@ -18,13 +18,13 @@ import (
 
 const pluginID = "md.numen.engines.ocr"
 
-// pages reads "page N" on the Nth page it is shown, in one block whose two lines stand in the top
+// pages returns "page N" for the Nth page, in one block whose two lines are in the top
 // and the bottom half of the page, and counts the pages.
 type pages struct {
-	mu    sync.Mutex
-	shown int
-	err   error
-	says  string
+	mu        sync.Mutex
+	pageCount int
+	err       error
+	says      string
 }
 
 func (p *pages) GetRecognitionModel() engine.Model {
@@ -34,7 +34,7 @@ func (p *pages) GetRecognitionModel() engine.Model {
 func (p *pages) Recognise(_ context.Context, page image.Image) ([]engine.Block, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.shown++
+	p.pageCount++
 	if p.err != nil {
 		return nil, p.err
 	}
@@ -53,10 +53,10 @@ func (p *pages) Recognise(_ context.Context, page image.Image) ([]engine.Block, 
 	}, nil
 }
 
-func (p *pages) getShown() int {
+func (p *pages) getPageCount() int {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	return p.shown
+	return p.pageCount
 }
 
 // scene is one vault holding a scan and a PDF with a text layer, and the plugin over it.
@@ -123,7 +123,7 @@ func (s *scene) readLive(t *testing.T, path string, provider host.TextProvider) 
 	return domain.VersionText{}
 }
 
-func TestAScanIsRecognisedOnItsOwnIntoAPositionedVersion(t *testing.T) {
+func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"})
@@ -137,40 +137,40 @@ func TestAScanIsRecognisedOnItsOwnIntoAPositionedVersion(t *testing.T) {
 	if !strings.Contains(text.Text, "page two\n\nHeading") {
 		t.Errorf("the text reads %q, want the pages in order with their blocks apart", text.Text)
 	}
-	at := strings.LastIndex(text.Text, "page two")
-	boxes := text.GetBoxes(domain.ByteSpan{From: at, To: at + len("page two")})
+	offset := strings.LastIndex(text.Text, "page two")
+	boxes := text.GetBoxes(domain.ByteSpan{From: offset, To: offset + len("page two")})
 	if len(boxes) != 1 || boxes[0].Page != 1 || boxes[0].MinY != 0.5 || boxes[0].MaxY != 1 {
-		t.Errorf("the last line stands in %+v, want the bottom half of the second page", boxes)
+		t.Errorf("boxes of the last line: %+v, want the bottom half of the second page", boxes)
 	}
-	if got := text.Locate(at); got != "Heading, page 2 of the file" {
-		t.Errorf("the last line is located at %q", got)
+	if got := text.Locate(offset); got != "Heading, page 2 of the file" {
+		t.Errorf("location of the last line: %q", got)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
 		t.Errorf("a finished recognition still shows %+v", tasks)
 	}
 }
 
-func TestAPDFWithItsOwnLayerIsRecognisedOnlyWhenAPersonAsks(t *testing.T) {
+func TestRecogniseSkipsTextLayerUnlessUserStarted(t *testing.T) {
 	s := newScene(t)
 
 	res, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf"})
-	if err != nil || !res.IsSkipped || s.recogniser.getShown() != 0 {
-		t.Fatalf("a PDF with a layer, unasked: %+v (%v), %d pages read", res, err, s.recogniser.getShown())
+	if err != nil || !res.IsSkipped || s.recogniser.getPageCount() != 0 {
+		t.Fatalf("a PDF with a layer, unasked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
 	}
 	res, err = s.run.Recognise(t.Context(), recognition.Request{Path: "books/layer.pdf", IsUserStarted: true})
-	if err != nil || res.IsSkipped || res.Pages == 0 || s.recogniser.getShown() != res.Pages {
-		t.Fatalf("a PDF with a layer, asked: %+v (%v), %d pages read", res, err, s.recogniser.getShown())
+	if err != nil || res.IsSkipped || res.Pages == 0 || s.recogniser.getPageCount() != res.Pages {
+		t.Fatalf("a PDF with a layer, asked: %+v (%v), %d pages read", res, err, s.recogniser.getPageCount())
 	}
 }
 
-func TestAFileRecognisedAsItIsNowIsNotReadAgain(t *testing.T) {
+func TestRecogniseSkipsUnchangedFile(t *testing.T) {
 	s := newScene(t)
 	for _, isUserStarted := range []bool{false, false, true} {
 		if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf", IsUserStarted: isUserStarted}); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if got := s.recogniser.getShown(); got != 2 {
+	if got := s.recogniser.getPageCount(); got != 2 {
 		t.Fatalf("%d pages were read, want the two of one run", got)
 	}
 
@@ -178,12 +178,12 @@ func TestAFileRecognisedAsItIsNowIsNotReadAgain(t *testing.T) {
 	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/scan.pdf"}); err != nil {
 		t.Fatal(err)
 	}
-	if got := s.recogniser.getShown(); got != 4 {
+	if got := s.recogniser.getPageCount(); got != 4 {
 		t.Fatalf("%d pages were read, want the replaced file read again", got)
 	}
 }
 
-func TestAScanThatSaysNothingIsKeptAsNothing(t *testing.T) {
+func TestRecogniseEmptyScanKeepsNothing(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.says = ""
 
@@ -200,7 +200,7 @@ func TestAScanThatSaysNothingIsKeptAsNothing(t *testing.T) {
 	}
 }
 
-func TestAFailureIsShownAsATaskUntilTheFileIsRecognised(t *testing.T) {
+func TestRecogniseFailureReportsTaskError(t *testing.T) {
 	s := newScene(t)
 	s.recogniser.err = errors.New("the model ran out of memory")
 
@@ -209,7 +209,7 @@ func TestAFailureIsShownAsATaskUntilTheFileIsRecognised(t *testing.T) {
 	}
 	tasks := s.queue.ListTasks()
 	if len(tasks) != 1 || !strings.Contains(tasks[0].Error, "out of memory") || !tasks[0].IsUserStarted {
-		t.Fatalf("tasks %+v, want the failure shown", tasks)
+		t.Fatalf("tasks %+v, want the failure pageCount", tasks)
 	}
 
 	s.recogniser.err = nil
@@ -221,14 +221,14 @@ func TestAFailureIsShownAsATaskUntilTheFileIsRecognised(t *testing.T) {
 	}
 }
 
-func TestAFileThatIsNotThereIsAFailure(t *testing.T) {
+func TestRecogniseMissingFileFails(t *testing.T) {
 	s := newScene(t)
 	if _, err := s.run.Recognise(t.Context(), recognition.Request{Path: "books/gone.pdf"}); !errors.Is(err, host.ErrNotExist) {
 		t.Fatalf("a file that is not there answered %v", err)
 	}
 }
 
-func TestARecognitionNeedsTheHostAndARecogniser(t *testing.T) {
+func TestNewRequiresHostAndRecogniser(t *testing.T) {
 	v := hosttest.New("Physics")
 	open := func(context.Context) (recognition.Recogniser, error) { return &pages{}, nil }
 	full := recognition.Host{Vault: v, Store: v.Store(), Texts: hosttest.NewTexts("Physics", pluginID), Queue: hosttest.NewQueue()}

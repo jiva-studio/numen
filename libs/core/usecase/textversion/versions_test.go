@@ -360,7 +360,7 @@ func TestGetVersionTextOfADisabledPluginIsNoText(t *testing.T) {
 	}
 }
 
-func TestOnlyATextAPersonAskedForIsUserStarted(t *testing.T) {
+func TestCreateTextMarksMenuRunsUserStarted(t *testing.T) {
 	s := newScene(t)
 	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.fileHash()); err != nil {
 		t.Fatal(err)

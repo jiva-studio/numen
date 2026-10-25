@@ -88,7 +88,7 @@ func TestStoreReadsAndListsExternalFile(t *testing.T) {
 	}
 }
 
-func TestAStoreReplacesAFileWholeAndDeletesIt(t *testing.T) {
+func TestStoreWriteAndDelete(t *testing.T) {
 	ctx := context.Background()
 	s := hosttest.New("Physics").Store()
 

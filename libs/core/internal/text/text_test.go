@@ -25,7 +25,7 @@ func checkLocation(t *testing.T, doc *text.Document, passage, want string) {
 	}
 }
 
-func TestAnArticleIsComposedFromItsOwnBytesAlone(t *testing.T) {
+func TestReadComposedReturnsArticleBytes(t *testing.T) {
 	const article = "Tidal mills turned with the sea.\n\nThe pond filled at high water."
 	store := artifactMap{
 		domain.NewArtifactName(domain.ArtifactText, domain.Article, "abc123"):        []byte(article),

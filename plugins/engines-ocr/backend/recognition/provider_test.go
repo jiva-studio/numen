@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-func TestTheHostReadsARecognitionAPageACall(t *testing.T) {
+func TestGetTextPagesByCursor(t *testing.T) {
 	s := newScene(t)
 	provider := recognition.NewProvider(s.run, s.store)
 	t.Cleanup(provider.Close)
@@ -35,7 +35,7 @@ func TestTheHostReadsARecognitionAPageACall(t *testing.T) {
 	}
 }
 
-func TestACreatedTextIsRecognisedBehindTheCall(t *testing.T) {
+func TestCreateTextRecognisesInBackground(t *testing.T) {
 	s := newScene(t)
 	provider := recognition.NewProvider(s.run, s.store)
 	t.Cleanup(provider.Close)
@@ -50,7 +50,7 @@ func TestACreatedTextIsRecognisedBehindTheCall(t *testing.T) {
 	}
 }
 
-func TestATextOfAVersionIsNoTextThePluginMakes(t *testing.T) {
+func TestCreateTextRejectsVersionInput(t *testing.T) {
 	provider := recognition.NewProvider(newScene(t).run, nil)
 	t.Cleanup(provider.Close)
 	err := provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: "books/scan.pdf", Input: "md.numen.readers.pdf/layer"})
@@ -59,7 +59,7 @@ func TestATextOfAVersionIsNoTextThePluginMakes(t *testing.T) {
 	}
 }
 
-func TestADeletedTextIsNotThereAnyMore(t *testing.T) {
+func TestDeleteTextRemovesRecord(t *testing.T) {
 	s := newScene(t)
 	provider := recognition.NewProvider(s.run, s.store)
 	t.Cleanup(provider.Close)

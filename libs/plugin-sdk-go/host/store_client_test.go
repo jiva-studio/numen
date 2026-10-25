@@ -151,7 +151,7 @@ func TestAStoreOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 	}
 }
 
-func TestAStoreClientReplacesAndDeletesAFile(t *testing.T) {
+func TestStoreClientWriteAndDelete(t *testing.T) {
 	h := newStoreHost()
 	store := dialStore(t, h)
 	ctx := t.Context()

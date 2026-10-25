@@ -138,18 +138,18 @@ func TestAHostShowingNoVaultAnswersNoVaultForTheStore(t *testing.T) {
 	}
 }
 
-func TestAPluginsFileIsReplacedWholeAndDeleted(t *testing.T) {
+func TestStoreWriteReplacesAndDeleteRemovesFile(t *testing.T) {
 	h := newStoreHost(t)
 	client := h.newClient("token-a")
 	ctx := t.Context()
-	at := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a", "a.json")
+	filePath := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a", "a.json")
 
 	for _, content := range []string{"first and longer", "second"} {
 		if _, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "a.json", Content: []byte(content)})); err != nil {
 			t.Fatal(err)
 		}
 	}
-	on, err := os.ReadFile(at)
+	on, err := os.ReadFile(filePath)
 	if err != nil || string(on) != "second" {
 		t.Errorf("the folder holds %q (%v), want the second write alone", on, err)
 	}
@@ -160,7 +160,7 @@ func TestAPluginsFileIsReplacedWholeAndDeleted(t *testing.T) {
 			t.Errorf("a delete was answered %v (%v)", res.Msg, err)
 		}
 	}
-	if _, err := os.Stat(at); !errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filePath); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("the deleted file is still there: %v", err)
 	}
 	outside, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "../md.numen.b/a", Content: []byte("x")}))

@@ -19,7 +19,7 @@ import (
 // VersionKey is the key the plugin keeps the recognition of a file under: one recognition a file.
 const VersionKey = "recognition"
 
-// batch is how many pages are read before what was read is kept, so a run that stops keeps them.
+// batch is the number of pages read between two writes of the record.
 const batch = 8
 
 // Recogniser reads the blocks of one page drawn as an image.
@@ -29,7 +29,7 @@ type Recogniser interface {
 }
 
 // Host is what a recognition works through: the vault the file is read from, the plugin's folder
-// the text is kept in, the text versions it is reported to, and the queue it waits its turn in.
+// the text is stored in, the text versions it is reported to, and the queue it runs in.
 type Host struct {
 	Vault host.Vault
 	Store host.Store
@@ -99,12 +99,12 @@ func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store hos
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
 	}
 	inputHash := domain.HashContent(raw)
-	kept, err := readRecord(ctx, store, req.Path)
+	rec, err := readRecord(ctx, store, req.Path)
 	if err != nil {
 		return Result{}, err
 	}
-	if !req.IsUserStarted && kept.isCompleteFor(inputHash) {
-		return Result{Pages: kept.PageCount, IsSkipped: true}, nil
+	if !req.IsUserStarted && rec.isCompleteFor(inputHash) {
+		return Result{Pages: rec.PageCount, IsSkipped: true}, nil
 	}
 	doc, err := document.Open(req.Path, raw)
 	if err != nil {
@@ -126,15 +126,15 @@ func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store hos
 	}
 	model := recogniser.GetRecognitionModel()
 	recipe := fmt.Sprintf("%s|%s|%s|%d", model.From, model.Layout, model.Recogniser, model.DPI)
-	if !kept.isFor(inputHash, recipe) {
-		kept = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount()}
+	if !rec.isFor(inputHash, recipe) {
+		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount()}
 	}
 
-	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: store, task: task}, kept); err != nil {
+	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
-	kept.IsComplete = true
-	return r.putVersion(ctx, store, kept)
+	rec.IsComplete = true
+	return r.putVersion(ctx, store, rec)
 }
 
 // pageReading is what the pages of one file are read with.
@@ -148,23 +148,23 @@ type pageReading struct {
 
 // readPages reads the pages the record does not hold yet, keeping them a batch at a time and showing
 // how far it came in the task.
-func (r *Recognition) readPages(ctx context.Context, on pageReading, kept *record) error {
-	on.task.Total, on.task.Done = int64(kept.PageCount), int64(len(kept.Pages))
+func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record) error {
+	on.task.Total, on.task.Done = int64(rec.PageCount), int64(len(rec.Pages))
 	if err := r.host.Queue.ReportTask(ctx, *on.task); err != nil {
 		return err
 	}
-	for index := len(kept.Pages); index < kept.PageCount; index++ {
+	for index := len(rec.Pages); index < rec.PageCount; index++ {
 		page, err := on.doc.RenderPage(index, on.dpi)
 		if err != nil {
 			return err
 		}
 		blocks, err := on.recogniser.Recognise(ctx, page)
 		if err != nil {
-			return fmt.Errorf("recognise page %d of %s: %w", index+1, kept.Path, err)
+			return fmt.Errorf("recognise page %d of %s: %w", index+1, rec.Path, err)
 		}
-		kept.Pages = append(kept.Pages, newPage(page.Bounds(), blocks))
+		rec.Pages = append(rec.Pages, newPage(page.Bounds(), blocks))
 		if (index+1)%batch == 0 {
-			if err := writeRecord(ctx, on.store, kept); err != nil {
+			if err := writeRecord(ctx, on.store, rec); err != nil {
 				return err
 			}
 		}
@@ -177,24 +177,24 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, kept *recor
 }
 
 // putVersion keeps a complete record and reports it as the file's version. A record that says
-// nothing is kept as nothing, and reported as no version.
-func (r *Recognition) putVersion(ctx context.Context, store host.Store, kept *record) (Result, error) {
-	text := kept.getText()
+// no text is deleted and reported as no version.
+func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *record) (Result, error) {
+	text := rec.getText()
 	if strings.TrimSpace(text.Text) == "" {
-		if err := store.Delete(ctx, getRecordName(kept.Path)); err != nil {
+		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
 			return Result{}, err
 		}
-		return Result{Pages: kept.PageCount, IsEmpty: true}, nil
+		return Result{Pages: rec.PageCount, IsEmpty: true}, nil
 	}
-	if err := writeRecord(ctx, store, kept); err != nil {
+	if err := writeRecord(ctx, store, rec); err != nil {
 		return Result{}, err
 	}
 	_, err := r.host.Texts.PutVersion(ctx, host.TextPut{
-		Path: kept.Path, Key: VersionKey, Format: domain.TextFormatPositioned,
-		InputHash: kept.InputHash, Hash: domain.HashContent([]byte(text.Text)),
+		Path: rec.Path, Key: VersionKey, Format: domain.TextFormatPositioned,
+		InputHash: rec.InputHash, Hash: domain.HashContent([]byte(text.Text)),
 	})
 	if err != nil {
-		return Result{}, fmt.Errorf("report the recognition of %s: %w", kept.Path, err)
+		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)
 	}
-	return Result{Pages: kept.PageCount}, nil
+	return Result{Pages: rec.PageCount}, nil
 }

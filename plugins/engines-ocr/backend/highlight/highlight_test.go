@@ -46,7 +46,7 @@ func read(t *testing.T, s highlight.Service, spans ...*numenv1.Span) (*numenv1.R
 	return res.Msg, nil
 }
 
-func TestARunOfTheLiveTextIsLitWhereItStands(t *testing.T) {
+func TestReadOcrReturnsBoxesOfLiveText(t *testing.T) {
 	s := highlight.Service{Texts: newTexts(t)}
 
 	got, err := read(t, s, &numenv1.Span{From: 12, To: 18}, &numenv1.Span{From: 0, To: 5})
@@ -58,11 +58,11 @@ func TestARunOfTheLiveTextIsLitWhereItStands(t *testing.T) {
 	}
 	boxes := got.GetRuns()[0].GetBoxes()
 	if len(boxes) != 1 || boxes[0].GetPage() != 0 || boxes[0].GetRect().GetMinY() != 0.3 || boxes[0].GetSpan().GetFrom() != 12 {
-		t.Errorf("the second line stands in %v", boxes)
+		t.Errorf("boxes of the second line: %v", boxes)
 	}
 }
 
-func TestAFileWithNoLiveTextIsLitNowhere(t *testing.T) {
+func TestReadOcrWithoutLiveVersionReturnsNoBoxes(t *testing.T) {
 	texts := newTexts(t)
 	texts.SetEnabled(reader, false)
 
@@ -72,7 +72,7 @@ func TestAFileWithNoLiveTextIsLitNowhere(t *testing.T) {
 	}
 }
 
-func TestARunThatIsNoPlaceInTheTextIsRefused(t *testing.T) {
+func TestReadOcrRejectsInvalidSpans(t *testing.T) {
 	s := highlight.Service{Texts: newTexts(t)}
 	for name, spans := range map[string][]*numenv1.Span{
 		"none":            nil,

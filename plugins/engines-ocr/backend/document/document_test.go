@@ -30,7 +30,7 @@ func readFixture(t *testing.T, name string) []byte {
 	return raw
 }
 
-func TestAScannedPDFHasNoTextLayerAndDrawsEachPage(t *testing.T) {
+func TestScannedPDFHasNoTextLayer(t *testing.T) {
 	doc := open(t, "books/scan.pdf", readFixture(t, "scan.pdf"))
 
 	if doc.GetPageCount() != 2 || doc.HasTextLayer() {
@@ -48,13 +48,13 @@ func TestAScannedPDFHasNoTextLayerAndDrawsEachPage(t *testing.T) {
 	}
 }
 
-func TestAPDFWithTextHasATextLayer(t *testing.T) {
+func TestPDFWithTextHasTextLayer(t *testing.T) {
 	if doc := open(t, "books/tiny.PDF", readFixture(t, "tiny.pdf")); !doc.HasTextLayer() {
 		t.Error("a PDF that carries text has no layer")
 	}
 }
 
-func TestAnImageIsAScanOfOnePage(t *testing.T) {
+func TestImageIsOnePage(t *testing.T) {
 	var raw bytes.Buffer
 	if err := png.Encode(&raw, image.NewGray(image.Rect(0, 0, 30, 20))); err != nil {
 		t.Fatal(err)
@@ -70,7 +70,7 @@ func TestAnImageIsAScanOfOnePage(t *testing.T) {
 	}
 }
 
-func TestBytesThatAreNoDocumentAreUnreadable(t *testing.T) {
+func TestOpenRejectsInvalidBytes(t *testing.T) {
 	for path, raw := range map[string][]byte{
 		"a.pdf": []byte("INVALID_PDF_HEADER"), "b.pdf": nil, "c.png": []byte("not an image"),
 	} {

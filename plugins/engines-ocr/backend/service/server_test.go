@@ -33,7 +33,7 @@ func (c closing) Close() error {
 	return nil
 }
 
-func TestASettingThatDecidesWhatReadsAPageOpensTheRecogniserAgain(t *testing.T) {
+func TestUpdateConfigReopensEngine(t *testing.T) {
 	o := &opened{}
 	models := newEngines(engine.Defaults(), o.open)
 	if _, err := models.getEngine(t.Context()); err != nil {
@@ -59,7 +59,7 @@ func TestASettingThatDecidesWhatReadsAPageOpensTheRecogniserAgain(t *testing.T) 
 	}
 }
 
-func TestTheHostRunningOnMockModelsOpensTheMock(t *testing.T) {
+func TestOpenEngineReturnsMockRecogniser(t *testing.T) {
 	t.Setenv("NUMEN_MOCK_ML", "true")
 	opened, err := openEngine(t.Context(), engine.Defaults())
 	if err != nil {
@@ -70,7 +70,7 @@ func TestTheHostRunningOnMockModelsOpensTheMock(t *testing.T) {
 	}
 }
 
-func TestTheRecogniseCommandSaysWhatItRead(t *testing.T) {
+func TestRecogniseCommandReportsPages(t *testing.T) {
 	v := hosttest.New("Physics")
 	raw, err := os.ReadFile("../document/testdata/scan.pdf")
 	if err != nil {
@@ -95,7 +95,7 @@ func TestTheRecogniseCommandSaysWhatItRead(t *testing.T) {
 	}
 }
 
-func TestARecogniserThatCannotOpenIsAnError(t *testing.T) {
+func TestGetEngineReturnsOpenError(t *testing.T) {
 	models := newEngines(engine.Defaults(), func(context.Context, engine.Config) (recogniser, error) {
 		return nil, errors.New("no models")
 	})

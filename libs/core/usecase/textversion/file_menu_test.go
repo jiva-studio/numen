@@ -36,7 +36,7 @@ func hasAction(entries []textversion.MenuEntry, action textversion.MenuAction) b
 	return slices.ContainsFunc(entries, func(e textversion.MenuEntry) bool { return e.Action == action })
 }
 
-func TestAFileMenuIsMadeForTheFileAsItIsNow(t *testing.T) {
+func TestFileMenuUsesCurrentFileHash(t *testing.T) {
 	s := newScene(t)
 	menu, err := textversion.NewFileMenu(s.versions, fileReaders(s.files))
 	if err != nil {
@@ -60,7 +60,7 @@ func TestAFileMenuIsMadeForTheFileAsItIsNow(t *testing.T) {
 	}
 }
 
-func TestARunFromTheFileMenuIsUserStarted(t *testing.T) {
+func TestFileMenuRunIsUserStarted(t *testing.T) {
 	s := newScene(t)
 	menu, err := textversion.NewFileMenu(s.versions, fileReaders(s.files))
 	if err != nil {
@@ -74,7 +74,7 @@ func TestARunFromTheFileMenuIsUserStarted(t *testing.T) {
 	}
 }
 
-func TestAFileMenuNeedsVersionsAndReaders(t *testing.T) {
+func TestNewFileMenuRequiresVersionsAndReaders(t *testing.T) {
 	if _, err := textversion.NewFileMenu(nil, fileReaders{}); err == nil {
 		t.Error("a file menu was made without versions")
 	}

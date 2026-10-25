@@ -86,7 +86,7 @@ func (p *Provider) CreateText(_ context.Context, req host.TextCreation) error {
 	p.running[key] = true
 	p.wg.Go(func() {
 		defer p.finish(key)
-		// A failure is shown as a task by Recognise, and the host is told nothing more.
+		// Recognise reports a failure as a task error.
 		_, _ = p.recognition.Recognise(p.ctx, Request{Vault: req.Vault, Path: req.Path, IsUserStarted: req.IsUserStarted})
 	})
 	return nil

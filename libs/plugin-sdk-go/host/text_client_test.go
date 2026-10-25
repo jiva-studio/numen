@@ -139,19 +139,19 @@ func TestAProviderIsServedAsTextProviderService(t *testing.T) {
 	}
 }
 
-// creations is a provider that records each creation it is asked for.
-type creations struct {
+// recordingProvider is a provider that records each creation it is requests for.
+type recordingProvider struct {
 	hosttest.MemoryProvider
-	asked []host.TextCreation
+	requests []host.TextCreation
 }
 
-func (c *creations) CreateText(_ context.Context, req host.TextCreation) error {
-	c.asked = append(c.asked, req)
+func (c *recordingProvider) CreateText(_ context.Context, req host.TextCreation) error {
+	c.requests = append(c.requests, req)
 	return nil
 }
 
-func TestAProviderIsToldWhoAskedForTheText(t *testing.T) {
-	provider := &creations{MemoryProvider: *hosttest.NewMemoryProvider()}
+func TestProviderReceivesUserStartedFlag(t *testing.T) {
+	provider := &recordingProvider{MemoryProvider: *hosttest.NewMemoryProvider()}
 	mux := http.NewServeMux()
 	mux.Handle(host.NewTextProviderHandler(provider))
 	server := httptest.NewServer(mux)
@@ -168,7 +168,7 @@ func TestAProviderIsToldWhoAskedForTheText(t *testing.T) {
 		{Vault: "v", Path: "a.pdf", Input: "p/k", IsUserStarted: true},
 		{Vault: "v", Path: "a.pdf", Input: "p/k"},
 	}
-	if !slices.Equal(provider.asked, want) {
-		t.Fatalf("asked %+v, want %+v", provider.asked, want)
+	if !slices.Equal(provider.requests, want) {
+		t.Fatalf("got %+v, want %+v", provider.requests, want)
 	}
 }
