@@ -43,9 +43,9 @@ func newScene(t *testing.T) *scene {
 		files:    map[string][]byte{scanPath: []byte("%PDF scan, first printing")},
 		repo:     &memoryVersions{},
 		plugins: &plugins{all: []textport.TextPlugin{
-			{ID: ocr, Files: domain.FileInput{".pdf"}},
-			{ID: pdfReader, Files: domain.FileInput{".pdf"}, IsAutoRun: true},
-			{ID: proofreader, Formats: domain.TextFormats()},
+			{ID: ocr, Name: "OCR", Files: domain.FileInput{".pdf"}},
+			{ID: pdfReader, Name: "PDF", Files: domain.FileInput{".pdf"}, IsAutoRun: true},
+			{ID: proofreader, Name: "Proofreading", Formats: domain.TextFormats()},
 		}},
 	}
 	page := func(word string, n int) domain.TextPart {
@@ -230,8 +230,8 @@ func TestTheMenuFollowsTheEnabledPlugins(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := []textversion.MenuEntry{
-		{Action: textversion.ActionRecognise, PluginID: ocr},
-		{Action: textversion.ActionRecognise, PluginID: pdfReader},
+		{Action: textversion.ActionRecognise, PluginID: ocr, PluginName: "OCR"},
+		{Action: textversion.ActionRecognise, PluginID: pdfReader, PluginName: "PDF"},
 	}
 	if !slices.Equal(menu, want) {
 		t.Fatalf("a file with no version: menu %+v, want %+v", menu, want)
@@ -250,9 +250,9 @@ func TestTheMenuFollowsTheEnabledPlugins(t *testing.T) {
 	}
 	a := domain.NewTextVersionID(pdfReader, "file-"+s.fileHash()[:8])
 	want = []textversion.MenuEntry{
-		{Action: textversion.ActionRecognise, PluginID: pdfReader},
-		{Action: textversion.ActionProofread, PluginID: proofreader, Version: a},
-		{Action: textversion.ActionDeleteVersion, PluginID: pdfReader, Version: a},
+		{Action: textversion.ActionRecognise, PluginID: pdfReader, PluginName: "PDF"},
+		{Action: textversion.ActionProofread, PluginID: proofreader, PluginName: "Proofreading", Version: a},
+		{Action: textversion.ActionDeleteVersion, PluginID: pdfReader, PluginName: "PDF", Version: a},
 	}
 	if !slices.Equal(menu, want) {
 		t.Fatalf("a file with one version and OCR disabled: menu %+v, want %+v", menu, want)
@@ -357,5 +357,20 @@ func TestGetVersionTextOfADisabledPluginIsNoText(t *testing.T) {
 	a := domain.NewTextVersionID(pdfReader, "file-"+s.fileHash()[:8])
 	if _, err := s.versions.GetVersionText(t.Context(), s.vault, scanPath, a); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("got %v, want ErrNoText", err)
+	}
+}
+
+func TestOnlyATextAPersonAskedForIsUserStarted(t *testing.T) {
+	s := newScene(t)
+	if err := s.versions.RequestText(t.Context(), s.vault, scanPath, s.fileHash()); err != nil {
+		t.Fatal(err)
+	}
+	s.runEntry(t, textversion.ActionRecognise, ocr)
+
+	if !slices.Equal(s.reader.isUserStarted, []bool{false}) {
+		t.Errorf("the reader run on its own was asked as %v, want not user-started", s.reader.isUserStarted)
+	}
+	if !slices.Equal(s.ocr.isUserStarted, []bool{true}) {
+		t.Errorf("the recogniser run from the menu was asked as %v, want user-started", s.ocr.isUserStarted)
 	}
 }

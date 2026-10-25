@@ -147,7 +147,9 @@ type fakeProvider struct {
 	mu      sync.Mutex
 	texts   map[string][]domain.TextPart
 	created int
-	deleted []string
+	// isUserStarted is whether each creation was asked for by a person, in order.
+	isUserStarted []bool
+	deleted       []string
 	// pageSize is how many parts one page holds. Zero is all of them.
 	pageSize int
 }
@@ -199,6 +201,7 @@ func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation
 	}
 	f.texts[req.Path+"|"+params.Key] = parts
 	f.created++
+	f.isUserStarted = append(f.isUserStarted, req.IsUserStarted)
 	f.mu.Unlock()
 	_, err := f.versions.PutVersion(ctx, f.vault, f.pluginID, params)
 	return err

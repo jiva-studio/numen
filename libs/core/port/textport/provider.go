@@ -35,11 +35,13 @@ type TextPage struct {
 }
 
 // TextCreation asks a plugin for text of a file. Input is the version it is
-// made from, and empty for the file itself.
+// made from, and empty for the file itself. IsUserStarted is set for text a
+// person asked for, which runs before text nobody asked for.
 type TextCreation struct {
-	Vault domain.VaultID
-	Path  string
-	Input domain.TextVersionID
+	Vault         domain.VaultID
+	Path          string
+	Input         domain.TextVersionID
+	IsUserStarted bool
 }
 
 // TextProvider is a plugin that makes and keeps text of vault files.
@@ -62,9 +64,10 @@ type TextProviders interface {
 // TextPlugin is an enabled plugin that makes text, and what it makes text
 // from: files of the types Files names, and versions in the formats Formats
 // names. IsAutoRun asks for the plugin to be run on a file of its types that
-// has no live version.
+// has no live version. Name is the plugin's name as a person reads it.
 type TextPlugin struct {
 	ID        string
+	Name      string
 	Files     domain.FileInput
 	Formats   []domain.TextFormat
 	IsAutoRun bool

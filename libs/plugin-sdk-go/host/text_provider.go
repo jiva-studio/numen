@@ -22,11 +22,13 @@ type TextRequest struct {
 }
 
 // TextCreation asks for text of a file. Input is the version it is made from, and empty for the
-// file itself.
+// file itself. IsUserStarted is set for text a person asked for, which runs before text nobody
+// asked for.
 type TextCreation struct {
-	Vault domain.VaultID
-	Path  string
-	Input domain.TextVersionID
+	Vault         domain.VaultID
+	Path          string
+	Input         domain.TextVersionID
+	IsUserStarted bool
 }
 
 // TextProvider is what a plugin that declares a text input answers the host with. The plugin keeps
@@ -87,6 +89,7 @@ func (s providerService) CreateText(
 	m := req.Msg
 	code, err := answerText(s.provider.CreateText(ctx, TextCreation{
 		Vault: domain.VaultID(m.GetVaultId()), Path: m.GetPath(), Input: domain.TextVersionID(m.GetInputVersionId()),
+		IsUserStarted: m.GetIsUserStarted(),
 	}))
 	if err != nil {
 		return nil, err

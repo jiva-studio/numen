@@ -19,6 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
@@ -43,6 +44,8 @@ type Services struct {
 	Settings  *settings.Handler
 	Agent     *agentHandler
 	Command   *command.Handler
+	// TextVersion answers the menu a file's text versions make.
+	TextVersion *textmenu.Handler
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
@@ -72,19 +75,20 @@ type Services struct {
 func createServices(state *State) *Services {
 	files := &artifactFiles{state: state}
 	return &Services{
-		state:     state,
-		Vault:     &vaultHandler{state: state},
-		Workspace: &workspaceHandler{state: state},
-		File:      &fileHandler{state: state},
-		Note:      &noteHandler{state: state},
-		Search:    search.NewHandler(state),
-		Vaults:    &vaultsHandler{state: state},
-		Settings:  settings.NewHandler(),
-		Agent:     &agentHandler{state: state},
-		Command:   command.NewHandler(plugincommand.NewCommands(nil)),
-		Plugin:    numenv1connect.UnimplementedPluginServiceHandler{},
-		files:     files,
-		server:    &fileServer{state: state, files: files},
+		state:       state,
+		Vault:       &vaultHandler{state: state},
+		Workspace:   &workspaceHandler{state: state},
+		File:        &fileHandler{state: state},
+		Note:        &noteHandler{state: state},
+		Search:      search.NewHandler(state),
+		Vaults:      &vaultsHandler{state: state},
+		Settings:    settings.NewHandler(),
+		Agent:       &agentHandler{state: state},
+		Command:     command.NewHandler(plugincommand.NewCommands(nil)),
+		TextVersion: textmenu.NewHandler(state, nil),
+		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
+		files:       files,
+		server:      &fileServer{state: state, files: files},
 	}
 }
 

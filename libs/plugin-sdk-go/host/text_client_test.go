@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"testing"
 	"time"
 
@@ -135,5 +136,39 @@ func TestAProviderIsServedAsTextProviderService(t *testing.T) {
 	after, err := client.GetText(ctx, connect.NewRequest(&v1.TextProviderServiceGetTextRequest{Path: "a.pdf", Key: "k"}))
 	if err != nil || after.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_MISSING {
 		t.Fatalf("a deleted text answered %v (%v)", after.Msg, err)
+	}
+}
+
+// creations is a provider that records each creation it is asked for.
+type creations struct {
+	hosttest.MemoryProvider
+	asked []host.TextCreation
+}
+
+func (c *creations) CreateText(_ context.Context, req host.TextCreation) error {
+	c.asked = append(c.asked, req)
+	return nil
+}
+
+func TestAProviderIsToldWhoAskedForTheText(t *testing.T) {
+	provider := &creations{MemoryProvider: *hosttest.NewMemoryProvider()}
+	mux := http.NewServeMux()
+	mux.Handle(host.NewTextProviderHandler(provider))
+	server := httptest.NewServer(mux)
+	t.Cleanup(server.Close)
+	client := numenv1connect.NewTextProviderServiceClient(server.Client(), server.URL)
+
+	for _, isUserStarted := range []bool{true, false} {
+		req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf", InputVersionId: "p/k", IsUserStarted: isUserStarted}
+		if _, err := client.CreateText(t.Context(), connect.NewRequest(req)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want := []host.TextCreation{
+		{Vault: "v", Path: "a.pdf", Input: "p/k", IsUserStarted: true},
+		{Vault: "v", Path: "a.pdf", Input: "p/k"},
+	}
+	if !slices.Equal(provider.asked, want) {
+		t.Fatalf("asked %+v, want %+v", provider.asked, want)
 	}
 }

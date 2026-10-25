@@ -49,7 +49,7 @@ func (s *texts) GetText(_ context.Context, req *connect.Request[v1.TextProviderS
 func (s *texts) CreateText(_ context.Context, req *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.created = append(s.created, req.Msg.GetPath()+"<"+req.Msg.GetInputVersionId())
+	s.created = append(s.created, req.Msg.GetPath()+"<"+req.Msg.GetInputVersionId()+"/"+strconv.FormatBool(req.Msg.GetIsUserStarted()))
 	return connect.NewResponse(&v1.TextProviderServiceCreateTextResponse{}), nil
 }
 
@@ -75,7 +75,7 @@ func (h *host) GetPluginInfos() []pluginport.PluginInfo {
 func (h *host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.ocr":
-		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, TextInput: &pluginport.PluginTextInput{
+		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, Name: "Example OCR", TextInput: &pluginport.PluginTextInput{
 			Files: []string{".pdf"}, Formats: []domain.TextFormat{domain.TextFormatPlain}, IsAutoRun: true,
 		}}}, true
 	case "org.example.other":
@@ -111,7 +111,7 @@ func newHost(t *testing.T) (*host, *texts) {
 func TestTheTextPluginsAreTheEnabledOnesThatDeclareAnInput(t *testing.T) {
 	h, _ := newHost(t)
 	got := textproviderbridge.NewPlugins(h).GetTextPlugins()
-	if len(got) != 1 || got[0].ID != "org.example.ocr" || !got[0].IsAutoRun || !got[0].Files.IsFileAccepted("a.pdf") {
+	if len(got) != 1 || got[0].ID != "org.example.ocr" || got[0].Name != "Example OCR" || !got[0].IsAutoRun || !got[0].Files.IsFileAccepted("a.pdf") {
 		t.Fatalf("got %+v, want the OCR plugin alone", got)
 	}
 }
@@ -141,13 +141,13 @@ func TestAProviderReadsCreatesAndDeletesThroughThePlugin(t *testing.T) {
 	if _, err := provider.GetText(ctx, textport.TextRequest{Vault: "v1", Path: "a.pdf", Key: "gone"}); !errors.Is(err, textport.ErrNoText) {
 		t.Fatalf("a missing text: got %v, want ErrNoText", err)
 	}
-	if err := provider.CreateText(ctx, textport.TextCreation{Vault: "v1", Path: "a.pdf", Input: "x/y"}); err != nil {
+	if err := provider.CreateText(ctx, textport.TextCreation{Vault: "v1", Path: "a.pdf", Input: "x/y", IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 	if err := provider.DeleteText(ctx, "v1", "a.pdf", "k"); err != nil {
 		t.Fatal(err)
 	}
-	if len(served.created) != 1 || served.created[0] != "a.pdf<x/y" || len(served.deleted) != 1 {
+	if len(served.created) != 1 || served.created[0] != "a.pdf<x/y/true" || len(served.deleted) != 1 {
 		t.Fatalf("created %v, deleted %v", served.created, served.deleted)
 	}
 	if h.released != 5 {

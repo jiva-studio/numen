@@ -44,7 +44,7 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		}
 		in := found.Manifest.TextInput
 		out = append(out, textport.TextPlugin{
-			ID: info.ID, Files: domain.FileInput(in.Files), Formats: in.Formats, IsAutoRun: in.IsAutoRun,
+			ID: info.ID, Name: found.Manifest.Name, Files: domain.FileInput(in.Files), Formats: in.Formats, IsAutoRun: in.IsAutoRun,
 		})
 	}
 	return out
@@ -95,7 +95,7 @@ func (p provider) CreateText(ctx context.Context, req textport.TextCreation) err
 	}
 	defer func() { _ = lease.Close() }()
 	res, err := client.CreateText(ctx, connect.NewRequest(&v1.TextProviderServiceCreateTextRequest{
-		VaultId: string(req.Vault), Path: req.Path, InputVersionId: string(req.Input),
+		VaultId: string(req.Vault), Path: req.Path, InputVersionId: string(req.Input), IsUserStarted: req.IsUserStarted,
 	}))
 	if err != nil {
 		return fmt.Errorf("rpc create text: %w", err)

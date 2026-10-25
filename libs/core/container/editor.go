@@ -10,6 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -245,4 +246,18 @@ func (e EditorAssembly) SetTextVersionListener(listener textport.VersionListener
 	if e.cfg.TextVersions != nil {
 		e.cfg.TextVersions.SetListener(listener)
 	}
+}
+
+// OpenFileMenu is the menu the text versions make of a vault's files, and nil where the
+// installation keeps no text versions.
+func (e EditorAssembly) OpenFileMenu() *textversion.FileMenu {
+	if e.cfg.TextVersions == nil {
+		return nil
+	}
+	menu, err := textversion.NewFileMenu(e.cfg.TextVersions, e.cfg.VaultReaders())
+	if err != nil {
+		e.cfg.handleError(err)
+		return nil
+	}
+	return menu
 }

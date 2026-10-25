@@ -179,9 +179,14 @@ func (u *Versions) DeleteVersion(ctx context.Context, v domain.Vault, path strin
 	return u.RemoveVersion(ctx, v, version.PluginID, path, version.Key)
 }
 
-// CreateText asks a plugin for text of a file, or of one of its versions where
-// input names one. The plugin has to take the input it is given.
+// CreateText asks a plugin, for a person, for text of a file, or of one of its
+// versions where input names one. The plugin has to take the input it is given.
 func (u *Versions) CreateText(ctx context.Context, v domain.Vault, pluginID, path string, input domain.TextVersionID) error {
+	return u.createText(ctx, v, textport.TextCreation{Vault: v.ID, Path: path, Input: input, IsUserStarted: true}, pluginID)
+}
+
+func (u *Versions) createText(ctx context.Context, v domain.Vault, req textport.TextCreation, pluginID string) error {
+	path, input := req.Path, req.Input
 	plugin, ok := u.findPlugin(pluginID)
 	if !ok {
 		return fmt.Errorf("%w: %s", textport.ErrNotTextPlugin, pluginID)
@@ -206,7 +211,7 @@ func (u *Versions) CreateText(ctx context.Context, v domain.Vault, pluginID, pat
 	if err != nil {
 		return err
 	}
-	if err := provider.CreateText(ctx, textport.TextCreation{Vault: v.ID, Path: path, Input: input}); err != nil {
+	if err := provider.CreateText(ctx, req); err != nil {
 		return fmt.Errorf("create text of %s with %s: %w", path, pluginID, err)
 	}
 	return nil
@@ -232,7 +237,7 @@ func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHa
 		if !u.markRequested(key) {
 			continue
 		}
-		if err := u.CreateText(ctx, v, plugin.ID, path, ""); err != nil {
+		if err := u.createText(ctx, v, textport.TextCreation{Vault: v.ID, Path: path}, plugin.ID); err != nil {
 			u.clearRequested(key)
 			failures = append(failures, err)
 		}
