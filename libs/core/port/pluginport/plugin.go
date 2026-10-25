@@ -195,6 +195,8 @@ type PluginLifecycleManager interface {
 	// SetSafeMode stops every running plugin when enabled, and starts none until it is disabled.
 	SetSafeMode(enabled bool)
 	SetPluginVault(vault PluginVault)
+	// SetPluginWork sets the queue and the list of tasks the plugins use.
+	SetPluginWork(work PluginWork)
 	// SetVaultPath is the vault the plugins' paths are inside.
 	SetVaultPath(path string)
 	// SetOnPluginFailed registers a callback invoked once when a plugin has failed to start repeatedly,

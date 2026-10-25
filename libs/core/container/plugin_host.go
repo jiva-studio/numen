@@ -141,6 +141,13 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	})
 }
 
+// SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
+func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
+	if c.PluginHost != nil {
+		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks))
+	}
+}
+
 // SetPluginVault is the vault the plugins work through the host. Without one a plugin that calls for
 // the vault is told the host shows none.
 func (c Config) SetPluginVault(vault pluginport.PluginVault) {

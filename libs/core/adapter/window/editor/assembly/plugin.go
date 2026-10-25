@@ -36,4 +36,6 @@ type PluginAssembly interface {
 	OpenRetryPlugin() *settings.RetryPlugin
 	// ReportPluginFailures puts a task in the list for each plugin the host suspends.
 	ReportPluginFailures(tasks *run.Tasks)
+	// SetPluginWork lets the plugins wait for the models and report their tasks into the list.
+	SetPluginWork(tasks *run.Tasks, models *run.Lock)
 }
