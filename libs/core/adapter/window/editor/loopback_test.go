@@ -7,14 +7,12 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/document"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -370,18 +368,6 @@ func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
 	ref := domain.Fingerprint{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
 	if back := convertFingerprintFromWire(convertFingerprintToWire(ref)); !back.IsUnchanged(ref) {
 		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
-	}
-}
-
-func TestTheWindowsFingerprintIsAKeyOfPlainNumbers(t *testing.T) {
-	target := reflect.TypeOf(document.Fingerprint{})
-	if !target.Comparable() {
-		t.Fatal("the window's fingerprint cannot be a map key at all")
-	}
-	for item := range target.NumField() {
-		if field := target.Field(item); field.Type == reflect.TypeOf(time.Time{}) {
-			t.Errorf("%s is a time.Time, and this struct is a map key", field.Name)
-		}
 	}
 }
 

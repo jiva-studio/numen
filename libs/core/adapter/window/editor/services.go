@@ -9,7 +9,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/document"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -97,7 +96,7 @@ func (s *Services) openPlaying(playing *Loopback) {
 // readFiles binds the use cases that read the files of the vaults the readers open.
 func (s *Services) readFiles(readers vaultport.VaultReaders) {
 	s.files.getFingerprint = file.NewGetFingerprint(readers)
-	s.server.openFile = document.NewOpenFile(readers)
+	s.server.openFile = file.NewOpenFile(readers)
 }
 
 // noteHandler answers what a vault's notes hold and what changes them.

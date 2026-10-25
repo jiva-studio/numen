@@ -10,7 +10,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
 // WorkerAssembly is what this window asks for background workers, embedding, downloads, and books.
@@ -42,7 +41,4 @@ type WorkerAssembly interface {
 	OpenTranscriptionWorker(
 		ctx context.Context, tasks *run.Tasks, models *run.Lock,
 	) *transcription.Worker
-
-	// GetBooks is the reader of books that reflow.
-	GetBooks() sourceport.Book
 }

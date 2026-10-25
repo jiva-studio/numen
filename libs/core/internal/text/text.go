@@ -1,33 +1,14 @@
-// Package text answers one question for every kind of source: what does this
-// file say, and where in it is any offset.
-//
-// Three callers ask it — an extractor cutting a source, a search showing a
-// passage, an embedder re-slicing a chunk — and they have to agree. A chunk
-// keeps an offset into the text a reader produced; a second reader producing
-// other text at other offsets reads the wrong place and says so with
-// confidence.
-//
-// Reading one file's bytes is pure: no filesystem, no clock, no database, and
-// the same bytes give the same text at the same offsets. Reader is the part
-// that fetches those bytes, and it is the only part that touches anything.
+// Package text reads what a recognition, a transcript and a download wrote about a source, and
+// says where in that text any offset is.
 package text
 
 import (
-	"context"
-	"errors"
 	"fmt"
-	"path"
 	"sort"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
-
-// ErrUnreadable is a file that is there and says nothing this can use. It is
-// not a failure of whatever asked: one file is one file, and a library goes on.
-var ErrUnreadable = errors.New("nothing could be read from the source")
 
 // A Document is a source, read.
 type Document struct {
@@ -96,133 +77,4 @@ func page(pos int) string {
 
 func findPrecedingIndex(namedPlaces []namedPlace, offset int) int {
 	return sort.Search(len(namedPlaces), func(i int) bool { return namedPlaces[i].Offset > offset }) - 1
-}
-
-// The names of what takes text out of a file. A name is part of a source's
-// recipe and changes when the text or the offsets it produces do.
-const (
-	ReaderNote      = "note-1"
-	ReaderEPUB      = "epub-1"
-	ReaderPDF       = "pdf-1"
-	ReaderRecording = "recording-1"
-	ReaderURL       = "url-1"
-)
-
-// Readers is every one of them, and is what a list of the recipes in use is
-// read from. A reader left out of such a list is a reader whose sources owe
-// their text on every run.
-func Readers() []string {
-	return []string{ReaderNote, ReaderEPUB, ReaderPDF, ReaderRecording, ReaderURL}
-}
-
-// ReaderName names what would read this file. A file nothing reads has no name,
-// and nothing asks for its text.
-func ReaderName(ref domain.Fingerprint) (string, bool) {
-	if ref.Kind == domain.KindNote {
-		return ReaderNote, true
-	}
-	if ref.Kind == domain.KindRecording {
-		return ReaderRecording, true
-	}
-	if ref.Kind == domain.KindURL {
-		return ReaderURL, true
-	}
-	if domain.MediaType(ref.Path) != "" {
-		return ReaderRecording, true
-	}
-	switch strings.ToLower(path.Ext(ref.Path)) {
-	case ".epub":
-		return ReaderEPUB, true
-	case ".pdf":
-		return ReaderPDF, true
-	}
-	return "", false
-}
-
-// Read is what one file says.
-//
-// A note is its own bytes. A book is what taking the text out of it produces,
-// and a chunk's offsets belong to that and not to the bytes on disk: slicing an
-// archive at a text offset returns compressed noise.
-//
-// One format is read by a library, which is given and not reached for.
-//
-// The bytes are somebody else's: a book in a synced vault was put there by
-// whoever synced it, and a library taking text out of it is a library being
-// fed. A panic inside one is answered here as an unreadable file, so that one
-// crafted book costs one file and not the process the window runs in.
-func Read(ctx context.Context, docs sourceport.TextExtractor, ref domain.Fingerprint, raw []byte) (doc *Document, err error) {
-	defer func() {
-		if raised := recover(); raised != nil {
-			doc, err = nil, fmt.Errorf("%w: reading %s raised %v", ErrUnreadable, ref.Path, raised)
-		}
-	}()
-	reader, ok := ReaderName(ref)
-	if !ok {
-		return nil, ErrUnreadable
-	}
-	switch reader {
-	case ReaderNote:
-		return &Document{Text: string(raw)}, nil
-	case ReaderEPUB:
-		if docs == nil {
-			return nil, ErrUnreadable
-		}
-		return fromEPUB(ctx, docs, raw)
-	case ReaderPDF:
-		if docs == nil {
-			return nil, ErrUnreadable
-		}
-		return fromPages(ctx, docs, raw)
-	case ReaderRecording:
-		// A recording says nothing until a model has listened to it. What it
-		// then says is an artifact, and this is never asked for it.
-		return nil, ErrUnreadable
-	}
-	return nil, ErrUnreadable
-}
-
-func fromEPUB(ctx context.Context, docs sourceport.TextExtractor, raw []byte) (*Document, error) {
-	book, err := docs.ReadBook(ctx, raw)
-	if err != nil {
-		if ctx.Err() != nil {
-			return nil, err
-		}
-		return nil, ErrUnreadable
-	}
-	doc := &Document{Text: book.Text}
-	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
-	}
-	// A book made for a screen has no pages of its own, and those it names are
-	// the printed edition it was set from. That is the only name they have.
-	for _, p := range book.Pages {
-		if p.Label == "" {
-			continue
-		}
-		doc.paged = append(doc.paged, namedPlace{Offset: p.Offset, Name: p.Label})
-	}
-	return doc, nil
-}
-
-// fromPages is a document whose text is laid out on printed pages, and whose
-// pages are named by where they stand.
-func fromPages(ctx context.Context, docs sourceport.TextExtractor, raw []byte) (*Document, error) {
-	book, err := docs.Read(ctx, raw)
-	if err != nil {
-		if ctx.Err() != nil {
-			return nil, err
-		}
-		return nil, ErrUnreadable
-	}
-	doc := &Document{Text: book.Text}
-	for _, p := range book.Parts {
-		doc.Parts = append(doc.Parts, p)
-		doc.named = append(doc.named, namedPlace{Offset: p.Offset, Name: p.Title})
-	}
-	for i, item := range book.Pages {
-		doc.paged = append(doc.paged, namedPlace{Offset: item, Name: page(i)})
-	}
-	return doc, nil
 }

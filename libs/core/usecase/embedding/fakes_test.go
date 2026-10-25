@@ -603,14 +603,14 @@ const (
 )
 
 // documents reads the books bookOf writes. It reads nothing else.
-type documents struct{ sourceport.TextExtractor }
+type documents struct{}
 
-func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
+func (documents) ReadBook(_ context.Context, raw []byte) (bookText, error) {
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return domain.BookText{}, sourceport.ErrNotADocument
+		return bookText{}, sourceport.ErrNotADocument
 	}
 	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
-	var out domain.BookText
+	var out bookText
 	var text strings.Builder
 	for i, part := range fields[1:] {
 		title := fmt.Sprintf("Part %d", i+1)
@@ -634,4 +634,10 @@ func newExtract(
 ) source.Extract {
 	extract := source.NewExtract(readers, sources, queries, bookTexts{readers: readers})
 	return extract
+}
+
+// bookText is a book read: its text, and the parts it names.
+type bookText struct {
+	Text  string
+	Parts []domain.PartStart
 }

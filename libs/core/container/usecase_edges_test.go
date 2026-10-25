@@ -16,7 +16,6 @@ import (
 var useCaseEdges = map[string][]string{
 	"note":          nil,
 	"settings":      nil,
-	"document":      nil,
 	"run":           nil,
 	"source":        nil,
 	"recognition":   {"run"},

@@ -7,15 +7,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
-// ScenarioAssembly is what this window asks for scenarios, rendering, extraction, search, and refresh.
+// ScenarioAssembly is what this window asks for scenarios, search, and refresh.
 type ScenarioAssembly interface {
-	// GetTextExtractor takes the text out of a document and GetPageRenderer
-	// draws one, and GetClock is what time it is.
-	GetTextExtractor() sourceport.TextExtractor
-	GetPageRenderer() sourceport.PageRenderer
+	// GetClock is what time it is.
 	GetClock() machineport.Clock
 
 	// NewSearch is how the window answers a question about the text the vault

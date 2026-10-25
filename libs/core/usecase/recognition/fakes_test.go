@@ -395,41 +395,8 @@ func documentOf(raw []byte) document {
 	return read
 }
 
-// boxes is where the words of the pages named sit, one box a word, printed one
-// line under another. They ascend, which is how a run of the text is found.
-func (d document) boxes(pages []int) []domain.HighlightBox {
-	var out []domain.HighlightBox
-	for _, index := range slices.Sorted(slices.Values(pages)) {
-		if index < 0 || index >= len(d.pages) {
-			continue
-		}
-		pos := d.Pages[index]
-		for i, word := range d.pages[index] {
-			down := 0.05 + 0.1*float32(i)
-			out = append(out, domain.HighlightBox{
-				Page:     index,
-				ByteSpan: domain.ByteSpan{From: pos, To: pos + len(word)},
-				Rect:     domain.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
-			})
-			pos += len(word) + 1
-		}
-	}
-	return out
-}
-
 // documents reads and draws the documents a test prints.
 type documents struct{}
-
-func (documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
-	read := documentOf(raw)
-	return domain.TextLayer{Text: read.Text, Pages: read.Pages}, nil
-}
-
-func (documents) GetHighlights(
-	_ context.Context, raw []byte, _ []int, pages []int,
-) ([]domain.HighlightBox, error) {
-	return documentOf(raw).boxes(pages), nil
-}
 
 func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	defer file.Close()
@@ -444,8 +411,6 @@ func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (source
 type scanned struct{ read document }
 
 func (s scanned) GetPageCount() int { return len(s.read.pages) }
-
-func (scanned) GetPageSize(int) (width, height float64, err error) { return pageWide, pageHigh, nil }
 
 func (scanned) RenderPage(int, int) (image.Image, error) {
 	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil

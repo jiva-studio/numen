@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bookbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
@@ -193,39 +192,6 @@ func encodeTestWav(rate, channels int, samples []int16) []byte {
 	return out.Bytes()
 }
 
-func TestRealBookPluginProcessE2E(t *testing.T) {
-	pluginsDir, err := filepath.Abs("../../../../../plugins")
-	if err != nil {
-		t.Fatalf("resolve plugins dir: %v", err)
-	}
-
-	bookBin := filepath.Join(pluginsDir, "reader-epub", "bin", "reader-epub")
-	if _, err := os.Stat(bookBin); os.IsNotExist(err) {
-		t.Skipf("reader-epub binary not found at %s; skipping real process E2E test", bookBin)
-	}
-
-	host := plugin.NewHost("desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	ctx := t.Context()
-	bridge, err := bookbridge.Open(ctx, host)
-	if err != nil {
-		t.Fatalf("OpenBookBridge with real binary failed: %v", err)
-	}
-	defer func() {
-		_ = bridge.Close()
-		_ = host.TeardownAll(ctx, 1*time.Second)
-	}()
-
-	// Query non-existent book - expect error from plugin service
-	_, err = bridge.GetBook(ctx, "nonexistent.epub")
-	if err == nil {
-		t.Fatal("expected error querying nonexistent book from real plugin")
-	}
-}
-
 func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	pluginsDir, err := filepath.Abs("../../../../../plugins")
 	if err != nil {
@@ -301,35 +267,6 @@ func TestRealDocumentPluginProcessE2E(t *testing.T) {
 	}()
 
 	testPDF := filepath.Join(pluginsDir, "reader-pdf", "backend", "pdf", "testdata", "tiny.pdf")
-	raw, err := os.ReadFile(testPDF)
-	if err != nil {
-		t.Fatalf("read test pdf: %v", err)
-	}
-
-	layer, err := bridge.Read(ctx, raw)
-	if err != nil {
-		t.Fatalf("Read failed: %v", err)
-	}
-	if len(layer.Pages) != 2 {
-		t.Fatalf("expected 2 pages, got %d", len(layer.Pages))
-	}
-
-	boxes, err := bridge.GetHighlights(ctx, raw, layer.Pages, []int{0, 1})
-	if err != nil {
-		t.Fatalf("GetHighlights failed: %v", err)
-	}
-	if len(boxes) != 6 {
-		t.Fatalf("expected 6 highlight boxes for tiny.pdf, got %d", len(boxes))
-	}
-
-	expectedWords := []string{"Alpha", "beta", "gamma", "Delta", "epsilon", "zeta"}
-	for i, box := range boxes {
-		word := layer.Text[box.From:box.To]
-		if word != expectedWords[i] {
-			t.Errorf("box %d word = %q, want %q", i, word, expectedWords[i])
-		}
-	}
-
 	file, err := os.Open(testPDF)
 	if err != nil {
 		t.Fatalf("open test pdf: %v", err)

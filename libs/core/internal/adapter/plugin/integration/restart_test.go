@@ -87,37 +87,11 @@ type restartedDocument struct {
 	plugin *restartedPlugin
 }
 
-func (r restartedDocument) ExtractText(
-	context.Context, *connect.Request[v1.ExtractTextRequest],
-) (*connect.Response[v1.ExtractTextResponse], error) {
+func (r restartedDocument) GetDocument(
+	context.Context, *connect.Request[v1.GetDocumentRequest],
+) (*connect.Response[v1.GetDocumentResponse], error) {
 	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.ExtractTextResponse{}), nil
-}
-
-type restartedBook struct {
-	numenv1connect.UnimplementedBookServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedBook) GetBook(
-	context.Context, *connect.Request[v1.GetBookRequest],
-) (*connect.Response[v1.GetBookResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.GetBookResponse{}), nil
-}
-
-func (r restartedBook) ReadBookEntry(
-	context.Context, *connect.Request[v1.ReadBookEntryRequest],
-) (*connect.Response[v1.ReadBookEntryResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.ReadBookEntryResponse{}), nil
-}
-
-func (r restartedBook) ExtractBookText(
-	context.Context, *connect.Request[v1.ExtractBookTextRequest],
-) (*connect.Response[v1.ExtractBookTextResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.ExtractBookTextResponse{}), nil
+	return connect.NewResponse(&v1.GetDocumentResponse{Pages: []*v1.Page{{Width: 1, Height: 1}}}), nil
 }
 
 type restartedDownload struct {
@@ -153,7 +127,6 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux.Handle(numenv1connect.NewRecognitionServiceHandler(restartedRecognition{plugin: plugin}))
 	mux.Handle(numenv1connect.NewTranscriptionServiceHandler(restartedTranscription{plugin: plugin}))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(restartedDocument{plugin: plugin}))
-	mux.Handle(numenv1connect.NewBookServiceHandler(restartedBook{plugin: plugin}))
 	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewProofreadingServiceHandler(restartedProofreading{plugin: plugin}))

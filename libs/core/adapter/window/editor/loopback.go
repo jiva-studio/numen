@@ -16,7 +16,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/document"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -28,7 +28,7 @@ type fileServer struct {
 	files    *artifactFiles
 	find     *vaults.Find
 	openCopy source.OpenCopy
-	openFile *document.OpenFile
+	openFile *file.OpenFile
 }
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -151,7 +151,7 @@ func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
 	}
 	return l.address + "/" + l.token + "/" + url.PathEscape(string(vault.ID)) +
 		"/" + url.PathEscape(ref.Path) +
-		"?" + formatFingerprint(document.Fingerprint{Size: ref.Size, Mtime: stamp(ref.ModTime)})
+		"?" + formatFingerprint(ref)
 }
 
 // Close stops answering.
@@ -214,7 +214,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 // The size the address carries is the copy's own: a copy fetched again under
 // the same name is a different address.
 func (h *fileServer) serveCopy(
-	w http.ResponseWriter, r *http.Request, target domain.Vault, pos string, named document.Fingerprint,
+	w http.ResponseWriter, r *http.Request, target domain.Vault, pos string, named domain.Fingerprint,
 ) bool {
 	points := h.files.getArtifactAddress(r.Context(), target, domain.Fingerprint{Path: pos, Kind: domain.KindURL})
 	if getPlayerURL(points) == "" {
@@ -226,7 +226,7 @@ func (h *fileServer) serveCopy(
 	}
 	defer video.File.Close()
 	if named.Size != video.Size {
-		refuse(w, document.ErrChanged)
+		refuse(w, file.ErrChanged)
 		return true
 	}
 	w.Header().Set("Cache-Control", immutable)
@@ -262,20 +262,20 @@ func (l *Loopback) getPlayOrigins() []string {
 
 const immutable = "public, max-age=31536000, immutable"
 
-func formatFingerprint(mark document.Fingerprint) string {
-	return fmt.Sprintf("size=%d&mtime=%d", mark.Size, mark.Mtime)
+func formatFingerprint(ref domain.Fingerprint) string {
+	return fmt.Sprintf("size=%d&mtime=%d", ref.Size, stamp(ref.ModTime))
 }
 
-func parseFingerprint(query url.Values) (document.Fingerprint, error) {
+func parseFingerprint(query url.Values) (domain.Fingerprint, error) {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
-		return document.Fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
+		return domain.Fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
 	}
 	mtime, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
 	if err != nil {
-		return document.Fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
+		return domain.Fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return document.Fingerprint{Size: size, Mtime: mtime}, nil
+	return domain.Fingerprint{Size: size, ModTime: instant(mtime)}, nil
 }
 
 func stamp(t time.Time) int64 {
@@ -294,7 +294,7 @@ func instant(nanos int64) time.Time {
 
 func refuse(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, document.ErrChanged), source.IsNoNote(err):
+	case errors.Is(err, file.ErrChanged), source.IsNoNote(err):
 		http.Error(w, err.Error(), http.StatusNotFound)
 	case errors.Is(err, source.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)

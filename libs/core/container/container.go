@@ -95,9 +95,6 @@ type Config struct {
 	// KeyStore provides credential storage. Defaults to the system keychain if nil.
 	KeyStore pluginport.KeyStore
 
-	// Texts extracts text from documents and books. Defaults to PluginHost plugins if nil.
-	Texts sourceport.TextExtractor
-
 	// TextVersions is the text versions of the vaults' files, which the index, the
 	// search and the highlighting read text through. Nil is none, and only notes
 	// have text. NewTextVersions makes it.

@@ -12,7 +12,7 @@ import (
 )
 
 // MostArtifactRead is how much of an artifact one read carries.
-const MostArtifactRead = MostDocumentText
+const MostArtifactRead = 16000
 
 // ArtifactText is a range of an artifact's text. Start is what was asked for
 // held within the text, and Length is how long the range is.

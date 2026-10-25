@@ -1,6 +1,7 @@
 package integration
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +16,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bookbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
@@ -35,7 +35,6 @@ type bridgeHost interface {
 	transcriberbridge.Host
 	downloaderbridge.Host
 	documentbridge.Host
-	bookbridge.Host
 	agentbridge.Host
 	proofreaderbridge.Host
 	toolsbridge.Host
@@ -98,25 +97,12 @@ var bridgeContracts = []bridgeContract{
 	{"document", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
 		b, err := documentbridge.Open(ctx, h)
 		return createContract(b, err, func(b *documentbridge.Document, ctx context.Context) (bool, error) {
-			return isZeroResult(b.Read(ctx, []byte("%PDF")))
-		})
-	}},
-	{"book", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := bookbridge.Open(ctx, h)
-		return createContract(b, err, func(b *bookbridge.Book, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ReadBook(ctx, []byte("PK")))
-		})
-	}},
-	{"book shape", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := bookbridge.Open(ctx, h)
-		return createContract(b, err, func(b *bookbridge.Book, ctx context.Context) (bool, error) {
-			return isZeroResult(b.GetBook(ctx, "a.epub"))
-		})
-	}},
-	{"book entry", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := bookbridge.Open(ctx, h)
-		return createContract(b, err, func(b *bookbridge.Book, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ReadEntry(ctx, domain.Fingerprint{Path: "a.epub"}, "cover.png"))
+			doc, err := b.OpenDocument(ctx, readSeekNopCloser{bytes.NewReader([]byte("%PDF"))})
+			if doc == nil {
+				return true, err
+			}
+			doc.Close()
+			return false, err
 		})
 	}},
 	{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
@@ -292,3 +278,10 @@ func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
 		})
 	}
 }
+
+// readSeekNopCloser is bytes in memory, as a file a document is opened from.
+type readSeekNopCloser struct {
+	*bytes.Reader
+}
+
+func (readSeekNopCloser) Close() error { return nil }

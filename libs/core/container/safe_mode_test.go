@@ -1,7 +1,6 @@
 package container
 
 import (
-	"context"
 	"errors"
 	"os"
 	"path/filepath"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -46,21 +44,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 	}
 
 	ctx := t.Context()
-
-	t.Run("document extractor returns degraded fallback", func(t *testing.T) {
-		extractor := cfg.TextExtractor()
-		_, err := extractor.Read(ctx, []byte("fake"))
-		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
-			t.Fatalf("got %v, want the document plugin disabled", err)
-		}
-	})
-
-	t.Run("book extractor returns degraded fallback", func(t *testing.T) {
-		_, err := cfg.TextExtractor().ReadBook(ctx, []byte("fake"))
-		if !isDisabledInSafeMode(err, bridge.CapabilityDocument) {
-			t.Fatalf("got %v, want the document plugin disabled", err)
-		}
-	})
 
 	t.Run("page renderer returns degraded fallback", func(t *testing.T) {
 		renderer := cfg.PageRenderer()
@@ -126,22 +109,6 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 			}
 		}
 	})
-}
-
-func TestTheTextsAnInstallationBindsAreTheTextExtractor(t *testing.T) {
-	cfg := Config{SafeMode: true, Texts: bookReader{}}
-
-	got, err := cfg.TextExtractor().ReadBook(t.Context(), []byte("fake"))
-	if err != nil || got.Text != "bound" {
-		t.Fatalf("ReadBook = %+v, %v, want the text of the extractor bound", got, err)
-	}
-}
-
-// bookReader is an extractor an installation binds.
-type bookReader struct{ unavailableDocument }
-
-func (bookReader) ReadBook(context.Context, []byte) (domain.BookText, error) {
-	return domain.BookText{Text: "bound"}, nil
 }
 
 // isDisabledInSafeMode is whether the error says the capability's plugin is

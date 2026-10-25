@@ -3,8 +3,6 @@ package source
 import (
 	"bytes"
 	"context"
-	"fmt"
-	"image"
 	"io"
 	"io/fs"
 	"strings"
@@ -14,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -138,89 +135,7 @@ func (s *fakeStorage) hold(name domain.ArtifactName) {
 	s.item[name] = true
 }
 
-func (s *fakeStorage) artifactNames() []domain.ArtifactName {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	var out []domain.ArtifactName
-	for name := range s.files {
-		out = append(out, name)
-	}
-	return out
-}
-
-// A speaker reads every page as the same thing, or as nothing, and counts how
-// many pages it was shown.
-type speaker struct {
-	says string
-	// heads is what every page says in the region that opens a part of the
-	// document. Empty is a page opening none.
-	heads string
-	// blank is the page, counted from one, that the model reads nothing on.
-	blank int
-	pages int
-	stop  func(int)
-}
-
-func (s *speaker) GetRecognitionModel() recognitionport.RecognitionModel {
-	return recognitionport.RecognitionModel{Layout: "layout", Recogniser: "reader", DPI: 300, From: "a test"}
-}
-
-func (s *speaker) Recognise(ctx context.Context, _ image.Image) ([]domain.OCRBlock, error) {
-	s.pages++
-	if s.stop != nil {
-		s.stop(s.pages)
-	}
-	if err := ctx.Err(); err != nil {
-		return nil, err
-	}
-	if s.says == "" || s.pages == s.blank {
-		return nil, nil
-	}
-	// No two pages say the same thing, so a coordinate read at the wrong offset
-	// names the wrong words.
-	response := fmt.Sprintf("%s %d", s.says, s.pages)
-	var out []domain.OCRBlock
-	if s.heads != "" {
-		out = append(out, domain.OCRBlock{Label: "doc_title", Text: fmt.Sprintf("%s %d", s.heads, s.pages), IsHeading: true, Depth: 1})
-	}
-	return append(out, domain.OCRBlock{
-		Label: "text",
-		Text:  response,
-		Boxes: []domain.OCRBox{{Rect: image.Rect(10, 20, 30, 40), Span: domain.ByteSpan{To: len(response)}}},
-	}), nil
-}
-
-func (s *speaker) Close() error { return nil }
-
 const documentPath = "library/scan.pdf"
-
-// names are what one recognition of the fixture is kept under.
-type names struct {
-	hash        string
-	artifact    domain.ArtifactName
-	corrections domain.ArtifactName
-	far         domain.ArtifactName
-}
-
-// textNames finds the one recognition on the shelf and says what its files are
-// called.
-func textNames(t *testing.T, shelved *fakeStorage) names {
-	t.Helper()
-	for _, name := range shelved.artifactNames() {
-		if name.File != domain.ArtifactText || name.Producer != domain.OCR {
-			continue
-		}
-		hash := name.Hash
-		return names{
-			hash:        hash,
-			artifact:    domain.NewArtifactName(domain.ArtifactText, domain.OCR, hash),
-			corrections: domain.NewArtifactName(domain.ArtifactCorrections, domain.OCR, hash),
-			far:         domain.NewArtifactName(domain.ArtifactProofread, domain.OCR, hash),
-		}
-	}
-	t.Fatal("nothing was read")
-	return names{}
-}
 
 const recordingPath = "library/talk.mp3"
 

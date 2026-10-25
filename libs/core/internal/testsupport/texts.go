@@ -1,7 +1,10 @@
 package testsupport
 
 import (
+	"bytes"
 	"context"
+	"strconv"
+	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -12,9 +15,12 @@ import (
 // TextReader is the plugin every text version Texts gives was made by.
 const TextReader = "test.reader"
 
-// Texts is the text versions of the files Documents reads: each has one, made
-// by TextReader from the bytes it holds now. A document is positioned text, a
-// page a part; a book is plain text, a section a part.
+// documentText is the text of every document Texts reads: two pages.
+const documentText = "Alpha Beta\nGamma Delta\n"
+
+// Texts is the text versions of the vault's documents and books: each has one, made by TextReader
+// from the bytes it holds now. A file that opens with the PDF marker is positioned text, a page a
+// part; one NewBook made is plain text, a line a section.
 type Texts struct {
 	Readers vaultport.VaultReaders
 }
@@ -39,22 +45,24 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 	}
 	hash := domain.HashContent(raw)
 	version := domain.TextVersion{Path: path, PluginID: TextReader, Key: hash[:12], InputHash: hash, Hash: hash}
-	if layer, err := (Documents{}).Read(ctx, raw); err == nil {
+	if bytes.HasPrefix(raw, []byte("%PDF-")) {
 		version.Format = domain.TextFormatPositioned
-		return domain.NewVersionText(version, splitAt(layer.Text, layer.Pages, nil)), nil
+		return domain.NewVersionText(version, splitAt(documentText, []int{0, 11}, nil)), nil
 	}
-	book, err := (Documents{}).ReadBook(ctx, raw)
-	if err != nil {
+	if !bytes.HasPrefix(raw, []byte(bookMark)) {
 		return domain.VersionText{}, textport.ErrNoText
 	}
-	version.Format = domain.TextFormatPlain
-	starts := make([]int, 0, len(book.Parts))
-	titles := make([]string, 0, len(book.Parts))
-	for _, part := range book.Parts {
-		starts = append(starts, part.Offset)
-		titles = append(titles, part.Title)
+	text := string(raw[len(bookMark):])
+	var starts []int
+	var titles []string
+	offset := 0
+	for i, line := range strings.Split(text, "\n") {
+		starts = append(starts, offset)
+		titles = append(titles, "Part "+strconv.Itoa(i+1))
+		offset += len(line) + 1
 	}
-	return domain.NewVersionText(version, splitAt(book.Text, starts, titles)), nil
+	version.Format = domain.TextFormatPlain
+	return domain.NewVersionText(version, splitAt(text, starts, titles)), nil
 }
 
 // splitAt is text cut into parts where each start says. A part with a title

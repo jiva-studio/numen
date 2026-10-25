@@ -54,16 +54,6 @@ func (s *mockDocumentServer) RenderPage(
 	return connect.NewResponse(&v1.RenderPageResponse{}), nil
 }
 
-func (s *mockDocumentServer) ExtractText(
-	_ context.Context,
-	_ *connect.Request[v1.ExtractTextRequest],
-) (*connect.Response[v1.ExtractTextResponse], error) {
-	return connect.NewResponse(&v1.ExtractTextResponse{
-		Text:       "sample document text",
-		PageStarts: []int32{0},
-	}), nil
-}
-
 func createTestDocumentPluginTree(t *testing.T, dir string) {
 	t.Helper()
 	pDir := filepath.Join(dir, "document")

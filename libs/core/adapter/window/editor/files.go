@@ -12,7 +12,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	derived "github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
@@ -253,10 +252,10 @@ func convertBookFormatToWire(path string, kind domain.SourceKind) v1.BookFormat 
 	if kind != domain.KindBook {
 		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
 	}
-	switch reader, _ := derived.ReaderName(domain.Fingerprint{Path: path, Kind: kind}); reader {
-	case derived.ReaderEPUB:
+	switch name := strings.ToLower(path); {
+	case strings.HasSuffix(name, ".epub"):
 		return v1.BookFormat_BOOK_FORMAT_EPUB
-	case derived.ReaderPDF:
+	case strings.HasSuffix(name, ".pdf"):
 		return v1.BookFormat_BOOK_FORMAT_PDF
 	default:
 		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED

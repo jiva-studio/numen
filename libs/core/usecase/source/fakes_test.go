@@ -372,28 +372,6 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 	return out
 }
 
-// The documents these tests are written against: what each page says, in the
-// order the pages are printed. No word is printed twice in a document, so a
-// test names a word and says which page it relies on.
-var (
-	outline = [][]string{
-		{"Opening", "lines", "here"},
-		{"Middle", "matter", "follows"},
-		{"A", "closer", "look"},
-		{"Afterword", "and", "ending"},
-	}
-)
-
-// printPages is the bytes of a document printed as these pages, a page to a
-// line.
-func printPages(pages [][]string) []byte {
-	var out strings.Builder
-	for _, words := range pages {
-		out.WriteString(strings.Join(words, " ") + "\n")
-	}
-	return []byte(out.String())
-}
-
 // A document is one of those read back: the whole of what it says, where each
 // page begins in that text, and the words each page is printed with.
 type document struct {
@@ -415,41 +393,8 @@ func documentOf(raw []byte) document {
 	return read
 }
 
-// boxes is where the words of the pages named sit, one box a word, printed one
-// line under another. They ascend, which is how a run of the text is found.
-func (d document) boxes(pages []int) []domain.HighlightBox {
-	var out []domain.HighlightBox
-	for _, index := range slices.Sorted(slices.Values(pages)) {
-		if index < 0 || index >= len(d.pages) {
-			continue
-		}
-		pos := d.Pages[index]
-		for i, word := range d.pages[index] {
-			down := 0.05 + 0.1*float32(i)
-			out = append(out, domain.HighlightBox{
-				Page:     index,
-				ByteSpan: domain.ByteSpan{From: pos, To: pos + len(word)},
-				Rect:     domain.Rect{MinX: 0.1, MinY: down, MaxX: 0.9, MaxY: down + 0.05},
-			})
-			pos += len(word) + 1
-		}
-	}
-	return out
-}
-
 // documents reads and draws the documents a test prints.
 type documents struct{}
-
-func (documents) Read(_ context.Context, raw []byte) (domain.TextLayer, error) {
-	read := documentOf(raw)
-	return domain.TextLayer{Text: read.Text, Pages: read.Pages}, nil
-}
-
-func (documents) GetHighlights(
-	_ context.Context, raw []byte, _ []int, pages []int,
-) ([]domain.HighlightBox, error) {
-	return documentOf(raw).boxes(pages), nil
-}
 
 func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
 	defer file.Close()
@@ -464,8 +409,6 @@ func (documents) OpenDocument(_ context.Context, file io.ReadSeekCloser) (source
 type scanned struct{ read document }
 
 func (s scanned) GetPageCount() int { return len(s.read.pages) }
-
-func (scanned) GetPageSize(int) (width, height float64, err error) { return pageWide, pageHigh, nil }
 
 func (scanned) RenderPage(int, int) (image.Image, error) {
 	return image.NewGray(image.Rect(0, 0, pageWide, pageHigh)), nil
@@ -658,12 +601,12 @@ const (
 
 // ReadBook reads the bytes bookOf gives: each part is a heading and its words,
 // and the book names each heading.
-func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error) {
+func (documents) ReadBook(_ context.Context, raw []byte) (bookText, error) {
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
-		return domain.BookText{}, sourceport.ErrNotADocument
+		return bookText{}, sourceport.ErrNotADocument
 	}
 	fields := strings.Split(strings.TrimPrefix(string(raw), bookMark), bookSeparator)
-	var out domain.BookText
+	var out bookText
 	var text strings.Builder
 	for i, part := range fields[1:] {
 		title := fmt.Sprintf("Part %d", i+1)
@@ -685,4 +628,10 @@ func newExtract(shelves vaults, sources sourceport.SourceRepository, queries sou
 func newExtractWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Extract, *shelfTexts) {
 	texts := newShelfTexts(shelves)
 	return NewExtract(shelves, sources, queries, texts), texts
+}
+
+// bookText is a book read: its text, and the parts it names.
+type bookText struct {
+	Text  string
+	Parts []domain.PartStart
 }

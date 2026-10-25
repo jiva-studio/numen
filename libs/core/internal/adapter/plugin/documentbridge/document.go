@@ -20,8 +20,6 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/security"
@@ -69,156 +67,6 @@ func Open(ctx context.Context, host Host) (*Document, error) {
 // Close releases the active reference count for the document plugin in the host supervisor.
 func (b *Document) Close() error {
 	return b.lease.Close()
-}
-
-// Read implements port.TextExtractor.
-func (b *Document) Read(ctx context.Context, raw []byte) (domain.TextLayer, error) {
-	if b.host != nil {
-		if err := b.host.CheckPluginPermission(b.pluginID, plugindir.PermissionVaultRead); err != nil {
-			return domain.TextLayer{}, err
-		}
-	}
-
-	req := connect.NewRequest(&v1.ExtractTextRequest{
-		Data: raw,
-	})
-	client, call, err := b.service.Open(ctx)
-	if err != nil {
-		return domain.TextLayer{}, err
-	}
-	defer func() { _ = call.Close() }()
-
-	resp, err := client.ExtractText(ctx, req)
-	if err != nil {
-		return domain.TextLayer{}, fmt.Errorf("rpc extract text: %w", err)
-	}
-	pages := make([]int, len(resp.Msg.GetPageStarts()))
-	for i, s := range resp.Msg.GetPageStarts() {
-		pages[i] = int(s)
-	}
-	return domain.TextLayer{
-		Text:  resp.Msg.GetText(),
-		Pages: pages,
-	}, nil
-}
-
-// GetHighlights implements port.TextExtractor.
-func (b *Document) GetHighlights(ctx context.Context, raw []byte, starts []int, pages []int) ([]domain.HighlightBox, error) {
-	if len(raw) == 0 || len(pages) == 0 {
-		return nil, nil
-	}
-
-	if b.host != nil {
-		if err := b.host.CheckPluginPermission(b.pluginID, plugindir.PermissionVaultRead); err != nil {
-			return nil, err
-		}
-	}
-
-	textLayer, err := b.Read(ctx, raw)
-	if err != nil {
-		return nil, fmt.Errorf("read text layer: %w", err)
-	}
-
-	tmpPath, cleanup, err := bufferTempDocument(bytes.NewReader(raw))
-	if err != nil {
-		return nil, err
-	}
-	defer cleanup()
-
-	req := connect.NewRequest(&v1.GetHighlightsRequest{
-		Path: tmpPath,
-	})
-	client, call, err := b.service.Open(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = call.Close() }()
-
-	resp, err := client.GetHighlights(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("rpc get highlights: %w", err)
-	}
-
-	wanted := make(map[int]bool, len(pages))
-	for _, p := range pages {
-		if p >= 0 {
-			wanted[p] = true
-		}
-	}
-
-	pageStarts := starts
-	if len(pageStarts) == 0 {
-		pageStarts = textLayer.Pages
-	}
-
-	return mapHighlightBoxes(resp.Msg.GetHighlights(), wanted, textLayer.Text, pageStarts), nil
-}
-
-func mapHighlightBoxes(
-	highlights []*v1.DocumentHighlight,
-	wanted map[int]bool,
-	docText string,
-	pageStarts []int,
-) []domain.HighlightBox {
-	pageCursors := make(map[int]int)
-	var boxes []domain.HighlightBox
-	for _, h := range highlights {
-		page := int(h.GetPageNumber())
-		if !wanted[page] {
-			continue
-		}
-
-		cursor, exists := pageCursors[page]
-		if !exists && page < len(pageStarts) {
-			cursor = pageStarts[page]
-		}
-
-		from, to, next := locateWordSpan(docText, cursor, h.GetText())
-		pageCursors[page] = next
-
-		boxes = append(boxes, domain.HighlightBox{
-			Page: page,
-			ByteSpan: domain.ByteSpan{
-				From: from,
-				To:   to,
-			},
-			Rect: getRectFromQuadPoints(h.GetQuadPoints()),
-		})
-	}
-	return boxes
-}
-
-func locateWordSpan(docText string, cursor int, word string) (int, int, int) {
-	from, to := cursor, cursor+len(word)
-	if cursor < len(docText) {
-		idx := strings.Index(docText[cursor:], word)
-		if idx >= 0 {
-			from = cursor + idx
-			to = from + len(word)
-		}
-	}
-	return from, to, to
-}
-
-func getRectFromQuadPoints(qp []float32) domain.Rect {
-	switch {
-	case len(qp) == 4:
-		return domain.Rect{
-			MinX: min(qp[0], qp[2]),
-			MinY: min(qp[1], qp[3]),
-			MaxX: max(qp[0], qp[2]),
-			MaxY: max(qp[1], qp[3]),
-		}
-	case len(qp) >= 8:
-		return domain.Rect{
-			MinX: min(qp[0], qp[2], qp[4], qp[6]),
-			MinY: min(qp[1], qp[3], qp[5], qp[7]),
-			MaxX: max(qp[0], qp[2], qp[4], qp[6]),
-			MaxY: max(qp[1], qp[3], qp[5], qp[7]),
-		}
-	default:
-		return domain.Rect{}
-	}
 }
 
 // OpenDocument implements port.PageRenderer.
@@ -293,14 +141,6 @@ type remoteDocument struct {
 
 func (d *remoteDocument) GetPageCount() int {
 	return len(d.pages)
-}
-
-func (d *remoteDocument) GetPageSize(index int) (width, height float64, err error) {
-	if index < 0 || index >= len(d.pages) {
-		return 0, 0, errors.New("page index out of range")
-	}
-	p := d.pages[index]
-	return p.GetWidth(), p.GetHeight(), nil
 }
 
 func (d *remoteDocument) RenderPage(index, dpi int) (image.Image, error) {

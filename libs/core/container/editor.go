@@ -85,11 +85,8 @@ func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders   { return e.cf
 func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters   { return e.cfg.VaultWriters() }
 func (e EditorAssembly) GetDerivedStores() vaultport.DerivedStores { return e.cfg.GetDerivedStores() }
 
-func (e EditorAssembly) GetBooks() sourceport.Book                  { return e.cfg.Books() }
-func (e EditorAssembly) GetTextExtractor() sourceport.TextExtractor { return e.cfg.TextExtractor() }
-func (e EditorAssembly) GetPageRenderer() sourceport.PageRenderer   { return e.cfg.PageRenderer() }
-func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity  { return e.cfg.VaultIdentity() }
-func (e EditorAssembly) GetClock() machineport.Clock                { return e.cfg.Clock() }
+func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity { return e.cfg.VaultIdentity() }
+func (e EditorAssembly) GetClock() machineport.Clock               { return e.cfg.Clock() }
 
 func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries              { return e.db.Queries() }
 func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries              { return e.db.Links() }

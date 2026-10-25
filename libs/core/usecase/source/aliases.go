@@ -9,11 +9,9 @@ type (
 	ArtifactText                  = artifacts.ArtifactText
 	Correction                    = artifacts.Correction
 	Document                      = artifacts.Document
-	DocumentText                  = artifacts.DocumentText
 	GetArtifactList               = artifacts.GetArtifactList
 	GetArtifactText               = artifacts.GetArtifactText
 	GetDocumentList               = artifacts.GetDocumentList
-	GetDocumentText               = artifacts.GetDocumentText
 	GetRawTranscript              = artifacts.GetRawTranscript
 	GetRecognitionCorrectionState = artifacts.GetRecognitionCorrectionState
 	GetRunProgress                = artifacts.GetRunProgress
@@ -33,8 +31,6 @@ type (
 )
 
 const (
-	MostDocumentText = artifacts.MostDocumentText
-
 	KindRecognition = artifacts.KindRecognition
 	KindTranscript  = artifacts.KindTranscript
 	KindArticle     = artifacts.KindArticle
@@ -57,7 +53,6 @@ var (
 	NewGetArtifactList  = artifacts.NewGetArtifactList
 	NewGetArtifactText  = artifacts.NewGetArtifactText
 	NewGetDocumentList  = artifacts.NewGetDocumentList
-	NewGetDocumentText  = artifacts.NewGetDocumentText
 	NewWriteCorrections = artifacts.NewWriteCorrections
 	NewSourceTexts      = artifacts.NewSourceTexts
 )

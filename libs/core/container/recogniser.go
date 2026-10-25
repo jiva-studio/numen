@@ -2,12 +2,15 @@ package container
 
 import (
 	"context"
+	"io"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/documentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/recogniserbridge"
 	"github.com/jiva-studio/numen/libs/core/usecase/recognition"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
@@ -59,4 +62,44 @@ func (c Config) OpenRecognitionWorker(
 		},
 		Proofreading: c.getProofreading(c.ScanProofreading),
 	})
+}
+
+// PageRenderer draws the pages of a document through the document plugin, looked up when it is
+// asked.
+func (c Config) PageRenderer() sourceport.PageRenderer {
+	host, err := c.resolvePlugin(bridge.CapabilityDocument)
+	if err != nil {
+		return unavailableRenderer{why: err}
+	}
+	return pluginRenderer{host: host}
+}
+
+// pluginRenderer reaches the document plugin. A document it opens holds its own reference on the
+// plugin.
+type pluginRenderer struct {
+	host pluginport.PluginManager
+}
+
+func (r pluginRenderer) OpenDocument(ctx context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
+	bridge, err := documentbridge.Open(ctx, r.host)
+	if err != nil {
+		if file != nil {
+			_ = file.Close()
+		}
+		return nil, err
+	}
+	defer bridge.Close()
+	return bridge.OpenDocument(ctx, file)
+}
+
+// unavailableRenderer answers every ask with why no document plugin is there.
+type unavailableRenderer struct {
+	why error
+}
+
+func (u unavailableRenderer) OpenDocument(_ context.Context, file io.ReadSeekCloser) (sourceport.OpenDocument, error) {
+	if file != nil {
+		_ = file.Close()
+	}
+	return nil, u.why
 }
