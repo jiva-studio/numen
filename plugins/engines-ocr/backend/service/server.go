@@ -1,210 +1,178 @@
-// Package service is the backend of the OCR plugin.
+// Package service is the backend of the OCR plugin: the text provider the host asks for the
+// recognition of a file, the highlighting a window asks of the live text, and the recognise command.
 package service
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"image"
-	_ "image/gif"
-	_ "image/jpeg"
-	_ "image/png"
-	"net/http"
 	"os"
 	"strconv"
 	"sync"
 
-	"connectrpc.com/connect"
-	_ "golang.org/x/image/webp"
-
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/highlight"
+	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
 
-type recognitionServer struct {
-	numenv1connect.UnimplementedRecognitionServiceHandler
+// engineFactory opens the recogniser the configuration names.
+type engineFactory func(ctx context.Context, cfg engine.Config) (recogniser, error)
 
-	mu     sync.Mutex
-	engine *engine.Recogniser
-	cfg    engine.Config
+// recogniser is the recogniser of a page and what it holds.
+type recogniser interface {
+	recognition.Recogniser
+	Close() error
 }
 
-func newRecognitionServer(eng *engine.Recogniser, cfg engine.Config) *recognitionServer {
-	return &recognitionServer{
-		engine: eng,
-		cfg:    cfg,
+// openEngine opens the models of the configuration, or the mock where the host runs on mock models.
+func openEngine(ctx context.Context, cfg engine.Config) (recogniser, error) {
+	if os.Getenv("NUMEN_MOCK_ML") == "true" {
+		return engine.MockRecogniser{}, nil
 	}
+	return engine.Open(ctx, cfg)
 }
 
-func updateField(target *string, values map[string]string, key string) bool {
-	if val, ok := values[key]; ok && *target != val {
-		*target = val
-		return true
+// engines holds the recogniser, opened when a page is first read and opened again once a setting
+// that decides what it reads with changes.
+type engines struct {
+	mu      sync.Mutex
+	cfg     engine.Config
+	factory engineFactory
+	engine  recogniser
+}
+
+func newEngines(cfg engine.Config, factory engineFactory) *engines {
+	return &engines{cfg: cfg, factory: factory}
+}
+
+// updateConfig takes the settings the host hands over. A resolution that is no positive number is
+// left as it was.
+func (e *engines) updateConfig(values map[string]string) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if dpi, err := strconv.Atoi(values["dpi"]); err == nil && dpi > 0 && dpi != e.cfg.Recognise.DPI {
+		e.cfg.Recognise.DPI = dpi
+		e.dropLocked()
 	}
-	return false
-}
-
-func (s *recognitionServer) updateConfig(values map[string]string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if dpiStr, ok := values["dpi"]; ok {
-		if dpi, err := strconv.Atoi(dpiStr); err == nil && dpi > 0 {
-			s.cfg.Recognise.DPI = dpi
+	for key, target := range map[string]*string{
+		"language": &e.cfg.Recognise.Name, "custom_model_path": &e.cfg.Recognise.Path, "custom_dict_path": &e.cfg.Recognise.Dict,
+	} {
+		if value, ok := values[key]; ok && *target != value {
+			*target = value
+			e.dropLocked()
 		}
 	}
-	_ = values["model_profile"]
-	changed := updateField(&s.cfg.Recognise.Name, values, "language")
-	changed = updateField(&s.cfg.Recognise.Path, values, "custom_model_path") || changed
-	changed = updateField(&s.cfg.Recognise.Dict, values, "custom_dict_path") || changed
-	if changed && s.engine != nil {
-		_ = s.engine.Close()
-		s.engine = nil
-	}
 }
 
-func (s *recognitionServer) getEngine(ctx context.Context) (*engine.Recogniser, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.engine != nil {
-		return s.engine, nil
+func (e *engines) getEngine(ctx context.Context) (recognition.Recogniser, error) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.engine != nil {
+		return e.engine, nil
 	}
-	eng, err := engine.Open(ctx, s.cfg)
+	opened, err := e.factory(context.WithoutCancel(ctx), e.cfg)
 	if err != nil {
 		return nil, err
 	}
-	s.engine = eng
-	return s.engine, nil
+	e.engine = opened
+	return opened, nil
 }
 
-func (s *recognitionServer) close() error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.engine != nil {
-		err := s.engine.Close()
-		s.engine = nil
+func (e *engines) close() error {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.closeLocked()
+}
+
+// dropLocked closes the recogniser so the next page opens it again. A recogniser that fails to close
+// is told on the standard error, the stream the host keeps of the plugin.
+func (e *engines) dropLocked() {
+	if err := e.closeLocked(); err != nil {
+		fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
+	}
+}
+
+func (e *engines) closeLocked() error {
+	if e.engine == nil {
+		return nil
+	}
+	err := e.engine.Close()
+	e.engine = nil
+	return err
+}
+
+// Mount registers the services of the plugin on s, working the vault, the plugin's folder, the text
+// versions and the queue through the host the environment names. The recogniser closes with s.
+func Mount(s *server.Server) error {
+	vault, err := host.NewClientFromEnv()
+	if err != nil {
 		return err
 	}
-	return nil
+	store, err := host.NewStoreClientFromEnv()
+	if err != nil {
+		return err
+	}
+	texts, err := host.NewTextClientFromEnv()
+	if err != nil {
+		return err
+	}
+	queue, err := host.NewQueueClientFromEnv()
+	if err != nil {
+		return err
+	}
+	return mount(s, recognition.Host{Vault: vault, Store: store, Texts: texts, Queue: queue}, newEngines(getConfig(), openEngine))
 }
 
-func (s *recognitionServer) GetRecognitionModel(
-	ctx context.Context,
-	_ *connect.Request[numenv1.GetRecognitionModelRequest],
-) (*connect.Response[numenv1.GetRecognitionModelResponse], error) {
-	s.mu.Lock()
-	eng := s.engine
-	s.mu.Unlock()
-
-	// gomutants:disable-next-line BRANCH_IF reason="getEngine returns s.engine when non-nil, so fallthrough produces the same response"
-	if eng != nil {
-		m := eng.GetRecognitionModel()
-		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
-			Layout:     m.Layout,
-			Recogniser: m.Recogniser,
-			Dpi:        int32(m.DPI),
-			From:       m.From,
-		}), nil
-	}
-
-	eng, err := s.getEngine(ctx)
-	// gomutants:disable-next-line BRANCH_IF reason="opening an uninitialised engine requires real models not present during unit tests"
-	if err == nil {
-		m := eng.GetRecognitionModel()
-		return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
-			Layout:     m.Layout,
-			Recogniser: m.Recogniser,
-			Dpi:        int32(m.DPI),
-			From:       m.From,
-		}), nil
-	}
-
-	return connect.NewResponse(&numenv1.GetRecognitionModelResponse{
-		Layout:     s.cfg.Layout.Name,
-		Recogniser: s.cfg.Recognise.Name,
-		Dpi:        300,
-		From:       "defaults",
-	}), nil
-}
-
-func (s *recognitionServer) RecognisePage(
-	ctx context.Context,
-	req *connect.Request[numenv1.RecognisePageRequest],
-) (*connect.Response[numenv1.RecognisePageResponse], error) {
-	data := req.Msg.GetImageData()
-	if len(data) == 0 {
-		return connect.NewResponse(&numenv1.RecognisePageResponse{
-			Blocks: nil,
-		}), nil
-	}
-
-	eng, err := s.getEngine(ctx)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("open recognition engine: %w", err))
-	}
-
-	img, _, err := image.Decode(bytes.NewReader(data))
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("decode image: %w", err))
-	}
-
-	blocks, err := eng.Recognise(ctx, img)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("recognise page: %w", err))
-	}
-
-	outBlocks := make([]*numenv1.OcrBlock, 0, len(blocks))
-	for _, b := range blocks {
-		boxes := make([]*numenv1.OcrBox, 0, len(b.Boxes))
-		for _, bx := range b.Boxes {
-			boxes = append(boxes, &numenv1.OcrBox{
-				MinX: int32(bx.Rect.Min.X),
-				MinY: int32(bx.Rect.Min.Y),
-				MaxX: int32(bx.Rect.Max.X),
-				MaxY: int32(bx.Rect.Max.Y),
-				Span: &numenv1.Span{
-					From: int32(bx.Span.From),
-					To:   int32(bx.Span.To),
-				},
-			})
-		}
-		outBlocks = append(outBlocks, &numenv1.OcrBlock{
-			Label:     b.Label,
-			Text:      b.Text,
-			IsHeading: b.IsHeading,
-			Depth:     int32(b.Depth),
-			Boxes:     boxes,
-		})
-	}
-
-	return connect.NewResponse(&numenv1.RecognisePageResponse{
-		Blocks: outBlocks,
-	}), nil
-}
-
-// Mount registers the recognition service on s, with the engine the environment configures. The
-// engine closes with s.
-func Mount(s *server.Server) error {
+// getConfig is the configuration the environment of the process names.
+func getConfig() engine.Config {
 	cfg := engine.Defaults()
 	if dir := os.Getenv("NUMEN_OCR_DIR"); dir != "" {
 		cfg.Dir = dir
 	} else if modelsDir := os.Getenv(engine.EnvDir); modelsDir != "" {
 		cfg.Dir = modelsDir
 	}
-	if rt := os.Getenv("NUMEN_OCR_RUNTIME"); rt != "" {
-		cfg.Runtime = rt
+	if runtime := os.Getenv("NUMEN_OCR_RUNTIME"); runtime != "" {
+		cfg.Runtime = runtime
 	}
+	return cfg
+}
 
-	recog := newRecognitionServer(nil, cfg)
-	s.SetUpdateConfig(recog.updateConfig)
-	s.Register(numenv1connect.NewRecognitionServiceHandler(recog, s.HandlerOptions()...))
-	s.OnClose(func() { _ = recog.close() })
+func mount(s *server.Server, h recognition.Host, models *engines) error {
+	recognitions, err := recognition.New(h, models.getEngine)
+	if err != nil {
+		return err
+	}
+	provider := recognition.NewProvider(recognitions, h.Store)
+	commands := command.New()
+	if err := commands.Add("recognise", newRecogniseCommand(recognitions)); err != nil {
+		return err
+	}
+	s.SetUpdateConfig(models.updateConfig)
+	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
+	s.Register(numenv1connect.NewOcrServiceHandler(highlight.Service{Texts: h.Texts}, s.HandlerOptions()...))
+	command.Mount(s, commands)
+	s.OnClose(func() {
+		provider.Close()
+		if err := models.close(); err != nil {
+			fmt.Fprintln(os.Stderr, "engines-ocr: close the recogniser:", err)
+		}
+	})
 	return nil
 }
 
-// NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
-// from the variables a launched process of the plugin is given.
-func NewHandler(vars map[string]string) (http.Handler, error) {
-	return server.NewLinkedHandler(vars, Mount)
+// newRecogniseCommand recognises the file a person named and waits for it.
+func newRecogniseCommand(recognitions *recognition.Recognition) command.Run {
+	return func(ctx context.Context, req command.Request) (command.Result, error) {
+		res, err := recognitions.Recognise(ctx, recognition.Request{Path: req.Path, IsUserStarted: true})
+		if err != nil {
+			return command.Result{}, err
+		}
+		if res.IsEmpty {
+			return command.Result{Message: fmt.Sprintf("%s says nothing that could be read, and nothing was kept", req.Path)}, nil
+		}
+		return command.Result{Message: fmt.Sprintf("recognised %d pages of %s", res.Pages, req.Path)}, nil
+	}
 }

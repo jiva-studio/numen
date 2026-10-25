@@ -3,11 +3,22 @@
   "name": "Document OCR",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Optical character recognition using PaddleOCR and ONNX Runtime",
-  "capabilities": ["recognition"],
+  "description": "Recognises the text of scans and scanned PDFs using PaddleOCR and ONNX Runtime",
+  "capabilities": [],
   "targets": ["desktop.editor"],
-  "activationEvents": ["onFile:*.pdf", "onCommand:ocr.recognize"],
-  "permissions": ["vault:read", "network:outbound"],
+  "activationEvents": [],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "textInput": {
+    "files": [".pdf", ".png", ".jpg", ".jpeg", ".gif", ".webp"],
+    "autoRun": true
+  },
+  "commands": [
+    {
+      "id": "recognise",
+      "title": "Recognise the text of a scan",
+      "fileExtensions": ["pdf", "png", "jpg", "jpeg", "gif", "webp"]
+    }
+  ],
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -52,7 +63,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-ocr",
-    "serviceName": "numen.v1.RecognitionService"
+    "serviceName": "numen.v1.OcrService"
   },
   "settings": [
     {
@@ -72,14 +83,6 @@
       "description": "Primary recognition language model",
       "options": ["auto", "cyrillic", "latin", "ch"],
       "default": "auto"
-    },
-    {
-      "key": "model_profile",
-      "type": "enum",
-      "title": "Model Profile",
-      "description": "Mobile (fast, low memory) or Server (higher accuracy)",
-      "options": ["mobile", "server"],
-      "default": "mobile"
     },
     {
       "key": "custom_model_path",
