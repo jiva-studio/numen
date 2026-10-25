@@ -53,7 +53,7 @@ test('getDynamicScopes discovers idiomatic plugin names and variants', () => {
   assert.ok(scopes.has('plex-graph'))
 
   // Discovered from apps
-  assert.ok(scopes.has('desktop-monolith'))
+  assert.ok(scopes.has('mobile'))
   assert.ok(scopes.has('desktop'))
 
   // Base scopes
@@ -69,7 +69,7 @@ test('validateCommitMessage accepts valid conventional commit messages', () => {
     'refactor(flashcards): replace note buffer with cards store',
     'test(agent-claude): eliminate mutation survivors',
     'fix(reader-epub): parse toc correctly',
-    'arch(desktop-monolith): register builtin plugins',
+    'arch(desktop): register plugin host',
     'docs: update installation instructions',
     'chore(deps): bump vite to 5.0.5',
     'feat(core,desktop): coordinate active tab state',

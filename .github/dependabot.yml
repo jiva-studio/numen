@@ -24,7 +24,6 @@ updates:
       - /libs/plugin-sdk-go/onnx
       - /libs/plugin-sdk-go/vault
       - /apps/desktop
-      - /apps/desktop-monolith
       - /apps/mobile
       - /apps/desktop/build/tools
       - /plugins/*

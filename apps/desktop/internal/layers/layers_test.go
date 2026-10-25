@@ -275,8 +275,5 @@ func getPackage(root, path string) string {
 // application is the one a package belongs to.
 func application(pkg string) string {
 	target, _, _ := strings.Cut(pkg, "/")
-	if target == "desktop-monolith" {
-		return "desktop"
-	}
 	return target
 }

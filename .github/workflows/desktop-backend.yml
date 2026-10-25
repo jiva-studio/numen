@@ -19,7 +19,6 @@ on:
       - "!libs/plugin-sdk-go/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
-      - "apps/desktop-monolith/**"
       - "plugins/**"
       - "!plugins/**/*.md"
       - "!docs/**"
@@ -159,10 +158,8 @@ jobs:
         env:
           TMPDIR: /dev/shm
 
-      - name: Verify dual-mode builds
-        run: |
-          go build -tags plugins_monolith -o /dev/null ./cmd/numen
-          go build -o /dev/null ./cmd/numen
+      - name: Build the desktop binary
+        run: go build -o /dev/null ./cmd/numen
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -253,43 +250,3 @@ jobs:
         run: |
           go vet ./...
           go build -o /dev/null .
-
-  # The composition root that runs the plugins in-process is a module of its
-  # own, and this is the job that compiles it.
-  monolith:
-    name: Monolith
-    needs: [changes]
-    if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    defaults:
-      run:
-        working-directory: apps/desktop-monolith
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
-        with:
-          go-version-file: apps/desktop-monolith/go.mod
-          cache-dependency-path: apps/desktop-monolith/go.sum
-
-      # It links the window, and the window links against the system's own
-      # browser.
-      - uses: ./.github/actions/setup-webkit
-
-      - name: Run go vet
-        run: go vet -tags plugins_monolith ./...
-
-      - name: Build the monolith
-        run: go build -tags plugins_monolith -o /dev/null .
-
-      - name: Run Go tests
-        run: go test -tags plugins_monolith -short ./...
-
-      # Both builds are put the same chat, single answer and document: the monolith serves the
-      # plugins from its own process and the other build launches them as processes. The answers
-      # are compared.
-      - name: Smoke test both builds
-        run: go test -tags plugins_monolith -run TestBothBuildsAnswerAlike ./...
