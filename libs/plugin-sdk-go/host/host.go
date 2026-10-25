@@ -1,6 +1,7 @@
 // Package host is the vault as a plugin works it through the host: its files, its notes and links
 // as the index knows them, the cache the installation keeps for it, and its own folder of the
 // vault's store.
+// It is also the core's shared queue of heavy work and its list of tasks.
 //
 // The host answers each call as the plugin it knows by its token. It holds a call on the vault that
 // reads to vault:read and one that changes anything to vault:write; the plugin's own folder takes
