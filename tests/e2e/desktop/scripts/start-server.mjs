@@ -84,6 +84,9 @@ fs.utimesSync(thermoFile, futureTime, futureTime)
 
 const testConfigDir = path.join(tmpVault, '.config')
 fs.mkdirSync(testConfigDir, { recursive: true })
+// Each server keeps its index in a cache folder of its own.
+const testCacheDir = path.join(tmpVault, '.cache')
+fs.mkdirSync(testCacheDir, { recursive: true })
 
 function cleanup() {
   try {
@@ -101,6 +104,7 @@ const child = spawn(
     env: {
       ...process.env,
       XDG_CONFIG_HOME: testConfigDir,
+      XDG_CACHE_HOME: testCacheDir,
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
     },
