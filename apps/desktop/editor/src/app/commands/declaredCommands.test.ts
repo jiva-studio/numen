@@ -68,7 +68,7 @@ describe('a declared command in the palette', () => {
 })
 
 describe('a run of a declared command', () => {
-  it('hands the plugin the file and the values, says what it answered and opens the file it names', async () => {
+  it('sends the file and values, writes the message and opens the returned path', async () => {
     const run = vi.fn().mockResolvedValue({
       ok: true,
       value: { message: 'Made a deck', openedPath: 'Verbs.md' },
@@ -133,11 +133,11 @@ describe('a run of a declared command', () => {
   })
 
   it('is no longer handled once the plugins no longer declare it', async () => {
-    let listed: readonly DeclaredCommand[] = [convert]
-    const declared = useDeclaredCommands({ list: async () => listed, run: vi.fn() })
+    let commandList: readonly DeclaredCommand[] = [convert]
+    const declared = useDeclaredCommands({ list: async () => commandList, run: vi.fn() })
     await declared.load()
 
-    listed = []
+    commandList = []
     await declared.load()
 
     expect(commands.get(getPaletteId(convert))).toBeUndefined()

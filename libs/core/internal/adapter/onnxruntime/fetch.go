@@ -61,7 +61,7 @@ func verifyFile(name, sum string) error {
 
 // download writes the archive at the address to at. The bytes go through a file
 // beside at and are put in place only when they hold the pinned sum.
-func download(ctx context.Context, client *http.Client, r Release, pos string, onProgress func(done, total int64)) error {
+func download(ctx context.Context, client *http.Client, r Release, pos string, onProgress func(count, total int64)) error {
 	ctx, cancel := context.WithTimeout(ctx, downloadTimeout)
 	defer cancel()
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, r.Address, nil)
@@ -108,14 +108,14 @@ func download(ctx context.Context, client *http.Client, r Release, pos string, o
 // that is negative when unknown.
 type progressWriter struct {
 	total      int64
-	done       int64
-	onProgress func(done, total int64)
+	count      int64
+	onProgress func(count, total int64)
 }
 
 func (w *progressWriter) Write(chunk []byte) (int, error) {
-	w.done += int64(len(chunk))
+	w.count += int64(len(chunk))
 	if w.onProgress != nil {
-		w.onProgress(w.done, w.total)
+		w.onProgress(w.count, w.total)
 	}
 	return len(chunk), nil
 }

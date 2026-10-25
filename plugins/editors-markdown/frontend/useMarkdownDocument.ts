@@ -117,22 +117,22 @@ function scanLineDelimiters(line: string, state: DelimiterState): boolean {
   return false
 }
 
-function isTopLevelKeyLine(line: string, trimmed: string): boolean {
+function isTopLevelKeyLine(line: string, lineContent: string): boolean {
   return (
     !line.startsWith(' ') &&
     !line.startsWith('\t') &&
-    !trimmed.startsWith('#') &&
-    !trimmed.startsWith('-')
+    !lineContent.startsWith('#') &&
+    !lineContent.startsWith('-')
   )
 }
 
-function checkTopLevelMappingLine(trimmed: string, topKeys: Set<string>): boolean {
-  const colonIdx = trimmed.indexOf(':')
+function checkTopLevelMappingLine(lineContent: string, topKeys: Set<string>): boolean {
+  const colonIdx = lineContent.indexOf(':')
   if (colonIdx <= 0) return true
-  const key = trimmed.slice(0, colonIdx).trim()
+  const key = lineContent.slice(0, colonIdx).trim()
   if (topKeys.has(key)) return true
   topKeys.add(key)
-  const after = trimmed.slice(colonIdx + 1).trim()
+  const after = lineContent.slice(colonIdx + 1).trim()
   return after.endsWith(':') && !after.startsWith('{') && !after.startsWith('[')
 }
 
@@ -147,14 +147,14 @@ function isTopLevel(state: DelimiterState): boolean {
 
 function isMalformedLine(
   line: string,
-  trimmed: string,
+  lineContent: string,
   state: DelimiterState,
   topKeys: Set<string>,
 ): boolean {
   if (
     isTopLevel(state) &&
-    isTopLevelKeyLine(line, trimmed) &&
-    checkTopLevelMappingLine(trimmed, topKeys)
+    isTopLevelKeyLine(line, lineContent) &&
+    checkTopLevelMappingLine(lineContent, topKeys)
   ) {
     return true
   }
@@ -171,8 +171,8 @@ function hasMalformedFrontmatter(rawYaml: string): boolean {
   const topKeys = new Set<string>()
 
   for (const line of rawYaml.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (trimmed && isMalformedLine(line, trimmed, state, topKeys)) return true
+    const lineContent = line.trim()
+    if (lineContent && isMalformedLine(line, lineContent, state, topKeys)) return true
   }
 
   return (

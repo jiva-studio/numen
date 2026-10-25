@@ -28,7 +28,7 @@ defineProps<{
 }>()
 
 /** Which of the card and the panels either side of it is in the window. */
-const at = defineModel<PanelPlace>('at', { required: true })
+const currentPlace = defineModel<PanelPlace>('at', { required: true })
 
 /* --------------------------------- Events --------------------------------- */
 defineEmits<{
@@ -79,7 +79,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
 
     <!-- The card is what changes under a person as they work, so a reader that
          is not looking at the screen is told when the answer appears. -->
-    <PanelCarousel v-model:at="at">
+    <PanelCarousel v-model:at="currentPlace">
       <template #before><slot name="reading" /></template>
       <div class="session__card" aria-live="polite">
         <Card

@@ -85,10 +85,10 @@ func (e *dependencyEndpoint) ProvisionDependency(
 		return connect.NewError(connect.CodeNotFound, pluginport.ErrNoProvisioner)
 	}
 	updates := make(chan pluginport.DependencyStatus, dependencyStreamBuffer)
-	done := make(chan error, 1)
+	errc := make(chan error, 1)
 	go func() {
 		_, err := catalog.Provision(ctx, requirement, func(status pluginport.DependencyStatus) { sendLatest(updates, status) })
-		done <- err
+		errc <- err
 	}()
 	for {
 		select {
@@ -96,7 +96,7 @@ func (e *dependencyEndpoint) ProvisionDependency(
 			if err := stream.Send(&v1.ProvisionDependencyResponse{Status: writeWireDependencyStatus(status)}); err != nil {
 				return err
 			}
-		case err := <-done:
+		case err := <-errc:
 			return e.finishStream(stream, updates, requirement, err)
 		}
 	}

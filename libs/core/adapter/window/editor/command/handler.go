@@ -28,9 +28,9 @@ func NewHandler(commands plugincommand.Commands) *Handler {
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
-	listed := h.list.Execute()
-	commands := make([]*v1.PluginCommand, 0, len(listed))
-	for _, one := range listed {
+	entries := h.list.Execute()
+	commands := make([]*v1.PluginCommand, 0, len(entries))
+	for _, one := range entries {
 		commands = append(commands, newWireCommand(one))
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil

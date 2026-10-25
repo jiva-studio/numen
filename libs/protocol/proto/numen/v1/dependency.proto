@@ -14,7 +14,7 @@ enum DependencyKind {
   DEPENDENCY_KIND_DATASET = 4;
 }
 
-// DependencyState is where a dependency stands on the machine. UNSPECIFIED means the host did not
+// DependencyState is the install state of a dependency on this machine. UNSPECIFIED means the host did not
 // answer; MISSING means the host answered that nothing is installed.
 enum DependencyState {
   DEPENDENCY_STATE_UNSPECIFIED = 0;
@@ -34,7 +34,7 @@ message DependencyRequirement {
   map<string, string> metadata = 6;
 }
 
-// ResolvedDependency is where a ready dependency sits on disk and how a process reaches it.
+// ResolvedDependency is the install location of a ready dependency and how a process uses it.
 message ResolvedDependency {
   string id = 1;
   // The folder that holds everything the dependency installed.

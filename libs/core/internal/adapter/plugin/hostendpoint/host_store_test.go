@@ -111,7 +111,7 @@ func TestAPluginSeesNoOtherPluginsFolder(t *testing.T) {
 	}
 }
 
-func TestThePluginsFolderTakesNoVaultPermissionButATokenTheHostGave(t *testing.T) {
+func TestPluginStoreAcceptsHostTokenWithoutVaultPermission(t *testing.T) {
 	h := newStoreHost(t)
 	ctx := t.Context()
 

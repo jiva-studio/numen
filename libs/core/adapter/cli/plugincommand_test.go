@@ -13,11 +13,11 @@ import (
 
 // pluginCommands declares the commands it is given and keeps every call it is asked to run.
 type pluginCommands struct {
-	listed []plugincommand.Entry
-	calls  []plugincommand.Call
+	entries []plugincommand.Entry
+	calls   []plugincommand.Call
 }
 
-func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.listed }
+func (p *pluginCommands) ListCommands() []plugincommand.Entry { return p.entries }
 
 func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	p.calls = append(p.calls, call)
@@ -27,7 +27,7 @@ func (p *pluginCommands) RunCommand(_ context.Context, call plugincommand.Call) 
 // createPluginCommandDeps is a terminal over the notebook whose plugins declare a command over no
 // file and one over PDFs, and the vaults the plugins were opened over.
 func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
-	declared := &pluginCommands{listed: []plugincommand.Entry{
+	declared := &pluginCommands{entries: []plugincommand.Entry{
 		{PluginID: "md.numen.cards", Command: plugincommand.Command{
 			ID: "create-deck", Title: "Create a deck",
 			Arguments: []plugincommand.Argument{
@@ -40,7 +40,7 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 			ID: "count-pages", Title: "Count the pages", FileExtensions: []string{"pdf"},
 		}},
 	}}
-	var opened []domain.Vault
+	var vaults []domain.Vault
 	commands := plugincommand.NewCommands(declared)
 	deps := cli.Deps{
 		Vaults: createVaultList(notebook),
@@ -48,25 +48,25 @@ func createPluginCommandDeps() (cli.Deps, *pluginCommands, *[]domain.Vault) {
 			return cli.PluginCommands{
 				List: commands.List,
 				Open: func(_ context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-					opened = append(opened, v)
+					vaults = append(vaults, v)
 					return commands.Run, nil, nil
 				},
 			}
 		},
 	}
-	return deps, declared, &opened
+	return deps, declared, &vaults
 }
 
 func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.T) {
-	deps, declared, opened := createPluginCommandDeps()
+	deps, declared, vaults := createPluginCommandDeps()
 
 	out, err := runWithDeps(deps, "create-deck", "notebook", "--title", "Verbs", "--open", "--folder=decks")
 
 	if err != nil || out != "ran create-deck\n" {
 		t.Fatalf("the command answered %q, %v", out, err)
 	}
-	if len(*opened) != 1 || (*opened)[0].ID != notebook.ID {
-		t.Errorf("the plugins were opened over %+v", *opened)
+	if len(*vaults) != 1 || (*vaults)[0].ID != notebook.ID {
+		t.Errorf("the plugins were opened over %+v", *vaults)
 	}
 	call := declared.calls[0]
 	if call.PluginID != "md.numen.cards" || call.Path != "" ||
@@ -75,7 +75,7 @@ func TestACommandAPluginDeclaresIsASubcommandWithItsArgumentsAsFlags(t *testing.
 	}
 }
 
-func TestACommandOverAFileTakesTheFileAfterTheVaultAndSaysTheFileItOpens(t *testing.T) {
+func TestPluginCommandOnFileAcceptsPathAfterVaultAndPrintsOpenedPath(t *testing.T) {
 	deps, declared, _ := createPluginCommandDeps()
 
 	out, err := runWithDeps(deps, "count-pages", "notebook", "books/Bees.pdf")
@@ -89,7 +89,7 @@ func TestACommandOverAFileTakesTheFileAfterTheVaultAndSaysTheFileItOpens(t *test
 	}
 }
 
-func TestACommandTypedWrongSaysHowItIsTypedAndRunsNothing(t *testing.T) {
+func TestPluginCommandWithInvalidArgumentsPrintsUsageAndRunsNothing(t *testing.T) {
 	cases := map[string][]string{
 		"no vault":                      {"create-deck"},
 		"a file to a command over none": {"create-deck", "notebook", "a.md", "--title", "T"},
@@ -98,15 +98,15 @@ func TestACommandTypedWrongSaysHowItIsTypedAndRunsNothing(t *testing.T) {
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
-			deps, declared, opened := createPluginCommandDeps()
+			deps, declared, vaults := createPluginCommandDeps()
 
 			_, err := runWithDeps(deps, args...)
 
 			if err == nil || !strings.HasPrefix(err.Error(), "usage: numen-cli "+args[0]+" <vault>") {
 				t.Errorf("the command answered %v", err)
 			}
-			if len(declared.calls) != 0 || len(*opened) != 0 {
-				t.Errorf("the plugin was sent %+v over %+v", declared.calls, *opened)
+			if len(declared.calls) != 0 || len(*vaults) != 0 {
+				t.Errorf("the plugin was sent %+v over %+v", declared.calls, *vaults)
 			}
 		})
 	}

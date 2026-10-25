@@ -28,11 +28,11 @@ function getContainerSize(parent: HTMLElement | null): { width: number; height: 
 }
 
 export function usePopoverPosition(options: PopoverPositionOptions) {
-  const { target, at, watchTriggers = [] } = options
+  const { target, at: getAnchor, watchTriggers = [] } = options
 
   const placedPosition = ref<{ left: number; top: number }>(
     resolvePopoverPosition({
-      at: at(),
+      at: getAnchor(),
       popoverSize: { width: 320, height: 160 },
       containerSize: {
         width: typeof window !== 'undefined' ? window.innerWidth : 800,
@@ -51,7 +51,7 @@ export function usePopoverPosition(options: PopoverPositionOptions) {
     if (!el) return
     const parent = (el.offsetParent as HTMLElement | null) || el.parentElement
     placedPosition.value = resolvePopoverPosition({
-      at: at(),
+      at: getAnchor(),
       popoverSize: getElementSize(el),
       containerSize: getContainerSize(parent),
     })

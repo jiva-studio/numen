@@ -72,7 +72,11 @@ const createStrip = (
   const one = mount(
     defineComponent({
       setup() {
-        target = useCarouselStrip({ window: windowRef, middle: middleRef, shown: displayedItems })
+        target = useCarouselStrip({
+          window: windowRef,
+          middle: middleRef,
+          currentPlace: displayedItems,
+        })
         return () => null
       },
     }),
@@ -105,7 +109,7 @@ const createStrip = (
     takeOff,
     window_,
     windowRef,
-    shown: displayedItems,
+    currentPlace: displayedItems,
     moves,
     capture,
     errors,
@@ -126,19 +130,19 @@ describe('where the strip remains', () => {
   })
 
   it('remains every stop at the start while there is no card to read them off', () => {
-    const { window_, shown, errors, scrollTo } = createStrip('after', { hasCard: false })
+    const { window_, currentPlace, errors, scrollTo } = createStrip('after', { hasCard: false })
     expect(window_.scrollLeft).toBe(0)
 
     scrollTo(300)
 
-    expect(shown.value).toBe('before')
+    expect(currentPlace.value).toBe('before')
     expect(errors).toEqual([])
   })
 
   it('takes the earlier of two stops it remains exactly between', () => {
-    const { shown, scrollTo } = createStrip('here')
+    const { currentPlace, scrollTo } = createStrip('here')
     scrollTo(330)
-    expect(shown.value).toBe('here')
+    expect(currentPlace.value).toBe('here')
   })
 })
 
@@ -165,7 +169,7 @@ describe('a move requested for', () => {
   })
 
   it('says nothing of where it passes through while the later of two moves is on its way', async () => {
-    const { shown, scrollTo, moveTo } = createStrip('here')
+    const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
     vi.advanceTimersByTime(500)
@@ -173,33 +177,33 @@ describe('a move requested for', () => {
     vi.advanceTimersByTime(200)
     scrollTo(400)
 
-    expect(shown.value).toBe('before')
+    expect(currentPlace.value).toBe('before')
   })
 
   it('hears a wheel as soon as the move has arrived', async () => {
-    const { shown, scrollTo, moveTo } = createStrip('here')
+    const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
     scrollTo(439)
     vi.advanceTimersByTime(100)
     scrollTo(200)
 
-    expect(shown.value).toBe('here')
+    expect(currentPlace.value).toBe('here')
   })
 
   // A move that never arrives is over when its time is up.
   it('hears a wheel once the move has had its time, arrived or not', async () => {
-    const { shown, scrollTo, moveTo } = createStrip('here')
+    const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
     vi.advanceTimersByTime(700)
     scrollTo(200)
 
-    expect(shown.value).toBe('here')
+    expect(currentPlace.value).toBe('here')
   })
 
   it('leaves the time of a move that arrived running out on no later move', async () => {
-    const { shown, scrollTo, moveTo } = createStrip('here')
+    const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
     vi.advanceTimersByTime(100)
@@ -209,7 +213,7 @@ describe('a move requested for', () => {
     vi.advanceTimersByTime(450)
     scrollTo(400)
 
-    expect(shown.value).toBe('before')
+    expect(currentPlace.value).toBe('before')
   })
 
   it('does not take the strip anywhere while a hand is on it', async () => {
@@ -253,7 +257,7 @@ describe('a resize', () => {
   })
 
   it('leaves no earlier move still running out its time', async () => {
-    const { shown, scrollTo, moveTo } = createStrip('here')
+    const { currentPlace, scrollTo, moveTo } = createStrip('here')
 
     await moveTo('after')
     vi.advanceTimersByTime(100)
@@ -263,7 +267,7 @@ describe('a resize', () => {
     vi.advanceTimersByTime(450)
     scrollTo(400)
 
-    expect(shown.value).toBe('before')
+    expect(currentPlace.value).toBe('before')
   })
 })
 

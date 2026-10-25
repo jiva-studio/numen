@@ -11,11 +11,11 @@ import (
 
 // declaredCommands lists the commands it is given and keeps every call it is asked to run.
 type declaredCommands struct {
-	listed []plugincommand.Entry
-	calls  []plugincommand.Call
+	entries []plugincommand.Entry
+	calls   []plugincommand.Call
 }
 
-func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.listed }
+func (d *declaredCommands) ListCommands() []plugincommand.Entry { return d.entries }
 
 func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call) (plugincommand.Result, error) {
 	d.calls = append(d.calls, call)
@@ -23,7 +23,7 @@ func (d *declaredCommands) RunCommand(_ context.Context, call plugincommand.Call
 }
 
 func newDeclared() *declaredCommands {
-	return &declaredCommands{listed: []plugincommand.Entry{
+	return &declaredCommands{entries: []plugincommand.Entry{
 		{PluginID: "md.numen.a", Command: plugincommand.Command{
 			ID: "convert", Title: "Convert", FileExtensions: []string{"pdf"},
 			Arguments: []plugincommand.Argument{
@@ -36,7 +36,7 @@ func newDeclared() *declaredCommands {
 	}}
 }
 
-func TestACallThatMeetsItsDeclarationIsRunWithItsBooleansWrittenOneWay(t *testing.T) {
+func TestRunCommandNormalizesBooleanArguments(t *testing.T) {
 	declared := newDeclared()
 
 	result, err := plugincommand.NewCommands(declared).Run.Execute(t.Context(), plugincommand.Call{
@@ -47,9 +47,9 @@ func TestACallThatMeetsItsDeclarationIsRunWithItsBooleansWrittenOneWay(t *testin
 	if err != nil || result.Message != "ran convert" || result.OpenedPath != "books/Some.PDF" {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
-	sent := declared.calls[0]
-	if sent.Path != "books/Some.PDF" || sent.Arguments["pages"] != "12" || sent.Arguments["again"] != "true" {
-		t.Errorf("the plugin was sent %+v", sent)
+	call := declared.calls[0]
+	if call.Path != "books/Some.PDF" || call.Arguments["pages"] != "12" || call.Arguments["again"] != "true" {
+		t.Errorf("the plugin received %+v", call)
 	}
 }
 
@@ -85,7 +85,7 @@ func TestACallThatDoesNotMeetItsDeclarationRunsNothing(t *testing.T) {
 				t.Errorf("the call answered %v, want ErrBadArguments", err)
 			}
 			if len(declared.calls) != 0 {
-				t.Errorf("the plugin was sent %+v", declared.calls)
+				t.Errorf("the plugin received %+v", declared.calls)
 			}
 		})
 	}
@@ -119,8 +119,8 @@ func TestACommandIsFoundByThePluginOfTheLowestID(t *testing.T) {
 func TestAnInstallationWithNoPluginHostListsNoCommandAndRunsNone(t *testing.T) {
 	commands := plugincommand.NewCommands(nil)
 
-	if listed := commands.List.Execute(); len(listed) != 0 {
-		t.Errorf("listed %+v", listed)
+	if entries := commands.List.Execute(); len(entries) != 0 {
+		t.Errorf("got %+v", entries)
 	}
 	if _, err := commands.Run.Execute(t.Context(), plugincommand.Call{Command: "tidy"}); !errors.Is(err, completionport.ErrUnavailable) {
 		t.Errorf("a run answered %v, want unavailable", err)

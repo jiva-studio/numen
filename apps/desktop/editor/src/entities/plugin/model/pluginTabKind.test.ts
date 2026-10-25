@@ -121,7 +121,7 @@ describe('the pane of a declared kind', () => {
     expect(view.find('.held').attributes()).toStrictEqual({ class: 'held' })
   })
 
-  it('draws the stylesheet the plugin registered beside the component', () => {
+  it('renders the plugin stylesheet next to the component', () => {
     registerPluginStyle('md.numen.sample', '/api/plugins/md.numen.sample/dist/styles.css')
     const view = mount(createDeclaredPane('md.numen.sample', Pane), {
       props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },

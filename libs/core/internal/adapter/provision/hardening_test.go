@@ -34,14 +34,14 @@ func TestACallerJoiningARunEveryCallerLeftStartsAFreshRun(t *testing.T) {
 	}
 
 	first, leave := context.WithCancel(t.Context())
-	left := make(chan struct{})
+	exit := make(chan struct{})
 	go func() {
 		_, _ = group.do(first, "k", nil, run)
-		close(left)
+		close(exit)
 	}()
 	<-started
 	leave()
-	<-left
+	<-exit
 
 	type outcome struct {
 		resolved pluginport.ResolvedDependency

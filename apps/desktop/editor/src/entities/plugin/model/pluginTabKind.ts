@@ -67,9 +67,9 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
         if (error.value) return renderFallback(pluginId, error.value)
         if (!component) return null
         const styleUrl = getPluginStyle(pluginId)
-        const drawn = h(component, { state: props.state })
-        if (!styleUrl) return drawn
-        return [h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': pluginId }), drawn]
+        const node = h(component, { state: props.state })
+        if (!styleUrl) return node
+        return [h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': pluginId }), node]
       }
     },
   })

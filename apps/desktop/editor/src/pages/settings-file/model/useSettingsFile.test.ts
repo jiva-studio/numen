@@ -1,6 +1,6 @@
 /**
- * The settings file held whole: read as it stands, written as it was typed, and
- * refused where the settings cannot be read out of it.
+ * The settings file tab: reads the raw file, saves the draft unchanged, and reports
+ * text that does not parse as settings.
  *
  * Every value here is invented.
  */
@@ -9,128 +9,128 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { useSettingsFile, type SettingsFileTabDeps } from './useSettingsFile'
 import { WORDS as words } from '../words'
 
-const HELD = '{\n  "agent": { "use": "claude" }\n}\n'
+const FILE_TEXT = '{\n  "agent": { "use": "claude" }\n}\n'
 
-/** A vault holding that file, and everything it was asked to write. */
-const vault = (answers: Partial<SettingsFileTabDeps> = {}) => {
-  const wrote: string[] = []
-  /** What each write presented as the file it last read. */
-  const presented: (string | null)[] = []
+/** A vault with that file, recording every write. */
+const vault = (overrides: Partial<SettingsFileTabDeps> = {}) => {
+  const writes: string[] = []
+  /** The expected version passed with each write. */
+  const versions: (string | null)[] = []
   const core: SettingsFileTabDeps = {
-    getSettingsFile: () => Promise.resolve({ written: HELD, path: '/numen.json' }),
-    saveSettingsFile: (written, seen) => {
-      wrote.push(written)
-      presented.push(seen)
+    getSettingsFile: () => Promise.resolve({ written: FILE_TEXT, path: '/numen.json' }),
+    saveSettingsFile: (content, expectedVersion) => {
+      writes.push(content)
+      versions.push(expectedVersion)
       return Promise.resolve({ isChanged: false })
     },
-    ...answers,
+    ...overrides,
   }
   const reads = vi.fn()
-  return { wrote, presented, reads, held: useSettingsFile(core, reads) }
+  return { writes, versions, reads, tab: useSettingsFile(core, reads) }
 }
 
-describe('the file as it stands', () => {
-  it('is read whole, byte for byte', async () => {
-    const { held } = vault()
-    await held.reload()
+describe('reading the file', () => {
+  it('reads the file byte for byte', async () => {
+    const { tab } = vault()
+    await tab.reload()
 
-    expect(held.text.value).toBe(HELD)
-    expect(held.isRead.value).toBe(true)
-    expect(held.changed.value).toBe(false)
+    expect(tab.text.value).toBe(FILE_TEXT)
+    expect(tab.isRead.value).toBe(true)
+    expect(tab.changed.value).toBe(false)
   })
 
-  it('is nothing until it has been read', () => {
-    const { held } = vault()
-    expect(held.isRead.value).toBe(false)
-    expect(held.text.value).toBe('')
-    expect(held.changed.value).toBe(false)
-    expect(held.errorMessage.value).toBe('')
-    expect(held.isStale.value).toBe(false)
+  it('is empty before the first read', () => {
+    const { tab } = vault()
+    expect(tab.isRead.value).toBe(false)
+    expect(tab.text.value).toBe('')
+    expect(tab.changed.value).toBe(false)
+    expect(tab.errorMessage.value).toBe('')
+    expect(tab.isStale.value).toBe(false)
   })
 
-  it('has nothing wrong with it once a read that failed is followed by one that did not', async () => {
+  it('clears the error after a successful read follows a failed one', async () => {
     let fails = true
-    const { held } = vault({
+    const { tab } = vault({
       getSettingsFile: () =>
         fails
           ? Promise.reject(new Error('the folder is not there'))
-          : Promise.resolve({ written: HELD, path: '/numen.json' }),
+          : Promise.resolve({ written: FILE_TEXT, path: '/numen.json' }),
     })
-    await held.reload()
-    expect(held.errorMessage.value).not.toBe('')
+    await tab.reload()
+    expect(tab.errorMessage.value).not.toBe('')
 
     fails = false
-    await held.reload()
+    await tab.reload()
 
-    expect(held.errorMessage.value).toBe('')
+    expect(tab.errorMessage.value).toBe('')
   })
 
-  it('says so where it could not be read', async () => {
-    const { held } = vault({
+  it('reports a failed read', async () => {
+    const { tab } = vault({
       getSettingsFile: () => Promise.reject(new Error('the folder is not there')),
     })
-    await held.reload()
+    await tab.reload()
 
-    expect(held.errorMessage.value).toBe(
+    expect(tab.errorMessage.value).toBe(
       `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
     )
-    expect(held.isRead.value).toBe(false)
+    expect(tab.isRead.value).toBe(false)
   })
 })
 
-describe('what is typed over it', () => {
-  it('is marked as differing from what the file held', async () => {
-    const { held } = vault()
-    await held.reload()
+describe('editing the draft', () => {
+  it('marks the draft as changed while it differs from the file', async () => {
+    const { tab } = vault()
+    await tab.reload()
 
-    held.type('{}\n')
-    expect(held.changed.value).toBe(true)
+    tab.type('{}\n')
+    expect(tab.changed.value).toBe(true)
 
-    held.type(HELD)
-    expect(held.changed.value).toBe(false)
+    tab.type(FILE_TEXT)
+    expect(tab.changed.value).toBe(false)
   })
 
-  it('is written as it was typed', async () => {
-    const { held, wrote } = vault()
-    await held.reload()
+  it('saves the draft unchanged', async () => {
+    const { tab, writes } = vault()
+    await tab.reload()
 
-    held.type('{\n  "agent": { "use": "" }\n}\n')
-    await held.save()
+    tab.type('{\n  "agent": { "use": "" }\n}\n')
+    await tab.save()
 
-    expect(wrote).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
-    expect(held.changed.value).toBe(false)
-    expect(held.errorMessage.value).toBe('')
+    expect(writes).toStrictEqual(['{\n  "agent": { "use": "" }\n}\n'])
+    expect(tab.changed.value).toBe(false)
+    expect(tab.errorMessage.value).toBe('')
   })
 
-  it('presents the file the tab last read', async () => {
-    const { held, presented } = vault()
-    await held.reload()
+  it('passes the last read text as the expected version', async () => {
+    const { tab, versions } = vault()
+    await tab.reload()
 
-    held.type('{}\n')
-    await held.save()
+    tab.type('{}\n')
+    await tab.save()
 
-    expect(presented).toStrictEqual([HELD])
+    expect(versions).toStrictEqual([FILE_TEXT])
   })
 
-  it('is written nowhere before the file has been read', async () => {
-    const { held, wrote } = vault()
-    held.type('{}\n')
-    await held.save()
+  it('writes nothing before the first read', async () => {
+    const { tab, writes } = vault()
+    tab.type('{}\n')
+    await tab.save()
 
-    expect(wrote).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
-  it('has every setting read again once it is written', async () => {
-    const { held, reads } = vault()
-    await held.reload()
-    held.type('{}\n')
-    await held.save()
+  it('reloads the settings after a save', async () => {
+    const { tab, reads } = vault()
+    await tab.reload()
+    tab.type('{}\n')
+    await tab.save()
 
     expect(reads).toHaveBeenCalledTimes(1)
   })
 })
 
-describe('a file the settings cannot be read out of', () => {
+describe('a draft that does not parse as settings', () => {
   const createUnwritableVault = () =>
     vault({
       saveSettingsFile: () =>
@@ -142,103 +142,105 @@ describe('a file the settings cannot be read out of', () => {
         ),
     })
 
-  it('is refused, with what is wrong said', async () => {
-    const { held } = createUnwritableVault()
-    await held.reload()
-    held.type('{ "agent": ')
-    await held.save()
+  it('reports the parse error', async () => {
+    const { tab } = createUnwritableVault()
+    await tab.reload()
+    tab.type('{ "agent": ')
+    await tab.save()
 
-    expect(held.errorMessage.value).toContain(words.unwritten)
-    expect(held.errorMessage.value).toContain('at byte 12')
+    expect(tab.errorMessage.value).toContain(words.unwritten)
+    expect(tab.errorMessage.value).toContain('at byte 12')
   })
 
-  it('is left in the editor, as it was typed', async () => {
-    const { held } = createUnwritableVault()
-    await held.reload()
-    held.type('{ "agent": ')
-    await held.save()
+  it('keeps the draft in the editor', async () => {
+    const { tab } = createUnwritableVault()
+    await tab.reload()
+    tab.type('{ "agent": ')
+    await tab.save()
 
-    expect(held.text.value).toBe('{ "agent": ')
-    expect(held.changed.value).toBe(true)
+    expect(tab.text.value).toBe('{ "agent": ')
+    expect(tab.changed.value).toBe(true)
   })
 
-  it('has nothing read again', async () => {
-    const { held, reads } = createUnwritableVault()
-    await held.reload()
-    held.type('{ "agent": ')
-    await held.save()
+  it('does not reload the settings', async () => {
+    const { tab, reads } = createUnwritableVault()
+    await tab.reload()
+    tab.type('{ "agent": ')
+    await tab.save()
 
     expect(reads).not.toHaveBeenCalled()
   })
 })
 
-describe('a file that moved past what the tab read', () => {
+describe('a file that changed on disk after the read', () => {
   const MOVED = '{\n  "agent": { "use": "claude" },\n  "review": { "day_start_time": "05:00" }\n}\n'
-  const TYPED = '{\n  "agent": { "use": "gemini" }\n}\n'
+  const DRAFT = '{\n  "agent": { "use": "gemini" }\n}\n'
 
-  const stale = async () => {
-    let stands = HELD
-    const wrote: string[] = []
+  const createStaleTab = async () => {
+    let diskText = FILE_TEXT
+    const writes: string[] = []
     const reads = vi.fn()
     const core: SettingsFileTabDeps = {
-      getSettingsFile: () => Promise.resolve({ written: stands, path: '/numen.json' }),
-      saveSettingsFile: (written, seen) => {
-        if (seen !== null && seen !== stands) return Promise.resolve({ isChanged: true })
-        stands = written
-        wrote.push(written)
+      getSettingsFile: () => Promise.resolve({ written: diskText, path: '/numen.json' }),
+      saveSettingsFile: (content, expectedVersion) => {
+        if (expectedVersion !== null && expectedVersion !== diskText) {
+          return Promise.resolve({ isChanged: true })
+        }
+        diskText = content
+        writes.push(content)
         return Promise.resolve({ isChanged: false })
       },
     }
-    const held = useSettingsFile(core, reads)
-    await held.reload()
-    stands = MOVED
-    held.type(TYPED)
-    await held.save()
-    return { held, wrote, reads }
+    const tab = useSettingsFile(core, reads)
+    await tab.reload()
+    diskText = MOVED
+    tab.type(DRAFT)
+    await tab.save()
+    return { tab, writes, reads }
   }
 
-  it('stops keeping, with nothing written', async () => {
-    const { held, wrote, reads } = await stale()
+  it('marks the tab stale and writes nothing', async () => {
+    const { tab, writes, reads } = await createStaleTab()
 
-    expect(held.isStale.value).toBe(true)
-    expect(wrote).toStrictEqual([])
+    expect(tab.isStale.value).toBe(true)
+    expect(writes).toStrictEqual([])
     expect(reads).not.toHaveBeenCalled()
   })
 
-  it('writes what was typed where the person keeps theirs', async () => {
-    const { held, wrote, reads } = await stale()
-    await held.keep()
+  it('writes the draft on keep', async () => {
+    const { tab, writes, reads } = await createStaleTab()
+    await tab.keep()
 
-    expect(wrote).toStrictEqual([TYPED])
-    expect(held.isStale.value).toBe(false)
-    expect(held.changed.value).toBe(false)
+    expect(writes).toStrictEqual([DRAFT])
+    expect(tab.isStale.value).toBe(false)
+    expect(tab.changed.value).toBe(false)
     expect(reads).toHaveBeenCalledTimes(1)
   })
 
-  it("reads the file again where the person takes the file's", async () => {
-    const { held, wrote } = await stale()
-    await held.take()
+  it('reloads the file on take', async () => {
+    const { tab, writes } = await createStaleTab()
+    await tab.take()
 
-    expect(held.text.value).toBe(MOVED)
-    expect(held.isStale.value).toBe(false)
-    expect(held.changed.value).toBe(false)
-    expect(wrote).toStrictEqual([])
+    expect(tab.text.value).toBe(MOVED)
+    expect(tab.isStale.value).toBe(false)
+    expect(tab.changed.value).toBe(false)
+    expect(writes).toStrictEqual([])
   })
 
-  it('writes nothing where keeping is asked of a file that did not move', async () => {
-    const { held, wrote } = vault()
-    await held.reload()
-    held.type('{}\n')
-    await held.keep()
+  it('ignores keep when the file is not stale', async () => {
+    const { tab, writes } = vault()
+    await tab.reload()
+    tab.type('{}\n')
+    await tab.keep()
 
-    expect(wrote).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
-  it('is written nowhere until the person answers', async () => {
-    const { held, wrote } = await stale()
-    await held.save()
+  it('does not save until keep or take', async () => {
+    const { tab, writes } = await createStaleTab()
+    await tab.save()
 
-    expect(held.isStale.value).toBe(true)
-    expect(wrote).toStrictEqual([])
+    expect(tab.isStale.value).toBe(true)
+    expect(writes).toStrictEqual([])
   })
 })

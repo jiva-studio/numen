@@ -79,7 +79,7 @@ func (DependencyKind) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_dependency_proto_rawDescGZIP(), []int{0}
 }
 
-// DependencyState is where a dependency stands on the machine. UNSPECIFIED means the host did not
+// DependencyState is the install state of a dependency on this machine. UNSPECIFIED means the host did not
 // answer; MISSING means the host answered that nothing is installed.
 type DependencyState int32
 
@@ -221,7 +221,7 @@ func (x *DependencyRequirement) GetMetadata() map[string]string {
 	return nil
 }
 
-// ResolvedDependency is where a ready dependency sits on disk and how a process reaches it.
+// ResolvedDependency is the install location of a ready dependency and how a process uses it.
 type ResolvedDependency struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Id    string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`

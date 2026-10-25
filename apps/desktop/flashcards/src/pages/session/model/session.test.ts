@@ -30,22 +30,22 @@ const opening = (...cards: string[]): SessionStart => ({
  * from here, so a second press arrives while the first is still being written.
  */
 function createSession(how?: { answering?: Promise<{ answer: string }>; refuses?: unknown }) {
-  const asks: { what: string; said: unknown }[] = []
+  const asks: { what: string; request: unknown }[] = []
   let content = 0
   const cards: SessionClient = {
     async startSession(one) {
-      asks.push({ what: 'start', said: one })
+      asks.push({ what: 'start', request: one })
       return opening('one', 'two', 'three')
     },
     async answerCard(one) {
-      asks.push({ what: 'answer', said: one })
+      asks.push({ what: 'answer', request: one })
       if (how?.refuses) throw how.refuses
       if (how?.answering) return how.answering
       content += 1
       return { answer: `01${content}` }
     },
     async takeBackAnswer(one) {
-      asks.push({ what: 'takeBack', said: one })
+      asks.push({ what: 'takeBack', request: one })
       if (how?.refuses) throw how.refuses
       return {}
     },
@@ -64,7 +64,7 @@ describe('what a session is opened over', () => {
 
     await one.start('01VAULT', 'decks/Words.md')
 
-    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: 'decks/Words.md' })
+    expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: 'decks/Words.md' })
   })
 
   it('names the preset where it is opened over one', async () => {
@@ -72,7 +72,7 @@ describe('what a session is opened over', () => {
 
     await one.start('01VAULT', '', 'Sanskrit.md')
 
-    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: '', preset: 'Sanskrit.md' })
+    expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: '', preset: 'Sanskrit.md' })
   })
 
   it('names the defaults by the empty path, and not by naming nothing', async () => {
@@ -80,12 +80,12 @@ describe('what a session is opened over', () => {
 
     await one.start('01VAULT', '', '')
 
-    expect(asks[0]?.said).toStrictEqual({ vault: '01VAULT', deck: '', preset: '' })
+    expect(asks[0]?.request).toStrictEqual({ vault: '01VAULT', deck: '', preset: '' })
   })
 
   // A preset with nothing to ask fails, and a tile standing for one is not
   // pressed. A count read a moment ago can still be overtaken, and what comes
-  // back is said and nothing is opened.
+  // back is reported and nothing is opened.
   it('opens nothing where the preset fails, and says why', async () => {
     const cards: SessionClient = {
       startSession: () =>
@@ -257,13 +257,13 @@ describe('a session', () => {
 
   it('measures how long the card stood in front of the person', async () => {
     let clock = 1000
-    const asks: { said: unknown }[] = []
+    const asks: { request: unknown }[] = []
     const cards: SessionClient = {
       async startSession() {
         return opening('one', 'two')
       },
       async answerCard(one) {
-        asks.push({ said: one })
+        asks.push({ request: one })
         return { answer: '011' }
       },
       async takeBackAnswer() {
@@ -278,19 +278,19 @@ describe('a session', () => {
     one.show()
     await one.answer('good')
 
-    expect(asks[0]?.said).toMatchObject({ tookMs: 4200n })
+    expect(asks[0]?.request).toMatchObject({ tookMs: 4200n })
 
     clock += 3000
     one.show()
     await one.answer('good')
 
-    expect(asks[1]?.said).toMatchObject({ tookMs: 3000n })
+    expect(asks[1]?.request).toMatchObject({ tookMs: 3000n })
 
     await one.takeBack()
     clock += 1500
     await one.answer('good')
 
-    expect(asks[2]?.said).toMatchObject({ tookMs: 1500n })
+    expect(asks[2]?.request).toMatchObject({ tookMs: 1500n })
   })
 })
 
@@ -315,7 +315,7 @@ describe('an answer taken back', () => {
 
     await one.takeBack()
 
-    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.said)).toEqual([
+    expect(asks.filter((ask) => ask.what === 'takeBack').map((ask) => ask.request)).toEqual([
       { vault: '01VAULT', run: 'flashcards/01A.jsonl', answer: '011' },
     ])
   })

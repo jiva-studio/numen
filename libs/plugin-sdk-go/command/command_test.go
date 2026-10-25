@@ -84,7 +84,7 @@ func TestACommandThatDidNotSucceedIsAnsweredWithItsCodeAndItsWords(t *testing.T)
 	}
 }
 
-func TestACommandIsAddedUnderAnIDOnce(t *testing.T) {
+func TestAddRejectsDuplicateID(t *testing.T) {
 	registry := newRegistry(t)
 
 	err := registry.Add("greet", func(context.Context, command.Request) (command.Result, error) { return command.Result{}, nil })

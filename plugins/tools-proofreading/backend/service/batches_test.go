@@ -195,7 +195,7 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 	// Both are answered the same way.
 	for _, one := range []string{scanInstruction, speechInstruction} {
 		for _, word := range []string{
-			"12|the line, put right",
+			"12|the corrected line",
 			"A line you would leave alone is a line you do not answer with.",
 			Opens,
 			Closes,
@@ -211,7 +211,7 @@ func TestSpeechIsProofreadForDifferentThingsThanAScan(t *testing.T) {
 	if !strings.Contains(scanInstruction, "Nothing moves from one line to\n  another") {
 		t.Error("the scan instruction lets a word move between lines")
 	}
-	if !strings.Contains(speechInstruction, "12-14|the whole sentence, put right") {
+	if !strings.Contains(speechInstruction, "12-14|the corrected sentence") {
 		t.Error("the speech instruction does not say how a broken sentence is answered for")
 	}
 }

@@ -123,9 +123,9 @@ function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): Command
   const value = deps.text.value.trim()
   if (!value && prompt.isRequired) return null
   const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
-  const answered = (step.answered ?? 0) + 1
-  if (answered < (step.command.prompts?.length ?? 0)) {
-    deps.pushStep({ step: 'arguments', command: step.command, on: step.on, answered, values })
+  const promptIndex = (step.promptIndex ?? 0) + 1
+  if (promptIndex < (step.command.prompts?.length ?? 0)) {
+    deps.pushStep({ step: 'arguments', command: step.command, on: step.on, promptIndex, values })
     return null
   }
   return { ...deps.invocation(step.command.id, step.on), values }

@@ -89,7 +89,7 @@ type PluginVaultStore interface {
 
 // PluginVaultLifecycle manages vault identity, indexing state, usage, and file watching.
 type PluginVaultLifecycle interface {
-	// GetVault is the vault the window is showing, and false while it shows none.
+	// GetVault returns the vault open in the window, or false when none is open.
 	GetVault() (domain.Vault, bool)
 	// GetVaults lists every vault the installation knows.
 	GetVaults() ([]domain.Vault, error)
@@ -107,7 +107,7 @@ type PluginVaultLifecycle interface {
 	Watch(ctx context.Context) (changes <-chan []string, lost <-chan struct{}, err error)
 }
 
-// PluginVault is the vault the window is showing, as the host works it for a plugin: its files,
+// PluginVault is the open vault as the host exposes it to a plugin: its files,
 // what the index says of its notes and links, the plugin's folder in its store, and
 // the cache the installation keeps for a plugin.
 type PluginVault interface {

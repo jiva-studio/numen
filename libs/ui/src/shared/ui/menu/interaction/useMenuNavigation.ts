@@ -70,11 +70,11 @@ export function useMenuNavigation(options: MenuNavigationOptions): MenuNavigatio
     if (!item.children || item.children.length === 0) return
     const rowInst = rowElements.get(item.id)
     const el = rowInst?.getElement?.() ?? null
-    const at = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
+    const position = options.getSubmenuPosition(el) ?? options.getFallbackPosition()
     activeSubmenu.value = {
       id: item.id,
       items: item.children,
-      at,
+      at: position,
       from: el,
     }
     submenuTrigger.value = trigger

@@ -16,10 +16,10 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
   /** One settings tab to a window: the settings are the installation's, not a file's. */
   const kind: TabKind<SettingsTabState, typeof SETTINGS> = {
     kind: SETTINGS,
-    open: (at?: string) => {
+    open: (pluginId?: string) => {
       isOpen.value = true
-      if (at) {
-        initialPluginId.value = at
+      if (pluginId) {
+        initialPluginId.value = pluginId
       }
       return state
     },
@@ -29,7 +29,7 @@ export function useSettingsTab(handle: WindowHandle, installation: Installation)
     isTool: true,
   }
 
-  /** The settings put in front of the person. */
+  /** Opens the settings tab, optionally at one plugin. */
   const openSettings = (pluginId?: string): void => {
     isOpen.value = true
     if (pluginId !== undefined) {

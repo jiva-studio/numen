@@ -28,7 +28,7 @@ export interface CarouselStripDeps {
   /** The middle of the three, which the stops are read off. */
   readonly middle: Readonly<ShallowRef<HTMLElement | null>>
   /** Which of the three is in the window, moved by a hand as much as by the owner. */
-  readonly shown: Ref<PanelPlace>
+  readonly currentPlace: Ref<PanelPlace>
 }
 
 function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLElement | null>) {
@@ -53,7 +53,7 @@ function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLE
 
 function useCarouselDrag(deps: {
   readonly window_: Ref<HTMLElement | null>
-  readonly shown: Ref<PanelPlace>
+  readonly currentPlace: Ref<PanelPlace>
   readonly findNearest: (left: number) => PanelPlace
   readonly slideTo: (where: PanelPlace) => void
 }) {
@@ -79,12 +79,12 @@ function useCarouselDrag(deps: {
   const letGo = async () => {
     if (!taking.value) return
     const place = deps.window_.value
-    const where = place ? deps.findNearest(place.scrollLeft) : deps.shown.value
+    const where = place ? deps.findNearest(place.scrollLeft) : deps.currentPlace.value
     taking.value = false
     await nextTick()
-    if (where !== deps.shown.value) deps.shown.value = where
+    if (where !== deps.currentPlace.value) deps.currentPlace.value = where
     await nextTick()
-    deps.slideTo(deps.shown.value)
+    deps.slideTo(deps.currentPlace.value)
   }
 
   return { taking, onPointerDown, onPointerMove, letGo }
@@ -147,13 +147,13 @@ function createCarouselMover(
 export const useCarouselStrip = (deps: CarouselStripDeps) => {
   const window_ = deps.window
   const middle = deps.middle
-  const displayedItems = deps.shown
+  const { currentPlace } = deps
   const { getStops, findNearest } = createCarouselStops(window_, middle)
   const mover = createCarouselMover(window_, getStops)
 
   const { taking, onPointerDown, onPointerMove, letGo } = useCarouselDrag({
     window_,
-    shown: displayedItems,
+    currentPlace,
     findNearest,
     slideTo: mover.slideTo,
   })
@@ -163,21 +163,21 @@ export const useCarouselStrip = (deps: CarouselStripDeps) => {
     if (!place) return
     mover.checkArrived(place.scrollLeft)
     const where = findNearest(place.scrollLeft)
-    if (!mover.isAiming() && where !== displayedItems.value) displayedItems.value = where
-    if (!taking.value) mover.snapTo(displayedItems.value)
+    if (!mover.isAiming() && where !== currentPlace.value) currentPlace.value = where
+    if (!taking.value) mover.snapTo(currentPlace.value)
   }
 
   watch(
-    () => displayedItems.value,
+    () => currentPlace.value,
     (where) => {
       if (!taking.value) mover.slideTo(where)
     },
   )
 
-  const onResize = () => mover.placeAt(displayedItems.value)
+  const onResize = () => mover.placeAt(currentPlace.value)
 
   onMounted(() => {
-    mover.placeAt(displayedItems.value)
+    mover.placeAt(currentPlace.value)
     window.addEventListener('resize', onResize)
   })
 

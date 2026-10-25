@@ -1,46 +1,46 @@
 /**
- * The settings file itself, opened whole in a tab of its own.
+ * The settings file, opened as raw text in its own tab.
  *
- * The tab holds the bytes the file stands as, and hands them back as they were
- * typed. A file the settings cannot be read out of is refused with what is
- * wrong with it, and the file is left as it was.
+ * The tab keeps the file's bytes from the last read and saves the draft unchanged. When
+ * the draft does not parse as settings, the save fails with the parse error and the file
+ * stays unchanged.
  */
 import { computed, readonly, ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { WORDS as words } from '../words'
 
-/** What this asks of the vault. */
+/** The vault operations the tab uses. */
 export interface SettingsFileTabDeps {
-  /** The settings file as its person wrote it, and where it stands. */
+  /** The raw settings file text and its path. */
   getSettingsFile(): Promise<{ readonly written: string; readonly path: string }>
   /**
-   * The settings file written whole, presenting the file it was last read as. A
-   * file it cannot read is refused, and a file standing at anything else is
-   * answered `changed` with nothing written.
+   * Writes the whole settings file when the file on disk still equals `expectedVersion`.
+   * Text that does not parse throws; a file that changed on disk returns `isChanged`
+   * and nothing is written.
    */
-  saveSettingsFile(written: string, seen: string | null): Promise<{ readonly isChanged: boolean }>
+  saveSettingsFile(
+    content: string,
+    expectedVersion: string | null,
+  ): Promise<{ readonly isChanged: boolean }>
 }
 
-/** What one tab of the settings file holds. */
+/** The state of one settings file tab. */
 export type SettingsFileTabState = ReturnType<typeof useSettingsFile>
 
-/**
- * The file as it stands, what is typed over it, and what is wrong with what was
- * typed.
- */
+/** The file's saved text, the edited draft, and the last read or write error. */
 export function useSettingsFile(core: SettingsFileTabDeps, readSettings: () => void) {
-  /** The bytes the file held when it was last read. */
-  const held = ref('')
-  const typed = ref('')
-  const wrong = ref('')
+  /** The file's bytes at the last read or save. */
+  const savedText = ref('')
+  const draft = ref('')
+  const error = ref('')
 
-  /** Whether what is typed differs from what the file held. */
-  const changed = computed(() => typed.value !== held.value)
+  /** Whether the draft differs from the saved text. */
+  const changed = computed(() => draft.value !== savedText.value)
 
   /** Whether the file has been read at all. */
   const isRead = ref(false)
 
-  /** Whether the file moved past what was last read, so keeping it stopped. */
+  /** Whether the file changed on disk after the last read, which stops saving. */
   const isStale = ref(false)
 
   const reload = async (): Promise<void> => {
@@ -48,42 +48,40 @@ export function useSettingsFile(core: SettingsFileTabDeps, readSettings: () => v
     try {
       answer = await core.getSettingsFile()
     } catch (thrown) {
-      wrong.value = `${words.unread} ${formatErrorMessage(thrown)}`
+      error.value = `${words.unread} ${formatErrorMessage(thrown)}`
       return
     }
-    held.value = answer.written
-    typed.value = answer.written
-    wrong.value = ''
+    savedText.value = answer.written
+    draft.value = answer.written
+    error.value = ''
     isRead.value = true
     isStale.value = false
   }
 
-  /**
-   * What was typed written into the file.
-   */
+  /** Writes the draft to the file. */
   const write = async (baseline: string | null): Promise<void> => {
     if (!isRead.value) return
     let answer: Awaited<ReturnType<SettingsFileTabDeps['saveSettingsFile']>>
     try {
-      answer = await core.saveSettingsFile(typed.value, baseline)
+      answer = await core.saveSettingsFile(draft.value, baseline)
     } catch (thrown) {
-      wrong.value = `${words.unwritten} ${formatErrorMessage(thrown)}`
+      error.value = `${words.unwritten} ${formatErrorMessage(thrown)}`
       return
     }
     if (answer.isChanged) {
       isStale.value = true
       return
     }
-    held.value = typed.value
-    wrong.value = ''
+    savedText.value = draft.value
+    error.value = ''
     isStale.value = false
     readSettings()
   }
 
-  /** What was typed written into the file the tab read. */
-  const save = (): Promise<void> => write(held.value)
+  /** Writes the draft when the file still equals the last read. */
+  const save = (): Promise<void> => write(savedText.value)
 
-  /** Keep: what is typed goes to the file, whatever the file now holds. */
+  /** Writes the draft over a file that changed on disk. */
   const keep = async (): Promise<void> => {
     if (!isStale.value) return
     await write(null)
@@ -91,9 +89,9 @@ export function useSettingsFile(core: SettingsFileTabDeps, readSettings: () => v
 
   // eslint-disable-next-line numen/max-composable-return-properties
   return {
-    text: readonly(typed),
-    type: (content: string) => void (typed.value = content),
-    errorMessage: readonly(wrong),
+    text: readonly(draft),
+    type: (content: string) => void (draft.value = content),
+    errorMessage: readonly(error),
     changed,
     isRead: readonly(isRead),
     isStale: readonly(isStale),

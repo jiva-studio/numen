@@ -64,7 +64,7 @@ describe('the settings file tab', () => {
     expect(kind.getMark?.(state)).toBe('stale')
   })
 
-  it('is put in front beside the pane the person is in', () => {
+  it('opens in a tab next to the active pane', () => {
     const handle = createHandle()
     const { openSettingsFile } = createSettingsFileTabKind(handle, createCore(), vi.fn())
 

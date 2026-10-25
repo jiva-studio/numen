@@ -34,12 +34,12 @@ func writePluginCommandUsage(out io.Writer, deps Deps) {
 	if deps.PluginCommands == nil {
 		return
 	}
-	listed := deps.PluginCommands().List.Execute()
-	if len(listed) == 0 {
+	entries := deps.PluginCommands().List.Execute()
+	if len(entries) == 0 {
 		return
 	}
 	fmt.Fprintln(out, "\ncommands of the plugins:")
-	for _, entry := range listed {
+	for _, entry := range entries {
 		fmt.Fprintf(out, "  numen-cli %s\n      %s\n", getPluginCommandSynopsis(entry.Command), entry.Command.Title)
 	}
 }

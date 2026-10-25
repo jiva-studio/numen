@@ -25,7 +25,7 @@ test.describe('a deck or a stencil made through the palette', () => {
     await expect(page.locator('[data-tree-row="Rivers.md"]')).toHaveCount(1)
   })
 
-  test('a name taken already is said, and no second tab opens', async ({ page }) => {
+  test('reports a taken name and opens no second tab', async ({ page }) => {
     await openWorkspace(page)
     await make(page, 'New deck', 'Lakes')
     await expect(page.locator('.deck').first()).toBeVisible()

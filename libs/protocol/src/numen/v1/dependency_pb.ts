@@ -59,7 +59,7 @@ export const DependencyRequirementSchema: GenMessage<DependencyRequirement> = /*
   messageDesc(file_numen_v1_dependency, 0);
 
 /**
- * ResolvedDependency is where a ready dependency sits on disk and how a process reaches it.
+ * ResolvedDependency is the install location of a ready dependency and how a process uses it.
  *
  * @generated from message numen.v1.ResolvedDependency
  */
@@ -296,7 +296,7 @@ export const DependencyKindSchema: GenEnum<DependencyKind> = /*@__PURE__*/
   enumDesc(file_numen_v1_dependency, 0);
 
 /**
- * DependencyState is where a dependency stands on the machine. UNSPECIFIED means the host did not
+ * DependencyState is the install state of a dependency on this machine. UNSPECIFIED means the host did not
  * answer; MISSING means the host answered that nothing is installed.
  *
  * @generated from enum numen.v1.DependencyState

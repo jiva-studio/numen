@@ -20,7 +20,7 @@ const (
 	DependencyKindDataset DependencyKind = "dataset"
 )
 
-// DependencyState is where a dependency stands on the machine.
+// DependencyState is the install state of a dependency on this machine.
 type DependencyState string
 
 // The states a dependency is reported in.
@@ -53,7 +53,7 @@ type DependencyRequirement struct {
 	PluginDir string `json:"-"`
 }
 
-// ResolvedDependency is where a ready dependency sits on disk and how a process reaches it.
+// ResolvedDependency is the install location of a ready dependency and how a process uses it.
 type ResolvedDependency struct {
 	ID string
 	// RootPath is the folder that holds everything the dependency installed.

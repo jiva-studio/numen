@@ -40,7 +40,7 @@ describe('resolveTaskPlugin', () => {
     }
 
     const matched = resolveTaskPlugin(task, PLUGINS)
-    // Should match proofreading rather than blindly defaulting to ACP
+    // A proofreading task resolves to the proofreading plugin.
     expect(matched).toBe('md.numen.tools.proofreading')
   })
 

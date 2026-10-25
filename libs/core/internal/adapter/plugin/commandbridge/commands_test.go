@@ -121,22 +121,22 @@ func TestTheCommandsOfTheEnabledPluginsAreListedFromTheirManifestsWithNoPluginSt
 		disabled: map[string]bool{"md.numen.b": true},
 	}
 
-	listed := Open(host).ListCommands()
+	entries := Open(host).ListCommands()
 
 	var ids []string
-	for _, one := range listed {
+	for _, one := range entries {
 		ids = append(ids, one.PluginID+"/"+one.Command.ID)
 	}
 	want := []string{"md.numen.a/first", "md.numen.a/second", "md.numen.c/fourth"}
 	if len(ids) != len(want) || ids[0] != want[0] || ids[1] != want[1] || ids[2] != want[2] {
-		t.Errorf("listed %v, want %v", ids, want)
+		t.Errorf("got %v, want %v", ids, want)
 	}
 	if host.acquired != 0 {
 		t.Errorf("listing started %d plugins", host.acquired)
 	}
 }
 
-func TestACommandIsSentToItsPluginWithItsFileAndArgumentsAndAnswersWhatThePluginSaid(t *testing.T) {
+func TestRunCommandSendsFileAndArgumentsAndReturnsPluginResult(t *testing.T) {
 	plugin := &commandPlugin{reply: &v1.RunCommandResponse{Message: "made it", OpenedPath: "Made.md"}}
 	host := &commandHost{
 		plugins:   []pluginport.DiscoveredPlugin{declaring("md.numen.a", "make")},
@@ -149,9 +149,9 @@ func TestACommandIsSentToItsPluginWithItsFileAndArgumentsAndAnswersWhatThePlugin
 	if err != nil || result.Message != "made it" || result.OpenedPath != "Made.md" {
 		t.Fatalf("the run answered %+v, %v", result, err)
 	}
-	sent := plugin.received[0]
-	if sent.GetCommand() != "make" || sent.GetPath() != "a.pdf" || sent.GetArguments()["title"] != "T" {
-		t.Errorf("the plugin was sent %v", sent)
+	request := plugin.received[0]
+	if request.GetCommand() != "make" || request.GetPath() != "a.pdf" || request.GetArguments()["title"] != "T" {
+		t.Errorf("the plugin received %v", request)
 	}
 	if host.acquired != 1 || host.released != 1 {
 		t.Errorf("acquired %d references, gave back %d", host.acquired, host.released)

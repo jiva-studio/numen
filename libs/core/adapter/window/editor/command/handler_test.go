@@ -46,15 +46,15 @@ func TestTheCommandsAreListedAsTheManifestsDeclareThem(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	listed := res.Msg.GetCommands()
-	if len(listed) != 1 {
-		t.Fatalf("listed %v", listed)
+	commands := res.Msg.GetCommands()
+	if len(commands) != 1 {
+		t.Fatalf("got %v", commands)
 	}
-	one := listed[0]
+	one := commands[0]
 	argument := one.GetArguments()[0]
 	if one.GetPluginId() != "md.numen.cards" || one.GetId() != "create-deck" || one.GetFileExtensions()[0] != "md" ||
 		!argument.GetIsRequired() {
-		t.Errorf("listed %v", one)
+		t.Errorf("got %v", one)
 	}
 }
 

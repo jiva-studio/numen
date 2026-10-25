@@ -37,10 +37,10 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 		Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
 		tabs, frontID := manager.GetOpenTabs()
-		asked := tools.Asked(ctx)
+		requestContext := tools.Asked(ctx)
 
-		if len(tabs) == 0 && asked != nil {
-			if focus := asked["focus"]; focus != "" {
+		if len(tabs) == 0 && requestContext != nil {
+			if focus := requestContext["focus"]; focus != "" {
 				inferredTab := TabInfo{
 					ID:      "front-tab",
 					Kind:    "note",

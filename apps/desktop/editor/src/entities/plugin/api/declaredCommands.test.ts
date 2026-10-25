@@ -57,7 +57,7 @@ describe('the commands the plugins declare', () => {
 })
 
 describe('a run', () => {
-  it('is handed the file and the values, and answers what the plugin said', async () => {
+  it('sends the file and values and returns the plugin message', async () => {
     request.runPluginCommand.mockResolvedValue({
       error: CommandErrorCode.UNSPECIFIED,
       message: 'Converted 3 pages',

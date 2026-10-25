@@ -26,7 +26,7 @@ func TestDependencyKindsRoundTripTheWire(t *testing.T) {
 	}
 }
 
-func TestDependencyStatesAreWrittenToTheWire(t *testing.T) {
+func TestWriteWireDependencyStateMapsEveryState(t *testing.T) {
 	want := map[pluginport.DependencyState]v1.DependencyState{
 		pluginport.DependencyStateMissing:      v1.DependencyState_DEPENDENCY_STATE_MISSING,
 		pluginport.DependencyStateProvisioning: v1.DependencyState_DEPENDENCY_STATE_PROVISIONING,

@@ -7,14 +7,14 @@ import type { Command, CommandPrompt, CommandTarget, PromptStep } from '../../ty
 
 /**
  * One step of a command: what it asks for, and what it is over. An `arguments`
- * step asks for the prompt at `answered`, and carries the `values` the steps
- * before it were answered.
+ * step asks for the prompt at `promptIndex` and holds the `values` of the earlier
+ * prompts.
  */
 export interface PendingStep {
   readonly step: PromptStep
   readonly command: Command
   readonly on: CommandTarget
-  readonly answered?: number
+  readonly promptIndex?: number
   readonly values?: Readonly<Record<string, string>>
 }
 
@@ -33,4 +33,4 @@ export const YES = 'yes'
 
 /** The prompt an `arguments` step asks for, and nothing for any other step. */
 export const getPrompt = (step: PendingStep): CommandPrompt | undefined =>
-  step.step === 'arguments' ? step.command.prompts?.[step.answered ?? 0] : undefined
+  step.step === 'arguments' ? step.command.prompts?.[step.promptIndex ?? 0] : undefined

@@ -30,7 +30,7 @@ type WorkerAssembly interface {
 	// on a machine holding neither of the tools that reach one. OpenImportURL
 	// is one such address fetched into the vault.
 	OpenDownloader(ctx context.Context) downloadport.Downloader
-	OpenImportURL(ctx context.Context, by downloadport.Downloader) source.ImportURL
+	OpenImportURL(ctx context.Context, downloader downloadport.Downloader) source.ImportURL
 
 	// OpenRecognitionWorker reads a scanned document and
 	// OpenTranscriptionWorker hears a recording, each for whoever asks. models

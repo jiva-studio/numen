@@ -970,11 +970,11 @@ func (r *testAgentRun) Stop() error                     { return nil }
 
 type testAgentProvider struct {
 	agentport.Agent
-	asked chan agentport.Task
+	tasks chan agentport.Task
 }
 
 func (m *testAgentProvider) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
-	m.asked <- task
+	m.tasks <- task
 	run := &testAgentRun{steps: make(chan agentport.Step, 2)}
 	run.steps <- agentport.Step{Kind: domain.StepSay, Text: "hello from agent"}
 	run.steps <- agentport.Step{Kind: domain.StepStop, Detail: "done"}
@@ -1002,7 +1002,7 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 	services := createServices(state)
-	agent := &testAgentProvider{asked: make(chan agentport.Task, 1)}
+	agent := &testAgentProvider{tasks: make(chan agentport.Task, 1)}
 	services.Agent.getAgent = func() agentport.Agent { return agent }
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins
@@ -1035,12 +1035,12 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 		t.Errorf("plugin services was erroneously called: %v", plugins.servedPaths)
 	}
 	select {
-	case task := <-agent.asked:
+	case task := <-agent.tasks:
 		if task.Agent != "claude" || task.Question != "test question" {
 			t.Errorf("unexpected task: %+v", task)
 		}
 	default:
-		t.Fatal("agent was not asked")
+		t.Fatal("agent received no task")
 	}
 }
 

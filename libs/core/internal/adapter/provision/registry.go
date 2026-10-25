@@ -18,7 +18,7 @@ import (
 type Registry struct {
 	mu           sync.Mutex
 	provisioners []pluginport.DependencyProvisioner
-	known        map[string]pluginport.DependencyRequirement
+	requirements map[string]pluginport.DependencyRequirement
 	order        []string
 	last         map[string]pluginport.DependencyStatus
 	flights      flightGroup
@@ -29,7 +29,7 @@ type Registry struct {
 func NewRegistry(provisioners ...pluginport.DependencyProvisioner) *Registry {
 	return &Registry{
 		provisioners: provisioners,
-		known:        make(map[string]pluginport.DependencyRequirement),
+		requirements: make(map[string]pluginport.DependencyRequirement),
 		last:         make(map[string]pluginport.DependencyStatus),
 	}
 }
@@ -81,17 +81,17 @@ func (r *Registry) route(req pluginport.DependencyRequirement) (pluginport.Depen
 func (r *Registry) Register(req pluginport.DependencyRequirement) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	if _, ok := r.known[req.ID]; !ok {
+	if _, ok := r.requirements[req.ID]; !ok {
 		r.order = append(r.order, req.ID)
 	}
-	r.known[req.ID] = req
+	r.requirements[req.ID] = req
 }
 
 // Lookup returns the registered requirement with the id.
 func (r *Registry) Lookup(id string) (pluginport.DependencyRequirement, bool) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	req, ok := r.known[id]
+	req, ok := r.requirements[id]
 	return req, ok
 }
 

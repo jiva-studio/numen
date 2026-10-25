@@ -26,8 +26,8 @@ func hasValidToken(token string, r *http.Request) bool {
 
 	auth := r.Header.Get("Authorization")
 	if strings.HasPrefix(auth, "Bearer ") {
-		given := strings.TrimPrefix(auth, "Bearer ")
-		if subtle.ConstantTimeCompare([]byte(given), expected) == 1 {
+		bearer := strings.TrimPrefix(auth, "Bearer ")
+		if subtle.ConstantTimeCompare([]byte(bearer), expected) == 1 {
 			return true
 		}
 	}

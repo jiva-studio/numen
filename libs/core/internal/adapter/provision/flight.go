@@ -23,7 +23,7 @@ type flightGroup struct {
 
 type flight struct {
 	cancel      context.CancelFunc
-	done        chan struct{}
+	completion  chan struct{}
 	subscribers map[int]func(pluginport.DependencyStatus)
 	next        int
 	refs        int
@@ -54,7 +54,7 @@ func (g *flightGroup) do(
 	current, joined := g.flights[key]
 	if !joined {
 		runCtx, cancel := context.WithCancel(context.WithoutCancel(ctx))
-		current = &flight{cancel: cancel, done: make(chan struct{}), subscribers: make(map[int]func(pluginport.DependencyStatus))}
+		current = &flight{cancel: cancel, completion: make(chan struct{}), subscribers: make(map[int]func(pluginport.DependencyStatus))}
 		g.flights[key] = current
 		go g.execute(runCtx, key, current, run)
 	}
@@ -70,7 +70,7 @@ func (g *flightGroup) do(
 	g.mu.Unlock()
 
 	select {
-	case <-current.done:
+	case <-current.completion:
 		return current.resolved, current.err
 	case <-ctx.Done():
 		g.mu.Lock()
@@ -113,5 +113,5 @@ func (g *flightGroup) execute(
 		delete(g.flights, key)
 	}
 	g.mu.Unlock()
-	close(current.done)
+	close(current.completion)
 }

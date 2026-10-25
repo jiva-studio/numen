@@ -347,8 +347,8 @@ type span struct {
 // quiet windows enough after it, so that the pause between two words does not
 // cut a sentence in half. Each is then widened by pad at both ends, and two
 // that now meet are one.
-func getSpans(scores []float32, threshold float32, silence, pad, longest, shortest int) []span {
-	out := findSpeechSpans(scores, threshold, silence)
+func getSpans(scores []float32, threshold float32, silenceWindows, pad, longest, shortest int) []span {
+	out := findSpeechSpans(scores, threshold, silenceWindows)
 	wider := widenSpans(out, pad, len(scores))
 
 	var trimmed []span
@@ -366,8 +366,8 @@ func getSpans(scores []float32, threshold float32, silence, pad, longest, shorte
 }
 
 // findSpeechSpans are the runs of windows scored at the threshold or above,
-// each closed by more than silence quiet windows after it.
-func findSpeechSpans(scores []float32, threshold float32, silence int) []span {
+// each closed by more than silenceWindows quiet windows after it.
+func findSpeechSpans(scores []float32, threshold float32, silenceWindows int) []span {
 	var out []span
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="any negative number marks the span as closed, and last is always set on the first speech window before it is read"
 	open, last := -1, -1
@@ -379,7 +379,7 @@ func findSpeechSpans(scores []float32, threshold float32, silence int) []span {
 			last = i
 			continue
 		}
-		if open >= 0 && i-last > silence {
+		if open >= 0 && i-last > silenceWindows {
 			out = append(out, span{open, last + 1})
 			open = -1
 		}

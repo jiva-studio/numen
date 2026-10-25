@@ -20,8 +20,8 @@ var _ host.Store = (*Store)(nil)
 
 // folder is what the plugin's folder of a vault holds.
 type folder struct {
-	files   map[string][]byte
-	refused map[string]error
+	files map[string][]byte
+	errs  map[string]error
 }
 
 // Store is the plugin's folder in the store of the vault.
@@ -30,7 +30,7 @@ func (v *Vault) Store() *Store { return &Store{vault: v} }
 // getFolder is the vault's folder, made on first use. The caller holds the world's lock.
 func (v *Vault) getFolder() *folder {
 	if v.folder == nil {
-		v.folder = &folder{files: map[string][]byte{}, refused: map[string]error{}}
+		v.folder = &folder{files: map[string][]byte{}, errs: map[string]error{}}
 	}
 	return v.folder
 }
@@ -41,10 +41,10 @@ func (s *Store) Refuse(name string, err error) {
 	s.vault.world.mu.Lock()
 	defer s.vault.world.mu.Unlock()
 	if err == nil {
-		delete(s.vault.getFolder().refused, name)
+		delete(s.vault.getFolder().errs, name)
 		return
 	}
-	s.vault.getFolder().refused[name] = err
+	s.vault.getFolder().errs[name] = err
 }
 
 // File puts a file in the folder, or replaces it, as another program would.
@@ -81,7 +81,7 @@ func (s *Store) open(ctx context.Context, name string) (*folder, error) {
 	if name == "" || strings.ContainsAny(name, `/\`) || strings.HasPrefix(name, ".") {
 		return nil, host.ErrOutside
 	}
-	return f, f.refused[name]
+	return f, f.errs[name]
 }
 
 func (s *Store) Read(ctx context.Context, name string) ([]byte, error) {

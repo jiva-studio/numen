@@ -144,7 +144,7 @@ func TestToolAggregatorExecuteSuccess(t *testing.T) {
 	}
 }
 
-func TestToolAggregatorExecuteRefusal(t *testing.T) {
+func TestToolAggregatorExecuteMarksDeniedResultAsError(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeToolClient{

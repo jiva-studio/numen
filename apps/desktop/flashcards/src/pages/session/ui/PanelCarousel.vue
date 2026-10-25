@@ -19,7 +19,7 @@ const middle = useTemplateRef<HTMLElement>('middle')
 const { taking, onScroll, onPointerDown, onPointerMove, letGo } = useCarouselStrip({
   window: window_,
   middle,
-  shown: currentPlace,
+  currentPlace,
 })
 </script>
 

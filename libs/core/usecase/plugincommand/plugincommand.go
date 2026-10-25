@@ -90,14 +90,14 @@ func (u Run) Execute(ctx context.Context, call Call) (Result, error) {
 	if u.commands == nil {
 		return Result{}, ErrUnavailable
 	}
-	listed := u.commands.ListCommands()
-	index := slices.IndexFunc(listed, func(one Entry) bool {
+	entries := u.commands.ListCommands()
+	index := slices.IndexFunc(entries, func(one Entry) bool {
 		return one.PluginID == call.PluginID && one.Command.ID == call.Command
 	})
 	if index < 0 {
 		return Result{}, fmt.Errorf("%w: %s of %s", ErrUnknownCommand, call.Command, call.PluginID)
 	}
-	declared := listed[index].Command
+	declared := entries[index].Command
 	if err := checkCall(declared, call); err != nil {
 		return Result{}, err
 	}

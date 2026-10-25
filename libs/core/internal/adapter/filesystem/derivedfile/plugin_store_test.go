@@ -31,7 +31,7 @@ func openPluginStore(t *testing.T) (pluginport.PluginStore, string) {
 	return store, filepath.Join(root, vaultconfig.DefaultServiceDir, pluginID)
 }
 
-func TestAPluginsFilesAreKeptInTheFolderOfItsIdentity(t *testing.T) {
+func TestPluginStoreWritesToFolderNamedByPluginID(t *testing.T) {
 	store, folder := openPluginStore(t)
 	ctx := t.Context()
 

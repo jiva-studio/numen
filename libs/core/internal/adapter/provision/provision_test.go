@@ -152,7 +152,7 @@ func TestARunContinuesWhileACallerRemainsAndStopsWhenAllLeave(t *testing.T) {
 	}
 }
 
-func TestADownloadIsVerifiedAndPlacedUnderTheCacheLayout(t *testing.T) {
+func TestDownloadVerifiesChecksumAndWritesToCachePath(t *testing.T) {
 	data := bytes.Repeat([]byte("model-bytes"), 5000)
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeContent(w, r, "w.bin", time.Time{}, bytes.NewReader(data))
@@ -236,7 +236,7 @@ func TestADownloadResumesFromAPartialFile(t *testing.T) {
 	}
 }
 
-func TestADownloadThatFailsTheChecksumLeavesNothingInPlace(t *testing.T) {
+func TestDownloadWithChecksumMismatchKeepsFolderEmpty(t *testing.T) {
 	data := []byte("the real bytes")
 	server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = w.Write([]byte("tampered bytes"))

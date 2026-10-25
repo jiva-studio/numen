@@ -11,15 +11,15 @@ import {
 } from './model/useSettingsFile'
 import { WORDS as words } from './words'
 
-/** What the tab carries beside its name, and nothing where there is nothing to say. */
+/** The mark shown next to the tab title, or undefined when there is none. */
 const getMark = (state: SettingsFileTabState): string | undefined => {
   if (state.isStale.value) return 'stale'
   return state.changed.value ? '•' : undefined
 }
 
 /**
- * The settings file tab. There is one file, so opening it again is the tab it
- * already stands in.
+ * The settings file tab. There is one settings file, so opening it again focuses the
+ * existing tab.
  */
 export function createSettingsFileTabKind(
   handle: WindowHandle,
@@ -39,7 +39,7 @@ export function createSettingsFileTabKind(
     identity: () => SETTINGS_FILE,
   }
 
-  /** The file put in front of the person, beside what they were looking at. */
+  /** Opens the settings file in a tab next to the active pane. */
   const openSettingsFile = (): void => void handle.openTabBeside(SETTINGS_FILE)
 
   return { kind, openSettingsFile }

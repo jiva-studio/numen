@@ -33,7 +33,7 @@ type transfer struct {
 	dest       string
 	sum        string
 	backoff    backoff
-	onProgress func(done, total int64)
+	onProgress func(count, total int64)
 }
 
 // newClient returns a client that follows a redirect only to another https address.
@@ -78,21 +78,21 @@ func claimPartial(dir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	var kept string
+	var partial string
 	for _, entry := range entries {
 		if !strings.HasPrefix(entry.Name(), tempPrefix) {
 			continue
 		}
-		if kept == "" {
-			kept = filepath.Join(dir, entry.Name())
+		if partial == "" {
+			partial = filepath.Join(dir, entry.Name())
 			continue
 		}
 		if err := os.Remove(filepath.Join(dir, entry.Name())); err != nil {
 			return "", err
 		}
 	}
-	if kept != "" {
-		return kept, nil
+	if partial != "" {
+		return partial, nil
 	}
 	return filepath.Join(dir, tempPrefix+uuid.NewString()), nil
 }
@@ -141,14 +141,14 @@ func (t transfer) append(ctx context.Context, part string) error {
 	if err != nil {
 		return err
 	}
-	written, err := copyProgress(io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
+	byteCount, err := copyProgress(io.MultiWriter(file, hasher), answer.Body, offset, total, t.onProgress)
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
 	if err != nil {
 		return fmt.Errorf("fetching %s: %w", t.address, err)
 	}
-	return t.finish(hasher, offset+written)
+	return t.finish(hasher, offset+byteCount)
 }
 
 // finish checks the checksum of the whole file. A file that does not hold it is
@@ -178,27 +178,27 @@ func hashExisting(path string, hasher hash.Hash) (int64, error) {
 
 // copyProgress copies the body to the writer and reports how far it has got no
 // more often than progressInterval.
-func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress func(done, total int64)) (int64, error) {
+func copyProgress(dst io.Writer, src io.Reader, offset, total int64, onProgress func(count, total int64)) (int64, error) {
 	buffer := make([]byte, 64*1024)
-	var written int64
+	var byteCount int64
 	last := time.Now()
 	for {
 		count, readErr := src.Read(buffer)
 		if count > 0 {
 			if _, err := dst.Write(buffer[:count]); err != nil {
-				return written, err
+				return byteCount, err
 			}
-			written += int64(count)
+			byteCount += int64(count)
 			if onProgress != nil && time.Since(last) >= progressInterval {
-				onProgress(offset+written, total)
+				onProgress(offset+byteCount, total)
 				last = time.Now()
 			}
 		}
 		if errors.Is(readErr, io.EOF) {
-			return written, nil
+			return byteCount, nil
 		}
 		if readErr != nil {
-			return written, readErr
+			return byteCount, readErr
 		}
 	}
 }
