@@ -33,6 +33,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/settingsport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
@@ -101,6 +102,10 @@ type Config struct {
 	// search and the highlighting read text through. Nil is none, and only notes
 	// have text. NewTextVersions makes it.
 	TextVersions *textversion.Versions
+
+	// TextReaders is where the index, the search and the highlighting read text
+	// versions. Defaults to TextVersions if nil.
+	TextReaders textport.TextReaders
 
 	// Agent configures the active assistant model.
 	Agent settings.Agent

@@ -42,6 +42,9 @@ func (c Config) NewTextVersions() (*textversion.Versions, error) {
 // getTextReaders is the text versions sources are read from, or nil where the
 // configuration has none.
 func (c Config) getTextReaders() textport.TextReaders {
+	if c.TextReaders != nil {
+		return c.TextReaders
+	}
 	if c.TextVersions == nil {
 		return nil
 	}

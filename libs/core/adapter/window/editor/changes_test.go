@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
@@ -68,7 +69,7 @@ func openVaultWithWindow(t *testing.T, notes map[string]string) (
 	settings := container.Config{
 		IndexPath:    filepath.Join(t.TempDir(), "index.db"),
 		RegistryPath: filepath.Join(t.TempDir(), "vaults.json"),
-		Texts:        testsupport.Documents{},
+		TextReaders:  testsupport.Texts{Readers: vaultreader.Readers{}},
 	}
 	registry, err := settings.Registry()
 	if err != nil {
