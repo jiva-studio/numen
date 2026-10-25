@@ -29,6 +29,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.ProofreadKind":        "plugins/proofreading: handled by proofread",
 	"numen.v1.ProblemKind":          "adapter/window/editor: written by faultOf",
 	"numen.v1.FlushResult":          "internal/adapterlib/wire: read by left",
+	"numen.v1.FileMenuAction":       "adapter/window/editor/textmenu: written by the actions table",
 	"numen.v1.HostIndexState":       "plugin-sdk-go/host: read by EnsureIndexed",
 	"numen.v1.HostStoreErrorCode":   "plugin-sdk-go/host: read by readStoreError",
 	"numen.v1.HostVaultErrorCode":   "plugin-sdk-go/host: read by fail",
@@ -56,6 +57,7 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.ToolStep":             "internal/adapter/plugin: read by readToolStep",
 	"numen.v1.Unit":                 "internal/adapterlib/wire: written by unitOf",
 	"numen.v1.VaultsErrorCode":      "adapter/window/editor: written by vaultsErrorCodeBy",
+	"numen.v1.WorkState":            "plugin-sdk-go/host: read by EnqueueWork",
 }
 
 // TestEveryEnumOfTheSchemaIsWalked. An enum nothing walks is an enum whose next
