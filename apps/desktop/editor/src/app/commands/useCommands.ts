@@ -2,6 +2,8 @@
  * Command palette, keyboard shortcut dispatch, and command execution.
  */
 
+import { watch } from 'vue'
+import { formatErrorMessage } from '@numen/wire'
 import {
   isChord,
   findChordCommand,
@@ -18,6 +20,7 @@ import {
   type VaultRef,
 } from '@/features/command-palette'
 import { createCommandDeps } from './commandDeps'
+import type { DeclaredCommands } from './declaredCommands'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog, MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
@@ -70,6 +73,8 @@ export interface CommandsDepsOptions {
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@/entities/plugin').PluginHost | undefined
+  /** The commands the enabled plugins declare, read again each time the palette opens. */
+  declaredCommands?: DeclaredCommands
 }
 
 export function useCommands(options: CommandsDepsOptions) {
@@ -98,6 +103,7 @@ export function useCommands(options: CommandsDepsOptions) {
     undefined,
     () => [
       ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+      ...(options.declaredCommands?.paletteCommands.value ?? []),
       ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
         id: cmd.id,
         text: cmd.title,
@@ -106,6 +112,16 @@ export function useCommands(options: CommandsDepsOptions) {
       })) ?? []),
     ],
   )
+
+  const { declaredCommands } = options
+  if (declaredCommands) {
+    watch(commands.open, (isOpen) => {
+      if (!isOpen) return
+      declaredCommands
+        .load()
+        .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
+    })
+  }
 
   const commandDeps: CommandDeps = createCommandDeps({
     ...options,

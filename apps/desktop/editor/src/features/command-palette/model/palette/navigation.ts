@@ -4,7 +4,7 @@
 import { computed, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
 import { getRenamedPath, type PathRename } from '@/shared/paths'
 import type { Vault } from '@/entities/vault'
-import { EXACT, NO, YES, type PendingStep } from '../../lib/step/step'
+import { EXACT, NO, YES, getPrompt, type PendingStep } from '../../lib/step/step'
 import type {
   CommandInvocation,
   CommandTarget,
@@ -112,6 +112,25 @@ function resolveConfirmationAction(
     : null
 }
 
+/**
+ * The answer to one prompt of a command: the step of the next prompt, or the
+ * invocation once the last is answered. A required prompt answered with nothing
+ * goes nowhere.
+ */
+function resolveArgumentAction(step: PendingStep, deps: StepActionDeps): CommandInvocation | null {
+  const prompt = getPrompt(step)
+  if (!prompt) return null
+  const value = deps.text.value.trim()
+  if (!value && prompt.isRequired) return null
+  const values = value ? { ...step.values, [prompt.name]: value } : { ...step.values }
+  const answered = (step.answered ?? 0) + 1
+  if (answered < (step.command.prompts?.length ?? 0)) {
+    deps.pushStep({ step: 'arguments', command: step.command, on: step.on, answered, values })
+    return null
+  }
+  return { ...deps.invocation(step.command.id, step.on), values }
+}
+
 function resolveStepAction(
   step: PendingStep,
   choice: {
@@ -129,6 +148,7 @@ function resolveStepAction(
   if (step.step === 'naming' || step.step === 'address' || step.step === 'choosing') {
     return resolveInputOrChoiceAction(step, choice.item, deps)
   }
+  if (step.step === 'arguments') return resolveArgumentAction(step, deps)
   return resolveConfirmationAction(step, choice.action, deps)
 }
 
@@ -147,6 +167,7 @@ function useStepComputed(deps: {
     const s = here.value
     if (!s) return words.typeCommand
     if (s.step === 'exactly') return s.command.warns?.back ?? words.typeBack
+    if (s.step === 'arguments') return getPrompt(s)?.title ?? words.typeCommand
     return prompts[s.step as PromptStep] ?? words.typeCommand
   })
 

@@ -123,6 +123,8 @@ export const WORDS = {
   naming: 'Name',
   typeName: 'What is it called',
   callIt: 'Call it',
+  givesIt: 'Give it',
+  leavesOut: 'Leave out',
   url: 'Address',
   typeAddress: 'Paste a link',
   importIt: 'Import',

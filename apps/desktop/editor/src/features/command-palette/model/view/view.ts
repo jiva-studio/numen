@@ -17,14 +17,14 @@ export type { ViewState } from './viewState'
 
 /** The view one palette draws, over the state that palette holds. */
 export function getPaletteView(state: ViewState) {
-  const { words, commands, byId, runs } = state
+  const { words, runs } = state
   const steps = createStepGroups(state)
 
   /** One command as it is drawn, and nothing where the words typed leave it out. */
   const renderItem = (one: Command, target: CommandTarget, word: string): PaletteItem | null => {
     const found = word === '' ? -1 : one.text.toLowerCase().indexOf(word)
     if (word !== '' && found < 0) return null
-    const also = one.also ? byId.get(one.also) : undefined
+    const also = one.also ? state.byId.get(one.also) : undefined
     return {
       id: one.id,
       title: one.text,
@@ -47,7 +47,7 @@ export function getPaletteView(state: ViewState) {
   const getCommandGroups = (target: CommandTarget, text: string): readonly PaletteGroup[] => {
     const word = text.trim().toLowerCase()
     const items = (group: CommandGroup): readonly PaletteItem[] =>
-      getGroupCommands(commands, group)
+      getGroupCommands(state.commands, group)
         .filter((one) => one.isOffered(target, runs))
         .map((one) => renderItem(one, target, word))
         .filter((item) => item !== null)
@@ -77,6 +77,7 @@ export function getPaletteView(state: ViewState) {
   const createGroups = (step: PendingStep | null, target: CommandTarget, text: string) => {
     if (!step) return getCommandGroups(target, text)
     if (step.step === 'naming') return [steps.getNamingGroup(text)]
+    if (step.step === 'arguments') return [steps.getArgumentGroup(step, text)]
     if (step.step === 'address') return [steps.getAddressGroup(text)]
     if (step.step === 'picking') return [steps.getPickingGroup(text)]
     if (step.step === 'choosing') return steps.getChoosingGroups(step, text)

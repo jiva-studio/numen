@@ -27,10 +27,30 @@ export type CommandGroup = 'note' | 'file' | 'window' | 'vault'
 /**
  * Which step the palette is on: one being asked for, or the list of commands.
  * `picking` asks the vault what it holds and `vaults` asks the installation;
- * `choosing` offers a list the window holds already.
+ * `choosing` offers a list the window holds already; `arguments` asks for one
+ * of a command's `prompts`, a step to each.
  */
 export type Step =
-  'commands' | 'naming' | 'address' | 'picking' | 'vaults' | 'choosing' | 'asking' | 'exactly'
+  | 'commands'
+  | 'naming'
+  | 'address'
+  | 'picking'
+  | 'vaults'
+  | 'choosing'
+  | 'asking'
+  | 'exactly'
+  | 'arguments'
+
+/**
+ * One value a command asks for under its own name, typed in a step of its own.
+ * A step that is not `isRequired` goes on with nothing typed, and the value is
+ * left out.
+ */
+export interface CommandPrompt {
+  readonly name: string
+  readonly title: string
+  readonly isRequired: boolean
+}
 
 /** What a command wants before it can happen, which is the step that asks. */
 export type PromptStep = Exclude<Step, 'commands'>
@@ -87,6 +107,8 @@ export interface Command {
   readonly needs?: PromptStep
   /** The step it asks for once the first one is answered. */
   readonly next?: PromptStep
+  /** The values the `arguments` steps ask for, in order. */
+  readonly prompts?: readonly CommandPrompt[]
   /** The group it is offered in. */
   readonly group: CommandGroup
   /** Whether it is offered at all over what is in front, in this window. */
@@ -125,6 +147,8 @@ export interface CommandInvocation {
   readonly kind: string | null
   /** The tab it was asked from, for a command about the tab itself. */
   readonly tab: string
+  /** What the `arguments` steps were answered, by the name of each prompt. */
+  readonly values?: Readonly<Record<string, string>>
 }
 
 /** One of a list the window itself holds, as the step that offers it draws it. */

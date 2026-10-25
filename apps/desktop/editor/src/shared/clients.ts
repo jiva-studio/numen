@@ -8,6 +8,7 @@ import {
   ArticleService,
   ArtifactService,
   BookService,
+  CommandService,
   DocumentService,
   FileService,
   NoteService,
@@ -71,3 +72,6 @@ export const documents = createClient(DocumentService, transport)
 
 /** Where the text of a document relies on its pages. */
 export const ocr = createClient(OcrService, transport)
+
+/** The commands the enabled plugins declare, and running one in the plugin's backend. */
+export const pluginCommands = createClient(CommandService, transport)

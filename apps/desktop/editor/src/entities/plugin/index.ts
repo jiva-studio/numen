@@ -18,3 +18,9 @@ export type {
   ReaderRegistration,
   TabKindRegistration,
 } from './model/types'
+export {
+  canRunOn,
+  listDeclaredCommands,
+  runDeclaredCommand,
+  type DeclaredCommand,
+} from './api/declaredCommands'

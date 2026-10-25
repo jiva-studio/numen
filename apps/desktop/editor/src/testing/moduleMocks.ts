@@ -77,3 +77,19 @@ vi.mock('@/entities/settings', async (original) => ({
   ...(await original<typeof import('@/entities/settings')>()),
   ...themesSaid,
 }))
+
+// The window is shown with no plugin declaring a command.
+const declaredCommandsSaid = {
+  listDeclaredCommands: async () => [],
+  runDeclaredCommand: async () => ({ ok: false as const, error: 'no plugin declares it' }),
+}
+
+vi.mock('@/entities/plugin/api/declaredCommands', async (original) => ({
+  ...(await original<typeof import('@/entities/plugin/api/declaredCommands')>()),
+  ...declaredCommandsSaid,
+}))
+
+vi.mock('@/entities/plugin', async (original) => ({
+  ...(await original<typeof import('@/entities/plugin')>()),
+  ...declaredCommandsSaid,
+}))

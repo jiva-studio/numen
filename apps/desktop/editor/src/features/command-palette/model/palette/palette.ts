@@ -341,9 +341,7 @@ function createPalettePresentation(
 
   const groups = computed(() => draws.createGroups(steps.here.value, on.value, state.typed.value))
   const execution = createPaletteExecution({
-    get byId() {
-      return byId.value
-    },
+    byId: { get: (id: string) => byId.value.get(id) },
     runs: deps.runs,
     open: state.open,
     words: deps.words,

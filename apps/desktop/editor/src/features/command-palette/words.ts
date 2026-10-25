@@ -160,6 +160,9 @@ export interface Words extends EmptyWords {
   readonly naming: string
   readonly typeName: string
   readonly callIt: string
+  /** A value a command asks for, and the two things its step offers. */
+  readonly givesIt: string
+  readonly leavesOut: string
   /**
    * what is said of words that are no address.
    */

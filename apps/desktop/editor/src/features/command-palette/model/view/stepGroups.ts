@@ -10,7 +10,17 @@ import type { PaletteGroup, PaletteItem } from '@numen/ui'
 import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
 import { isWebUrl } from '../../lib/url/url'
-import { CHOSEN, EXACT, NAME, NO, OPEN, PICK, YES, type PendingStep } from '../../lib/step/step'
+import {
+  CHOSEN,
+  EXACT,
+  NAME,
+  NO,
+  OPEN,
+  PICK,
+  YES,
+  getPrompt,
+  type PendingStep,
+} from '../../lib/step/step'
 import type { StepRow } from '../../types'
 import type { ConfirmWords, RetypeWords, Words } from '../../words'
 import type { NameMatch } from '../search/search'
@@ -32,6 +42,22 @@ function getNamingGroup(text: string, words: Words): PaletteGroup {
       : [],
     silence: words.typeName,
   }
+}
+
+function getArgumentGroup(step: PendingStep, text: string, words: Words): PaletteGroup {
+  const prompt = getPrompt(step)
+  const value = text.trim()
+  const title = prompt?.title ?? ''
+  const item = (itemTitle: string, action: string): PaletteItem => ({
+    id: NAME,
+    title: itemTitle,
+    actions: [{ id: NAME, text: action }],
+  })
+  let items: PaletteItem[] = []
+  if (value) items = [item(`${title}: “${value}”`, words.givesIt)]
+  else if (prompt && !prompt.isRequired)
+    items = [item(`${words.leavesOut} ${title}`, words.leavesOut)]
+  return { id: 'arguments', title, items, silence: title }
 }
 
 function getAddressGroup(text: string, words: Words): PaletteGroup {
@@ -223,6 +249,7 @@ export function createStepGroups(state: ViewState) {
 
   return {
     getNamingGroup: (text: string) => getNamingGroup(text, words),
+    getArgumentGroup: (step: PendingStep, text: string) => getArgumentGroup(step, text, words),
     getAddressGroup: (text: string) => getAddressGroup(text, words),
     getPickingGroup,
     getChoosingGroups,
