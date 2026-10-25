@@ -99,7 +99,7 @@ func (t transcripts) finish(ctx context.Context, key string) ([]transcript.Cue, 
 	if err := t.write(ctx, key, cues); err != nil {
 		return nil, err
 	}
-	return cues, t.store.Remove(ctx, getPartialName(key))
+	return cues, t.store.Delete(ctx, getPartialName(key))
 }
 
 // write keeps the cues whole under the key.
@@ -109,7 +109,7 @@ func (t transcripts) write(ctx context.Context, key string, cues []transcript.Cu
 
 // remove takes away everything kept under the key.
 func (t transcripts) remove(ctx context.Context, key string) error {
-	return errors.Join(t.store.Remove(ctx, getFileName(key)), t.store.Remove(ctx, getPartialName(key)))
+	return errors.Join(t.store.Delete(ctx, getFileName(key)), t.store.Delete(ctx, getPartialName(key)))
 }
 
 // writeParts is the cues as the parts of a timed text, one line to a cue.
