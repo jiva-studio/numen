@@ -31,6 +31,17 @@
       "type": "preset"
     }
   ],
+  "commands": [
+    {
+      "id": "create-deck",
+      "title": "Create a deck",
+      "description": "Make a deck of no cards, named after its title, in a folder of the vault or at its root.",
+      "arguments": [
+        { "name": "title", "title": "Title", "type": "string", "required": true },
+        { "name": "folder", "title": "Folder", "type": "string" }
+      ]
+    }
+  ],
   "settings": [
     {
       "key": "day_start_time",

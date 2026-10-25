@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -67,7 +68,7 @@ func (b *Backend) Configure(values map[string]string) {
 	b.Reconfigure(func() time.Duration { return starts })
 }
 
-// Mount registers the services and the tools on s.
+// Mount registers the services, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
 	options := s.HandlerOptions()
 	s.Register(numenv1connect.NewCardsServiceHandler(b.Cards(), options...))
@@ -78,6 +79,11 @@ func (b *Backend) Mount(s *server.Server) error {
 		return err
 	}
 	registry.Mount(s)
+	commands, err := b.Commands()
+	if err != nil {
+		return err
+	}
+	command.Mount(s, commands)
 	return nil
 }
 
