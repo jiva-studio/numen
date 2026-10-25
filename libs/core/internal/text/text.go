@@ -3,7 +3,6 @@
 package text
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -64,15 +63,6 @@ func (d *Document) GetNamesAt(offset int) []string {
 		}
 	}
 	return names
-}
-
-// page is what a page of a file is called: at its current position in it.
-//
-// is the one on the screen. What the paper printed is a second number for the
-// same page, and a person shown both has to work out which is being talked
-// about.
-func page(pos int) string {
-	return fmt.Sprintf("page %d of the file", pos+1)
 }
 
 func findPrecedingIndex(namedPlaces []namedPlace, offset int) int {
