@@ -8,7 +8,11 @@
   "targets": ["desktop.editor"],
   "fileExtensions": [".epub"],
   "activationEvents": ["onFile:*.epub"],
-  "permissions": ["vault:read"],
+  "permissions": ["vault:read", "vault:write"],
+  "textInput": {
+    "files": [".epub"],
+    "autoRun": true
+  },
   "lifecycle": {
     "idleTimeoutSeconds": 300,
     "keepAliveWhileVisible": true,

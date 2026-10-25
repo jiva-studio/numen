@@ -133,36 +133,6 @@ func (s *BookServer) ReadBookMarkup(
 	}), nil
 }
 
-// ExtractBookText returns the text of the EPUB in the bytes given, with the parts
-// and the printed pages it names.
-func (s *BookServer) ExtractBookText(
-	_ context.Context,
-	req *connect.Request[numenv1.ExtractBookTextRequest],
-) (*connect.Response[numenv1.ExtractBookTextResponse], error) {
-	if len(req.Msg.GetData()) == 0 {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("data required"))
-	}
-	book, err := epub.Read(req.Msg.GetData())
-	if err != nil {
-		return nil, newReadError(err)
-	}
-	resp := &numenv1.ExtractBookTextResponse{Text: book.Text}
-	for _, part := range book.Parts {
-		resp.Parts = append(resp.Parts, &numenv1.BookPart{
-			Title:  part.Title,
-			Offset: int32(part.Offset),
-			Level:  int32(part.Level),
-		})
-	}
-	for _, page := range book.Pages {
-		resp.PrintedPages = append(resp.PrintedPages, &numenv1.PrintedPage{
-			Label:  page.Label,
-			Offset: int32(page.Offset),
-		})
-	}
-	return connect.NewResponse(resp), nil
-}
-
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive while the
 // file is still the bytes the baseline names.
 func (s *BookServer) ReadBookEntry(

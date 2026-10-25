@@ -2,7 +2,8 @@
 /**
  * Book tab view rendering reflowable book text and contents navigation.
  */
-import { ref, useTemplateRef, watchEffect } from 'vue'
+import { ref, useTemplateRef, watch, watchEffect } from 'vue'
+import type { Span } from '@numen/plugin-sdk'
 import { Waiting } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
@@ -44,6 +45,16 @@ watchEffect(() => {
     ;(props.state as Record<string, unknown>).title = tabState.title.value
   }
 })
+
+/* ---------------------------------- Hooks --------------------------------- */
+// The host names the runs a tab is opened at by setting `spans` on its state.
+watch(
+  () => (props.state as { spans?: readonly Span[] } | undefined)?.spans,
+  (spans) => {
+    if (spans && spans.length > 0) void tabState.focusSpans(...spans)
+  },
+  { immediate: true },
+)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDismissListing() {

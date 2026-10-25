@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/book.proto.
  */
 export const file_numen_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50InIKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEiwKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUiKAoWUmVhZEJvb2tNYXJrdXBSZXNwb25zZRIOCgZtYXJrdXAYASABKAkiJgoWRXh0cmFjdEJvb2tUZXh0UmVxdWVzdBIMCgRkYXRhGAEgASgMIngKF0V4dHJhY3RCb29rVGV4dFJlc3BvbnNlEgwKBHRleHQYASABKAkSIQoFcGFydHMYAiADKAsyEi5udW1lbi52MS5Cb29rUGFydBIsCg1wcmludGVkX3BhZ2VzGAMgAygLMhUubnVtZW4udjEuUHJpbnRlZFBhZ2UiXAoUUmVhZEJvb2tFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgVlbnRyeRgCIAEoCRInCghiYXNlbGluZRgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiUKFVJlYWRCb29rRW50cnlSZXNwb25zZRIMCgRib2R5GAEgASgMIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyzAIKC0Jvb2tTZXJ2aWNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJTCg5SZWFkQm9va01hcmt1cBIfLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBogLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVzcG9uc2USVgoPRXh0cmFjdEJvb2tUZXh0EiAubnVtZW4udjEuRXh0cmFjdEJvb2tUZXh0UmVxdWVzdBohLm51bWVuLnYxLkV4dHJhY3RCb29rVGV4dFJlc3BvbnNlElAKDVJlYWRCb29rRW50cnkSHi5udW1lbi52MS5SZWFkQm9va0VudHJ5UmVxdWVzdBofLm51bWVuLnYxLlJlYWRCb29rRW50cnlSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9ib29rLnByb3RvEghudW1lbi52MSIeCg5HZXRCb29rUmVxdWVzdBIMCgRwYXRoGAEgASgJIoUCCg9HZXRCb29rUmVzcG9uc2USDQoFdGl0bGUYASABKAkSKgoJZG9jdW1lbnRzGAIgAygLMhcubnVtZW4udjEuU3BpbmVEb2N1bWVudBIhCgVwYXJ0cxgDIAMoCzISLm51bWVuLnYxLkJvb2tQYXJ0EiwKDXByaW50ZWRfcGFnZXMYBCADKAsyFS5udW1lbi52MS5QcmludGVkUGFnZRISCgpwYWdlX2NvdW50GAUgASgFEhIKCnRleHRfYnl0ZXMYBiABKAUSEgoKcGFnZV9ieXRlcxgHIAEoBRIqCgtmaW5nZXJwcmludBgIIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50InIKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEiwKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUiKAoWUmVhZEJvb2tNYXJrdXBSZXNwb25zZRIOCgZtYXJrdXAYASABKAkiXAoUUmVhZEJvb2tFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgVlbnRyeRgCIAEoCRInCghiYXNlbGluZRgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiUKFVJlYWRCb29rRW50cnlSZXNwb25zZRIMCgRib2R5GAEgASgMIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUy9AEKC0Jvb2tTZXJ2aWNlEj4KB0dldEJvb2sSGC5udW1lbi52MS5HZXRCb29rUmVxdWVzdBoZLm51bWVuLnYxLkdldEJvb2tSZXNwb25zZRJTCg5SZWFkQm9va01hcmt1cBIfLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBogLm51bWVuLnYxLlJlYWRCb29rTWFya3VwUmVzcG9uc2USUAoNUmVhZEJvb2tFbnRyeRIeLm51bWVuLnYxLlJlYWRCb29rRW50cnlSZXF1ZXN0Gh8ubnVtZW4udjEuUmVhZEJvb2tFbnRyeVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetBookRequest
@@ -172,59 +172,6 @@ export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = 
   messageDesc(file_numen_v1_book, 3);
 
 /**
- * @generated from message numen.v1.ExtractBookTextRequest
- */
-export type ExtractBookTextRequest = Message<"numen.v1.ExtractBookTextRequest"> & {
-  /**
-   * The book, as the bytes of its archive.
-   *
-   * @generated from field: bytes data = 1;
-   */
-  data: Uint8Array;
-};
-
-/**
- * Describes the message numen.v1.ExtractBookTextRequest.
- * Use `create(ExtractBookTextRequestSchema)` to create a new message.
- */
-export const ExtractBookTextRequestSchema: GenMessage<ExtractBookTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 4);
-
-/**
- * @generated from message numen.v1.ExtractBookTextResponse
- */
-export type ExtractBookTextResponse = Message<"numen.v1.ExtractBookTextResponse"> & {
-  /**
-   * The book's text as one stream. Every offset below is a byte offset into it.
-   *
-   * @generated from field: string text = 1;
-   */
-  text: string;
-
-  /**
-   * What the book names, ascending by offset.
-   *
-   * @generated from field: repeated numen.v1.BookPart parts = 2;
-   */
-  parts: BookPart[];
-
-  /**
-   * The pages of the printed book this file was made from, ascending by
-   * offset.
-   *
-   * @generated from field: repeated numen.v1.PrintedPage printed_pages = 3;
-   */
-  printedPages: PrintedPage[];
-};
-
-/**
- * Describes the message numen.v1.ExtractBookTextResponse.
- * Use `create(ExtractBookTextResponseSchema)` to create a new message.
- */
-export const ExtractBookTextResponseSchema: GenMessage<ExtractBookTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 5);
-
-/**
  * @generated from message numen.v1.ReadBookEntryRequest
  */
 export type ReadBookEntryRequest = Message<"numen.v1.ReadBookEntryRequest"> & {
@@ -255,7 +202,7 @@ export type ReadBookEntryRequest = Message<"numen.v1.ReadBookEntryRequest"> & {
  * Use `create(ReadBookEntryRequestSchema)` to create a new message.
  */
 export const ReadBookEntryRequestSchema: GenMessage<ReadBookEntryRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 6);
+  messageDesc(file_numen_v1_book, 4);
 
 /**
  * @generated from message numen.v1.ReadBookEntryResponse
@@ -274,7 +221,7 @@ export type ReadBookEntryResponse = Message<"numen.v1.ReadBookEntryResponse"> & 
  * Use `create(ReadBookEntryResponseSchema)` to create a new message.
  */
 export const ReadBookEntryResponseSchema: GenMessage<ReadBookEntryResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 7);
+  messageDesc(file_numen_v1_book, 5);
 
 /**
  * book's text.
@@ -309,7 +256,7 @@ export type SpineDocument = Message<"numen.v1.SpineDocument"> & {
  * Use `create(SpineDocumentSchema)` to create a new message.
  */
 export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 8);
+  messageDesc(file_numen_v1_book, 6);
 
 /**
  * BookPart is a named division of the book, at the offset its text begins.
@@ -341,7 +288,7 @@ export type BookPart = Message<"numen.v1.BookPart"> & {
  * Use `create(BookPartSchema)` to create a new message.
  */
 export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 9);
+  messageDesc(file_numen_v1_book, 7);
 
 /**
  * PrintedPage is one page of the printed book, at the offset it starts.
@@ -365,7 +312,7 @@ export type PrintedPage = Message<"numen.v1.PrintedPage"> & {
  * Use `create(PrintedPageSchema)` to create a new message.
  */
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
-  messageDesc(file_numen_v1_book, 10);
+  messageDesc(file_numen_v1_book, 8);
 
 /**
  * @generated from service numen.v1.BookService
@@ -395,17 +342,6 @@ export const BookService: GenService<{
     methodKind: "unary";
     input: typeof ReadBookMarkupRequestSchema;
     output: typeof ReadBookMarkupResponseSchema;
-  },
-  /**
-   * ExtractBookText is the text of the book in the bytes given, with the parts
-   * and the printed pages it names, counted in bytes of that text.
-   *
-   * @generated from rpc numen.v1.BookService.ExtractBookText
-   */
-  extractBookText: {
-    methodKind: "unary";
-    input: typeof ExtractBookTextRequestSchema;
-    output: typeof ExtractBookTextResponseSchema;
   },
   /**
    * ReadBookEntry is the bytes of one entry of a book's archive. It answers

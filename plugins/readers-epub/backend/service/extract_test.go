@@ -7,13 +7,11 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
 var pngBytes = []byte("\x89PNG\r\n\x1a\nnot really a picture")
@@ -66,67 +64,6 @@ func createPictureEpub(t *testing.T) []byte {
 <body><h1>Second part</h1><p>Goodbye reader epub</p></body></html>`),
 		"EPUB/cover.png": pngBytes,
 	})
-}
-
-func TestExtractBookTextAnswersTheTextAndTheParts(t *testing.T) {
-	server := NewBookServer()
-	resp, err := server.ExtractBookText(context.Background(),
-		connect.NewRequest(&numenv1.ExtractBookTextRequest{Data: createPictureEpub(t)}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !strings.Contains(resp.Msg.GetText(), "Hello reader epub") {
-		t.Errorf("the text is %q, want the chapter's words", resp.Msg.GetText())
-	}
-	parts := resp.Msg.GetParts()
-	if len(parts) == 0 || parts[0].GetTitle() != "First part" {
-		t.Errorf("the parts are %v, want the heading the chapter names", parts)
-	}
-	for _, part := range parts {
-		if int(part.GetOffset()) > len(resp.Msg.GetText()) {
-			t.Errorf("part %q is at offset %d, outside text length %d", part.GetTitle(), part.GetOffset(), len(resp.Msg.GetText()))
-		}
-	}
-	pages := resp.Msg.GetPrintedPages()
-	if len(pages) != 2 || pages[0].GetLabel() != "1" || pages[1].GetLabel() != "2" {
-		t.Errorf("the pages are %v, want 2 pages", pages)
-	}
-}
-
-func TestExtractBookTextRefusesBytesThatAreNoBook(t *testing.T) {
-	_, err := NewBookServer().ExtractBookText(context.Background(),
-		connect.NewRequest(&numenv1.ExtractBookTextRequest{Data: []byte("this is not an archive")}))
-	if connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
-	}
-	if !errors.Is(err, epub.ErrNotArchive) {
-		t.Fatalf("err = %v, want errors.Is ErrNotArchive", err)
-	}
-}
-
-func TestExtractBookTextRefusesEmptyOrIncomplete(t *testing.T) {
-	cases := []struct {
-		name       string
-		req        *numenv1.ExtractBookTextRequest
-		wantErrMsg string
-	}{
-		{name: "no bytes", req: &numenv1.ExtractBookTextRequest{}, wantErrMsg: "data required"},
-		{name: "single byte", req: &numenv1.ExtractBookTextRequest{Data: []byte{0}}},
-	}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			_, err := NewBookServer().ExtractBookText(context.Background(), connect.NewRequest(tc.req))
-			if connect.CodeOf(err) != connect.CodeInvalidArgument {
-				t.Fatalf("code = %v (%v), want invalid argument", connect.CodeOf(err), err)
-			}
-			if tc.wantErrMsg != "" && !strings.Contains(err.Error(), tc.wantErrMsg) {
-				t.Fatalf("err = %v, want substring %q", err, tc.wantErrMsg)
-			}
-			if tc.wantErrMsg == "" && strings.Contains(err.Error(), "data required") {
-				t.Fatalf("err = %v, should not be 'data required'", err)
-			}
-		})
-	}
 }
 
 func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
@@ -276,12 +213,4 @@ func createEncryptedEpub(t *testing.T) []byte {
 </package>`),
 		"EPUB/c1.xhtml": []byte(`<html><body><p>Encrypted</p></body></html>`),
 	})
-}
-
-func TestExtractBookTextRefusesEncryptedBook(t *testing.T) {
-	_, err := NewBookServer().ExtractBookText(context.Background(),
-		connect.NewRequest(&numenv1.ExtractBookTextRequest{Data: createEncryptedEpub(t)}))
-	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
-		t.Fatalf("code = %v (%v), want failed precondition", connect.CodeOf(err), err)
-	}
 }

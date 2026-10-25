@@ -46,9 +46,6 @@ const (
 	// BookServiceReadBookMarkupProcedure is the fully-qualified name of the BookService's
 	// ReadBookMarkup RPC.
 	BookServiceReadBookMarkupProcedure = "/numen.v1.BookService/ReadBookMarkup"
-	// BookServiceExtractBookTextProcedure is the fully-qualified name of the BookService's
-	// ExtractBookText RPC.
-	BookServiceExtractBookTextProcedure = "/numen.v1.BookService/ExtractBookText"
 	// BookServiceReadBookEntryProcedure is the fully-qualified name of the BookService's ReadBookEntry
 	// RPC.
 	BookServiceReadBookEntryProcedure = "/numen.v1.BookService/ReadBookEntry"
@@ -65,9 +62,6 @@ type BookServiceClient interface {
 	// page from. It answers while the file is still the bytes the ask names, so
 	// one answer is one reading of one file.
 	ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error)
-	// ExtractBookText is the text of the book in the bytes given, with the parts
-	// and the printed pages it names, counted in bytes of that text.
-	ExtractBookText(context.Context, *connect.Request[v1.ExtractBookTextRequest]) (*connect.Response[v1.ExtractBookTextResponse], error)
 	// ReadBookEntry is the bytes of one entry of a book's archive. It answers
 	// while the file is still the bytes the ask names.
 	ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error)
@@ -96,12 +90,6 @@ func NewBookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(bookServiceMethods.ByName("ReadBookMarkup")),
 			connect.WithClientOptions(opts...),
 		),
-		extractBookText: connect.NewClient[v1.ExtractBookTextRequest, v1.ExtractBookTextResponse](
-			httpClient,
-			baseURL+BookServiceExtractBookTextProcedure,
-			connect.WithSchema(bookServiceMethods.ByName("ExtractBookText")),
-			connect.WithClientOptions(opts...),
-		),
 		readBookEntry: connect.NewClient[v1.ReadBookEntryRequest, v1.ReadBookEntryResponse](
 			httpClient,
 			baseURL+BookServiceReadBookEntryProcedure,
@@ -113,10 +101,9 @@ func NewBookServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 
 // bookServiceClient implements BookServiceClient.
 type bookServiceClient struct {
-	getBook         *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
-	readBookMarkup  *connect.Client[v1.ReadBookMarkupRequest, v1.ReadBookMarkupResponse]
-	extractBookText *connect.Client[v1.ExtractBookTextRequest, v1.ExtractBookTextResponse]
-	readBookEntry   *connect.Client[v1.ReadBookEntryRequest, v1.ReadBookEntryResponse]
+	getBook        *connect.Client[v1.GetBookRequest, v1.GetBookResponse]
+	readBookMarkup *connect.Client[v1.ReadBookMarkupRequest, v1.ReadBookMarkupResponse]
+	readBookEntry  *connect.Client[v1.ReadBookEntryRequest, v1.ReadBookEntryResponse]
 }
 
 // GetBook calls numen.v1.BookService.GetBook.
@@ -127,11 +114,6 @@ func (c *bookServiceClient) GetBook(ctx context.Context, req *connect.Request[v1
 // ReadBookMarkup calls numen.v1.BookService.ReadBookMarkup.
 func (c *bookServiceClient) ReadBookMarkup(ctx context.Context, req *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	return c.readBookMarkup.CallUnary(ctx, req)
-}
-
-// ExtractBookText calls numen.v1.BookService.ExtractBookText.
-func (c *bookServiceClient) ExtractBookText(ctx context.Context, req *connect.Request[v1.ExtractBookTextRequest]) (*connect.Response[v1.ExtractBookTextResponse], error) {
-	return c.extractBookText.CallUnary(ctx, req)
 }
 
 // ReadBookEntry calls numen.v1.BookService.ReadBookEntry.
@@ -150,9 +132,6 @@ type BookServiceHandler interface {
 	// page from. It answers while the file is still the bytes the ask names, so
 	// one answer is one reading of one file.
 	ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error)
-	// ExtractBookText is the text of the book in the bytes given, with the parts
-	// and the printed pages it names, counted in bytes of that text.
-	ExtractBookText(context.Context, *connect.Request[v1.ExtractBookTextRequest]) (*connect.Response[v1.ExtractBookTextResponse], error)
 	// ReadBookEntry is the bytes of one entry of a book's archive. It answers
 	// while the file is still the bytes the ask names.
 	ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error)
@@ -177,12 +156,6 @@ func NewBookServiceHandler(svc BookServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(bookServiceMethods.ByName("ReadBookMarkup")),
 		connect.WithHandlerOptions(opts...),
 	)
-	bookServiceExtractBookTextHandler := connect.NewUnaryHandler(
-		BookServiceExtractBookTextProcedure,
-		svc.ExtractBookText,
-		connect.WithSchema(bookServiceMethods.ByName("ExtractBookText")),
-		connect.WithHandlerOptions(opts...),
-	)
 	bookServiceReadBookEntryHandler := connect.NewUnaryHandler(
 		BookServiceReadBookEntryProcedure,
 		svc.ReadBookEntry,
@@ -195,8 +168,6 @@ func NewBookServiceHandler(svc BookServiceHandler, opts ...connect.HandlerOption
 			bookServiceGetBookHandler.ServeHTTP(w, r)
 		case BookServiceReadBookMarkupProcedure:
 			bookServiceReadBookMarkupHandler.ServeHTTP(w, r)
-		case BookServiceExtractBookTextProcedure:
-			bookServiceExtractBookTextHandler.ServeHTTP(w, r)
 		case BookServiceReadBookEntryProcedure:
 			bookServiceReadBookEntryHandler.ServeHTTP(w, r)
 		default:
@@ -214,10 +185,6 @@ func (UnimplementedBookServiceHandler) GetBook(context.Context, *connect.Request
 
 func (UnimplementedBookServiceHandler) ReadBookMarkup(context.Context, *connect.Request[v1.ReadBookMarkupRequest]) (*connect.Response[v1.ReadBookMarkupResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.BookService.ReadBookMarkup is not implemented"))
-}
-
-func (UnimplementedBookServiceHandler) ExtractBookText(context.Context, *connect.Request[v1.ExtractBookTextRequest]) (*connect.Response[v1.ExtractBookTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.BookService.ExtractBookText is not implemented"))
 }
 
 func (UnimplementedBookServiceHandler) ReadBookEntry(context.Context, *connect.Request[v1.ReadBookEntryRequest]) (*connect.Response[v1.ReadBookEntryResponse], error) {

@@ -26,10 +26,6 @@ service BookService {
   // one answer is one reading of one file.
   rpc ReadBookMarkup(ReadBookMarkupRequest) returns (ReadBookMarkupResponse);
 
-  // ExtractBookText is the text of the book in the bytes given, with the parts
-  // and the printed pages it names, counted in bytes of that text.
-  rpc ExtractBookText(ExtractBookTextRequest) returns (ExtractBookTextResponse);
-
   // ReadBookEntry is the bytes of one entry of a book's archive. It answers
   // while the file is still the bytes the ask names.
   rpc ReadBookEntry(ReadBookEntryRequest) returns (ReadBookEntryResponse);
@@ -89,23 +85,6 @@ message ReadBookMarkupResponse {
   // The markup of the document, carrying the offsets the book's text stands
   // at.
   string markup = 1;
-}
-
-message ExtractBookTextRequest {
-  // The book, as the bytes of its archive.
-  bytes data = 1;
-}
-
-message ExtractBookTextResponse {
-  // The book's text as one stream. Every offset below is a byte offset into it.
-  string text = 1;
-
-  // What the book names, ascending by offset.
-  repeated BookPart parts = 2;
-
-  // The pages of the printed book this file was made from, ascending by
-  // offset.
-  repeated PrintedPage printed_pages = 3;
 }
 
 message ReadBookEntryRequest {
