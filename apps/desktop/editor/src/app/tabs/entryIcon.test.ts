@@ -9,12 +9,11 @@ import {
   FileText,
   Folder,
   FolderOpen,
-  Gauge,
   Globe,
   Layers,
-  LayoutTemplate,
 } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
+import { registerNoteIcon } from '@/entities/note'
 import { getEntryIcon } from './entryIcon'
 
 const entry = (overrides: Partial<Entry> = {}): Entry => ({
@@ -44,11 +43,13 @@ describe('the icon of an entry', () => {
     expect(getEntryIcon(entry({ isFolder: true, kind: 'note' }), false)).toBe(Folder)
   })
 
-  it('is drawn by the kind of note for a note', () => {
+  it('is drawn by the type of note for a note, as a plugin registers its icon', () => {
     expect(getEntryIcon(entry({ type: 'note' }), false)).toBe(FileText)
+    expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(FileText)
+
+    const unregister = registerNoteIcon('deck', Layers)
     expect(getEntryIcon(entry({ type: 'deck' }), false)).toBe(Layers)
-    expect(getEntryIcon(entry({ type: 'stencil' }), false)).toBe(LayoutTemplate)
-    expect(getEntryIcon(entry({ type: 'preset' }), false)).toBe(Gauge)
+    unregister()
   })
 
   it('is drawn by the source for a file that is not a note', () => {

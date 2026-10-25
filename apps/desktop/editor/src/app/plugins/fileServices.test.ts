@@ -110,41 +110,6 @@ describe('the files of the vault a plugin is handed', () => {
     expect(createUntitled).toHaveBeenCalledWith('dir', [])
   })
 
-  it('make a deck, a stencil and a preset through the kinds that edit them, under the names given', async () => {
-    const { files, openNewFile, createFileOfKind } = setup()
-    createFileOfKind.mockImplementation((kind: string) =>
-      Promise.resolve({ ok: true, value: { path: `dir/${kind}.md` } }),
-    )
-
-    expect(await files.createFile('deck', 'dir', 'D')).toBe('dir/deck.md')
-    expect(await files.createFile('stencil', 'dir', 'S')).toBe('dir/stencil.md')
-    expect(await files.createFile('preset', 'dir', 'P')).toBe('dir/preset.md')
-
-    expect(createFileOfKind.mock.calls).toStrictEqual([
-      ['deck', 'dir', 'D'],
-      ['stencil', 'dir', 'S'],
-      ['preset', 'dir', 'P'],
-    ])
-    expect(openNewFile).not.toHaveBeenCalled()
-  })
-
-  it('make no deck, and say so, where no kind of tab makes one', async () => {
-    const { files, writeMessage } = setup()
-
-    expect(await files.createFile('deck', 'dir', 'D')).toBe('')
-
-    expect(writeMessage.mock.calls).toEqual([[words.unavailable, 'error']])
-  })
-
-  it('say why the vault rejected a stencil, in the words of the window', async () => {
-    const { files, createFileOfKind, writeMessage } = setup()
-    createFileOfKind.mockResolvedValue({ ok: false, error: 'occupied' })
-
-    expect(await files.createFile('stencil', 'dir', 'S')).toBe('')
-
-    expect(writeMessage.mock.calls).toEqual([[words.errors.occupied, 'error']])
-  })
-
   it('import several addresses without opening tabs, and one into a tab of its own', async () => {
     const { files, createUrl, openNewFile } = setup()
     createUrl
@@ -264,8 +229,9 @@ describe('the window’s commands over a row', () => {
       paths: ['Lecture.mp3', 'b.md'],
       name: 'Lecture',
       source: 'recording',
+      isFolder: false,
     })
-    host.runPathCommand('remove', { paths: [], name: 'A', source: 'note' })
+    host.runPathCommand('remove', { paths: [], name: 'A', source: 'note', isFolder: false })
 
     expect(runCommand).toHaveBeenNthCalledWith(1, 'remove', {
       ...target,

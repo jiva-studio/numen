@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import type { Entry } from '../types'
 import { useFilesTab } from './useFilesTab'
 import { getFolderPath, ROOT, useFileTree } from './useFileTree'
-import { NEW_DECK, NEW_FOLDER, NEW_NOTE, NEW_PRESET, NEW_STENCIL, RENAME } from '../lib/menu'
+import { NEW_FOLDER, NEW_NOTE, RENAME } from '../lib/menu'
 import { WORDS as words } from '../words'
 
 const file = (path: string, overrides: Partial<Entry> = {}): Entry => ({
@@ -54,6 +54,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
   const isDone: string[] = []
   const request: string[] = []
   const sources: string[] = []
+  const folders: boolean[] = []
   const vault: Record<string, readonly Entry[]> = { ...target, ...extra }
   const list = useFileTree({
     list: async (folderPath: string) => {
@@ -67,6 +68,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     runCommand: (id, paths, target) => {
       isDone.push(`runs ${id} ${paths.join(' ')} ${target.name}`)
       sources.push(target.source)
+      folders.push(target.isFolder)
     },
     movePath: async (from, to) => void isDone.push(`moves ${from} ${to}`),
     setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
@@ -84,27 +86,6 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
       if (fails) return ''
       return createdItem
     },
-    createDeck: async (folderPath, name) => {
-      isDone.push(`decks ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (fails) return ''
-      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'deck' })]
-      return createdItem
-    },
-    createStencil: async (folderPath, name) => {
-      isDone.push(`stencils ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (fails) return ''
-      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'stencil' })]
-      return createdItem
-    },
-    createPreset: async (folderPath, name) => {
-      isDone.push(`presets ${folderPath === ROOT ? '/' : folderPath} ${name}`)
-      if (fails) return ''
-      const createdItem = folderPath === ROOT ? `${name}.note` : `${folderPath}/${name}.note`
-      vault[folderPath] = [...(vault[folderPath] ?? []), file(createdItem, { type: 'preset' })]
-      return createdItem
-    },
     importUrl: async (folderPath, url) => {
       isDone.push(`imports ${folderPath === ROOT ? '/' : folderPath} ${url}`)
       return fails ? '' : 'made.url'
@@ -115,7 +96,7 @@ const tab = (fails = false, extra: Record<string, readonly Entry[]> = {}) => {
     },
     showError: (text) => void isDone.push(`says ${text}`),
   })
-  return { recorded: isDone, list, one: gestures, requests: request, sources }
+  return { recorded: isDone, list, one: gestures, requests: request, sources, folders }
 }
 
 describe('a row activated', () => {
@@ -313,9 +294,6 @@ describe('rows release', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
-      createDeck: async () => '',
-      createStencil: async () => '',
-      createPreset: async () => '',
       importUrl: async () => '',
       importUrls: async () => [],
       showError: () => {},
@@ -481,89 +459,6 @@ describe('an item chosen in the menu on a row', () => {
     expect(one.renamingPath.value).toBe('Untitled note.md')
   })
 
-  it('makes a deck alongside the row, and puts its name in a field', async () => {
-    const { recorded, one } = await openRowMenu()
-
-    one.chooseMenuItem(NEW_DECK)
-    await settle()
-
-    expect(recorded).toStrictEqual([`decks / ${words.newDeck}`])
-    expect(one.renamingPath.value).toBe(`${words.newDeck}.note`)
-  })
-
-  it('asks under the name alone, putting no ending on it', async () => {
-    const { recorded, one } = await openRowMenu()
-
-    one.chooseMenuItem(NEW_DECK)
-    await settle()
-
-    expect(recorded[0]).not.toContain('.md')
-  })
-
-  it('makes a stencil the same way, under a name of its own', async () => {
-    const { recorded, one } = await openRowMenu()
-
-    one.chooseMenuItem(NEW_STENCIL)
-    await settle()
-
-    expect(recorded).toStrictEqual([`stencils / ${words.newStencil}`])
-  })
-
-  it('makes a preset the same way, under a name of its own', async () => {
-    const { recorded, one } = await openRowMenu()
-
-    one.chooseMenuItem(NEW_PRESET)
-    await settle()
-
-    expect(recorded).toStrictEqual([`presets / ${words.newPreset}`])
-    expect(one.renamingPath.value).toBe(`${words.newPreset}.note`)
-  })
-
-  it('remains the preset in the tree as a preset', async () => {
-    const { one } = await openRowMenu()
-
-    one.chooseMenuItem(NEW_PRESET)
-    await settle()
-
-    expect(one.list.getEntryAt(`${words.newPreset}.note`)?.type).toBe('preset')
-  })
-
-  it('makes a preset inside the row where the row is a folder', async () => {
-    const { recorded, one } = await openRowMenu('physics')
-
-    one.chooseMenuItem(NEW_PRESET)
-    await settle()
-
-    expect(recorded).toStrictEqual([`presets physics ${words.newPreset}`])
-  })
-
-  it('is empty where the vault made no preset', async () => {
-    const { one } = await openRowMenu(undefined, true)
-
-    one.chooseMenuItem(NEW_PRESET)
-    await settle()
-
-    expect(one.renamingPath.value).toBeNull()
-  })
-
-  it('makes a deck inside the row where the row is a folder', async () => {
-    const { recorded, one } = await openRowMenu('physics')
-
-    one.chooseMenuItem(NEW_DECK)
-    await settle()
-
-    expect(recorded).toStrictEqual([`decks physics ${words.newDeck}`])
-  })
-
-  it('is empty where the vault made no deck', async () => {
-    const { one } = await openRowMenu(undefined, true)
-
-    one.chooseMenuItem(NEW_DECK)
-    await settle()
-
-    expect(one.renamingPath.value).toBeNull()
-  })
-
   it('makes a note inside the row where the row is a folder', async () => {
     const { recorded, one } = await openRowMenu('physics')
 
@@ -680,9 +575,6 @@ describe('a field already holding a name, and a file rejected', () => {
   it.each([
     ['folder', NEW_FOLDER],
     ['note', NEW_NOTE],
-    ['deck', NEW_DECK],
-    ['stencil', NEW_STENCIL],
-    ['preset', NEW_PRESET],
   ])('leaves the field alone where the %s failed', async (_kind, id) => {
     expect(await refuse(id)).toBe('Cover.png')
   })
@@ -722,6 +614,18 @@ describe('the source a command is run over', () => {
     one.chooseMenuItem('recognise')
 
     expect(sources).toStrictEqual(['other'])
+  })
+
+  it('says whether the row is a folder', async () => {
+    const { list, one, folders } = tab()
+    await list.openFolder(ROOT)
+
+    one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })
+    one.chooseMenuItem('copy')
+    one.openMenu({ path: 'Heat.pdf', at: { x: 0, y: 0 } })
+    one.chooseMenuItem('copy')
+
+    expect(folders).toStrictEqual([true, false])
   })
 })
 
@@ -801,10 +705,7 @@ describe('a name given to a row, in more detail', () => {
 })
 
 describe('a file rejected in a folder that is shut', () => {
-  it.each([
-    ['note', NEW_NOTE],
-    ['deck', NEW_DECK],
-  ])('leaves the folder shut where the %s failed', async (_kind, id) => {
+  it.each([['note', NEW_NOTE]])('leaves the folder shut where the %s failed', async (_kind, id) => {
     const { one, list } = tab(true)
     await list.openFolder(ROOT)
     one.openMenu({ path: 'physics', at: { x: 0, y: 0 } })

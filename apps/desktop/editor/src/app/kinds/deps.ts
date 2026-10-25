@@ -28,4 +28,5 @@ export interface WindowKindsDeps {
   tabSync?: ReturnType<typeof createTabSync>
   getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
+  getContextMenuIcon?: (id: string) => unknown
 }

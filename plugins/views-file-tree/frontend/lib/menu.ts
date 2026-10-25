@@ -11,9 +11,6 @@ import { WORDS as own } from '../words'
 
 /** What the tab does itself: the files it makes, and a name put in a field. */
 export const NEW_NOTE = 'newNote'
-export const NEW_DECK = 'newDeck'
-export const NEW_STENCIL = 'newStencil'
-export const NEW_PRESET = 'newPreset'
 export const NEW_FOLDER = 'newFolder'
 export const RENAME = 'rename'
 
@@ -33,12 +30,7 @@ export const MADE: readonly MenuEntry[] = [
 const OWN: readonly MenuEntry[] = [...MADE, { id: RENAME, text: own.rename, group: FILE_GROUP }]
 
 /** What the tab does itself anywhere. A choice outside this is the window's. */
-export const OWN_IDS: ReadonlySet<string> = new Set([
-  ...OWN.map((one) => one.id),
-  NEW_DECK,
-  NEW_STENCIL,
-  NEW_PRESET,
-])
+export const OWN_IDS: ReadonlySet<string> = new Set(OWN.map((one) => one.id))
 
 export const createNewSubmenu = (contributed: readonly MenuEntry[] = []): MenuEntry => ({
   id: 'new',

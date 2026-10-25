@@ -402,6 +402,7 @@ export function createPluginHost(deps: PluginHostDeps) {
       }
       return items.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
     },
+    getContextMenuIcon: (id: string): unknown => registry.contextMenus.value.get(id)?.reg.icon,
     runContextMenu: async (id: string, target: ContextMenuTarget): Promise<boolean> => {
       const entry = registry.contextMenus.value.get(id)
       if (!entry) return false

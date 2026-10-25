@@ -75,18 +75,7 @@ function guardNotes(notes: VaultNotes, requireWrite: (operation: string) => void
   }
 }
 
-function guardFiles(
-  files: VaultFiles & {
-    createDeck?(folder: string, name: string): Promise<string>
-    createStencil?(folder: string, name: string): Promise<string>
-    createPreset?(folder: string, name: string): Promise<string>
-  },
-  requireWrite: (operation: string) => void,
-): VaultFiles & {
-  createDeck?(folder: string, name: string): Promise<string>
-  createStencil?(folder: string, name: string): Promise<string>
-  createPreset?(folder: string, name: string): Promise<string>
-} {
+function guardFiles(files: VaultFiles, requireWrite: (operation: string) => void): VaultFiles {
   return {
     ...files,
     move: async (from, to) => {
@@ -101,30 +90,6 @@ function guardFiles(
       requireWrite('files.createNote')
       return files.createNote(folder)
     },
-    ...(files.createDeck
-      ? {
-          createDeck: async (folder: string, name: string) => {
-            requireWrite('files.createDeck')
-            return files.createDeck!(folder, name)
-          },
-        }
-      : {}),
-    ...(files.createStencil
-      ? {
-          createStencil: async (folder: string, name: string) => {
-            requireWrite('files.createStencil')
-            return files.createStencil!(folder, name)
-          },
-        }
-      : {}),
-    ...(files.createPreset
-      ? {
-          createPreset: async (folder: string, name: string) => {
-            requireWrite('files.createPreset')
-            return files.createPreset!(folder, name)
-          },
-        }
-      : {}),
     importUrl: async (folder, url) => {
       requireWrite('files.importUrl')
       return files.importUrl(folder, url)

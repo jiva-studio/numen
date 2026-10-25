@@ -11,8 +11,8 @@ import type {
 } from '@numen/ui'
 import type { PathRename, PluginContext } from '@numen/plugin-sdk'
 
-/** Which of four types a note can be. */
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
+/** What a note is: a note, or a type a plugin declares. */
+export type NoteType = string
 
 /** One heading inside a note. */
 export interface NoteHeading {

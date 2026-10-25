@@ -5,7 +5,9 @@
  * carried out over the note the window holds it by. What each one evaluates to is
  * asked of the window drawn, since the palette is where a person meets it.
  */
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, onTestFinished } from 'vitest'
+import { Layers, LayoutTemplate } from '@lucide/vue'
+import { registerNoteIcon } from '@/entities/note'
 // The mocked modules stand before the plugins that reach them are imported.
 import {
   requests,
@@ -64,6 +66,7 @@ describe('the palette', () => {
     )
 
   it('draws every kind of note a name turned up as what it is', async () => {
+    drawFlashcardTypes()
     said.names = [
       nameAnswer('Ants.md', 'Ants'),
       nameAnswer('Animals.md', 'Animals', 'deck'),
@@ -77,6 +80,7 @@ describe('the palette', () => {
   })
 
   it('draws a passage as the note it was read out of', async () => {
+    drawFlashcardTypes()
     said.names = []
     said.passages = [
       passageAnswer('Animals.md', 'Animals', 'deck'),
@@ -315,3 +319,11 @@ describe('a command requested for while the vault is being read', () => {
 })
 
 /** How the window is drawn, walked as a person walks it, with nothing stubbed. */
+
+/** Decks and stencils drawn with the icons their plugin registers, for the test that asks for them. */
+function drawFlashcardTypes(): void {
+  const unregister = [registerNoteIcon('deck', Layers), registerNoteIcon('stencil', LayoutTemplate)]
+  onTestFinished(() => {
+    for (const one of unregister) one()
+  })
+}

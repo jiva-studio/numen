@@ -12,10 +12,10 @@ import type { ErrorCode } from '@/shared/errors'
 export type Source = 'note' | 'book' | 'recording' | 'url' | 'other'
 
 /**
- * Which of four a file is, as the `type` key of its frontmatter says. It says
- * nothing about a file that is not a note.
+ * What a note is, as the `type` key of its frontmatter says: `note`, or a type a plugin declares.
+ * It says nothing about a file that is not a note.
  */
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
+export type NoteType = string
 
 export type DocumentFormat = 'pdf'
 export type BookFormat = 'epub'

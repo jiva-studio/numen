@@ -82,26 +82,20 @@ describe('what else a files tab asks of the window', () => {
     const { host, recorded } = createHost()
     const deps = createFilesTabDeps(host, 'files')
 
-    deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', source: 'note' })
+    deps.runCommand('remove', ['a.md', 'b.md'], { name: 'a', source: 'note', isFolder: false })
     await deps.movePath('a.md', 'dir/a.md')
     await deps.createFolder('dir')
     expect(await deps.createNote('dir/')).toBe('dir/note')
-    expect(await deps.createDeck('dir/', 'D')).toBe('dir/D')
-    expect(await deps.createStencil('dir/', 'S')).toBe('dir/S')
-    expect(await deps.createPreset('dir/', 'P')).toBe('dir/P')
     expect(await deps.importUrl('dir/', 'https://a.test')).toBe('dir/https://a.test')
     expect(await deps.importUrls('dir/', ['https://b.test'])).toStrictEqual(['https://b.test'])
 
     expect(recorded.commands).toStrictEqual([
-      ['remove', { paths: ['a.md', 'b.md'], name: 'a', source: 'note' }],
+      ['remove', { paths: ['a.md', 'b.md'], name: 'a', source: 'note', isFolder: false }],
     ])
     expect(recorded.made).toStrictEqual([
       'move a.md dir/a.md',
       'folder dir',
       'note dir/',
-      'deck dir/ D',
-      'stencil dir/ S',
-      'preset dir/ P',
       'url dir/ https://a.test',
       'urls dir/ https://b.test',
     ])

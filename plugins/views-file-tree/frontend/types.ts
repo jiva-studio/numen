@@ -37,6 +37,7 @@ export type DropPosition = { readonly into: string | null } | { readonly before:
 export interface FileCommandTarget {
   readonly name: string
   readonly source: Source
+  readonly isFolder: boolean
 }
 
 /** What a files tab asks of the window it is drawn in. */
@@ -49,9 +50,6 @@ export interface FilesTabDeps {
   setDraggedPaths(paths: readonly string[]): void
   createFolder(path: string): Promise<void>
   createNote(folder: string): Promise<string>
-  createDeck(folder: string, name: string): Promise<string>
-  createStencil(folder: string, name: string): Promise<string>
-  createPreset(folder: string, name: string): Promise<string>
   importUrl(folder: string, url: string): Promise<string>
   importUrls(folder: string, urls: readonly string[]): Promise<readonly string[]>
   showError(text: string): void
@@ -60,9 +58,6 @@ export interface FilesTabDeps {
   getCommandIcon(id: string): Component | null
   getEntryIcon(entry: Entry | null, isOpen: boolean): Component
 }
-
-/** One of the custom files the vault makes, made in a folder. */
-export type FileMaker = (folder: string, name: string) => Promise<string>
 
 export interface FileTree {
   readonly rows: Ref<readonly ListingRow[]>
@@ -103,7 +98,6 @@ export interface FilesTabState {
   remove(paths: readonly string[]): void
   createFolder(path: string | null): Promise<void>
   createNote(path: string | null): Promise<void>
-  createOne(path: string | null, createEntry: FileMaker, name: string): Promise<void>
   importUrl(url: string): Promise<string>
   importUrls(urls: readonly string[]): Promise<readonly string[]>
   openMenu(request: MenuRequest): void

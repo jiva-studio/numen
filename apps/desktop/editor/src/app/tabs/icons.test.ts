@@ -7,11 +7,11 @@
 import { describe, expect, it } from 'vitest'
 
 import { findIcon } from '@/shared/icons'
-import { getNoteIcon } from '@/entities/note'
+import { getNoteIcon, registerNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
-import type { NoteType, Source } from '@/entities/file'
+import type { Source } from '@/entities/file'
 
 /** A window that has been told nothing, which can do every run. */
 const canRunAnything = () => true
@@ -53,15 +53,18 @@ describe('the icon a command is drawn with', () => {
   })
 })
 
-// One mark to a kind.
-describe('the icon of a kind of note', () => {
-  const kinds: readonly NoteType[] = ['note', 'deck', 'stencil', 'preset']
-
-  it('is there for every kind a note may be', () => {
-    for (const kind of kinds) expect(getNoteIcon(kind), kind).toBeTruthy()
+// One mark to a type.
+describe('the icon of a type of note', () => {
+  it('is the icon of a note for a type no plugin draws', () => {
+    expect(getNoteIcon('deck')).toBe(getNoteIcon('note'))
   })
 
-  it('notifies the five kinds apart', () => {
-    expect(new Set(kinds.map(getNoteIcon)).size).toBe(kinds.length)
+  it('is the icon a plugin registers for its type, until the plugin lets go of it', () => {
+    const icon = {}
+    const unregister = registerNoteIcon('deck', icon)
+    expect(getNoteIcon('deck')).toBe(icon)
+
+    unregister()
+    expect(getNoteIcon('deck')).toBe(getNoteIcon('note'))
   })
 })

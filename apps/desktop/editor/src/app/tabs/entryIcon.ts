@@ -3,12 +3,13 @@
  * it holds is drawn; a note is drawn by which kind of note it is, and every
  * other file by the source the vault holds it as.
  */
-import { File, Folder, FolderOpen, type LucideIcon } from '@lucide/vue'
+import type { Component } from 'vue'
+import { File, Folder, FolderOpen } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
 import { findSourceIcon } from '@/entities/file'
 import { getNoteIcon } from '@/entities/note'
 
-export const getEntryIcon = (entry: Entry | null | undefined, open: boolean): LucideIcon => {
+export const getEntryIcon = (entry: Entry | null | undefined, open: boolean): Component => {
   if (!entry) return File
   if (entry.isFolder) return open ? FolderOpen : Folder
   if (entry.kind === 'note') return getNoteIcon(entry.type)

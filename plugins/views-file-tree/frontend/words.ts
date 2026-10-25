@@ -9,9 +9,6 @@ export const WORDS = {
   rename: 'Rename',
   new: 'New',
   newNote: 'New note',
-  newDeck: 'New deck',
-  newStencil: 'New stencil',
-  newPreset: 'New preset',
   newFolder: 'New folder',
   /** The name a folder is made under, which renaming it is what changes. */
   folder: 'New folder',

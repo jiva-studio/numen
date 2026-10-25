@@ -1,6 +1,7 @@
 import { watch } from 'vue'
 import type { PluginServices } from './pluginServices'
 import { createPluginHost } from '@/entities/plugin'
+import { registerNoteIcon } from '@/entities/note'
 import { DEFAULT_PLUGIN_ENABLED, createPluginLoader, type PluginLoader } from '@numen/shell'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
@@ -63,7 +64,14 @@ export function createPluginSupport(deps: PluginSupportDeps) {
 
   const pluginHost = createPluginHost({
     ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
-    registerKind: windowTabs.registerKind,
+    registerKind: (kind) => {
+      const unregisterKind = windowTabs.registerKind(kind)
+      const unregisterIcon = kind.icon ? registerNoteIcon(kind.kind, kind.icon) : () => {}
+      return () => {
+        unregisterKind()
+        unregisterIcon()
+      }
+    },
     registerExtensionReader: tabOpeners.registerExtensionReader,
     registerEditor: tabOpeners.registerEditor,
     openTab: windowTabs.openTabOfKind,

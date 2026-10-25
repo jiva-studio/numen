@@ -1,3 +1,4 @@
+import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
@@ -57,6 +58,7 @@ export function activate(context: PluginContext): void {
     context.registerContextMenu({
       id: 'newDeck',
       text: 'New deck',
+      icon: Layers,
       parentId: 'new',
       target: 'all',
       handler: async (target) => {
@@ -66,6 +68,7 @@ export function activate(context: PluginContext): void {
     context.registerContextMenu({
       id: 'newStencil',
       text: 'New stencil',
+      icon: LayoutTemplate,
       parentId: 'new',
       target: 'all',
       handler: async (target) => {
@@ -75,6 +78,7 @@ export function activate(context: PluginContext): void {
     context.registerContextMenu({
       id: 'newPreset',
       text: 'New preset',
+      icon: Gauge,
       parentId: 'new',
       target: 'all',
       handler: async (target) => {

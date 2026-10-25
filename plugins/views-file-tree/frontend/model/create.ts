@@ -1,9 +1,9 @@
 /**
- * Creation of notes, folders, decks, stencils, and presets in the files tree.
+ * Creation of notes, folders and other files in the files tree.
  */
 import { getFolderPath, ROOT } from './useFileTree'
 import { WORDS as words } from '../words'
-import type { FileMaker, FilesTabDeps, FileTree } from '../types'
+import type { FilesTabDeps, FileTree } from '../types'
 
 export const getFolderFor = (list: FileTree, path: string | null): string => {
   if (path === null) return ROOT
@@ -33,25 +33,6 @@ export const createNote = async (
 ): Promise<string | null> => {
   const into = getFolderFor(list, path)
   const createdItem = await deps.createNote(into)
-  if (!createdItem) return null
-  await list.openFolder(into)
-  return createdItem
-}
-
-export interface CreateEntryOptions {
-  createEntry: FileMaker
-  name: string
-}
-
-/** Creates a custom file type in the folder. */
-export const createOne = async (
-  list: FileTree,
-  path: string | null,
-  options: CreateEntryOptions,
-): Promise<string | null> => {
-  const { createEntry, name } = options
-  const into = getFolderFor(list, path)
-  const createdItem = await createEntry(into, name)
   if (!createdItem) return null
   await list.openFolder(into)
   return createdItem

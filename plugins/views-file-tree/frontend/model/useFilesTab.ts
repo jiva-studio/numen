@@ -4,22 +4,12 @@
 import { ref } from 'vue'
 import { getFileName, type MenuEntry } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
-import {
-  createMenuItems,
-  NEW_DECK,
-  NEW_FOLDER,
-  NEW_NOTE,
-  NEW_PRESET,
-  NEW_STENCIL,
-  OWN_IDS,
-  RENAME,
-} from '../lib/menu'
+import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME } from '../lib/menu'
 import { resolveRenamePath } from './rename'
 import { WORDS as words } from '../words'
 import type {
   DropPosition,
   Entry,
-  FileMaker,
   FilesTabDeps,
   FilesTabState,
   FileTree,
@@ -28,7 +18,7 @@ import type {
 } from '../types'
 import * as create from './create'
 
-export type { DropPosition, FileMaker, FilesTabDeps, FilesTabState, MenuRequest }
+export type { DropPosition, FilesTabDeps, FilesTabState, MenuRequest }
 
 function createFileCreation(
   list: FileTree,
@@ -45,12 +35,7 @@ function createFileCreation(
     if (createdItem) renamingPath.value = createdItem
   }
 
-  const createOne = async (path: string | null, createEntry: FileMaker, name: string) => {
-    const createdItem = await create.createOne(list, path, { createEntry, name })
-    if (createdItem) renamingPath.value = createdItem
-  }
-
-  return { createFolder, createNote, createOne }
+  return { createFolder, createNote }
 }
 
 function createFileMoves(list: FileTree, deps: FilesTabDeps) {
@@ -136,12 +121,6 @@ function useFileMenu(options: FileMenuDeps) {
     if (!request || !isOffered(id, request.path)) return
     if (id === 'new' || id === 'relation') return
     if (id === NEW_NOTE) return void creators.createNote(request.path)
-    if (id === NEW_DECK)
-      return void creators.createOne(request.path, deps.createDeck, words.newDeck)
-    if (id === NEW_STENCIL)
-      return void creators.createOne(request.path, deps.createStencil, words.newStencil)
-    if (id === NEW_PRESET)
-      return void creators.createOne(request.path, deps.createPreset, words.newPreset)
     if (id === NEW_FOLDER) return void creators.createFolder(request.path)
 
     const path = request.path
@@ -150,7 +129,11 @@ function useFileMenu(options: FileMenuDeps) {
       renamingPath.value = path
       return
     }
-    deps.runCommand(id, getOverPaths(path), { name: getNameOf(path), source: getSourceOf(path) })
+    deps.runCommand(id, getOverPaths(path), {
+      name: getNameOf(path),
+      source: getSourceOf(path),
+      isFolder: list.getEntryAt(path)?.isFolder ?? false,
+    })
   }
 
   return { menu, openMenu, dismissMenu, chooseMenuItem, getOverPaths, getMenuItems }
@@ -186,7 +169,11 @@ function createFileActions(list: FileTree, deps: FilesTabDeps) {
   const remove = (paths: readonly string[]) => {
     const first = paths[0]
     if (first === undefined) return
-    deps.runCommand('remove', paths, { name: getNameOf(first), source: getSourceOf(first) })
+    deps.runCommand('remove', paths, {
+      name: getNameOf(first),
+      source: getSourceOf(first),
+      isFolder: list.getEntryAt(first)?.isFolder ?? false,
+    })
   }
 
   return { getNameOf, getSourceOf, activate, rename, drag, remove }
@@ -225,7 +212,6 @@ export function useFilesTab(list: FileTree, deps: FilesTabDeps): FilesTabState {
     drop: () => deps.setDraggedPaths([]),
     createFolder: creators.createFolder,
     createNote: creators.createNote,
-    createOne: creators.createOne,
     importUrl: (url) =>
       deps.importUrl(create.getFolderFor(list, list.selectedPaths.value[0] ?? null), url),
     importUrls: (urls) =>

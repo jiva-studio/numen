@@ -295,6 +295,7 @@ function initWindowKindsAndCommands(
     tabSync,
     getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
     runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
+    getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
   })
 
   Object.assign(base.pluginServices, getKinds(ctx).services)

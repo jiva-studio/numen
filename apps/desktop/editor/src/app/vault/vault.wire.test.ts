@@ -47,10 +47,10 @@ describe('vault name responses', () => {
     ])
   })
 
-  it('is an ordinary note where the answer names a kind this window has no word for', async () => {
+  it('carries the type a plugin declares as the answer names it', async () => {
     answerWith({ found: [{ note: { path: 'Later.md', title: 'Later' }, at: [], type: 'later' }] })
 
-    expect((await core.names('la', 8))[0]?.type).toBe('note')
+    expect((await core.names('la', 8))[0]?.type).toBe('later')
   })
 })
 

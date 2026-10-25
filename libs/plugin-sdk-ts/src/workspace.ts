@@ -7,8 +7,8 @@ export interface NoteRef {
   readonly title: string
 }
 
-// NoteType is which of four things a note of the vault is.
-export type NoteType = 'note' | 'deck' | 'stencil' | 'preset'
+// NoteType is what a note of the vault is: a note, or a type a plugin declares in its manifest.
+export type NoteType = string
 
 // NoteHeading is one heading inside a note.
 export interface NoteHeading {
@@ -150,11 +150,12 @@ export interface PathMenuRow {
   readonly isSeveral: boolean
 }
 
-// PathCommandTarget is the file a command runs over, and the others selected with it.
+// PathCommandTarget is the file or folder a command runs over, and the others selected with it.
 export interface PathCommandTarget {
   readonly paths: readonly string[]
   readonly name: string
   readonly source: FileSource
+  readonly isFolder: boolean
 }
 
 // VaultFiles is what a plugin lists of the folders of the vault, and makes and moves in them.

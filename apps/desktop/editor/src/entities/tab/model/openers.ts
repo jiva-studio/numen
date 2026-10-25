@@ -12,7 +12,7 @@ import type { Span } from '@/shared/span'
  * What a file the window opens is opened as: which kind of note it is, the
  * preset a fourth kind of note holds, or the kind a plugin registers.
  */
-export type EditorKind = NoteType | 'preset' | 'url' | (string & {})
+export type EditorKind = NoteType | 'url' | (string & {})
 
 export interface OpenPlacement {
   where?: PlexDestination | undefined

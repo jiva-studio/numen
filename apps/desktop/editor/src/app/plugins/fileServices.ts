@@ -2,6 +2,7 @@
  * The files of the vault as a plugin's tabs are given them: the folders listed,
  * the files made and moved, and the window's commands over a row.
  */
+import type { Component } from 'vue'
 import { asFailure, formatErrorMessage, getKnownErrorCode } from '@numen/wire'
 import type {
   ContextMenuRegistration,
@@ -130,12 +131,7 @@ export interface VaultFilesDeps {
   readonly commandDeps: () => CommandDeps
 }
 
-export function createVaultFiles(deps: VaultFilesDeps): VaultFiles & {
-  createFile(kind: string, folder: string, name: string): Promise<string>
-  createDeck(folder: string, name: string): Promise<string>
-  createStencil(folder: string, name: string): Promise<string>
-  createPreset(folder: string, name: string): Promise<string>
-} {
+export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
   const { core, made, making, getTarget, commandDeps } = deps
   const run = (id: string, target: CommandTarget, name: string) =>
     runInvocation(createInvocation(id, target, name), commandDeps(), ANSWER_WORDS)
@@ -144,10 +140,6 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles & {
     move: (from, to) => run('move', { ...getTarget(), path: from }, to),
     createFolder: (path) => run('createFolder', getTarget(), path),
     createNote: async (folder) => (await making.createUntitled(folder, []))?.path ?? '',
-    createFile: (kind, folder, name) => made.createFile(kind, folder, name),
-    createDeck: (folder, name) => made.createFile('deck', folder, name),
-    createStencil: (folder, name) => made.createFile('stencil', folder, name),
-    createPreset: (folder, name) => made.createFile('preset', folder, name),
     importUrl: (folder, url) => made.createUrl(folder, url),
     importUrls: (folder, urls) => made.createUrls(folder, urls),
   }
@@ -161,13 +153,23 @@ export interface PathCommandDeps {
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
+  /** The icon a plugin draws its menu item with, and nothing for an item it draws none for. */
+  readonly getContextMenuIcon?: (id: string) => unknown
 }
 
 /** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
 export function createPathCommandHost(
   deps: PathCommandDeps,
 ): Pick<WorkspaceHost, 'getPathCommands' | 'runPathCommand' | 'getCommandIcon' | 'getEntryIcon'> {
-  const { runs, vaults, getTarget, runCommand, getContextMenuItems, runContextMenu } = deps
+  const {
+    runs,
+    vaults,
+    getTarget,
+    runCommand,
+    getContextMenuItems,
+    runContextMenu,
+    getContextMenuIcon,
+  } = deps
   return {
     getPathCommands: ({ entry, isSeveral }) => {
       const target: ContextMenuTarget = {
@@ -189,12 +191,12 @@ export function createPathCommandHost(
         contributions,
       )
     },
-    runPathCommand: (id, { paths, name, source }) => {
+    runPathCommand: (id, { paths, name, source, isFolder }) => {
       const path = paths[0] ?? ''
       const target: ContextMenuTarget = {
         path,
         name,
-        isFolder: false,
+        isFolder,
         kind: source,
         isSeveral: paths.length > 1,
       }
@@ -224,7 +226,8 @@ export function createPathCommandHost(
         others: paths.slice(1),
       })
     },
-    getCommandIcon: (id) => findIcon(id),
+    getCommandIcon: (id) =>
+      findIcon(id) ?? (getContextMenuIcon?.(id) as Component | undefined) ?? null,
     getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen),
   }
 }

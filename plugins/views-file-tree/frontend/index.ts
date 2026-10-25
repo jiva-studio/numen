@@ -5,15 +5,7 @@ import { useFileTree } from './model/useFileTree'
 
 export { FilesTab }
 export { createFilesKind, FILES } from './kind'
-export {
-  createMenuItems,
-  NEW_DECK,
-  NEW_FOLDER,
-  NEW_NOTE,
-  NEW_PRESET,
-  NEW_STENCIL,
-  RENAME,
-} from './lib/menu'
+export { createMenuItems, NEW_FOLDER, NEW_NOTE, RENAME } from './lib/menu'
 export { ROOT, createFileTree, useFileTree } from './model/useFileTree'
 export { useFilesTab } from './model/useFilesTab'
 export type { FilesTabDeps, FilesTabState } from './types'

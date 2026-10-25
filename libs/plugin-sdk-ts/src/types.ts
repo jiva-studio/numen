@@ -178,7 +178,8 @@ export interface ContextMenuRegistration {
   /** Which target kinds this item applies to. */
   readonly target?: 'all' | 'file' | 'folder' | 'root' | 'note' | readonly string[]
   readonly order?: number
-  readonly isDisabled?: boolean | ((target: ContextMenuTarget) => boolean)
+  readonly isDisabled?: boolean // The icon the item is drawn with.
+  readonly icon?: unknown | ((target: ContextMenuTarget) => boolean)
   readonly handler: (target: ContextMenuTarget) => void | Promise<void>
 }
 

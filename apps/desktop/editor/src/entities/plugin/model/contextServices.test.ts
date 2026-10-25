@@ -34,9 +34,6 @@ const createServices = () => {
     move: vi.fn(() => Promise.resolve()),
     createFolder: vi.fn(() => Promise.resolve()),
     createNote: vi.fn(() => Promise.resolve('a.md')),
-    createDeck: vi.fn(() => Promise.resolve('a.deck')),
-    createStencil: vi.fn(() => Promise.resolve('a.stencil')),
-    createPreset: vi.fn(() => Promise.resolve('a.preset')),
     importUrl: vi.fn(() => Promise.resolve('u.md')),
     importUrls: vi.fn(() => Promise.resolve(['u.md'])),
   } as unknown as VaultFiles
@@ -194,7 +191,7 @@ describe('a file a plugin writes', () => {
 
 describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A' }
-  const row = { paths: ['a.md'], name: 'a', source: 'note' as const }
+  const row = { paths: ['a.md'], name: 'a', source: 'note' as const, isFolder: false }
 
   it.each(['remove', 'child', 'title', 'transcribe'])('fails for %s without vault:write', (id) => {
     const { context, workspace } = createContext(['vault:read'])

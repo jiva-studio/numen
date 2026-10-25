@@ -8,11 +8,7 @@ import type { FilesTabDeps } from '../types'
 /** The host services a files tab is made from. */
 export interface FileTreeHost {
   readonly workspace: WorkspaceHost
-  readonly files: VaultFiles & {
-    createDeck?(folder: string, name: string): Promise<string>
-    createStencil?(folder: string, name: string): Promise<string>
-    createPreset?(folder: string, name: string): Promise<string>
-  }
+  readonly files: VaultFiles
 }
 
 /**
@@ -31,18 +27,12 @@ export function createFilesTabDeps({ workspace, files }: FileTreeHost, id: strin
         workspace.syncPath(id, path, entry.name)
       }
     },
-    runCommand: (command, paths, { name, source }) =>
-      workspace.runPathCommand(command, { paths, name, source }),
+    runCommand: (command, paths, { name, source, isFolder }) =>
+      workspace.runPathCommand(command, { paths, name, source, isFolder }),
     movePath: (from, to) => files.move(from, to),
     setDraggedPaths: (paths) => workspace.setDraggedPaths(paths),
     createFolder: (path) => files.createFolder(path),
     createNote: (folder) => files.createNote(folder),
-    createDeck: (folder, name) =>
-      files.createDeck ? files.createDeck(folder, name) : Promise.resolve(''),
-    createStencil: (folder, name) =>
-      files.createStencil ? files.createStencil(folder, name) : Promise.resolve(''),
-    createPreset: (folder, name) =>
-      files.createPreset ? files.createPreset(folder, name) : Promise.resolve(''),
     importUrl: (folder, url) => files.importUrl(folder, url),
     importUrls: (folder, urls) => files.importUrls(folder, urls),
     showError: (text) => workspace.showError(text),

@@ -42,9 +42,6 @@ const mountFiles = async (open: readonly string[] = []) => {
     setDraggedPaths: (paths) => void isDone.push(`drags ${paths.join(' ') || '—'}`),
     createFolder: async (path) => void isDone.push(`makes ${path}`),
     createNote: async (folderPath) => `${folderPath}Untitled note.md`,
-    createDeck: async (folderPath, name) => `${folderPath}${name}`,
-    createStencil: async (folderPath, name) => `${folderPath}${name}`,
-    createPreset: async (folderPath, name) => `${folderPath}${name}`,
     importUrl: async (folderPath, url) => void isDone.push(`imports ${folderPath} ${url}`) as never,
     importUrls: async (folderPath, urls) => {
       isDone.push(`imports-multi ${folderPath || '/'} ${urls.join(' ')}`)
@@ -265,9 +262,6 @@ describe('a folder that could not be read', () => {
       setDraggedPaths: () => {},
       createFolder: async () => {},
       createNote: async () => '',
-      createDeck: async () => '',
-      createStencil: async () => '',
-      createPreset: async () => '',
       importUrl: async () => '',
       importUrls: async () => [],
       showError: () => {},
