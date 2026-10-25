@@ -1,27 +1,27 @@
 # ---------------------------------- Modules -----------------------------------
-MODULES  := modules
-CORE     := modules/libs/core
-NOTES    := modules/libs/notes
-UI       := modules/libs/ui
-WIRE     := modules/libs/wire
-PROTOCOL := modules/libs/protocol
-PLUGIN_SDK := modules/libs/plugin-sdk-ts
-PLUGIN_SDK_GO := modules/libs/plugin-sdk-go
+CORE     := libs/core
+NOTES    := libs/notes
+UI       := libs/ui
+WIRE     := libs/wire
+PROTOCOL := libs/protocol
+PLUGIN_SDK := libs/plugin-sdk-ts
+PLUGIN_SDK_GO := libs/plugin-sdk-go
 # The base module of the Go plugin SDK and each feature module under it.
 PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))
 
-DESKTOP  := modules/apps/desktop
-DESKTOP_MONOLITH := modules/apps/desktop-monolith
-MOBILE   := modules/apps/mobile
-DOCS     := modules/apps/docs
-LANDING  := modules/apps/landing
+DESKTOP  := apps/desktop
+DESKTOP_MONOLITH := apps/desktop-monolith
+MOBILE   := apps/mobile
+DOCS     := apps/docs
+LANDING  := apps/landing
 
-ICON     := modules/tools/build-icons
-STORIES  := modules/tools/ci-stories
-LAYERS   := modules/tools/lint-layers
-QUALITY  := modules/tools/lint-quality
-PLUGINS  := modules/plugins
+ICON     := tools/build-icons
+STORIES  := tools/ci-stories
+LAYERS   := tools/lint-layers
+QUALITY  := tools/lint-quality
+PLUGINS  := plugins
 PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
+TESTS    := tests
 
 INSTALL  ?= npm install
 
@@ -38,7 +38,7 @@ help: ## show available targets
 # ------------------------------- Workflow & CI --------------------------------
 .PHONY: install
 install: ## fetch all workspace dependencies
-	cd $(MODULES) && $(INSTALL)
+	$(INSTALL)
 
 .PHONY: compile
 compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
@@ -336,7 +336,7 @@ app_desktop_test: lib_ui_build ## run desktop tests
 .PHONY: app_desktop_e2e
 app_desktop_e2e: lib_ui_build app_desktop_editor_build plugins_build ## run desktop end-to-end tests
 	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
-	cd $(MODULES)/tests/e2e/desktop && npx playwright test
+	cd $(TESTS)/e2e/desktop && npx playwright test
 
 .PHONY: app_desktop_lint
 app_desktop_lint: ## lint desktop module

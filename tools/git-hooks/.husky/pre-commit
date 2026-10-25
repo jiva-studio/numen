@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+set -e
+
+# Fast architectural gate and staged module checks before a commit is created.
+# Set NUMEN_SKIP_CHECKS=1 to commit without them.
+[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
+
+root=$(git rev-parse --show-toplevel)
+
+# 1. Staged files check
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+
+if [ -z "$STAGED_FILES" ]; then
+  exit 0
+fi
+
+# 2. Formatting validation (gofmt for staged Go files)
+GO_FILES=$(echo "$STAGED_FILES" | grep '\.go$' || true)
+if [ -n "$GO_FILES" ]; then
+  UNFORMATTED=$(gofmt -l $GO_FILES || true)
+  if [ -n "$UNFORMATTED" ]; then
+    echo "❌ Error: The following staged Go files are not formatted with gofmt:"
+    echo "$UNFORMATTED"
+    echo "Please format them with 'gofmt -w <file>' and stage again."
+    exit 1
+  fi
+fi
+
+# 3. Fast architecture & boundary gates
+"$root/libs/core/adapter/index/migration-forward-only.sh" --self-test || exit 1
+
+PRETTIER_FILES=$(echo "$STAGED_FILES" | grep -E '\.(ts|vue|json|css)$' || true)
+if [ -n "$PRETTIER_FILES" ]; then
+  npx prettier --check $PRETTIER_FILES || exit 1
+fi
+

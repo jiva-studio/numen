@@ -3,23 +3,23 @@ name: Plugins Frontend
 on:
   pull_request:
     paths:
-      - "modules/plugins/*/frontend/**"
-      - "modules/plugins/*/package.json"
-      - "modules/plugins/*/vite.config.ts"
-      - "modules/plugins/*/vitest.config.ts"
-      - "modules/plugins/vitest.config.ts"
-      - "modules/plugins/eslint.config.js"
-      - "modules/plugins/vite.shared.ts"
-      - "modules/plugins/*/manifest.json"
-      - "modules/plugins/.storybook/**"
-      - "modules/libs/ui/**"
-      - "modules/libs/plugin-sdk-ts/**"
-      - "modules/libs/wire/**"
-      - "modules/libs/protocol/**"
-      - "modules/package.json"
-      - "modules/package-lock.json"
-      - "modules/prettier.config.mjs"
-      - "modules/.prettierignore"
+      - "plugins/*/frontend/**"
+      - "plugins/*/package.json"
+      - "plugins/*/vite.config.ts"
+      - "plugins/*/vitest.config.ts"
+      - "plugins/vitest.config.ts"
+      - "plugins/eslint.config.js"
+      - "plugins/vite.shared.ts"
+      - "plugins/*/manifest.json"
+      - "plugins/.storybook/**"
+      - "libs/ui/**"
+      - "libs/plugin-sdk-ts/**"
+      - "libs/wire/**"
+      - "libs/protocol/**"
+      - "package.json"
+      - "package-lock.json"
+      - "prettier.config.mjs"
+      - ".prettierignore"
       - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
@@ -28,23 +28,23 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/plugins/*/frontend/**"
-      - "modules/plugins/*/package.json"
-      - "modules/plugins/*/vite.config.ts"
-      - "modules/plugins/*/vitest.config.ts"
-      - "modules/plugins/vitest.config.ts"
-      - "modules/plugins/eslint.config.js"
-      - "modules/plugins/vite.shared.ts"
-      - "modules/plugins/*/manifest.json"
-      - "modules/plugins/.storybook/**"
-      - "modules/libs/ui/**"
-      - "modules/libs/plugin-sdk-ts/**"
-      - "modules/libs/wire/**"
-      - "modules/libs/protocol/**"
-      - "modules/package.json"
-      - "modules/package-lock.json"
-      - "modules/prettier.config.mjs"
-      - "modules/.prettierignore"
+      - "plugins/*/frontend/**"
+      - "plugins/*/package.json"
+      - "plugins/*/vite.config.ts"
+      - "plugins/*/vitest.config.ts"
+      - "plugins/vitest.config.ts"
+      - "plugins/eslint.config.js"
+      - "plugins/vite.shared.ts"
+      - "plugins/*/manifest.json"
+      - "plugins/.storybook/**"
+      - "libs/ui/**"
+      - "libs/plugin-sdk-ts/**"
+      - "libs/wire/**"
+      - "libs/protocol/**"
+      - "package.json"
+      - "package-lock.json"
+      - "prettier.config.mjs"
+      - ".prettierignore"
       - ".github/actions/**"
       - "!**/*.md"
       - "!docs/**"
@@ -61,7 +61,7 @@ permissions:
 
 jobs:
   # The frontends of every plugin under the one ESLint configuration in
-  # modules/plugins, and in the Prettier style of the modules.
+  # plugins, and in the Prettier style of the modules.
   lint:
     name: Plugin Lint
     runs-on: ubuntu-latest
@@ -75,13 +75,13 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
       - name: Lint plugin frontends
-        working-directory: modules/plugins
+        working-directory: plugins
         run: ../node_modules/.bin/eslint .
 
       - name: Check plugin formatting
@@ -104,7 +104,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
@@ -126,7 +126,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules

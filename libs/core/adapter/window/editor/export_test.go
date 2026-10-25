@@ -1,0 +1,91 @@
+package editor
+
+import (
+	"context"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
+	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/port/windowport"
+)
+
+// The use cases a handler holds, for the tests that wrap one in a fake.
+
+func (s *Services) NoteCreate() *note.Create { return s.Note.create }
+func (s *Services) NoteWrite() *note.Write   { return s.Note.write }
+func (s *Services) NoteRename() *note.Rename { return s.Note.rename }
+func (s *Services) FileRemove() *note.Remove { return s.File.remove }
+func (s *Services) FileMove() *vaults.Move   { return s.File.move }
+
+func (s *Services) SetFileMove(move *vaults.Move)  { s.File.move = move }
+func (s *Services) SetNoteWrite(write *note.Write) { s.Note.write = write }
+
+// NewWireModels is the models as the wire carries them.
+var NewWireModels = settings.NewWireModels
+
+// NewAssembly is the window's assembly over a configuration, bound the way an
+// application binds one. The index it opens is the window's to close.
+func NewAssembly(t *testing.T, cfg container.Config) Assembly {
+	t.Helper()
+
+	made, err := cfg.GetEditorAssembly(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return made
+}
+
+// watched is the window's assembly with the walk and the watch a test drives,
+// in place of the ones an installation is bound to. Everything else is the
+// installation's own.
+type watched struct {
+	container.EditorAssembly
+
+	cfg     container.Config
+	db      *container.Index
+	readers vaultport.VaultReaders
+	watcher vaultport.VaultWatcher
+}
+
+// newWatched is that assembly over an index and the pieces a test drives.
+func newWatched(
+	cfg container.Config, db *container.Index,
+	readers vaultport.VaultReaders, watcher vaultport.VaultWatcher,
+) watched {
+	return watched{
+		EditorAssembly: container.NewEditorAssembly(cfg, nil, db),
+		cfg:            cfg,
+		db:             db,
+		readers:        readers,
+		watcher:        watcher,
+	}
+}
+
+func (w watched) StartVault(
+	ctx context.Context, v domain.Vault, rebuild bool,
+	notified func(paths, assets []string, reload bool),
+	handleError windowport.ErrorHandler,
+) (
+	read func(ctx context.Context, during func()) (notes int, err error),
+	run func(ctx context.Context),
+	refresh vaults.Refresh,
+	unwatched error,
+) {
+	request := w.cfg
+	request.ShouldRebuildIndex = rebuild
+
+	opening := request.VaultOpenerWith(w.db, w.readers, w.watcher)
+	opening.ShouldRebuild = rebuild
+	opening.ErrorHandler = handleError
+	if notified != nil {
+		opening.Told = func(m container.VaultChanges) { notified(m.Paths, m.Assets, m.ShouldReload) }
+	}
+
+	open := opening.Begin(ctx, v)
+	return open.Read, open.Run, opening.GetRefresh(), open.GetUnwatchedReason()
+}

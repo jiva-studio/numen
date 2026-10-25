@@ -7,12 +7,12 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
       - "!docs/**"
       - ".github/workflows/protocol.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
+      - ".golangci.yml"
       - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -26,7 +26,7 @@ permissions:
 
 defaults:
   run:
-    working-directory: modules/libs/protocol
+    working-directory: libs/protocol
 
 jobs:
   # Whether the change is more than documentation. The checks below always start
@@ -66,14 +66,14 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/libs/protocol/go.mod
-          cache-dependency-path: modules/libs/protocol/go.sum
+          go-version-file: libs/protocol/go.mod
+          cache-dependency-path: libs/protocol/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - uses: bufbuild/buf-action@85aebf73123b5c15fd5528aaecbf9129cddf7fa7 # v1.6.0
         with:

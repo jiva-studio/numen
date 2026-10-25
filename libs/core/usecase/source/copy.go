@@ -1,0 +1,186 @@
+package source
+
+import (
+	"context"
+	"errors"
+	"io"
+	"io/fs"
+	"strings"
+
+	"github.com/jiva-studio/numen/libs/core/internal/operation"
+	"github.com/jiva-studio/numen/libs/core/internal/text"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+)
+
+// Downloading the media a url points at, so a person plays it from this disk.
+
+// CopyResult reports what downloading a copy did.
+type CopyResult struct {
+	Path string
+	// Bytes is how large what is at the address is, and Limit the size a copy
+	// may be. Over the limit nothing is downloaded.
+	Bytes int64
+	Limit int64
+	// IsExisted is a copy that already stood, and nothing was downloaded.
+	IsExisted bool
+	// At is where in the vault the copy landed, and nothing where it landed in
+	// the application's own folder.
+	At string
+}
+
+func (r CopyResult) IsTooLarge() bool { return r.Limit > 0 && r.Bytes > r.Limit }
+
+// Copy downloads what is at a url's address so a person plays it from this disk.
+//
+// It is asked for by hand: a copy takes as much of somebody's disk as what is
+// at the address takes, and pasting an address is not asking for one. Where it
+// lands is `importing.copies_to_vault`: the application's own folder, where
+// losing it costs another download, or beside the url as a file of the person's
+// own.
+//
+// The progress function, where given, is told how much of the copy has arrived out of how much the site declared.
+func (u ImportURL) Copy(
+	ctx context.Context, v domain.Vault, path string, progress func(finished, total int64),
+) (CopyResult, error) {
+	res := CopyResult{Path: path, Limit: u.CopyMaxSize}
+	pos, _, store, err := u.readURLFile(ctx, v, path)
+	if err != nil {
+		return res, err
+	}
+	hash := text.Fingerprint([]byte(string(pos)))
+	besidePath := CopyBeside(path)
+
+	// One run to a copy, held for as long as the download takes. The claim is on
+	// the store's name whichever disk the copy lands on: it is the address that
+	// is being downloaded, and two urls on one address are one download.
+	release, err := store.ClaimArtifact(ctx, domain.NewCopyName(hash))
+	if errors.Is(err, vaultport.ErrClaimed) {
+		return res, ErrBeingDownloaded
+	}
+	if err != nil {
+		return res, err
+	}
+	defer release()
+
+	if size, target, err := u.getExistingCopy(ctx, v, store, hash, besidePath); err != nil {
+		return res, err
+	} else if target {
+		res.IsExisted, res.Bytes, res.At = true, size, u.landing(besidePath)
+		return res, nil
+	}
+
+	// The size gate and the download share one operation on one address.
+	ctx, endOperation := operation.Begin(ctx)
+	defer endOperation()
+	meta, err := u.By.GetMetadata(ctx, pos)
+	if err != nil {
+		return res, err
+	}
+	res.Bytes = meta.Bytes
+	if u.CopyMaxSize > 0 && meta.Bytes > u.CopyMaxSize {
+		return res, nil
+	}
+
+	// The copy is written through the store's own rename, so a download that
+	// stopped leaves nothing anything plays.
+	read, write := io.Pipe()
+	going := make(chan error, 1)
+	go func() {
+		_, err := u.By.Download(ctx, pos, write)
+		_ = write.CloseWithError(err)
+		going <- err
+	}()
+	incoming := limitReader(read, u.CopyMaxSize)
+	if progress != nil {
+		progress(0, meta.Bytes)
+		incoming = &passing{from: incoming, total: meta.Bytes, report: progress}
+	}
+	size, err := u.writeCopy(ctx, v, store, domain.NewCopyName(hash), besidePath, incoming)
+	// The read end is closed before the download is waited for: whoever stopped
+	// reading unblocks whoever is writing into it.
+	_ = read.CloseWithError(err)
+	downloading := <-going
+	// A site that declared a size it then ran past is known only to be over the
+	// limit, which is the size reported.
+	if errors.Is(err, errTooLarge) {
+		res.Bytes = u.CopyMaxSize + 1
+		return res, nil
+	}
+	if downloading != nil {
+		return res, downloading
+	}
+	if err != nil {
+		return res, err
+	}
+	res.Bytes, res.At = size, u.landing(besidePath)
+	return res, nil
+}
+
+// CopyBeside is where a copy kept in the vault stands: beside the url, under
+// its own name. A person looking at the folder sees the copy and the url
+// together.
+func CopyBeside(path string) string {
+	return strings.TrimSuffix(path, domain.URLExtension) + domain.CopyExtension
+}
+
+// landing is where the copy is, as the vault names it, and nothing where it is
+// in the application's own folder.
+func (u ImportURL) landing(copyPath string) string {
+	if !u.IsToVault {
+		return ""
+	}
+	return copyPath
+}
+
+// getExistingCopy says whether a copy is already here, and how large.
+func (u ImportURL) getExistingCopy(
+	ctx context.Context, v domain.Vault, store vaultport.DerivedStore, hash, copyPath string,
+) (int64, bool, error) {
+	if u.IsToVault {
+		reader, err := u.Readers.Open(v)
+		if err != nil {
+			return 0, false, err
+		}
+		ref, err := reader.GetFingerprint(ctx, copyPath)
+		if errors.Is(err, fs.ErrNotExist) {
+			return 0, false, nil
+		}
+		if err != nil {
+			return 0, false, err
+		}
+		return ref.Size, true, nil
+	}
+	reader, size, err := store.OpenArtifact(ctx, domain.NewCopyName(hash))
+	if errors.Is(err, fs.ErrNotExist) {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	_ = reader.Close()
+	return size, true, nil
+}
+
+// writeCopy writes the copy where the settings say it lands, and answers how
+// large it came to.
+//
+// A copy in the vault is the person's file: the application does not replace
+// one that is there, and putting the folders above it right is the writer's.
+func (u ImportURL) writeCopy(
+	ctx context.Context, v domain.Vault, store vaultport.DerivedStore, name domain.ArtifactName, adjacent string, from io.Reader,
+) (int64, error) {
+	if !u.IsToVault {
+		return store.WriteArtifactStream(ctx, name, from)
+	}
+	writer, err := u.Writers.Open(v)
+	if err != nil {
+		return 0, err
+	}
+	counted := &passing{from: from}
+	if err := writer.Import(ctx, adjacent, counted); err != nil {
+		return 0, err
+	}
+	return counted.read, nil
+}

@@ -3,38 +3,38 @@ name: Mobile Plugin
 on:
   pull_request:
     paths:
-      - "modules/apps/mobile/bind/**"
-      - "modules/apps/mobile/*.go"
-      - "modules/apps/mobile/go.mod"
-      - "modules/apps/mobile/go.sum"
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/notes/**"
-      - "!modules/libs/notes/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
+      - "apps/mobile/bind/**"
+      - "apps/mobile/*.go"
+      - "apps/mobile/go.mod"
+      - "apps/mobile/go.sum"
+      - "libs/core/**"
+      - "!libs/core/**/*.md"
+      - "libs/notes/**"
+      - "!libs/notes/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
       - "!docs/**"
       - ".github/workflows/mobile-plugin.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
+      - ".golangci.yml"
       - "**/gorules/**"
   push:
     branches: [main]
     paths:
-      - "modules/apps/mobile/bind/**"
-      - "modules/apps/mobile/*.go"
-      - "modules/apps/mobile/go.mod"
-      - "modules/apps/mobile/go.sum"
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/notes/**"
-      - "!modules/libs/notes/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
+      - "apps/mobile/bind/**"
+      - "apps/mobile/*.go"
+      - "apps/mobile/go.mod"
+      - "apps/mobile/go.sum"
+      - "libs/core/**"
+      - "!libs/core/**/*.md"
+      - "libs/notes/**"
+      - "!libs/notes/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
       - "!docs/**"
       - ".github/workflows/mobile-plugin.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
+      - ".golangci.yml"
       - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -53,7 +53,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: modules/apps/mobile
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -61,10 +61,10 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/mobile/go.mod
+          go-version-file: apps/mobile/go.mod
           cache-dependency-path: |
-            modules/apps/mobile/go.sum
-            modules/libs/core/go.sum
+            apps/mobile/go.sum
+            libs/core/go.sum
 
       - name: Verify Go formatting
         run: |
@@ -80,7 +80,7 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/apps/mobile
+          working-directory: apps/mobile
           args: --timeout 15m
 
       # The vulnerability list is kept elsewhere and read at the time of the
@@ -89,7 +89,7 @@ jobs:
       # is required.
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: modules/apps/mobile
+          working-directory: apps/mobile
 
   test:
     name: Tests
@@ -97,7 +97,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: modules/apps/mobile
+        working-directory: apps/mobile
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -107,14 +107,14 @@ jobs:
       - id: setup-go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/mobile/go.mod
+          go-version-file: apps/mobile/go.mod
           cache: false
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
-          key: go-mod-modules/apps/mobile-${{ hashFiles('modules/apps/mobile/go.sum') }}
-          restore-keys: go-mod-modules/apps/mobile-
+          key: go-mod-apps/mobile-${{ hashFiles('apps/mobile/go.sum') }}
+          restore-keys: go-mod-apps/mobile-
 
       # What main's last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The prefix restores main's
@@ -122,8 +122,8 @@ jobs:
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
-          key: go-build-modules/apps/mobile-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/apps/mobile/go.sum') }}
-          restore-keys: go-build-modules/apps/mobile-
+          key: go-build-apps/mobile-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('apps/mobile/go.sum') }}
+          restore-keys: go-build-apps/mobile-
 
       # A test builds its vault in a temporary folder, and there is memory here
       # to hold every one of them.
@@ -137,4 +137,4 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           path: ~/.cache/go-build
-          key: go-build-modules/apps/mobile-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/apps/mobile/go.sum') }}
+          key: go-build-apps/mobile-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('apps/mobile/go.sum') }}

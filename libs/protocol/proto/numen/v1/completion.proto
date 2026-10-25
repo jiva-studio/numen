@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+// A plugin's question to a model: messages in, text out.
+//
+// A plugin that needs a language model states what it needs and the host
+// decides which agent and model answer. The question carries no tools, no
+// vault and no conversation.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// HostService is what the host answers for a plugin that holds the ai:complete
+// permission.
+service HostService {
+  // Complete answers the question with text from the agent and the model the
+  // calling plugin's setting names, else from the default of the settings. The
+  // host knows the caller by its token, and nothing in the request chooses the
+  // agent.
+  rpc Complete(HostServiceCompleteRequest) returns (HostServiceCompleteResponse);
+}
+
+message HostServiceCompleteRequest {
+  CompletionQuestion question = 1;
+}
+
+message HostServiceCompleteResponse {
+  CompletionAnswer answer = 1;
+  CompletionErrorCode error = 2;
+  string detail = 3;
+}
+
+// CompletionQuestion is what a plugin asks of a model.
+message CompletionQuestion {
+  // The conversation so far, oldest first.
+  repeated CompletionMessage messages = 1;
+  // What the answer is for (e.g. "proofreading"). It routes nothing; a purpose
+  // names neither a model, an agent nor a key.
+  string purpose = 2;
+
+  reserved 3;
+  reserved "hints";
+}
+
+message CompletionMessage {
+  // Who wrote the text: "system", "user" or "assistant". Empty is read as "user".
+  string role = 1;
+  string text = 2;
+}
+
+// value means it was not.
+enum CompletionErrorCode {
+  COMPLETION_ERROR_CODE_UNSPECIFIED = 0;
+
+  // No agent answers the question: the program the settings name is not
+  // installed or no plugin lists it, or no program is installed at all.
+  COMPLETION_ERROR_CODE_NO_ROUTE = 1;
+
+  // The program the question is routed to cannot be reached or stopped without
+  // an answer.
+  COMPLETION_ERROR_CODE_UNAVAILABLE = 2;
+
+  // The window asks the person, and a plugin shows this as the reason nothing
+  // was answered.
+  COMPLETION_ERROR_CODE_NO_CONSENT = 3;
+}
+
+// CompletionAnswer is what a model said.
+message CompletionAnswer {
+  string text = 1;
+}

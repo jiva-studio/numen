@@ -7,12 +7,13 @@ Numen features a modular plugin architecture that decouples specialized capabili
 ## 1. Overview & Architecture
 
 Numen plugins follow a dual-mode architectural contract:
+
 1. **In-tree Monolithic Build**: Plugins compile directly into the application binary for development without IPC overhead.
 2. **Out-of-Process Modular Build**: Plugins execute as independent subprocesses communicating with the core host over loopback Connect-RPC HTTP/2.
 
-In the monolithic build, `modules/apps/desktop-monolith` is the composition root and the one module that names plugins. It registers each plugin it links once, with `app.RegisterPlugin(manifest, serve)`: `manifest` is the plugin's own `manifest.json`, embedded by the package at the root of the plugin's module, and `serve` makes the handler of the plugin's backend from the variables a launched process of it is given. The handler is a linked server of the plugin SDK (`server.NewLinkedHandler`) with the plugin's services mounted on it, so each plugin answers its own services and its own `Configure`. A plugin the monolith does not link is launched as a process.
+In the monolithic build, `apps/desktop-monolith` is the composition root and the one module that names plugins. It registers each plugin it links once, with `app.RegisterPlugin(manifest, serve)`: `manifest` is the plugin's own `manifest.json`, embedded by the package at the root of the plugin's module, and `serve` makes the handler of the plugin's backend from the variables a launched process of it is given. The handler is a linked server of the plugin SDK (`server.NewLinkedHandler`) with the plugin's services mounted on it, so each plugin answers its own services and its own `Configure`. A plugin the monolith does not link is launched as a process.
 
-A plugin joins the monolith in three steps. Its module has a `manifest.go` that embeds `manifest.json`, its backend lives in an importable package `backend/service` whose `Mount(s *server.Server) error` registers its services and whose `NewHandler(vars)` returns `server.NewLinkedHandler(vars, Mount)`, and `registerPlugins` in `modules/apps/desktop-monolith/main.go` gains one line. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down. The monolith links Numen Agent, Claude Code, proofreading, the downloader, embeddings, OCR, transcription and both readers. CI runs `TestBothBuildsAnswerAlike` in that module: the same chat, single answer and document call go to the plugins linked into the process and to the plugins launched as processes, and the answers and the declared capabilities are compared.
+A plugin joins the monolith in three steps. Its module has a `manifest.go` that embeds `manifest.json`, its backend lives in an importable package `backend/service` whose `Mount(s *server.Server) error` registers its services and whose `NewHandler(vars)` returns `server.NewLinkedHandler(vars, Mount)`, and `registerPlugins` in `apps/desktop-monolith/main.go` gains one line. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down. The monolith links Numen Agent, Claude Code, proofreading, the downloader, embeddings, OCR, transcription and both readers. CI runs `TestBothBuildsAnswerAlike` in that module: the same chat, single answer and document call go to the plugins linked into the process and to the plugins launched as processes, and the answers and the declared capabilities are compared.
 
 ### The vault, through the host
 
@@ -21,6 +22,7 @@ A plugin never opens the vault folder. A plugin that holds `vault:read` calls `H
 ### Host Lifecycle & IPC Transport
 
 Plugins communicating over Connect-RPC use loopback TCP:
+
 - The host supervisor launches the plugin executable with `--port=<port>` and `--token=<auth_token>`.
 - The plugin process starts an HTTP/2 (`h2c`) server and announces readiness by writing to standard output:
   ```
@@ -37,7 +39,7 @@ Plugins communicating over Connect-RPC use loopback TCP:
 Every plugin follows a standard layout:
 
 ```text
-modules/plugins/<name>/
+plugins/<name>/
 ├── manifest.json       # Metadata, capabilities, activation events, permissions
 ├── manifest.go         # Monolithic build registration
 ├── Makefile            # Build and test recipes
@@ -206,6 +208,7 @@ numen plugin create ui-plugin --type=frontend
 ```
 
 Supported templates:
+
 - `reader`: Complete document viewer with Connect-RPC backend and Vue 3 frontend.
 - `compute`: Headless backend computation service (Go Connect-RPC).
 - `agent`: AI agent integration with backend service and client controls.
@@ -215,15 +218,17 @@ Supported templates:
 Verify `manifest.json` with the same validator the host runs at discovery (identity, protocol, lifecycle, permissions, settings), and ensure backend/frontend entrypoints resolve:
 
 ```bash
-numen plugin validate modules/plugins/sample
+numen plugin validate plugins/sample
 ```
 
 Output:
+
 ```text
-plugin at modules/plugins/sample is valid
+plugin at plugins/sample is valid
 ```
 
 If validation fails, each rule violation is reported:
+
 ```text
 validation errors:
   - invalid permission: unrestricted:root
@@ -235,13 +240,14 @@ validation errors:
 Bundle the plugin into a distributable archive ready for installation:
 
 ```bash
-numen plugin package modules/plugins/sample
+numen plugin package plugins/sample
 ```
 
 Output:
+
 ```text
-Bundled 12 files into modules/plugins/sample/dist/md.numen.sample-0.1.0.zip
-packaged plugin: modules/plugins/sample/dist/md.numen.sample-0.1.0.zip
+Bundled 12 files into plugins/sample/dist/md.numen.sample-0.1.0.zip
+packaged plugin: plugins/sample/dist/md.numen.sample-0.1.0.zip
 ```
 
 ---
@@ -254,7 +260,7 @@ packaged plugin: modules/plugins/sample/dist/md.numen.sample-0.1.0.zip
    ```
 2. **Build backend**:
    ```bash
-   cd modules/plugins/epub-reader
+   cd plugins/epub-reader
    make build
    ```
 3. **Run unit tests**:

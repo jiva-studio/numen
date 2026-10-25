@@ -16,18 +16,18 @@ updates:
   # local module is listed beside it, so one group bump moves them together.
   - package-ecosystem: gomod
     directories:
-      - /modules/libs/core
-      - /modules/libs/protocol
-      - /modules/libs/plugin-sdk-go
-      - /modules/libs/plugin-sdk-go/agent
-      - /modules/libs/plugin-sdk-go/models
-      - /modules/libs/plugin-sdk-go/onnx
-      - /modules/libs/plugin-sdk-go/vault
-      - /modules/apps/desktop
-      - /modules/apps/desktop-monolith
-      - /modules/apps/mobile
-      - /modules/apps/desktop/build/tools
-      - /modules/plugins/*
+      - /libs/core
+      - /libs/protocol
+      - /libs/plugin-sdk-go
+      - /libs/plugin-sdk-go/agent
+      - /libs/plugin-sdk-go/models
+      - /libs/plugin-sdk-go/onnx
+      - /libs/plugin-sdk-go/vault
+      - /apps/desktop
+      - /apps/desktop-monolith
+      - /apps/mobile
+      - /apps/desktop/build/tools
+      - /plugins/*
     schedule:
       interval: monthly
     commit-message:

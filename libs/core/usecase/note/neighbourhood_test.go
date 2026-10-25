@@ -1,0 +1,427 @@
+package note_test
+
+import (
+	"fmt"
+	"slices"
+	"strings"
+	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/notes/domain"
+)
+
+// relationsOf renders a neighbourhood as `relation path` lines, which is what these
+// tests are about: who is shown, and where.
+func relationsOf(n domain.Neighbourhood) []string {
+	out := make([]string, 0, len(n.Related))
+	for _, r := range n.Related {
+		out = append(out, string(r.Relation)+" "+r.Path)
+	}
+	return out
+}
+
+func neighbourhoodOf(t *testing.T, files map[string]string, path string) domain.Neighbourhood {
+	t.Helper()
+	db, v := newIndexedVault(t, files)
+	n, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).
+		Execute(t.Context(), v, path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return n
+}
+
+// TestBothEndsOfAnEdgeAreOneRelationship. `parent: B` in A and `child: A` in B
+// say the same thing, so A must be B's child either way it was written.
+func TestBothEndsOfAnEdgeAreOneRelationship(t *testing.T) {
+	t.Parallel()
+	content := neighbourhoodOf(t, map[string]string{
+		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
+		"Idea.md":  "---\ntitle: Idea\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Idea\n",
+		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
+	}, "Area.md")
+	if got := relationsOf(content); !slices.Equal(got, []string{"child Idea.md"}) {
+		t.Errorf("a note that names Area its parent is not Area's child: %v", got)
+	}
+
+	reversed := neighbourhoodOf(t, map[string]string{
+		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Idea]]\"\n    role: child\n---\n\n# Area\n",
+		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
+	}, "Area.md")
+	if got := relationsOf(reversed); !slices.Equal(got, []string{"child Idea.md"}) {
+		t.Errorf("the same edge written from the other end: %v", got)
+	}
+}
+
+// describeEdge renders the line between two notes as it is seen from one of
+// them: the relation, the label where there is one, and whether the edge is mutual.
+func describeEdge(t *testing.T, files map[string]string, from, to string) string {
+	t.Helper()
+	for _, r := range neighbourhoodOf(t, files, from).Related {
+		if r.Path != to {
+			continue
+		}
+		relations := []string{string(r.Relation)}
+		if r.Label != "" {
+			relations = append(relations, r.Label)
+		}
+		if r.IsMutual {
+			relations = append(relations, "mutual")
+		}
+		return strings.Join(relations, " ")
+	}
+	return "nothing"
+}
+
+// TestALabelWrittenAtEitherEndIsDrawn.
+//
+// Either end of a relationship can name it, and both ends naming it makes the
+// edge mutual. The word shown is then the one the note in focus wrote, so the
+// two notes read the same edge in their own language.
+func TestALabelSavedAtEitherEndIsGenerated(t *testing.T) {
+	t.Parallel()
+	content := func(title, links string) string {
+		if links == "" {
+			return "---\ntitle: " + title + "\n---\n\n# " + title + "\n"
+		}
+		return "---\ntitle: " + title + "\nlinks:\n" + links + "---\n\n# " + title + "\n"
+	}
+
+	for _, c := range []struct {
+		name               string
+		area, idea         string
+		fromArea, fromIdea string
+	}{
+		{
+			name:     "the far end alone names it",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n    label: the top plot\n",
+			fromArea: "parent the top plot mutual",
+			fromIdea: "child the top plot mutual",
+		},
+		{
+			name:     "each end has its own word for it",
+			area:     "  - to: \"[[Idea]]\"\n    role: jump\n    label: the newest tenant\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: jump\n    label: the oldest tenant\n",
+			fromArea: "jump the newest tenant mutual",
+			fromIdea: "jump the oldest tenant mutual",
+		},
+		{
+			name:     "the near end alone names it",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
+			fromArea: "parent the site mutual",
+			fromIdea: "child the site mutual",
+		},
+		{
+			name:     "written at one end only",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n    label: the site\n",
+			idea:     "",
+			fromArea: "parent the site",
+			fromIdea: "child the site",
+		},
+		{
+			name:     "mutual and named by neither",
+			area:     "  - to: \"[[Idea]]\"\n    role: parent\n",
+			idea:     "  - to: \"[[Area]]\"\n    role: child\n",
+			fromArea: "parent mutual",
+			fromIdea: "child mutual",
+		},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			files := map[string]string{
+				"Area.md": content("Area", c.area),
+				"Idea.md": content("Idea", c.idea),
+			}
+			if got := describeEdge(t, files, "Area.md", "Idea.md"); got != c.fromArea {
+				t.Errorf("from Area: got %q, want %q", got, c.fromArea)
+			}
+			if got := describeEdge(t, files, "Idea.md", "Area.md"); got != c.fromIdea {
+				t.Errorf("from Idea: got %q, want %q", got, c.fromIdea)
+			}
+		})
+	}
+}
+
+// TestEndsThatDisagreeAnswerNothing. A pair who are each other's parent name
+// two relationships, and the one drawn is the one whose relation wins.
+func TestEndsThatDisagreeAnswerNothing(t *testing.T) {
+	t.Parallel()
+	mutualParents := map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n    label: lays them\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n    label: came out of one\n---\n\n# Egg\n",
+	}
+	if got := describeEdge(t, mutualParents, "Chicken.md", "Egg.md"); got != "parent lays them" {
+		t.Errorf("got %q, want the parent relation and the word written here", got)
+	}
+	if got := describeEdge(t, mutualParents, "Egg.md", "Chicken.md"); got != "parent came out of one" {
+		t.Errorf("got %q, want the parent relation and the word written here", got)
+	}
+
+	// Each calls the other its child, so the parent relation is earned from the far
+	// end and carries the word written there.
+	mutualChildren := map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n    label: was laid\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n    label: hatched\n---\n\n# Egg\n",
+	}
+	if got := describeEdge(t, mutualChildren, "Chicken.md", "Egg.md"); got != "parent hatched" {
+		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
+	}
+	if got := describeEdge(t, mutualChildren, "Egg.md", "Chicken.md"); got != "parent was laid" {
+		t.Errorf("got %q, want the parent relation and the word written at the end it came from", got)
+	}
+}
+
+// TestSiblingsAreTheOtherChildrenOfAParent. Nothing stores a sibling; it is
+// what the shared parent knows.
+func TestSiblingsAreTheOtherChildrenOfAParent(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Area.md":  "---\ntitle: Area\n---\n\n# Area\n",
+		"One.md":   "---\ntitle: One\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# One\n",
+		"Two.md":   "---\ntitle: Two\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Two\n",
+		"Three.md": "---\ntitle: Three\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Three\n",
+	}, "One.md")
+
+	want := []string{"parent Area.md", "sibling Three.md", "sibling Two.md"}
+	if got := relationsOf(n); !slices.Equal(got, want) {
+		t.Errorf("got %v, want %v", got, want)
+	}
+}
+
+// TestANoteTakesOneRelation. A pair that are each other's parent is a contradiction
+// the vault is allowed to contain, and a picture that draws one note twice is
+// not a picture.
+func TestANoteConsumesOneRelation(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: parent\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: parent\n---\n\n# Egg\n",
+	}, "Chicken.md")
+
+	if got := relationsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
+		t.Errorf("got %v, want the first relation it qualifies for and no second one", got)
+	}
+}
+
+// TestTheHigherRelationWins is the other half of taking one relation: which one.
+//
+// Written from the mirrored end, so the child arrives first and the parent
+// second. Keeping whichever was seen first would make it a child; the rule
+// is that a parent outranks one.
+func TestTheHigherRelationWins(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Chicken.md": "---\ntitle: Chicken\nlinks:\n  - to: \"[[Egg]]\"\n    role: child\n---\n\n# Chicken\n",
+		"Egg.md":     "---\ntitle: Egg\nlinks:\n  - to: \"[[Chicken]]\"\n    role: child\n---\n\n# Egg\n",
+	}, "Chicken.md")
+
+	if got := relationsOf(n); !slices.Equal(got, []string{"parent Egg.md"}) {
+		t.Errorf("got %v, want parent — it outranks the child relation the same pair also earns", got)
+	}
+}
+
+// TestANeighbourhoodStaysInsideItsVault. A link by identifier resolves in
+// whichever connected vault holds the note, so a neighbourhood that does not
+// check where one landed draws a note from somewhere else — or, when the two
+// vaults file a note at the same path, the wrong note under the right name.
+func TestANeighbourhoodStaysInsideItsVault(t *testing.T) {
+	t.Parallel()
+	const shared = "notes/Entropy.md"
+	db, here := newIndexedVault(t, map[string]string{
+		shared:    "---\ntitle: Entropy here\nid: 01M02ACGM0FYMSXNDP29C90JN1\n---\n\n# Entropy here\n",
+		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"note://01M02ACGM0FYMSXNDP29C90JN2\"\n    role: child\n---\n\n# Area\n",
+	})
+	addVault(t, db, testsupport.NewVault(t, map[string]string{
+		shared: "---\ntitle: Entropy elsewhere\nid: 01M02ACGM0FYMSXNDP29C90JN2\n---\n\n# Entropy elsewhere\n",
+	}))
+
+	n, err := note.NewShowNeighbourhood(db.Links(), db.Queries()).
+		Execute(t.Context(), here, "Area.md")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := relationsOf(n); len(got) != 0 {
+		t.Errorf("got %v — the note that identifier names is in another vault", got)
+	}
+}
+
+// TestOnlyNavigableLinksTakeARelation. A wikilink in prose and an attachment are
+// links, and neither is a place in the hierarchy.
+func TestOnlyNavigableLinksTakeARelation(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"https://example.org/paper\"\n    role: attachment\n" +
+			"  - to: \"[[Idea]]\"\n    role: jump\n---\n\n# Area\n\nMentioned in prose: [[Other]].\n",
+		"Idea.md":  "---\ntitle: Idea\n---\n\n# Idea\n",
+		"Other.md": "---\ntitle: Other\n---\n\n# Other\n",
+	}, "Area.md")
+
+	if got := relationsOf(n); !slices.Equal(got, []string{"jump Idea.md"}) {
+		t.Errorf("got %v — prose links and attachments are not relations", got)
+	}
+}
+
+// TestADanglingLinkHasNoRelation: there is nothing to draw and nowhere to go.
+func TestADanglingLinkHasNoRelation(t *testing.T) {
+	t.Parallel()
+	n := neighbourhoodOf(t, map[string]string{
+		"Area.md": "---\ntitle: Area\nlinks:\n  - to: \"[[Nothing by that name]]\"\n    role: child\n---\n\n# Area\n",
+	}, "Area.md")
+
+	if got := relationsOf(n); len(got) != 0 {
+		t.Errorf("got %v, want nothing", got)
+	}
+	if n.Focus.Title != "Area" {
+		t.Errorf("focus = %+v", n.Focus)
+	}
+}
+
+// TestTheSameVaultDrawsTheSameWayTwice.
+//
+// Every note is called the same thing, on purpose. A picture ordered by what a
+// note is called is ordered by nothing at all when they share a name, and the
+// vault where that is true is the one a person notices it in: twelve daily
+// notes, twelve chapters, twelve "Notes".
+func TestTheSameVaultDrawsTheSameWayTwice(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{"Area.md": "---\ntitle: Area\n---\n\n# Area\n"}
+	for i := range 12 {
+		files[fmt.Sprintf("Child%02d.md", i)] = fmt.Sprintf(
+			"---\ntitle: Notes\nlinks:\n  - to: \"[[Area]]\"\n    role: parent\n---\n\n# Notes %02d\n", i)
+	}
+
+	first := relationsOf(neighbourhoodOf(t, files, "Area.md"))
+	for range 8 {
+		if again := relationsOf(neighbourhoodOf(t, files, "Area.md")); !slices.Equal(first, again) {
+			t.Fatalf("two runs disagree:\n  %v\n  %v", first, again)
+		}
+	}
+	if len(first) != 12 {
+		t.Errorf("%d children, want 12", len(first))
+	}
+}
+
+// TestAVaultOpensOnItsFirstNote.
+func TestAVaultOpensOnItsFirstNote(t *testing.T) {
+	t.Parallel()
+	db, v := newIndexedVault(t, map[string]string{
+		"Area.md": "---\ntitle: Area\n---\n\n# Area\n",
+		"Idea.md": "---\ntitle: Idea\n---\n\n# Idea\n",
+	})
+
+	opening, found, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !found {
+		t.Fatal("a vault with two notes opens on neither")
+	}
+	if opening.Title == "" || opening.Path == "" {
+		t.Errorf("opening = %+v", opening)
+	}
+
+	again, _, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if again != opening {
+		t.Errorf("a vault opens somewhere different each time: %+v then %+v", opening, again)
+	}
+}
+
+func TestAnEmptyVaultOpensOnNothing(t *testing.T) {
+	t.Parallel()
+	db, v := newIndexedVault(t, map[string]string{})
+
+	_, found, err := db.Queries().GetOpeningNote(t.Context(), v.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if found {
+		t.Error("an empty vault opened on something")
+	}
+}
+
+func TestMutualLinksCarryBothLabels(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Alpha.md": "---\ntitle: Alpha\nlinks:\n  - to: \"[[Beta]]\"\n    role: jump\n    label: \"111\"\n---\n\n# Alpha\n",
+		"Beta.md":  "---\ntitle: Beta\nlinks:\n  - to: \"[[Alpha]]\"\n    role: jump\n    label: \"222\"\n---\n\n# Beta\n",
+	}
+
+	aroundAlpha := neighbourhoodOf(t, files, "Alpha.md")
+	if len(aroundAlpha.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundAlpha.Related))
+	}
+	relAlpha := aroundAlpha.Related[0]
+	if !relAlpha.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relAlpha.Label != "111" {
+		t.Errorf("expected Label to be 111, got %q", relAlpha.Label)
+	}
+	if relAlpha.ReverseLabel != "222" {
+		t.Errorf("expected ReverseLabel to be 222, got %q", relAlpha.ReverseLabel)
+	}
+
+	aroundBeta := neighbourhoodOf(t, files, "Beta.md")
+	if len(aroundBeta.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundBeta.Related))
+	}
+	relBeta := aroundBeta.Related[0]
+	if !relBeta.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relBeta.Label != "222" {
+		t.Errorf("expected Label to be 222, got %q", relBeta.Label)
+	}
+	if relBeta.ReverseLabel != "111" {
+		t.Errorf("expected ReverseLabel to be 111, got %q", relBeta.ReverseLabel)
+	}
+}
+
+func TestMutualChildParentLinksCarryBothLabels(t *testing.T) {
+	t.Parallel()
+	files := map[string]string{
+		"Parent.md": "---\ntitle: Parent\nlinks:\n  - to: \"[[Child]]\"\n    role: child\n    label: \"child of parent\"\n---\n\n# Parent\n",
+		"Child.md":  "---\ntitle: Child\nlinks:\n  - to: \"[[Parent]]\"\n    role: parent\n    label: \"parent of child\"\n---\n\n# Child\n",
+	}
+
+	aroundParent := neighbourhoodOf(t, files, "Parent.md")
+	if len(aroundParent.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundParent.Related))
+	}
+	relParent := aroundParent.Related[0]
+	if !relParent.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relParent.Relation != domain.RelationChild {
+		t.Errorf("expected Relation to be child, got %v", relParent.Relation)
+	}
+	if relParent.Label != "child of parent" {
+		t.Errorf("expected Label to be 'child of parent', got %q", relParent.Label)
+	}
+	if relParent.ReverseLabel != "parent of child" {
+		t.Errorf("expected ReverseLabel to be 'parent of child', got %q", relParent.ReverseLabel)
+	}
+
+	aroundChild := neighbourhoodOf(t, files, "Child.md")
+	if len(aroundChild.Related) != 1 {
+		t.Fatalf("expected 1 related note, got %d", len(aroundChild.Related))
+	}
+	relChild := aroundChild.Related[0]
+	if !relChild.IsMutual {
+		t.Errorf("expected IsMutual to be true")
+	}
+	if relChild.Relation != domain.RelationParent {
+		t.Errorf("expected Relation to be parent, got %v", relChild.Relation)
+	}
+	if relChild.Label != "parent of child" {
+		t.Errorf("expected Label to be 'parent of child', got %q", relChild.Label)
+	}
+	if relChild.ReverseLabel != "child of parent" {
+		t.Errorf("expected ReverseLabel to be 'child of parent', got %q", relChild.ReverseLabel)
+	}
+}

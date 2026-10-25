@@ -1,0 +1,12 @@
+{
+  "name": "@numen/git.hooks",
+  "private": true,
+  "description": "Git hooks configuration.",
+  "scripts": {
+    "prepare": "cd ../.. && husky tools/git-hooks/.husky && git config commit.template \"$(git rev-parse --show-toplevel)/tools/git-hooks/.gitmessage\"",
+    "test": "node --test *.test.mjs"
+  },
+  "devDependencies": {
+    "husky": "^9.1.7"
+  }
+}

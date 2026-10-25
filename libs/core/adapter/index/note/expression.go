@@ -1,0 +1,46 @@
+package note
+
+import (
+	"strings"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+)
+
+// The two characters the index is asked to wrap a run that matched in. They are
+// control characters, which no name written by a person holds.
+const (
+	opening = "\x02"
+	closing = "\x03"
+)
+
+// parseMarkedName is a marked name as it actually reads, and the runs the index marked in
+// it, counted the way a client counts text: in UTF-16 code units.
+func parseMarkedName(marked string) (string, []domain.UnitSpan) {
+	var name strings.Builder
+	name.Grow(len(marked))
+
+	var pos []domain.UnitSpan
+	if n := strings.Count(marked, "\x02"); n > 0 {
+		pos = make([]domain.UnitSpan, 0, n)
+	}
+
+	units, from := 0, -1
+	for _, r := range marked {
+		switch r {
+		case '\x02':
+			from = units
+		case '\x03':
+			if from >= 0 && units > from {
+				pos = append(pos, domain.UnitSpan{From: from, To: units})
+			}
+			from = -1
+		default:
+			name.WriteRune(r)
+			units++
+			if r > 0xffff {
+				units++
+			}
+		}
+	}
+	return name.String(), pos
+}

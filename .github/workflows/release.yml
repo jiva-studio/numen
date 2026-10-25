@@ -193,17 +193,17 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers.
@@ -220,7 +220,7 @@ jobs:
 
       # What the binary answers `--version` with is written in at the link.
       - name: Build desktop binaries
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
@@ -228,7 +228,7 @@ jobs:
         run: |
           # Both binaries say what they are out of the one package the linker
           # writes the numbers into.
-          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          into=github.com/jiva-studio/numen/apps/desktop/internal/version
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
@@ -258,15 +258,15 @@ jobs:
         run: |
           set -euo pipefail
           tree="$RUNNER_TEMP/tree"
-          at=modules/apps/desktop/build/linux
+          at=apps/desktop/build/linux
 
           make plugins_build
 
           install -Dm755 "$RUNNER_TEMP/numen" "$tree/numen"
           install -Dm755 "$RUNNER_TEMP/numen-flashcards" "$tree/numen-flashcards"
 
-          .github/scripts/stage-plugins.sh modules/plugins "$tree/plugins"
-          .github/scripts/check-staged-plugins.sh modules/plugins "$tree/plugins"
+          .github/scripts/stage-plugins.sh plugins "$tree/plugins"
+          .github/scripts/check-staged-plugins.sh plugins "$tree/plugins"
 
           install -Dm644 "$at/numen.desktop" -t "$tree/share/applications"
           install -Dm644 "$at/numen-flashcards.desktop" -t "$tree/share/applications"
@@ -298,21 +298,21 @@ jobs:
         env:
           VERSION: ${{ needs.naming.outputs.version }}
         run: |
-          go -C modules/apps/desktop/build/tools install tool
+          go -C apps/desktop/build/tools install tool
 
           staged="$RUNNER_TEMP/staged"
           mkdir -p "$staged"
           cp "$RUNNER_TEMP/numen" "$staged/numen"
           cp "$RUNNER_TEMP/numen-flashcards" "$staged/numen-flashcards"
           cp -r "$RUNNER_TEMP/tree/plugins" "$staged/"
-          cp modules/apps/desktop/build/linux/numen.desktop "$staged/"
-          cp modules/apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
-          cp modules/apps/desktop/build/linux/nfpm.yaml "$staged/"
-          cp modules/apps/desktop/build/linux/numen.svg "$staged/"
-          cp modules/apps/desktop/build/linux/numen-flashcards.svg "$staged/"
+          cp apps/desktop/build/linux/numen.desktop "$staged/"
+          cp apps/desktop/build/linux/numen-flashcards.desktop "$staged/"
+          cp apps/desktop/build/linux/nfpm.yaml "$staged/"
+          cp apps/desktop/build/linux/numen.svg "$staged/"
+          cp apps/desktop/build/linux/numen-flashcards.svg "$staged/"
           # The rasters come across whole: the flashcards ones stand in a folder
           # of their own inside it.
-          cp -r modules/apps/desktop/build/linux/icons "$staged/"
+          cp -r apps/desktop/build/linux/icons "$staged/"
 
           cd "$staged"
           for kind in deb rpm; do
@@ -348,7 +348,7 @@ jobs:
           pkgver=${VERSION//-/_}
 
           sed -e "s|@PKGVER@|$pkgver|" -e "s|@URL@|$url|" -e "s|@SHA256@|$sum|" \
-            modules/apps/desktop/build/linux/arch/PKGBUILD.in > "$recipe/PKGBUILD"
+            apps/desktop/build/linux/arch/PKGBUILD.in > "$recipe/PKGBUILD"
 
           # What the AUR reads instead of running the recipe. Every line under
           # the first is indented with a tab.
@@ -385,7 +385,7 @@ jobs:
         run: |
           set -euo pipefail
           flake="$RUNNER_TEMP/flake"
-          mkdir -p "$flake/modules/tools/build-nix" "$flake/modules/apps/desktop/build"
+          mkdir -p "$flake/tools/build-nix" "$flake/apps/desktop/build"
 
           archive="$RUNNER_TEMP/numen_${VERSION}_linux_amd64.tar.gz"
           if [ "$SHELF" = latest ]; then
@@ -401,14 +401,14 @@ jobs:
           # A flake handed over as a file cannot write itself a lock, so it
           # carries the one this tree holds.
           cp flake.nix flake.lock "$flake/"
-          cp modules/tools/build-nix/numen.nix "$flake/modules/tools/build-nix/"
+          cp tools/build-nix/numen.nix "$flake/tools/build-nix/"
           # The desktop entries and the icons are read from the tree the flake
           # stands in, so they come along at the path it reads them from.
-          cp -r modules/apps/desktop/build/linux "$flake/modules/apps/desktop/build/"
+          cp -r apps/desktop/build/linux "$flake/apps/desktop/build/"
 
           printf '{\n  "version": "%s",\n  "url": "%s",\n  "hash": "%s"\n}\n' \
-            "$VERSION" "$url" "$hash" > "$flake/modules/tools/build-nix/release.json"
-          cat "$flake/modules/tools/build-nix/release.json"
+            "$VERSION" "$url" "$hash" > "$flake/tools/build-nix/release.json"
+          cat "$flake/tools/build-nix/release.json"
 
           tar czf "$RUNNER_TEMP/numen-nix.tar.gz" -C "$flake" .
 
@@ -467,7 +467,7 @@ jobs:
         run: |
           set -euo pipefail
           staged="$RUNNER_TEMP/staged"
-          at=modules/apps/desktop/build/linux
+          at=apps/desktop/build/linux
           mkdir -p "$staged"
 
           tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz \
@@ -544,7 +544,7 @@ jobs:
           staged="$work/staged"
           mkdir -p "$staged/bin" "$work/snap"
 
-          at=modules/apps/desktop/build/linux/snap
+          at=apps/desktop/build/linux/snap
 
           tar xzf "$RUNNER_TEMP"/built/numen_*_linux_amd64.tar.gz -C "$staged"
           mv "$staged/numen" "$staged/numen-flashcards" "$staged/bin/"
@@ -593,17 +593,17 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Build frontend interfaces
@@ -618,7 +618,7 @@ jobs:
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
       # into it.
       - name: Build Windows binaries
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
         env:
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
@@ -626,7 +626,7 @@ jobs:
         run: |
           go -C build/tools install tool
 
-          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          into=github.com/jiva-studio/numen/apps/desktop/internal/version
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
@@ -682,13 +682,13 @@ jobs:
             "-DVERSION=$VERSION" \
             "-DNUMERIC_VERSION=$NUMERIC" \
             "-DBINARY=$RUNNER_TEMP/numen.exe" \
-            "-DNUMEN_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen.ico" \
+            "-DNUMEN_ICON=$GITHUB_WORKSPACE/apps/desktop/build/windows/numen.ico" \
             "-DFLASHCARDS=$RUNNER_TEMP/numen-flashcards.exe" \
-            "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/modules/apps/desktop/build/windows/numen-flashcards.ico" \
+            "-DFLASHCARDS_ICON=$GITHUB_WORKSPACE/apps/desktop/build/windows/numen-flashcards.ico" \
             "-DWEBVIEW2=$RUNNER_TEMP/webview2.exe" \
             "-DPLUGINS_DIR=$RUNNER_TEMP/plugins" \
             "-DOUTFILE=$RUNNER_TEMP/Numen-${VERSION}.exe" \
-            modules/apps/desktop/build/windows/installer.nsi
+            apps/desktop/build/windows/installer.nsi
           ls -la "$RUNNER_TEMP"/Numen-*.exe
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -712,17 +712,17 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           # The window is built from both modules.
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # The number the window draws in its corner is written into the page here.
       - name: Build frontend interfaces
@@ -737,14 +737,14 @@ jobs:
       # Both architectures come off this one machine: the window links against
       # frameworks the SDK carries for each.
       - name: Build macOS binaries
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
         env:
           MACOSX_DEPLOYMENT_TARGET: "11.0"
           VERSION: ${{ needs.naming.outputs.version }}
           BUILD: ${{ needs.naming.outputs.build }}
           COMMIT: ${{ needs.naming.outputs.commit }}
         run: |
-          into=github.com/jiva-studio/numen/modules/apps/desktop/internal/version
+          into=github.com/jiva-studio/numen/apps/desktop/internal/version
           # -s -w drop the debugging tables, which are a quarter of the binary
           # and reach nobody: a panic is symbolised from the pcln table, which
           # neither flag touches.
@@ -786,8 +786,8 @@ jobs:
             APP="$RUNNER_TEMP/$1.app"
             mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
             mv "$RUNNER_TEMP/$2" "$APP/Contents/MacOS/$2"
-            cp "modules/apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
-            cp "modules/apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
+            cp "apps/desktop/build/darwin/$3" "$APP/Contents/Info.plist"
+            cp "apps/desktop/build/darwin/$4" "$APP/Contents/Resources/$4"
             if [ -d "$RUNNER_TEMP/plugins" ]; then
               mkdir -p "$APP/Contents/PlugIns"
               cp -r "$RUNNER_TEMP/plugins/"* "$APP/Contents/PlugIns/"
@@ -838,7 +838,7 @@ jobs:
           if [ -d "$RUNNER_TEMP/Numen.app/Contents/PlugIns" ]; then
             find "$RUNNER_TEMP/Numen.app/Contents/PlugIns" -type f -perm +111 | while read -r plugin_bin; do
               codesign --force --timestamp --options runtime \
-                --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+                --entitlements apps/desktop/build/darwin/entitlements.plist \
                 --keychain "$KEYCHAIN" --sign "$IDENTITY" \
                 "$plugin_bin"
               codesign --verify --strict --verbose=2 "$plugin_bin"
@@ -847,7 +847,7 @@ jobs:
 
           for app in "$RUNNER_TEMP/Numen.app" "$RUNNER_TEMP/Numen Flashcards.app"; do
             codesign --force --timestamp --options runtime \
-              --entitlements modules/apps/desktop/build/darwin/entitlements.plist \
+              --entitlements apps/desktop/build/darwin/entitlements.plist \
               --keychain "$KEYCHAIN" --sign "$IDENTITY" \
               "$app"
             codesign --verify --deep --strict --verbose=2 "$app"

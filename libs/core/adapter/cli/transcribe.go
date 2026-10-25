@@ -1,0 +1,89 @@
+package cli
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"time"
+
+	"github.com/jiva-studio/numen/libs/core/internal/transcript"
+	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/transcription"
+)
+
+// runTranscribeCommand listens to one recording with a model and writes down what
+// it heard.
+//
+// A recording carries no text of its own, so what the model heard is the only
+// text there is. The window listens to a vault's recordings on its own; this is
+// the hand asking for one.
+func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []string) error {
+	again := false
+	rest := make([]string, 0, len(args))
+	for _, one := range args {
+		if one == "--again" {
+			again = true
+			continue
+		}
+		rest = append(rest, one)
+	}
+	args = rest
+	if len(args) != 2 {
+		return errors.New("usage: numen-cli transcribe <vault> <file> [--again]")
+	}
+	v, err := findVault(deps, args[0])
+	if err != nil {
+		return err
+	}
+	// A terminal is where waiting is what a person came for, so the opener
+	// fetches what is missing and waits for it. It is said out loud first: a
+	// program that prints nothing for minutes looks broken.
+	fetching := func() {
+		fmt.Fprintln(out, "fetching what is needed to transcribe recordings")
+	}
+	open, err := deps.Transcribe(ctx, v, fetching)
+	if err != nil {
+		return fmt.Errorf("nothing to transcribe with: %w", err)
+	}
+	defer closeIfOpen(open.Close)
+
+	transcribe, cutSource := open.Transcribe, source.NewCutSource(open.Cut)
+	fmt.Fprintf(out, "transcribing %s with %s\n", args[1], transcribe.By().GetTranscriptionModel())
+	started := time.Now()
+
+	// The line of minutes is closed once it stops, so what follows it relies on
+	// a line of its own.
+	isDisplayed := false
+	transcribe.IsRepeat = again
+	transcribe.Cut = cutSource.Execute
+	// A terminal that prints nothing for an hour looks broken, and this takes
+	// about that. The line rewrites itself.
+	transcribe.OnProgress = func(res transcription.TranscribeResult) {
+		if res.Length > 0 {
+			fmt.Fprintf(out, "  %s of %s\r",
+				transcript.FormatTimestamp(res.Heard), transcript.FormatTimestamp(res.Length))
+			isDisplayed = true
+		}
+	}
+	res, err := transcribe.Execute(ctx, v, args[1])
+	if err != nil {
+		return err
+	}
+	if isDisplayed {
+		fmt.Fprintln(out)
+	}
+
+	switch {
+	case res.IsBusy:
+		fmt.Fprintf(out, "%s is already being listened to, and nothing was done\n", res.Path)
+	case res.IsUnopened:
+		fmt.Fprintf(out, "%s is not a recording anything here can open, and that is what was written\n", res.Path)
+	case res.IsSilent:
+		fmt.Fprintf(out, "%s carries no speech, and that is what was written\n", res.Path)
+	default:
+		fmt.Fprintf(out, "transcribed %s of %s in %s\n",
+			transcript.FormatTimestamp(res.Heard), res.Path, time.Since(started).Round(time.Second))
+	}
+	return nil
+}

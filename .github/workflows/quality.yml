@@ -5,7 +5,7 @@ name: Quality
 on:
   pull_request:
     paths:
-      - "modules/**"
+      - "{apps,libs,plugins,tools,tests}/**"
       - "!**/*.md"
       - "!docs/**"
       - "Makefile"
@@ -15,7 +15,7 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/**"
+      - "{apps,libs,plugins,tools,tests}/**"
       - "!**/*.md"
       - "!docs/**"
       - "Makefile"
@@ -40,17 +40,17 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/libs/core/go.mod
+          go-version-file: libs/core/go.mod
           cache-dependency-path: |
-            modules/libs/core/go.sum
-            modules/libs/notes/go.sum
-            modules/libs/plugin-sdk-go/go.sum
+            libs/core/go.sum
+            libs/notes/go.sum
+            libs/plugin-sdk-go/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules

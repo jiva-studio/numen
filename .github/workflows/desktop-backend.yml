@@ -7,26 +7,26 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/apps/desktop/**"
-      - "!modules/apps/desktop/editor/**"
-      - "!modules/apps/desktop/flashcards/**"
-      - "!modules/apps/desktop/**/*.md"
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/notes/**"
-      - "!modules/libs/notes/**/*.md"
-      - "modules/libs/plugin-sdk-go/**"
-      - "!modules/libs/plugin-sdk-go/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/apps/desktop-monolith/**"
-      - "modules/plugins/**"
-      - "!modules/plugins/**/*.md"
+      - "apps/desktop/**"
+      - "!apps/desktop/editor/**"
+      - "!apps/desktop/flashcards/**"
+      - "!apps/desktop/**/*.md"
+      - "libs/core/**"
+      - "!libs/core/**/*.md"
+      - "libs/notes/**"
+      - "!libs/notes/**/*.md"
+      - "libs/plugin-sdk-go/**"
+      - "!libs/plugin-sdk-go/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
+      - "apps/desktop-monolith/**"
+      - "plugins/**"
+      - "!plugins/**/*.md"
       - "!docs/**"
       - ".github/workflows/desktop-backend.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
-      - "modules/plugins/.golangci.yml"
+      - ".golangci.yml"
+      - "plugins/.golangci.yml"
       - "**/gorules/**"
 
 # One run at a time per branch, and on a pull request the newest is the one that
@@ -65,7 +65,7 @@ jobs:
     timeout-minutes: 20
     defaults:
       run:
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -73,10 +73,10 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
 
       # The window links against the system's own browser, so the machine that
       # compiles and checks it needs that browser's headers.
@@ -96,7 +96,7 @@ jobs:
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/apps/desktop
+          working-directory: apps/desktop
           args: --timeout 15m
 
       - name: Run plugin linters
@@ -109,7 +109,7 @@ jobs:
       # is required.
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: modules/apps/desktop
+          working-directory: apps/desktop
 
   test:
     name: Tests
@@ -119,7 +119,7 @@ jobs:
     timeout-minutes: 45
     defaults:
       run:
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -129,14 +129,14 @@ jobs:
       - id: setup-go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           cache: false
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/go/pkg/mod
-          key: go-mod-modules/apps/desktop-${{ hashFiles('modules/apps/desktop/go.sum') }}
-          restore-keys: go-mod-modules/apps/desktop-
+          key: go-mod-apps/desktop-${{ hashFiles('apps/desktop/go.sum') }}
+          restore-keys: go-mod-apps/desktop-
 
       # What main's last compile and test run left behind: a run compiles what
       # changed and re-runs the tests that changed. The prefix restores main's
@@ -144,8 +144,8 @@ jobs:
       - uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/go-build
-          key: go-build-modules/apps/desktop-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/apps/desktop/go.sum') }}
-          restore-keys: go-build-modules/apps/desktop-
+          key: go-build-apps/desktop-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('apps/desktop/go.sum') }}
+          restore-keys: go-build-apps/desktop-
 
       # The window links against the system's own browser, so the machine that
       # compiles it needs that browser's headers. The command line tool needs
@@ -168,13 +168,13 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install Node dependencies
         uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
-        working-directory: modules/libs/ui
+        working-directory: libs/ui
         run: npm run build
 
       - name: Build and test modular plugins
@@ -188,7 +188,7 @@ jobs:
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
           path: ~/.cache/go-build
-          key: go-build-modules/apps/desktop-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/apps/desktop/go.sum') }}
+          key: go-build-apps/desktop-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('apps/desktop/go.sum') }}
 
   # The library every native plugin backend is built on: a base module and a
   # feature module in each folder of it that has a go.mod.
@@ -205,8 +205,8 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/libs/plugin-sdk-go/go.mod
-          cache-dependency-path: modules/libs/plugin-sdk-go/**/go.sum
+          go-version-file: libs/plugin-sdk-go/go.mod
+          cache-dependency-path: libs/plugin-sdk-go/**/go.sum
 
       # The linter the make target runs, at the version the other modules use.
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
@@ -230,17 +230,17 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: modules/apps/desktop
+        working-directory: apps/desktop
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
       - name: Cross-compile CLI binaries
         run: |
           for target in darwin/arm64 windows/amd64 linux/arm64; do
@@ -249,7 +249,7 @@ jobs:
       # The tool that strips machine paths from the build profile is a module
       # of its own under the desktop one.
       - name: Build the profile normaliser
-        working-directory: modules/apps/desktop/build/pgonorm
+        working-directory: apps/desktop/build/pgonorm
         run: |
           go vet ./...
           go build -o /dev/null .
@@ -264,7 +264,7 @@ jobs:
     timeout-minutes: 30
     defaults:
       run:
-        working-directory: modules/apps/desktop-monolith
+        working-directory: apps/desktop-monolith
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -272,8 +272,8 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop-monolith/go.mod
-          cache-dependency-path: modules/apps/desktop-monolith/go.sum
+          go-version-file: apps/desktop-monolith/go.mod
+          cache-dependency-path: apps/desktop-monolith/go.sum
 
       # It links the window, and the window links against the system's own
       # browser.

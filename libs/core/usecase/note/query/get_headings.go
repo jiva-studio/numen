@@ -1,0 +1,23 @@
+package query
+
+import (
+	"context"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/noteport"
+)
+
+// GetHeadings finds what each of the notes at some paths is divided into.
+type GetHeadings struct {
+	queries noteport.NoteQueries
+}
+
+func NewGetHeadings(queries noteport.NoteQueries) *GetHeadings {
+	return &GetHeadings{queries: queries}
+}
+
+// Execute answers by path, in the order the headings stand in the note.
+func (u *GetHeadings) Execute(ctx context.Context, v domain.Vault, paths []string) (map[string][]domain.Heading, error) {
+	return u.queries.GetHeadings(ctx, v.ID, paths)
+}

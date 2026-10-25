@@ -48,16 +48,16 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/apps/desktop/go.mod
+          go-version-file: apps/desktop/go.mod
           cache-dependency-path: |
-            modules/apps/desktop/go.sum
-            modules/libs/core/go.sum
+            apps/desktop/go.sum
+            libs/core/go.sum
 
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
@@ -69,27 +69,27 @@ jobs:
           browsers: "chromium"
 
       - name: Build UI library
-        run: npm run build --prefix modules/libs/ui
+        run: npm run build --prefix libs/ui
 
       - name: Build modular plugins
         run: make plugins_build
 
       - name: Build desktop editor
-        run: npm run build --prefix modules/apps/desktop/editor
+        run: npm run build --prefix apps/desktop/editor
 
       - name: Build debug desktop binary
         run: |
-          cd modules/apps/desktop
+          cd apps/desktop
           go build -tags debug -o numen-debug ./cmd/numen
 
       - name: Run desktop E2E tests
-        run: cd modules/tests/e2e/desktop && ../../../node_modules/.bin/playwright test
+        run: cd tests/e2e/desktop && ../../../node_modules/.bin/playwright test
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
           name: playwright-report
           path: |
-            modules/tests/e2e/desktop/playwright-report/
-            modules/tests/e2e/desktop/test-results/
+            tests/e2e/desktop/playwright-report/
+            tests/e2e/desktop/test-results/
           retention-days: 7

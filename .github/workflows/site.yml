@@ -6,12 +6,12 @@ name: Site
 on:
   pull_request:
     paths:
-      - "modules/apps/landing/**"
+      - "apps/landing/**"
       - ".github/workflows/site.yml"
   push:
     branches: [main]
     paths:
-      - "modules/apps/landing/**"
+      - "apps/landing/**"
       - ".github/workflows/site.yml"
 
 # One run at a time per branch, and the newest is the one that matters. Two
@@ -45,26 +45,26 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
       - name: Typecheck landing page
-        run: npm run typecheck --prefix modules/apps/landing
+        run: npm run typecheck --prefix apps/landing
 
       - name: Lint landing page
-        run: npm run lint --prefix modules/apps/landing
+        run: npm run lint --prefix apps/landing
 
       - name: Build landing page
         env:
           PUBLIC_NUMEN_DOWNLOADS_BASE: ${{ vars.PUBLIC_NUMEN_DOWNLOADS_BASE }}
-        run: npm run build --prefix modules/apps/landing
+        run: npm run build --prefix apps/landing
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: landing
-          path: modules/apps/landing/dist
+          path: apps/landing/dist
           if-no-files-found: error
 
   # What is on the default branch is what is on the web. Storage is never

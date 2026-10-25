@@ -45,7 +45,7 @@ Eight builds in each and what they hold beside them, one name each in `latest/` 
 
 The `PKGBUILD` and the flake are recipes: they are read rather than fetched by a machine, so they stand on the shelf under their own names and are not in the manifest. Each is written by the run that made the build it names, and carries that build's address and hash.
 
-The repository is closed, which is why the flake is handed out as a file at all — `nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz` is what a stranger has instead of a git address. It holds `flake.nix`, `modules/tools/nix/numen.nix`, the desktop entries and the icons, a `modules/tools/nix/release.json` written by the run, and the lock: a flake taken as a file cannot write itself one.
+The repository is closed, which is why the flake is handed out as a file at all — `nix run tarball+https://dl.numen.md/latest/numen-nix.tar.gz` is what a stranger has instead of a git address. It holds `flake.nix`, `tools/build-nix/numen.nix`, the desktop entries and the icons, a `tools/build-nix/release.json` written by the run, and the lock: a flake taken as a file cannot write itself one.
 
 What an Arch user installs is the AUR package `numen-bin`. Pushing the `PKGBUILD` to the AUR is a person's own doing; the AUR repository holds this file and nothing else of ours.
 
@@ -106,7 +106,7 @@ Each workflow names every one of these before it does anything, so a missing one
 
 **The page.** `site.yml` builds it on every pull request. On the default branch it also uploads what was built, takes down anything in the store that this build did not write, purges the edge, and then fetches the page over the public address to prove a stranger can read it.
 
-**The manual.** `docs.yml` does the same for `modules/apps/docs`, and checks one thing more before it builds: that the five pages that write themselves still say what the application does. It runs on a pull request touching the manual and on the twelve files those pages are written from.
+**The manual.** `docs.yml` does the same for `apps/docs`, and checks one thing more before it builds: that the five pages that write themselves still say what the application does. It runs on a pull request touching the manual and on the twelve files those pages are written from.
 
 **The builds.** `release.yml` is asked for by hand and answers for one channel. A stable release is named for the month it is made in and for how many stable releases that month already holds — `2026.9.0`, then `2026.9.1` — and goes into `latest/` and `releases/`, which is where the page looks. A beta is named for the stable release it precedes and for the number of commits behind it — `2026.9.1-beta.884` — and goes into `beta/` and `builds/`, where nothing points at it. Either way it renames what each platform produced to the names above, writes `latest.json`, uploads, purges, and fetches every file back over the public address, checking that what comes down is the file that went up.
 

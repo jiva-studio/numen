@@ -3,27 +3,27 @@ name: Mobile Frontend
 on:
   pull_request:
     paths:
-      - "modules/apps/mobile/src/**"
-      - "modules/apps/mobile/*.vue"
-      - "modules/apps/mobile/package.json"
-      - "modules/apps/mobile/vite.config.ts"
-      - "modules/libs/ui/**"
-      - "!modules/libs/ui/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
+      - "apps/mobile/src/**"
+      - "apps/mobile/*.vue"
+      - "apps/mobile/package.json"
+      - "apps/mobile/vite.config.ts"
+      - "libs/ui/**"
+      - "!libs/ui/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
       - "!docs/**"
       - ".github/workflows/mobile-frontend.yml"
   push:
     branches: [main]
     paths:
-      - "modules/apps/mobile/src/**"
-      - "modules/apps/mobile/*.vue"
-      - "modules/apps/mobile/package.json"
-      - "modules/apps/mobile/vite.config.ts"
-      - "modules/libs/ui/**"
-      - "!modules/libs/ui/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
+      - "apps/mobile/src/**"
+      - "apps/mobile/*.vue"
+      - "apps/mobile/package.json"
+      - "apps/mobile/vite.config.ts"
+      - "libs/ui/**"
+      - "!libs/ui/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
       - "!docs/**"
       - ".github/workflows/mobile-frontend.yml"
 
@@ -50,7 +50,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # A screen reaches the components through their build.
       - name: Install dependencies
@@ -58,13 +58,13 @@ jobs:
 
       # A screen reaches the components through their build.
       - name: Build the components
-        run: npm run build --prefix modules/libs/ui
+        run: npm run build --prefix libs/ui
 
       - name: Typecheck screens
-        run: npm run typecheck --prefix modules/apps/mobile
+        run: npm run typecheck --prefix apps/mobile
 
       - name: Lint screens
-        run: npm run lint --prefix modules/apps/mobile
+        run: npm run lint --prefix apps/mobile
 
       - name: Run screen tests
-        run: npm test --prefix modules/apps/mobile
+        run: npm test --prefix apps/mobile

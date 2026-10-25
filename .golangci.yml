@@ -85,19 +85,19 @@ linters:
             - "net/url"
             - "net/netip"
           deny:
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/adapter"
               desc: "the domain does not reach adapters"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/internal/adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter"
               desc: "the domain does not reach adapters"
-            - pkg: "github.com/jiva-studio/numen/modules/apps/desktop/internal/adapter"
+            - pkg: "github.com/jiva-studio/numen/apps/desktop/internal/adapter"
               desc: "the domain does not reach adapters"
-            - pkg: "github.com/jiva-studio/numen/modules/apps"
+            - pkg: "github.com/jiva-studio/numen/apps"
               desc: "the domain does not reach applications"
-            - pkg: "github.com/jiva-studio/numen/modules/plugins"
+            - pkg: "github.com/jiva-studio/numen/plugins"
               desc: "the domain does not reach plugins"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/usecase"
+            - pkg: "github.com/jiva-studio/numen/libs/core/usecase"
               desc: "the domain does not reach use cases"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+            - pkg: "github.com/jiva-studio/numen/libs/core/container"
               desc: "the domain does not reach the composition root"
             - pkg: "os"
               desc: "the domain performs no I/O"
@@ -110,7 +110,7 @@ linters:
           files:
             - "$all"
           deny:
-            - pkg: "github.com/jiva-studio/numen/modules/libs/plugin-sdk-go"
+            - pkg: "github.com/jiva-studio/numen/libs/plugin-sdk-go"
               desc: "the core and the applications meet a plugin through the protocol and name no SDK module"
 
         usecase:
@@ -118,11 +118,11 @@ linters:
           files:
             - "**/usecase/**"
           deny:
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/adapter"
               desc: "a use case does not reach concrete adapters"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/internal/adapter"
+            - pkg: "github.com/jiva-studio/numen/libs/core/internal/adapter"
               desc: "a use case does not reach concrete adapters"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+            - pkg: "github.com/jiva-studio/numen/libs/core/container"
               desc: "a use case does not reach the composition root"
 
         driven-adapter:
@@ -140,9 +140,9 @@ linters:
             - "**/internal/adapter/transcription/**"
             - "**/internal/adapter/trash/**"
           deny:
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/usecase"
+            - pkg: "github.com/jiva-studio/numen/libs/core/usecase"
               desc: "a driven adapter stands behind a port and runs no scenario"
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/container"
+            - pkg: "github.com/jiva-studio/numen/libs/core/container"
               desc: "an adapter is given what it needs and assembles nothing"
 
         # The files named with ! below hold a port in their signature; each one
@@ -170,7 +170,7 @@ linters:
             - "!**/adapter/window/flashcards/index.go"
             - "!**/adapter/cli/deps.go"
           deny:
-            - pkg: "github.com/jiva-studio/numen/modules/libs/core/port"
+            - pkg: "github.com/jiva-studio/numen/libs/core/port"
               desc: "a driving adapter calls the use case layer; a port or sentinel it needs is re-exported there"
 
     errcheck:
@@ -185,7 +185,7 @@ linters:
       exclude-functions:
         - (*database/sql.Tx).Rollback
         - (*os.Root).Remove
-        - (github.com/jiva-studio/numen/modules/libs/core/port/agentport.Run).Stop
+        - (github.com/jiva-studio/numen/libs/core/port/agentport.Run).Stop
 
     gocritic:
       # The default checkers found eight things in 851 files, and five of them
@@ -253,7 +253,7 @@ linters:
       # second alias but not the bare import that started the argument.
       no-unaliased: true
       alias:
-        - pkg: github.com/jiva-studio/numen/modules/libs/protocol/gen/numen/v1
+        - pkg: github.com/jiva-studio/numen/libs/protocol/gen/numen/v1
           alias: v1
         - pkg: github.com/modelcontextprotocol/go-sdk/mcp
           alias: sdk

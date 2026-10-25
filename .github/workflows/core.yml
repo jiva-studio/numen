@@ -7,20 +7,20 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/libs/core/**"
-      - "!modules/libs/core/**/*.md"
-      - "modules/libs/notes/**"
-      - "!modules/libs/notes/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/libs/plugin-sdk-go/**"
-      - "!modules/libs/plugin-sdk-go/**/*.md"
+      - "libs/core/**"
+      - "!libs/core/**/*.md"
+      - "libs/notes/**"
+      - "!libs/notes/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
+      - "libs/plugin-sdk-go/**"
+      - "!libs/plugin-sdk-go/**/*.md"
       - "tests/**"
       - "!tests/**/*.md"
       - "!docs/**"
       - ".github/workflows/core.yml"
       # The rules the linter is held to, and the ones written here in Go.
-      - "modules/.golangci.yml"
+      - ".golangci.yml"
   # A platform can be asked for after the checks have already run, without
   # rewriting a commit to carry the trailer.
   workflow_dispatch:
@@ -149,10 +149,10 @@ jobs:
 
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
-          go-version-file: modules/libs/core/go.mod
+          go-version-file: libs/core/go.mod
           cache-dependency-path: |
-            modules/libs/core/go.sum
-            modules/libs/notes/go.sum
+            libs/core/go.sum
+            libs/notes/go.sum
 
       - name: Verify Go formatting (Core)
         run: |
@@ -160,7 +160,7 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
-        working-directory: modules/libs/core
+        working-directory: libs/core
 
       - name: Verify Go formatting (Notes)
         run: |
@@ -168,7 +168,7 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
-        working-directory: modules/libs/notes
+        working-directory: libs/notes
 
       - name: Verify Go formatting (Protocol)
         run: |
@@ -176,7 +176,7 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
-        working-directory: modules/libs/protocol
+        working-directory: libs/protocol
 
       - name: Verify Go formatting (Plugin SDK Go)
         run: |
@@ -184,55 +184,55 @@ jobs:
           if [ -n "$unformatted" ]; then
             echo "not gofmt-ed:"; echo "$unformatted"; exit 1
           fi
-        working-directory: modules/libs/plugin-sdk-go
+        working-directory: libs/plugin-sdk-go
 
       - name: Run go vet (Core)
         run: go vet ./...
-        working-directory: modules/libs/core
+        working-directory: libs/core
 
       - name: Run go vet (Notes)
         run: go vet ./...
-        working-directory: modules/libs/notes
+        working-directory: libs/notes
 
       - name: Run go vet (Protocol)
         run: go vet ./...
-        working-directory: modules/libs/protocol
+        working-directory: libs/protocol
 
       - name: Run go vet (Plugin SDK Go)
         run: go vet ./...
-        working-directory: modules/libs/plugin-sdk-go
+        working-directory: libs/plugin-sdk-go
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/libs/core
+          working-directory: libs/core
           args: --timeout 15m
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/libs/notes
+          working-directory: libs/notes
           args: --timeout 10m
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/libs/protocol
+          working-directory: libs/protocol
           args: --timeout 10m
 
       - uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v2.14.0
-          working-directory: modules/libs/plugin-sdk-go
+          working-directory: libs/plugin-sdk-go
           args: --timeout 10m
 
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: modules/libs/core
+          working-directory: libs/core
 
       - uses: ./.github/actions/govulncheck
         with:
-          working-directory: modules/libs/protocol
+          working-directory: libs/protocol
 
   # A numbered file a released build has run is a step somebody's index was
   # brought through, and rewriting or deleting it moves a database this build
@@ -254,7 +254,7 @@ jobs:
       # put through a repository built to be refused before it is trusted with
       # this one. It needs no base and runs on every event.
       - name: Self-test migration rule
-        run: modules/libs/core/adapter/index/migration-forward-only.sh --self-test
+        run: libs/core/adapter/index/migration-forward-only.sh --self-test
 
       # Git holds the hashes, so nothing here is written down twice: a file the
       # base already carries has to still be what it was there.
@@ -262,7 +262,7 @@ jobs:
         if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
         env:
           BASE: ${{ github.event.pull_request.base.sha || github.event.merge_group.base_sha }}
-        run: modules/libs/core/adapter/index/migration-forward-only.sh "$BASE"
+        run: libs/core/adapter/index/migration-forward-only.sh "$BASE"
 
   # The steps carry the condition that skips a documentation-only change: a matrix
   # job skipped whole reports under its unexpanded name, which no required check holds.
@@ -283,7 +283,7 @@ jobs:
       run:
         # One shell on all three, so a step is read the same wherever it runs.
         shell: bash
-        working-directory: modules/libs/core
+        working-directory: libs/core
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
@@ -297,7 +297,7 @@ jobs:
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
-          go-version-file: modules/libs/core/go.mod
+          go-version-file: libs/core/go.mod
           cache: false
 
       # Where the compiler keeps what it built is the machine's own answer.
@@ -311,7 +311,7 @@ jobs:
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           path: ${{ steps.go-cache-paths.outputs.modules }}
-          key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('modules/libs/core/go.sum') }}
+          key: go-mod-core-${{ matrix.runner }}-${{ hashFiles('libs/core/go.sum') }}
           restore-keys: go-mod-core-${{ matrix.runner }}-
 
       # What main's last compile and test run left behind: a run compiles what
@@ -321,7 +321,7 @@ jobs:
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
-          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}
+          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('libs/core/go.sum') }}
           restore-keys: go-build-core-${{ matrix.runner }}-
 
       # A test builds its vault in a temporary folder, and there is memory here
@@ -352,7 +352,7 @@ jobs:
       - name: Run Go tests (Notes)
         if: (needs.changes.result != 'success' || needs.changes.outputs.code == 'true')
         run: go test ${{ matrix.race && '-race' || '' }} ./...
-        working-directory: modules/libs/notes
+        working-directory: libs/notes
 
       # A push to main writes what it built, and every other run only reads it.
       # A run that found something still built most of it.
@@ -360,4 +360,4 @@ jobs:
         if: ${{ (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') && !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         with:
           path: ${{ steps.go-cache-paths.outputs.build }}
-          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('modules/libs/core/go.sum') }}
+          key: go-build-core-${{ matrix.runner }}-${{ steps.setup-go.outputs.go-version }}-${{ hashFiles('libs/core/go.sum') }}

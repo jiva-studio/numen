@@ -1,0 +1,322 @@
+syntax = "proto3";
+
+// Flashcards service definitions.
+// Manages flashcard review sessions, card scheduling counts, and answer logs across vaults.
+package numen.v1;
+
+import "numen/v1/presets.proto";
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// FlashcardsService manages card review sessions, progress tracking, and deck scheduling.
+service FlashcardsService {
+  // WatchCardsDue streams due card counts across registered vaults.
+  // The first message contains vault metadata, followed by individual evaluation updates.
+  rpc WatchCardsDue(WatchCardsDueRequest) returns (stream WatchCardsDueResponse);
+
+  // StartSession initializes a review session and returns ordered cards to review.
+  // Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
+  rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
+
+  // AnswerCard records an answer rating and review latency for a card face.
+  rpc AnswerCard(AnswerCardRequest) returns (AnswerCardResponse);
+
+  // TakeBackAnswer appends an undo entry for a previously recorded answer.
+  rpc TakeBackAnswer(TakeBackAnswerRequest) returns (TakeBackAnswerResponse);
+
+  // WatchReloads notifies clients when vault content changes and requires recount.
+  rpc WatchReloads(WatchReloadsRequest) returns (stream WatchReloadsResponse);
+
+  // ListReviewDays returns historical review counts and review streaks for a vault.
+  rpc ListReviewDays(ListReviewDaysRequest) returns (ListReviewDaysResponse);
+
+  // GetDeckNeighbourhood returns notes linked to and from the specified deck note.
+  rpc GetDeckNeighbourhood(GetDeckNeighbourhoodRequest) returns (GetDeckNeighbourhoodResponse);
+
+  // GetVaultDeckPreset returns the scheduling preset configured for a deck within a vault.
+  rpc GetVaultDeckPreset(GetVaultDeckPresetRequest) returns (GetVaultDeckPresetResponse);
+}
+
+// Rating represents review recall accuracy.
+enum Rating {
+  RATING_UNSPECIFIED = 0;
+  // RATING_AGAIN indicates failure to recall.
+  RATING_AGAIN = 1;
+  // RATING_HARD indicates correct recall with significant effort.
+  RATING_HARD = 2;
+  // RATING_GOOD indicates successful recall.
+  RATING_GOOD = 3;
+  // RATING_EASY indicates effortless recall.
+  RATING_EASY = 4;
+}
+
+// VaultCardsDue holds card scheduling counts for a vault.
+message VaultCardsDue {
+  // Vault identifier and display name.
+  string id = 1;
+  string name = 2;
+  string path = 3;
+
+  // Total card faces, currently due faces, and unreviewed faces.
+  int32 faces = 4;
+  int32 due = 5;
+  int32 new = 6;
+
+  // Scheduling counts per deck file.
+  repeated DeckCardsDue decks = 7;
+
+  // Scheduling counts evaluated per preset.
+  repeated PresetCardsDue presets = 8;
+
+  // Error message if counting or indexing failed.
+  string unread = 9;
+
+  // True while the vault is being indexed.
+  bool is_indexing = 10;
+}
+
+message DeckCardsDue {
+  string deck = 1;
+  int32 faces = 2;
+  int32 due = 3;
+  int32 new = 4;
+
+  // Number of cards answered during the current review day.
+  int32 answered = 5;
+
+  // Number of card faces meeting the preset learned criteria.
+  int32 learned = 6;
+
+  // Number of card faces that have never been reviewed.
+  int32 unbegun = 7;
+}
+
+// PresetCardsDue holds daily review counts evaluated under a preset.
+message PresetCardsDue {
+  // Path to the preset note, or empty for the default preset.
+  string preset = 1;
+
+  // Display title of the preset.
+  string title = 2;
+
+  // Number of decks configured with this preset.
+  int32 decks = 3;
+
+  // Total card faces across assigned decks.
+  int32 cards = 4;
+
+  // Due and new card faces available within the preset budget.
+  int32 owed_due = 5;
+  int32 owed_new = 6;
+
+  // Answer counts and elapsed review time for the current review day.
+  int32 answered = 7;
+  int64 took_ms = 8;
+  int32 answered_new = 9;
+  int32 answered_reviews = 10;
+
+  // Configured daily budget limits for the current day of the week.
+  int32 new = 11;
+  int32 reviews = 12;
+  double minutes = 13;
+
+  // Budget key that capped reviews, or empty if budget was not reached.
+  string closes_new = 14;
+  string closes_reviews = 15;
+  string closes_minutes = 16;
+  string closes_backlog = 17;
+
+  // Reason why no reviews are scheduled for the current day.
+  StopReason stops_on = 18;
+}
+
+// Intervals specifies next review intervals in seconds for each rating choice.
+message Intervals {
+  int64 again = 1;
+  int64 hard = 2;
+  int64 good = 3;
+  int64 easy = 4;
+}
+
+// SessionCard represents a rendered card face presented during a review session.
+message SessionCard {
+  // Deck file path and section header name.
+  string deck = 1;
+  string section = 2;
+
+  // Card identifier and face template name.
+  string mark = 3;
+  string face = 4;
+
+  // First line of the card primary field.
+  string heading = 5;
+
+  // Rendered HTML content for card front and back.
+  string front = 6;
+  string back = 7;
+
+  // Status flags and next due timestamp.
+  bool is_new = 8;
+  string due = 9;
+
+  // Projected intervals for each rating.
+  Intervals intervals = 10;
+}
+
+message WatchCardsDueRequest {}
+
+message WatchCardsDueResponse {
+  // Registered vaults list.
+  repeated VaultCardsDue vaults = 1;
+
+  // Current review day in YYYY-MM-DD format based on day rollover settings.
+  string day = 2;
+
+  // Count update for an individual vault.
+  VaultCardsDue counted = 3;
+}
+
+message StartSessionRequest {
+  string vault = 1;
+  // Path of a specific deck, or empty to include all decks in the vault.
+  string deck = 2;
+
+  // Path of a preset note, or empty for default preset. Deck and preset are mutually exclusive.
+  optional string preset = 3;
+}
+
+message StartSessionResponse {
+  // Run log identifier used for recording answers.
+  string run = 1;
+  repeated SessionCard cards = 2;
+
+  // Paths of decks containing cards without valid identifiers.
+  repeated string unwritten = 3;
+
+  // Count of unparseable answer log entries encountered during replay.
+  int32 skipped = 4;
+}
+
+message AnswerCardRequest {
+  string vault = 1;
+  string run = 2;
+  // Card identifier and face name.
+  string mark = 3;
+  string face = 4;
+  Rating rating = 5;
+  // Time spent viewing the card in milliseconds.
+  int64 took_ms = 6;
+}
+
+message AnswerCardResponse {
+  // Answer entry identifier for undo operations.
+  string answer = 1;
+}
+
+message TakeBackAnswerRequest {
+  string vault = 1;
+  string run = 2;
+  // Identifier of the previous answer entry to undo.
+  string answer = 3;
+}
+
+message TakeBackAnswerResponse {}
+
+message ListReviewDaysRequest {
+  string vault = 1;
+
+  // Date range in YYYY-MM-DD format (inclusive). Empty bounds represent open intervals.
+  string from = 2;
+  string to = 3;
+}
+
+message ListReviewDaysResponse {
+  // Historical review activity by day.
+  repeated ReviewDay days = 1;
+
+  // Projected review load for upcoming days.
+  repeated ReviewDay due = 2;
+
+  // Current consecutive review day streak count.
+  int32 streak = 3;
+
+  // Total answers recorded across the vault.
+  int32 answered = 4;
+}
+
+// ReviewDay represents review statistics for a single day.
+message ReviewDay {
+  // Review day date in YYYY-MM-DD format.
+  string day = 1;
+  int32 answered = 2;
+
+  // Rating counts for reviews completed on this day.
+  int32 again = 3;
+  int32 hard = 4;
+  int32 good = 5;
+  int32 easy = 6;
+
+  // Long-interval card retention counts.
+  int32 asked = 7;
+  int32 recalled = 8;
+}
+
+message GetDeckNeighbourhoodRequest {
+  string vault = 1;
+  // Deck file path to query neighboring links for.
+  string deck = 2;
+}
+
+message GetDeckNeighbourhoodResponse {
+  repeated DeckNeighbour notes = 1;
+
+  // Count of linked notes whose content was omitted to preserve performance limits.
+  int32 unread = 2;
+}
+
+// DeckNeighbour represents a note linked to or from a deck.
+message DeckNeighbour {
+  // Original link target address and resolved file path.
+  string written = 1;
+  string path = 2;
+
+  // Note title and markdown content.
+  string title = 3;
+  string body = 4;
+
+  // Custom link anchor label.
+  string label = 5;
+
+  // True if the deck links to this note; false if this note links to the deck.
+  bool is_pointed_at = 6;
+
+  // True if multiple notes match the link target.
+  bool is_ambiguous = 7;
+
+  // Error code if the note could not be read.
+  optional ErrorCode error = 8;
+}
+
+message WatchReloadsRequest {}
+
+message WatchReloadsResponse {
+  // True when vault files change and require recounting.
+  bool reload = 1;
+}
+
+// Presets query messages for multi-vault clients.
+message GetVaultDeckPresetRequest {
+  string vault = 1;
+
+  // Deck file path.
+  string deck = 2;
+}
+
+message GetVaultDeckPresetResponse {
+  // Preset configuration, absent if resolution failed.
+  optional Preset preset = 1;
+
+  // Error code if the preset could not be read.
+  optional ErrorCode error = 2;
+}

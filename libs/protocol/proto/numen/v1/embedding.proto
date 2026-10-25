@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// EmbeddingService calculates dense vector embeddings for text passages.
+service EmbeddingService {
+  // GetEmbeddingModel returns identity and configuration of the active embedding model.
+  rpc GetEmbeddingModel(GetEmbeddingModelRequest) returns (GetEmbeddingModelResponse);
+
+
+  // EmbedBatch computes vector embeddings for a list of texts.
+  rpc EmbedBatch(EmbedBatchRequest) returns (EmbedBatchResponse);
+}
+
+message GetEmbeddingModelRequest {}
+
+message GetEmbeddingModelResponse {
+  string name = 1;
+  int32 dimensions = 2;
+  int32 max_tokens = 3;
+  string pooling = 4;
+  string from = 5;
+  int32 concurrency = 6;
+}
+
+
+message FloatVector {
+  repeated float values = 1;
+}
+
+message EmbedBatchRequest {
+  repeated string texts = 1;
+}
+
+message EmbedBatchResponse {
+  repeated FloatVector vectors = 1;
+}

@@ -1,0 +1,271 @@
+syntax = "proto3";
+
+// What a client asks an agent, and what it hears back while the agent works.
+//
+// The window hands over a person's task and draws what arrives, a step at a
+// time. What the agent is and how it reaches the vault is the application's
+// business and is said nowhere here.
+package numen.v1;
+
+import "numen/v1/shared.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// AgentService gives a task to the agent working this vault.
+service AgentService {
+  // AskAgent hands over a task and reports what the agent does, in the order it
+  // does it, until it is done. Letting go of the stream stops the agent.
+  rpc AskAgent(AskAgentRequest) returns (stream AskAgentResponse);
+
+  // FinishConversation says a conversation is over. What the agent kept of it
+  // is release, and whatever is still being answered in it stops.
+  rpc FinishConversation(FinishConversationRequest) returns (FinishConversationResponse);
+
+  // GetAgentState is whether an agent can be reached at all. Which agent
+  // answers is the installation's, not the vault's, so every window asks the
+  // same question here and none of them carries the answer in its own state.
+  rpc GetAgentState(GetAgentStateRequest) returns (GetAgentStateResponse);
+
+  // RegisterTool registers a custom tool with the agent.
+  rpc RegisterTool(RegisterToolRequest) returns (RegisterToolResponse);
+
+  // ExtendSystemPrompt extends the agent's system instructions.
+  rpc ExtendSystemPrompt(ExtendSystemPromptRequest) returns (ExtendSystemPromptResponse);
+
+  // GetAgentTools lists the registered tools and prompt extension.
+  rpc GetAgentTools(GetAgentToolsRequest) returns (GetAgentToolsResponse);
+
+  // GetAgentPrograms lists the programs this provider runs, whether each is installed on this
+  // machine, and the models each offers.
+  rpc GetAgentPrograms(GetAgentProgramsRequest) returns (GetAgentProgramsResponse);
+}
+
+message GetAgentStateRequest {}
+
+message GetAgentStateResponse {
+  // Set when no agent can be reached, and then nothing can be asked of one. It
+  // says why, in the person's own words.
+  string unreachable = 1;
+}
+
+message AskAgentRequest {
+  // What the person wrote.
+  string prompt = 1;
+  // The note in focus, for a task that says "this note". Empty when nothing
+  // is in focus.
+  string focus = 2;
+  // Which conversation thread this question belongs to. Questions carrying one name
+  // are answered in one conversation with the agent, so the name has to be the
+  // client's alone: unique among the conversations it has open, and never
+  // given to a second one for as long as the application is running. Empty is
+  // no conversation, and a question asked under it is answered on its own.
+  string conversation = 3;
+  // The card in focus, for a window that asks about one: the mark its deck
+  // writes it under, and the face it is being shown through. The deck is the
+  // note in focus. Both empty in a window that asks about notes.
+  string mark = 4;
+  string face = 5;
+
+  // Which agent answers (e.g. "antigravity", "codex", "claude"). Empty uses the installation default.
+  string agent = 6;
+  // Which model answers (e.g. "gemini-3.7-flash-high", "gpt-4o", "sonnet"). Empty uses default.
+  string model = 7;
+  // Instructions told about the task.
+  string instructions = 8;
+  // Vault tools the agent may call.
+  repeated string tools = 9;
+  // Maximum steps the agent may take.
+  int32 max_steps = 10;
+  repeated ToolDeclaration tool_declarations = 11;
+  // The folder the agent is started in. Empty starts it where the plugin runs.
+  string root = 12;
+  // The command line that starts the program, as the installation set it. Empty starts the
+  // program where the provider finds it.
+  repeated string command = 13;
+  // The settings only the program knows, by key, each as JSON.
+  map<string, string> options = 14;
+  // Where the program reaches the vault's tools, and what it presents there. Empty gives the
+  // program no tools.
+  string tools_url = 15;
+  string tools_token = 16;
+  // The depth of reasoning the model works at, by the name of one of the levels the model offers.
+  // Empty leaves the depth to the program.
+  string reasoning = 17;
+}
+
+message GetAgentProgramsRequest {
+  // The command lines the installation set for programs, so that a model list is asked of the
+  // program the person runs.
+  repeated AgentProgramCommand commands = 1;
+}
+
+// AgentProgramCommand is the command line the installation set for one program.
+message AgentProgramCommand {
+  // The program, by the name it is listed under.
+  string program = 1;
+  repeated string command = 2;
+}
+
+message GetAgentProgramsResponse {
+  repeated AgentProgram programs = 1;
+}
+
+// AgentProgram is one program a provider runs.
+message AgentProgram {
+  // The name a task asks for the program by, and the settings keep its section under.
+  string name = 1;
+  // What the program is called when shown to a person.
+  string title = 2;
+  // Whether the program is installed on this machine.
+  bool is_installed = 3;
+  // Set on the program an installation nobody has configured answers with.
+  bool is_default = 4;
+  // The models the program says it offers. Empty where it says none.
+  repeated AgentModel models = 5;
+  // Whether the program runs only the vault tools a task names, and no tool of its own that reaches
+  // this machine.
+  bool limits_tools = 6;
+}
+
+// AgentModel is one model a program offers.
+message AgentModel {
+  string name = 1;
+  string title = 2;
+  // Set where the program names the model it answers with unasked.
+  bool is_default = 3;
+  // The depths of reasoning the model can be asked to work at, from the least to the most. Empty
+  // where the model offers no choice.
+  repeated ReasoningLevel reasoning_levels = 4;
+  // The level the model works at unasked. Empty where it names none.
+  string default_reasoning = 5;
+}
+
+// while it is being written.
+message ToolDeclaration {
+  // The tool, by the name the vault serves it under.
+  string name = 1;
+  // What the tool is called when shown to a person.
+  string title = 2;
+  // What a call of the tool does to the vault: read, edit, remove, move or search. Empty is a call
+  // of unknown effect.
+  string kind = 3;
+  // The argument that says what a call is about.
+  string about = 4;
+  // The field of one element that says which element it is, for a call that takes a collection.
+  string element = 5;
+  // The argument carrying the text a call replaces. Empty for a call that replaces no text.
+  string match = 6;
+  // The argument carrying the text that takes the place of the match. Empty for a call that replaces no text.
+  string text = 7;
+}
+
+message FinishConversationRequest {
+  // Which conversation thread is over, by the name its questions carried. Empty is
+  // no conversation, and there is nothing to finish.
+  string conversation = 1;
+}
+
+message FinishConversationResponse {}
+
+// AskAgentResponse is one step of the work: one thing the agent said, did, or
+// stopped for.
+message AskAgentResponse {
+  oneof step {
+    // A piece of what the agent is saying, appended in the order it arrives.
+    string text = 1;
+    // A tool the agent is using.
+    ToolCall tool_call = 2;
+    // The agent has finished, and this is why it stopped. Empty, or "done", when
+    // it stopped because it was done.
+    string stopped = 3;
+    // The tool the agent was using has finished. Nothing of this application's
+    // is running from here until the next step arrives.
+    ToolFinished tool_finished = 4;
+    // A request to the model has begun. This is where a wait starts, and the
+    // agent says so itself.
+    ModelStarted model_started = 5;
+    // A change to a note is being written: the text it replaces and the text that takes its place,
+    // as far as they have arrived.
+    EditProgress edit_progress = 6;
+  }
+}
+
+// ToolFinished and ModelStarted carry no fields.
+message ToolFinished {}
+
+message ModelStarted {}
+
+
+// ToolCall is a tool in the agent's hands.
+//
+// It arrives more than once for one call: a call carrying the text of a note is
+// written for minutes, and each report says how much has arrived.
+message ToolCall {
+  // The tool, by the name it is called by whoever serves it.
+  string tool = 1;
+  // What it was called about — a note, a query — empty when the call says
+  // nothing worth showing. Read out of arguments that have not finished
+  // arriving, so it appears before the call is made.
+  string about = 2;
+  // How much of the call has been written, in characters. The only thing that
+  // moves while a long call is being written.
+  int32 length = 3;
+
+  // Where the call is working: the source it names, by the path the vault
+  // files it under. Empty for a call that is working on no one file.
+  string path = 4;
+
+  // The run of that source's text the call names, counted in bytes. An empty
+  // span is a call that named the source and no place inside it.
+  Span span = 5;
+
+  // What the agent named this call. Every report of one call carries the same name.
+  string call = 6;
+
+  // What a call of this tool does to the vault: read, edit, remove, move or search. Empty is a call
+  // of unknown effect.
+  string kind = 7;
+}
+
+// EditProgress is a change to a note while the call writing it is still arriving.
+message EditProgress {
+  // What the agent named the call making the change.
+  string call = 1;
+  // The note the change goes into, by the path the vault files it under.
+  string path = 2;
+  // The text the change replaces.
+  string match = 3;
+  // The text that takes its place, as far as it has arrived.
+  string text = 4;
+}
+
+// AgentToolDefinition describes a tool registered with or provided by the agent service.
+message AgentToolDefinition {
+  string name = 1;
+  string description = 2;
+  string parameters_json_schema = 3;
+}
+
+message RegisterToolRequest {
+  AgentToolDefinition tool = 1;
+}
+
+message RegisterToolResponse {
+  bool success = 1;
+}
+
+message ExtendSystemPromptRequest {
+  string extension = 1;
+}
+
+message ExtendSystemPromptResponse {
+  bool success = 1;
+  string full_prompt = 2;
+}
+
+message GetAgentToolsRequest {}
+
+message GetAgentToolsResponse {
+  repeated AgentToolDefinition tools = 1;
+  string system_prompt_extension = 2;
+}

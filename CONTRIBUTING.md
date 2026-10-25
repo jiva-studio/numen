@@ -2,19 +2,27 @@
 
 ## Layout
 
-Every module is listed in the [README](README.md#layout), which is the one place they are written down.
+The repository root is organized into top-level directories:
 
-The repo is mixed-language by design. Each module owns its own build and its own tests; the root carries no build system. The npm packages share one install, at `modules/`, because a package installed twice is two types that never match.
+- `apps/`: User-facing applications (`desktop`, `mobile`, `docs`, `landing`).
+- `libs/`: Shared foundational libraries (`core`, `ui`, `protocol`, `notes`).
+- `plugins/`: Extensible plugins for agents, engines, tools, and UI views.
+- `tools/`: Development, linting, code generation, and CI scripts.
+- `tests/`: End-to-end suites and test fixtures.
+
+The repo is mixed-language by design. Each Go module owns its own build and its own tests. Frontend packages share a unified npm workspace at the repository root.
 
 ## Setup
 
 ```bash
-cd modules && npm install
+npm install
 ```
 
-That is the whole setup. `modules/` is the npm workspace root, so one install fetches every package under it — the interface libraries, the two windows, the phone, the sites and the tools — and one copy of a package answers for all of them. It also wires git hooks through husky and points `commit.template` at the message template.
+That is the whole setup. The repository root is the npm workspace root, so one install fetches workspace dependencies across the repository — the interface libraries, desktop editor & flashcards windows, documentation sites, and development tools. It also wires git hooks through husky and points `commit.template` at the message template.
 
-The install lives in `modules/` rather than at the repository root, deliberately: the repo is mixed-language, and a `package.json` and `node_modules` in the root would read as "this is a Node project". The root carries no build system; `modules/` is the source root, and the Go modules under it are built by go.
+## Contributing UI Features and Plugins
+
+Numen's desktop core shell is minimal and domain-agnostic. New UI features, panels, view modes, external integrations, or specialized editors should be built as **plugins** under `plugins/` (using TypeScript/Vue and `@numen/plugin-sdk`), rather than coupling domain logic directly into `apps/desktop`. Each plugin in `plugins/` is an independent package with its own `manifest.json`.
 
 ## Issue labels
 

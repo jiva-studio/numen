@@ -1,13 +1,13 @@
 <div align="center">
 
-<img alt="Numen" src="modules/tools/build-icons/icon.svg" width="96">
+<img alt="Numen" src="tools/build-icons/icon.svg" width="96">
 
 **Numen — Markdown notes with a connection graph, an AI agent and spaced repetition.**
 
 <p>
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="modules/apps/landing/src/assets/window-filing-dark.webp">
-  <img alt="A note in Numen, with its graph and the agent panel" src="modules/apps/landing/src/assets/window-filing-light.webp" width="920">
+  <source media="(prefers-color-scheme: dark)" srcset="apps/landing/src/assets/window-filing-dark.webp">
+  <img alt="A note in Numen, with its graph and the agent panel" src="apps/landing/src/assets/window-filing-light.webp" width="920">
 </picture>
 </p>
 
@@ -34,11 +34,11 @@
 
 ## Download
 
-| Platform | Download |
-|:---|:---|
-| **macOS** (Apple Silicon & Intel) | [.dmg](https://github.com/jiva-studio/numen/releases/latest/download/numen-macos.dmg) |
-| **Windows** (x64) | [Installer](https://github.com/jiva-studio/numen/releases/latest/download/numen-windows-setup.exe) · [Portable .zip](https://github.com/jiva-studio/numen/releases/latest/download/numen-windows-amd64.zip) |
-| **Linux** (x64) | [.deb](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.deb) · [.rpm](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.rpm) · [Flatpak](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.flatpak) · [.tar.gz](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.tar.gz) |
+| Platform                          | Download                                                                                                                                                                                                                                                                                                                                                                                           |
+| :-------------------------------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **macOS** (Apple Silicon & Intel) | [.dmg](https://github.com/jiva-studio/numen/releases/latest/download/numen-macos.dmg)                                                                                                                                                                                                                                                                                                              |
+| **Windows** (x64)                 | [Installer](https://github.com/jiva-studio/numen/releases/latest/download/numen-windows-setup.exe) · [Portable .zip](https://github.com/jiva-studio/numen/releases/latest/download/numen-windows-amd64.zip)                                                                                                                                                                                        |
+| **Linux** (x64)                   | [.deb](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.deb) · [.rpm](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.rpm) · [Flatpak](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.flatpak) · [.tar.gz](https://github.com/jiva-studio/numen/releases/latest/download/numen-linux-amd64.tar.gz) |
 
 ## Community
 

@@ -4,11 +4,11 @@ inputs:
   documentation:
     description: "Extended regular expression; a changed path that matches it is documentation"
     required: false
-    default: '^docs/|^modules/apps/docs/(src|public)/|\.mdx?$'
+    default: '^docs/|^apps/docs/(src|public)/|\.mdx?$'
   except:
     description: "Extended regular expression; a changed path that matches it is code even when it matches the documentation expression"
     required: false
-    default: '(^|/)testdata/|^modules/apps/docs/src/.*\.(astro|js|jsx|mjs|ts|tsx)$'
+    default: '(^|/)testdata/|^apps/docs/src/.*\.(astro|js|jsx|mjs|ts|tsx)$'
 outputs:
   code:
     description: "true when the change touches code, false when it touches documentation only"

@@ -1,9 +1,0 @@
-#!/usr/bin/env bash
-set -e
-
-# Conventional Commits and Scope Gate
-# Set NUMEN_SKIP_CHECKS=1 to commit without validation.
-[ -n "$NUMEN_SKIP_CHECKS" ] && exit 0
-
-root=$(git rev-parse --show-toplevel)
-node "$root/modules/tools/git-hooks/check-commit.mjs" "$1"

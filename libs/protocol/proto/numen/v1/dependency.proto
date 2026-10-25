@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+// What a plugin needs on the machine besides its own code, and the host's answer about each need.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// DependencyKind is what a dependency is. UNSPECIFIED means the kind was not set.
+enum DependencyKind {
+  DEPENDENCY_KIND_UNSPECIFIED = 0;
+  DEPENDENCY_KIND_RUNTIME = 1;
+  DEPENDENCY_KIND_MODEL = 2;
+  DEPENDENCY_KIND_BINARY = 3;
+  DEPENDENCY_KIND_DATASET = 4;
+}
+
+// DependencyState is where a dependency stands on the machine. UNSPECIFIED means the host did not
+// answer; MISSING means the host answered that nothing is installed.
+enum DependencyState {
+  DEPENDENCY_STATE_UNSPECIFIED = 0;
+  DEPENDENCY_STATE_MISSING = 1;
+  DEPENDENCY_STATE_PROVISIONING = 2;
+  DEPENDENCY_STATE_READY = 3;
+  DEPENDENCY_STATE_FAILED = 4;
+}
+
+// DependencyRequirement is one dependency a plugin declares.
+message DependencyRequirement {
+  string id = 1;
+  DependencyKind kind = 2;
+  string version = 3;
+  string source_url = 4;
+  string checksum_sha256 = 5;
+  map<string, string> metadata = 6;
+}
+
+// ResolvedDependency is where a ready dependency sits on disk and how a process reaches it.
+message ResolvedDependency {
+  string id = 1;
+  // The folder that holds everything the dependency installed.
+  string root_path = 2;
+  // The file a plugin opens or runs, inside root_path.
+  string primary_path = 3;
+  map<string, string> env_vars = 4;
+  map<string, string> metadata = 5;
+}
+
+// DependencyStatus is the state of one dependency at one moment.
+message DependencyStatus {
+  string id = 1;
+  DependencyState state = 2;
+  int64 bytes_downloaded = 3;
+  int64 bytes_total = 4;
+  double progress_percent = 5;
+  string message = 6;
+  // Set while state is FAILED.
+  string error = 7;
+  // Set while state is READY.
+  ResolvedDependency resolved = 8;
+}
+
+// DependencyService provisions the dependencies the plugins of the host declare.
+service DependencyService {
+  // GetDependencyStatus answers the state of one dependency.
+  rpc GetDependencyStatus(GetDependencyStatusRequest) returns (GetDependencyStatusResponse);
+
+  // ProvisionDependency installs a dependency and streams its status until it is READY or FAILED.
+  rpc ProvisionDependency(ProvisionDependencyRequest) returns (stream ProvisionDependencyResponse);
+
+  // ListDependencies answers the state of every dependency the host knows.
+  rpc ListDependencies(ListDependenciesRequest) returns (ListDependenciesResponse);
+}
+
+message GetDependencyStatusRequest {
+  string id = 1;
+}
+
+message GetDependencyStatusResponse {
+  DependencyStatus status = 1;
+}
+
+message ProvisionDependencyRequest {
+  DependencyRequirement requirement = 1;
+}
+
+message ProvisionDependencyResponse {
+  DependencyStatus status = 1;
+}
+
+message ListDependenciesRequest {}
+
+message ListDependenciesResponse {
+  repeated DependencyStatus statuses = 1;
+}

@@ -1,0 +1,39 @@
+package registry
+
+import (
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+)
+
+// GetVaultToShow returns the vault named, which must be on the list; with none named, the last shown, else the first on the list, else none.
+type GetVaultToShow struct {
+	registry vaultport.VaultRegistry
+	find     Find
+	list     List
+}
+
+func NewGetVaultToShow(registry vaultport.VaultRegistry) GetVaultToShow {
+	return GetVaultToShow{registry: registry, find: NewFind(registry), list: NewList(registry)}
+}
+
+func (u GetVaultToShow) Execute(name string) (domain.Vault, error) {
+	if name != "" {
+		return u.find.Execute(name)
+	}
+	last, found, err := u.registry.GetLastVault()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if found {
+		return last, nil
+	}
+	target, err := u.list.Execute()
+	if err != nil {
+		return domain.Vault{}, err
+	}
+	if len(target) > 0 {
+		return target[0], nil
+	}
+	return domain.Vault{}, nil
+}

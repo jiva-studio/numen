@@ -3,36 +3,36 @@ name: Docs
 on:
   pull_request:
     paths:
-      - "modules/apps/docs/**"
+      - "apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/features/command-palette/lib/chords.ts"
-      - "modules/apps/desktop/editor/src/features/command-palette/lib/table.ts"
-      - "modules/apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
-      - "modules/apps/desktop/editor/src/shared/words.ts"
-      - "modules/apps/desktop/cmd/numen/main.go"
-      - "modules/libs/core/adapter/cli/cli.go"
-      - "modules/libs/core/adapter/settings/**"
-      - "modules/libs/core/internal/adapter/embed/config.go"
-      - "modules/libs/core/internal/adapter/recognition/config.go"
-      - "modules/libs/core/internal/adapter/transcription/config.go"
-      - "modules/libs/core/internal/adapter/proofreading/config.go"
+      - "apps/desktop/editor/src/features/command-palette/lib/chords.ts"
+      - "apps/desktop/editor/src/features/command-palette/lib/table.ts"
+      - "apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
+      - "apps/desktop/editor/src/shared/words.ts"
+      - "apps/desktop/cmd/numen/main.go"
+      - "libs/core/adapter/cli/cli.go"
+      - "libs/core/adapter/settings/**"
+      - "libs/core/internal/adapter/embed/config.go"
+      - "libs/core/internal/adapter/recognition/config.go"
+      - "libs/core/internal/adapter/transcription/config.go"
+      - "libs/core/internal/adapter/proofreading/config.go"
       - ".github/workflows/docs.yml"
   push:
     branches: [main]
     paths:
-      - "modules/apps/docs/**"
+      - "apps/docs/**"
       # What the manual writes itself from.
-      - "modules/apps/desktop/editor/src/features/command-palette/lib/chords.ts"
-      - "modules/apps/desktop/editor/src/features/command-palette/lib/table.ts"
-      - "modules/apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
-      - "modules/apps/desktop/editor/src/shared/words.ts"
-      - "modules/apps/desktop/cmd/numen/main.go"
-      - "modules/libs/core/adapter/cli/cli.go"
-      - "modules/libs/core/adapter/settings/**"
-      - "modules/libs/core/internal/adapter/embed/config.go"
-      - "modules/libs/core/internal/adapter/recognition/config.go"
-      - "modules/libs/core/internal/adapter/transcription/config.go"
-      - "modules/libs/core/internal/adapter/proofreading/config.go"
+      - "apps/desktop/editor/src/features/command-palette/lib/chords.ts"
+      - "apps/desktop/editor/src/features/command-palette/lib/table.ts"
+      - "apps/desktop/editor/src/features/command-palette/ui/CommandPalette.vue"
+      - "apps/desktop/editor/src/shared/words.ts"
+      - "apps/desktop/cmd/numen/main.go"
+      - "libs/core/adapter/cli/cli.go"
+      - "libs/core/adapter/settings/**"
+      - "libs/core/internal/adapter/embed/config.go"
+      - "libs/core/internal/adapter/recognition/config.go"
+      - "libs/core/internal/adapter/transcription/config.go"
+      - "libs/core/internal/adapter/proofreading/config.go"
       - ".github/workflows/docs.yml"
 
 # Two deploys share one storage zone, and the second takes down what the first
@@ -65,27 +65,27 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
       - name: Verify manual references
-        run: npm run manual:check --prefix modules/apps/docs
+        run: npm run manual:check --prefix apps/docs
 
       - name: Typecheck documentation site
-        run: npm run typecheck --prefix modules/apps/docs
+        run: npm run typecheck --prefix apps/docs
 
       - name: Lint documentation site
-        run: npm run lint --prefix modules/apps/docs
+        run: npm run lint --prefix apps/docs
 
       - name: Build documentation site
-        run: npm run build --prefix modules/apps/docs
+        run: npm run build --prefix apps/docs
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: docs
-          path: modules/apps/docs/dist
+          path: apps/docs/dist
           if-no-files-found: error
 
   # What is on the default branch is what is on the web. Storage is never

@@ -7,17 +7,17 @@ on:
   push:
     branches: [main]
     paths:
-      - "modules/apps/desktop/editor/**"
-      - "!modules/apps/desktop/editor/**/*.md"
-      - "modules/apps/desktop/flashcards/**"
-      - "!modules/apps/desktop/flashcards/**/*.md"
-      - "modules/libs/ui/**"
-      - "!modules/libs/ui/**/*.md"
-      - "modules/libs/wire/**"
-      - "!modules/libs/wire/**/*.md"
-      - "modules/libs/protocol/**"
-      - "!modules/libs/protocol/**/*.md"
-      - "modules/tools/ci-stories/**"
+      - "apps/desktop/editor/**"
+      - "!apps/desktop/editor/**/*.md"
+      - "apps/desktop/flashcards/**"
+      - "!apps/desktop/flashcards/**/*.md"
+      - "libs/ui/**"
+      - "!libs/ui/**/*.md"
+      - "libs/wire/**"
+      - "!libs/wire/**/*.md"
+      - "libs/protocol/**"
+      - "!libs/protocol/**/*.md"
+      - "tools/ci-stories/**"
       - "!docs/**"
       - ".github/workflows/desktop-frontend.yml"
 
@@ -64,7 +64,7 @@ jobs:
         with:
           node-version: "22"
           cache: npm
-          cache-dependency-path: modules/package-lock.json
+          cache-dependency-path: package-lock.json
 
       # A window reaches the components through their build; everything else it
       # names is linked or fetched by the one install at the source root.
@@ -74,26 +74,26 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - name: Build the components
-        run: npm run build --prefix modules/libs/ui
+        run: npm run build --prefix libs/ui
 
       - name: Verify story references
-        run: npm run check --prefix modules/tools/ci-stories
+        run: npm run check --prefix tools/ci-stories
 
       - name: Lint editor and flashcards
         run: |
-          npm run lint --prefix modules/apps/desktop/editor
-          npm run lint --prefix modules/apps/desktop/flashcards
+          npm run lint --prefix apps/desktop/editor
+          npm run lint --prefix apps/desktop/flashcards
 
       - name: Typecheck screens and wire
         run: |
-          npm run typecheck --prefix modules/libs/wire
-          npm run typecheck --prefix modules/apps/desktop/editor
-          npm run typecheck --prefix modules/apps/desktop/flashcards
+          npm run typecheck --prefix libs/wire
+          npm run typecheck --prefix apps/desktop/editor
+          npm run typecheck --prefix apps/desktop/flashcards
 
       - name: Run frontend tests
         run: |
-          npm test --prefix modules/libs/wire
-          npm run test:unit --prefix modules/apps/desktop/editor -- --coverage
-          npm run test:stories --prefix modules/apps/desktop/editor
-          npm run test:unit --prefix modules/apps/desktop/flashcards -- --coverage
-          npm run test:stories --prefix modules/apps/desktop/flashcards
+          npm test --prefix libs/wire
+          npm run test:unit --prefix apps/desktop/editor -- --coverage
+          npm run test:stories --prefix apps/desktop/editor
+          npm run test:unit --prefix apps/desktop/flashcards -- --coverage
+          npm run test:stories --prefix apps/desktop/flashcards

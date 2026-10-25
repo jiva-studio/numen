@@ -27,16 +27,16 @@
 
       # The desktop entries and the icons come from this tree; only the two
       # binaries are fetched.
-      assets = ./modules/apps/desktop/build/linux;
+      assets = ./apps/desktop/build/linux;
     in
     {
       packages = on (pkgs: rec {
-        numen = pkgs.callPackage ./modules/tools/build-nix/numen.nix { inherit assets; };
+        numen = pkgs.callPackage ./tools/build-nix/numen.nix { inherit assets; };
         default = numen;
       });
 
       overlays.default = final: _prev: {
-        numen = final.callPackage ./modules/tools/build-nix/numen.nix { inherit assets; };
+        numen = final.callPackage ./tools/build-nix/numen.nix { inherit assets; };
       };
 
       formatter = on (pkgs: pkgs.nixfmt-rfc-style);

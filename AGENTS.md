@@ -9,7 +9,7 @@ Gemini, or any other) must follow them.
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Unified review skill (`/review`)**: [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md)
-- **Per-module conventions**: `AGENTS.md` inside `modules/libs/core`, `modules/libs/ui`, `modules/libs/protocol`, `modules/apps/desktop`.
+- **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui`, `libs/protocol`, `apps/desktop`.
 
 ## Code review protocol: the 3-stage pipeline (`/review`)
 
@@ -26,7 +26,7 @@ flowchart LR
 ```
 
 1. **Gatekeeper & architecture** — [`stages/1-gatekeeper.md`](.agents/skills/review/stages/1-gatekeeper.md): module targets for touched packages (e.g. `make lib_core_lint lib_core_test`, `make lib_ui_lint lib_ui_test`), then the diff against `AGENTS.md` and the rules in `.agents/rules/`. A failing gate stops the pipeline.
-2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with *Given → When → Then*.
+2. **Semantic logic audit** — [`stages/2-bughunter.md`](.agents/skills/review/stages/2-bughunter.md): the blast radius, and every defect proven with _Given → When → Then_.
 3. **Dynamic stress verification** — [`stages/3-adversary.md`](.agents/skills/review/stages/3-adversary.md): a test that forces the failure, and the mutation check on the change's own tests.
 4. **Synthesis** — the Unified Review Report exactly as templated in the skill.
 
@@ -62,12 +62,12 @@ Functions and methods take **imperative verb phrases** in the base form
 
 Forbidden patterns:
 
-| Pattern | Example | Fix |
-|---|---|---|
-| Third-person singular | `carries`, `attends`, `reads` | `carry`, `attend`, `read` |
-| Past participle | `listened`, `spoken`, `cued` | `getTranscript`, `transcribe` |
-| Bare noun / adjective | `highlight`, `book` | `getHighlight`, `createBook` |
-| Literary metaphor | `minting`, `held`, `cold` | `getTitle`, `getActiveTab`, `getTitle` |
+| Pattern               | Example                       | Fix                                    |
+| --------------------- | ----------------------------- | -------------------------------------- |
+| Third-person singular | `carries`, `attends`, `reads` | `carry`, `attend`, `read`              |
+| Past participle       | `listened`, `spoken`, `cued`  | `getTranscript`, `transcribe`          |
+| Bare noun / adjective | `highlight`, `book`           | `getHighlight`, `createBook`           |
+| Literary metaphor     | `minting`, `held`, `cold`     | `getTitle`, `getActiveTab`, `getTitle` |
 
 A method states **what operation is performed** using standard engineering
 terms, never literary third-person narrative.
@@ -80,10 +80,10 @@ Event handlers are named `on<Action>`:
 
 ```ts
 // ✅ correct
-onSubmit, onClose, onClick, onSelect, onToggle
+;(onSubmit, onClose, onClick, onSelect, onToggle)
 
 // ❌ wrong
-cold, submitted, handle, doThing
+;(cold, submitted, handle, doThing)
 ```
 
 In Vue `<template>`, emits use kebab-case (`@item-selected`); the
@@ -124,6 +124,7 @@ function formatValue(val: string) { ... }
 ```
 
 Rules:
+
 1. Always follow the order: **Props → Events (or Props & Emits) → State → Hooks → Handlers → Helpers**.
 2. Only include headers for sections that actually exist in the component.
 3. The banner is the 80-character form: `/* --------------------------------- <Name> ---------------------------------- */`.
@@ -142,10 +143,10 @@ Composables and reactive state factories in Vue must be named with the `use…` 
 
 ```ts
 // ✅ correct
-useBookTab, useDocumentTab, useAgentChat, useFileManager
+;(useBookTab, useDocumentTab, useAgentChat, useFileManager)
 
 // ❌ wrong (gerunds, verbs, literary words)
-booking, documenting, talking, opening
+;(booking, documenting, talking, opening)
 ```
 
 ---
@@ -156,10 +157,10 @@ Types and interfaces are **singular nouns** or noun phrases:
 
 ```ts
 // ✅
-Tab, FileEntry, MoveResult, TranscriptSegment
+;(Tab, FileEntry, MoveResult, TranscriptSegment)
 
 // ❌ gerunds, adjectives, verbs
-Opening, Doing, Failed
+;(Opening, Doing, Failed)
 ```
 
 ### Boolean fields
@@ -172,8 +173,8 @@ isUserRequested: boolean
 hasTranscript: boolean
 
 // ❌
-userRequested: boolean   // reads as past tense, not boolean
-failed: string           // "failed" looks boolean but is a string — rename to failureReason
+userRequested: boolean // reads as past tense, not boolean
+failed: string // "failed" looks boolean but is a string — rename to failureReason
 ```
 
 ### Struct / interface fields
@@ -182,10 +183,10 @@ Fields are **noun phrases** that say what they hold:
 
 ```ts
 // ✅
-title, completedCount, totalCount, failureReason, progressPercent
+;(title, completedCount, totalCount, failureReason, progressPercent)
 
 // ❌ cryptic or ambiguous
-about, doing, done, total, counting
+;(about, doing, done, total, counting)
 ```
 
 ---
@@ -198,10 +199,10 @@ Factory functions use `create…`:
 
 ```ts
 // ✅
-createTab, createBookKind, createDocumentTab
+;(createTab, createBookKind, createDocumentTab)
 
 // ❌
-makeTab, bookKind, newTab
+;(makeTab, bookKind, newTab)
 ```
 
 The word `make` is **not used** in frontend code for factories.
@@ -245,13 +246,13 @@ truth for domain terms. When the glossary and code disagree, fix the code.
 
 Specific term rules:
 
-| Wrong | Correct | Context |
-|---|---|---|
-| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants |
-| `readings` | `recognition` | OCR output — the core's word is `Recognition` |
-| `spoken`, `spokenBy` | `transcript` | audio/video transcription output |
-| `reflow` for EPUB | `book` | EPUB = book; PDF = document |
-| `make` (frontend) | `create` | factory functions in TS/Vue |
+| Wrong                | Correct              | Context                                       |
+| -------------------- | -------------------- | --------------------------------------------- |
+| `refusal`, `refused` | `error`, `errorCode` | operation error discriminants                 |
+| `readings`           | `recognition`        | OCR output — the core's word is `Recognition` |
+| `spoken`, `spokenBy` | `transcript`         | audio/video transcription output              |
+| `reflow` for EPUB    | `book`               | EPUB = book; PDF = document                   |
+| `make` (frontend)    | `create`             | factory functions in TS/Vue                   |
 
 Three words this table used to call wrong are the glossary's own, and renaming
 them breaks a settled distinction rather than serving it:
@@ -281,13 +282,13 @@ general meaning. Obvious industry terms (tree, drag, chunk, window, theme) do no
 ## 10. File placement — domain code stays in its domain
 
 Code that serves one domain lives inside that domain's folder under
-`modules/apps/desktop/ui/src/`:
+`apps/desktop/editor/src/` (or its respective plugin under `plugins/`):
 
-| File | Belongs in |
-|---|---|
-| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/` |
-| File-manager entries (`FileEntry`, `MoveResult`) | `files/` |
-| Flashcard review settings | `cards/` |
+| File                                             | Belongs in |
+| ------------------------------------------------ | ---------- |
+| Note-specific types (`Move`, `Focus`, `Enabler`) | `note/`    |
+| File-manager entries (`FileEntry`, `MoveResult`) | `files/`   |
+| Flashcard review settings                        | `cards/`   |
 
 There is no `tabs/` folder and no `shared/`. What two or more domains genuinely
 use sits at the top of `src/` under the word for what it is — `transport.ts`,
@@ -302,11 +303,19 @@ concept. Split by capability:
 
 ```ts
 // ❌ one ArtifactRunner that can transcribe, correct, fetch for all artifact types
-class ArtifactRunner { transcribe(); correct(); fetch(); }
+class ArtifactRunner {
+  transcribe()
+  correct()
+  fetch()
+}
 
 // ✅ separate by capability, composed via generics or mixins
-interface Transcribable { getTranscript(): Transcript }
-interface Correctable  { applyCorrection(c: Correction): void }
+interface Transcribable {
+  getTranscript(): Transcript
+}
+interface Correctable {
+  applyCorrection(c: Correction): void
+}
 ```
 
 A file is split when it holds a second responsibility. The unit of organisation
@@ -327,14 +336,15 @@ Directories and files follow strict casing rules:
 To prevent linguistic contagion and degraded code readability, pseudo-literary prose, Anglish idioms, irregular past participles as identifiers, and bare prepositions are strictly forbidden across TypeScript, Vue, and Go.
 
 ### Forbidden variable & identifier patterns:
+
 1. **Irregular past participles as identifiers**: `held`, `said`, `asked`, `drawn`, `done`, `written`, `kept`, `shown`, `seen`, `told`, `settled`, `cut`, `put`, `taken`, `left`, `answered`.
-   - *Fix*: Use standard engineering nouns: `instance`, `wrapper`, `binding`, `response`, `query`, `request`, `result`, `count`, `target`, `item`.
+   - _Fix_: Use standard engineering nouns: `instance`, `wrapper`, `binding`, `response`, `query`, `request`, `result`, `count`, `target`, `item`.
 2. **Bare prepositions as identifiers**: `beside`, `under`, `over`, `behind`, `along`, `near`, `around`, `across`.
-   - *Fix*: Use concrete nouns: `adjacentPath`, `sidePane`, `parent`, `delta`, `range`.
+   - _Fix_: Use concrete nouns: `adjacentPath`, `sidePane`, `parent`, `delta`, `range`.
 3. **Literary metaphors & bare adjectives**: `bare`, `wide`, `stale`, `fresh`, `plain`, `shut`, `loose`, `quiet`, `warm`, `unseen`, `cold`, `minting`.
-   - *Fix*: Use descriptive identifiers: `rawText`, `isExpanded`, `isAvailable`, `isClosed`.
+   - _Fix_: Use descriptive identifiers: `rawText`, `isExpanded`, `isAvailable`, `isClosed`.
 4. **Third-person singular verbs as function names**: `carries`, `attends`, `reads`, `names`, `answers`, `stands`.
-   - *Fix*: Use imperative verb phrases: `carry`, `attend`, `readText`, `getName`, `respond`.
+   - _Fix_: Use imperative verb phrases: `carry`, `attend`, `readText`, `getName`, `respond`.
 5. **Fake turn casts**: Never write `voice: 'said'`, `state: 'done'`, or `as unknown as Turn`. Adhere strictly to the domain types `voice: 'asked' | 'answered'` and `TurnState: 'settled' | 'arriving' | 'failed'`.
 6. **Forbidden error terminology**: Never use `refused` or `refusal`. Always use `error` or `errorCode`.
 7. **Narrative comments & docstrings**: Do not write biblical or Saxon idioms (`hands back`, `comes to`, `stands on`, `where it sits`, `what holds here`). Write plain, technical engineering English.
@@ -348,7 +358,7 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
 - **The windows reach `@numen/ui` through its build.** Run `npm run build` in
-  `modules/libs/ui` before the suites in `modules/apps/desktop/ui` and
+  `libs/ui` before the suites in `apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
   `@numen/protocol` to whatever branch that checkout is parked on.** A
@@ -357,7 +367,7 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 - **`usecase/flashcards` and `adapter/flashcardsui` run close to the 10-minute
   per-package limit under `-race`.** A timeout there is the machine's load, not
   the code.
-- **`npm test` in `modules/libs/ui` starts both story instances at once**, and
+- **`npm test` in `libs/ui` starts both story instances at once**, and
   the run dies before any test executes. Take them one at a time:
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,
