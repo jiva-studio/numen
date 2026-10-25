@@ -47,7 +47,7 @@ const (
 // HostQueueServiceClient is a client for the numen.v1.HostQueueService service.
 type HostQueueServiceClient interface {
 	// EnqueueWork puts one piece of the plugin's work in the queue and streams
-	// where it stands. The turn lasts until the plugin closes the stream, and
+	// its state. The turn lasts until the plugin closes the stream, and
 	// the next work in the queue runs after it.
 	EnqueueWork(context.Context, *connect.Request[v1.EnqueueWorkRequest]) (*connect.ServerStreamForClient[v1.EnqueueWorkResponse], error)
 	// ReportTask puts one of the plugin's tasks in the list, or replaces the one
@@ -115,7 +115,7 @@ func (c *hostQueueServiceClient) FinishTask(ctx context.Context, req *connect.Re
 // HostQueueServiceHandler is an implementation of the numen.v1.HostQueueService service.
 type HostQueueServiceHandler interface {
 	// EnqueueWork puts one piece of the plugin's work in the queue and streams
-	// where it stands. The turn lasts until the plugin closes the stream, and
+	// its state. The turn lasts until the plugin closes the stream, and
 	// the next work in the queue runs after it.
 	EnqueueWork(context.Context, *connect.Request[v1.EnqueueWorkRequest], *connect.ServerStream[v1.EnqueueWorkResponse]) error
 	// ReportTask puts one of the plugin's tasks in the list, or replaces the one

@@ -11,15 +11,15 @@ import (
 func enqueueBehind(t *testing.T, q *hosttest.Queue, isUserStarted bool) <-chan host.Turn {
 	t.Helper()
 	turns := make(chan host.Turn, 1)
-	waiting := make(chan struct{})
+	queued := make(chan struct{})
 	go func() {
-		turn, err := q.EnqueueWork(t.Context(), host.Work{IsUserStarted: isUserStarted, OnWaiting: func() { close(waiting) }})
+		turn, err := q.EnqueueWork(t.Context(), host.Work{IsUserStarted: isUserStarted, OnWaiting: func() { close(queued) }})
 		if err == nil {
 			turns <- turn
 		}
 	}()
 	select {
-	case <-waiting:
+	case <-queued:
 	case <-time.After(time.Second):
 		t.Fatal("the work never waited")
 	}
@@ -32,13 +32,13 @@ func TestQueueRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	waiting := first.WatchWaiting()
+	contended := first.WatchWaiting()
 	background := enqueueBehind(t, q, false)
 	requested := enqueueBehind(t, q, true)
 	select {
-	case <-waiting:
+	case <-contended:
 	default:
-		t.Fatal("the turn was not told of the work waiting behind it")
+		t.Fatal("no signal for the work queued behind the turn")
 	}
 
 	first.Release()

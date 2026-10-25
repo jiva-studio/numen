@@ -76,7 +76,7 @@ func newQueueClient(t *testing.T) (*host.QueueClient, *queueing) {
 	return host.NewQueueClient(hostcall.Endpoint{BaseURL: server.URL, Token: "tok"}), q
 }
 
-func TestQueueClientHoldsTheTurnUntilItIsReleased(t *testing.T) {
+func TestQueueClientKeepsTheTurnUntilRelease(t *testing.T) {
 	client, q := newQueueClient(t)
 
 	var waited int
@@ -85,14 +85,14 @@ func TestQueueClientHoldsTheTurnUntilItIsReleased(t *testing.T) {
 		t.Fatal(err)
 	}
 	if waited != 1 {
-		t.Errorf("told of waiting %d times, want 1", waited)
+		t.Errorf("OnWaiting ran %d times, want 1", waited)
 	}
 	if q.authHeader != "Bearer tok" {
 		t.Errorf("the host was called with %q", q.authHeader)
 	}
 	select {
 	case <-turn.WatchWaiting():
-		t.Fatal("told of waiting work before the host said any waits")
+		t.Fatal("signalled work behind the turn before the host reported any")
 	default:
 	}
 
@@ -100,7 +100,7 @@ func TestQueueClientHoldsTheTurnUntilItIsReleased(t *testing.T) {
 	select {
 	case <-turn.WatchWaiting():
 	case <-time.After(time.Second):
-		t.Fatal("not told of the work waiting behind the turn")
+		t.Fatal("no signal for the work queued behind the turn")
 	}
 	select {
 	case <-q.ended:
@@ -128,14 +128,14 @@ func TestQueueClientReportsAndFinishesTasks(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(q.reported) != 1 {
-		t.Fatalf("the host was told %d tasks, want 1", len(q.reported))
+		t.Fatalf("the host received %d tasks, want 1", len(q.reported))
 	}
 	got := q.reported[0]
 	if got.GetId() != "a.mp3" || got.GetTitle() != "Transcribing" || got.GetAbout() != "a.mp3" || got.GetDone() != 4 ||
 		got.GetTotal() != 60 || got.GetUnit() != v1.Unit_UNIT_SECONDS || !got.GetIsUserStarted() {
-		t.Errorf("the host was told %v", got)
+		t.Errorf("the host received %v", got)
 	}
 	if len(q.finished) != 1 || q.finished[0] != "a.mp3" {
-		t.Errorf("the host was told to finish %v", q.finished)
+		t.Errorf("the host finished %v", q.finished)
 	}
 }

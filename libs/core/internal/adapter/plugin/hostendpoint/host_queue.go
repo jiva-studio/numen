@@ -63,15 +63,15 @@ func (e *queueEndpoint) EnqueueWork(
 	if err := stream.Send(&v1.EnqueueWorkResponse{State: v1.WorkState_WORK_STATE_RUNNING}); err != nil {
 		return err
 	}
-	waiting := turn.WatchWaiting()
+	contended := turn.WatchWaiting()
 	for {
 		select {
 		case <-ctx.Done():
 			return nil
 		case <-turn.WatchEnd():
 			return nil
-		case <-waiting:
-			waiting = nil
+		case <-contended:
+			contended = nil
 			if err := stream.Send(&v1.EnqueueWorkResponse{State: v1.WorkState_WORK_STATE_CONTENDED}); err != nil {
 				return err
 			}

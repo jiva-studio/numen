@@ -17,9 +17,9 @@ func enqueueBehind(
 	t.Helper()
 	turns := make(chan pluginport.PluginTurn, 1)
 	errs := make(chan error, 1)
-	waiting := make(chan struct{})
+	queued := make(chan struct{})
 	go func() {
-		turn, err := work.EnqueueWork(ctx, pluginID, isUserStarted, func() { close(waiting) })
+		turn, err := work.EnqueueWork(ctx, pluginID, isUserStarted, func() { close(queued) })
 		if err != nil {
 			errs <- err
 			return
@@ -27,7 +27,7 @@ func enqueueBehind(
 		turns <- turn
 	}()
 	select {
-	case <-waiting:
+	case <-queued:
 	case err := <-errs:
 		t.Fatalf("%s did not wait: %v", pluginID, err)
 	case <-time.After(time.Second):
@@ -69,7 +69,7 @@ func TestPluginWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	receiveTurn(t, background, "indexer").Release()
 }
 
-func TestPluginTurnIsToldOfWorkWaitingBehindIt(t *testing.T) {
+func TestPluginTurnReportsContention(t *testing.T) {
 	lock := &Lock{}
 	work := NewPluginWork(lock, NewTasks())
 
@@ -77,17 +77,17 @@ func TestPluginTurnIsToldOfWorkWaitingBehindIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	waiting := turn.WatchWaiting()
+	contended := turn.WatchWaiting()
 	select {
-	case <-waiting:
-		t.Fatal("told of waiting work while none waits")
+	case <-contended:
+		t.Fatal("signalled work behind the turn while none is queued")
 	default:
 	}
 	next, _ := enqueueBehind(t, t.Context(), work, "recogniser", true)
 	select {
-	case <-waiting:
+	case <-contended:
 	case <-time.After(time.Second):
-		t.Fatal("not told of the work waiting behind the turn")
+		t.Fatal("no signal for the work queued behind the turn")
 	}
 	turn.Release()
 	turn.Release()
@@ -144,13 +144,13 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, stopped := enqueueBehind(t, t.Context(), work, "transcriber", true)
+	_, cleared := enqueueBehind(t, t.Context(), work, "transcriber", true)
 	other, _ := enqueueBehind(t, t.Context(), work, "recogniser", false)
 
 	work.ClearPlugin("transcriber")
 
 	select {
-	case err := <-stopped:
+	case err := <-cleared:
 		if !errors.Is(err, errPluginCleared) {
 			t.Errorf("the stopped plugin's wait ended with %v", err)
 		}

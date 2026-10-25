@@ -21,7 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// WorkState is where a piece of work stands in the queue. UNSPECIFIED means
+// WorkState is the state of a piece of work in the queue. UNSPECIFIED means
 // nothing was said.
 type WorkState int32
 

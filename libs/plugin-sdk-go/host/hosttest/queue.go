@@ -12,13 +12,13 @@ import (
 // reported to it in memory. Work a person started runs before work nobody asked for, and work of
 // one kind runs in the order it arrived.
 type Queue struct {
-	mu       sync.Mutex
-	isHeld   bool
-	asked    []chan struct{}
-	unasked  []chan struct{}
-	watchers []chan struct{}
-	tasks    map[string]host.Task
-	order    []string
+	mu         sync.Mutex
+	isHeld     bool
+	requested  []chan struct{}
+	background []chan struct{}
+	watchers   []chan struct{}
+	tasks      map[string]host.Task
+	order      []string
 }
 
 var _ host.Queue = (*Queue)(nil)
@@ -35,9 +35,9 @@ func (q *Queue) EnqueueWork(ctx context.Context, work host.Work) (host.Turn, err
 	}
 	turn := make(chan struct{})
 	if work.IsUserStarted {
-		q.asked = append(q.asked, turn)
+		q.requested = append(q.requested, turn)
 	} else {
-		q.unasked = append(q.unasked, turn)
+		q.background = append(q.background, turn)
 	}
 	for _, watcher := range q.watchers {
 		close(watcher)
@@ -93,7 +93,7 @@ func (q *Queue) ListTasks() []host.Task {
 func (q *Queue) release() {
 	q.mu.Lock()
 	defer q.mu.Unlock()
-	for _, line := range []*[]chan struct{}{&q.asked, &q.unasked} {
+	for _, line := range []*[]chan struct{}{&q.requested, &q.background} {
 		if len(*line) > 0 {
 			next := (*line)[0]
 			*line = (*line)[1:]
@@ -107,7 +107,7 @@ func (q *Queue) release() {
 // leave takes a wait that ended out of the queue, and hands on a turn that arrived as it ended.
 func (q *Queue) leave(turn chan struct{}) {
 	q.mu.Lock()
-	for _, line := range []*[]chan struct{}{&q.asked, &q.unasked} {
+	for _, line := range []*[]chan struct{}{&q.requested, &q.background} {
 		if i := slices.Index(*line, turn); i >= 0 {
 			*line = slices.Delete(*line, i, i+1)
 			q.mu.Unlock()
@@ -123,7 +123,7 @@ func (q *Queue) watchWaiting() <-chan struct{} {
 	q.mu.Lock()
 	defer q.mu.Unlock()
 	watcher := make(chan struct{})
-	if len(q.asked)+len(q.unasked) > 0 {
+	if len(q.requested)+len(q.background) > 0 {
 		close(watcher)
 		return watcher
 	}

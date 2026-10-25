@@ -13,7 +13,7 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // plugin stops.
 service HostQueueService {
   // EnqueueWork puts one piece of the plugin's work in the queue and streams
-  // where it stands. The turn lasts until the plugin closes the stream, and
+  // its state. The turn lasts until the plugin closes the stream, and
   // the next work in the queue runs after it.
   rpc EnqueueWork(EnqueueWorkRequest) returns (stream EnqueueWorkResponse);
 
@@ -26,7 +26,7 @@ service HostQueueService {
   rpc FinishTask(FinishTaskRequest) returns (FinishTaskResponse);
 }
 
-// WorkState is where a piece of work stands in the queue. UNSPECIFIED means
+// WorkState is the state of a piece of work in the queue. UNSPECIFIED means
 // nothing was said.
 enum WorkState {
   WORK_STATE_UNSPECIFIED = 0;

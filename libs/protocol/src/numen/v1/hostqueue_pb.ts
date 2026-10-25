@@ -113,7 +113,7 @@ export const FinishTaskResponseSchema: GenMessage<FinishTaskResponse> = /*@__PUR
   messageDesc(file_numen_v1_hostqueue, 5);
 
 /**
- * WorkState is where a piece of work stands in the queue. UNSPECIFIED means
+ * WorkState is the state of a piece of work in the queue. UNSPECIFIED means
  * nothing was said.
  *
  * @generated from enum numen.v1.WorkState
@@ -164,7 +164,7 @@ export const WorkStateSchema: GenEnum<WorkState> = /*@__PURE__*/
 export const HostQueueService: GenService<{
   /**
    * EnqueueWork puts one piece of the plugin's work in the queue and streams
-   * where it stands. The turn lasts until the plugin closes the stream, and
+   * its state. The turn lasts until the plugin closes the stream, and
    * the next work in the queue runs after it.
    *
    * @generated from rpc numen.v1.HostQueueService.EnqueueWork
