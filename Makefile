@@ -329,6 +329,14 @@ app_desktop_test: lib_ui_build ## run desktop tests
 	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 
+.PHONY: app_desktop_stories
+app_desktop_stories: lib_ui_build ## draw the stories of both desktop windows, one engine at a time
+	@set -e; for window in editor flashcards; do \
+		for engine in chromium webkit; do \
+			(cd $(DESKTOP)/$$window && npx vitest run --project "stories ($$engine)"); \
+		done; \
+	done
+
 .PHONY: app_desktop_e2e
 app_desktop_e2e: lib_ui_build app_desktop_editor_build plugins_build ## run desktop end-to-end tests
 	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen

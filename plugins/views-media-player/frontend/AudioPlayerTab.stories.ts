@@ -13,9 +13,6 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** A player holding a transcript: Tab indents until Escape returns focus. */
-const WRITING = { reach: { keeps: 'Escape returns Tab focus to the page' } }
-
 interface Cue {
   readonly text: string
   readonly from: number
@@ -101,7 +98,6 @@ const player = (state: Record<string, unknown>) => ({
 
 /** The words heard in a recording, against the moment each was said. */
 export const Recording: Story = {
-  parameters: WRITING,
   render: () => player({ url: MEDIA, now: 47_200, runs: RUNS, isPlaying: true, cues: SPOKEN }),
 }
 
