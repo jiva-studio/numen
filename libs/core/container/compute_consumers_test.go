@@ -19,7 +19,7 @@ func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {
 }
 
 func TestASearchOfAContainerWithoutAPlanExtractsTheDefaultNumberOfSources(t *testing.T) {
-	want := search.New(nil, nil, nil, nil, nil, 0, nil).GetExtractors()
+	want := search.New(nil, nil, nil, nil, 0, nil).GetExtractors()
 	if got := (Config{}).NewSearchOver(nil, nil, nil).GetExtractors(); got != want {
 		t.Errorf("a search extracts %d sources at once, want %d", got, want)
 	}

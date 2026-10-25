@@ -5,8 +5,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/ocrartifact"
-	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -204,13 +202,13 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 			},
 		},
 		{
-			name: "the text is shorter than it was",
+			name: "the file holds another text now, and the version the chunks were cut from is gone",
 			replace: func(t *testing.T, shelf *library) {
 				shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 20)), 2)
 			},
-			want: func(t *testing.T, res EmbedResult, _ int) {
-				if res.Displaced == 0 {
-					t.Errorf("the run reports %+v, want the places past the end of the text left alone", res)
+			want: func(t *testing.T, res EmbedResult, owed int) {
+				if res.Vanished != owed || res.Embedded != 0 {
+					t.Errorf("the run reports %+v, want all %d chunks left alone", res, owed)
 				}
 			},
 		},
@@ -284,45 +282,6 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 			t.Fatalf("chunk %d carries %d vectors after both vaults were embedded",
 				chunk.id, len(index.getVectors(chunk)))
 		}
-	}
-}
-
-func TestASourceActiveOnARecognitionIsEmbeddedFromIt(t *testing.T) {
-	// A source that relies on what a model read in it holds no text of its own
-	// that a chunk is a place in. Reaching that text is the store's, and an
-	// embedder without one passes the chunk over and says nothing.
-	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
-
-	raw := bookOf(t, "Scanned", words(sanskrit, 400))
-	shelf.hold(bookPath, domain.KindBook, raw, 1)
-	read, _, _ := ocrartifact.Write([]ocrartifact.Page{{Index: 0, Blocks: []domain.OCRBlock{{Label: "text", Text: words(sanskrit, 400)}}}})
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", text.Fingerprint(raw)), read); err != nil {
-		t.Fatal(err)
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	if index.sources[first.ID][bookPath].Producer == "" {
-		t.Fatal("the source does not stand on a recognition, so embedding it proves nothing")
-	}
-	small := index.small(first.ID)
-	if len(small) == 0 {
-		t.Fatal("the book was not cut into anything that carries a vector")
-	}
-
-	embed := newEmbed(vaults{first.ID: shelf}, index, index)
-	embed.Derived = made
-	embed.Embedder = &embedder{dims: dimensions}
-	embed.BatchCharacters = 4000
-	if _, err := embed.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	if len(index.vectors) != len(small) {
-		t.Errorf("%d of %d chunks carry a vector", len(index.vectors), len(small))
 	}
 }
 

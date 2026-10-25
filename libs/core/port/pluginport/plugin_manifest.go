@@ -243,6 +243,8 @@ type PluginManifest struct {
 	NoteTypes []PluginNoteType `json:"noteTypes,omitempty"`
 	// Commands are the commands the plugin's backend runs, offered by the palette and the command line.
 	Commands []PluginCommand `json:"commands,omitempty"`
+	// TextInput is what the plugin makes text from. A plugin that makes no text declares none.
+	TextInput *PluginTextInput `json:"textInput,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -305,6 +307,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listServiceIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
+	issues = append(issues, m.listTextInputIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }

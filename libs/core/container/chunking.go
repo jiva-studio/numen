@@ -89,7 +89,7 @@ func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault
 	}
 	embed := embedding.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
 	embed.Derived = derived
-	embed.Documents = c.TextExtractor()
+	embed.Texts = c.getTextReaders()
 	embed.Embedder = embedder
 	return embed, nil
 }
@@ -97,13 +97,11 @@ func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault
 // Extract cuts a vault's sources into chunks. Every entry point takes it from
 // here, so what a chunk is kept under is one answer.
 func (c Config) Extract(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (source.Extract, error) {
-	derived, err := c.GetDerivedStores().Open(v)
-	if err != nil {
+	if _, err := c.VaultReaders().Open(v); err != nil {
 		return source.Extract{}, err
 	}
-	extract := source.NewExtract(c.VaultReaders(), sources, queries)
-	extract.Derived = derived
-	extract.Documents = c.TextExtractor()
+	extract := source.NewExtract(c.VaultReaders(), sources, queries, c.getTextReaders())
+	extract.ErrorHandler = c.handleError
 	cutter := c.CutNotes()
 	extract.Sizes = cutter.Sizes
 	extract.Legibility = cutter.Legibility

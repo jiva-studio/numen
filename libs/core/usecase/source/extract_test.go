@@ -2,15 +2,12 @@ package source
 
 import (
 	"errors"
-	"io/fs"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/chunking"
-	"github.com/jiva-studio/numen/libs/core/internal/text"
-	"github.com/jiva-studio/numen/libs/core/internal/transcript"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -48,7 +45,7 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			}
 
 			source := index.sources[first.ID][bookPath]
-			if want := recipe(text.ReaderEPUB, extract.sizes()); source.Recipe != want {
+			if want := recipe(versionReader, extract.sizes()); source.Recipe != want {
 				t.Errorf("recipe = %q, want %q", source.Recipe, want)
 			}
 			if source.Hash == "" {
@@ -195,7 +192,7 @@ func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T)
 	other := one
 	other.Small = 21
 
-	if recipe(text.ReaderEPUB, one) == recipe(text.ReaderEPUB, other) {
+	if recipe(versionReader, one) == recipe(versionReader, other) {
 		t.Fatal("one word of difference in a chunk size is not in the recipe")
 	}
 
@@ -208,7 +205,7 @@ func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T)
 		t.Fatal(err)
 	}
 
-	stale, err := index.GetSourcesWithOtherRecipe(ctx, first.ID, domain.KindBook, recipes(Extract{Sizes: other}.sizes()), 10)
+	stale, err := index.GetSourcesWithOtherRecipe(ctx, first.ID, domain.KindBook, []string{recipe(versionReader, Extract{Sizes: other}.sizes())}, 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +224,7 @@ func TestTheRecipeFollowsTheSplitSizesAndStalenessFollowsTheRecipe(t *testing.T)
 	if index.outBytes[bookPath] != 2 {
 		t.Errorf("the source was written %d times, want the cut at each of the two sizes", index.outBytes[bookPath])
 	}
-	if want := recipe(text.ReaderEPUB, extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
+	if want := recipe(versionReader, extract.sizes()); index.sources[first.ID][bookPath].Recipe != want {
 		t.Errorf("recipe = %q, want %q", index.sources[first.ID][bookPath].Recipe, want)
 	}
 
@@ -383,228 +380,51 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 	}
 }
 
-// A recognition still running is the source's text while it runs. The pages it
-// has read are what a passage is a place in, and the artifact answers under the
-// same producer name once the run finishes.
-func TestASourceSplitFromAPartialReadsBackFromThePartial(t *testing.T) {
-	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
-
-	raw := bookOf(t, "A Book", words(sanskrit, 200))
-	shelf.hold(bookPath, domain.KindBook, raw, 1)
-
-	const (
-		read  = "What the pages read so far say."
-		whole = "What every page of the document says."
-	)
-	hash := text.Fingerprint(raw)
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactPartial, "ocr", hash), []byte(read)); err != nil {
-		t.Fatal(err)
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	src := index.sources[first.ID][bookPath]
-	if src.Producer != "ocr" {
-		t.Fatalf("the source names %q as the producer of its text, want ocr", src.Producer)
-	}
-
-	of := text.Reader{Vault: shelf, Derived: made}
-	doc, err := of.GetDocument(ctx, bookPath, src.Producer, src.Hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if doc.Text != read {
-		t.Errorf("the source reads back as %q, want the pages the run has read", doc.Text)
-	}
-
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, "ocr", hash), []byte(whole)); err != nil {
-		t.Fatal(err)
-	}
-	doc, err = of.GetDocument(ctx, bookPath, src.Producer, src.Hash)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if doc.Text != whole {
-		t.Errorf("the source reads back as %q, want the finished artifact", doc.Text)
-	}
-}
-
-// A source the vault no longer holds takes the files of its recognition with it.
-// One run made them and none of them means anything without the others.
-func TestABookTakenOutConsumesTheFilesOfItsRecognition(t *testing.T) {
-	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
-
-	removed := bookOf(t, "Gone", words(latin, 200))
-	resolved := bookOf(t, "Kept", words(sanskrit, 200))
-	shelf.hold("library/gone.epub", domain.KindBook, removed, 1)
-	shelf.hold("library/kept.epub", domain.KindBook, resolved, 1)
-
-	for _, raw := range [][]byte{removed, resolved} {
-		for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
-			if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	if index.sources[first.ID]["library/gone.epub"].Producer == "" {
-		t.Fatal("the book was not cut from its recognition, so its removal proves nothing")
-	}
-
-	delete(shelf.files, "library/gone.epub")
-	res, err := extract.Execute(ctx, first)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Removed != 1 {
-		t.Fatalf("removed = %d, want the one book the vault no longer holds", res.Removed)
-	}
-
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(removed)) {
-		if _, err := made.ReadArtifact(ctx, name); !errors.Is(err, fs.ErrNotExist) {
-			t.Errorf("%s is still in the store", name)
-		}
-	}
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(resolved)) {
-		if _, err := made.ReadArtifact(ctx, name); err != nil {
-			t.Errorf("%s went with the other book: %v", name, err)
-		}
-	}
-}
-
-func TestARenamedBookKeepsItsRecognition(t *testing.T) {
-	// A recognition is named by the hash of what was read, so a document renamed is
-	// the same recognition at another path. Renaming is a path gone and a path
-	// found, and an hour of a model's work relies on the one that went.
-	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
-
-	raw := bookOf(t, "Read", words(sanskrit, 200))
-	shelf.hold("library/before.epub", domain.KindBook, raw, 1)
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
-		if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-	if index.sources[first.ID]["library/before.epub"].Producer == "" {
-		t.Fatal("the book was not cut from its recognition, so renaming it proves nothing")
-	}
-
-	delete(shelf.files, "library/before.epub")
-	shelf.hold("library/after.epub", domain.KindBook, raw, 1)
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
-		if _, err := made.ReadArtifact(ctx, name); err != nil {
-			t.Errorf("renaming the book threw away %s: %v", name, err)
-		}
-	}
-	if from := index.sources[first.ID]["library/after.epub"].Producer; from == "" {
-		t.Error("the renamed book does not stand on its recognition")
-	}
-}
-
-func TestOneOfTwoCopiesTakenOutPreservesTheOtherRecognition(t *testing.T) {
-	// Two copies of one document are one recognition, because the name is the hash
-	// of the bytes. Taking one copy out leaves the other standing on it.
-	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
-
-	raw := bookOf(t, "Twice", words(sanskrit, 200))
-	shelf.hold("library/one.epub", domain.KindBook, raw, 1)
-	shelf.hold("shelf/two.epub", domain.KindBook, raw, 1)
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
-		if err := made.WriteArtifact(ctx, name, []byte("What the pages say.")); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-
-	delete(shelf.files, "library/one.epub")
-	if _, err := extract.Execute(ctx, first); err != nil {
-		t.Fatal(err)
-	}
-
-	for _, name := range domain.GetArtifactNames("ocr", text.Fingerprint(raw)) {
-		if _, err := made.ReadArtifact(ctx, name); err != nil {
-			t.Errorf("one copy going took %s with it: %v", name, err)
-		}
-	}
-	if from := index.sources[first.ID]["shelf/two.epub"].Producer; from == "" {
-		t.Error("the copy that stayed lost its recognition")
-	}
-}
-
 const talkPath = "talks/a lecture.mp3"
 
-// newTranscript is the transcript a model leaves of one talk.
-func newTranscript() []byte {
-	return transcript.Marshal([]domain.TranscriptCue{
-		{Text: words(sanskrit, 200), From: 1500, To: 5025000},
-		{Text: words(latin, 200), From: 5025000, To: 5400000},
-	})
+// heardParts is the text a transcription plugin gives of one talk.
+func heardParts() []domain.TextPart {
+	return []domain.TextPart{
+		{Text: words(sanskrit, 200) + "\n", Place: domain.TextPlace{Start: 1500 * time.Millisecond}},
+		{Text: words(latin, 200) + "\n", Place: domain.TextPlace{Start: 5025 * time.Second}},
+	}
 }
 
-// A recording nobody has listened to is a source found by its name, with
-// nothing to cut into chunks.
-func TestARecordingNobodyHasHeardIsASourceWithNoChunks(t *testing.T) {
+// A recording with no text version is a source found by its name, with nothing
+// to cut into chunks, and the plugins that run on their own are asked for its text.
+func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
+	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Seen != 1 || res.Recorded != 1 {
-		t.Errorf("the run reports %+v, want the recording found and recorded", res)
+	if res.Seen != 1 || res.Recorded != 1 || res.Unreadable != 1 {
+		t.Errorf("the run reports %+v, want the recording found, recorded and without text", res)
 	}
 	if res.Chunks != 0 || res.Extracted != 0 {
-		t.Errorf("the run cut %d chunks out of a recording nobody has heard", res.Chunks)
+		t.Errorf("the run cut %d chunks out of a recording with no text", res.Chunks)
 	}
 	if _, target := index.sources[first.ID][talkPath]; !target {
 		t.Error("the vault holds a recording the index does not")
 	}
+	if got := texts.getRequested(); !slices.Equal(got, []string{talkPath}) {
+		t.Errorf("text was asked for %v, want the recording", got)
+	}
 }
 
-// What a model heard is the text of the recording, and a chunk of it is located
-// by when it was said.
-func TestARecordingIsSplitFromWhatWasHeardInIt(t *testing.T) {
+// The live version of a recording is its text, and a chunk of it is located by
+// when it was said.
+func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	raw := []byte("ID3 and then the samples")
-	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, domain.ASR, text.Fingerprint(raw)), newTranscript()); err != nil {
-		t.Fatal(err)
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
+	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
+	heard := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -612,83 +432,104 @@ func TestARecordingIsSplitFromWhatWasHeardInIt(t *testing.T) {
 	if res.Extracted != 1 || res.Chunks == 0 {
 		t.Fatalf("the run reports %+v, want the recording cut into chunks", res)
 	}
-
 	src := index.sources[first.ID][talkPath]
-	if src.Producer != domain.ASR {
-		t.Errorf("the source names %q as the producer of its text, want %q", src.Producer, domain.ASR)
+	if src.Producer != string(heard.GetID()) {
+		t.Errorf("the source names %q as the version it was cut from, want %q", src.Producer, heard.GetID())
 	}
-	if want := recipe(text.ReaderRecording, extract.sizes()); src.Recipe != want {
+	if want := recipe(versionReader, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
 	}
-	if !slices.Contains(recipes(extract.sizes()), src.Recipe) {
-		t.Error("the recipe a recording is cut by is not one the next run knows")
-	}
-
+	located := 0
 	for _, c := range index.chunks {
-		if c.location == "" {
-			t.Fatal("a chunk of a recording says nothing about where it is")
+		if strings.Contains(c.location, ":") {
+			located++
 		}
+	}
+	if located != len(index.chunks) {
+		t.Fatalf("%d of %d chunks of a recording say when they were said", located, len(index.chunks))
 	}
 }
 
-// A transcription writes a transcript and the note of what heard it, and a
-// recording the vault no longer holds takes both with it.
-func TestARecordingTakenOutConsumesTheFilesOfItsTranscription(t *testing.T) {
+// A version that stops being the live one leaves its chunks owed: the next run
+// cuts the file from the version that is live now, or keeps no chunks of it.
+func TestASourceCutFromAVersionNoLongerLiveIsCutAgain(t *testing.T) {
 	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	raw := []byte("ID3 and then the samples")
-	shelf.hold(talkPath, domain.KindRecording, raw, 1)
-	hash := text.Fingerprint(raw)
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactText, domain.ASR, hash), newTranscript()); err != nil {
-		t.Fatal(err)
-	}
-	if err := made.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactProducer, domain.ASR, hash), []byte(`{"model":"parakeet"}`)); err != nil {
-		t.Fatal(err)
-	}
-
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
-	extract.Derived = made
+	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
+	texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
+	if !index.cut(first.ID, talkPath) {
+		t.Fatal("the recording was not cut, so dropping its version proves nothing")
+	}
 
-	delete(shelf.files, talkPath)
+	texts.drop(talkPath)
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.Removed != 1 {
-		t.Fatalf("removed = %d, want the one recording the vault no longer holds", res.Removed)
+	if res.Outdated != 1 || res.Unreadable != 1 {
+		t.Errorf("the run reports %+v, want the source outdated and left without text", res)
 	}
-	if remaining := made.artifactNames(); len(remaining) != 0 {
-		t.Errorf("the store still holds %v", remaining)
+	if index.cut(first.ID, talkPath) {
+		t.Error("the chunks of a version that is not live are still in the index")
+	}
+	if got := index.sources[first.ID][talkPath].Producer; got != "" {
+		t.Errorf("the source still names %q as its version", got)
 	}
 }
 
-// A vault already read is not read again: what a book is cut by, and where its
-// recognition is kept, are what they were before recordings were a kind of their
-// own.
-func TestABookIsSplitTheWayItAlwaysWas(t *testing.T) {
+// ExtractOne is the cut the index makes when a file's versions change.
+func TestExtractOneCutsTheVersionThatIsLiveNow(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	raw := bookOf(t, "A Book", words(sanskrit, 400))
-	shelf.hold(bookPath, domain.KindBook, raw, 1)
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
-	extract := newExtract(vaults{first.ID: shelf}, index, index)
+	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
+	heard := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, heardParts())
+	if _, err := extract.ExtractOne(ctx, first, talkPath); err != nil {
+		t.Fatal(err)
+	}
+	if got := index.sources[first.ID][talkPath].Producer; got != string(heard.GetID()) {
+		t.Fatalf("the source names %q, want %q", got, heard.GetID())
+	}
+	if !index.cut(first.ID, talkPath) {
+		t.Fatal("the new version was not cut")
+	}
+}
 
-	sizes := extract.sizes()
-	if want := "epub-1/large=200+40/small=50+10/limit=1000"; recipe(text.ReaderEPUB, sizes) != want {
-		t.Errorf("a book is cut by %q, want %q", recipe(text.ReaderEPUB, sizes), want)
+// A provider that cannot answer is one source: it is told to the error handler
+// and the run goes on.
+func TestATextThatCannotBeReadIsReportedAndTheRunGoesOn(t *testing.T) {
+	ctx := t.Context()
+	index, shelf := newStore(), newLibrary()
+	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 200)), 1)
+
+	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
+	texts.failure = errors.New("the plugin is not running")
+	var heard []error
+	extract.ErrorHandler = func(err error) { heard = append(heard, err) }
+	res, err := extract.Execute(ctx, first)
+	if err != nil {
+		t.Fatalf("a provider that failed ended the run: %v", err)
 	}
-	if got := index.sources[first.ID][bookPath].Recipe; got != recipe(text.ReaderEPUB, sizes) {
-		t.Errorf("the book was cut by %q", got)
+	if res.Unreadable != 1 || len(heard) != 1 {
+		t.Fatalf("the run reports %+v and the handler heard %v, want one unreadable source reported", res, heard)
 	}
-	if got := extract.producer(domain.Fingerprint{Kind: domain.KindBook}); got != "ocr" {
-		t.Errorf("a book's recognition is kept under %q, want ocr", got)
+	if got := texts.getRequested(); len(got) != 0 {
+		t.Fatalf("text was asked for %v while a provider failed", got)
+	}
+}
+
+func TestTheRecipeNamesTheVersionReaderAndTheSizes(t *testing.T) {
+	sizes := (Extract{}).sizes()
+	if want := "text-version-1/large=200+40/small=50+10/limit=1000"; recipe(versionReader, sizes) != want {
+		t.Errorf("a source is cut by %q, want %q", recipe(versionReader, sizes), want)
 	}
 }

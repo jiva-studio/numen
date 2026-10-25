@@ -43,6 +43,20 @@ func (h *Host) GetPluginVault() pluginport.PluginVault {
 	return h.vault
 }
 
+// SetPluginTexts is the text versions of the shown vault the plugins work through the host.
+func (h *Host) SetPluginTexts(texts pluginport.PluginTexts) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.texts = texts
+}
+
+// GetPluginTexts is the text versions the plugins work, or nil.
+func (h *Host) GetPluginTexts() pluginport.PluginTexts {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.texts
+}
+
 // SetCompleter sets what answers the completions plugins ask for. The host
 // endpoint starts serving when the first plugin launches after it is set.
 func (h *Host) SetCompleter(completer completionport.Completer) {
@@ -139,4 +153,10 @@ func (h *Host) HasEndpoint(pluginID string) bool {
 	defer h.mu.RUnlock()
 	_, ok := h.endpoints[pluginID]
 	return ok
+}
+
+func (h *Host) getOnEnabledChanged() func(pluginID string) {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return h.onEnabledChanged
 }

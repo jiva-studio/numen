@@ -83,6 +83,7 @@ type Host struct {
 	activation       lifecycle.ActivationPolicy
 	onPluginFailed   func(pluginport.PluginFailure)
 	onFailureCleared func(pluginID string)
+	onEnabledChanged func(pluginID string)
 	errorHandler     eventbus.ErrorHandler
 	onDisk           map[string]bool
 	discoverMu       sync.RWMutex
@@ -90,6 +91,7 @@ type Host struct {
 	problems         []plugindir.DiscoveryProblem
 	completer        completionport.Completer
 	vault            pluginport.PluginVault
+	texts            pluginport.PluginTexts
 	// consentAsks holds the plugins that asked for a completion the person has
 	// not answered for, since the host started.
 	consentAsks   map[string]bool
@@ -128,6 +130,7 @@ func NewHost(target string, dirs ...string) *Host {
 		activation:       lifecycle.DefaultActivationPolicy(),
 		onPluginFailed:   nil,
 		onFailureCleared: nil,
+		onEnabledChanged: nil,
 		errorHandler:     nil,
 		onDisk:           make(map[string]bool),
 		discoverMu:       sync.RWMutex{},
@@ -199,6 +202,13 @@ func (h *Host) SetOnFailureCleared(fn func(pluginID string)) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.onFailureCleared = fn
+}
+
+// SetOnEnabledChanged registers a callback invoked with the id of a plugin the person enabled or disabled.
+func (h *Host) SetOnEnabledChanged(fn func(pluginID string)) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.onEnabledChanged = fn
 }
 
 // SetLauncher overrides the process launcher for testing.
@@ -1191,6 +1201,9 @@ func (h *Host) applyEnabledChange(ctx context.Context, pluginID string, value an
 	h.mu.RUnlock()
 	if sup != nil {
 		h.clearFailure(pluginID, sup)
+	}
+	if onChanged := h.getOnEnabledChanged(); onChanged != nil {
+		onChanged(pluginID)
 	}
 	return stopErr
 }

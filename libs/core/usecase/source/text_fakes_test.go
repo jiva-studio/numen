@@ -1,0 +1,160 @@
+package source
+
+import (
+	"context"
+	"fmt"
+	"slices"
+	"sync"
+
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
+	"github.com/jiva-studio/numen/libs/core/port/textport"
+)
+
+// bookReader is the plugin whose version every book the stand-in reads has.
+const bookReader = "test.books"
+
+// shelfTexts is the text versions of the libraries a test holds. A book the
+// stand-in reads has a version of bookReader, made from the bytes it holds now;
+// a test puts any other version with put.
+type shelfTexts struct {
+	shelves vaults
+
+	mu    sync.Mutex
+	extra map[string][]placedVersion
+	// books is every version bookReader has made, by path and the hash of the bytes it read.
+	books     map[string]placedVersion
+	requested []string
+	failure   error
+}
+
+type placedVersion struct {
+	version domain.TextVersion
+	parts   []domain.TextPart
+}
+
+func newShelfTexts(shelves vaults) *shelfTexts {
+	return &shelfTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}}
+}
+
+// put gives a file a version made from its bytes as they are now. The newest put is live.
+func (s *shelfTexts) put(v domain.Vault, path, pluginID string, format domain.TextFormat, parts []domain.TextPart) domain.TextVersion {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	raw := s.shelves[v.ID].files[path].raw
+	version := domain.TextVersion{
+		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Format: format, InputHash: domain.HashContent(raw),
+	}
+	s.extra[path] = append(s.extra[path], placedVersion{version: version, parts: parts})
+	return version
+}
+
+// drop removes every version a test put on a file.
+func (s *shelfTexts) drop(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.extra, path)
+}
+
+func (s *shelfTexts) getRequested() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.requested)
+}
+
+func (s *shelfTexts) Open(v domain.Vault) (textport.VaultTexts, error) {
+	return shelfVaultTexts{texts: s, vault: v}, nil
+}
+
+type shelfVaultTexts struct {
+	texts *shelfTexts
+	vault domain.Vault
+}
+
+// findLive is the live version of a file and its parts.
+func (t shelfVaultTexts) findLive(ctx context.Context, path, fileHash string) (placedVersion, error) {
+	s := t.texts
+	s.mu.Lock()
+	failure := s.failure
+	extra := slices.Clone(s.extra[path])
+	s.mu.Unlock()
+	if failure != nil {
+		return placedVersion{}, failure
+	}
+	for i := len(extra) - 1; i >= 0; i-- {
+		if extra[i].version.InputHash == fileHash {
+			return extra[i], nil
+		}
+	}
+	s.mu.Lock()
+	made, isMade := s.books[path+"|"+fileHash]
+	s.mu.Unlock()
+	if isMade {
+		return made, nil
+	}
+	file, ok := s.shelves[t.vault.ID].files[path]
+	if !ok || domain.HashContent(file.raw) != fileHash {
+		return placedVersion{}, textport.ErrNoText
+	}
+	book, err := documents{}.ReadBook(ctx, file.raw)
+	if err != nil {
+		return placedVersion{}, textport.ErrNoText
+	}
+	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: fileHash[:8], Format: domain.TextFormatPlain, InputHash: fileHash}
+	var parts []domain.TextPart
+	for i, part := range book.Parts {
+		end := len(book.Text)
+		if i+1 < len(book.Parts) {
+			end = book.Parts[i+1].Offset
+		}
+		parts = append(parts, domain.TextPart{Text: book.Text[part.Offset:end], Section: part.Title})
+	}
+	made = placedVersion{version: version, parts: parts}
+	s.mu.Lock()
+	s.books[path+"|"+fileHash] = made
+	s.mu.Unlock()
+	return made, nil
+}
+
+func (t shelfVaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) (domain.TextVersionID, error) {
+	live, err := t.findLive(ctx, path, fileHash)
+	if err != nil {
+		return "", err
+	}
+	return live.version.GetID(), nil
+}
+
+func (t shelfVaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
+	live, err := t.findLive(ctx, path, fileHash)
+	if err != nil {
+		return domain.VersionText{}, err
+	}
+	return domain.NewVersionText(live.version, live.parts), nil
+}
+
+func (t shelfVaultTexts) GetVersionText(ctx context.Context, path string, id domain.TextVersionID) (domain.VersionText, error) {
+	t.texts.mu.Lock()
+	extra := slices.Clone(t.texts.extra[path])
+	t.texts.mu.Unlock()
+	for _, one := range extra {
+		if one.version.GetID() == id {
+			return domain.NewVersionText(one.version, one.parts), nil
+		}
+	}
+	file, ok := t.texts.shelves[t.vault.ID].files[path]
+	if !ok {
+		return domain.VersionText{}, textport.ErrNoText
+	}
+	live, err := t.findLive(ctx, path, domain.HashContent(file.raw))
+	if err != nil || live.version.GetID() != id {
+		return domain.VersionText{}, textport.ErrNoText
+	}
+	return domain.NewVersionText(live.version, live.parts), nil
+}
+
+func (t shelfVaultTexts) RequestText(_ context.Context, path, _ string) error {
+	t.texts.mu.Lock()
+	defer t.texts.mu.Unlock()
+	t.texts.requested = append(t.texts.requested, path)
+	return nil
+}

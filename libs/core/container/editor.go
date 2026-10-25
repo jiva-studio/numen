@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
@@ -237,3 +238,10 @@ func (e EditorAssembly) GetPluginCommands() plugincommand.Commands { return e.cf
 
 // GetAgent returns the agent provider for running tasks.
 func (e EditorAssembly) GetAgent() agentport.Agent { return e.cfg.AgentProvider() }
+
+// SetTextVersionListener names the index that hears the versions of a file changed.
+func (e EditorAssembly) SetTextVersionListener(listener textport.VersionListener) {
+	if e.cfg.TextVersions != nil {
+		e.cfg.TextVersions.SetListener(listener)
+	}
+}

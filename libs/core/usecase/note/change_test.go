@@ -46,7 +46,7 @@ func openChanging(t *testing.T, notes map[string]string) changing {
 
 // search is the one search, with no embedder: the words half answers alone.
 func (c changing) search() search.Search {
-	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, nil, 0, nil)
+	return search.New(c.db.Passages(), vaultreader.Readers{}, nil, nil, 0, nil)
 }
 
 func (c changing) create() note.Create {

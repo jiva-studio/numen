@@ -150,6 +150,12 @@ func (s *Session) RequestCut(v domain.Vault, path string) {
 	signal(s.worker.read)
 }
 
+// ReportVersionsChanged asks for the file to be cut again from its live text
+// version, which is what the index does whenever the versions of a file change.
+func (s *Session) ReportVersionsChanged(v domain.Vault, path string) {
+	s.RequestCut(v, path)
+}
+
 // drain is every source waiting, and leaves none behind.
 func (s *Session) drain() map[string]domain.Vault {
 	s.mu.Lock()

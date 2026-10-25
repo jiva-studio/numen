@@ -78,7 +78,7 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
+		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
 		vectors,
 	)
 	var notes, books, made atomic.Int32
@@ -116,7 +116,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	notes.Walks = db.Walks()
 	making := vaults.NewReadWholeVault(
 		notes,
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
+		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
 		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
@@ -138,7 +138,7 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr}),
+		source.NewExtract(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr}, nil),
 		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
@@ -168,7 +168,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	vectors.Embedder = failing{err: stopErr}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
+		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
 		vectors,
 	)
 
@@ -196,7 +196,7 @@ func TestARunThatEndedInTheBooksIsReportedWhatTheBooksHadCompleted(t *testing.T)
 	vectors.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), uncutter),
+		source.NewExtract(readers, db.Sources(), uncutter, nil),
 		vectors,
 	)
 
@@ -221,7 +221,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	uncutter := uncuttable{SourceQueries: db.SourcesKnown(), onRecipe: cancel}
-	books := source.NewExtract(readers, db.Sources(), uncutter)
+	books := source.NewExtract(readers, db.Sources(), uncutter, nil)
 	books.Kinds = []domain.SourceKind{domain.KindBook}
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
@@ -258,7 +258,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(unreadable{err: stopErr}, db.Sources(), db.SourcesKnown()),
+		source.NewExtract(unreadable{err: stopErr}, db.Sources(), db.SourcesKnown(), nil),
 		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")

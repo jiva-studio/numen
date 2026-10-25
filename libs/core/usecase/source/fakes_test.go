@@ -376,7 +376,6 @@ func (s *store) small(vaultID domain.VaultID) []storedChunk {
 // order the pages are printed. No word is printed twice in a document, so a
 // test names a word and says which page it relies on.
 var (
-	tiny    = [][]string{{"Alpha", "beta", "gamma"}, {"Delta", "epsilon", "zeta"}}
 	outline = [][]string{
 		{"Opening", "lines", "here"},
 		{"Middle", "matter", "follows"},
@@ -675,10 +674,15 @@ func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error
 	return out, nil
 }
 
-// newExtract is the cut of a library whose books and documents are read by the
-// stand-in.
-func newExtract(readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Extract {
-	extract := NewExtract(readers, sources, queries)
-	extract.Documents = documents{}
+// newExtract is the cut of a library whose books have the text versions the
+// stand-in reads.
+func newExtract(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Extract {
+	extract, _ := newExtractWithTexts(shelves, sources, queries)
 	return extract
+}
+
+// newExtractWithTexts is newExtract, and the text versions a test puts more of.
+func newExtractWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Extract, *shelfTexts) {
+	texts := newShelfTexts(shelves)
+	return NewExtract(shelves, sources, queries, texts), texts
 }

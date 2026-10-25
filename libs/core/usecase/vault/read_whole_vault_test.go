@@ -55,7 +55,7 @@ func TestNotesReadBeforeBooksAndBooksBeforeVectors(t *testing.T) {
 	var order []string
 	notes := scanner(readers, db)
 	notes.OnProgress = func(vaults.ScanResult) { order = append(order, "notes") }
-	books := source.NewExtract(readers, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil)
 	books.OnProgress = func(source.ExtractResult) { order = append(order, "books") }
 	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = pointing{}
@@ -89,7 +89,7 @@ func TestNotesThatCannotBeReadStopTheRest(t *testing.T) {
 
 	notes := scanner(refusing{}, db)
 	counted := &counting{VaultReaders: readers}
-	books := source.NewExtract(counted, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(counted, db.Sources(), db.SourcesKnown(), nil)
 	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	making := vaults.NewReadWholeVault(notes, books, vectors)
 
@@ -114,7 +114,7 @@ func TestBooksAndVectorsThatBothFailAreBothReported(t *testing.T) {
 	}
 
 	notes := scanner(readers, db)
-	books := source.NewExtract(refusing{}, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(refusing{}, db.Sources(), db.SourcesKnown(), nil)
 	vectors := embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
 	making := vaults.NewReadWholeVault(notes, books, vectors)
@@ -145,7 +145,7 @@ func TestBooksStoppedByATimeLimitAreWhatIsReported(t *testing.T) {
 
 	limitCtx := limit(t.Context())
 	notes := scanner(readers, db)
-	books := source.NewExtract(timedOut{limit: limitCtx}, db.Sources(), db.SourcesKnown())
+	books := source.NewExtract(timedOut{limit: limitCtx}, db.Sources(), db.SourcesKnown(), nil)
 	counted := &counting{VaultReaders: readers}
 	vectors := embedding.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	vectors.Embedder = unwilling{}
@@ -256,7 +256,7 @@ func (c *counting) Open(v domain.Vault) (vaultport.VaultReader, error) {
 func newWholeVaultRead(readers vaultport.VaultReaders, db *container.Index) vaults.ReadWholeVault {
 	return vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown()),
+		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
 		embedding.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 }

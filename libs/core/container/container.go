@@ -27,6 +27,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/trash"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -95,6 +96,11 @@ type Config struct {
 
 	// Texts extracts text from documents and books. Defaults to PluginHost plugins if nil.
 	Texts sourceport.TextExtractor
+
+	// TextVersions is the text versions of the vaults' files, which the index, the
+	// search and the highlighting read text through. Nil is none, and only notes
+	// have text. NewTextVersions makes it.
+	TextVersions *textversion.Versions
 
 	// Agent configures the active assistant model.
 	Agent settings.Agent

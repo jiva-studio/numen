@@ -621,10 +621,10 @@ func (documents) ReadBook(_ context.Context, raw []byte) (domain.BookText, error
 	return out, nil
 }
 
-// newEmbed is the embedding of a library whose books are read by the stand-in.
+// newEmbed is the embedding of a library whose books have the versions the stand-in reads.
 func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries, vectors embeddingport.VectorRepository) Embed {
 	embed := NewEmbed(readers, chunks, vectors)
-	embed.Documents = documents{}
+	embed.Texts = bookTexts{readers: readers}
 	return embed
 }
 
@@ -632,7 +632,6 @@ func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries
 func newExtract(
 	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
 ) source.Extract {
-	extract := source.NewExtract(readers, sources, queries)
-	extract.Documents = documents{}
+	extract := source.NewExtract(readers, sources, queries, bookTexts{readers: readers})
 	return extract
 }

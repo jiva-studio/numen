@@ -2,13 +2,14 @@ package transcription
 
 import (
 	"context"
+	"errors"
+	"io/fs"
 	"slices"
 	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/core/internal/transcript"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -24,13 +25,10 @@ func newDrop(t *testing.T, words ...string) (Transcribe, Drop, domain.Vault, *st
 	shelf := newShelf()
 	model := &voice{words: words}
 
-	cutting := source.NewExtract(vaults{first.ID: shelved}, index, index)
-	cutting.Derived = shelf
 	listen := NewTranscribe(vaults{first.ID: shelved}, index, fakeStores{shelf}, model)
 	listen.Batch = 1
 	listen.Cut = func(ctx context.Context, v domain.Vault, path string) error {
-		_, err := cutting.ExtractOne(ctx, v, path)
-		return err
+		return cutTranscript(ctx, vaults{first.ID: shelved}, index, shelf, v, path)
 	}
 	drop := Drop{
 		Readers: vaults{first.ID: shelved},
@@ -282,4 +280,40 @@ func TestATranscriptBeingSavedIsNotDropped(t *testing.T) {
 	if index.sources[v.ID][recordingPath].Producer != domain.ASR {
 		t.Error("the source was taken off its transcript")
 	}
+}
+
+// cutTranscript cuts a recording into one chunk of the words its transcript
+// holds, under the producer that heard them.
+func cutTranscript(ctx context.Context, readers vaults, index *store, shelf *fakeStorage, v domain.Vault, path string) error {
+	reader, err := readers.Open(v)
+	if err != nil {
+		return err
+	}
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil {
+		return err
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return err
+	}
+	hash := text.Fingerprint(raw)
+	for _, file := range []domain.ArtifactFile{domain.ArtifactText, domain.ArtifactPartial} {
+		found, err := shelf.ReadArtifact(ctx, domain.NewArtifactName(file, domain.ASR, hash))
+		if errors.Is(err, fs.ErrNotExist) {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		doc, err := text.ReadComposed(ctx, shelf, domain.ASR, hash, found)
+		if err != nil {
+			return err
+		}
+		return index.SaveExtraction(ctx, v.ID, domain.SourceChunks{
+			Source: domain.Source{Fingerprint: ref, Hash: hash, Recipe: "transcript", Producer: domain.ASR},
+			Chunks: []domain.Chunk{{Start: 0, Length: len(doc.Text), Text: doc.Text}},
+		})
+	}
+	return nil
 }

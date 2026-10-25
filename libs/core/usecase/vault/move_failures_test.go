@@ -101,7 +101,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 // recordBooks files the books the vault holds in the index.
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := source.NewExtract(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown())
+	extract := source.NewExtract(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown(), nil)
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}

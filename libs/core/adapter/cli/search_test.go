@@ -48,7 +48,7 @@ func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Dep
 		Vaults: createVaultList(newVault(folder)),
 		Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
-				Search: search.New(index, vaultreader.Readers{}, nil, nil, nil, 0, nil),
+				Search: search.New(index, vaultreader.Readers{}, nil, nil, 0, nil),
 				Words:  words,
 			}, nil
 		},

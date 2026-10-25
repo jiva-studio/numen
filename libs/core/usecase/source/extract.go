@@ -8,36 +8,34 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/internal/chunking"
-	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
+	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
 
 // sourcesPerQuery bounds one answer about what owes its text, so that a library
 // of any size is worked through in pieces.
 const sourcesPerQuery = 100
 
+// versionReader names the text a source is cut from: the live text version of
+// the file. It is part of every recipe, and changes when the text or the
+// offsets a version gives do.
+const versionReader = "text-version-1"
+
 // Extract turns the books a vault holds into chunks.
 //
 // It runs in two passes. The first records what the vault has, opening nothing.
-// The second takes the text out of every source that owes it and cuts it into
-// chunks, one write per source.
+// The second reads the live text version of every source that owes its text and
+// cuts it into chunks, one write per source.
 type Extract struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
 	queries sourceport.SourceQueries
-
-	// Derived is optional. It holds what a recogniser wrote; without one, a
-	// source is read from its own bytes and a recognition is not looked for.
-	Derived vaultport.DerivedStore
-	// Documents is optional. It reads a format that needs a library; without
-	// one, a source in that format is unreadable.
-	Documents sourceport.TextExtractor
-	// Area is the producer a recognition is kept under. Empty means the default.
-	Area string
+	texts   textport.TextReaders
 
 	// Kinds are the sorts of source this cuts. Empty means the books and the
 	// recordings a vault holds.
@@ -64,15 +62,23 @@ type Extract struct {
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
 	OnProgress func(ExtractResult)
+
+	// ErrorHandler hears of a source whose text could not be read or asked for.
+	// The source is counted unreadable and the run goes on. Nil hears nothing.
+	ErrorHandler windowport.ErrorHandler
 }
 
 // NewExtract is what a vault's sources are cut into chunks through: the vault
-// they are read out of, where a source and its chunks are written, and what
-// says which sources the index already holds.
+// they are read out of, where a source and its chunks are written, what says
+// which sources the index already holds, and the text versions of the vault.
+// Nil texts is an installation with none, where no source has text.
 func NewExtract(
-	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
+	readers vaultport.VaultReaders,
+	sources sourceport.SourceRepository,
+	queries sourceport.SourceQueries,
+	texts textport.TextReaders,
 ) Extract {
-	return Extract{readers: readers, sources: sources, queries: queries}
+	return Extract{readers: readers, sources: sources, queries: queries, texts: texts}
 }
 
 // ExtractResult reports what extraction did.
@@ -86,9 +92,9 @@ type ExtractResult struct {
 	Unchanged     int    // skipped on size and modification time alone
 	Extracted     int    // read, chunked and written
 	Chunks        int    // chunks written, of both sizes
-	Unreadable    int    // read, and not a book
+	Unreadable    int    // read, and no live text version
 	Removed       int    // held by the index, no longer in the vault
-	Forgotten     int    // read by a model once, and that recognition is gone
+	Outdated      int    // cut from a version that is no longer the live one
 	Vanished      int    // named by the index, vanished by the time it was read
 	CurrentSource string // the source open now
 }
@@ -98,21 +104,17 @@ type ExtractResult struct {
 func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, error) {
 	var res ExtractResult
 
-	reader, err := u.readers.Open(v)
+	on, err := u.open(v)
 	if err != nil {
 		return res, err
 	}
-	var swept []sourceport.SourceText
-	if err := u.discover(ctx, v, reader, &res, &swept); err != nil {
+	if err := u.discover(ctx, v, on, &res); err != nil {
 		return res, err
 	}
-	if err := u.dropMissingText(ctx, v, reader, &res); err != nil {
+	if err := u.dropOutdatedText(ctx, v, on, &res); err != nil {
 		return res, err
 	}
-	if err := u.cut(ctx, v, reader, &res); err != nil {
-		return res, err
-	}
-	return res, u.sweep(ctx, v, swept)
+	return res, u.cut(ctx, v, on, &res)
 }
 
 // discover records every book the vault holds. Nothing is opened: a file whose
@@ -121,19 +123,18 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 func (u Extract) discover(
 	ctx context.Context,
 	v domain.Vault,
-	reader vaultport.VaultReader,
+	on openVault,
 	res *ExtractResult,
-	swept *[]sourceport.SourceText,
 ) error {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
 		return err
 	}
-	found, err := u.walkAndRecord(ctx, v, reader, recognized, res)
+	found, err := u.walkAndRecord(ctx, v, on, recognized, res)
 	if err != nil {
 		return err
 	}
-	return u.removeGone(ctx, v, recognized, found, res, swept)
+	return u.removeGone(ctx, v, recognized, found, res)
 }
 
 // readKnown reads the fingerprints the index holds, by kind and path.
@@ -154,12 +155,12 @@ func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.Sour
 func (u Extract) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
-	reader vaultport.VaultReader,
+	on openVault,
 	indexed map[domain.SourceKind]map[string]domain.Fingerprint,
 	res *ExtractResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
-	err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
+	err := on.files.WalkFiles(ctx, func(ref domain.Fingerprint) error {
 		target, ours := indexed[ref.Kind]
 		if !ours {
 			return nil
@@ -188,7 +189,6 @@ func (u Extract) removeGone(
 	existing map[domain.SourceKind]map[string]domain.Fingerprint,
 	found map[string]bool,
 	res *ExtractResult,
-	swept *[]sourceport.SourceText,
 ) error {
 	for _, kind := range u.kinds() {
 		removed := make([]string, 0)
@@ -201,14 +201,6 @@ func (u Extract) removeGone(
 			continue
 		}
 		slices.Sort(removed)
-		// The recognitions those paths stood on are read before the rows saying so
-		// are taken out; which of them nothing relies on any more is settled once
-		// every source has been cut.
-		went, err := u.readSourceTexts(ctx, v, kind, removed)
-		if err != nil {
-			return err
-		}
-		*swept = append(*swept, went...)
 		if err := u.sources.RemoveSources(ctx, v.ID, kind, removed); err != nil {
 			return fmt.Errorf("remove: %w", err)
 		}
@@ -217,118 +209,20 @@ func (u Extract) removeGone(
 	return nil
 }
 
-// readSourceTexts is the recognition each of these paths stood on, for the ones
-// that stood on any.
-func (u Extract) readSourceTexts(
-	ctx context.Context,
-	v domain.Vault,
-	kind domain.SourceKind,
-	paths []string,
-) ([]sourceport.SourceText, error) {
-	if u.Derived == nil {
-		return nil, nil
-	}
-	target, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
-	if err != nil {
-		return nil, fmt.Errorf("read index: %w", err)
-	}
-	made := make(map[string]sourceport.SourceText, len(target))
-	for _, r := range target {
-		made[r.Path] = r
-	}
-	out := make([]sourceport.SourceText, 0, len(paths))
-	for _, path := range paths {
-		if r, on := made[path]; on && r.Producer != "" {
-			out = append(out, r)
-		}
-	}
-	return out, nil
-}
-
-// sweep takes out the files of a recognition no source relies on any more.
-//
-// A recognition is named by the hash of the bytes it was made from, so a document
-// renamed is the same recognition at another path and two copies of one document
-// are one recognition. What is asked is whether any source still names it, and the
-// question is asked once every source has been cut and says what it relies on.
-//
-// A walk that failed returns before any of this, so a folder that could not be
-// read takes nothing with it.
-func (u Extract) sweep(ctx context.Context, v domain.Vault, went []sourceport.SourceText) error {
-	if u.Derived == nil || len(went) == 0 {
-		return nil
-	}
-	status, named, err := u.readReferencedRecognitions(ctx, v)
-	if err != nil {
-		return err
-	}
-	for _, r := range went {
-		if status[sourceport.SourceText{Producer: r.Producer, Hash: r.Hash}] {
-			continue
-		}
-		removed := domain.GetArtifactNames(r.Producer, r.Hash)
-		// A copy of a video is named by the address alone, so it goes when
-		// nothing names that address any more, whoever downloaded the words.
-		if !named[r.Hash] {
-			removed = append(removed, domain.NewCopyName(r.Hash))
-		}
-		if err := u.removeNames(ctx, removed); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
-// readReferencedRecognitions returns the recognitions some source relies on and the hashes some
-// source names.
-func (u Extract) readReferencedRecognitions(ctx context.Context, v domain.Vault) (map[sourceport.SourceText]bool, map[string]bool, error) {
-	status := make(map[sourceport.SourceText]bool)
-	named := make(map[string]bool)
+// dropOutdatedText records afresh, with no recipe, every source cut from a
+// version that is no longer the file's live one: a plugin was switched off, a
+// version was deleted, or a newer one was made while nothing was indexing.
+func (u Extract) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *ExtractResult) error {
 	for _, kind := range u.kinds() {
-		target, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
-		if err != nil {
-			return nil, nil, fmt.Errorf("read index: %w", err)
-		}
-		for _, r := range target {
-			status[sourceport.SourceText{Producer: r.Producer, Hash: r.Hash}] = true
-			named[r.Hash] = true
-		}
-	}
-	return status, named, nil
-}
-
-// removeNames removes each named file from the store; a file already absent
-// counts as removed.
-func (u Extract) removeNames(ctx context.Context, names []domain.ArtifactName) error {
-	for _, name := range names {
-		if err := u.Derived.RemoveArtifact(ctx, name); err != nil && !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("remove %s: %w", name, err)
-		}
-	}
-	return nil
-}
-
-// dropMissingText finds the sources whose producer's files are no longer there.
-//
-// The store is a folder on the person's disk and they may empty it. A source
-// whose text went with it answers a search with nothing and would go on doing
-// so, because its recipe is still the one in use: nothing else asks after it.
-// Recording it afresh with no recipe clears which producer made its text, so the
-// next pass cuts it from the document again.
-func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res *ExtractResult) error {
-	if u.Derived == nil {
-		return nil
-	}
-	for _, kind := range u.kinds() {
-		recognised, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
+		cut, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
 		if err != nil {
 			return fmt.Errorf("read index: %w", err)
 		}
-		for _, r := range recognised {
+		for _, one := range cut {
 			if err := ctx.Err(); err != nil {
 				return err
 			}
-			if err := u.recordIfTextMissing(ctx, v, reader, r, res); err != nil {
+			if err := u.recordIfOutdated(ctx, v, on, one, res); err != nil {
 				return err
 			}
 		}
@@ -336,44 +230,45 @@ func (u Extract) dropMissingText(ctx context.Context, v domain.Vault, reader vau
 	return nil
 }
 
-// recordIfTextMissing records the source afresh when the store holds no text for its
-// recognition.
-func (u Extract) recordIfTextMissing(
+// recordIfOutdated records a source afresh when the version it was cut from is
+// not the live one.
+func (u Extract) recordIfOutdated(
 	ctx context.Context,
 	v domain.Vault,
-	reader vaultport.VaultReader,
-	r sourceport.SourceText,
+	on openVault,
+	cut sourceport.SourceText,
 	res *ExtractResult,
 ) error {
-	if u.hasAny(ctx,
-		domain.NewArtifactName(domain.ArtifactText, r.Producer, r.Hash),
-		domain.NewArtifactName(domain.ArtifactPartial, r.Producer, r.Hash),
-	) {
-		return nil
+	fileHash := cut.Hash
+	if cut.Kind == domain.KindURL {
+		raw, err := on.files.Read(ctx, cut.Path)
+		if errors.Is(err, fs.ErrNotExist) || vaultport.IsNoNote(err) {
+			return nil
+		}
+		if err != nil {
+			return fmt.Errorf("read %s: %w", cut.Path, err)
+		}
+		fileHash = domain.HashContent(raw)
 	}
-	ref, err := reader.GetFingerprint(ctx, r.Path)
+	live, err := on.texts.FindLiveVersion(ctx, cut.Path, fileHash)
+	switch {
+	case err == nil && string(live) == cut.Producer:
+		return nil
+	case err != nil && !errors.Is(err, textport.ErrNoText):
+		return fmt.Errorf("find the live version of %s: %w", cut.Path, err)
+	}
+	ref, err := on.files.GetFingerprint(ctx, cut.Path)
 	if vaultport.IsNoNote(err) {
 		return nil
 	}
 	if err != nil {
-		return fmt.Errorf("stat %s: %w", r.Path, err)
+		return fmt.Errorf("stat %s: %w", cut.Path, err)
 	}
 	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
-		return fmt.Errorf("record %s: %w", r.Path, err)
+		return fmt.Errorf("record %s: %w", cut.Path, err)
 	}
-	res.Forgotten++
+	res.Outdated++
 	return nil
-}
-
-// hasAny says the store has something under one of these names. A recognition
-// still being written is the text of the pages read so far.
-func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool {
-	for _, name := range names {
-		if _, err := u.Derived.ReadArtifact(ctx, name); !errors.Is(err, fs.ErrNotExist) {
-			return true
-		}
-	}
-	return false
 }
 
 // cut extracts and cuts every source that owes its text.
@@ -383,9 +278,9 @@ func (u Extract) hasAny(ctx context.Context, names ...domain.ArtifactName) bool 
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it is empty that has not been tried, so a run that stopped part way
 // is continued by starting another.
-func (u Extract) cut(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res *ExtractResult) error {
+func (u Extract) cut(ctx context.Context, v domain.Vault, on openVault, res *ExtractResult) error {
 	sizes := u.sizes()
-	recognized := recipes(sizes)
+	recognized := []string{recipe(versionReader, sizes)}
 	tried := map[string]bool{}
 
 	var questions []func(context.Context) ([]string, error)
@@ -405,7 +300,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader vaultport.Vault
 			if err != nil {
 				return err
 			}
-			freshCount, err := u.chunkNewPaths(ctx, v, reader, paths, tried, sizes, res)
+			freshCount, err := u.chunkNewPaths(ctx, v, on, paths, tried, sizes, res)
 			if err != nil {
 				return err
 			}
@@ -422,7 +317,7 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, reader vaultport.Vault
 func (u Extract) chunkNewPaths(
 	ctx context.Context,
 	v domain.Vault,
-	reader vaultport.VaultReader,
+	on openVault,
 	paths []string,
 	tried map[string]bool,
 	sizes chunking.Sizes,
@@ -438,38 +333,38 @@ func (u Extract) chunkNewPaths(
 		if err := ctx.Err(); err != nil {
 			return freshCount, err
 		}
-		if err := u.source(ctx, v, reader, path, sizes, res); err != nil {
+		if err := u.source(ctx, v, on, path, sizes, res); err != nil {
 			return freshCount, err
 		}
 	}
 	return freshCount, nil
 }
 
-// ExtractOne brings a single source's chunks up to date with its text.
-//
-// It is what a recognition calls as it writes: the pages already read are cut
-// and can be embedded while the rest of the document is still being read.
+// ExtractOne brings a single source's chunks up to date with its live text
+// version. It is what the index does when the versions of a file change.
 func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
 	var res ExtractResult
-	reader, err := u.readers.Open(v)
+	on, err := u.open(v)
 	if err != nil {
 		return res, err
 	}
-	return res, u.source(ctx, v, reader, path, u.sizes(), &res)
+	return res, u.source(ctx, v, on, path, u.sizes(), &res)
 }
 
-// source takes the text out of one book and writes the chunks it was cut into.
+// source reads the live text version of one file and writes the chunks it was
+// cut into.
 //
-// A file that will not parse is counted and the run goes on: no structure is an
-// ordinary outcome, and one bad book must not stop a library. A vault out of
-// reach, or an index that will not take the chunks, stops it.
+// A file with no live version keeps no chunks, and the plugins that run on
+// their own are asked for its text. That is an ordinary outcome, counted, and
+// the run goes on. A vault out of reach, or an index that will not take the
+// chunks, stops it.
 //
 // The file is stated before it is read, so a file that changes while it is being
 // read keeps the older fingerprint and is asked for again.
 func (u Extract) source(
 	ctx context.Context,
 	v domain.Vault,
-	reader vaultport.VaultReader,
+	on openVault,
 	path string,
 	sizes chunking.Sizes,
 	res *ExtractResult,
@@ -477,7 +372,7 @@ func (u Extract) source(
 	res.CurrentSource = path
 	u.progress(*res)
 
-	ref, err := reader.GetFingerprint(ctx, path)
+	ref, err := on.files.GetFingerprint(ctx, path)
 	if vaultport.IsNoNote(err) {
 		res.Vanished++
 		return nil
@@ -485,7 +380,7 @@ func (u Extract) source(
 	if err != nil {
 		return fmt.Errorf("stat %s: %w", path, err)
 	}
-	raw, err := reader.Read(ctx, path)
+	raw, err := on.files.Read(ctx, path)
 	if errors.Is(err, fs.ErrNotExist) {
 		res.Vanished++
 		return nil
@@ -500,17 +395,8 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
-
-	// Which reader takes the text out is the file's to say, and it is part of
-	// what the recipe records: two readers give one file two texts, and a chunk
-	// keeps an offset into one of them.
-	name, ok := text.ReaderName(ref)
-	if !ok {
-		res.Unreadable++
-		return nil
-	}
 	hash, err := u.fingerprint(ref, raw)
-	if errors.Is(err, text.ErrUnreadable) {
+	if errors.Is(err, errNoAddress) {
 		res.Unreadable++
 		return nil
 	}
@@ -518,17 +404,13 @@ func (u Extract) source(
 		return err
 	}
 
-	// A document read by a recogniser has a text of its own, and the chunks are
-	// places in that. It is found by the hash of the bytes it was read from, so a
-	// file whose modification time moved without its content is claimed again
-	// and not read from scratch.
-	doc, from, err := u.text(ctx, ref, raw, hash)
-	if errors.Is(err, text.ErrUnreadable) {
-		res.Unreadable++
-		return nil
-	}
+	fileHash := domain.HashContent(raw)
+	doc, err := on.texts.GetLiveText(ctx, path, fileHash)
 	if err != nil {
-		return err
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		return u.saveWithoutText(ctx, v, on, domain.Source{Fingerprint: ref, Hash: hash}, fileHash, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
@@ -536,8 +418,8 @@ func (u Extract) source(
 		Source: domain.Source{
 			Fingerprint: ref,
 			Hash:        hash,
-			Recipe:      recipe(name, sizes),
-			Producer:    from,
+			Recipe:      recipe(versionReader, sizes),
+			Producer:    string(doc.Version.GetID()),
 		},
 		Chunks: chunks,
 	}
@@ -550,10 +432,42 @@ func (u Extract) source(
 	return nil
 }
 
+// saveWithoutText records a source with no live version, no chunks and no
+// recipe, which is a source that owes its text, and asks for that text. Text that could not be read is told to the error handler.
+func (u Extract) saveWithoutText(
+	ctx context.Context,
+	v domain.Vault,
+	on openVault,
+	source domain.Source,
+	fileHash string,
+	readErr error,
+	res *ExtractResult,
+) error {
+	res.Unreadable++
+	if !errors.Is(readErr, textport.ErrNoText) {
+		u.reportError(readErr)
+	}
+	if err := u.sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: source}); err != nil {
+		return fmt.Errorf("write the chunks of %s: %w", source.Fingerprint.Path, err)
+	}
+	if errors.Is(readErr, textport.ErrNoText) {
+		if err := on.texts.RequestText(ctx, source.Fingerprint.Path, fileHash); err != nil {
+			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.Fingerprint.Path, err))
+		}
+	}
+	return nil
+}
+
+func (u Extract) reportError(err error) {
+	if u.ErrorHandler != nil {
+		u.ErrorHandler(err)
+	}
+}
+
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
-func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
-	return chunking.Chunks(doc.Text, doc.Parts, sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
+func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
+	return chunking.Chunks(doc.Text, doc.GetSections(), sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
 		out := chunkAt(doc, c)
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only.
@@ -566,7 +480,7 @@ func chunksOf(doc *text.Document, sizes chunking.Sizes, reads chunking.Legibilit
 
 // chunkAt is one chunk with what it holds and where the source says it is. The
 // text goes with it to be indexed for its words and is not kept.
-func chunkAt(doc *text.Document, c chunking.Chunk) domain.Chunk {
+func chunkAt(doc domain.VersionText, c chunking.Chunk) domain.Chunk {
 	return domain.Chunk{
 		Start:    c.Start,
 		Length:   c.Length,
@@ -592,16 +506,44 @@ func recipe(reader string, s chunking.Sizes) string {
 		reader, s.Large, s.LargeOverlap, s.Small, s.SmallOverlap, s.Limit)
 }
 
-// recipes are what every reader would produce at these sizes. A source carrying
-// none of them owes its text: its own reader has changed, or the sizes have.
-func recipes(s chunking.Sizes) []string {
-	named := text.Readers()
-	out := make([]string, 0, len(named))
-	for _, reader := range named {
-		out = append(out, recipe(reader, s))
-	}
-	return out
+// openVault is one vault as a cut reads it: its files and the text versions of them.
+type openVault struct {
+	files vaultport.VaultReader
+	texts textport.VaultTexts
 }
+
+func (u Extract) open(v domain.Vault) (openVault, error) {
+	files, err := u.readers.Open(v)
+	if err != nil {
+		return openVault{}, err
+	}
+	if u.texts == nil {
+		return openVault{files: files, texts: noTexts{}}, nil
+	}
+	texts, err := u.texts.Open(v)
+	if err != nil {
+		return openVault{}, err
+	}
+	return openVault{files: files, texts: texts}, nil
+}
+
+// noTexts is a vault with no text versions: every file is without text, and
+// nothing is asked for.
+type noTexts struct{}
+
+func (noTexts) FindLiveVersion(context.Context, string, string) (domain.TextVersionID, error) {
+	return "", textport.ErrNoText
+}
+
+func (noTexts) GetLiveText(context.Context, string, string) (domain.VersionText, error) {
+	return domain.VersionText{}, textport.ErrNoText
+}
+
+func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (domain.VersionText, error) {
+	return domain.VersionText{}, textport.ErrNoText
+}
+
+func (noTexts) RequestText(context.Context, string, string) error { return nil }
 
 // sizes are the sizes the cut works to, which is what the recipe has to name:
 // a recipe describing anything else describes bytes that were never written.
@@ -613,65 +555,6 @@ func (u Extract) progress(res ExtractResult) {
 	}
 }
 
-// text is what a source says, and which producer made it.
-//
-// what a person asked for, and a document whose layer is unusable is why they
-// asked. A recognition still being written is the text of the pages read so far.
-func (u Extract) text(ctx context.Context, ref domain.Fingerprint, raw []byte, hash string) (*text.Document, string, error) {
-	// A url is its address and nothing else, so whatever was fetched for that
-	// address is its text. Which producer fetched it is what the store says.
-	if ref.Kind == domain.KindURL {
-		if u.Derived == nil {
-			return &text.Document{}, "", nil
-		}
-		words, from, err := text.ReadDownloaded(ctx, u.Derived, hash)
-		if err != nil {
-			return nil, "", err
-		}
-		return &text.Document{Text: words}, from, nil
-	}
-	if u.Derived != nil {
-		from := u.producer(ref)
-		for _, name := range []domain.ArtifactName{
-			domain.NewArtifactName(domain.ArtifactText, from, hash),
-			domain.NewArtifactName(domain.ArtifactPartial, from, hash),
-		} {
-			switch found, err := u.Derived.ReadArtifact(ctx, name); {
-			case err == nil:
-				// The parts of a recognition bound the chunks it is cut into, the
-				// way an outline bounds a book's.
-				doc, err := text.ReadComposed(ctx, u.Derived, from, hash, found)
-				if err != nil {
-					return nil, "", err
-				}
-				return doc, from, nil
-			case !errors.Is(err, fs.ErrNotExist):
-				return nil, "", err
-			}
-		}
-	}
-	doc, err := text.Read(ctx, u.Documents, ref, raw)
-	return doc, "", err
-}
-
-// area is the producer a recognition is kept under, and the first part of every
-// name its files carry.
-func (u Extract) area() string {
-	if u.Area == "" {
-		return "ocr"
-	}
-	return u.Area
-}
-
-// producer is where this file's text comes from: a recording is listened to,
-// and everything else is read.
-func (u Extract) producer(ref domain.Fingerprint) string {
-	if ref.Kind == domain.KindRecording {
-		return domain.ASR
-	}
-	return u.area()
-}
-
 // kinds are the sorts of source this run works through.
 func (u Extract) kinds() []domain.SourceKind {
 	if len(u.Kinds) == 0 {
@@ -680,18 +563,21 @@ func (u Extract) kinds() []domain.SourceKind {
 	return u.Kinds
 }
 
+// errNoAddress is a link file that names no address.
+var errNoAddress = errors.New("the link names no address")
+
 // fingerprint hashes the source's content, reading a URL file's target address
 // where the source is a link.
 func (u Extract) fingerprint(ref domain.Fingerprint, raw []byte) (string, error) {
 	if ref.Kind != domain.KindURL {
-		return text.Fingerprint(raw), nil
+		return domain.HashContent(raw), nil
 	}
 	pos, err := urlfile.Read(raw)
 	if errors.Is(err, urlfile.ErrNoAddress) || errors.Is(err, domain.ErrNotAURL) {
-		return "", text.ErrUnreadable
+		return "", errNoAddress
 	}
 	if err != nil {
 		return "", err
 	}
-	return text.Fingerprint([]byte(string(pos))), nil
+	return domain.HashContent([]byte(string(pos))), nil
 }

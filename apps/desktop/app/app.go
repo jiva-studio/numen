@@ -228,6 +228,11 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
+	versions, err := cfg.NewTextVersions()
+	if err != nil {
+		return shownInstallation{}, err
+	}
+	cfg.TextVersions = versions
 
 	made, err := cfg.GetEditorAssembly(ctx)
 	if err != nil {
@@ -238,10 +243,11 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVaultPath(opened.GetCurrentVault().Path)
-	shared, err := made.OpenPluginVault(func() (domain.Vault, bool) {
+	getShownVault := func() (domain.Vault, bool) {
 		current := opened.GetCurrentVault()
 		return current, current.Path != ""
-	}, container.PluginVaultHooks{Written: func() {
+	}
+	shared, err := made.OpenPluginVault(getShownVault, container.PluginVaultHooks{Written: func() {
 		if wake := opened.State.NotifyNoteWritten; wake != nil {
 			wake()
 		}
@@ -250,6 +256,7 @@ func openInstallation(
 		return shownInstallation{}, err
 	}
 	cfg.SetPluginVault(shared)
+	cfg.SetPluginTexts(ctx, getShownVault)
 	return shownInstallation{pages: pages, opened: opened}, nil
 }
 

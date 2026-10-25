@@ -464,16 +464,10 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			}
 			options := vaultconfig.Options{}
 			readers := vaultreader.Readers{Options: options}
-			store, err := getDerived(options).Open(v)
-			if err != nil {
-				_ = db.Close()
-				return cli.Scan{}, err
-			}
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
 				db.NoteQueries(), db.Maintenance())
-			books := source.NewExtract(readers, db.Sources(), db.Sources())
-			books.Derived, books.Documents = store, testsupport.Documents{}
+			books := source.NewExtract(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {

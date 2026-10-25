@@ -243,3 +243,30 @@ func TestPluginEnablementAndStatus(t *testing.T) {
 		t.Errorf("expected 1 enabled plugin in GetPluginStatuses")
 	}
 }
+
+func TestEnablingOrDisablingAPluginIsReported(t *testing.T) {
+	tmp := t.TempDir()
+	pDir := filepath.Join(tmp, "sample")
+	if err := os.MkdirAll(pDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	manifest := `{"id": "md.numen.toggleable", "name": "Toggleable", "version": "1.0.0", "targets": ["desktop.editor"]}`
+	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	host := NewHost("desktop.editor", tmp)
+	if err := host.Discover(); err != nil {
+		t.Fatal(err)
+	}
+	var reported []string
+	host.SetOnEnabledChanged(func(pluginID string) { reported = append(reported, pluginID) })
+
+	for _, enabled := range []bool{false, true} {
+		if err := host.SetPluginEnabled(t.Context(), "md.numen.toggleable", enabled); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if len(reported) != 2 || reported[0] != "md.numen.toggleable" || reported[1] != "md.numen.toggleable" {
+		t.Fatalf("reported %v, want the plugin twice", reported)
+	}
+}

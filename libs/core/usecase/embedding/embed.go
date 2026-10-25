@@ -13,11 +13,10 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	"github.com/jiva-studio/numen/libs/core/internal/embedding"
-	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -35,14 +34,12 @@ type Embed struct {
 	chunks  embeddingport.VectorQueries
 	vectors embeddingport.VectorRepository
 
-	// Derived is optional. It holds what a recogniser wrote, and a chunk of a
-	// recognised document is re-sliced out of that and not out of the document;
-	// without one such a chunk is left owing its vector.
+	// Texts is optional. A chunk of a source cut from a text version is re-sliced
+	// out of that version; without it such a chunk is left owing its vector.
+	Texts textport.TextReaders
+	// Derived is optional. It holds the claim on the index that keeps a second
+	// process from embedding the vault at once; without it nothing is claimed.
 	Derived vaultport.DerivedStore
-	// Documents is optional. It reads a format that needs a library, for a
-	// source standing on its own bytes; without one such a chunk is left owing
-	// its vector.
-	Documents sourceport.TextExtractor
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
@@ -136,11 +133,12 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	if err != nil {
 		return res, err
 	}
-	var store vaultport.DerivedStore
-	if u.Derived != nil {
-		store = u.Derived
+	source := extracted{files: reader}
+	if u.Texts != nil {
+		if source.texts, err = u.Texts.Open(v); err != nil {
+			return res, err
+		}
 	}
-	source := extracted{of: text.Reader{Vault: reader, Derived: store, Documents: u.Documents}}
 
 	var mu sync.Mutex
 	updateProgress := func(source string, embedded, reused int) {
@@ -386,7 +384,7 @@ func (u Embed) read(
 		} else {
 			mu.Unlock()
 		}
-		prose, ok, err := source.textOf(ctx, p.Source, p.Producer, p.SourceHash)
+		prose, ok, err := source.textOf(ctx, p.Source, p.Producer)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -559,7 +557,8 @@ func packVector(q []int8) []byte {
 // again. The source now open is kept, because the chunks of one source are asked
 // about together.
 type extracted struct {
-	of     text.Reader
+	files  vaultport.VaultReader
+	texts  textport.Texts
 	path   string
 	text   string
 	isHeld bool
@@ -568,22 +567,36 @@ type extracted struct {
 // text is the extracted text of one source, and false where the vault no longer
 // holds a source with text at that path.
 //
-// One reader for every kind and for every place a text may live, so that a
-// chunk is re-sliced out of the text it was cut from.
-func (e *extracted) textOf(ctx context.Context, path, from, hash string) (string, bool, error) {
+// A chunk of a note is re-sliced out of the note's file, and a chunk cut from a
+// version out of that version.
+func (e *extracted) textOf(ctx context.Context, path, from string) (string, bool, error) {
 	if e.path == path {
 		return e.text, e.isHeld, nil
 	}
 	e.path, e.text, e.isHeld = path, "", false
 
-	doc, err := e.of.GetDocument(ctx, path, from, hash)
+	read, err := e.read(ctx, path, from)
 	switch {
-	case vaultport.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, text.ErrUnreadable):
+	case vaultport.IsNoNote(err), errors.Is(err, fs.ErrNotExist), errors.Is(err, textport.ErrNoText):
 		return "", false, nil
 	case err != nil:
 		return "", false, fmt.Errorf("read %s: %w", path, err)
 	}
-	e.text = doc.Text
+	e.text = read
 	e.isHeld = true
 	return e.text, true, nil
+}
+
+// read is the text a source's chunks are places in: a note's file, or the
+// version the source was cut from.
+func (e *extracted) read(ctx context.Context, path, from string) (string, error) {
+	if from == "" {
+		raw, err := e.files.Read(ctx, path)
+		return string(raw), err
+	}
+	if e.texts == nil {
+		return "", textport.ErrNoText
+	}
+	doc, err := e.texts.GetVersionText(ctx, path, domain.TextVersionID(from))
+	return doc.Text, err
 }

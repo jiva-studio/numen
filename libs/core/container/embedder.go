@@ -59,6 +59,6 @@ func (c Config) NewSearch(db *Index, asking embeddingport.Embedder, errorHandler
 // NewSearchOver is that search over the passages given, for a run that holds
 // the index open for asking alone.
 func (c Config) NewSearchOver(passages sourceport.PassageQueries, asking embeddingport.Embedder, errorHandler func(error)) search.Search {
-	return search.New(passages, c.VaultReaders(), c.GetDerivedStores(), c.TextExtractor(),
+	return search.New(passages, c.VaultReaders(), c.getTextReaders(),
 		asking, c.Embedding.Floor, errorHandler).WithExtractors(c.ResolvedCompute.Workers)
 }

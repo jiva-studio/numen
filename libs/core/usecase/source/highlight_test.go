@@ -1,387 +1,185 @@
 package source
 
 import (
-	"context"
 	"slices"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/correction"
-	"github.com/jiva-studio/numen/libs/core/internal/highlight"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
-
-	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
-// layered reads a document with the library and answers where its words sit
-// with what the test put in.
-type layered struct {
-	sourceport.TextExtractor
-	where func(raw []byte, pages []int) ([]domain.HighlightBox, error)
+const ocrPlugin = "test.ocr"
+
+// positioned is one word a page, each in a rectangle of its own.
+func positioned(words ...string) []domain.TextPart {
+	parts := make([]domain.TextPart, 0, len(words))
+	for i, word := range words {
+		parts = append(parts, domain.TextPart{
+			Text:  word + " ",
+			Place: domain.TextPlace{Page: i, Rects: []domain.Rect{{MinX: float32(i), MaxX: float32(i) + 0.5, MaxY: 1}}},
+		})
+	}
+	return parts
 }
 
-func (l layered) GetHighlights(_ context.Context, raw []byte, _ []int, pages []int) ([]domain.HighlightBox, error) {
-	return l.where(raw, pages)
-}
-
-// setPlacer is the use case with the test's own answer for where words sit.
-func setPlacer(u Highlight, where func(raw []byte, pages []int) ([]domain.HighlightBox, error)) Highlight {
-	u.Documents = layered{TextExtractor: documents{}, where: where}
-	return u
-}
-
-// newHighlight is a Highlight over one vault holding one document, and the
-// document read.
-//
-// The document is pages of a few words each, so a test can name a word and say
-// which page it is printed on.
-func newHighlight(t *testing.T, pages [][]string) (Highlight, *store, *fakeStorage, document, *library) {
+// newHighlight is a Highlight over one vault holding one scanned document, the
+// text versions of it, and the vault itself.
+func newHighlight(t *testing.T) (Highlight, *store, *shelfTexts, *library) {
 	t.Helper()
-	raw := printPages(pages)
-	book := documentOf(raw)
 	shelved := newLibrary()
-	shelved.hold(documentPath, domain.KindBook, raw, 1)
+	shelved.hold(documentPath, domain.KindBook, []byte("%PDF the first printing"), 1)
 	index := newStore()
-	store := newShelf()
-	hl := NewHighlight(vaults{first.ID: shelved}, index, fakeStores{store})
-	hl.Documents = documents{}
-	return hl, index, store, book, shelved
+	shelves := vaults{first.ID: shelved}
+	texts := newShelfTexts(shelves)
+	return NewHighlight(shelves, index, texts), index, texts, shelved
 }
 
-// recordSource records a source the way the index holds one: the file as it
-// stood when it was read, and the producer of the text its chunks are places
-// in.
-func recordSource(t *testing.T, index *store, shelved *library, from, hash string) {
+// recordCut records the source the way the index holds one cut from a version.
+func recordCut(t *testing.T, index *store, shelved *library, version domain.TextVersion) {
 	t.Helper()
 	ref, err := shelved.GetFingerprint(t.Context(), documentPath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	index.put(first.ID, domain.Source{Fingerprint: ref, Hash: hash, Producer: from})
+	index.put(first.ID, domain.Source{Fingerprint: ref, Hash: version.InputHash, Producer: string(version.GetID())})
 }
 
-// locate is where a word of the document is: its offset in the text, and how long
-// it is.
-func locate(t *testing.T, book document, word string) (start, length int) {
+func spanOf(t *testing.T, text, word string) domain.ByteSpan {
 	t.Helper()
-	pos := strings.Index(book.Text, word)
+	pos := strings.Index(text, word)
 	if pos < 0 {
-		t.Fatalf("the document does not say %q", word)
+		t.Fatalf("the text does not say %q", word)
 	}
-	return pos, len(word)
+	return domain.ByteSpan{From: pos, To: pos + len(word)}
 }
 
-// litOn is where one run of a source's text sits, asked about on its own. A
-// source with no recognition and no layer is lit nowhere.
-func litOn(t *testing.T, u Highlight, path string, start, length int) []domain.HighlightBox {
-	t.Helper()
-	found, err := u.Execute(t.Context(), first, path, []domain.ByteSpan{{From: start, To: start + length}})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(found) == 0 {
-		return nil
-	}
-	return found[0].Boxes
-}
-
-// pages is the pages a run was lit on, each of them once and in the order the
-// boxes were read.
-func pages(boxes []domain.HighlightBox) []int {
+func getPages(boxes []domain.HighlightBox) []int {
 	var out []int
 	for _, box := range boxes {
-		if len(out) == 0 || out[len(out)-1] != box.Page {
+		if !slices.Contains(out, box.Page) {
 			out = append(out, box.Page)
 		}
 	}
 	return out
 }
 
-// A run of a recognised source's text is lit from what the model wrote down.
-// The document's own layer is not asked: the offsets are places in the text the
-// model produced, and the layer's words are elsewhere in the book.
-func TestARecognisedSourceIsLitFromWhatWasReadInIt(t *testing.T) {
-	u, index, store, _, shelved := newHighlight(t, tiny)
-	recordSource(t, index, shelved, "ocr", "abc123")
-	u = setPlacer(u, func([]byte, []int) ([]domain.HighlightBox, error) {
-		t.Error("the document's own layer was read for a source standing on a recognition")
-		return nil, nil
-	})
+func TestARunIsLitOnThePagesOfTheVersionItWasCutFrom(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	version := texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana", "vrksa", "bija"))
+	recordCut(t, index, shelved, version)
+	text := domain.NewVersionText(version, positioned("udyana", "vrksa", "bija")).Text
 
-	// Two words on one page and a third on the next, as a model reading the
-	// pages wrote them down.
-	content := []domain.HighlightBox{
-		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
-	}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(content)); err != nil {
-		t.Fatal(err)
-	}
-
-	found := litOn(t, u, documentPath, 0, 10)
-	if len(found) != 2 || !slices.Equal(pages(found), []int{4}) {
-		t.Fatalf("the run was lit at %+v", found)
-	}
-	want := domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}
-	if found[0].Rect != want {
-		t.Errorf("the first word is at %+v, want %+v", found[0].Rect, want)
-	}
-}
-
-// The same source before anything read it is lit from the document's own text
-// layer, over the page the word is printed on.
-func TestASourceWithNoRecognitionIsLitFromItsOwnLayer(t *testing.T) {
-	u, index, _, book, shelved := newHighlight(t, tiny)
-	recordSource(t, index, shelved, "", "abc123")
-
-	start, length := locate(t, book, "gamma")
-	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Page != 0 {
-		t.Fatalf("%q was lit at %+v", "gamma", found)
-	}
-
-	// The rectangle is the one the document puts that word in.
-	var want domain.Rect
-	for _, box := range book.boxes([]int{0}) {
-		if box.From == start {
-			want = domain.Rect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
-		}
-	}
-	if found[0].Rect != want {
-		t.Errorf("%q is at %+v, want the %+v the document places it at",
-			"gamma", found[0].Rect, want)
-	}
-}
-
-// A run that crosses a page comes back as two pages, each with the words of it
-// that are printed there.
-func TestARunCrossingAPageIsOnBothOfThem(t *testing.T) {
-	u, index, _, book, shelved := newHighlight(t, tiny)
-	recordSource(t, index, shelved, "", "abc123")
-
-	from, _ := locate(t, book, "gamma")
-	to, length := locate(t, book, "Delta")
-	found := litOn(t, u, documentPath, from, to+length-from)
-	if len(found) != 2 || !slices.Equal(pages(found), []int{0, 1}) {
-		t.Fatalf("a run across a page was lit at %+v", found)
-	}
-}
-
-// A word on the last page is lit on the last page. Where a run falls is worked
-// out from where each page's text begins, so the rectangles land where the word
-// is printed.
-func TestAWordIsLitOnThePageItIsPrintedOn(t *testing.T) {
-	u, index, _, book, shelved := newHighlight(t, outline)
-	recordSource(t, index, shelved, "", "abc123")
-
-	start, length := locate(t, book, "Afterword")
-	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 1 || found[0].Page != 3 {
-		t.Fatalf("%q is printed on page 3 and was lit at %+v", "Afterword", found)
-	}
-}
-
-// One page of a document is lit, and the rest of it is not. A question about
-// a paragraph is not a reason to read a book.
-func TestOnlyThePagesARunFallsOnAreLit(t *testing.T) {
-	u, index, _, book, shelved := newHighlight(t, outline)
-	recordSource(t, index, shelved, "", "abc123")
-
-	var request []int
-	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
-		request = pages
-		return book.boxes(pages), nil
-	})
-
-	start, length := locate(t, book, "closer")
-	found := litOn(t, u, documentPath, start, length)
-	if !slices.Equal(request, []int{2}) {
-		t.Errorf("a word on page 2 of %d asked for pages %v", len(book.Pages), request)
-	}
-	if len(found) != 1 || found[0].Page != 2 {
-		t.Errorf("%q was lit at %+v", "closer", found)
-	}
-}
-
-// Several places are asked about at once and come back in the order they were
-// asked about, so a caller knows which answer is which. The pages they fall on
-// are read once, however many of the places stand on one page.
-func TestSeveralPlacesAreAskedAboutAtOnce(t *testing.T) {
-	u, index, _, book, shelved := newHighlight(t, outline)
-	recordSource(t, index, shelved, "", "abc123")
-
-	var request [][]int
-	u = setPlacer(u, func(_ []byte, pages []int) ([]domain.HighlightBox, error) {
-		request = append(request, pages)
-		return book.boxes(pages), nil
-	})
-
-	after, afterLength := locate(t, book, "Afterword")
-	closer, closerLength := locate(t, book, "closer")
-	found, err := u.Execute(t.Context(), first, documentPath, []domain.ByteSpan{
-		{From: after, To: after + afterLength},
-		{From: closer, To: closer + closerLength},
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{
+		spanOf(t, text, "vrksa"),
+		spanOf(t, text, "a vrksa b"),
+		spanOf(t, text, "udyana"),
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) != 2 {
-		t.Fatalf("two places were asked about and %d came back: %+v", len(found), found)
+	if len(runs) != 3 {
+		t.Fatalf("%d runs answered, want 3", len(runs))
 	}
-	if len(found[0].Boxes) != 1 || found[0].Boxes[0].Page != 3 {
-		t.Errorf("%q is printed on page 3 and was lit at %+v", "Afterword", found[0].Boxes)
+	if runs[0].Text != "vrksa" || !slices.Equal(getPages(runs[0].Boxes), []int{1}) {
+		t.Errorf("vrksa says %q and is lit on %v, want page 1", runs[0].Text, getPages(runs[0].Boxes))
 	}
-	if len(found[1].Boxes) != 1 || found[1].Boxes[0].Page != 2 {
-		t.Errorf("%q is printed on page 2 and was lit at %+v", "closer", found[1].Boxes)
+	if !slices.Equal(getPages(runs[1].Boxes), []int{0, 1, 2}) {
+		t.Errorf("a run across three words is lit on %v", getPages(runs[1].Boxes))
 	}
-	if found[0].Text != "Afterword" || found[1].Text != "closer" {
-		t.Errorf("the runs read %q and %q", found[0].Text, found[1].Text)
-	}
-	if len(request) != 1 || !slices.Equal(request[0], []int{2, 3}) {
-		t.Errorf("the layer was asked for %v, want both pages once", request)
+	if !slices.Equal(getPages(runs[2].Boxes), []int{0}) {
+		t.Errorf("the first word is lit on %v, want page 0", getPages(runs[2].Boxes))
 	}
 }
 
-// A run beginning before the start of the text reads from the start instead
-// of slicing at a negative offset.
-func TestARunBeginningBeforeTheStartOfTheTextReadsFromTheStart(t *testing.T) {
-	// h is one byte and é is two, so a run reaching three bytes before the
-	// start would slice into é's own bytes if the start were not clamped
-	// first.
-	const prose = "héllo"
-	found := getRuns(prose, nil, []domain.ByteSpan{{From: -3, To: 2}})
-	if len(found) != 1 {
-		t.Fatalf("one run was asked about and %d came back", len(found))
+// The runs are places in the version the index cut, and a newer version of the
+// same bytes has other words at those places.
+func TestARunIsReadFromTheVersionTheIndexCutAndNotTheNewestOne(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	cut := texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana", "vrksa"))
+	recordCut(t, index, shelved, cut)
+	texts.put(first, documentPath, "test.proofreader", domain.TextFormatPositioned, positioned("jala", "grama"))
+
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 0, To: 6}})
+	if err != nil {
+		t.Fatal(err)
 	}
-	if found[0].Text != "héll" {
-		t.Errorf("the run read %q, want %q", found[0].Text, "héll")
+	if runs[0].Text != "udyana" {
+		t.Fatalf("the run says %q, want the word of the version that was cut", runs[0].Text)
 	}
 }
 
-// A run of negative length reads nothing, even where the byte it would
-func TestARunOfNegativeLengthReadsNothing(t *testing.T) {
-	// Four copies of a four-byte character, so landing inside one and
-	// walking forward to the next whole character crosses into the next
-	// one's own bytes.
-	const prose = "😀😀😀😀"
-	found := getRuns(prose, nil, []domain.ByteSpan{{From: 10, To: 9}})
-	if len(found) != 1 {
-		t.Fatalf("one run was asked about and %d came back", len(found))
-	}
-	if found[0].Text != "" {
-		t.Errorf("a run of negative length read %q", found[0].Text)
-	}
-}
+func TestAFileRewrittenSinceItWasCutIsLitFromItsLiveVersion(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	recordCut(t, index, shelved, texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana")))
 
-// is read and nothing is lit.
-func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
-	u, index, _, _, shelved := newHighlight(t, tiny)
-	recordSource(t, index, shelved, "", "abc123")
+	shelved.hold(documentPath, domain.KindBook, []byte("%PDF the second printing"), 2)
+	texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("aqua", "terra"))
 
-	for _, path := range []string{"library/nothing.pdf", "../outside.pdf"} {
-		t.Run(path, func(t *testing.T) {
-			found, err := u.Execute(t.Context(), first, path, []domain.ByteSpan{{From: 0, To: 5}})
-			if err == nil {
-				t.Errorf("%s was answered with %+v", path, found)
-			}
-		})
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 5, To: 10}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runs[0].Text != "terra" || !slices.Equal(getPages(runs[0].Boxes), []int{1}) {
+		t.Fatalf("the run says %q on %v, want terra on page 1", runs[0].Text, getPages(runs[0].Boxes))
 	}
 }
 
-// A source the index does not hold is lit nowhere: which producer made its
-// text is what says where its offsets are, and nothing has said.
+func TestPlainTextIsReadAndLitNowhere(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	recordCut(t, index, shelved, texts.put(first, documentPath, "test.article", domain.TextFormatPlain,
+		[]domain.TextPart{{Text: "udyana vrksa"}}))
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 7, To: 12}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if runs[0].Text != "vrksa" || len(runs[0].Boxes) != 0 {
+		t.Fatalf("got %+v, want the word and no boxes", runs[0])
+	}
+}
+
 func TestASourceTheIndexDoesNotHoldIsLitNowhere(t *testing.T) {
-	u, _, _, book, _ := newHighlight(t, tiny)
-	u = setPlacer(u, func([]byte, []int) ([]domain.HighlightBox, error) {
-		t.Error("a source the index does not hold was read")
-		return nil, nil
-	})
-
-	start, length := locate(t, book, "gamma")
-	found := litOn(t, u, documentPath, start, length)
-	if len(found) != 0 {
-		t.Errorf("a source the index does not hold was lit at %+v", found)
+	hl, _, texts, _ := newHighlight(t)
+	texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana"))
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 0, To: 6}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(runs) != 1 || runs[0].Text != "" || len(runs[0].Boxes) != 0 {
+		t.Fatalf("got %+v, want one run lit nowhere", runs)
 	}
 }
 
-// A run past the end of the text is lit nowhere, and a recognition that is not
-// there says nothing.
-func TestNothingIsLitWhereThereIsNothingToLight(t *testing.T) {
-	t.Run("past the end", func(t *testing.T) {
-		u, index, _, book, shelved := newHighlight(t, tiny)
-		recordSource(t, index, shelved, "", "abc123")
-
-		if found := litOn(t, u, documentPath, len(book.Text)+100, 10); len(found) != 0 {
-			t.Errorf("a run past the end was lit at %+v", found)
-		}
-	})
-
-	t.Run("a recognition that is gone", func(t *testing.T) {
-		u, index, _, _, shelved := newHighlight(t, tiny)
-		recordSource(t, index, shelved, "ocr", "abc123")
-
-		if found := litOn(t, u, documentPath, 0, 10); len(found) != 0 {
-			t.Errorf("a recognition nothing kept was lit at %+v", found)
-		}
-	})
-}
-
-func TestAFileRewrittenSinceItWasReadIsLitFromItself(t *testing.T) {
-	// A recognition is of the bytes that were there when it was made, and its
-	// coordinates describe those. Put against a file rewritten since, they fall
-	// where those words no longer are, and nothing on the page says so.
-	ctx := t.Context()
-	u, index, store, book, shelved := newHighlight(t, outline)
-	recordSource(t, index, shelved, "ocr", "abc123")
-
-	// A recognition whose words sit at the top of the first page.
-	if err := store.WriteArtifact(ctx, domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack([]domain.HighlightBox{
-		testsupport.Box(0, 0, 400, domain.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}),
-	})); err != nil {
+func TestASourceWhoseVersionIsGoneIsLitNowhere(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	recordCut(t, index, shelved, texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana")))
+	texts.drop(documentPath)
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: 0, To: 6}})
+	if err != nil {
 		t.Fatal(err)
 	}
-	start, length := locate(t, book, "Afterword")
-
-	literal := litOn(t, u, documentPath, start, length)
-	if len(literal) == 0 {
-		t.Fatal("the recognition lit nothing, so rewriting the file proves nothing")
-	}
-
-	// The same document, written again.
-	shelved.hold(documentPath, domain.KindBook, printPages(outline), 2)
-
-	after := litOn(t, u, documentPath, start, length)
-	if len(after) == 1 && after[0].MinY == 0.1 {
-		t.Error("the recognition of other bytes was lit on the file that is there now")
+	if len(runs) != 1 || len(runs[0].Boxes) != 0 {
+		t.Fatalf("got %+v, want one run lit nowhere", runs)
 	}
 }
 
-// A run of a proofread recognition is lit where its words now stand. A correction
-// that changes a line's length moves everything after it, and the coordinates
-// answer about the text the chunks are places in.
-func TestAProofreadRecognitionIsLitWhereItsWordsNowStand(t *testing.T) {
-	u, index, store, _, shelved := newHighlight(t, tiny)
-	recordSource(t, index, shelved, "ocr", "abc123")
-
-	content := []domain.HighlightBox{
-		testsupport.Box(4, 0, 5, domain.Rect{MinX: 0.1, MinY: 0.2, MaxX: 0.2, MaxY: 0.23}),
-		testsupport.Box(4, 6, 10, domain.Rect{MinX: 0.21, MinY: 0.2, MaxX: 0.3, MaxY: 0.23}),
-		testsupport.Box(5, 11, 16, domain.Rect{MinX: 0.1, MinY: 0.5, MaxX: 0.2, MaxY: 0.53}),
-	}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactBoxes, "ocr", "abc123"), highlight.Pack(content)); err != nil {
+func TestARunOutsideTheTextReadsWhatIsThere(t *testing.T) {
+	hl, index, texts, shelved := newHighlight(t)
+	recordCut(t, index, shelved, texts.put(first, documentPath, ocrPlugin, domain.TextFormatPositioned, positioned("udyana")))
+	runs, err := hl.Execute(t.Context(), first, documentPath, []domain.ByteSpan{{From: -3, To: 3}, {From: 4, To: 2}})
+	if err != nil {
 		t.Fatal(err)
 	}
-	// The first line is put right and grows by three bytes, so the third line
-	// begins at 14 and runs to 19.
-	correctionLines := []domain.CorrectionLine{{Number: 0, Text: "eighteen"}}
-	if err := store.WriteArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactCorrections, "ocr", "abc123"), correction.Pack(correctionLines)); err != nil {
-		t.Fatal(err)
+	if runs[0].Text != "udyana" {
+		t.Errorf("a run beginning before the text says %q, want it read from the start", runs[0].Text)
 	}
+	if runs[1].Text != "" || len(runs[1].Boxes) != 0 {
+		t.Errorf("a run of negative length is %+v", runs[1])
+	}
+}
 
-	found := litOn(t, u, documentPath, 16, 3)
-	if len(found) != 1 || found[0].Page != 5 {
-		t.Fatalf("the run was lit at %+v", found)
+func TestAPathTheVaultDoesNotHoldIsRefused(t *testing.T) {
+	hl, _, _, _ := newHighlight(t)
+	if _, err := hl.Execute(t.Context(), first, "library/absent.pdf", []domain.ByteSpan{{From: 0, To: 1}}); err == nil {
+		t.Fatal("a path the vault does not hold was answered")
 	}
 }

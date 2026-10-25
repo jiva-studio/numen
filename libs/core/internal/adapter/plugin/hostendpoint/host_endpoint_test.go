@@ -32,6 +32,7 @@ type callers struct {
 	completer completionport.Completer
 	checked   []string
 	vault     pluginport.PluginVault
+	texts     pluginport.PluginTexts
 }
 
 func (c *callers) GetPluginIDByToken(token string) (string, bool) {
@@ -63,6 +64,7 @@ func (c *callers) GetCompleter() completionport.Completer { return c.completer }
 
 func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 
+func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
 func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 
 // callerCompleter answers with the id of the plugin it was told asks.

@@ -83,13 +83,13 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				db.NoteQueries(), db.Maintenance())
 			notes.ShouldRebuildIndex = rebuild
 
-			books := source.NewExtract(readers, db.Sources(), db.Sources())
-			books.Derived, books.Documents, books.ShouldRebuildIndex = store, testsupport.Documents{}, rebuild
+			books := source.NewExtract(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+			books.ShouldRebuildIndex = rebuild
 
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
 			vectors := embedding.NewEmbed(readers, db.Sources(), db.Sources())
-			vectors.Derived, vectors.Documents = store, testsupport.Documents{}
+			vectors.Derived, vectors.Texts = store, testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
 				Read: vaults.NewReadWholeVault(notes, books, vectors),
@@ -109,7 +109,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			}
 			return cli.Search{
 				Search: search.New(db.ChunkQueries(), vaultreader.Readers{Options: options},
-					getDerived(options), testsupport.Documents{}, nil, 0, errorHandler),
+					testsupport.Texts{Readers: vaultreader.Readers{Options: options}}, nil, 0, errorHandler),
 				Close: db.Close,
 			}, nil
 		},

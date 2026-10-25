@@ -135,6 +135,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 	// document being read and a vault being scanned are then never two passes
 	// over the index at once.
 	indexed := o.indexer.NewSession()
+	o.made.SetTextVersionListener(indexed)
 	recognising.Cut = func(_ context.Context, of domain.Vault, path string) error {
 		indexed.RequestCut(of, path)
 		return nil

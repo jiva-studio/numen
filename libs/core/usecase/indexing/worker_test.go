@@ -525,3 +525,23 @@ func TestAWakeForNotesIsLeftOnceWhateverTheNumberOfChanges(t *testing.T) {
 		t.Errorf("%d wakes are waiting, want 1", got)
 	}
 }
+
+func TestAChangeOfVersionsAsksForTheFileToBeCutAgain(t *testing.T) {
+	worker := NewWorker(Config{Quiet: time.Hour, After: time.After})
+	session := worker.NewSession()
+	v := domain.Vault{ID: "v1"}
+
+	session.ReportVersionsChanged(v, "books/scan.pdf")
+	session.ReportVersionsChanged(v, "books/scan.pdf")
+	session.ReportVersionsChanged(v, "talks/a.mp3")
+
+	select {
+	case <-worker.read:
+	default:
+		t.Fatal("a change of versions woke nothing")
+	}
+	got := session.drain()
+	if len(got) != 2 || got["books/scan.pdf"].ID != "v1" || got["talks/a.mp3"].ID != "v1" {
+		t.Fatalf("waiting to be cut: %v, want each changed file once", got)
+	}
+}

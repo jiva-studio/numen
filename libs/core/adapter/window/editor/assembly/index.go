@@ -5,6 +5,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
 // IndexAssembly is what this window asks the cache and index queries of an installation.
@@ -19,6 +20,10 @@ type IndexAssembly interface {
 	GetSourceQueries() sourceport.SourceQueries
 	GetPassageQueries() sourceport.PassageQueries
 	CloseIndex() error
+
+	// SetTextVersionListener names the index that hears the versions of a file
+	// changed. A vault shown later names its own.
+	SetTextVersionListener(listener textport.VersionListener)
 
 	// IsRebuildingIndex is whether this launch was asked to read every file
 	// into the cache again. It belongs to the vault the window opened on and to

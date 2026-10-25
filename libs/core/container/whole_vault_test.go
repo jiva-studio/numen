@@ -75,11 +75,8 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if trimmed.Derived == nil {
-		t.Error("the cut has no place to keep what it derives")
-	}
-	if trimmed.Documents == nil {
-		t.Error("the cut cannot take the text out of a document")
+	if trimmed.ErrorHandler == nil {
+		t.Error("a source whose text could not be read is told to no one")
 	}
 	if !trimmed.ShouldRebuildIndex {
 		t.Error("a rebuild was asked for and the cut skips sources the index remembers")
@@ -99,10 +96,10 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 		t.Fatal(err)
 	}
 	if made.Derived == nil {
-		t.Error("the vectors have no place to keep what they derive")
+		t.Error("the vectors have no place to claim the index in")
 	}
-	if made.Documents == nil {
-		t.Error("the vectors cannot take the text out of a document")
+	if made.Texts != nil {
+		t.Error("a configuration with no text versions reads text through some")
 	}
 	if made.Embedder != model {
 		t.Errorf("the vectors are made by %v, and the model given is %v", made.Embedder, model)

@@ -8,11 +8,11 @@ import (
 
 	"golang.org/x/sync/errgroup"
 
-	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
@@ -100,8 +100,7 @@ type Search struct {
 	passages     sourceport.PassageQueries
 	readers      vaultport.VaultReaders
 	embedder     embeddingport.Embedder
-	derived      vaultport.DerivedStores
-	documents    sourceport.TextExtractor
+	texts        textport.TextReaders
 	floor        float64
 	errorHandler windowport.ErrorHandler
 	cache        *QueryCache
@@ -120,9 +119,12 @@ type Search struct {
 // `floor` is how near the query a passage stands to be an answer, in the units
 // the model in use measures in. Zero takes DefaultFloor.
 //
+// `texts` is the text versions sources are cut from. Nil is an installation with
+// none, and only notes answer with their text.
+//
 // `errorHandler` hears about a half that could not answer. Nothing is said by
 // passing nothing.
-func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, derived vaultport.DerivedStores, documents sourceport.TextExtractor, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
+func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, texts textport.TextReaders, embedder embeddingport.Embedder, floor float64, errorHandler windowport.ErrorHandler) Search {
 	if floor == 0 {
 		floor = DefaultFloor
 	}
@@ -133,8 +135,7 @@ func New(passages sourceport.PassageQueries, readers vaultport.VaultReaders, der
 		passages:     passages,
 		readers:      readers,
 		embedder:     embedder,
-		derived:      derived,
-		documents:    documents,
+		texts:        texts,
 		floor:        floor,
 		errorHandler: errorHandler,
 		cache:        NewQueryCache(defaultCacheCapacity),
@@ -327,13 +328,12 @@ func (u Search) read(ctx context.Context, v domain.Vault, found []domain.Passage
 	if err != nil {
 		return nil, err
 	}
-	var store vaultport.DerivedStore
-	if u.derived != nil {
-		if store, err = u.derived.Open(v); err != nil {
+	of := sourceTexts{files: reader}
+	if u.texts != nil {
+		if of.texts, err = u.texts.Open(v); err != nil {
 			return nil, err
 		}
 	}
-	of := text.Reader{Vault: reader, Derived: store, Documents: u.documents}
 
 	groups, order := groupBySource(found)
 
@@ -378,7 +378,7 @@ func (u Search) GetExtractors() int {
 // `indices`, which name it. It writes only those indices of `filled` and `keep`.
 func fillSource(
 	ctx context.Context,
-	of text.Reader,
+	of sourceTexts,
 	source string,
 	indices []int,
 	found, filled []domain.Passage,
@@ -388,7 +388,7 @@ func fillSource(
 		return err
 	}
 	first := found[indices[0]]
-	prose, err := extractText(ctx, of, source, first.Producer, first.SourceHash)
+	prose, err := of.getText(ctx, source, first.Producer)
 	if vaultport.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
@@ -427,18 +427,29 @@ func groupBySource(found []domain.Passage) (map[string][]int, []string) {
 // not a failure of the search: the passage is dropped and the rest answer.
 var errUnreadable = errors.New("nothing could be read from the source")
 
-// extractText is the text a source's chunks are places in.
-//
-// A note's text is its file. A book's is what taking the text out of it produces,
-// and a chunk's offsets belong to that, not to the bytes on disk: slicing the
-// archive at a text offset returns compressed noise. Extraction is deterministic,
-// which is what lets the text be recovered from the source it belongs to.
-//
-// Which reader produces it is decided in one place, so that what a search slices
-// and what an extractor cut are the same text.
-func extractText(ctx context.Context, reader text.Reader, path, from, hash string) (string, error) {
-	doc, err := reader.GetDocument(ctx, path, from, hash)
-	if errors.Is(err, text.ErrUnreadable) {
+// sourceTexts is where a passage's text is read from: a note's own file, and
+// the text version every other source was cut from.
+type sourceTexts struct {
+	files vaultport.VaultReader
+	texts textport.Texts
+}
+
+// getText is the text a source's chunks are places in. A source cut from no
+// version is a note, and its text is its file. A source cut from a version is
+// that version, and a version no longer there is errUnreadable.
+func (s sourceTexts) getText(ctx context.Context, path, version string) (string, error) {
+	if version == "" {
+		raw, err := s.files.Read(ctx, path)
+		if err != nil {
+			return "", err
+		}
+		return string(raw), nil
+	}
+	if s.texts == nil {
+		return "", errUnreadable
+	}
+	doc, err := s.texts.GetVersionText(ctx, path, domain.TextVersionID(version))
+	if errors.Is(err, textport.ErrNoText) {
 		return "", errUnreadable
 	}
 	if err != nil {

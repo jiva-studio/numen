@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/highlight"
 	"github.com/jiva-studio/numen/libs/core/internal/ocrartifact"
 	"github.com/jiva-studio/numen/libs/core/internal/text"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
@@ -225,45 +224,6 @@ func TestWhatReadItIsCachedAdjacentWhatItRead(t *testing.T) {
 		if !strings.Contains(string(raw), want) {
 			t.Errorf("what was kept does not mention %q: %s", want, raw)
 		}
-	}
-}
-
-func TestARecognitionDeletedByHandIsNoticed(t *testing.T) {
-	// The store is a folder on the person's disk and they may empty it. A source
-	// standing on a recognition that is gone answers a search with nothing, and
-	// would go on doing so: its recipe is the one in use, so nothing else asks
-	// after it.
-	u, v, index, shelf, _ := recogniser(t, "Something.")
-	if _, err := u.Execute(t.Context(), v, documentPath); err != nil {
-		t.Fatal(err)
-	}
-	status := index.sources[v.ID][documentPath]
-	if status.Producer == "" {
-		t.Fatal("the source does not stand on a recognition")
-	}
-
-	// Cut it once, so it is a source that owes nothing.
-	extract := source.NewExtract(u.readers, index, index)
-	extract.Derived = shelf
-	if _, err := extract.Execute(t.Context(), v); err != nil {
-		t.Fatal(err)
-	}
-	if index.sources[v.ID][documentPath].Recipe == "" {
-		t.Fatal("the source was not cut, so this cannot tell anything")
-	}
-
-	if err := shelf.RemoveArtifact(t.Context(), domain.NewArtifactName(domain.ArtifactText, status.Producer, status.Hash)); err != nil {
-		t.Fatal(err)
-	}
-	res, err := extract.Execute(t.Context(), v)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if res.Forgotten != 1 {
-		t.Errorf("noticed %d recognitions gone, want 1", res.Forgotten)
-	}
-	if got := index.sources[v.ID][documentPath].Producer; got != "" {
-		t.Errorf("the source still is on %q", got)
 	}
 }
 
