@@ -181,7 +181,13 @@ function measure(): void {
   box-sizing: border-box;
   position: fixed;
   z-index: var(--lift, 99999);
+  display: flex;
+  flex-direction: column;
   padding: var(--inset);
+  font-family: var(--numen-font-sans);
+  font-size: var(--numen-font-size);
+  line-height: var(--numen-line-height);
+  color: var(--numen-ink);
   inline-size: max-content;
   min-inline-size: max(var(--narrowest), var(--asking));
   max-inline-size: max(var(--widest), var(--asking));
@@ -201,6 +207,8 @@ function measure(): void {
 
 .menu__silence {
   margin: 0;
+  padding: 0.375rem 0.5rem;
+  color: var(--numen-hushed);
 }
 
 /* The search line is a row of its own at the top of the menu: it stays there
