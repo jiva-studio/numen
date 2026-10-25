@@ -20,10 +20,15 @@ type pluginCommands struct {
 }
 
 func (p pluginCommands) ListCommands() []plugincommand.Entry {
-	return []plugincommand.Entry{{PluginID: "md.numen.cards", Command: plugincommand.Command{
-		ID: "create-deck", Title: "Create a deck", FileExtensions: []string{"md"},
-		Arguments: []plugincommand.Argument{{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true}},
-	}}}
+	return []plugincommand.Entry{
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{
+			ID: "create-deck", Title: "Create a deck", FileExtensions: []string{"md"},
+			Arguments: []plugincommand.Argument{{Name: "pages", Title: "Pages", Type: plugincommand.ArgumentNumber, IsRequired: true}},
+		}},
+		{PluginID: "md.numen.cards", Command: plugincommand.Command{
+			ID: "print-deck", Title: "Print a deck", FileExtensions: []string{"md"}, IsHiddenInPalette: true,
+		}},
+	}
 }
 
 func (p pluginCommands) RunCommand(context.Context, plugincommand.Call) (plugincommand.Result, error) {
@@ -39,7 +44,7 @@ func run(t *testing.T, commands pluginCommands, request *v1.RunPluginCommandRequ
 	return res.Msg
 }
 
-func TestTheCommandsAreListedAsTheManifestsDeclareThem(t *testing.T) {
+func TestTheCommandsAreListedWithoutThoseHiddenInThePalette(t *testing.T) {
 	res, err := command.NewHandler(plugincommand.NewCommands(pluginCommands{})).ListCommands(
 		t.Context(), connect.NewRequest(&v1.ListCommandsRequest{}))
 	if err != nil {

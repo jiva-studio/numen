@@ -24,7 +24,7 @@ func TestDiscoverPlugins(t *testing.T) {
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": [],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 100, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "OcrService"},
+		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "TextProviderService"},
 		"frontend": {"entrypoint": "", "styles": ""},
 		"settings": []
 	}`

@@ -35,6 +35,9 @@ type PluginCommand struct {
 	// a command over no file.
 	FileExtensions []string                `json:"fileExtensions,omitempty"`
 	Arguments      []PluginCommandArgument `json:"arguments,omitempty"`
+	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
+	// same thing another way. The command line still offers it.
+	IsHiddenInPalette bool `json:"hiddenInPalette,omitempty"`
 }
 
 // PluginCommandArgument is one argument a command takes.

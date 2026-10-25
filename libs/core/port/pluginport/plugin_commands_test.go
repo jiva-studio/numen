@@ -12,7 +12,7 @@ const commandManifestHead = `{"id":"a.b","name":"A","version":"1.0.0","backend":
 
 func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	text := commandManifestHead + `[{
-		"id": "convert-pages", "title": "Convert", "fileExtensions": ["pdf", "djvu"],
+		"id": "convert-pages", "title": "Convert", "fileExtensions": ["pdf", "djvu"], "hiddenInPalette": true,
 		"arguments": [
 			{"name": "pages", "title": "Pages", "type": "number", "required": true},
 			{"name": "again", "title": "Again", "type": "boolean"},
@@ -29,7 +29,7 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 		t.Fatalf("the commands came out as %+v", manifest.Commands)
 	}
 	command := manifest.Commands[0]
-	if command.ID != "convert-pages" || command.Title != "Convert" || !command.HasFiles() || len(command.Arguments) != 3 {
+	if command.ID != "convert-pages" || command.Title != "Convert" || !command.IsHiddenInPalette || !command.HasFiles() || len(command.Arguments) != 3 {
 		t.Fatalf("the command came out as %+v", command)
 	}
 	pages, _ := command.GetArgument("pages")

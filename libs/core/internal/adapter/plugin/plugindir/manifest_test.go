@@ -27,7 +27,7 @@ func TestReadManifest(t *testing.T) {
 		"backend": {
 			"type": "process",
 			"entrypoint": "bin/engines.ocr",
-			"serviceName": "numen.v1.OcrService"
+			"serviceName": "numen.v1.TextProviderService"
 		},
 		"frontend": {
 			"entrypoint": "dist/index.js",

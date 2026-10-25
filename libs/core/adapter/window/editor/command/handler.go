@@ -24,13 +24,16 @@ func NewHandler(commands plugincommand.Commands) *Handler {
 	return &Handler{list: commands.List, run: commands.Run}
 }
 
-// ListCommands lists the commands of every enabled plugin.
+// ListCommands lists the commands of every enabled plugin that the palette offers.
 func (h *Handler) ListCommands(
 	context.Context, *connect.Request[v1.ListCommandsRequest],
 ) (*connect.Response[v1.ListCommandsResponse], error) {
 	entries := h.list.Execute()
 	commands := make([]*v1.PluginCommand, 0, len(entries))
 	for _, one := range entries {
+		if one.Command.IsHiddenInPalette {
+			continue
+		}
 		commands = append(commands, newWireCommand(one))
 	}
 	return connect.NewResponse(&v1.ListCommandsResponse{Commands: commands}), nil

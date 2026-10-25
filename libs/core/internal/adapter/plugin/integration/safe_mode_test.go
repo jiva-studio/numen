@@ -23,7 +23,7 @@ func TestHostSafeMode(t *testing.T) {
 		"activationEvents": ["onFile:*.pdf"],
 		"permissions": ["vault:read"],
 		"lifecycle": {"mode": "on-demand", "idleTimeoutSeconds": 10, "keepAliveWhileVisible": false},
-		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "numen.v1.OcrService"}
+		"backend": {"type": "process", "entrypoint": "bin/engines.ocr", "serviceName": "numen.v1.TextProviderService"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)
