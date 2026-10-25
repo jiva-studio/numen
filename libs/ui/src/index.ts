@@ -67,8 +67,7 @@ export { createTimeGutter } from './features/editor'
 export { createWikilinkCompletion } from './features/editor'
 export type { WikilinkOption, WikilinkCompletionOptions, Extension } from './features/editor'
 
-/** The controls a recording is played by. What plays is somewhere else. */
-export { Player } from './features/player'
+/** A moment of a recording as a player writes one. */
 export { clock } from './shared/lib/time/duration'
 
 /** A stream taken up again for as long as a window is open. */

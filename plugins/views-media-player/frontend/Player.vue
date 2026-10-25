@@ -8,7 +8,7 @@
  */
 import { computed, ref } from 'vue'
 import { Pause, Play } from '@lucide/vue'
-import { clock } from '@/shared/lib/time/duration'
+import { clock } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = withDefaults(

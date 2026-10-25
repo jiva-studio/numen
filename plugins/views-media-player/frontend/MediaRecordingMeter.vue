@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { formatClock } from './useAudioPlayback'
+import { clock } from '@numen/ui'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{
@@ -28,7 +28,7 @@ const liveBars = computed(() => {
 <template>
   <div class="media-recorder__meter">
     <div class="media-recorder__timer">
-      {{ formatClock(props.elapsedMs) }}
+      {{ clock(props.elapsedMs) }}
     </div>
 
     <div class="media-recorder__waveform" aria-label="Microphone input meter">

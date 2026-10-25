@@ -12,8 +12,11 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@connectrpc/connect": "^2.1.2",
     "@numen/plugin-sdk": "workspace:*",
-    "@numen/ui": "workspace:*"
+    "@numen/protocol": "workspace:*",
+    "@numen/ui": "workspace:*",
+    "@numen/wire": "workspace:*"
   },
   "peerDependencies": {
     "vue": "^3.5.0"

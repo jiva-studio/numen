@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk'
-import plugin, { activate, AudioPlayerTab, MediaRecordingTab } from './index'
+import plugin, { activate, MediaRecordingTab, RecordingTab } from './index'
 
 describe('media-player plugin', () => {
   it('registers audio reader and recording tab kind upon activation', () => {
@@ -13,7 +13,7 @@ describe('media-player plugin', () => {
     expect(registerReaderSpy).toHaveBeenCalledWith({
       id: 'media-player',
       fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
-      component: AudioPlayerTab,
+      component: RecordingTab,
       title: 'Audio Player',
       source: 'recording',
       capabilities: ['recording', 'media', 'audio'],
