@@ -80,13 +80,15 @@ func (FileMenuAction) EnumDescriptor() ([]byte, []int) {
 
 // FileMenuEntry is one entry of a file's menu. version_id is the input of a
 // proofreading and the target of a deletion, and empty for a recognition.
-// plugin_name is the plugin's name as its manifest gives it.
+// plugin_name is the plugin's name as its manifest gives it. is_live is set
+// when version_id is the version shown and indexed now.
 type FileMenuEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Action        FileMenuAction         `protobuf:"varint,1,opt,name=action,proto3,enum=numen.v1.FileMenuAction" json:"action,omitempty"`
 	PluginId      string                 `protobuf:"bytes,2,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	PluginName    string                 `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	VersionId     string                 `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	IsLive        bool                   `protobuf:"varint,5,opt,name=is_live,json=isLive,proto3" json:"is_live,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -147,6 +149,13 @@ func (x *FileMenuEntry) GetVersionId() string {
 		return x.VersionId
 	}
 	return ""
+}
+
+func (x *FileMenuEntry) GetIsLive() bool {
+	if x != nil {
+		return x.IsLive
+	}
+	return false
 }
 
 type GetFileMenuRequest struct {
@@ -345,14 +354,15 @@ var File_numen_v1_textversion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_textversion_proto_rawDesc = "" +
 	"\n" +
-	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\x9e\x01\n" +
+	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\xb7\x01\n" +
 	"\rFileMenuEntry\x120\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x18.numen.v1.FileMenuActionR\x06action\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
 	"\vplugin_name\x18\x03 \x01(\tR\n" +
 	"pluginName\x12\x1d\n" +
 	"\n" +
-	"version_id\x18\x04 \x01(\tR\tversionId\"(\n" +
+	"version_id\x18\x04 \x01(\tR\tversionId\x12\x17\n" +
+	"\ais_live\x18\x05 \x01(\bR\x06isLive\"(\n" +
 	"\x12GetFileMenuRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"H\n" +
 	"\x13GetFileMenuResponse\x121\n" +

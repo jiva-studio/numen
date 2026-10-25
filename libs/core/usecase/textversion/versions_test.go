@@ -251,8 +251,8 @@ func TestTheMenuFollowsTheEnabledPlugins(t *testing.T) {
 	a := domain.NewTextVersionID(pdfReader, "file-"+s.fileHash()[:8])
 	want = []textversion.MenuEntry{
 		{Action: textversion.ActionRecognise, PluginID: pdfReader, PluginName: "PDF"},
-		{Action: textversion.ActionProofread, PluginID: proofreader, PluginName: "Proofreading", Version: a},
-		{Action: textversion.ActionDeleteVersion, PluginID: pdfReader, PluginName: "PDF", Version: a},
+		{Action: textversion.ActionProofread, PluginID: proofreader, PluginName: "Proofreading", Version: a, IsLive: true},
+		{Action: textversion.ActionDeleteVersion, PluginID: pdfReader, PluginName: "PDF", Version: a, IsLive: true},
 	}
 	if !slices.Equal(menu, want) {
 		t.Fatalf("a file with one version and OCR disabled: menu %+v, want %+v", menu, want)

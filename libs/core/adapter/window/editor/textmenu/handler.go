@@ -66,6 +66,7 @@ func (h *Handler) GetFileMenu(
 	for _, one := range entries {
 		out = append(out, &v1.FileMenuEntry{
 			Action: actions[one.Action], PluginId: one.PluginID, PluginName: one.PluginName, VersionId: string(one.Version),
+			IsLive: one.IsLive,
 		})
 	}
 	return connect.NewResponse(&v1.GetFileMenuResponse{Entries: out}), nil

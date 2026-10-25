@@ -24,11 +24,13 @@ const (
 // MenuEntry is one entry of a file's menu. Version is the input of a
 // proofreading and the target of a deletion, and empty for a recognition.
 // PluginName is the name of the plugin that does it, as a person reads it.
+// IsLive says Version is the version shown and indexed now.
 type MenuEntry struct {
 	Action     MenuAction
 	PluginID   string
 	PluginName string
 	Version    domain.TextVersionID
+	IsLive     bool
 }
 
 // GetMenu is what a file's menu offers, as the enabled plugins and the file's
@@ -51,12 +53,15 @@ func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash s
 	}
 	for _, plugin := range plugins {
 		if hasLive && slices.Contains(plugin.Formats, live.Format) {
-			entries = append(entries, MenuEntry{Action: ActionProofread, PluginID: plugin.ID, PluginName: plugin.Name, Version: live.GetID()})
+			entries = append(entries, MenuEntry{Action: ActionProofread, PluginID: plugin.ID, PluginName: plugin.Name, Version: live.GetID(), IsLive: true})
 		}
 	}
 	for _, version := range versions {
 		if plugin, ok := u.findPlugin(version.PluginID); ok {
-			entries = append(entries, MenuEntry{Action: ActionDeleteVersion, PluginID: plugin.ID, PluginName: plugin.Name, Version: version.GetID()})
+			entries = append(entries, MenuEntry{
+				Action: ActionDeleteVersion, PluginID: plugin.ID, PluginName: plugin.Name, Version: version.GetID(),
+				IsLive: hasLive && version.GetID() == live.GetID(),
+			})
 		}
 	}
 	return entries, nil

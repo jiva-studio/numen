@@ -57,7 +57,7 @@ func TestActionsCoverEveryFileMenuAction(t *testing.T) {
 func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
 		{Action: textversion.ActionRecognise, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR"},
-		{Action: textversion.ActionDeleteVersion, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Version: "md.numen.engines.ocr/recognition"},
+		{Action: textversion.ActionDeleteVersion, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Version: "md.numen.engines.ocr/recognition", IsLive: true},
 	}}
 	h := NewHandler(vault, m)
 
@@ -68,7 +68,8 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 	got := res.Msg.GetEntries()
 	if len(got) != 2 ||
 		got[0].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_RECOGNISE || got[0].GetPluginName() != "Document OCR" ||
-		got[1].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION || got[1].GetVersionId() != "md.numen.engines.ocr/recognition" {
+		got[1].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION || got[1].GetVersionId() != "md.numen.engines.ocr/recognition" ||
+		got[0].GetIsLive() || !got[1].GetIsLive() {
 		t.Fatalf("answered %v", got)
 	}
 	if _, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "gone.pdf"})); connect.CodeOf(err) != connect.CodeNotFound {
