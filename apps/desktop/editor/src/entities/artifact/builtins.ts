@@ -5,7 +5,6 @@ import { BUILT_IN_WORDS } from './words'
 
 const WIRE_KINDS: Readonly<Record<BuiltInArtifact, Kinds>> = {
   transcript: Kinds.TRANSCRIPT,
-  'transcript.corrected': Kinds.TRANSCRIPT_CORRECTED,
   article: Kinds.ARTICLE,
   copy: Kinds.COPY,
 }

@@ -25,15 +25,6 @@ export const BUILT_IN_WORDS: Record<BuiltInArtifact, Record<ArtifactState, strin
     empty: 'There is no speech in this recording.',
     failed: 'This recording could not be opened:',
   },
-  'transcript.corrected': {
-    none: 'Nothing has been transcribed here, so there is nothing to proofread.',
-    queued: 'This transcript is in line, behind the one being put right now.',
-    running: 'This transcript is being put right now.',
-    stopped: 'Putting this transcript right stopped part way.',
-    done: 'This transcript has already been put right.',
-    empty: 'There were no words in this transcript to put right.',
-    failed: 'This transcript could not be put right:',
-  },
   copy: {
     none: 'No copy of this is on this disk.',
     queued: 'This is in line, behind the one being fetched now.',

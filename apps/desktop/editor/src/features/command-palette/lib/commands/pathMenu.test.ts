@@ -6,7 +6,6 @@
  */
 import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
-import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import { createPathCommands, type RunGuard } from './pathMenu'
 
@@ -27,8 +26,8 @@ const getGroupedIds = (source: Source): readonly string[] =>
   )
 
 describe('the commands over a row standing for a recording', () => {
-  it('offer the recording to be transcribed', () => {
-    expect(getItemIds('recording')).toContain('transcribe')
+  it('offer the file commands only', () => {
+    expect(getItemIds('recording')).toStrictEqual(getItemIds('other'))
   })
 })
 
@@ -62,17 +61,17 @@ describe('the commands over a row standing for a scanned document', () => {
 })
 
 describe('the commands over a row standing for anything else', () => {
-  it('offer neither run on a note', () => {
-    expect(getItemIds('note')).not.toContain('transcribe')
+  it('offer no run on a note', () => {
+    expect(getItemIds('note')).not.toContain('downloadText')
   })
 
-  it('offer neither run on a file the vault holds no source for', () => {
-    expect(getItemIds('other')).not.toContain('transcribe')
+  it('offer no run on a file the vault holds no source for', () => {
+    expect(getItemIds('other')).not.toContain('downloadText')
   })
 
-  // A folder of recordings is not a recording, and a run is over one file.
-  it('offer neither run on a folder', () => {
-    expect(getItemIds('recording', true)).not.toContain('transcribe')
+  // A folder of addresses is not an address, and a run is over one file.
+  it('offer no run on a folder', () => {
+    expect(getItemIds('url', true)).not.toContain('downloadText')
   })
 
   it('offer only the removal over a selection of several', () => {
@@ -119,79 +118,17 @@ describe('the commands over a note', () => {
 
 describe('where a run remains among the commands', () => {
   it('remains after the path and before the remove, parted from both by a rule', () => {
-    expect(getGroupedIds('recording')).toStrictEqual([
+    expect(getGroupedIds('url')).toStrictEqual([
       'copy',
-      '— transcribe',
-      'proofread',
+      '— downloadText',
+      'downloadCopy',
+      'deleteText',
+      'deleteCopy',
       '— remove',
     ])
   })
 
   it('leaves no rule behind on a row that has no run', () => {
     expect(getGroupedIds('other')).toStrictEqual(['copy', '— remove'])
-  })
-})
-
-describe('disabling of runs based on artifact states', () => {
-  const getRuns = (source: 'recording', createdItem: ArtifactStates) =>
-    createPathCommands({ source, isFolder: false, made: createdItem }, false, canRunAnything)
-
-  it('disables transcribe and enables proofread when transcript is done', () => {
-    const items = getRuns('recording', { transcript: 'done' })
-    expect(items.find((one) => one.id === 'transcribe')?.isDisabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(false)
-  })
-
-  it('disables both when transcript and proofread are done', () => {
-    const items = getRuns('recording', { transcript: 'done', 'transcript.corrected': 'done' })
-    expect(items.find((one) => one.id === 'transcribe')?.isDisabled).toBe(true)
-    expect(items.find((one) => one.id === 'proofread')?.isDisabled).toBe(true)
-  })
-})
-
-describe('the commands where this build cannot do a run at all', () => {
-  it('offer the recording nothing', () => {
-    const but: RunGuard = (run) => run !== 'transcribe' && run !== 'proofread'
-
-    expect(getItemIds('recording', false, but)).not.toContain('transcribe')
-    expect(getItemIds('recording', false, but)).not.toContain('proofread')
-  })
-})
-
-describe('a run that is under way or finished', () => {
-  const getDisabled = (
-    source: 'recording',
-    createdItem: ArtifactStates,
-    id: string,
-  ): boolean | undefined =>
-    createPathCommands({ source, isFolder: false, made: createdItem }, false, canRunAnything).find(
-      (one) => one.id === id,
-    )?.isDisabled
-
-  it('disables transcribe while the transcript is running or queued', () => {
-    expect(getDisabled('recording', { transcript: 'running' }, 'transcribe')).toBe(true)
-    expect(getDisabled('recording', { transcript: 'queued' }, 'transcribe')).toBe(true)
-  })
-
-  it('leaves transcribe enabled where the transcript failed or was never made', () => {
-    expect(getDisabled('recording', { transcript: 'failed' }, 'transcribe')).toBe(false)
-    expect(getDisabled('recording', {}, 'transcribe')).toBe(false)
-  })
-
-  it('disables proofread while there is no transcript to proofread', () => {
-    expect(getDisabled('recording', {}, 'proofread')).toBe(true)
-    expect(getDisabled('recording', { transcript: 'running' }, 'proofread')).toBe(true)
-  })
-
-  it('disables proofread while the proofreading is running', () => {
-    const createdItem: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'running' }
-    expect(getDisabled('recording', createdItem, 'proofread')).toBe(true)
-  })
-
-  it('leaves proofread enabled where the proofreading is queued or failed', () => {
-    const queued: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'queued' }
-    const failed: ArtifactStates = { transcript: 'done', 'transcript.corrected': 'failed' }
-    expect(getDisabled('recording', queued, 'proofread')).toBe(false)
-    expect(getDisabled('recording', failed, 'proofread')).toBe(false)
   })
 })

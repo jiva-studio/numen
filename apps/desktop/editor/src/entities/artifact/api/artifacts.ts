@@ -45,7 +45,6 @@ export const running: ArtifactRunner = {
       throw error
     }
   },
-  correctArtifact: (path) => running.createArtifact(path, 'transcript.corrected'),
   fetchArtifact: async (path) => {
     // Which of the two the text at an address is, is the vault's to say: it
     // knows the address, and this asks for the one it says the note carries.

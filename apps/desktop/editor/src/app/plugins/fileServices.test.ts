@@ -236,14 +236,13 @@ describe('the window’s commands over a row', () => {
   const entry = (path: string, kind: 'note' | 'recording' | 'book' = 'note', isFolder = false) =>
     ({ path, name: path, isFolder, kind, type: 'note' }) as const
 
-  it('are what the window offers over a row of that kind, as far as it can run them', () => {
+  it('are the file commands over a recording', () => {
     const { host } = createCommands()
 
     const ids = host.getPathCommands({ entry: entry('Lecture.mp3', 'recording'), isSeveral: false })
 
     expect(ids.map((one) => [one.id, one.isDisabled])).toStrictEqual([
       ['copy', undefined],
-      ['proofread', false],
       ['remove', undefined],
     ])
   })

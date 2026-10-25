@@ -81,9 +81,7 @@ export interface Words extends EmptyWords {
   readonly ask: string
   readonly copy: string
   /** The run a person asks for over the recording in front. */
-  readonly transcribe: string
   /** The transcript of the recording in front, put right by a proofreader. */
-  readonly proofread: string
   /** What is at the address a link note points at, fetched again. */
   readonly downloadText: string
   /** What a url points at, fetched onto this disk. */
@@ -212,8 +210,6 @@ export interface Words extends EmptyWords {
 /** What the menu on a row of the files tree offers besides the commands over a note. */
 export const PATH_WORDS = {
   /** The runs a recording can be put through. */
-  transcribe: 'Transcribe',
-  proofread: 'Proofread',
   /** The runs over a url: the text at its address, and a copy of what is there. */
   downloadText: 'Download the text again',
   downloadCopy: 'Download a copy',

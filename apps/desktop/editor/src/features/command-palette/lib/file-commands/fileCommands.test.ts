@@ -56,7 +56,9 @@ describe('the runs over a file', () => {
 
 describe('a run over the file in front', () => {
   it('is not offered where the tab names no file', () => {
-    expect(isOffered('transcribe', { ...createTarget('recording', {}), file: '' })).toBe(false)
+    expect(
+      isOffered('downloadText', { ...createTarget('url', { transcript: 'done' }), file: '' }),
+    ).toBe(false)
   })
 })
 

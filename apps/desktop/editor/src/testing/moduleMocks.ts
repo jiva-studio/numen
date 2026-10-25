@@ -23,10 +23,6 @@ vi.mock('@/entities/artifact', async (original) => ({
       requests.ran.push(`${of} ${path}`)
       return { able: true, of, made: 'queued', error: '' }
     },
-    correctArtifact: async (path: string) => {
-      requests.ran.push(`transcript.corrected ${path}`)
-      return { able: true, of: 'transcript.corrected' as const, made: 'queued' as const, error: '' }
-    },
     fetchArtifact: async (path: string) => {
       requests.ran.push(`transcript ${path}`)
       return { able: true, of: 'transcript' as const, made: 'queued' as const, error: '' }

@@ -104,10 +104,8 @@ export const registerCommand = commands.registerCommand
 type ArtifactAction = (runs: CommandDeps['runs'], file: string) => Promise<Outcome>
 
 const DYNAMIC_ARTIFACTS: Record<string, ArtifactAction> = {
-  transcribe: (runs, file) => runs.createArtifact(file, 'transcript'),
   downloadText: (runs, file) => runs.fetchArtifact(file),
   downloadCopy: (runs, file) => runs.createArtifact(file, 'copy'),
-  proofread: (runs, file) => runs.correctArtifact(file),
 }
 
 const DYNAMIC_CREATORS: Record<

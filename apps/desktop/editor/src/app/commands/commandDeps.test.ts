@@ -165,7 +165,7 @@ describe('the commands reach the window', () => {
     expect(request).toHaveBeenCalledWith('talk.mp3')
   })
 
-  it.each(['createArtifact', 'fetchArtifact', 'correctArtifact'] as const)(
+  it.each(['createArtifact', 'fetchArtifact'] as const)(
     'answers %s with what the runner answered, and reads what the file carries again',
     async (run) => {
       const outcome = { able: true }

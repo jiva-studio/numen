@@ -146,10 +146,6 @@ const window = (
         isDone.push(`carries ${path}`)
         return answers.carries ?? {}
       },
-      correctArtifact: async (path) => {
-        isDone.push(`corrects ${path}`)
-        return answers.outcome ?? outcome('transcript.corrected', 'running')
-      },
       fetchArtifact: async (path) => {
         isDone.push(`fetches ${path}`)
         return answers.outcome ?? outcome('transcript', 'running')
@@ -395,10 +391,10 @@ const REACHED: readonly ArtifactState[] = [
   'failed',
 ]
 
-/** An artifact of the recording in front asked for, as it came out. */
+/** An artifact of the file in front asked for, as it came out. */
 const createArtifactRun = (state: ArtifactState, error = '') => {
-  const one = window({ outcome: outcome('transcript', state, error) })
-  return { one, invocation: createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })) }
+  const one = window({ outcome: outcome('copy', state, error) })
+  return { one, invocation: createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })) }
 }
 
 describe('an artifact requested for over a file', () => {
@@ -407,7 +403,7 @@ describe('an artifact requested for over a file', () => {
 
     await carry(invocation, one.on)
 
-    expect(one.actions).toStrictEqual(['makes transcript talks/Ants.mp3'])
+    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
   })
 
   // happened.
@@ -417,7 +413,7 @@ describe('an artifact requested for over a file', () => {
 
       await carry(invocation, one.on)
 
-      expect(one.notices, createdItem).toStrictEqual([getMadeWords('transcript', createdItem)])
+      expect(one.notices, createdItem).toStrictEqual([getMadeWords('copy', createdItem)])
     }
   })
 
@@ -435,26 +431,26 @@ describe('an artifact requested for over a file', () => {
     }
   })
 
-  // The person asked for this one by name, and a recording already transcribed
-  // would otherwise look like a command that did nothing.
-  it('says a recording already transcribed has been transcribed', async () => {
+  // The person asked for this one by name, and a copy already made would
+  // otherwise look like a command that did nothing.
+  it('says a copy already made has been made', async () => {
     const { one, invocation } = createArtifactRun('done')
 
     await carry(invocation, one.on)
 
-    expect(one.notices).toStrictEqual([getMadeWords('transcript', 'done')])
+    expect(one.notices).toStrictEqual([getMadeWords('copy', 'done')])
   })
 
   // A run that could not read the file wrote down what it got, and asking again
   // gets the same until that record is taken away.
-  it('says what a run returned about a recording it could not open', async () => {
+  it('says what a run returned about a file it could not copy', async () => {
     const reason = 'mp3: MPEG version 2.5 is not supported'
     const { one, invocation } = createArtifactRun('failed', reason)
 
     await carry(invocation, one.on)
 
-    expect(one.actions).toStrictEqual(['makes transcript talks/Ants.mp3'])
-    expect(one.notices).toStrictEqual([`${getMadeWords('transcript', 'failed')} ${reason}`])
+    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
+    expect(one.notices).toStrictEqual([`${getMadeWords('copy', 'failed')} ${reason}`])
   })
 
   // No two of them may say the same thing: a person reads the sentence and not
@@ -469,19 +465,19 @@ describe('an artifact requested for over a file', () => {
   it('says this build cannot do it, and offers it nowhere after that', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.notices).toStrictEqual([words.unrunnable])
-    expect(one.runs.canRun('transcribe')).toBe(false)
-    expect(one.runs.canRun('downloadCopy')).toBe(true)
+    expect(one.runs.canRun('downloadCopy')).toBe(false)
+    expect(one.runs.canRun('deleteCopy')).toBe(true)
   })
 
   it('is returned only in the window it was requested in', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
-    expect(window().runs.canRun('transcribe')).toBe(true)
+    expect(window().runs.canRun('downloadCopy')).toBe(true)
   })
 })
 
@@ -1251,7 +1247,7 @@ describe('a copy or a text of a file requested for', () => {
   it('says as an error that this build cannot run it', async () => {
     const one = window({ outcome: { able: false } })
 
-    await carry(createInvocation('transcribe', front({ file: 'talks/Ants.mp3' })), one.on)
+    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
 
     expect(one.tones).toStrictEqual(['error'])
   })

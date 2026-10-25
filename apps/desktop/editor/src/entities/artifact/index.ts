@@ -8,7 +8,6 @@ export type {
   ArtifactDefinition,
   ArtifactRegistryError,
   BuiltInArtifact,
-  ArtifactCorrector,
   ArtifactDeleter,
   ArtifactFetcher,
   ArtifactInspector,

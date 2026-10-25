@@ -2,21 +2,8 @@
  * The commands offered over the file in front, on what has been made from it.
  */
 import { createArtifactOffer, isArtifactMissing } from '../commands/availability'
-import type { Command, CommandTarget, RunSupport } from '../../types'
+import type { Command } from '../../types'
 import type { Words } from '../../words'
-
-const isProofreadOffered = createArtifactOffer(
-  'proofread',
-  'recording',
-  (createdItem) =>
-    createdItem.transcript === 'done' && isArtifactMissing(createdItem['transcript.corrected']),
-)
-
-const isRecordingDeleteTextOffered = createArtifactOffer(
-  'deleteText',
-  'recording',
-  (createdItem) => createdItem.transcript !== 'none',
-)
 
 const isUrlDeleteTextOffered = createArtifactOffer(
   'deleteText',
@@ -24,18 +11,7 @@ const isUrlDeleteTextOffered = createArtifactOffer(
   (createdItem) => createdItem.transcript !== 'none',
 )
 
-const isDeleteTextOffered = (target: CommandTarget, runs: RunSupport): boolean =>
-  isRecordingDeleteTextOffered(target, runs) || isUrlDeleteTextOffered(target, runs)
-
 export const createArtifactCommands = (words: Words): readonly Command[] => [
-  {
-    id: 'transcribe',
-    text: words.transcribe,
-    group: 'file',
-    isOffered: createArtifactOffer('transcribe', 'recording', (createdItem) =>
-      isArtifactMissing(createdItem.transcript),
-    ),
-  },
   {
     id: 'downloadText',
     text: words.downloadText,
@@ -56,12 +32,6 @@ export const createArtifactCommands = (words: Words): readonly Command[] => [
       target.made.copy !== undefined &&
       isArtifactMissing(target.made.copy),
   },
-  {
-    id: 'proofread',
-    text: words.proofread,
-    group: 'file',
-    isOffered: isProofreadOffered,
-  },
 ]
 
 export const createDeletionCommands = (words: Words): readonly Command[] => [
@@ -70,7 +40,7 @@ export const createDeletionCommands = (words: Words): readonly Command[] => [
     text: words.deleteText,
     group: 'file',
     needs: 'asking',
-    isOffered: isDeleteTextOffered,
+    isOffered: isUrlDeleteTextOffered,
     answers: {
       keeps: words.keepsTranscript,
       retainedNotice: words.retainedNotice,

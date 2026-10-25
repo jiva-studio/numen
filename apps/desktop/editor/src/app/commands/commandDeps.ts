@@ -65,11 +65,6 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
       void loadArtifactStates(path)
       return outcome
     },
-    correctArtifact: async (path) => {
-      const outcome = await running.correctArtifact(path)
-      void loadArtifactStates(path)
-      return outcome
-    },
     deleteTranscript: async (path) => {
       const able = await running.deleteTranscript(path)
       if (able) {

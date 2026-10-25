@@ -537,15 +537,14 @@ describe('a note that moves under an open step', () => {
   })
 })
 
-/** A recording in front of the window, and a scanned document. */
-const recording: Partial<CommandTarget> = {
+/** An address in front of the window, and a scanned document. */
+const address: Partial<CommandTarget> = {
   kind: 'recording',
   path: '',
-  // A recording tab is filed at no note, and what it is called is the name of
-  // the file it plays.
-  title: 'Ants.mp3',
-  file: 'talks/Ants.mp3',
-  source: 'recording',
+  title: 'Ants',
+  file: 'https://example.org/ants',
+  source: 'url',
+  made: { transcript: 'done', copy: 'done' },
 }
 const scanned: Partial<CommandTarget> = {
   kind: 'document',
@@ -556,13 +555,13 @@ const scanned: Partial<CommandTarget> = {
 }
 
 describe('the runs over the file in front', () => {
-  it('offers transcribe, proofread and delete over a recording', () => {
-    const { commands } = createPalette(recording)
+  it('offers the downloads and the deletions over an address', () => {
+    const { commands } = createPalette(address)
 
     expect(getItemIds(commands.groups).file).toStrictEqual([
-      'transcribe',
-      'proofread',
+      'downloadText',
       'deleteText',
+      'deleteCopy',
     ])
   })
 
@@ -581,114 +580,84 @@ describe('the runs over the file in front', () => {
   })
 
   it('offers neither where the vault could not be opened', () => {
-    const { commands } = createPalette({ ...recording, isReady: false })
+    const { commands } = createPalette({ ...address, isReady: false })
 
     expect(getItemIds(commands.groups).file).toBeUndefined()
   })
 
   it('carries the file the tab in front holds', () => {
-    const { commands } = createPalette(recording)
+    const { commands } = createPalette(address)
 
-    expect(commands.chooseItem('transcribe', 'transcribe')?.file).toBe('talks/Ants.mp3')
+    expect(commands.chooseItem('downloadText', 'downloadText')?.file).toBe(address.file)
   })
 
   it('is offered nowhere once this build has returned it cannot do it at all', () => {
     const runs = runSupport()
-    runs.cannotRun('transcribe')
-    runs.cannotRun('proofread')
+    runs.cannotRun('downloadText')
     runs.cannotRun('deleteText')
+    runs.cannotRun('deleteCopy')
 
     expect(
-      getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file,
+      getItemIds(createPalette(address, [], {}, undefined, runs).commands.groups).file,
     ).toBeUndefined()
   })
 
-  it('offers a recording to be transcribed only where nothing has transcribed it', () => {
-    const { commands } = createPalette({ ...recording, made: { transcript: 'done' } })
-
-    expect(getItemIds(commands.groups).file).not.toContain('transcribe')
-  })
-
-  // There is nothing to put right until a model has transcribed something, and
-  // nothing to take away until it has.
-  it('offers a transcript to be put right once one remains, and not before', () => {
+  // There is nothing to take away until a run has made it.
+  it('offers a copy to be downloaded only where none has been made', () => {
     expect(
-      getItemIds(createPalette({ ...recording, made: { transcript: 'none' } }).commands.groups)
-        .file,
-    ).toStrictEqual(['transcribe'])
+      getItemIds(createPalette({ ...address, made: { copy: 'none' } }).commands.groups).file,
+    ).toStrictEqual(['downloadCopy', 'deleteText'])
     expect(
-      getItemIds(createPalette({ ...recording, made: { transcript: 'done' } }).commands.groups)
-        .file,
-    ).toStrictEqual(['proofread', 'deleteText'])
-    expect(
-      getItemIds(
-        createPalette({
-          ...recording,
-          made: { transcript: 'done', 'transcript.corrected': 'done' },
-        }).commands.groups,
-      ).file,
-    ).toStrictEqual(['deleteText'])
-  })
-
-  // Nothing has been asked yet, and the file is offered what its kind offers.
-  // A window that hid the runs until the answer came would flicker every one of
-  // them into place.
-  it('offers what the kind offers while nothing is known of the file', () => {
-    const { commands } = createPalette(recording)
-
-    expect(getItemIds(commands.groups).file).toStrictEqual([
-      'transcribe',
-      'proofread',
-      'deleteText',
-    ])
+      getItemIds(createPalette({ ...address, made: { copy: 'done' } }).commands.groups).file,
+    ).toStrictEqual(['deleteText', 'deleteCopy'])
   })
 
   it('is still offered in a window that has not been told it', () => {
     const runs = runSupport()
-    runs.cannotRun('transcribe')
-    runs.cannotRun('proofread')
+    runs.cannotRun('downloadText')
     runs.cannotRun('deleteText')
+    runs.cannotRun('deleteCopy')
 
     expect(
-      getItemIds(createPalette(recording, [], {}, undefined, runs).commands.groups).file,
+      getItemIds(createPalette(address, [], {}, undefined, runs).commands.groups).file,
     ).toBeUndefined()
-    expect(getItemIds(createPalette(recording).commands.groups).file).toStrictEqual([
-      'transcribe',
-      'proofread',
+    expect(getItemIds(createPalette(address).commands.groups).file).toStrictEqual([
+      'downloadText',
       'deleteText',
+      'deleteCopy',
     ])
   })
 })
 
-describe('dropping the transcript of a recording', () => {
+describe('dropping the text of an address', () => {
   it('asks before the words go, and is nothing until the answer is given', () => {
-    const { commands } = createPalette(recording)
+    const { commands } = createPalette(address)
 
-    expect(commands.startCommand('deleteText', front(recording))).toBeNull()
+    expect(commands.startCommand('deleteText', front(address))).toBeNull()
     expect(commands.groups.value[0]?.id).toBe('asking')
     expect(commands.groups.value[0]?.items.map((one) => one.id)).toStrictEqual(['no', 'yes'])
   })
 
   // The answer that changes nothing is the one the keyboard opens on.
-  it('names the recording in the answer that takes the words away', () => {
-    const { commands } = createPalette(recording)
-    commands.startCommand('deleteText', front(recording))
+  it('names the address in the answer that takes the words away', () => {
+    const { commands } = createPalette(address)
+    commands.startCommand('deleteText', front(address))
 
     expect(commands.groups.value[0]?.items[0]?.title).toBe(words.keepsTranscript)
-    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.deletes} “${recording.title}”`)
+    expect(commands.groups.value[0]?.items[1]?.title).toBe(`${words.deletes} “${address.title}”`)
     expect(commands.groups.value[0]?.items[1]?.detail).toBe(words.deleted)
   })
 
-  it('carries the recording the tab in front holds once the answer is given', () => {
-    const { commands } = createPalette(recording)
-    commands.startCommand('deleteText', front(recording))
+  it('carries the address the tab in front holds once the answer is given', () => {
+    const { commands } = createPalette(address)
+    commands.startCommand('deleteText', front(address))
 
-    expect(commands.chooseItem('yes', 'yes')?.file).toBe('talks/Ants.mp3')
+    expect(commands.chooseItem('yes', 'yes')?.file).toBe(address.file)
   })
 
   it('does nothing and puts the step away where the answer keeps the words', () => {
-    const { commands } = createPalette(recording)
-    commands.startCommand('deleteText', front(recording))
+    const { commands } = createPalette(address)
+    commands.startCommand('deleteText', front(address))
 
     expect(commands.chooseItem('no', 'no')).toBeNull()
     expect(commands.groups.value[0]?.id).not.toBe('asking')

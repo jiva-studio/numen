@@ -16,7 +16,7 @@
 export type Artifact = string
 
 /** The artifacts the window itself registers, before any plugin adds its own. */
-export type BuiltInArtifact = 'transcript' | 'transcript.corrected' | 'article' | 'copy'
+export type BuiltInArtifact = 'transcript' | 'article' | 'copy'
 
 /**
  * One artifact the window knows: its name, the words each state is told in, and
@@ -75,11 +75,6 @@ export interface ArtifactProducer {
   createArtifact(path: string, of: Artifact): Promise<Outcome>
 }
 
-/** Asks for a recording's transcript to be put right. */
-export interface ArtifactCorrector {
-  correctArtifact(path: string): Promise<Outcome>
-}
-
 export interface ArtifactFetcher {
   fetchArtifact(path: string): Promise<Outcome>
 }
@@ -92,9 +87,4 @@ export interface ArtifactDeleter {
 
 /** Everything a caller asks of the runs, for a caller that asks all of it. */
 export interface ArtifactRunner
-  extends
-    ArtifactInspector,
-    ArtifactProducer,
-    ArtifactCorrector,
-    ArtifactFetcher,
-    ArtifactDeleter {}
+  extends ArtifactInspector, ArtifactProducer, ArtifactFetcher, ArtifactDeleter {}

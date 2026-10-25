@@ -25,7 +25,7 @@ test.describe('A recording', () => {
   }) => {
     await openWorkspace(page)
     const tab = await openVaultFile(page, 'assets', 'lecture.wav')
-    await runCommand(page, 'Transcribe', /^Transcribe/)
+    await runCommand(page, 'Recognise', /Audio\/Video Transcription/)
 
     await expect(tab.getByText(MOCK_TRANSCRIPT)).toBeVisible({ timeout: 30_000 })
   })

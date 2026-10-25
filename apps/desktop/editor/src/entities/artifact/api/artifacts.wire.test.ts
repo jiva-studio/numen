@@ -131,15 +131,6 @@ describe('beginning a run', () => {
   })
 })
 
-describe('putting a text right', () => {
-  it('requests the corrected transcript', async () => {
-    answerWith({ artifact: { state: 'STATE_QUEUED' } })
-
-    expect(await running.correctArtifact('Talk.mp3')).toMatchObject({ of: 'transcript.corrected' })
-    expect(request[0]).toEqual({ path: 'Talk.mp3', kind: 'ARTIFACT_KIND_TRANSCRIPT_CORRECTED' })
-  })
-})
-
 describe('asking an address afresh', () => {
   it('asks for the transcript of a file carrying one', async () => {
     answerWith({
