@@ -56,12 +56,13 @@ const nameId = computed(() => `settings-${props.at}`)
   border-block-end: none;
 }
 
+/* The name keeps its width beside a control of any width, and the control gives way. */
 .settings__label {
   display: flex;
   flex-direction: column;
   gap: var(--settings-label-gap);
   flex: 1 1 auto;
-  min-inline-size: 0;
+  min-inline-size: min(100%, 18rem);
 }
 
 .settings__name {
@@ -71,7 +72,7 @@ const nameId = computed(() => `settings-${props.at}`)
 
 .settings__value {
   display: flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
   min-inline-size: 0;
   align-items: center;
   justify-content: flex-end;

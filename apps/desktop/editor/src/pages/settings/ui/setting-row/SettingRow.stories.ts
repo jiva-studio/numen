@@ -131,15 +131,19 @@ export const WideControlBesideTheText: Story = {
   },
 }
 
-/** Under the text when there is not, and the text keeps its width. */
-export const WideControlUnderTheText: Story = {
+/** Beside the text where there is no room for it, narrowed, and the text keeps its width. */
+export const WideControlInANarrowRow: Story = {
   render: wideControl('26rem'),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
+    const row = canvasElement.querySelector('.settings__row')!.getBoundingClientRect()
     const name = canvas.getByText('Sample Agent: apiKey').getBoundingClientRect()
     const control = canvas.getByRole('textbox').getBoundingClientRect()
 
-    await expect(control.top).toBeGreaterThanOrEqual(name.bottom)
-    await expect(name.width).toBeGreaterThanOrEqual(18 * 16 - 1)
+    await expect(control.left).toBeGreaterThanOrEqual(name.right)
+    await expect(control.top).toBeLessThan(name.bottom)
+    await expect(control.right).toBeLessThanOrEqual(row.right + 1)
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
+    await expect(name.width).toBeGreaterThanOrEqual(18 * rem - 1)
   },
 }
