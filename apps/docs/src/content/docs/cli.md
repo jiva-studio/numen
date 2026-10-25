@@ -29,7 +29,7 @@ numen-cli search Research "entropy"
 | `numen-cli scan <vault> [--rebuild-index]` | bring the index up to date with a vault --rebuild-index reads every file again, forgets the vectors of every model but the one in use, and gives their space back |
 | `numen-cli recognise <vault> <file>` | recognise a scanned document with a model |
 | `numen-cli proofread <vault> <file>` | put a document's recognition right with a model |
-| `numen-cli transcribe <vault> <file> [--again]` | transcribe a recording with a model |
+| `numen-cli transcribe <vault> <file>` | transcribe a recording with the plugin that reads it |
 | `numen-cli import <vault> <note> [--again] [--copy]` | fetch what an address holds, and --copy the video itself |
 | `numen-cli search <vault> <query>` | full-text search within one vault |
 | `numen-cli links <vault> <note>` | what a note points at, and what points at it |

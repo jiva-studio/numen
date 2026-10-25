@@ -55,12 +55,6 @@ How a vault is made searchable.
 | `recognition.proofread.automatically` | yes or no | whether a text already written down is put right without anybody asking for it. |
 | `proofreading` |  | what puts a recognition right. Naming no profile here is naming no proofreader, and a recognition is used as it was read. |
 | `proofreading.profiles` |  |  |
-| `transcription` |  | how a recording is listened to: which models hear it, where they came from, and how the speech in it is found. |
-| `transcription.proofread` |  | names the profile a transcript is put right at. |
-| `transcription.proofread.with` | text | the profile, by the name the profiles carry it under. |
-| `transcription.proofread.automatically` | yes or no | whether a text already written down is put right without anybody asking for it. |
-| `transcribe_recordings` | yes or no | whether a recording the vault holds no transcript for is listened to without anybody asking. |
-| `transcribe_under_mb` | a number | how large a recording may be and still be listened to without anybody asking, in megabytes. |
 
 ### `agent`
 
