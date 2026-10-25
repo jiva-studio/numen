@@ -118,7 +118,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   - `keepAliveWhileVisible`: Keep alive while a tab displaying the plugin is open.
   - `memoryLimitBytes` (or `memoryLimitMB`): The resident memory the plugin process may hold before the host evicts it. A plugin with a backend declares it, and declares `idleTimeoutSeconds` too (`0` keeps it running). The host sets no CPU limit on a plugin process.
 - **`backend`**: `type` is `process` (the only backend type) and `entrypoint` is required.
-- **`frontend`**: `entrypoint` is required, `styles` is optional.
+- **`frontend`**: `entrypoint` is required, `styles` is optional. The window loads both from `/api/plugins/<id>/` and compiles nothing of a plugin into itself. A frontend bundle leaves `vue`, `@numen/plugin-sdk` and `@numen/ui` out and imports them from the paths `HOST_MODULES` in `@numen/plugin-sdk/host-modules` names (`/sdk/vue.js`, `/sdk/plugin-sdk.js`, `/sdk/ui.js`), where the window serves its own instances.
 - **`settings`**: Declarative settings schema automatically rendered in host settings and stored by the core. The host hands the settings to the plugin in `Configure`, once it is running and again on every change; they are not in its environment. A setting has a `key`, a `type` (`boolean`, `string`, `number`, `enum`, `select`, `range` or `agent`), a `title`, a `description` and a `default`; `enum` and `select` take `options`, `range` and `number` take `min`, `max` and `step`. Neither `storedSecrets` nor `aiConsent` may be a key: the host keeps both.
   - **`agent`**: which agent program answers the plugin's completions, and with which model. A plugin that holds `ai:complete` may declare one, with no `default`: the person chooses it in the plugin's settings page, from "Default (<the agent answering now>)" and the programs the agent plugins list, then from "Agent default" and the models that program lists in `GetAgentPrograms`. Its value is `{ "agent": "<program name>", "model": "<model id>" }`; an empty `agent` is the default of the settings (`ai.default`), an empty `model` the model `agent.<program>.model` names in the settings, else the program's own. The core stores it with the plugin's other settings, the settings window alone writes it, and the host routes by it: nothing in a request names an agent. The plugin is handed it in `Configure` like any setting, and reads nothing from it to route.
 - **`services`**: The services the plugin serves to the windows, by their full names (`numen.v1.CardsService`). A window that receives a call for one forwards it to the plugin with the token the plugin knows the host by, whole and unchanged, streams included; the host activates the plugin for the length of the call. A service the host serves itself is never forwarded.
@@ -253,20 +253,18 @@ packaged plugin: plugins/sample/dist/md.numen.sample-0.1.0.zip
    ```bash
    make create_plugin name=epub-reader template=reader
    ```
-2. **Build backend**:
+2. **Build, lint, test**: every plugin's `Makefile` answers the same four targets, `build`, `lint` (Go vet and golangci-lint, ESLint and the frontend's typecheck), `test` and `clean`, over the backend and the frontend it has. The root targets `plugins_build`, `plugins_lint`, `plugins_test` and `plugins_clean` run them in every directory under `plugins/` that holds a `manifest.json`.
    ```bash
    cd plugins/epub-reader
    make build
-   ```
-3. **Run unit tests**:
-   ```bash
+   make lint
    make test
    ```
-4. **Validate manifest**:
+3. **Validate manifest**:
    ```bash
    numen plugin validate .
    ```
-5. **Package for distribution**:
+4. **Package for distribution**:
    ```bash
    numen plugin package .
    ```

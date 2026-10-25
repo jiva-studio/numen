@@ -1,38 +1,23 @@
+# The four targets every plugin answers, whatever it is made of: a backend in Go, a frontend built
+# by Vite, or both.
 NAME := $(notdir $(patsubst %/,%,$(CURDIR)))
 EXE ?=
 ifeq ($(OS),Windows_NT)
 EXE := .exe
 endif
 
-.PHONY: all build backend_build frontend_build lint test clean
+.PHONY: build lint test clean
 
-all: build
-
-build: backend_build frontend_build
-
-backend_build:
-	@if [ -d backend ]; then \
-		mkdir -p bin && \
-		go build -o bin/$(NAME)$(EXE) ./backend ; \
-	fi
-
-frontend_build:
-	@if [ -f package.json ]; then \
-		npm run build ; \
-	elif [ -d frontend ]; then \
-		mkdir -p dist ; \
-		if [ -f frontend/styles.css ]; then \
-			cp frontend/styles.css dist/styles.css ; \
-		fi ; \
-	fi
+build:
+	@if [ -d backend ]; then mkdir -p bin && go build -ldflags="-s -w" -o bin/$(NAME)$(EXE) ./backend; fi
+	@if [ -f package.json ]; then npm run build; fi
 
 lint:
-	go vet ./...
-	golangci-lint run ./...
-	@if [ -f package.json ]; then npm run lint --if-present; fi
+	@if [ -f go.mod ]; then go vet ./... && golangci-lint run ./...; fi
+	@if [ -f package.json ]; then npm run lint && npm run typecheck; fi
 
 test:
-	go test ./...
+	@if [ -f go.mod ]; then go test ./...; fi
 	@if [ -f package.json ]; then npm test; fi
 
 clean:

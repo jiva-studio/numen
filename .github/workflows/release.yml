@@ -613,7 +613,7 @@ jobs:
         run: |
           make install INSTALL="npm ci"
           make interface
-          make plugins_frontend_build
+          make plugins_build
 
       # Explorer, the taskbar and Alt-Tab draw a program by the icon linked
       # into it.
@@ -732,7 +732,7 @@ jobs:
         run: |
           make install INSTALL="npm ci"
           make interface
-          make plugins_frontend_build
+          make plugins_build
 
       # Both architectures come off this one machine: the window links against
       # frameworks the SDK carries for each.

@@ -10,6 +10,7 @@ on:
       - "plugins/vitest.config.ts"
       - "plugins/eslint.config.js"
       - "plugins/vite.shared.ts"
+      - "plugins/*/tsconfig.json"
       - "plugins/*/manifest.json"
       - "plugins/.storybook/**"
       - "libs/ui/**"
@@ -35,6 +36,7 @@ on:
       - "plugins/vitest.config.ts"
       - "plugins/eslint.config.js"
       - "plugins/vite.shared.ts"
+      - "plugins/*/tsconfig.json"
       - "plugins/*/manifest.json"
       - "plugins/.storybook/**"
       - "libs/ui/**"
@@ -60,10 +62,11 @@ permissions:
   contents: read
 
 jobs:
-  # The frontends of every plugin under the one ESLint configuration in
-  # plugins, and in the Prettier style of the modules.
-  lint:
-    name: Plugin Lint
+  # The frontends of every plugin in the Prettier style of the modules. Each
+  # plugin's own lint, typecheck and tests run under make plugins_lint and
+  # make plugins_test in the backend workflow, where Go is set up beside Node.
+  format:
+    name: Plugin Format
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -80,37 +83,8 @@ jobs:
       - name: Install dependencies
         uses: ./.github/actions/install-node-modules
 
-      - name: Lint plugin frontends
-        working-directory: plugins
-        run: ../node_modules/.bin/eslint .
-
       - name: Check plugin formatting
-        working-directory: modules
         run: node_modules/.bin/prettier --check "plugins/**/*.{ts,vue,json,css,js}"
-
-  # Every plugin's own suite, under its own configuration. The make target
-  # builds the components first: a plugin reaches them through their build, as
-  # it does in the window.
-  tests:
-    name: Plugin Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install dependencies
-        uses: ./.github/actions/install-node-modules
-
-      - name: Run plugin tests
-        run: make plugins_frontend_test
 
   # The stories of every plugin, drawn in both engines the window is drawn in.
   stories:

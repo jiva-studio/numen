@@ -19,7 +19,8 @@ STORIES  := tools/ci-stories
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 PLUGINS  := plugins
-PLUGIN_NAMES := $(notdir $(patsubst %/,%,$(dir $(wildcard $(PLUGINS)/*/manifest.json))))
+# Every directory under plugins/ holding a manifest.json is a plugin.
+PLUGIN_DIRS := $(patsubst %/manifest.json,%,$(wildcard $(PLUGINS)/*/manifest.json))
 TESTS    := tests
 
 INSTALL  ?= npm install
@@ -62,38 +63,39 @@ desktop_modular: interface plugins_build ## build desktop application in modular
 	cd $(DESKTOP) && CGO_ENABLED=1 go build $(TAGS_FLAG) -o $(CURDIR)/numen ./cmd/numen
 	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
+# Each runs the target of that name in every plugin's own Makefile.
+define run_in_plugins
+	@set -e; for dir in $(PLUGIN_DIRS); do echo "$$dir"; $(MAKE) -C "$$dir" $(1); done
+endef
+
 .PHONY: plugins
-plugins: plugins_build ## build all native plugins
+plugins: plugins_build ## build every plugin
 
 .PHONY: plugins_build
-plugins_build: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))) ## build all native plugins
-
-.PHONY: plugins_frontend_build
-plugins_frontend_build: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))) ## build the frontend of every plugin
-
-.PHONY: plugins_frontend_lint
-plugins_frontend_lint: ## lint plugin frontend boundaries
-	cd $(PLUGINS) && ../node_modules/.bin/eslint .
+plugins_build: lib_ui_build ## build every plugin
+	$(call run_in_plugins,build)
 
 .PHONY: plugins_lint
-plugins_lint: plugins_frontend_lint $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))) ## lint all native plugins
+plugins_lint: lib_ui_build ## lint every plugin
+	$(call run_in_plugins,lint)
 
 .PHONY: plugins_test
-plugins_test: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))) ## run tests across all plugins
+plugins_test: lib_ui_build ## test every plugin
+	$(call run_in_plugins,test)
 
-.PHONY: plugins_frontend_test
-plugins_frontend_test: lib_ui_build ## run the frontend tests of every plugin
-	@set -e; for dir in $(dir $(wildcard $(PLUGINS)/*/package.json)); do \
-		echo "$$dir"; \
-		(cd "$$dir" && npm test); \
-	done
+.PHONY: plugins_clean
+plugins_clean: ## remove what every plugin built
+	$(call run_in_plugins,clean)
 
 .PHONY: plugins_stories
 plugins_stories: lib_ui_build ## draw the stories of every plugin in Chromium and WebKit
 	cd $(PLUGINS) && npx vitest run
 
 .PHONY: plugins_package
-plugins_package: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))) ## package all plugins into zip archives
+plugins_package: plugins_build ## package every plugin into a zip archive
+	@set -e; for dir in $(PLUGIN_DIRS); do \
+		(cd $(DESKTOP) && go run ./cmd/numen-plugin package $(CURDIR)/$$dir); \
+	done
 
 .PHONY: flashcards
 flashcards: app_desktop_flashcards_bin ## build flashcards standalone window
@@ -431,43 +433,3 @@ check_all: ## run full architectural and quality suites across all modules
 	node $(LAYERS)/check.mjs
 	node $(QUALITY)/check.mjs $(opts)
 
-# ---------------------------------- Plugins -----------------------------------
-.PHONY: $(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _build,$(PLUGIN_NAMES))): plugin_%_build: plugin_%_backend_build plugin_%_frontend_build
-
-.PHONY: $(addprefix plugin_,$(addsuffix _backend_build,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _backend_build,$(PLUGIN_NAMES))): plugin_%_backend_build:
-	@if [ -d $(PLUGINS)/$*/backend ]; then \
-		mkdir -p $(PLUGINS)/$*/bin && \
-		cd $(PLUGINS)/$* && go build -ldflags="-s -w" -o bin/$*$(EXE) ./backend ; \
-	fi
-
-.PHONY: $(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _frontend_build,$(PLUGIN_NAMES))): plugin_%_frontend_build:
-	@if [ -f $(PLUGINS)/$*/package.json ]; then \
-		cd $(PLUGINS)/$* && npm run build ; \
-	elif [ -d $(PLUGINS)/$*/frontend ]; then \
-		mkdir -p $(PLUGINS)/$*/dist ; \
-		if [ -f $(PLUGINS)/$*/frontend/styles.css ]; then \
-			cp $(PLUGINS)/$*/frontend/styles.css $(PLUGINS)/$*/dist/styles.css ; \
-		fi ; \
-	fi
-
-.PHONY: $(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _lint,$(PLUGIN_NAMES))): plugin_%_lint:
-	$(MAKE) -C $(PLUGINS)/$* lint
-
-.PHONY: $(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _test,$(PLUGIN_NAMES))): plugin_%_test:
-	$(MAKE) -C $(PLUGINS)/$* test
-
-.PHONY: $(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _package,$(PLUGIN_NAMES))): plugin_%_package: plugin_%_build
-	cd $(DESKTOP) && go run ./cmd/numen-plugin package $(CURDIR)/$(PLUGINS)/$*
-
-.PHONY: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES)))
-$(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))): plugin_%_clean:
-	rm -rf $(PLUGINS)/$*/bin $(PLUGINS)/$*/dist
-
-.PHONY: plugins_clean
-plugins_clean: $(addprefix plugin_,$(addsuffix _clean,$(PLUGIN_NAMES))) ## clean all plugin artifacts

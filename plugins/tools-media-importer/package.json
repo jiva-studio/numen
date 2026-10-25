@@ -8,6 +8,8 @@
   "types": "./frontend/index.ts",
   "scripts": {
     "build": "vite build",
+    "lint": "eslint .",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "test": "vitest run"
   },
   "dependencies": {

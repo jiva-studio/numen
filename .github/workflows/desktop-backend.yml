@@ -98,9 +98,25 @@ jobs:
           working-directory: apps/desktop
           args: --timeout 15m
 
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install Node dependencies
+        uses: ./.github/actions/install-node-modules
+
       - name: Run plugin linters
         working-directory: .
         run: make plugins_lint
+
+      - name: Validate each plugin's manifest with the plugin CLI
+        working-directory: apps/desktop
+        run: |
+          for dir in ../../plugins/*/; do
+            if [ -f "$dir/manifest.json" ]; then go run ./cmd/numen-plugin validate "$dir"; fi
+          done
 
       # The vulnerability list is kept elsewhere and read at the time of the
       # run, so this step can find something on a branch that changed nothing.
