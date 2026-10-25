@@ -1,6 +1,6 @@
 /**
  * The one sound the window makes, through a single element that belongs to no
- * tab and stands in no page, so a tab moved between panes plays on without a
+ * tab and is not in the page, so a tab moved between panes keeps playing without a
  * gap.
  *
  * One sound plays at a time: a recording asked to play takes it from whatever
@@ -29,7 +29,7 @@ export interface Player {
   /** What is loaded now, and nothing where the window is silent. */
   readonly url: Readonly<Ref<string>>
   /** Where it stands, in milliseconds. */
-  readonly at: Readonly<Ref<number>>
+  readonly position: Readonly<Ref<number>>
   /** How long it runs, in milliseconds, and zero until the recording says. */
   readonly duration: Readonly<Ref<number>>
   readonly isPlaying: Readonly<Ref<boolean>>
@@ -52,7 +52,7 @@ const createAudioElement: AudioFactory = () => new Audio()
 function bindAudioListeners(
   audio: HTMLAudioElement,
   state: {
-    at: Ref<number>
+    position: Ref<number>
     duration: Ref<number>
     isPlaying: Ref<boolean>
     error: Ref<string>
@@ -60,10 +60,10 @@ function bindAudioListeners(
 ) {
   audio.preload = 'metadata'
   audio.addEventListener('timeupdate', () => {
-    state.at.value = Math.round(audio.currentTime * 1000)
+    state.position.value = Math.round(audio.currentTime * 1000)
   })
   audio.addEventListener('seeked', () => {
-    state.at.value = Math.round(audio.currentTime * 1000)
+    state.position.value = Math.round(audio.currentTime * 1000)
   })
   audio.addEventListener('durationchange', () => {
     const runs = audio.duration
@@ -83,7 +83,7 @@ function bindAudioListeners(
  */
 export function createAudioPlayer(create: AudioFactory = createAudioElement): Player {
   const url = ref('')
-  const at = ref(0)
+  const position = ref(0)
   const duration = ref(0)
   const isPlaying = ref(false)
   const error = ref('')
@@ -101,7 +101,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       return null
     }
     element = audio
-    bindAudioListeners(audio, { at, duration, isPlaying, error })
+    bindAudioListeners(audio, { position, duration, isPlaying, error })
     return audio
   }
 
@@ -112,7 +112,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     if (url.value === next) return audio
     audio.src = next
     url.value = next
-    at.value = 0
+    position.value = 0
     duration.value = 0
     isPlaying.value = false
     error.value = ''
@@ -121,7 +121,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
 
   return {
     url: readonly(url),
-    at: readonly(at),
+    position: readonly(position),
     duration: readonly(duration),
     isPlaying: readonly(isPlaying),
     error: readonly(error),
@@ -147,7 +147,7 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       const audio = load(url)
       if (!audio) return
       const to = Math.max(0, Math.round(ms))
-      at.value = to
+      position.value = to
       audio.currentTime = to / 1000
     },
   }
@@ -178,8 +178,8 @@ export function createMediaTypeProbe(answers: MediaTypeProbe = probeWindow): Med
   const answersByType = new Map<string, boolean>()
   return (type) => {
     if (!type) return false
-    const known = answersByType.get(type)
-    if (known !== undefined) return known
+    const answer = answersByType.get(type)
+    if (answer !== undefined) return answer
     const can = answers(type)
     answersByType.set(type, can)
     return can

@@ -31,7 +31,7 @@ const { now, runs, isPlaying, isPlayable } = tab.playback
 const { isProofreadable, isDeletable } = tab.offers
 
 /** What the menu offers over this recording: each item only where it applies. */
-const offered = computed(() => [
+const menuItems = computed(() => [
   ...(isProofreadable.value ? [{ id: PROOFREAD, text: words.proofread }] : []),
   ...(isDeletable.value ? [{ id: DELETE_TEXT, text: words.deleteText }] : []),
 ])
@@ -69,13 +69,13 @@ function onPause() {
   tab.playback.controls.pause()
 }
 
-function onSeek(at: number) {
-  tab.playback.controls.go(at)
+function onSeek(ms: number) {
+  tab.playback.controls.go(ms)
 }
 </script>
 
 <template>
-  <MediaLayout :state="tab" :offered="offered" @choose="onChoose">
+  <MediaLayout :state="tab" :menu-items="menuItems" @choose="onChoose">
     <template #player>
       <Player
         v-if="isPlayable"

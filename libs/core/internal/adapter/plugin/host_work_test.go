@@ -57,7 +57,7 @@ func (w workingHost) checkCleared(t *testing.T) {
 	plugintest.WaitUntil(t, "the stopped plugin's tasks are gone", func() bool { return len(w.tasks.List()) == 0 })
 }
 
-func TestADisabledPluginsTasksAreCleared(t *testing.T) {
+func TestDisabledPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
 	if err := w.host.SetPluginEnabled(t.Context(), workingPlugin, false); err != nil {
@@ -66,7 +66,7 @@ func TestADisabledPluginsTasksAreCleared(t *testing.T) {
 	w.checkCleared(t)
 }
 
-func TestACrashedPluginsTasksAreCleared(t *testing.T) {
+func TestCrashedPluginTasksAreCleared(t *testing.T) {
 	w := newWorkingHost(t)
 
 	plugintest.KillProcess(t, w.process)

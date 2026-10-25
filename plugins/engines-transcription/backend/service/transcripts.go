@@ -66,16 +66,16 @@ func (s transcriptServer) WriteTranscript(
 		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("%s: %w", path, errNoLiveText))
 	}
 	cues := readWireCues(req.Msg.GetCues())
-	put := host.TextPut{Path: path, Format: domain.TextFormatTimed, Hash: hashCues(cues)}
+	request := host.TextPut{Path: path, Format: domain.TextFormatTimed, Hash: hashCues(cues)}
 	if version.PluginID == PluginID && isEditKey(version.Key) {
-		put.Key, put.Input, put.InputHash = version.Key, version.Input, version.InputHash
+		request.Key, request.Input, request.InputHash = version.Key, version.Input, version.InputHash
 	} else {
-		put.Key, put.Input, put.InputHash = getEditKey(version.GetID()), version.GetID(), version.Hash
+		request.Key, request.Input, request.InputHash = getEditKey(version.GetID()), version.GetID(), version.Hash
 	}
-	if err := (transcripts{store: s.stores}).write(ctx, put.Key, cues); err != nil {
+	if err := (transcripts{store: s.stores}).write(ctx, request.Key, cues); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	if _, err := s.texts.PutVersion(ctx, put); err != nil {
+	if _, err := s.texts.PutVersion(ctx, request); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 	return connect.NewResponse(&numenv1.WriteTranscriptResponse{Cues: writeWireCues(cues)}), nil

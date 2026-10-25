@@ -15,29 +15,29 @@ const CUES: readonly Cue[] = [
 ]
 
 /** The words have been still long enough to be written, and were, if anything was. */
-const waitForStill = () => new Promise((done) => setTimeout(done, 20))
+const waitForStill = () => new Promise((resolve) => setTimeout(resolve, 20))
 
 describe('a draft told nothing more is typed here', () => {
   it('writes nothing still waiting out its stillness', async () => {
-    const written: (readonly Cue[])[] = []
+    const writes: (readonly Cue[])[] = []
     const draft = useTranscriptDraft({
       cues: ref(CUES),
       isEditable: ref(true),
       error: ref(''),
-      quiet: 5,
+      idleMs: 5,
       isOpen: () => true,
-      write: async (next) => void written.push(next),
+      write: async (next) => void writes.push(next),
     })
 
     draft.setProse('The first thing meant.\nThe second thing said.')
     draft.stop()
     await waitForStill()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 })
 
-const refusal = new Error('disk full')
+const failure = new Error('disk full')
 const TEST_WRITE_IDLE_MS = 100
 const EDITED = 'The first thing meant.\nThe second thing said.'
 const EDITED_AGAIN = 'The first thing meant twice.\nThe second thing said.'
@@ -65,21 +65,21 @@ const createDraft = (
   const cues = ref<readonly Cue[]>(CUES)
   const isEditable = ref(how.isEditable ?? true)
   const error = ref(how.error ?? '')
-  const written: (readonly Cue[])[] = []
+  const writes: (readonly Cue[])[] = []
   const draft = useTranscriptDraft({
     cues,
     isEditable,
     error,
-    quiet: TEST_WRITE_IDLE_MS,
+    idleMs: TEST_WRITE_IDLE_MS,
     isOpen: () => state.open,
     write:
       how.write ??
       (async (next) => {
-        written.push(next)
+        writes.push(next)
       }),
   })
   draft.setText(getText(CUES))
-  return { draft, state, cues, isEditable, error, written }
+  return { draft, state, cues, isEditable, error, writes }
 }
 
 describe('a draft whose words are typed over', () => {
@@ -91,30 +91,30 @@ describe('a draft whose words are typed over', () => {
   })
 
   it('writes the edited words once the typing has been still', async () => {
-    const { draft, cues, written } = createDraft()
+    const { draft, cues, writes } = createDraft()
 
     draft.setProse(EDITED)
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 1)
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
     await vi.advanceTimersByTimeAsync(1)
 
-    expect(written).toHaveLength(1)
-    expect(written[0]![0]!.text).toBe('The first thing meant.')
-    expect(cues.value).toStrictEqual(written[0])
+    expect(writes).toHaveLength(1)
+    expect(writes[0]![0]!.text).toBe('The first thing meant.')
+    expect(cues.value).toStrictEqual(writes[0])
   })
 
   it('waits for the last of the typing, and writes once', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     draft.setProse(EDITED)
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 1)
     draft.setProse(EDITED_AGAIN)
     await vi.advanceTimersByTimeAsync(2)
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
-    expect(written).toHaveLength(1)
-    expect(written[0]![0]!.text).toBe('The first thing meant twice.')
+    expect(writes).toHaveLength(1)
+    expect(writes[0]![0]!.text).toBe('The first thing meant twice.')
   })
 
   it('keeps the view from following until the typing has been still', async () => {
@@ -133,7 +133,7 @@ describe('a draft whose words are typed over', () => {
   })
 
   it('takes no typing once the tab is closed', async () => {
-    const { draft, state, written } = createDraft()
+    const { draft, state, writes } = createDraft()
     state.open = false
 
     draft.setProse(EDITED)
@@ -141,54 +141,54 @@ describe('a draft whose words are typed over', () => {
 
     expect(draft.prose.value).toBe(getText(CUES))
     expect(draft.typing.value).toBe(false)
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('takes the same words typed again as no typing at all', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     draft.setProse(getText(CUES))
     expect(draft.typing.value).toBe(false)
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('writes nothing for words that read as the recording has them', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     draft.setProse(EDITED)
     draft.setProse(getText(CUES))
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('writes nothing where there was no typing', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('writes nothing while the transcript may not be written over', async () => {
-    const { draft, written } = createDraft({ isEditable: false })
+    const { draft, writes } = createDraft({ isEditable: false })
 
     draft.setProse(EDITED)
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('writes nothing once the tab is closed', async () => {
-    const { draft, state, written } = createDraft()
+    const { draft, state, writes } = createDraft()
 
     draft.setProse(EDITED)
     state.open = false
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('lets the words on screen be replaced by the recording until they are typed over', () => {
@@ -302,10 +302,10 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     const first = draft.keep()
-    pending.answers[0]!.reject(refusal)
+    pending.answers[0]!.reject(failure)
     await first
 
-    expect(error.value).toBe(formatErrorMessage(refusal))
+    expect(error.value).toBe(formatErrorMessage(failure))
     expect(cues.value).toStrictEqual(CUES)
     draft.setText('Heard again.')
     expect(draft.prose.value).toBe(EDITED)
@@ -323,7 +323,7 @@ describe('a draft whose words are typed over', () => {
 
     draft.setProse(EDITED)
     const first = draft.keep()
-    pending.answers[0]!.reject(refusal)
+    pending.answers[0]!.reject(failure)
     await first
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS * 3)
 
@@ -337,7 +337,7 @@ describe('a draft whose words are typed over', () => {
     draft.setProse(EDITED)
     const first = draft.keep()
     state.open = false
-    pending.answers[0]!.reject(refusal)
+    pending.answers[0]!.reject(failure)
     await first
     state.open = true
     draft.setText('Heard again.')
@@ -347,14 +347,14 @@ describe('a draft whose words are typed over', () => {
   })
 
   it('drops an edit waiting to be written', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     draft.setProse(EDITED)
     draft.drop()
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
     await draft.keep()
 
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
     draft.setText('Heard again.')
     expect(draft.prose.value).toBe('Heard again.')
   })
@@ -369,7 +369,7 @@ describe('a draft whose words are typed over', () => {
     await vi.advanceTimersByTimeAsync(10)
     draft.drop()
     await vi.advanceTimersByTimeAsync(10)
-    pending.answers[0]!.reject(refusal)
+    pending.answers[0]!.reject(failure)
     await first
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS - 15)
 
@@ -377,14 +377,14 @@ describe('a draft whose words are typed over', () => {
   })
 
   it('takes the words off the screen and writes no more when stopped', async () => {
-    const { draft, written } = createDraft()
+    const { draft, writes } = createDraft()
 
     draft.setProse(EDITED)
     draft.stop()
     await vi.advanceTimersByTimeAsync(TEST_WRITE_IDLE_MS)
 
     expect(draft.prose.value).toBe('')
-    expect(written).toStrictEqual([])
+    expect(writes).toStrictEqual([])
   })
 
   it('leaves the view where it was when stopped', async () => {

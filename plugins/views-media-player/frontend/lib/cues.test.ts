@@ -2,7 +2,7 @@
  * The words as they now read, back against the milliseconds they were said in.
  *
  * The application refuses a transcript whose cues run backwards, overlap, or
- * end before they begin, so every answer here is held to that as well as to
+ * end before they begin, so every result here is checked for that as well as for
  * the times it works out.
  */
 import { describe, expect, it } from 'vitest'
@@ -16,17 +16,17 @@ const CUES: readonly Cue[] = [
 
 /** Cues run forward, none begins before the one before it ends. */
 const isOrdered = (cues: readonly Cue[]) => {
-  for (let at = 0; at < cues.length; at++) {
-    const one = cues[at]!
+  for (let index = 0; index < cues.length; index++) {
+    const one = cues[index]!
     expect(one.from).toBeLessThanOrEqual(one.to)
     expect(Number.isInteger(one.from)).toBe(true)
     expect(Number.isInteger(one.to)).toBe(true)
-    if (at > 0) expect(one.from).toBeGreaterThanOrEqual(cues[at - 1]!.to)
+    if (index > 0) expect(one.from).toBeGreaterThanOrEqual(cues[index - 1]!.to)
   }
   return cues
 }
 
-/** The words as they now read, held to what the application will take. */
+/** applyCues, with the result checked for cue order. */
 const applyText = (was: readonly Cue[], text: string) => isOrdered(applyCues(was, text))
 
 describe('the words as they were left', () => {
@@ -42,32 +42,32 @@ describe('the words as they were left', () => {
 })
 
 describe('a line whose words changed', () => {
-  it('keeps the moment it was said at', () => {
-    const kept = applyText(
+  it('keeps the times of an edited line', () => {
+    const result = applyText(
       CUES,
       'A bell above the door.\nRain on the awning.\nSomeone counting change.',
     )
 
-    expect(kept).toStrictEqual([
+    expect(result).toStrictEqual([
       { text: 'A bell above the door.', from: 1_000, to: 3_000 },
       CUES[1],
       CUES[2],
     ])
   })
 
-  it('keeps it wherever the line stands', () => {
-    const kept = applyText(
+  it('keeps the times of an edited line in any position', () => {
+    const result = applyText(
       CUES,
       'A bell over the door.\nRain on the roof.\nSomeone counting change.',
     )
 
-    expect(kept[1]).toStrictEqual({ text: 'Rain on the roof.', from: 3_000, to: 6_000 })
+    expect(result[1]).toStrictEqual({ text: 'Rain on the roof.', from: 3_000, to: 6_000 })
   })
 
   it('keeps every one of them where they all changed', () => {
-    const kept = applyText(CUES, 'One.\nTwo.\nThree.')
+    const result = applyText(CUES, 'One.\nTwo.\nThree.')
 
-    expect(kept).toStrictEqual([
+    expect(result).toStrictEqual([
       { text: 'One.', from: 1_000, to: 3_000 },
       { text: 'Two.', from: 3_000, to: 6_000 },
       { text: 'Three.', from: 6_000, to: 10_000 },
@@ -77,24 +77,24 @@ describe('a line whose words changed', () => {
 
 describe('lines joined into one', () => {
   it('run from the first of them to the last, where two are joined', () => {
-    const kept = applyText(
+    const result = applyText(
       CUES,
       'A bell over the door. Rain on the awning.\nSomeone counting change.',
     )
 
-    expect(kept).toStrictEqual([
+    expect(result).toStrictEqual([
       { text: 'A bell over the door. Rain on the awning.', from: 1_000, to: 6_000 },
       CUES[2],
     ])
   })
 
   it('run from the first to the last, where three are joined', () => {
-    const kept = applyText(
+    const result = applyText(
       CUES,
       'A bell over the door. Rain on the awning. Someone counting change.',
     )
 
-    expect(kept).toStrictEqual([
+    expect(result).toStrictEqual([
       {
         text: 'A bell over the door. Rain on the awning. Someone counting change.',
         from: 1_000,
@@ -104,9 +104,9 @@ describe('lines joined into one', () => {
   })
 
   it('run from the first to the last where the joined words were changed too', () => {
-    const kept = applyText(CUES, 'A bell, and rain.\nSomeone counting change.')
+    const result = applyText(CUES, 'A bell, and rain.\nSomeone counting change.')
 
-    expect(kept[0]).toStrictEqual({ text: 'A bell, and rain.', from: 1_000, to: 6_000 })
+    expect(result[0]).toStrictEqual({ text: 'A bell, and rain.', from: 1_000, to: 6_000 })
   })
 })
 
@@ -147,16 +147,16 @@ describe('a line split in two', () => {
   })
 
   it('divides the span of the line it fell in and leaves the others alone', () => {
-    const kept = applyText(
+    const result = applyText(
       CUES,
       'A bell over the door.\nRain on\n the awning.\nSomeone counting change.',
     )
 
-    expect(kept[0]).toStrictEqual(CUES[0])
-    expect(kept[1]!.from).toBe(3_000)
-    expect(kept[2]!.to).toBe(6_000)
-    expect(kept[1]!.to).toBe(kept[2]!.from)
-    expect(kept[3]).toStrictEqual(CUES[2])
+    expect(result[0]).toStrictEqual(CUES[0])
+    expect(result[1]!.from).toBe(3_000)
+    expect(result[2]!.to).toBe(6_000)
+    expect(result[1]!.to).toBe(result[2]!.from)
+    expect(result[3]).toStrictEqual(CUES[2])
   })
 
   it('divides it in three where two splits fell in it', () => {
@@ -198,40 +198,40 @@ describe('a transcript deleted entirely', () => {
     expect(applyText(CUES, '')).toStrictEqual([])
   })
 
-  it('holds none where it held one', () => {
+  it('drops a cue whose line is deleted', () => {
     expect(applyText([CUES[0]!], '')).toStrictEqual([])
   })
 })
 
 describe('a line typed where no cue stood', () => {
   it('takes an empty span at the end of the words before it', () => {
-    const kept = applyText(CUES, `${getText(CUES)}\nAnd the door again.`)
+    const result = applyText(CUES, `${getText(CUES)}\nAnd the door again.`)
 
-    expect(kept[3]).toStrictEqual({ text: 'And the door again.', from: 10_000, to: 10_000 })
+    expect(result[3]).toStrictEqual({ text: 'And the door again.', from: 10_000, to: 10_000 })
   })
 
   it('takes an empty span at the start of the words after it', () => {
-    const kept = applyText(CUES, `A first thought.\n${getText(CUES)}`)
+    const result = applyText(CUES, `A first thought.\n${getText(CUES)}`)
 
-    expect(kept[0]).toStrictEqual({ text: 'A first thought.', from: 1_000, to: 1_000 })
+    expect(result[0]).toStrictEqual({ text: 'A first thought.', from: 1_000, to: 1_000 })
   })
 
   it('takes an empty span between the words either side of it', () => {
-    const kept = applyText(
+    const result = applyText(
       CUES,
       'A bell over the door.\nA thought.\nRain on the awning.\nSomeone counting change.',
     )
 
-    expect(kept[1]).toStrictEqual({ text: 'A thought.', from: 3_000, to: 3_000 })
+    expect(result[1]).toStrictEqual({ text: 'A thought.', from: 3_000, to: 3_000 })
   })
 
-  it('is all there is where the recording held no words', () => {
+  it('returns the typed lines for a recording with no cues', () => {
     expect(applyText([], 'A thought.')).toStrictEqual([{ text: 'A thought.', from: 0, to: 0 }])
   })
 })
 
 describe('a cue that spans no time at all', () => {
-  it('gives both halves of a split the moment it stands at', () => {
+  it('gives both halves of a split cue its single moment', () => {
     const was: readonly Cue[] = [{ text: 'abcd', from: 5_000, to: 5_000 }]
 
     expect(applyText(was, 'ab\ncd')).toStrictEqual([
@@ -254,9 +254,9 @@ describe('a cue that spans no time at all', () => {
 
 describe('a line of nothing but spaces', () => {
   it('is a cue like any other, and is not dropped', () => {
-    const kept = applyText(CUES, 'A bell over the door.\n   \nSomeone counting change.')
+    const result = applyText(CUES, 'A bell over the door.\n   \nSomeone counting change.')
 
-    expect(kept).toStrictEqual([CUES[0], { text: '   ', from: 3_000, to: 6_000 }, CUES[2]])
+    expect(result).toStrictEqual([CUES[0], { text: '   ', from: 3_000, to: 6_000 }, CUES[2]])
   })
 })
 
@@ -312,14 +312,14 @@ describe('every line on screen', () => {
   })
 })
 
-describe('the cue being said at a millisecond', () => {
+describe('findCueAt', () => {
   it('is the one whose span holds it', () => {
     expect(findCueAt(CUES, 1_000)).toBe(0)
     expect(findCueAt(CUES, 4_500)).toBe(1)
     expect(findCueAt(CUES, 6_000)).toBe(2)
   })
 
-  it('is the last one said where a silence stands there', () => {
+  it('returns the previous cue during a silence', () => {
     expect(findCueAt(CUES, 10_500)).toBe(2)
   })
 
@@ -338,7 +338,7 @@ describe('cues that differ only in how many there are', () => {
 
 describe('cues that differ only in where one ends', () => {
   it('are not the same words', () => {
-    const later = CUES.map((cue, at) => (at === 1 ? { ...cue, to: cue.to + 1 } : cue))
+    const later = CUES.map((cue, index) => (index === 1 ? { ...cue, to: cue.to + 1 } : cue))
 
     expect(isSame(CUES, later)).toBe(false)
   })

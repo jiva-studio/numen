@@ -28,7 +28,7 @@ const mountTab = (
       path: 'talks/Ants.mp3',
       state,
       recordings,
-      how: { through: player, plays: () => isPlayable },
+      how: { audioPlayer: player, plays: () => isPlayable },
     },
     attachTo: document.body,
   })
@@ -98,7 +98,7 @@ describe('a recording tab', () => {
     tab.unmount()
   })
 
-  it('plays from the cue a search hit stands in', async () => {
+  it('seeks to the cue of a search hit span', async () => {
     const setup = createRecordings()
     setup.state.cueTimes.set(22, 83_000)
     const { tab, seeks, state } = mountTab(setup.recordings)

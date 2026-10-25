@@ -4,7 +4,7 @@ import { createWorkWatcher, type TaskStream } from './work'
 
 /** A stream of task lists a test pushes, and how many times it was opened and closed. */
 function createStream() {
-  const lists: (readonly { about: string }[])[] = []
+  const lists: (readonly { id: string; about: string }[])[] = []
   let wake: (() => void) | null = null
   const counts = { opened: 0, aborted: 0 }
   const stream: TaskStream = async function* (signal) {
@@ -22,32 +22,46 @@ function createStream() {
       await new Promise<void>((done) => (wake = done))
     }
   }
-  const push = (list: readonly { about: string }[]) => {
+  const push = (list: readonly { id: string; about: string }[]) => {
     lists.push(list)
     wake?.()
   }
   return { stream, push, counts }
 }
 
-const flush = () => new Promise((done) => setTimeout(done, 0))
+const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
 describe('a watcher of work', () => {
-  it('tells a file it is being worked on, and once more when the work ends', async () => {
+  it('reports work on a file when it starts and when it ends', async () => {
     const { stream, push } = createStream()
-    const told: boolean[] = []
+    const changes: boolean[] = []
     const watcher = createWorkWatcher(stream)
-    watcher.watch('a.wav', (isWorking) => told.push(isWorking))
+    watcher.watch('a.wav', (isWorking) => changes.push(isWorking))
 
-    push([{ about: 'b.wav' }])
+    push([{ id: 'plugin:p:t', about: 'b.wav' }])
     await flush()
-    push([{ about: 'a.wav' }])
+    push([{ id: 'plugin:p:t', about: 'a.wav' }])
     await flush()
-    push([{ about: 'a.wav' }, { about: 'b.wav' }])
+    push([
+      { id: 'plugin:p:t', about: 'a.wav' },
+      { id: 'plugin:p:t', about: 'b.wav' },
+    ])
     await flush()
     push([])
     await flush()
 
-    expect(told).toStrictEqual([true, true, false])
+    expect(changes).toStrictEqual([true, true, false])
+  })
+
+  it('ignores a task the core lists about the file itself', async () => {
+    const { stream, push } = createStream()
+    const changes: boolean[] = []
+    createWorkWatcher(stream).watch('a.wav', (isWorking) => changes.push(isWorking))
+
+    push([{ id: 'making the vectors', about: 'a.wav' }])
+    await flush()
+
+    expect(changes).toStrictEqual([])
   })
 
   it('opens one stream for every listener, and closes it when the last stops listening', async () => {

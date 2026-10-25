@@ -7,7 +7,7 @@
  * span out where the split fell in its characters.
  */
 
-/** One span of speech: what was said, and the milliseconds it covers. */
+/** One cue: its text and the milliseconds it covers. */
 export interface Cue {
   readonly text: string
   readonly from: number
@@ -19,8 +19,8 @@ export interface Cue {
  * stands there. Nothing until the first cue begins.
  */
 export const findCueAt = (cues: readonly Cue[], ms: number): number => {
-  for (let at = cues.length - 1; at >= 0; at--) {
-    if (cues[at]!.from <= ms) return at
+  for (let index = cues.length - 1; index >= 0; index--) {
+    if (cues[index]!.from <= ms) return index
   }
   return -1
 }
@@ -31,7 +31,10 @@ export const getText = (cues: readonly Cue[]): string => cues.map((cue) => cue.t
 /** Whether two runs of cues say the same words at the same moments. */
 export const isSame = (a: readonly Cue[], b: readonly Cue[]): boolean =>
   a.length === b.length &&
-  a.every((cue, at) => cue.text === b[at]!.text && cue.from === b[at]!.from && cue.to === b[at]!.to)
+  a.every(
+    (cue, index) =>
+      cue.text === b[index]!.text && cue.from === b[index]!.from && cue.to === b[index]!.to,
+  )
 
 /**
  * Where the lines of `text` fall in the cues they were edited from: one cue
@@ -67,7 +70,7 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const headCues = was.slice(0, head)
   const rest = was.slice(was.length - tail)
   const old = was.slice(head, was.length - tail)
-  const fresh = lines.slice(head, lines.length - tail)
+  const newLines = lines.slice(head, lines.length - tail)
 
   // Lines typed where no cue stood take an empty span at the boundary they
   // were typed on.
@@ -77,9 +80,9 @@ export const spanCues = (was: readonly Cue[], text: string): readonly Cue[] => {
   const end = old.length ? old[old.length - 1]!.to : start
 
   const middle =
-    old.length === fresh.length
-      ? fresh.map((one, at) => ({ text: one, from: old[at]!.from, to: old[at]!.to }))
-      : spread(fresh, start, end)
+    old.length === newLines.length
+      ? newLines.map((one, index) => ({ text: one, from: old[index]!.from, to: old[index]!.to }))
+      : spread(newLines, start, end)
 
   return [...headCues, ...middle, ...rest]
 }
@@ -99,17 +102,17 @@ const spread = (texts: readonly string[], start: number, end: number): Cue[] => 
   const all = texts.reduce((sum, one) => sum + one.length, 0)
   const cues: Cue[] = []
   let from = start
-  let seen = 0
-  for (let at = 0; at < texts.length; at++) {
-    const text = texts[at]!
-    seen += text.length
-    const last = at === texts.length - 1
+  let charCount = 0
+  for (let index = 0; index < texts.length; index++) {
+    const text = texts[index]!
+    charCount += text.length
+    const last = index === texts.length - 1
     let to = end
     if (!last) {
       to =
         all === 0
           ? from
-          : Math.min(end, Math.max(from, start + Math.round(((end - start) * seen) / all)))
+          : Math.min(end, Math.max(from, start + Math.round(((end - start) * charCount) / all)))
     }
     cues.push({ text, from, to })
     from = to

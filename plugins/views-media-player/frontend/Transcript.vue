@@ -92,7 +92,7 @@ function onSave() {
   min-block-size: 0;
 }
 
-/* With nothing here, what a person can ask for stands in the middle of the room the text would have. */
+/* An empty transcript centres its note or its Transcribe button. */
 .transcript__silence {
   display: flex;
   flex-direction: column;

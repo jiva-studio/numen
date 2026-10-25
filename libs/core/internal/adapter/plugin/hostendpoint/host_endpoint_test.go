@@ -34,7 +34,7 @@ type callers struct {
 	vault     pluginport.PluginVault
 	texts     pluginport.PluginTexts
 	work      pluginport.PluginWork
-	held      map[string]int
+	acquired  map[string]int
 	releases  chan string
 }
 
@@ -74,25 +74,25 @@ func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work
 func (c *callers) Acquire(pluginID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	if c.held == nil {
-		c.held = map[string]int{}
+	if c.acquired == nil {
+		c.acquired = map[string]int{}
 	}
-	c.held[pluginID]++
+	c.acquired[pluginID]++
 }
 
 func (c *callers) Release(pluginID string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	c.held[pluginID]--
+	c.acquired[pluginID]--
 	if c.releases != nil {
 		c.releases <- pluginID
 	}
 }
 
-func (c *callers) getHeld(pluginID string) int {
+func (c *callers) getAcquired(pluginID string) int {
 	c.mu.Lock()
 	defer c.mu.Unlock()
-	return c.held[pluginID]
+	return c.acquired[pluginID]
 }
 
 // callerCompleter answers with the id of the plugin it was told asks.

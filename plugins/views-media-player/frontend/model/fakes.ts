@@ -69,11 +69,11 @@ export function createRecordings(
 /** The one player the window has, faked: nothing here makes a sound. */
 export function createPlayer() {
   const url = ref('')
-  const at = ref(0)
+  const position = ref(0)
   const seeks: [string, number][] = []
   const player: Player = {
     url,
-    at,
+    position,
     duration: ref(0),
     isPlaying: ref(false),
     error: ref(''),
@@ -82,7 +82,7 @@ export function createPlayer() {
     pause: () => {},
     seek: (next, ms) => {
       url.value = next
-      at.value = ms
+      position.value = ms
       seeks.push([next, ms])
     },
   }
@@ -90,4 +90,4 @@ export function createPlayer() {
 }
 
 /** Everything asked for has been answered. */
-export const flush = () => new Promise((done) => setTimeout(done, 0))
+export const flush = () => new Promise((resolve) => setTimeout(resolve, 0))

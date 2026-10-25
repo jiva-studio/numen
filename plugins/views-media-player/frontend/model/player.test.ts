@@ -80,7 +80,7 @@ function createElement() {
     emit('durationchange')
   }
 
-  /** The recording plays on, and says where it stands. */
+  /** Advances the element and emits timeupdate. */
   const setCurrentTime = (seconds: number) => {
     element.currentTime = seconds
     emit('timeupdate')
@@ -95,15 +95,15 @@ function createElement() {
   return { element, emit, countListeners, setDuration, setCurrentTime, setError }
 }
 
-/** A player standing on one element, and the element it stands on. */
+/** A player over a fake element, and that element. */
 const player = () => {
-  const stood = createElement()
-  const getElement: AudioFactory = () => stood.element as unknown as HTMLAudioElement
-  return { plays: createAudioPlayer(getElement), ...stood }
+  const element = createElement()
+  const getElement: AudioFactory = () => element.element as unknown as HTMLAudioElement
+  return { plays: createAudioPlayer(getElement), ...element }
 }
 
 describe('a recording loaded', () => {
-  it('is where the player stands, and nothing has been asked of it', () => {
+  it('reports the element position without a request', () => {
     const { plays, element } = player()
 
     plays.load(TALK)
@@ -114,7 +114,7 @@ describe('a recording loaded', () => {
     expect(plays.isPlaying.value).toBe(false)
   })
 
-  it('is loaded once, however often it is asked for', () => {
+  it('loads an address once', () => {
     const { plays, element, setCurrentTime } = player()
     plays.load(TALK)
     setCurrentTime(4)
@@ -122,7 +122,7 @@ describe('a recording loaded', () => {
     plays.load(TALK)
 
     expect(element.loaded).toStrictEqual([TALK])
-    expect(plays.at.value).toBe(4_000)
+    expect(plays.position.value).toBe(4_000)
   })
 
   it('is nothing at all where the application named no address', () => {
@@ -142,7 +142,7 @@ describe('a recording loaded', () => {
     plays.load(OTHER)
 
     expect(plays.url.value).toBe(OTHER)
-    expect(plays.at.value).toBe(0)
+    expect(plays.position.value).toBe(0)
     expect(plays.duration.value).toBe(0)
   })
 })
@@ -155,7 +155,7 @@ describe('a moment gone to', () => {
 
     expect(element.loaded).toStrictEqual([TALK])
     expect(element.currentTime).toBe(2.5)
-    expect(plays.at.value).toBe(2_500)
+    expect(plays.position.value).toBe(2_500)
   })
 
   it('is the beginning when it is before that', () => {
@@ -164,7 +164,7 @@ describe('a moment gone to', () => {
     plays.seek(TALK, -400)
 
     expect(element.currentTime).toBe(0)
-    expect(plays.at.value).toBe(0)
+    expect(plays.position.value).toBe(0)
   })
 
   it('is nowhere at all where the application named no address', () => {
@@ -173,12 +173,12 @@ describe('a moment gone to', () => {
     plays.seek('', 2_500)
 
     expect(element.loaded).toStrictEqual([])
-    expect(plays.at.value).toBe(0)
+    expect(plays.position.value).toBe(0)
   })
 })
 
 describe('a recording played', () => {
-  it('takes the player from whatever held it', async () => {
+  it('takes over the element from the previous recording', async () => {
     const { plays, element } = player()
     plays.play(TALK)
     await Promise.resolve()
@@ -217,7 +217,7 @@ describe('a recording played', () => {
     expect(plays.error.value).toBe('')
   })
 
-  it('stops where the person stops it, and stands where it stopped', () => {
+  it('pauses and keeps the position', () => {
     const { plays, setCurrentTime } = player()
     plays.play(TALK)
     setCurrentTime(3)
@@ -225,7 +225,7 @@ describe('a recording played', () => {
     plays.pause()
 
     expect(plays.isPlaying.value).toBe(false)
-    expect(plays.at.value).toBe(3_000)
+    expect(plays.position.value).toBe(3_000)
   })
 
   it('stops of itself when it ends', () => {
@@ -257,7 +257,7 @@ describe('how long a recording runs', () => {
     expect(plays.duration.value).toBe(0)
   })
 
-  it('is nothing where the recording has not said', () => {
+  it('reports zero duration until the element reports one', () => {
     const { plays, setDuration } = player()
     plays.load(TALK)
 
@@ -300,17 +300,18 @@ describe('a recording the player could not read', () => {
 describe('the element a window plays through', () => {
   it('is made once, and listened to once, however many recordings are opened', () => {
     let made = 0
-    const stood = createElement()
+    const element = createElement()
     const plays = createAudioPlayer(() => {
       made++
-      return stood.element as unknown as HTMLAudioElement
+      return element.element as unknown as HTMLAudioElement
     })
 
-    for (let at = 0; at < 100; at++) plays.load(`http://127.0.0.1:1/files/w/v/${at}.mp3`)
+    for (let index = 0; index < 100; index++)
+      plays.load(`http://127.0.0.1:1/files/w/v/${index}.mp3`)
 
     expect(made).toBe(1)
-    expect(stood.countListeners('timeupdate')).toBe(1)
-    expect(stood.countListeners('error')).toBe(1)
+    expect(element.countListeners('timeupdate')).toBe(1)
+    expect(element.countListeners('error')).toBe(1)
   })
 
   it('plays nothing and says so where the window has no element to give', () => {
@@ -355,7 +356,7 @@ describe('what this window can play', () => {
   })
 })
 
-describe('a player nothing has been asked of', () => {
+describe('an unused player', () => {
   it('has no error to say', () => {
     const { plays } = player()
 
@@ -379,12 +380,12 @@ describe('the element once it is made', () => {
     element.currentTime = 7.5
     emit('seeked')
 
-    expect(plays.at.value).toBe(7_500)
+    expect(plays.position.value).toBe(7_500)
   })
 })
 
 describe('a recording already loaded', () => {
-  it('is played where it stands when it is asked to play', () => {
+  it('plays from the current position', () => {
     const { plays, element } = player()
     plays.load(TALK)
 
@@ -409,7 +410,7 @@ describe('a play the window refused', () => {
     expect(plays.isPlaying.value).toBe(false)
   })
 
-  it('leaves what the element already said of the recording', async () => {
+  it('keeps the duration the element reported', async () => {
     const { plays, element, setError } = player()
     element.fails = true
 
@@ -423,7 +424,7 @@ describe('a play the window refused', () => {
 })
 
 describe('an element that reports an error with no reason', () => {
-  it('is said to have been unable to play the recording', () => {
+  it('reports a failed play', () => {
     const { plays, emit } = player()
     plays.load(TALK)
 
@@ -433,7 +434,7 @@ describe('an element that reports an error with no reason', () => {
   })
 })
 
-describe('the window asked what it can play', () => {
+describe('createMediaTypeProbe', () => {
   afterEach(() => {
     vi.restoreAllMocks()
   })
@@ -457,7 +458,7 @@ describe('the window asked what it can play', () => {
     expect(createMediaTypeProbe()('audio/mpeg')).toBe(false)
   })
 
-  it('says no where the window cannot be asked', () => {
+  it('returns false when canPlayType throws', () => {
     vi.spyOn(document, 'createElement').mockImplementation(() => {
       throw new Error('no document')
     })

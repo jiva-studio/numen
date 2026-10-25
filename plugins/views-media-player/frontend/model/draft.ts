@@ -12,11 +12,11 @@ export interface DraftOptions {
   cues: Ref<readonly Cue[]>
   /** Whether the transcript may be written over now. */
   isEditable: Ref<boolean>
-  /** What this recording could not do, in words the tab puts up for it. */
+  /** The last write error, shown above the transcript. */
   error: Ref<string>
   /** How long the typing settles for before the words are written. */
-  quiet: number
-  /** Whether the tab this recording stands in is still open. */
+  idleMs: number
+  /** Whether the recording tab is still open. */
   isOpen: () => boolean
   /** The words as a person has edited them, kept against the recording. */
   write: (cues: readonly Cue[]) => Promise<void>
@@ -34,14 +34,14 @@ async function saveDraftCues(
     if (!options.isOpen()) return { isSaved: false, errorText: '' }
     cues.value = next
     return { isSaved: true, errorText: '' }
-  } catch (thrown) {
+  } catch (err) {
     if (!options.isOpen()) return { isSaved: false, errorText: '' }
-    return { isSaved: false, errorText: formatErrorMessage(thrown) }
+    return { isSaved: false, errorText: formatErrorMessage(err) }
   }
 }
 
 export function useTranscriptDraft(how: DraftOptions) {
-  const { cues, isEditable, error, quiet, isOpen, write } = how
+  const { cues, isEditable, error, idleMs, isOpen, write } = how
 
   /** The words as the editor shows them, one cue to a line. */
   const prose = ref('')
@@ -85,7 +85,7 @@ export function useTranscriptDraft(how: DraftOptions) {
       isWriting = false
       if (isOpen() && prose.value !== body) {
         isPending = true
-        writeTimer = setTimeout(() => void keep(), quiet)
+        writeTimer = setTimeout(() => void keep(), idleMs)
       }
     }
   }
@@ -100,9 +100,9 @@ export function useTranscriptDraft(how: DraftOptions) {
     // hands.
     typing.value = true
     clearTimeout(followTimer)
-    followTimer = setTimeout(() => void (typing.value = false), quiet)
+    followTimer = setTimeout(() => void (typing.value = false), idleMs)
     clearTimeout(writeTimer)
-    writeTimer = setTimeout(() => void keep(), quiet)
+    writeTimer = setTimeout(() => void keep(), idleMs)
   }
 
   /**

@@ -16,7 +16,7 @@ import type { TranscriptState } from './model/transcript'
 const props = defineProps<{
   state: TranscriptState
   /** What the menu at the end of the strip offers, and nothing where it offers none. */
-  offered?: readonly MenuItem[]
+  menuItems?: readonly MenuItem[]
 }>()
 
 const emit = defineEmits<{ choose: [id: string] }>()
@@ -27,7 +27,7 @@ const { timed } = props.state.lines
 
 const isFollowing = computed(() => following.value)
 
-const offered = computed(() => props.offered ?? [])
+const items = computed(() => props.menuItems ?? [])
 
 /** Where the menu was asked for, and nothing while it is not open. */
 const menu = ref<{ at: Position; from: HTMLElement } | null>(null)
@@ -60,10 +60,10 @@ function onToggleFollow() {
       <slot name="player" />
 
       <MediaActions
-        v-if="timed || offered.length"
+        v-if="timed || items.length"
         :is-timed="timed"
         :is-following="isFollowing"
-        :has-menu="offered.length > 0"
+        :has-menu="items.length > 0"
         @toggle-follow="onToggleFollow"
         @open-menu="onOpenMenu"
       />
@@ -73,7 +73,7 @@ function onToggleFollow() {
 
     <Menu
       v-if="menu"
-      :items="offered"
+      :items="items"
       :at="menu.at"
       :from="menu.from"
       is-open

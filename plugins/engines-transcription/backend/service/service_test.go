@@ -26,12 +26,12 @@ const (
 // heardModel hears every stretch as the words given for the moment it begins, and records each
 // moment a recording was asked for segments from.
 type heardModel struct {
-	mu       sync.Mutex
-	segments []engine.Audio
-	words    map[int]string
-	opened   int
-	asked    []int
-	isBroken bool
+	mu            sync.Mutex
+	segments      []engine.Audio
+	words         map[int]string
+	opened        int
+	segmentStarts []int
+	isBroken      bool
 }
 
 func (m *heardModel) Open(context.Context, []byte) (engine.Recording, error) {
@@ -52,10 +52,10 @@ func (m *heardModel) Transcribe(_ context.Context, audio engine.Audio) (string, 
 
 func (m *heardModel) Close() error { return nil }
 
-func (m *heardModel) getAsked() []int {
+func (m *heardModel) getSegmentStarts() []int {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return slices.Clone(m.asked)
+	return slices.Clone(m.segmentStarts)
 }
 
 type heardRecording struct {
@@ -71,7 +71,7 @@ func (r heardRecording) GetDuration() int {
 func (r heardRecording) GetSegments(_ context.Context, from, count int) ([]engine.Audio, error) {
 	r.model.mu.Lock()
 	defer r.model.mu.Unlock()
-	r.model.asked = append(r.model.asked, from)
+	r.model.segmentStarts = append(r.model.segmentStarts, from)
 	var out []engine.Audio
 	for _, one := range r.model.segments {
 		if one.From >= from && len(out) < count {
@@ -151,7 +151,7 @@ func (s *scene) readCues(t *testing.T, span *numenv1.Span) []*numenv1.Cue {
 	return answer.Msg.GetCues()
 }
 
-func TestATranscribedRecordingIsATimedVersionKeptInThePluginsFolder(t *testing.T) {
+func TestCreateTextTimedVersionInStore(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 
@@ -175,7 +175,7 @@ func TestATranscribedRecordingIsATimedVersionKeptInThePluginsFolder(t *testing.T
 	}
 }
 
-func TestARecordingTranscribedBeforeIsNotHeardAgain(t *testing.T) {
+func TestCreateTextSkipsWholeTranscript(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 	s.transcribe(t)
@@ -185,7 +185,7 @@ func TestARecordingTranscribedBeforeIsNotHeardAgain(t *testing.T) {
 	}
 }
 
-func TestATranscriptionTakesUpWhereARunBeforeItStopped(t *testing.T) {
+func TestCreateTextResumesFromPartialTranscript(t *testing.T) {
 	s := newScene(t)
 	key := domain.HashContent([]byte(lectureSound))
 	partial := append(transcript.Marshal([]transcript.Cue{{Text: "heard before", From: 0, To: 1000}}), transcript.GetReachMarker(1000)...)
@@ -195,15 +195,15 @@ func TestATranscriptionTakesUpWhereARunBeforeItStopped(t *testing.T) {
 
 	s.transcribe(t)
 
-	if asked := s.model.getAsked(); len(asked) == 0 || asked[0] != 1000 {
-		t.Errorf("the recording was asked for segments from %v, want from 1000 first", asked)
+	if starts := s.model.getSegmentStarts(); len(starts) == 0 || starts[0] != 1000 {
+		t.Errorf("the recording was asked for segments from %v, want from 1000 first", starts)
 	}
 	if _, text := s.readLive(t); text != "heard before\nsecond words" {
 		t.Errorf("the version reads %q", text)
 	}
 }
 
-func TestARecordingThatCannotBeOpenedStaysShownWithWhy(t *testing.T) {
+func TestCreateTextReportsUnopenableRecording(t *testing.T) {
 	s := newScene(t)
 	s.model.isBroken = true
 
@@ -218,7 +218,7 @@ func TestARecordingThatCannotBeOpenedStaysShownWithWhy(t *testing.T) {
 	}
 }
 
-func TestATranscriptionWaitsForItsTurnAndGivesItUpBetweenBatches(t *testing.T) {
+func TestCreateTextWaitsForQueueTurn(t *testing.T) {
 	s := newScene(t)
 	held, err := s.queue.EnqueueWork(t.Context(), host.Work{})
 	if err != nil {
@@ -239,7 +239,7 @@ func TestATranscriptionWaitsForItsTurnAndGivesItUpBetweenBatches(t *testing.T) {
 	}
 }
 
-func TestAnInputVersionIsNotWhatThePluginReads(t *testing.T) {
+func TestCreateTextRejectsInputVersion(t *testing.T) {
 	s := newScene(t)
 
 	err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: s.vault.Vault().ID, Path: lecture, Input: "a/b"})
@@ -249,7 +249,7 @@ func TestAnInputVersionIsNotWhatThePluginReads(t *testing.T) {
 	}
 }
 
-func TestTheTranscriptIsTheLiveVersionAndASpanFindsItsCue(t *testing.T) {
+func TestReadTranscriptReturnsLiveCuesAndSpanCue(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 
@@ -263,7 +263,7 @@ func TestTheTranscriptIsTheLiveVersionAndASpanFindsItsCue(t *testing.T) {
 	}
 }
 
-func TestAnEditIsAVersionOfThisPluginMadeFromTheLiveOne(t *testing.T) {
+func TestWriteTranscriptEditVersion(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 	heard, _ := s.readLive(t)
@@ -297,7 +297,7 @@ func TestAnEditIsAVersionOfThisPluginMadeFromTheLiveOne(t *testing.T) {
 	}
 }
 
-func TestARecordingWithNoTranscriptIsNotEdited(t *testing.T) {
+func TestWriteTranscriptRejectsRecordingWithoutTranscript(t *testing.T) {
 	s := newScene(t)
 
 	_, err := s.transcripts.WriteTranscript(t.Context(), connect.NewRequest(&numenv1.WriteTranscriptRequest{
@@ -312,7 +312,7 @@ func TestARecordingWithNoTranscriptIsNotEdited(t *testing.T) {
 	}
 }
 
-func TestDeletingATextTakesItOutOfTheFolder(t *testing.T) {
+func TestDeleteTextRemovesStoreFiles(t *testing.T) {
 	s := newScene(t)
 	s.transcribe(t)
 	version, _ := s.readLive(t)

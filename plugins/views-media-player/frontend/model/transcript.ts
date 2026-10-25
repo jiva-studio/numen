@@ -1,6 +1,6 @@
 /**
- * One recording as its tab reads it: where the player stands in it, its transcript, which cue is
- * being said now, the words as a person edits them, and what its menu offers.
+ * The state of one recording tab: playback position, transcript cues, the current cue,
+ * the edited text, and the text menu entries.
  */
 import { computed, ref, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
@@ -20,9 +20,9 @@ export const WRITE_IDLE_MS = 800
 /** What the window hands one recording tab, beside the application and the path. */
 export interface TranscriptOptions {
   /** The player the sound comes out of, which every recording of a window shares. */
-  through?: Player
+  audioPlayer?: Player
   /** How long the typing settles for before the words are written. */
-  quiet?: number
+  idleMs?: number
   /** Whether this window can play a kind of sound. */
   plays?: MediaTypeProbe
 }
@@ -36,12 +36,12 @@ export function findOffers(entries: readonly MenuEntry[]) {
   }
 }
 
-/** Answers to a question asked again: only the latest asking may land. */
-function createAnswerGuard() {
+/** Request ordering: only the latest request may apply its result. */
+function createRequestGuard() {
   let latest = 0
   let isClosed = false
   return {
-    ask: () => {
+    begin: () => {
       const mine = ++latest
       return { isLatest: () => !isClosed && mine === latest }
     },
@@ -50,8 +50,8 @@ function createAnswerGuard() {
 }
 
 export function useTranscript(recordings: Recordings, path: string, how: TranscriptOptions = {}) {
-  const through = how.through ?? player
-  const quiet = how.quiet ?? WRITE_IDLE_MS
+  const audioPlayer = how.audioPlayer ?? player
+  const idleMs = how.idleMs ?? WRITE_IDLE_MS
   const plays = how.plays ?? createMediaTypeProbe()
 
   let isOpen = true
@@ -64,42 +64,42 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
   const error = ref('')
   const following = ref(true)
   const isEditable = computed(() => !isWorking.value)
-  const answers = createAnswerGuard()
+  const requests = createRequestGuard()
 
-  const playback = usePlayback(through, plays, checkOpen)
+  const playback = usePlayback(audioPlayer, plays, checkOpen)
   const draft = useTranscriptDraft({
     cues,
     isEditable,
     error,
-    quiet,
+    idleMs,
     isOpen: checkOpen,
     write: (next) => recordings.writeTranscript(path, next),
   })
   const lines = useTranscriptLines(cues, draft.prose)
 
   const readRecording = async () => {
-    const mine = answers.ask()
+    const mine = requests.begin()
     try {
-      const [source, heard, menu] = await Promise.all([
+      const [source, transcriptCues, menu] = await Promise.all([
         recordings.getSource(path),
         recordings.readTranscript(path),
         recordings.getMenu(path),
       ])
       if (!mine.isLatest()) return
       playback.setSource(source)
-      cues.value = heard
+      cues.value = transcriptCues
       entries.value = menu
-      draft.setText(getText(heard))
+      draft.setText(getText(transcriptCues))
       error.value = ''
-    } catch (thrown) {
+    } catch (err) {
       if (!mine.isLatest()) return
-      error.value = formatErrorMessage(thrown)
+      error.value = formatErrorMessage(err)
     } finally {
       if (mine.isLatest()) isLoading.value = false
     }
   }
 
-  const opened = readRecording()
+  const firstRead = readRecording()
 
   /** Work on the recording began or ended: the words and the menu are read again. */
   const setWorking = (next: boolean) => {
@@ -129,8 +129,8 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
         draft.drop()
         await readRecording()
       }
-    } catch (thrown) {
-      if (isOpen) error.value = formatErrorMessage(thrown)
+    } catch (err) {
+      if (isOpen) error.value = formatErrorMessage(err)
     }
   }
 
@@ -142,13 +142,13 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
 
   /** The person is taken to the moment the first of the spans was said at. */
   const reach = async (...spans: readonly Span[]) => {
-    await opened
+    await firstRead
     if (!isOpen || spans.length === 0) return
     try {
       const ms = await recordings.findCueTime(path, spans[0]!)
       if (isOpen && ms !== null) playback.controls.go(ms)
-    } catch (thrown) {
-      if (isOpen) error.value = formatErrorMessage(thrown)
+    } catch (err) {
+      if (isOpen) error.value = formatErrorMessage(err)
     }
   }
 
@@ -162,7 +162,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
     playback.controls.pause()
     isOpen = false
     stopWatching()
-    answers.close()
+    requests.close()
     cues.value = []
     draft.stop()
   }
@@ -178,7 +178,7 @@ export function useTranscript(recordings: Recordings, path: string, how: Transcr
       isLoading,
       isEditable,
       error,
-      opened,
+      firstRead,
       note,
       current,
       following,

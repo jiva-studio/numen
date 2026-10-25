@@ -70,11 +70,11 @@ func (m *models) open(ctx context.Context) (engine.TranscriberPort, error) {
 		m.current = engine.NewMockTranscriber()
 		return m.current, nil
 	}
-	opened, err := engine.Open(context.WithoutCancel(ctx), m.cfg)
+	loaded, err := engine.Open(context.WithoutCancel(ctx), m.cfg)
 	if err != nil {
 		return nil, err
 	}
-	m.current = opened
+	m.current = loaded
 	return m.current, nil
 }
 
@@ -117,15 +117,15 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 // Mount registers the text provider and the transcript service on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
-	opened := &models{cfg: cfg, isMock: isMock}
-	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, opened.open)
-	s.SetUpdateConfig(opened.updateConfig)
+	model := &models{cfg: cfg, isMock: isMock}
+	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.open)
+	s.SetUpdateConfig(model.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider{stores: hosted.Store, transcriber: transcriber}, s.HandlerOptions()...))
 	s.Register(numenv1connect.NewTranscriptServiceHandler(transcriptServer{stores: hosted.Store, texts: hosted.Texts}, s.HandlerOptions()...))
 	s.OnClose(func() {
 		transcriber.Close()
 		// The plugin is stopping, and a model that will not close leaves nothing to retry.
-		_ = opened.close()
+		_ = model.close()
 	})
 }
 

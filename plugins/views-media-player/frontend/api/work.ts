@@ -3,10 +3,13 @@
  * any tab listens to it.
  */
 
-/** One list of what is being done, by the file each task is about. */
+/** One list of what is being done: each task by its id and the file it is about. */
 export type TaskStream = (
   signal: AbortSignal,
-) => AsyncIterable<readonly { readonly about: string }[]>
+) => AsyncIterable<readonly { readonly id: string; readonly about: string }[]>
+
+/** The core lists a plugin's task under an id starting with this; the index's own tasks do not. */
+const PLUGIN_TASK_PREFIX = 'plugin:'
 
 /** Tells each listener whether work on its file is going, from one stream of tasks. */
 export function createWorkWatcher(openStream: TaskStream) {
@@ -30,7 +33,13 @@ export function createWorkWatcher(openStream: TaskStream) {
     void (async () => {
       try {
         for await (const tasks of openStream(controller.signal)) {
-          publish(new Set(tasks.map((task) => task.about)))
+          publish(
+            new Set(
+              tasks
+                .filter((task) => task.id.startsWith(PLUGIN_TASK_PREFIX))
+                .map((task) => task.about),
+            ),
+          )
         }
       } catch {
         // A stream that ended is opened again by the next tab that listens.

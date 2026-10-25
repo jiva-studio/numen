@@ -1,5 +1,5 @@
 /**
- * Where one recording stands in the single player the window makes sound with.
+ * Playback state of one recording in the shared audio player.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
@@ -14,7 +14,7 @@ const FILE: RecordingSource = { mediaUrl: TALK, mediaType: 'audio/mpeg' }
 /** The one player of the window, with what is asked of it recorded. */
 const createPlayer = () => {
   const url = ref('')
-  const at = ref(0)
+  const position = ref(0)
   const duration = ref(0)
   const isPlaying = ref(false)
   const error = ref('')
@@ -22,15 +22,15 @@ const createPlayer = () => {
   const play = vi.fn<(url: string) => void>()
   const pause = vi.fn<() => void>()
   const seek = vi.fn<(url: string, ms: number) => void>()
-  const through: Player = { url, at, duration, isPlaying, error, load, play, pause, seek }
-  return { through, url, at, duration, isPlaying, error, load, play, pause, seek }
+  const audioPlayer: Player = { url, position, duration, isPlaying, error, load, play, pause, seek }
+  return { audioPlayer, url, position, duration, isPlaying, error, load, play, pause, seek }
 }
 
 const createPlayback = (how: { isPlayable?: boolean } = {}) => {
   const player = createPlayer()
   const state = { isOpen: true }
   const playback = usePlayback(
-    player.through,
+    player.audioPlayer,
     () => how.isPlayable ?? true,
     () => state.isOpen,
   )
@@ -48,11 +48,11 @@ describe('a recording that does not know its address yet', () => {
 })
 
 describe('a recording the player holds', () => {
-  it('stands and runs where the player says, and says what the player could not do', () => {
-    const { playback, url, at, duration, isPlaying, error } = createPlayback()
+  it('reports the player position, duration and error', () => {
+    const { playback, url, position, duration, isPlaying, error } = createPlayback()
     playback.setSource(FILE)
     url.value = TALK
-    at.value = 4_000
+    position.value = 4_000
     duration.value = 6_000
     isPlaying.value = true
     error.value = 'broken'
@@ -78,11 +78,11 @@ describe('a recording the player holds', () => {
 })
 
 describe('a recording another holds the player for', () => {
-  it('stands at its beginning and is not playing', () => {
-    const { playback, url, at, isPlaying } = createPlayback()
+  it('starts at zero and paused', () => {
+    const { playback, url, position, isPlaying } = createPlayback()
     playback.setSource(FILE)
     url.value = OTHER
-    at.value = 7_000
+    position.value = 7_000
     isPlaying.value = true
 
     expect(playback.now.value).toBe(0)

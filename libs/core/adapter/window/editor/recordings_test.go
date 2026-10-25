@@ -28,7 +28,7 @@ func newRecordingClient(t *testing.T) numenv1connect.RecordingServiceClient {
 	return numenv1connect.NewRecordingServiceClient(server.Client(), server.URL)
 }
 
-func TestARecordingIsPlayedFromTheAddressTheSocketServesItsBytesAt(t *testing.T) {
+func TestGetRecordingReturnsLoopbackAddress(t *testing.T) {
 	client := newRecordingClient(t)
 
 	answer, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: talk}))
@@ -49,7 +49,7 @@ func TestARecordingIsPlayedFromTheAddressTheSocketServesItsBytesAt(t *testing.T)
 	}
 }
 
-func TestAFileTheVaultDoesNotHoldIsNotFound(t *testing.T) {
+func TestGetRecordingRejectsMissingFile(t *testing.T) {
 	client := newRecordingClient(t)
 
 	_, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: "talks/none.mp3"}))

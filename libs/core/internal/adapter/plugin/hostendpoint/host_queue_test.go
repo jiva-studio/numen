@@ -58,7 +58,7 @@ func readState(t *testing.T, stream *connect.ServerStreamForClient[v1.EnqueueWor
 	}
 }
 
-func TestEnqueueWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
+func TestEnqueueWorkRunsUserWorkFirst(t *testing.T) {
 	lock := &run.Lock{}
 	work := run.NewPluginWork(lock, run.NewTasks())
 	release, err := lock.Acquire(t.Context(), true, nil)
@@ -78,7 +78,7 @@ func TestEnqueueWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	readState(t, background, v1.WorkState_WORK_STATE_RUNNING)
 }
 
-func TestEnqueueWorkEndsTheStreamOfAPluginThatStopped(t *testing.T) {
+func TestEnqueueWorkEndsStreamOfClearedPlugin(t *testing.T) {
 	work := run.NewPluginWork(&run.Lock{}, run.NewTasks())
 	stream := openWork(t, t.Context(), newQueueClient(t, work, "token-a"), false, v1.WorkState_WORK_STATE_RUNNING)
 
@@ -96,7 +96,7 @@ func TestEnqueueWorkEndsTheStreamOfAPluginThatStopped(t *testing.T) {
 	openWork(t, t.Context(), newQueueClient(t, work, "token-c"), false, v1.WorkState_WORK_STATE_RUNNING)
 }
 
-func TestReportTaskListsThePluginsTaskUntilItIsFinished(t *testing.T) {
+func TestReportTaskListsTaskUntilFinished(t *testing.T) {
 	tasks := run.NewTasks()
 	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, tasks), "token-a")
 
@@ -123,7 +123,7 @@ func TestReportTaskListsThePluginsTaskUntilItIsFinished(t *testing.T) {
 	}
 }
 
-func TestQueueRefusesACallerWithNoToken(t *testing.T) {
+func TestQueueRejectsCallerWithoutToken(t *testing.T) {
 	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, run.NewTasks()), "token-unknown")
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{Id: "a"}}))
 	if code := readCode(t, err); code != connect.CodeUnauthenticated {
@@ -131,14 +131,14 @@ func TestQueueRefusesACallerWithNoToken(t *testing.T) {
 	}
 }
 
-func TestEnqueueWorkKeepsThePluginRunningWhileTheStreamLasts(t *testing.T) {
+func TestEnqueueWorkAcquiresPluginForStream(t *testing.T) {
 	work := run.NewPluginWork(&run.Lock{}, run.NewTasks())
 	fakeCallers := newCallers(nil)
 	fakeCallers.releases = make(chan string, 1)
 	ctx, closeStream := context.WithCancel(t.Context())
 	openWork(t, ctx, newQueueClientOver(t, fakeCallers, work, "token-a"), true, v1.WorkState_WORK_STATE_RUNNING)
 
-	if got := fakeCallers.getHeld("md.numen.a"); got != 1 {
+	if got := fakeCallers.getAcquired("md.numen.a"); got != 1 {
 		t.Fatalf("the plugin is held %d times during its turn, want 1", got)
 	}
 	closeStream()
@@ -147,7 +147,7 @@ func TestEnqueueWorkKeepsThePluginRunningWhileTheStreamLasts(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the plugin was not released after its turn ended")
 	}
-	if got := fakeCallers.getHeld("md.numen.a"); got != 0 {
+	if got := fakeCallers.getAcquired("md.numen.a"); got != 0 {
 		t.Fatalf("the plugin is still held %d times after its turn ended", got)
 	}
 }
