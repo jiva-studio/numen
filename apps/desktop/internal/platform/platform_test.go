@@ -72,13 +72,3 @@ func TestGetConfig(t *testing.T) {
 		t.Fatal("expected configured plugin host")
 	}
 }
-
-func TestBuildMode(t *testing.T) {
-	mode := BuildMode
-	if mode != "monolith" && mode != "modular" {
-		t.Fatalf("unexpected build mode: %s", mode)
-	}
-	if IsMonolith() != (mode == "monolith") {
-		t.Fatalf("IsMonolith mismatch with mode %s", mode)
-	}
-}

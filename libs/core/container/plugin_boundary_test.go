@@ -17,26 +17,9 @@ import (
 // plugin, and a module under it is one too.
 const pluginsPrefix = "github.com/jiva-studio/numen/plugins/"
 
-// compositionRoots are the modules that name plugins: the monolithic build of the
-// desktop binds them in. Every other module meets a plugin only through the
-// plugin contract.
-var compositionRoots = []string{"apps/desktop-monolith"}
-
 // isPlugin says whether a package is compiled from a plugin.
 func isPlugin(importPath string) bool {
 	return strings.HasPrefix(importPath, pluginsPrefix)
-}
-
-// mayNamePlugins says whether the module at a directory, slashed and relative to
-// the root of the modules, may require plugins: a composition root may, and a
-// plugin names no other, so its own module directive is the one line it carries.
-func mayNamePlugins(dir string) bool {
-	for _, root := range compositionRoots {
-		if dir == root {
-			return true
-		}
-	}
-	return false
 }
 
 // getPluginRequirements is every line of a go.mod that requires or replaces a
@@ -55,7 +38,7 @@ func getPluginRequirements(gomod string) []string {
 	return named
 }
 
-// What isPlugin, mayNamePlugins and getPluginRequirements say is the whole of the
+// What isPlugin and getPluginRequirements say is the whole of the
 // rule, so it is asked directly. A walk that reads the tree and refuses nothing
 func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 	for _, one := range []struct {
@@ -71,23 +54,6 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 	} {
 		if got := isPlugin(one.dep); got != one.isPlugin {
 			t.Errorf("isPlugin(%s) = %v, want %v", one.dep, got, one.isPlugin)
-		}
-	}
-
-	for _, one := range []struct {
-		dir string
-		may bool
-	}{
-		{"libs/core", false},
-		{"libs/protocol", false},
-		{"apps/desktop", false},
-		{"apps/mobile", false},
-		{"apps/desktop-monolith", true},
-		{"plugins/readers-epub", false},
-		{"pluginsx", false},
-	} {
-		if got := mayNamePlugins(one.dir); got != one.may {
-			t.Errorf("mayNamePlugins(%s) = %v, want %v", one.dir, got, one.may)
 		}
 	}
 
@@ -110,14 +76,9 @@ func TestWhatThePluginBoundaryRefuses(t *testing.T) {
 
 // listPackages is what one module's build resolves on one platform, and what
 // each package of it is compiled from.
-func listPackages(t *testing.T, dir, goos, goarch string, tags ...string) []listed {
+func listPackages(t *testing.T, dir, goos, goarch string) []listed {
 	t.Helper()
-	args := []string{"list", "-json"}
-	if len(tags) > 0 {
-		args = append(args, "-tags", strings.Join(tags, ","))
-	}
-	args = append(args, "./...")
-	listing := exec.CommandContext(t.Context(), "go", args...)
+	listing := exec.CommandContext(t.Context(), "go", "list", "-json", "./...")
 	listing.Dir = dir
 	listing.Env = append(os.Environ(), "GOOS="+goos, "GOARCH="+goarch)
 	out, err := listing.Output()
@@ -155,7 +116,7 @@ type listed struct {
 // The core and the desktop meet a plugin only through the protocol: they are
 // compiled from no plugin and no module of the plugin SDK. What the build
 // resolved is what is read, so a package reached through another answers for
-// it too, on every platform and in the monolithic build.
+// it too, on every platform.
 //
 // A test file is left out: a test stands outside the package it exercises.
 func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T) {
@@ -169,32 +130,26 @@ func TestNothingTheCoreOrTheDesktopIsCompiledFromIsAPluginOrTheSDK(t *testing.T)
 	}
 	for _, build := range builds {
 		for _, one := range build.platforms {
-			for _, tags := range [][]string{nil, {"plugins_monolith"}} {
-				name := build.module + "/" + one.goos + "/" + one.goarch
-				if tags != nil {
-					name += "/monolith"
+			t.Run(build.module+"/"+one.goos+"/"+one.goarch, func(t *testing.T) {
+				packages := listPackages(t, build.dir, one.goos, one.goarch)
+				if len(packages) == 0 {
+					t.Fatal("go list found no package: a rule checked against nothing")
 				}
-				t.Run(name, func(t *testing.T) {
-					packages := listPackages(t, build.dir, one.goos, one.goarch, tags...)
-					if len(packages) == 0 {
-						t.Fatal("go list found no package: a rule checked against nothing")
-					}
-					for _, pkg := range packages {
-						for _, dep := range pkg.Deps {
-							if isPlugin(dep) || isSDK(dep) {
-								t.Errorf("%s reaches %s", pkg.ImportPath, dep)
-							}
+				for _, pkg := range packages {
+					for _, dep := range pkg.Deps {
+						if isPlugin(dep) || isSDK(dep) {
+							t.Errorf("%s reaches %s", pkg.ImportPath, dep)
 						}
 					}
-				})
-			}
+				}
+			})
 		}
 	}
 }
 
-// No module requires a plugin but a composition root: a
-// requirement is how a build evaluates to be compiled from one.
-func TestNoModuleButACompositionRootRequiresAPlugin(t *testing.T) {
+// No module requires a plugin: a requirement is how a build evaluates to be
+// compiled from one.
+func TestNoModuleRequiresAPlugin(t *testing.T) {
 	root := filepath.Join("..", "..", "..")
 	found := 0
 	err := filepath.WalkDir(root, func(path string, entry fs.DirEntry, err error) error {
@@ -216,9 +171,6 @@ func TestNoModuleButACompositionRootRequiresAPlugin(t *testing.T) {
 			return err
 		}
 		dir = filepath.ToSlash(dir)
-		if mayNamePlugins(dir) {
-			return nil
-		}
 		gomod, err := os.ReadFile(path)
 		if err != nil {
 			return err
