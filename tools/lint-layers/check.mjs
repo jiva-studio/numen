@@ -17,7 +17,7 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, ui, wire, sdk, plugins, desktop, editor, flashcards
+ *   core, notes, ui, wire, sdk, plugins, boundary, desktop, editor, flashcards
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -196,6 +196,229 @@ function verifyCoreHoldsNoPluginPackage() {
   }
 }
 
+/** The Go module path every module of the repository is named under. */
+const GO_MODULE_ROOT = "github.com/jiva-studio/numen/";
+
+/** The source files read for references, by extension. */
+const SCRIPT_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".vue"]);
+
+/**
+ * Lists every string literal of a script with its line, comments left out.
+ * A template literal is read up to its first substitution.
+ */
+function getScriptLiterals(source) {
+  const literals = [];
+  let line = 1;
+  let i = 0;
+  let previous = "";
+  while (i < source.length) {
+    const c = source[i];
+    const next = source[i + 1];
+    if (c === "\n") {
+      line++;
+      i++;
+      continue;
+    }
+    if (c === "/" && next === "/") {
+      while (i < source.length && source[i] !== "\n") i++;
+      continue;
+    }
+    if (c === "/" && next === "*") {
+      i += 2;
+      while (i < source.length && !(source[i] === "*" && source[i + 1] === "/")) {
+        if (source[i] === "\n") line++;
+        i++;
+      }
+      i += 2;
+      continue;
+    }
+    if (c === "/" && (previous === "" || "(,=:[!&|?{};+-*%<>~^".includes(previous))) {
+      i++;
+      let inClass = false;
+      while (i < source.length && source[i] !== "\n") {
+        if (source[i] === "\\") i++;
+        else if (source[i] === "[") inClass = true;
+        else if (source[i] === "]") inClass = false;
+        else if (source[i] === "/" && !inClass) break;
+        i++;
+      }
+      i++;
+      previous = "/";
+      continue;
+    }
+    if (c === "'" || c === '"' || c === "`") {
+      const start = line;
+      let value = "";
+      let isOpen = true;
+      i++;
+      while (i < source.length && source[i] !== c) {
+        if (source[i] === "\\") {
+          value += source[i + 1] ?? "";
+          i += 2;
+          continue;
+        }
+        if (c === "`" && source[i] === "$" && source[i + 1] === "{") isOpen = false;
+        if (source[i] === "\n") line++;
+        if (isOpen) value += source[i];
+        i++;
+      }
+      i++;
+      literals.push({ line: start, value });
+      previous = "'";
+      continue;
+    }
+    if (!/\s/.test(c)) previous = c;
+    i++;
+  }
+  return literals;
+}
+
+/** The `<script>` blocks of a single-file component, blanked elsewhere so lines keep their numbers. */
+function getVueScript(source) {
+  return source.replace(/(^|<\/script>)([\s\S]*?)(<script\b[^>]*>|$)/g, (_, open, between, close) =>
+    open + between.replace(/[^\n]/g, " ") + close.replace(/[^\n]/g, " "),
+  );
+}
+
+/** Lists the import paths of a Go file with their lines, and its other string literals. */
+function getGoReferences(source) {
+  const imports = [];
+  const literals = [];
+  const stripped = source.replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, " "));
+  const lines = stripped.split("\n");
+  let inImportBlock = false;
+  lines.forEach((text, index) => {
+    const code = text.replace(/\/\/.*$/, "");
+    const line = index + 1;
+    if (/^import\s*\($/.test(code.trim())) {
+      inImportBlock = true;
+      return;
+    }
+    if (inImportBlock && code.trim() === ")") {
+      inImportBlock = false;
+      return;
+    }
+    const single = /^import\s+(?:[\w.]+\s+)?"([^"]+)"/.exec(code.trim());
+    if (single) {
+      imports.push({ line, value: single[1] });
+      return;
+    }
+    if (inImportBlock) {
+      const spec = /"([^"]+)"/.exec(code);
+      if (spec) imports.push({ line, value: spec[1] });
+      return;
+    }
+    for (const match of code.matchAll(/"((?:[^"\\]|\\.)*)"|`([^`]*)`/g)) {
+      literals.push({ line, value: match[1] ?? match[2] });
+    }
+  });
+  return { imports, literals };
+}
+
+/** Lists the module paths and local replacement paths a `go.mod` names. */
+function getGoModReferences(source) {
+  const imports = [];
+  const literals = [];
+  source.split("\n").forEach((text, index) => {
+    const line = index + 1;
+    const code = text.replace(/\/\/.*$/, "");
+    if (/^\s*module\s/.test(code)) return;
+    for (const match of code.matchAll(/github\.com\/jiva-studio\/numen\/[\w./-]+/g)) {
+      imports.push({ line, value: match[0] });
+    }
+    const replacement = /=>\s*(\.{1,2}\/\S*)/.exec(code);
+    if (replacement) literals.push({ line, value: replacement[1] });
+  });
+  return { imports, literals };
+}
+
+/** True when `target` is `root` or a path below it. */
+function isWithin(target, root) {
+  const relative = path.relative(root, target);
+  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
+}
+
+/**
+ * Lists every reference a file under `fromDir` makes into `toDir`.
+ * A reference is an import path, an alias, a relative file path resolved
+ * against the file's directory, or a repository-rooted path.
+ */
+function findBoundaryReferences(fromDir, toDir, aliasPattern, packageNames) {
+  const toRoot = path.join(REPO_ROOT, toDir);
+  const goPrefix = GO_MODULE_ROOT + toDir + "/";
+  const listed = spawnSync("git", ["ls-files", "-z", "--", fromDir], { cwd: REPO_ROOT, encoding: "utf8" });
+  const files = (listed.stdout || "").split("\0").filter((file) => file && !BOUNDARY_RULES.has(file));
+  const findings = [];
+  for (const file of files) {
+    const absolute = path.join(REPO_ROOT, file);
+    if (!fs.existsSync(absolute)) continue;
+    const base = path.basename(file);
+    const ext = path.extname(file);
+    const directory = path.dirname(absolute);
+    const report = (line, message) => findings.push(file + ":" + line + ": " + message);
+    const checkPath = ({ line, value }) => {
+      if (aliasPattern.test(value)) {
+        report(line, "alias " + JSON.stringify(value));
+      } else if (/^\.{1,2}\//.test(value) && isWithin(path.resolve(directory, value), toRoot)) {
+        report(line, "path " + JSON.stringify(value) + " reaches " + toDir + "/");
+      } else if (value.startsWith(toDir + "/")) {
+        report(line, "repository path " + JSON.stringify(value));
+      } else if (value.startsWith(goPrefix)) {
+        report(line, "module " + JSON.stringify(value));
+      }
+    };
+    const source = () => fs.readFileSync(absolute, "utf8");
+    if (base === "go.mod" || ext === ".go") {
+      const { imports, literals } = base === "go.mod" ? getGoModReferences(source()) : getGoReferences(source());
+      for (const { line, value } of imports) {
+        if (value.startsWith(goPrefix)) report(line, "Go import " + JSON.stringify(value));
+      }
+      literals.forEach(checkPath);
+    } else if (SCRIPT_EXTENSIONS.has(ext)) {
+      const text = ext === ".vue" ? getVueScript(source()) : source();
+      getScriptLiterals(text).forEach(checkPath);
+    } else if (/^tsconfig.*\.json$/.test(base)) {
+      getScriptLiterals(source()).forEach(checkPath);
+    } else if (base === "package.json") {
+      const manifest = JSON.parse(source());
+      for (const field of ["dependencies", "devDependencies", "peerDependencies", "optionalDependencies"]) {
+        for (const name of Object.keys(manifest[field] ?? {})) {
+          if (packageNames.has(name)) report(1, field + " names " + JSON.stringify(name));
+        }
+      }
+    }
+  }
+  return findings;
+}
+
+/** The npm package names declared under a top-level directory. */
+function getPackageNames(dir) {
+  const listed = spawnSync("git", ["ls-files", "--", dir + "/**/package.json", dir + "/*/package.json"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  const names = new Set();
+  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
+    const name = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, file), "utf8")).name;
+    if (typeof name === "string") names.add(name);
+  }
+  return names;
+}
+
+/**
+ * The application compiles nothing from `plugins/`, and a plugin compiles nothing from `apps/`.
+ * The window reaches a plugin only through `/api/plugins/<id>/` at runtime.
+ */
+function verifyAppPluginBoundary() {
+  const findings = [
+    ...findBoundaryReferences("apps", "plugins", /^@plugins(\/|$)/, getPackageNames("plugins")),
+    ...findBoundaryReferences("plugins", "apps", /^@(\/|$)/, getPackageNames("apps")),
+  ];
+  if (findings.length > 0) {
+    throw new Error("Application and plugins reach into each other:\n    " + findings.join("\n    "));
+  }
+}
+
 function verifyUiDomainIsolation() {
   const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
@@ -288,6 +511,13 @@ const VERIFIERS = [
     module: "plugins",
     name: "Plugins Reach No Application (no path, alias or import into apps/)",
     run: verifyPluginsReachNoApp,
+  },
+  {
+    id: "apps-plugins-boundary",
+    scope: "plugins",
+    module: "boundary",
+    name: "Application & Plugin Separation (apps compile nothing from plugins, plugins nothing from apps)",
+    run: verifyAppPluginBoundary,
   },
   {
     id: "plugins-frontend",
@@ -394,6 +624,7 @@ function getChangedModules() {
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");
     if (file.startsWith("apps/")) matched.add("apps");
+    if (file.startsWith("apps/") || file.startsWith("plugins/")) matched.add("boundary");
   }
   return Array.from(matched);
 }
