@@ -98,9 +98,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 	// is one piece of work however they asked for it. It is made before
 	// anything that reports itself into it.
 	tasks := run.NewTasks()
-	models := &run.Lock{}
 	made.ReportPluginFailures(tasks)
-	made.SetPluginWork(tasks, models)
 
 	// Opened once, for as long as the window is. A local model is fetched and
 	// compiled behind this, so the window is drawn while it arrives.
@@ -136,7 +134,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		made:          made,
 		checkIdentity: vaults.NewCheckIdentity(made.GetVaultIdentity()),
 		tasks:         tasks,
-		models:        models,
+		models:        &run.Lock{},
 		out:           out,
 		ctx:           ctx,
 		indexer:       indexer,

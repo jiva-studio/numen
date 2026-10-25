@@ -142,10 +142,6 @@ func (e EditorAssembly) ReportPluginFailures(tasks *run.Tasks) {
 	e.cfg.ReportDependencies(tasks)
 }
 
-func (e EditorAssembly) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
-	e.cfg.SetPluginWork(tasks, models)
-}
-
 func (e EditorAssembly) IsRebuildingIndex() bool     { return e.cfg.ShouldRebuildIndex }
 func (e EditorAssembly) IsTranscribingUnasked() bool { return e.cfg.ShouldTranscribe }
 

@@ -102,7 +102,6 @@ type Host struct {
 	hostEndpoint   *hostendpoint.Endpoint
 	hostAddress    string
 	dependencies   pluginport.DependencyCatalog
-	work           pluginport.PluginWork
 	builtIns       map[string]builtInPlugin
 }
 
@@ -140,7 +139,6 @@ func NewHost(target string, dirs ...string) *Host {
 		hostEndpoint:     nil,
 		hostAddress:      hostendpoint.Address,
 		dependencies:     nil,
-		work:             nil,
 		builtIns:         make(map[string]builtInPlugin),
 	}
 	h.bus = eventbus.New(h, 50*time.Millisecond, 250*time.Millisecond)
@@ -262,7 +260,6 @@ func (h *Host) teardownTarget(ctx context.Context, target pluginTeardownTarget, 
 	rpcShutdown := h.createRPCShutdown(target.endpoint, gracePeriod)
 	err := target.sup.Teardown(ctx, gracePeriod, rpcShutdown)
 	h.closeStdin(target.id, target.pid)
-	h.clearPluginWork(target.id)
 	return err
 }
 
@@ -566,14 +563,9 @@ func (h *Host) awaitActivation(ctx context.Context, pluginID string, sup *lifecy
 // dropEndpointOfStoppedPlugin forgets the endpoint of an exited process unless a replacement is already running.
 func (h *Host) dropEndpointOfStoppedPlugin(pluginID string, sup *lifecycle.Supervisor) {
 	h.mu.Lock()
-	state := sup.GetState()
-	isStopped := state == lifecycle.StateDormant || state == lifecycle.StateActivating
-	if isStopped {
+	defer h.mu.Unlock()
+	if state := sup.GetState(); state == lifecycle.StateDormant || state == lifecycle.StateActivating {
 		delete(h.endpoints, pluginID)
-	}
-	h.mu.Unlock()
-	if isStopped {
-		h.clearPluginWork(pluginID)
 	}
 }
 

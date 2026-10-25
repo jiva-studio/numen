@@ -21,8 +21,6 @@ type Lock struct {
 	mu      sync.Mutex
 	isHeld  bool
 	waiting [priorities][]chan struct{}
-	// watchers are closed the next time a run waits.
-	watchers []chan struct{}
 }
 
 // Acquire waits for the lock and returns what releases it. waiting is called
@@ -42,10 +40,6 @@ func (g *Lock) Acquire(ctx context.Context, requested bool, waiting func()) (fun
 	}
 	stand := make(chan struct{})
 	g.waiting[pos] = append(g.waiting[pos], stand)
-	for _, watcher := range g.watchers {
-		close(watcher)
-	}
-	g.watchers = nil
 	g.mu.Unlock()
 
 	if waiting != nil {
@@ -90,28 +84,9 @@ func (g *Lock) leave(pos int, stand chan struct{}) {
 	g.release()
 }
 
-// HasWaiting reports whether a run waits for the lock.
 func (g *Lock) HasWaiting() bool {
 	g.mu.Lock()
 	defer g.mu.Unlock()
-	return g.hasWaitingLocked()
-}
-
-// WatchWaiting returns a channel closed once a run waits for the lock. It is
-// closed already where one waits now.
-func (g *Lock) WatchWaiting() <-chan struct{} {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	watcher := make(chan struct{})
-	if g.hasWaitingLocked() {
-		close(watcher)
-		return watcher
-	}
-	g.watchers = append(g.watchers, watcher)
-	return watcher
-}
-
-func (g *Lock) hasWaitingLocked() bool {
 	for _, line := range g.waiting {
 		if len(line) > 0 {
 			return true

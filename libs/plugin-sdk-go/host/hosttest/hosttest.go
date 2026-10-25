@@ -1,6 +1,6 @@
-// Package hosttest is a vault and a queue that answer as the host does, for the tests of a plugin
-// that works them through package host. The vault's files are held in memory, or in a folder where
-// a test can change them as another program would.
+// Package hosttest is a vault that answers as the host does, for the tests of a plugin that works a
+// vault through package host. Its files are held in memory, or in a folder where a test can change
+// them as another program would.
 package hosttest
 
 import (
