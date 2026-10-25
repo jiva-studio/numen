@@ -10,7 +10,6 @@ PLUGIN_SDK_GO := libs/plugin-sdk-go
 PLUGIN_SDK_GO_MODULES := $(patsubst %/go.mod,%,$(wildcard $(PLUGIN_SDK_GO)/go.mod $(PLUGIN_SDK_GO)/*/go.mod))
 
 DESKTOP  := apps/desktop
-DESKTOP_MONOLITH := apps/desktop-monolith
 MOBILE   := apps/mobile
 DOCS     := apps/docs
 LANDING  := apps/landing
@@ -57,11 +56,6 @@ generate-check: lib_protocol_generate_check ## verify generated code matches sch
 
 .PHONY: desktop
 desktop: app_desktop_build ## build desktop application
-
-.PHONY: desktop_monolith
-desktop_monolith: interface ## build desktop application in monolithic mode
-	cd $(DESKTOP_MONOLITH) && CGO_ENABLED=1 go build -tags plugins_monolith -o $(CURDIR)/numen .
-	$(call bundle,Numen,numen,Info.plist,numen.icns)
 
 .PHONY: desktop_modular
 desktop_modular: interface plugins_build ## build desktop application in modular mode

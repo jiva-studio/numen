@@ -40,8 +40,6 @@ export const ALLOWED_BASE_SCOPES = new Set([
 
   // Apps
   'desktop',
-  'desktop-monolith',
-  'monolith',
   'editor',
   'flashcards',
   'mobile',

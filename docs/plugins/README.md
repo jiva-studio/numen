@@ -6,14 +6,9 @@ Numen features a modular plugin architecture that decouples specialized capabili
 
 ## 1. Overview & Architecture
 
-Numen plugins follow a dual-mode architectural contract:
+Every plugin runs as an independent subprocess that communicates with the core host over loopback Connect-RPC HTTP/2. No application or library module imports a plugin package: the host discovers plugins on disk from their `manifest.json` and launches them.
 
-1. **In-tree Monolithic Build**: Plugins compile directly into the application binary for development without IPC overhead.
-2. **Out-of-Process Modular Build**: Plugins execute as independent subprocesses communicating with the core host over loopback Connect-RPC HTTP/2.
-
-In the monolithic build, `apps/desktop-monolith` is the composition root and the one module that names plugins. It registers each plugin it links once, with `app.RegisterPlugin(manifest, serve)`: `manifest` is the plugin's own `manifest.json`, embedded by the package at the root of the plugin's module, and `serve` makes the handler of the plugin's backend from the variables a launched process of it is given. The handler is a linked server of the plugin SDK (`server.NewLinkedHandler`) with the plugin's services mounted on it, so each plugin answers its own services and its own `Configure`. A plugin the monolith does not link is launched as a process.
-
-A plugin joins the monolith in three steps. Its module has a `manifest.go` that embeds `manifest.json`, its backend lives in an importable package `backend/service` whose `Mount(s *server.Server) error` registers its services and whose `NewHandler(vars)` returns `server.NewLinkedHandler(vars, Mount)`, and `registerPlugins` in `apps/desktop-monolith/main.go` gains one line. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down. The monolith links Numen Agent, Claude Code, proofreading, the downloader, embeddings, OCR, transcription and both readers. CI runs `TestBothBuildsAnswerAlike` in that module: the same chat, single answer and document call go to the plugins linked into the process and to the plugins launched as processes, and the answers and the declared capabilities are compared.
+A plugin's backend lives in the package `backend/service`, whose `Mount(s *server.Server) error` registers its services. What the plugin holds open is closed with `s.OnClose`, which runs when the host shuts the plugin down.
 
 ### The vault, through the host
 
@@ -41,7 +36,7 @@ Every plugin follows a standard layout:
 ```text
 plugins/<name>/
 ├── manifest.json       # Metadata, capabilities, activation events, permissions
-├── manifest.go         # Monolithic build registration
+├── manifest.go         # manifest.json embedded for Go
 ├── Makefile            # Build and test recipes
 ├── README.md           # Documentation
 ├── backend/            # Native Connect-RPC server (Go)

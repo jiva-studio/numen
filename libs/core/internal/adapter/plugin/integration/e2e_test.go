@@ -1,5 +1,3 @@
-//go:build !plugins_monolith
-
 package integration_test
 
 import (
