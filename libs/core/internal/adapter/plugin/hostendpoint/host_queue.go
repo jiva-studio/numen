@@ -38,7 +38,8 @@ func (e *queueEndpoint) begin(header http.Header) (string, pluginport.PluginWork
 
 // EnqueueWork streams WAITING while other work holds the queue, RUNNING once
 // the plugin's turn begins and CONTENDED once other work waits behind it. The
-// stream ends when the turn does.
+// stream ends when the turn does. The plugin is not stopped as idle while the
+// stream lasts.
 func (e *queueEndpoint) EnqueueWork(
 	ctx context.Context, req *connect.Request[v1.EnqueueWorkRequest], stream *connect.ServerStream[v1.EnqueueWorkResponse],
 ) error {
@@ -46,6 +47,8 @@ func (e *queueEndpoint) EnqueueWork(
 	if err != nil {
 		return err
 	}
+	e.endpoint.callers.Acquire(pluginID)
+	defer e.endpoint.callers.Release(pluginID)
 	var waitErr error
 	turn, err := work.EnqueueWork(ctx, pluginID, req.Msg.GetIsUserStarted(), func() {
 		waitErr = stream.Send(&v1.EnqueueWorkResponse{State: v1.WorkState_WORK_STATE_WAITING})

@@ -49,6 +49,9 @@ type Callers interface {
 	GetDependencies() pluginport.DependencyCatalog
 	// GetPluginWork is the queue and the list of tasks the plugins use, or nil.
 	GetPluginWork() pluginport.PluginWork
+	// Acquire keeps a running plugin from being stopped as idle until Release.
+	Acquire(pluginID string)
+	Release(pluginID string)
 }
 
 // Endpoint answers the calls plugins make to the host. It listens on the

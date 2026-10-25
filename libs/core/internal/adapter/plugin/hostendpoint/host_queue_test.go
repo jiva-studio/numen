@@ -20,7 +20,12 @@ import (
 // calling it with the token.
 func newQueueClient(t *testing.T, work *run.PluginWork, token string) numenv1connect.HostQueueServiceClient {
 	t.Helper()
-	fakeCallers := newCallers(nil)
+	return newQueueClientOver(t, newCallers(nil), work, token)
+}
+
+// newQueueClientOver is that client over the host the callers are.
+func newQueueClientOver(t *testing.T, fakeCallers *callers, work *run.PluginWork, token string) numenv1connect.HostQueueServiceClient {
+	t.Helper()
 	fakeCallers.work = work
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: &Endpoint{callers: fakeCallers}}))
@@ -123,5 +128,26 @@ func TestQueueRefusesACallerWithNoToken(t *testing.T) {
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{Id: "a"}}))
 	if code := readCode(t, err); code != connect.CodeUnauthenticated {
 		t.Fatalf("got %s, want unauthenticated", code)
+	}
+}
+
+func TestEnqueueWorkKeepsThePluginRunningWhileTheStreamLasts(t *testing.T) {
+	work := run.NewPluginWork(&run.Lock{}, run.NewTasks())
+	fakeCallers := newCallers(nil)
+	fakeCallers.releases = make(chan string, 1)
+	ctx, closeStream := context.WithCancel(t.Context())
+	openWork(t, ctx, newQueueClientOver(t, fakeCallers, work, "token-a"), true, v1.WorkState_WORK_STATE_RUNNING)
+
+	if got := fakeCallers.getHeld("md.numen.a"); got != 1 {
+		t.Fatalf("the plugin is held %d times during its turn, want 1", got)
+	}
+	closeStream()
+	select {
+	case <-fakeCallers.releases:
+	case <-time.After(5 * time.Second):
+		t.Fatal("the plugin was not released after its turn ended")
+	}
+	if got := fakeCallers.getHeld("md.numen.a"); got != 0 {
+		t.Fatalf("the plugin is still held %d times after its turn ended", got)
 	}
 }

@@ -34,6 +34,8 @@ type callers struct {
 	vault     pluginport.PluginVault
 	texts     pluginport.PluginTexts
 	work      pluginport.PluginWork
+	held      map[string]int
+	releases  chan string
 }
 
 func (c *callers) GetPluginIDByToken(token string) (string, bool) {
@@ -68,6 +70,30 @@ func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
 func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
+
+func (c *callers) Acquire(pluginID string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if c.held == nil {
+		c.held = map[string]int{}
+	}
+	c.held[pluginID]++
+}
+
+func (c *callers) Release(pluginID string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.held[pluginID]--
+	if c.releases != nil {
+		c.releases <- pluginID
+	}
+}
+
+func (c *callers) getHeld(pluginID string) int {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.held[pluginID]
+}
 
 // callerCompleter answers with the id of the plugin it was told asks.
 type callerCompleter struct{}
