@@ -98,6 +98,28 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost))
 }
 
+// OpenPluginCommands opens the index of the vault and lets the plugins work it through the host
+// with no window, and answers how to run a command of theirs and how to close what it opened.
+func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
+	c.SetPluginVaultPath(v.Path)
+	registry, err := c.Registry()
+	if err != nil {
+		return plugincommand.Run{}, nil, err
+	}
+	db, err := c.OpenIndex(ctx)
+	if err != nil {
+		return plugincommand.Run{}, nil, err
+	}
+	current := func() (domain.Vault, bool) { return v, true }
+	vault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
+	if err != nil {
+		_ = db.Close()
+		return plugincommand.Run{}, nil, err
+	}
+	c.SetPluginVault(vault)
+	return c.GetPluginCommands().Run, db.Close, nil
+}
+
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.
 type PluginServices = interface {
 	http.Handler

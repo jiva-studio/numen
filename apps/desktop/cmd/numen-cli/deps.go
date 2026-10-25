@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
@@ -298,30 +297,7 @@ func createProblems(ctx context.Context, cfg container.Config) (cli.Problems, er
 	return cli.Problems{Problems: db.Problems(), Close: db.Close}, nil
 }
 
-// createPluginCommands is the commands the enabled plugins declare. Running one opens the index and
-// lets the plugins work the vault through the host, with no window.
+// createPluginCommands is the commands the enabled plugins declare.
 func createPluginCommands(cfg container.Config) cli.PluginCommands {
-	commands := cfg.GetPluginCommands()
-	return cli.PluginCommands{
-		List: commands.List,
-		Open: func(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-			cfg.SetPluginVaultPath(v.Path)
-			registry, err := cfg.Registry()
-			if err != nil {
-				return plugincommand.Run{}, nil, err
-			}
-			db, err := cfg.OpenIndex(ctx)
-			if err != nil {
-				return plugincommand.Run{}, nil, err
-			}
-			current := func() (domain.Vault, bool) { return v, true }
-			vault, err := cfg.OpenPluginVault(registry, db, current, container.PluginVaultHooks{})
-			if err != nil {
-				_ = db.Close()
-				return plugincommand.Run{}, nil, err
-			}
-			cfg.SetPluginVault(vault)
-			return commands.Run, db.Close, nil
-		},
-	}
+	return cli.PluginCommands{List: cfg.GetPluginCommands().List, Open: cfg.OpenPluginCommands}
 }
