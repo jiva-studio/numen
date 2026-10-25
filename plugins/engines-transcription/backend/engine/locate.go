@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -23,7 +22,6 @@ type paths struct {
 	joiner    string
 	tokens    string
 	segmenter string
-	from      string
 }
 
 func findInFolder(dir, fileName string) string {
@@ -119,17 +117,6 @@ func locateModels(ctx context.Context, cfg Config) (*ort.Engine, paths, error) {
 		joiner:    joiner,
 		tokens:    tokens,
 		segmenter: segmenterPath,
-		from:      "provisioned",
-	}
-	if cfg.Dir != "" {
-		found.from = cfg.Dir
 	}
 	return engine, found, nil
-}
-
-func getModelName(name, pos string) string {
-	if name != "" {
-		return name
-	}
-	return strings.TrimSuffix(path.Base(filepath.ToSlash(pos)), filepath.Ext(pos))
 }

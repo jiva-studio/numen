@@ -1,8 +1,6 @@
 // Package segmenter finds where in a recording somebody is speaking.
 package segmenter
 
-import "fmt"
-
 // Model is how the segmenter finds where in a recording somebody is speaking. What it cuts is
 // what the transcriber is given, so where it cuts is part of what the words
 // are.
@@ -77,12 +75,4 @@ func (s Model) getShortestPause() int {
 		return 2500
 	}
 	return s.Least
-}
-
-// DescribeSettings is every setting a segment is cut by, as one value. Each of them
-// moves where a segment ends, and a segment that ends elsewhere is transcribed
-// as other words.
-func (s Model) DescribeSettings() string {
-	return fmt.Sprintf("%.2f/%d/%d/%d/%d/%d",
-		s.getThreshold(), s.getSilenceLength(), s.getPadding(), s.getLongestSegment(), s.getShortestSegment(), s.getShortestPause())
 }

@@ -25,7 +25,7 @@ func run() error {
 	flag.StringVar(&runtimeFlag, "runtime", "", "Path to ONNX runtime library")
 
 	s := server.New()
-	if err := service.Mount(s, service.NewConfig(modelsDirFlag, runtimeFlag), os.Getenv("NUMEN_VAULT_PATH")); err != nil {
+	if err := service.MountFromEnv(s, service.NewConfig(modelsDirFlag, runtimeFlag)); err != nil {
 		return err
 	}
 	return s.Serve()

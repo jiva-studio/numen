@@ -3,17 +3,13 @@
   "name": "Audio/Video Transcription",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Speech-to-text audio and video transcription using native plugin backend",
-  "capabilities": ["transcription"],
+  "description": "Transcribes the recordings a person asks for, keeps their transcripts and gives them to the vault as timed text",
   "targets": ["desktop.editor"],
-  "activationEvents": [
-    "onFile:*.mp3",
-    "onFile:*.wav",
-    "onFile:*.m4a",
-    "onFile:*.mp4",
-    "onCommand:transcribe"
-  ],
-  "permissions": ["vault:read", "network:outbound"],
+  "activationEvents": ["onFile:*.mp3", "onFile:*.wav", "onFile:*.flac"],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "textInput": {
+    "files": [".wav", ".mp3", ".flac"]
+  },
   "dependencies": [
     {
       "id": "onnxruntime",
@@ -78,7 +74,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/engines-transcription",
-    "serviceName": "numen.v1.TranscriptionService"
+    "serviceName": "numen.v1.TranscriptService"
   },
   "settings": [
     {

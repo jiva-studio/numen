@@ -10,13 +10,6 @@ type Audio struct {
 	To      int
 }
 
-type TranscriptionModel struct {
-	Model     string
-	Segmenter string
-	Cutting   string
-	From      string
-}
-
 // A Recording is a file opened for listening.
 type Recording interface {
 	GetDuration() int
@@ -26,7 +19,6 @@ type Recording interface {
 
 // TranscriberPort is the port interface for speech recognition and segmentation.
 type TranscriberPort interface {
-	GetTranscriptionModel() TranscriptionModel
 	Open(ctx context.Context, raw []byte) (Recording, error)
 	Transcribe(ctx context.Context, audio Audio) (string, error)
 	Close() error

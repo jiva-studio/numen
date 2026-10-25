@@ -83,8 +83,6 @@ type Transcriber struct {
 	// workers is how many goroutines share the signal processing of a stretch.
 	workers int
 
-	model TranscriptionModel
-
 	// One set of sessions, one stretch at a time. The library is safe to call
 	// from several goroutines, and a stretch is heard start to finish.
 	mu sync.Mutex
@@ -111,12 +109,6 @@ func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
 		pieces:  pieces,
 		blank:   blank,
 		workers: cfg.Workers,
-		model: TranscriptionModel{
-			Model:     getModelName(cfg.Model.Name, found.encoder),
-			Segmenter: getModelName(cfg.Segmenter.Name, found.segmenter),
-			Cutting:   cfg.Segmenter.DescribeSettings(),
-			From:      found.from,
-		},
 	}
 	threads := cfg.sessionThreads()
 	for _, one := range []struct {
@@ -153,9 +145,6 @@ func openSession(engine *ort.Engine, path string, threads int) (*ort.Session, er
 	defer options.Destroy()
 	return onnx.NewSession(engine, path, options)
 }
-
-// GetTranscriptionModel is what every recording this transcriber hears was heard by.
-func (t *Transcriber) GetTranscriptionModel() TranscriptionModel { return t.model }
 
 // Close lets go of the models this transcriber loaded. The runtime they ran on
 // is the process's and stays.

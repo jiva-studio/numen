@@ -10,15 +10,6 @@ func NewMockTranscriber() TranscriberPort {
 	return &mockTranscriber{}
 }
 
-func (m *mockTranscriber) GetTranscriptionModel() TranscriptionModel {
-	return TranscriptionModel{
-		Model:     "mock-asr",
-		Segmenter: "mock-vad",
-		Cutting:   "mock-threshold",
-		From:      "mock",
-	}
-}
-
 func (m *mockTranscriber) Open(_ context.Context, _ []byte) (Recording, error) {
 	return &mockRecording{duration: 2000, hasServed: false}, nil
 }
