@@ -124,11 +124,11 @@ func TestHowManyPlacesRunAtOnce(t *testing.T) {
 
 // answering is a store that returns what it was given for every name.
 type answering struct {
-	ports.DerivedStore
+	ports.LogStore
 	why error
 }
 
-func (a answering) ReadArtifact(context.Context, domain.ArtifactName) ([]byte, error) {
+func (a answering) ReadLog(context.Context, string) ([]byte, error) {
 	return nil, a.why
 }
 
@@ -138,7 +138,7 @@ func (a answering) ReadArtifact(context.Context, domain.ArtifactName) ([]byte, e
 func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrPermission}}
 
-	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
+	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Run: "run"})
 	if err != nil {
 		t.Fatalf("a file nobody may open failed the whole history: %v", err)
 	}
@@ -152,7 +152,7 @@ func TestARunNobodyMayOpenIsOneSkippedRun(t *testing.T) {
 func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 	store := answering{why: &os.PathError{Op: "open", Path: "run.jsonl", Err: fs.ErrNotExist}}
 
-	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
+	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Run: "run"})
 	if err != nil {
 		t.Fatalf("a file that was gone failed the whole history: %v", err)
 	}
@@ -165,7 +165,7 @@ func TestARunTakenAwayBeforeItWasReadIsNoRun(t *testing.T) {
 func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 	store := answering{why: fmt.Errorf("the disk is not there")}
 
-	if _, err := (Log{}).ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")}); err == nil {
+	if _, err := (Log{}).ReadFile(t.Context(), store, ports.Entry{Run: "run"}); err == nil {
 		t.Error("a store that could not answer was taken as a run that was read")
 	}
 }
@@ -176,7 +176,7 @@ func TestARunThatWouldNotBeReadForAnyOtherReasonIsTrouble(t *testing.T) {
 func TestARunHeldByAnotherProgramIsOneSkippedRun(t *testing.T) {
 	store := answering{why: fmt.Errorf("run.jsonl: %w", ports.ErrHeldByAnother)}
 
-	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Name: domain.NewReviewLogName("run")})
+	ran, err := Log{}.ReadFile(t.Context(), store, ports.Entry{Run: "run"})
 	if err != nil {
 		t.Fatalf("a file another program holds failed the whole history: %v", err)
 	}

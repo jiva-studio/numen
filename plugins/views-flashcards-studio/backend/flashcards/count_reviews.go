@@ -61,7 +61,7 @@ type ReviewCounts struct {
 // the order of every answer before it, so a schedule arriving late is the whole
 // history read again.
 type CountReviews struct {
-	logs ports.DerivedStores
+	logs ports.LogStores
 	// Cache is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
 	Cache ports.ScheduleStore
@@ -76,7 +76,7 @@ type CountReviews struct {
 // are kept, where those answers have left each card face, where one day of
 // review gives way to the next, and what time it is.
 func NewCountReviews(
-	logs ports.DerivedStores, schedules Schedules, day review.Day, now ports.Clock,
+	logs ports.LogStores, schedules Schedules, day review.Day, now ports.Clock,
 ) CountReviews {
 	return CountReviews{logs: logs, schedules: schedules, day: day, now: now}
 }
@@ -152,12 +152,12 @@ type reviewCounter struct {
 
 // countFile adds one run of the log to the counting.
 func (u CountReviews) countFile(
-	ctx context.Context, log Log, store ports.DerivedStore, file ports.Entry, run *reviewCounter,
+	ctx context.Context, log Log, store ports.LogStore, file ports.Entry, run *reviewCounter,
 ) error {
 	var ran LogFile
 	var didOpen bool
 	var err error
-	one, hasCached := run.was[file.Name.Hash]
+	one, hasCached := run.was[file.Run]
 	isStale := !hasCached || one.Size != file.Size
 	if isStale || run.coming {
 		ran, err = log.ReadFile(ctx, store, file)
@@ -168,7 +168,7 @@ func (u CountReviews) countFile(
 	}
 	if isStale {
 		one = cachedRun{
-			Name: file.Name.Hash,
+			Name: file.Run,
 			Size: ran.Size,
 			Days: review.GetDayTallies(u.day, ran.Answers),
 			IDs:  collectIdentifiers(ran.Answers),
@@ -177,7 +177,7 @@ func (u CountReviews) countFile(
 	run.now.Runs = append(run.now.Runs, one)
 	if didOpen && !ran.IsGone && !ran.IsUnreadable {
 		run.log.Answers = append(run.log.Answers, ran.Answers...)
-		run.log.Files = append(run.log.Files, ports.Entry{Name: file.Name, Size: ran.Size})
+		run.log.Files = append(run.log.Files, ports.Entry{Run: file.Run, Size: ran.Size})
 	}
 
 	days := one.Days

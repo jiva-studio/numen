@@ -59,7 +59,6 @@ const (
 	ArtifactProducer    = artifacts.ArtifactProducer
 	ArtifactCopy        = artifacts.ArtifactCopy
 	ArtifactIndexClaim  = artifacts.ArtifactIndexClaim
-	ArtifactReviewLog   = artifacts.ArtifactReviewLog
 	MostHighlights      = artifacts.MostHighlights
 )
 
@@ -80,7 +79,6 @@ var (
 	NewArtifactName       = artifacts.NewArtifactName
 	NewCopyName           = artifacts.NewCopyName
 	NewIndexClaimName     = artifacts.NewIndexClaimName
-	NewReviewLogName      = artifacts.NewReviewLogName
 	IsTimedProducer       = artifacts.IsTimedProducer
 	GetAddressProducers   = artifacts.GetAddressProducers
 	GetArtifactNames      = artifacts.GetArtifactNames

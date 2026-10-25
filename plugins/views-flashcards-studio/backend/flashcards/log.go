@@ -17,7 +17,7 @@ import (
 )
 
 // Log is one vault's answers: every run that was ever written there.
-type Log struct{ Stores ports.DerivedStores }
+type Log struct{ Stores ports.LogStores }
 
 // ReviewLog is what a vault's log came to.
 type ReviewLog struct {
@@ -89,7 +89,7 @@ func (u Log) Read(ctx context.Context, v domain.Vault) (ReviewLog, error) {
 			continue
 		}
 		out.Answers = append(out.Answers, ran.Answers...)
-		out.Files = append(out.Files, ports.Entry{Name: file.Name, Size: ran.Size})
+		out.Files = append(out.Files, ports.Entry{Run: file.Run, Size: ran.Size})
 	}
 	out.order = newHistory(out.Answers)
 	return out, nil
@@ -116,9 +116,9 @@ type LogFile struct {
 
 // ReadFile reads one file of a vault's log.
 func (u Log) ReadFile(
-	ctx context.Context, store ports.DerivedStore, file ports.Entry,
+	ctx context.Context, store ports.LogStore, file ports.Entry,
 ) (LogFile, error) {
-	raw, err := store.ReadArtifact(ctx, file.Name)
+	raw, err := store.ReadLog(ctx, file.Run)
 	if errors.Is(err, fs.ErrNotExist) {
 		return LogFile{IsGone: true}, nil
 	}
@@ -133,14 +133,14 @@ func (u Log) ReadFile(
 }
 
 // readLogFiles returns the files of the log, sorted by name.
-func readLogFiles(ctx context.Context, store ports.DerivedStore) ([]ports.Entry, error) {
-	target, err := store.ListReviewLogs(ctx)
+func readLogFiles(ctx context.Context, store ports.LogStore) ([]ports.Entry, error) {
+	target, err := store.ListLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
 	out := slices.Clone(target)
 	slices.SortFunc(out, func(a, b ports.Entry) int {
-		return strings.Compare(a.Name.Hash, b.Name.Hash)
+		return strings.Compare(a.Run, b.Run)
 	})
 	return out, nil
 }
@@ -156,19 +156,19 @@ func (u Log) Open(ctx context.Context, v domain.Vault, now time.Time) (*LogWrite
 		return nil, err
 	}
 	id := ulid.New(now)
-	return &LogWriter{store: store, name: domain.NewReviewLogName(id)}, nil
+	return &LogWriter{store: store, run: id}, nil
 }
 
 // LogWriter is one session of review, and the file it appends to.
 type LogWriter struct {
-	store ports.DerivedStore
-	name  domain.ArtifactName
+	store ports.LogStore
+	run   string
 	// answer writes nothing further to it, and every answer after it is
 	stopped error
 }
 
 // GetName is the identifier of the run, which names the file it writes.
-func (r *LogWriter) GetName() string { return r.name.Hash }
+func (r *LogWriter) GetName() string { return r.run }
 
 // Append writes one answer to the end of the run's file.
 //
@@ -182,8 +182,8 @@ func (r *LogWriter) Append(ctx context.Context, a review.Answer) error {
 	if err != nil {
 		return err
 	}
-	if err := r.store.AppendArtifact(ctx, r.name, raw); err != nil {
-		r.stopped = fmt.Errorf("%s took no more answers: %w", r.name, err)
+	if err := r.store.AppendLog(ctx, r.run, raw); err != nil {
+		r.stopped = fmt.Errorf("run %s took no more answers: %w", r.run, err)
 		return r.stopped
 	}
 	return nil

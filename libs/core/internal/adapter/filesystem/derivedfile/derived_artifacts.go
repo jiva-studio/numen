@@ -7,9 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// reviewLogSuffix is what a file of review answers is named with.
-const reviewLogSuffix = ".jsonl"
-
 // extensions is what each file of a producer's work ends in. A text with the
 // times it was said at is WebVTT, and opens in a player under that name.
 var extensions = map[domain.ArtifactFile]struct{ prose, timed string }{
@@ -32,8 +29,6 @@ func getKey(name domain.ArtifactName) string {
 		return CopyDir + "/" + name.Hash + domain.CopyExtension
 	case domain.ArtifactIndexClaim:
 		return IndexDir + "/indexing"
-	case domain.ArtifactReviewLog:
-		return FlashcardsDir + "/" + name.Hash + reviewLogSuffix
 	default:
 		ext := extensions[name.File]
 		if domain.IsTimedProducer(name.Producer) {

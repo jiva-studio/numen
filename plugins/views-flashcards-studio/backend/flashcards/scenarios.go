@@ -44,7 +44,7 @@ type Config struct {
 	Links     ports.LinkQueries
 	Problems  ports.ProblemQueries
 	Index     func(ctx context.Context, v domain.Vault, paths []string) error
-	Logs      ports.DerivedStores
+	Logs      ports.LogStores
 	Schedules ports.ScheduleStore
 	DayCounts ports.ScheduleStore
 	DayStart  func() time.Duration

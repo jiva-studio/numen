@@ -42,7 +42,7 @@ type vaulted struct {
 	marking   flashcards.MarkCards
 	schedules flashcards.Schedules
 	counted   flashcards.CountReviews
-	logs      ports.DerivedStores
+	logs      ports.LogStores
 	notes     ports.NoteQueries
 	links     ports.LinkQueries
 	// scan brings the index level with what the vault now holds.

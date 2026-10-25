@@ -28,7 +28,7 @@ func TestARunTakenAwayBeforeItWasReadIsMissing(t *testing.T) {
 	}
 
 	ran, err := flashcards.Log{Stores: s.logs}.ReadFile(t.Context(), store, ports.Entry{
-		Name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV"),
+		Run: "01ARZ3NDEKTSV4RRFFQ69G5FAV",
 	})
 	if err != nil {
 		t.Fatalf("a run that is no longer there was trouble: %v", err)
@@ -71,7 +71,7 @@ func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 	}
 	for _, one := range target.Files {
 		if one.Size == 0 {
-			t.Errorf("%s was read at no length at all", one.Name)
+			t.Errorf("%s was read at no length at all", one.Run)
 		}
 	}
 	if target.Skipped != 0 {
@@ -83,29 +83,29 @@ func TestWhatAVaultContainsIsEveryRunItWasReadFrom(t *testing.T) {
 // synchroniser taking a file away between the listing and the reading, which is
 // the one moment nothing else can arrange.
 type phantom struct {
-	ports.DerivedStores
-	name domain.ArtifactName
+	ports.LogStores
+	name string
 }
 
-func (p phantom) Open(v domain.Vault) (ports.DerivedStore, error) {
-	store, err := p.DerivedStores.Open(v)
+func (p phantom) Open(v domain.Vault) (ports.LogStore, error) {
+	store, err := p.LogStores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return listing{DerivedStore: store, name: p.name}, nil
+	return listing{LogStore: store, name: p.name}, nil
 }
 
 type listing struct {
-	ports.DerivedStore
-	name domain.ArtifactName
+	ports.LogStore
+	name string
 }
 
-func (l listing) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	target, err := l.DerivedStore.ListReviewLogs(ctx)
+func (l listing) ListLogs(ctx context.Context) ([]ports.Entry, error) {
+	target, err := l.LogStore.ListLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return append(target, ports.Entry{Name: l.name, Size: 120}), nil
+	return append(target, ports.Entry{Run: l.name, Size: 120}), nil
 }
 
 // A run taken away between the listing and the reading is left out, and the
@@ -119,7 +119,7 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	removed := phantom{DerivedStores: s.logs, name: domain.NewReviewLogName("01ARZ3NDEKTSV4RRFFQ69G5FAV")}
+	removed := phantom{LogStores: s.logs, name: "01ARZ3NDEKTSV4RRFFQ69G5FAV"}
 	target, err := flashcards.Log{Stores: removed}.Read(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a run taken away failed the whole history: %v", err)
@@ -136,12 +136,12 @@ func TestARunTakenAwayIsLeftOutAndTheRestAreRead(t *testing.T) {
 // descending order each time it is asked, which is what a directory's own
 // order is not promised to keep across two listings of it.
 type reordered struct {
-	ports.DerivedStore
+	ports.LogStore
 	reverse bool
 }
 
-func (r *reordered) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
-	target, err := r.DerivedStore.ListReviewLogs(ctx)
+func (r *reordered) ListLogs(ctx context.Context) ([]ports.Entry, error) {
+	target, err := r.LogStore.ListLogs(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -156,17 +156,17 @@ func (r *reordered) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
 // reorderedStores opens the one store every call flips the order of, so the
 // same vault's listing keeps flipping across every call that asks for it.
 type reorderedStores struct {
-	ports.DerivedStores
+	ports.LogStores
 	store *reordered
 }
 
-func (s *reorderedStores) Open(v domain.Vault) (ports.DerivedStore, error) {
+func (s *reorderedStores) Open(v domain.Vault) (ports.LogStore, error) {
 	if s.store == nil {
-		inner, err := s.DerivedStores.Open(v)
+		inner, err := s.LogStores.Open(v)
 		if err != nil {
 			return nil, err
 		}
-		s.store = &reordered{DerivedStore: inner}
+		s.store = &reordered{LogStore: inner}
 	}
 	return s.store, nil
 }
@@ -187,7 +187,7 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 		}
 	}
 
-	log := flashcards.Log{Stores: &reorderedStores{DerivedStores: s.logs}}
+	log := flashcards.Log{Stores: &reorderedStores{LogStores: s.logs}}
 	first, err := log.GetLogFiles(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
@@ -199,14 +199,14 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 	if len(first) != 3 || len(second) != 3 {
 		t.Fatalf("listed %d and then %d files, want the three runs each time", len(first), len(second))
 	}
-	byName := func(a, b ports.Entry) int { return strings.Compare(a.Name.Hash, b.Name.Hash) }
+	byName := func(a, b ports.Entry) int { return strings.Compare(a.Run, b.Run) }
 	for _, one := range [][]ports.Entry{first, second} {
 		if !slices.IsSortedFunc(one, byName) {
 			t.Errorf("%v is not sorted by name", one)
 		}
 	}
 	for entry := range first {
-		if first[entry].Name != second[entry].Name {
+		if first[entry].Run != second[entry].Run {
 			t.Errorf("the same runs came back in another order: %v then %v", first, second)
 		}
 	}
@@ -215,22 +215,22 @@ func TestGetLogFilesSortsWhateverOrderTheStoreLists(t *testing.T) {
 // refusing is a vault's store that cannot be read at all: a disk that has gone
 // away, a folder somebody's permissions closed.
 type refusing struct {
-	ports.DerivedStores
+	ports.LogStores
 }
 
-func (r refusing) Open(v domain.Vault) (ports.DerivedStore, error) {
-	store, err := r.DerivedStores.Open(v)
+func (r refusing) Open(v domain.Vault) (ports.LogStore, error) {
+	store, err := r.LogStores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return closed{DerivedStore: store}, nil
+	return closed{LogStore: store}, nil
 }
 
-type closed struct{ ports.DerivedStore }
+type closed struct{ ports.LogStore }
 
 var errClosed = errors.New("the folder cannot be read")
 
-func (closed) ReadArtifact(context.Context, domain.ArtifactName) ([]byte, error) {
+func (closed) ReadLog(context.Context, string) ([]byte, error) {
 	return nil, errClosed
 }
 
@@ -245,13 +245,13 @@ func TestAVaultWhoseAnswersCannotBeReadIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := (flashcards.Log{Stores: refusing{DerivedStores: s.logs}}).Read(
+	if _, err := (flashcards.Log{Stores: refusing{LogStores: s.logs}}).Read(
 		t.Context(), s.vault,
 	); !errors.Is(err, errClosed) {
 		t.Errorf("a folder that cannot be read came back with %v", err)
 	}
 
-	counter := flashcards.NewCountReviews(refusing{DerivedStores: s.logs}, s.schedules, today, time.Now)
+	counter := flashcards.NewCountReviews(refusing{LogStores: s.logs}, s.schedules, today, time.Now)
 	if _, err := counter.Execute(t.Context(), s.vault); !errors.Is(err, errClosed) {
 		t.Errorf("the counting came back with %v", err)
 	}
@@ -290,34 +290,34 @@ func TestASessionIntoAVaultThatIsMissingStops(t *testing.T) {
 // brimming is a store that takes one append and refuses every one after it,
 // which is a disk filling up under a session.
 type brimming struct {
-	ports.DerivedStores
+	ports.LogStores
 	store *filling
 }
 
-func (b *brimming) Open(v domain.Vault) (ports.DerivedStore, error) {
+func (b *brimming) Open(v domain.Vault) (ports.LogStore, error) {
 	if b.store == nil {
-		store, err := b.DerivedStores.Open(v)
+		store, err := b.LogStores.Open(v)
 		if err != nil {
 			return nil, err
 		}
-		b.store = &filling{DerivedStore: store}
+		b.store = &filling{LogStore: store}
 	}
 	return b.store, nil
 }
 
 type filling struct {
-	ports.DerivedStore
+	ports.LogStore
 	callCount int
 }
 
 var errNoRoom = errors.New("no room left on the disk")
 
-func (f *filling) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
+func (f *filling) AppendLog(ctx context.Context, name string, content []byte) error {
 	f.callCount++
 	if f.callCount > 1 {
 		return errNoRoom
 	}
-	return f.DerivedStore.AppendArtifact(ctx, name, content)
+	return f.LogStore.AppendLog(ctx, name, content)
 }
 
 // A run whose append did not land stops. The file it was writing ends where a
@@ -327,7 +327,7 @@ func TestARunWhoseAppendDidNotLandStops(t *testing.T) {
 	s := openVault(t, vault)
 	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
 
-	full := &brimming{DerivedStores: s.logs}
+	full := &brimming{LogStores: s.logs}
 	run, err := flashcards.Log{Stores: full}.Open(t.Context(), s.vault, time.Now())
 	if err != nil {
 		t.Fatal(err)

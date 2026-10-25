@@ -24,7 +24,7 @@ type Ports struct {
 	Notes     ports.NoteQueries
 	Links     ports.LinkQueries
 	Problems  ports.ProblemQueries
-	Logs      ports.DerivedStores
+	Logs      ports.LogStores
 	Schedules func(name string) ports.ScheduleStore
 }
 
@@ -167,38 +167,25 @@ func (p Problems) GetParseProblems(ctx context.Context, id domain.VaultID) ([]do
 // Logs opens the plugin's folder of a vault's store, which the answers are kept in.
 type Logs struct{ Store host.Store }
 
-func (l Logs) Open(v domain.Vault) (ports.DerivedStore, error) {
+func (l Logs) Open(v domain.Vault) (ports.LogStore, error) {
 	return store{folder: l.Store.With(v.ID)}, nil
 }
 
 type store struct{ folder host.Store }
 
-// fileOf is the file a review log is kept in.
-func fileOf(name domain.ArtifactName) (string, error) {
-	if name.File != domain.ArtifactReviewLog {
-		return "", errors.New("the store holds review logs only")
-	}
-	return name.Hash + reviewLogSuffix, nil
-}
+// fileOf is the file the answers of a run are kept in.
+func fileOf(run string) string { return run + reviewLogSuffix }
 
-func (s store) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error) {
-	file, err := fileOf(name)
-	if err != nil {
-		return nil, err
-	}
-	content, err := s.folder.Read(ctx, file)
+func (s store) ReadLog(ctx context.Context, run string) ([]byte, error) {
+	content, err := s.folder.Read(ctx, fileOf(run))
 	return content, readError(err)
 }
 
-func (s store) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
-	file, err := fileOf(name)
-	if err != nil {
-		return err
-	}
-	return readError(s.folder.Append(ctx, file, content))
+func (s store) AppendLog(ctx context.Context, run string, content []byte) error {
+	return readError(s.folder.Append(ctx, fileOf(run), content))
 }
 
-func (s store) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
+func (s store) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 	target, err := s.folder.List(ctx)
 	if err != nil {
 		return nil, readError(err)
@@ -209,7 +196,7 @@ func (s store) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
 		if !isLog {
 			continue
 		}
-		out = append(out, ports.Entry{Name: domain.NewReviewLogName(id), Size: int(one.Size)})
+		out = append(out, ports.Entry{Run: id, Size: int(one.Size)})
 	}
 	return out, nil
 }

@@ -42,13 +42,10 @@ const (
 	ArtifactCopy ArtifactFile = "copy"
 	// ArtifactIndexClaim is the claim that one run is indexing a vault.
 	ArtifactIndexClaim ArtifactFile = "index-claim"
-	// ArtifactReviewLog is one run's file of card review answers.
-	ArtifactReviewLog ArtifactFile = "review-log"
 )
 
 // ArtifactName says which file of a vault's derived store is meant, and not
-// where it is kept. The Hash is the fingerprint of the source's bytes, and the
-// id of the run for a review log.
+// where it is kept. The Hash is the fingerprint of the source's bytes.
 type ArtifactName struct {
 	File     ArtifactFile
 	Producer string
@@ -67,11 +64,6 @@ func NewCopyName(hash string) ArtifactName {
 
 // NewIndexClaimName is the claim that a run is indexing the vault.
 func NewIndexClaimName() ArtifactName { return ArtifactName{File: ArtifactIndexClaim} }
-
-// NewReviewLogName is the file of the review run with this id.
-func NewReviewLogName(id string) ArtifactName {
-	return ArtifactName{File: ArtifactReviewLog, Hash: id}
-}
 
 // IsTimedProducer says a producer writes words with the times they were said
 // at. Those are WebVTT and open in a player; everything else is prose.

@@ -274,7 +274,7 @@ func isFront(f flashcards.CardFace, word string) bool {
 // unopenable is stores that open no vault.
 type unopenable struct{}
 
-func (unopenable) Open(domain.Vault) (ports.DerivedStore, error) {
+func (unopenable) Open(domain.Vault) (ports.LogStore, error) {
 	return nil, errNothingRead
 }
 
@@ -406,15 +406,15 @@ func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
 }
 
 // appendRefusing is a store whose file takes no answer.
-type appendRefusing struct{ ports.DerivedStore }
+type appendRefusing struct{ ports.LogStore }
 
-func (appendRefusing) AppendArtifact(context.Context, domain.ArtifactName, []byte) error {
+func (appendRefusing) AppendLog(context.Context, string, []byte) error {
 	return errNothingRead
 }
 
 type refusingStores struct{}
 
-func (refusingStores) Open(domain.Vault) (ports.DerivedStore, error) { return appendRefusing{}, nil }
+func (refusingStores) Open(domain.Vault) (ports.LogStore, error) { return appendRefusing{}, nil }
 
 // An answer the run's file would not take is an internal error, and so is the
 // taking back of one.

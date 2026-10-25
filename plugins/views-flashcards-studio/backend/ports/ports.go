@@ -91,26 +91,26 @@ type ProblemQueries interface {
 	GetParseProblems(ctx context.Context, vaultID domain.VaultID) ([]domain.VaultProblem, error)
 }
 
-// Entry is one thing a store holds: its name, and how many bytes are under it.
+// Entry is one file of review answers: the run that wrote it, and how many bytes it holds.
 type Entry struct {
-	Name domain.ArtifactName
+	Run  string
 	Size int
 }
 
-// DerivedStore is the shelf one vault's review answers are kept on, which the plugin cannot make
+// LogStore is one vault's files of review answers, one to a run, which the plugin cannot make
 // again.
-type DerivedStore interface {
-	// ReadArtifact returns what is kept under a name.
-	ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error)
-	// AppendArtifact adds to what is kept under a name, making it if it is not there.
-	AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error
-	// ListReviewLogs reports the files of review answers, sorted by name.
-	ListReviewLogs(ctx context.Context) ([]Entry, error)
+type LogStore interface {
+	// ReadLog returns the answers a run wrote.
+	ReadLog(ctx context.Context, run string) ([]byte, error)
+	// AppendLog adds to the answers of a run, making its file if it is not there.
+	AppendLog(ctx context.Context, run string, content []byte) error
+	// ListLogs reports the files of review answers.
+	ListLogs(ctx context.Context) ([]Entry, error)
 }
 
-// DerivedStores opens one vault's store.
-type DerivedStores interface {
-	Open(v domain.Vault) (DerivedStore, error)
+// LogStores opens one vault's files of review answers.
+type LogStores interface {
+	Open(v domain.Vault) (LogStore, error)
 }
 
 // ScheduleStore keeps what was worked out for a vault between launches. It belongs to the

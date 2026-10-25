@@ -38,11 +38,6 @@ const (
 	IndexDir = "index"
 )
 
-// FlashcardsDir is where the answers a person gave their cards are kept. They
-// are the one thing here nobody can produce a second time: the notes are the
-// person's own writing, and a year of answers to them is not.
-const FlashcardsDir = "flashcards"
-
 // DerivedStore is the application's own shelf inside one vault: where a file
 // it made, and cannot make again, is kept.
 //

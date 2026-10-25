@@ -34,13 +34,12 @@ func TestEveryArtifactIsCachedWhereExistingVaultsKeepIt(t *testing.T) {
 		{domain.NewArtifactName(domain.ArtifactText, domain.Article, "abc123"), "article/abc123.txt"},
 		{domain.NewCopyName("abc123"), "copy/abc123.mp4"},
 		{domain.NewIndexClaimName(), "index/indexing"},
-		{domain.NewReviewLogName("01ARZ3"), "flashcards/01ARZ3.jsonl"},
 	} {
 		t.Run(one.targetPath, func(t *testing.T) {
 			_, root := store(t)
 			derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{},
 				derivedfile.OCRDir, derivedfile.TranscriptDir, derivedfile.ArticleDir,
-				derivedfile.CopyDir, derivedfile.IndexDir, derivedfile.FlashcardsDir)
+				derivedfile.CopyDir, derivedfile.IndexDir)
 			if err != nil {
 				t.Fatal(err)
 			}

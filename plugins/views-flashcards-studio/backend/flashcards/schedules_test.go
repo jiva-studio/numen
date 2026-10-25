@@ -67,7 +67,7 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	}
 
 	counts := &loadCounts{}
-	logs := countingStores{inner: &reorderedStores{DerivedStores: s.logs}, on: counts}
+	logs := countingStores{inner: &reorderedStores{LogStores: s.logs}, on: counts}
 	schedules := flashcards.NewSchedules(logs, review.NewFSRS(), today, s.standings, s.presets)
 	schedules.Cache = countingKept{inner: s.schedules.Cache, on: counts}
 
@@ -619,11 +619,11 @@ type loadCounts struct {
 
 // countingStores counts what a use case asks of one vault's store.
 type countingStores struct {
-	inner ports.DerivedStores
+	inner ports.LogStores
 	on    *loadCounts
 }
 
-func (s countingStores) Open(v domain.Vault) (ports.DerivedStore, error) {
+func (s countingStores) Open(v domain.Vault) (ports.LogStore, error) {
 	one, err := s.inner.Open(v)
 	if err != nil {
 		return nil, err
@@ -632,22 +632,22 @@ func (s countingStores) Open(v domain.Vault) (ports.DerivedStore, error) {
 }
 
 type countingStore struct {
-	inner ports.DerivedStore
+	inner ports.LogStore
 	on    *loadCounts
 }
 
-func (s countingStore) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error) {
+func (s countingStore) ReadLog(ctx context.Context, name string) ([]byte, error) {
 	s.on.Opened++
-	return s.inner.ReadArtifact(ctx, name)
+	return s.inner.ReadLog(ctx, name)
 }
 
-func (s countingStore) ListReviewLogs(ctx context.Context) ([]ports.Entry, error) {
+func (s countingStore) ListLogs(ctx context.Context) ([]ports.Entry, error) {
 	s.on.Listed++
-	return s.inner.ListReviewLogs(ctx)
+	return s.inner.ListLogs(ctx)
 }
 
-func (s countingStore) AppendArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error {
-	return s.inner.AppendArtifact(ctx, name, content)
+func (s countingStore) AppendLog(ctx context.Context, name string, content []byte) error {
+	return s.inner.AppendLog(ctx, name, content)
 }
 
 // countingKept counts what a use case asks of the cache.
@@ -692,7 +692,7 @@ type loaded struct {
 	vaulted
 	on        *loadCounts
 	schedules flashcards.Schedules
-	logs      ports.DerivedStores
+	logs      ports.LogStores
 	owed      flashcards.CountCardsDue
 	sat       flashcards.Session
 	review    flashcards.CountReviews
@@ -826,7 +826,7 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 			lines = append(lines, raw...)
 			card++
 		}
-		if err := store.AppendArtifact(ctx, domain.NewReviewLogName(run.GetName()), lines); err != nil {
+		if err := store.AppendLog(ctx, run.GetName(), lines); err != nil {
 			tb.Fatal(err)
 		}
 	}
@@ -907,26 +907,26 @@ func (c countingReader) Read(ctx context.Context, path string) ([]byte, error) {
 
 // tallied is a vault's answers with a tally of the files read out of them.
 type tallied struct {
-	ports.DerivedStores
-	reads map[domain.ArtifactName]int
+	ports.LogStores
+	reads map[string]int
 }
 
-func (s tallied) Open(v domain.Vault) (ports.DerivedStore, error) {
-	store, err := s.DerivedStores.Open(v)
+func (s tallied) Open(v domain.Vault) (ports.LogStore, error) {
+	store, err := s.LogStores.Open(v)
 	if err != nil {
 		return nil, err
 	}
-	return talliedStore{DerivedStore: store, reads: s.reads}, nil
+	return talliedStore{LogStore: store, reads: s.reads}, nil
 }
 
 type talliedStore struct {
-	ports.DerivedStore
-	reads map[domain.ArtifactName]int
+	ports.LogStore
+	reads map[string]int
 }
 
-func (s talliedStore) ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error) {
+func (s talliedStore) ReadLog(ctx context.Context, name string) ([]byte, error) {
 	s.reads[name]++
-	return s.DerivedStore.ReadArtifact(ctx, name)
+	return s.LogStore.ReadLog(ctx, name)
 }
 
 // lookups is a vault's links with a tally of the notes whose links were looked
@@ -1020,9 +1020,9 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 	})
 	answer(t, s.run(t, saturday.AddDate(0, 0, -1)), "card000000", 6*time.Second)
 
-	reads := map[domain.ArtifactName]int{}
+	reads := map[string]int{}
 	schedules := flashcards.NewSchedules(
-		tallied{DerivedStores: s.logs, reads: reads},
+		tallied{LogStores: s.logs, reads: reads},
 		review.NewFSRS(), today, s.standings, s.presets,
 	)
 	owed := flashcards.NewCountCardsDue(s.standings, schedules, s.presets, today, func() time.Time { return saturday })
@@ -1031,7 +1031,7 @@ func TestTheAnswerLogIsReadOnce(t *testing.T) {
 		t.Fatal(err)
 	}
 	for name, times := range reads {
-		if name.File == domain.ArtifactReviewLog && times != 1 {
+		if times != 1 {
 			t.Errorf("%s was read %d times", name, times)
 		}
 	}

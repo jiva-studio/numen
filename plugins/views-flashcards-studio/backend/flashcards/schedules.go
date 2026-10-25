@@ -57,7 +57,7 @@ type cachedSchedule struct {
 // already counted, and a schedule depends on the order of the answers, so
 // nothing can be added to what the later ones produced.
 type Schedules struct {
-	logs ports.DerivedStores
+	logs ports.LogStores
 	// Cache is where the working out is remembered. A build holding none works
 	// it out at every launch.
 	Cache     ports.ScheduleStore
@@ -80,7 +80,7 @@ type Schedules struct {
 // to the next, and the card faces and presets that say which share of the cards
 // each card is worked out at.
 func NewSchedules(
-	logs ports.DerivedStores,
+	logs ports.LogStores,
 	scheduler review.Scheduler,
 	day review.Day,
 	faces ListCardFaces,
@@ -342,7 +342,7 @@ func read(was []cachedFile, files []ports.Entry) bool {
 		return false
 	}
 	for item, one := range was {
-		if one.Name != files[item].Name.Hash || one.Size != files[item].Size {
+		if one.Name != files[item].Run || one.Size != files[item].Size {
 			return false
 		}
 	}
@@ -361,7 +361,7 @@ func (u Schedules) remember(
 	}
 	now := scheduleCache{V: keptVersion, By: mark}
 	for _, one := range files {
-		now.Files = append(now.Files, cachedFile{Name: one.Name.Hash, Size: one.Size})
+		now.Files = append(now.Files, cachedFile{Name: one.Run, Size: one.Size})
 	}
 	for on, s := range out {
 		now.Faces = append(now.Faces, cachedSchedule{
