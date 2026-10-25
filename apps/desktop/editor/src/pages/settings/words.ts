@@ -51,13 +51,6 @@ export const WORDS = {
   transcriptProofreadAlways: 'Proofread every transcript',
   transcriptProofreadAlwaysDetail:
     'Whether a transcript is put right as it is made, without being asked.',
-  /** Recognising a scanned page, and putting the recognition right. */
-  ocrModel: 'OCR model',
-  ocrModelDetail: 'The model a scanned page is read by.',
-  ocrProofread: 'Proofreading a scanned reading',
-  ocrProofreadDetail: 'The profile a reading taken off a scanned page is put right at.',
-  ocrProofreadAlways: 'Proofread every scanned reading',
-  ocrProofreadAlwaysDetail: 'Whether a reading is put right as it is taken, without being asked.',
   /** The profile naming none, which is what proofreads nothing. */
   proofreadingNone: 'Nothing',
   /** Turning the vault into vectors. */
