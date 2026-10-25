@@ -34,3 +34,10 @@ if [ -n "$PRETTIER_FILES" ]; then
   npx prettier --check $PRETTIER_FILES || exit 1
 fi
 
+
+# 4. Narrative identifiers, test names and comments in staged files
+if ! NARRATIVE_REPORT=$(node "$root/tools/lint-narrative/scan.mjs" "$root" --staged --check 2>&1); then
+  echo "$NARRATIVE_REPORT"
+  echo "❌ Error: staged files contain narrative identifiers, test names or comments (see AGENTS.md §13)."
+  exit 1
+fi

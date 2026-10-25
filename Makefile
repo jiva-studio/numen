@@ -18,6 +18,7 @@ ICON     := tools/build-icons
 STORIES  := tools/ci-stories
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
+NARRATIVE := tools/lint-narrative
 PLUGINS  := plugins
 # Every directory under plugins/ holding a manifest.json is a plugin.
 PLUGIN_DIRS := $(patsubst %/manifest.json,%,$(wildcard $(PLUGINS)/*/manifest.json))
@@ -428,6 +429,10 @@ check_layers tool_layers_check: ## validate architectural layer boundaries (usag
 check_quality: ## validate code quality metrics (usage: make check_quality [check=<name>] [opts=...])
 	node $(QUALITY)/check.mjs $(if $(check),--check=$(check),) $(opts)
 
+.PHONY: lint_narrative
+lint_narrative: ## reject narrative identifiers, test names and comments across the repository
+	node $(NARRATIVE)/scan.mjs . --check
+
 .PHONY: check_gate
 check_gate: ## run architectural and quality gates on changed files (fast pre-push gate)
 	node $(LAYERS)/check.mjs --changed-only
@@ -440,4 +445,5 @@ gate: check_gate ## alias for check_gate
 check_all: ## run full architectural and quality suites across all modules
 	node $(LAYERS)/check.mjs
 	node $(QUALITY)/check.mjs $(opts)
+	node $(NARRATIVE)/scan.mjs . --check
 

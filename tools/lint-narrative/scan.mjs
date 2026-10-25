@@ -46,7 +46,7 @@ for (let i = 0; i < args.length; i++) {
 }
 
 if (!rootDir) {
-  rootDir = path.resolve(import.meta.dirname, '../../..')
+  rootDir = path.resolve(import.meta.dirname, '../..')
 }
 
 function printHelp() {
@@ -999,6 +999,11 @@ function getStagedFiles() {
   }
 }
 
+/** Whether a directory name is skipped by the scan. */
+function isIgnoredDir(name) {
+  return (name.startsWith('.') && name !== '.agents') || IGNORED_DIRS.has(name)
+}
+
 function walk(dir) {
   let entries = []
   try {
@@ -1008,8 +1013,7 @@ function walk(dir) {
   }
 
   for (const entry of entries) {
-    if (entry.name.startsWith('.') && entry.name !== '.agents') continue
-    if (IGNORED_DIRS.has(entry.name)) continue
+    if (isIgnoredDir(entry.name)) continue
 
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
@@ -1023,6 +1027,8 @@ function walk(dir) {
 if (isStagedOnly) {
   const staged = getStagedFiles()
   for (const file of staged) {
+    const dirs = path.relative(rootDir, path.dirname(file)).split(path.sep)
+    if (dirs.some((name) => name && isIgnoredDir(name))) continue
     if (fs.existsSync(file)) scanFile(file)
   }
 } else {
@@ -1228,5 +1234,13 @@ if (isJsonOutput) {
 }
 
 if (isCheckMode && totalIssues > 0) {
+  console.log('Findings:')
+  for (const [category, items] of Object.entries(findings)) {
+    for (const item of items) {
+      const label = item.word || item.title || item.kind || ''
+      console.log(`  ${item.file}:${item.line} [${category}${label ? `: ${label}` : ''}] ${item.text}`)
+    }
+  }
+  console.log('')
   process.exit(1)
 }

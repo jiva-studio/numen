@@ -1,7 +1,7 @@
 name: Quality
 
 # Verification of code quality metrics (duplication, complexity, dead code, interfaces)
-# across Go and TypeScript/Vue modules.
+# and narrative naming across Go and TypeScript/Vue modules.
 on:
   pull_request:
     paths:
@@ -58,6 +58,9 @@ jobs:
       - name: Install golangci-lint
         run: |
           curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.14.0
+
+      - name: Check narrative identifiers, test names and comments
+        run: make lint_narrative
 
       - name: Run code quality suite
         run: make check_quality opts="--github-summary"
