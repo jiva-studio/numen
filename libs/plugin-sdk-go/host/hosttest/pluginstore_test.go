@@ -87,3 +87,29 @@ func TestStoreReadsAndListsExternalFile(t *testing.T) {
 		t.Errorf("read %q, listed %v", got, files)
 	}
 }
+
+func TestAStoreReplacesAFileWholeAndDeletesIt(t *testing.T) {
+	ctx := context.Background()
+	s := hosttest.New("Physics").Store()
+
+	_ = s.Append(ctx, "a", []byte("first and longer"))
+	if err := s.Write(ctx, "a", []byte("second")); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.Read(ctx, "a")
+	if err != nil || string(got) != "second" {
+		t.Errorf("read %q (%v), want the write alone", got, err)
+	}
+	if err := s.Delete(ctx, "a"); err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Delete(ctx, "a"); err != nil {
+		t.Errorf("a file that is not there was not removed: %v", err)
+	}
+	if _, err := s.Read(ctx, "a"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("a deleted file was read with %v", err)
+	}
+	if err := s.Write(ctx, "../b", nil); !errors.Is(err, host.ErrOutside) {
+		t.Errorf("a write outside the folder answered %v", err)
+	}
+}

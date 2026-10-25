@@ -35,7 +35,7 @@ func (v *Vault) getFolder() *folder {
 	return v.folder
 }
 
-// Refuse makes every read and append of the file fail with err, as a file the host may not open
+// Refuse makes every call on the file fail with err, as a file the host may not open
 // does. A nil err lets it be worked again.
 func (s *Store) Refuse(name string, err error) {
 	s.vault.world.mu.Lock()
@@ -122,4 +122,26 @@ func (s *Store) List(ctx context.Context) ([]host.StoreFile, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
+}
+
+func (s *Store) Write(ctx context.Context, name string, content []byte) error {
+	s.vault.world.mu.Lock()
+	defer s.vault.world.mu.Unlock()
+	f, err := s.open(ctx, name)
+	if err != nil {
+		return err
+	}
+	f.files[name] = bytes.Clone(content)
+	return nil
+}
+
+func (s *Store) Delete(ctx context.Context, name string) error {
+	s.vault.world.mu.Lock()
+	defer s.vault.world.mu.Unlock()
+	f, err := s.open(ctx, name)
+	if err != nil {
+		return err
+	}
+	delete(f.files, name)
+	return nil
 }

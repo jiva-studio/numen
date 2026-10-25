@@ -68,6 +68,22 @@ func (h *storeHost) ListStoreFiles(_ context.Context, req *connect.Request[v1.Li
 	return connect.NewResponse(&v1.ListStoreFilesResponse{Files: files}), nil
 }
 
+func (h *storeHost) WriteStoreFile(_ context.Context, req *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.recordVault(req.Header())
+	h.files[req.Msg.GetName()] = req.Msg.GetContent()
+	return connect.NewResponse(&v1.WriteStoreFileResponse{}), nil
+}
+
+func (h *storeHost) DeleteStoreFile(_ context.Context, req *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	h.recordVault(req.Header())
+	delete(h.files, req.Msg.GetName())
+	return connect.NewResponse(&v1.DeleteStoreFileResponse{Error: h.code}), nil
+}
+
 func dialStore(t *testing.T, h *storeHost) *host.StoreClient {
 	t.Helper()
 	mux := http.NewServeMux()
@@ -132,5 +148,32 @@ func TestAStoreOfAnotherVaultNamesItOnEveryCall(t *testing.T) {
 		if h.vaults[i] != want[i] {
 			t.Errorf("the vaults named were %q, want %q", h.vaults, want)
 		}
+	}
+}
+
+func TestAStoreClientReplacesAndDeletesAFile(t *testing.T) {
+	h := newStoreHost()
+	store := dialStore(t, h)
+	ctx := t.Context()
+
+	if err := store.Write(ctx, "a.json", []byte("first and longer")); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Write(ctx, "a.json", []byte("second")); err != nil {
+		t.Fatal(err)
+	}
+	read, err := store.Read(ctx, "a.json")
+	if err != nil || string(read) != "second" {
+		t.Errorf("read %q (%v), want the second write alone", read, err)
+	}
+	if err := store.Delete(ctx, "a.json"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := store.Read(ctx, "a.json"); !errors.Is(err, host.ErrNotExist) {
+		t.Errorf("a deleted file was read: %v", err)
+	}
+	h.code = v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE
+	if err := store.Delete(ctx, "../a"); !errors.Is(err, host.ErrOutside) {
+		t.Errorf("a refused delete answered %v", err)
 	}
 }

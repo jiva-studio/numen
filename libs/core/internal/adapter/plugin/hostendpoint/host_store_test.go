@@ -137,3 +137,34 @@ func TestAHostShowingNoVaultAnswersNoVaultForTheStore(t *testing.T) {
 		t.Errorf("answered %v (%v)", res.Msg, err)
 	}
 }
+
+func TestAPluginsFileIsReplacedWholeAndDeleted(t *testing.T) {
+	h := newStoreHost(t)
+	client := h.newClient("token-a")
+	ctx := t.Context()
+	at := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a", "a.json")
+
+	for _, content := range []string{"first and longer", "second"} {
+		if _, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "a.json", Content: []byte(content)})); err != nil {
+			t.Fatal(err)
+		}
+	}
+	on, err := os.ReadFile(at)
+	if err != nil || string(on) != "second" {
+		t.Errorf("the folder holds %q (%v), want the second write alone", on, err)
+	}
+
+	for range 2 {
+		res, err := client.DeleteStoreFile(ctx, connect.NewRequest(&v1.DeleteStoreFileRequest{Name: "a.json"}))
+		if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+			t.Errorf("a delete was answered %v (%v)", res.Msg, err)
+		}
+	}
+	if _, err := os.Stat(at); !errors.Is(err, os.ErrNotExist) {
+		t.Errorf("the deleted file is still there: %v", err)
+	}
+	outside, err := client.WriteStoreFile(ctx, connect.NewRequest(&v1.WriteStoreFileRequest{Name: "../md.numen.b/a", Content: []byte("x")}))
+	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE {
+		t.Errorf("a write outside the folder was answered %v (%v)", outside.Msg, err)
+	}
+}

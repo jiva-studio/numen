@@ -113,3 +113,19 @@ func (c *StoreClient) List(ctx context.Context) ([]StoreFile, error) {
 	}
 	return out, nil
 }
+
+func (c *StoreClient) Write(ctx context.Context, name string, content []byte) error {
+	res, err := c.rpc.WriteStoreFile(ctx, newStoreRequest(c, &v1.WriteStoreFileRequest{Name: name, Content: content}))
+	if err != nil {
+		return readError(err)
+	}
+	return readStoreError(res.Msg.GetError())
+}
+
+func (c *StoreClient) Delete(ctx context.Context, name string) error {
+	res, err := c.rpc.DeleteStoreFile(ctx, newStoreRequest(c, &v1.DeleteStoreFileRequest{Name: name}))
+	if err != nil {
+		return readError(err)
+	}
+	return readStoreError(res.Msg.GetError())
+}

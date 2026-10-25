@@ -113,3 +113,25 @@ func (e *storeEndpoint) ListStoreFiles(
 	}
 	return connect.NewResponse(&v1.ListStoreFilesResponse{Files: files}), nil
 }
+
+func (e *storeEndpoint) WriteStoreFile(
+	ctx context.Context, req *connect.Request[v1.WriteStoreFileRequest],
+) (*connect.Response[v1.WriteStoreFileResponse], error) {
+	store, code, err := e.open(ctx, req.Header())
+	if err != nil || store == nil {
+		return connect.NewResponse(&v1.WriteStoreFileResponse{Error: code}), err
+	}
+	code, err = answerStore(ctx, store.Write(ctx, req.Msg.GetName(), req.Msg.GetContent()))
+	return connect.NewResponse(&v1.WriteStoreFileResponse{Error: code}), err
+}
+
+func (e *storeEndpoint) DeleteStoreFile(
+	ctx context.Context, req *connect.Request[v1.DeleteStoreFileRequest],
+) (*connect.Response[v1.DeleteStoreFileResponse], error) {
+	store, code, err := e.open(ctx, req.Header())
+	if err != nil || store == nil {
+		return connect.NewResponse(&v1.DeleteStoreFileResponse{Error: code}), err
+	}
+	code, err = answerStore(ctx, store.Delete(ctx, req.Msg.GetName()))
+	return connect.NewResponse(&v1.DeleteStoreFileResponse{Error: code}), err
+}

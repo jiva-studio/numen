@@ -69,3 +69,19 @@ func (f pluginFolder) List(ctx context.Context) ([]pluginport.PluginStoreFile, e
 	}
 	return out, nil
 }
+
+func (f pluginFolder) Write(ctx context.Context, name string, content []byte) error {
+	key, err := f.getKey(name)
+	if err != nil {
+		return err
+	}
+	return f.store.Write(ctx, key, content)
+}
+
+func (f pluginFolder) Delete(ctx context.Context, name string) error {
+	key, err := f.getKey(name)
+	if err != nil {
+		return err
+	}
+	return f.store.Remove(ctx, key)
+}

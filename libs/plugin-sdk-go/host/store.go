@@ -28,6 +28,11 @@ type Store interface {
 	// Append adds to the end of the file, making it when it is not there. The content lands whole or
 	// not at all.
 	Append(ctx context.Context, name string, content []byte) error
+	// Write replaces the whole file, making it when it is not there. The content lands whole or not
+	// at all.
+	Write(ctx context.Context, name string, content []byte) error
+	// Delete removes the file. A file that is not there is removed.
+	Delete(ctx context.Context, name string) error
 	// List returns the files of the folder, sorted by name. A folder that is not there holds none.
 	List(ctx context.Context) ([]StoreFile, error)
 }

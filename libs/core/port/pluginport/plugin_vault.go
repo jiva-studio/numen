@@ -19,6 +19,10 @@ type PluginStore interface {
 	Read(ctx context.Context, name string) ([]byte, error)
 	// Append adds to the end of the file, making it when it is not there.
 	Append(ctx context.Context, name string, content []byte) error
+	// Write replaces the whole file, making it when it is not there.
+	Write(ctx context.Context, name string, content []byte) error
+	// Delete removes the file. A file that is not there is removed.
+	Delete(ctx context.Context, name string) error
 	// List returns the files of the folder, sorted by name.
 	List(ctx context.Context) ([]PluginStoreFile, error)
 }
