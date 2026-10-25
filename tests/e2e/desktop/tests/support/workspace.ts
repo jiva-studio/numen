@@ -26,6 +26,13 @@ export const runPaletteCommand = async (page: Page, query: string, name: string)
 export const getPaletteField = (page: Page): Locator =>
   page.getByRole('combobox', { name: 'Search the vault' })
 
+/** Runs the first command the palette offers for the words typed whose name matches `name`. */
+export const runCommand = async (page: Page, query: string, name: RegExp): Promise<void> => {
+  await page.keyboard.press('Control+p')
+  await getPaletteField(page).fill(query)
+  await page.getByRole('option', { name }).first().click()
+}
+
 /**
  * Opens a file of the vault from the files tab and gives back the panel it is drawn in, found by
  * the file's name without its extension.

@@ -149,8 +149,9 @@ function verifyPluginsReachNoApp() {
   }
 }
 
-/** The packages of the core that belong to a plugin, as directories. */
-const CORE_MOVED_DIRS = ["usecase/document"];
+/** The packages of the core that belong to a plugin, as directories, and as files of `container`. */
+const CORE_MOVED_DIRS = ["usecase/document", "usecase/recognition", "internal/ocrartifact"];
+const CORE_MOVED_CONTAINER_FILES = ["recogniser"];
 
 /** Every file under `dir` in the working tree, relative to the repository root. */
 function listFiles(dir) {
@@ -168,6 +169,11 @@ function verifyCoreHoldsNoPluginPackage() {
   for (const dir of CORE_MOVED_DIRS) {
     const files = listFiles(path.join("libs/core", dir));
     if (files.length > 0) found.push(`libs/core/${dir}/ (${files.length} files)`);
+  }
+  const container = listFiles("libs/core/container").filter((f) => path.dirname(f) === "libs/core/container");
+  for (const name of CORE_MOVED_CONTAINER_FILES) {
+    const files = container.filter((f) => new RegExp(`/${name}(_\\w+)?\\.go$`).test(f));
+    if (files.length > 0) found.push(`libs/core/container/${name}*.go: ${files.map((f) => path.basename(f)).join(", ")}`);
   }
   if (found.length > 0) {
     throw new Error("The core holds packages a plugin owns:\n" + found.join("\n"));
@@ -218,7 +224,7 @@ const VERIFIERS = [
     id: "core-holds-no-plugin-package",
     scope: "libs",
     module: "core",
-    name: "Core Holds No Plugin Package (document)",
+    name: "Core Holds No Plugin Package (document, recognition)",
     run: verifyCoreHoldsNoPluginPackage,
   },
   {
