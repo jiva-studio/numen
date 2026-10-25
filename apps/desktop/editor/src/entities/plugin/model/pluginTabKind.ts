@@ -5,7 +5,8 @@
 import { defineComponent, h, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
-import { getPluginStyle, renderFallback, resolvePluginComponent } from './styles'
+import { getPluginStyle } from '@numen/shell'
+import { renderFallback, resolvePluginComponent } from './styles'
 
 /** A registration that says what its tabs hold. */
 export type DeclaredTabKindRegistration = TabKindRegistration & {

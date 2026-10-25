@@ -1,11 +1,7 @@
 import { watch } from 'vue'
 import type { PluginServices } from './pluginServices'
 import { createPluginHost } from '@/entities/plugin'
-import {
-  DEFAULT_PLUGIN_ENABLED,
-  createPluginLoader,
-  type PluginLoader,
-} from '@/features/plugin-loader'
+import { DEFAULT_PLUGIN_ENABLED, createPluginLoader, type PluginLoader } from '@numen/shell'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
 import type { useSettings } from '../window/useSettings'

@@ -185,6 +185,8 @@ export interface ContextMenuRegistration {
 // PluginContext provides registration and host services to an activated plugin.
 export interface PluginContext {
   readonly pluginId: string
+  // The window the plugin is activated in, named as a manifest's targets name it.
+  readonly target: string
   readonly subscriptions: Disposable[]
   registerReader(registration: ReaderRegistration): Disposable
   registerTabKind<State>(registration: TabKindRegistration<State>): Disposable

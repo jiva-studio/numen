@@ -1,8 +1,10 @@
 /**
- * Scoped stylesheet registry for plugin views and Shadow DOM style containment.
+ * How a plugin view is drawn inside its pane: its component, its stylesheet and the shadow root it
+ * is contained in.
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
+import { getPluginStyle } from '@numen/shell'
 
 type AsyncComponentRegistration = {
   type: 'async'
@@ -61,24 +63,6 @@ export function extractStatePath(state: unknown): string {
   const s = state as Record<string, unknown>
   const val = s.path ?? s.file ?? s.at
   return typeof val === 'string' ? val : ''
-}
-
-const stylesRegistry = new Map<string, string>()
-
-export function registerPluginStyle(pluginId: string, url: string): void {
-  stylesRegistry.set(pluginId, url)
-}
-
-export function unregisterPluginStyle(pluginId: string): void {
-  stylesRegistry.delete(pluginId)
-}
-
-export function getPluginStyle(pluginId: string): string | undefined {
-  return stylesRegistry.get(pluginId)
-}
-
-export function clearPluginStyles(): void {
-  stylesRegistry.clear()
 }
 
 export const PANE_LAYOUT_STYLE =

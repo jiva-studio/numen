@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext, PluginLifecycle } from '@numen/plugin-sdk'
-import { getPluginStyle, type PluginHost } from '@/entities/plugin'
+import type { LoaderHost } from './host'
+import { getPluginStyle } from './styles'
 import { createPluginLoader } from './loader'
 
 /** The loader, with a module registered under each plugin id. */
@@ -13,7 +14,7 @@ function registerModules(
 }
 
 describe('createPluginLoader', () => {
-  function createMockHost(): PluginHost & {
+  function createMockHost(): LoaderHost & {
     triggerSettingChange: (pluginId: string, key: string, value: unknown) => void
     settings: Map<string, unknown>
   } {
@@ -21,9 +22,9 @@ describe('createPluginLoader', () => {
     const settings = new Map<string, unknown>()
     const settingListeners = new Map<string, Set<(val: unknown) => void>>()
 
-    const getSetting: PluginHost['getSetting'] = vi.fn((pluginId: string, key: string) =>
-      settings.get(`${pluginId}.${key}`),
-    ) as unknown as PluginHost['getSetting']
+    const getSetting: NonNullable<LoaderHost['getSetting']> = vi.fn(
+      (pluginId: string, key: string) => settings.get(`${pluginId}.${key}`),
+    ) as unknown as NonNullable<LoaderHost['getSetting']>
     const onSettingChange = vi.fn(
       (pluginId: string, key: string, handler: (val: unknown) => void) => {
         const compositeKey = `${pluginId}.${key}`
@@ -50,11 +51,11 @@ describe('createPluginLoader', () => {
     }
 
     return {
-      contextHost: {} as unknown as PluginHost['contextHost'],
       registerManifest: vi.fn(),
       createContext: vi.fn((pluginId: string, _manifest?: unknown) => {
         const ctx: PluginContext = {
           pluginId,
+          target: 'desktop.test',
           subscriptions: [],
           registerReader: vi.fn(() => ({ dispose: vi.fn() })),
           registerTabKind: vi.fn(() => ({ dispose: vi.fn() })),
@@ -77,19 +78,8 @@ describe('createPluginLoader', () => {
       }),
       getSetting,
       onSettingChange,
-      getPaletteCommands: vi.fn(() => []),
-      hasCommand: vi.fn(() => false),
-      executeCommand: vi.fn(async () => false),
-      handleShortcut: vi.fn(() => false),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
-      getRegisteredReaders: vi.fn(() => []),
-      getRegisteredTabKinds: vi.fn(() => []),
-      getRegisteredCommands: vi.fn(() => []),
-      getRegisteredContextMenus: vi.fn(() => []),
-      getContextMenuItems: vi.fn(() => []),
-      runContextMenu: vi.fn(async () => true),
-      notifyVaultChange: vi.fn(),
       triggerSettingChange,
       settings,
     }
@@ -102,7 +92,7 @@ describe('createPluginLoader', () => {
     }) as Response) as unknown as typeof fetch
 
   function createTestLoader(
-    host: PluginHost,
+    host: LoaderHost,
     extra: Partial<Omit<Parameters<typeof createPluginLoader>[0], 'host'>> = {},
   ) {
     return createPluginLoader({ host, ...extra })
@@ -320,7 +310,7 @@ describe('createPluginLoader catalog manifests', () => {
       createContext,
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
-    } as unknown as PluginHost
+    } as unknown as LoaderHost
     const manifest = { id: 'cat.plugin', name: 'Cat', version: '1', permissions: ['vault:read'] }
     const loader = registerModules(createPluginLoader({ host }), {
       'cat.plugin': async () => ({ activate: () => {} }),
@@ -345,7 +335,7 @@ describe('createPluginLoader failures, order and toggles', () => {
           return { dispose: () => void listeners.delete(id) }
         },
       ),
-    } as unknown as PluginHost
+    } as unknown as LoaderHost
     return { host, listeners }
   }
 
@@ -576,7 +566,7 @@ describe('createPluginLoader failure state', () => {
       createContext: vi.fn((pluginId: string) => ({ pluginId }) as unknown as PluginContext),
       disposePlugin: vi.fn(),
       disposeAll: vi.fn(),
-    } as unknown as PluginHost
+    } as unknown as LoaderHost
     const loader = registerModules(
       createPluginLoader({
         host,

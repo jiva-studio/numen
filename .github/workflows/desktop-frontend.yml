@@ -15,6 +15,8 @@ on:
       - "!libs/ui/**/*.md"
       - "libs/wire/**"
       - "!libs/wire/**/*.md"
+      - "libs/shell/**"
+      - "!libs/shell/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "tools/ci-stories/**"
@@ -83,16 +85,19 @@ jobs:
         run: |
           npm run lint --prefix apps/desktop/editor
           npm run lint --prefix apps/desktop/flashcards
+          npm run lint --prefix libs/shell
 
       - name: Typecheck screens and wire
         run: |
           npm run typecheck --prefix libs/wire
+          npm run typecheck --prefix libs/shell
           npm run typecheck --prefix apps/desktop/editor
           npm run typecheck --prefix apps/desktop/flashcards
 
       - name: Run frontend tests
         run: |
           npm test --prefix libs/wire
+          npm test --prefix libs/shell
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage

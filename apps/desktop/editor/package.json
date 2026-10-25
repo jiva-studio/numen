@@ -18,6 +18,7 @@
     "@connectrpc/connect": "^2.1.2",
     "@lucide/vue": "^1.57.0",
     "@numen/plugin-sdk": "*",
+    "@numen/shell": "*",
     "@numen/protocol": "*",
     "@numen/ui": "*",
     "@numen/wire": "*",

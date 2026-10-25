@@ -1,9 +1,10 @@
 /**
- * Dynamic frontend plugin loader for desktop editor.
+ * The loader of plugin frontends: each module is fetched from the window, activated with a context
+ * the host makes, and deactivated as its `enabled` setting says.
  */
 import { shallowRef, type ShallowRef } from 'vue'
 import type { Disposable, PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
-import type { PluginHost } from '@/entities/plugin'
+import type { LoaderHost } from './host'
 import {
   getLifecycleHooks,
   removePluginStyles,
@@ -12,7 +13,7 @@ import {
 } from './module'
 
 export interface PluginLoaderDeps {
-  readonly host: PluginHost
+  readonly host: LoaderHost
   readonly baseUrl?: string
   readonly fetch?: typeof fetch
   readonly dynamicImport?: (url: string) => Promise<unknown>
@@ -32,7 +33,7 @@ interface ActivePluginEntry {
 }
 
 interface ActivateContext extends ResolveModuleContext {
-  readonly host: PluginHost
+  readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly failures: { value: ReadonlyMap<string, string> }
   readonly reportError: (pluginId: string, error: unknown) => void
@@ -86,7 +87,7 @@ async function activateEntry(
 }
 
 interface DeactivateDeps {
-  readonly host: PluginHost
+  readonly host: LoaderHost
   readonly activePlugins: { value: ReadonlyMap<string, ActivePluginEntry> }
   readonly manifests: Map<string, PluginManifest>
   readonly reportError: (pluginId: string, error: unknown) => void
@@ -118,7 +119,7 @@ async function deactivateEntry(deps: DeactivateDeps, pluginId: string): Promise<
 }
 
 interface ListenerDeps {
-  readonly host: PluginHost
+  readonly host: LoaderHost
   readonly subscriptions: Map<string, Disposable>
   readonly activate: (id: string) => Promise<boolean>
   readonly deactivate: (id: string) => Promise<boolean>
@@ -147,7 +148,7 @@ async function startLoader(deps: StartLoaderDeps, activate: (id: string) => Prom
 }
 
 interface CloseLoaderDeps {
-  readonly host: PluginHost
+  readonly host: LoaderHost
   readonly subscriptions: Map<string, Disposable>
 }
 

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
-import { registerPluginStyle } from './styles'
+import { registerPluginStyle } from '@numen/shell'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {

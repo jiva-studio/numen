@@ -237,6 +237,9 @@ function guardServices(
   }
 }
 
+/** The target the editor activates its plugins in. */
+const EDITOR_TARGET = 'desktop.editor'
+
 export function createPluginContext(
   pluginId: string,
   host: PluginContextHost,
@@ -249,6 +252,7 @@ export function createPluginContext(
 
   return {
     pluginId,
+    target: EDITOR_TARGET,
     subscriptions,
     ...guardServices(host, requirePerm, add),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,

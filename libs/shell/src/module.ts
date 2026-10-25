@@ -2,7 +2,7 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import type { PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
-import { registerPluginStyle, unregisterPluginStyle } from '@/entities/plugin'
+import { registerPluginStyle, unregisterPluginStyle } from './styles'
 
 function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
   const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath

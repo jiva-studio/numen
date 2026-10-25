@@ -48,6 +48,7 @@ export function createMockPluginContext(
 
   const context: MockPluginContext = {
     pluginId,
+    target: initialValues?.target ?? 'desktop.editor',
     subscriptions,
     ...(initialValues?.workspace ? { workspace: initialValues.workspace } : {}),
     ...(initialValues?.notes ? { notes: initialValues.notes } : {}),
