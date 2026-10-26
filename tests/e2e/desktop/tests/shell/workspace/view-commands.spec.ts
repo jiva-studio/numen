@@ -7,7 +7,7 @@ import { openWorkspace, runPaletteCommand } from '../../support/workspace'
  */
 const VIEWS = [
   {
-    command: 'Show the files of the vault',
+    command: 'Show files',
     query: 'files',
     tab: /^Files/,
     keys: 'Control+Shift+e',

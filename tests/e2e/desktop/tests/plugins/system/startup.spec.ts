@@ -2,7 +2,7 @@ import { test, expect } from 'playwright/test'
 import { openWorkspace } from '../../support/workspace'
 
 /** The words a plugin that did not start is reported in, as a notice or as a task. */
-const PLUGIN_FAILURE = /Plugin .* failed|Plugin stopped|could not be started/i
+const PLUGIN_FAILURE = /stopped:|Plugin stopped|failed to start|failed to load/i
 
 /** The stock plugins, started with the window and asked for what they serve. */
 test.describe('the stock plugins after the window starts', () => {
