@@ -106,7 +106,8 @@ const getFillStyle = (level: number) => {
             'rounded-pill inline-flex size-7 shrink-0 items-center justify-center',
             'border-rule border font-sans text-base font-medium',
             'duration-hover ease-numen cursor-pointer transition-[background-color,color]',
-            'weekday-chips__day ring-numen outline-none',
+            'ring-numen outline-none',
+            'aria-disabled:cursor-not-allowed aria-disabled:opacity-50',
           )
         "
         @click="onOpenLevels(day, $event)"
@@ -128,10 +129,3 @@ const getFillStyle = (level: number) => {
     @dismiss="popoverAnchor = null"
   />
 </template>
-
-<style scoped>
-.weekday-chips__day[aria-disabled='true'] {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-</style>

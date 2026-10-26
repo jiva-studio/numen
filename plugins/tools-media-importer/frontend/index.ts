@@ -4,6 +4,7 @@
  */
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import LinkTab from './LinkTab.vue'
+import './styles.css'
 import { links } from './api/wire'
 import type { Links } from './types'
 import { WORDS as words } from './words'

@@ -9,6 +9,7 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
+import { LIGHTNING_CSS, createUtilitiesPlugin } from './vite.styles.ts'
 
 const modules = resolve(import.meta.dirname, '..')
 
@@ -62,8 +63,9 @@ export interface PluginBuildOptions {
  */
 export function createPluginBuildConfig(options: PluginBuildOptions): UserConfig {
   return {
-    plugins: [...options.plugins, createStylesPlugin(options.root)],
+    plugins: [...options.plugins, createUtilitiesPlugin(), createStylesPlugin(options.root)],
     resolve: { alias: getPluginAliases(options.aliases) },
+    css: { lightningcss: LIGHTNING_CSS },
     build: {
       outDir: 'dist',
       emptyOutDir: true,

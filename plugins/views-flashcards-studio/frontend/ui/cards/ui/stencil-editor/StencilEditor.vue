@@ -136,9 +136,12 @@ const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) 
       @dragover="hoverFace(null, $event)"
       @drop="dropFace"
     >
-      <h2 class="stencil__heading caps-numen text-small text-hushed">{{ words.faces }}</h2>
+      <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.faces }}</h2>
 
-      <p v-if="!renderedFaces.length" class="stencil__silence caps-numen text-small text-hushed">
+      <p
+        v-if="!renderedFaces.length"
+        class="stencil__silence caps-numen text-small text-hushed m-0"
+      >
         {{ words.noFaces }}
       </p>
 
@@ -168,11 +171,6 @@ const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) 
 
 <style scoped>
 @import '../caret.css';
-
-.stencil__heading,
-.stencil__silence {
-  margin: 0;
-}
 
 .stencil {
   /* The room between one part and the next, and between the rows of a part. */

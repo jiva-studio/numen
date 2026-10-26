@@ -99,7 +99,7 @@ function onGripKey(event: KeyboardEvent): void {
       <Button
         variant="ghost"
         size="icon-small"
-        class="stencil__away"
+        class="stencil__away size-6"
         :disabled="row.hasNames"
         :title="row.hasNames ? words.pinned : undefined"
         :aria-label="`${words.remove}: ${row.field}`"
@@ -155,11 +155,6 @@ function onGripKey(event: KeyboardEvent): void {
 }
 
 /* Controls are muted until hovered or focused. */
-.stencil__away {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
 .stencil__grip,
 .stencil__away {
   opacity: 0.45;

@@ -107,7 +107,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
     @dragover="hover(null, $event)"
     @drop="drop"
   >
-    <h2 class="stencil__heading caps-numen text-small text-hushed">{{ words.fields }}</h2>
+    <h2 class="stencil__heading caps-numen text-small text-hushed m-0">{{ words.fields }}</h2>
 
     <ul v-if="rows.length" class="stencil__fields">
       <Field
@@ -128,7 +128,7 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
       />
     </ul>
 
-    <p v-else class="stencil__silence caps-numen text-small text-hushed">
+    <p v-else class="stencil__silence caps-numen text-small text-hushed m-0">
       {{ words.noFields }}
     </p>
 
@@ -142,11 +142,6 @@ const wrongWith = (field: string): readonly string[] => props.wrong?.get(field) 
 </template>
 
 <style scoped>
-.stencil__heading,
-.stencil__silence {
-  margin: 0;
-}
-
 .stencil__fields {
   display: flex;
   flex-direction: column;

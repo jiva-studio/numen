@@ -25,7 +25,7 @@ const emit = defineEmits<{
 <template>
   <div class="deck__asking flex flex-col items-center">
     <p class="deck__silence caps-numen text-small text-hushed">{{ words.cut }}</p>
-    <div class="deck__cuts flex justify-center">
+    <div class="deck__cuts flex flex-wrap justify-center">
       <Button
         v-for="stencil in stencils"
         :key="stencil.name"
@@ -46,7 +46,6 @@ const emit = defineEmits<{
 }
 
 .deck__cuts {
-  flex-wrap: wrap;
   gap: var(--numen-inset);
 }
 
