@@ -133,3 +133,36 @@ export const Dark: Story = {
     expect(Math.abs(pill - ground)).toBeGreaterThan(2)
   },
 }
+
+/**
+ * The theme the window is set to, drawn against the opposite one the machine prefers. The tokens
+ * of the built `@numen/ui` follow `color-scheme` on the root, which is where the window writes
+ * its mode, and not `prefers-color-scheme`.
+ */
+const drawAgainstSystem =
+  (system: 'light' | 'dark', isDark: boolean): Story['play'] =>
+  async ({ canvasElement }) => {
+    const { commands } = await import('vitest/browser')
+    await commands.setSystemScheme(system)
+    try {
+      const ground = canvasElement.querySelector('.numen')
+      if (!ground) throw new Error('no ground drawn')
+      const shade = lightness(getComputedStyle(ground).backgroundColor)
+      if (isDark) expect(shade).toBeLessThan(64)
+      else expect(shade).toBeGreaterThan(192)
+    } finally {
+      await commands.setSystemScheme(null)
+    }
+  }
+
+/** The dark theme on a machine that prefers light. */
+export const DarkOnLightSystem: Story = {
+  globals: DARK,
+  play: drawAgainstSystem('light', true),
+}
+
+/** The light theme on a machine that prefers dark. */
+export const LightOnDarkSystem: Story = {
+  globals: { theme: 'light' },
+  play: drawAgainstSystem('dark', false),
+}

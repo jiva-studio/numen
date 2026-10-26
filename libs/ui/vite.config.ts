@@ -3,12 +3,16 @@ import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import dts from 'vite-plugin-dts'
+import { Features } from 'lightningcss'
 
 export default defineConfig({
   plugins: [vue(), tailwindcss(), dts({ include: ['src'], entryRoot: 'src' })],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },
+  // `light-dark()` stays as written: the window chooses a half with `color-scheme`, which the
+  // lowered form does not read.
+  css: { lightningcss: { exclude: Features.LightDark } },
   build: {
     lib: {
       entry: fileURLToPath(new URL('./src/index.ts', import.meta.url)),

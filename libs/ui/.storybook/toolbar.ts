@@ -20,29 +20,6 @@ const sizes = (among: readonly number[]) =>
 const selected = (target: unknown, among: readonly number[]) =>
   among.includes(Number(target)) ? String(Number(target)) : '1'
 
-/**
- * The built stylesheet of `@numen/ui` carries `light-dark()` lowered by
- * Lightning CSS: each pair reads `--lightningcss-light` and
- * `--lightningcss-dark`, which the build sets from `prefers-color-scheme`
- * alone. Stories drawn against the build, as the plugins' are, take the theme
- * from these two. Stories drawn against the source do not read them.
- */
-const LOWERED_SCHEME = {
-  light: ':root { --lightningcss-light: initial; --lightningcss-dark: ; }',
-  dark: ':root { --lightningcss-light: ; --lightningcss-dark: initial; }',
-} as const
-
-/** Sets the lowered `light-dark()` of the built stylesheet to one theme. */
-const setLoweredScheme = (theme: keyof typeof LOWERED_SCHEME) => {
-  let sheet = document.getElementById('story-lowered-scheme')
-  if (!sheet) {
-    sheet = document.createElement('style')
-    sheet.id = 'story-lowered-scheme'
-    document.head.append(sheet)
-  }
-  sheet.textContent = LOWERED_SCHEME[theme]
-}
-
 export const toolbar = {
   globalTypes: {
     theme: {
@@ -84,7 +61,6 @@ export const toolbar = {
       const theme = context.globals['theme'] === 'dark' ? 'dark' : 'light'
       const root = document.documentElement
       root.style.colorScheme = theme
-      setLoweredScheme(theme)
       // On the root, where the window puts them, so every story is looked at
       // through the same two numbers the window is drawn through.
       root.style.setProperty(

@@ -2,8 +2,16 @@
  * The build of the host modules a window serves to plugin frontends: one entry for each module in
  * `HOST_MODULES`, re-exporting it and written to its path there.
  */
+import { Features } from 'lightningcss'
 import type { Plugin } from 'vite'
 import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
+
+/**
+ * The Lightning CSS options of every stylesheet a window or a plugin frontend is built into.
+ * `light-dark()` stays as written: the window chooses a half with `color-scheme`, which the
+ * lowered form does not read.
+ */
+export const LIGHTNING_CSS = { exclude: Features.LightDark } as const
 
 /** The id of the entry that serves one host module to plugin bundles. */
 const HOST_MODULE_ENTRY = 'host-module:'
