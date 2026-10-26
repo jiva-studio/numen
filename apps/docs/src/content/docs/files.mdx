@@ -55,23 +55,20 @@ done to a file: rename it, copy its path, make something beside it, remove it.
 Choose several rows and the menu offers what means something for all of them, which is removing
 them.
 
-## Running something over a row
+## Making text of a file
 
-Two kinds of file carry a run of their own, in a band between what is done to the file and what
-is made off it in the plex.
+A [recording](/recordings/) and a [scanned book](/documents/#scanned-books) are written down by
+plugins rather than from their row. A recording with no transcript offers **Transcribe** in its
+own tab, under the player; a scan is read by the Document OCR plugin of its own accord. Both are
+in the [commands](/commands/) under **File** for the file in front of you, each named by the
+plugin that does it. Both run on your own machine, behind the window, and say how far they have
+got in the corner.
 
 <Shot
   name="transcribe"
-  alt="The numen window: the menu on a recording in the file tree, offering to transcribe it."
-  caption="A recording offers to be written down, on the row it stands at."
+  alt="The numen window: a recording with no transcript yet, offering to transcribe it under the player."
+  caption="A recording offers to be written down, in its own tab."
 />
-
-**Transcribe** on a [recording](/recordings/) writes down what a model hears in it.
-**Recognise** on a [scanned book](/documents/#scanned-books) reads its pages. Both run on your
-own machine, behind the window, and say how far they have got in the corner.
-
-Neither is offered where the build cannot do it at all — the run is asked for once, and a build
-that answers that it has no models for it stops offering it.
 
 **Remove** puts a file in `.trash/` inside the vault, the same as anywhere else in numen.
 Nothing is destroyed.

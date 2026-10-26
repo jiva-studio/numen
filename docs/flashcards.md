@@ -46,12 +46,12 @@ Cards owed and answered before come first, the one waiting longest at the front,
 
 A card is answered by how well it came back, not by whether it did:
 
-| | |
-| --- | --- |
-| **Again** | it did not come back at all |
-| **Hard** | it came back, slowly and with effort |
-| **Good** | it came back |
-| **Easy** | it came back with none |
+|           |                                      |
+| --------- | ------------------------------------ |
+| **Again** | it did not come back at all          |
+| **Hard**  | it came back, slowly and with effort |
+| **Good**  | it came back                         |
+| **Easy**  | it came back with none               |
 
 The better it came back, the longer it is left. What that comes to is FSRS's, and nothing about the intervals is written into a vault: they are worked out from the answers whenever they are wanted.
 
@@ -95,9 +95,9 @@ So a person who never opens the editor can still run their cards, and one write 
 
 ## What is reported
 
-| Problem | Against | What it is |
-| --- | --- | --- |
-| a line that cannot be read | the vault's answers | a run that stopped partway leaves a line no newline closed, and a line of a version this build does not know is one it will not act on. Both are counted and left out. |
-| a deck that could not be written | the deck | a card in it carries no mark, and the file could not be given one. Its cards are left out of this session and asked for again at the next. |
+| Problem                          | Against             | What it is                                                                                                                                                             |
+| -------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a line that cannot be read       | the vault's answers | a run that stopped partway leaves a line no newline closed, and a line of a version this build does not know is one it will not act on. Both are counted and left out. |
+| a deck that could not be written | the deck            | a card in it carries no mark, and the file could not be given one. Its cards are left out of this session and asked for again at the next.                             |
 
 Everything else a review meets is already a problem against a deck or a stencil, and [cards](cards.md) is where it is listed.

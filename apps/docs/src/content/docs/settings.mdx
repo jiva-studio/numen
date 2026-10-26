@@ -5,28 +5,19 @@ description: What you change from the window, where the settings file lives, and
 
 import Shot from '../../components/Shot.astro'
 
-**Settings** in the commands opens a page over the file: the settings a person configures, each with a control, grouped by the part of the application it governs. The rest of the file — what a model is fetched from, how a page is rendered before OCR reads it, how a proofreader is reached — is edited in [the file itself](#the-file).
+**Settings** in the commands opens a page over the file: **System**, the settings of the window itself, and under it every plugin installed, each with a page of its own. The search at the top narrows the list by a plugin's name, its description or its kind. The rest of the file is edited in [the file itself](#the-file).
 
 <Shot
   name="settings"
-  alt="The numen window: the settings page, in the groups the part of the application each setting governs."
-  caption="Every setting with a control on it, and at the top the file they all stand in."
+  alt="The numen window: the settings page, listing System and then every installed plugin under its kind."
+  caption="The window's own settings at the top, and under them a page for each plugin."
 />
 
 Turning a control writes it down. There is no separate save, and nothing is applied later: a theme chosen here is worn before your hand leaves the mouse.
 
-At the head of the page is the path of the file the page is a face onto, and **Open the file** beside it — see [the file itself](#the-file).
+## System
 
-## The groups
-
-| | |
-| --- | --- |
-| **The window** | the theme, light or dark, the two sizes, and what a node on the map hangs. |
-| **What a note is called** | whether renaming a note renames its file, and the other way round. |
-| **A day of review** | the hour a day of cards begins at. |
-| **OCR** | which model reads a scanned page, and what corrects the text afterwards. |
-| **Indexing** | the model your notes are turned into vectors by, for [semantic search](/semantic-search/). |
-| **The agent** | which assistant answers, its model, how far it may go, and what it may reach. |
+At the head of **System** is the path of the file the page is a face onto, and **Open the file** beside it — see [the file itself](#the-file).
 
 ### The window
 
@@ -36,51 +27,35 @@ At the head of the page is the path of the file the page is a face onto, and **O
 | **Light or dark** | follow the system, or pin one. A theme that declares light and dark itself leaves nothing to choose here, and the control says so. |
 | **Interface size** | how large the chrome, the controls and the type in them are drawn. 1 is as designed. |
 | **Reading size** | how large the text you read is set, over the size above. |
-| **Nest headings under notes** | whether a node on the map brings out the note's headings. See [the plex](/plex/#what-is-inside-a-note). |
-| **How many headings** | how many of those headings stand at once, from one to twelve. |
 
-The two sizes are multipliers over what was designed. The interface goes from **0.8 to 2** and
-the text you read from **0.8 to 1.75**; hairlines, borders and focus rings stay one physical
-line under either. A number outside those bounds is rejected, reported with an alert, and left in the file
-exactly as you wrote it.
+The two sizes are multipliers over what was designed. The interface goes from **0.8 to 2** and the text you read from **0.8 to 1.75**; hairlines, borders and focus rings stay one physical line under either. A number outside those bounds is rejected, reported with an alert, and left in the file exactly as you wrote it.
 
-### A day of review
+### What a note is called
 
-**A day begins at** sets the hour an answer stops counting for yesterday and starts counting for today — 04:00 by default, up to 12:00 maximum. This setting configures clock rollover independently of review [presets](/review/#a-preset).
+**Sync title and filename** says whether renaming a note renames its file, and the other way round.
 
-### Models
+## A plugin's page
 
-**OCR model**, **Embedding model** and **The agent's model** provide selection dropdowns. The value in the settings file remains active, options provided by the current build appear in the list, and remote models can be entered directly.
-
-A model that runs on your own machine says underneath whether its files are **on this machine** or **not fetched yet**. Nothing is downloaded until the work that needs it is asked for.
-
-### Proofreading
-
-numen produces two texts with a model, and each can be corrected afterwards by another: the text OCR reads off a scanned page, and the transcript of a recording. Each names a **profile** — a way of reaching a proofreader, under a name you choose — and each offers **Nothing**, which is what a fresh installation is set to and what asks for no key and no network.
-
-The switch under each says whether it happens by itself, as soon as the text is made. Off, you ask for it by hand on the book or the recording in front of you.
-
-The profiles themselves are written in the file, under `indexing.proofreading.profiles` — see [correcting what OCR read](/reader/#correcting-what-ocr-read).
-
-### The agent
+A plugin's page holds what the plugin declares, and the window's controls over the plugin itself:
 
 | | |
 | --- | --- |
-| **Which agent answers** | the program the panel asks. Nothing answers where none is named. |
-| **The agent's model** | which of that program's models answers. |
-| **Steps in a turn** | how many times it may act before it has to answer. |
-| **MCP server** | whether this vault's tools are served over MCP, so another program can reach them. See [connect another agent](/connect/). |
-| **Read hooks and skills** | whether it reads the hooks and skills this machine is set up with. See [the agent](/agent/#what-it-cannot-do). |
+| **Enabled** | whether the plugin runs at all. A plugin turned off offers none of its commands, views or texts. |
+| **Plugins that stopped** | a plugin the window could not start, with when it gave up and why, and **Retry** or **Disable**. |
+| **May ask a model** | for a plugin that asks a model, whether you let it. Until you choose, its first question fails. |
+| **Keys** | each key the plugin declares, stored in the system keychain, never in the settings file, and never shown again. |
+
+Under them stand the plugin's own settings, each with the control its manifest declares — a model to choose, a number, a list. The [scanned books](/reader/) and [recordings](/recordings/) pages say which of those are worth changing.
 
 ## In the commands
 
-Some of the same settings are in the commands as well — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd>, under **This window**: **Change the theme**, **Light or dark**, **Interface size**, **Reading font size**, **Sync title and filename**, **Nest headings under notes**, **How many headings nest under a note**.
+Some of the same settings are in the commands as well — <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>P</kbd>, under **General**: **Change the theme**, **Light or dark**, **Interface size**, **Reading font size**, **Sync title and filename**, **Nest headings under notes**, **How many headings nest under a note**, **Set performance profile**. A plugin can offer one of its settings there too, named after the plugin.
 
 A row on the page and the command of the same name go through one piece of code, so it makes no difference which you use.
 
 ## The file
 
-Every setting stands in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file** at the top of the settings page opens it in a tab of its own, drawn as the JSON it is. Unlike a note it is not written as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> keeps it, which is the chord a note is kept by.
+Every setting stands in one file, `numen.json`, in [the folder numen keeps its own things in](/install/#where-numen-keeps-its-own-files). **Open the file**, at the head of **System** on the settings page, opens it in a tab of its own, drawn as the JSON it is. Unlike a note it is not written as you type: <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>S</kbd> keeps it, which is the chord a note is kept by.
 
 A file changed underneath the tab stops saving there and then and asks the same two questions a note does: [keep mine, or take the file's](/editor/#when-the-file-changed-underneath-you). Content that does not match recognized configuration schemas is rejected, and the tab reports an error without saving invalid changes.
 
@@ -106,13 +81,12 @@ parse is never written over — numen says so and leaves it alone.
 | | |
 | --- | --- |
 | `appearance` | how the window is drawn: the theme, which half of it, the two sizes, and what a node hangs. |
-| `indexing.embedding` | the model that reads your notes so they can be found by meaning. See [semantic search](/semantic-search/). |
-| `indexing.recognition` | how a scanned book is read, and what corrects that text. See [reading scanned books](/reader/). |
-| `indexing.proofreading` | the profiles those corrections are made at, and nothing by default. |
-| `indexing.transcription` | how a recording is listened to, and what corrects the transcript. See [recordings](/recordings/). |
-| `review` | the hour a day of review begins at. Everything else about review is a [preset](/review/#a-preset) in the vault. |
+| `indexing.embedding` | how the index keeps the vectors the embedding plugin makes. See [semantic search](/semantic-search/). |
 | `agent` | which assistant answers in the panel, and how it is started. See [the agent](/agent/). |
 | `naming` | whether a note's title and its filename are kept as one name. See [writing notes](/editor/#renaming). |
+| `performance` | how much of the machine the work behind the window may take. |
+| `ai.default` | the agent and the model a plugin's question to a model goes to when the plugin names none. |
+| `plugins` | each plugin's own settings, under its id. |
 
 [Every setting](/reference/) is the complete list, taken from the application itself.
 

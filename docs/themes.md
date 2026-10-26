@@ -51,12 +51,12 @@ Each carries `data-appearance`, which is `mode`, `theme` or `sizes`, and that is
 
 The themes folder is `numen/themes/` in the folder this desktop keeps a person's configuration in, beside `numen.json` — see [Settings](settings.md). It is made, empty, on the first run.
 
-| | |
-| --- | --- |
-| One level | a folder inside the themes folder is not a theme, and neither is a file one level down. |
-| `.css` | `dracula.css.bak` and `README.md` are files in the folder and not themes. |
-| 262144 bytes | a file past that is neither offered nor read. Every shipped palette is under two kilobytes. |
-| Readable | a link to nothing, a file the disk refuses: not in the list. A name in the list is a theme that can be worn. |
+|              |                                                                                                              |
+| ------------ | ------------------------------------------------------------------------------------------------------------ |
+| One level    | a folder inside the themes folder is not a theme, and neither is a file one level down.                      |
+| `.css`       | `dracula.css.bak` and `README.md` are files in the folder and not themes.                                    |
+| 262144 bytes | a file past that is neither offered nor read. Every shipped palette is under two kilobytes.                  |
+| Readable     | a link to nothing, a file the disk refuses: not in the list. A name in the list is a theme that can be worn. |
 
 A folder that is not there or cannot be read leaves the list holding what ships.
 
@@ -76,76 +76,76 @@ Forty-three, each a colour except where it says otherwise.
 
 ### The window and what stands on it
 
-| | |
-| --- | --- |
-| `--numen-surface` | the ground the window is drawn on. |
-| `--numen-raised` | what a node, a card and a pane are filled with. |
-| `--numen-ink` | text on that fill, and the caret in it. |
-| `--numen-rule` | the line around it. |
-| `--numen-accent` | the node the keyboard is on, what a button is filled with, and every line and mark drawn in the accent. |
-| `--numen-accent-ink` | text on the accent. |
-| `--numen-ring` | the outline around what is focused, and a link in marked-up text. |
-| `--numen-alarm` | what is wrong: an error, and what the parser could not read. |
-| `--numen-alarm-bg` | the ground a card carrying an alarm stands on. |
-| `--numen-hushed` | text said quietly beside what it is about: a caption, a count, a month over a grid. |
+|                      |                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------- |
+| `--numen-surface`    | the ground the window is drawn on.                                                                      |
+| `--numen-raised`     | what a node, a card and a pane are filled with.                                                         |
+| `--numen-ink`        | text on that fill, and the caret in it.                                                                 |
+| `--numen-rule`       | the line around it.                                                                                     |
+| `--numen-accent`     | the node the keyboard is on, what a button is filled with, and every line and mark drawn in the accent. |
+| `--numen-accent-ink` | text on the accent.                                                                                     |
+| `--numen-ring`       | the outline around what is focused, and a link in marked-up text.                                       |
+| `--numen-alarm`      | what is wrong: an error, and what the parser could not read.                                            |
+| `--numen-alarm-bg`   | the ground a card carrying an alarm stands on.                                                          |
+| `--numen-hushed`     | text said quietly beside what it is about: a caption, a count, a month over a grid.                     |
 
 ### The plex
 
-| | |
-| --- | --- |
-| `--numen-relation-parent` | the hue of the relation a parent stands in. |
-| `--numen-relation-child` | the hue of a child's relation. |
-| `--numen-relation-jump` | the hue of a jump's relation. |
-| `--numen-relation-sibling` | the hue of a sibling's relation. |
-| `--numen-edge` | the line drawn between two nodes. |
-| `--numen-edge-label` | the words on that line, which are said in the hushed voice unless a theme sets them apart. |
+|                            |                                                                                            |
+| -------------------------- | ------------------------------------------------------------------------------------------ |
+| `--numen-relation-parent`  | the hue of the relation a parent stands in.                                                |
+| `--numen-relation-child`   | the hue of a child's relation.                                                             |
+| `--numen-relation-jump`    | the hue of a jump's relation.                                                              |
+| `--numen-relation-sibling` | the hue of a sibling's relation.                                                           |
+| `--numen-edge`             | the line drawn between two nodes.                                                          |
+| `--numen-edge-label`       | the words on that line, which are said in the hushed voice unless a theme sets them apart. |
 
 ### Text being read, and text about to change
 
-| | |
-| --- | --- |
-| `--numen-selection` | the ground under selected text. |
-| `--numen-selection-away` | the same selection where the keyboard is somewhere else. |
-| `--numen-selection-match` | every other place that text stands. |
-| `--numen-highlight` | the ground under a stretch something is about to change. It sits under words still being read, so it is a tint. |
-| `--numen-caution-bg` | the band something is said in that a person should read but need not act on at once. |
-| `--numen-caution-fg` | the words in that band. |
+|                           |                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `--numen-selection`       | the ground under selected text.                                                                                 |
+| `--numen-selection-away`  | the same selection where the keyboard is somewhere else.                                                        |
+| `--numen-selection-match` | every other place that text stands.                                                                             |
+| `--numen-highlight`       | the ground under a stretch something is about to change. It sits under words still being read, so it is a tint. |
+| `--numen-caution-bg`      | the band something is said in that a person should read but need not act on at once.                            |
+| `--numen-caution-fg`      | the words in that band.                                                                                         |
 
 ### Marked-up text
 
-| | |
-| --- | --- |
-| `--numen-syntax-mark` | the marks themselves, shown under the caret. |
-| `--numen-code-bg` | the ground under code. |
-| `--numen-table-head-bg` | the ground under the head row of a table. |
-| `--numen-syntax-keyword` | keywords, modifiers, and operators written as words. |
-| `--numen-syntax-name` | names: variables, properties, attributes. |
-| `--numen-syntax-type` | type names, class names, namespaces, tags. |
-| `--numen-syntax-string` | strings and regular expressions. |
-| `--numen-syntax-number` | numbers, booleans, atoms, escapes. |
-| `--numen-syntax-comment` | comments, which are set in italic. |
-| `--numen-syntax-punctuation` | operators, brackets, separators. |
+|                              |                                                      |
+| ---------------------------- | ---------------------------------------------------- |
+| `--numen-syntax-mark`        | the marks themselves, shown under the caret.         |
+| `--numen-code-bg`            | the ground under code.                               |
+| `--numen-table-head-bg`      | the ground under the head row of a table.            |
+| `--numen-syntax-keyword`     | keywords, modifiers, and operators written as words. |
+| `--numen-syntax-name`        | names: variables, properties, attributes.            |
+| `--numen-syntax-type`        | type names, class names, namespaces, tags.           |
+| `--numen-syntax-string`      | strings and regular expressions.                     |
+| `--numen-syntax-number`      | numbers, booleans, atoms, escapes.                   |
+| `--numen-syntax-comment`     | comments, which are set in italic.                   |
+| `--numen-syntax-punctuation` | operators, brackets, separators.                     |
 
 ### What floats over the window
 
-| | |
-| --- | --- |
-| `--numen-panel-bg` | what a panel is tinted with. |
-| `--numen-panel-border` | the line around it. |
-| `--numen-panel-blur` | a length: how much what shows through the tint is blurred. An opaque tint leaves nothing to blur, so a theme setting one sets the other. |
-| `--numen-panel-shadow` | what a panel is lifted by. It carries its offsets and its spread beside its colour, so a theme setting it writes those lengths again. |
-| `--numen-shadow-card` | what a card is lifted off the window by, written the same way. |
-| `--numen-scrim` | the wash a panel lays over what it covers. |
+|                        |                                                                                                                                          |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `--numen-panel-bg`     | what a panel is tinted with.                                                                                                             |
+| `--numen-panel-border` | the line around it.                                                                                                                      |
+| `--numen-panel-blur`   | a length: how much what shows through the tint is blurred. An opaque tint leaves nothing to blur, so a theme setting one sets the other. |
+| `--numen-panel-shadow` | what a panel is lifted by. It carries its offsets and its spread beside its colour, so a theme setting it writes those lengths again.    |
+| `--numen-shadow-card`  | what a card is lifted off the window by, written the same way.                                                                           |
+| `--numen-scrim`        | the wash a panel lays over what it covers.                                                                                               |
 
 ### Fields, and what is said in them
 
-| | |
-| --- | --- |
-| `--numen-field-bg` | the ground a field of typing sits in. |
-| `--numen-field-border` | the line around it. |
-| `--numen-bubble-bg` | the bubble what was said is drawn in. |
-| `--numen-bubble-fg` | the words in it. |
-| `--numen-answer-fg` | what came back, set on the surface. |
+|                        |                                       |
+| ---------------------- | ------------------------------------- |
+| `--numen-field-bg`     | the ground a field of typing sits in. |
+| `--numen-field-border` | the line around it.                   |
+| `--numen-bubble-bg`    | the bubble what was said is drawn in. |
+| `--numen-bubble-fg`    | the words in it.                      |
+| `--numen-answer-fg`    | what came back, set on the surface.   |
 
 ## What a theme leaves alone
 
@@ -157,21 +157,21 @@ The two multipliers are what a theme does not reach. `--numen-interface-scale` a
 
 ## What ships
 
-| | |
-| --- | --- |
-| `preset:numen` | this product's own palette, in two halves. |
-| `preset:catppuccin` | Latte in the light, Mocha in the dark. |
-| `preset:github` | Light Default in the light, Dark Default in the dark. |
-| `preset:gruvbox` | two halves, orange the accent. |
-| `preset:solarized` | two halves, one set of accents across both. |
-| `preset:ayu` | two halves, yellow the accent across both. |
-| `preset:tokyo-night` | Tokyo Night in the dark, Tokyo Night Light in the light. |
-| `preset:dracula` | dark, pinned. |
-| `preset:nord` | dark, pinned. |
-| `preset:one-dark` | dark, pinned: Atom's hues on One Dark Pro's grounds. |
-| `preset:monokai` | dark, pinned: the original, as Visual Studio Code sets it. |
-| `preset:cobalt2` | dark, pinned: yellow on navy. |
-| `preset:amber` | dark, pinned: four colours, and the rest derived from them. |
+|                      |                                                             |
+| -------------------- | ----------------------------------------------------------- |
+| `preset:numen`       | this product's own palette, in two halves.                  |
+| `preset:catppuccin`  | Latte in the light, Mocha in the dark.                      |
+| `preset:github`      | Light Default in the light, Dark Default in the dark.       |
+| `preset:gruvbox`     | two halves, orange the accent.                              |
+| `preset:solarized`   | two halves, one set of accents across both.                 |
+| `preset:ayu`         | two halves, yellow the accent across both.                  |
+| `preset:tokyo-night` | Tokyo Night in the dark, Tokyo Night Light in the light.    |
+| `preset:dracula`     | dark, pinned.                                               |
+| `preset:nord`        | dark, pinned.                                               |
+| `preset:one-dark`    | dark, pinned: Atom's hues on One Dark Pro's grounds.        |
+| `preset:monokai`     | dark, pinned: the original, as Visual Studio Code sets it.  |
+| `preset:cobalt2`     | dark, pinned: yellow on navy.                               |
+| `preset:amber`       | dark, pinned: four colours, and the rest derived from them. |
 
 Each is its publisher's palette from that publisher's own source; what a palette does not name is derived from what it does, and the file says which. Each names the colours its publisher names and leaves the rest — marked-up text among them — as `tokens.css` has it.
 

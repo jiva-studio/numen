@@ -54,45 +54,54 @@ The window a person runs their cards in opens neither: an answer there says wher
 
 ## The tools
 
-Six families and a reader of files, served over the vault's own endpoint.
+Three plugins register the tools an agent reaches, each over the subject it owns, and `agents-mcp-server` serves them. The server column says where each is offered: `full`, `reading`, or both.
 
-| Family | What it is for |
-| --- | --- |
-| `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
-| `file_read` | read a range of a file the person put in the vault, by its path from the vault folder |
-| `link_*` | add, change, remove and list the links a note carries |
-| `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
-| `source_*` | list the documents a vault holds, read a range of one's text, ask for a scanned one to be read, and show the person a passage |
-| `url_import` | make a file holding a web address and fetch what is there, in one call |
-| `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
+`agents-tools-vault`, the notes and files of the vault:
 
-A call that carries names takes as many as are wanted — at most fifty for a lookup, at most ten for reading prose. A call that carries the text of a document takes one: creating a note, writing one and editing one are each a call of their own, and each is filed as it is finished.
+| Tool                              | What it does                                                                                                  | Servers |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------- | ------- |
+| `note_read`                       | the content, prose, title, frontmatter and fingerprint of one note, by its path                               | both    |
+| `note_write`                      | write or create one note; with the fingerprint `note_read` gave, a write over somebody else's edit is refused | full    |
+| `note_headings`                   | the headings of one note: level, text, line and byte offset                                                   | both    |
+| `note_search`, `search_query`     | the notes whose title, path or text answer a query, at most 100, 20 where the call names no limit             | both    |
+| `note_neighbourhood`, `link_list` | the links one note writes and the notes that link to it                                                       | both    |
+| `vault_info`, `vault_get`         | the vault's name, root path and number of notes                                                               | both    |
+| `file_read`                       | a byte range of any file in the vault, by its path from the vault root                                        | both    |
+| `file_create`                     | a new file in the vault, holding the content given                                                            | full    |
 
-A deck is as long as somebody made it, so `card_read` answers with at most fifty cards at a time and is told where to start. An agent that knows which card it wants names its mark and is answered with that one, and one that wants a field names it and is answered that field alone. A card is named by a mark and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable.
+`agents-tools-window`, the window the person is looking at:
 
-A tool that writes returns only once the index is level again. An agent that creates a note and searches for it in the next breath finds it.
+| Tool               | What it does                                                                          | Servers |
+| ------------------ | ------------------------------------------------------------------------------------- | ------- |
+| `window_tabs_get`  | the tabs open in the window — title, path, kind, position — and which one is in front | both    |
+| `window_focus_tab` | put a tab in front, named by its id, its path or its title                            | both    |
+| `edit_preview`     | propose a change to a note as a diff in the editor, leaving the file as it is         | both    |
 
-`file_read` is the path a person names when the file behind it is neither a note nor a document the vault has read — a transcript somebody typed, an export, whatever they put in the folder — and it is how a file too long to answer with is read a range at a time. It takes a path from the vault root and refuses every other, including one that reaches outside through a link. What the vault passes over it passes over too: the application's own folder, and every name the vault's ignore rules match. The tools write notes, so a file of another kind is read here and not written.
+`views-flashcards-studio`, the decks and stencils of the vault:
+
+| Tool                                                             | What it does                                                                              | Servers |
+| ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------- |
+| `card_current`                                                   | the card in front of the person in the window they run their cards in                     | both    |
+| `card_stencil_list`                                              | the stencils of the vault, at most 50, and the fields each declares                       | both    |
+| `card_stencil_read`                                              | the fields and faces of one stencil                                                       | both    |
+| `card_read`                                                      | the cards of one deck in the order they stand, at most 50 a call, or one card by its mark | both    |
+| `card_deck_create`                                               | a deck holding no cards                                                                   | full    |
+| `card_stencil_create`                                            | a stencil: the fields a card is asked for, and its faces                                  | full    |
+| `card_stencil_edit`                                              | change a stencil's fields and faces in place                                              | full    |
+| `card_field_rename`                                              | give one of a stencil's fields another name, everywhere it is written                     | full    |
+| `card_add`                                                       | write one card at the end of a deck or of one of its sections                             | full    |
+| `card_edit`                                                      | write values into one card, leaving the fields the call does not name                     | full    |
+| `card_value_remove`                                              | take one field off one card                                                               | full    |
+| `card_remove`                                                    | take one card out of a deck                                                               | full    |
+| `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                              | full    |
+
+A card is named by its mark and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable. Every write to a deck takes the fingerprint `card_read` gave, and lands only on the deck that fingerprint names.
+
+`file_read` is how a file that is not a note is read — a transcript somebody typed, an export, whatever they put in the folder — and how a file too long to answer with is read a range at a time.
 
 ### How a tool is named
 
-A tool is named for the service that owns its subject, then what the tool does: `note_read`, `card_add`, `vault_list`. One word for one subject, so a tool and the call behind it are found under the same word.
-
-A format is not a subject. A PDF and an EPUB are both documents, so `document_` covers both and neither has a prefix of its own.
-
-These stand under a word other than the service that owns them:
-
-| Tool | The subject |
-| --- | --- |
-| `note_search`, `note_titles` | what answers what a person typed |
-| `note_focus`, `source_focus`, `window_tab_list` | where in the vault the person stands |
-| `link_*` | the addresses written in a note |
-| `card_*` | the cards, in the plural the service is named in |
-| `card_current` | a session of review |
-| `source_list`, `source_read` | a document |
-| `vault_list`, `vault_add`, `vault_rename`, `vault_remove`, `vault_open` | the vaults the installation holds |
-
-`file_read` and `url_import` stand under no service at all: nothing owns the bytes of a file that is neither a note nor a document, and nothing owns a url.
+A tool is named for the subject it acts on, then what it does: `note_read`, `card_add`, `window_focus_tab`. Three tools carry a second name that answers the same call: `search_query` is `note_search`, `link_list` is `note_neighbourhood`, and `vault_get` is `vault_info`. `edit_preview` stands under no subject.
 
 ## The servers
 

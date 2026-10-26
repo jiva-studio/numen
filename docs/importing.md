@@ -19,22 +19,22 @@ At the command line the same run is `numen-cli import <vault> --address <url>`, 
 
 ## What is fetched
 
-| At the address | The link's text version |
-| --- | --- |
-| a video somebody published captions for | the captions, timed text |
-| anything else | the prose the page is written around, plain text |
+| At the address                          | The link's text version                          |
+| --------------------------------------- | ------------------------------------------------ |
+| a video somebody published captions for | the captions, timed text                         |
+| anything else                           | the prose the page is written around, plain text |
 
 An address that publishes nothing is kept as such, and the plugin is not asked for it again until a person asks. The plugin runs on its own over a link with no text, so a link made any other way is fetched too. Deleting the text version through the file's menu keeps the link from being fetched on its own again.
 
 Everything is kept in the plugin's folder of the vault's store, `.numen/md.numen.tools.media.importer/`, under the content hash of the link file, so two links of one address share it and renaming the link keeps it:
 
-| File | What it holds |
-| --- | --- |
-| `<hash>.txt` | the prose of a page |
-| `<hash>.vtt` | the captions of a video, as WebVTT |
-| `<hash>.json` | what fetched it: the address, the title, the tool |
+| File          | What it holds                                                 |
+| ------------- | ------------------------------------------------------------- |
+| `<hash>.txt`  | the prose of a page                                           |
+| `<hash>.vtt`  | the captions of a video, as WebVTT                            |
+| `<hash>.json` | what fetched it: the address, the title, the tool             |
 | `<hash>.none` | an address that publishes nothing, or a text a person deleted |
-| `<hash>.mp4` | the copy of a video; `<hash>.part` while it arrives |
+| `<hash>.mp4`  | the copy of a video; `<hash>.part` while it arrives           |
 
 ## What a search answers
 

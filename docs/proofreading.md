@@ -6,10 +6,10 @@ What a second model corrects in a text the first one produced, what it is shown,
 
 A machine that read a page and a machine that transcribed an hour both produce text nobody typed, and both get things wrong. What they got wrong is different — a scan carries letters a machine misread, speech carries words it took for others — and everything around that is the same, so one mechanism serves both.
 
-| Proofread | The format of the version read | The unit | Asked about |
-| --- | --- | --- | --- |
-| a recognition, or a PDF's own text layer | positioned: parts in rectangles on pages | one part, a printed line or a block | a page at a time |
-| a transcript | timed: parts between moments of a recording | one cue | a window of batches at a time |
+| Proofread                                | The format of the version read              | The unit                            | Asked about                   |
+| ---------------------------------------- | ------------------------------------------- | ----------------------------------- | ----------------------------- |
+| a recognition, or a PDF's own text layer | positioned: parts in rectangles on pages    | one part, a printed line or a block | a page at a time              |
+| a transcript                             | timed: parts between moments of a recording | one cue                             | a window of batches at a time |
 
 What a recognition is is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md). What a text version is, and which one is live, is the plan's section B in `resources/plans/plugins.md` and `libs/core/usecase/textversion`.
 

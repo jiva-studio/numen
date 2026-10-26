@@ -140,18 +140,18 @@ const SHOTS = [
   {
     id: 'transcript',
     name: 'Transcribe',
-    caption: 'Right-click a recording and the words are written down on your machine.',
-    alt: 'The numen window: the menu on a recording in the file tree, offering '
-      + 'to transcribe it.',
+    caption: 'Open a recording and ask for its words: they are written down on your machine.',
+    alt: 'The numen window: a recording with no transcript yet, offering to '
+      + 'transcribe it under the player.',
     light: transcriptLight,
     dark: transcriptDark,
   },
   {
     id: 'ocr',
     name: 'Recognise',
-    caption: 'Right-click a scan and the pages are read, page by page, where they are.',
+    caption: 'A scan is read page by page, where it is, and the commands ask for it again.',
     alt: 'The numen window: a scanned book open beside the file tree, with the '
-      + 'menu on it offering to recognise its text.',
+      + 'commands offering to recognise its text.',
     light: ocrLight,
     dark: ocrDark,
   },
@@ -529,7 +529,7 @@ const description =
 
           <div class="features">
             <div class="feature">
-              <h3>Right-click, transcribe</h3>
+              <h3>Open it, transcribe</h3>
               <p>
                 A recording in the folder is written down where it stands. The words
                 arrive while it runs, so a long talk is searchable before it is finished.

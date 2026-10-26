@@ -14,11 +14,11 @@ The run waits for the core's shared queue as a person's request, behind any othe
 
 Every file is named by the hash of the recording's bytes, so a file renamed or moved keeps its transcript, and two copies of one recording share it.
 
-| File | What it holds |
-| --- | --- |
-| `<hash>.vtt` | the transcript, complete |
+| File                 | What it holds                                   |
+| -------------------- | ----------------------------------------------- |
+| `<hash>.vtt`         | the transcript, complete                        |
 | `<hash>.partial.vtt` | a run still going, or one that stopped part way |
-| `edit-<id>.vtt` | a person's edit of a version |
+| `edit-<id>.vtt`      | a person's edit of a version                    |
 
 A recording asked for again whose transcript is complete is not heard again.
 

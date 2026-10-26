@@ -6,14 +6,14 @@ What a model reads off the pages of a scanned document, where it is kept, and wh
 
 A recognition is one file, `<hash>.json`, where the hash is the SHA-256 of the file's path in the vault:
 
-| Field | What it holds |
-| --- | --- |
-| `path` | the path of the file read |
-| `inputHash` | the content hash of the bytes read |
-| `recipe` | which layout, line and recognition models read it, and at what resolution |
-| `pageCount` | how many pages the file has |
-| `pages` | for each page read so far, its parts: a run of text, the rectangles it was read from as fractions of the page, and the section a heading starts |
-| `isComplete` | whether every page is read |
+| Field        | What it holds                                                                                                                                   |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `path`       | the path of the file read                                                                                                                       |
+| `inputHash`  | the content hash of the bytes read                                                                                                              |
+| `recipe`     | which layout, line and recognition models read it, and at what resolution                                                                       |
+| `pageCount`  | how many pages the file has                                                                                                                     |
+| `pages`      | for each page read so far, its parts: a run of text, the rectangles it was read from as fractions of the page, and the section a heading starts |
+| `isComplete` | whether every page is read                                                                                                                      |
 
 ```mermaid
 graph TD

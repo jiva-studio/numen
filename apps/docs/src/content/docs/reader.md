@@ -3,53 +3,49 @@ title: Scanned books
 description: How a scan of paper becomes text you can search, and the settings that decide how it is read.
 ---
 
-A PDF that is scans of paper carries no text. Right-click it in the [files](/files/) and choose **Recognise** — or ask the [agent](/agent/) to read it — and the pages are read here, on your machine: three small models, one that divides a page into its parts, one that finds the lines in a part, one that reads what a line says. Nothing is uploaded and no account is involved.
+A PDF that is scans of paper carries no text. The Document OCR plugin reads its pages here, on your machine: three small models, one that divides a page into its parts, one that finds the lines in a part, one that reads what a line says. Nothing is uploaded and no account is involved.
+
+It reads a scan of its own accord: a `.pdf`, `.png`, `.jpg`, `.jpeg`, `.gif` or `.webp` whose pages carry no text and that has no text yet. You can also ask for it — **Recognise the text with Document OCR** in the [commands](/commands/), under **File**, or ask the [agent](/agent/) to read it.
 
 What comes out is kept in the OCR plugin's folder inside the vault's own `.numen/` folder, `.numen/md.numen.engines.ocr/`, one file a document.
 
-The models are fetched the first time a recognition is asked for, and the corner of the window shows how far that has got.
-
-Everything here is `indexing.recognition` in [the settings file](/settings/).
+The three models are the plugin's own dependencies, which numen fetches for it.
 
 ## What is worth changing
 
-Almost nothing: every number was measured, and the defaults are where the measurement said to put them. These are the three that come up.
+The settings are the Document OCR plugin's, on its page in the [settings](/settings/), and in the settings file under `plugins` → `md.numen.engines.ocr`.
 
 | | |
 | --- | --- |
-| `recognise.dpi` | what a page is rendered at before it is read. 300. Raising it reads finer print and costs time. |
-| `recognise.threads` | how many threads one model may use. 4. |
-| `detect.expand` | how many pixels a found line is widened by before it is read. 18. The line a detector finds is drawn *inside* the letters, so without widening the top of every capital and the last letter of every line are cut away. |
+| `dpi` | what a page is rendered at before it is read. 300, from 150 to 600. Raising it reads finer print and costs time. |
+| `language` | which recognition model reads the lines: `auto`, `cyrillic`, `latin` or `ch`. `auto` where you name none. |
+| `custom_model_path` | a recognition model of your own, as an ONNX file, read in place of the one the plugin ships with. |
+| `custom_dict_path` | the character dictionary that model reads with. |
 
-`regions.body` says which parts of a page carry what the document says, and `regions.head` which of them open a section — where a name stands in that list is how deep the section sits. A part the model finds that `body` does not name is not read at all, which is how page numbers and running heads stay out of your search.
-
-`dir` names a folder holding the models, and `download` turned off keeps numen from fetching anything — the two together are how a machine with no network reads a book. `runtime` names the ONNX Runtime library, for a machine whose own is the one to use.
+Changing one of them takes effect the next time the plugin reads a page.
 
 ## Correcting what OCR read
 
-The text OCR read off the pages can be corrected afterwards by a model, through the proofreading plugin. **Nothing does this by default**: name no profile under `indexing.proofreading` and the text is used exactly as it was read, with no key and no network.
+The text OCR read off the pages can be corrected afterwards by a model, through the LLM Proofreading plugin. **Nothing does this by default**: it runs when you ask for it, with **Proofread the text with LLM Proofreading** in the [commands](/commands/), and until then the text is used exactly as it was read, with no key and no network.
 
 ```json
 {
   "ai": {
-    "default": { "agent": "md.numen.agents.claude", "model": "haiku" }
+    "default": { "agent": "claude", "model": "haiku" }
   },
-  "indexing": {
-    "proofreading": {
-      "max_edit_distance": 0.30,
-      "profiles": {
-        "careful": { "batch_size": 40 }
-      }
-    },
-    "recognition": { "proofread": { "with": "careful", "automatically": true } }
+  "plugins": {
+    "md.numen.tools.proofreading": {
+      "batch_size": 40,
+      "max_edit_distance": 0.3
+    }
   }
 }
 ```
 
-A profile is the size a text is cut into requests at, under a name you choose, and `recognition.proofread.with` names the one that corrects a recognition. `automatically` off leaves it to the hand: you ask for it on the book in front of you.
+A recognition is asked about a page a request. The corrected text is a new version beside the one it was made from, and deleting it — **Delete the text LLM Proofreading made** — brings that one back.
 
-The model that answers is the one the proofreading plugin's own **Agent** setting names, in its section of the settings page; left at "Default", it is the one under `ai.default`: the agent, the model, and how many questions it answers at once. The `claude` command line you already have installed is one agent; a key belongs to the agent that holds it, and you enter it in the AI section of the settings page. The first time proofreading asks a model, the AI section asks you whether it may. With no agent to answer, proofreading says that nothing is available; while you have not allowed it, the proofreading in the list of what is being done says "AI access not allowed — allow it in Settings → AI". Either way the text stays as it was read.
+The model that answers is the one the proofreading plugin's own **Agent** setting names, on its page of the settings; left at "Default", it is the one under `ai.default`: the agent, the model, and how many questions it answers at once. The `claude` command line you already have installed is one agent; a key belongs to the agent that holds it, and you enter it in the settings of that agent's plugin. The first time proofreading asks a model, the settings ask you whether it may. With no agent to answer, proofreading says that nothing is available; while you have not allowed it, the proofreading in the list of what is being done says "AI access not allowed — allow it in Settings → AI". Either way the text stays as it was read.
 
-`max_edit_distance` is the safety catch: how far a correction may move a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction further apart than 0.30 was damage — text dragged in from the next line, or one corrected word standing in for a whole line — and everything below it was a genuine fix. A correction further apart than this is dropped, and that line is left as it was read. It stands above the profiles because it is one threshold for the whole installation, and it is 0.30 where you name nothing.
+`max_edit_distance` is the safety catch: how far a correction may move a line's letters and still count as a correction, taken as the Levenshtein distance between them as a share of the longer of the two. Over 931 corrections of one book, every correction further apart than 0.3 was damage — text dragged in from the next line, or one corrected word standing in for a whole line — and everything below it was a genuine fix. A correction further apart than this is dropped, and that line is left as it was read. It is 0.3 where you name nothing.
 
-The complete list is on [every setting](/reference/).
+The settings of the file itself are on [every setting](/reference/).

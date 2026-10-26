@@ -101,13 +101,13 @@ The index file does not shrink. The space is reused and the file is the size it 
 
 Five tools:
 
-| Tool | What it does |
-| --- | --- |
-| `vault_list` | every vault this installation holds, and which one the person is looking at. A vault whose folder is gone is marked and stays on the list. |
-| `vault_add` | put a folder on the list. With no path, this machine's own picker goes up in front of the person and what they choose is added; a person who closes it has chosen nothing, and the answer says so. With a path, the folder at that path becomes a vault. Nothing already in the folder is moved or rewritten, and the vault's identity is written into it. |
-| `vault_rename` | call a vault something else. |
-| `vault_remove` | take a vault off the list and out of the index. |
-| `vault_open` | put another vault in front of the person. The agent's session ends with the vault it was serving. |
+| Tool           | What it does                                                                                                                                                                                                                                                                                                                                               |
+| -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `vault_list`   | every vault this installation holds, and which one the person is looking at. A vault whose folder is gone is marked and stays on the list.                                                                                                                                                                                                                 |
+| `vault_add`    | put a folder on the list. With no path, this machine's own picker goes up in front of the person and what they choose is added; a person who closes it has chosen nothing, and the answer says so. With a path, the folder at that path becomes a vault. Nothing already in the folder is moved or rewritten, and the vault's identity is written into it. |
+| `vault_rename` | call a vault something else.                                                                                                                                                                                                                                                                                                                               |
+| `vault_remove` | take a vault off the list and out of the index.                                                                                                                                                                                                                                                                                                            |
+| `vault_open`   | put another vault in front of the person. The agent's session ends with the vault it was serving.                                                                                                                                                                                                                                                          |
 
 Every other tool works the vault marked `showing`, and no other.
 

@@ -6,11 +6,11 @@ Where the page, the manual and the builds are served from, and what has to exist
 
 Storage on bunny.net is never readable from the web: reading it needs the zone's password, and the password is a secret. What serves a file to the world is a **pull zone** standing in front of a storage zone. So a store is public exactly to the extent that a pull zone points at it, and each of the three has a store of its own — nothing in one can be reached through the other.
 
-| | Storage zone | Pull zone | Served from |
-| --- | --- | --- | --- |
-| The page | `numen-site` | `numen-site` | `numen-site.b-cdn.net`, and `numen.md` |
+|            | Storage zone | Pull zone    | Served from                                 |
+| ---------- | ------------ | ------------ | ------------------------------------------- |
+| The page   | `numen-site` | `numen-site` | `numen-site.b-cdn.net`, and `numen.md`      |
 | The manual | `numen-docs` | `numen-docs` | `numen-docs.b-cdn.net`, and `docs.numen.md` |
-| The builds | `numen` | `numen-dl` | `numen-dl.b-cdn.net`, and `dl.numen.md` |
+| The builds | `numen`      | `numen-dl`   | `numen-dl.b-cdn.net`, and `dl.numen.md`     |
 
 Every store is in Falkenstein, so the endpoint is `storage.bunnycdn.com`. Each zone serves from every continent and holds what it was given for thirty days; the builds' zone is on the volume tier, which is what large files that are rarely fetched should be on.
 
@@ -20,28 +20,28 @@ The manual is a folder of folders, each holding an `index.html`, and a pull zone
 
 ## What is in the store
 
-| Folder | What is in it |
-| --- | --- |
-| `latest/` | The newest release, under names that carry no version |
-| `releases/<version>/` | That release under names that carry the stamp, kept |
-| `beta/` | The newest beta, under names that carry no version |
-| `builds/<stamp>/` | That beta under names that carry the stamp, kept |
+| Folder                | What is in it                                         |
+| --------------------- | ----------------------------------------------------- |
+| `latest/`             | The newest release, under names that carry no version |
+| `releases/<version>/` | That release under names that carry the stamp, kept   |
+| `beta/`               | The newest beta, under names that carry no version    |
+| `builds/<stamp>/`     | That beta under names that carry the stamp, kept      |
 
 Eight builds in each and what they hold beside them, one name each in `latest/` and `beta/`:
 
-| File | What it is |
-| --- | --- |
-| `numen-macos.dmg` | The window, universal, signed and notarized |
-| `numen-windows-setup.exe` | The installer, with the webview bootstrapper |
-| `numen-windows-amd64.zip` | The window on its own |
-| `numen-linux-amd64.deb` | Debian and Ubuntu |
-| `numen-linux-amd64.rpm` | Fedora and RHEL |
+| File                        | What it is                                                                     |
+| --------------------------- | ------------------------------------------------------------------------------ |
+| `numen-macos.dmg`           | The window, universal, signed and notarized                                    |
+| `numen-windows-setup.exe`   | The installer, with the webview bootstrapper                                   |
+| `numen-windows-amd64.zip`   | The window on its own                                                          |
+| `numen-linux-amd64.deb`     | Debian and Ubuntu                                                              |
+| `numen-linux-amd64.rpm`     | Fedora and RHEL                                                                |
 | `numen-linux-amd64.flatpak` | Any distribution with flatpak on it, the browser coming from the GNOME runtime |
-| `numen-linux-amd64.snap` | Ubuntu, the browser carried inside |
-| `numen-linux-amd64.tar.gz` | The two windows and the marks a desktop shows them under |
-| `PKGBUILD` | What an Arch machine builds the archive into a package with |
-| `numen-nix.tar.gz` | The flake a Nix machine reads, naming the archive above |
-| `notes.md` | What this release holds that the last one did not |
+| `numen-linux-amd64.snap`    | Ubuntu, the browser carried inside                                             |
+| `numen-linux-amd64.tar.gz`  | The two windows and the marks a desktop shows them under                       |
+| `PKGBUILD`                  | What an Arch machine builds the archive into a package with                    |
+| `numen-nix.tar.gz`          | The flake a Nix machine reads, naming the archive above                        |
+| `notes.md`                  | What this release holds that the last one did not                              |
 
 The `PKGBUILD` and the flake are recipes: they are read rather than fetched by a machine, so they stand on the shelf under their own names and are not in the manifest. Each is written by the run that made the build it names, and carries that build's address and hash.
 
@@ -61,18 +61,18 @@ A release is named by a git tag, `v0.4.0-alpha.1`, and that tag is the only plac
 
 The three written with dashes between them are the stamp, `0.4.0-alpha.1-364-283d1d5`, and every file a run puts up carries it in its name.
 
-| Where | What it carries |
-| --- | --- |
-| The stamped file names | The version, the build number and the commit |
-| `numen --version` | `numen 0.4.0-alpha.1 (build 364, commit 283d1d5)` |
-| The corner of the welcome screen | The version |
-| macOS `CFBundleShortVersionString` | The version |
-| macOS `CFBundleVersion` | The build number, which is what macOS orders two builds of one version by |
-| Windows `VIProductVersion` | `0.4.0.364` — four numbers, the last of them the build |
-| The deb and the rpm | `0.4.0~alpha.1`, a tilde being where both managers sort a prerelease before the release it leads to |
-| The snap | The version as it is written |
-| The `PKGBUILD` | `0.4.0_alpha.1`, a pkgver holding no dash |
-| `latest.json` | The version, the build number, the commit and the stamp, as four fields |
+| Where                              | What it carries                                                                                     |
+| ---------------------------------- | --------------------------------------------------------------------------------------------------- |
+| The stamped file names             | The version, the build number and the commit                                                        |
+| `numen --version`                  | `numen 0.4.0-alpha.1 (build 364, commit 283d1d5)`                                                   |
+| The corner of the welcome screen   | The version                                                                                         |
+| macOS `CFBundleShortVersionString` | The version                                                                                         |
+| macOS `CFBundleVersion`            | The build number, which is what macOS orders two builds of one version by                           |
+| Windows `VIProductVersion`         | `0.4.0.364` — four numbers, the last of them the build                                              |
+| The deb and the rpm                | `0.4.0~alpha.1`, a tilde being where both managers sort a prerelease before the release it leads to |
+| The snap                           | The version as it is written                                                                        |
+| The `PKGBUILD`                     | `0.4.0_alpha.1`, a pkgver holding no dash                                                           |
+| `latest.json`                      | The version, the build number, the commit and the stamp, as four fields                             |
 
 The version, the build number and the commit go into the binary at the link, and a name the linker does not find is one it passes over in silence, so the Linux job asks the binary it just built what it calls itself and stops if the answer does not carry all three. It goes into the page as `VITE_NUMEN_VERSION` while the page is built, which is where the welcome screen reads it from.
 
@@ -84,19 +84,19 @@ The version, the build number and the commit go into the binary at the link, and
 
 Variables:
 
-| Variable | Value |
-| --- | --- |
-| `BUNNY_STORAGE_ENDPOINT` | `storage.bunnycdn.com` |
-| `BUNNY_STORAGE_ZONE` | `numen` |
-| `BUNNY_PULL_ZONE_ID` | `6406732` |
-| `BUNNY_SERVED_FROM` | `https://dl.numen.md` |
-| `BUNNY_SITE_STORAGE_ZONE` | `numen-site` |
-| `BUNNY_SITE_PULL_ZONE_ID` | `6406733` |
-| `BUNNY_SITE_SERVED_FROM` | `https://numen.md` |
-| `BUNNY_DOCS_STORAGE_ZONE` | `numen-docs` |
-| `BUNNY_DOCS_PULL_ZONE_ID` | `6415145` |
-| `BUNNY_DOCS_SERVED_FROM` | `https://docs.numen.md` |
-| `PUBLIC_NUMEN_DOWNLOADS_BASE` | `https://dl.numen.md` |
+| Variable                      | Value                   |
+| ----------------------------- | ----------------------- |
+| `BUNNY_STORAGE_ENDPOINT`      | `storage.bunnycdn.com`  |
+| `BUNNY_STORAGE_ZONE`          | `numen`                 |
+| `BUNNY_PULL_ZONE_ID`          | `6406732`               |
+| `BUNNY_SERVED_FROM`           | `https://dl.numen.md`   |
+| `BUNNY_SITE_STORAGE_ZONE`     | `numen-site`            |
+| `BUNNY_SITE_PULL_ZONE_ID`     | `6406733`               |
+| `BUNNY_SITE_SERVED_FROM`      | `https://numen.md`      |
+| `BUNNY_DOCS_STORAGE_ZONE`     | `numen-docs`            |
+| `BUNNY_DOCS_PULL_ZONE_ID`     | `6415145`               |
+| `BUNNY_DOCS_SERVED_FROM`      | `https://docs.numen.md` |
+| `PUBLIC_NUMEN_DOWNLOADS_BASE` | `https://dl.numen.md`   |
 
 Secrets: `BUNNY_STORAGE_KEY`, `BUNNY_SITE_STORAGE_KEY` and `BUNNY_DOCS_STORAGE_KEY` are the three stores' own passwords; `BUNNY_API_KEY` is the account key, which is what purging asks for. They are in 1Password beside the account key they came from.
 

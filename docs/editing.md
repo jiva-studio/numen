@@ -41,26 +41,26 @@ A tab that is stale is answered before it closes and before the window quits.
 
 The predicates are read in order, so a tab is in exactly one state. The mark is the one word the tab carries beside its title, and what a screen reader reads out.
 
-| State | What it means | Mark |
-| --- | --- | --- |
-| `stuck` | reading or writing this note is impossible, and the tab says why | `stuck` |
-| `loading` | the first read has not answered; there is no document to type into | — |
-| `gone` | the name the tab stands at has no file behind it | `gone` |
-| `stale` | the file moved past the prose this tab read, and the save stopped | `stale` |
-| `saving` | a write is in the air | `unsaved` |
-| `unsaved` | what is shown differs from what was written | `unsaved` |
-| `clean` | the file holds what is shown | — |
+| State     | What it means                                                      | Mark      |
+| --------- | ------------------------------------------------------------------ | --------- |
+| `stuck`   | reading or writing this note is impossible, and the tab says why   | `stuck`   |
+| `loading` | the first read has not answered; there is no document to type into | —         |
+| `gone`    | the name the tab stands at has no file behind it                   | `gone`    |
+| `stale`   | the file moved past the prose this tab read, and the save stopped  | `stale`   |
+| `saving`  | a write is in the air                                              | `unsaved` |
+| `unsaved` | what is shown differs from what was written                        | `unsaved` |
+| `clean`   | the file holds what is shown                                       | —         |
 
 A tab is `stuck` on one of six errors:
 
-| Error | What the person is told |
-| --- | --- |
-| `tooLarge` | this note is longer than the editor holds |
+| Error            | What the person is told                                            |
+| ---------------- | ------------------------------------------------------------------ |
+| `tooLarge`       | this note is longer than the editor holds                          |
 | `bodyUnwritable` | a note begins below its frontmatter, and this text begins with one |
-| `notANote` | this file is not a note |
-| `notText` | this file is not text |
-| `unreadable` | the frontmatter of this note cannot be read |
-| `unreachable` | the vault could not be reached, so this note was not written |
+| `notANote`       | this file is not a note                                            |
+| `notText`        | this file is not text                                              |
+| `unreadable`     | the frontmatter of this note cannot be read                        |
+| `unreachable`    | the vault could not be reached, so this note was not written       |
 
 A keystroke is worth trying again after three of them — `tooLarge`, `bodyUnwritable` and `unreachable` — and typing clears the error. The other three are conditions of the file. A tab held on a mendable error is told once when it is asked to close, and goes the second time it is asked.
 
