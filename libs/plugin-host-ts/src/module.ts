@@ -63,14 +63,18 @@ async function loadDynamicModule(
   const manifest = (await res.json()) as PluginManifest
   manifests.set(pluginId, manifest)
   if (manifest.frontend === undefined) return undefined
-  if (manifest.frontend.styles) {
-    const styleUrl = getStyleUrl(baseUrl, pluginId, manifest.frontend.styles)
-    await loadPluginStyle(pluginId, styleUrl, fetchFn)
-  }
+  const { styles } = manifest.frontend
+  const style = styles
+    ? loadPluginStyle(pluginId, getStyleUrl(baseUrl, pluginId, styles), fetchFn)
+    : undefined
   const entrypoint = manifest.frontend.entrypoint ?? 'dist/index.js'
   const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint
   const token = options.getImportToken()
-  return importFn(`${baseUrl}/${pluginId}/${normalizedEntrypoint}?activation=${token}`)
+  const [loaded] = await Promise.all([
+    importFn(`${baseUrl}/${pluginId}/${normalizedEntrypoint}?activation=${token}`),
+    style,
+  ])
+  return loaded
 }
 
 export interface ResolveModuleContext extends LoadModuleOptions {
