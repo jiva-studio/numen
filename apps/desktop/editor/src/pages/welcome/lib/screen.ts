@@ -45,7 +45,7 @@ export const SETTINGS = 'settings'
  * installation's, so they are offered last and are offered always. The rest
  * stand on a vault: a window showing none offers none of them, and the list
  * below is where a person goes first. A note is offered once the vault has
- * been read. The commands the plugins declare over the window stand after it.
+ * been read. The commands the plugins declare over the window with a keystroke stand after it.
  *
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.

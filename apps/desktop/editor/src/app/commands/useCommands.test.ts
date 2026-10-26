@@ -282,8 +282,8 @@ describe('a plugin command over a note', () => {
     expect(offer?.icon).toBe('graph icon')
   })
 
-  it('offers the commands over the window as ways in, and those over a note to the menus', () => {
-    const one = setupPlugin([PRESET, GRAPH])
+  it('offers the keyed commands over the window as ways in, and those over a note to the menus', () => {
+    const one = setupPlugin([PRESET, GRAPH, { id: 'plugin:tree', title: 'Show the tree' }])
 
     expect(one.pluginWays.value).toStrictEqual([
       { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },

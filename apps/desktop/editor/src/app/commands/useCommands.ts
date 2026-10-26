@@ -116,10 +116,13 @@ export function useCommands(options: CommandsDepsOptions) {
     })),
   ])
 
-  /** The commands the plugins declare over the window, as the screen of a window with no tab offers them. */
+  /**
+   * The commands the plugins declare over the window with a keystroke of their
+   * own, as the screen of a window with no tab offers them.
+   */
   const pluginWays = computed<readonly WelcomeAction[]>(() =>
     getPluginCommands()
-      .filter((cmd) => cmd.scope !== 'note')
+      .filter((cmd) => cmd.scope !== 'note' && cmd.shortcut)
       .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
 

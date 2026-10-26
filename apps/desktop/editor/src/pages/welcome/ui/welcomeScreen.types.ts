@@ -11,7 +11,7 @@ export interface WelcomeScreenProps {
   search: SearchState
   doing: CommandDeps
   getTarget: () => CommandTarget
-  /** The commands the plugins declare over the window, offered as ways in. */
+  /** The commands the plugins declare over the window with a keystroke, offered as ways in. */
   pluginWays: readonly WelcomeAction[]
   /** A command asked for, which is what every way in but the commands evaluates to. */
   runCommand: (id: string, target: CommandTarget) => void
