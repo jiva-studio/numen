@@ -1,2 +1,2 @@
-// Package recognitionport declares what the core needs to recognise text on a page and proofread it.
+// Package recognitionport declares the queries the core answers about the problems of a vault.
 package recognitionport

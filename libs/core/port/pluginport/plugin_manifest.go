@@ -46,7 +46,6 @@ func PluginCapabilities() []string {
 		"document",
 		"book",
 		"embedding",
-		"proofreading",
 		"tools",
 		"agent",
 		"ai.agent.provider",

@@ -37,8 +37,6 @@ export const WORDS = {
   headingsDetail: 'How many of them stand under a node at once.',
   syncing: 'Sync title and filename',
   syncingDetail: 'Whether renaming either of the two brings the other into line.',
-  /** The profile naming none, which is what proofreads nothing. */
-  proofreadingNone: 'Nothing',
   /** Workload and performance calibration. */
   performanceProfile: 'Performance profile',
   performanceProfileDetail:

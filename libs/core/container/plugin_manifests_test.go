@@ -458,12 +458,11 @@ func TestWhatTheSettingRuleRefuses(t *testing.T) {
 
 // coreCapabilities are the capabilities resolved by the core's adapters and composition root.
 var coreCapabilities = map[string]bool{
-	bridge.CapabilityDocument:     true,
-	bridge.CapabilityBook:         true,
-	bridge.CapabilityEmbedding:    true,
-	bridge.CapabilityProofreading: true,
-	bridge.CapabilityTools:        true,
-	"ai.agent.provider":           true,
+	bridge.CapabilityDocument:  true,
+	bridge.CapabilityBook:      true,
+	bridge.CapabilityEmbedding: true,
+	bridge.CapabilityTools:     true,
+	"ai.agent.provider":        true,
 }
 
 // sdkCapabilities are the capabilities resolved by the frontend SDK and tab kinds.

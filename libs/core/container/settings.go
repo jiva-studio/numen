@@ -135,7 +135,6 @@ func (c Config) getSettingsOrDefaults() Settings {
 // off.
 func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
-	c.Proofreading = s.Indexing.Proofreading
 	c.Agent = s.Agent
 	c.Performance = s.Performance
 	c.Hardware = hardware.Detect()

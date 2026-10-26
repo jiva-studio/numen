@@ -1402,7 +1402,7 @@ func newHostOfProviders(t *testing.T) *Host {
 	for _, id := range []string{"md.numen.provider-c", "md.numen.provider-a", "md.numen.provider-b"} {
 		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: plugindir.Manifest{
 			ID:             id,
-			Capabilities:   []string{bridge.CapabilityProofreading},
+			Capabilities:   []string{bridge.CapabilityEmbedding},
 			FileExtensions: []string{".fixture"},
 		}}
 	}
@@ -1414,7 +1414,7 @@ func newHostOfProviders(t *testing.T) *Host {
 func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
 	host := newHostOfProviders(t)
 	for range 100 {
-		byCapability, ok := host.FindPluginByCapability(bridge.CapabilityProofreading)
+		byCapability, ok := host.FindPluginByCapability(bridge.CapabilityEmbedding)
 		if !ok || byCapability.Manifest.ID != "md.numen.provider-a" {
 			t.Fatalf("by capability found %q, %v", byCapability.Manifest.ID, ok)
 		}
@@ -1425,7 +1425,7 @@ func TestTheLowestIDOfSeveralProvidersIsFound(t *testing.T) {
 	}
 
 	host.SetSettings(map[string]map[string]any{"md.numen.provider-a": {settingEnabled: false}})
-	if found, _ := host.FindPluginByCapability(bridge.CapabilityProofreading); found.Manifest.ID != "md.numen.provider-b" {
+	if found, _ := host.FindPluginByCapability(bridge.CapabilityEmbedding); found.Manifest.ID != "md.numen.provider-b" {
 		t.Errorf("with the lowest disabled, found %q", found.Manifest.ID)
 	}
 }

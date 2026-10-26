@@ -27,7 +27,6 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.CompletionConsent":    "adapter/window/editor: written by the consents table",
 	"numen.v1.CompletionErrorCode":  "plugin-sdk-go/ai: read by readRefusal",
 	"numen.v1.ErrorCode":            "adapter/window/editor: worded by note errors",
-	"numen.v1.ProofreadKind":        "plugins/proofreading: handled by proofread",
 	"numen.v1.ProblemKind":          "adapter/window/editor: written by faultOf",
 	"numen.v1.FlushResult":          "internal/adapterlib/wire: read by left",
 	"numen.v1.FileMenuAction":       "adapter/window/editor/textmenu: written by the actions table",

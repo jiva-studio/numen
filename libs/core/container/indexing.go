@@ -6,29 +6,6 @@ package container
 type Indexing struct {
 	// Embedding is how the index keeps and asks vectors.
 	Embedding EmbeddingConfig `json:"embedding"`
-
-	// Proofreading is what puts a transcript right. Naming no profile here is
-	// naming no proofreader, and a transcript is used as it was heard.
-	Proofreading ProofreadingConfig `json:"proofreading"`
-}
-
-// ProofreadingConfig is the proofreading section of indexing settings.
-type ProofreadingConfig struct {
-	Profiles map[string]any `json:"profiles"`
-}
-
-// Proofread names the profile a text is put right at.
-type Proofread struct {
-	// Profile is the profile, by the name the profiles carry it under.
-	Profile string `json:"with"`
-
-	// IsAutomatic is whether a text already written down is put right without anybody asking for it.
-	IsAutomatic bool `json:"automatically"`
-}
-
-// HasProfiles says whether this installation has any profile configured.
-func (c ProofreadingConfig) HasProfiles() bool {
-	return len(c.Profiles) > 0
 }
 
 // DefaultIndexing is what an installation nobody has configured makes a vault
@@ -36,9 +13,6 @@ func (c ProofreadingConfig) HasProfiles() bool {
 func DefaultIndexing() Indexing {
 	return Indexing{
 		Embedding: DefaultEmbedding(),
-		Proofreading: ProofreadingConfig{
-			Profiles: map[string]any{},
-		},
 	}
 }
 

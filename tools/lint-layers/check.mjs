@@ -165,6 +165,7 @@ const CORE_MOVED_DIRS = [
   "internal/adapter/download",
   "internal/adapter/plugin/downloaderbridge",
   "port/downloadport",
+  "internal/correction",
 ];
 const CORE_MOVED_CONTAINER_FILES = ["recogniser", "transcriber", "proofreader", "embedder", "downloader"];
 
@@ -246,7 +247,7 @@ const VERIFIERS = [
     id: "core-holds-no-plugin-package",
     scope: "libs",
     module: "core",
-    name: "Core Holds No Plugin Package (document, recognition, transcription, links)",
+    name: "Core Holds No Plugin Package (document, recognition, transcription, links, proofreading)",
     run: verifyCoreHoldsNoPluginPackage,
   },
   {

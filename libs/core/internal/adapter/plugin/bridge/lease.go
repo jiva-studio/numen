@@ -75,7 +75,7 @@ func (s Service[C]) Open(ctx context.Context) (C, *Lease, error) {
 	return Open(ctx, s.Host, s.PluginID, s.NewClient)
 }
 
-// ReadActivationError sorts the failure to start the proofreading plugin: the
+// ReadActivationError sorts the failure to start a plugin: the
 // end of a context is returned as it is, and any other failure is
 // port.ErrUnavailable.
 func ReadActivationError(err error) error {

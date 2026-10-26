@@ -29,12 +29,6 @@ func runTranscribeCommand(ctx context.Context, out io.Writer, deps Deps, args []
 	return runTextMenuEntry(ctx, out, deps, v, args[1], textversion.ActionRecognise)
 }
 
-// proofreadTextCommand asks a plugin that reads the format of the file's live text for a version
-// made from it, and waits for the plugin to finish.
-func proofreadTextCommand(ctx context.Context, out io.Writer, deps Deps, v domain.Vault, path string) error {
-	return runTextMenuEntry(ctx, out, deps, v, path, textversion.ActionProofread)
-}
-
 // runTextMenuEntry carries out the first entry of the action the file's menu offers, and waits
 // until the plugin carrying it out reports no task about the file. The file is then cut from its
 // live text.

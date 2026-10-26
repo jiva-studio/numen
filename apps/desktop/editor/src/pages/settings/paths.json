@@ -1,5 +1,4 @@
 {
-  "profiles": ["indexing", "proofreading", "profiles"],
   "agent": ["agent", "use"],
   "agentTools": ["agent", "serve_tools"],
   "performanceProfile": ["performance", "profile"],

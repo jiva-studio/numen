@@ -70,9 +70,6 @@ type Config struct {
 	// Embedding is how the index keeps and asks vectors.
 	Embedding EmbeddingConfig
 
-	// Proofreading configures the recognition proofreading pipeline.
-	Proofreading ProofreadingConfig
-
 	// PluginHost coordinates process lifecycle and RPC routing for modular extensions.
 	PluginHost pluginport.PluginManager
 

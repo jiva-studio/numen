@@ -601,19 +601,6 @@ func TestOneAgentFieldKeepsTheRest(t *testing.T) {
 	}
 }
 
-// Nothing proofreads a recognition unless a person named something to proofread it
-// with. This is what an untouched installation does, and a model that rewrites
-// a person's books does not arrive by default.
-func TestAnUntouchedInstallationProofreadsNothing(t *testing.T) {
-	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cfg.Indexing.Proofreading.HasProfiles() {
-		t.Errorf("proofreads with %+v", cfg.Indexing.Proofreading)
-	}
-}
-
 // A setting that is on where a file says nothing is read through a pointer:
 // leaving the section out, leaving the field out and writing false are three
 // different things a person can write, and the last of them is the only one

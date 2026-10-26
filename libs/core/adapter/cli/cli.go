@@ -24,7 +24,6 @@ usage:
                                                --rebuild-index reads every file again, forgets
                                                the vectors of every model but the one in use,
                                                and gives their space back
-  numen-cli proofread <vault> <file>          put a recording's text right with a model
   numen-cli transcribe <vault> <file>          transcribe a recording with the plugin that reads it
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
@@ -87,8 +86,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return runVaultCommand(ctx, out, deps, rest[1:])
 	case "scan":
 		return runScanCommand(ctx, out, deps, rest[1:])
-	case "proofread":
-		return proofreadCommand(ctx, out, deps, rest[1:])
 	case "transcribe":
 		return runTranscribeCommand(ctx, out, deps, rest[1:])
 	case "search":

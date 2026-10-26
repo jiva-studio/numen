@@ -154,7 +154,7 @@ The **core budget** is the number of hardware threads CPU-bound work may occupy 
 | Local embedding, forward passes at once | workers, lowered to what a quarter of the available memory holds, unless the model names `sessions`; one on an accelerator | one up to 2 CPUs, two up to 4, three beyond |
 | Search question and indexing sharing one local model | indexing holds one pass fewer than the model runs at once, at least one; a question is never held | not applicable |
 | OCR | OCR threads and sessions | unresolved counts, then named defaults |
-| Proofreading, batches one call answers | LLM concurrency, unless the profile names `in_flight` | 4 |
+| Proofreading, batches of a transcript one window carries | the plugin's `in_flight` | 4 |
 | Embedding service, requests in flight | LLM concurrency | 4 |
 | Search, sources extracted at once | workers | 4 |
 | Cards, decks parsed and curve places worked out at once | workers | one per CPU |
@@ -196,67 +196,11 @@ The Vector Embeddings plugin makes the vectors: which model, where it runs, and 
 
 A vector is kept under the model the plugin answers with: its name, width, input bound and pooling, and where it was made. A model changed in the plugin makes every stored vector again, and going back finds the old vectors where they were. A vault with the plugin disabled is searched by its words alone.
 
-## Recognising a scanned document
-
-`indexing.recognition` is how a scanned page is read. Nothing here runs on its own: a person asks for a recognition, and what one is and where it is kept is in [Recognising a document](recognising.md).
-
-```json
-{
-  "indexing": {
-    "recognition": {
-      "proofread": { "with": "", "automatically": false }
-    }
-  }
-}
-```
-
-| | |
-| --- | --- |
-| `proofread.with` | which profile under `indexing.proofreading.profiles` puts a recognition right. Empty proofreads nothing, and a recognition is used exactly as it was read. A name no profile carries is an error at startup. |
-| `proofread.automatically` | whether a recognition is proofread as soon as it is finished. Off leaves it to the hand: a person asks for it on the book in front of them. |
-
 ## Putting a text right
 
-`indexing.proofreading` is what corrects a text a model produced — a recognition of a scan, a transcript of a recording. It stands beside `recognition` because a text put right is a text searched, and it holds the profiles it names. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
+The proofreading plugin, `md.numen.tools.proofreading`, puts a transcript or a recognition right when a person asks for it from the file's menu, and its settings are the plugin's own. What a correction may change, and what refuses one, is in [Proofreading](proofreading.md).
 
-An installation naming no profile proofreads nothing, and nothing asks for a key or a network.
-
-A profile says how a text is cut into requests. Which model answers them is not a profile's to say: the proofreading plugin asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent program, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way nothing is corrected.
-
-```json
-{
-  "indexing": {
-    "proofreading": {
-      "max_edit_distance": 0.30,
-      "profiles": {
-        "scans": { "batch_size": 40, "overlap": 0 },
-        "speech": { "batch_size": 60, "overlap": 2, "in_flight": 3 }
-      }
-    }
-  }
-}
-```
-
-| | |
-| --- | --- |
-| `max_edit_distance` | how far a correction may move a line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. Left out, the proofreading plugin's own limit, 0.30. A correction standing further apart is dropped and that line is left as it was. It stands above the profiles because it is one threshold for the installation: how far a correction may move says nothing about what it was asked for through. |
-| `profiles` | a map of name to profile. The name is what a consumer says under `proofread.with`, and it is the person's own word. |
-
-A profile is flat: every key sits at the profile's own level.
-
-| | |
-| --- | --- |
-| `batch_size` | how many lines one speech request carries, or how many pages one scan call carries. 40. |
-| `overlap` | how many lines neighbouring batches share, so a phrase torn at a batch boundary is still seen whole by one of them. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows it. |
-| `in_flight` | how many batches one call answers. Left out, it is the performance profile's LLM concurrency; with no performance profile, 4. How many questions reach the model at once is `ai.default.concurrency`. |
-
-A profile of an older file that names `use`, `name`, `base_url`, `batch_url`, `key`, `key_env`, `model`, `command`, `attempts`, `delay_ms` or `max_delay_ms` is read for its sizes alone. The command line a person has installed is one agent plugin, and a key belongs to the agent that holds it.
-
-`max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
-
-## Worked example, proofreading
-
-Scans through the `claude` command line on this machine, two questions at once. It runs on its own: a book read is a book proofread, with nobody asked.
+Which model answers is not the plugin's to say: it asks the host, and the host answers from the plugin's own `agent` setting, else from [`ai.default`](#where-a-plugins-questions-to-a-model-are-answered), which names the agent program, the model and the number of questions answered at once. With no agent to answer, proofreading fails with "unavailable"; before the person lets the plugin ask, it fails with "AI access not allowed — allow it in Settings → AI". Either way no version is made.
 
 ```json
 {
@@ -264,25 +208,25 @@ Scans through the `claude` command line on this machine, two questions at once. 
     "default": { "agent": "claude", "model": "haiku", "concurrency": 2 }
   },
   "plugins": {
-    "md.numen.tools.proofreading": { "aiConsent": true }
-  },
-  "indexing": {
-    "proofreading": {
-      "max_edit_distance": 0.30,
-      "profiles": {
-        "scans": { "batch_size": 40, "overlap": 0 },
-        "speech": { "batch_size": 60, "overlap": 2, "in_flight": 3 }
-      }
-    },
-
-    "recognition": { "proofread": { "with": "scans", "automatically": true } }
+    "md.numen.tools.proofreading": {
+      "aiConsent": true,
+      "batch_size": 40,
+      "overlap": 4,
+      "in_flight": 4,
+      "max_edit_distance": 0.30
+    }
   }
 }
 ```
 
-A scan goes forty pages to a call. A page ends where a page ends, so nothing carries over and `overlap` is 0. Speech goes sixty cues to a request, three requests to a call; a sentence runs across the cue a batch ends on, so two cues are shared with the batch on either side.
+| | |
+| --- | --- |
+| `batch_size` | how many lines of a transcript one request carries. 40. A recognition is asked about a page a request. |
+| `overlap` | how many lines neighbouring batches of a transcript share, so a phrase torn at a batch boundary is still seen whole by one of them. 4. |
+| `in_flight` | how many batches of a transcript one window carries; the task shows the lines done after each window. 4. |
+| `max_edit_distance` | how far a correction of a recognised line may move the line's letters and still be a correction: the Levenshtein distance between what is left after spaces, punctuation, symbols, diacritics and case come off, as a share of the longer of the two. 0.30. A correction standing further apart is dropped and that line is left as it was. |
 
-A `with` naming a profile `profiles` does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run quietly proofreading nothing.
+`max_edit_distance` is 0.30 because the measured distribution has a hole there. Over 931 corrections of one book, every correction standing further apart than 0.30 was damage — text dragged in from the next line, or one corrected word in place of a whole line — and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
 
 ## Reaching an address
 
@@ -357,7 +301,7 @@ Every agent that runs a task answers a question, and a task that names no tool i
 
 The file is read at every question, so a choice written while the application runs applies to the next one.
 
-The first question of a plugin the person has not answered for is rejected with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Deny. If denied, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin answers it as permission denied, and the proofreading appears in the list of what is being done with "AI access not allowed — allow it in Settings → AI".
+The first question of a plugin the person has not answered for is rejected with `NO_CONSENT`, and the settings page puts it to the person: the AI section names the plugin that asked, with Allow and Deny. If denied, every question of that plugin is answered `NO_CONSENT`, which the plugin shows as the reason nothing was answered; the proofreading plugin shows it as the error of its task in the list of what is being done.
 
 The settings page writes all of these. Its AI section holds the default agent and its model, a switch for each plugin that may ask, and the keys of the secrets plugins declare; a plugin's own section draws its setting of type `agent` as two lists, the agent first, "Default (<the agent answering it now>)" at its head, then the model, "Agent default" at its head. The agents a list offers are the programs the plugins list, and the models are the ones each program lists for `GetAgentPrograms`.
 
