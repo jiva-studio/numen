@@ -83,6 +83,7 @@ export function createPlayer() {
       position.value = ms
       seeks.push([next, ms])
     },
+    getDuration: async () => 0,
   }
   return { player, seeks }
 }

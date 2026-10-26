@@ -78,6 +78,7 @@ const createPlayer = (isPlaying: boolean): Player => ({
   play: () => {},
   pause: () => {},
   seek: () => {},
+  getDuration: async () => RUNS,
 })
 
 const meta: Meta = {

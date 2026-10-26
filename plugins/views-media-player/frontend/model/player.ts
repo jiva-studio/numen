@@ -36,6 +36,9 @@ const DURATION_EVENTS = [
   'progress',
 ]
 
+/** How long reading the length of a recording that does not hold the player may take. */
+const DURATION_READ_TIMEOUT_MS = 20_000
+
 /** How often, and how many times, a length still unknown once the metadata is read is asked for again. */
 const DURATION_POLL_MS = 250
 const DURATION_POLLS = 40
@@ -58,6 +61,11 @@ export interface Player {
   pause(): void
   /** Play a millisecond of the recording at an address, loading it first. */
   seek(url: string, ms: number): void
+  /**
+   * The length of the recording at an address in milliseconds, read through an element of its
+   * own, so the recording that holds the player keeps it. Zero where it cannot be read.
+   */
+  getDuration(url: string): Promise<number>
 }
 
 /** What makes the element a sound is played through. A test says otherwise. */
@@ -65,19 +73,16 @@ export type AudioFactory = () => HTMLAudioElement
 
 const createAudioElement: AudioFactory = () => new Audio()
 
-function bindAudioListeners(
-  audio: HTMLAudioElement,
-  state: {
-    position: Ref<number>
-    duration: Ref<number>
-    isPlaying: Ref<boolean>
-    error: Ref<string>
-  },
-) {
-  audio.preload = 'metadata'
-  // WebKitGTK reports a VBR mp3 with no Xing header as 0 s long at durationchange and
-  // loadedmetadata, then sets the estimated length without another durationchange. The length is
-  // read again at each of these, and polled while it is still unknown.
+/**
+ * Reports the length of the element's recording in milliseconds, zero while it is unknown, each
+ * time it may have changed. Gives back the function that reads it, for the events a caller
+ * already listens to.
+ *
+ * WebKitGTK reports a VBR mp3 with no Xing header as 0 s long at durationchange and
+ * loadedmetadata, then sets the estimated length without another durationchange. The length is
+ * read again at each of these, and polled while it is still unknown.
+ */
+function watchDuration(audio: HTMLAudioElement, onDuration: (ms: number) => void): () => void {
   let poll: ReturnType<typeof setInterval> | undefined
   const stopPoll = () => {
     clearInterval(poll)
@@ -86,7 +91,7 @@ function bindAudioListeners(
   const readDuration = () => {
     const runs = audio.duration
     const ms = Number.isFinite(runs) && runs > 0 ? Math.round(runs * 1000) : 0
-    state.duration.value = ms
+    onDuration(ms)
     if (ms > 0 || audio.readyState < HAVE_METADATA) {
       stopPoll()
       return
@@ -101,6 +106,20 @@ function bindAudioListeners(
     }, DURATION_POLL_MS)
   }
   for (const name of DURATION_EVENTS) audio.addEventListener(name, readDuration)
+  return readDuration
+}
+
+function bindAudioListeners(
+  audio: HTMLAudioElement,
+  state: {
+    position: Ref<number>
+    duration: Ref<number>
+    isPlaying: Ref<boolean>
+    error: Ref<string>
+  },
+) {
+  audio.preload = 'metadata'
+  const readDuration = watchDuration(audio, (ms) => (state.duration.value = ms))
   const readPosition = () => {
     state.position.value = Math.round(audio.currentTime * 1000)
     readDuration()
@@ -160,6 +179,49 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
     return audio
   }
 
+  /** The lengths read of recordings that do not hold the player, by address. */
+  const lengths = new Map<string, Promise<number>>()
+
+  const readLength = (next: string): Promise<number> =>
+    new Promise((resolve) => {
+      let probe: HTMLAudioElement
+      try {
+        probe = create()
+      } catch {
+        resolve(0)
+        return
+      }
+      let isDone = false
+      const finish = (ms: number) => {
+        if (isDone) return
+        isDone = true
+        clearTimeout(timer)
+        // The element lets go of the recording's connection once its source is gone.
+        probe.removeAttribute?.('src')
+        probe.load?.()
+        resolve(ms)
+      }
+      const timer = setTimeout(() => finish(0), DURATION_READ_TIMEOUT_MS)
+      probe.preload = 'metadata'
+      watchDuration(probe, (ms) => {
+        if (ms > 0) finish(ms)
+      })
+      probe.addEventListener('error', () => finish(0))
+      probe.src = next
+    })
+
+  const getDuration = (next: string): Promise<number> => {
+    if (!next) return Promise.resolve(0)
+    const cached = lengths.get(next)
+    if (cached) return cached
+    const length = readLength(next)
+    lengths.set(next, length)
+    void length.then((ms) => {
+      if (ms === 0) lengths.delete(next)
+    })
+    return length
+  }
+
   return {
     url: readonly(url),
     position: readonly(position),
@@ -191,6 +253,8 @@ export function createAudioPlayer(create: AudioFactory = createAudioElement): Pl
       position.value = to
       audio.currentTime = to / 1000
     },
+
+    getDuration,
   }
 }
 

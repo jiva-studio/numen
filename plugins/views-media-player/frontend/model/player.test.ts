@@ -518,3 +518,52 @@ describe('createMediaTypeProbe', () => {
     expect(createMediaTypeProbe()('audio/mpeg')).toBe(false)
   })
 })
+
+describe('the length of a recording that does not hold the player', () => {
+  /** A player whose every element is kept, the first being the one it plays through. */
+  const createPlayers = () => {
+    const made: ReturnType<typeof createElement>[] = []
+    const plays = createAudioPlayer(() => {
+      const one = createElement()
+      made.push(one)
+      return one.element as unknown as HTMLAudioElement
+    })
+    return { plays, made }
+  }
+
+  it('is read through an element of its own, and the playing recording keeps the player', async () => {
+    const { plays, made } = createPlayers()
+    plays.play(TALK)
+
+    const length = plays.getDuration(OTHER)
+    const reader = made[1]!
+    expect(reader.element.preload).toBe('metadata')
+    expect(reader.element.src).toBe(OTHER)
+    reader.element.readyState = 1
+    reader.setDuration(187)
+
+    await expect(length).resolves.toBe(187_000)
+    expect(plays.url.value).toBe(TALK)
+    expect(made[0]!.element.loaded).toStrictEqual([TALK])
+  })
+
+  it('makes one reader element per address', async () => {
+    const { plays, made } = createPlayers()
+
+    const first = plays.getDuration(OTHER)
+    made[0]!.setDuration(42)
+    await first
+    await plays.getDuration(OTHER)
+
+    expect(made).toHaveLength(1)
+  })
+
+  it('is zero where the element cannot read the recording', async () => {
+    const { plays, made } = createPlayers()
+
+    const length = plays.getDuration(OTHER)
+    made[0]!.setError(4)
+
+    await expect(length).resolves.toBe(0)
+  })
+})

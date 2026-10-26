@@ -2,13 +2,15 @@
  * Playback state of one recording in the shared audio player.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { nextTick, ref } from 'vue'
 import { usePlayback } from './playback'
 import type { Player } from './player'
 import type { RecordingSource } from '../types'
 
 const TALK = 'http://127.0.0.1:1/token/v/talk.mp3'
 const OTHER = 'http://127.0.0.1:1/token/v/other.mp3'
+const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0))
+
 const FILE: RecordingSource = { mediaUrl: TALK, mediaType: 'audio/mpeg' }
 
 /** The one player of the window, with what is asked of it recorded. */
@@ -22,8 +24,32 @@ const createPlayer = () => {
   const play = vi.fn<(url: string) => void>()
   const pause = vi.fn<() => void>()
   const seek = vi.fn<(url: string, ms: number) => void>()
-  const audioPlayer: Player = { url, position, duration, isPlaying, error, load, play, pause, seek }
-  return { audioPlayer, url, position, duration, isPlaying, error, load, play, pause, seek }
+  const getDuration = vi.fn<(url: string) => Promise<number>>(async () => 0)
+  const audioPlayer: Player = {
+    url,
+    position,
+    duration,
+    isPlaying,
+    error,
+    load,
+    play,
+    pause,
+    seek,
+    getDuration,
+  }
+  return {
+    audioPlayer,
+    url,
+    position,
+    duration,
+    isPlaying,
+    error,
+    load,
+    play,
+    pause,
+    seek,
+    getDuration,
+  }
 }
 
 const createPlayback = (how: { isPlayable?: boolean } = {}) => {
@@ -121,6 +147,48 @@ describe('the source given to a player holding nothing', () => {
     url.value = OTHER
     playback.setSource(FILE)
     expect(load).not.toHaveBeenCalled()
+  })
+})
+
+describe('a recording while another one holds the player', () => {
+  it('shows its own length, read without taking the player, at position 0', async () => {
+    const { playback, url, duration, position, getDuration, load, seek } = createPlayback()
+    url.value = OTHER
+    duration.value = 6_000
+    position.value = 2_000
+    getDuration.mockResolvedValue(187_000)
+
+    playback.setSource(FILE)
+    await flushPromises()
+
+    expect(getDuration).toHaveBeenCalledWith(TALK)
+    expect(playback.runs.value).toBe(187_000)
+    expect(playback.now.value).toBe(0)
+    expect(load).not.toHaveBeenCalled()
+    expect(seek).not.toHaveBeenCalled()
+  })
+
+  it('keeps the length the player read once another recording takes the player', async () => {
+    const { playback, url, duration, getDuration } = createPlayback()
+    playback.setSource(FILE)
+    url.value = TALK
+    duration.value = 187_000
+    await nextTick()
+
+    url.value = OTHER
+    duration.value = 6_000
+    await nextTick()
+
+    expect(playback.runs.value).toBe(187_000)
+    expect(getDuration).not.toHaveBeenCalled()
+  })
+
+  it('reads nothing of its own where the player is free and loads it', () => {
+    const { playback, getDuration, load } = createPlayback()
+    playback.setSource(FILE)
+
+    expect(load).toHaveBeenCalledWith(TALK)
+    expect(getDuration).not.toHaveBeenCalled()
   })
 })
 

@@ -1,7 +1,7 @@
 /**
  * Playback state of one recording in the shared audio player.
  */
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import type { MediaTypeProbe, Player } from './player'
 import type { RecordingSource } from '../types'
 
@@ -13,10 +13,23 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   const url = ref('')
   const type = ref('')
   const isSourceRead = ref(false)
+  /** The length read of this recording's own source, for while another recording holds the player. */
+  const ownDuration = ref(0)
   let pendingSeek = -1
 
   const isLoaded = computed(() => url.value !== '' && audioPlayer.url.value === url.value)
-  const runs = computed(() => (isLoaded.value ? audioPlayer.duration.value : 0))
+  const runs = computed(() =>
+    isLoaded.value && audioPlayer.duration.value > 0
+      ? audioPlayer.duration.value
+      : ownDuration.value,
+  )
+  // A length the player read stays this recording's once another recording takes the player.
+  watch(
+    () => (isLoaded.value ? audioPlayer.duration.value : 0),
+    (ms) => {
+      if (ms > 0) ownDuration.value = ms
+    },
+  )
   const now = computed(() => (isLoaded.value ? audioPlayer.position.value : 0))
   const isPlaying = computed(() => isLoaded.value && audioPlayer.isPlaying.value)
   const failure = computed(() => (isLoaded.value ? audioPlayer.error.value : ''))
@@ -34,11 +47,19 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
     audioPlayer.seek(url.value, position)
   }
 
+  const readOwnDuration = (source: string) => {
+    if (audioPlayer.url.value === '' || audioPlayer.url.value === source) return
+    void audioPlayer.getDuration(source).then((ms) => {
+      if (url.value === source) ownDuration.value = ms
+    })
+  }
+
   const setSource = (source: RecordingSource) => {
     isSourceRead.value = true
     url.value = source.mediaUrl
     type.value = source.mediaType
     if (!url.value) return
+    readOwnDuration(url.value)
     if (pendingSeek >= 0) {
       audioPlayer.seek(url.value, pendingSeek)
       pendingSeek = -1
