@@ -60,6 +60,8 @@ func mount(pos string, to http.Handler) served { return served{posVal: pos, to: 
 // it. Naming none is a build that answers the whole schema.
 func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)
+	// The bytes of a vault file are served only where documents are answered about.
+	hasAssets := isServed(named, numenv1connect.DocumentServiceName) || isServed(named, numenv1connect.BookServiceName)
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
@@ -86,7 +88,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 				return
 			}
 		}
-		s.serveBeside(w, r, files)
+		s.serveBeside(w, r, hasAssets, files)
 	})
 }
 
@@ -177,7 +179,7 @@ const updateEndpoint = "https://dl.numen.md/latest/latest.json"
 
 // serveBeside answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
-func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, files http.Handler) {
+func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)
@@ -188,7 +190,7 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, files htt
 		}
 		defer s.state.questions.finish()
 		wire.ServePluginAsset(w, r, s.getPluginDir)
-	case strings.HasPrefix(r.URL.Path, assetsRoute):
+	case hasAssets && strings.HasPrefix(r.URL.Path, assetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
