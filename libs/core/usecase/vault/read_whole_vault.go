@@ -104,7 +104,29 @@ func (u ReadWholeVault) MakeVectors(ctx context.Context, v domain.Vault) (vector
 
 // CutOne cuts one source again from whatever its text now says. A recognition
 // writes a batch of pages and asks for this, so a book being read answers about
-// the pages that have been read.
+// the pages that have been read. A note is cut from its own words by the scan,
+// so a note is left as it is.
 func (u ReadWholeVault) CutOne(ctx context.Context, v domain.Vault, path string) error {
+	isNote, err := u.isNote(ctx, v, path)
+	if err != nil {
+		return err
+	}
+	if isNote {
+		return nil
+	}
 	return source.NewCutSource(u.books).Execute(ctx, v, path)
+}
+
+// isNote reports whether the vault holds a note at the path.
+func (u ReadWholeVault) isNote(ctx context.Context, v domain.Vault, path string) (bool, error) {
+	if u.notes.readers == nil {
+		return false, nil
+	}
+	reader, err := u.notes.readers.Open(v)
+	if err != nil {
+		return false, err
+	}
+	// A path that cannot be stated is left to the cut, which says what stands there.
+	ref, statErr := reader.GetFingerprint(ctx, path)
+	return statErr == nil && ref.Kind == domain.KindNote, nil
 }

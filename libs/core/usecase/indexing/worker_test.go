@@ -477,3 +477,35 @@ func TestVersionChangeEmbedsWhatTheVaultOwes(t *testing.T) {
 		t.Errorf("after a version change %d of %d chunks carry a vector", embedded, target)
 	}
 }
+
+// A note is cut from its own words, so a change to the versions of a note
+// keeps the chunks the note was cut into.
+func TestVersionChangeOfANoteKeepsItsChunks(t *testing.T) {
+	model := &fakeEmbedder{dims: 64}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	cut(t, made, db, v)
+	owed, _, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if owed == 0 {
+		t.Fatal("the note was cut into no chunk that owes a vector")
+	}
+
+	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
+	p.session.ReportVersionsChanged(v, "Note.md")
+	<-p.worker.read
+	p.embedRecognised(t.Context())
+
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target != owed || embedded != target {
+		t.Errorf("after a version change of the note %d of %d chunks carry a vector, want %d of %d",
+			embedded, target, owed, owed)
+	}
+}
