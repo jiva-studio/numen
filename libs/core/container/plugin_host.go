@@ -98,10 +98,16 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 	return plugincommand.NewCommands(commandbridge.Open(c.PluginHost))
 }
 
-// OpenPluginCommands opens the index of the vault and lets the plugins work it through the host
-// with no window, and answers how to run a command of theirs and how to close what it opened.
+// OpenPluginCommands opens the index of the vault and lets the plugins work it, its text versions
+// and the queue through the host with no window, and answers how to run a command of theirs and
+// how to close what it opened.
 func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
 	c.SetPluginVaultPath(v.Path)
+	versions, err := c.NewTextVersions()
+	if err != nil {
+		return plugincommand.Run{}, nil, err
+	}
+	c.TextVersions = versions
 	registry, err := c.Registry()
 	if err != nil {
 		return plugincommand.Run{}, nil, err
@@ -116,7 +122,9 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 		_ = db.Close()
 		return plugincommand.Run{}, nil, err
 	}
+	c.SetPluginWork(run.NewTasks(), &run.Lock{})
 	c.SetPluginVault(vault)
+	c.SetPluginTexts(ctx, current)
 	return c.GetPluginCommands().Run, db.Close, nil
 }
 

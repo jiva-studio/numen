@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImgKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSDAoEdHlwZRgFIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJwCghGaWxlS2luZBIMCgRwYXRoGAEgASgJEiIKBGtpbmQYAiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEgwKBHR5cGUYAyABKAkSJAoGZm9ybWF0GAQgASgOMhQubnVtZW4udjEuQm9va0Zvcm1hdCIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKQAQoQTW92ZUZpbGVSZXNwb25zZRIoCgVtb3ZlZBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgBiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX21vdmVkQggKBl9lcnJvciJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiMgoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIIoEBChJSZW1vdmVGaWxlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhUKDWlzX3VubGV2ZWxsZWQYBCABKAhCCAoGX2Vycm9yIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJJChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciItChBDcmVhdGVVUkxSZXF1ZXN0EgsKA3VybBgBIAEoCRIMCgRwYXRoGAIgASgJIlQKEUNyZWF0ZVVSTFJlc3BvbnNlEgwKBHBhdGgYASABKAkSJwoFZXJyb3IYAiABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IqhQEKClNvdXJjZUtpbmQSGwoXU09VUkNFX0tJTkRfVU5TUEVDSUZJRUQQABIUChBTT1VSQ0VfS0lORF9OT1RFEAESFAoQU09VUkNFX0tJTkRfQk9PSxACEhkKFVNPVVJDRV9LSU5EX1JFQ09SRElORxADEhMKD1NPVVJDRV9LSU5EX1VSTBAEKlQKCkJvb2tGb3JtYXQSGwoXQk9PS19GT1JNQVRfVU5TUEVDSUZJRUQQABITCg9CT09LX0ZPUk1BVF9QREYQARIUChBCT09LX0ZPUk1BVF9FUFVCEAIyxgMKC0ZpbGVTZXJ2aWNlEkQKCUxpc3RGaWxlcxIaLm51bWVuLnYxLkxpc3RGaWxlc1JlcXVlc3QaGy5udW1lbi52MS5MaXN0RmlsZXNSZXNwb25zZRJQCg1MaXN0RmlsZUtpbmRzEh4ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1JlcXVlc3QaHy5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVzcG9uc2USQQoITW92ZUZpbGUSGS5udW1lbi52MS5Nb3ZlRmlsZVJlcXVlc3QaGi5udW1lbi52MS5Nb3ZlRmlsZVJlc3BvbnNlEkcKClJlbW92ZUZpbGUSGy5udW1lbi52MS5SZW1vdmVGaWxlUmVxdWVzdBocLm51bWVuLnYxLlJlbW92ZUZpbGVSZXNwb25zZRJNCgxDcmVhdGVGb2xkZXISHS5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXF1ZXN0Gh4ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVzcG9uc2USRAoJQ3JlYXRlVVJMEhoubnVtZW4udjEuQ3JlYXRlVVJMUmVxdWVzdBobLm51bWVuLnYxLkNyZWF0ZVVSTFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImgKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSDAoEdHlwZRgFIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJwCghGaWxlS2luZBIMCgRwYXRoGAEgASgJEiIKBGtpbmQYAiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEgwKBHR5cGUYAyABKAkSJAoGZm9ybWF0GAQgASgOMhQubnVtZW4udjEuQm9va0Zvcm1hdCIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKQAQoQTW92ZUZpbGVSZXNwb25zZRIoCgVtb3ZlZBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgBiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX21vdmVkQggKBl9lcnJvciJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiMgoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIIoEBChJSZW1vdmVGaWxlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhUKDWlzX3VubGV2ZWxsZWQYBCABKAhCCAoGX2Vycm9yIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJJChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciqFAQoKU291cmNlS2luZBIbChdTT1VSQ0VfS0lORF9VTlNQRUNJRklFRBAAEhQKEFNPVVJDRV9LSU5EX05PVEUQARIUChBTT1VSQ0VfS0lORF9CT09LEAISGQoVU09VUkNFX0tJTkRfUkVDT1JESU5HEAMSEwoPU09VUkNFX0tJTkRfVVJMEAQqVAoKQm9va0Zvcm1hdBIbChdCT09LX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhMKD0JPT0tfRk9STUFUX1BERhABEhQKEEJPT0tfRk9STUFUX0VQVUIQAjKAAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -404,59 +404,6 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
   messageDesc(file_numen_v1_file, 12);
 
 /**
- * @generated from message numen.v1.CreateURLRequest
- */
-export type CreateURLRequest = Message<"numen.v1.CreateURLRequest"> & {
-  /**
-   * The address, as a browser would go to it. It is read into the one form
-   * every spelling of it reaches, and one nothing can be fetched from is
-   *
-   * @generated from field: string url = 1;
-   */
-  url: string;
-
-  /**
-   * The folder it goes in, as a path relative to the root. Empty is the root.
-   *
-   * @generated from field: string path = 2;
-   */
-  path: string;
-};
-
-/**
- * Describes the message numen.v1.CreateURLRequest.
- * Use `create(CreateURLRequestSchema)` to create a new message.
- */
-export const CreateURLRequestSchema: GenMessage<CreateURLRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_file, 13);
-
-/**
- * @generated from message numen.v1.CreateURLResponse
- */
-export type CreateURLResponse = Message<"numen.v1.CreateURLResponse"> & {
-  /**
-   * Where the file is filed. Empty when nothing was made.
-   *
-   * @generated from field: string path = 1;
-   */
-  path: string;
-
-  /**
-   * Set when nothing was made, and why.
-   *
-   * @generated from field: optional numen.v1.ErrorCode error = 2;
-   */
-  error?: ErrorCode | undefined;
-};
-
-/**
- * Describes the message numen.v1.CreateURLResponse.
- * Use `create(CreateURLResponseSchema)` to create a new message.
- */
-export const CreateURLResponseSchema: GenMessage<CreateURLResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_file, 14);
-
-/**
  * SourceKind is what the vault holds at a path. A file the index holds no text
  * for — a picture, an archive — is unspecified.
  *
@@ -590,18 +537,6 @@ export const FileService: GenService<{
     methodKind: "unary";
     input: typeof CreateFolderRequestSchema;
     output: typeof CreateFolderResponseSchema;
-  },
-  /**
-   * CreateURL makes the file a web address is kept in. It holds the address and
-   * nothing else, and what is at that address is fetched into the store beside
-   * it.
-   *
-   * @generated from rpc numen.v1.FileService.CreateURL
-   */
-  createURL: {
-    methodKind: "unary";
-    input: typeof CreateURLRequestSchema;
-    output: typeof CreateURLResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_file, 0);

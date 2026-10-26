@@ -58,18 +58,6 @@ func (r restartedDocument) GetDocument(
 	return connect.NewResponse(&v1.GetDocumentResponse{Pages: []*v1.Page{{Width: 1, Height: 1}}}), nil
 }
 
-type restartedDownload struct {
-	numenv1connect.UnimplementedDownloadServiceHandler
-	plugin *restartedPlugin
-}
-
-func (r restartedDownload) GetMetadata(
-	context.Context, *connect.Request[v1.GetMetadataRequest],
-) (*connect.Response[v1.GetMetadataResponse], error) {
-	r.plugin.requested.Add(1)
-	return connect.NewResponse(&v1.GetMetadataResponse{}), nil
-}
-
 type restartedAgent struct {
 	numenv1connect.UnimplementedAgentServiceHandler
 	plugin *restartedPlugin
@@ -89,7 +77,6 @@ func newRestartedPlugin(t *testing.T) (*restartedPlugin, *httptest.Server) {
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(plugin))
 	mux.Handle(numenv1connect.NewDocumentServiceHandler(restartedDocument{plugin: plugin}))
-	mux.Handle(numenv1connect.NewDownloadServiceHandler(restartedDownload{plugin: plugin}))
 	mux.Handle(numenv1connect.NewAgentServiceHandler(restartedAgent{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginToolServiceHandler(restartedTools{plugin: plugin}))
 	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(testsupport.PluginLifecycle{}))
@@ -148,7 +135,7 @@ func writeRestartedPlugin(t *testing.T) string {
 		"id": "md.numen.stub",
 		"name": "All",
 		"version": "1.0.0",
-		"capabilities": ["embedding", "document", "book", "downloader", "tools"],
+		"capabilities": ["embedding", "document", "book", "tools"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read", "network:outbound"],
 		"backend": {"type": "process", "entrypoint": "bin/stub"}

@@ -3,18 +3,11 @@
  * commands over a row.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { formatErrorMessage } from '@numen/wire'
 import { Folder, FolderOpen } from '@lucide/vue'
-import { WORDS as words } from '@/shared/words'
 import { ANSWER_WORDS, createInvocation, runInvocation } from '@/features/command-palette'
-import { running } from '@/entities/artifact'
 import { findIcon } from '@/shared/icons'
 import { createFileMakers, createPathCommandHost, createVaultFiles } from './fileServices'
 
-vi.mock('@/entities/artifact', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/entities/artifact')>()),
-  running: { fetchArtifact: vi.fn(() => Promise.resolve()) },
-}))
 vi.mock('@/features/command-palette', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/features/command-palette')>()),
   runInvocation: vi.fn(() => Promise.resolve()),
@@ -35,16 +28,12 @@ const target = {
 const setup = () => {
   const writeMessage = vi.fn()
   const openNewFile = vi.fn()
-  const createUrl = vi.fn()
   const createFileOfKind = vi.fn()
-  const applyPathChanges = vi.fn()
   const createUntitled = vi.fn()
   const commandDeps = vi.fn(() => ({ marker: 'deps' }))
   const createdItem = createFileMakers({
-    core: { createUrl },
     tabOpeners: { openNewFile } as never,
     windowTabs: { createFileOfKind },
-    notes: { applyPathChanges },
     writeMessage,
   })
   const files = createVaultFiles({
@@ -58,9 +47,7 @@ const setup = () => {
     files,
     writeMessage,
     openNewFile,
-    createUrl,
     createFileOfKind,
-    applyPathChanges,
     createUntitled,
     commandDeps,
   }
@@ -111,57 +98,20 @@ describe('the files of the vault a plugin is handed', () => {
   })
 
   it('import several addresses without opening tabs, and one into a tab of its own', async () => {
-    const { files, createUrl, openNewFile } = setup()
-    createUrl
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/A.md' } })
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/B.md' } })
-      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/C.md' } })
+    const { files, createFileOfKind, openNewFile } = setup()
+    createFileOfKind
+      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/A.url' } })
+      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/B.url' } })
+      .mockResolvedValueOnce({ ok: true, value: { path: 'dir/C.url' } })
 
     expect(await files.importUrls('dir', ['https://a.test', 'https://b.test'])).toEqual([
-      'dir/A.md',
-      'dir/B.md',
+      'dir/A.url',
+      'dir/B.url',
     ])
+    expect(createFileOfKind).toHaveBeenCalledWith('url', 'dir', 'https://a.test')
     expect(openNewFile).not.toHaveBeenCalled()
-    expect(await files.importUrls('dir', ['https://c.test'])).toEqual(['dir/C.md'])
-    expect(openNewFile).toHaveBeenCalledWith('dir/C.md', '', 'url')
-  })
-})
-
-describe('an address imported', () => {
-  it('fetches what the note points at and notifies the notes its path changed', async () => {
-    const { files, createUrl, applyPathChanges } = setup()
-    createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
-
-    expect(await files.importUrl('dir', 'https://example.test')).toBe('dir/U.md')
-
-    expect(createUrl).toHaveBeenCalledWith('https://example.test', 'dir')
-    await vi.waitFor(() => expect(applyPathChanges).toHaveBeenCalledWith(['dir/U.md']))
-    expect(running.fetchArtifact).toHaveBeenCalledWith('dir/U.md')
-  })
-
-  it('says why the fetch failed and does not tell the notes', async () => {
-    const { files, createUrl, applyPathChanges, writeMessage } = setup()
-    createUrl.mockResolvedValue({ ok: true, value: { path: 'dir/U.md' } })
-    const failure = new Error('offline')
-    vi.mocked(running.fetchArtifact).mockRejectedValueOnce(failure)
-
-    await files.importUrl('dir', 'https://example.test')
-
-    await vi.waitFor(() =>
-      expect(writeMessage).toHaveBeenCalledWith(formatErrorMessage(failure), 'error'),
-    )
-    expect(applyPathChanges).not.toHaveBeenCalled()
-  })
-
-  it('fetches nothing where the vault rejected the address', async () => {
-    const { files, createUrl, applyPathChanges, writeMessage } = setup()
-    createUrl.mockResolvedValue({ ok: false, error: 'occupied' })
-
-    await files.importUrl('dir', 'https://example.test')
-
-    expect(writeMessage.mock.calls).toEqual([[words.errors.occupied, 'error']])
-    expect(running.fetchArtifact).not.toHaveBeenCalled()
-    expect(applyPathChanges).not.toHaveBeenCalled()
+    expect(await files.importUrls('dir', ['https://c.test'])).toEqual(['dir/C.url'])
+    expect(openNewFile).toHaveBeenCalledWith('dir/C.url', '', 'url')
   })
 })
 

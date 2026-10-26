@@ -498,41 +498,6 @@ func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, 
 	return out, nil
 }
 
-// writing is the vault a copy kept beside the note is written into. Only what a
-// copy asks of a writer is answered: everything else a use case might write is
-// another scenario's.
-type writing struct {
-	vaultport.VaultWriter
-	to *library
-}
-
-func (w writing) Import(_ context.Context, path string, from io.Reader) error {
-	if _, target := w.to.files[path]; target {
-		return vaultport.ErrOccupied
-	}
-	raw, err := io.ReadAll(from)
-	if err != nil {
-		return err
-	}
-	w.to.hold(path, domain.KindRecording, raw, 1)
-	return nil
-}
-
-// writers opens the writer of each vault a test set up.
-type writers map[domain.VaultID]*library
-
-func (w writers) Open(vault domain.Vault) (vaultport.VaultWriter, error) {
-	target, ok := w[vault.ID]
-	if !ok {
-		return nil, fmt.Errorf("no vault %s", vault.ID)
-	}
-	return writing{to: target}, nil
-}
-
-func (w writers) Lock(context.Context, domain.Vault) (func(), error) {
-	return func() {}, nil
-}
-
 // bookOf is the bytes of a book whose spine is the parts given, each under a
 // heading of its own, so that the book names its places.
 func bookOf(t testing.TB, title string, parts ...string) []byte {

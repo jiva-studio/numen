@@ -135,3 +135,14 @@ func (e *storeEndpoint) DeleteStoreFile(
 	code, err = answerStore(ctx, store.Delete(ctx, req.Msg.GetName()))
 	return connect.NewResponse(&v1.DeleteStoreFileResponse{Error: code}), err
 }
+
+func (e *storeEndpoint) RenameStoreFile(
+	ctx context.Context, req *connect.Request[v1.RenameStoreFileRequest],
+) (*connect.Response[v1.RenameStoreFileResponse], error) {
+	store, code, err := e.open(ctx, req.Header())
+	if err != nil || store == nil {
+		return connect.NewResponse(&v1.RenameStoreFileResponse{Error: code}), err
+	}
+	code, err = answerStore(ctx, store.Rename(ctx, req.Msg.GetFrom(), req.Msg.GetTo()))
+	return connect.NewResponse(&v1.RenameStoreFileResponse{Error: code}), err
+}

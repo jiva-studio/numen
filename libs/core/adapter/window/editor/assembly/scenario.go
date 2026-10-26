@@ -1,6 +1,7 @@
 package assembly
 
 import (
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -27,6 +28,9 @@ type ScenarioAssembly interface {
 	// OpenFileMenu is the menu the text versions make of a vault's files, and nil where the
 	// installation keeps no text versions.
 	OpenFileMenu() *textversion.FileMenu
+
+	// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
+	OpenCopy() *file.OpenCopy
 
 	// GetRefresh brings named notes up to date for a window standing on no
 	// vault. A window showing one asks what that vault was opened with.

@@ -2,10 +2,11 @@ package integration
 
 import (
 	"errors"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 )
 
 func TestHostSafeMode(t *testing.T) {

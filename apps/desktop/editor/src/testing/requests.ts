@@ -11,7 +11,6 @@ export const requests = {
   removed: [] as string[],
   moved: [] as string[],
   folders: [] as string[],
-  urls: [] as string[],
   worn: [] as string[],
   /** How often an open editor was told to take its measurements again. */
   measured: 0,

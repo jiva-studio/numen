@@ -16,7 +16,6 @@ func TestEverySectionKeyIsTheOneTheDocumentSpells(t *testing.T) {
 	}{
 		{Settings{}, "Indexing", indexingAt},
 		{Settings{}, "Agent", agentAt},
-		{Settings{}, "Importing", importingAt},
 		{Indexing{}, "Embedding", embeddingAt},
 	} {
 		field, there := reflect.TypeOf(one.in).FieldByName(one.field)

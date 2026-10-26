@@ -9,7 +9,7 @@ import type { NotePort } from '@/app/ports/notes'
 
 export type FilesCore = Pick<
   FilePort,
-  'list' | 'move' | 'createFolder' | 'createUrl' | 'fileKinds'
+  'list' | 'move' | 'createFolder' | 'fileKinds'
 > &
   Pick<NotePort, 'remove'>
 
@@ -28,11 +28,6 @@ export const filesCore: FilesCore = {
     return asValue(answer.moved ? mapMoveResult(answer.moved) : null)
   },
   createFolder: async (path) => findErrorCode(await files.createFolder({ path })),
-  createUrl: async (url, folder) => {
-    const answer = await files.createURL({ url, path: folder })
-    const error = findErrorCode(answer)
-    return error ? asFailure(error) : asValue({ path: answer.path })
-  },
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(

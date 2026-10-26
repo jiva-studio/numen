@@ -48,6 +48,9 @@ const (
 	// HostStoreServiceDeleteStoreFileProcedure is the fully-qualified name of the HostStoreService's
 	// DeleteStoreFile RPC.
 	HostStoreServiceDeleteStoreFileProcedure = "/numen.v1.HostStoreService/DeleteStoreFile"
+	// HostStoreServiceRenameStoreFileProcedure is the fully-qualified name of the HostStoreService's
+	// RenameStoreFile RPC.
+	HostStoreServiceRenameStoreFileProcedure = "/numen.v1.HostStoreService/RenameStoreFile"
 )
 
 // HostStoreServiceClient is a client for the numen.v1.HostStoreService service.
@@ -65,6 +68,9 @@ type HostStoreServiceClient interface {
 	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
 	// DeleteStoreFile removes a file. A file that is not there is removed.
 	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
+	// RenameStoreFile moves a file to another name of the folder, replacing what
+	// the other name held. The file lands under the new name whole.
+	RenameStoreFile(context.Context, *connect.Request[v1.RenameStoreFileRequest]) (*connect.Response[v1.RenameStoreFileResponse], error)
 }
 
 // NewHostStoreServiceClient constructs a client for the numen.v1.HostStoreService service. By
@@ -108,6 +114,12 @@ func NewHostStoreServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostStoreServiceMethods.ByName("DeleteStoreFile")),
 			connect.WithClientOptions(opts...),
 		),
+		renameStoreFile: connect.NewClient[v1.RenameStoreFileRequest, v1.RenameStoreFileResponse](
+			httpClient,
+			baseURL+HostStoreServiceRenameStoreFileProcedure,
+			connect.WithSchema(hostStoreServiceMethods.ByName("RenameStoreFile")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -118,6 +130,7 @@ type hostStoreServiceClient struct {
 	listStoreFiles  *connect.Client[v1.ListStoreFilesRequest, v1.ListStoreFilesResponse]
 	writeStoreFile  *connect.Client[v1.WriteStoreFileRequest, v1.WriteStoreFileResponse]
 	deleteStoreFile *connect.Client[v1.DeleteStoreFileRequest, v1.DeleteStoreFileResponse]
+	renameStoreFile *connect.Client[v1.RenameStoreFileRequest, v1.RenameStoreFileResponse]
 }
 
 // ReadStoreFile calls numen.v1.HostStoreService.ReadStoreFile.
@@ -145,6 +158,11 @@ func (c *hostStoreServiceClient) DeleteStoreFile(ctx context.Context, req *conne
 	return c.deleteStoreFile.CallUnary(ctx, req)
 }
 
+// RenameStoreFile calls numen.v1.HostStoreService.RenameStoreFile.
+func (c *hostStoreServiceClient) RenameStoreFile(ctx context.Context, req *connect.Request[v1.RenameStoreFileRequest]) (*connect.Response[v1.RenameStoreFileResponse], error) {
+	return c.renameStoreFile.CallUnary(ctx, req)
+}
+
 // HostStoreServiceHandler is an implementation of the numen.v1.HostStoreService service.
 type HostStoreServiceHandler interface {
 	// ReadStoreFile reads a whole file.
@@ -160,6 +178,9 @@ type HostStoreServiceHandler interface {
 	WriteStoreFile(context.Context, *connect.Request[v1.WriteStoreFileRequest]) (*connect.Response[v1.WriteStoreFileResponse], error)
 	// DeleteStoreFile removes a file. A file that is not there is removed.
 	DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error)
+	// RenameStoreFile moves a file to another name of the folder, replacing what
+	// the other name held. The file lands under the new name whole.
+	RenameStoreFile(context.Context, *connect.Request[v1.RenameStoreFileRequest]) (*connect.Response[v1.RenameStoreFileResponse], error)
 }
 
 // NewHostStoreServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -199,6 +220,12 @@ func NewHostStoreServiceHandler(svc HostStoreServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostStoreServiceMethods.ByName("DeleteStoreFile")),
 		connect.WithHandlerOptions(opts...),
 	)
+	hostStoreServiceRenameStoreFileHandler := connect.NewUnaryHandler(
+		HostStoreServiceRenameStoreFileProcedure,
+		svc.RenameStoreFile,
+		connect.WithSchema(hostStoreServiceMethods.ByName("RenameStoreFile")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.HostStoreService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case HostStoreServiceReadStoreFileProcedure:
@@ -211,6 +238,8 @@ func NewHostStoreServiceHandler(svc HostStoreServiceHandler, opts ...connect.Han
 			hostStoreServiceWriteStoreFileHandler.ServeHTTP(w, r)
 		case HostStoreServiceDeleteStoreFileProcedure:
 			hostStoreServiceDeleteStoreFileHandler.ServeHTTP(w, r)
+		case HostStoreServiceRenameStoreFileProcedure:
+			hostStoreServiceRenameStoreFileHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -238,4 +267,8 @@ func (UnimplementedHostStoreServiceHandler) WriteStoreFile(context.Context, *con
 
 func (UnimplementedHostStoreServiceHandler) DeleteStoreFile(context.Context, *connect.Request[v1.DeleteStoreFileRequest]) (*connect.Response[v1.DeleteStoreFileResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostStoreService.DeleteStoreFile is not implemented"))
+}
+
+func (UnimplementedHostStoreServiceHandler) RenameStoreFile(context.Context, *connect.Request[v1.RenameStoreFileRequest]) (*connect.Response[v1.RenameStoreFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostStoreService.RenameStoreFile is not implemented"))
 }

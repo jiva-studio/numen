@@ -33,6 +33,9 @@ type Store interface {
 	Write(ctx context.Context, name string, content []byte) error
 	// Delete removes the file. A file that is not there is removed.
 	Delete(ctx context.Context, name string) error
+	// Rename moves the file to another name of the folder, replacing what the other held. The file
+	// lands under the new name whole.
+	Rename(ctx context.Context, from, to string) error
 	// List returns the files of the folder, sorted by name. A folder that is not there holds none.
 	List(ctx context.Context) ([]StoreFile, error)
 }

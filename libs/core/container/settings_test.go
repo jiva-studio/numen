@@ -157,16 +157,12 @@ func TestSettingsThatCannotBeSavedAreRefused(t *testing.T) {
 func TestAConfigurationCarriesEverySectionOfTheSettings(t *testing.T) {
 	response := DefaultSettings()
 	response.Agent.Use = settings.UseProgram("claude")
-	response.Importing.Captions = []string{"sa", "en"}
 	response.Performance = hardware.Performance{Profile: hardware.ProfileEco}
 
 	got := Config{}.SetSettings(response)
 
 	if got.Agent.GetUse() != "claude" {
 		t.Errorf("the agent is %q", got.Agent.GetUse())
-	}
-	if !slices.Equal(got.Importing.Captions, []string{"sa", "en"}) {
-		t.Errorf("the captions are %v", got.Importing.Captions)
 	}
 	if got.Performance.Profile != hardware.ProfileEco {
 		t.Errorf("the performance profile is %q", got.Performance.Profile)

@@ -584,3 +584,29 @@ type Listed struct {
 	Name string
 	Size int
 }
+
+// Rename moves what is under one name to another, replacing what the other held. Both names are
+// in the store, and the file lands under the new name whole.
+func (d *DerivedStore) Rename(_ context.Context, from, to string) error {
+	source, err := d.getPath(from)
+	if err != nil {
+		return err
+	}
+	target, err := d.getPath(to)
+	if err != nil {
+		return err
+	}
+	root, oldPos, err := d.openRoot(source)
+	if err != nil {
+		return err
+	}
+	defer root.Close()
+	newPos, err := filepath.Rel(d.root, target)
+	if err != nil {
+		return err
+	}
+	if err := root.Rename(oldPos, newPos); err != nil {
+		return wrapHeldByAnother(err)
+	}
+	return atomicfile.SyncDirectory(root, filepath.Dir(newPos))
+}

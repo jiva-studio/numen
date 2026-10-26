@@ -19,6 +19,7 @@ import (
 // beside it.
 var walked = map[protoreflect.FullName]string{
 	"numen.v1.ArtifactKind":         "adapter/window/editor: named by standing",
+	"numen.v1.ArticleErrorCode":     "plugins/tools-media-importer: written by getErrorCode",
 	"numen.v1.BookFormat":           "adapter/window/editor: written by formatOf",
 	"numen.v1.BudgetName":           "internal/adapterlib/wire: answered one by one against BudgetOf",
 	"numen.v1.BudgetUnit":           "internal/adapterlib/wire: round trip through BudgetUnitIn and BudgetUnitOf",

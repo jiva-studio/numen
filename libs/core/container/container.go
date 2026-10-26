@@ -17,7 +17,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
@@ -67,9 +66,6 @@ type Config struct {
 
 	// Hardware specifies hardware specifications detected for the host system.
 	Hardware hardware.Specs
-
-	// Importing configures external URL and media download options.
-	Importing download.Config
 
 	// Embedding is how the index keeps and asks vectors.
 	Embedding EmbeddingConfig

@@ -19,7 +19,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
@@ -40,8 +39,6 @@ type Installation struct {
 	// State is what every handler reads, and Services the handlers themselves.
 	State    *State
 	Services *Services
-
-	importURL *source.ImportURL
 
 	// Embedder fills the index, and Asking turns a query into a vector. They
 	// are one object where the settings name one provider, and two providers
@@ -144,7 +141,7 @@ func Open(ctx context.Context, made Assembly, targetVault string, out io.Writer)
 		stopEmbedder:  closeEmbedder,
 	}
 
-	pool.wireUseCases(ctx)
+	pool.wireUseCases()
 
 	// Indexing every file again is what this launch was asked for, and is not
 	// carried to a vault opened later.
@@ -289,7 +286,7 @@ func createWindow(
 	services.getPluginDir = made.GetPluginDir
 	state.EmitEvent = made.EmitEvent
 	readers := made.GetVaultReaders()
-	services.readFiles(readers)
+	services.readFiles(readers, made.OpenCopy())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())
@@ -317,7 +314,7 @@ func createWindow(
 
 // wireUseCases builds the use cases the window and everything else working its
 // vault are served, and hands each handler the ones it answers through.
-func (o *Installation) wireUseCases(ctx context.Context) {
+func (o *Installation) wireUseCases() {
 	made, services := o.made, o.Services
 
 	// Everything that acts on this installation's notes and vaults, built
@@ -356,7 +353,6 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 
 	target := &o.vaults
 	services.File.move = &target.Move
-	services.File.urls = &source.CreateURL{Writers: made.GetVaultWriters(), Index: o.level}
 	services.Vaults.list = &target.List
 	services.Vaults.find = &target.Find
 	services.Vaults.folderCheck = &target.FolderCheck
@@ -364,26 +360,12 @@ func (o *Installation) wireUseCases(ctx context.Context) {
 	services.Vaults.rename = &target.Rename
 	services.Vaults.remove = &target.Remove
 	services.server.find = &target.Find
-
-	// A machine holding neither of the tools an address is reached with binds
-	// no downloader, and the window is answered that this build cannot do it.
-	if delta := made.OpenDownloader(ctx); delta != nil {
-		fetching := made.OpenImportURL(ctx, delta)
-		o.importURL = &fetching
-	}
 }
 
 // Vaults is the use cases that act on the list of vaults, built once. An agent
 // that works the list is served these, so what one of them refuses the other
 // refuses.
 func (o *Installation) Vaults() *vaults.Scenarios { return &o.vaults }
-
-// GetCreateURL is the use case that makes the file a web address is kept in.
-func (o *Installation) GetCreateURL() *source.CreateURL { return o.Services.File.urls }
-
-// GetImportURL is what fetches the text at an address, or nil where this build
-// holds neither of the tools that reach one.
-func (o *Installation) GetImportURL() *source.ImportURL { return o.importURL }
 
 // GetSearch is the search the window offers.
 func (o *Installation) GetSearch() *search.Search { return o.Services.Search.Finds }

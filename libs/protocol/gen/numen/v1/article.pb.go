@@ -4,9 +4,9 @@
 // 	protoc        (unknown)
 // source: numen/v1/article.proto
 
-// The prose a page is written around, found by the reader that fetches an
-// address. Nothing timed it, so it carries no places in a recording and no
-// places on a page.
+// A link is a `.url` file of the vault: one web address. What is published at
+// the address is fetched into text versions of the file, and a video there is
+// copied to be played from this disk. The media importer plugin serves this.
 
 package numenv1
 
@@ -25,20 +25,303 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// ArticleErrorCode is why a call about a link was refused. The zero value means
+// it was not.
+type ArticleErrorCode int32
+
+const (
+	ArticleErrorCode_ARTICLE_ERROR_CODE_UNSPECIFIED ArticleErrorCode = 0
+	// The address is not a web address.
+	ArticleErrorCode_ARTICLE_ERROR_CODE_NOT_AN_ADDRESS ArticleErrorCode = 1
+	// A file is already there.
+	ArticleErrorCode_ARTICLE_ERROR_CODE_OCCUPIED ArticleErrorCode = 2
+	// The file is not a link, or names no address.
+	ArticleErrorCode_ARTICLE_ERROR_CODE_NOT_A_LINK ArticleErrorCode = 3
+	// The host shows no vault.
+	ArticleErrorCode_ARTICLE_ERROR_CODE_NO_VAULT ArticleErrorCode = 4
+)
+
+// Enum value maps for ArticleErrorCode.
+var (
+	ArticleErrorCode_name = map[int32]string{
+		0: "ARTICLE_ERROR_CODE_UNSPECIFIED",
+		1: "ARTICLE_ERROR_CODE_NOT_AN_ADDRESS",
+		2: "ARTICLE_ERROR_CODE_OCCUPIED",
+		3: "ARTICLE_ERROR_CODE_NOT_A_LINK",
+		4: "ARTICLE_ERROR_CODE_NO_VAULT",
+	}
+	ArticleErrorCode_value = map[string]int32{
+		"ARTICLE_ERROR_CODE_UNSPECIFIED":    0,
+		"ARTICLE_ERROR_CODE_NOT_AN_ADDRESS": 1,
+		"ARTICLE_ERROR_CODE_OCCUPIED":       2,
+		"ARTICLE_ERROR_CODE_NOT_A_LINK":     3,
+		"ARTICLE_ERROR_CODE_NO_VAULT":       4,
+	}
+)
+
+func (x ArticleErrorCode) Enum() *ArticleErrorCode {
+	p := new(ArticleErrorCode)
+	*p = x
+	return p
+}
+
+func (x ArticleErrorCode) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (ArticleErrorCode) Descriptor() protoreflect.EnumDescriptor {
+	return file_numen_v1_article_proto_enumTypes[0].Descriptor()
+}
+
+func (ArticleErrorCode) Type() protoreflect.EnumType {
+	return &file_numen_v1_article_proto_enumTypes[0]
+}
+
+func (x ArticleErrorCode) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use ArticleErrorCode.Descriptor instead.
+func (ArticleErrorCode) EnumDescriptor() ([]byte, []int) {
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{0}
+}
+
+type CreateLinkRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The address, as a browser would go to it.
+	Url string `protobuf:"bytes,1,opt,name=url,proto3" json:"url,omitempty"`
+	// The folder the file goes in, as a path relative to the root. Empty is the
+	// root.
+	Folder        string `protobuf:"bytes,2,opt,name=folder,proto3" json:"folder,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLinkRequest) Reset() {
+	*x = CreateLinkRequest{}
+	mi := &file_numen_v1_article_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinkRequest) ProtoMessage() {}
+
+func (x *CreateLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_article_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinkRequest.ProtoReflect.Descriptor instead.
+func (*CreateLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *CreateLinkRequest) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *CreateLinkRequest) GetFolder() string {
+	if x != nil {
+		return x.Folder
+	}
+	return ""
+}
+
+type CreateLinkResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error ArticleErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ArticleErrorCode" json:"error,omitempty"`
+	// Where the file is filed. Empty when nothing was made.
+	Path          string `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CreateLinkResponse) Reset() {
+	*x = CreateLinkResponse{}
+	mi := &file_numen_v1_article_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CreateLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CreateLinkResponse) ProtoMessage() {}
+
+func (x *CreateLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_article_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CreateLinkResponse.ProtoReflect.Descriptor instead.
+func (*CreateLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *CreateLinkResponse) GetError() ArticleErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ArticleErrorCode_ARTICLE_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *CreateLinkResponse) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type GetLinkRequest struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The file, as the vault holds it.
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLinkRequest) Reset() {
+	*x = GetLinkRequest{}
+	mi := &file_numen_v1_article_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLinkRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLinkRequest) ProtoMessage() {}
+
+func (x *GetLinkRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_article_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLinkRequest.ProtoReflect.Descriptor instead.
+func (*GetLinkRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *GetLinkRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type GetLinkResponse struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Error ArticleErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ArticleErrorCode" json:"error,omitempty"`
+	// The address the file holds.
+	Url string `protobuf:"bytes,2,opt,name=url,proto3" json:"url,omitempty"`
+	// Whether a video is published at the address, so a copy of it can be made.
+	IsCopyable bool `protobuf:"varint,3,opt,name=is_copyable,json=isCopyable,proto3" json:"is_copyable,omitempty"`
+	// How many bytes the copy kept of the video holds, and zero where none is
+	// kept. RecordingService plays it.
+	CopySize      int64 `protobuf:"varint,4,opt,name=copy_size,json=copySize,proto3" json:"copy_size,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetLinkResponse) Reset() {
+	*x = GetLinkResponse{}
+	mi := &file_numen_v1_article_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetLinkResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetLinkResponse) ProtoMessage() {}
+
+func (x *GetLinkResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_article_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetLinkResponse.ProtoReflect.Descriptor instead.
+func (*GetLinkResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetLinkResponse) GetError() ArticleErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ArticleErrorCode_ARTICLE_ERROR_CODE_UNSPECIFIED
+}
+
+func (x *GetLinkResponse) GetUrl() string {
+	if x != nil {
+		return x.Url
+	}
+	return ""
+}
+
+func (x *GetLinkResponse) GetIsCopyable() bool {
+	if x != nil {
+		return x.IsCopyable
+	}
+	return false
+}
+
+func (x *GetLinkResponse) GetCopySize() int64 {
+	if x != nil {
+		return x.CopySize
+	}
+	return 0
+}
+
 type ReadArticleRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
-	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// The run of the prose to answer with, counted in bytes, and nothing at all
-	// for the whole of it.
-	Span          *Span `protobuf:"bytes,2,opt,name=span,proto3" json:"span,omitempty"`
+	Path          string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadArticleRequest) Reset() {
 	*x = ReadArticleRequest{}
-	mi := &file_numen_v1_article_proto_msgTypes[0]
+	mi := &file_numen_v1_article_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -50,7 +333,7 @@ func (x *ReadArticleRequest) String() string {
 func (*ReadArticleRequest) ProtoMessage() {}
 
 func (x *ReadArticleRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_article_proto_msgTypes[0]
+	mi := &file_numen_v1_article_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -63,7 +346,7 @@ func (x *ReadArticleRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadArticleRequest.ProtoReflect.Descriptor instead.
 func (*ReadArticleRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_article_proto_rawDescGZIP(), []int{0}
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReadArticleRequest) GetPath() string {
@@ -73,25 +356,18 @@ func (x *ReadArticleRequest) GetPath() string {
 	return ""
 }
 
-func (x *ReadArticleRequest) GetSpan() *Span {
-	if x != nil {
-		return x.Span
-	}
-	return nil
-}
-
 type ReadArticleResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The prose, as it reads. A client draws it currently, with no gutter and
-	// nothing to seek. A file nothing has been fetched for carries none.
-	Text          string `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
+	Error ArticleErrorCode       `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.ArticleErrorCode" json:"error,omitempty"`
+	// The text of the file's live version, and empty where it has none.
+	Text          string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadArticleResponse) Reset() {
 	*x = ReadArticleResponse{}
-	mi := &file_numen_v1_article_proto_msgTypes[1]
+	mi := &file_numen_v1_article_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -103,7 +379,7 @@ func (x *ReadArticleResponse) String() string {
 func (*ReadArticleResponse) ProtoMessage() {}
 
 func (x *ReadArticleResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_article_proto_msgTypes[1]
+	mi := &file_numen_v1_article_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -116,7 +392,14 @@ func (x *ReadArticleResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadArticleResponse.ProtoReflect.Descriptor instead.
 func (*ReadArticleResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_article_proto_rawDescGZIP(), []int{1}
+	return file_numen_v1_article_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ReadArticleResponse) GetError() ArticleErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return ArticleErrorCode_ARTICLE_ERROR_CODE_UNSPECIFIED
 }
 
 func (x *ReadArticleResponse) GetText() string {
@@ -130,13 +413,36 @@ var File_numen_v1_article_proto protoreflect.FileDescriptor
 
 const file_numen_v1_article_proto_rawDesc = "" +
 	"\n" +
-	"\x16numen/v1/article.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"L\n" +
+	"\x16numen/v1/article.proto\x12\bnumen.v1\"=\n" +
+	"\x11CreateLinkRequest\x12\x10\n" +
+	"\x03url\x18\x01 \x01(\tR\x03url\x12\x16\n" +
+	"\x06folder\x18\x02 \x01(\tR\x06folder\"Z\n" +
+	"\x12CreateLinkResponse\x120\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.ArticleErrorCodeR\x05error\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\"$\n" +
+	"\x0eGetLinkRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x93\x01\n" +
+	"\x0fGetLinkResponse\x120\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.ArticleErrorCodeR\x05error\x12\x10\n" +
+	"\x03url\x18\x02 \x01(\tR\x03url\x12\x1f\n" +
+	"\vis_copyable\x18\x03 \x01(\bR\n" +
+	"isCopyable\x12\x1b\n" +
+	"\tcopy_size\x18\x04 \x01(\x03R\bcopySize\"(\n" +
 	"\x12ReadArticleRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\"\n" +
-	"\x04span\x18\x02 \x01(\v2\x0e.numen.v1.SpanR\x04span\")\n" +
-	"\x13ReadArticleResponse\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text2\\\n" +
-	"\x0eArticleService\x12J\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"[\n" +
+	"\x13ReadArticleResponse\x120\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1a.numen.v1.ArticleErrorCodeR\x05error\x12\x12\n" +
+	"\x04text\x18\x02 \x01(\tR\x04text*\xc2\x01\n" +
+	"\x10ArticleErrorCode\x12\"\n" +
+	"\x1eARTICLE_ERROR_CODE_UNSPECIFIED\x10\x00\x12%\n" +
+	"!ARTICLE_ERROR_CODE_NOT_AN_ADDRESS\x10\x01\x12\x1f\n" +
+	"\x1bARTICLE_ERROR_CODE_OCCUPIED\x10\x02\x12!\n" +
+	"\x1dARTICLE_ERROR_CODE_NOT_A_LINK\x10\x03\x12\x1f\n" +
+	"\x1bARTICLE_ERROR_CODE_NO_VAULT\x10\x042\xe5\x01\n" +
+	"\x0eArticleService\x12G\n" +
+	"\n" +
+	"CreateLink\x12\x1b.numen.v1.CreateLinkRequest\x1a\x1c.numen.v1.CreateLinkResponse\x12>\n" +
+	"\aGetLink\x12\x18.numen.v1.GetLinkRequest\x1a\x19.numen.v1.GetLinkResponse\x12J\n" +
 	"\vReadArticle\x12\x1c.numen.v1.ReadArticleRequest\x1a\x1d.numen.v1.ReadArticleResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
@@ -151,21 +457,32 @@ func file_numen_v1_article_proto_rawDescGZIP() []byte {
 	return file_numen_v1_article_proto_rawDescData
 }
 
-var file_numen_v1_article_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_numen_v1_article_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_article_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_numen_v1_article_proto_goTypes = []any{
-	(*ReadArticleRequest)(nil),  // 0: numen.v1.ReadArticleRequest
-	(*ReadArticleResponse)(nil), // 1: numen.v1.ReadArticleResponse
-	(*Span)(nil),                // 2: numen.v1.Span
+	(ArticleErrorCode)(0),       // 0: numen.v1.ArticleErrorCode
+	(*CreateLinkRequest)(nil),   // 1: numen.v1.CreateLinkRequest
+	(*CreateLinkResponse)(nil),  // 2: numen.v1.CreateLinkResponse
+	(*GetLinkRequest)(nil),      // 3: numen.v1.GetLinkRequest
+	(*GetLinkResponse)(nil),     // 4: numen.v1.GetLinkResponse
+	(*ReadArticleRequest)(nil),  // 5: numen.v1.ReadArticleRequest
+	(*ReadArticleResponse)(nil), // 6: numen.v1.ReadArticleResponse
 }
 var file_numen_v1_article_proto_depIdxs = []int32{
-	2, // 0: numen.v1.ReadArticleRequest.span:type_name -> numen.v1.Span
-	0, // 1: numen.v1.ArticleService.ReadArticle:input_type -> numen.v1.ReadArticleRequest
-	1, // 2: numen.v1.ArticleService.ReadArticle:output_type -> numen.v1.ReadArticleResponse
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 0: numen.v1.CreateLinkResponse.error:type_name -> numen.v1.ArticleErrorCode
+	0, // 1: numen.v1.GetLinkResponse.error:type_name -> numen.v1.ArticleErrorCode
+	0, // 2: numen.v1.ReadArticleResponse.error:type_name -> numen.v1.ArticleErrorCode
+	1, // 3: numen.v1.ArticleService.CreateLink:input_type -> numen.v1.CreateLinkRequest
+	3, // 4: numen.v1.ArticleService.GetLink:input_type -> numen.v1.GetLinkRequest
+	5, // 5: numen.v1.ArticleService.ReadArticle:input_type -> numen.v1.ReadArticleRequest
+	2, // 6: numen.v1.ArticleService.CreateLink:output_type -> numen.v1.CreateLinkResponse
+	4, // 7: numen.v1.ArticleService.GetLink:output_type -> numen.v1.GetLinkResponse
+	6, // 8: numen.v1.ArticleService.ReadArticle:output_type -> numen.v1.ReadArticleResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_article_proto_init() }
@@ -173,19 +490,19 @@ func file_numen_v1_article_proto_init() {
 	if File_numen_v1_article_proto != nil {
 		return
 	}
-	file_numen_v1_shared_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_article_proto_rawDesc), len(file_numen_v1_article_proto_rawDesc)),
-			NumEnums:      0,
-			NumMessages:   2,
+			NumEnums:      1,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_article_proto_goTypes,
 		DependencyIndexes: file_numen_v1_article_proto_depIdxs,
+		EnumInfos:         file_numen_v1_article_proto_enumTypes,
 		MessageInfos:      file_numen_v1_article_proto_msgTypes,
 	}.Build()
 	File_numen_v1_article_proto = out.File

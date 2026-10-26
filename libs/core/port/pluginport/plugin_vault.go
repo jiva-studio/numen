@@ -2,6 +2,7 @@ package pluginport
 
 import (
 	"context"
+	"io"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -25,6 +26,11 @@ type PluginStore interface {
 	Delete(ctx context.Context, name string) error
 	// List returns the files of the folder, sorted by name.
 	List(ctx context.Context) ([]PluginStoreFile, error)
+	// Open opens the file to read a part of, and returns how many bytes it holds, or
+	// fs.ErrNotExist. Whoever opens it closes it.
+	Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error)
+	// Rename moves the file to another name of the folder, replacing what the other held.
+	Rename(ctx context.Context, from, to string) error
 }
 
 // PluginStores opens a plugin's folder in the store of a vault.

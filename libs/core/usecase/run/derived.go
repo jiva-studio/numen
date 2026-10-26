@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/jiva-studio/numen/libs/core/internal/text"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
@@ -25,7 +24,7 @@ func GetHash(ctx context.Context, readers vaultport.VaultReaders, v domain.Vault
 	if err != nil {
 		return "", fmt.Errorf("read %s: %w", path, err)
 	}
-	return text.Fingerprint(raw), nil
+	return domain.HashContent(raw), nil
 }
 
 // Cut makes a source's chunks through cut, and does nothing where none is set.

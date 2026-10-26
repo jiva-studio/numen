@@ -40,10 +40,6 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			TextMenu: func(ctx context.Context, v domain.Vault) (cli.TextMenu, error) {
 				return createTextMenu(ctx, cfg, v)
 			},
-			ImportURL: func(ctx context.Context, v domain.Vault) (cli.ImportURL, error) {
-				cfg.SetPluginVaultPath(v.Path)
-				return createImportURL(ctx, cfg)
-			},
 			Search: func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 				return createSearch(ctx, cfg, errorHandler)
 			},
@@ -133,15 +129,6 @@ func createTextMenu(ctx context.Context, cfg container.Config, v domain.Vault) (
 		return cli.TextMenu{}, err
 	}
 	return cli.TextMenu{Menu: opened.Menu, Tasks: opened.Tasks, Cut: opened.Cut, Close: opened.Close}, nil
-}
-
-// createImportURL is the download of an address into the vault.
-func createImportURL(ctx context.Context, cfg container.Config) (cli.ImportURL, error) {
-	db, err := cfg.OpenIndex(ctx)
-	if err != nil {
-		return cli.ImportURL{}, err
-	}
-	return cli.ImportURL{ImportURL: cfg.ImportURL(ctx, db, cfg.Downloader(ctx)), Close: db.Close}, nil
 }
 
 // createSearch is the search over the index. Only the provider that embeds

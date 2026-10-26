@@ -168,3 +168,29 @@ func TestStoreWriteReplacesAndDeleteRemovesFile(t *testing.T) {
 		t.Errorf("a write outside the folder was answered %v (%v)", outside.Msg, err)
 	}
 }
+
+func TestStoreRenameMovesAFileWithinTheFolder(t *testing.T) {
+	h := newStoreHost(t)
+	client := h.newClient("token-a")
+	ctx := t.Context()
+	folder := filepath.Join(h.vault.storeRoot, ".numen", "md.numen.a")
+
+	if _, err := client.AppendStoreFile(ctx, connect.NewRequest(&v1.AppendStoreFileRequest{Name: "clip.part", Content: []byte("a copy")})); err != nil {
+		t.Fatal(err)
+	}
+	res, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
+	if err != nil || res.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED {
+		t.Fatalf("a rename was answered %v (%v)", res.Msg, err)
+	}
+	if on, err := os.ReadFile(filepath.Join(folder, "clip.mp4")); err != nil || string(on) != "a copy" {
+		t.Errorf("the new name holds %q (%v)", on, err)
+	}
+	missing, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.part", To: "clip.mp4"}))
+	if err != nil || missing.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_MISSING {
+		t.Errorf("a rename of a file that is not there was answered %v (%v)", missing.Msg, err)
+	}
+	outside, err := client.RenameStoreFile(ctx, connect.NewRequest(&v1.RenameStoreFileRequest{From: "clip.mp4", To: "../md.numen.b/clip.mp4"}))
+	if err != nil || outside.Msg.GetError() != v1.HostStoreErrorCode_HOST_STORE_ERROR_CODE_OUTSIDE {
+		t.Errorf("a rename out of the folder was answered %v (%v)", outside.Msg, err)
+	}
+}

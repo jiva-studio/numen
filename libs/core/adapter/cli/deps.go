@@ -7,7 +7,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -57,10 +56,6 @@ type Deps struct {
 	// TextMenu opens the menu a file offers about its text, carried out by the
 	// plugins that make text.
 	TextMenu func(ctx context.Context, v domain.Vault) (TextMenu, error)
-
-	// ImportURL opens what reaches the address a link note points at. A machine
-	// holding neither of the tools that reach one opens nothing.
-	ImportURL func(ctx context.Context, v domain.Vault) (ImportURL, error)
 
 	// PluginCommands opens the commands the enabled plugins declare. Left nil, there are none.
 	PluginCommands func() PluginCommands
@@ -133,13 +128,6 @@ type Links struct {
 type Problems struct {
 	Problems recognitionport.ProblemQueries
 	Close    func() error
-}
-
-// ImportURL is what is at the address a link note points at, fetched into the
-// vault.
-type ImportURL struct {
-	ImportURL source.ImportURL
-	Close     func() error
 }
 
 // closeIfOpen gives back what an opener opened, and does nothing where it

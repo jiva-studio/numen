@@ -31,6 +31,10 @@ service HostStoreService {
 
   // DeleteStoreFile removes a file. A file that is not there is removed.
   rpc DeleteStoreFile(DeleteStoreFileRequest) returns (DeleteStoreFileResponse);
+
+  // RenameStoreFile moves a file to another name of the folder, replacing what
+  // the other name held. The file lands under the new name whole.
+  rpc RenameStoreFile(RenameStoreFileRequest) returns (RenameStoreFileResponse);
 }
 
 // HostStoreErrorCode is why a call on the plugin's folder was refused. The
@@ -97,5 +101,14 @@ message DeleteStoreFileRequest {
 }
 
 message DeleteStoreFileResponse {
+  HostStoreErrorCode error = 1;
+}
+
+message RenameStoreFileRequest {
+  string from = 1;
+  string to = 2;
+}
+
+message RenameStoreFileResponse {
   HostStoreErrorCode error = 1;
 }

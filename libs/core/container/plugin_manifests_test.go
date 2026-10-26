@@ -461,7 +461,6 @@ var coreCapabilities = map[string]bool{
 	bridge.CapabilityDocument:     true,
 	bridge.CapabilityBook:         true,
 	bridge.CapabilityEmbedding:    true,
-	bridge.CapabilityDownloader:   true,
 	bridge.CapabilityProofreading: true,
 	bridge.CapabilityTools:        true,
 	"ai.agent.provider":           true,

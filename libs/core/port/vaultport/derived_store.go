@@ -3,7 +3,6 @@ package vaultport
 import (
 	"context"
 	"errors"
-	"io"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -18,47 +17,11 @@ var ErrClaimed = errors.New("the name is claimed by another caller")
 // to and not a failure of the store.
 var ErrHeldByAnother = errors.New("the file is held by another program")
 
-// A derived file is one the application made and cannot make again: a model
-// read a scan and wrote down what it saw. It is not a note and never becomes
-// one — nothing walks it, nothing indexes it as a source of its own, no link
-// reaches it, and the person did not write it.
-//
-// It is kept inside the vault folder because losing it loses work no machine
-// here can redo, and in the application's own folder inside it because it is
-// the application's and not the person's.
-//
-// is one that resolves out of it through a link. Where a name is kept is the
-// store's own business.
+// DerivedStore is the application's own folder inside a vault, where the work
+// one run is doing on the vault is claimed so no other run does it at once.
 type DerivedStore interface {
-	// ReadArtifact returns what is stored under a name. A name with nothing
-	// under it gets fs.ErrNotExist: the folder is on the person's disk and they
-	// may empty it, which is an answer and not a failure.
-	ReadArtifact(ctx context.Context, name domain.ArtifactName) ([]byte, error)
-
-	// OpenArtifact is one file to read a part of, and how many bytes it holds.
-	// A copy of a video is played from the middle and is an hour long, and
-	// holding all of it to answer for a second of it is the whole file in
-	// memory for every listener.
-	//
-	// The same errors as ReadArtifact. Whoever opens it closes it.
-	OpenArtifact(ctx context.Context, name domain.ArtifactName) (io.ReadSeekCloser, int64, error)
-
-	// WriteArtifact puts content under a name, atomically, replacing whatever
-	// was there. Replacing is ordinary: one recognition run twice writes the
-	// same bytes under the same name.
-	WriteArtifact(ctx context.Context, name domain.ArtifactName, content []byte) error
-
-	// WriteArtifactStream puts what a reader gives under a name, atomically. A
-	// copy of a video arrives over a network and is not held in memory to be
-	// written.
-	WriteArtifactStream(ctx context.Context, name domain.ArtifactName, from io.Reader) (int64, error)
-
-	// RemoveArtifact takes a name out of the store. A name already gone is the
-	// outcome that was asked for.
-	RemoveArtifact(ctx context.Context, name domain.ArtifactName) error
-
 	// ClaimArtifact takes a name for this caller alone and returns what lets it
-	// output is one file is done once.
+	// go. A name another caller holds gets ErrClaimed.
 	ClaimArtifact(ctx context.Context, name domain.ArtifactName) (release func() error, err error)
 }
 

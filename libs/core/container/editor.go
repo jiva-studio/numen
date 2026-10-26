@@ -3,18 +3,17 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 	"github.com/jiva-studio/numen/libs/core/usecase/settings"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
-	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -157,16 +156,6 @@ func (e EditorAssembly) OpenVaults(moves note.Move) vault.Scenarios {
 	return e.cfg.Vaults(e.registry, e.db, moves)
 }
 
-func (e EditorAssembly) OpenDownloader(ctx context.Context) downloadport.Downloader {
-	return e.cfg.Downloader(ctx)
-}
-
-func (e EditorAssembly) OpenImportURL(
-	ctx context.Context, downloader downloadport.Downloader,
-) source.ImportURL {
-	return e.cfg.ImportURL(ctx, e.db, downloader)
-}
-
 func (e EditorAssembly) GetRefresh() vault.Refresh {
 	return makeRefresh(e.cfg, e.db, e.db.Notes())
 }
@@ -236,4 +225,9 @@ func (e EditorAssembly) OpenFileMenu() *textversion.FileMenu {
 		return nil
 	}
 	return menu
+}
+
+// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
+func (e EditorAssembly) OpenCopy() *file.OpenCopy {
+	return file.NewOpenCopy(e.cfg.VaultReaders(), e.cfg.Copies())
 }

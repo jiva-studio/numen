@@ -63,7 +63,6 @@ function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
     list: async () => [],
     move: async () => ({ ok: true, value: null }),
     createFolder: async () => null,
-    createUrl: async () => ({ ok: true, value: { path: '' } }),
     getSyncEnabled: async () => true,
     getNestingSettings: async () => ({ isNesting: true, headings: 6, least: 1, most: 12 }),
     setSyncEnabled: async () => null,

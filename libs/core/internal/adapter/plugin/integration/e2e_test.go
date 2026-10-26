@@ -7,9 +7,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
@@ -57,48 +55,5 @@ func TestRealEmbeddingPluginProcessE2E(t *testing.T) {
 	}
 	if len(vectors[0]) != model.Dimensions {
 		t.Fatalf("expected vector length %d, got %d", model.Dimensions, len(vectors[0]))
-	}
-}
-
-func TestRealDownloaderPluginProcessE2E(t *testing.T) {
-	pluginsDir, err := filepath.Abs("../../../../../plugins")
-	if err != nil {
-		t.Fatalf("resolve plugins dir: %v", err)
-	}
-
-	downloaderBin := filepath.Join(pluginsDir, "downloader", "bin", "downloader")
-	if _, err := os.Stat(downloaderBin); os.IsNotExist(err) {
-		t.Skipf("downloader binary not found at %s; skipping real process E2E test", downloaderBin)
-	}
-
-	host := plugin.NewHost("desktop.editor", pluginsDir)
-	if err := host.Discover(); err != nil {
-		t.Fatalf("Discover failed: %v", err)
-	}
-
-	ctx := t.Context()
-	bridge, err := downloaderbridge.Open(ctx, host)
-	if err != nil {
-		t.Fatalf("OpenDownloaderBridge with real binary failed: %v", err)
-	}
-	defer func() {
-		_ = bridge.Close()
-		_ = host.TeardownAll(ctx, 1*time.Second)
-	}()
-
-	model, err := bridge.GetDownloadModel(ctx, domain.URL("https://example.com/test"))
-	if err != nil {
-		t.Fatalf("GetDownloadModel failed: %v", err)
-	}
-	if model.Producer == "" {
-		t.Fatalf("expected valid producer from real downloader plugin, got %+v", model)
-	}
-
-	can, err := bridge.CanHandle(ctx, domain.URL("https://example.com/test"))
-	if err != nil {
-		t.Fatalf("CanHandle failed: %v", err)
-	}
-	if !can {
-		t.Fatalf("expected CanHandle to be true for https://example.com/test")
 	}
 }

@@ -2,21 +2,128 @@
 // @generated from file numen/v1/article.proto (package numen.v1, syntax proto3)
 /* eslint-disable */
 
-// The prose a page is written around, found by the reader that fetches an
-// address. Nothing timed it, so it carries no places in a recording and no
-// places on a page.
+// A link is a `.url` file of the vault: one web address. What is published at
+// the address is fetched into text versions of the file, and a video there is
+// copied to be played from this disk. The media importer plugin serves this.
 
-import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Span } from "./shared_pb.js";
-import { file_numen_v1_shared } from "./shared_pb.js";
+import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/article.proto.
  */
 export const file_numen_v1_article: GenFile = /*@__PURE__*/
-  fileDesc("ChZudW1lbi92MS9hcnRpY2xlLnByb3RvEghudW1lbi52MSJAChJSZWFkQXJ0aWNsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIcCgRzcGFuGAIgASgLMg4ubnVtZW4udjEuU3BhbiIjChNSZWFkQXJ0aWNsZVJlc3BvbnNlEgwKBHRleHQYASABKAkyXAoOQXJ0aWNsZVNlcnZpY2USSgoLUmVhZEFydGljbGUSHC5udW1lbi52MS5SZWFkQXJ0aWNsZVJlcXVlc3QaHS5udW1lbi52MS5SZWFkQXJ0aWNsZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChZudW1lbi92MS9hcnRpY2xlLnByb3RvEghudW1lbi52MSIwChFDcmVhdGVMaW5rUmVxdWVzdBILCgN1cmwYASABKAkSDgoGZm9sZGVyGAIgASgJIk0KEkNyZWF0ZUxpbmtSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkFydGljbGVFcnJvckNvZGUSDAoEcGF0aBgCIAEoCSIeCg5HZXRMaW5rUmVxdWVzdBIMCgRwYXRoGAEgASgJInEKD0dldExpbmtSZXNwb25zZRIpCgVlcnJvchgBIAEoDjIaLm51bWVuLnYxLkFydGljbGVFcnJvckNvZGUSCwoDdXJsGAIgASgJEhMKC2lzX2NvcHlhYmxlGAMgASgIEhEKCWNvcHlfc2l6ZRgEIAEoAyIiChJSZWFkQXJ0aWNsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCSJOChNSZWFkQXJ0aWNsZVJlc3BvbnNlEikKBWVycm9yGAEgASgOMhoubnVtZW4udjEuQXJ0aWNsZUVycm9yQ29kZRIMCgR0ZXh0GAIgASgJKsIBChBBcnRpY2xlRXJyb3JDb2RlEiIKHkFSVElDTEVfRVJST1JfQ09ERV9VTlNQRUNJRklFRBAAEiUKIUFSVElDTEVfRVJST1JfQ09ERV9OT1RfQU5fQUREUkVTUxABEh8KG0FSVElDTEVfRVJST1JfQ09ERV9PQ0NVUElFRBACEiEKHUFSVElDTEVfRVJST1JfQ09ERV9OT1RfQV9MSU5LEAMSHwobQVJUSUNMRV9FUlJPUl9DT0RFX05PX1ZBVUxUEAQy5QEKDkFydGljbGVTZXJ2aWNlEkcKCkNyZWF0ZUxpbmsSGy5udW1lbi52MS5DcmVhdGVMaW5rUmVxdWVzdBocLm51bWVuLnYxLkNyZWF0ZUxpbmtSZXNwb25zZRI+CgdHZXRMaW5rEhgubnVtZW4udjEuR2V0TGlua1JlcXVlc3QaGS5udW1lbi52MS5HZXRMaW5rUmVzcG9uc2USSgoLUmVhZEFydGljbGUSHC5udW1lbi52MS5SZWFkQXJ0aWNsZVJlcXVlc3QaHS5udW1lbi52MS5SZWFkQXJ0aWNsZVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+
+/**
+ * @generated from message numen.v1.CreateLinkRequest
+ */
+export type CreateLinkRequest = Message<"numen.v1.CreateLinkRequest"> & {
+  /**
+   * The address, as a browser would go to it.
+   *
+   * @generated from field: string url = 1;
+   */
+  url: string;
+
+  /**
+   * The folder the file goes in, as a path relative to the root. Empty is the
+   * root.
+   *
+   * @generated from field: string folder = 2;
+   */
+  folder: string;
+};
+
+/**
+ * Describes the message numen.v1.CreateLinkRequest.
+ * Use `create(CreateLinkRequestSchema)` to create a new message.
+ */
+export const CreateLinkRequestSchema: GenMessage<CreateLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_article, 0);
+
+/**
+ * @generated from message numen.v1.CreateLinkResponse
+ */
+export type CreateLinkResponse = Message<"numen.v1.CreateLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.ArticleErrorCode error = 1;
+   */
+  error: ArticleErrorCode;
+
+  /**
+   * Where the file is filed. Empty when nothing was made.
+   *
+   * @generated from field: string path = 2;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.CreateLinkResponse.
+ * Use `create(CreateLinkResponseSchema)` to create a new message.
+ */
+export const CreateLinkResponseSchema: GenMessage<CreateLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_article, 1);
+
+/**
+ * @generated from message numen.v1.GetLinkRequest
+ */
+export type GetLinkRequest = Message<"numen.v1.GetLinkRequest"> & {
+  /**
+   * The file, as the vault holds it.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+};
+
+/**
+ * Describes the message numen.v1.GetLinkRequest.
+ * Use `create(GetLinkRequestSchema)` to create a new message.
+ */
+export const GetLinkRequestSchema: GenMessage<GetLinkRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_article, 2);
+
+/**
+ * @generated from message numen.v1.GetLinkResponse
+ */
+export type GetLinkResponse = Message<"numen.v1.GetLinkResponse"> & {
+  /**
+   * @generated from field: numen.v1.ArticleErrorCode error = 1;
+   */
+  error: ArticleErrorCode;
+
+  /**
+   * The address the file holds.
+   *
+   * @generated from field: string url = 2;
+   */
+  url: string;
+
+  /**
+   * Whether a video is published at the address, so a copy of it can be made.
+   *
+   * @generated from field: bool is_copyable = 3;
+   */
+  isCopyable: boolean;
+
+  /**
+   * How many bytes the copy kept of the video holds, and zero where none is
+   * kept. RecordingService plays it.
+   *
+   * @generated from field: int64 copy_size = 4;
+   */
+  copySize: bigint;
+};
+
+/**
+ * Describes the message numen.v1.GetLinkResponse.
+ * Use `create(GetLinkResponseSchema)` to create a new message.
+ */
+export const GetLinkResponseSchema: GenMessage<GetLinkResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_article, 3);
 
 /**
  * @generated from message numen.v1.ReadArticleRequest
@@ -28,14 +135,6 @@ export type ReadArticleRequest = Message<"numen.v1.ReadArticleRequest"> & {
    * @generated from field: string path = 1;
    */
   path: string;
-
-  /**
-   * The run of the prose to answer with, counted in bytes, and nothing at all
-   * for the whole of it.
-   *
-   * @generated from field: numen.v1.Span span = 2;
-   */
-  span?: Span | undefined;
 };
 
 /**
@@ -43,17 +142,21 @@ export type ReadArticleRequest = Message<"numen.v1.ReadArticleRequest"> & {
  * Use `create(ReadArticleRequestSchema)` to create a new message.
  */
 export const ReadArticleRequestSchema: GenMessage<ReadArticleRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_article, 0);
+  messageDesc(file_numen_v1_article, 4);
 
 /**
  * @generated from message numen.v1.ReadArticleResponse
  */
 export type ReadArticleResponse = Message<"numen.v1.ReadArticleResponse"> & {
   /**
-   * The prose, as it reads. A client draws it currently, with no gutter and
-   * nothing to seek. A file nothing has been fetched for carries none.
+   * @generated from field: numen.v1.ArticleErrorCode error = 1;
+   */
+  error: ArticleErrorCode;
+
+  /**
+   * The text of the file's live version, and empty where it has none.
    *
-   * @generated from field: string text = 1;
+   * @generated from field: string text = 2;
    */
   text: string;
 };
@@ -63,18 +166,84 @@ export type ReadArticleResponse = Message<"numen.v1.ReadArticleResponse"> & {
  * Use `create(ReadArticleResponseSchema)` to create a new message.
  */
 export const ReadArticleResponseSchema: GenMessage<ReadArticleResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_article, 1);
+  messageDesc(file_numen_v1_article, 5);
 
 /**
- * ArticleService reads the prose of a file that carries one.
+ * ArticleErrorCode is why a call about a link was refused. The zero value means
+ * it was not.
  *
- * Whether a file carries one is ListArtifacts.
+ * @generated from enum numen.v1.ArticleErrorCode
+ */
+export enum ArticleErrorCode {
+  /**
+   * @generated from enum value: ARTICLE_ERROR_CODE_UNSPECIFIED = 0;
+   */
+  UNSPECIFIED = 0,
+
+  /**
+   * The address is not a web address.
+   *
+   * @generated from enum value: ARTICLE_ERROR_CODE_NOT_AN_ADDRESS = 1;
+   */
+  NOT_AN_ADDRESS = 1,
+
+  /**
+   * A file is already there.
+   *
+   * @generated from enum value: ARTICLE_ERROR_CODE_OCCUPIED = 2;
+   */
+  OCCUPIED = 2,
+
+  /**
+   * The file is not a link, or names no address.
+   *
+   * @generated from enum value: ARTICLE_ERROR_CODE_NOT_A_LINK = 3;
+   */
+  NOT_A_LINK = 3,
+
+  /**
+   * The host shows no vault.
+   *
+   * @generated from enum value: ARTICLE_ERROR_CODE_NO_VAULT = 4;
+   */
+  NO_VAULT = 4,
+}
+
+/**
+ * Describes the enum numen.v1.ArticleErrorCode.
+ */
+export const ArticleErrorCodeSchema: GenEnum<ArticleErrorCode> = /*@__PURE__*/
+  enumDesc(file_numen_v1_article, 0);
+
+/**
+ * ArticleService makes links and reads what was fetched for them.
  *
  * @generated from service numen.v1.ArticleService
  */
 export const ArticleService: GenService<{
   /**
-   * ReadArticle is the prose as it now stands.
+   * CreateLink makes the file an address is kept in and starts fetching what is
+   * published there.
+   *
+   * @generated from rpc numen.v1.ArticleService.CreateLink
+   */
+  createLink: {
+    methodKind: "unary";
+    input: typeof CreateLinkRequestSchema;
+    output: typeof CreateLinkResponseSchema;
+  },
+  /**
+   * GetLink is the address a link holds and the copy kept of it.
+   *
+   * @generated from rpc numen.v1.ArticleService.GetLink
+   */
+  getLink: {
+    methodKind: "unary";
+    input: typeof GetLinkRequestSchema;
+    output: typeof GetLinkResponseSchema;
+  },
+  /**
+   * ReadArticle is the live text of a link, as it reads.
    *
    * @generated from rpc numen.v1.ArticleService.ReadArticle
    */

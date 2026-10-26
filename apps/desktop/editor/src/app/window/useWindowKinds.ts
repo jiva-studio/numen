@@ -73,10 +73,8 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   }
 
   const createdItem = createFileMakers({
-    core,
     tabOpeners,
     windowTabs,
-    notes: editing.notes,
     writeMessage,
   })
 

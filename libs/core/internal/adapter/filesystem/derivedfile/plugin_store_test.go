@@ -2,6 +2,7 @@ package derivedfile_test
 
 import (
 	"errors"
+	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -99,5 +100,43 @@ func TestAPluginReachesNothingOutsideItsFolder(t *testing.T) {
 	}
 	if on, _ := os.ReadFile(filepath.Join(vault, "note.md")); string(on) != "mine" {
 		t.Errorf("the note now holds %q", on)
+	}
+}
+
+func TestAPluginFileIsRenamedWholeAndOpenedAtAnyPart(t *testing.T) {
+	store, folder := openPluginStore(t)
+	ctx := t.Context()
+
+	if err := store.Append(ctx, "clip.part", []byte("the bytes of a copy")); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Write(ctx, "clip.mp4", []byte("a copy made before")); err != nil {
+		t.Fatal(err)
+	}
+	if err := store.Rename(ctx, "clip.part", "clip.mp4"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(folder, "clip.part")); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("the old name is still there (%v)", err)
+	}
+	body, size, err := store.Open(ctx, "clip.mp4")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer body.Close()
+	if _, err := body.Seek(4, io.SeekStart); err != nil {
+		t.Fatal(err)
+	}
+	rest, err := io.ReadAll(body)
+	if err != nil || size != 19 || string(rest) != "bytes of a copy" {
+		t.Errorf("the renamed file holds %d bytes and %q from its fifth (%v)", size, rest, err)
+	}
+	for _, name := range []string{"../escape.mp4", ".hidden"} {
+		if err := store.Rename(ctx, "clip.mp4", name); !errors.Is(err, vaultconfig.ErrOutside) {
+			t.Errorf("a rename to %q was answered %v", name, err)
+		}
+	}
+	if _, _, err := store.Open(ctx, "none.mp4"); !errors.Is(err, fs.ErrNotExist) {
+		t.Errorf("a file that is not there opened as %v", err)
 	}
 }

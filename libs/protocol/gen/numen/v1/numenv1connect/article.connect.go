@@ -2,9 +2,9 @@
 //
 // Source: numen/v1/article.proto
 
-// The prose a page is written around, found by the reader that fetches an
-// address. Nothing timed it, so it carries no places in a recording and no
-// places on a page.
+// A link is a `.url` file of the vault: one web address. What is published at
+// the address is fetched into text versions of the file, and a video there is
+// copied to be played from this disk. The media importer plugin serves this.
 package numenv1connect
 
 import (
@@ -36,6 +36,11 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
+	// ArticleServiceCreateLinkProcedure is the fully-qualified name of the ArticleService's CreateLink
+	// RPC.
+	ArticleServiceCreateLinkProcedure = "/numen.v1.ArticleService/CreateLink"
+	// ArticleServiceGetLinkProcedure is the fully-qualified name of the ArticleService's GetLink RPC.
+	ArticleServiceGetLinkProcedure = "/numen.v1.ArticleService/GetLink"
 	// ArticleServiceReadArticleProcedure is the fully-qualified name of the ArticleService's
 	// ReadArticle RPC.
 	ArticleServiceReadArticleProcedure = "/numen.v1.ArticleService/ReadArticle"
@@ -43,7 +48,12 @@ const (
 
 // ArticleServiceClient is a client for the numen.v1.ArticleService service.
 type ArticleServiceClient interface {
-	// ReadArticle is the prose as it now stands.
+	// CreateLink makes the file an address is kept in and starts fetching what is
+	// published there.
+	CreateLink(context.Context, *connect.Request[v1.CreateLinkRequest]) (*connect.Response[v1.CreateLinkResponse], error)
+	// GetLink is the address a link holds and the copy kept of it.
+	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
+	// ReadArticle is the live text of a link, as it reads.
 	ReadArticle(context.Context, *connect.Request[v1.ReadArticleRequest]) (*connect.Response[v1.ReadArticleResponse], error)
 }
 
@@ -58,6 +68,18 @@ func NewArticleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 	baseURL = strings.TrimRight(baseURL, "/")
 	articleServiceMethods := v1.File_numen_v1_article_proto.Services().ByName("ArticleService").Methods()
 	return &articleServiceClient{
+		createLink: connect.NewClient[v1.CreateLinkRequest, v1.CreateLinkResponse](
+			httpClient,
+			baseURL+ArticleServiceCreateLinkProcedure,
+			connect.WithSchema(articleServiceMethods.ByName("CreateLink")),
+			connect.WithClientOptions(opts...),
+		),
+		getLink: connect.NewClient[v1.GetLinkRequest, v1.GetLinkResponse](
+			httpClient,
+			baseURL+ArticleServiceGetLinkProcedure,
+			connect.WithSchema(articleServiceMethods.ByName("GetLink")),
+			connect.WithClientOptions(opts...),
+		),
 		readArticle: connect.NewClient[v1.ReadArticleRequest, v1.ReadArticleResponse](
 			httpClient,
 			baseURL+ArticleServiceReadArticleProcedure,
@@ -69,7 +91,19 @@ func NewArticleServiceClient(httpClient connect.HTTPClient, baseURL string, opts
 
 // articleServiceClient implements ArticleServiceClient.
 type articleServiceClient struct {
+	createLink  *connect.Client[v1.CreateLinkRequest, v1.CreateLinkResponse]
+	getLink     *connect.Client[v1.GetLinkRequest, v1.GetLinkResponse]
 	readArticle *connect.Client[v1.ReadArticleRequest, v1.ReadArticleResponse]
+}
+
+// CreateLink calls numen.v1.ArticleService.CreateLink.
+func (c *articleServiceClient) CreateLink(ctx context.Context, req *connect.Request[v1.CreateLinkRequest]) (*connect.Response[v1.CreateLinkResponse], error) {
+	return c.createLink.CallUnary(ctx, req)
+}
+
+// GetLink calls numen.v1.ArticleService.GetLink.
+func (c *articleServiceClient) GetLink(ctx context.Context, req *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error) {
+	return c.getLink.CallUnary(ctx, req)
 }
 
 // ReadArticle calls numen.v1.ArticleService.ReadArticle.
@@ -79,7 +113,12 @@ func (c *articleServiceClient) ReadArticle(ctx context.Context, req *connect.Req
 
 // ArticleServiceHandler is an implementation of the numen.v1.ArticleService service.
 type ArticleServiceHandler interface {
-	// ReadArticle is the prose as it now stands.
+	// CreateLink makes the file an address is kept in and starts fetching what is
+	// published there.
+	CreateLink(context.Context, *connect.Request[v1.CreateLinkRequest]) (*connect.Response[v1.CreateLinkResponse], error)
+	// GetLink is the address a link holds and the copy kept of it.
+	GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error)
+	// ReadArticle is the live text of a link, as it reads.
 	ReadArticle(context.Context, *connect.Request[v1.ReadArticleRequest]) (*connect.Response[v1.ReadArticleResponse], error)
 }
 
@@ -90,6 +129,18 @@ type ArticleServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	articleServiceMethods := v1.File_numen_v1_article_proto.Services().ByName("ArticleService").Methods()
+	articleServiceCreateLinkHandler := connect.NewUnaryHandler(
+		ArticleServiceCreateLinkProcedure,
+		svc.CreateLink,
+		connect.WithSchema(articleServiceMethods.ByName("CreateLink")),
+		connect.WithHandlerOptions(opts...),
+	)
+	articleServiceGetLinkHandler := connect.NewUnaryHandler(
+		ArticleServiceGetLinkProcedure,
+		svc.GetLink,
+		connect.WithSchema(articleServiceMethods.ByName("GetLink")),
+		connect.WithHandlerOptions(opts...),
+	)
 	articleServiceReadArticleHandler := connect.NewUnaryHandler(
 		ArticleServiceReadArticleProcedure,
 		svc.ReadArticle,
@@ -98,6 +149,10 @@ func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect.Handler
 	)
 	return "/numen.v1.ArticleService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
+		case ArticleServiceCreateLinkProcedure:
+			articleServiceCreateLinkHandler.ServeHTTP(w, r)
+		case ArticleServiceGetLinkProcedure:
+			articleServiceGetLinkHandler.ServeHTTP(w, r)
 		case ArticleServiceReadArticleProcedure:
 			articleServiceReadArticleHandler.ServeHTTP(w, r)
 		default:
@@ -108,6 +163,14 @@ func NewArticleServiceHandler(svc ArticleServiceHandler, opts ...connect.Handler
 
 // UnimplementedArticleServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedArticleServiceHandler struct{}
+
+func (UnimplementedArticleServiceHandler) CreateLink(context.Context, *connect.Request[v1.CreateLinkRequest]) (*connect.Response[v1.CreateLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArticleService.CreateLink is not implemented"))
+}
+
+func (UnimplementedArticleServiceHandler) GetLink(context.Context, *connect.Request[v1.GetLinkRequest]) (*connect.Response[v1.GetLinkResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArticleService.GetLink is not implemented"))
+}
 
 func (UnimplementedArticleServiceHandler) ReadArticle(context.Context, *connect.Request[v1.ReadArticleRequest]) (*connect.Response[v1.ReadArticleResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.ArticleService.ReadArticle is not implemented"))

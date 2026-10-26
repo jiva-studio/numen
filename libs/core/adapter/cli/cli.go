@@ -26,8 +26,6 @@ usage:
                                                and gives their space back
   numen-cli proofread <vault> <file>          put a recording's text right with a model
   numen-cli transcribe <vault> <file>          transcribe a recording with the plugin that reads it
-  numen-cli import <vault> <note> [--again] [--copy]  fetch what an address holds,
-                                               and --copy the video itself
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -93,8 +91,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return proofreadCommand(ctx, out, deps, rest[1:])
 	case "transcribe":
 		return runTranscribeCommand(ctx, out, deps, rest[1:])
-	case "import":
-		return runImportCommand(ctx, out, deps, rest[1:])
 	case "search":
 		return runSearchCommand(ctx, out, errOut, deps, rest[1:])
 	case "links":

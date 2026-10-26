@@ -1,6 +1,6 @@
 /** What the window asks of the vault about files and folders. */
 import type { ErrorCode } from '@/shared/errors'
-import type { CreateResult, Entry, FileKind, Movement } from '@/entities/file'
+import type { Entry, FileKind, Movement } from '@/entities/file'
 
 export interface FilePort {
   /**
@@ -21,9 +21,4 @@ export interface FilePort {
   move(from: string, to: string): Promise<Movement>
   /** An empty folder. The folders above it are made with it. */
   createFolder(path: string): Promise<ErrorCode | null>
-  /**
-   * The file a web address is kept in, named by the address until a fetch says
-   * what is there.
-   */
-  createUrl(url: string, folder: string): Promise<CreateResult>
 }

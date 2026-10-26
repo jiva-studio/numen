@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
-	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -107,16 +106,10 @@ func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
 	}
 }
 
-// Every host that may be framed is named here, so one arriving in the list
-// arrives in a diff somebody reads. A frame runs that host's own scripts and
-// reaches that host's own machines, and nothing else about the policy moves.
-//
-// The window frames this run's own socket and no host at all. The page that
+// The window frames no host. A frame runs that host's own scripts and reaches
+// that host's own machines, so a host arriving here arrives in a diff somebody
+// reads.
 func TestTheHostsAWindowMayFrame(t *testing.T) {
-	if got := embedHosts; !slices.Equal(got, []string{"https://www.youtube-nocookie.com"}) {
-		t.Errorf("the window may frame %q", got)
-	}
-
 	response := getResponse(newBareServices().NewHandler(http.NotFoundHandler()), "/").
 		Header().Get("Content-Security-Policy")
 	if !strings.Contains(response, "frame-src 'self';") {

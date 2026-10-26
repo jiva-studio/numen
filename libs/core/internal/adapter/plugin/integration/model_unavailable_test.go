@@ -12,9 +12,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
@@ -113,21 +111,6 @@ func TestABridgeIsNotOpenedOnAPluginThatDoesNotAnswerInTime(t *testing.T) {
 				t.Errorf("acquired %d times, released %d times", host.acquired.Load(), host.released.Load())
 			}
 		})
-	}
-}
-
-func TestADownloaderThatIsDownNamesNoModel(t *testing.T) {
-	host := newDownModelHost(t)
-	bridge, err := downloaderbridge.Open(t.Context(), host)
-	if err != nil {
-		t.Fatal(err)
-	}
-	model, err := bridge.GetDownloadModel(t.Context(), domain.URL("https://example.com/video"))
-	if err == nil {
-		t.Fatal("a download model was named by a plugin that is down")
-	}
-	if model != (downloadport.DownloadModel{}) {
-		t.Fatalf("a model was returned with the error: %+v", model)
 	}
 }
 

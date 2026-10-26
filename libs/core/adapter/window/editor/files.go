@@ -44,14 +44,13 @@ func eachOnce(paths []string) ([]string, error) {
 }
 
 // fileHandler answers what the vault holds and what a person does to it: its tree,
-// its folders and its links to the web.
+// and its folders.
 type fileHandler struct {
 	state            *State
 	getFolderEntries *file.GetFolderEntries
 	getFileKinds     *file.GetFileKinds
 	createFolder     *file.CreateFolder
 	move             *vaults.Move
-	urls             *source.CreateURL
 	remove           *note.Remove
 }
 
@@ -188,42 +187,6 @@ func (h *fileHandler) MoveFile(
 		// repaired is the answer, whatever came apart after it landed.
 	}
 	return connect.NewResponse(out), nil
-}
-
-// CreateURL makes the file a web address is kept in.
-//
-// What is at the address is not fetched here: the file is made, and a run over
-// it is asked for the way a run over any source is.
-func (h *fileHandler) CreateURL(
-	ctx context.Context, r *connect.Request[v1.CreateURLRequest],
-) (*connect.Response[v1.CreateURLResponse], error) {
-	showing, err := h.state.getCurrentVault()
-	if err != nil {
-		return nil, err
-	}
-	pos, err := domain.ParseURL(r.Msg.GetUrl())
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInvalidArgument, err)
-	}
-	if !h.state.Writing.begin() {
-		return nil, connect.NewError(connect.CodeUnavailable, errClosing)
-	}
-	defer h.state.Writing.finish()
-
-	made, err := h.urls.Execute(ctx, showing, source.NewURL{
-		Address: pos, Path: r.Msg.GetPath(),
-	})
-	if made.Path != "" {
-		return connect.NewResponse(&v1.CreateURLResponse{Path: made.Path}), nil
-	}
-	if err == nil {
-		return connect.NewResponse(&v1.CreateURLResponse{}), nil
-	}
-	reason, ok := wire.GetErrorCode(err)
-	if !ok {
-		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-	return connect.NewResponse(&v1.CreateURLResponse{Error: &reason}), nil
 }
 
 // getListCode is the code a folder that could not be listed is answered with.

@@ -3,6 +3,7 @@ package derivedfile
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -84,4 +85,24 @@ func (f pluginFolder) Delete(ctx context.Context, name string) error {
 		return err
 	}
 	return f.store.Remove(ctx, key)
+}
+
+func (f pluginFolder) Open(ctx context.Context, name string) (io.ReadSeekCloser, int64, error) {
+	key, err := f.getKey(name)
+	if err != nil {
+		return nil, 0, err
+	}
+	return f.store.Open(ctx, key)
+}
+
+func (f pluginFolder) Rename(ctx context.Context, from, to string) error {
+	source, err := f.getKey(from)
+	if err != nil {
+		return err
+	}
+	target, err := f.getKey(to)
+	if err != nil {
+		return err
+	}
+	return f.store.Rename(ctx, source, target)
 }

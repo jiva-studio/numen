@@ -8,7 +8,6 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/core/internal/chunking"
-	"github.com/jiva-studio/numen/libs/core/internal/urlfile"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
@@ -239,18 +238,7 @@ func (u Extract) recordIfOutdated(
 	source sourceport.SourceText,
 	res *ExtractResult,
 ) error {
-	fileHash := source.Hash
-	if source.Kind == domain.KindURL {
-		raw, err := on.files.Read(ctx, source.Path)
-		if errors.Is(err, fs.ErrNotExist) || vaultport.IsNoNote(err) {
-			return nil
-		}
-		if err != nil {
-			return fmt.Errorf("read %s: %w", source.Path, err)
-		}
-		fileHash = domain.HashContent(raw)
-	}
-	live, err := on.texts.FindLiveVersion(ctx, source.Path, fileHash)
+	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.Hash)
 	switch {
 	case err == nil && string(live) == source.Producer:
 		return nil
@@ -395,22 +383,13 @@ func (u Extract) source(
 		res.Unreadable++
 		return nil
 	}
-	hash, err := u.fingerprint(ref, raw)
-	if errors.Is(err, errNoAddress) {
-		res.Unreadable++
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-
-	fileHash := domain.HashContent(raw)
-	doc, err := on.texts.GetLiveText(ctx, path, fileHash)
+	hash := domain.HashContent(raw)
+	doc, err := on.texts.GetLiveText(ctx, path, hash)
 	if err != nil {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{Fingerprint: ref, Hash: hash}, fileHash, err, res)
+		return u.saveWithoutText(ctx, v, on, domain.Source{Fingerprint: ref, Hash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
@@ -439,7 +418,6 @@ func (u Extract) saveWithoutText(
 	v domain.Vault,
 	on openVault,
 	source domain.Source,
-	fileHash string,
 	readErr error,
 	res *ExtractResult,
 ) error {
@@ -451,7 +429,7 @@ func (u Extract) saveWithoutText(
 		return fmt.Errorf("write the chunks of %s: %w", source.Fingerprint.Path, err)
 	}
 	if errors.Is(readErr, textport.ErrNoText) {
-		if err := on.texts.RequestText(ctx, source.Fingerprint.Path, fileHash); err != nil {
+		if err := on.texts.RequestText(ctx, source.Fingerprint.Path, source.Hash); err != nil {
 			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.Fingerprint.Path, err))
 		}
 	}
@@ -561,23 +539,4 @@ func (u Extract) kinds() []domain.SourceKind {
 		return []domain.SourceKind{domain.KindBook, domain.KindRecording, domain.KindURL}
 	}
 	return u.Kinds
-}
-
-// errNoAddress is a link file that names no address.
-var errNoAddress = errors.New("the link names no address")
-
-// fingerprint hashes the source's content, reading a URL file's target address
-// where the source is a link.
-func (u Extract) fingerprint(ref domain.Fingerprint, raw []byte) (string, error) {
-	if ref.Kind != domain.KindURL {
-		return domain.HashContent(raw), nil
-	}
-	pos, err := urlfile.Read(raw)
-	if errors.Is(err, urlfile.ErrNoAddress) || errors.Is(err, domain.ErrNotAURL) {
-		return "", errNoAddress
-	}
-	if err != nil {
-		return "", err
-	}
-	return domain.HashContent([]byte(string(pos))), nil
 }

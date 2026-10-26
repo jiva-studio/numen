@@ -62,14 +62,9 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 	routes := s.newRoutes(named)
 
 	// Where a recording is played from is known once the socket it is served
-	// over is open, which is before a page is ever asked for. What a link note
-	// points at is played in a frame, from the hosts named here and no other.
-	// A player is framed from this run's own socket and never from the host
-	// directly: a host is told which address holds its player, and a window
-	// drawn from a scheme of its own has none to give.
+	// over is open, which is before a page is ever asked for.
 	policy := csp.Sources{
 		Media:   s.Playing.getPlayOrigins(),
-		Frames:  s.Playing.getPlayOrigins(),
 		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
 	}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

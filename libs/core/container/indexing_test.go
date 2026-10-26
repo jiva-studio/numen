@@ -35,7 +35,7 @@ func TestASectionAddedToTheSettingsIsCarriedToo(t *testing.T) {
 	// The document holds the sections the file does, and the line a person is
 	// left about what it says. The ai section is carried by the router the host is
 	// given, which reads it at every question.
-	if targetVal := reflect.TypeOf(container.Settings{}).NumField(); targetVal != 10 {
+	if targetVal := reflect.TypeOf(container.Settings{}).NumField(); targetVal != 9 {
 		t.Errorf("the settings hold %d sections; carry the new one in Config.SetSettings", targetVal)
 	}
 }

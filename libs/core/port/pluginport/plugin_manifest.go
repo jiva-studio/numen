@@ -46,7 +46,6 @@ func PluginCapabilities() []string {
 		"document",
 		"book",
 		"embedding",
-		"downloader",
 		"proofreading",
 		"tools",
 		"agent",
@@ -243,6 +242,8 @@ type PluginManifest struct {
 	Commands []PluginCommand `json:"commands,omitempty"`
 	// TextInput is what the plugin makes text from. A plugin that makes no text declares none.
 	TextInput *PluginTextInput `json:"textInput,omitempty"`
+	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
+	Playback *PluginPlayback `json:"playback,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -306,6 +307,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listTextInputIssues()...)
+	issues = append(issues, m.listPlaybackIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }

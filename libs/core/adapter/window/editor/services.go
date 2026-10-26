@@ -12,9 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
-	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
@@ -67,14 +65,12 @@ type Services struct {
 	// played here.
 	Playing *Loopback
 
-	files  *artifactFiles
 	server *fileServer
 }
 
 // createServices is every handler of a window over this state, each holding
 // nothing yet that needs a vault.
 func createServices(state *State) *Services {
-	files := &artifactFiles{state: state}
 	return &Services{
 		state:       state,
 		Vault:       &vaultHandler{state: state},
@@ -89,8 +85,7 @@ func createServices(state *State) *Services {
 		Recording:   &recordingHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
 		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
-		files:       files,
-		server:      &fileServer{state: state, files: files},
+		server:      &fileServer{state: state},
 	}
 }
 
@@ -100,11 +95,13 @@ func (s *Services) openPlaying(playing *Loopback) {
 	s.Recording.playing = playing
 }
 
-// readFiles binds the use cases that read the files of the vaults the readers open.
-func (s *Services) readFiles(readers vaultport.VaultReaders) {
-	s.files.getFingerprint = file.NewGetFingerprint(readers)
+// readFiles binds the use cases that read the files of the vaults the readers open, and the copies
+// played in place of files.
+func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenCopy) {
 	s.server.openFile = file.NewOpenFile(readers)
-	s.Recording.getFingerprint = s.files.getFingerprint
+	s.server.openCopy = openCopy
+	s.Recording.getFingerprint = file.NewGetFingerprint(readers)
+	s.Recording.openCopy = openCopy
 }
 
 // noteHandler answers what a vault's notes hold and what changes them.
@@ -124,20 +121,6 @@ type noteHandler struct {
 	rename            *note.Rename
 	showNeighbourhood *note.ShowNeighbourhood
 	getLinkAddress    *note.GetLinkAddress
-}
-
-// artifactFiles finds the file a question about an artifact is about, in the
-type artifactFiles struct {
-	state          *State
-	getFingerprint *file.GetFingerprint
-	getNoteAddress source.GetNoteAddress
-}
-
-func (f *artifactFiles) getArtifactAddress(ctx context.Context, v domain.Vault, ref domain.Fingerprint) domain.URL {
-	if ref.Kind != domain.KindURL {
-		return domain.URL("")
-	}
-	return f.getNoteAddress.Execute(ctx, v, ref.Path)
 }
 
 // SetFolderDialog puts the machine's folder dialog in front of the person when a

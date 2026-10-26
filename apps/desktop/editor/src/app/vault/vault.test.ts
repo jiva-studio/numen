@@ -37,7 +37,6 @@ const request = {
   listFiles: vi.fn(),
   moveFile: vi.fn(),
   createFolder: vi.fn(),
-  createURL: vi.fn(),
   listFileKinds: vi.fn(),
   getSettings: vi.fn(),
   writeSettings: vi.fn(),
@@ -148,10 +147,6 @@ describe('files domain', () => {
 
     request.createFolder.mockResolvedValue({})
     expect(await core.createFolder('folder')).toBeNull()
-
-    request.createURL.mockResolvedValue({ path: 'url.md' })
-    const url = await core.createUrl('https://example.com', '')
-    expect(url.ok ? url.value.path : null).toBe('url.md')
 
     request.listFileKinds.mockResolvedValue({
       kinds: [{ path: 'book.epub', kind: 2, type: 'note', format: 2 }],

@@ -4,13 +4,11 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 
-	"github.com/jiva-studio/numen/libs/core/port/downloadport"
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 )
 
-// WorkerAssembly is what this window asks for background workers, embedding, downloads, and books.
+// WorkerAssembly is what this window asks for its background workers and embedding.
 type WorkerAssembly interface {
 	// OpenEmbedders opens the model this installation turns text into vectors
 	// with, and the one a query is turned into a vector by. The two are one
@@ -18,10 +16,4 @@ type WorkerAssembly interface {
 	OpenEmbedders(
 		ctx context.Context, tasks *run.Tasks,
 	) (indexing, asking embeddingport.Embedder, closer func() error, why error)
-
-	// OpenDownloader reaches the address a link note points at, and is nothing
-	// on a machine holding neither of the tools that reach one. OpenImportURL
-	// is one such address fetched into the vault.
-	OpenDownloader(ctx context.Context) downloadport.Downloader
-	OpenImportURL(ctx context.Context, downloader downloadport.Downloader) source.ImportURL
 }

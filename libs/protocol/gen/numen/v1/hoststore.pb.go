@@ -600,6 +600,102 @@ func (x *DeleteStoreFileResponse) GetError() HostStoreErrorCode {
 	return HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED
 }
 
+type RenameStoreFileRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	From          string                 `protobuf:"bytes,1,opt,name=from,proto3" json:"from,omitempty"`
+	To            string                 `protobuf:"bytes,2,opt,name=to,proto3" json:"to,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameStoreFileRequest) Reset() {
+	*x = RenameStoreFileRequest{}
+	mi := &file_numen_v1_hoststore_proto_msgTypes[11]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameStoreFileRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameStoreFileRequest) ProtoMessage() {}
+
+func (x *RenameStoreFileRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hoststore_proto_msgTypes[11]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameStoreFileRequest.ProtoReflect.Descriptor instead.
+func (*RenameStoreFileRequest) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hoststore_proto_rawDescGZIP(), []int{11}
+}
+
+func (x *RenameStoreFileRequest) GetFrom() string {
+	if x != nil {
+		return x.From
+	}
+	return ""
+}
+
+func (x *RenameStoreFileRequest) GetTo() string {
+	if x != nil {
+		return x.To
+	}
+	return ""
+}
+
+type RenameStoreFileResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Error         HostStoreErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostStoreErrorCode" json:"error,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RenameStoreFileResponse) Reset() {
+	*x = RenameStoreFileResponse{}
+	mi := &file_numen_v1_hoststore_proto_msgTypes[12]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RenameStoreFileResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RenameStoreFileResponse) ProtoMessage() {}
+
+func (x *RenameStoreFileResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_hoststore_proto_msgTypes[12]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RenameStoreFileResponse.ProtoReflect.Descriptor instead.
+func (*RenameStoreFileResponse) Descriptor() ([]byte, []int) {
+	return file_numen_v1_hoststore_proto_rawDescGZIP(), []int{12}
+}
+
+func (x *RenameStoreFileResponse) GetError() HostStoreErrorCode {
+	if x != nil {
+		return x.Error
+	}
+	return HostStoreErrorCode_HOST_STORE_ERROR_CODE_UNSPECIFIED
+}
+
 var File_numen_v1_hoststore_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hoststore_proto_rawDesc = "" +
@@ -630,19 +726,25 @@ const file_numen_v1_hoststore_proto_rawDesc = "" +
 	"\x16DeleteStoreFileRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\"M\n" +
 	"\x17DeleteStoreFileResponse\x122\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error\"<\n" +
+	"\x16RenameStoreFileRequest\x12\x12\n" +
+	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
+	"\x02to\x18\x02 \x01(\tR\x02to\"M\n" +
+	"\x17RenameStoreFileResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostStoreErrorCodeR\x05error*\xd0\x01\n" +
 	"\x12HostStoreErrorCode\x12%\n" +
 	"!HOST_STORE_ERROR_CODE_UNSPECIFIED\x10\x00\x12\"\n" +
 	"\x1eHOST_STORE_ERROR_CODE_NO_VAULT\x10\x01\x12!\n" +
 	"\x1dHOST_STORE_ERROR_CODE_MISSING\x10\x02\x12!\n" +
 	"\x1dHOST_STORE_ERROR_CODE_OUTSIDE\x10\x03\x12)\n" +
-	"%HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER\x10\x042\xbe\x03\n" +
+	"%HOST_STORE_ERROR_CODE_HELD_BY_ANOTHER\x10\x042\x96\x04\n" +
 	"\x10HostStoreService\x12P\n" +
 	"\rReadStoreFile\x12\x1e.numen.v1.ReadStoreFileRequest\x1a\x1f.numen.v1.ReadStoreFileResponse\x12V\n" +
 	"\x0fAppendStoreFile\x12 .numen.v1.AppendStoreFileRequest\x1a!.numen.v1.AppendStoreFileResponse\x12S\n" +
 	"\x0eListStoreFiles\x12\x1f.numen.v1.ListStoreFilesRequest\x1a .numen.v1.ListStoreFilesResponse\x12S\n" +
 	"\x0eWriteStoreFile\x12\x1f.numen.v1.WriteStoreFileRequest\x1a .numen.v1.WriteStoreFileResponse\x12V\n" +
-	"\x0fDeleteStoreFile\x12 .numen.v1.DeleteStoreFileRequest\x1a!.numen.v1.DeleteStoreFileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x0fDeleteStoreFile\x12 .numen.v1.DeleteStoreFileRequest\x1a!.numen.v1.DeleteStoreFileResponse\x12V\n" +
+	"\x0fRenameStoreFile\x12 .numen.v1.RenameStoreFileRequest\x1a!.numen.v1.RenameStoreFileResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_hoststore_proto_rawDescOnce sync.Once
@@ -657,7 +759,7 @@ func file_numen_v1_hoststore_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_v1_hoststore_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_numen_v1_hoststore_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
+var file_numen_v1_hoststore_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_hoststore_proto_goTypes = []any{
 	(HostStoreErrorCode)(0),         // 0: numen.v1.HostStoreErrorCode
 	(*ReadStoreFileRequest)(nil),    // 1: numen.v1.ReadStoreFileRequest
@@ -671,6 +773,8 @@ var file_numen_v1_hoststore_proto_goTypes = []any{
 	(*WriteStoreFileResponse)(nil),  // 9: numen.v1.WriteStoreFileResponse
 	(*DeleteStoreFileRequest)(nil),  // 10: numen.v1.DeleteStoreFileRequest
 	(*DeleteStoreFileResponse)(nil), // 11: numen.v1.DeleteStoreFileResponse
+	(*RenameStoreFileRequest)(nil),  // 12: numen.v1.RenameStoreFileRequest
+	(*RenameStoreFileResponse)(nil), // 13: numen.v1.RenameStoreFileResponse
 }
 var file_numen_v1_hoststore_proto_depIdxs = []int32{
 	0,  // 0: numen.v1.ReadStoreFileResponse.error:type_name -> numen.v1.HostStoreErrorCode
@@ -679,21 +783,24 @@ var file_numen_v1_hoststore_proto_depIdxs = []int32{
 	6,  // 3: numen.v1.ListStoreFilesResponse.files:type_name -> numen.v1.HostStoreFile
 	0,  // 4: numen.v1.WriteStoreFileResponse.error:type_name -> numen.v1.HostStoreErrorCode
 	0,  // 5: numen.v1.DeleteStoreFileResponse.error:type_name -> numen.v1.HostStoreErrorCode
-	1,  // 6: numen.v1.HostStoreService.ReadStoreFile:input_type -> numen.v1.ReadStoreFileRequest
-	3,  // 7: numen.v1.HostStoreService.AppendStoreFile:input_type -> numen.v1.AppendStoreFileRequest
-	5,  // 8: numen.v1.HostStoreService.ListStoreFiles:input_type -> numen.v1.ListStoreFilesRequest
-	8,  // 9: numen.v1.HostStoreService.WriteStoreFile:input_type -> numen.v1.WriteStoreFileRequest
-	10, // 10: numen.v1.HostStoreService.DeleteStoreFile:input_type -> numen.v1.DeleteStoreFileRequest
-	2,  // 11: numen.v1.HostStoreService.ReadStoreFile:output_type -> numen.v1.ReadStoreFileResponse
-	4,  // 12: numen.v1.HostStoreService.AppendStoreFile:output_type -> numen.v1.AppendStoreFileResponse
-	7,  // 13: numen.v1.HostStoreService.ListStoreFiles:output_type -> numen.v1.ListStoreFilesResponse
-	9,  // 14: numen.v1.HostStoreService.WriteStoreFile:output_type -> numen.v1.WriteStoreFileResponse
-	11, // 15: numen.v1.HostStoreService.DeleteStoreFile:output_type -> numen.v1.DeleteStoreFileResponse
-	11, // [11:16] is the sub-list for method output_type
-	6,  // [6:11] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	0,  // 6: numen.v1.RenameStoreFileResponse.error:type_name -> numen.v1.HostStoreErrorCode
+	1,  // 7: numen.v1.HostStoreService.ReadStoreFile:input_type -> numen.v1.ReadStoreFileRequest
+	3,  // 8: numen.v1.HostStoreService.AppendStoreFile:input_type -> numen.v1.AppendStoreFileRequest
+	5,  // 9: numen.v1.HostStoreService.ListStoreFiles:input_type -> numen.v1.ListStoreFilesRequest
+	8,  // 10: numen.v1.HostStoreService.WriteStoreFile:input_type -> numen.v1.WriteStoreFileRequest
+	10, // 11: numen.v1.HostStoreService.DeleteStoreFile:input_type -> numen.v1.DeleteStoreFileRequest
+	12, // 12: numen.v1.HostStoreService.RenameStoreFile:input_type -> numen.v1.RenameStoreFileRequest
+	2,  // 13: numen.v1.HostStoreService.ReadStoreFile:output_type -> numen.v1.ReadStoreFileResponse
+	4,  // 14: numen.v1.HostStoreService.AppendStoreFile:output_type -> numen.v1.AppendStoreFileResponse
+	7,  // 15: numen.v1.HostStoreService.ListStoreFiles:output_type -> numen.v1.ListStoreFilesResponse
+	9,  // 16: numen.v1.HostStoreService.WriteStoreFile:output_type -> numen.v1.WriteStoreFileResponse
+	11, // 17: numen.v1.HostStoreService.DeleteStoreFile:output_type -> numen.v1.DeleteStoreFileResponse
+	13, // 18: numen.v1.HostStoreService.RenameStoreFile:output_type -> numen.v1.RenameStoreFileResponse
+	13, // [13:19] is the sub-list for method output_type
+	7,  // [7:13] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hoststore_proto_init() }
@@ -707,7 +814,7 @@ func file_numen_v1_hoststore_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_hoststore_proto_rawDesc), len(file_numen_v1_hoststore_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   11,
+			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -129,3 +129,11 @@ func (c *StoreClient) Delete(ctx context.Context, name string) error {
 	}
 	return readStoreError(res.Msg.GetError())
 }
+
+func (c *StoreClient) Rename(ctx context.Context, from, to string) error {
+	res, err := c.rpc.RenameStoreFile(ctx, newStoreRequest(c, &v1.RenameStoreFileRequest{From: from, To: to}))
+	if err != nil {
+		return readError(err)
+	}
+	return readStoreError(res.Msg.GetError())
+}

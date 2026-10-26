@@ -50,8 +50,6 @@ const (
 	// FileServiceCreateFolderProcedure is the fully-qualified name of the FileService's CreateFolder
 	// RPC.
 	FileServiceCreateFolderProcedure = "/numen.v1.FileService/CreateFolder"
-	// FileServiceCreateURLProcedure is the fully-qualified name of the FileService's CreateURL RPC.
-	FileServiceCreateURLProcedure = "/numen.v1.FileService/CreateURL"
 )
 
 // FileServiceClient is a client for the numen.v1.FileService service.
@@ -74,10 +72,6 @@ type FileServiceClient interface {
 	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
-	// CreateURL makes the file a web address is kept in. It holds the address and
-	// nothing else, and what is at that address is fetched into the store beside
-	// it.
-	CreateURL(context.Context, *connect.Request[v1.CreateURLRequest]) (*connect.Response[v1.CreateURLResponse], error)
 }
 
 // NewFileServiceClient constructs a client for the numen.v1.FileService service. By default, it
@@ -121,12 +115,6 @@ func NewFileServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 			connect.WithClientOptions(opts...),
 		),
-		createURL: connect.NewClient[v1.CreateURLRequest, v1.CreateURLResponse](
-			httpClient,
-			baseURL+FileServiceCreateURLProcedure,
-			connect.WithSchema(fileServiceMethods.ByName("CreateURL")),
-			connect.WithClientOptions(opts...),
-		),
 	}
 }
 
@@ -137,7 +125,6 @@ type fileServiceClient struct {
 	moveFile      *connect.Client[v1.MoveFileRequest, v1.MoveFileResponse]
 	removeFile    *connect.Client[v1.RemoveFileRequest, v1.RemoveFileResponse]
 	createFolder  *connect.Client[v1.CreateFolderRequest, v1.CreateFolderResponse]
-	createURL     *connect.Client[v1.CreateURLRequest, v1.CreateURLResponse]
 }
 
 // ListFiles calls numen.v1.FileService.ListFiles.
@@ -165,11 +152,6 @@ func (c *fileServiceClient) CreateFolder(ctx context.Context, req *connect.Reque
 	return c.createFolder.CallUnary(ctx, req)
 }
 
-// CreateURL calls numen.v1.FileService.CreateURL.
-func (c *fileServiceClient) CreateURL(ctx context.Context, req *connect.Request[v1.CreateURLRequest]) (*connect.Response[v1.CreateURLResponse], error) {
-	return c.createURL.CallUnary(ctx, req)
-}
-
 // FileServiceHandler is an implementation of the numen.v1.FileService service.
 type FileServiceHandler interface {
 	// ListFiles is what one folder of the vault holds. A tree asks for a folder
@@ -190,10 +172,6 @@ type FileServiceHandler interface {
 	RemoveFile(context.Context, *connect.Request[v1.RemoveFileRequest]) (*connect.Response[v1.RemoveFileResponse], error)
 	// CreateFolder makes an empty folder. The folders above it are made with it.
 	CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error)
-	// CreateURL makes the file a web address is kept in. It holds the address and
-	// nothing else, and what is at that address is fetched into the store beside
-	// it.
-	CreateURL(context.Context, *connect.Request[v1.CreateURLRequest]) (*connect.Response[v1.CreateURLResponse], error)
 }
 
 // NewFileServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -233,12 +211,6 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(fileServiceMethods.ByName("CreateFolder")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fileServiceCreateURLHandler := connect.NewUnaryHandler(
-		FileServiceCreateURLProcedure,
-		svc.CreateURL,
-		connect.WithSchema(fileServiceMethods.ByName("CreateURL")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.FileService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case FileServiceListFilesProcedure:
@@ -251,8 +223,6 @@ func NewFileServiceHandler(svc FileServiceHandler, opts ...connect.HandlerOption
 			fileServiceRemoveFileHandler.ServeHTTP(w, r)
 		case FileServiceCreateFolderProcedure:
 			fileServiceCreateFolderHandler.ServeHTTP(w, r)
-		case FileServiceCreateURLProcedure:
-			fileServiceCreateURLHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -280,8 +250,4 @@ func (UnimplementedFileServiceHandler) RemoveFile(context.Context, *connect.Requ
 
 func (UnimplementedFileServiceHandler) CreateFolder(context.Context, *connect.Request[v1.CreateFolderRequest]) (*connect.Response[v1.CreateFolderResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.CreateFolder is not implemented"))
-}
-
-func (UnimplementedFileServiceHandler) CreateURL(context.Context, *connect.Request[v1.CreateURLRequest]) (*connect.Response[v1.CreateURLResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.FileService.CreateURL is not implemented"))
 }

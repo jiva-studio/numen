@@ -19,7 +19,6 @@ const { asked } = vi.hoisted(() => {
     listFiles: vi.fn(),
     moveFile: vi.fn(),
     createFolder: vi.fn(),
-    createURL: vi.fn(),
     listFileKinds: vi.fn(),
     listVaults: vi.fn(),
     getCurrentVault: vi.fn(),
@@ -128,21 +127,6 @@ describe('a file requested for', () => {
     asked.createFolder.mockResolvedValue({})
     await core.createFolder('Notes/New')
     expect(asked.createFolder.mock.calls.at(-1)?.[0]).toEqual({ path: 'Notes/New' })
-  })
-
-  it('has a url created in a folder, and rejected with error', async () => {
-    asked.createURL.mockResolvedValue({ path: 'Notes/page.md' })
-    await core.createUrl('https://example.com', 'Notes')
-    expect(asked.createURL.mock.calls.at(-1)?.[0]).toEqual({
-      url: 'https://example.com',
-      path: 'Notes',
-    })
-
-    asked.createURL.mockResolvedValue({ error: ErrorCode.UNNAMEABLE })
-    expect(await core.createUrl('https://example.com', 'Notes')).toEqual({
-      ok: false,
-      error: 'unnameable',
-    })
   })
 
   it('has its kinds requested of every path given', async () => {

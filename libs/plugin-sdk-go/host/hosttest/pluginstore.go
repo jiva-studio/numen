@@ -145,3 +145,22 @@ func (s *Store) Delete(ctx context.Context, name string) error {
 	delete(f.files, name)
 	return nil
 }
+
+func (s *Store) Rename(ctx context.Context, from, to string) error {
+	s.vault.world.mu.Lock()
+	defer s.vault.world.mu.Unlock()
+	f, err := s.open(ctx, from)
+	if err != nil {
+		return err
+	}
+	if _, err := s.open(ctx, to); err != nil {
+		return err
+	}
+	content, there := f.files[from]
+	if !there {
+		return host.ErrNotExist
+	}
+	f.files[to] = content
+	delete(f.files, from)
+	return nil
+}

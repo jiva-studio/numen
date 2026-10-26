@@ -92,7 +92,8 @@ func isPathWithin(base, child string) bool {
 }
 
 // IsWhitelistedEnv reports whether a variable of the host's environment reaches a plugin process:
-// the system's own, and NUMEN_MOCK_ML, which runs a plugin on its mock models.
+// the system's own, the proxy the machine reaches the network through, and NUMEN_MOCK_ML, which
+// runs a plugin on its mock models.
 func IsWhitelistedEnv(key string) bool {
 	upper := strings.ToUpper(strings.TrimSpace(key))
 	if upper == "" || isSecretEnv(upper) {
@@ -101,7 +102,7 @@ func IsWhitelistedEnv(key string) bool {
 	switch upper {
 	case "PATH", "TMPDIR", "TMP", "TEMP", "HOME", "USER",
 		"SYSTEMROOT", "SYSTEMDRIVE", "APPDATA", "LOCALAPPDATA",
-		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "NUMEN_MOCK_ML":
+		"LANG", "SSL_CERT_FILE", "SSL_CERT_DIR", "HTTP_PROXY", "HTTPS_PROXY", "NO_PROXY", "NUMEN_MOCK_ML":
 		return true
 	}
 	return strings.HasPrefix(upper, "LC_")

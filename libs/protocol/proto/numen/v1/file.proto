@@ -35,11 +35,6 @@ service FileService {
 
   // CreateFolder makes an empty folder. The folders above it are made with it.
   rpc CreateFolder(CreateFolderRequest) returns (CreateFolderResponse);
-
-  // CreateURL makes the file a web address is kept in. It holds the address and
-  // nothing else, and what is at that address is fetched into the store beside
-  // it.
-  rpc CreateURL(CreateURLRequest) returns (CreateURLResponse);
 }
 
 message ListFilesRequest {
@@ -194,21 +189,4 @@ message CreateFolderRequest {
 message CreateFolderResponse {
   // Set when nothing was made, and why.
   optional ErrorCode error = 1;
-}
-
-message CreateURLRequest {
-  // The address, as a browser would go to it. It is read into the one form
-  // every spelling of it reaches, and one nothing can be fetched from is
-  string url = 1;
-
-  // The folder it goes in, as a path relative to the root. Empty is the root.
-  string path = 2;
-}
-
-message CreateURLResponse {
-  // Where the file is filed. Empty when nothing was made.
-  string path = 1;
-
-  // Set when nothing was made, and why.
-  optional ErrorCode error = 2;
 }

@@ -5,7 +5,6 @@
 import { createClient } from '@connectrpc/connect'
 import {
   AgentService,
-  ArticleService,
   ArtifactService,
   BookService,
   CommandService,
@@ -57,9 +56,6 @@ export const recordings = createClient(RecordingService, transport)
 
 /** The cues a recording is written down in. */
 export const transcripts = createClient(TranscriptService, transport)
-
-/** The prose a recording is written up as. */
-export const articles = createClient(ArticleService, transport)
 
 /** The themes the window is drawn in, and how large. */
 export const theme = createClient(ThemeService, transport)

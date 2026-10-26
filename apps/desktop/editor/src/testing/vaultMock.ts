@@ -83,10 +83,6 @@ vi.mock('@/app/vault', () => ({
       requests.folders.push(path)
       return null
     },
-    createUrl: async (url: string, folder: string) => {
-      requests.urls.push(`${url} ${folder}`)
-      return asValue({ path: folder ? `${folder}/made.url` : 'made.url' })
-    },
     watchVaultChanges: pendingStream,
     watchEdits: pendingStream,
     watchTasks: pendingStream,

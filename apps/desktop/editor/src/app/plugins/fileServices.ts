@@ -3,14 +3,14 @@
  * the files made and moved, and the window's commands over a row.
  */
 import type { Component } from 'vue'
-import { asFailure, formatErrorMessage, getKnownErrorCode } from '@numen/wire'
+import { asFailure, getKnownErrorCode } from '@numen/wire'
 import type {
   ContextMenuRegistration,
   ContextMenuTarget,
   VaultFiles,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
-import { running, type ArtifactStates } from '@/entities/artifact'
+import type { ArtifactStates } from '@/entities/artifact'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
 import {
@@ -40,23 +40,17 @@ export interface FileCreatorRegistry {
 
 /** What making a file asks of the window. */
 export interface FileMakersDeps {
-  readonly core?: Pick<FilePort, 'createUrl'>
   readonly tabOpeners: FileOpeners
   readonly windowTabs: Pick<ReturnType<typeof useWindowTabs>, 'createFileOfKind'>
-  readonly notes?: { applyPathChanges(paths: readonly string[]): void }
   readonly writeMessage: MessageWriter
-  readonly fetchArtifact?: (path: string) => Promise<unknown>
   readonly creators?: Record<string, FileCreatorFn>
 }
 
 /** The files the window makes across registered kinds, each put in front of the person. */
 export function createFileMakers({
-  core,
   tabOpeners,
   windowTabs,
-  notes,
   writeMessage,
-  fetchArtifact: customFetchArtifact,
   creators,
 }: FileMakersDeps) {
   const registeredCreators = new Map<string, FileCreatorFn>()
@@ -74,22 +68,6 @@ export function createFileMakers({
     for (const [kind, creator] of Object.entries(creators)) {
       registerCreator(kind, creator)
     }
-  }
-
-  const fetchArtifact = (path: string): void => {
-    const fetcher = customFetchArtifact ?? running?.fetchArtifact
-    fetcher?.(path).then(
-      () => notes?.applyPathChanges([path]),
-      (error: unknown) => writeMessage(formatErrorMessage(error), 'error'),
-    )
-  }
-
-  if (core?.createUrl) {
-    registerCreator('url', async (address, folder) => {
-      const createdItem = await core.createUrl!(address, folder)
-      if (createdItem.ok) fetchArtifact(createdItem.value.path)
-      return createdItem
-    })
   }
 
   const createGenericOfKind = async (

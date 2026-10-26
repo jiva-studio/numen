@@ -12,7 +12,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/downloaderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
@@ -22,7 +21,6 @@ import (
 // bridgeHost is what every bridge is opened on.
 type bridgeHost interface {
 	embedderbridge.Host
-	downloaderbridge.Host
 	agentbridge.Host
 	toolsbridge.Host
 }
@@ -61,12 +59,6 @@ var bridgeContracts = []bridgeContract{
 		b, err := embedderbridge.Open(ctx, h)
 		return createContract(b, err, func(b *embedderbridge.Embedder, ctx context.Context) (bool, error) {
 			return isZeroResult(b.Embed(ctx, []string{"a"}))
-		})
-	}},
-	{"downloader", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b, err := downloaderbridge.Open(ctx, h)
-		return createContract(b, err, func(b *downloaderbridge.Downloader, ctx context.Context) (bool, error) {
-			return isZeroResult(b.GetMetadata(ctx, "https://example.org"))
 		})
 	}},
 	{"agent", func(ctx context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {

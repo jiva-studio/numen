@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/download"
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
@@ -23,7 +22,6 @@ const (
 	indexingAt  = "indexing"
 	embeddingAt = "embedding"
 	agentAt     = "agent"
-	importingAt = "importing"
 )
 
 // Settings is the file a person configures this installation in: one object
@@ -45,9 +43,6 @@ type Settings struct {
 
 	// Agent is which agent answers in the panel, and what it may reach.
 	Agent settings.Agent `json:"agent"`
-
-	// Importing is how an address a link note points at is reached.
-	Importing download.Config `json:"importing"`
 
 	Titles settings.Titles `json:"naming"`
 
@@ -107,7 +102,6 @@ func DefaultSettings() Settings {
 		Version:     settings.DefaultVersion,
 		Appearance:  settings.DefaultAppearance(),
 		Indexing:    DefaultIndexing(),
-		Importing:   download.Defaults(),
 		Titles:      settings.DefaultTitles(),
 		Performance: hardware.DefaultPerformance(),
 	}
@@ -143,7 +137,6 @@ func (c Config) SetSettings(s Settings) Config {
 	c.Embedding = s.Indexing.Embedding
 	c.Proofreading = s.Indexing.Proofreading
 	c.Agent = s.Agent
-	c.Importing = s.Importing
 	c.Performance = s.Performance
 	c.Hardware = hardware.Detect()
 	c.ResolvedCompute = hardware.ResolveCompute(s.Performance.Profile, c.Hardware, s.Performance.Custom)
