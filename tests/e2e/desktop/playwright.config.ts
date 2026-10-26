@@ -31,10 +31,16 @@ export default defineConfig({
     reuseExistingServer: !process.env.CI,
     timeout: 30_000,
   },
+  // The window is WebKitGTK on Linux and WKWebView on macOS. `scripts/run-offline.mjs` runs each
+  // project against a server of its own, since a run changes the vault.
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'], deviceScaleFactor: 1 },
     },
   ],
 })

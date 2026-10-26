@@ -40,7 +40,7 @@ jobs:
     needs: [changes]
     if: ${{ !cancelled() && (needs.changes.result != 'success' || needs.changes.outputs.code == 'true') }}
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -66,7 +66,7 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
         with:
-          browsers: "chromium"
+          browsers: "chromium webkit"
 
       - name: Build UI library
         run: |
@@ -90,7 +90,7 @@ jobs:
             sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
           fi
 
-      - name: Run desktop E2E tests
+      - name: Run desktop E2E tests in Chromium, then WebKit
         run: cd tests/e2e/desktop && npm test
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2

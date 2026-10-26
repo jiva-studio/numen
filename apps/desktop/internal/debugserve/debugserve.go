@@ -28,7 +28,7 @@ import (
 // on a certificate of its own unless NUMEN_DEBUG_TLS is "false", and writes the address it listens on
 // to out once it does.
 func Serve(ctx context.Context, addr string, handler http.Handler, out io.Writer) error {
-	server := &http.Server{Addr: addr, Handler: handler}
+	server := &http.Server{Addr: addr, Handler: newHandler(handler)}
 
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {
