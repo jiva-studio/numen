@@ -12,7 +12,8 @@ import (
 
 // openTranscriber is the models a machine holds, and the recording to hear with them.
 // They are hundreds of megabytes and are not in the repository, so a machine
-// without them says so and the rest of the package is still tested.
+// without them says so and the rest of the package is still tested. NUMEN_MODEL names the model the
+// files are of, the default one where it names none.
 func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	t.Helper()
 	dir, recorded := os.Getenv("NUMEN_MODELS"), os.Getenv("NUMEN_RECORDING")
@@ -21,6 +22,13 @@ func openTranscriber(t *testing.T) (*Transcriber, []byte) {
 	}
 
 	cfg := Defaults()
+	if name := os.Getenv("NUMEN_MODEL"); name != "" {
+		model, ok := FindModel(name)
+		if !ok {
+			t.Fatalf("NUMEN_MODEL names %s, which the engine does not run", name)
+		}
+		cfg.Model = model
+	}
 	cfg.Dir, cfg.ShouldDownload = dir, false
 	delta, err := Open(t.Context(), cfg)
 	if err != nil {

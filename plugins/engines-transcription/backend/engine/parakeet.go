@@ -91,6 +91,9 @@ type Transcriber struct {
 // Open loads the models and compiles them, reading the weights. The result is
 // used for any number of recordings until it is closed.
 func Open(ctx context.Context, cfg Config) (*Transcriber, error) {
+	if err := cfg.checkLanguage(); err != nil {
+		return nil, err
+	}
 	engine, found, err := locateModels(ctx, cfg)
 	if err != nil {
 		return nil, err

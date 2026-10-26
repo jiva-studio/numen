@@ -1,5 +1,16 @@
-import { test, expect } from 'playwright/test'
+import { test, expect, type Page } from 'playwright/test'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
+
+/** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */
+async function openTranscriptionSettings(page: Page): Promise<void> {
+  await runPaletteCommand(page, 'Settings', 'Settings')
+  await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
+  const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
+  const model = page.getByTestId('setting-model')
+  await expect(pluginRow.or(model)).toBeVisible({ timeout: 10_000 })
+  if (await pluginRow.isVisible()) await pluginRow.click()
+  await expect(page.getByTestId('setting-model')).toBeVisible({ timeout: 5_000 })
+}
 
 test.describe('Plugin Settings and Configuration', () => {
   test('opens command palette and navigates to Settings tab', async ({ page }) => {
@@ -14,105 +25,56 @@ test.describe('Plugin Settings and Configuration', () => {
     })
   })
 
-  test('displays declarative plugin settings in Settings tab', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    // Navigate to Settings
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
-
-    // Verify declarative plugin settings are rendered
-    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
-    await pluginRow.click()
-    await expect(page.getByText('Transcription Language').first()).toBeVisible({ timeout: 5_000 })
-  })
-
-  test('shows the default transcription language', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
-
-    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
-    await pluginRow.click()
-
-    const language = page.locator('.settings__choice').first()
-    await expect(language).toBeVisible()
-    await expect(language).toHaveText('auto')
-  })
-
-  test('changes transcription language dropdown selection', async ({ page }) => {
-    await page.goto('/')
-
-    await expect(page.locator('text=Ready')).toBeVisible()
-
-    await page.keyboard.press('Control+p')
-    const paletteInput = page.locator('input[data-palette="field"]').first()
-    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-
-    await paletteInput.fill('Settings')
-    await page.keyboard.press('Enter')
-
-    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
-    await pluginRow.click()
-
-    // Select container for language enum setting is rendered
-    const choiceEl = page.locator('.settings__choice').first()
-    await expect(choiceEl).toBeVisible({ timeout: 5_000 })
-  })
-
-  test('persists a changed transcription language across tab re-opening', async ({ page }) => {
+  test('shows the transcription model and the language it detects', async ({ page }) => {
     await openWorkspace(page)
+    await openTranscriptionSettings(page)
 
-    await runPaletteCommand(page, 'Settings', 'Settings')
+    const model = page.getByTestId('setting-model')
+    await expect(model.locator('.settings__choice')).toHaveText('Parakeet TDT 0.6B v3')
+    await expect(model.locator('.settings__origin')).toHaveText('Default')
+    await expect(page.getByText('25 European languages, 670 MB')).toBeVisible()
 
-    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    const pluginRow = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-    await expect(pluginRow).toBeVisible({ timeout: 10_000 })
-    await pluginRow.click()
+    const language = page.getByTestId('setting-language')
+    await expect(language.locator('.settings__fixed')).toHaveText('Detected by the model')
+    await expect(language.locator('.settings__origin')).toHaveText('Model default')
+    await expect(language.locator('.settings__choice')).toHaveCount(0)
+    await expect(page.getByText('Transcription Language')).toHaveCount(0)
+  })
 
-    const language = page.locator('.settings__choice').first()
-    await expect(language).toBeVisible()
-    await expect(language).toHaveText('auto')
-    await language.click()
-    await page.getByRole('menuitemradio', { name: 'es', exact: true }).click()
-    await expect(language).toHaveText('es')
+  test('changes the language with the model, and keeps the model across reopening', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await openTranscriptionSettings(page)
 
-    // Close Settings tab
-    const closeBtn = page.getByRole('button', { name: /Close Settings/i }).first()
-    await expect(closeBtn).toBeVisible()
-    await closeBtn.click()
+    const model = page.getByTestId('setting-model')
+    await model.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Parakeet TDT 0.6B v2', exact: true }).click()
+    await expect(model.locator('.settings__choice')).toHaveText('Parakeet TDT 0.6B v2')
+    await expect(model.locator('.settings__origin')).toHaveText('Chosen')
+
+    const language = page.getByTestId('setting-language')
+    await expect(language.locator('.settings__fixed')).toHaveText('English')
+    await expect(language.locator('.settings__origin')).toHaveText('Model default')
+
+    await page
+      .getByRole('button', { name: /Close Settings/i })
+      .first()
+      .click()
     await expect(page.locator('.settings__plugins')).not.toBeVisible({ timeout: 5_000 })
+    await openTranscriptionSettings(page)
+    await expect(page.getByTestId('setting-model').locator('.settings__choice')).toHaveText(
+      'Parakeet TDT 0.6B v2',
+    )
+    await expect(page.getByTestId('setting-language').locator('.settings__fixed')).toHaveText(
+      'English',
+    )
 
-    // Reopen Settings tab via command palette
-    await runPaletteCommand(page, 'Settings', 'Settings')
-
-    await expect(page.locator('.settings__plugins').first()).toBeVisible({ timeout: 10_000 })
-    const pluginRow2 = page.getByRole('button', { name: /Audio\/Video Transcription/i }).first()
-    if (await pluginRow2.isVisible()) {
-      await pluginRow2.click()
-    }
-
-    // Verify the changed language persisted
-    await expect(page.locator('.settings__choice').first()).toHaveText('es')
+    await page.getByTestId('setting-model').locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Parakeet TDT 0.6B v3', exact: true }).click()
+    await expect(page.getByTestId('setting-language').locator('.settings__fixed')).toHaveText(
+      'Detected by the model',
+    )
   })
 
   test('searches palette and executes Files navigation command', async ({ page }) => {

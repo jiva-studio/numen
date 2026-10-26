@@ -39,7 +39,9 @@ func TestManifestDeclaresDependencies(t *testing.T) {
 		}
 	}
 	for _, expected := range []string{
-		"onnxruntime", "parakeet-encoder", "parakeet-decoder", "parakeet-joiner", "parakeet-tokens", "silero-vad",
+		"onnxruntime", "silero-vad",
+		"parakeet-v3-encoder", "parakeet-v3-decoder", "parakeet-v3-joiner", "parakeet-v3-tokens",
+		"parakeet-v2-encoder", "parakeet-v2-decoder", "parakeet-v2-joiner", "parakeet-v2-tokens",
 	} {
 		if !slices.Contains(ids, expected) {
 			t.Errorf("dependencies missing %s: got %v", expected, ids)

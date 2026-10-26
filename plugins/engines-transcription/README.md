@@ -10,5 +10,5 @@ Transcribes the recordings a person asks for with native ONNX models, and gives 
 - Serves `numen.v1.TranscriptService` to the player: `ReadTranscript` is the cues of the live version, whichever plugin made it; `WriteTranscript` keeps a person's edit as a version of this plugin made from the live one.
 - Declares the `transcribe` command over its recordings, hidden from the palette: `numen-cli transcribe <vault> <file>` transcribes the file and waits for the transcript.
 - `NUMEN_MOCK_ML=true` hears every recording with a mock model, for automated runs.
-- Configurable transcription language.
+- A model setting: Parakeet TDT 0.6B v3 (`nvidia/parakeet-tdt-0.6b-v3`, 25 European languages, detected by the model) or v2 (`nvidia/parakeet-tdt-0.6b-v2`, English), each the int8 sherpa-onnx export of its model and declared as the dependencies the option provisions. Neither model can be given a language, so the language row shows the language of the model chosen: "Detected by the model" for v3, English for v2.
 - Declares `onnxruntime` as a `runtime` dependency; the host provisions it and launches the plugin with `NUMEN_ONNX_RUNTIME_LIB`.

@@ -56,16 +56,24 @@ func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path str
 	return raw, err
 }
 
+// openModel opens the recogniser of the configuration.
+type openModel func(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error)
+
+func openParakeet(ctx context.Context, cfg engine.Config) (engine.TranscriberPort, error) {
+	return engine.Open(ctx, cfg)
+}
+
 // models opens the model once, under the configuration the settings last named, and keeps it until
 // the plugin stops.
 type models struct {
 	mu      sync.Mutex
 	cfg     engine.Config
 	isMock  bool
+	open    openModel
 	current engine.TranscriberPort
 }
 
-func (m *models) open(ctx context.Context) (engine.TranscriberPort, error) {
+func (m *models) get(ctx context.Context) (engine.TranscriberPort, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	if m.current != nil {
@@ -75,7 +83,7 @@ func (m *models) open(ctx context.Context) (engine.TranscriberPort, error) {
 		m.current = engine.NewMockTranscriber()
 		return m.current, nil
 	}
-	loaded, err := engine.Open(context.WithoutCancel(ctx), m.cfg)
+	loaded, err := m.open(context.WithoutCancel(ctx), m.cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -83,11 +91,17 @@ func (m *models) open(ctx context.Context) (engine.TranscriberPort, error) {
 	return m.current, nil
 }
 
+// updateConfig takes the model and the language the settings name, which the model opens with. A
+// model the plugin does not provision is left as it was. The host stops the plugin when the model
+// changes, since the model's files change with it, so an open model is kept.
 func (m *models) updateConfig(values map[string]string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	if lang, ok := values["language"]; ok && lang != "" {
-		m.cfg.Model.Name = lang
+	if model, ok := engine.FindModel(values["model"]); ok {
+		m.cfg.Model = model
+	}
+	if language, ok := values["language"]; ok {
+		m.cfg.Language = language
 	}
 }
 
@@ -122,8 +136,8 @@ func NewConfig(modelsDir, runtime string) engine.Config {
 // Mount registers the text provider and the transcript service on s over the host given. The model
 // is the mock one where isMock is set. The transcriptions and the model end with s.
 func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
-	model := &models{cfg: cfg, isMock: isMock}
-	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.open)
+	model := &models{cfg: cfg, isMock: isMock, open: openParakeet}
+	transcriber := NewTranscriber(vaultFiles{vault: hosted.Vault}, hosted.Store, hosted.Texts, hosted.Queue, model.get)
 	s.SetUpdateConfig(model.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider{stores: hosted.Store, transcriber: transcriber}, s.HandlerOptions()...))
 	s.Register(numenv1connect.NewTranscriptServiceHandler(transcriptServer{stores: hosted.Store, texts: hosted.Texts}, s.HandlerOptions()...))
