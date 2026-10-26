@@ -1,54 +1,64 @@
 <script setup lang="ts">
 /**
- * One setting on a row: what it is called, what it means, and the control that
- * turns it at the end of the line.
+ * One settings row: the title and a one-sentence description on the left, the
+ * control on the right. Text after the first sentence of `detail` goes into a
+ * tooltip behind an info icon next to the title. When the nearest size
+ * container (the settings column) is narrower than 34rem, the control moves
+ * under the description at full width.
  *
- * The name carries the identifier and the control is announced by it. That is
- * the one rule here, and it holds whatever the control is: a switch, a row of
- * segments and a week of days are each drawn out of parts, and none of them has
- * an element a `<label for>` can name.
+ * The title carries the id the control is labelled by, because switches,
+ * segments and composite controls have no element a `<label for>` can target.
  */
 import { computed } from 'vue'
+import SettingInfo from './SettingInfo.vue'
+import { splitDetail } from './detail'
+import { WORDS as words } from '../../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */
 const props = defineProps<{
-  /** What the setting is about, which the name is addressed by. */
+  /** Unique key of the setting; the title id is derived from it. */
   at: string
-  /** What the row is called, and under it what it means. */
   name: string
   detail: string
 }>()
 
 defineSlots<{
-  /** The control at the end of the line, told what announces it. */
+  /** The control, given the id of the title that labels it. */
   default(props: { labelledBy: string }): unknown
 }>()
 
 /* --------------------------------- State ---------------------------------- */
 const nameId = computed(() => `settings-${props.at}`)
+const parts = computed(() => splitDetail(props.detail))
 </script>
 
 <template>
   <div class="settings__row">
-    <span class="settings__label">
-      <span :id="nameId" class="settings__name">{{ name }}</span>
-      <span class="settings__detail">{{ detail }}</span>
-    </span>
-    <span class="settings__value">
+    <div class="settings__label">
+      <span class="settings__title">
+        <span :id="nameId" class="settings__name">{{ name }}</span>
+        <SettingInfo
+          v-if="parts.more"
+          :at="`${nameId}-more`"
+          :label="words.aboutSetting(name)"
+          :text="parts.more"
+        />
+      </span>
+      <span v-if="parts.summary" class="settings__detail">{{ parts.summary }}</span>
+    </div>
+    <div class="settings__value">
       <slot v-bind="{ labelledBy: nameId }" />
-    </span>
+    </div>
   </div>
 </template>
 
 <style scoped>
 .settings__row {
-  --settings-row-air: 0.625rem;
-  --settings-label-gap: 0.125rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--settings-row-air) var(--numen-panel-gap, 1rem);
-  padding-block: var(--settings-row-air);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) fit-content(24rem);
+  align-items: start;
+  gap: 0.5rem var(--numen-panel-gap, 1rem);
+  padding-block: 0.625rem;
   border-block-end: var(--numen-stroke, 1px) solid var(--numen-rule);
 }
 
@@ -56,30 +66,60 @@ const nameId = computed(() => `settings-${props.at}`)
   border-block-end: none;
 }
 
-/* The name keeps its width beside a control of any width, and the control gives way. */
 .settings__label {
   display: flex;
   flex-direction: column;
-  gap: var(--settings-label-gap);
-  flex: 1 1 auto;
-  min-inline-size: min(100%, 18rem);
+  gap: 0.125rem;
+  min-inline-size: 0;
+}
+
+.settings__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-block-size: 2rem;
+  min-inline-size: 0;
 }
 
 .settings__name {
+  min-inline-size: 0;
+  overflow-wrap: anywhere;
   color: var(--numen-ink);
   font-weight: 500;
 }
 
-.settings__value {
-  display: flex;
-  flex: 0 1 auto;
-  min-inline-size: 0;
-  align-items: center;
-  justify-content: flex-end;
-}
-
 .settings__detail {
+  overflow-wrap: anywhere;
   color: var(--numen-hushed);
   font-size: var(--numen-text-1);
+}
+
+.settings__value {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-block-size: 2rem;
+  min-inline-size: 0;
+}
+
+.settings__value :deep(.settings__choice),
+.settings__value :deep(.settings__text-input) {
+  inline-size: var(--settings-choice, 16rem);
+  max-inline-size: 100%;
+}
+
+@container (max-width: 34rem) {
+  .settings__row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings__value {
+    --settings-choice: 100%;
+    justify-content: flex-start;
+  }
+
+  .settings__value > :deep(*) {
+    max-inline-size: 100%;
+  }
 }
 </style>

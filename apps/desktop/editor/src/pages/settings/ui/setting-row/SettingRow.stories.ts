@@ -1,13 +1,10 @@
 /**
- * One row of the settings, drawn on its own.
- *
- * What is asked here is what only a browser can answer: that controls of every
- * width end at the one edge, and that a name too long for its half of the row
- * does not push the control off it.
+ * Settings rows with every control type and long titles and descriptions, at a
+ * wide and a narrow width. The checks need real layout, so they run in a browser.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, within } from 'storybook/test'
-import { Select, Switch } from '@numen/ui'
+import { Button, NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from './SettingRow.vue'
 
 const CHOICES = [
@@ -15,42 +12,41 @@ const CHOICES = [
   { id: 'careful', text: 'Careful' },
 ]
 
-const UNBROKEN = 'A setting nobody gave a short name to and whose name runs on past the row'
+const LONG_NAME = 'Maximum number of recognition sessions kept open at the same time'
+const LONG_DETAIL =
+  'Parallel ONNX recognition sessions used for every scanned page of every document in the vault queue'
 
-/** A switch and a list of choices, each on a row of its own. */
-const rows = () => ({
-  components: { SettingRow, Select, Switch },
-  setup: () => ({ choices: CHOICES, unbroken: UNBROKEN }),
+/** One row per control type, inside a column of the given width. */
+const rows = (width: string) => () => ({
+  components: { SettingRow, Select, Switch, NumberField, Slider, Button },
+  setup: () => ({ choices: CHOICES, longName: LONG_NAME, longDetail: LONG_DETAIL }),
   template: `
-    <div class="numen" style="inline-size:40rem;padding:1rem;background:var(--numen-surface)">
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="nesting"
-        name="Nest headings under notes"
-        detail="The headings of a note, under the box that draws it"
-      >
+    <div class="numen" style="container-type:inline-size;inline-size:${width};padding:1rem;background:var(--numen-surface);--settings-choice:16rem">
+      <SettingRow v-slot="{ labelledBy }" at="switch" name="Nest headings under notes" detail="Show the headings of a note under its node.">
         <Switch :aria-labelledby="labelledBy" />
       </SettingRow>
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="proofread"
-        name="Put a transcript right"
-        detail="The profile a recording is read back against"
-      >
-        <Select
-          :choices="choices"
-          :aria-labelledby="labelledBy"
-          model-value="quick"
-          style="inline-size:18rem"
-        />
+      <SettingRow v-slot="{ labelledBy }" at="select" :name="longName" :detail="longDetail">
+        <Select :choices="choices" :aria-labelledby="labelledBy" model-value="quick" class="settings__choice" />
       </SettingRow>
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="unbroken"
-        :name="unbroken"
-        :detail="unbroken"
-      >
-        <Switch :aria-labelledby="labelledBy" />
+      <SettingRow v-slot="{ labelledBy }" at="text" name="Day starts at" detail="Time a review day starts. Answers before it count toward the day before.">
+        <input type="text" value="04:00" :aria-labelledby="labelledBy" class="settings__text-input" />
+      </SettingRow>
+      <SettingRow v-slot="{ labelledBy }" at="path" name="Path to the yt-dlp program on this machine" :detail="longDetail">
+        <input type="text" value="/usr/local/bin/a-very-long-folder-name/yt-dlp" :aria-labelledby="labelledBy" class="settings__text-input" />
+      </SettingRow>
+      <SettingRow v-slot="{ labelledBy }" at="number" :name="longName" detail="Text chunks processed in one forward pass.">
+        <NumberField :model-value="8" :min="1" :max="64" :aria-labelledby="labelledBy" style="inline-size:6rem" />
+      </SettingRow>
+      <SettingRow v-slot="{ labelledBy }" at="range" name="Temperature" :detail="longDetail">
+        <span style="display:flex;inline-size:var(--settings-choice, 16rem);max-inline-size:100%">
+          <Slider :model-value="0.7" :min="0" :max="1" :step="0.1" :aria-labelledby="labelledBy" style="flex:1 1 auto" />
+        </span>
+      </SettingRow>
+      <SettingRow v-slot="{ labelledBy }" at="secret" name="Key: apiKey" detail="Not set. Stored in the system keychain, not in the settings file.">
+        <span style="display:flex;gap:0.375rem;min-inline-size:0;max-inline-size:100%">
+          <input type="password" placeholder="Paste a key" :aria-labelledby="labelledBy" class="settings__text-input" style="flex:1 1 auto;min-inline-size:0" />
+          <Button variant="outline" size="small">Save</Button>
+        </span>
       </SettingRow>
     </div>
   `,
@@ -60,90 +56,90 @@ const meta: Meta<typeof SettingRow> = {
   title: 'Window/Setting row',
   component: SettingRow,
   parameters: { layout: 'fullscreen' },
-  render: rows,
+  render: rows('56rem'),
 }
 
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** The rows drawn, whatever control each carries. */
-export const EveryControlAtTheOneEdge: Story = {
+/** Whether two boxes share any area. */
+const isOverlapping = (a: DOMRect, b: DOMRect): boolean =>
+  a.left < b.right - 0.5 &&
+  b.left < a.right - 0.5 &&
+  a.top < b.bottom - 0.5 &&
+  b.top < a.bottom - 0.5
+
+/** The label and control boxes of every row. */
+const getRowBoxes = (root: HTMLElement) =>
+  [...root.querySelectorAll<HTMLElement>('.settings__row')].map((row) => ({
+    row: row.getBoundingClientRect(),
+    label: row.querySelector('.settings__label')!.getBoundingClientRect(),
+    value: row.querySelector('.settings__value')!.getBoundingClientRect(),
+    control: row.querySelector('.settings__value')!.firstElementChild!.getBoundingClientRect(),
+  }))
+
+/** Wide: controls sit right of the text, never over it, and end at one edge. */
+export const WideRowsDoNotOverlap: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const switches = canvas.getAllByRole('switch')
-    const list = canvas.getByRole('button')
-
-    // Each control is announced by the name on its own row.
-    await expect(switches[0]).toHaveAccessibleName('Nest headings under notes')
-    await expect(list).toHaveAccessibleName('Put a transcript right')
-
-    const switchRect = switches[0]!.getBoundingClientRect()
-    const listRect = list.getBoundingClientRect()
-    await expect(Math.round(listRect.right)).toBe(Math.round(switchRect.right))
-    await expect(listRect.width).toBeGreaterThan(switchRect.width)
-
-    // A name too long for its half of the row leaves the control where it was.
-    const last = switches[1]!.getBoundingClientRect()
-    await expect(Math.round(last.right)).toBe(Math.round(switchRect.right))
+    const boxes = getRowBoxes(canvasElement)
+    await expect(boxes).toHaveLength(7)
+    const edge = Math.round(boxes[0]!.control.right)
+    for (const one of boxes) {
+      await expect(isOverlapping(one.label, one.control)).toBe(false)
+      await expect(one.control.left).toBeGreaterThanOrEqual(one.label.right)
+      await expect(Math.round(one.control.right)).toBe(edge)
+      await expect(one.control.right).toBeLessThanOrEqual(one.row.right + 0.5)
+    }
   },
 }
 
-/** What a row is called, and under it what it means, read as two things. */
-export const TheNameStandsOutFromWhatItMeans: Story = {
+/** Wide: text, select and path controls share one width. */
+export const WideTextControlsShareOneWidth: Story = {
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const name = canvas.getByText('Nest headings under notes')
-    const detail = canvas.getByText('The headings of a note, under the box that draws it')
-
-    await expect(getComputedStyle(name).fontWeight).toBe('500')
-    await expect(getComputedStyle(name).color).not.toBe(getComputedStyle(detail).color)
-  },
-}
-
-/** A row whose control is wide, drawn at the width of a narrow window and of a wide one. */
-const wideControl = (width: string) => () => ({
-  components: { SettingRow },
-  template: `
-    <div class="numen" style="inline-size:${width};padding:1rem;background:var(--numen-surface)">
-      <SettingRow
-        v-slot="{ labelledBy }"
-        at="key"
-        name="Sample Agent: apiKey"
-        detail="Set. Stored in the system keychain and never shown again"
-      >
-        <input :aria-labelledby="labelledBy" style="inline-size:24rem;max-inline-size:100%" />
-      </SettingRow>
-    </div>
-  `,
-})
-
-/** Beside the text when there is room, and the text keeps its width. */
-export const WideControlBesideTheText: Story = {
-  render: wideControl('56rem'),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const name = canvas.getByText('Sample Agent: apiKey').getBoundingClientRect()
-    const control = canvas.getByRole('textbox').getBoundingClientRect()
-
-    await expect(control.left).toBeGreaterThanOrEqual(name.right)
-    await expect(control.width).toBeLessThanOrEqual(24 * 16 + 1)
-    await expect(name.width).toBeGreaterThanOrEqual(18 * 16 - 1)
-  },
-}
-
-/** Beside the text where there is no room for it, narrowed, and the text keeps its width. */
-export const WideControlInANarrowRow: Story = {
-  render: wideControl('26rem'),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const row = canvasElement.querySelector('.settings__row')!.getBoundingClientRect()
-    const name = canvas.getByText('Sample Agent: apiKey').getBoundingClientRect()
-    const control = canvas.getByRole('textbox').getBoundingClientRect()
-
-    await expect(control.left).toBeGreaterThanOrEqual(name.right)
-    await expect(control.top).toBeLessThan(name.bottom)
-    await expect(control.right).toBeLessThanOrEqual(row.right + 1)
+    const widths = [...canvasElement.querySelectorAll('.settings__choice, .settings__text-input')]
+      .slice(0, 3)
+      .map((one) => Math.round(one.getBoundingClientRect().width))
     const rem = parseFloat(getComputedStyle(document.documentElement).fontSize)
-    await expect(name.width).toBeGreaterThanOrEqual(18 * rem - 1)
+    await expect(widths).toStrictEqual([16 * rem, 16 * rem, 16 * rem])
+  },
+}
+
+/** Narrow: every control moves under its description at full width. */
+export const NarrowRowsStackTheControl: Story = {
+  render: rows('24rem'),
+  play: async ({ canvasElement }) => {
+    for (const one of getRowBoxes(canvasElement)) {
+      await expect(isOverlapping(one.label, one.control)).toBe(false)
+      await expect(one.value.top).toBeGreaterThanOrEqual(one.label.bottom)
+      await expect(one.control.right).toBeLessThanOrEqual(one.row.right + 0.5)
+    }
+    const text = canvasElement.querySelector('.settings__text-input')!.getBoundingClientRect()
+    const row = canvasElement.querySelectorAll('.settings__row')[2]!.getBoundingClientRect()
+    await expect(Math.round(text.width)).toBe(Math.round(row.width))
+  },
+}
+
+/** A description of several sentences shows the first and puts the rest in a tooltip. */
+export const LongDescriptionGoesToATooltip: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getByText('Time a review day starts.')).toBeVisible()
+    const button = canvas.getByRole('button', { name: 'About Day starts at' })
+    const tooltip = canvas.getByText('Answers before it count toward the day before.')
+    await expect(tooltip).not.toBeVisible()
+    await expect(button).toHaveAccessibleDescription(
+      'Answers before it count toward the day before.',
+    )
+    button.focus()
+    await expect(tooltip).toBeVisible()
+  },
+}
+
+/** Each control is labelled by the title of its row. */
+export const ControlsAreLabelledByTheTitle: Story = {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement)
+    await expect(canvas.getAllByRole('switch')[0]).toHaveAccessibleName('Nest headings under notes')
+    await expect(canvas.getByDisplayValue('04:00')).toHaveAccessibleName('Day starts at')
   },
 }

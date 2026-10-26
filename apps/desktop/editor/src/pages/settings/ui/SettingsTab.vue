@@ -74,7 +74,7 @@ function onBack(): void {
   --settings-apart: 1.75rem;
   --settings-near: 0.375rem;
   --settings-value: 6rem;
-  --settings-choice: 18rem;
+  --settings-choice: 16rem;
   display: flex;
   flex-direction: column;
   block-size: 100%;
@@ -92,6 +92,7 @@ function onBack(): void {
 }
 
 .settings__main {
+  container-type: inline-size;
   inline-size: 100%;
   max-inline-size: var(--settings-measure);
   margin-inline: auto;

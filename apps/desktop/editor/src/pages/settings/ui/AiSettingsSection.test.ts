@@ -92,7 +92,7 @@ describe('the default agent', () => {
   it('offers the agents the plugins list, returned with the one that answers while none is named', () => {
     const { wrapper } = createSection()
     expect(getChoices(wrapper, 0).map((one) => one.text)).toStrictEqual([
-      'Agent of the panel (Agent A)',
+      'Panel agent (Agent A)',
       'Agent A',
       'Agent B',
     ])
@@ -128,7 +128,7 @@ describe('the consent', () => {
   it('asks the person about a plugin that requested, and writes the answer', async () => {
     const { wrapper, recordedWrites } = createSection()
     const activePrompt = wrapper.find('[role="alert"]')
-    expect(activePrompt.text()).toContain('Asking Plugin asks to use a model.')
+    expect(activePrompt.text()).toContain('Asking Plugin requests model use.')
 
     await pick(activePrompt.findAll('button'), 0).trigger('click')
     await pick(activePrompt.findAll('button'), 1).trigger('click')

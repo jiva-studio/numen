@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import PluginRow from './PluginRow.vue'
 import { createPluginInfo } from '@/testing/installation'
-import { WORDS as words } from '../../words'
 
 describe('PluginRow', () => {
   it('renders plugin name, version, and description', () => {
@@ -53,15 +52,19 @@ describe('PluginRow', () => {
 
   it('renders failure badge when plugin failure is present', () => {
     const plugin = createPluginInfo('test.engine', 'Speech Engine', {
-      failure: { reason: 'Process crashed with status 1', failedAt: 1_700_000_000_000 },
+      failure: {
+        reason: 'Failed to start',
+        detail: 'process exited with status 1',
+        failedAt: 1_700_000_000_000,
+      },
     })
     const wrapper = mount(PluginRow, {
       props: { plugin, isEnabled: false },
     })
 
-    const badge = wrapper.find('.plugin-row__badge--failure')
+    const badge = wrapper.find('.plugin-row__badge--stopped')
     expect(badge.exists()).toBe(true)
-    expect(badge.text()).toBe(words.pluginsStopped)
+    expect(badge.text()).toBe('Stopped')
   })
 
   it('applies disabled class and has no disabled badge when plugin is disabled', () => {

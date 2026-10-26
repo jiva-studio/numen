@@ -1,132 +1,133 @@
-/** What the settings tab says: the groups it draws, and what each setting is. */
+/** UI copy of the settings tab: group headings, setting titles and descriptions. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
   settings: 'Settings',
-  /**
-   * Where the settings stand, said once at the head of the page. The file
-   * itself is named where the vault has said where it is.
-   */
-  file: 'One file, numen.json, in this machine’s configuration folder.',
-  opens: 'Open the file',
-  /** The groups, in the order they are drawn. */
-  window: 'The window',
-  naming: 'What a note is called',
+  /** Shown in place of the settings file path until the path is known. */
+  file: 'numen.json in the configuration folder',
+  opens: 'Open file',
+  /** Group headings, in display order. */
+  window: 'Window',
+  naming: 'Note names',
   ocr: 'OCR',
   performance: 'Performance',
-  agent: 'The agent',
+  agent: 'Agent',
   ai: 'AI',
-  /** The window's own settings. */
+  /** Window settings. */
   theme: 'Theme',
-  themeDetail: 'The stylesheet the window wears.',
-  shipped: 'Ships with numen',
-  owned: 'Yours',
+  themeDetail: 'Window stylesheet.',
+  shipped: 'Built-in',
+  owned: 'Custom',
   mode: 'Light or dark',
-  modeDetail: 'Which half of a colour pair every token is read as.',
-  pinned: 'The theme worn declares light and dark itself.',
+  modeDetail: 'Colour scheme of the theme.',
+  pinned: 'Set by the theme.',
   system: 'System',
   light: 'Light',
   dark: 'Dark',
   interfaceScale: 'Interface size',
-  interfaceScaleDetail:
-    'How large the chrome, the controls and the type in them are drawn. 1 is as designed.',
+  interfaceScaleDetail: 'Scale of controls and interface text. 1 is the default.',
   textScale: 'Reading size',
-  textScaleDetail: 'How large the text a person reads is set. 1 is as designed.',
+  textScaleDetail: 'Scale of note and book text. 1 is the default.',
   nesting: 'Nest headings under notes',
-  nestingDetail: 'Whether a node nests the headings of its note under its box.',
-  headings: 'How many headings',
-  headingsDetail: 'How many of them stand under a node at once.',
+  nestingDetail: 'Show the headings of a note under its node.',
+  headings: 'Headings per note',
+  headingsDetail: 'Maximum number of headings shown under a node.',
   syncing: 'Sync title and filename',
-  syncingDetail: 'Whether renaming either of the two brings the other into line.',
+  syncingDetail: 'Renaming one also renames the other.',
   /** Workload and performance calibration. */
   performanceProfile: 'Performance profile',
-  performanceProfileDetail:
-    'Calibrates compute throughput and hardware saturation across local AI pipelines.',
+  performanceProfileDetail: 'CPU and memory use of local AI work.',
   eco: 'Eco',
-  ecoDetail: 'Minimal power, quiet fans (1 worker thread).',
+  ecoDetail: 'Minimal power, 1 worker thread.',
   balanced: 'Balanced',
   balancedDetail: 'Standard workload, 50% CPU capacity.',
   maximum: 'Maximum',
-  maximumDetail: 'Full hardware saturation across all CPU cores and memory.',
+  maximumDetail: 'All CPU cores and memory.',
   custom: 'Custom',
   customDetail: 'Manual parameter tuning.',
   embeddingBatchSize: 'Embedding batch size',
-  embeddingBatchSizeDetail: 'Number of text chunks processed in a single forward pass.',
+  embeddingBatchSizeDetail: 'Text chunks processed in one forward pass.',
   ocrThreads: 'OCR parallel threads',
-  ocrThreadsDetail: 'Number of parallel CPU worker threads for page rendering.',
+  ocrThreadsDetail: 'Parallel CPU threads for page rendering.',
   ocrSessions: 'OCR recognition sessions',
-  ocrSessionsDetail: 'Number of parallel ONNX text recognition sessions.',
+  ocrSessionsDetail: 'Parallel ONNX text recognition sessions.',
   llmConcurrency: 'LLM concurrency',
-  llmConcurrencyDetail: 'Maximum number of concurrent in-flight requests to the proofreader.',
+  llmConcurrencyDetail: 'Maximum concurrent requests to the proofreader.',
   /** The agent. */
-  agentUse: 'Which agent answers',
-  agentUseDetail: 'The program the panel asks. Nothing answers where none is named.',
-  agentModel: 'The agent’s model',
-  agentModelDetail: 'Which of that program’s models answers.',
-  agentSteps: 'Steps in a turn',
-  agentStepsDetail: 'How many times it may act before it has to answer.',
+  agentUse: 'Agent',
+  agentUseDetail: 'Program used by the agent panel. None disables the panel.',
+  agentModel: 'Agent model',
+  agentModelDetail: 'Model of the selected program.',
+  agentSteps: 'Steps per turn',
+  agentStepsDetail: 'Maximum tool calls before the agent answers.',
   agentTools: 'MCP server',
   agentToolsDetail:
-    'Whether this vault’s tools are served over MCP, so another program — an editor, a coding agent — can reach them.',
-  agentHooks: 'Read hooks and skills',
-  agentHooksDetail: 'Whether it reads the hooks and skills this machine is set up with.',
-  /** Which agent answers the plugins that ask a model, and with which model. */
+    'Serve the vault tools over MCP to other programs, such as editors and coding agents.',
+  agentHooks: 'Hooks and skills',
+  agentHooksDetail: 'Load the hooks and skills configured on this machine.',
+  /** Default agent and model for plugins that use a model. */
   defaultAgent: 'Default agent',
   defaultAgentDetail:
-    'The agent that answers a plugin whose own setting names none. Left to itself, the agent of the panel answers.',
+    'Used by plugins without their own agent setting. Defaults to the panel agent.',
   defaultModel: 'Default model',
-  defaultModelDetail: 'Which of that agent’s models answers.',
+  defaultModelDetail: 'Model of the selected agent.',
   pluginModel: 'Model',
   agentByDefault: (name: string) => `Default (${name})`,
-  agentFirst: (name: string) => `Agent of the panel (${name})`,
-  agentNone: 'No agent answers',
-  agentMissing: 'not installed: questions are rejected, and no other agent answers',
+  agentFirst: (name: string) => `Panel agent (${name})`,
+  agentNone: 'None',
+  agentMissing: 'Not installed. Requests fail.',
   modelByAgent: 'Agent default',
-  /** What the search line of a long list of models is announced as. */
+  /** Accessible name of the search field in a long model list. */
   searchModels: 'Search models',
-  /** Whether a plugin may ask a model at all. */
-  consentAllowed: 'May ask a model',
+  /** AI consent of a plugin. */
+  consentAllowed: 'Allow model use',
   consentDetail: {
     none: '',
-    unanswered: 'Not asked yet. Its first question fails until you choose.',
-    asked: 'Asked to use a model and failed until you choose.',
-    allowed: 'Allowed: its questions go to the agent its setting names.',
-    denied: 'Denied: its questions are answered with an error it shows.',
+    unanswered: 'Not set. Requests fail until you choose.',
+    asked: 'Requested. Requests fail until you choose.',
+    allowed: 'Allowed. Requests go to the agent in its settings.',
+    denied: 'Denied. Requests return an error.',
   },
-  asking: (name: string) => `${name} asks to use a model.`,
+  asking: (name: string) => `${name} requests model use.`,
   allow: 'Allow',
-  refuse: 'Refuse',
-  /** The plugins the host suspends after they failed to start. */
-  pluginsStopped: 'Plugins that stopped',
+  refuse: 'Deny',
+  /** Failed plugins. */
+  pluginsStopped: 'Stopped plugins',
   pluginStoppedAt: (when: string) => `Stopped ${when}`,
+  pluginDetails: 'Details',
   pluginRetry: 'Retry',
   pluginDisable: 'Disable',
   pluginEnable: 'Enable',
   pluginRetryFor: (name: string) => `Retry ${name}`,
   pluginDisableFor: (name: string) => `Disable ${name}`,
-  /** The keys of the secrets plugins declare. */
-  keys: 'Keys',
+  /** State badge of a plugin, on its row and on its page. */
+  pluginState: {
+    enabled: 'Enabled',
+    disabled: 'Disabled',
+    stopped: 'Stopped',
+  },
+  /** Accessible name of the info button next to a setting title. */
+  aboutSetting: (name: string) => `About ${name}`,
+  /** Plugin secrets. */
+  keys: 'Key',
   keyStored: 'Set',
   keyMissing: 'Not set',
-  keyDetail: 'Stored in the system keychain, never in the settings file, and never shown again.',
+  keyDetail: 'Stored in the system keychain, not in the settings file.',
   keyPlaceholder: 'Paste a key',
   keySave: 'Save',
   keyReplace: 'Replace',
   keyDelete: 'Delete',
-  /** What is said on the row an installation nobody has configured runs on. */
-  byDefault: 'the default',
-  /** What a model's files are on this machine. A model reached over the network
-   * is fetched from nowhere, and stands with neither of these said about it.
-   */
-  present: 'on this machine',
-  notFetched: 'not fetched yet',
-  /** Plugin registry and detail navigation. */
+  /** Suffix of the default model of an installation. */
+  byDefault: 'default',
+  /** Download state of a model; remote models show neither. */
+  present: 'downloaded',
+  notFetched: 'not downloaded',
+  /** Plugin list and plugin page. */
   plugins: 'Plugins',
   pluginsDetail: 'Installed engines and extensions.',
   configure: 'Configure',
   backToPlugins: 'All plugins',
   pluginEnabled: 'Enabled',
   pluginDisabled: 'Disabled',
-  pluginNoSettings: 'This plugin has no additional settings.',
   noPlugins: 'No plugins installed.',
   categoryAll: 'All',
   categoryAgents: 'Agents',
@@ -136,7 +137,7 @@ export const WORDS = {
   categoryTools: 'Tools',
   categoryViews: 'Views',
   systemSettings: 'System',
-  systemSettingsDetail: 'Window appearance, theme, scale, and filename syncing.',
+  systemSettingsDetail: 'Theme, scale and filename sync.',
   searchPlugins: 'Search plugins…',
   noPluginsFound: 'No plugins found.',
 }

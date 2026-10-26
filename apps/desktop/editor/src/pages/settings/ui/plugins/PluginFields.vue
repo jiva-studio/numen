@@ -201,7 +201,7 @@ function getStringSetting(key: string, fallback: unknown): string {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 
 .settings__slider-container .settings__slider {
@@ -218,12 +218,12 @@ function getStringSetting(key: string, fallback: unknown): string {
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 
 .settings__text-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
   padding: 0.25rem 0.5rem;
   background-color: var(--numen-surface, transparent);
   border: var(--numen-stroke, 1px) solid var(--numen-rule);

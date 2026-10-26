@@ -134,7 +134,7 @@ export const TheDefaultAgentAndItsModel: Story = {
     const agent = canvas.getByRole('button', { name: 'Default agent' })
     const model = canvas.getByRole('button', { name: 'Default model' })
 
-    await expect(agent).toHaveTextContent('Agent of the panel (Sample Agent A)')
+    await expect(agent).toHaveTextContent('Panel agent (Sample Agent A)')
     const agentRect = agent.getBoundingClientRect()
     const modelRect = model.getBoundingClientRect()
     await expect(Math.round(modelRect.right)).toBe(Math.round(agentRect.right))
@@ -151,7 +151,7 @@ export const APluginAskingIsPutToThePerson: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const activePrompt = canvas.getByRole('alert')
-    await expect(activePrompt).toHaveTextContent('Sample Asking Plugin asks to use a model.')
+    await expect(activePrompt).toHaveTextContent('Sample Asking Plugin requests model use.')
 
     const frame = canvasElement.querySelector('.numen')
     if (!frame) throw new Error('the page is not drawn')
@@ -160,7 +160,7 @@ export const APluginAskingIsPutToThePerson: Story = {
       .getByRole('button', { name: 'Allow' })
       .getBoundingClientRect()
     const refuse = within(activePrompt)
-      .getByRole('button', { name: 'Refuse' })
+      .getByRole('button', { name: 'Deny' })
       .getBoundingClientRect()
     await expect(allow.right).toBeLessThanOrEqual(page.right)
     await expect(refuse.right).toBeLessThanOrEqual(page.right)

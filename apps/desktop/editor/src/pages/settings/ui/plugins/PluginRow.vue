@@ -6,6 +6,7 @@
 import { computed, ref } from 'vue'
 import { Menu, type MenuItem } from '@numen/ui'
 import type { PluginInfo } from '@/entities/settings'
+import { getPluginState, type PluginState } from '../../lib/failures'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -30,7 +31,7 @@ const categoryPrefixText = computed(() =>
 const rowTitle = computed(
   () => `${categoryPrefixText.value}${props.plugin.name}${versionSuffix.value}`,
 )
-const hasFailed = computed(() => props.plugin.failure !== undefined)
+const pluginState = computed<PluginState>(() => getPluginState(props.plugin, props.isEnabled))
 
 const menuItems = computed<readonly MenuItem[]>(() => [
   {
@@ -100,8 +101,12 @@ function onChooseMenuItem(id: string): void {
     </div>
 
     <div class="plugin-row__trail">
-      <span v-if="hasFailed" class="plugin-row__badge plugin-row__badge--failure">
-        {{ words.pluginsStopped }}
+      <span
+        v-if="pluginState === 'stopped'"
+        class="plugin-row__badge"
+        :class="`plugin-row__badge--${pluginState}`"
+      >
+        {{ words.pluginState[pluginState] }}
       </span>
       <span class="plugin-row__chevron" aria-hidden="true">&rsaquo;</span>
     </div>
@@ -224,7 +229,7 @@ function onChooseMenuItem(id: string): void {
   border-radius: var(--numen-radius-small, 3px);
 }
 
-.plugin-row__badge--failure {
+.plugin-row__badge--stopped {
   color: var(--numen-danger, #d14);
   background-color: var(--numen-danger-soft, rgba(221, 17, 68, 0.1));
 }

@@ -34,11 +34,9 @@ function onOpenFile(): void {
 
 <template>
   <div class="system-detail">
-    <div class="system-detail__navigation">
-      <Button variant="outline" size="small" class="system-detail__back" @click="onBack">
-        &larr; {{ words.backToPlugins }}
-      </Button>
-    </div>
+    <Button variant="ghost" size="small" class="system-detail__back" @click="onBack">
+      &larr; {{ words.backToPlugins }}
+    </Button>
 
     <div class="system-detail__where">
       <p class="system-detail__file">{{ installation.file.value || words.file }}</p>
@@ -60,8 +58,11 @@ function onOpenFile(): void {
   margin-inline: auto;
 }
 
-.system-detail__navigation {
-  margin-block-end: 1rem;
+.system-detail__back {
+  align-self: flex-start;
+  margin-block-end: 0.75rem;
+  margin-inline-start: -0.5rem;
+  color: var(--numen-hushed);
 }
 
 .system-detail__where {

@@ -106,7 +106,8 @@ describe('PluginDetail', () => {
   it('renders failure card, calls retryPlugin on retry, and writes disabled on disable', async () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine', {
       failure: {
-        reason: 'Connection timed out',
+        reason: 'Timed out while starting',
+        detail: 'handshake timeout after 10s',
         failedAt: 1_700_000_000_000,
       },
     })
@@ -114,7 +115,9 @@ describe('PluginDetail', () => {
 
     const stoppedCard = wrapper.find('.plugin-detail__stopped')
     expect(stoppedCard.exists()).toBe(true)
-    expect(stoppedCard.text()).toContain('Connection timed out')
+    expect(stoppedCard.text()).toContain('Timed out while starting')
+    expect(stoppedCard.find('details summary').text()).toBe('Details')
+    expect(stoppedCard.find('details code').text()).toBe('handshake timeout after 10s')
 
     const buttons = stoppedCard.findAll('button')
     const retryButton = buttons.find((btn) => btn.text() === words.pluginRetry)
@@ -289,5 +292,41 @@ describe('PluginDetail', () => {
     expect(wrapper.find('.plugin-detail__title').text()).toContain('Empty Plugin')
     expect(wrapper.find('.plugin-detail__master-switch').exists()).toBe(true)
     expect(wrapper.find('.plugin-detail__empty').exists()).toBe(false)
+  })
+
+  it('puts the back button first, above the title', () => {
+    const { wrapper } = createDetail(createPluginInfo('test.plugin', 'Super Engine'))
+    const root = wrapper.find('.plugin-detail').element
+    expect(root.firstElementChild?.classList.contains('plugin-detail__back')).toBe(true)
+  })
+
+  it('shows the plugin state as a badge', () => {
+    const failure = { reason: 'Failed to start', detail: 'exec format error', failedAt: 0 }
+    expect(
+      createDetail(createPluginInfo('a', 'A')).wrapper.find('.plugin-detail__state').text(),
+    ).toBe('Enabled')
+    expect(
+      createDetail(createPluginInfo('a', 'A'), { plugins: { a: { enabled: false } } })
+        .wrapper.find('.plugin-detail__state')
+        .text(),
+    ).toBe('Disabled')
+    expect(
+      createDetail(createPluginInfo('a', 'A', { failure }))
+        .wrapper.find('.plugin-detail__state')
+        .text(),
+    ).toBe('Stopped')
+  })
+
+  it('draws no divider and no filler text under a plugin without settings', () => {
+    const { wrapper } = createDetail(createPluginInfo('a', 'A', { description: 'Plays audio' }))
+    expect(wrapper.find('.plugin-detail__header--ruled').exists()).toBe(false)
+    expect(wrapper.find('.plugin-detail__header').element.nextElementSibling).toBeNull()
+  })
+
+  it('draws the divider when something follows the header', () => {
+    const failure = { reason: 'Failed to start', detail: '', failedAt: 0 }
+    const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
+    expect(wrapper.find('.plugin-detail__header--ruled').exists()).toBe(true)
+    expect(wrapper.find('.plugin-detail__stopped details').exists()).toBe(false)
   })
 })

@@ -87,7 +87,7 @@ function onDelete() {
 
 .settings__secret-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
   flex: 1 1 auto;
   min-inline-size: 0;
   max-inline-size: 24rem;

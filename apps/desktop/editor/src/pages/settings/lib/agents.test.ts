@@ -17,7 +17,7 @@ import {
 const words = {
   agentByDefault: (name: string) => `Default (${name})`,
   agentFirst: (name: string) => `Agent of the panel (${name})`,
-  agentNone: 'No agent answers',
+  agentNone: 'None',
   agentMissing: 'not installed',
   modelByAgent: 'Agent default',
 }
@@ -135,9 +135,7 @@ describe('the agents the default can name', () => {
   })
 
   it('say so where no agent answers', () => {
-    expect(createDefaultAgentChoices([], '', words)).toStrictEqual([
-      { id: '', text: 'No agent answers' },
-    ])
+    expect(createDefaultAgentChoices([], '', words)).toStrictEqual([{ id: '', text: 'None' }])
   })
 })
 

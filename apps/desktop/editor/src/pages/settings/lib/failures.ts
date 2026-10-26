@@ -1,13 +1,22 @@
 /**
- * The plugins the host suspends, and the words that say when.
+ * Plugin state for the settings pages, and the failure time format.
  */
 import type { PluginInfo } from '@/entities/settings'
+
+/** What a plugin's state badge shows. */
+export type PluginState = 'enabled' | 'disabled' | 'stopped'
 
 /** The plugins the host suspends, in the order they are listed. */
 export const getFailedPlugins = (plugins: readonly PluginInfo[]): readonly PluginInfo[] =>
   plugins.filter((one) => one.failure !== undefined)
 
-/** The time a plugin was given up, as a person reads it. */
+/** The state of a plugin: a failure outranks the enabled setting. */
+export const getPluginState = (plugin: PluginInfo, isEnabled: boolean): PluginState => {
+  if (plugin.failure !== undefined) return 'stopped'
+  return isEnabled ? 'enabled' : 'disabled'
+}
+
+/** The time a plugin was given up, in the locale's medium date and short time. */
 export const formatFailedAt = (failedAt: number, locale?: string): string =>
   new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
     new Date(failedAt),

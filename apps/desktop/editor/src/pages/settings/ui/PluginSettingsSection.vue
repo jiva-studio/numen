@@ -233,16 +233,16 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
 }
 
 .settings__slider {
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 
 .settings__text-input {
   box-sizing: border-box;
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
   padding: 0.25rem 0.5rem;
   background-color: var(--numen-surface, transparent);
   border: var(--numen-stroke, 1px) solid var(--numen-rule);

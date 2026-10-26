@@ -168,6 +168,6 @@ function onAgentHooksChange(value: boolean) {
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 </style>

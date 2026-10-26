@@ -237,7 +237,7 @@ describe('a setting of type agent', () => {
     const choices = pick(wrapper.findAllComponents({ name: 'Select' }), 0).props('choices')
     expect(choices.at(-1)).toMatchObject({
       id: 'test.gone',
-      detail: expect.stringContaining('not installed'),
+      detail: expect.stringContaining('Not installed'),
     })
   })
 })

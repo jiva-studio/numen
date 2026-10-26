@@ -7,7 +7,11 @@ import PluginFailureSection from './PluginFailureSection.vue'
 import { createInstallation, createPluginInfo } from '@/testing/installation'
 
 const STOPPED = createPluginInfo('sample.stopped', 'Sample Stopped', {
-  failure: { reason: 'The plugin did not finish starting in time.', failedAt: 1_700_000_000_000 },
+  failure: {
+    reason: 'Timed out while starting',
+    detail: 'handshake timeout',
+    failedAt: 1_700_000_000_000,
+  },
 })
 
 const createSection = (plugins: readonly PluginInfo[]) => {
@@ -35,7 +39,7 @@ describe('PluginFailureSection', () => {
 
     const group = wrapper.get('[role="group"]')
     expect(group.attributes('aria-label')).toBe('Sample Stopped')
-    expect(group.text()).toContain('The plugin did not finish starting in time.')
+    expect(group.text()).toContain('Timed out while starting')
     expect(group.text()).toContain('Stopped')
     expect(wrapper.findAll('[role="group"]')).toHaveLength(1)
     expect(wrapper.get('button[aria-label="Retry Sample Stopped"]').text()).toBe('Retry')

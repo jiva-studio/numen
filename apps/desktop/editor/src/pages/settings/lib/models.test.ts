@@ -10,10 +10,10 @@ import type { Model } from '@/entities/settings'
 import { createChoices, createModelChoices, getLastPathSegment } from './models'
 
 const WORDS = {
-  byDefault: 'the default',
+  byDefault: 'default',
   owned: 'Yours',
-  present: 'on this machine',
-  notFetched: 'not fetched yet',
+  present: 'downloaded',
+  notFetched: 'not downloaded',
 }
 
 const model = (one: Partial<Model> & { name: string }): Model => ({
@@ -60,7 +60,7 @@ describe('the choices a setting offers', () => {
 
   it('name a preset by its own words and address it underneath', () => {
     const [one] = createChoices([PRESET], PRESET.name, WORDS)
-    expect(one?.text).toBe('Tiny, small — the default')
+    expect(one?.text).toBe('Tiny, small — default')
     expect(one?.detail).toBe(PRESET.name)
   })
 
@@ -114,8 +114,8 @@ describe('the choices a setting offers', () => {
 
     const proposed = createChoices([here, coming, reached], 'opus', WORDS)
     expect(proposed.map((one) => one.detail)).toStrictEqual([
-      'on this machine · somewhere/tiny',
-      'not fetched yet · somewhere/large',
+      'downloaded · somewhere/tiny',
+      'not downloaded · somewhere/large',
       undefined,
     ])
   })

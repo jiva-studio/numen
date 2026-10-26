@@ -86,7 +86,13 @@ export const settingsCore: SettingsPort = {
         storedSecrets: p.storedSecrets,
         consent: consented[p.completionConsent],
         ...(p.failure
-          ? { failure: { reason: p.failure.reason, failedAt: Number(p.failure.failedAtUnixMs) } }
+          ? {
+              failure: {
+                reason: p.failure.reason,
+                detail: p.failure.detail,
+                failedAt: Number(p.failure.failedAtUnixMs),
+              },
+            }
           : {}),
         settings: (p.settings ?? []).map((s) => {
           let defaultValue: unknown = undefined

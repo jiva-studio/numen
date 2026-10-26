@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { createPluginInfo } from '@/testing/installation'
-import { formatFailedAt, getFailedPlugins } from './failures'
+import { formatFailedAt, getFailedPlugins, getPluginState } from './failures'
 
 describe('the plugins suspended', () => {
   it('are those with a failure, in the order listed', () => {
-    const failure = { reason: 'The plugin did not finish starting in time.', failedAt: 0 }
+    const failure = { reason: 'Timed out while starting', detail: 'handshake timeout', failedAt: 0 }
     const items = [
       createPluginInfo('sample.b', 'B', { failure }),
       createPluginInfo('sample.ok', 'Ok'),
@@ -23,5 +23,19 @@ describe('the time a plugin was given up', () => {
     const failure = formatFailedAt(Date.UTC(2026, 9, 19, 12, 30), 'en-US')
     expect(failure).toMatch(/2026/)
     expect(failure).toMatch(/\d{1,2}:\d{2}/)
+  })
+})
+
+describe('getPluginState', () => {
+  const failure = { reason: 'Failed to start', detail: 'exec format error', failedAt: 0 }
+
+  it('is stopped for a failed plugin, whatever its setting', () => {
+    expect(getPluginState(createPluginInfo('sample.a', 'A', { failure }), true)).toBe('stopped')
+    expect(getPluginState(createPluginInfo('sample.a', 'A', { failure }), false)).toBe('stopped')
+  })
+
+  it('follows the enabled setting for a plugin that has not failed', () => {
+    expect(getPluginState(createPluginInfo('sample.a', 'A'), true)).toBe('enabled')
+    expect(getPluginState(createPluginInfo('sample.a', 'A'), false)).toBe('disabled')
   })
 })

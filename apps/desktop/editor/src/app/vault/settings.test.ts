@@ -284,7 +284,8 @@ describe('a plugin the host suspends', () => {
               completionConsent: CompletionConsent.UNSPECIFIED,
               settings: [],
               failure: {
-                reason: 'The plugin did not finish starting in time.',
+                reason: 'Timed out while starting',
+                detail: 'handshake timeout',
                 failedAtUnixMs: 1_700_000_000_123n,
               },
             },
@@ -296,20 +297,21 @@ describe('a plugin the host suspends', () => {
     const got = await core.getSettings()
 
     expect(got.plugins?.[0]?.failure).toStrictEqual({
-      reason: 'The plugin did not finish starting in time.',
+      reason: 'Timed out while starting',
+      detail: 'handshake timeout',
       failedAt: 1_700_000_000_123,
     })
   })
 
   it('is started again by its id, and the answer is why it failed again', async () => {
     request.retryPlugin.mockResolvedValue({
-      failure: 'The plugin did not finish starting in time.',
+      failure: 'Timed out while starting',
     })
 
     const failure = await core.retryPlugin('sample.plugin')
 
     expect(request.retryPlugin).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
-    expect(failure).toBe('The plugin did not finish starting in time.')
+    expect(failure).toBe('Timed out while starting')
   })
 
   it('is answered with nothing where it started', async () => {

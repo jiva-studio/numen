@@ -65,8 +65,10 @@ export type Consent = 'none' | 'unanswered' | 'asked' | 'allowed' | 'denied'
 
 /** Why the host suspends a plugin after it failed to start, and when it gave the plugin up. */
 export interface PluginFailure {
-  /** The reason, in words a person reads. */
+  /** A short UI label, such as "Failed to start". */
   readonly reason: string
+  /** The underlying error, shown on request. Empty when there is none. */
+  readonly detail: string
   /** When the host gave the plugin up, in milliseconds since the Unix epoch. */
   readonly failedAt: number
 }

@@ -150,6 +150,6 @@ function onTextScaleChange(size: number | null) {
 }
 
 .settings__choice {
-  inline-size: var(--settings-choice, 18rem);
+  inline-size: var(--settings-choice, 16rem);
 }
 </style>

@@ -15,7 +15,8 @@ import { createInstallation, createPluginInfo } from '@/testing/installation'
 const PLUGINS: readonly PluginInfo[] = [
   createPluginInfo('sample.stopped', 'Sample Stopped', {
     failure: {
-      reason: 'The plugin could not be started: exec format error',
+      reason: 'Failed to start',
+      detail: 'launch plugin: exec format error',
       failedAt: Date.UTC(2026, 9, 19, 12, 30),
     },
   }),
@@ -53,7 +54,7 @@ export const APluginHeldOff: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)
     const group = canvas.getByRole('group', { name: 'Sample Stopped' })
-    await expect(group).toHaveTextContent('The plugin could not be started: exec format error')
+    await expect(group).toHaveTextContent('Failed to start')
     await expect(canvas.queryByRole('group', { name: 'Sample Running' })).toBeNull()
   },
 }
