@@ -21,7 +21,7 @@ export const formatBuyFact = (fact: BuyFact): string => {
     case 'cardsASession':
       return `${many(fact.cards, 'card')} a session`
     case 'cannotGetThere':
-      return `${count(fact.short)} of ${count(fact.cards)} cannot get there`
+      return `${count(fact.short)} of ${count(fact.cards)} not reachable`
     case 'overdueGone':
       return `overdue gone in ${many(fact.days, 'day')}`
     case 'overdueStays':
@@ -50,7 +50,7 @@ export const formatLearningFact = (fact: LearningFact): { figure: string; name: 
     case 'notYet':
       return { figure: 'not yet', name: 'in the days ahead' }
     case 'allToday':
-      return { figure: 'today', name: 'all of it learned' }
+      return { figure: 'today', name: 'all learned' }
     case 'daysToLearn':
       return {
         figure: count(fact.days),

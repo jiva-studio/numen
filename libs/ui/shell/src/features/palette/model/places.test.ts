@@ -7,7 +7,7 @@ import { nextTick, ref } from 'vue'
 import { usePalettePlaces } from './places'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '../lib/item'
 
-const OPEN: PaletteAction = { id: 'open', text: 'Open the note' }
+const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
 
 const item = (id: string, isDisabled = false): PaletteItem => ({
   id,

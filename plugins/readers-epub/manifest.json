@@ -3,7 +3,7 @@
   "name": "EPUB Book Reader",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "EPUB reflowable book reader and metadata parser",
+  "description": "EPUB book reader and metadata parser",
   "capabilities": ["book"],
   "targets": ["desktop.editor"],
   "fileExtensions": [".epub"],

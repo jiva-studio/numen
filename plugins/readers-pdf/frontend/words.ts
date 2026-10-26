@@ -7,8 +7,8 @@ export const WORDS = {
   next: 'Next page',
   page: 'Page',
   pages: 'Pages',
-  zoomIn: 'Closer',
-  zoomOut: 'Further',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
   /** The document is being read, and how many pages it has is not known yet. */
   loading: 'Loading…',
 }

@@ -3,11 +3,11 @@
 export const WORDS = {
   files: 'Files',
   /** The commands the plugin declares: the tree put in front, and a note shown in it. */
-  showFiles: 'Show the files of the vault',
-  reveal: 'Show this note in the files',
+  showFiles: 'Show files',
+  reveal: 'Show in files',
   /** The tree, announced to whoever is not looking at it. */
-  tree: 'The folders and files of the vault',
-  empty: 'This vault holds no files',
+  tree: 'Vault files',
+  empty: 'No files in this vault',
   /** What the tab itself offers in the menu on a row. */
   rename: 'Rename',
   new: 'New',
@@ -18,5 +18,5 @@ export const WORDS = {
   /** How many rows are being dragged, shown at the pointer while they are. */
   dragging: (files: number) => `${files} files`,
   /** The rows that stayed where they were, because the folder holds those names. */
-  taken: 'These are filed there already:',
+  taken: 'Not moved, names already exist:',
 }

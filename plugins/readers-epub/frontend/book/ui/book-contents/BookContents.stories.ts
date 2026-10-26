@@ -165,6 +165,6 @@ export const NamesNothing: Story = {
   decorators: [panel],
   render: activeReading([]),
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('This book names nothing.')).toBeInTheDocument()
+    await expect(within(canvasElement).getByText('No table of contents.')).toBeInTheDocument()
   },
 }

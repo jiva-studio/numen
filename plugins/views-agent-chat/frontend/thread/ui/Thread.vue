@@ -76,7 +76,7 @@ defineExpose({ toFoot })
     @scroll="onScroll"
   >
     <p v-if="!placedTurns.length" class="text-hushed m-auto">
-      <slot name="silence">Nothing said yet</slot>
+      <slot name="silence">No messages yet</slot>
     </p>
 
     <ThreadTurn

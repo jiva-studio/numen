@@ -10,7 +10,7 @@ import type { Model } from '../lib/configuration'
 import { createSettingsStore, getSettingAt, type SettingsStoreDeps } from './store'
 
 const words = {
-  unturned: 'That setting could not be written:',
+  unturned: 'Setting not saved:',
   unreadSettings: 'The settings could not be read.',
 }
 
@@ -191,7 +191,7 @@ describe('a setting written', () => {
     const { kept, notify } = createStore('{}', 'the file could not be written')
     await kept.writeSetting(['agent', 'use'], 'claude')
     expect(notify).toHaveBeenLastCalledWith(
-      'That setting could not be written: numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
+      'Setting not saved: Numen is not responding; retrying',
       'error',
     )
   })

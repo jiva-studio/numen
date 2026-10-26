@@ -80,7 +80,7 @@ describe('when the material is learned', () => {
       cards: 79,
       at: [point(), point(), point({ learns: 0, learned: 79 }), point()],
     })
-    expect(getLearnedTiles(tab)[0]).toStrictEqual(['today', 'all of it learned'])
+    expect(getLearnedTiles(tab)[0]).toStrictEqual(['today', 'all learned'])
   })
 
   it('says nothing at all until the answer lands', () => {

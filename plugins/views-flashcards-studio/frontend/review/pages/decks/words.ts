@@ -13,11 +13,11 @@ import type { Preset, Settings } from './types'
  */
 export const STOPPED = {
   /** The day held none of its cards. */
-  nothing: 'nothing today',
+  nothing: 'nothing due today',
   /** The budget was spent, and elsewhere for a deck that says this. */
-  full: 'the day is full',
+  full: 'daily limit reached',
   /** Every card face here is unbegun, and the preset begins none a day. */
-  noneToBegin: 'no cards to begin',
+  noneToBegin: 'no new cards',
 } as const
 
 /**
@@ -28,7 +28,7 @@ export const STOPPED = {
 export const LEARNED = {
   share: (of: number) => `${percent(of)} learned`,
   /** The preset scheduling the deck could not be read, and the rule is its. */
-  unruled: 'no rule to count by',
+  unruled: 'no learned rule',
 } as const
 
 /**

@@ -120,7 +120,7 @@ describe('how much of a deck remains learned', () => {
   it('says there is no rule to count by where the deck has no preset', () => {
     const one = mountDecks(vault(), [preset({ decks: [] })])
 
-    expect(one.find('.decks__learned').text()).toBe('no rule to count by')
+    expect(one.find('.decks__learned').text()).toBe('no learned rule')
   })
 
   // The figure is the count's and the rule is the preset's, so a screen still
@@ -154,7 +154,7 @@ describe('a deck as a share of itself', () => {
 // Nothing here reads a preset's own day, and the fixture is a preset that
 // schedules something.
 it('draws a deck of a stopped preset with its share all the same', () => {
-  const one = mountDecks(vault(), [preset({ paused: 'no cards a day' })])
+  const one = mountDecks(vault(), [preset({ paused: 'no cards per day' })])
 
   expect(one.find('.decks__learned').text()).toBe('25% learned')
 })

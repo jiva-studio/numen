@@ -34,7 +34,7 @@ describe('a search that turned up nothing', () => {
     const proposed = appendCreateOffer(createGroups(0), { text: 'Entropy', words, target: front() })
 
     expect(proposed.at(-1)?.id).toBe(CREATE_NOTE_ID)
-    expect(proposed.at(-1)?.items[0]?.title).toBe('Create a note called “Entropy”')
+    expect(proposed.at(-1)?.items[0]?.title).toBe('Create note “Entropy”')
   })
 
   it('offers nothing while a group is still waiting on the vault', () => {

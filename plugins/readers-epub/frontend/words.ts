@@ -5,8 +5,8 @@ export const WORDS = {
   next: 'Next page',
   page: 'Page',
   pages: 'Pages',
-  zoomIn: 'Larger',
-  zoomOut: 'Smaller',
+  zoomIn: 'Zoom in',
+  zoomOut: 'Zoom out',
   /** Where in the book the page in front stands. */
   of: (page: number, pages: number) => `${page} of ${pages}`,
   /** How much of the chapter in front is still to come. */
@@ -15,7 +15,7 @@ export const WORDS = {
   loading: 'Loading…',
   contents: 'Contents',
   find: 'Find in contents',
-  nothing: 'This book names nothing.',
+  nothing: 'No table of contents.',
   /** What showing and hiding the list of what the book divides into is called. */
   showContents: 'Show contents',
   hideContents: 'Hide contents',

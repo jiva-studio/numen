@@ -238,7 +238,7 @@ describe('a document opened at a place in its text', () => {
 
     await readItem.focusSpans({ from: 40_512, to: 40_543 })
 
-    expect(readItem.error.value).toContain('numen did not answer')
+    expect(readItem.error.value).toContain('Numen is not responding')
     expect(readItem.error.value).not.toContain('the layer is being written')
     expect(readItem.picture.value).toBe('Book.pdf 0 800')
   })
@@ -267,7 +267,7 @@ describe('a document that will not open', () => {
     readItem.widen(800)
     await readItem.goToPage(1)
 
-    expect(readItem.error.value).toContain('numen did not answer')
+    expect(readItem.error.value).toContain('Numen is not responding')
     expect(readItem.error.value).not.toContain('no such document')
     expect(readItem.pages.value.length).toBe(0)
     expect(readItem.picture.value).toBe('')

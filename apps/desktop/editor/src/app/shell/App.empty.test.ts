@@ -13,7 +13,7 @@ describe('the window with no note to show', () => {
 
     const corner = cards(window)
     expect(corner[0]).toContain('the vault folder is not there')
-    expect(corner[1]).toBe('nothing was read')
+    expect(corner[1]).toBe('No notes loaded')
   })
 
   it('says nothing when the vault was read and holds none', async () => {

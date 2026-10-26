@@ -111,7 +111,7 @@ describe('the four commands over how the window is drawn', () => {
       await settle()
 
       await type('theme')
-      expect(getRemainingRows()).toStrictEqual(['Change the theme'])
+      expect(getRemainingRows()).toStrictEqual(['Change theme'])
 
       await type('light')
       expect(getRemainingRows()).toStrictEqual(['Light or dark'])
@@ -150,7 +150,7 @@ describe('the four commands over how the window is drawn', () => {
     it('draws the shelves as groups, and opens on the theme the window wears', async () => {
       await runCommand('theme')
 
-      expect(groups()).toStrictEqual(['Ships with numen', 'Your own themes'])
+      expect(groups()).toStrictEqual(['Built-in', 'Custom themes'])
       expect(document.body.querySelector('[data-here]')?.textContent).toContain('numen')
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
@@ -190,7 +190,7 @@ describe('the four commands over how the window is drawn', () => {
       await runCommand('light')
 
       expect(groups()).toStrictEqual(['Light and dark'])
-      expect(getRemainingRows()).toStrictEqual(['Follow the system', 'Light', 'Dark'])
+      expect(getRemainingRows()).toStrictEqual(['System', 'Light', 'Dark'])
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
 
@@ -307,7 +307,7 @@ describe('the four commands over how the window is drawn', () => {
     it('opens on the size the window is drawn at, in a group of its own', async () => {
       await runCommand('interface')
 
-      expect(groups()).toStrictEqual(['How large the interface is drawn'])
+      expect(groups()).toStrictEqual(['Interface size'])
       expect(getRemainingRows()).toStrictEqual(TENTHS)
       expect(getHeadStyles()).toStrictEqual([PAIR, SERVED, SIZED])
     })
@@ -413,7 +413,7 @@ describe('the four commands over how the window is drawn', () => {
     it('opens on the sizes the reading text goes between', async () => {
       await runCommand('reading')
 
-      expect(groups()).toStrictEqual(['How large the text is set'])
+      expect(groups()).toStrictEqual(['Reading size'])
       // The far end of this one falls between two steps, and is offered there.
       expect(getRemainingRows()).toStrictEqual([...TENTHS.slice(0, 10), '175%'])
     })

@@ -95,7 +95,7 @@ describe('a file of a kind made', () => {
 
     expect(await createdItem.createAndOpenFile('deck', 'zoology', 'Animals')).toBe('')
     expect(mockWriter.messagesText.join(' ')).not.toContain('the vault is not there')
-    expect(mockWriter.messagesText.join(' ')).toContain('numen did not answer')
+    expect(mockWriter.messagesText.join(' ')).toContain('Numen is not responding')
   })
 
   it('says what the vault rejected as an error', async () => {

@@ -140,6 +140,8 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
 }
 
 function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSettings> }) {
+  const getPluginName = (pluginId: string): string =>
+    settingsHolder.current?.rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId
   const log = createMessageLog()
   const writeMessage = log.getWriter('command')
   const windowTabs = useWindowTabs()
@@ -157,9 +159,17 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     notices: pluginNotices,
     reportError: (pluginId, error) =>
       log.getWriter(`plugin:${pluginId}`)(
-        `Plugin ${pluginId} failed: ${error instanceof Error ? error.message : String(error)}`,
+        words.pluginError(getPluginName(pluginId), formatErrorMessage(error)),
         'error',
       ),
+    reportLoadError: (pluginId, error) => {
+      // eslint-disable-next-line no-console -- the full error stays available in the devtools console
+      console.error(`plugin ${pluginId} failed to load`, error)
+      log.getWriter(`plugin:${pluginId}`)(
+        words.pluginStopped(getPluginName(pluginId), words.pluginLoadFailed),
+        'error',
+      )
+    },
     ...createPluginNotes(core),
   })
   return {

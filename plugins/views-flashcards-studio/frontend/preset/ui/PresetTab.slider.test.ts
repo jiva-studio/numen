@@ -334,7 +334,7 @@ describe('what a day cannot reach', () => {
     expect(getBoughtTexts(tab)).toStrictEqual([
       '14 days off',
       '40 minutes a day',
-      '38 of 79 cannot get there',
+      '38 of 79 not reachable',
     ])
   })
 
@@ -343,7 +343,7 @@ describe('what a day cannot reach', () => {
     await tab.get('[data-control="picture"][role="slider"]').trigger('keydown', { key: 'End' })
     const saidText = getBoughtTexts(tab)
     expect(saidText).toStrictEqual(['180 days off', '15 minutes a day'])
-    expect(saidText.join(' ')).not.toContain('cannot get there')
+    expect(saidText.join(' ')).not.toContain('not reachable')
     expect(saidText.join(' ')).not.toContain('0 of')
   })
 
@@ -353,7 +353,7 @@ describe('what a day cannot reach', () => {
     await tab
       .get('[data-control="picture"][role="slider"]')
       .trigger('keydown', { key: 'ArrowRight' })
-    expect(getBoughtTexts(tab)).toContain('11 of 79 cannot get there')
+    expect(getBoughtTexts(tab)).toContain('11 of 79 not reachable')
   })
 
   // It is the goal of a date that names a day, so it is that goal alone that
@@ -363,7 +363,7 @@ describe('what a day cannot reach', () => {
       cards: 79,
       at: [point(), point(), point({ reviews: 80, short: 38 }), point()],
     })
-    expect(getBoughtTexts(tab).join(' ')).not.toContain('cannot get there')
+    expect(getBoughtTexts(tab).join(' ')).not.toContain('not reachable')
   })
 })
 
@@ -403,7 +403,7 @@ describe('what the control remains at', () => {
   it('speaks the share as a percentage, and of remembering', () => {
     expect(words.value('retention', 0.9, '')).toBe('90% remembered')
     expect(words.formatGoalValue('retention', 0.9)).toBe('90%')
-    expect(words.fieldDetail('retention')).toContain('remember')
+    expect(words.fieldDetail('retention')).toContain('recall')
     for (const response of [
       words.value('retention', 0.9, ''),
       words
@@ -523,10 +523,10 @@ describe('what the control remains at', () => {
       expect(tab.get('[data-control="name"][data-axis="x"]').text()).toBe(words.axisX(goal))
     }
     expect(words.axisY('minutes')).toBe('Cards in a session')
-    expect(words.axisX('minutes')).toBe('Minutes a day')
-    expect(words.axisY('retention')).toBe('Minutes a day')
+    expect(words.axisX('minutes')).toBe('Minutes per day')
+    expect(words.axisY('retention')).toBe('Minutes per day')
     expect(words.axisX('retention')).toBe('Retention')
-    expect(words.axisY('date')).toBe('Minutes a day')
+    expect(words.axisY('date')).toBe('Minutes per day')
     expect(words.axisX('date')).toBe('Days from today')
   })
 

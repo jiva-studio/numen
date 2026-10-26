@@ -40,7 +40,7 @@ describe('an error code', () => {
 describe('a fault', () => {
   it('says what the person can do about a connection that has gone', () => {
     expect(formatErrorMessage(new ConnectError('read /notes: EIO', Code.Unknown))).toBe(
-      'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
+      'Numen is not responding; retrying',
     )
   })
 
@@ -58,7 +58,7 @@ describe('a fault', () => {
 
   it('falls back on the code where the application sent no sentence', () => {
     expect(formatErrorMessage(new ConnectError('', Code.Unavailable))).toBe(
-      'numen is not answering just now — try again in a moment',
+      'Numen is busy; try again',
     )
   })
 
@@ -66,7 +66,7 @@ describe('a fault', () => {
     const message = formatErrorMessage(
       new ConnectError('stat notes/Leaf mould.md: no such file', Code.NotFound),
     )
-    expect(message).toBe('what was asked for is not there')
+    expect(message).toBe('not found')
   })
 
   it('says nothing at all about a call the window itself stopped', () => {

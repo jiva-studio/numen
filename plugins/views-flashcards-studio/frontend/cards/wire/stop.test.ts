@@ -21,9 +21,9 @@ describe('a stop reason', () => {
 
   it('names the day a preset aimed at', () => {
     expect(formatStopReasonMessage(StopReason.PAST_DAY, { day: '3 March' })).toBe(
-      '3 March has passed',
+      'target date 3 March passed',
     )
-    expect(formatStopReasonMessage(StopReason.PAST_DAY)).toBe('the day has passed')
+    expect(formatStopReasonMessage(StopReason.PAST_DAY)).toBe('target date passed')
   })
 
   it('names the weekday that carries no load', () => {

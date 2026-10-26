@@ -8,7 +8,7 @@ import { nextTick, ref } from 'vue'
 import { useActionPanel } from './panel'
 import type { PaletteAction } from '../lib/item'
 
-const OPEN: PaletteAction = { id: 'open', text: 'Open the note' }
+const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
 
 const setUp = (lit: string | undefined) => {
   const actions = ref<readonly PaletteAction[]>([OPEN])

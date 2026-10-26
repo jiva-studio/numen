@@ -10,7 +10,7 @@ import { usePaletteKeys, type PaletteFieldHandle, type PaletteKeysState } from '
 import { usePalettePlaces, type PalettePlacesState } from './places'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '../lib/item'
 
-const OPEN: PaletteAction = { id: 'open', text: 'Open the note' }
+const OPEN: PaletteAction = { id: 'open', text: 'Open note' }
 
 const item = (id: string): PaletteItem => ({ id, title: id, actions: [OPEN] })
 

@@ -54,7 +54,7 @@ describe('the preset one deck is scheduled by', () => {
       'decks/Words.md',
     )
 
-    expect(one).toMatchObject({ ok: false, error: 'that file is not a note' })
+    expect(one).toMatchObject({ ok: false, error: 'not a note' })
   })
 
   it('fails as unread where no preset and no error came', async () => {

@@ -135,7 +135,7 @@ describe('making a note in a relation of another', () => {
     const making = createNoteWriter(core, write)
 
     expect(await making.createInRelation('Ontology.md', 'child')).toBeNull()
-    expect(last()).toContain('numen did not answer')
+    expect(last()).toContain('Numen is not responding')
     expect(last()).not.toContain('out of reach')
     expect(messages.at(-1)?.kind).toBe('error')
   })
@@ -281,7 +281,7 @@ describe('removing a relationship from a note', () => {
     })
 
     expect(await createNoteWriter(core, write).removeLink('Ontology.md', 'Entropy.md')).toBe(false)
-    expect(messages.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.text).toContain('Numen is not responding')
     expect(messages.at(-1)?.kind).toBe('error')
   })
 })
@@ -298,7 +298,7 @@ describe('joining through a core that could not be reached', () => {
     expect(await createNoteWriter(core, write).join('Ontology.md', 'Entropy.md', 'child')).toBe(
       false,
     )
-    expect(messages.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.text).toContain('Numen is not responding')
     expect(messages.at(-1)?.kind).toBe('error')
   })
 })
@@ -361,6 +361,6 @@ describe('replacing the links between two notes', () => {
     expect(
       await createNoteWriter(core, write).replaceLinks('Ontology.md', 'Entropy.md', links),
     ).toBe(false)
-    expect(messages.at(-1)?.text).toContain('numen did not answer')
+    expect(messages.at(-1)?.text).toContain('Numen is not responding')
   })
 })

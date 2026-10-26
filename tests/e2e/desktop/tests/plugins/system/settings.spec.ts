@@ -118,7 +118,7 @@ test.describe('Plugin Settings and Configuration', () => {
   test('searches palette and executes Files navigation command', async ({ page }) => {
     await openWorkspace(page)
 
-    await runPaletteCommand(page, 'Files', 'Show the files of the vault')
+    await runPaletteCommand(page, 'Files', 'Show files')
 
     // Verify file tree is open and assets folder is visible
     await expect(page.locator('[data-tree-row="assets"]').first()).toBeVisible({ timeout: 10_000 })

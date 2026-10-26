@@ -11,8 +11,8 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    // 2. Search and execute "First" (Go to the note the vault opens with)
-    await paletteInput.fill('Go to the note the vault opens with')
+    // 2. Search and execute "First" (Go to start note)
+    await paletteInput.fill('Go to start note')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
@@ -72,12 +72,12 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await page.getByText('Agent').first().click()
     await expect(page.getByText('Files').first()).not.toHaveAttribute('aria-selected', 'true')
 
-    // 3. Run Reveal command (Show this note in the files)
+    // 3. Run Reveal command (Show in files)
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    await paletteInput.fill('Show this note in the files')
+    await paletteInput.fill('Show in files')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 

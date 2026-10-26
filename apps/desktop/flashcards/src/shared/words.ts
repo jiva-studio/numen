@@ -3,7 +3,7 @@ export const WORDS = {
   /** What the list of vaults is called. */
   vaults: 'Vaults',
   /** Said while the installation has not yet named the vaults it holds. */
-  listing: 'Reading the vaults',
+  listing: 'Loading vaults…',
   /** Said where no plugin of the window draws a view. */
-  empty: 'No plugin of this window draws anything.',
+  empty: 'No plugin views.',
 } as const

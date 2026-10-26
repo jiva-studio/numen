@@ -70,7 +70,7 @@ Options:
                           regular-participles | test-assertions |
                           conversational | async | domestic |
                           error-storytelling | domestic-structs | domestic-verbs |
-                          masked-primitives | boolean-prefixes
+                          masked-primitives | boolean-prefixes | ui-words
   --word <name>         Filter findings by specific word (e.g. --word beside, --word refusal)
   --help, -h            Show this help message
 `)
@@ -451,6 +451,24 @@ const RE_GO_HUNT_OFFER = new RegExp(
   `\\b(${HUNT_OFFER_SYMBOLS.join('|')})\\s*:=|var\\s+(${HUNT_OFFER_SYMBOLS.join('|')})\\s+[A-Za-z*]`,
 )
 
+// 21. UI copy in words files (words.ts, *Words.ts): labels and messages are noun phrases,
+// imperative actions or "<Name> stopped: <reason>", never a narrated sentence.
+const RE_WORDS_FILE = /(?:^|[A-Za-z])[Ww]ords\.ts$/
+const UI_WORDS_RULES = [
+  { name: 'relative clause', re: /\b(?:that|which|who|whose)\b/i },
+  { name: 'narrative opener', re: /^(?:That|These|Those|Nothing|Nobody|Something|Whatever)\b/ },
+  { name: 'consequence clause', re: /,\s*so\b/i },
+  { name: 'self narration', re: /\b(?:the window|a person|the person|numen did|did not say why)\b/i },
+]
+const RE_UI_STRING = /'((?:[^'\\]|\\.)*)'|"((?:[^"\\]|\\.)*)"|`([^`]*)`/g
+
+/** The words-file rule a UI string breaks, or null. */
+function findUiWordsRule(text) {
+  const plain = text.replace(/\$\{[^}]*\}/g, 'X').trim()
+  if (!/\s/.test(plain)) return null
+  return UI_WORDS_RULES.find((rule) => rule.re.test(plain)) ?? null
+}
+
 const findings = {
   fakeTurnCasts: [],
   participleIdentifiers: [],
@@ -472,6 +490,7 @@ const findings = {
   maskedPrimitives: [],
   bareBooleans: [],
   huntAndOffering: [],
+  uiWords: [],
 }
 
 const stats = {
@@ -965,6 +984,21 @@ function scanFile(filePath) {
       }
     }
 
+    // 21. UI copy in words files
+    if (isTs && !isCommentLine && shouldCheckCategory('ui-words') && RE_WORDS_FILE.test(baseName) && !baseName.includes('.test.')) {
+      const code = line.replace(/\/\/.*$/, '')
+      if (!/^\s*import\b|\bfrom\s+['"]/.test(code)) {
+        for (const m of code.matchAll(RE_UI_STRING)) {
+          const text = m[1] ?? m[2] ?? m[3] ?? ''
+          const rule = findUiWordsRule(text)
+          if (rule) {
+            findings.uiWords.push({ file: relPath, line: lineNum, lang: 'ts', word: rule.name, text: text.trim() })
+            stats.frontendTotal++
+          }
+        }
+      }
+    }
+
     // 20. Hunting and offering interaction metaphors (hunt, offered, lit)
     if (isCode && !isCommentLine && shouldCheckCategory('hunt-offer')) {
       const m = isGo ? RE_GO_HUNT_OFFER.exec(lineWithoutStrings) : RE_TS_HUNT_OFFER.exec(lineWithoutStrings)
@@ -1082,7 +1116,8 @@ const totalIssues =
   findings.domesticVerbs.length +
   findings.maskedPrimitives.length +
   findings.bareBooleans.length +
-  findings.huntAndOffering.length
+  findings.huntAndOffering.length +
+  findings.uiWords.length
 
 const fileCounts = {}
 for (const cat of Object.keys(findings)) {
@@ -1158,6 +1193,7 @@ console.log(`17. Banned domestic verbs (sitDeck, lookAt, tellWritten)   : ${find
 console.log(`18. Masked UI interaction primitives (questions, outward)   : ${findings.maskedPrimitives.length}`)
 console.log(`19. Bare boolean properties (open, closed, disabled, stale): ${findings.bareBooleans.length}`)
 console.log(`20. Hunting and offering metaphors (hunt, offered, lit)    : ${findings.huntAndOffering.length}`)
+console.log(`21. Narrative UI copy in words files (that…, so…, That…)  : ${findings.uiWords.length}`)
 console.log('----------------------------------------------------------------------')
 console.log(`FRONTEND VIOLATIONS (TypeScript / Vue)                    : ${stats.frontendTotal}`)
 console.log(`BACKEND VIOLATIONS (Go)                                   : ${stats.backendTotal}`)

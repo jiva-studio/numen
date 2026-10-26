@@ -240,9 +240,10 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
     refresh: rest.start,
   })
   const retry = createPluginRetry(core, {
-    words: { failedAgain: words.pluginFailedAgain, error: words.pluginRetryRefused },
+    words: { stopped: words.pluginStopped, retryFailed: words.pluginRetryFailed },
     notify: log.getWriter('plugins'),
     refresh: rest.start,
+    getName: (pluginId) => rest.plugins.value.find((one) => one.id === pluginId)?.name ?? pluginId,
   })
 
   const file = createSettingsFileTabKind(windowTabs.handle, core, () => void rest.start())

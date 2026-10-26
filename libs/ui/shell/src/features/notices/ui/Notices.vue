@@ -21,7 +21,7 @@ import type { NoticesProps } from './Notices.types'
 const props = withDefaults(defineProps<NoticesProps>(), {
   notices: () => [],
   name: 'Background work',
-  dismiss: 'Put away',
+  dismiss: 'Dismiss',
   more: 'more',
   wait: CARD_DELAY,
   room: ROOM,

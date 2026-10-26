@@ -21,13 +21,13 @@ const WORDS: Words = {
   names: 'Names',
   text: 'Text',
   meaning: 'Meaning',
-  read: 'Open the note',
+  read: 'Open note',
   readAt: 'Open at this heading',
   readDocument: 'Open the document',
   noneFound: 'Nothing',
-  notAsked: 'The vault could not answer',
-  wordsOnly: 'Searching by words only — no model set',
-  notEmbedded: 'This vault has not been read for meaning yet',
+  notAsked: 'Search failed',
+  wordsOnly: 'Text search only: no embedding model set',
+  notEmbedded: 'Semantic index not built yet',
 }
 
 /** A vault that answers when the test says so, and remembers what it was asked. */

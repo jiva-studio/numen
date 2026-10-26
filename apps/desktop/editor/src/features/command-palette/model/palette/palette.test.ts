@@ -320,7 +320,7 @@ describe('a command that asks for a name', () => {
 
     void commands.setTyped('  Entropy  ')
 
-    expect(commands.groups.value[0]?.items[0]?.title).toBe('Call it “Entropy”')
+    expect(commands.groups.value[0]?.items[0]?.title).toBe('Name it “Entropy”')
   })
 
   it('carries the name to the note it was requested over', () => {
@@ -605,13 +605,13 @@ describe('a command that offers a list the window holds', () => {
   const THEMES: readonly StepGroup[] = [
     {
       id: 'shipping',
-      title: 'Ships with numen',
+      title: 'Built-in',
       items: [
         { id: 'preset:numen', title: 'numen', detail: 'Current' },
         { id: 'preset:dracula', title: 'dracula' },
       ],
     },
-    { id: 'owned', title: 'Your own themes', items: [], silence: 'A .css file there is one' },
+    { id: 'owned', title: 'Custom themes', items: [], silence: 'A .css file there is one' },
   ]
 
   /** The three halves, drawn and not to be chosen, as a pinned theme leaves them. */
@@ -620,7 +620,7 @@ describe('a command that offers a list the window holds', () => {
       id: 'half',
       title: 'Light and dark',
       items: [
-        { id: 'mode:system', title: 'Follow the system', isDisabled: true },
+        { id: 'mode:system', title: 'System', isDisabled: true },
         { id: 'mode:light', title: 'Light', detail: 'The theme worn sets this itself' },
       ],
     },
@@ -635,8 +635,8 @@ describe('a command that offers a list the window holds', () => {
     expect(commands.crumb.value).toBe(words.appearance)
     expect(commands.placeholder.value).toBe(words.typeChoice)
     expect(commands.groups.value.map((group) => group.title)).toStrictEqual([
-      'Ships with numen',
-      'Your own themes',
+      'Built-in',
+      'Custom themes',
     ])
     expect(getItemIds(commands.groups)).toStrictEqual({
       shipping: ['preset:numen', 'preset:dracula'],
@@ -1509,7 +1509,7 @@ describe('a row of a list the window holds', () => {
   const THEMES: readonly StepGroup[] = [
     {
       id: 'shipping',
-      title: 'Ships with numen',
+      title: 'Built-in',
       items: [
         { id: 'preset:numen', title: 'numen', detail: 'Current' },
         { id: 'preset:dracula', title: 'dracula' },

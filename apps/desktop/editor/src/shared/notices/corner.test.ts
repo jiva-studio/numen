@@ -12,11 +12,11 @@ import type { IndexCoverage } from './coverage'
 import type { WindowMessage } from './messages'
 
 const words: Words = {
-  unwatched: 'not following the vault',
-  unread: 'the vault could not be read',
-  indexing: 'indexing the vault…',
-  nothingRead: 'nothing was read',
-  wordsOnly: 'Searching by words only — no model set',
+  unwatched: 'Vault changes not watched',
+  unread: 'Vault unreadable',
+  indexing: 'Indexing the vault…',
+  nothingRead: 'No notes loaded',
+  wordsOnly: 'Text search only: no embedding model set',
 }
 
 const well = (overrides: Partial<State> = {}): State => ({

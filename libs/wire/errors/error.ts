@@ -8,7 +8,7 @@ import { Code, ConnectError } from '@connectrpc/connect'
 import { ErrorCode as ProtoErrorCode } from '@numen/protocol'
 
 /** What is said when nothing more precise can honestly be said. */
-const UNEXPECTED = 'something inside numen went wrong'
+const UNEXPECTED = 'internal error'
 
 /**
  * What a call that could not be answered says. Unknown is what a connection
@@ -17,20 +17,19 @@ const UNEXPECTED = 'something inside numen went wrong'
  */
 const TROUBLE: Record<Code, string> = {
   [Code.Canceled]: '',
-  [Code.Unknown]:
-    'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
-  [Code.InvalidArgument]: 'numen could not make sense of what was asked, so nothing was done',
-  [Code.DeadlineExceeded]: 'numen took too long to answer, so nothing was done',
-  [Code.NotFound]: 'what was asked for is not there',
+  [Code.Unknown]: 'Numen is not responding; retrying',
+  [Code.InvalidArgument]: 'invalid request',
+  [Code.DeadlineExceeded]: 'request timed out',
+  [Code.NotFound]: 'not found',
   [Code.AlreadyExists]: UNEXPECTED,
   [Code.PermissionDenied]: UNEXPECTED,
   [Code.ResourceExhausted]: UNEXPECTED,
-  [Code.FailedPrecondition]: 'numen cannot do that as things now stand',
+  [Code.FailedPrecondition]: 'not possible right now',
   [Code.Aborted]: UNEXPECTED,
   [Code.OutOfRange]: UNEXPECTED,
-  [Code.Unimplemented]: 'this installation of numen cannot do that',
+  [Code.Unimplemented]: 'not supported by this build',
   [Code.Internal]: UNEXPECTED,
-  [Code.Unavailable]: 'numen is not answering just now — try again in a moment',
+  [Code.Unavailable]: 'Numen is busy; try again',
   [Code.DataLoss]: UNEXPECTED,
   [Code.Unauthenticated]: UNEXPECTED,
 }
@@ -63,18 +62,16 @@ export const formatErrorMessage = (error: unknown): string => {
  * What each error code the schema carries says.
  */
 const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
-  [ProtoErrorCode.UNSPECIFIED]: 'that note could not be read, and numen did not say why',
-  [ProtoErrorCode.MISSING]: 'that note is not in the vault',
-  [ProtoErrorCode.NOT_A_NOTE]: 'that file is not a note',
-  [ProtoErrorCode.NOT_TEXT]: 'that file is not text',
-  [ProtoErrorCode.TOO_LARGE]: 'that note is longer than this reads',
-  [ProtoErrorCode.BODY_UNWRITABLE]:
-    'a note begins below its frontmatter, and that text begins with one',
-  [ProtoErrorCode.UNREADABLE]: 'the frontmatter of that note cannot be read',
-  [ProtoErrorCode.OCCUPIED]:
-    'something of that name is filed there already, so nothing was written',
-  [ProtoErrorCode.UNNAMEABLE]: 'a note cannot be called that',
-  [ProtoErrorCode.STALE]: 'that note changed on disk, so nothing was written',
+  [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
+  [ProtoErrorCode.MISSING]: 'note not in the vault',
+  [ProtoErrorCode.NOT_A_NOTE]: 'not a note',
+  [ProtoErrorCode.NOT_TEXT]: 'not a text file',
+  [ProtoErrorCode.TOO_LARGE]: 'note too large',
+  [ProtoErrorCode.BODY_UNWRITABLE]: 'text cannot start with frontmatter',
+  [ProtoErrorCode.UNREADABLE]: 'frontmatter unreadable',
+  [ProtoErrorCode.OCCUPIED]: 'a file with this name exists',
+  [ProtoErrorCode.UNNAMEABLE]: 'invalid note name',
+  [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
 }
 
 /** What one error code says, and nothing where there was no error. */

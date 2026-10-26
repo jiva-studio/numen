@@ -133,7 +133,7 @@ function measure(): void {
       </MenuRow>
 
       <p v-if="!visibleItems.length" class="menu__silence">
-        <slot name="silence">Nothing to do</slot>
+        <slot name="silence">No items</slot>
       </p>
     </div>
 

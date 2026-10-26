@@ -17,7 +17,7 @@ export interface ActionWords {
 export const ACTION_WORDS: ActionWords = {
   name: 'Actions',
   placeholder: 'Search actions',
-  silence: 'Nothing by that name',
+  silence: 'No actions found',
 }
 
 /** One action as it is drawn in the action panel. */

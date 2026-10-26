@@ -71,9 +71,7 @@ describe('reading the file', () => {
     })
     await tab.reload()
 
-    expect(tab.errorMessage.value).toBe(
-      `${words.unread} numen did not answer, so nothing was done — it may have stopped, and the window keeps trying`,
-    )
+    expect(tab.errorMessage.value).toBe(`${words.unread} Numen is not responding; retrying`)
     expect(tab.isRead.value).toBe(false)
   })
 })

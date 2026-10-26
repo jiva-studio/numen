@@ -98,9 +98,9 @@ describe('the conversation view', () => {
   })
 
   it('shows why the agent cannot be reached where the answers stand, and the silence otherwise', () => {
-    let unreachable = 'The agent could not be reached.'
+    let unreachable = 'Agent unreachable.'
     const { view } = open({ getUnreachable: () => unreachable })
-    expect(view.getSilence()).toBe('The agent could not be reached.')
+    expect(view.getSilence()).toBe('Agent unreachable.')
 
     unreachable = ''
     expect(view.getSilence()).toBe(WORDS.nothingSaid)

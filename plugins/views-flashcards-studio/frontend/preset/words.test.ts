@@ -38,7 +38,7 @@ describe('WORDS.buys', () => {
     expect(WORDS.buys('date', { ...samplePoint, short: 3 })).toEqual([
       `${many(30, 'day')} off`,
       `${many(20, 'minute')} a day`,
-      '3 of 40 cannot get there',
+      '3 of 40 not reachable',
     ])
     expect(WORDS.buys('date', samplePoint)).toHaveLength(2)
   })
@@ -57,9 +57,9 @@ describe('WORDS axis units', () => {
   })
 
   it('names the mark under each goal', () => {
-    expect(WORDS.markName('retention')).toBe('most kept')
-    expect(WORDS.markName('date')).toBe('first day it fits')
-    expect(WORDS.markName('minutes')).toBe('time enough')
+    expect(WORDS.markName('retention')).toBe('best retention')
+    expect(WORDS.markName('date')).toBe('earliest date')
+    expect(WORDS.markName('minutes')).toBe('enough time')
   })
 
   it('reads the value in the units of its goal', () => {
@@ -71,11 +71,7 @@ describe('WORDS axis units', () => {
 
 describe('WORDS.noCards', () => {
   it('speaks of one deck in the singular and of several by their count', () => {
-    expect(WORDS.noCards(1)).toBe(
-      'One deck points here and it holds no cards, so this preset schedules nothing.',
-    )
-    expect(WORDS.noCards(3)).toBe(
-      '3 decks point here and they hold no cards, so this preset schedules nothing.',
-    )
+    expect(WORDS.noCards(1)).toBe('The deck using this preset has no cards.')
+    expect(WORDS.noCards(3)).toBe('The 3 decks using this preset have no cards.')
   })
 })

@@ -20,10 +20,10 @@ describe('ConversationView', () => {
   it('shows why the agent cannot be reached where the answers would be', () => {
     const view = mount(ConversationView, {
       props: {
-        context: { agent, focus: '', getUnreachable: () => 'The agent could not be reached.' },
+        context: { agent, focus: '', getUnreachable: () => 'Agent unreachable.' },
       },
     })
-    expect(view.text()).toContain('The agent could not be reached.')
+    expect(view.text()).toContain('Agent unreachable.')
   })
 
   it('takes the keyboard into the field when the host focuses it', () => {

@@ -183,7 +183,7 @@ describe('the screen drawn narrow', () => {
 describe('the screen drawn short', () => {
   const WAYS: readonly WelcomeAction[] = [
     { id: 'find', text: 'Search the vault', keys: { icons: ['control'], letter: 'K' } },
-    { id: 'commands', text: 'Show the commands' },
+    { id: 'commands', text: 'Show commands' },
     { id: 'note', text: 'New note' },
     { id: 'plex', text: 'Open plex' },
     { id: 'agent', text: 'New agent' },

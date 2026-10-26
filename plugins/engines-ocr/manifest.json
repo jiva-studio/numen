@@ -3,7 +3,7 @@
   "name": "Document OCR",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Recognises the text of scans and scanned PDFs using PaddleOCR and ONNX Runtime",
+  "description": "Text recognition for scans and scanned PDFs with PaddleOCR and ONNX Runtime",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],
@@ -15,7 +15,7 @@
   "commands": [
     {
       "id": "recognise",
-      "title": "Recognise the text of a scan",
+      "title": "Recognise text",
       "fileExtensions": ["pdf", "png", "jpg", "jpeg", "gif", "webp"],
       "hiddenInPalette": true
     }

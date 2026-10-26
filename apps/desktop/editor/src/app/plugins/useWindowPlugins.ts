@@ -18,6 +18,8 @@ export interface PluginSupportDeps {
     path: string,
   ) => Promise<{ body?: string; error?: string } | string | undefined>
   readonly reportError?: (pluginId: string, error: unknown) => void
+  /** Reports a plugin whose frontend failed to load or activate; falls back to `reportError`. */
+  readonly reportLoadError?: (pluginId: string, error: unknown) => void
   readonly writeNote?: (path: string, body: string) => Promise<void>
   /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
   readonly services?: PluginServices
@@ -102,9 +104,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getBuffers: () => deps.services?.buffers,
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
+  const reportLoadError = deps.reportLoadError ?? deps.reportError
   const pluginLoader = createPluginLoader({
     host: pluginHost,
-    ...(deps.reportError !== undefined ? { onError: deps.reportError } : {}),
+    ...(reportLoadError !== undefined ? { onError: reportLoadError } : {}),
   })
 
   return { pluginHost, pluginLoader }

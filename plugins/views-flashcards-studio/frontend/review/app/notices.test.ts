@@ -23,9 +23,9 @@ describe('what the window has to say', () => {
 
   it('says trouble in the person’s own words, as an alarm', () => {
     const one = createWindowNotices()
-    one.reportError(new ConnectError('the vault could not be read', Code.Unavailable))
+    one.reportError(new ConnectError('Vault unreadable', Code.Unavailable))
 
-    expect(one.host.getShown()).toEqual([{ text: 'The vault could not be read.', tone: 'alarm' }])
+    expect(one.host.getShown()).toEqual([{ text: 'Vault unreadable.', tone: 'alarm' }])
   })
 
   // Pressing a tile whose count is a moment stale fails, and what the

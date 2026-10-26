@@ -76,10 +76,10 @@ describe('useLink', () => {
   it('says why a file could not be read as a link', async () => {
     const links: Links = {
       ...createLinks({ url: '', isCopyable: false, copySize: 0 }).links,
-      getLink: async () => ({ ok: false, error: 'This file holds no web address' }),
+      getLink: async () => ({ ok: false, error: 'This file has no web address' }),
     }
     const tab = useLink(links, 'notes/plain.md')
     await flushPromises()
-    expect(tab.error.value).toBe('This file holds no web address')
+    expect(tab.error.value).toBe('This file has no web address')
   })
 })

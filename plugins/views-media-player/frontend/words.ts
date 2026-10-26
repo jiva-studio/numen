@@ -1,7 +1,7 @@
 /** What a recording tab says: the player, the transcript, and what can be asked about it. */
 export const WORDS = {
-  player: 'The recording',
-  transcript: 'The transcript',
+  player: 'Recording',
+  transcript: 'Transcript',
   /** The view keeps the line being said in sight. */
   follow: 'Follow',
   /** The menu at the end of the strip, and what it is announced as. */
@@ -14,19 +14,19 @@ export const WORDS = {
   proofread: 'Proofread transcript',
   deleteText: 'Delete transcript',
   /** A run is going, and more words arrive as they are written down. */
-  transcribing: 'Still transcribing…',
+  transcribing: 'Transcribing…',
   /** This window has nothing to play this kind of sound with. */
-  unplayable: 'This system cannot play sound here.',
+  unplayable: 'Audio playback not supported here.',
   /** The player stopped and said nothing a code names. */
-  unreadable: 'The recording could not be played.',
+  unreadable: 'Recording failed to play.',
   /** The person, or the window, stopped the loading. */
-  stopped: 'Loading the recording was stopped.',
+  stopped: 'Loading stopped.',
   /** The bytes never arrived. */
-  unreached: 'The recording could not be read from the vault.',
+  unreached: 'Recording unreadable.',
   /** They arrived and are not what they claim, or nothing here decodes them. */
-  undecoded: 'The recording is in a form this system cannot decode.',
+  undecoded: 'Recording format not supported.',
   /** The player refused the type before asking for a byte of it. */
-  unwanted: 'This system does not play recordings of this kind.',
+  unwanted: 'Recording type not supported.',
 }
 
 /** The ids of what the tab's menu offers. */

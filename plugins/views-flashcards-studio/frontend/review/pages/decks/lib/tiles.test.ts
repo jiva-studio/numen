@@ -53,9 +53,9 @@ describe('what a tile says', () => {
   })
 
   it('says nothing of what a session would ask where the preset schedules nothing', () => {
-    const [tile] = getTiles([preset({ paused: 'no cards a day' })], today)
+    const [tile] = getTiles([preset({ paused: 'no cards per day' })], today)
 
-    expect(tile?.goal).toBe('no cards a day')
+    expect(tile?.goal).toBe('no cards per day')
     expect(tile?.left).toBe('')
     expect(tile?.canOpen).toBe(false)
   })

@@ -25,21 +25,21 @@ import {
 export const WORDS = {
   preset: 'Preset',
   /** The command that opens the preset of the note in front. */
-  openPreset: 'Open the preset',
+  openPreset: 'Open preset',
   /** What a preset tab is called before the vault has said what the note is. */
   newPreset: 'Preset',
   /** The deck in front names no preset, so the defaults schedule it. */
-  noPreset: 'This deck names no preset, so it is scheduled by the defaults.',
+  noPreset: 'No preset set. Scheduled by the defaults.',
   /** What the three segments are, said over them. */
   goal: 'Goal',
   goalName: (goal: Goal) => GOALS[goal],
   budgetUnitName: (unit: BudgetUnit) => BUDGET_UNITS[unit],
   ruleName: (rule: Rule) => RULES[rule],
   /** What each axis measures, said along the axis it names. */
-  axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a session' : 'Minutes a day'),
+  axisY: (goal: Goal) => (goal === 'minutes' ? 'Cards in a session' : 'Minutes per day'),
   axisX: (goal: Goal) => {
     if (goal === 'retention') return 'Retention'
-    return goal === 'date' ? 'Days from today' : 'Minutes a day'
+    return goal === 'date' ? 'Days from today' : 'Minutes per day'
   },
   /** What the backlog under the picture measures, said along the axis it names. */
   backlogY: 'Cards overdue',
@@ -83,9 +83,9 @@ export const WORDS = {
   fieldDetail: (field: Field) => FIELDS[field][1],
   /** A share in hundredths, read out beside the track it is moved along. */
   percent: (value: number) => `${count(value)}%`,
-  settings: 'What the goal produced',
+  settings: 'Resulting settings',
   /** The knob, and what it is announced as while it is moved. */
-  knob: 'The goal of this preset',
+  knob: 'Preset goal',
   /** Said in the picture's place while the application works the curve out. */
   waiting: 'Loading…',
   /**
@@ -93,8 +93,8 @@ export const WORDS = {
    * is where the clock stops being the limit.
    */
   markName: (goal: Goal) => {
-    if (goal === 'retention') return 'most kept'
-    return goal === 'date' ? 'first day it fits' : 'time enough'
+    if (goal === 'retention') return 'best retention'
+    return goal === 'date' ? 'earliest date' : 'enough time'
   },
   value: (goal: Goal, value: number, day: string) => {
     if (goal === 'retention') return `${percent(value)} remembered`
@@ -102,38 +102,32 @@ export const WORDS = {
     return `${many(value, 'minute')} a day`
   },
   /** No deck points here, so the goal has nothing to work on. */
-  unpointed:
-    'No deck points at this preset, so it schedules nothing. ' +
-    'Point a deck at it and its goal has cards to work on.',
+  unpointed: 'No decks use this preset. Set it on a deck to schedule cards.',
   /** The decks pointing here hold no cards between them. */
   noCards: (decks: number) =>
     decks === 1
-      ? 'One deck points here and it holds no cards, so this preset schedules nothing.'
-      : `${count(decks)} decks point here and they hold no cards, ` +
-        'so this preset schedules nothing.',
+      ? 'The deck using this preset has no cards.'
+      : `The ${count(decks)} decks using this preset have no cards.`,
   /** The decks hold cards, and none of them is one this preset can begin. */
   beginsNothing:
-    'Nobody has begun a card in these decks and this preset begins none a day, ' +
-    'so it has nothing to schedule. Raise the new cards a day and its goal has ' +
-    'cards to work on.',
+    'No cards started and new cards per day is 0. Raise new cards per day to schedule cards.',
   /** Why the preset schedules nothing on the day it was read in. */
   stopped: (why: StopReason) => {
     const clause = formatStopReasonMessage(why)
-    return clause ? `This preset schedules nothing: ${clause}.` : ''
+    return clause ? `No cards scheduled: ${clause}.` : ''
   },
   /** What is wrong with the file, said above the control. */
-  problems: 'What is wrong with this preset',
+  problems: 'Preset problems',
   /** The file moved under the window, and the two answers to that. */
-  changed: 'This file changed on disk, so nothing was written.',
-  reads: 'Read it again',
+  changed: 'Not saved: the file changed on disk.',
+  reads: 'Reload',
   /** What a read failed for. */
   notRead: (error: ErrorCode) => sayAsSentence(getErrorWords(error)),
-  notSaved: (error: ErrorCode) =>
-    `${sayAsSentence(getErrorWords(error))} These settings are still here.`,
+  notSaved: (error: ErrorCode) => `${sayAsSentence(getErrorWords(error))} Your settings are kept.`,
   /** The vault answered a read with neither settings nor a reason. */
-  unreachable: 'The vault would not answer for this preset, and did not say why.',
+  unreachable: 'Preset unreadable: no response from the vault.',
   /** The vault answered a write with neither a file nor a reason. */
-  unwritten: 'The vault would not take these settings, and did not say why. They are still here.',
+  unwritten: 'Settings not saved: no response from the vault. Your settings are kept.',
   /** The vault would not work the picture out. */
-  noCurve: 'The vault would not work this picture out, and did not say why.',
+  noCurve: 'Chart unavailable: no response from the vault.',
 }

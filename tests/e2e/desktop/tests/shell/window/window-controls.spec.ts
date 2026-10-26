@@ -21,12 +21,12 @@ test.describe('Window Controls and Display Preferences', () => {
     const entropyTab = page.getByRole('tab', { name: /Entropy/i }).first()
     await expect(entropyTab).toBeVisible({ timeout: 10_000 })
 
-    // 2. Open palette and execute Close command (Close this tab)
+    // 2. Open palette and execute Close command (Close tab)
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
 
-    await paletteInput.fill('Close this tab')
+    await paletteInput.fill('Close tab')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 

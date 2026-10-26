@@ -314,7 +314,7 @@ describe('a command requested for while the vault is being read', () => {
     await press('Enter')
 
     expect(requests.made).toStrictEqual(['Entropy'])
-    expect(cards(window)).toStrictEqual(['indexing the vault…'])
+    expect(cards(window)).toStrictEqual(['Indexing the vault…'])
   })
 })
 

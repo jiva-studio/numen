@@ -15,7 +15,7 @@ const thread = (turns: readonly Turn[]) => mount(Thread, { props: { turns } })
 
 describe('what is drawn', () => {
   it('says nothing was returned yet on an empty thread', () => {
-    expect(thread([]).text()).toContain('Nothing said yet')
+    expect(thread([]).text()).toContain('No messages yet')
   })
 
   it('draws no turns on an empty thread', () => {
@@ -23,7 +23,7 @@ describe('what is drawn', () => {
   })
 
   it('drops the empty line the moment there is a turn', () => {
-    expect(thread([createAsked('1')]).text()).not.toContain('Nothing said yet')
+    expect(thread([createAsked('1')]).text()).not.toContain('No messages yet')
   })
 
   it('draws one element per turn', () => {
@@ -52,11 +52,11 @@ describe('what is drawn', () => {
 
 describe('a turn that failed', () => {
   it('says so', () => {
-    expect(thread([createAsked('1', 'gone', 'failed')]).text()).toContain('Did not send')
+    expect(thread([createAsked('1', 'gone', 'failed')]).text()).toContain('Not sent')
   })
 
   it('says nothing of the sort about a turn that settled', () => {
-    expect(thread([createAsked('1')]).text()).not.toContain('Did not send')
+    expect(thread([createAsked('1')]).text()).not.toContain('Not sent')
   })
 })
 
@@ -99,7 +99,7 @@ describe('what the caller decides', () => {
       slots: { silence: 'ask it something' },
     })
     expect(wrapper.text()).toContain('ask it something')
-    expect(wrapper.text()).not.toContain('Nothing said yet')
+    expect(wrapper.text()).not.toContain('No messages yet')
   })
 })
 

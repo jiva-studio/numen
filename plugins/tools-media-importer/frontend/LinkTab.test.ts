@@ -44,6 +44,6 @@ describe('LinkTab', () => {
   it('says when nothing was fetched', async () => {
     const wrapper = mount(LinkTab, { props: { path: 'links/clip.url', links: createLinks(0, '') } })
     await flushPromises()
-    expect(wrapper.text()).toContain('Nothing was fetched from this address.')
+    expect(wrapper.text()).toContain('No text found at this link.')
   })
 })

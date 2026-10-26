@@ -1,9 +1,9 @@
 /** What a note tab says: the questions its file puts, and the two ways out. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
-  stale: 'The file changed on disk, so this note stopped saving.',
-  gone: 'This note is no longer in the vault, so saving stopped. What is here is still yours.',
-  makeAgain: 'make it again',
-  keep: 'Keep mine',
-  take: "Take the file's",
+  stale: 'Saving paused: the file changed on disk.',
+  gone: 'Saving paused: the note was removed from the vault. Your text is kept.',
+  makeAgain: 'recreate it',
+  keep: 'Keep my version',
+  take: 'Use disk version',
 }

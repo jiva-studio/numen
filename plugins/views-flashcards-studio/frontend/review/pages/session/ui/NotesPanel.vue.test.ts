@@ -86,10 +86,10 @@ describe('the panel the deck is read in', () => {
 
   it('says why a note it could reach has no text', async () => {
     const one = await mountPanel({
-      notes: [createNeighbour({ body: '', error: 'that note is not in the vault' })],
+      notes: [createNeighbour({ body: '', error: 'note not in the vault' })],
       unread: 0,
     })
-    expect(one.text()).toContain('that note is not in the vault')
+    expect(one.text()).toContain('note not in the vault')
   })
 
   // The bound is where a person can see it, and not a list that quietly

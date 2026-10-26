@@ -99,7 +99,7 @@ describe('App', () => {
     mounted.push(window)
     await flushPromises()
 
-    expect(window.text()).toContain('No plugin of this window draws anything.')
+    expect(window.text()).toContain('No plugin views.')
     expect(window.text()).toContain(formatErrorMessage(new Error('the window is gone')))
   })
 
@@ -177,7 +177,7 @@ describe('the window over a plugin that draws the review', () => {
     let answer: (vaults: readonly VaultRow[]) => void = () => {}
     const { window } = await mountWindow(() => new Promise((then) => (answer = then)))
 
-    expect(window.find('[role="status"]').text()).toBe('Reading the vaults')
+    expect(window.find('[role="status"]').text()).toBe('Loading vaults…')
 
     answer(VAULTS)
     await flushPromises()

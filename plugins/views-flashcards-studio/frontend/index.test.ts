@@ -143,7 +143,7 @@ describe('flashcards-studio plugin', () => {
 
     const commands = ctx.getRegisteredCommands()
     expect(commands.map(({ id, title, scope }) => ({ id, title, scope }))).toStrictEqual([
-      { id: 'preset', title: 'Open the preset', scope: 'note' },
+      { id: 'preset', title: 'Open preset', scope: 'note' },
     ])
   })
 

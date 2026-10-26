@@ -23,7 +23,7 @@
       "key": "executable_path",
       "type": "string",
       "title": "Executable Path",
-      "description": "Path to the Antigravity CLI executable. If empty, the agent is discovered automatically.",
+      "description": "Path to the Antigravity CLI executable. Empty finds it automatically.",
       "default": ""
     }
   ]

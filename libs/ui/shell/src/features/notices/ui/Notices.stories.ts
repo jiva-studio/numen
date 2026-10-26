@@ -128,7 +128,7 @@ const meta = {
   args: {
     notices: [EMBEDDING],
     name: 'Background work',
-    dismiss: 'Put away',
+    dismiss: 'Dismiss',
     more: 'more',
     wait: 0,
     room: 4,
@@ -184,7 +184,7 @@ export const NoTotalYet: Story = {
 
 /** A fact about this installation, said once and not happening. */
 export const Resting: Story = {
-  args: { notices: [{ id: 'words', text: 'Searching by words only — no model set' }] },
+  args: { notices: [{ id: 'words', text: 'Text search only: no embedding model set' }] },
 }
 
 /** Work, something that is so, and something that happened, in one stack. */
@@ -307,7 +307,7 @@ export const PutOneAway: Story = {
     await waitFor(() => expect(cards()).toHaveLength(2))
 
     const first = within(cards()[0]!)
-    await userEvent.click(first.getByRole('button', { name: /^Put away/ }))
+    await userEvent.click(first.getByRole('button', { name: /^Dismiss/ }))
 
     await waitFor(() => expect(cards()).toHaveLength(1))
     await expect(cards()[0]!.textContent).toContain('Preparing search by meaning')
@@ -439,7 +439,7 @@ export const Dark: Story = {
 
     // The way out is only ink until a hand is on it, and then it relies on a
     // ground of its own.
-    const away = within(cards[2]!).getByRole('button', { name: /^Put away/ })
+    const away = within(cards[2]!).getByRole('button', { name: /^Dismiss/ })
     await expect(getComputedStyle(away).backgroundColor).toBe('rgba(0, 0, 0, 0)')
 
     const behindColor = getComputedStyle(cards[2]!).backgroundColor

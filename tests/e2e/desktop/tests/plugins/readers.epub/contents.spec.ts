@@ -71,7 +71,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
       // Contents drawer closes upon selecting chapter
       await expect(contentsNav).not.toBeVisible({ timeout: 5_000 })
     } else {
-      await expect(contentsNav.getByText('This book names nothing.')).toBeVisible()
+      await expect(contentsNav.getByText('No table of contents.')).toBeVisible()
     }
   })
 
@@ -107,7 +107,7 @@ test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
 
     // Type a non-existent search query
     await findField.fill('NonExistentChapterQuery123')
-    await expect(contentsNav.getByText('This book names nothing.')).toBeVisible({ timeout: 5_000 })
+    await expect(contentsNav.getByText('No table of contents.')).toBeVisible({ timeout: 5_000 })
 
     // Clear search
     await findField.fill('')

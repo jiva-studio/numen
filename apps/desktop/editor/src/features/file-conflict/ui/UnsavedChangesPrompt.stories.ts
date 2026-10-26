@@ -13,9 +13,9 @@ import type { UnsavedChangesWords } from './UnsavedChangesPrompt.vue'
 
 /** The words a window hands the prompt. The component knows none of its own. */
 const WORDS: UnsavedChangesWords = {
-  going: 'These notes stopped saving because their files changed. The window waits.',
-  keep: 'Keep mine',
-  take: "Take the file's",
+  going: 'Saving paused: the files of these notes changed on disk.',
+  keep: 'Keep my version',
+  take: 'Use disk version',
   later: 'Not yet',
 }
 

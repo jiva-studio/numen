@@ -891,9 +891,7 @@ describe('nothing to carry out', () => {
 
     await runInvocation(createInvocation('remove', front()), broken, words)
 
-    expect(one.notices).toStrictEqual([
-      'numen did not answer, so nothing was done — it may have stopped, and the window keeps trying',
-    ])
+    expect(one.notices).toStrictEqual(['Numen is not responding; retrying'])
   })
 })
 

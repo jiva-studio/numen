@@ -467,7 +467,7 @@ export const NotChoosable: Story = {
 export const Grouped: Story = {
   args: {
     items: [
-      { id: 'open', text: 'Open the note', group: 'open' },
+      { id: 'open', text: 'Open note', group: 'open' },
       { id: 'travel', text: 'Show in plex', group: 'open' },
       { id: 'note', text: 'New note', group: 'file' },
       { id: 'folder', text: 'New folder', group: 'file' },
@@ -483,7 +483,7 @@ export const Grouped: Story = {
     await expect(menu.getAllByRole('separator')).toHaveLength(3)
     // The keyboard passes over the rules: they are drawn, not chosen.
     await userEvent.keyboard('{ArrowDown}')
-    await expect(menu.getByRole('menuitem', { name: 'Open the note' })).toHaveFocus()
+    await expect(menu.getByRole('menuitem', { name: 'Open note' })).toHaveFocus()
     await userEvent.keyboard('{ArrowUp}')
     await expect(menu.getByRole('menuitem', { name: 'Remove note' })).toHaveFocus()
   },
@@ -493,8 +493,8 @@ export const Grouped: Story = {
 export const GroupsNamed: Story = {
   args: {
     items: [
-      { id: 'numen', text: 'numen', group: 'Ships with numen' },
-      { id: 'paper', text: 'paper', group: 'Ships with numen' },
+      { id: 'numen', text: 'numen', group: 'Built-in' },
+      { id: 'paper', text: 'paper', group: 'Built-in' },
       { id: 'sea', text: 'sea', group: 'Yours' },
     ],
     current: 'paper',
@@ -505,7 +505,7 @@ export const GroupsNamed: Story = {
     const named = Array.from(menu.querySelectorAll('.menu__group-name')).map((one) =>
       one.textContent?.trim(),
     )
-    await expect(named).toEqual(['Ships with numen', 'Yours'])
+    await expect(named).toEqual(['Built-in', 'Yours'])
     // The names are drawn, not ruled: a name and a rule do the one job.
     await expect(menu.querySelectorAll('.menu__rule')).toHaveLength(0)
   },

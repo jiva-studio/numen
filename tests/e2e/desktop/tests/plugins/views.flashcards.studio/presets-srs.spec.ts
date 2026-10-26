@@ -34,7 +34,7 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
       timeout: 10_000,
     })
-    await expect(page.getByRole('radio', { name: 'Minutes a day' })).toBeVisible()
+    await expect(page.getByRole('radio', { name: 'Minutes per day' })).toBeVisible()
     await expect(page.getByRole('radio', { name: 'Retention' })).toBeVisible()
   })
 
@@ -64,13 +64,13 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     })
 
     // Verify initial radio state
-    const minutesRadio = page.getByRole('radio', { name: 'Minutes a day' })
+    const minutesRadio = page.getByRole('radio', { name: 'Minutes per day' })
     const retentionRadio = page.getByRole('radio', { name: 'Retention' })
 
     await expect(minutesRadio).toBeChecked()
 
     // Verify daily schedule toolbar
-    await expect(page.getByRole('toolbar', { name: 'Load by day' })).toBeVisible()
+    await expect(page.getByRole('toolbar', { name: 'Load by weekday' })).toBeVisible()
 
     // Switch goal to Retention
     await retentionRadio.click()
@@ -134,13 +134,13 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await page.keyboard.press('Control+p')
     const paletteInput = page.locator('input[data-palette="field"]').first()
     await expect(paletteInput).toBeVisible({ timeout: 5_000 })
-    await paletteInput.fill('Open the preset')
+    await paletteInput.fill('Open preset')
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
-    await expect(
-      page.getByText('This deck names no preset, so it is scheduled by the defaults.').first(),
-    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByText('No preset set. Scheduled by the defaults.').first()).toBeVisible({
+      timeout: 10_000,
+    })
     await expect(page.getByRole('region', { name: 'Goal', exact: true })).toHaveCount(0)
   })
 })

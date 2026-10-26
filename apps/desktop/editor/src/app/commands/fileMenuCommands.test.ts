@@ -122,7 +122,7 @@ describe('useFileMenuCommands', () => {
     )
 
     expect(writeMessage).toHaveBeenLastCalledWith(
-      expect.stringContaining('did not answer'),
+      expect.stringContaining('not responding'),
       'error',
     )
   })

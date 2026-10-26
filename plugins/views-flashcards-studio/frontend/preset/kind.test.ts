@@ -507,7 +507,7 @@ describe('what the tab says it encountered as an error', () => {
   // a person deciding what to do next has to be told that.
   it('says the settings are still here where a write failed', async () => {
     for (const error of errors) {
-      expect(words.notSaved(error)).toContain('still here')
+      expect(words.notSaved(error)).toContain('are kept')
     }
   })
 

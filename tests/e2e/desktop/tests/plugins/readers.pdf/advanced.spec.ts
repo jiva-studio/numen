@@ -20,8 +20,8 @@ test.describe('PDF Document Reader Advanced Controls', () => {
     await expect(reader).toBeVisible({ timeout: 10_000 })
 
     // 2. Identify zoom controls
-    const zoomInBtn = page.getByRole('button', { name: 'Closer' })
-    const zoomOutBtn = page.getByRole('button', { name: 'Further' })
+    const zoomInBtn = page.getByRole('button', { name: 'Zoom in' })
+    const zoomOutBtn = page.getByRole('button', { name: 'Zoom out' })
 
     await expect(zoomInBtn).toBeVisible({ timeout: 5_000 })
     await expect(zoomOutBtn).toBeVisible({ timeout: 5_000 })

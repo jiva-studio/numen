@@ -69,7 +69,7 @@ const call = computed(() => ({
     </div>
 
     <p v-if="entry.state === 'failed'" class="thread__failure text-small text-alarm mt-1">
-      <slot name="failure" :turn="entry.turn">Did not send</slot>
+      <slot name="failure" :turn="entry.turn">Not sent</slot>
     </p>
   </div>
 </template>

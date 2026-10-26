@@ -93,7 +93,7 @@ describe('opening a note', () => {
     await settle()
 
     expect(notes.getOpenNote('photo.md').state).toBe('stuck')
-    expect(notes.getErrorMessage('photo.md')).toBe('this file is not text')
+    expect(notes.getErrorMessage('photo.md')).toBe('not a text file')
   })
 })
 
@@ -417,7 +417,7 @@ describe('a note that changed on disk under a save', () => {
     const { notes, wrote } = await createCaughtSave()
 
     expect(notes.getOpenNote('Heat.md').state).toBe('stale')
-    expect(notes.stale('Heat.md')?.says).toBe('this note changed on disk, and saving stopped')
+    expect(notes.stale('Heat.md')?.says).toBe('saving paused: the note changed on disk')
     expect(notes.getOpenNote('Heat.md').body).toBe('mine')
 
     notes.setBody('Heat.md', 'mine and more')
@@ -495,9 +495,7 @@ describe('a save that failed', () => {
     notes.setBody('Heat.md', '---\nnot a body\n---\n')
     await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
-    expect(notes.getErrorMessage('Heat.md')).toBe(
-      'a note begins below its frontmatter, and this text begins with one',
-    )
+    expect(notes.getErrorMessage('Heat.md')).toBe('text cannot start with frontmatter')
   })
 
   it('says the vault was out of reach when the core did not answer', async () => {
@@ -514,9 +512,7 @@ describe('a save that failed', () => {
     notes.setBody('Heat.md', 'one two')
     await vi.waitFor(() => expect(notes.getOpenNote('Heat.md').state).toBe('stuck'))
 
-    expect(notes.getErrorMessage('Heat.md')).toBe(
-      'the vault could not be reached, so this note was not written',
-    )
+    expect(notes.getErrorMessage('Heat.md')).toBe('vault unreachable, note not saved')
   })
 })
 
@@ -537,9 +533,7 @@ describe('closing a note that could not be written', () => {
 
     await notes.close('Heat.md')
     expect(notes.getOpenIds()).toEqual(['Heat.md'])
-    expect(notes.getErrorMessage('Heat.md')).toBe(
-      'the vault could not be reached, so this note was not written',
-    )
+    expect(notes.getErrorMessage('Heat.md')).toBe('vault unreachable, note not saved')
 
     await notes.close('Heat.md')
     expect(notes.getOpenIds()).toEqual([])

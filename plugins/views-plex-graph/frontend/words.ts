@@ -11,7 +11,7 @@ export const WORDS = {
   /** What the shape under the pointer says while notes are dragged over the picture. */
   dropName: (relation: PlexRelation) => `as ${getRelationName(relation)}`,
   /** The notes that stayed unjoined, because the vault would not write the link. */
-  notJoined: 'These were not joined:',
+  notJoined: 'Links not created:',
   /** What the field in the quick-link popover is called. */
   quickLinkLabel: 'Note to link',
   /** The input placeholder in the quick-link popover. */
@@ -42,7 +42,7 @@ export const WORDS = {
   newPlex: 'New plex',
   travel: 'Show in plex',
   /** Menu command labels */
-  read: 'Open the note',
+  read: 'Open note',
   copy: 'Copy path',
   child: 'New child note',
   parent: 'New parent note',

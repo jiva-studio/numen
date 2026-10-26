@@ -3,7 +3,7 @@
   "name": "Audio/Video Transcription",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Transcribes the recordings a person asks for, keeps their transcripts and gives them to the vault as timed text",
+  "description": "Transcribes recordings into timed transcripts in the vault",
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.mp3", "onFile:*.wav", "onFile:*.flac"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],

@@ -261,10 +261,10 @@ describe('createCustomTabKind (failed writes)', () => {
 
   it('keeps the message of a read when a write succeeds', async () => {
     const state = open(() => Promise.resolve())
-    state.errorMessage.value = 'the frontmatter of this note cannot be read'
+    state.errorMessage.value = 'frontmatter unreadable'
     state.updateBody('one')
     await new Promise((resolve) => setTimeout(resolve, 0))
-    expect(state.errorMessage.value).toBe('the frontmatter of this note cannot be read')
+    expect(state.errorMessage.value).toBe('frontmatter unreadable')
   })
 
   it('ignores the failure of a write that a newer write replaced', async () => {

@@ -3,7 +3,7 @@
   "name": "LLM Proofreading",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Puts a transcript or a recognised text right with a language model, as a version made from the text it read",
+  "description": "Proofreads transcripts and recognised text with a language model, as a new text version",
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete"],
@@ -13,7 +13,7 @@
   "commands": [
     {
       "id": "proofread",
-      "title": "Proofread the live text of a file",
+      "title": "Proofread text",
       "fileExtensions": ["*"],
       "hiddenInPalette": true
     }
@@ -23,34 +23,34 @@
       "key": "agent",
       "type": "agent",
       "title": "Agent",
-      "description": "The agent and the model that proofread a text"
+      "description": "Agent and model used for proofreading"
     },
     {
       "key": "batch_size",
       "type": "number",
       "title": "Batch size",
-      "description": "How many lines one request to the model carries",
+      "description": "Lines per model request",
       "default": 40
     },
     {
       "key": "overlap",
       "type": "number",
       "title": "Overlap",
-      "description": "How many lines neighbouring speech batches share",
+      "description": "Lines shared by neighbouring batches",
       "default": 4
     },
     {
       "key": "in_flight",
       "type": "number",
       "title": "In-flight requests",
-      "description": "How many model requests one call answers",
+      "description": "Parallel model requests per call",
       "default": 4
     },
     {
       "key": "max_edit_distance",
       "type": "number",
       "title": "Max edit distance",
-      "description": "How far a correction may stand from the line as read",
+      "description": "Maximum edit distance of a correction from the original line",
       "default": 0.3
     }
   ],

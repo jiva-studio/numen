@@ -151,7 +151,7 @@ const countDecksIntoPresets = (reads: readonly DeckRead[]): Map<string, PresetTa
 /** One preset currently before a deck has been counted into it. */
 const createTally = (preset: DeckPreset['held']): PresetTally => ({
   path: preset.path,
-  name: preset.name || 'The defaults',
+  name: preset.name || 'Defaults',
   settings: preset.settings,
   stopsOn: preset.stopsOn,
   decks: [],

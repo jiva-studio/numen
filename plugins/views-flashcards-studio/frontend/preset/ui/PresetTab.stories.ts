@@ -200,7 +200,7 @@ export const TheRowsShareTheirColumns: Story = {
     const controls = [
       canvas.getByRole('button', { name: 'Counts as learned' }),
       canvas.getByRole('spinbutton', { name: 'Days apart' }),
-      canvas.getByRole('spinbutton', { name: 'Minutes a day' }),
+      canvas.getByRole('spinbutton', { name: 'Minutes per day' }),
       canvas.getByRole('slider', { name: 'Overdue share' }),
       canvas.getByRole('toolbar', { name: 'Load by day' }),
       canvas.getByRole('switch', { name: 'Even load' }),
@@ -210,7 +210,7 @@ export const TheRowsShareTheirColumns: Story = {
     const names = [
       'Counts as learned',
       'Days apart',
-      'Minutes a day',
+      'Minutes per day',
       'Overdue share',
       'Load by day',
       'Even load',

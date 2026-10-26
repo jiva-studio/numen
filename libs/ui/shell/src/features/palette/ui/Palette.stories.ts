@@ -39,9 +39,9 @@ interface Knobs {
 /** What a plex can do with a name, and what a note can do with a place in it. */
 const TRAVEL = [
   { id: 'travel', text: 'Show in plex' },
-  { id: 'read', text: 'Open the note' },
+  { id: 'read', text: 'Open note' },
 ]
-const READ = [{ id: 'read', text: 'Open the note' }]
+const READ = [{ id: 'read', text: 'Open note' }]
 
 /** What a command offers: doing it. */
 const RUN = [{ id: 'run', text: 'Run' }]
@@ -49,7 +49,7 @@ const RUN = [{ id: 'run', text: 'Run' }]
 /** Everything one thing can be asked, which is more than the keys reach. */
 const EVERYTHING = [
   { id: 'travel', text: 'Show in plex' },
-  { id: 'read', text: 'Open the note' },
+  { id: 'read', text: 'Open note' },
   { id: 'beside', text: 'Open beside' },
   { id: 'rename', text: 'Rename' },
   { id: 'copy', text: 'Copy the link' },
@@ -355,7 +355,7 @@ export const LitAlone: Story = {
 /** Every group came back with nothing, so there is nowhere to stand. */
 export const LitNothing: Story = {
   args: {
-    groups: [{ id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' }],
+    groups: [{ id: 'names', title: 'Names', items: [], silence: 'Search failed' }],
   },
   play: async ({ args }) => {
     await waitFor(() => expect(palette()).not.toBeNull())
@@ -850,7 +850,7 @@ export const NotToBeChosen: Story = {
 export const SomeCameBackEmpty: Story = {
   args: {
     groups: [
-      { id: 'names', title: 'Names', items: [], silence: 'The vault could not answer' },
+      { id: 'names', title: 'Names', items: [], silence: 'Search failed' },
       TEXT,
       { ...MEANING, isWorking: true },
     ],
@@ -883,7 +883,7 @@ export const FiveActions: Story = {
     await waitFor(() => expect(activeItem()).not.toBeNull())
 
     const reach = Array.from(document.body.querySelectorAll('[data-palette="key"]')).map(getText)
-    await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open the note'])
+    await expect(reach).toEqual(['Return Show in plex', 'Shift Return Open note'])
     await expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain(
       'Actions',
     )
@@ -1037,7 +1037,7 @@ export const KeyHints: Story = {
         items: [
           { id: 'new', title: 'New note', keys: keyChord('n', APPLE), actions: RUN },
           { id: 'plex', title: 'Show the plex', keys: keyChord('p', APPLE, true), actions: RUN },
-          { id: 'close', title: 'Close this tab', keys: keyChord('w', OTHER, true), actions: RUN },
+          { id: 'close', title: 'Close tab', keys: keyChord('w', OTHER, true), actions: RUN },
           { id: 'goto', title: 'Go to a note', keys: keyChord('g', OTHER), actions: RUN },
           { id: 'run', title: 'Run it', keys: { icons: ['return'], letter: '' }, actions: RUN },
           {

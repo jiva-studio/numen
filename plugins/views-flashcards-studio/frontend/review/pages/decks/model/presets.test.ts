@@ -136,17 +136,19 @@ describe('why a preset schedules nothing, in words', () => {
   })
 
   it('says which budget remains at nothing', () => {
-    expect(getStoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no budget in time')
-    expect(getStoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards a day')
-    expect(getStoppedWords(StopReason.NO_DAY, settings(), on)).toBe('by no day')
+    expect(getStoppedWords(StopReason.NO_MINUTES, settings(), on)).toBe('no time budget')
+    expect(getStoppedWords(StopReason.NO_CARDS, settings(), on)).toBe('no cards per day')
+    expect(getStoppedWords(StopReason.NO_DAY, settings(), on)).toBe('no target date')
   })
 
   it('names the day a goal aimed at, where the settings carry one', () => {
     const datePreset = settings({ goal: 'date', byDate: '2026-08-31' })
 
-    expect(getStoppedWords(StopReason.PAST_DAY, datePreset, on)).toMatch(/August.*has passed$/)
+    expect(getStoppedWords(StopReason.PAST_DAY, datePreset, on)).toMatch(
+      /^target date August.*passed$/,
+    )
     // A preset counted with no settings on hand still says what stopped it.
-    expect(getStoppedWords(StopReason.PAST_DAY, null, on)).toBe('the day has passed')
+    expect(getStoppedWords(StopReason.PAST_DAY, null, on)).toBe('target date passed')
   })
 
   // The fifth of September in 2026 is a Saturday.
@@ -165,7 +167,7 @@ describe('what a goal evaluates to in words', () => {
   it('says how long a day runs', () => {
     expect(getGoalWords(settings({ minutesADay: 20 }), '2026-09-05')).toBe('20 minutes a day')
     expect(getGoalWords(settings({ minutesADay: 1 }), '2026-09-05')).toBe('1 minute a day')
-    expect(getGoalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no budget in time')
+    expect(getGoalWords(settings({ minutesADay: 0 }), '2026-09-05')).toBe('no time budget')
   })
 
   it('says the share requested of memory in hundredths', () => {
@@ -183,7 +185,9 @@ describe('what a goal evaluates to in words', () => {
   })
 
   it('says no day while the goal names none', () => {
-    expect(getGoalWords(settings({ goal: 'date', byDate: '' }), '2026-09-12')).toBe('by no day')
+    expect(getGoalWords(settings({ goal: 'date', byDate: '' }), '2026-09-12')).toBe(
+      'no target date',
+    )
   })
 
   it('says only the day once it is today or has passed', () => {
@@ -285,11 +289,11 @@ describe('what starting a session on a preset would ask', () => {
 
   // A tile with nothing to offer says why, as the deck rows under it do.
   it('says the day is full where the budget is what left it nothing', () => {
-    expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('the day is full')
+    expect(getLeftWords(preset({ cards: 0, answered: 55, took: 20 }))).toBe('daily limit reached')
   })
 
   it('says nothing fell due where the day retained none of its cards', () => {
-    expect(getLeftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing today')
+    expect(getLeftWords(preset({ cards: 0, answered: 0, took: 0 }))).toBe('nothing due today')
   })
 })
 
@@ -315,7 +319,7 @@ describe('whether starting a session on a deck is offered', () => {
   })
 
   it('fails where the preset scheduling it schedules nothing', () => {
-    expect(canStart(deck(3), createPresets(preset({ paused: 'no cards a day' })))).toBe(false)
+    expect(canStart(deck(3), createPresets(preset({ paused: 'no cards per day' })))).toBe(false)
   })
 
   it('is offered where nothing says which preset schedules the deck', () => {
@@ -342,7 +346,7 @@ describe('why a preset or a deck is asking nothing', () => {
     }
     // A day and a day of the week are names, and carry the only capital in one.
     expect(getStoppedWords(StopReason.PAST_DAY, settings({ byDate: '2026-09-30' }), on)).toMatch(
-      / has passed$/,
+      / passed$/,
     )
     expect(getStoppedWords(StopReason.NO_LOAD, null, on)).toMatch(/^no load on \S+$/)
   })
@@ -443,7 +447,7 @@ describe('which preset schedules each deck', () => {
 
     await one.read(vault([{ deck: 'decks/Words.md', due: 3, new: 1 }]), '2026-09-05')
 
-    expect(one.presets.value[0]).toMatchObject({ path: '', name: 'The defaults', cards: 4 })
+    expect(one.presets.value[0]).toMatchObject({ path: '', name: 'Defaults', cards: 4 })
   })
 
   it('holds nothing of the day for a preset that schedules nothing, and says why', async () => {
@@ -463,7 +467,7 @@ describe('which preset schedules each deck', () => {
     await one.read(vault([{ deck: 'decks/Words.md', due: 0, new: 0 }]), '2026-09-05')
 
     expect(one.presets.value[0]).toMatchObject({
-      paused: 'no cards a day',
+      paused: 'no cards per day',
       cards: 0,
     })
   })
@@ -552,7 +556,7 @@ describe('which preset schedules each deck', () => {
     expect(one.presets.value[0]).toMatchObject({ path: 'Empty.md', paused: '' })
     expect(one.presets.value[1]).toMatchObject({
       path: 'Quiet.md',
-      paused: 'no budget in time',
+      paused: 'no time budget',
     })
   })
 
@@ -652,7 +656,7 @@ describe('which preset schedules each deck', () => {
       '2026-09-05',
     )
 
-    expect(one.presets.value[0]?.wrong).toBe('that note is not in the vault')
+    expect(one.presets.value[0]?.wrong).toBe('note not in the vault')
   })
 
   it('says nothing is wrong with a preset no deck of this vault answered for', async () => {
@@ -905,7 +909,7 @@ describe('what is wrong with a preset no deck answered for', () => {
 
     expect(one.presets.value[1]).toMatchObject({
       path: 'Latin.md',
-      wrong: 'that note is not in the vault',
+      wrong: 'note not in the vault',
     })
   })
 

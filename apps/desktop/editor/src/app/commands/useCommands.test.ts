@@ -191,7 +191,7 @@ describe('a key press', () => {
 })
 
 describe('a plugin command over a note', () => {
-  const PRESET = { id: 'plugin:preset', title: 'Open the preset', scope: 'note' as const }
+  const PRESET = { id: 'plugin:preset', title: 'Open preset', scope: 'note' as const }
   const GRAPH = {
     id: 'plugin:graph',
     title: 'New graph',

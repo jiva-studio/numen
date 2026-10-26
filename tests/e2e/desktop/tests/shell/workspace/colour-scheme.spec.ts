@@ -10,7 +10,7 @@ const PROSE = { light: 'rgb(58, 50, 42)', dark: 'rgb(236, 224, 205)' } as const
 
 type Half = keyof typeof SURFACE
 
-const MODE_NAMES = { light: 'Light', dark: 'Dark', system: 'Follow the system' } as const
+const MODE_NAMES = { light: 'Light', dark: 'Dark', system: 'System' } as const
 
 /**
  * The colour `--numen-surface` resolves to in the window, in the files view, which is drawn in the

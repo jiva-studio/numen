@@ -204,10 +204,10 @@ describe('what the goals come to today', () => {
   // What a person needs from the tile is why it schedules nothing, not what it
   // was aiming at, so the reason stands where the goal would.
   it('greys a preset that schedules nothing and says why in place of the goal', () => {
-    const one = mountPresets([preset({ paused: 'no cards a day' })])
+    const one = mountPresets([preset({ paused: 'no cards per day' })])
 
     expect(one.find('.presets__preset--paused').exists()).toBe(true)
-    expect(one.find('.presets__goal').text()).toBe('no cards a day')
+    expect(one.find('.presets__goal').text()).toBe('no cards per day')
     expect(one.text()).not.toContain('20 minutes a day')
     expect(one.findAll('.presets__done')).toHaveLength(0)
     expect(one.text()).not.toContain('%')
@@ -222,7 +222,7 @@ describe('what the goals come to today', () => {
         cards: 22,
         answered: 6,
         took: 4,
-        wrong: 'that note is not in the vault',
+        wrong: 'note not in the vault',
       }),
     ])
 
@@ -232,9 +232,9 @@ describe('what the goals come to today', () => {
   })
 
   it('says what is wrong with a preset where its goal would stand', () => {
-    const one = mountPresets([preset({ settings: null, wrong: 'that note is not in the vault' })])
+    const one = mountPresets([preset({ settings: null, wrong: 'note not in the vault' })])
 
-    expect(one.find('.presets__wrong').text()).toBe('that note is not in the vault')
+    expect(one.find('.presets__wrong').text()).toBe('note not in the vault')
   })
 
   it('says nothing of what is wrong where nothing is', () => {
@@ -266,21 +266,21 @@ describe('what the goals come to today', () => {
   it('keeps a preset that schedules nothing today, alongside the ones that do', () => {
     const one = mountPresets([
       preset({ path: 'A.md', name: 'Sanskrit' }),
-      preset({ path: 'B.md', name: 'Stopped', paused: 'no cards a day' }),
+      preset({ path: 'B.md', name: 'Stopped', paused: 'no cards per day' }),
       preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
     ])
     const presetElements = one.findAll('.presets__preset')
 
     expect(presetElements).toHaveLength(2)
-    expect(presetElements[1]?.text()).toBe('Stoppedno cards a day')
+    expect(presetElements[1]?.text()).toBe('Stoppedno cards per day')
     expect(presetElements[1]?.find('.presets__done').exists()).toBe(false)
   })
 
   // The decks naming no preset are a tile like any other, and it carries no act.
   it('draws the tile of the defaults as an ordinary preset', () => {
-    const one = mountPresets([preset({ path: '', name: 'The defaults' })])
+    const one = mountPresets([preset({ path: '', name: 'Defaults' })])
 
-    expect(one.text()).toContain('The defaults')
+    expect(one.text()).toContain('Defaults')
     expect(one.findAll('.presets__done')).toHaveLength(1)
     // Starting a session on it is the whole tile, the way it is for a preset that
     // names itself: the tile carries no act of its own beside that.
@@ -341,16 +341,16 @@ describe('what pressing a preset would ask', () => {
       mountPresets([preset({ cards: 0, answered: 55, took: 20 })])
         .find('.presets__left')
         .text(),
-    ).toBe('the day is full')
+    ).toBe('daily limit reached')
     expect(
       mountPresets([preset({ cards: 0, answered: 0, took: 0 })])
         .find('.presets__left')
         .text(),
-    ).toBe('nothing today')
+    ).toBe('nothing due today')
   })
 
   it('says nothing of a count where the preset schedules nothing today', () => {
-    const one = mountPresets([preset({ cards: 0, paused: 'no cards a day' })])
+    const one = mountPresets([preset({ cards: 0, paused: 'no cards per day' })])
 
     expect(one.findAll('.presets__left')).toHaveLength(0)
   })
@@ -378,7 +378,7 @@ describe('starting a session on a preset', () => {
   // The decks naming no preset are sat down to the way the rest are, and the
   // note they stand under is no note at all.
   it('names the defaults by the nothing they stand in', async () => {
-    const one = mountPresets([preset({ path: '', name: 'The defaults' })])
+    const one = mountPresets([preset({ path: '', name: 'Defaults' })])
 
     await one.find('.presets__preset').trigger('click')
 
@@ -398,7 +398,7 @@ describe('starting a session on a preset', () => {
 
   it('offers no session where the preset schedules nothing today', () => {
     expect(
-      getPressable(mountPresets([preset({ cards: 0, paused: 'no cards a day' })])),
+      getPressable(mountPresets([preset({ cards: 0, paused: 'no cards per day' })])),
     ).toStrictEqual([false])
   })
 })

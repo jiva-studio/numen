@@ -97,7 +97,7 @@ const DECK_STATE: DeckTabState = {
   errorMessage: computed(() => ''),
   scheduled: computed(() => ({ path: 'Sanskrit.md', name: 'Sanskrit', errorMessage: '' })),
   choices: computed(() => [
-    { path: '', name: 'The defaults' },
+    { path: '', name: 'Defaults' },
     { path: 'Sanskrit.md', name: 'Sanskrit' },
     { path: 'Anatomy.md', name: 'Anatomy' },
   ]),

@@ -304,9 +304,7 @@ describe('when there is nothing to choose', () => {
   it('says so and not drawing an empty box', async () => {
     mountMenu({ items: [] })
     await settle()
-    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe(
-      'Nothing to do',
-    )
+    expect(getDrawnMenu()?.querySelector('.menu__silence')?.textContent?.trim()).toBe('No items')
   })
 
   it('says it in the words it was given', async () => {
@@ -322,7 +320,7 @@ describe('when there is nothing to choose', () => {
 
 describe('the groups the items stand in', () => {
   const SHELVED: MenuItem[] = [
-    { id: 'numen', text: 'Numen', group: 'Ships with numen' },
+    { id: 'numen', text: 'Numen', group: 'Built-in' },
     { id: 'sea', text: 'Sea', group: 'Yours' },
     { id: 'sand', text: 'Sand', group: 'Yours' },
   ]
@@ -335,7 +333,7 @@ describe('the groups the items stand in', () => {
   it('are named where the menu is told to name them', async () => {
     mountMenu({ items: SHELVED, hasGroups: true })
     await settle()
-    expect(shelves()).toStrictEqual(['Ships with numen', 'Yours'])
+    expect(shelves()).toStrictEqual(['Built-in', 'Yours'])
     expect(document.body.querySelectorAll('.menu__rule')).toHaveLength(0)
   })
 

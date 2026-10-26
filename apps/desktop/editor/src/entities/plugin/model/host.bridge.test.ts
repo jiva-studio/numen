@@ -129,7 +129,7 @@ describe('a command over a note', () => {
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({
       id: 'preset',
-      title: 'Open the preset',
+      title: 'Open preset',
       scope: 'note',
       handler,
     })
@@ -137,7 +137,7 @@ describe('a command over a note', () => {
     await host.executeCommand('plugin:preset', NOTE)
 
     expect(host.getPaletteCommands()).toStrictEqual([
-      { id: 'plugin:preset', title: 'Open the preset', scope: 'note' },
+      { id: 'plugin:preset', title: 'Open preset', scope: 'note' },
     ])
     expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
@@ -147,7 +147,7 @@ describe('a command over a note', () => {
     const handler = vi.fn()
     host.createContext('cmd.plugin').registerCommand({
       id: 'preset',
-      title: 'Open the preset',
+      title: 'Open preset',
       shortcut: 'ctrl+p',
       scope: 'note',
       handler,

@@ -20,7 +20,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     // Verify note editor detects malformed frontmatter and displays explicit alert banner
     const alertBanner = page.getByRole('alert')
     await expect(alertBanner).toBeVisible({ timeout: 10_000 })
-    await expect(alertBanner).toContainText('the frontmatter of this note cannot be read')
+    await expect(alertBanner).toContainText('frontmatter unreadable')
 
     // Verify application remains interactive
     await expect(page.locator('.status-bar')).toBeVisible({ timeout: 10_000 })

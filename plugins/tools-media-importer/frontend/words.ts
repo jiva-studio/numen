@@ -1,15 +1,15 @@
 /** Words used across the media importer frontend. */
 export const WORDS = {
   link: 'Link',
-  fetching: 'Fetching what the address publishes…',
+  fetching: 'Fetching the page…',
   copying: 'Copying the video…',
-  noText: 'Nothing was fetched from this address.',
+  noText: 'No text found at this link.',
   play: 'Play',
   pause: 'Pause',
-  elapsed: 'Played so far',
-  failed: 'The link could not be read',
-  notAnAddress: 'This is not a web address',
-  occupied: 'A link of this address is already there',
-  notALink: 'This file holds no web address',
-  noVault: 'No vault is open',
+  elapsed: 'Elapsed',
+  failed: 'Link unreadable',
+  notAnAddress: 'Not a web address',
+  occupied: 'A link to this address exists',
+  notALink: 'This file has no web address',
+  noVault: 'No vault open',
 } as const

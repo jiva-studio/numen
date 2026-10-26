@@ -73,13 +73,11 @@ describe('MarkdownNoteEditor error banner', () => {
     const wrapper = mount(MarkdownNoteEditor, {
       props: {
         filePath: 'test.md',
-        errorMessage: 'the frontmatter of this note cannot be read',
+        errorMessage: 'frontmatter unreadable',
       },
     })
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
-    expect(wrapper.find('.caution__text').text()).toBe(
-      'the frontmatter of this note cannot be read',
-    )
+    expect(wrapper.find('.caution__text').text()).toBe('frontmatter unreadable')
 
     await wrapper.find('.caution__dismiss').trigger('click')
     expect(wrapper.find('[role="alert"]').exists()).toBe(false)
@@ -118,9 +116,7 @@ key: value:
       },
     })
     expect(wrapper.find('[role="alert"]').exists()).toBe(true)
-    expect(wrapper.find('.caution__text').text()).toBe(
-      'the frontmatter of this note cannot be read',
-    )
+    expect(wrapper.find('.caution__text').text()).toBe('frontmatter unreadable')
   })
 
   it('does not display caution banner when errorMessage is an empty ref or empty string', () => {

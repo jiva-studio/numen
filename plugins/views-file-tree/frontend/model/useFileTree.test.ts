@@ -354,7 +354,7 @@ describe('a folder that could not be read', () => {
 
     await list.openFolder(ROOT)
 
-    expect(list.errorMessage.value).toContain('numen did not answer')
+    expect(list.errorMessage.value).toContain('Numen is not responding')
     expect(list.errorMessage.value).not.toContain('the vault is not there')
     expect(list.rows.value).toStrictEqual([])
   })

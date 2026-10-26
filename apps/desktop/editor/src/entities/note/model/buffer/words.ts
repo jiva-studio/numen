@@ -3,16 +3,16 @@
 import type { NoteErrorCode } from './tabState'
 
 export const ERROR_MESSAGES: Record<NoteErrorCode, string> = {
-  notANote: 'this file is not a note',
-  notText: 'this file is not text',
-  tooLarge: 'this note is longer than the editor holds',
-  bodyUnwritable: 'a note begins below its frontmatter, and this text begins with one',
-  unreadable: 'the frontmatter of this note cannot be read',
-  unreachable: 'the vault could not be reached, so this note was not written',
+  notANote: 'not a note',
+  notText: 'not a text file',
+  tooLarge: 'note too large for the editor',
+  bodyUnwritable: 'text cannot start with frontmatter',
+  unreadable: 'frontmatter unreadable',
+  unreachable: 'vault unreachable, note not saved',
 }
 
 export const STALE_CONFLICT = {
-  says: 'this note changed on disk, and saving stopped',
-  keep: 'keep mine',
-  take: "take the file's",
+  says: 'saving paused: the note changed on disk',
+  keep: 'keep my version',
+  take: 'use disk version',
 }

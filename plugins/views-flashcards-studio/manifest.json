@@ -3,7 +3,7 @@
   "name": "Flashcards Studio",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Flashcard deck editor, card stencil designer, SRS preset studio and the review of the cards",
+  "description": "Flashcard deck editor, card stencil designer, SRS presets and card review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],
@@ -63,7 +63,7 @@
       "key": "day_start_time",
       "type": "string",
       "title": "Day starts at",
-      "description": "The hour a day of review begins at, as HH:MM from 00:00 to 12:00. An answer given before it is written into the day before. Anything else stands at 04:00.",
+      "description": "Time a review day starts. Answers before it count toward the day before. HH:MM from 00:00 to 12:00; other values use 04:00.",
       "default": "04:00",
       "replaces": ["review.day_start_time", "review.day_starts"]
     }

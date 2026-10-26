@@ -28,7 +28,7 @@ import { MANY } from '../fixtures/actions'
 const OPEN = [{ id: 'open', text: 'Open' }]
 const BOTH = [
   { id: 'travel', text: 'Show in plex' },
-  { id: 'open', text: 'Open the note' },
+  { id: 'open', text: 'Open note' },
 ]
 
 const item = (id: string, more: Partial<PaletteItem> = {}): PaletteItem => ({

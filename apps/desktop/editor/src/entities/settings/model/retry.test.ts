@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createPluginRetry, type RetryDeps } from './retry'
 
-const words = { failedAgain: 'It stopped again.', error: 'It could not be started.' }
+const words = {
+  stopped: (name: string, reason: string) => `${name} stopped: ${reason}`,
+  retryFailed: (name: string, message: string) => `Could not retry ${name}: ${message}`,
+}
 
 const createRetry = (answer: Promise<string>) => {
   const calls: string[] = []
@@ -11,43 +14,39 @@ const createRetry = (answer: Promise<string>) => {
       return answer
     },
   }
-  const notifiedCalls = vi.fn()
+  const notify = vi.fn()
   const refresh = vi.fn(() => Promise.resolve())
+  const getName = (pluginId: string) => (pluginId === 'md.numen.sample' ? 'Sample' : pluginId)
   return {
     calls,
-    notified: notifiedCalls,
+    notify,
     refresh,
-    retry: createPluginRetry(core, { words, notify: notifiedCalls, refresh }),
+    retry: createPluginRetry(core, { words, notify, refresh, getName }),
   }
 }
 
-describe('a plugin retried', () => {
-  it('is handed to the vault by its id, and the settings are read again', async () => {
-    const { calls, notified, refresh, retry } = createRetry(Promise.resolve(''))
+describe('createPluginRetry', () => {
+  it('sends the plugin id to the core and refreshes the settings', async () => {
+    const { calls, notify, refresh, retry } = createRetry(Promise.resolve(''))
     await retry.retryPlugin('md.numen.sample')
     expect(calls).toStrictEqual(['md.numen.sample'])
-    expect(notified).toHaveBeenCalledOnce()
-    expect(notified).toHaveBeenLastCalledWith('')
+    expect(notify).toHaveBeenCalledOnce()
+    expect(notify).toHaveBeenLastCalledWith('')
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  it('that fails again is notified with its reason', async () => {
-    const { notified, refresh, retry } = createRetry(
-      Promise.resolve('The plugin did not finish starting in time.'),
-    )
+  it('shows a repeated failure with the plugin name and the reason', async () => {
+    const { notify, refresh, retry } = createRetry(Promise.resolve('Failed to start'))
     await retry.retryPlugin('md.numen.sample')
-    expect(notified).toHaveBeenLastCalledWith(
-      'It stopped again. The plugin did not finish starting in time.',
-      'caution',
-    )
+    expect(notify).toHaveBeenLastCalledWith('Sample stopped: Failed to start', 'caution')
     expect(refresh).toHaveBeenCalledOnce()
   })
 
-  it('that cannot be calls is notified as an error, and the settings are read again', async () => {
-    const { notified, refresh, retry } = createRetry(Promise.reject(new Error('core unreachable')))
+  it('shows a failed request as an error with the plugin name, and refreshes the settings', async () => {
+    const { notify, refresh, retry } = createRetry(Promise.reject(new Error('core unreachable')))
     await retry.retryPlugin('md.numen.sample')
-    expect(notified).toHaveBeenLastCalledWith(
-      expect.stringContaining('It could not be started.'),
+    expect(notify).toHaveBeenLastCalledWith(
+      expect.stringContaining('Could not retry Sample: '),
       'error',
     )
     expect(refresh).toHaveBeenCalledOnce()

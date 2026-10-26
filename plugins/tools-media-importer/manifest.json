@@ -3,7 +3,7 @@
   "name": "Media Importer",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Keeps web addresses as links, fetches the articles and captions published there, and copies videos to play from this disk",
+  "description": "Saves web links as notes, fetches their articles and captions, and downloads videos for offline playback",
   "targets": ["desktop.editor"],
   "activationEvents": ["onFile:*.url"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
@@ -17,7 +17,7 @@
   "commands": [
     {
       "id": "import",
-      "title": "Import an address",
+      "title": "Import link",
       "arguments": [
         { "name": "address", "title": "The address", "type": "string", "required": true }
       ],
@@ -25,17 +25,17 @@
     },
     {
       "id": "download-text",
-      "title": "Download the text again",
+      "title": "Download text again",
       "fileExtensions": ["url"]
     },
     {
       "id": "download-copy",
-      "title": "Download a copy",
+      "title": "Download video",
       "fileExtensions": ["url"]
     },
     {
       "id": "delete-copy",
-      "title": "Delete the copy",
+      "title": "Delete downloaded video",
       "fileExtensions": ["url"]
     }
   ],
@@ -58,7 +58,7 @@
       "key": "yt_dlp",
       "type": "string",
       "title": "yt-dlp",
-      "description": "The path to the yt-dlp program",
+      "description": "Path to the yt-dlp program",
       "default": "",
       "replaces": ["importing.yt_dlp"]
     },
@@ -66,7 +66,7 @@
       "key": "ffmpeg",
       "type": "string",
       "title": "ffmpeg",
-      "description": "The path to the ffmpeg program",
+      "description": "Path to the ffmpeg program",
       "default": "",
       "replaces": ["importing.ffmpeg"]
     },
@@ -74,21 +74,21 @@
       "key": "captions",
       "type": "string",
       "title": "Caption languages",
-      "description": "The languages captions are taken in, best first, separated by commas",
+      "description": "Caption languages in order of preference, comma-separated",
       "default": ""
     },
     {
       "key": "automatic_captions",
       "type": "boolean",
       "title": "Automatic captions",
-      "description": "Take the captions a machine wrote where a site publishes none of its own",
+      "description": "Use auto-generated captions when a site has no others",
       "default": true
     },
     {
       "key": "copy_max_size_mb",
       "type": "number",
-      "title": "Largest copy",
-      "description": "How many megabytes a copy of a video may take; 0 is no limit",
+      "title": "Maximum download size",
+      "description": "Maximum video download size in megabytes; 0 for no limit",
       "default": 500,
       "min": 0,
       "max": 100000,

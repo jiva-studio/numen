@@ -18,7 +18,7 @@ describe('the words of an error code', () => {
   })
 
   it('say that the vault could not be reached where it did not answer', () => {
-    expect(getErrorWords('unreachable')).toBe('the vault could not be reached')
+    expect(getErrorWords('unreachable')).toBe('vault unreachable')
   })
 })
 

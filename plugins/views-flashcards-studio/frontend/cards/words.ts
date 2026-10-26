@@ -12,38 +12,37 @@ export const WORDS = {
    */
   newField: 'Field 1',
   /** The two the file puts to the person, and the two ways out. */
-  stale: 'This file changed on disk, so it stopped saving.',
-  gone: 'This file is no longer in the vault, so saving stopped. What is here is still yours.',
-  makeAgain: 'make it again',
-  keep: 'Keep mine',
-  take: "Take the file's",
+  stale: 'Saving paused: the file changed on disk.',
+  gone: 'Saving paused: the file was removed from the vault. Your text is kept.',
+  makeAgain: 'recreate it',
+  keep: 'Keep my version',
+  take: 'Use disk version',
   /** What stopped the whole file being read, said above what was read. */
-  notRead: 'This file could not be read.',
-  notSaved: 'This file could not be written.',
+  notRead: 'File unreadable.',
+  notSaved: 'File not saved.',
   /** The vault answered nothing at all, and what is on screen is still here. */
-  unreachable: 'The vault could not be reached.',
-  notADeck: 'That note is not a deck.',
-  notAStencil: 'That note is not a stencil.',
+  unreachable: 'Vault unreachable.',
+  notADeck: 'Not a deck.',
+  notAStencil: 'Not a stencil.',
   /** A deck past the size one is read at, with the bound it is past. */
-  tooLarge: (linked: number) => `This deck is over ${linked} bytes, so none of it was read.`,
+  tooLarge: (linked: number) => `Deck larger than ${linked} bytes; not loaded.`,
   /** The line at the top of a deck, which says which preset schedules it. */
   scheduledBy: 'Scheduled by',
-  defaults: 'The defaults',
+  defaults: 'Defaults',
   unnamed: (path: string) => getFileName(path),
   /** A deck the vault would not put on the preset chosen. */
-  notScheduled: 'This deck was not put on that preset.',
+  notScheduled: 'Preset not applied to this deck.',
   /** A deck the file has moved past since the window read it. */
-  notScheduledChanged: 'This deck changed on disk, so it was not put on that preset.',
+  notScheduledChanged: 'Preset not applied: the deck changed on disk.',
   /** What is wrong with the file itself, standing against no card and no face. */
-  problems: 'What is wrong with this file',
+  problems: 'File problems',
   /** What a mark on a card, a face or a field is announced as. */
-  wrong: 'Wrong here',
+  wrong: 'Problem',
   /** How far a field's new name reached, said once it has. */
   renamed: (cards: number, decks: number) =>
-    `The field was renamed in ${many(cards, 'card')}, over ${many(decks, 'deck')}.`,
+    `Field renamed in ${many(cards, 'card')} across ${many(decks, 'deck')}.`,
   /** A rename asked against a stencil the file has since moved past. */
-  notRenamed: 'This file changed on disk, so the field was not renamed.',
+  notRenamed: 'Field not renamed: the file changed on disk.',
   /** The decks the new name did not reach, each keeping the heading it had. */
-  notWritten: (paths: readonly string[]) =>
-    `These decks keep the old heading: ${paths.join(', ')}.`,
+  notWritten: (paths: readonly string[]) => `Old heading kept in: ${paths.join(', ')}.`,
 }

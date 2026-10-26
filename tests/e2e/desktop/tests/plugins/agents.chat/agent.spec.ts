@@ -12,7 +12,7 @@ test.describe('Agent Plugin and Interface', () => {
     // Verify Agent panel interface
     const input = page.getByRole('textbox', { name: 'Ask about the vault' }).first()
     await expect(input).toBeVisible({ timeout: 10_000 })
-    await expect(page.getByText('Nothing said yet').first()).toBeVisible()
+    await expect(page.getByText('No messages yet').first()).toBeVisible()
   })
 
   test('inspects agent model and provider selector button', async ({ page }) => {

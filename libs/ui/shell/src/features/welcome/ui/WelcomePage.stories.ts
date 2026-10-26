@@ -16,7 +16,7 @@ import type { Offer, VaultRow, WelcomeAction } from '../lib/welcome'
 /** The ways in the editor's window offers, in the order it offers them. */
 const WAYS: readonly WelcomeAction[] = [
   { id: 'find', text: 'Search the vault', keys: { icons: ['control'], letter: 'K' } },
-  { id: 'commands', text: 'Show the commands', keys: { icons: ['control', 'shift'], letter: 'P' } },
+  { id: 'commands', text: 'Show commands', keys: { icons: ['control', 'shift'], letter: 'P' } },
   { id: 'note', text: 'New note', icon: SquarePen, keys: { icons: ['control'], letter: 'N' } },
   { id: 'plex', text: 'Open plex', icon: Waypoints, keys: { icons: ['control'], letter: 'G' } },
   { id: 'agent', text: 'New agent', icon: Bot, keys: { icons: ['control', 'shift'], letter: 'A' } },

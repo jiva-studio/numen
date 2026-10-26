@@ -35,7 +35,7 @@ describe('formatBuyFact', () => {
     expect(formatBuyFact({ kind: 'cardsASession', cards: 20 })).toBe('20 cards a session')
     expect(formatBuyFact({ kind: 'cardsASession', cards: 1 })).toBe('1 card a session')
     expect(formatBuyFact({ kind: 'cannotGetThere', short: 5, cards: 100 })).toBe(
-      '5 of 100 cannot get there',
+      '5 of 100 not reachable',
     )
     expect(formatBuyFact({ kind: 'overdueGone', days: 3 })).toBe('overdue gone in 3 days')
     expect(formatBuyFact({ kind: 'overdueStays', horizon: 14 })).toBe('not within 14 days')
@@ -75,7 +75,7 @@ describe('formatLearningFact', () => {
     })
     expect(formatLearningFact({ kind: 'allToday' })).toStrictEqual({
       figure: 'today',
-      name: 'all of it learned',
+      name: 'all learned',
     })
     expect(formatLearningFact({ kind: 'daysToLearn', days: 5 })).toStrictEqual({
       figure: '5',

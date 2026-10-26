@@ -229,7 +229,7 @@ const marks = (title: string, word: string): Span[] => {
 }
 
 const TRAVEL = { id: 'travel', text: 'Show in plex' }
-const READ = { id: 'read', text: 'Open the note' }
+const READ = { id: 'read', text: 'Open note' }
 const READ_AT = { id: 'readAt', text: 'Open at this heading' }
 const READ_DOCUMENT = { id: 'readDocument', text: 'Open the document here' }
 
@@ -338,7 +338,7 @@ const OVER_WINDOW: PaletteGroup = {
     command('note', 'New note', keyChord('n', KEYBOARD)),
     command('plex', 'New plex'),
     command('agent', 'New agent', keyChord('a', KEYBOARD, true)),
-    command('appearance', 'Change the theme'),
+    command('appearance', 'Change theme'),
   ],
 }
 
@@ -358,7 +358,7 @@ const COMMANDS: readonly PaletteGroup[] = [
     id: 'note',
     title: 'Note',
     items: [
-      command('read', 'Open the note'),
+      command('read', 'Open note'),
       command('beside', 'Open beside'),
       command('travel', 'Show in plex', keyChord('p', KEYBOARD, true)),
       command('child', 'New child note', keyChord('c', KEYBOARD, true)),
@@ -476,7 +476,7 @@ const screen = ({
             :rows="ROWS"
             :open="OPEN"
             :selected="selected"
-            name="The folders and files of the vault"
+            name="Vault files"
           >
             <template #icon="{ id, open }">
               <component :is="getIcon(id, open)" class="size-4 shrink-0 text-hushed" />
@@ -693,7 +693,7 @@ export const Filing: Story = {
     }),
   play: async ({ canvasElement }) => {
     const tree = within(canvasElement).getByRole('tree', {
-      name: 'The folders and files of the vault',
+      name: 'Vault files',
     })
     const rows = within(tree).getAllByRole('treeitem')
     const selected = rows.filter((row) => row.getAttribute('aria-selected') === 'true')

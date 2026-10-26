@@ -1,43 +1,46 @@
 /**
- * A plugin the host suspends, started once more.
+ * Retry of a plugin the host suspends.
  */
 import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '@/shared/notices/messages'
 
-/** Everything this says in the window's voice. */
+/** Notice copy of a retry. */
 export interface RetryWords {
-  /** The plugin failed to start again, which a reason follows. */
-  readonly failedAgain: string
-  /** The plugin could not be asked to start. */
-  readonly error: string
+  /** The plugin failed to start again: "<Name> stopped: <reason>". */
+  readonly stopped: (name: string, reason: string) => string
+  /** The retry request itself failed. */
+  readonly retryFailed: (name: string, message: string) => string
 }
 
-/** What this asks of the vault. */
+/** The core call a retry makes. */
 export interface RetryDeps {
   retryPlugin(pluginId: string): Promise<string>
 }
 
-/** Where this says what happened, and how the settings are read again after. */
+/** Notice output, settings refresh and the plugin name lookup of a retry. */
 export interface RetryOptions {
   readonly words: RetryWords
   readonly notify: MessageWriter
   readonly refresh: () => Promise<void>
+  /** The display name of a plugin, or its id when it has none. */
+  readonly getName: (pluginId: string) => string
 }
 
 /**
- * Starting a plugin again. A plugin that fails again is reported with its reason,
- * and the settings are read again either way, so what is drawn as failed is what
- * the host holds.
+ * Starts a plugin again. A repeated failure is shown as a notice with the
+ * plugin name and the reason; the settings are read again in every case.
  */
-export function createPluginRetry(core: RetryDeps, { words, notify, refresh }: RetryOptions) {
-  /** The plugin started once more. */
+export function createPluginRetry(
+  core: RetryDeps,
+  { words, notify, refresh, getName }: RetryOptions,
+) {
   const retryPlugin = async (pluginId: string): Promise<void> => {
     notify('')
     try {
       const failure = await core.retryPlugin(pluginId)
-      if (failure !== '') notify(`${words.failedAgain} ${failure}`, 'caution')
+      if (failure !== '') notify(words.stopped(getName(pluginId), failure), 'caution')
     } catch (caughtError) {
-      notify(`${words.error} ${formatErrorMessage(caughtError)}`, 'error')
+      notify(words.retryFailed(getName(pluginId), formatErrorMessage(caughtError)), 'error')
     }
     await refresh()
   }

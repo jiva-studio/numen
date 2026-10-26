@@ -3,7 +3,7 @@
   "name": "ACP Agents",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Generic Agent Client Protocol client: discovers programs that speak ACP and answers completions through them",
+  "description": "Agent Client Protocol (ACP) client: finds ACP programs and runs completions through them",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": ["onCommand:askAgent"],
@@ -23,7 +23,7 @@
       "key": "executable_path",
       "type": "string",
       "title": "Executable Path",
-      "description": "Path to the ACP agent executable. If empty, the agent is discovered automatically.",
+      "description": "Path to the ACP agent executable. Empty finds it automatically.",
       "default": ""
     }
   ]

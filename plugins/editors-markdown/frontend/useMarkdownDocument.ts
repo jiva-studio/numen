@@ -192,7 +192,7 @@ function checkFrontmatterError(content: string): string {
   }
   const rawYaml = rest.slice(0, delimiterMatch.index)
   if (hasMalformedFrontmatter(rawYaml)) {
-    return 'the frontmatter of this note cannot be read'
+    return 'frontmatter unreadable'
   }
   return ''
 }

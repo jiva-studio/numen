@@ -79,11 +79,11 @@ describe('the panel coming in', () => {
 
   // A gesture that does nothing is a gesture a person repeats.
   it('says why it cannot come in, and does not', () => {
-    const { held, notices } = panel({ unreachable: 'The agent could not be reached.' })
+    const { held, notices } = panel({ unreachable: 'Agent unreachable.' })
     held.openPanel()
     expect(held.open.value).toBe(false)
     expect(held.context.value).toBeNull()
-    expect(notices).toEqual(['The agent could not be reached.'])
+    expect(notices).toEqual(['Agent unreachable.'])
   })
 
   it('is put away and keeps the conversation', () => {

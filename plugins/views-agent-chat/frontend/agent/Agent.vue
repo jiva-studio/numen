@@ -81,9 +81,9 @@ const agentStyle = computed(() => ({ '--agent-room': room.value }))
       @open="emit('open', $event)"
       @follow="(turn: Turn, href: string, press: MouseEvent) => emit('follow', turn, href, press)"
     >
-      <template #silence><slot name="silence">Nothing said yet</slot></template>
+      <template #silence><slot name="silence">No messages yet</slot></template>
       <template v-if="$slots.turn" #turn="bound"><slot name="turn" v-bind="bound" /></template>
-      <template #failure="bound"><slot name="failure" v-bind="bound">Did not send</slot></template>
+      <template #failure="bound"><slot name="failure" v-bind="bound">Not sent</slot></template>
     </Thread>
 
     <div class="agent__scrim" aria-hidden="true" />

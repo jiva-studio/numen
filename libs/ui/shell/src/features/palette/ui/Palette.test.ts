@@ -18,10 +18,10 @@ import { MANY } from '../fixtures/actions'
 /** A keystroke that reaches an item away from the palette. */
 const OPTION_1: PaletteKeys = { icons: ['option'], letter: '1' }
 
-const OPEN = [{ id: 'open', text: 'Open the note' }]
+const OPEN = [{ id: 'open', text: 'Open note' }]
 const BOTH = [
   { id: 'travel', text: 'Show in plex' },
-  { id: 'open', text: 'Open the note' },
+  { id: 'open', text: 'Open note' },
 ]
 
 const OFFERING: PaletteGroup[] = [
@@ -364,11 +364,11 @@ describe('choosing', () => {
   it('says what the keys reach for the item that is lit', async () => {
     mountPalette()
     await settle()
-    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open note'])
 
     await press('ArrowDown')
     await press('ArrowDown')
-    expect(keys().map(getText)).toEqual(['Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Open note'])
   })
 
   it('draws each key retained as its own mark, in the order it is retained', async () => {
@@ -599,7 +599,7 @@ describe('item with multiple actions', () => {
     mountPalette({ groups: OFFERING })
     await settle()
 
-    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open the note'])
+    expect(keys().map(getText)).toEqual(['Return Show in plex', 'Shift Return Open note'])
     expect(document.body.querySelector('[data-palette="more"]')?.textContent).toContain('Actions')
   })
 
@@ -640,7 +640,7 @@ describe('the action panel', () => {
 
     expect(actions().map((row) => getText(row.querySelector('[data-actions="name"]')))).toEqual([
       'Show in plex',
-      'Open the note',
+      'Open note',
       'Open beside',
       'Rename',
       'Move to trash',
@@ -689,7 +689,7 @@ describe('the action panel', () => {
     await open()
 
     await pressOn(searchInput(), 'ArrowDown')
-    expect(litAction()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open note')
     expect(activeItem()?.textContent).toContain('Entropy')
 
     await pressOn(searchInput(), 'ArrowUp')
@@ -702,10 +702,10 @@ describe('the action panel', () => {
 
     await typeIn(searchInput(), 'open')
     expect(actions().map((row) => getText(row.querySelector('[data-actions="name"]')))).toEqual([
-      'Open the note',
+      'Open note',
       'Open beside',
     ])
-    expect(litAction()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open note')
 
     await typeIn(searchInput(), 'nowhere')
     expect(actions()).toHaveLength(0)
@@ -841,7 +841,7 @@ describe('the action panel', () => {
   it('relies on the first action left when the one it was on is gone', async () => {
     const palette = await open()
     await pressOn(searchInput(), 'ArrowDown')
-    expect(litAction()?.textContent).toContain('Open the note')
+    expect(litAction()?.textContent).toContain('Open note')
 
     await palette.setProps({
       groups: [

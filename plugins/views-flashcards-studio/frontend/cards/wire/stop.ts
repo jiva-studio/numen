@@ -16,13 +16,13 @@ export interface StopDetail {
 export const formatStopReasonMessage = (reason: StopReason, detail: StopDetail = {}): string => {
   switch (reason) {
     case StopReason.NO_MINUTES:
-      return 'no budget in time'
+      return 'no time budget'
     case StopReason.NO_CARDS:
-      return 'no cards a day'
+      return 'no cards per day'
     case StopReason.NO_DAY:
-      return 'by no day'
+      return 'no target date'
     case StopReason.PAST_DAY:
-      return detail.day ? `${detail.day} has passed` : 'the day has passed'
+      return detail.day ? `target date ${detail.day} passed` : 'target date passed'
     case StopReason.NO_LOAD:
       return detail.weekday ? `no load on ${detail.weekday}` : 'no load today'
     case StopReason.NO_WEEK:

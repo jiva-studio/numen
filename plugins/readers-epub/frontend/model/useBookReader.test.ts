@@ -274,7 +274,7 @@ describe('a book that will not open', () => {
 
     await readItem.goToOffset(400)
 
-    expect(recordedEvents.join(' ')).toContain('numen did not answer')
+    expect(recordedEvents.join(' ')).toContain('Numen is not responding')
     expect(recordedEvents.join(' ')).not.toContain('this file is not a book')
     expect(readItem.pages.value).toBe(0)
     expect(readItem.markup.value).toBe('')
@@ -286,7 +286,7 @@ describe('a book that will not open', () => {
 
     await settle()
 
-    expect(recordedEvents.join(' ')).toContain('numen did not answer')
+    expect(recordedEvents.join(' ')).toContain('Numen is not responding')
   })
 })
 

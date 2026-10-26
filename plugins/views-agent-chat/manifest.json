@@ -3,7 +3,7 @@
   "name": "Agent Chat",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "The conversation tab where the person asks the agent about the vault, and the conversation view other plugins mount",
+  "description": "Agent conversation tab and the conversation view used by other plugins",
   "capabilities": [],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],

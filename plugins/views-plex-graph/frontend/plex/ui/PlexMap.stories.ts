@@ -104,10 +104,10 @@ const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
  * what is asked of the agent, and what takes it out of the vault.
  */
 const MENU: readonly MenuItem[] = [
-  { id: 'read', text: 'Open the note', group: 'open' },
+  { id: 'read', text: 'Open note', group: 'open' },
   { id: 'travel', text: 'Show in plex', group: 'open' },
   { id: 'copy', text: 'Copy path', group: 'file' },
-  { id: 'reveal', text: 'Show this note in the files', group: 'file' },
+  { id: 'reveal', text: 'Show in files', group: 'file' },
   { id: 'child', text: 'New child note', group: 'plex' },
   { id: 'parent', text: 'New parent note', group: 'plex' },
   { id: 'jump', text: 'New jump note', group: 'plex' },

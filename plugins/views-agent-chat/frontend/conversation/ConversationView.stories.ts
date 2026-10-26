@@ -33,7 +33,7 @@ type Story = StoryObj<typeof meta>
 export const Empty: Story = {
   args: { context: { agent, focus: 'decks/Words.md', placeholder: 'Ask about this card' } },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('Nothing said yet')).toBeVisible()
+    await expect(within(canvasElement).getByText('No messages yet')).toBeVisible()
   },
 }
 
@@ -60,10 +60,10 @@ export const Unreachable: Story = {
       agent,
       focus: 'decks/Words.md',
       placeholder: 'Ask about this card',
-      getUnreachable: () => 'The agent could not be reached.',
+      getUnreachable: () => 'Agent unreachable.',
     },
   },
   play: async ({ canvasElement }) => {
-    await expect(within(canvasElement).getByText('The agent could not be reached.')).toBeVisible()
+    await expect(within(canvasElement).getByText('Agent unreachable.')).toBeVisible()
   },
 }
