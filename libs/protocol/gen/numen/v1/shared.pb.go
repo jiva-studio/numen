@@ -63,15 +63,6 @@ const (
 	// after, it is more than one line, or a heading would read it back as
 	// something else. Nothing is written.
 	ErrorCode_ERROR_CODE_UNNAMEABLE ErrorCode = 8
-	// The note at the path is not a stencil, and a stencil was asked for.
-	ErrorCode_ERROR_CODE_NOT_A_STENCIL ErrorCode = 9
-	// The note at the path is not a deck, and a deck was asked for.
-	ErrorCode_ERROR_CODE_NOT_A_DECK ErrorCode = 10
-	// The file is past the size a deck is read at, which stands above the size a
-	// note is read at.
-	ErrorCode_ERROR_CODE_DECK_TOO_LARGE ErrorCode = 11
-	// The note at the path is not a preset, and a preset was asked for.
-	ErrorCode_ERROR_CODE_NOT_A_PRESET ErrorCode = 12
 	// The file is no longer the one this caller read. Nothing was written, and
 	// the person chooses what happens to what they have.
 	ErrorCode_ERROR_CODE_STALE ErrorCode = 13
@@ -89,10 +80,6 @@ var (
 		6:  "ERROR_CODE_UNREADABLE",
 		7:  "ERROR_CODE_OCCUPIED",
 		8:  "ERROR_CODE_UNNAMEABLE",
-		9:  "ERROR_CODE_NOT_A_STENCIL",
-		10: "ERROR_CODE_NOT_A_DECK",
-		11: "ERROR_CODE_DECK_TOO_LARGE",
-		12: "ERROR_CODE_NOT_A_PRESET",
 		13: "ERROR_CODE_STALE",
 	}
 	ErrorCode_value = map[string]int32{
@@ -105,10 +92,6 @@ var (
 		"ERROR_CODE_UNREADABLE":      6,
 		"ERROR_CODE_OCCUPIED":        7,
 		"ERROR_CODE_UNNAMEABLE":      8,
-		"ERROR_CODE_NOT_A_STENCIL":   9,
-		"ERROR_CODE_NOT_A_DECK":      10,
-		"ERROR_CODE_DECK_TOO_LARGE":  11,
-		"ERROR_CODE_NOT_A_PRESET":    12,
 		"ERROR_CODE_STALE":           13,
 	}
 )
@@ -382,7 +365,7 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x04most\x18\x02 \x01(\x01R\x04most\":\n" +
 	"\x0eReasoningLevel\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
-	"\x05title\x18\x02 \x01(\tR\x05title*\x87\x03\n" +
+	"\x05title\x18\x02 \x01(\tR\x05title*\xaa\x02\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -392,13 +375,10 @@ const file_numen_v1_shared_proto_rawDesc = "" +
 	"\x1aERROR_CODE_BODY_UNWRITABLE\x10\x05\x12\x19\n" +
 	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x17\n" +
 	"\x13ERROR_CODE_OCCUPIED\x10\a\x12\x19\n" +
-	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x1c\n" +
-	"\x18ERROR_CODE_NOT_A_STENCIL\x10\t\x12\x19\n" +
-	"\x15ERROR_CODE_NOT_A_DECK\x10\n" +
-	"\x12\x1d\n" +
-	"\x19ERROR_CODE_DECK_TOO_LARGE\x10\v\x12\x1b\n" +
-	"\x17ERROR_CODE_NOT_A_PRESET\x10\f\x12\x14\n" +
-	"\x10ERROR_CODE_STALE\x10\rBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x14\n" +
+	"\x10ERROR_CODE_STALE\x10\r\"\x04\b\t\x10\t\"\x04\b\n" +
+	"\x10\n" +
+	"\"\x04\b\v\x10\v\"\x04\b\f\x10\fBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_shared_proto_rawDescOnce sync.Once

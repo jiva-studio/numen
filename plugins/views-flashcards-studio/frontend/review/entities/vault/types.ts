@@ -2,7 +2,7 @@
  * What a vault owes today: the vault, the decks in it, and the presets
  * scheduling them.
  */
-import type { StopReason } from '@numen/protocol'
+import type { StopReason } from '../../../gen/numen/flashcards/v1/presets_pb.js'
 
 /** One deck's share of what a vault owes. */
 export interface DeckCardsDue {

@@ -1,6 +1,7 @@
 // Stryker disable StringLiteral: interface copy
-import type { StopReason } from '@numen/protocol'
-import { formatStopReasonMessage, type ErrorCode, getErrorWords } from '@numen/wire'
+import type { StopReason } from '../gen/numen/flashcards/v1/presets_pb.js'
+import { type ErrorCode, getErrorWords } from '../cards/wire/errors'
+import { formatStopReasonMessage } from '../cards/wire/stop'
 /** What a preset tab says: the one control, the settings under it, and what went wrong. */
 import { many, percent } from '@numen/ui'
 import type { BudgetUnit, Goal, Rule } from './types'

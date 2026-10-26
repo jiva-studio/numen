@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { BudgetUnit as BudgetUnits, Goal as Goals, Rule as Rules } from '@numen/protocol'
+import {
+  BudgetUnit as BudgetUnits,
+  Goal as Goals,
+  Rule as Rules,
+} from '../../gen/numen/flashcards/v1/presets_pb'
 
 import { DEFAULT_SETTINGS, formatSettings, parseSettings } from './settings'
 import type { Settings, SettingsMessage } from './settings'

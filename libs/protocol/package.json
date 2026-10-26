@@ -6,7 +6,8 @@
   "description": "What a client may ask about a vault. Generated from proto/.",
   "main": "./index.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.ts",
+    "./numen/v1/*_pb.js": "./src/numen/v1/*_pb.ts"
   },
   "scripts": {
     "generate": "buf generate"

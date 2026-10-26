@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 )
 
@@ -63,11 +64,11 @@ func (b *Backend) newCreateRun(
 }
 
 // describeCreateError is why a file was not made, in words a person reads.
-func describeCreateError(code v1.ErrorCode) string {
+func describeCreateError(code flashcardsv1.ErrorCode) string {
 	switch code {
-	case v1.ErrorCode_ERROR_CODE_OCCUPIED:
+	case flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED:
 		return "something of that name is filed there already, so nothing was written"
-	case v1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE:
 		return "a note cannot be called that"
 	default:
 		return "the file could not be made: " + code.String()

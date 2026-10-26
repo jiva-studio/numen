@@ -3,7 +3,7 @@
  * the shapes the schema holds.
  */
 import { describe, expect, it } from 'vitest'
-import type { Deck as DeckMessage } from '@numen/protocol'
+import type { Deck as DeckMessage } from '../../gen/numen/flashcards/v1/cards_pb.js'
 import type { VaultCard } from '../types'
 import { deserializeDeck, serializeCardToWire } from './serialize'
 

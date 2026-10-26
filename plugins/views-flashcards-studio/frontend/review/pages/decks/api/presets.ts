@@ -1,8 +1,11 @@
 /** What the application answers about the preset one deck is scheduled by. */
-import { StopReason } from '@numen/protocol'
-import type { ErrorCode } from '@numen/protocol'
-import { asFailure, asValue, formatErrorCodeMessage, parseSettings } from '@numen/wire'
-import type { Result, SettingsMessage } from '@numen/wire'
+import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import type { ErrorCode } from '../../../../gen/numen/flashcards/v1/errors_pb.js'
+import { asFailure, asValue } from '@numen/wire'
+import { formatErrorCodeMessage } from '../../../../cards/wire/errors'
+import { parseSettings } from '../../../../cards/wire/settings'
+import type { Result } from '@numen/wire'
+import type { SettingsMessage } from '../../../../cards/wire/settings'
 
 import type { Settings } from '../types'
 

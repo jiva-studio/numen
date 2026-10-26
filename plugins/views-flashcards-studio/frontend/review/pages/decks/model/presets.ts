@@ -6,7 +6,7 @@
  * and the decks of one preset are counted together however many there are.
  */
 import { computed, ref, shallowRef } from 'vue'
-import type { StopReason } from '@numen/protocol'
+import type { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
 
 import { getDeckName } from '../../../entities/vault'
 import type { DeckCardsDue, PresetCardsDue, VaultCardsDue } from '../../../entities/vault'

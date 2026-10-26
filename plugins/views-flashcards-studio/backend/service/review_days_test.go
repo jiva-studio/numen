@@ -4,9 +4,10 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -21,17 +22,17 @@ func TestWhatAVaultWasAnsweredOnReachesBackInOrder(t *testing.T) {
 
 	session := startSession(t, api, v)
 	for _, card := range session.GetCards() {
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
-			Rating: v1.Rating_RATING_GOOD,
+			Rating: flashcardsv1.Rating_RATING_GOOD,
 		})); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(v.ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,7 +57,7 @@ func TestAVaultNobodyAnsweredHasNothingToDraw(t *testing.T) {
 	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -76,16 +77,16 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.GetCards()[0]
-	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
-		Rating: v1.Rating_RATING_EASY,
+		Rating: flashcardsv1.Rating_RATING_EASY,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(v.ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
 	api, target := newAPI(t, deck)
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -127,7 +128,7 @@ func TestNothingIsComingWhereNothingWasAnswered(t *testing.T) {
 // The days are drawn along a line of time, so they are handed over along one,
 // whatever order they were counted in.
 func TestTheDaysComeBackOldestFirst(t *testing.T) {
-	response := sortReviewDays([]*v1.ReviewDay{
+	response := sortReviewDays([]*flashcardsv1.ReviewDay{
 		{Day: "2026-08-30"},
 		{Day: "2026-07-01"},
 		{Day: "2027-01-02"},
@@ -148,7 +149,7 @@ func TestAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 
 	_, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: "nothing"}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -162,16 +163,16 @@ func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 
 	session := startSession(t, api, v)
 	for _, card := range session.GetCards() {
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
-			Rating: v1.Rating_RATING_GOOD,
+			Rating: flashcardsv1.Rating_RATING_GOOD,
 		})); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	out, err := api.ListReviewDays(t.Context(), connect.NewRequest(&v1.ListReviewDaysRequest{
+	out, err := api.ListReviewDays(t.Context(), connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{
 		Vault: string(v.ID), From: "1970-01-01", To: "1970-12-31",
 	}))
 	if err != nil {

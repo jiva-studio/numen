@@ -1,0 +1,9 @@
+version: v2
+# The workspace the plugins' own schemas are built in: each imports the shared
+# types of libs/protocol by the path that module gives them.
+modules:
+  - path: libs/protocol/proto
+  - path: plugins/views-flashcards-studio/proto
+lint:
+  use:
+    - STANDARD

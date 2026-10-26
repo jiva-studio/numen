@@ -1,24 +1,17 @@
 /** The presets of a vault, as the window asks for them and as the schema writes them. */
+import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/wire'
+import { findErrorCode, isStaleAnswer } from '../wire/errors'
+import { formatSettings, parseSettings } from '../wire/settings'
+import { goalOf } from '../wire/goal'
+import { type Bounds as BoundsMessage } from '@numen/protocol'
 import {
-  asFailure,
-  asValue,
-  formatSettings,
-  goalOf,
-  parseSettings,
-  parseFingerprint,
-  findErrorCode,
-  isStaleAnswer,
-  formatFingerprint,
-} from '@numen/wire'
-import {
-  type Bounds as BoundsMessage,
   type Curve as CurveMessage,
-  type ErrorCode as ProtoErrorCode,
   type CurvePoint as CurvePointMessage,
   type Point as PointMessage,
   type Preset as PresetMessage,
   type SettingsBounds as SettingsBoundsMessage,
-} from '@numen/protocol'
+} from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { type ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb.js'
 import { presetsService } from './clients'
 import {
   DEFAULTS,

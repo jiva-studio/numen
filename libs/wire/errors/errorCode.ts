@@ -8,8 +8,4 @@ export type ErrorCode =
   | 'unreadable'
   | 'occupied'
   | 'unnameable'
-  | 'notAStencil'
-  | 'notADeck'
-  | 'deckTooLarge'
-  | 'notAPreset'
   | 'unreachable'

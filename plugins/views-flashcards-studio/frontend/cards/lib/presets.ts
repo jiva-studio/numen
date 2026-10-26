@@ -1,15 +1,15 @@
 /** How the decks pointing at one preset are scheduled, and what that evaluates to. */
+import { type Result } from '@numen/wire'
+import { type ErrorCode } from '../wire/errors'
 import {
-  type Result,
   DEFAULT_SETTINGS,
-  type Goal,
   type BudgetUnit,
   type Rule,
   type Load,
   type Settings,
-  type ErrorCode,
-} from '@numen/wire'
-import { StopReason, type BudgetName } from '@numen/protocol'
+} from '../wire/settings'
+import { type Goal } from '../wire/goal'
+import { StopReason, type BudgetName } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import type { CardsFailure } from '../types'
 
 export type { Goal, BudgetUnit, Rule, Load, Settings }

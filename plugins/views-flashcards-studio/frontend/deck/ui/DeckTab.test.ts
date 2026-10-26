@@ -7,9 +7,9 @@
 // @vitest-environment jsdom
 import { enableAutoUnmount, mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import { asFailure, asValue } from '@numen/wire'
-import type { ErrorCode } from '@numen/wire'
+import type { ErrorCode } from '../../cards/wire/errors'
 import type { Cards, VaultCard, DeckProblem, Preset } from '../../cards'
 import { DEFAULTS, NO_CURVE_POINT, NO_BOUNDS, type PresetChoice, type Presets } from '../../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'

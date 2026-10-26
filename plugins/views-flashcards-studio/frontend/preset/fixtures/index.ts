@@ -4,7 +4,7 @@
  * The window is not here: what the tab holds is made up, and everything it was
  * asked to do is written down in the order it was asked.
  */
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import { afterEach, beforeEach, vi } from 'vitest'
 import { ref, shallowRef } from 'vue'
 import { mount } from '@vue/test-utils'

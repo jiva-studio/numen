@@ -3,7 +3,8 @@ package presetwire
 import (
 	"testing"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/protocol/schematest"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -27,13 +28,13 @@ func TestEveryBudgetUnitCrossesBothWays(t *testing.T) {
 }
 
 func TestEveryVerdictIsSavedFromOne(t *testing.T) {
-	schematest.CheckProduced(t, map[v1.StopReason]review.StopReason{
-		v1.StopReason_STOP_REASON_NOTHING:    review.StoppedNothing,
-		v1.StopReason_STOP_REASON_NO_MINUTES: review.StoppedNoMinutes,
-		v1.StopReason_STOP_REASON_NO_CARDS:   review.StoppedNoCards,
-		v1.StopReason_STOP_REASON_NO_DAY:     review.StoppedNoDay,
-		v1.StopReason_STOP_REASON_PAST_DAY:   review.StoppedPastDay,
-		v1.StopReason_STOP_REASON_NO_LOAD:    review.StoppedNoLoad,
-		v1.StopReason_STOP_REASON_NO_WEEK:    review.StoppedNoWeek,
+	schematest.CheckProduced(t, map[flashcardsv1.StopReason]review.StopReason{
+		flashcardsv1.StopReason_STOP_REASON_NOTHING:    review.StoppedNothing,
+		flashcardsv1.StopReason_STOP_REASON_NO_MINUTES: review.StoppedNoMinutes,
+		flashcardsv1.StopReason_STOP_REASON_NO_CARDS:   review.StoppedNoCards,
+		flashcardsv1.StopReason_STOP_REASON_NO_DAY:     review.StoppedNoDay,
+		flashcardsv1.StopReason_STOP_REASON_PAST_DAY:   review.StoppedPastDay,
+		flashcardsv1.StopReason_STOP_REASON_NO_LOAD:    review.StoppedNoLoad,
+		flashcardsv1.StopReason_STOP_REASON_NO_WEEK:    review.StoppedNoWeek,
 	}, ConvertStopReasonToWire)
 }

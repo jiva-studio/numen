@@ -4,10 +4,10 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
-import type { ErrorCode } from '@numen/wire'
+import type { ErrorCode } from '../cards/wire/errors'
 import type { Cards, VaultFace, DeckProblem, FieldRenameResult } from '../cards'
 import { createMockBufferHost, createMockTabWindow } from '@numen/plugin-sdk/testing'
-import { ERRORS } from '@numen/wire'
+import { ERRORS } from '../cards/wire/errors'
 import { STENCIL, createStencilTabs, type StencilTabState } from './kind'
 import { WORDS as words } from '../cards'
 

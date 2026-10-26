@@ -2,11 +2,12 @@ syntax = "proto3";
 
 // Presets service definitions.
 // Manages deck scheduling presets and computes retention/load projection curves.
-package numen.v1;
+package numen.flashcards.v1;
 
+import "numen/flashcards/v1/errors.proto";
 import "numen/v1/shared.proto";
 
-option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+option go_package = "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1;flashcardsv1";
 
 // PresetsService manages scheduling presets and configuration within a vault.
 service PresetsService {
@@ -262,7 +263,7 @@ message GetDeckPresetResponse {
   optional ErrorCode error = 2;
 
   // File fingerprint for optimistic concurrency.
-  optional Fingerprint at = 3;
+  optional numen.v1.Fingerprint at = 3;
 
   // Permitted bounds for preset settings.
   SettingsBounds bounds = 4;
@@ -307,7 +308,7 @@ message ScheduleDeckRequest {
   string preset = 2;
 
   // Baseline fingerprint for optimistic concurrency.
-  optional Fingerprint baseline = 3;
+  optional numen.v1.Fingerprint baseline = 3;
 }
 
 message ScheduleDeckResponse {
@@ -315,7 +316,7 @@ message ScheduleDeckResponse {
   optional ErrorCode error = 1;
 
   // Resulting file fingerprint for subsequent writes.
-  optional Fingerprint at = 2;
+  optional numen.v1.Fingerprint at = 2;
 
   // True if written to disk but not yet indexed.
   bool is_unlevelled = 3;
@@ -333,7 +334,7 @@ message ReadPresetResponse {
   optional ErrorCode error = 2;
 
   // File fingerprint for optimistic concurrency.
-  optional Fingerprint at = 3;
+  optional numen.v1.Fingerprint at = 3;
 
   // Permitted bounds for preset settings.
   SettingsBounds bounds = 4;
@@ -341,15 +342,15 @@ message ReadPresetResponse {
 
 // SettingsBounds defines allowable ranges for preset parameters.
 message SettingsBounds {
-  Bounds minutes_a_day = 1;
-  Bounds new_a_day = 2;
-  Bounds reviews_a_day = 3;
-  Bounds retention = 4;
-  Bounds backlog = 5;
-  Bounds interval = 6;
+  numen.v1.Bounds minutes_a_day = 1;
+  numen.v1.Bounds new_a_day = 2;
+  numen.v1.Bounds reviews_a_day = 3;
+  numen.v1.Bounds retention = 4;
+  numen.v1.Bounds backlog = 5;
+  numen.v1.Bounds interval = 6;
 
   // Allowable load percentage range for weekdays.
-  Bounds load = 7;
+  numen.v1.Bounds load = 7;
 }
 
 message WritePresetRequest {
@@ -359,7 +360,7 @@ message WritePresetRequest {
   Settings settings = 2;
 
   // Baseline fingerprint for optimistic concurrency.
-  optional Fingerprint baseline = 3;
+  optional numen.v1.Fingerprint baseline = 3;
 }
 
 message WritePresetResponse {
@@ -367,7 +368,7 @@ message WritePresetResponse {
   optional ErrorCode error = 1;
 
   // Resulting file fingerprint for subsequent writes.
-  optional Fingerprint at = 2;
+  optional numen.v1.Fingerprint at = 2;
 
   // True if written to disk but not yet indexed.
   bool is_unlevelled = 3;

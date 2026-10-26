@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review/projection"
@@ -17,9 +17,9 @@ import (
 // preset written before it holds. A key nobody wrote leaves the default in
 // force: it never leaves a threshold every card face passes.
 func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
-	old := &v1.Settings{
-		Goal:        v1.Goal_GOAL_RETENTION,
-		Counts:      v1.BudgetUnit_BUDGET_UNIT_CARDS,
+	old := &flashcardsv1.Settings{
+		Goal:        flashcardsv1.Goal_GOAL_RETENTION,
+		Counts:      flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS,
 		MinutesADay: 10,
 		NewADay:     12,
 		ReviewsADay: 5,
@@ -79,12 +79,12 @@ func TestAPlaceWithNoDayToNameCarriesNone(t *testing.T) {
 // the other's field would be read without complaint. Each value of each is put
 // through and read back beside every value of the other.
 func TestWhatABudgetCountsIsNotWhatCountsAsLearned(t *testing.T) {
-	for _, counts := range []v1.BudgetUnit{
-		v1.BudgetUnit_BUDGET_UNIT_CARDS, v1.BudgetUnit_BUDGET_UNIT_SHOWS,
+	for _, counts := range []flashcardsv1.BudgetUnit{
+		flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS, flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS,
 	} {
-		for _, rule := range []v1.Rule{v1.Rule_RULE_INTERVAL, v1.Rule_RULE_RETENTION} {
-			p, err := ConvertSettingsFromWire(&v1.Settings{
-				Goal: v1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
+		for _, rule := range []flashcardsv1.Rule{flashcardsv1.Rule_RULE_INTERVAL, flashcardsv1.Rule_RULE_RETENTION} {
+			p, err := ConvertSettingsFromWire(&flashcardsv1.Settings{
+				Goal: flashcardsv1.Goal_GOAL_MINUTES_A_DAY, Counts: counts, Learned: rule,
 				MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
 				Retention: 0.9, Interval: 21,
 			})
@@ -182,7 +182,7 @@ func TestEverySettingReachesBackAsItWentOut(t *testing.T) {
 // A client that names none of them is one that has not said, and the settings
 // are weighed against what a preset may hold before anything is written.
 func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
-	p, err := ConvertSettingsFromWire(&v1.Settings{})
+	p, err := ConvertSettingsFromWire(&flashcardsv1.Settings{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -206,15 +206,15 @@ func TestAnUnspecifiedSettingIsNotAValue(t *testing.T) {
 func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	for _, one := range []struct {
 		why      review.StopReason
-		expected v1.StopReason
+		expected flashcardsv1.StopReason
 	}{
-		{review.StoppedNothing, v1.StopReason_STOP_REASON_NOTHING},
-		{review.StoppedNoMinutes, v1.StopReason_STOP_REASON_NO_MINUTES},
-		{review.StoppedNoCards, v1.StopReason_STOP_REASON_NO_CARDS},
-		{review.StoppedNoDay, v1.StopReason_STOP_REASON_NO_DAY},
-		{review.StoppedPastDay, v1.StopReason_STOP_REASON_PAST_DAY},
-		{review.StoppedNoLoad, v1.StopReason_STOP_REASON_NO_LOAD},
-		{review.StoppedNoWeek, v1.StopReason_STOP_REASON_NO_WEEK},
+		{review.StoppedNothing, flashcardsv1.StopReason_STOP_REASON_NOTHING},
+		{review.StoppedNoMinutes, flashcardsv1.StopReason_STOP_REASON_NO_MINUTES},
+		{review.StoppedNoCards, flashcardsv1.StopReason_STOP_REASON_NO_CARDS},
+		{review.StoppedNoDay, flashcardsv1.StopReason_STOP_REASON_NO_DAY},
+		{review.StoppedPastDay, flashcardsv1.StopReason_STOP_REASON_PAST_DAY},
+		{review.StoppedNoLoad, flashcardsv1.StopReason_STOP_REASON_NO_LOAD},
+		{review.StoppedNoWeek, flashcardsv1.StopReason_STOP_REASON_NO_WEEK},
 	} {
 		if got := ConvertStopReasonToWire(one.why); got != one.expected {
 			t.Errorf("%q crosses as %v, and it is %v", one.why, got, one.expected)
@@ -224,7 +224,7 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 	// A verdict nobody has taught this table is not "the preset schedules". A
 	// preset stopped for a reason the schema has no word for would be drawn as
 	// one handing out a day of review.
-	if got := ConvertStopReasonToWire(review.StopReason("sideways")); got != v1.StopReason_STOP_REASON_UNSPECIFIED {
+	if got := ConvertStopReasonToWire(review.StopReason("sideways")); got != flashcardsv1.StopReason_STOP_REASON_UNSPECIFIED {
 		t.Errorf("a verdict the schema does not name crosses as %v", got)
 	}
 }
@@ -234,13 +234,13 @@ func TestEveryVerdictCrossesAsItself(t *testing.T) {
 // A note names them in its own words, and a word the reader made nothing of
 // leaves the field where its default stands.
 func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
-	if got := ConvertGoalToWire(review.Goal("sideways")); got != v1.Goal_GOAL_UNSPECIFIED {
+	if got := ConvertGoalToWire(review.Goal("sideways")); got != flashcardsv1.Goal_GOAL_UNSPECIFIED {
 		t.Errorf("a goal the schema does not name crosses as %v", got)
 	}
-	if got := ConvertRuleToWire(review.LearnedRule("sideways")); got != v1.Rule_RULE_UNSPECIFIED {
+	if got := ConvertRuleToWire(review.LearnedRule("sideways")); got != flashcardsv1.Rule_RULE_UNSPECIFIED {
 		t.Errorf("a rule the schema does not name crosses as %v", got)
 	}
-	if got := ConvertBudgetUnitToWire(review.BudgetUnit("sideways")); got != v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
+	if got := ConvertBudgetUnitToWire(review.BudgetUnit("sideways")); got != flashcardsv1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED {
 		t.Errorf("a count the schema does not name crosses as %v", got)
 	}
 }
@@ -250,10 +250,10 @@ func TestAWordTheSchemaDoesNotNameCrossesAsUnspecified(t *testing.T) {
 func TestSettingsTheCoreCannotMakeOutAreRefused(t *testing.T) {
 	for _, one := range []struct {
 		named    string
-		settings *v1.Settings
+		settings *flashcardsv1.Settings
 	}{
-		{"a day written in no form the core reads", &v1.Settings{ByDate: "30 September"}},
-		{"a load on a name no week carries", &v1.Settings{Load: map[string]int32{"caturday": 50}}},
+		{"a day written in no form the core reads", &flashcardsv1.Settings{ByDate: "30 September"}},
+		{"a load on a name no week carries", &flashcardsv1.Settings{Load: map[string]int32{"caturday": 50}}},
 	} {
 		p, err := ConvertSettingsFromWire(one.settings)
 		if err == nil {

@@ -7,10 +7,11 @@ import (
 	"os"
 	"time"
 
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
+
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -71,9 +72,9 @@ func (b *Backend) Configure(values map[string]string) {
 // Mount registers the services, the tools and the commands on s.
 func (b *Backend) Mount(s *server.Server) error {
 	options := s.HandlerOptions()
-	s.Register(numenv1connect.NewCardsServiceHandler(b.Cards(), options...))
-	s.Register(numenv1connect.NewPresetsServiceHandler(b.Presets(), options...))
-	s.Register(numenv1connect.NewFlashcardsServiceHandler(b.Review(), options...))
+	s.Register(flashcardsv1connect.NewCardsServiceHandler(b.Cards(), options...))
+	s.Register(flashcardsv1connect.NewPresetsServiceHandler(b.Presets(), options...))
+	s.Register(flashcardsv1connect.NewFlashcardsServiceHandler(b.Review(), options...))
 	registry, err := b.Tools()
 	if err != nil {
 		return err
@@ -88,10 +89,14 @@ func (b *Backend) Mount(s *server.Server) error {
 }
 
 // Cards answers CardsService: the decks and stencils a vault is arranged into.
-func (b *Backend) Cards() numenv1connect.CardsServiceHandler { return &cardsHandler{Backend: b} }
+func (b *Backend) Cards() flashcardsv1connect.CardsServiceHandler { return &cardsHandler{Backend: b} }
 
 // Presets answers PresetsService: the presets decks are scheduled by.
-func (b *Backend) Presets() numenv1connect.PresetsServiceHandler { return &presetsHandler{Backend: b} }
+func (b *Backend) Presets() flashcardsv1connect.PresetsServiceHandler {
+	return &presetsHandler{Backend: b}
+}
 
 // Review answers FlashcardsService: what a vault owes, what to ask next and what an answer is written to.
-func (b *Backend) Review() numenv1connect.FlashcardsServiceHandler { return &reviewHandler{Backend: b} }
+func (b *Backend) Review() flashcardsv1connect.FlashcardsServiceHandler {
+	return &reviewHandler{Backend: b}
+}

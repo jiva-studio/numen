@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { Rating } from '@numen/protocol'
+import { Rating } from '../../../gen/numen/flashcards/v1/flashcards_pb.js'
 
 import { GRADE_LABELS, grades, RATING_BY_GRADE } from './grades'
 

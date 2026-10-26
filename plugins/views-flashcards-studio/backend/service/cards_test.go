@@ -8,10 +8,11 @@ import (
 	"strings"
 	"testing"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
+
 	"connectrpc.com/connect"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
@@ -22,7 +23,7 @@ import (
 // cutting is a vault with the notes given in it, and a client asking about its
 // decks and its stencils the way the window does.
 type cutting struct {
-	client numenv1connect.CardsServiceClient
+	client flashcardsv1connect.CardsServiceClient
 	root   string
 }
 
@@ -32,7 +33,7 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	env := vaulttest.New(t, notes)
 	backend := service.New(service.Config{Vault: env.Host, Store: env.Store})
 
-	route, handler := numenv1connect.NewCardsServiceHandler(backend.Cards())
+	route, handler := flashcardsv1connect.NewCardsServiceHandler(backend.Cards())
 	mux := http.NewServeMux()
 	mux.Handle(route, handler)
 	server := httptest.NewUnstartedServer(mux)
@@ -42,7 +43,7 @@ func newCutting(t *testing.T, notes map[string]string) *cutting {
 	t.Cleanup(server.Close)
 
 	return &cutting{
-		client: numenv1connect.NewCardsServiceClient(server.Client(), server.URL),
+		client: flashcardsv1connect.NewCardsServiceClient(server.Client(), server.URL),
 		root:   env.Vault.Path,
 	}
 }
@@ -79,7 +80,7 @@ const dividedDeck = "---\ntype: deck\n---\n\n" + dividedRun
 
 // getFieldValue is what a card holds under one field. A card has no name, so this is
 // how a test says which card it is looking at.
-func getFieldValue(card *v1.Card, field string) string {
+func getFieldValue(card *flashcardsv1.Card, field string) string {
 	for _, v := range card.GetValues() {
 		if v.GetField() == field {
 			return v.GetText()
@@ -88,9 +89,9 @@ func getFieldValue(card *v1.Card, field string) string {
 	return ""
 }
 
-func deck(t *testing.T, f *cutting, path string) *v1.ReadDeckResponse {
+func deck(t *testing.T, f *cutting, path string) *flashcardsv1.ReadDeckResponse {
 	t.Helper()
-	answer, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&v1.ReadDeckRequest{Path: path}))
+	answer, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&flashcardsv1.ReadDeckRequest{Path: path}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -115,7 +116,7 @@ func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 	if len(problems) != 1 {
 		t.Fatalf("the deck came back with %d problems: %+v", len(problems), problems)
 	}
-	if fault := problems[0].GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL {
+	if fault := problems[0].GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL {
 		t.Errorf("the card with no wikilink under it is reported as %v", fault)
 	}
 	pos := problems[0].GetCard()
@@ -196,7 +197,7 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 		t.Fatalf("two cards of one mark came back as %d problems: %+v", len(problems), problems)
 	}
 	for item, problem := range problems {
-		if fault := problem.GetKind(); fault != v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE {
+		if fault := problem.GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE {
 			t.Errorf("the problem against card %d is %v", item, fault)
 		}
 		if problem.Card == nil || problem.GetCard() != int32(item) {
@@ -222,7 +223,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&flashcardsv1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
 		Cards:    read.GetDeck().GetCards()[:1],
@@ -232,7 +233,7 @@ func TestWritingADeckPreservesAloneOneThatChangedSinceItWasRead(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a write over a deck the person had edited answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "Animals.md"); target != theirs {
@@ -250,7 +251,7 @@ func TestADeckSavedBackKeepsTheCardsItHeld(t *testing.T) {
 	})
 
 	read := deck(t, f, "Animals.md")
-	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&flashcardsv1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
 		Sections: read.GetDeck().GetSections(),
@@ -261,7 +262,7 @@ func TestADeckSavedBackKeepsTheCardsItHeld(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(target, dividedRun) {
@@ -282,7 +283,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	sections := read.GetDeck().GetSections()
 	sections[1].Name = "Others\n\n## Also injected"
 
-	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&flashcardsv1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
 		Sections: sections,
@@ -293,7 +294,7 @@ func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing the deck answered %+v", answer.Msg)
 	}
 
@@ -317,7 +318,7 @@ func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	nowhere := int32(99)
 	cards[0].SectionIndex = &nowhere
 
-	_, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+	_, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&flashcardsv1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
 		Sections: read.GetDeck().GetSections(),
@@ -347,7 +348,7 @@ func TestACardWithNoStencilKeepsTheHeadingItExistsBelow(t *testing.T) {
 	if target := read.GetDeck().GetCards()[1].GetHeading(); target != "Alpaca" {
 		t.Fatalf("the card under no wikilink came back under the heading %q", target)
 	}
-	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&v1.WriteDeckRequest{
+	answer, err := f.client.WriteDeck(t.Context(), connect.NewRequest(&flashcardsv1.WriteDeckRequest{
 		Path:     "Animals.md",
 		Preamble: read.GetDeck().GetPreamble(),
 		Sections: read.GetDeck().GetSections(),
@@ -358,7 +359,7 @@ func TestACardWithNoStencilKeepsTheHeadingItExistsBelow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a deck straight back answered %+v", answer.Msg)
 	}
 	if targetVal := onDisk(t, f.root, "Animals.md"); !strings.HasSuffix(targetVal, cardRun) {
@@ -377,7 +378,7 @@ func TestAListOfStencilsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
 	})
 
 	answer, err := f.client.ListStencils(t.Context(),
-		connect.NewRequest(&v1.ListStencilsRequest{Limit: 2}))
+		connect.NewRequest(&flashcardsv1.ListStencilsRequest{Limit: 2}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -398,13 +399,13 @@ func TestAListOfStencilsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
 func TestADeckMadeIsADeckToRead(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
-	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&flashcardsv1.CreateDeckRequest{
 		Title: "Camelids", Path: "decks",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("making a deck answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "decks/Camelids.md" {
@@ -415,7 +416,7 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	}
 
 	read := deck(t, f, "decks/Camelids.md")
-	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := read.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the deck just made failed with %v", code)
 	}
 	if cards := read.GetDeck().GetCards(); len(cards) != 0 {
@@ -428,26 +429,26 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := newCutting(t, nil)
 
-	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
+	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&flashcardsv1.CreateStencilRequest{
 		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("making a stencil answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "cards/Bird.md" {
 		t.Fatalf("the stencil was filed at %q", path)
 	}
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: "cards/Bird.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := read.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := read.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the stencil just made failed with %v", code)
 	}
 	if fields := read.Msg.GetStencil().GetFields(); len(fields) != 2 || fields[0] != "Species" {
@@ -465,13 +466,13 @@ func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the rename answered %v", code)
 	}
 	if decks := answer.Msg.GetDecks(); len(decks) != 1 || decks[0] != "Animals.md" {
@@ -496,23 +497,23 @@ func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
 func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("the rename answered %+v", answer.Msg)
 	}
 
-	after, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	after, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
@@ -542,7 +543,7 @@ func TestRenamingAFieldPreservesAloneAStencilThatChangedSinceItWasRead(t *testin
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
@@ -558,13 +559,13 @@ func TestRenamingAFieldPreservesAloneAStencilThatChangedSinceItWasRead(t *testin
 	}
 	deckBefore := onDisk(t, f.root, "Animals.md")
 
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&v1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
 		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
@@ -582,7 +583,7 @@ func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
 	read := deck(t, f, "Animal.md")
-	if code := read.GetError(); code != v1.ErrorCode_ERROR_CODE_NOT_A_DECK {
+	if code := read.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK {
 		t.Errorf("a stencil asked for as a deck answered %v", code)
 	}
 	if read.GetDeck() != nil {
@@ -619,9 +620,9 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 }
 
 // stencil is what the window reads a stencil as.
-func stencil(t *testing.T, f *cutting, path string) *v1.ReadStencilResponse {
+func stencil(t *testing.T, f *cutting, path string) *flashcardsv1.ReadStencilResponse {
 	t.Helper()
-	answer, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	answer, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: path,
 	}))
 	if err != nil {
@@ -640,7 +641,7 @@ func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
 	faces := read.GetStencil().GetFaces()
 	faces[0].Back = "{{Height}} at the shoulder"
 
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
+	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
 		Path:     "cards/Animal.md",
 		Fields:   read.GetStencil().GetFields(),
 		Faces:    faces,
@@ -651,7 +652,7 @@ func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -675,7 +676,7 @@ func TestAStencilIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	read := stencil(t, f, "cards/Animal.md")
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
+	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
 		Path:     "cards/Animal.md",
 		Fields:   []string{"Name", "Height", "Life span"},
 		Faces:    read.GetStencil().GetFaces(),
@@ -686,7 +687,7 @@ func TestAStencilIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_UNSPECIFIED {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
 		t.Fatalf("writing a stencil answered %+v", answer.Msg)
 	}
 
@@ -717,7 +718,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 
 	faces := read.GetStencil().GetFaces()
 	faces[0].Front = "{{Species}}"
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
+	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
 		Path:     "cards/Animal.md",
 		Fields:   []string{"Species", "Height"},
 		Faces:    faces,
@@ -728,7 +729,7 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if answer.Msg.GetError() != v1.ErrorCode_ERROR_CODE_STALE {
+	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
 		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
@@ -741,14 +742,14 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&v1.WriteStencilRequest{
+	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
 		Path:   "cards/Nowhere.md",
 		Fields: []string{"Name"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_MISSING {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
 		t.Errorf("writing a stencil where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {
@@ -760,13 +761,13 @@ func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&v1.CreateStencilRequest{
+	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&flashcardsv1.CreateStencilRequest{
 		Title: "Animal", Path: "cards", Fields: []string{"Species"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a stencil on a name already taken answered %v", code)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
@@ -779,13 +780,13 @@ func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&flashcardsv1.CreateDeckRequest{
 		Title: "Animal", Path: "cards",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck on a name already taken answered %v", code)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
@@ -799,21 +800,21 @@ func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	_, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&v1.ReadDeckRequest{
+	_, err := f.client.ReadDeck(t.Context(), connect.NewRequest(&flashcardsv1.ReadDeckRequest{
 		Path: "../../etc/passwd",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("reading a deck outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.ReadStencil(t.Context(), connect.NewRequest(&v1.ReadStencilRequest{
+	_, err = f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
 		Path: "../../etc/passwd",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("reading a stencil outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
+	_, err = f.client.CreateDeck(t.Context(), connect.NewRequest(&flashcardsv1.CreateDeckRequest{
 		Title: "Elsewhere", Path: "../elsewhere",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
@@ -828,7 +829,7 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
 	_, err := f.client.RenameStencilField(t.Context(),
-		connect.NewRequest(&v1.RenameStencilFieldRequest{
+		connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
 			Path: "cards/Animal.md", From: "Height", To: "Name",
 		}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
@@ -843,13 +844,13 @@ func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
 func TestAFolderThatIsAFileIsAnAnswerAPersonCanActOn(t *testing.T) {
 	f := newCutting(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&v1.CreateDeckRequest{
+	answer, err := f.client.CreateDeck(t.Context(), connect.NewRequest(&flashcardsv1.CreateDeckRequest{
 		Title: "Camelids", Path: "Entropy.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if code := answer.Msg.GetError(); code != v1.ErrorCode_ERROR_CODE_OCCUPIED {
+	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
 		t.Errorf("making a deck under a file answered %v", code)
 	}
 	if target := onDisk(t, f.root, "Entropy.md"); target != "# Entropy\n" {

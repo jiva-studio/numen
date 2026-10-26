@@ -10,11 +10,12 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
@@ -22,16 +23,16 @@ import (
 
 // answerCard is one card of a session answered, and the line that stands for
 // it.
-func answerCard(t *testing.T, api *API, vault string, session *v1.StartSessionResponse) string {
+func answerCard(t *testing.T, api *API, vault string, session *flashcardsv1.StartSessionResponse) string {
 	t.Helper()
 	if len(session.GetCards()) == 0 {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.GetCards()[0]
-	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: vault, Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
-		Rating: v1.Rating_RATING_GOOD,
+		Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -81,14 +82,14 @@ func TestAnAnswerTakenBackIsNotCounted(t *testing.T) {
 	session := startSession(t, api, v)
 	provided := answerCard(t, api, string(v.ID), session)
 
-	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(), Answer: provided,
 	})); err != nil {
 		t.Fatal(err)
 	}
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(v.ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -106,7 +107,7 @@ func TestTakingBackWithoutNamingAnAnswerIsRefused(t *testing.T) {
 	v := target[0]
 	session := startSession(t, api, v)
 
-	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -122,7 +123,7 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 	session := startSession(t, api, v)
 	provided := answerCard(t, api, string(v.ID), session)
 
-	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: "nothing", Answer: provided,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -135,9 +136,9 @@ func TestTakingBackOnARunNobodyOpenedIsRefused(t *testing.T) {
 func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
-	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: "nothing", Run: "nothing",
-		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: v1.Rating_RATING_GOOD,
+		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("failed with %v", connect.CodeOf(err))
@@ -159,7 +160,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 	api := &reviewHandler{Backend: New(Config{Vault: unreadable{Vault: installation.Host}, Store: installation.Host.Store()})}
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(t.Context(),
-		connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -176,7 +177,7 @@ func TestAWindowThatCannotReadTheVaultsReturnsSo(t *testing.T) {
 func TestTakingBackOnAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
-	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	_, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
@@ -190,7 +191,7 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 	api, _, installation := newAPIOn(t)
 	client := newFlashcardsClient(t, api)
 
-	stream, err := client.WatchReloads(t.Context(), connect.NewRequest(&v1.WatchReloadsRequest{}))
+	stream, err := client.WatchReloads(t.Context(), connect.NewRequest(&flashcardsv1.WatchReloadsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -248,7 +249,7 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 		t.Fatalf("the faces were parsed again without a report: %+v %v", stale, err)
 	}
 
-	stream, err := newFlashcardsClient(t, api).WatchReloads(t.Context(), connect.NewRequest(&v1.WatchReloadsRequest{}))
+	stream, err := newFlashcardsClient(t, api).WatchReloads(t.Context(), connect.NewRequest(&flashcardsv1.WatchReloadsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -285,7 +286,7 @@ func TestASessionWhoseRunCannotBeOpenedIsRefused(t *testing.T) {
 	api.scenarios().flash.Log = flashcards.Log{Stores: unopenable{}}
 
 	out, err := api.StartSession(t.Context(),
-		connect.NewRequest(&v1.StartSessionRequest{Vault: string(target[0].ID)}))
+		connect.NewRequest(&flashcardsv1.StartSessionRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -302,7 +303,7 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 		flashcards.NewCountReviews(unopenable{}, api.scenarios().flash.Schedules, reviewDay, time.Now))
 
 	out, err := api.ListReviewDays(t.Context(),
-		connect.NewRequest(&v1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
+		connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -316,14 +317,14 @@ func TestAVaultWhoseAnswersCannotBeCountedIsRefused(t *testing.T) {
 func TestAnAnswerAndATakingBackNameTheVaultNobodyContains(t *testing.T) {
 	api, _ := newAPI(t, deck)
 
-	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
-		Vault: "nothing", Run: "nothing", Rating: v1.Rating_RATING_GOOD,
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
+		Vault: "nothing", Run: "nothing", Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound || errors.Is(err, ErrNoRun) {
 		t.Errorf("answering failed with %v, want a vault nobody holds", err)
 	}
 
-	_, err = api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	_, err = api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: "nothing", Run: "nothing", Answer: "nothing",
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound || errors.Is(err, ErrNoRun) {
@@ -338,7 +339,7 @@ func TestTakingAnAnswerBackIsAnsweredWithAResponse(t *testing.T) {
 	session := startSession(t, api, v)
 	answer := answerCard(t, api, string(v.ID), session)
 
-	out, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	out, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(), Answer: answer,
 	}))
 	if err != nil {
@@ -371,8 +372,8 @@ func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
 	v := target[0]
 	runDays(t, api, v, 14)
 
-	list := func(from, to string) *v1.ListReviewDaysResponse {
-		out, err := api.ListReviewDays(t.Context(), connect.NewRequest(&v1.ListReviewDaysRequest{
+	list := func(from, to string) *flashcardsv1.ListReviewDaysResponse {
+		out, err := api.ListReviewDays(t.Context(), connect.NewRequest(&flashcardsv1.ListReviewDaysRequest{
 			Vault: string(v.ID), From: from, To: to,
 		}))
 		if err != nil {
@@ -380,7 +381,7 @@ func TestAStretchOfALongHistoryContainsEveryDayInsideIt(t *testing.T) {
 		}
 		return out.Msg
 	}
-	names := func(days []*v1.ReviewDay) []string {
+	names := func(days []*flashcardsv1.ReviewDay) []string {
 		var out []string
 		for _, one := range days {
 			out = append(out, one.GetDay())
@@ -425,15 +426,15 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 	session := startSession(t, api, v)
 	card := session.GetCards()[0]
 
-	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(), Rating: v1.Rating_RATING_GOOD,
+		Mark: card.GetMark(), Face: card.GetFace(), Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
 		t.Errorf("answering came back with %+v and %v, want an internal error", out, err)
 	}
 
-	back, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	back, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault: string(v.ID), Run: session.GetRun(), Answer: "01J8F3K2M9QRSTVWXYZ012",
 	}))
 	if connect.CodeOf(err) != connect.CodeInternal || back != nil {
@@ -447,7 +448,7 @@ func TestASessionThatCannotBeWorkedOutIsRefused(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	cancel()
 
-	out, err := api.StartSession(ctx, connect.NewRequest(&v1.StartSessionRequest{Vault: string(target[0].ID)}))
+	out, err := api.StartSession(ctx, connect.NewRequest(&flashcardsv1.StartSessionRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
 		t.Errorf("a session that could not be worked out came back with %+v and %v", out, err)
 	}

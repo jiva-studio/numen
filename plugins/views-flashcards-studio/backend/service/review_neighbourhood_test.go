@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 	"testing"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
@@ -35,7 +36,7 @@ var joined = map[string]string{
 func TestReadingAroundIsRefusedForAVaultThisInstallationDoesNotHold(t *testing.T) {
 	api, _ := newAPI(t, joined)
 
-	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
 		Vault: "no-vault-of-this-identity",
 		Deck:  "decks/Words.md",
 	}))
@@ -63,14 +64,14 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
 		Vault: string(v.ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	var found *v1.DeckNeighbour
+	var found *flashcardsv1.DeckNeighbour
 	for _, one := range out.Msg.GetNotes() {
 		if one.GetPath() == "Mould.md" {
 			found = one
@@ -82,7 +83,7 @@ func TestANoteThatCannotBeReadIsRefusedAsTheEditorRefusesIt(t *testing.T) {
 	if found.Error == nil {
 		t.Fatal("a note that is not there came back without an error")
 	}
-	if got := found.GetError(); got != v1.ErrorCode_ERROR_CODE_MISSING {
+	if got := found.GetError(); got != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
 		t.Errorf("a note that is not there fails as %v", got)
 	}
 	if found.GetBody() != "" {
@@ -115,7 +116,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 	api.scenarios().neighbourhood = flashcards.NewShowNeighbourhood(
 		note.NewShowLinks(brokenLinks{}), nil, note.NewRead(api.ports.Readers))
 
-	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+	_, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",
 	}))
 	if code := connect.CodeOf(err); code != connect.CodeInternal {
@@ -128,7 +129,7 @@ func TestAnIndexOutOfReachIsAnInternalFailureForReadingAround(t *testing.T) {
 func TestANoteIsSaidToBePointedAtOnlyWhereTheDeckPointsAtIt(t *testing.T) {
 	api, target := newAPI(t, backlinked)
 
-	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&v1.GetDeckNeighbourhoodRequest{
+	out, err := api.GetDeckNeighbourhood(t.Context(), connect.NewRequest(&flashcardsv1.GetDeckNeighbourhoodRequest{
 		Vault: string(target[0].ID), Deck: "decks/Words.md",
 	}))
 	if err != nil {

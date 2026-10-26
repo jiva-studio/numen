@@ -12,6 +12,8 @@ import (
 	"strings"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
@@ -20,8 +22,8 @@ import (
 
 // GetSettingsBounds is how far each setting of a preset goes, as the schema
 // carries it. They are the domain's own, so a client draws the field a person
-func GetSettingsBounds() *v1.SettingsBounds {
-	return &v1.SettingsBounds{
+func GetSettingsBounds() *flashcardsv1.SettingsBounds {
+	return &flashcardsv1.SettingsBounds{
 		MinutesADay: getBounds(review.MinutesADayBounds),
 		NewADay:     getBounds(review.NewADayBounds),
 		ReviewsADay: getBounds(review.ReviewsADayBounds),
@@ -38,8 +40,8 @@ func getBounds(b review.Bounds) *v1.Bounds {
 }
 
 // ConvertPresetToWire is one preset as the schema carries it.
-func ConvertPresetToWire(p flashcards.PresetContents, title string) *v1.Preset {
-	return &v1.Preset{
+func ConvertPresetToWire(p flashcards.PresetContents, title string) *flashcardsv1.Preset {
+	return &flashcardsv1.Preset{
 		Path:     p.Path,
 		Title:    title,
 		Settings: ConvertSettingsToWire(p.Settings),
@@ -50,30 +52,30 @@ func ConvertPresetToWire(p flashcards.PresetContents, title string) *v1.Preset {
 }
 
 // ConvertStopReasonToWire is why a preset schedules nothing, as the schema names it.
-func ConvertStopReasonToWire(s review.StopReason) v1.StopReason {
+func ConvertStopReasonToWire(s review.StopReason) flashcardsv1.StopReason {
 	switch s {
 	case review.StoppedNoMinutes:
-		return v1.StopReason_STOP_REASON_NO_MINUTES
+		return flashcardsv1.StopReason_STOP_REASON_NO_MINUTES
 	case review.StoppedNoCards:
-		return v1.StopReason_STOP_REASON_NO_CARDS
+		return flashcardsv1.StopReason_STOP_REASON_NO_CARDS
 	case review.StoppedNoDay:
-		return v1.StopReason_STOP_REASON_NO_DAY
+		return flashcardsv1.StopReason_STOP_REASON_NO_DAY
 	case review.StoppedPastDay:
-		return v1.StopReason_STOP_REASON_PAST_DAY
+		return flashcardsv1.StopReason_STOP_REASON_PAST_DAY
 	case review.StoppedNoLoad:
-		return v1.StopReason_STOP_REASON_NO_LOAD
+		return flashcardsv1.StopReason_STOP_REASON_NO_LOAD
 	case review.StoppedNoWeek:
-		return v1.StopReason_STOP_REASON_NO_WEEK
+		return flashcardsv1.StopReason_STOP_REASON_NO_WEEK
 	case review.StoppedNothing:
-		return v1.StopReason_STOP_REASON_NOTHING
+		return flashcardsv1.StopReason_STOP_REASON_NOTHING
 	default:
-		return v1.StopReason_STOP_REASON_UNSPECIFIED
+		return flashcardsv1.StopReason_STOP_REASON_UNSPECIFIED
 	}
 }
 
 // ConvertSettingsToWire is how a preset schedules, as the schema carries it.
-func ConvertSettingsToWire(p review.Preset) *v1.Settings {
-	out := &v1.Settings{
+func ConvertSettingsToWire(p review.Preset) *flashcardsv1.Settings {
+	out := &flashcardsv1.Settings{
 		Goal:        ConvertGoalToWire(p.Goal),
 		Counts:      ConvertBudgetUnitToWire(p.Counts),
 		MinutesADay: int32(p.MinutesADay),
@@ -98,7 +100,7 @@ func ConvertSettingsToWire(p review.Preset) *v1.Settings {
 // ConvertSettingsFromWire is the settings a client is putting into a preset, in the words
 // the core holds them in. A day that is not one and a load kept on something
 // that is not a day of the week are the client's to correct.
-func ConvertSettingsFromWire(s *v1.Settings) (review.Preset, error) {
+func ConvertSettingsFromWire(s *flashcardsv1.Settings) (review.Preset, error) {
 	out := review.Preset{
 		Goal:        ConvertGoalFromWire(s.GetGoal()),
 		Counts:      ConvertBudgetUnitFromWire(s.GetCounts()),
@@ -132,12 +134,12 @@ func ConvertSettingsFromWire(s *v1.Settings) (review.Preset, error) {
 }
 
 // ConvertCurveToWire is a curve as the schema carries it.
-func ConvertCurveToWire(c flashcards.Curve) *v1.Curve {
-	out := &v1.Curve{
+func ConvertCurveToWire(c flashcards.Curve) *flashcardsv1.Curve {
+	out := &flashcardsv1.Curve{
 		Goal:      ConvertGoalToWire(c.Goal),
 		Grid:      c.Grid,
 		Days:      c.Days,
-		At:        make([]*v1.Point, 0, len(c.Points)),
+		At:        make([]*flashcardsv1.Point, 0, len(c.Points)),
 		Now:       convertCurvePoint(c.Now),
 		Suggested: convertCurvePoint(c.Suggested),
 		Decks:     int32(c.Decks),
@@ -146,7 +148,7 @@ func ConvertCurveToWire(c flashcards.Curve) *v1.Curve {
 		Unbegun:   int32(c.Unbegun),
 	}
 	for _, one := range c.Points {
-		out.At = append(out.At, &v1.Point{
+		out.At = append(out.At, &flashcardsv1.Point{
 			Reviews:  one.Reviews,
 			Minutes:  one.Minutes,
 			Retained: one.Retained,
@@ -165,8 +167,8 @@ func ConvertCurveToWire(c flashcards.Curve) *v1.Curve {
 }
 
 // ConvertBudgetsToWire are the budgets that closed a day, as the schema names them.
-func ConvertBudgetsToWire(names review.BudgetNames) []v1.BudgetName {
-	out := make([]v1.BudgetName, 0, len(names))
+func ConvertBudgetsToWire(names review.BudgetNames) []flashcardsv1.BudgetName {
+	out := make([]flashcardsv1.BudgetName, 0, len(names))
 	for _, one := range names {
 		out = append(out, ConvertBudgetToWire(one))
 	}
@@ -175,51 +177,51 @@ func ConvertBudgetsToWire(names review.BudgetNames) []v1.BudgetName {
 
 // ConvertBudgetToWire is one budget, as the schema names it. Every budget the core holds
 // is named here, so a budget added to the core is a case added beside them.
-func ConvertBudgetToWire(name review.BudgetName) v1.BudgetName {
+func ConvertBudgetToWire(name review.BudgetName) flashcardsv1.BudgetName {
 	switch name {
 	case review.ClosedNothing:
-		return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
+		return flashcardsv1.BudgetName_BUDGET_NAME_UNSPECIFIED
 	case review.ClosedMinutes:
-		return v1.BudgetName_BUDGET_NAME_MINUTES_A_DAY
+		return flashcardsv1.BudgetName_BUDGET_NAME_MINUTES_A_DAY
 	case review.ClosedNew:
-		return v1.BudgetName_BUDGET_NAME_NEW_A_DAY
+		return flashcardsv1.BudgetName_BUDGET_NAME_NEW_A_DAY
 	case review.ClosedReviews:
-		return v1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY
+		return flashcardsv1.BudgetName_BUDGET_NAME_REVIEWS_A_DAY
 	case review.ClosedDate:
-		return v1.BudgetName_BUDGET_NAME_BY_DATE
+		return flashcardsv1.BudgetName_BUDGET_NAME_BY_DATE
 	case review.ClosedBacklog:
-		return v1.BudgetName_BUDGET_NAME_BACKLOG
+		return flashcardsv1.BudgetName_BUDGET_NAME_BACKLOG
 	case review.ClosedPaused:
-		return v1.BudgetName_BUDGET_NAME_PAUSED
+		return flashcardsv1.BudgetName_BUDGET_NAME_PAUSED
 	}
-	return v1.BudgetName_BUDGET_NAME_UNSPECIFIED
+	return flashcardsv1.BudgetName_BUDGET_NAME_UNSPECIFIED
 }
 
-func convertCurvePoint(p flashcards.CurvePoint) *v1.CurvePoint {
-	return &v1.CurvePoint{At: int32(p.Index), Value: p.Value, Day: p.Day}
+func convertCurvePoint(p flashcards.CurvePoint) *flashcardsv1.CurvePoint {
+	return &flashcardsv1.CurvePoint{At: int32(p.Index), Value: p.Value, Day: p.Day}
 }
 
 // ConvertGoalToWire is which value the control steers, as the schema names it.
-func ConvertGoalToWire(g review.Goal) v1.Goal {
+func ConvertGoalToWire(g review.Goal) flashcardsv1.Goal {
 	switch g {
 	case review.GoalMinutes:
-		return v1.Goal_GOAL_MINUTES_A_DAY
+		return flashcardsv1.Goal_GOAL_MINUTES_A_DAY
 	case review.GoalRetention:
-		return v1.Goal_GOAL_RETENTION
+		return flashcardsv1.Goal_GOAL_RETENTION
 	case review.GoalDate:
-		return v1.Goal_GOAL_BY_DATE
+		return flashcardsv1.Goal_GOAL_BY_DATE
 	default:
-		return v1.Goal_GOAL_UNSPECIFIED
+		return flashcardsv1.Goal_GOAL_UNSPECIFIED
 	}
 }
 
-func ConvertGoalFromWire(g v1.Goal) review.Goal {
+func ConvertGoalFromWire(g flashcardsv1.Goal) review.Goal {
 	switch g {
-	case v1.Goal_GOAL_MINUTES_A_DAY:
+	case flashcardsv1.Goal_GOAL_MINUTES_A_DAY:
 		return review.GoalMinutes
-	case v1.Goal_GOAL_RETENTION:
+	case flashcardsv1.Goal_GOAL_RETENTION:
 		return review.GoalRetention
-	case v1.Goal_GOAL_BY_DATE:
+	case flashcardsv1.Goal_GOAL_BY_DATE:
 		return review.GoalDate
 	default:
 		return ""
@@ -227,22 +229,22 @@ func ConvertGoalFromWire(g v1.Goal) review.Goal {
 }
 
 // ConvertRuleToWire is what counts as learned, as the schema names it.
-func ConvertRuleToWire(r review.LearnedRule) v1.Rule {
+func ConvertRuleToWire(r review.LearnedRule) flashcardsv1.Rule {
 	switch r {
 	case review.RuleInterval:
-		return v1.Rule_RULE_INTERVAL
+		return flashcardsv1.Rule_RULE_INTERVAL
 	case review.RuleRetention:
-		return v1.Rule_RULE_RETENTION
+		return flashcardsv1.Rule_RULE_RETENTION
 	default:
-		return v1.Rule_RULE_UNSPECIFIED
+		return flashcardsv1.Rule_RULE_UNSPECIFIED
 	}
 }
 
-func ConvertRuleFromWire(r v1.Rule) review.LearnedRule {
+func ConvertRuleFromWire(r flashcardsv1.Rule) review.LearnedRule {
 	switch r {
-	case v1.Rule_RULE_INTERVAL:
+	case flashcardsv1.Rule_RULE_INTERVAL:
 		return review.RuleInterval
-	case v1.Rule_RULE_RETENTION:
+	case flashcardsv1.Rule_RULE_RETENTION:
 		return review.RuleRetention
 	default:
 		return ""
@@ -250,24 +252,24 @@ func ConvertRuleFromWire(r v1.Rule) review.LearnedRule {
 }
 
 // ConvertBudgetUnitToWire is what a day's budget is counted in, as the schema names it.
-func ConvertBudgetUnitToWire(u review.BudgetUnit) v1.BudgetUnit {
+func ConvertBudgetUnitToWire(u review.BudgetUnit) flashcardsv1.BudgetUnit {
 	switch u {
 	case review.BudgetUnitCards:
-		return v1.BudgetUnit_BUDGET_UNIT_CARDS
+		return flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS
 	case review.BudgetUnitShows:
-		return v1.BudgetUnit_BUDGET_UNIT_SHOWS
+		return flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS
 	default:
-		return v1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
+		return flashcardsv1.BudgetUnit_BUDGET_UNIT_UNSPECIFIED
 	}
 }
 
 // ConvertBudgetUnitFromWire is what a client said a day's budget is counted in, in the words
 // settings are weighed.
-func ConvertBudgetUnitFromWire(u v1.BudgetUnit) review.BudgetUnit {
+func ConvertBudgetUnitFromWire(u flashcardsv1.BudgetUnit) review.BudgetUnit {
 	switch u {
-	case v1.BudgetUnit_BUDGET_UNIT_CARDS:
+	case flashcardsv1.BudgetUnit_BUDGET_UNIT_CARDS:
 		return review.BudgetUnitCards
-	case v1.BudgetUnit_BUDGET_UNIT_SHOWS:
+	case flashcardsv1.BudgetUnit_BUDGET_UNIT_SHOWS:
 		return review.BudgetUnitShows
 	default:
 		return ""

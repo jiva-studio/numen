@@ -5,7 +5,7 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
-import { ErrorCode } from '@numen/protocol'
+import { ErrorCode } from '../../gen/numen/flashcards/v1/errors_pb.js'
 import { cardsService } from './clients'
 import { cards } from './cards'
 

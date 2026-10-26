@@ -4,7 +4,7 @@ import {
   type Deck as DeckMessage,
   type Problem as ProblemMessage,
   type Stencil as StencilMessage,
-} from '@numen/protocol'
+} from '../../gen/numen/flashcards/v1/cards_pb.js'
 import type {
   ProblemKind,
   DeckProblem,

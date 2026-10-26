@@ -4,6 +4,8 @@ import (
 	"reflect"
 	"testing"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"google.golang.org/protobuf/proto"
 
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -33,14 +35,14 @@ func TestAStencilGoesOutWithItsFacesAndProblems(t *testing.T) {
 		},
 		Problems: []format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Face: 1, Field: "Front", Detail: "d"}},
 	})
-	requireEqual(t, got, &v1.Stencil{
+	requireEqual(t, got, &flashcardsv1.Stencil{
 		Path: "stencils/basic.md", Title: "Basic", Fields: []string{"Front", "Back"},
 		Preamble: "above", Tail: "below",
-		Faces: []*v1.Face{
+		Faces: []*flashcardsv1.Face{
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []*v1.Problem{{Kind: v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Face: ptr(1), Field: "Front", Text: "d"}},
+		Problems: []*flashcardsv1.Problem{{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Face: ptr(1), Field: "Front", Text: "d"}},
 	})
 }
 
@@ -59,7 +61,7 @@ func TestAStencilWithoutProblemsCarriesNone(t *testing.T) {
 
 func TestAStencilSummaryGoesOutWhole(t *testing.T) {
 	got := NewWireSummary(cards.StencilSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
-	requireEqual(t, got, &v1.StencilSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
+	requireEqual(t, got, &flashcardsv1.StencilSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
@@ -72,11 +74,11 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 			{Path: "y.md", Problem: format.Problem{Fault: format.FaultNoFields, Card: 2, Face: format.NoPosition}},
 		},
 	}, pos)
-	requireEqual(t, got, &v1.RenameStencilFieldResponse{
+	requireEqual(t, got, &flashcardsv1.RenameStencilFieldResponse{
 		Decks: []string{"a.md"}, Cards: 7, At: pos,
-		NotWritten: []*v1.UnwrittenDeck{
-			{Path: "x.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
-			{Path: "y.md", Problem: &v1.Problem{Kind: v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},
+		NotWritten: []*flashcardsv1.UnwrittenDeck{
+			{Path: "x.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
+			{Path: "y.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},
 		},
 	})
 }
@@ -91,13 +93,13 @@ func TestADeckGoesOutWithItsSectionsCardsAndValues(t *testing.T) {
 			{Heading: "h2", Section: 1, StencilLink: "other"},
 		},
 	}, map[string]string{"basic": "stencils/basic.md"})
-	requireEqual(t, got, &v1.Deck{
+	requireEqual(t, got, &flashcardsv1.Deck{
 		Path: "decks/a.md", Title: "A", Preamble: "above", Tail: "below",
-		Sections: []*v1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
-		Cards: []*v1.Card{
+		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
+		Cards: []*flashcardsv1.Card{
 			{Heading: "h1", Mark: "m1", StencilLink: "basic", StencilPath: "stencils/basic.md", Preamble: "c1",
-				Values: []*v1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
-			{Heading: "h2", SectionIndex: ptr(1), StencilLink: "other", Values: []*v1.Value{}},
+				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
+			{Heading: "h2", SectionIndex: ptr(1), StencilLink: "other", Values: []*flashcardsv1.Value{}},
 		},
 	})
 }
@@ -110,12 +112,12 @@ func TestADeckWithNothingInItGoesOutWithEmptyLists(t *testing.T) {
 }
 
 func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
-	got := NewDeck(&v1.WriteDeckRequest{
+	got := NewDeck(&flashcardsv1.WriteDeckRequest{
 		Preamble: "above", Tail: "below",
-		Sections: []*v1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
-		Cards: []*v1.Card{
+		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
+		Cards: []*flashcardsv1.Card{
 			{Heading: "h1", Mark: "m1", SectionIndex: ptr(1), StencilLink: "basic", Preamble: "c1",
-				Values: []*v1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
+				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2"},
 		},
 	})
@@ -134,18 +136,18 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 }
 
 func TestADeckReachesInWithoutCardsOrSections(t *testing.T) {
-	got := NewDeck(&v1.WriteDeckRequest{})
+	got := NewDeck(&flashcardsv1.WriteDeckRequest{})
 	if got.Cards != nil || got.Sections != nil {
 		t.Errorf("cards %v, sections %v", got.Cards, got.Sections)
 	}
-	one := NewDeck(&v1.WriteDeckRequest{Cards: []*v1.Card{{Heading: "h"}}})
+	one := NewDeck(&flashcardsv1.WriteDeckRequest{Cards: []*flashcardsv1.Card{{Heading: "h"}}})
 	if len(one.Cards) != 1 {
 		t.Errorf("a single card came in as %d", len(one.Cards))
 	}
 }
 
 func TestFacesComeIn(t *testing.T) {
-	got := NewFaces([]*v1.Face{
+	got := NewFaces([]*flashcardsv1.Face{
 		{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 		{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 	})
@@ -159,7 +161,7 @@ func TestFacesComeIn(t *testing.T) {
 	if NewFaces(nil) != nil {
 		t.Error("no faces came in as a list")
 	}
-	if len(NewFaces([]*v1.Face{{Name: "x"}})) != 1 {
+	if len(NewFaces([]*flashcardsv1.Face{{Name: "x"}})) != 1 {
 		t.Error("a single face did not come in")
 	}
 }

@@ -4,6 +4,7 @@ package cardwire
 
 import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -16,14 +17,14 @@ import (
 const MaxStencils = 200
 
 // NewWireStencil is one stencil as the schema carries it.
-func NewWireStencil(path, title string, s format.Stencil) *v1.Stencil {
-	out := &v1.Stencil{
+func NewWireStencil(path, title string, s format.Stencil) *flashcardsv1.Stencil {
+	out := &flashcardsv1.Stencil{
 		Path:     path,
 		Title:    title,
 		Fields:   s.Fields,
 		Preamble: s.Preamble,
 		Tail:     s.Tail,
-		Faces:    make([]*v1.Face, 0, len(s.Faces)),
+		Faces:    make([]*flashcardsv1.Face, 0, len(s.Faces)),
 		Problems: newWireProblems(s.Problems),
 	}
 	for _, face := range s.Faces {
@@ -33,45 +34,45 @@ func NewWireStencil(path, title string, s format.Stencil) *v1.Stencil {
 }
 
 // NewWireSummary is one stencil as the list of them names it.
-func NewWireSummary(s cards.StencilSummary) *v1.StencilSummary {
-	return &v1.StencilSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
+func NewWireSummary(s cards.StencilSummary) *flashcardsv1.StencilSummary {
+	return &flashcardsv1.StencilSummary{Path: s.Path, Title: s.Title, Fields: s.Fields}
 }
 
 // NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func NewRenameResponse(r cards.RenameResult, fingerprint *v1.Fingerprint) *v1.RenameStencilFieldResponse {
-	out := &v1.RenameStencilFieldResponse{
+func NewRenameResponse(r cards.RenameResult, fingerprint *v1.Fingerprint) *flashcardsv1.RenameStencilFieldResponse {
+	out := &flashcardsv1.RenameStencilFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
 		At:    fingerprint,
 	}
 	for _, deck := range r.NotWritten {
-		out.NotWritten = append(out.NotWritten, &v1.UnwrittenDeck{
+		out.NotWritten = append(out.NotWritten, &flashcardsv1.UnwrittenDeck{
 			Path: deck.Path, Problem: newWireProblem(deck.Problem),
 		})
 	}
 	return out
 }
 
-func newWireFace(f format.FaceTemplate) *v1.Face {
-	return &v1.Face{Name: f.Name, Preamble: f.Preamble, Front: f.Front, Back: f.Back}
+func newWireFace(f format.FaceTemplate) *flashcardsv1.Face {
+	return &flashcardsv1.Face{Name: f.Name, Preamble: f.Preamble, Front: f.Front, Back: f.Back}
 }
 
 // NewWireDeck is one deck as the schema carries it. The cards go out in the order
 // they stand in the file, and a problem's position is an index into that list.
-func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *v1.Deck {
-	out := &v1.Deck{
+func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *flashcardsv1.Deck {
+	out := &flashcardsv1.Deck{
 		Path:     path,
 		Title:    title,
 		Preamble: d.Preamble,
 		Tail:     d.Tail,
-		Sections: make([]*v1.Section, 0, len(d.Sections)),
-		Cards:    make([]*v1.Card, 0, len(d.Cards)),
+		Sections: make([]*flashcardsv1.Section, 0, len(d.Sections)),
+		Cards:    make([]*flashcardsv1.Card, 0, len(d.Cards)),
 		Problems: newWireProblems(d.Problems),
 	}
 	for _, s := range d.Sections {
-		out.Sections = append(out.Sections, &v1.Section{Name: s.Name, Preamble: s.Preamble})
+		out.Sections = append(out.Sections, &flashcardsv1.Section{Name: s.Name, Preamble: s.Preamble})
 	}
 	for _, card := range d.Cards {
 		out.Cards = append(out.Cards, newWireCard(card, cutting[card.StencilLink]))
@@ -79,18 +80,18 @@ func NewWireDeck(path, title string, d format.Deck, cutting map[string]string) *
 	return out
 }
 
-func newWireCard(c format.Card, pos string) *v1.Card {
-	out := &v1.Card{
+func newWireCard(c format.Card, pos string) *flashcardsv1.Card {
+	out := &flashcardsv1.Card{
 		Heading:      c.Heading,
 		Mark:         string(c.Mark),
 		SectionIndex: section(c.Section),
 		StencilLink:  c.StencilLink,
 		StencilPath:  pos,
 		Preamble:     c.Preamble,
-		Values:       make([]*v1.Value, 0, len(c.Values)),
+		Values:       make([]*flashcardsv1.Value, 0, len(c.Values)),
 	}
 	for _, v := range c.Values {
-		out.Values = append(out.Values, &v1.Value{Field: v.Field, Text: v.Text})
+		out.Values = append(out.Values, &flashcardsv1.Value{Field: v.Field, Text: v.Text})
 	}
 	return out
 }
@@ -114,11 +115,11 @@ func sectionOf(index *int32) int {
 
 // newWireProblems is what was wrong with a file, in the order it was found. A check
 // the schema names no fault for is drawn nowhere, and is left out.
-func newWireProblems(problems []format.Problem) []*v1.Problem {
+func newWireProblems(problems []format.Problem) []*flashcardsv1.Problem {
 	if len(problems) == 0 {
 		return nil
 	}
-	out := make([]*v1.Problem, 0, len(problems))
+	out := make([]*flashcardsv1.Problem, 0, len(problems))
 	for _, p := range problems {
 		if one := newWireProblem(p); one != nil {
 			out = append(out, one)
@@ -129,12 +130,12 @@ func newWireProblems(problems []format.Problem) []*v1.Problem {
 
 // newWireProblem is one problem as the schema carries it, and nothing for a fault
 // the schema does not name.
-func newWireProblem(p format.Problem) *v1.Problem {
+func newWireProblem(p format.Problem) *flashcardsv1.Problem {
 	kind, isNamed := newWireProblemKind(p.Fault)
 	if !isNamed {
 		return nil
 	}
-	return &v1.Problem{
+	return &flashcardsv1.Problem{
 		Kind:  kind,
 		Card:  position(p.Card),
 		Face:  position(p.Face),
@@ -154,34 +155,34 @@ func position(offset int) *int32 {
 
 // newWireProblemKind is what kind of problem it is, as the schema names it, and whether the schema
 // names it at all.
-func newWireProblemKind(fault format.Fault) (v1.ProblemKind, bool) {
+func newWireProblemKind(fault format.Fault) (flashcardsv1.ProblemKind, bool) {
 	switch fault {
 	case format.FaultTwoFields:
-		return v1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE, true
 	case format.FaultNoFields:
-		return v1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, true
 	case format.FaultFaceSide:
-		return v1.ProblemKind_PROBLEM_KIND_FACE_MISSING_A_SIDE, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_FACE_MISSING_A_SIDE, true
 	case format.FaultPlaceholder:
-		return v1.ProblemKind_PROBLEM_KIND_PLACEHOLDER_UNDECLARED, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_PLACEHOLDER_UNDECLARED, true
 	case format.FaultNoStencil:
-		return v1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL, true
 	case format.FaultNotAStencil:
-		return v1.ProblemKind_PROBLEM_KIND_STENCIL_IS_NOT_ONE, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_IS_NOT_ONE, true
 	case format.FaultTwoMarks:
-		return v1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE, true
 	case format.FaultTwoValues:
-		return v1.ProblemKind_PROBLEM_KIND_FIELD_WRITTEN_TWICE, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_WRITTEN_TWICE, true
 	case format.FaultNotWritten:
-		return v1.ProblemKind_PROBLEM_KIND_FIELD_NOT_RENAMED, true
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_NOT_RENAMED, true
 	default:
-		return v1.ProblemKind_PROBLEM_KIND_UNSPECIFIED, false
+		return flashcardsv1.ProblemKind_PROBLEM_KIND_UNSPECIFIED, false
 	}
 }
 
 // NewDeck is the deck a client is putting in the vault, in the words the
 // core holds one in.
-func NewDeck(w *v1.WriteDeckRequest) format.Deck {
+func NewDeck(w *flashcardsv1.WriteDeckRequest) format.Deck {
 	out := format.Deck{
 		Preamble: w.GetPreamble(),
 		Cards:    newCards(w.GetCards()),
@@ -196,7 +197,7 @@ func NewDeck(w *v1.WriteDeckRequest) format.Deck {
 
 // newCards is the cards a client is putting into a deck, in the words the core
 // holds them in.
-func newCards(cs []*v1.Card) []format.Card {
+func newCards(cs []*flashcardsv1.Card) []format.Card {
 	if len(cs) == 0 {
 		return nil
 	}
@@ -218,7 +219,7 @@ func newCards(cs []*v1.Card) []format.Card {
 }
 
 // NewFaces is the faces a client is putting into a stencil.
-func NewFaces(fs []*v1.Face) []format.FaceTemplate {
+func NewFaces(fs []*flashcardsv1.Face) []format.FaceTemplate {
 	if len(fs) == 0 {
 		return nil
 	}

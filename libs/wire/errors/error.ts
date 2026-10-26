@@ -74,10 +74,6 @@ const ERROR_CODE_MESSAGES: Record<ProtoErrorCode, string> = {
   [ProtoErrorCode.OCCUPIED]:
     'something of that name is filed there already, so nothing was written',
   [ProtoErrorCode.UNNAMEABLE]: 'a note cannot be called that',
-  [ProtoErrorCode.NOT_A_STENCIL]: 'that note is not a stencil',
-  [ProtoErrorCode.NOT_A_DECK]: 'that note is not a deck',
-  [ProtoErrorCode.DECK_TOO_LARGE]: 'that deck is longer than this reads',
-  [ProtoErrorCode.NOT_A_PRESET]: 'that note is not a preset',
   [ProtoErrorCode.STALE]: 'that note changed on disk, so nothing was written',
 }
 

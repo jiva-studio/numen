@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
 
 import { useReviewCounter } from './counts'
 import type { CardsDueClient, DueCounts, VaultCounts } from './counts'

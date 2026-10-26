@@ -12,6 +12,9 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
+
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
@@ -21,8 +24,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
@@ -70,24 +71,24 @@ func newAPIOn(t testing.TB, notes ...map[string]string) (*API, []domain.Vault, v
 }
 
 // newFlashcardsClient returns a test client connected to the service.
-func newFlashcardsClient(t *testing.T, api *API) numenv1connect.FlashcardsServiceClient {
+func newFlashcardsClient(t *testing.T, api *API) flashcardsv1connect.FlashcardsServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewFlashcardsServiceHandler(api))
+	mux.Handle(flashcardsv1connect.NewFlashcardsServiceHandler(api))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+	return flashcardsv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
 // front polls WatchCardsDue until all vaults complete indexing.
-func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
+func front(t *testing.T, api *API) *flashcardsv1.WatchCardsDueResponse {
 	t.Helper()
 	client := newFlashcardsClient(t, api)
 
-	var out *v1.WatchCardsDueResponse
+	var out *flashcardsv1.WatchCardsDueResponse
 	for pos := time.Now(); time.Since(pos) < 30*time.Second; {
 		out = readCardsDue(t, client)
-		if !slices.ContainsFunc(out.GetVaults(), (*v1.VaultCardsDue).GetIsIndexing) {
+		if !slices.ContainsFunc(out.GetVaults(), (*flashcardsv1.VaultCardsDue).GetIsIndexing) {
 			return out
 		}
 		time.Sleep(20 * time.Millisecond)
@@ -98,16 +99,16 @@ func front(t *testing.T, api *API) *v1.WatchCardsDueResponse {
 
 // readCardsDue collects the full response from WatchCardsDue stream.
 func readCardsDue(
-	t *testing.T, client numenv1connect.FlashcardsServiceClient,
-) *v1.WatchCardsDueResponse {
+	t *testing.T, client flashcardsv1connect.FlashcardsServiceClient,
+) *flashcardsv1.WatchCardsDueResponse {
 	t.Helper()
-	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer stream.Close()
 
-	out, pos, first := &v1.WatchCardsDueResponse{}, map[string]int{}, true
+	out, pos, first := &flashcardsv1.WatchCardsDueResponse{}, map[string]int{}, true
 	for stream.Receive() {
 		response := stream.Msg()
 		if first {
@@ -137,10 +138,10 @@ func readCardsDue(
 }
 
 // startSession is a session opened on one vault, and what it holds to ask.
-func startSession(t *testing.T, api *API, v domain.Vault) *v1.StartSessionResponse {
+func startSession(t *testing.T, api *API, v domain.Vault) *flashcardsv1.StartSessionResponse {
 	t.Helper()
 	out, err := api.StartSession(t.Context(),
-		connect.NewRequest(&v1.StartSessionRequest{Vault: string(v.ID)}))
+		connect.NewRequest(&flashcardsv1.StartSessionRequest{Vault: string(v.ID)}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -159,12 +160,12 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	}
 	card := session.GetCards()[0]
 
-	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault:  string(two.ID),
 		Run:    session.GetRun(),
 		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
-		Rating: v1.Rating_RATING_GOOD,
+		Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if err == nil {
 		t.Fatal("an answer named against another vault's run was written")
@@ -206,12 +207,12 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 	}
 
 	card := now.GetCards()[0]
-	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    was.GetRun(),
 		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
-		Rating: v1.Rating_RATING_GOOD,
+		Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("the session was over and the answer failed with %v", connect.CodeOf(err))
@@ -232,10 +233,10 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 
 	session := startSession(t, api, one)
 	for _, card := range session.GetCards() {
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(one.ID), Run: session.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
-			Rating: v1.Rating_RATING_EASY,
+			Rating: flashcardsv1.Rating_RATING_EASY,
 		})); err != nil {
 			t.Fatal(err)
 		}
@@ -256,7 +257,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 }
 
 // findVaultCount returns the vault matching id from the response.
-func findVaultCount(t *testing.T, resp *v1.WatchCardsDueResponse, id string) *v1.VaultCardsDue {
+func findVaultCount(t *testing.T, resp *flashcardsv1.WatchCardsDueResponse, id string) *flashcardsv1.VaultCardsDue {
 	t.Helper()
 	for _, one := range resp.GetVaults() {
 		if one.GetId() == id {
@@ -276,12 +277,12 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	session := startSession(t, api, v)
 	card := session.GetCards()[0]
 
-	provided, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	provided, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault:  string(v.ID),
 		Run:    session.GetRun(),
 		Mark:   card.GetMark(),
 		Face:   card.GetFace(),
-		Rating: v1.Rating_RATING_GOOD,
+		Rating: flashcardsv1.Rating_RATING_GOOD,
 		TookMs: 1200,
 	}))
 	if err != nil {
@@ -291,7 +292,7 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 		t.Fatal("the answer came back with nothing to take it back by")
 	}
 
-	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&v1.TakeBackAnswerRequest{
+	if _, err := api.TakeBackAnswer(t.Context(), connect.NewRequest(&flashcardsv1.TakeBackAnswerRequest{
 		Vault:  string(v.ID),
 		Run:    session.GetRun(),
 		Answer: provided.Msg.GetAnswer(),
@@ -311,10 +312,10 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	session := startSession(t, api, v)
 	card := session.GetCards()[0]
 
-	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
-		Rating: v1.Rating_RATING_UNSPECIFIED,
+		Rating: flashcardsv1.Rating_RATING_UNSPECIFIED,
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Errorf("failed with %v", connect.CodeOf(err))
@@ -328,7 +329,7 @@ func TestAVaultIsIndexedBeforeItIsCounted(t *testing.T) {
 	installation.Of(target[1].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	// Nothing is counted from a walk half done, so the row of a vault being read says so.
-	rows := map[string]*v1.VaultCardsDue{}
+	rows := map[string]*flashcardsv1.VaultCardsDue{}
 	for _, one := range readCardsDue(t, newFlashcardsClient(t, api)).GetVaults() {
 		rows[one.GetId()] = one
 	}
@@ -366,7 +367,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 	installation.Of(target[0].ID).SetIndexState(host.IndexState{Status: host.Indexing})
 
 	_, err := api.StartSession(t.Context(),
-		connect.NewRequest(&v1.StartSessionRequest{Vault: string(target[0].ID)}))
+		connect.NewRequest(&flashcardsv1.StartSessionRequest{Vault: string(target[0].ID)}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition {
 		t.Fatalf("failed with %v: %v", connect.CodeOf(err), err)
 	}
@@ -379,7 +380,7 @@ func TestSessionDownToAVaultTheIndexDoesNotCarryIsRefused(t *testing.T) {
 func TestAQuestionAboutAVaultNobodyContainsIsRefused(t *testing.T) {
 	api, _ := newAPI(t)
 	_, err := api.StartSession(t.Context(),
-		connect.NewRequest(&v1.StartSessionRequest{Vault: "nothing"}))
+		connect.NewRequest(&flashcardsv1.StartSessionRequest{Vault: "nothing"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("failed with %v", connect.CodeOf(err))
 	}
@@ -408,17 +409,17 @@ func TestACardIsAskedWithWhatEachAnswerWouldDoToIt(t *testing.T) {
 // The four ratings are carried across as themselves, and nothing else is a
 // rating.
 func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
-	for response, want := range map[v1.Rating]review.Rating{
-		v1.Rating_RATING_AGAIN: review.Again,
-		v1.Rating_RATING_HARD:  review.Hard,
-		v1.Rating_RATING_GOOD:  review.Good,
-		v1.Rating_RATING_EASY:  review.Easy,
+	for response, want := range map[flashcardsv1.Rating]review.Rating{
+		flashcardsv1.Rating_RATING_AGAIN: review.Again,
+		flashcardsv1.Rating_RATING_HARD:  review.Hard,
+		flashcardsv1.Rating_RATING_GOOD:  review.Good,
+		flashcardsv1.Rating_RATING_EASY:  review.Easy,
 	} {
 		if got := parseRating(response); got != want {
 			t.Errorf("%v came across as %v", response, got)
 		}
 	}
-	if got := parseRating(v1.Rating_RATING_UNSPECIFIED); got.Valid() {
+	if got := parseRating(flashcardsv1.Rating_RATING_UNSPECIFIED); got.Valid() {
 		t.Errorf("nothing said came across as %v", got)
 	}
 }
@@ -507,10 +508,10 @@ func TestTheFrontDoorReturnsWhatTodayCameToBelowEachPreset(t *testing.T) {
 		t.Fatal("the vault owes nothing to answer")
 	}
 	card := session.GetCards()[0]
-	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
 		Mark: card.GetMark(), Face: card.GetFace(),
-		Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
+		Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
 		t.Fatal(err)
 	}
@@ -876,7 +877,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 	// Which decks each preset schedules, so what a session asks can be checked
 	// against the rows it was gathered from.
 	underMap := make(map[string][]string)
-	rows := make(map[string]*v1.DeckCardsDue, len(response.GetDecks()))
+	rows := make(map[string]*flashcardsv1.DeckCardsDue, len(response.GetDecks()))
 	for _, one := range response.GetDecks() {
 		rows[one.GetDeck()] = one
 		p, err := api.scenarios().flash.Presets.GetForDeck(t.Context(), v, one.GetDeck())
@@ -897,7 +898,7 @@ func TestThePresetTileAndTheSessionItOpensAreOneNumber(t *testing.T) {
 			t.Errorf("the tile over %q offers nothing to compare", one.GetPreset())
 		}
 
-		sessionResp, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		sessionResp, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
 			Vault: string(v.ID), Preset: newPresetName(one.GetPreset()),
 		}))
 		if err != nil {
@@ -1110,7 +1111,7 @@ type sessionCounts struct{ total, due, unbegun int }
 // session opens a session for one preset.
 func session(t *testing.T, api *API, v domain.Vault, preset string) sessionCounts {
 	t.Helper()
-	out, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+	out, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
 		Vault: string(v.ID), Preset: newPresetName(preset),
 	}))
 	if err != nil {
@@ -1182,5 +1183,5 @@ func TestTheBacklogShareMovesTheSessionAndTheProjectionTogether(t *testing.T) {
 // zero, which the use case refuses; a person who pressed a button would be told
 // the answer was not one.
 func TestEveryRatingIsRead(t *testing.T) {
-	schematest.CheckHandled(t, func(r v1.Rating) bool { return parseRating(r) != 0 })
+	schematest.CheckHandled(t, func(r flashcardsv1.Rating) bool { return parseRating(r) != 0 })
 }

@@ -17,6 +17,7 @@ const ALIASES = {
   '@plugins': import.meta.dirname,
   '@numen/plugin-sdk/testing': resolve(modules, 'libs/plugin-sdk-ts/src/testing/index.ts'),
   '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
+  '@numen/protocol/numen/v1': resolve(modules, 'libs/protocol/src/numen/v1'),
   '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
   '@numen/ui/styles.css': resolve(modules, 'libs/ui/dist/numen-ui.css'),
   '@numen/ui': resolve(modules, 'libs/ui/dist/index.js'),

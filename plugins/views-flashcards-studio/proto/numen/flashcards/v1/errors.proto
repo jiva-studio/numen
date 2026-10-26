@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package numen.flashcards.v1;
+
+option go_package = "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1;flashcardsv1";
+
+// ErrorCode is what a call over the stencils, decks and presets of a vault
+// failed on. The codes of a note read and written are numbered as the shared
+// numen.v1.ErrorCode numbers them; the codes of a stencil, a deck and a preset
+// are this plugin's own.
+enum ErrorCode {
+  ERROR_CODE_UNSPECIFIED = 0;
+
+  // Nothing is at the path. A read says so; a write creates the file.
+  ERROR_CODE_MISSING = 1;
+
+  // The file is in the vault and is not a note.
+  ERROR_CODE_NOT_A_NOTE = 2;
+
+  // The file is not text this can carry.
+  ERROR_CODE_NOT_TEXT = 3;
+
+  // The file is past the size a note is read at.
+  ERROR_CODE_TOO_LARGE = 4;
+
+  // The prose opens with a frontmatter delimiter, so writing it would put a
+  // second block inside the first.
+  ERROR_CODE_BODY_UNWRITABLE = 5;
+
+  // The frontmatter cannot be read, so the note can be neither read nor written.
+  ERROR_CODE_UNREADABLE = 6;
+
+  // A file is already where the note would go. Nothing is written there.
+  ERROR_CODE_OCCUPIED = 7;
+
+  // A note cannot be called this. Nothing is written.
+  ERROR_CODE_UNNAMEABLE = 8;
+
+  // The note at the path is not a stencil, and a stencil was asked for.
+  ERROR_CODE_NOT_A_STENCIL = 9;
+
+  // The note at the path is not a deck, and a deck was asked for.
+  ERROR_CODE_NOT_A_DECK = 10;
+
+  // The file is past the size a deck is read at, which stands above the size a
+  // note is read at.
+  ERROR_CODE_DECK_TOO_LARGE = 11;
+
+  // The note at the path is not a preset, and a preset was asked for.
+  ERROR_CODE_NOT_A_PRESET = 12;
+
+  // The file is no longer the one this caller read. Nothing was written, and
+  // the person chooses what happens to what they have.
+  ERROR_CODE_STALE = 13;
+}

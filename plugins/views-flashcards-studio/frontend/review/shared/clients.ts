@@ -3,7 +3,8 @@
  * of them at once.
  */
 import { createClient } from '@connectrpc/connect'
-import { AgentService, FlashcardsService, WindowService } from '@numen/protocol'
+import { AgentService, WindowService } from '@numen/protocol'
+import { FlashcardsService } from '../../gen/numen/flashcards/v1/flashcards_pb.js'
 import { transport } from '@numen/wire'
 import { FLASHCARDS_TARGET } from '../target'
 

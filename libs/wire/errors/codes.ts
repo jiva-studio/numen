@@ -13,10 +13,6 @@ const PROTO_BY_CODE: Record<Exclude<ErrorCode, 'unreachable'>, ProtoErrorCode> =
   unreadable: ProtoErrorCode.UNREADABLE,
   occupied: ProtoErrorCode.OCCUPIED,
   unnameable: ProtoErrorCode.UNNAMEABLE,
-  notAStencil: ProtoErrorCode.NOT_A_STENCIL,
-  notADeck: ProtoErrorCode.NOT_A_DECK,
-  deckTooLarge: ProtoErrorCode.DECK_TOO_LARGE,
-  notAPreset: ProtoErrorCode.NOT_A_PRESET,
 }
 
 /** What is said when the vault did not answer at all. */

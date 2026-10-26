@@ -3,7 +3,7 @@
  */
 import { shallowRef, type Ref } from 'vue'
 import { Gauge } from '@lucide/vue'
-import { ERRORS } from '@numen/wire'
+import { ERRORS } from '../cards/wire/errors'
 import {
   getFileName,
   type BufferHost,

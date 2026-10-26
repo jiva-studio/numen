@@ -5,9 +5,9 @@
  * flashcards window reads it off a preset it did not write. Two tables would
  * agree until one of them was given the next goal.
  */
-import { Goal as Goals } from '@numen/protocol'
+import { Goal as Goals } from '../../gen/numen/flashcards/v1/presets_pb'
 
-import { getNames } from './enumNames'
+import { getNames } from '@numen/wire'
 
 /** Which value the one control of a preset steers. */
 export type Goal = 'minutes' | 'retention' | 'date'

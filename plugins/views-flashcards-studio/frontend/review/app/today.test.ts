@@ -5,9 +5,9 @@
  * over while the core still schedules it.
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StopReason } from '@numen/protocol'
-import { DEFAULT_SETTINGS, formatSettings } from '@numen/wire'
-import type { SettingsMessage } from '@numen/wire'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
+import { DEFAULT_SETTINGS, formatSettings } from '../../cards/wire/settings'
+import type { SettingsMessage } from '../../cards/wire/settings'
 
 import { useReviewCounter } from '../entities/vault'
 import type { CardsDueClient, VaultCardsDue } from '../entities/vault'

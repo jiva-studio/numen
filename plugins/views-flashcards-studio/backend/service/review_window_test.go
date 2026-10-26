@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -113,11 +114,11 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 			// The times run over a spread a person's would, and every one of
 			// them is counted whole.
 			took := time.Duration(4+(i+day)%9) * time.Second
-			rating := v1.Rating_RATING_GOOD
+			rating := flashcardsv1.Rating_RATING_GOOD
 			if (i+day)%7 == 0 {
-				rating = v1.Rating_RATING_AGAIN
+				rating = flashcardsv1.Rating_RATING_AGAIN
 			}
-			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 				Vault: string(v.ID), Run: session.GetRun(),
 				Mark: one.GetMark(), Face: one.GetFace(),
 				Rating: rating, TookMs: took.Milliseconds(),
@@ -130,7 +131,7 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 }
 
 // getVaultCount returns the cards due summary for one vault.
-func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
+func getVaultCount(t *testing.T, api *API, v domain.Vault) *flashcardsv1.VaultCardsDue {
 	t.Helper()
 	for _, one := range front(t, api).GetVaults() {
 		if one.GetId() == string(v.ID) {
@@ -146,7 +147,7 @@ func getVaultCount(t *testing.T, api *API, v domain.Vault) *v1.VaultCardsDue {
 
 // countOfferedCards returns how many card faces the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
-func countOfferedCards(due *v1.VaultCardsDue, decks []string) int {
+func countOfferedCards(due *flashcardsv1.VaultCardsDue, decks []string) int {
 	out := 0
 	for _, one := range due.GetDecks() {
 		for _, deck := range decks {
@@ -179,7 +180,7 @@ func writePreset(t *testing.T, api *API, v domain.Vault, path string, p review.P
 
 // getCurve is what these settings come to over the whole range of their goal,
 // drawn by the simulator this window's own pieces make.
-func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) *v1.Curve {
+func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) *flashcardsv1.Curve {
 	t.Helper()
 	target, err := curves(api).Execute(t.Context(), v, path, p)
 	if err != nil {
@@ -303,7 +304,7 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		due += int(one.GetDue())
 		newCards += int(one.GetNew())
 
-		sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+		sat, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
 			Vault: string(v.ID), Deck: one.GetDeck(),
 		}))
 		if err != nil {
@@ -348,7 +349,7 @@ func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 	}
 
 	// One deck answered, and only that deck counts it.
-	sat, err := api.StartSession(t.Context(), connect.NewRequest(&v1.StartSessionRequest{
+	sat, err := api.StartSession(t.Context(), connect.NewRequest(&flashcardsv1.StartSessionRequest{
 		Vault: string(v.ID), Deck: "decks/Roots.md",
 	}))
 	if err != nil {
@@ -358,10 +359,10 @@ func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 		t.Fatalf("the deck offered %d card faces to answer", len(sat.Msg.GetCards()))
 	}
 	for _, card := range sat.Msg.GetCards()[:3] {
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sat.Msg.GetRun(),
 			Mark: card.GetMark(), Face: card.GetFace(),
-			Rating: v1.Rating_RATING_GOOD, TookMs: 6000,
+			Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 6000,
 		})); err != nil {
 			t.Fatal(err)
 		}

@@ -4,7 +4,7 @@
  * Nothing here draws. What arrives is turned into the plain values the panel
  * carries, so what the schema calls things stops at this file.
  */
-import { formatErrorCodeMessage } from '@numen/wire'
+import { formatErrorCodeMessage } from '../../../../cards/wire/errors'
 
 import { cards } from '../../../shared/clients'
 

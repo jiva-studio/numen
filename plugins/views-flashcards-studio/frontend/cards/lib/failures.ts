@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@numen/wire'
+import type { ErrorCode } from '../wire/errors'
 import type { CardsFailure } from '../types'
 
 export const getFailureCode = (code: CardsFailure): ErrorCode | null =>

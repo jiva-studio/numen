@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
@@ -118,7 +119,7 @@ func (t *Tools) readCardStencil(ctx context.Context, in stencilReadInput) (stenc
 		return stencilReadOutput{}, fmt.Errorf("%s: %s", in.Path, s.Outcome)
 	}
 	if s.Type != format.TypeStencil {
-		return stencilReadOutput{}, errors.New(describeCode(v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
+		return stencilReadOutput{}, errors.New(describeCode(flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
 	}
 	title := s.Title
 	if title == "" {

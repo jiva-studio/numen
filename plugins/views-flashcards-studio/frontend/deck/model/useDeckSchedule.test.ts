@@ -3,7 +3,7 @@
  * choice came to.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import { asFailure, asValue } from '@numen/wire'
 import {
   DEFAULTS,

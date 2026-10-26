@@ -7,7 +7,7 @@
  * another, and a date typed or written out is a day off the day the core reads.
  */
 import { describe, expect, it } from 'vitest'
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import { asValue } from '@numen/wire'
 import { dayAfter } from '@numen/ui'
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { StopReason, StopReasonSchema } from '@numen/protocol'
+import { StopReason, StopReasonSchema } from '../../gen/numen/flashcards/v1/presets_pb'
 
 import { formatStopReasonMessage } from './stop'
 

@@ -89,7 +89,7 @@ function pluginImportBlocks() {
 export default [
   ...createBaseConfig(import.meta.dirname, {
     useProjectService: false,
-    extraIgnores: ['**/dist/**', '**/coverage/**', '**/node_modules/**'],
+    extraIgnores: ['**/dist/**', '**/coverage/**', '**/node_modules/**', '*/frontend/gen/**'],
   }),
   ...pluginImportBlocks(),
 ]

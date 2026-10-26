@@ -1,4 +1,4 @@
-import type { ErrorCode } from '@numen/wire'
+import type { ErrorCode } from '../../cards/wire/errors'
 import { type DeckProblem, WORDS as words } from '../../cards'
 import { getFileName } from '@numen/plugin-sdk'
 

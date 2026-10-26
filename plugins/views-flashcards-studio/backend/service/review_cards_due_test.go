@@ -8,11 +8,12 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
@@ -23,7 +24,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 	api, target := newAPI(t, deck, other)
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -63,7 +64,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 	front(t, api)
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,10 +154,10 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 			continue
 		}
 		reply[one.GetDeck()] = true
-		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&v1.AnswerCardRequest{
+		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
 			Mark: one.GetMark(), Face: one.GetFace(),
-			Rating: v1.Rating_RATING_GOOD, TookMs: 5000,
+			Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 5000,
 		})); err != nil {
 			t.Fatal(err)
 		}
@@ -209,10 +210,10 @@ func BenchmarkFrontDoor(b *testing.B) {
 
 	ctx := b.Context()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewFlashcardsServiceHandler(api))
+	mux.Handle(flashcardsv1connect.NewFlashcardsServiceHandler(api))
 	server := httptest.NewServer(mux)
 	b.Cleanup(server.Close)
-	client := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+	client := flashcardsv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 
 	// The schedule caches are filled before the clock starts, which is what a
 	// person's second opening of a day costs.
@@ -232,7 +233,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 
 	b.Run("TheListOnScreen", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&v1.WatchCardsDueRequest{}))
+			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 			if err != nil {
 				b.Fatal(err)
 			}
@@ -245,7 +246,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 
 	b.Run("EveryCountIn", func(b *testing.B) {
 		for b.Loop() {
-			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&v1.WatchCardsDueRequest{}))
+			stream, err := client.WatchCardsDue(ctx, connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 			if err != nil {
 				b.Fatal(err)
 			}

@@ -9,14 +9,15 @@ import (
 	"testing"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1/flashcardsv1connect"
+
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 var errPageGone = errors.New("the page is gone")
@@ -61,14 +62,14 @@ func (c *breakingConn) Send(msg any) error {
 
 // newBreakingClient is the window's client over a server whose streams are
 // broken as b says.
-func newBreakingClient(t *testing.T, api *API, b breaking) numenv1connect.FlashcardsServiceClient {
+func newBreakingClient(t *testing.T, api *API, b breaking) flashcardsv1connect.FlashcardsServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	path, handler := numenv1connect.NewFlashcardsServiceHandler(api, connect.WithInterceptors(b))
+	path, handler := flashcardsv1connect.NewFlashcardsServiceHandler(api, connect.WithInterceptors(b))
 	mux.Handle(path, handler)
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
+	return flashcardsv1connect.NewFlashcardsServiceClient(server.Client(), server.URL)
 }
 
 // awaitReturn is what the handler returned.
@@ -100,7 +101,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		"repeating": {t.Context(), func(n int, _ any) bool { return n > 1 }, false},
 		// Something moved, and the page is gone by the time it is told.
 		"reloading": {t.Context(), func(_ int, msg any) bool {
-			return msg.(*v1.WatchReloadsResponse).GetReload()
+			return msg.(*flashcardsv1.WatchReloadsResponse).GetReload()
 		}, true},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -108,7 +109,7 @@ func TestAReloadStreamThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 			returned := make(chan error, 1)
 			client := newBreakingClient(t, api, breaking{fails: one.fails, ctx: one.ctx, returned: returned})
 
-			stream, err := client.WatchReloads(t.Context(), connect.NewRequest(&v1.WatchReloadsRequest{}))
+			stream, err := client.WatchReloads(t.Context(), connect.NewRequest(&flashcardsv1.WatchReloadsRequest{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -134,7 +135,7 @@ func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 		"listing": func(n int, _ any) bool { return n == 1 },
 		// A count has come in.
 		"counting": func(_ int, msg any) bool {
-			return msg.(*v1.WatchCardsDueResponse).GetCounted() != nil
+			return msg.(*flashcardsv1.WatchCardsDueResponse).GetCounted() != nil
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -143,7 +144,7 @@ func TestTheFrontDoorThatCannotBeSavedToEndsWithWhyItCannot(t *testing.T) {
 
 			returned := make(chan error, 1)
 			client := newBreakingClient(t, api, breaking{fails: fails, ctx: t.Context(), returned: returned})
-			stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+			stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -172,7 +173,7 @@ func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 		ctx:      t.Context(),
 		returned: returned,
 	})
-	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -214,7 +215,7 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	t.Cleanup(func() { openFirst(); openSecond() })
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,7 +264,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 	ctx, cancel := context.WithTimeout(t.Context(), vaulttest.Patience)
 	defer cancel()
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		ctx, connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		ctx, connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +321,7 @@ func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
 	client := newBreakingClient(t, api, breaking{
 		fails: func(int, any) bool { return false }, ctx: ctx, returned: returned,
 	})
-	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+	stream, err := client.WatchCardsDue(t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -365,13 +366,13 @@ func TestAStreamWhoseClientWentAwayEnds(t *testing.T) {
 	api, _ := newAPI(t)
 	entered, returned := make(chan struct{}, 1), make(chan struct{}, 1)
 	mux := http.NewServeMux()
-	path, handler := numenv1connect.NewFlashcardsServiceHandler(api)
+	path, handler := flashcardsv1connect.NewFlashcardsServiceHandler(api)
 	mux.Handle(path, rooted(handler, entered, returned))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
 
-	_, err := numenv1connect.NewFlashcardsServiceClient(server.Client(), server.URL).
-		WatchReloads(t.Context(), connect.NewRequest(&v1.WatchReloadsRequest{}))
+	_, err := flashcardsv1connect.NewFlashcardsServiceClient(server.Client(), server.URL).
+		WatchReloads(t.Context(), connect.NewRequest(&flashcardsv1.WatchReloadsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -407,7 +408,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: target}))
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
-		t.Context(), connect.NewRequest(&v1.WatchCardsDueRequest{}))
+		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -21,7 +21,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/shared.proto.
  */
 export const file_numen_v1_shared: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqHAwoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIcChhFUlJPUl9DT0RFX05PVF9BX1NURU5DSUwQCRIZChVFUlJPUl9DT0RFX05PVF9BX0RFQ0sQChIdChlFUlJPUl9DT0RFX0RFQ0tfVE9PX0xBUkdFEAsSGwoXRVJST1JfQ09ERV9OT1RfQV9QUkVTRVQQDBIUChBFUlJPUl9DT0RFX1NUQUxFEA1CQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChVudW1lbi92MS9zaGFyZWQucHJvdG8SCG51bWVuLnYxIjgKC0ZpbmdlcnByaW50EgwKBHBhdGgYASABKAkSDAoEc2l6ZRgCIAEoAxINCgVtdGltZRgDIAEoAyIgCgRTcGFuEgwKBGZyb20YASABKAUSCgoCdG8YAiABKAUiJQoGQm91bmRzEg0KBWxlYXN0GAEgASgBEgwKBG1vc3QYAiABKAEiLQoOUmVhc29uaW5nTGV2ZWwSDAoEbmFtZRgBIAEoCRINCgV0aXRsZRgCIAEoCSqqAgoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIUChBFUlJPUl9DT0RFX1NUQUxFEA0iBAgJEAkiBAgKEAoiBAgLEAsiBAgMEAxCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
 
 /**
  * Fingerprint is which file this is: where it is filed, how big it is, and when
@@ -208,35 +208,6 @@ export enum ErrorCode {
    * @generated from enum value: ERROR_CODE_UNNAMEABLE = 8;
    */
   UNNAMEABLE = 8,
-
-  /**
-   * The note at the path is not a stencil, and a stencil was asked for.
-   *
-   * @generated from enum value: ERROR_CODE_NOT_A_STENCIL = 9;
-   */
-  NOT_A_STENCIL = 9,
-
-  /**
-   * The note at the path is not a deck, and a deck was asked for.
-   *
-   * @generated from enum value: ERROR_CODE_NOT_A_DECK = 10;
-   */
-  NOT_A_DECK = 10,
-
-  /**
-   * The file is past the size a deck is read at, which stands above the size a
-   * note is read at.
-   *
-   * @generated from enum value: ERROR_CODE_DECK_TOO_LARGE = 11;
-   */
-  DECK_TOO_LARGE = 11,
-
-  /**
-   * The note at the path is not a preset, and a preset was asked for.
-   *
-   * @generated from enum value: ERROR_CODE_NOT_A_PRESET = 12;
-   */
-  NOT_A_PRESET = 12,
 
   /**
    * The file is no longer the one this caller read. Nothing was written, and

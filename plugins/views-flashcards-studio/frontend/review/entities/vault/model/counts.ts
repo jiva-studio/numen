@@ -9,7 +9,7 @@
  * follows on its own. A vault whose count has not arrived relies on the list
  */
 import { ref, shallowRef } from 'vue'
-import type { StopReason } from '@numen/protocol'
+import type { StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
 
 import type { VaultCardsDue } from '../types'
 

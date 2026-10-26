@@ -52,18 +52,7 @@ enum ErrorCode {
   // something else. Nothing is written.
   ERROR_CODE_UNNAMEABLE = 8;
 
-  // The note at the path is not a stencil, and a stencil was asked for.
-  ERROR_CODE_NOT_A_STENCIL = 9;
-
-  // The note at the path is not a deck, and a deck was asked for.
-  ERROR_CODE_NOT_A_DECK = 10;
-
-  // The file is past the size a deck is read at, which stands above the size a
-  // note is read at.
-  ERROR_CODE_DECK_TOO_LARGE = 11;
-
-  // The note at the path is not a preset, and a preset was asked for.
-  ERROR_CODE_NOT_A_PRESET = 12;
+  reserved 9, 10, 11, 12;
 
   // The file is no longer the one this caller read. Nothing was written, and
   // the person chooses what happens to what they have.

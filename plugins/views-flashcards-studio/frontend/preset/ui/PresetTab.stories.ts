@@ -4,7 +4,7 @@
  * browser can answer: where the columns, the readout under the knob, the bubble
  * over it and the numbers along the axis are put.
  */
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../../gen/numen/flashcards/v1/presets_pb.js'
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test'
 import { ref, shallowRef } from 'vue'

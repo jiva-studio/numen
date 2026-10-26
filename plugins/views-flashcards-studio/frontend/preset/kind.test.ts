@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
 
 import { usePresetTab } from './kind'
 import type { PresetTabState, SettingValue } from './types'
-import { StopReason } from '@numen/protocol'
+import { StopReason } from '../gen/numen/flashcards/v1/presets_pb.js'
 import { getGoalValue, findNearest } from './lib/curve'
 import { asFailure, asValue } from '@numen/wire'
 import type { CardsFailure } from '../cards'
@@ -28,7 +28,7 @@ import {
   type Settings,
 } from './types'
 import { BOUNDS } from './fixtures'
-import { ERRORS, type ErrorCode } from '@numen/wire'
+import { ERRORS, type ErrorCode } from '../cards/wire/errors'
 import { createMockBufferHost } from '@numen/plugin-sdk/testing'
 import { WORDS as words } from './words'
 

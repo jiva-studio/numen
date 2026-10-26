@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
@@ -21,8 +22,8 @@ type presetsHandler struct {
 // GetDeckPreset is the preset a deck is scheduled by. A deck naming none is
 // answered with the defaults under no path.
 func (h *presetsHandler) GetDeckPreset(
-	ctx context.Context, r *connect.Request[v1.GetDeckPresetRequest],
-) (*connect.Response[v1.GetDeckPresetResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.GetDeckPresetRequest],
+) (*connect.Response[flashcardsv1.GetDeckPresetResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -32,7 +33,7 @@ func (h *presetsHandler) GetDeckPreset(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &flashcardsv1.GetDeckPresetResponse{Bounds: presetwire.GetSettingsBounds()}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
@@ -48,8 +49,8 @@ func (h *presetsHandler) GetDeckPreset(
 // called. A deck's preset is chosen from this list, and from the defaults,
 // which are no note and are not in it.
 func (h *presetsHandler) ListPresets(
-	ctx context.Context, _ *connect.Request[v1.ListPresetsRequest],
-) (*connect.Response[v1.ListPresetsResponse], error) {
+	ctx context.Context, _ *connect.Request[flashcardsv1.ListPresetsRequest],
+) (*connect.Response[flashcardsv1.ListPresetsResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -59,24 +60,24 @@ func (h *presetsHandler) ListPresets(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ListPresetsResponse{Presets: make([]*v1.PresetSummary, 0, len(target))}
+	out := &flashcardsv1.ListPresetsResponse{Presets: make([]*flashcardsv1.PresetSummary, 0, len(target))}
 	for _, one := range target {
-		out.Presets = append(out.Presets, &v1.PresetSummary{Path: one.Path, Title: one.Title})
+		out.Presets = append(out.Presets, &flashcardsv1.PresetSummary{Path: one.Path, Title: one.Title})
 	}
 	return connect.NewResponse(out), nil
 }
 
 // CreatePreset puts a preset naming none of its settings in the vault. A key
 func (h *presetsHandler) CreatePreset(
-	ctx context.Context, r *connect.Request[v1.CreatePresetRequest],
-) (*connect.Response[v1.CreatePresetResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.CreatePresetRequest],
+) (*connect.Response[flashcardsv1.CreatePresetResponse], error) {
 	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return h.scenarios().cards.Create.Preset(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreatePresetResponse{
+	return connect.NewResponse(&flashcardsv1.CreatePresetResponse{
 		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
@@ -85,8 +86,8 @@ func (h *presetsHandler) CreatePreset(
 // read is written; one holding something else is left alone and the client is
 // told the deck changed.
 func (h *presetsHandler) ScheduleDeck(
-	ctx context.Context, r *connect.Request[v1.ScheduleDeckRequest],
-) (*connect.Response[v1.ScheduleDeckResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ScheduleDeckRequest],
+) (*connect.Response[flashcardsv1.ScheduleDeckResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -98,25 +99,25 @@ func (h *presetsHandler) ScheduleDeck(
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&v1.ScheduleDeckResponse{
+		return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{
 			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
-		return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
+		reason := flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET
+		return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{Error: &reason}), nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.ScheduleDeckResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{Error: &reason}), nil
 }
 
 // ReadPreset is the settings of one preset.
 func (h *presetsHandler) ReadPreset(
-	ctx context.Context, r *connect.Request[v1.ReadPresetRequest],
-) (*connect.Response[v1.ReadPresetResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ReadPresetRequest],
+) (*connect.Response[flashcardsv1.ReadPresetResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -126,7 +127,7 @@ func (h *presetsHandler) ReadPreset(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
+	out := &flashcardsv1.ReadPresetResponse{Bounds: presetwire.GetSettingsBounds()}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
@@ -140,8 +141,8 @@ func (h *presetsHandler) ReadPreset(
 // read is written; one holding something else is left alone and the client is
 // told the note changed.
 func (h *presetsHandler) WritePreset(
-	ctx context.Context, r *connect.Request[v1.WritePresetRequest],
-) (*connect.Response[v1.WritePresetResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.WritePresetRequest],
+) (*connect.Response[flashcardsv1.WritePresetResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -156,7 +157,7 @@ func (h *presetsHandler) WritePreset(
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&v1.WritePresetResponse{
+		return connect.NewResponse(&flashcardsv1.WritePresetResponse{
 			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
@@ -165,22 +166,22 @@ func (h *presetsHandler) WritePreset(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
-		reason := v1.ErrorCode_ERROR_CODE_NOT_A_PRESET
-		return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
+		reason := flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET
+		return connect.NewResponse(&flashcardsv1.WritePresetResponse{Error: &reason}), nil
 	}
 	reason, ok := getErrorCode(err)
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.WritePresetResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.WritePresetResponse{Error: &reason}), nil
 }
 
 // ComputeCurve is what these settings come to over the whole range of the goal
 // they name. Nothing is written: what a curve is asked for is the value a
 // person is moving and has not settled.
 func (h *presetsHandler) ComputeCurve(
-	ctx context.Context, r *connect.Request[v1.ComputeCurveRequest],
-) (*connect.Response[v1.ComputeCurveResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ComputeCurveRequest],
+) (*connect.Response[flashcardsv1.ComputeCurveResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -193,5 +194,5 @@ func (h *presetsHandler) ComputeCurve(
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}), nil
+	return connect.NewResponse(&flashcardsv1.ComputeCurveResponse{Curve: presetwire.ConvertCurveToWire(target)}), nil
 }

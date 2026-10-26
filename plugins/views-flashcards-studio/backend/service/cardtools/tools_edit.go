@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
@@ -285,7 +286,7 @@ func (t *Tools) writeCardStencilEdit(ctx context.Context, in stencilEditInput) (
 		return WriteOutcome{}, fmt.Errorf("%s: %s", in.Path, current.Outcome)
 	}
 	if current.Type != format.TypeStencil {
-		return WriteOutcome{}, errors.New(describeCode(v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
+		return WriteOutcome{}, errors.New(describeCode(flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL))
 	}
 	body, err := format.StencilBody(current.Body.Preamble, newFaceTemplates(in.Faces), current.Body.Tail)
 	if err != nil {

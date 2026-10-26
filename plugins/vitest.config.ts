@@ -16,6 +16,7 @@ const alias = getPluginAliases([
   '@plugins',
   '@numen/plugin-sdk/testing',
   '@numen/plugin-sdk',
+  '@numen/protocol/numen/v1',
   '@numen/protocol',
   '@numen/ui/styles.css',
   '@numen/ui',

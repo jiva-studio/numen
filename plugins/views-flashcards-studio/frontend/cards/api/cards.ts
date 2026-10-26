@@ -2,14 +2,8 @@
  * The decks and the stencils a vault holds, as the window asks for them and as
  * they come back.
  */
-import {
-  asFailure,
-  asValue,
-  parseFingerprint,
-  findErrorCode,
-  isStaleAnswer,
-  formatFingerprint,
-} from '@numen/wire'
+import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/wire'
+import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { cardsService } from './clients'
 import type { Cards, DeckService, StencilService } from '../types'
 import {

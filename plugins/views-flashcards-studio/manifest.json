@@ -13,7 +13,11 @@
     "keepAliveWhileVisible": true,
     "memoryLimitBytes": 1073741824
   },
-  "services": ["numen.v1.CardsService", "numen.v1.PresetsService", "numen.v1.FlashcardsService"],
+  "services": [
+    "numen.flashcards.v1.CardsService",
+    "numen.flashcards.v1.PresetsService",
+    "numen.flashcards.v1.FlashcardsService"
+  ],
   "noteTypes": [
     {
       "type": "deck",
@@ -67,7 +71,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/views-flashcards-studio",
-    "serviceName": "numen.v1.CardsService"
+    "serviceName": "numen.flashcards.v1.CardsService"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

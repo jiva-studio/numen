@@ -9,11 +9,12 @@ import (
 	"sync"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/presetwire"
@@ -99,21 +100,21 @@ const atOnce = 4
 // counted and the reason on it. One vault the editor has never read is not a
 // reason to refuse a person the others.
 func (a *reviewHandler) WatchCardsDue(
-	ctx context.Context, _ *connect.Request[v1.WatchCardsDueRequest],
-	out *connect.ServerStream[v1.WatchCardsDueResponse],
+	ctx context.Context, _ *connect.Request[flashcardsv1.WatchCardsDueRequest],
+	out *connect.ServerStream[flashcardsv1.WatchCardsDueResponse],
 ) error {
 	recognized, err := a.vault.GetVaults(ctx)
 	if err != nil {
 		return connect.NewError(connect.CodeInternal, err)
 	}
 
-	items := make([]*v1.VaultCardsDue, 0, len(recognized))
+	items := make([]*flashcardsv1.VaultCardsDue, 0, len(recognized))
 	for _, one := range recognized {
-		items = append(items, &v1.VaultCardsDue{Id: string(one.ID), Name: one.Name, Path: one.Path})
+		items = append(items, &flashcardsv1.VaultCardsDue{Id: string(one.ID), Name: one.Name, Path: one.Path})
 	}
 	// The day these counts stand in, which is the day a goal is weighed against.
-	createResponse := func() *v1.WatchCardsDueResponse {
-		return &v1.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: items}
+	createResponse := func() *flashcardsv1.WatchCardsDueResponse {
+		return &flashcardsv1.WatchCardsDueResponse{Day: a.scenarios().day.GetName(a.now()), Vaults: items}
 	}
 	if err := out.Send(createResponse()); err != nil {
 		return err
@@ -141,7 +142,7 @@ func (a *reviewHandler) WatchCardsDue(
 				counted = nil
 				continue
 			}
-			if err := out.Send(&v1.WatchCardsDueResponse{Counted: one}); err != nil {
+			if err := out.Send(&flashcardsv1.WatchCardsDueResponse{Counted: one}); err != nil {
 				return err
 			}
 			repeat.Reset(again)
@@ -157,8 +158,8 @@ func (a *reviewHandler) WatchCardsDue(
 // countVaults works the vaults out, a few at a time, and hands each over as it
 // comes. A vault that takes a minute holds up nothing but the ones behind it in
 // the queue.
-func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-chan *v1.VaultCardsDue {
-	counted := make(chan *v1.VaultCardsDue)
+func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-chan *flashcardsv1.VaultCardsDue {
+	counted := make(chan *flashcardsv1.VaultCardsDue)
 	go func() {
 		defer close(counted)
 		var running sync.WaitGroup
@@ -186,8 +187,8 @@ func (a *reviewHandler) countVaults(ctx context.Context, all []domain.Vault) <-c
 	return counted
 }
 
-func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.VaultCardsDue {
-	one := &v1.VaultCardsDue{Id: string(v.ID), Name: v.Name, Path: v.Path}
+func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *flashcardsv1.VaultCardsDue {
+	one := &flashcardsv1.VaultCardsDue{Id: string(v.ID), Name: v.Name, Path: v.Path}
 
 	// The vault is brought up to date before it is counted. Nothing is counted from a walk half done,
 	// and the numbers arrive with the count that the finished walk wakes.
@@ -215,7 +216,7 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.Vaul
 	one.Due = int32(owing.Due)
 	one.New = int32(owing.New)
 	for _, deck := range owing.Decks {
-		one.Decks = append(one.Decks, &v1.DeckCardsDue{
+		one.Decks = append(one.Decks, &flashcardsv1.DeckCardsDue{
 			Deck:     deck.Deck,
 			Faces:    int32(deck.Faces),
 			Due:      int32(deck.Due),
@@ -226,7 +227,7 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.Vaul
 		})
 	}
 	for _, preset := range owing.Presets {
-		one.Presets = append(one.Presets, &v1.PresetCardsDue{
+		one.Presets = append(one.Presets, &flashcardsv1.PresetCardsDue{
 			Preset:          preset.Preset,
 			Title:           a.getTitle(ctx, v, preset.Preset),
 			Decks:           int32(preset.Decks),
@@ -255,8 +256,8 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *v1.Vaul
 // A session is opened over one deck, over one preset, or over the whole vault.
 // when there is something to answer.
 func (a *reviewHandler) StartSession(
-	ctx context.Context, r *connect.Request[v1.StartSessionRequest],
-) (*connect.Response[v1.StartSessionResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.StartSessionRequest],
+) (*connect.Response[flashcardsv1.StartSessionResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -282,9 +283,9 @@ func (a *reviewHandler) StartSession(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.StartSessionResponse{
+	out := &flashcardsv1.StartSessionResponse{
 		Run:       run.GetName(),
-		Cards:     make([]*v1.SessionCard, 0, len(session.Queue)),
+		Cards:     make([]*flashcardsv1.SessionCard, 0, len(session.Queue)),
 		Unwritten: session.Unwritten,
 		Skipped:   int32(session.Skipped),
 	}
@@ -294,9 +295,9 @@ func (a *reviewHandler) StartSession(
 	return connect.NewResponse(out), nil
 }
 
-func newWireSessionCard(one flashcards.QueuedCardFace) *v1.SessionCard {
+func newWireSessionCard(one flashcards.QueuedCardFace) *flashcardsv1.SessionCard {
 	front, back := one.Lay()
-	return &v1.SessionCard{
+	return &flashcardsv1.SessionCard{
 		Deck:      one.Deck,
 		Section:   one.Section,
 		Mark:      one.ID.Card,
@@ -311,11 +312,11 @@ func newWireSessionCard(one flashcards.QueuedCardFace) *v1.SessionCard {
 }
 
 // newWireIntervals is where each of the four would leave the card, in seconds.
-func newWireIntervals(ahead map[review.Rating]time.Duration) *v1.Intervals {
+func newWireIntervals(ahead map[review.Rating]time.Duration) *flashcardsv1.Intervals {
 	if ahead == nil {
 		return nil
 	}
-	return &v1.Intervals{
+	return &flashcardsv1.Intervals{
 		Again: int64(ahead[review.Again].Seconds()),
 		Hard:  int64(ahead[review.Hard].Seconds()),
 		Good:  int64(ahead[review.Good].Seconds()),
@@ -325,8 +326,8 @@ func newWireIntervals(ahead map[review.Rating]time.Duration) *v1.Intervals {
 
 // AnswerCard writes down how a card came back.
 func (a *reviewHandler) AnswerCard(
-	ctx context.Context, r *connect.Request[v1.AnswerCardRequest],
-) (*connect.Response[v1.AnswerCardResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.AnswerCardRequest],
+) (*connect.Response[flashcardsv1.AnswerCardResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -346,19 +347,19 @@ func (a *reviewHandler) AnswerCard(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	return connect.NewResponse(&v1.AnswerCardResponse{Answer: provided.ID}), nil
+	return connect.NewResponse(&flashcardsv1.AnswerCardResponse{Answer: provided.ID}), nil
 }
 
 // case, which is where the rule is.
-func parseRating(r v1.Rating) review.Rating {
+func parseRating(r flashcardsv1.Rating) review.Rating {
 	switch r {
-	case v1.Rating_RATING_AGAIN:
+	case flashcardsv1.Rating_RATING_AGAIN:
 		return review.Again
-	case v1.Rating_RATING_HARD:
+	case flashcardsv1.Rating_RATING_HARD:
 		return review.Hard
-	case v1.Rating_RATING_GOOD:
+	case flashcardsv1.Rating_RATING_GOOD:
 		return review.Good
-	case v1.Rating_RATING_EASY:
+	case flashcardsv1.Rating_RATING_EASY:
 		return review.Easy
 	default:
 		return 0
@@ -367,8 +368,8 @@ func parseRating(r v1.Rating) review.Rating {
 
 // TakeBackAnswer writes down that an answer was taken back.
 func (a *reviewHandler) TakeBackAnswer(
-	ctx context.Context, r *connect.Request[v1.TakeBackAnswerRequest],
-) (*connect.Response[v1.TakeBackAnswerResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.TakeBackAnswerRequest],
+) (*connect.Response[flashcardsv1.TakeBackAnswerResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -383,14 +384,14 @@ func (a *reviewHandler) TakeBackAnswer(
 		}
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&v1.TakeBackAnswerResponse{}), nil
+	return connect.NewResponse(&flashcardsv1.TakeBackAnswerResponse{}), nil
 }
 
 // GetVaultDeckPreset is the preset a deck of the named vault is scheduled by. A
 // deck naming none is answered with the defaults under no path.
 func (a *reviewHandler) GetVaultDeckPreset(
-	ctx context.Context, r *connect.Request[v1.GetVaultDeckPresetRequest],
-) (*connect.Response[v1.GetVaultDeckPresetResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.GetVaultDeckPresetRequest],
+) (*connect.Response[flashcardsv1.GetVaultDeckPresetResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -400,7 +401,7 @@ func (a *reviewHandler) GetVaultDeckPreset(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.GetVaultDeckPresetResponse{}
+	out := &flashcardsv1.GetVaultDeckPresetResponse{}
 	if reason, ok := convertOutcomeToErrorCode(found.Outcome); ok {
 		out.Error = &reason
 		return connect.NewResponse(out), nil
@@ -416,8 +417,8 @@ func (a *reviewHandler) GetVaultDeckPreset(
 // along a line of time. A caller naming a stretch is answered that stretch; the
 // streak and the count are over the whole of the vault either way.
 func (a *reviewHandler) ListReviewDays(
-	ctx context.Context, r *connect.Request[v1.ListReviewDaysRequest],
-) (*connect.Response[v1.ListReviewDaysResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ListReviewDaysRequest],
+) (*connect.Response[flashcardsv1.ListReviewDaysResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -427,10 +428,10 @@ func (a *reviewHandler) ListReviewDays(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	days := make([]*v1.ReviewDay, 0, len(response.Days))
+	days := make([]*flashcardsv1.ReviewDay, 0, len(response.Days))
 	for day, one := range response.Days {
 		came := response.Retained[day]
-		days = append(days, &v1.ReviewDay{
+		days = append(days, &flashcardsv1.ReviewDay{
 			Day:      day,
 			Answered: int32(one.Answered),
 			Again:    int32(one.Again),
@@ -441,12 +442,12 @@ func (a *reviewHandler) ListReviewDays(
 			Recalled: int32(came.Recalled),
 		})
 	}
-	due := make([]*v1.ReviewDay, 0, len(response.Due))
+	due := make([]*flashcardsv1.ReviewDay, 0, len(response.Due))
 	for day, falls := range response.Due {
-		due = append(due, &v1.ReviewDay{Day: day, Answered: int32(falls)})
+		due = append(due, &flashcardsv1.ReviewDay{Day: day, Answered: int32(falls)})
 	}
 
-	return connect.NewResponse(&v1.ListReviewDaysResponse{
+	return connect.NewResponse(&flashcardsv1.ListReviewDaysResponse{
 		Days:     sortReviewDays(days),
 		Due:      sortReviewDays(due),
 		Streak:   int32(response.Streak),
@@ -455,8 +456,8 @@ func (a *reviewHandler) ListReviewDays(
 }
 
 // sortReviewDays puts the days oldest first.
-func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
-	slices.SortFunc(days, func(one, other *v1.ReviewDay) int {
+func sortReviewDays(days []*flashcardsv1.ReviewDay) []*flashcardsv1.ReviewDay {
+	slices.SortFunc(days, func(one, other *flashcardsv1.ReviewDay) int {
 		return cmp.Compare(one.GetDay(), other.GetDay())
 	})
 	return days
@@ -467,8 +468,8 @@ func sortReviewDays(days []*v1.ReviewDay) []*v1.ReviewDay {
 // Nothing here writes and no run is named: a person may read around a deck
 // before they have started on it, and reading is not part of a session.
 func (a *reviewHandler) GetDeckNeighbourhood(
-	ctx context.Context, r *connect.Request[v1.GetDeckNeighbourhoodRequest],
-) (*connect.Response[v1.GetDeckNeighbourhoodResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.GetDeckNeighbourhoodRequest],
+) (*connect.Response[flashcardsv1.GetDeckNeighbourhoodResponse], error) {
 	v, err := a.getVault(ctx, r.Msg.GetVault())
 	if err != nil {
 		return nil, err
@@ -478,12 +479,12 @@ func (a *reviewHandler) GetDeckNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.GetDeckNeighbourhoodResponse{
-		Notes:  make([]*v1.DeckNeighbour, 0, len(joined.Notes)),
+	out := &flashcardsv1.GetDeckNeighbourhoodResponse{
+		Notes:  make([]*flashcardsv1.DeckNeighbour, 0, len(joined.Notes)),
 		Unread: int32(joined.Unread),
 	}
 	for _, one := range joined.Notes {
-		next := &v1.DeckNeighbour{
+		next := &flashcardsv1.DeckNeighbour{
 			Written:     one.Written,
 			Path:        one.Path,
 			Title:       one.Title,
@@ -510,8 +511,8 @@ const again = time.Second
 // asked for again whatever changed.
 func (a *reviewHandler) WatchReloads(
 	ctx context.Context,
-	_ *connect.Request[v1.WatchReloadsRequest],
-	out *connect.ServerStream[v1.WatchReloadsResponse],
+	_ *connect.Request[flashcardsv1.WatchReloadsRequest],
+	out *connect.ServerStream[flashcardsv1.WatchReloadsResponse],
 ) error {
 	ctx, stop := context.WithCancel(ctx)
 	defer stop()
@@ -522,7 +523,7 @@ func (a *reviewHandler) WatchReloads(
 
 	// Named as listening before anything has moved. A stream that says nothing until a file changes
 	// cannot be told from one that never opened.
-	if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
+	if err := out.Send(&flashcardsv1.WatchReloadsResponse{}); err != nil {
 		return err
 	}
 
@@ -536,7 +537,7 @@ func (a *reviewHandler) WatchReloads(
 		case <-repeat.C:
 			// Nothing moved, which is what the opening message says too. A page that has gone fails the
 			// write.
-			if err := out.Send(&v1.WatchReloadsResponse{}); err != nil {
+			if err := out.Send(&flashcardsv1.WatchReloadsResponse{}); err != nil {
 				return err
 			}
 		case _, open := <-moved:
@@ -544,7 +545,7 @@ func (a *reviewHandler) WatchReloads(
 				return nil
 			}
 			a.scenarios().flash.CardFaces.InvalidateAll()
-			if err := out.Send(&v1.WatchReloadsResponse{Reload: true}); err != nil {
+			if err := out.Send(&flashcardsv1.WatchReloadsResponse{Reload: true}); err != nil {
 				return err
 			}
 		}

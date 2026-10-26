@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
 import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultStencil } from '../../cards'
 import { WORDS as words } from '../../cards'
-import { ERRORS } from '@numen/wire'
+import { ERRORS } from '../../cards/wire/errors'
 import { createStencilWire, NOTHING } from './wire'
 
 /** One stencil as the vault reads it, with whatever a test wants said of it. */

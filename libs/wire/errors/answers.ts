@@ -42,10 +42,6 @@ export const ERROR_CODE: Record<ProtoErrorCode, ErrorCode | null> = {
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
   [ProtoErrorCode.OCCUPIED]: 'occupied',
   [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
-  [ProtoErrorCode.NOT_A_STENCIL]: 'notAStencil',
-  [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
-  [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
-  [ProtoErrorCode.NOT_A_PRESET]: 'notAPreset',
   [ProtoErrorCode.STALE]: null,
 }
 

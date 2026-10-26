@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { ErrorCode, Goal, StopReason } from '@numen/protocol'
-import { DEFAULT_SETTINGS, formatSettings } from '@numen/wire'
-import type { SettingsMessage } from '@numen/wire'
+import { ErrorCode } from '../../../../gen/numen/flashcards/v1/errors_pb.js'
+import { Goal, StopReason } from '../../../../gen/numen/flashcards/v1/presets_pb.js'
+import { DEFAULT_SETTINGS, formatSettings } from '../../../../cards/wire/settings'
+import type { SettingsMessage } from '../../../../cards/wire/settings'
 
 import { readDeckPreset, PRESET_UNREADABLE_MESSAGE } from './presets'
 import type { PresetsClient } from './presets'

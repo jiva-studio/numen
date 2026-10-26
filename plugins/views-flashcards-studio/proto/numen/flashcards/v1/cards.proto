@@ -8,11 +8,12 @@ syntax = "proto3";
 // Nothing here is laid out. A face travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
 // the client's.
-package numen.v1;
+package numen.flashcards.v1;
 
+import "numen/flashcards/v1/errors.proto";
 import "numen/v1/shared.proto";
 
-option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+option go_package = "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1;flashcardsv1";
 
 // CardsService answers about the stencils and the decks of the one vault a
 // client is looking at.
@@ -339,7 +340,7 @@ message ReadStencilResponse {
   optional ErrorCode error = 2;
 
   // The file this stencil came out of, for the caller to present at its next
-  optional Fingerprint at = 3;
+  optional numen.v1.Fingerprint at = 3;
 }
 
 message WriteStencilRequest {
@@ -353,7 +354,7 @@ message WriteStencilRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the stencil now holds.
-  optional Fingerprint baseline = 4;
+  optional numen.v1.Fingerprint baseline = 4;
 
   // The prose to stand below the frontmatter and above the first face, with
   // line endings as LF.
@@ -371,7 +372,7 @@ message WriteStencilResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 2;
+  optional numen.v1.Fingerprint at = 2;
 
   // Set when the stencil is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
@@ -389,7 +390,7 @@ message RenameStencilFieldRequest {
 
   // The stencil this caller last read. Absent for a rename that lands on
   // whatever the stencil now holds.
-  optional Fingerprint baseline = 4;
+  optional numen.v1.Fingerprint baseline = 4;
 }
 
 message RenameStencilFieldResponse {
@@ -409,7 +410,7 @@ message RenameStencilFieldResponse {
 
   // The stencil the rename produced, for the caller to present at its next
   // write. Absent when nothing was renamed.
-  optional Fingerprint at = 5;
+  optional numen.v1.Fingerprint at = 5;
 
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
@@ -458,7 +459,7 @@ message ReadDeckResponse {
   optional ErrorCode error = 2;
 
   // The file this deck came out of, for the caller to present at its next
-  optional Fingerprint at = 3;
+  optional numen.v1.Fingerprint at = 3;
 
   // The size a deck is read up to, in bytes. Set with
   // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
@@ -482,7 +483,7 @@ message WriteDeckRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.
-  optional Fingerprint baseline = 5;
+  optional numen.v1.Fingerprint baseline = 5;
 
   // What the file is to end with, below the last value, with line endings as
   // LF.
@@ -497,7 +498,7 @@ message WriteDeckResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 2;
+  optional numen.v1.Fingerprint at = 2;
 
   // The size a deck is written up to, in bytes. Set with
   // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding

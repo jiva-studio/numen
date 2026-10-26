@@ -7,9 +7,10 @@ import (
 	"strings"
 	"time"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/edit"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
@@ -170,51 +171,51 @@ func parseFingerprint(s string) (domain.Fingerprint, error) {
 	return ref, nil
 }
 
-func convertOutcomeToErrorCode(o edit.ReadOutcome) (v1.ErrorCode, bool) {
+func convertOutcomeToErrorCode(o edit.ReadOutcome) (flashcardsv1.ErrorCode, bool) {
 	switch o {
 	case edit.Missing:
-		return v1.ErrorCode_ERROR_CODE_MISSING, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_MISSING, true
 	case edit.NotANote:
-		return v1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_NOTE, true
 	case edit.NotText:
-		return v1.ErrorCode_ERROR_CODE_NOT_TEXT, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_TEXT, true
 	case edit.TooLarge:
-		return v1.ErrorCode_ERROR_CODE_TOO_LARGE, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_TOO_LARGE, true
 	case edit.Unreadable:
-		return v1.ErrorCode_ERROR_CODE_UNREADABLE, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_UNREADABLE, true
 	case edit.Ok:
-		return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+		return flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 	}
-	return v1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
+	return flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED, false
 }
 
-func describeCode(reason v1.ErrorCode) string {
+func describeCode(reason flashcardsv1.ErrorCode) string {
 	switch reason {
-	case v1.ErrorCode_ERROR_CODE_MISSING:
+	case flashcardsv1.ErrorCode_ERROR_CODE_MISSING:
 		return "the vault holds no note at this path"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_NOTE:
 		return "this is not a note the vault holds"
-	case v1.ErrorCode_ERROR_CODE_NOT_TEXT:
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_TEXT:
 		return "this file is not text: some of it is not valid UTF-8, so open it as a file"
-	case v1.ErrorCode_ERROR_CODE_TOO_LARGE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_TOO_LARGE:
 		return fmt.Sprintf("it is larger than the %d bytes this reads; open the file instead", edit.MaxBytes)
-	case v1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_BODY_UNWRITABLE:
 		return "this text opens with a frontmatter delimiter, so it cannot be written into a note"
-	case v1.ErrorCode_ERROR_CODE_UNREADABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_UNREADABLE:
 		return "the frontmatter of this note cannot be read, so it can be neither read nor written from here"
-	case v1.ErrorCode_ERROR_CODE_OCCUPIED:
+	case flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED:
 		return "a file is already where this note would go"
-	case v1.ErrorCode_ERROR_CODE_UNNAMEABLE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE:
 		return "a note cannot be called this"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
 		return "this note is not a stencil"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_DECK:
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK:
 		return "this note is not a deck"
-	case v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:
 		return "this deck is larger than a deck is read at"
-	case v1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_PRESET:
 		return "this note is not a preset"
-	case v1.ErrorCode_ERROR_CODE_STALE:
+	case flashcardsv1.ErrorCode_ERROR_CODE_STALE:
 		return "this file is no longer the one that was read, and nothing was written: read it again and write from what is there now"
 	default:
 		return reason.String()

@@ -2,12 +2,13 @@ syntax = "proto3";
 
 // Flashcards service definitions.
 // Manages flashcard review sessions, card scheduling counts, and answer logs across vaults.
-package numen.v1;
+package numen.flashcards.v1;
 
-import "numen/v1/presets.proto";
+import "numen/flashcards/v1/presets.proto";
+import "numen/flashcards/v1/errors.proto";
 import "numen/v1/shared.proto";
 
-option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+option go_package = "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1;flashcardsv1";
 
 // FlashcardsService manages card review sessions, progress tracking, and deck scheduling.
 service FlashcardsService {

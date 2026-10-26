@@ -7,3 +7,4 @@ libs/protocol/gen/
 **/.tmp/**
 **/node_modules/**
 libs/core/adapter/window/*/pages/app/
+plugins/*/frontend/gen/

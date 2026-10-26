@@ -4,10 +4,11 @@ import (
 	"context"
 	"errors"
 
+	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
+
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
@@ -23,8 +24,8 @@ type cardsHandler struct {
 // it asks for. A vault holding more than one answer carries is answered with as
 // many as it carries, and told how many it holds.
 func (h *cardsHandler) ListStencils(
-	ctx context.Context, r *connect.Request[v1.ListStencilsRequest],
-) (*connect.Response[v1.ListStencilsResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ListStencilsRequest],
+) (*connect.Response[flashcardsv1.ListStencilsResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -34,8 +35,8 @@ func (h *cardsHandler) ListStencils(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &v1.ListStencilsResponse{Total: int32(count)}
-	out.Stencils = make([]*v1.StencilSummary, 0, len(target))
+	out := &flashcardsv1.ListStencilsResponse{Total: int32(count)}
+	out.Stencils = make([]*flashcardsv1.StencilSummary, 0, len(target))
 	for _, stencil := range target {
 		out.Stencils = append(out.Stencils, cardwire.NewWireSummary(stencil))
 	}
@@ -54,8 +55,8 @@ func getStencilLimit(limit int32) int {
 // CreateStencil puts a stencil declaring these fields in the vault, showing no
 // face.
 func (h *cardsHandler) CreateStencil(
-	ctx context.Context, r *connect.Request[v1.CreateStencilRequest],
-) (*connect.Response[v1.CreateStencilResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.CreateStencilRequest],
+) (*connect.Response[flashcardsv1.CreateStencilResponse], error) {
 	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
 		return h.scenarios().cards.Create.Stencil(ctx, showing, in)
@@ -63,22 +64,22 @@ func (h *cardsHandler) CreateStencil(
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreateStencilResponse{
+	return connect.NewResponse(&flashcardsv1.CreateStencilResponse{
 		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
 
 // CreateDeck puts a deck of no cards in the vault.
 func (h *cardsHandler) CreateDeck(
-	ctx context.Context, r *connect.Request[v1.CreateDeckRequest],
-) (*connect.Response[v1.CreateDeckResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.CreateDeckRequest],
+) (*connect.Response[flashcardsv1.CreateDeckResponse], error) {
 	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		return h.scenarios().cards.Create.Deck(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&v1.CreateDeckResponse{
+	return connect.NewResponse(&flashcardsv1.CreateDeckResponse{
 		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
@@ -88,7 +89,7 @@ func (h *cardsHandler) CreateDeck(
 // could not be made comes back as.
 func (b *Backend) createCardNote(
 	ctx context.Context, create func(domain.Vault, cards.New) (cards.CreateNoteResult, error), title, folder string,
-) (cards.CreateNoteResult, *v1.ErrorCode, bool, error) {
+) (cards.CreateNoteResult, *flashcardsv1.ErrorCode, bool, error) {
 	showing, err := b.getCurrentVault(ctx)
 	if err != nil {
 		return cards.CreateNoteResult{}, nil, false, err
@@ -114,8 +115,8 @@ func (b *Backend) createCardNote(
 // holding what the client read is written; one holding something else is left
 // alone and the client is told the stencil changed.
 func (h *cardsHandler) RenameStencilField(
-	ctx context.Context, r *connect.Request[v1.RenameStencilFieldRequest],
-) (*connect.Response[v1.RenameStencilFieldResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.RenameStencilFieldRequest],
+) (*connect.Response[flashcardsv1.RenameStencilFieldResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -138,13 +139,13 @@ func (h *cardsHandler) RenameStencilField(
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.RenameStencilFieldResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.RenameStencilFieldResponse{Error: &reason}), nil
 }
 
 // ReadStencil is the fields and the faces of one stencil.
 func (h *cardsHandler) ReadStencil(
-	ctx context.Context, r *connect.Request[v1.ReadStencilRequest],
-) (*connect.Response[v1.ReadStencilResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ReadStencilRequest],
+) (*connect.Response[flashcardsv1.ReadStencilResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -154,7 +155,7 @@ func (h *cardsHandler) ReadStencil(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ReadStencilResponse{}
+	out := &flashcardsv1.ReadStencilResponse{}
 	if code, ok := errorCodeOfStencil(found.Outcome, found.Type); ok {
 		out.Error = &code
 		return connect.NewResponse(out), nil
@@ -169,8 +170,8 @@ func (h *cardsHandler) ReadStencil(
 
 // ReadDeck is the cards of one deck, in the order they stand in the file.
 func (h *cardsHandler) ReadDeck(
-	ctx context.Context, r *connect.Request[v1.ReadDeckRequest],
-) (*connect.Response[v1.ReadDeckResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.ReadDeckRequest],
+) (*connect.Response[flashcardsv1.ReadDeckResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -180,12 +181,12 @@ func (h *cardsHandler) ReadDeck(
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &v1.ReadDeckResponse{}
+	out := &flashcardsv1.ReadDeckResponse{}
 	if code, ok := errorCodeOfDeck(found.Outcome, found.Type); ok {
 		out.Error = &code
 		// The bound travels with the error code, so the interface names it
 		// without holding a number of its own.
-		if code == v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE {
+		if code == flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE {
 			out.Bound = cards.MaxBytes
 		}
 		return connect.NewResponse(out), nil
@@ -200,8 +201,8 @@ func (h *cardsHandler) ReadDeck(
 // is written over; one holding something else is left alone and the client is
 // told the deck changed.
 func (h *cardsHandler) WriteDeck(
-	ctx context.Context, r *connect.Request[v1.WriteDeckRequest],
-) (*connect.Response[v1.WriteDeckResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.WriteDeckRequest],
+) (*connect.Response[flashcardsv1.WriteDeckResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -216,13 +217,13 @@ func (h *cardsHandler) WriteDeck(
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&v1.WriteDeckResponse{
+		return connect.NewResponse(&flashcardsv1.WriteDeckResponse{
 			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
-		code := v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE
-		return connect.NewResponse(&v1.WriteDeckResponse{
+		code := flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE
+		return connect.NewResponse(&flashcardsv1.WriteDeckResponse{
 			Error: &code, Bound: cards.MaxBytes,
 		}), nil
 	}
@@ -230,15 +231,15 @@ func (h *cardsHandler) WriteDeck(
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.WriteDeckResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.WriteDeckResponse{Error: &reason}), nil
 }
 
 // WriteStencil puts fields and faces into a stencil. A stencil still holding
 // what the client read is written over; one holding something else is left
 // alone and the client is told the stencil changed.
 func (h *cardsHandler) WriteStencil(
-	ctx context.Context, r *connect.Request[v1.WriteStencilRequest],
-) (*connect.Response[v1.WriteStencilResponse], error) {
+	ctx context.Context, r *connect.Request[flashcardsv1.WriteStencilRequest],
+) (*connect.Response[flashcardsv1.WriteStencilResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
@@ -255,7 +256,7 @@ func (h *cardsHandler) WriteStencil(
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&v1.WriteStencilResponse{
+		return connect.NewResponse(&flashcardsv1.WriteStencilResponse{
 			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
@@ -263,25 +264,25 @@ func (h *cardsHandler) WriteStencil(
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&v1.WriteStencilResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.WriteStencilResponse{Error: &reason}), nil
 }
 
 // errorCodeOfDeck is why a deck was not read. What holds for a note holds here,
 // and a deck read at a bound of its own fails at that bound.
-func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool) {
+func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (flashcardsv1.ErrorCode, bool) {
 	if o == note.TooLarge {
-		return v1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE, true
 	}
 	if o == note.Ok && is != format.TypeDeck {
-		return v1.ErrorCode_ERROR_CODE_NOT_A_DECK, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK, true
 	}
 	return convertOutcomeToErrorCode(o)
 }
 
 // errorCodeOfStencil is why a stencil was not read.
-func errorCodeOfStencil(o note.ReadOutcome, is domain.NoteType) (v1.ErrorCode, bool) {
+func errorCodeOfStencil(o note.ReadOutcome, is domain.NoteType) (flashcardsv1.ErrorCode, bool) {
 	if o == note.Ok && is != format.TypeStencil {
-		return v1.ErrorCode_ERROR_CODE_NOT_A_STENCIL, true
+		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL, true
 	}
 	return convertOutcomeToErrorCode(o)
 }
