@@ -45,11 +45,11 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, units ComputeUn
 func enableCoreML(opts *ort.SessionOptions, units ComputeUnits) error {
 	engine, loadedPath := runtimeState.GetLoaded()
 
-	if engine == nil || at == "" {
+	if engine == nil || loadedPath == "" {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
-	handle, err := purego.Dlopen(libPath, purego.RTLD_NOW|purego.RTLD_GLOBAL)
+	handle, err := purego.Dlopen(loadedPath, purego.RTLD_NOW|purego.RTLD_GLOBAL)
 	if err != nil {
 		return err
 	}
