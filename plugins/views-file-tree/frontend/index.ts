@@ -25,6 +25,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'files',
     title: WORDS.showFiles,
+    shortcut: 'mod+shift+e',
     icon: FolderTree,
     handler: async () => {
       await context.openTab?.(FILES)

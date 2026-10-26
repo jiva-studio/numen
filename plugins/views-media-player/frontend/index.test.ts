@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk'
-import plugin, { activate, MediaRecordingTab, RecordingTab } from './index'
+import plugin, { activate, MediaRecordingTab, RecordingTab, RECORDER } from './index'
 
 describe('media-player plugin', () => {
   it('registers audio reader and recording tab kind upon activation', () => {
@@ -24,6 +24,25 @@ describe('media-player plugin', () => {
       component: MediaRecordingTab,
       title: 'Record Audio',
     })
+  })
+
+  it('opens a tab to record in from its command', async () => {
+    const kinds: (string | undefined)[] = []
+    const context = createMockPluginContext({
+      pluginId: 'md.numen.views.media.player',
+      openTab: (kind) => {
+        kinds.push(kind)
+        return Promise.resolve('')
+      },
+    })
+    activate(context)
+
+    expect(context.getRegisteredCommands().map((one) => [one.id, one.title])).toStrictEqual([
+      ['record', 'Record audio'],
+    ])
+    await context.triggerCommand('record')
+
+    expect(kinds).toStrictEqual([RECORDER])
   })
 
   it('declares activate hook on default export', () => {

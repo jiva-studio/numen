@@ -1,5 +1,7 @@
 /** What a recording tab says: the player, the transcript, and what can be asked about it. */
 export const WORDS = {
+  /** The command that opens a tab to record in. */
+  record: 'Record audio',
   player: 'Recording',
   transcript: 'Transcript',
   /** The view keeps the line being said in sight. */
