@@ -1,14 +1,8 @@
 /**
  * What an application may use.
- *
- * Narrower than what the module contains: the easing curve, the routing and
- * the arithmetic are how a plex is built, not how it is used.
  */
 import './shared/tokens/theme.css'
 import './shared/tokens/window.css'
-
-export { Plex } from './features/plex'
-export { getRelationName } from './features/plex'
 
 export { Menu, groupItems, useOutsidePress } from './shared/ui/menu'
 export type { MenuItem, MenuTrigger } from './shared/ui/menu'
@@ -30,8 +24,6 @@ export { SegmentedControl } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
-/** A day of the calendar, written down, read back and counted against another. */
-export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/time/day'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { getVaultForKey, isTyping } from './features/welcome'
@@ -42,9 +34,6 @@ export { KeyCap } from './shared/ui/key-cap'
 export { commandKeyChord, keyChord } from './features/palette'
 export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
 export type { PaletteKeys } from './shared/ui/key-cap'
-
-/** The size a node's label is being set at, and the plex drawn to hold it. */
-export { optionsForType, useTypeSize } from './features/plex'
 
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
@@ -85,17 +74,17 @@ export { createNotice } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
 export { Agent } from './screens/agent'
-export { Reader } from './features/reader'
 
 export type { Span } from './shared/lib/text/span'
 
 /** The size, room and placement a component outside this module lays itself out by. */
-export type { Size } from './shared/lib/math/geometry'
+export type { Position, Size } from './shared/lib/math/geometry'
 export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
 export { browserViewport, useRoom, useViewport, type Viewport } from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
-export { onNextFrame } from './shared/lib/time/clock'
+export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
+export { createRefRegistry } from './shared/lib/dom/refs'
 export { cn } from './shared/lib/dom/classes'
 
 export { WorkspaceLayout } from './features/workspace'
@@ -108,15 +97,6 @@ export type { Tab, Workspace } from './features/workspace'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'
-
-export { byLongPress } from './features/plex'
-export { byDoubleTap } from './features/plex'
-export type { PlexHeading } from './features/plex'
-export type { EdgeArrow, PlexEdge } from './features/plex'
-export type { PlexNeighbourhood } from './features/plex'
-export type { PlexNode, Position } from './features/plex'
-export type { PlexRelation } from './features/plex'
-export type { PlexDestination } from './features/plex'
 
 export type { AgentModelOption } from './features/message-composer'
 
