@@ -6,7 +6,7 @@
  * says what its answers mean.
  */
 import type { AskAgentResponse, Span } from '@numen/protocol'
-import type { AgentPort } from '@numen/plugin-sdk'
+import type { AgentPort, AgentQuery, AgentStep } from '@numen/plugin-sdk'
 
 /** The span a call named, and one naming no place inside the source. */
 const normalizeSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
@@ -30,48 +30,55 @@ export interface AgentClient {
   finishConversation(request: { conversation: string }): Promise<unknown>
 }
 
+type AgentRequest = Parameters<AgentClient['askAgent']>[0]
+
+/** The request a query is asked with. An empty agent, model or reasoning is left out. */
+const createAgentRequest = (query: AgentQuery): AgentRequest => {
+  const { question: prompt, focus, conversation, agentId, modelId, reasoning } = query
+  return {
+    prompt,
+    focus,
+    conversation,
+    ...(agentId ? { agent: agentId } : {}),
+    ...(modelId ? { model: modelId } : {}),
+    ...(reasoning ? { reasoning } : {}),
+  }
+}
+
+/** The step of the port a step on the wire is, or undefined for one that carries none. */
+const getAgentStep = (step: AskAgentResponse): AgentStep | undefined => {
+  switch (step.step.case) {
+    case 'text':
+      return { kind: 'said', text: step.step.value }
+    case 'toolCall': {
+      const toolCall = step.step.value
+      return {
+        kind: 'toolCall',
+        tool: toolCall.tool,
+        subject: toolCall.about,
+        written: toolCall.length,
+        ...(toolCall.path
+          ? { place: { path: toolCall.path, span: normalizeSpan(toolCall.span) } }
+          : {}),
+      }
+    }
+    case 'toolFinished':
+      return { kind: 'answered' }
+    case 'modelStarted':
+      return { kind: 'thinking' }
+    case 'stopped':
+      return { kind: 'stopped', error: step.step.value === STOPPED_DONE ? '' : step.step.value }
+    default:
+      return undefined
+  }
+}
+
 /** The agent port, over the client the window talks on. */
 export const createAgentPort = (agent: AgentClient): AgentPort => ({
-  async *ask(query: Parameters<AgentPort['ask']>[0]) {
-    const { question: prompt, focus, conversation, signal, agentId, modelId, reasoning } = query
-    for await (const step of agent.askAgent(
-      {
-        prompt,
-        focus,
-        conversation,
-        ...(agentId ? { agent: agentId } : {}),
-        ...(modelId ? { model: modelId } : {}),
-        ...(reasoning ? { reasoning } : {}),
-      },
-      { signal },
-    )) {
-      switch (step.step.case) {
-        case 'text':
-          yield { kind: 'said', text: step.step.value }
-          break
-        case 'toolCall': {
-          const toolCall = step.step.value
-          yield {
-            kind: 'toolCall',
-            tool: toolCall.tool,
-            subject: toolCall.about,
-            written: toolCall.length,
-            ...(toolCall.path
-              ? { place: { path: toolCall.path, span: normalizeSpan(toolCall.span) } }
-              : {}),
-          }
-          break
-        }
-        case 'toolFinished':
-          yield { kind: 'answered' }
-          break
-        case 'modelStarted':
-          yield { kind: 'thinking' }
-          break
-        case 'stopped':
-          yield { kind: 'stopped', error: step.step.value === STOPPED_DONE ? '' : step.step.value }
-          break
-      }
+  async *ask(query: AgentQuery) {
+    for await (const step of agent.askAgent(createAgentRequest(query), { signal: query.signal })) {
+      const converted = getAgentStep(step)
+      if (converted) yield converted
     }
   },
 
