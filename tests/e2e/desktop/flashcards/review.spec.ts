@@ -35,3 +35,67 @@ test('the window loads the flashcards plugin, shows what is due and writes an an
   await expect.poll(readAnswers).toHaveLength(1)
   expect(JSON.parse(readAnswers()[0] ?? '{}')).toMatchObject({ rating: expect.anything() })
 })
+
+/** One frame of a Connect stream: a flag byte, the length, and the JSON message. */
+function createFrame(flags: number, message: unknown): Buffer {
+  const body = Buffer.from(JSON.stringify(message))
+  const head = Buffer.alloc(5)
+  head.writeUInt8(flags, 0)
+  head.writeUInt32BE(body.length, 1)
+  return Buffer.concat([head, body])
+}
+
+/** The JSON message of the one frame a Connect streaming request carries. */
+function readFrame(body: Buffer): Record<string, unknown> {
+  return JSON.parse(body.subarray(5, 5 + body.readUInt32BE(1)).toString('utf8'))
+}
+
+const REPLY = 'A llama lives in the Andes.'
+
+// The flashcards window serves no agent of its own, so the agent service is stood in for at the
+// page's origin: the review's question goes out as it would, and the stand-in answers it.
+test('the review mounts the conversation of the agent chat plugin in its agent panel', async ({
+  page,
+}) => {
+  const requests: Record<string, unknown>[] = []
+  await page.route('**/numen.v1.AgentService/GetAgentState', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+  )
+  await page.route('**/numen.v1.AgentService/AskAgent', (route) => {
+    requests.push(readFrame(route.request().postDataBuffer() ?? Buffer.alloc(5)))
+    return route.fulfill({
+      status: 200,
+      contentType: 'application/connect+json',
+      body: Buffer.concat([
+        createFrame(0, { text: REPLY }),
+        createFrame(0, { stopped: 'done' }),
+        createFrame(2, {}),
+      ]),
+    })
+  })
+  await page.route('**/numen.v1.AgentService/FinishConversation', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }),
+  )
+  await page.goto('/')
+
+  await page.getByRole('button', { name: new RegExp(path.basename(vault)) }).click()
+  await page.getByRole('button', { name: /Review/ }).click()
+  await page.getByRole('button', { name: /Ask/ }).click()
+
+  const panel = page.getByRole('region', { name: 'Ask about this card' })
+  const field = panel.getByRole('textbox', { name: 'Ask about this card' })
+  await expect(field).toBeVisible()
+  await field.fill('Where does it live?')
+  await panel.getByRole('button', { name: 'Send' }).click()
+
+  await expect(panel.getByText('Where does it live?')).toBeVisible()
+  await expect(panel).toContainText(REPLY)
+  // The card goes beside the question, and the question is only what was written.
+  expect(requests).toHaveLength(1)
+  expect(requests[0]).toMatchObject({
+    prompt: 'Where does it live?',
+    focus: expect.stringMatching(/\.md$/),
+  })
+  expect(requests[0]?.['mark']).toEqual(expect.any(String))
+  expect(requests[0]?.['face']).toEqual(expect.any(String))
+})
