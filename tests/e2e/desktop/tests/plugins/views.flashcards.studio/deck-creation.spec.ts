@@ -55,14 +55,14 @@ test.describe('a file open in an editor of cards, removed from the tree', () => 
   ] as const) {
     test(`lets go of the tab holding a ${what}`, async ({ page }) => {
       await openWorkspace(page)
-      await page.getByText('Files').first().click()
+      await page.getByRole('tab', { name: /^Files/ }).click()
       const folder = page.locator('[data-tree-row="cards"]')
       await folder.press('Enter')
       const row = page.locator(`[data-tree-row="${path}"]`)
       await row.press('Enter')
       await expect(page.locator(editor).first()).toBeVisible()
 
-      await page.getByText('Files').first().click()
+      await page.getByRole('tab', { name: /^Files/ }).click()
       await row.click({ button: 'right' })
       await page
         .getByRole('menuitem', { name: /Move to trash|Remove/ })

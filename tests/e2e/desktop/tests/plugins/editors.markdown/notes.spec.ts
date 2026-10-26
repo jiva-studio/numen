@@ -7,7 +7,7 @@ test.describe('Notes and File Tree', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Click on the Files tab in the right panel
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Verify root items from test vault are listed
     await expect(page.getByText('Thermodynamics.md').first()).toBeVisible()

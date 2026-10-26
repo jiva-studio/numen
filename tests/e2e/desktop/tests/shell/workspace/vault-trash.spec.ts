@@ -7,7 +7,7 @@ test.describe('Vault Deletion, Trash and Renaming', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open notes folder and trash-target.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -42,7 +42,7 @@ test.describe('Vault Deletion, Trash and Renaming', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -78,7 +78,7 @@ test.describe('Vault Deletion, Trash and Renaming', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

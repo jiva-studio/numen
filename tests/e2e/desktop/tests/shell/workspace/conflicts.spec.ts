@@ -7,7 +7,7 @@ test.describe('File Conflict and Concurrency Handling', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes folder
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

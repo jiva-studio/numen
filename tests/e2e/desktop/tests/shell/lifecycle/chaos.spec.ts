@@ -7,7 +7,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes folder
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -33,7 +33,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes folder
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -59,7 +59,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open Files panel
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Open notes folder
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -72,7 +72,7 @@ test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
     await entropyRow.press('Enter')
 
     // Switch back to Files tab to open assets
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Open assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')

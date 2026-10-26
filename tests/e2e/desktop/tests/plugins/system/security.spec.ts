@@ -26,7 +26,7 @@ test.describe('Plugin Security and Path Boundaries', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Workspace remains interactive and intact
     await expect(page.locator('[data-tree-row="notes"]')).toBeVisible()

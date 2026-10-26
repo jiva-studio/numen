@@ -7,7 +7,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -36,7 +36,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -65,7 +65,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -97,7 +97,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -111,7 +111,7 @@ test.describe('Plugin Lifecycle and Process Management', () => {
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Open sample.epub
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
     await expect(epubRow).toBeVisible()
     await epubRow.press('Enter')

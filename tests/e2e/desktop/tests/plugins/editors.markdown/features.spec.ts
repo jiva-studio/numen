@@ -10,7 +10,7 @@ test.describe('Markdown Editor Features and Editing', () => {
     })
 
     // 1. Open notes folder and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -45,7 +45,7 @@ test.describe('Markdown Editor Features and Editing', () => {
       timeout: 15_000,
     })
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -69,7 +69,7 @@ test.describe('Markdown Editor Features and Editing', () => {
   test('saves note edits with keyboard shortcut control s', async ({ page }) => {
     await openWorkspace(page)
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

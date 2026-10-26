@@ -7,7 +7,7 @@ test.describe('Markdown Editor Live Formatting and Styling', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open notes folder and plain.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -39,7 +39,7 @@ test.describe('Markdown Editor Live Formatting and Styling', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -73,7 +73,7 @@ test.describe('Markdown Editor Live Formatting and Styling', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

@@ -7,7 +7,7 @@ test.describe('Workspace Tab Management', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open Files panel
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // 1. Open notes/Entropy.md
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -21,7 +21,7 @@ test.describe('Workspace Tab Management', () => {
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 
     // 2. Open Files panel again to open an EPUB book
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()

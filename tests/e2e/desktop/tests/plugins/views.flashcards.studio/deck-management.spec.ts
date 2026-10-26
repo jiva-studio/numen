@@ -7,7 +7,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open cards folder and Animals.md deck
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -37,7 +37,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -66,7 +66,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -100,7 +100,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')

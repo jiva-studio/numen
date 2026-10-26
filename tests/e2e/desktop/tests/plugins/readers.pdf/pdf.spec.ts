@@ -7,7 +7,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -34,7 +34,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -58,7 +58,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -83,7 +83,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -106,7 +106,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -133,7 +133,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -148,7 +148,7 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
 
     // Open notes folder and open a note
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

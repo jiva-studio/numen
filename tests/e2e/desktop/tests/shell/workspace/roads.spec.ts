@@ -9,7 +9,7 @@ import { openWorkspace } from '../../support/workspace'
 
 /** The row of a file in the tree, its folder opened first. */
 const openFromTree = async (page: Page, folder: string, path: string): Promise<void> => {
-  await page.getByText('Files').first().click()
+  await page.getByRole('tab', { name: /^Files/ }).click()
   const folderRow = page.locator(`[data-tree-row="${folder}"]`)
   await expect(folderRow).toBeVisible()
   await folderRow.press('Enter')

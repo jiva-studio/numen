@@ -7,7 +7,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open assets folder and sample.pdf
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')
@@ -46,7 +46,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')
@@ -79,7 +79,7 @@ test.describe('PDF Document Reader Advanced Controls', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')

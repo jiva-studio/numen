@@ -7,7 +7,7 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // 2. Right click on notes folder row to open context menu
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -38,7 +38,7 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open Files tab and expand cards directory
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -52,7 +52,7 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     await otherTab.click()
 
     // 3. Switch back to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // 4. Verify cards folder remains expanded
     await expect(cardsRow).toBeVisible()
@@ -66,7 +66,7 @@ test.describe('File Tree Folder Expansion and Structure', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open Files tab and expand cards directory
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')

@@ -57,7 +57,7 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open Entropy.md note
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -70,7 +70,10 @@ test.describe('Vault Navigation and Quick Open Palette', () => {
 
     // 2. Switch away from Files tab to Agent or another panel
     await page.getByText('Agent').first().click()
-    await expect(page.getByText('Files').first()).not.toHaveAttribute('aria-selected', 'true')
+    await expect(page.getByRole('tab', { name: /^Files/ })).not.toHaveAttribute(
+      'aria-selected',
+      'true',
+    )
 
     // 3. Run Reveal command (Show in files)
     await page.keyboard.press('Control+p')

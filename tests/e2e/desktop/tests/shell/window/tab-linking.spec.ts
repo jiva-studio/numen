@@ -7,7 +7,7 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open notes folder and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -38,7 +38,7 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open sample.pdf
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')
@@ -48,7 +48,7 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await pdfRow.press('Enter')
 
     // Open notes and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -72,7 +72,7 @@ test.describe('Tab Linking and Split Pane Coordination', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open sample.epub
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const epubRow = page.locator('[data-tree-row="assets/sample.epub"]')
     if (!(await epubRow.isVisible())) {
       const assetsRow = page.locator('[data-tree-row="assets"]')

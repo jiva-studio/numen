@@ -83,7 +83,7 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open notes folder and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -120,7 +120,7 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await page.goto('/')
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')

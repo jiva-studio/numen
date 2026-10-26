@@ -7,7 +7,7 @@ test.describe('Stencil Templates and Schema Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand cards folder
     const cardsRow = page.locator('[data-tree-row="cards"]')

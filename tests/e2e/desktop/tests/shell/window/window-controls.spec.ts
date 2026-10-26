@@ -9,7 +9,7 @@ test.describe('Window Controls and Display Preferences', () => {
     })
 
     // 1. Open notes and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')

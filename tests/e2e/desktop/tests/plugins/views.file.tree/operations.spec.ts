@@ -7,7 +7,7 @@ test.describe('File System Operations and Organization', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand cards folder
     const cardsRow = page.locator('[data-tree-row="cards"]')
@@ -28,7 +28,7 @@ test.describe('File System Operations and Organization', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
@@ -48,7 +48,7 @@ test.describe('File System Operations and Organization', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Verify directory rows define drop targets for organization
     const assetsRow = page.locator('[data-tree-row="assets"]')

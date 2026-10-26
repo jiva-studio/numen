@@ -7,7 +7,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -44,7 +44,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -70,7 +70,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -96,7 +96,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -122,7 +122,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')
@@ -157,7 +157,7 @@ test.describe('Audio Transcription Pipeline', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand assets folder
     const assetsRow = page.locator('[data-tree-row="assets"]')

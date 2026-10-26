@@ -7,7 +7,7 @@ test.describe('Markdown Note Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand notes folder
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -33,7 +33,7 @@ test.describe('Markdown Note Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand notes folder
     const notesRow = page.locator('[data-tree-row="notes"]')
@@ -62,7 +62,7 @@ test.describe('Markdown Note Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Switch to Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand notes folder
     const notesRow = page.locator('[data-tree-row="notes"]')

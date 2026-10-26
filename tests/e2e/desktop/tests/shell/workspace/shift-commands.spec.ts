@@ -15,7 +15,7 @@ test.describe('a command reached by a keystroke holding Shift', () => {
 
   test('shows the note in front in the plex', async ({ page }) => {
     await openWorkspace(page)
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     await page.locator('[data-tree-row="notes"]').press('Enter')
     await page.locator('[data-tree-row="notes/Entropy.md"]').press('Enter')
     await expect(page.locator('.note').first()).toBeVisible()

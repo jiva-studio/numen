@@ -7,7 +7,7 @@ test.describe('Flashcards and Deck Editor', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open Files tab
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
 
     // Expand cards directory
     const cardsRow = page.locator('[data-tree-row="cards"]')
@@ -33,7 +33,7 @@ test.describe('Flashcards and Deck Editor', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -58,7 +58,7 @@ test.describe('Flashcards and Deck Editor', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')
@@ -85,7 +85,7 @@ test.describe('Flashcards and Deck Editor', () => {
 
     await expect(page.locator('text=Ready')).toBeVisible()
 
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const cardsRow = page.locator('[data-tree-row="cards"]')
     await expect(cardsRow).toBeVisible()
     await cardsRow.press('Enter')

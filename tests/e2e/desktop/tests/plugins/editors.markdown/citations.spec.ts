@@ -9,7 +9,7 @@ test.describe('Audio Citation and Backlink Navigation', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // 1. Open notes folder and Entropy.md
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const notesRow = page.locator('[data-tree-row="notes"]')
     await expect(notesRow).toBeVisible()
     await notesRow.press('Enter')
@@ -20,7 +20,7 @@ test.describe('Audio Citation and Backlink Navigation', () => {
     await expect(page.locator('.note').first()).toBeVisible({ timeout: 10_000 })
 
     // 2. Open sample.wav from assets
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')
@@ -41,7 +41,7 @@ test.describe('Audio Citation and Backlink Navigation', () => {
     await expect(page.locator('text=Ready')).toBeVisible()
 
     // Open sample.wav
-    await page.getByText('Files').first().click()
+    await page.getByRole('tab', { name: /^Files/ }).click()
     const assetsRow = page.locator('[data-tree-row="assets"]')
     await expect(assetsRow).toBeVisible()
     await assetsRow.press('Enter')
