@@ -8,6 +8,5 @@
 // Cutting is deterministic, needs nothing but the file, and either produces a
 // source's chunks or leaves the source owing them. It keeps no record of its own
 // progress: what owes work is read from the data, so a source with no small
-// chunk owes a cut. Reading a scan, hearing a recording and embedding the
-// chunks are the use cases of recognition, transcription and embedding.
+// chunk owes a cut. Embedding the chunks is the use case of vectors.
 package source

@@ -61,9 +61,6 @@ type Tasks struct {
 // NewTasks is what the application is doing now.
 func NewTasks() *Tasks { return &Tasks{activeItem: map[string]Task{}} }
 
-// New is an alias for NewTasks.
-func New() *Tasks { return NewTasks() }
-
 // Set puts one task in the list, or replaces it where it is.
 //
 // The order tasks were first seen in is the order they are shown in, so a list

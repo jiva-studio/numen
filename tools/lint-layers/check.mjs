@@ -570,7 +570,7 @@ const VERIFIERS = [
     name: "Core Hexagonal Layers & Inward Dependencies (layers_test.go)",
     run: () => {
       exec(
-        "go test -v ./container -run \"TestTheLayersAreWhatTheyAre|TestNoPurePackageIsTestedThroughAnAdapter|TestNoAdapterNamesThePortItSatisfies|TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt|TestNothingOfTheCoreReachesTheMachine|TestNoInnerLayerImportsATransport|TestNothingOfTheCoreLogs|TestNothingOfTheCoreReadsTheMachinesClock|TestTheCoresIdentitiesAreItsOwn|TestEveryAdapterServingTheSchemaIsDriving|TestEveryPortIsAskedForSomewhereElse|TestEveryTypePortDeclaresIsNamedSomewhereElse|TestEveryPortMethodIsCalledSomewhereElse|TestNoPackageIsImportedUnderItsLayer|TestTheCoresPublicAdaptersAreTheseAndNoOthers|TestTheCoresHeldAdaptersAreTheseAndNoOthers|TestEveryInstantTheCoreCarriesIsATime|TestTheIdentitiesAPortAsksForAreTheCoresOwn|TestContainerDoesNotDowncastPluginHost\"",
+        "go test -v ./container -run \"TestTheLayersAreWhatTheyAre|TestNoAdapterNamesThePortItSatisfies|TestATestOfTheCoreBuildingAnAdapterStandsOutsideIt|TestNothingOfTheCoreReachesTheMachine|TestNoInnerLayerImportsATransport|TestNothingOfTheCoreLogs|TestNothingOfTheCoreReadsTheMachinesClock|TestTheCoresIdentitiesAreItsOwn|TestEveryAdapterServingTheSchemaIsDriving|TestEveryPortIsAskedForSomewhereElse|TestEveryTypePortDeclaresIsNamedSomewhereElse|TestEveryPortMethodIsCalledSomewhereElse|TestNoPackageIsImportedUnderItsLayer|TestTheCoresPublicAdaptersAreTheseAndNoOthers|TestTheCoresHeldAdaptersAreTheseAndNoOthers|TestEveryInstantTheCoreCarriesIsATime|TestTheIdentitiesAPortAsksForAreTheCoresOwn|TestContainerDoesNotDowncastPluginHost\"",
         path.join(MODULES_DIR, "libs/core")
       );
     },

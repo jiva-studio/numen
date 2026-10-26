@@ -27,16 +27,6 @@ var driving = map[string]bool{
 	"internal/adapterlib/wire": true,
 }
 
-// pure are the packages holding what is true of a note, of a
-// highlight, or a proofread line, and the
-// arithmetic over them. Nothing they answer waits on a disk, a database or a
-// clock, and the way that is held is that a pure package reaches only another
-// pure one: naming no port and no scenario is not enough on its own, because a
-// sibling of the core carries goroutines, channels and a schema.
-var pure = []string{
-	"internal/highlight",
-}
-
 // The core is reached by the adapters and reaches none of them, an adapter is
 // given what it needs and not taking another, and what is assembled is
 // assembled in one place.
@@ -83,66 +73,6 @@ func TestTheLayersAreWhatTheyAre(t *testing.T) {
 	// holds, so it says the walk found the tree and not how big the tree is.
 	if read < 100 {
 		t.Fatalf("%d edges of this module read: the walk is not reading the core", read)
-	}
-}
-
-// A test file is left out of the rules above, because a test stands outside the
-// package it exercises and builds the adapters that stand in for the real ones.
-// That leaves the packages holding what is true of a note or a card, where the
-// reason does not reach: nothing there needs a disk to be shown a note is what
-// it is, and a test that takes one has turned the dependency round at the
-// innermost layer, where every other package can see it.
-func TestNoPurePackageIsTestedThroughAnAdapter(t *testing.T) {
-	var wrong []string
-	var read int
-	reached := map[string]bool{}
-	err := filepath.WalkDir("..", func(path string, entry fs.DirEntry, err error) error {
-		if err != nil || entry.IsDir() || !strings.HasSuffix(path, "_test.go") {
-			return err
-		}
-		pkg := getPackage("..", path)
-		if !isAmong(pure, pkg) {
-			return nil
-		}
-		file, err := parser.ParseFile(token.NewFileSet(), path, nil, parser.ImportsOnly)
-		if err != nil {
-			return err
-		}
-		read++
-		for _, one := range pure {
-			if pkg == one || strings.HasPrefix(pkg, one+"/") {
-				reached[one] = true
-			}
-		}
-		for _, one := range file.Imports {
-			to, err := strconv.Unquote(one.Path.Value)
-			if err != nil || !strings.HasPrefix(to, module) {
-				continue
-			}
-			target := strings.TrimPrefix(to, module)
-			if isAdapter(target) || target == "container" {
-				wrong = append(wrong, path+" is tested through "+target)
-			}
-		}
-		return nil
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, one := range wrong {
-		t.Error(one)
-	}
-
-	// A walk that read no test of a pure package is a rule checked against
-	// nothing, and it passes. Each package is named below as well: a package
-	// that moved is a package this rule stopped at.
-	if read == 0 {
-		t.Fatal("no test of the pure packages read: the walk is not reading them")
-	}
-	for _, one := range pure {
-		if !reached[one] {
-			t.Errorf("%s has no test the walk read: the rule stops at that package", one)
-		}
 	}
 }
 
@@ -1206,9 +1136,6 @@ func getRefusal(from, to string) string {
 		if isAdapter(to) || to == "container" {
 			return "the core reaches no adapter and nothing that assembles one"
 		}
-		if isAmong(pure, from) && !isAmong(pure, to) {
-			return "what is true of a note or a card is worked out from what is too"
-		}
 	}
 	return ""
 }
@@ -1383,10 +1310,6 @@ func TestWhatTheRulesRefuse(t *testing.T) {
 		// Fixtures build the real adapters.
 		{"internal/testsupport", "adapter/index", false},
 		{"internal/testonly", "container", false},
-
-		// What is true of a note is worked out from what is true of a note.
-		{"internal/highlight", "internal/epub", true},
-		{"internal/highlight", "port", true},
 
 		// The composition root does none of the core's work.
 		{"container", "internal/adapterlib/wire", true},

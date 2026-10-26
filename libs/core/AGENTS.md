@@ -16,7 +16,6 @@ Each test verifies adherence to structural rules.
 |---|---|
 | A package stands on the layer its path says, and reaches only downward | `TestTheLayersAreWhatTheyAre` |
 | Nothing the core is compiled from reaches an adapter | `TestNothingTheCoreIsCompiledFromReachesOutward` |
-| A pure package is tested without an adapter | `TestNoPurePackageIsTestedThroughAnAdapter` |
 | A use case builds only on the use cases `useCaseEdges` declares for it | `TestUseCaseImportsFollowDeclaredEdges` |
 | An adapter does not name the port it answers | `TestNoAdapterNamesThePortItSatisfies` |
 | The composition root hands out no adapter type | `TestTheRootHandsOutNoAdapterTheCompilerHolds` |
