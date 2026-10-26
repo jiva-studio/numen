@@ -7,10 +7,7 @@ import { mapBookFormat, mapEntry, mapMoveResult, mapNoteType, mapSourceKind } fr
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'
 
-export type FilesCore = Pick<
-  FilePort,
-  'list' | 'move' | 'createFolder' | 'fileKinds'
-> &
+export type FilesCore = Pick<FilePort, 'list' | 'move' | 'createFolder' | 'fileKinds'> &
   Pick<NotePort, 'remove'>
 
 export const filesCore: FilesCore = {
