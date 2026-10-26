@@ -33,7 +33,7 @@ flowchart TD
 
 Before proposing new files, types, or methods, search the codebase:
 1. Search existing domain models, ports, and DTOs across `modules/libs/core` and `modules/apps/desktop`.
-2. Check existing composables, components, and utilities in `modules/libs/ui`.
+2. Check existing composables, components, and utilities in `modules/libs/ui/core`.
 3. Check `AGENTS.md` and the rules in `.agents/rules/` governing the touched area.
 
 ---

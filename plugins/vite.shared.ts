@@ -20,8 +20,8 @@ const ALIASES = {
   '@numen/plugin-sdk': resolve(modules, 'libs/plugin-sdk-ts/src/index.ts'),
   '@numen/protocol/numen/v1': resolve(modules, 'libs/protocol/src/numen/v1'),
   '@numen/protocol': resolve(modules, 'libs/protocol/index.ts'),
-  '@numen/ui/styles.css': resolve(modules, 'libs/ui/dist/numen-ui.css'),
-  '@numen/ui': resolve(modules, 'libs/ui/dist/index.js'),
+  '@numen/ui/styles.css': resolve(modules, 'libs/ui/core/dist/numen-ui.css'),
+  '@numen/ui': resolve(modules, 'libs/ui/core/dist/index.js'),
   '@numen/wire': resolve(modules, 'libs/wire/index.ts'),
 } as const
 

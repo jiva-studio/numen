@@ -38,7 +38,7 @@ There is no `go.work`. Each Go module — `libs/core`, `libs/protocol`, `apps/de
 
 - **Libraries never depend on applications.** `modules/libs/*` is what `modules/apps/*` is built from, never the reverse and never sideways.
 - **`core` points inward.** `domain/`, `port/` and `usecase/` import nothing from `adapter/`, and nothing that is a driver, a framework or a transport. The violation is always visible in an import block.
-- **`ui` knows nothing about the domain.** No component, story or fixture in `modules/libs/ui` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
+- **`ui` knows nothing about the domain.** No component, story or fixture in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**`. A fixture taken from the domain is how the dependency comes back in through the door marked "tests".
 - **`protocol` is generated, not written.** What crosses between the Go host and a window is the schema's shape; `make generate-check` fails when what is committed is out of date (*A client is generated from the protocol*).
 - **An application is where the two sides meet.** `modules/apps/desktop` translates the domain into the drawing vocabulary a component takes, and translates the identifier a component emits back.
 

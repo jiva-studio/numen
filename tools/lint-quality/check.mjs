@@ -125,7 +125,7 @@ function resolveChecks(args, changedOnly) {
     const hasGo = changed.some((f) => f.endsWith(".go"));
     const hasTsOrVue = changed.some((f) => f.endsWith(".ts") || f.endsWith(".vue"));
     const hasGoPlugins = changed.some((f) => f.startsWith("plugins/") && f.endsWith(".go"));
-    const hasUi = changed.some((f) => f.startsWith("libs/ui/"));
+    const hasUi = changed.some((f) => f.startsWith("libs/ui/core/"));
     const hasGoCore = changed.some((f) => f.startsWith("libs/core/") && f.endsWith(".go"));
 
     targetIds = targetIds.filter((id) => {

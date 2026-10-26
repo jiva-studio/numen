@@ -43,7 +43,7 @@ jobs:
         uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
-        run: npm run build --prefix libs/ui
+        run: npm run build --prefix libs/ui/core
 
       - name: Measure unified coverage and update badge
         env:

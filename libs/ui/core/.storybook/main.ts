@@ -2,16 +2,16 @@ import { join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import type { StorybookConfig } from '@storybook/vue3-vite'
 
-const EDITOR_SRC = fileURLToPath(new URL('../../../apps/desktop/editor/src', import.meta.url))
+const EDITOR_SRC = fileURLToPath(new URL('../../../../apps/desktop/editor/src', import.meta.url))
 const FLASHCARDS_SRC = fileURLToPath(
-  new URL('../../../apps/desktop/flashcards/src', import.meta.url),
+  new URL('../../../../apps/desktop/flashcards/src', import.meta.url),
 )
 const UI_SRC = fileURLToPath(new URL('../src', import.meta.url))
 
 /** Where a window's own screens are drawn, beside the components they use. */
 const APPS = [
-  '../../../apps/desktop/editor/src/**/*.stories.ts',
-  '../../../apps/desktop/flashcards/src/**/*.stories.ts',
+  '../../../../apps/desktop/editor/src/**/*.stories.ts',
+  '../../../../apps/desktop/flashcards/src/**/*.stories.ts',
 ]
 
 /**

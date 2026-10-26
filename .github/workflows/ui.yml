@@ -3,15 +3,15 @@ name: UI
 on:
   pull_request:
     paths:
-      - "libs/ui/**"
-      - "!libs/ui/**/*.md"
+      - "libs/ui/core/**"
+      - "!libs/ui/core/**/*.md"
       - "!docs/**"
       - ".github/workflows/ui.yml"
   push:
     branches: [main]
     paths:
-      - "libs/ui/**"
-      - "!libs/ui/**/*.md"
+      - "libs/ui/core/**"
+      - "!libs/ui/core/**/*.md"
       - "!docs/**"
       - ".github/workflows/ui.yml"
 
@@ -47,15 +47,15 @@ jobs:
       # Correctness and the boundaries between the modules. It runs before the
       # build, because what it refuses is cheaper to read than a type error.
       - name: Lint components
-        run: npm run lint --prefix libs/ui
+        run: npm run lint --prefix libs/ui/core
 
 
       # Build the component library.
       - name: Build the components
-        run: npm run build --prefix libs/ui
+        run: npm run build --prefix libs/ui/core
 
       - name: Run unit tests
-        run: npm run test:unit --prefix libs/ui -- --coverage
+        run: npm run test:unit --prefix libs/ui/core -- --coverage
 
   # A story runs in a real browser, and several of them are the only test of a
   # thing a browser decides: what is clipped by an overflow, where a scroll
@@ -82,4 +82,4 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - name: Run story tests
-        run: npm run test:stories --prefix libs/ui
+        run: npm run test:stories --prefix libs/ui/core

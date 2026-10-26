@@ -12,7 +12,7 @@ Interface components shared by the desktop and mobile clients.
 
 This is why the plex talks about *nodes with a relation*: a link is not what the plex draws. What a link is is decided elsewhere; when it changes, the adapter in the application changes and nothing in this module does.
 
-The dependency runs one way: `apps/*` depends on `libs/ui`. Never the reverse, and never sideways.
+The dependency runs one way: `apps/*` depends on `libs/ui/core`. Never the reverse, and never sideways.
 
 ## Working on it
 

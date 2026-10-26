@@ -40,6 +40,6 @@ npm run manual:check  # fail where a page has drifted
 npm run shoot  # every picture in src/assets/, light and dark
 ```
 
-Each is a story, drawn at the size it is drawn at, in the Storybook that declares it: the components' own in `libs/ui`, which draws the windows' screens too, or the plugins' in `plugins/`. Both are started for the run and stopped again; `STORYBOOK_PORT` and `STORYBOOK_PLUGINS_PORT` name ones already running. The plugins' Storybook reaches `@numen/ui` through its build, so `npm run build` in `libs/ui` comes first. A screen of the desktop reaches `@numen/protocol`, so that module needs its dependencies installed as well, and a story that will not draw stops the run rather than being photographed.
+Each is a story, drawn at the size it is drawn at, in the Storybook that declares it: the components' own in `libs/ui/core`, which draws the windows' screens too, or the plugins' in `plugins/`. Both are started for the run and stopped again; `STORYBOOK_PORT` and `STORYBOOK_PLUGINS_PORT` name ones already running. The plugins' Storybook reaches `@numen/ui` through its build, so `npm run build` in `libs/ui/core` comes first. A screen of the desktop reaches `@numen/protocol`, so that module needs its dependencies installed as well, and a story that will not draw stops the run rather than being photographed.
 
 A picture that came back the same picture is left where it is: the encoder writes different bytes of one window, so what is compared is the pixels. A run over a manual nothing has changed under leaves the folder untouched.

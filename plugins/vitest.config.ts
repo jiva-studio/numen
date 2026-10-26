@@ -9,7 +9,7 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
-import { getStoryBrowser } from '../libs/ui/.storybook/browser'
+import { getStoryBrowser } from '../libs/ui/core/.storybook/browser'
 import { getPluginAliases } from './vite.shared'
 import { createStoryUtilitiesPlugin } from './vite.styles'
 

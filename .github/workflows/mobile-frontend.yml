@@ -7,8 +7,8 @@ on:
       - "apps/mobile/*.vue"
       - "apps/mobile/package.json"
       - "apps/mobile/vite.config.ts"
-      - "libs/ui/**"
-      - "!libs/ui/**/*.md"
+      - "libs/ui/core/**"
+      - "!libs/ui/core/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "!docs/**"
@@ -20,8 +20,8 @@ on:
       - "apps/mobile/*.vue"
       - "apps/mobile/package.json"
       - "apps/mobile/vite.config.ts"
-      - "libs/ui/**"
-      - "!libs/ui/**/*.md"
+      - "libs/ui/core/**"
+      - "!libs/ui/core/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "!docs/**"
@@ -58,7 +58,7 @@ jobs:
 
       # A screen reaches the components through their build.
       - name: Build the components
-        run: npm run build --prefix libs/ui
+        run: npm run build --prefix libs/ui/core
 
       - name: Typecheck screens
         run: npm run typecheck --prefix apps/mobile

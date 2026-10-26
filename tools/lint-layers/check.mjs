@@ -12,12 +12,12 @@
  *
  * Scopes:
  *   all       - Run all architectural layer checks (default)
- *   libs      - All library boundaries (core hexagon, notes, ui isolation, sdk isolation)
+ *   libs      - All library boundaries (core hexagon, notes, ui and shell isolation, sdk isolation)
  *   plugins   - Native plugin sandboxing, non-leakage, and frontend contracts
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, ui, wire, sdk, plugins, boundary, desktop, editor, flashcards
+ *   core, notes, ui, shell, wire, sdk, plugins, boundary, desktop, editor, flashcards
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -146,6 +146,14 @@ function verifyPluginsReachNoApp() {
   ]);
   if (crossings.length > 0) {
     throw new Error("A plugin reaches into apps/:\n" + crossings.join("\n"));
+  }
+}
+
+/** A plugin takes components from `@numen/ui` and never reaches the application shell. */
+function verifyPluginsReachNoShell() {
+  const crossings = findCrossings("plugins", "libs/ui/shell", ["['\"]@numen/shell\\b"]);
+  if (crossings.length > 0) {
+    throw new Error("A plugin reaches @numen/shell:\n" + crossings.join("\n"));
   }
 }
 
@@ -559,12 +567,21 @@ function verifyNotesNamesNoProducer() {
 }
 
 function verifyUiDomainIsolation() {
-  const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/src/"], { cwd: REPO_ROOT });
+  const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/core/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
   if (leaks) {
     throw new Error("UI library imports domain, wire, protocol or apps:\n" + leaks);
   }
-  exec("npm run lint", path.join(MODULES_DIR, "libs/ui"));
+  exec("npm run lint", path.join(MODULES_DIR, "libs/ui/core"));
+}
+
+function verifyShellDomainIsolation() {
+  const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/shell/src/"], { cwd: REPO_ROOT });
+  const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
+  if (leaks) {
+    throw new Error("Shell library imports domain, wire, protocol or apps:\n" + leaks);
+  }
+  exec("npm run lint", path.join(MODULES_DIR, "libs/ui/shell"));
 }
 
 const VERIFIERS = [
@@ -636,6 +653,13 @@ const VERIFIERS = [
     run: verifyUiDomainIsolation,
   },
   {
+    id: "shell-isolation",
+    scope: "libs",
+    module: "shell",
+    name: "Shell Library Domain & Wire Isolation (0 domain, 0 protocol, 0 wire, 0 apps)",
+    run: verifyShellDomainIsolation,
+  },
+  {
     id: "plugins-independence",
     scope: "plugins",
     module: "plugins",
@@ -657,6 +681,13 @@ const VERIFIERS = [
     module: "plugins",
     name: "Plugins Reach No Application (no path, alias or import into apps/)",
     run: verifyPluginsReachNoApp,
+  },
+  {
+    id: "plugins-reach-no-shell",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Reach No Shell (no @numen/shell, no path into libs/ui/shell)",
+    run: verifyPluginsReachNoShell,
   },
   {
     id: "apps-plugins-boundary",
@@ -773,7 +804,8 @@ function getChangedModules() {
     if (file.startsWith("libs/core/")) matched.add("core");
     if (file.startsWith("libs/notes/")) matched.add("notes");
     if (file.startsWith("libs/plugin-sdk-go/")) matched.add("sdk");
-    if (file.startsWith("libs/ui/")) matched.add("ui");
+    if (file.startsWith("libs/ui/core/")) matched.add("ui");
+    if (file.startsWith("libs/ui/shell/")) matched.add("shell");
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");
     if (file.startsWith("apps/")) matched.add("apps");

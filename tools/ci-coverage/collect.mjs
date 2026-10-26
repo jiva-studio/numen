@@ -33,7 +33,7 @@ const GO_MODULES = [
 ]
 
 const TS_PACKAGES = [
-  'libs/ui',
+  'libs/ui/core',
   'apps/desktop/editor',
   'apps/desktop/flashcards',
 ]

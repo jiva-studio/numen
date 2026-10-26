@@ -90,6 +90,7 @@ export function getDynamicScopes(repoRoot) {
     { dir: 'plugins', isPlugin: true },
     { dir: 'apps' },
     { dir: 'libs' },
+    { dir: 'libs/ui' },
     { dir: 'tools' },
   ]
 

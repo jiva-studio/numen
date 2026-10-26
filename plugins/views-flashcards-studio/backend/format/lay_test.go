@@ -9,7 +9,7 @@ import (
 )
 
 // A card face is shown on two surfaces and each lays it out for itself: this
-// package for the window a card is reviewed in, and modules/libs/ui for the
+// package for the window a card is reviewed in, and modules/libs/ui/core for the
 // file, and neither owns it.
 const corpus = "../../../../libs/protocol/testdata/faces.json"
 

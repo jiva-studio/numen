@@ -10,7 +10,7 @@ import (
 )
 
 // contract defines the design token stylesheet required for theme presets.
-const contract = "../../../../../libs/ui/src/shared/tokens/tokens.css"
+const contract = "../../../../../libs/ui/core/src/shared/tokens/tokens.css"
 
 // valueKind is the shape a value has. Each is read off the contract, so a token
 // given a different shape there holds every preset to the new one.

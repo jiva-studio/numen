@@ -36,7 +36,7 @@ is mapped field by field into the window's own type. A fault is put into words b
 ## The one gotcha that costs an afternoon
 
 A window reaches `@numen/ui` through its **build**. Run `npm run build` in
-`libs/ui` before either window's suite, or it fails on
+`libs/ui/core` before either window's suite, or it fails on
 `Cannot find module '@numen/ui'` — and a stale build is worse, because it
 compiles and draws the wrong thing.
 

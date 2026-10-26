@@ -21,10 +21,10 @@ import type { Plugin } from 'vite'
 const modules = resolve(import.meta.dirname, '..')
 
 /** The stylesheet of `@numen/ui` the utilities are built from. */
-const THEME = resolve(modules, 'libs/ui/src/shared/tokens/theme.css')
+const THEME = resolve(modules, 'libs/ui/core/src/shared/tokens/theme.css')
 
 /** The build of `@numen/ui` the window loads ahead of every plugin's stylesheet. */
-export const UI_STYLES = resolve(modules, 'libs/ui/dist/numen-ui.css')
+export const UI_STYLES = resolve(modules, 'libs/ui/core/dist/numen-ui.css')
 
 /**
  * The Lightning CSS options of a plugin's stylesheet, the ones the windows build theirs with.

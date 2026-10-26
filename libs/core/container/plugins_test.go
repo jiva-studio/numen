@@ -51,7 +51,7 @@ func TestWhatThePluginRulesRefuse(t *testing.T) {
 		{"ocr", numenModules + "libs/core/port", true},
 		{"ocr", numenModules + "libs/notes/domain", false},
 		{"ocr", numenModules + "libs/core", true},
-		{"ocr", numenModules + "libs/ui", true},
+		{"ocr", numenModules + "libs/ui/core", true},
 		{"ocr", numenModules + "plugins/embeddings/backend/engine", true},
 		{"agent", numenModules + "plugins/agent-acp/backend", true},
 		{"agent-acp", numenModules + "plugins/agent", true},

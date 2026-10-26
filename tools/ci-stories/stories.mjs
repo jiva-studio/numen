@@ -20,7 +20,7 @@ import { modules, root } from '../shared/modules.mjs'
  * the plugins', which draws every plugin's frontend.
  */
 export const BOOKS = {
-  ui: 'libs/ui',
+  ui: 'libs/ui/core',
   plugins: 'plugins',
 }
 

@@ -103,7 +103,7 @@ jobs:
       # The windows reach the shared components through their build.
       - name: Build the components
         if: matrix.kind == 'ts'
-        run: npm run build --prefix libs/ui
+        run: npm run build --prefix libs/ui/core
 
       # `-run-` ends the target's name in the key, so `apps-desktop` matches no key of `apps-desktop-editor`.
       - name: Restore the target's cache

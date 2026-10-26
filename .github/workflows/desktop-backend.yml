@@ -187,7 +187,7 @@ jobs:
         uses: ./.github/actions/install-node-modules
 
       - name: Build UI components
-        working-directory: libs/ui
+        working-directory: libs/ui/core
         run: npm run build
 
       - name: Build and test modular plugins

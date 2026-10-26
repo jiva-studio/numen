@@ -112,7 +112,7 @@ export async function runDeadcodeCheck({ repoRoot, warnOnly = false }) {
   const [coreUnparam, desktopUnparam, uiKnip, editorKnip, flashcardsKnip] = await Promise.all([
     checkUnparam(path.join(repoRoot, "libs/core"), configFile, "libs/core"),
     checkUnparam(path.join(repoRoot, "apps/desktop"), configFile, "apps/desktop"),
-    checkKnip(repoRoot, "libs/ui", "libs/ui"),
+    checkKnip(repoRoot, "libs/ui/core", "libs/ui/core"),
     checkKnip(repoRoot, "apps/desktop/editor", "desktop/editor"),
     checkKnip(repoRoot, "apps/desktop/flashcards", "desktop/flashcards"),
   ]);

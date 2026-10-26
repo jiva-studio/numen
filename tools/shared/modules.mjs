@@ -24,9 +24,9 @@ export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 export const modules = [
   {
     name: '@numen/ui',
-    at: 'libs/ui',
+    at: 'libs/ui/core',
     sources: ['src'],
-    written: 'libs/ui/src',
+    written: 'libs/ui/core/src',
     reads: 'src/index.ts',
     says: 'The shared components. Reaches nothing of ours.',
   },

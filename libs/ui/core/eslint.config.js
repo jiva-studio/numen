@@ -8,8 +8,8 @@
 
 import tseslint from 'typescript-eslint'
 import boundaries from 'eslint-plugin-boundaries'
-import { createBaseConfig, lifetimes } from '../../tools/lint-layers/base-eslint.mjs'
-import { createLayerElements, createLayerPolicies } from '../../tools/lint-layers/layers.mjs'
+import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
 
 const layerOrder = ['shared', 'features', 'screens']
 const sliceLayers = ['features']
@@ -39,7 +39,7 @@ const domainImports = [
   },
   {
     group: ['**/apps/**', '**/libs/**'],
-    message: 'the dependency runs apps → libs/ui, never back',
+    message: 'the dependency runs apps → libs/ui/core, never back',
   },
 ]
 

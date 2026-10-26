@@ -1,6 +1,6 @@
 # Frontend Coding Style & Component Guidelines
 
-The conventions for Vue 3 and TypeScript in numen: `modules/libs/ui` and the windows under `modules/apps/desktop/editor` and `modules/apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), *How an interface component is built*, *The component library is shadcn-vue* and *How this application is tested*.
+The conventions for Vue 3 and TypeScript in numen: `modules/libs/ui/core` and the windows under `modules/apps/desktop/editor` and `modules/apps/desktop/flashcards`. The architecture these serve is in [`architecture.md`](./architecture.md), *How an interface component is built*, *The component library is shadcn-vue* and *How this application is tested*.
 
 TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedAccess`. A component's props are a contract with another module, and an unchecked one is not a contract.
 
@@ -8,11 +8,11 @@ TypeScript is strict, with `exactOptionalPropertyTypes` and `noUncheckedIndexedA
 
 ## 1. The domain boundary
 
-Nothing in `modules/libs/ui` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**` — not the components, not the stories, not the fixtures.
+Nothing in `modules/libs/ui/core` imports `@numen/protocol`, a wire type, a domain type, or anything under `modules/apps/**` — not the components, not the stories, not the fixtures.
 
 A component takes props it defines itself, in a **vocabulary about drawing**, and emits **opaque identifiers**. A prop named after a vault, a note or an RPC message is the boundary crossed even when its type is a string. Whoever renders the component translates the domain into that shape and translates the identifier back.
 
-The dependency runs `modules/apps/*` → `modules/libs/ui`. Never back, never sideways.
+The dependency runs `modules/apps/*` → `modules/libs/ui/core`. Never back, never sideways.
 
 ---
 
@@ -172,7 +172,7 @@ A comment describes the active behavior or invariant. It does not argue, justify
 ## 12. Verification
 
 ```bash
-cd modules/libs/ui
+cd modules/libs/ui/core
 npm run typecheck
 npm run test:unit
 npm run build                                   # the windows reach @numen/ui through its build
@@ -180,7 +180,7 @@ npx vitest run --project 'stories (chromium)'
 npx vitest run --project 'stories (webkit)'
 ```
 
-Take the `modules/libs/ui` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
+Take the `modules/libs/ui/core` suites **one at a time**. `npm test` there starts both story instances at once and the run dies before any test executes.
 
 Then the windows, which need the library built first:
 

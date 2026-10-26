@@ -11,12 +11,12 @@ on:
       - "!apps/desktop/editor/**/*.md"
       - "apps/desktop/flashcards/**"
       - "!apps/desktop/flashcards/**/*.md"
-      - "libs/ui/**"
-      - "!libs/ui/**/*.md"
+      - "libs/ui/core/**"
+      - "!libs/ui/core/**/*.md"
       - "libs/wire/**"
       - "!libs/wire/**/*.md"
-      - "libs/shell/**"
-      - "!libs/shell/**/*.md"
+      - "libs/ui/shell/**"
+      - "!libs/ui/shell/**/*.md"
       - "libs/protocol/**"
       - "!libs/protocol/**/*.md"
       - "tools/ci-stories/**"
@@ -76,7 +76,7 @@ jobs:
       - uses: ./.github/actions/setup-playwright
 
       - name: Build the components
-        run: npm run build --prefix libs/ui
+        run: npm run build --prefix libs/ui/core
 
       - name: Verify story references
         run: npm run check --prefix tools/ci-stories
@@ -85,19 +85,19 @@ jobs:
         run: |
           npm run lint --prefix apps/desktop/editor
           npm run lint --prefix apps/desktop/flashcards
-          npm run lint --prefix libs/shell
+          npm run lint --prefix libs/ui/shell
 
       - name: Typecheck screens and wire
         run: |
           npm run typecheck --prefix libs/wire
-          npm run typecheck --prefix libs/shell
+          npm run typecheck --prefix libs/ui/shell
           npm run typecheck --prefix apps/desktop/editor
           npm run typecheck --prefix apps/desktop/flashcards
 
       - name: Run frontend tests
         run: |
           npm test --prefix libs/wire
-          npm test --prefix libs/shell
+          npm test --prefix libs/ui/shell
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor
           npm run test:unit --prefix apps/desktop/flashcards -- --coverage

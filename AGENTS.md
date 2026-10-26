@@ -9,7 +9,7 @@ Gemini, or any other) must follow them.
 - **Backend coding style (Go)**: [`.agents/rules/coding-style-backend.md`](.agents/rules/coding-style-backend.md)
 - **Frontend coding style (Vue / TypeScript)**: [`.agents/rules/coding-style-frontend.md`](.agents/rules/coding-style-frontend.md)
 - **Unified review skill (`/review`)**: [`.agents/skills/review/SKILL.md`](.agents/skills/review/SKILL.md)
-- **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui`, `libs/protocol`, `apps/desktop`.
+- **Per-module conventions**: `AGENTS.md` inside `libs/core`, `libs/ui/core`, `libs/protocol`, `apps/desktop`.
 
 ## Code review protocol: the 3-stage pipeline (`/review`)
 
@@ -358,7 +358,7 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
   tree, commit first and `git checkout HEAD~1 -- <path>`, or copy the file
   aside.
 - **The windows reach `@numen/ui` through its build.** Run `npm run build` in
-  `libs/ui` before the suites in `apps/desktop/editor` and
+  `libs/ui/core` before the suites in `apps/desktop/editor` and
   `flashcards`, or they fail on `Cannot find module '@numen/ui'`.
 - **`node_modules` symlinked from the primary checkout resolves
   `@numen/protocol` to whatever branch that checkout is parked on.** A
@@ -367,7 +367,7 @@ To prevent linguistic contagion and degraded code readability, pseudo-literary p
 - **`usecase/flashcards` and `adapter/flashcardsui` run close to the 10-minute
   per-package limit under `-race`.** A timeout there is the machine's load, not
   the code.
-- **`npm test` in `libs/ui` starts both story instances at once**, and
+- **`npm test` in `libs/ui/core` starts both story instances at once**, and
   the run dies before any test executes. Take them one at a time:
   `npm run test:unit`,
   `vitest run --project 'stories (chromium)'`,

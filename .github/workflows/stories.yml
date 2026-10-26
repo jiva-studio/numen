@@ -19,8 +19,8 @@ on:
   push:
     branches: [main]
     paths:
-      - "libs/ui/src/**"
-      - "!libs/ui/src/**/*.md"
+      - "libs/ui/core/src/**"
+      - "!libs/ui/core/src/**/*.md"
       - "apps/desktop/editor/src/**"
       - "!apps/desktop/editor/src/**/*.md"
       - "apps/desktop/flashcards/src/**"

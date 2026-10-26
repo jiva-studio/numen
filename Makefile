@@ -1,9 +1,9 @@
 # ---------------------------------- Modules -----------------------------------
 CORE     := libs/core
 NOTES    := libs/notes
-UI       := libs/ui
+UI       := libs/ui/core
 WIRE     := libs/wire
-SHELL_LIB := libs/shell
+SHELL_LIB := libs/ui/shell
 PROTOCOL := libs/protocol
 PLUGIN_SDK := libs/plugin-sdk-ts
 PLUGIN_SDK_GO := libs/plugin-sdk-go
