@@ -166,6 +166,9 @@ const CORE_MOVED_DIRS = [
   "internal/adapter/plugin/downloaderbridge",
   "port/downloadport",
   "internal/correction",
+  "adapter/window/flashcards",
+  "internal/adapter/plugin/toolsbridge",
+  "usecase/plugintool",
 ];
 const CORE_MOVED_CONTAINER_FILES = ["recogniser", "transcriber", "proofreader", "embedder", "downloader"];
 
@@ -419,12 +422,15 @@ function verifyAppPluginBoundary() {
   }
 }
 
-/** The protos of the domains plugins own. Every one generates into the shared `numen/v1` package. */
+/**
+ * The protos of the domains plugins own. Every one generates into the shared `numen/v1` package.
+ * `recording.proto` (the core serves the address a file plays at) and `embedding.proto` (the core
+ * asks the embeddings plugin for vectors and keeps them in its index) are the core's own contracts.
+ */
 const DOMAIN_PROTOS = [
   "transcript",
   "ocr",
   "article",
-  "recording",
   "artifact",
   "cards",
   "presets",
@@ -432,7 +438,6 @@ const DOMAIN_PROTOS = [
   "transcription",
   "download",
   "proofreading",
-  "embedding",
 ];
 const PROTOCOL_GEN = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1";
 
@@ -604,7 +609,7 @@ const VERIFIERS = [
     id: "core-imports-no-domain-proto",
     scope: "libs",
     module: "core",
-    name: "Core Imports No Domain Proto (transcript, ocr, article, recording, artifact, cards, ...)",
+    name: "Core Imports No Domain Proto (transcript, ocr, article, artifact, cards, ...)",
     run: verifyCoreImportsNoDomainProto,
   },
   {
