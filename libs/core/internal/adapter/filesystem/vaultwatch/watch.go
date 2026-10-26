@@ -2,7 +2,6 @@ package vaultwatch
 
 import (
 	"context"
-	"fmt"
 	"path/filepath"
 	"strings"
 
@@ -10,6 +9,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -48,9 +48,9 @@ func (w Watcher) WatchVault(
 	shape, why := vaultreader.ReadShape(reader)
 
 	raw := make(chan notify.EventInfo, handover)
-	tree := filepath.Join(reader.Root(), "...")
-	if err := notify.Watch(tree, raw, notify.All); err != nil {
-		return nil, nil, fmt.Errorf("watch %s: %w", v.Path, err)
+	stop, err := watchhub.Watch(reader.Root(), true, raw)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	debounced := make(chan []string)
@@ -63,7 +63,7 @@ func (w Watcher) WatchVault(
 	}
 
 	go func() {
-		defer notify.Stop(raw)
+		defer stop()
 		defer close(debounced)
 		queue := newQueue(Backlog)
 		go forwardEvents(ctx, raw, queue)
@@ -88,12 +88,13 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 	name := filepath.Base(pos)
 
 	raw := make(chan notify.EventInfo, handover)
-	if err := notify.Watch(filepath.Dir(pos), raw, notify.All); err != nil {
-		return nil, fmt.Errorf("watch %s: %w", path, err)
+	stop, err := watchhub.Watch(filepath.Dir(pos), false, raw)
+	if err != nil {
+		return nil, err
 	}
 
 	moved := make(chan struct{}, 1)
-	go relayFileEvents(ctx, raw, name, moved)
+	go relayFileEvents(ctx, raw, stop, name, moved)
 	return moved, nil
 }
 
@@ -101,9 +102,9 @@ func (w Watcher) File(ctx context.Context, path string) (<-chan struct{}, error)
 // ends, then stops the watch and closes the report. One waiting message is as
 // much as this says: a listener that has not read the last one is a listener
 // about to ask anyway.
-func relayFileEvents(ctx context.Context, raw chan notify.EventInfo, name string, moved chan<- struct{}) {
-	defer notify.Stop(raw)
+func relayFileEvents(ctx context.Context, raw chan notify.EventInfo, stop func(), name string, moved chan<- struct{}) {
 	defer close(moved)
+	defer stop()
 	for {
 		select {
 		case <-ctx.Done():

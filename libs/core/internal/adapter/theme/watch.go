@@ -3,11 +3,11 @@ package theme
 import (
 	"context"
 	"errors"
-	"fmt"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/watchhub"
 	"github.com/rjeczalik/notify"
 )
 
@@ -37,13 +37,14 @@ func (c Catalogue) Watch(ctx context.Context, hold time.Duration) (<-chan []stri
 	}
 
 	raw := make(chan notify.EventInfo, Backlog)
-	if err := notify.Watch(c.dir, raw, notify.All); err != nil {
-		return nil, fmt.Errorf("watch %s: %w", c.dir, err)
+	stop, err := watchhub.Watch(c.dir, false, raw)
+	if err != nil {
+		return nil, err
 	}
 
 	debounced := make(chan []string)
 	go func() {
-		defer notify.Stop(raw)
+		defer stop()
 		defer close(debounced)
 		c.debounce(ctx, hold, raw, debounced)
 	}()
