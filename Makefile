@@ -52,10 +52,10 @@ build: interface lib_core_build app_desktop_build ## build all application artif
 interface: lib_ui_build app_desktop_editor_build ## build UI pages into assets
 
 .PHONY: generate
-generate: lib_protocol_generate ## generate code from schema
+generate: lib_protocol_generate plugin_flashcards_generate ## generate code from schema
 
 .PHONY: generate-check
-generate-check: lib_protocol_generate_check ## verify generated code matches schema
+generate-check: lib_protocol_generate_check plugin_flashcards_generate_check ## verify generated code matches schema
 
 .PHONY: desktop
 desktop: app_desktop_build ## build desktop application
@@ -156,6 +156,17 @@ lib_protocol_generate: ## generate protocol code
 	cd $(PROTOCOL) && buf generate
 
 protocol_gen: lib_protocol_generate ## alias for lib_protocol_generate
+
+FLASHCARDS_PLUGIN := plugins/views-flashcards-studio
+
+.PHONY: plugin_flashcards_generate
+plugin_flashcards_generate: ## generate the flashcards plugin's own schema
+	cd $(FLASHCARDS_PLUGIN) && buf generate
+
+.PHONY: plugin_flashcards_generate_check
+plugin_flashcards_generate_check: plugin_flashcards_generate ## verify the flashcards plugin's schema is up to date
+	git add -AN -- $(FLASHCARDS_PLUGIN)/gen $(FLASHCARDS_PLUGIN)/frontend/gen
+	git diff --exit-code -- $(FLASHCARDS_PLUGIN)/gen $(FLASHCARDS_PLUGIN)/frontend/gen
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date
