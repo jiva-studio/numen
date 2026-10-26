@@ -2,7 +2,7 @@
  * Palette search coordination, debouncing, and group management.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { PaletteGroup } from '@numen/ui'
+import type { PaletteGroup } from '@numen/shell'
 import type { InFlightRequest } from '@/shared/requestGuard'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { NoteType, Source } from '@/entities/file'

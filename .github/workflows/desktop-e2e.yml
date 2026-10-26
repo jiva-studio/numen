@@ -69,7 +69,9 @@ jobs:
           browsers: "chromium"
 
       - name: Build UI library
-        run: npm run build --prefix libs/ui/core
+        run: |
+          npm run build --prefix libs/ui/core
+          npm run build --prefix libs/ui/shell
 
       - name: Build modular plugins
         run: make plugins_build

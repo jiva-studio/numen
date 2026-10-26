@@ -123,10 +123,8 @@ export default tseslint.config(
       'src/**/*.test.ts',
       'src/**/*.stories.ts',
       'src/**/fixtures/**',
-      // The port itself, and the one function that turns an element into the
-      // rectangle the pure core reasons about.
+      // The port itself.
       'src/shared/lib/time/clock.ts',
-      'src/features/workspace/lib/drop.ts',
     ],
     rules: {
       'no-restricted-globals': [

@@ -11,3 +11,18 @@ export interface PaletteKeys {
   readonly icons: readonly PaletteIcon[]
   readonly letter: string
 }
+
+/**
+ * The key beside the space bar on the keyboard a browser says it is running
+ * on: Command on Apple keyboards, Control everywhere else.
+ */
+export const overlayIcon = (agent: string): PaletteIcon =>
+  /mac|iphone|ipad|ipod/i.test(agent) ? 'command' : 'control'
+
+/**
+ * A keystroke of one letter and the key beside the space bar, as it is drawn.
+ */
+export const keyChord = (letter: string, agent: string, shift = false): PaletteKeys => ({
+  icons: shift ? [overlayIcon(agent), 'shift'] : [overlayIcon(agent)],
+  letter: letter.toUpperCase(),
+})

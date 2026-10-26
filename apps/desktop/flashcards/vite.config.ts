@@ -25,6 +25,12 @@ export default defineConfig({
         new URL('../../../libs/ui/core/dist/numen-ui.css', import.meta.url),
       ),
       '@numen/ui': fileURLToPath(new URL('../../../libs/ui/core/dist/index.js', import.meta.url)),
+      '@numen/shell/styles.css': fileURLToPath(
+        new URL('../../../libs/ui/shell/dist/numen-shell.css', import.meta.url),
+      ),
+      '@numen/shell': fileURLToPath(
+        new URL('../../../libs/ui/shell/dist/index.js', import.meta.url),
+      ),
     },
   },
   // Built into the Go package that serves it: what is embedded has to sit

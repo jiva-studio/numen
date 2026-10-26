@@ -5,7 +5,7 @@
  * nowhere to put them, so the palette offers a note under them. What is in
  * front is what the note can be nested under as it is made.
  */
-import type { PaletteGroup } from '@numen/ui'
+import type { PaletteGroup } from '@numen/shell'
 import { createInvocation } from './invocation'
 import type { CommandInvocation, CommandTarget } from '../../types'
 import type { Words } from '../../words'

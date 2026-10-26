@@ -8,7 +8,7 @@ import './vaultMock'
 import './moduleMocks'
 import { afterEach } from 'vitest'
 import { mount, type VueWrapper } from '@vue/test-utils'
-import { getPanes, WorkspaceLayout, type Workspace } from '@numen/ui'
+import { getPanes, WorkspaceLayout, type Workspace } from '@numen/shell'
 import { requests, forgetRequests } from './requests'
 import {
   folders,

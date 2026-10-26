@@ -7,7 +7,7 @@
  * and what a keystroke in it means. Two chords put each up and take it down.
  */
 import { computed } from 'vue'
-import { Palette, type ActionWords } from '@numen/ui'
+import { Palette, type ActionWords } from '@numen/shell'
 import { isCommandPrefixTyped } from '../lib/commands/commands'
 import type { CommandDeps } from '../model/handlers/deps'
 import type { CommandTarget } from '../types'

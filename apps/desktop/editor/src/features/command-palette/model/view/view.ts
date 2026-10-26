@@ -6,7 +6,7 @@
  * step is drawn as it is. Nothing here decides anything or asks the
  * application for anything: `palette.ts` holds the steps and does that.
  */
-import type { PaletteGroup, PaletteItem } from '@numen/ui'
+import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import { getGroupCommands } from '../../lib/commands/commands'
 import type { PendingStep } from '../../lib/step/step'
 import type { Command, CommandGroup, CommandTarget } from '../../types'

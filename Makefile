@@ -51,7 +51,7 @@ compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile 
 build: interface lib_core_build app_desktop_build ## build all application artifacts
 
 .PHONY: interface
-interface: lib_ui_build app_desktop_editor_build ## build UI pages into assets
+interface: lib_shell_build app_desktop_editor_build ## build UI pages into assets
 
 .PHONY: generate
 generate: lib_protocol_generate plugin_flashcards_generate ## generate code from schema
@@ -233,20 +233,34 @@ lib_wire_lint: ## lint wire package
 	cd $(WIRE) && npm run typecheck
 
 # --------------------------------- Lib: Shell ---------------------------------
+.PHONY: lib_shell_build
+lib_shell_build: lib_ui_build ## build @numen/shell package
+	cd $(SHELL_LIB) && npm run build
+
 .PHONY: lib_shell_typecheck
-lib_shell_typecheck: ## typecheck the shell package
+lib_shell_typecheck: lib_ui_build ## typecheck the shell package
 	cd $(SHELL_LIB) && npm run typecheck
 
 .PHONY: lib_shell_compile
-lib_shell_compile: lib_shell_typecheck
+lib_shell_compile: lib_shell_typecheck lib_shell_build
 
 .PHONY: lib_shell_test
-lib_shell_test: ## run shell tests
-	cd $(SHELL_LIB) && npm test
+lib_shell_test: lib_ui_build ## run shell unit tests
+	cd $(SHELL_LIB) && npm run test:unit
+
+.PHONY: lib_shell_stories
+lib_shell_stories: lib_ui_build ## draw the stories of the shell, one engine at a time
+	@set -e; for engine in chromium webkit; do \
+		(cd $(SHELL_LIB) && npx vitest run --project "stories ($$engine)"); \
+	done
 
 .PHONY: lib_shell_lint
-lib_shell_lint: ## lint the shell package
+lib_shell_lint: lib_ui_build ## lint the shell package
 	cd $(SHELL_LIB) && npm run lint && npm run typecheck
+
+.PHONY: lib_shell_knip
+lib_shell_knip: ## check dead code and unused dependencies of the shell with knip
+	cd $(SHELL_LIB) && npm run knip
 
 # ------------------------------ Lib: Plugin Host ------------------------------
 .PHONY: lib_plugin_host_typecheck
@@ -339,11 +353,11 @@ endef
 endif
 
 .PHONY: app_desktop_editor_build
-app_desktop_editor_build: lib_ui_build
+app_desktop_editor_build: lib_shell_build
 	cd $(DESKTOP)/editor && npm run build
 
 .PHONY: app_desktop_flashcards_build
-app_desktop_flashcards_build: lib_ui_build
+app_desktop_flashcards_build: lib_shell_build
 	cd $(DESKTOP)/flashcards && npm run build
 
 .PHONY: app_desktop_build
@@ -365,25 +379,25 @@ app_desktop_flashcards_bin: app_desktop_flashcards_build plugins_build ## build 
 	$(call bundle,Numen Flashcards,numen-flashcards,numen-flashcards-Info.plist,numen-flashcards.icns)
 
 .PHONY: app_desktop_compile
-app_desktop_compile: lib_ui_build ## compile desktop Go code and typecheck frontends
+app_desktop_compile: lib_shell_build ## compile desktop Go code and typecheck frontends
 	cd $(DESKTOP) && go build ./...
 	cd $(DESKTOP)/editor && npm run typecheck
 	cd $(DESKTOP)/flashcards && npm run typecheck
 
 .PHONY: app_desktop_test
-app_desktop_test: lib_ui_build ## run desktop tests
+app_desktop_test: lib_shell_build ## run desktop tests
 	cd $(DESKTOP) && go test ./... -race
 	cd $(DESKTOP)/editor && npm test
 	cd $(DESKTOP)/flashcards && npm test
 
 .PHONY: app_desktop_stories
-app_desktop_stories: lib_ui_build ## draw the stories of the editor, one engine at a time
+app_desktop_stories: lib_shell_build ## draw the stories of the editor, one engine at a time
 	@set -e; for engine in chromium webkit; do \
 		(cd $(DESKTOP)/editor && npx vitest run --project "stories ($$engine)"); \
 	done
 
 .PHONY: app_desktop_e2e
-app_desktop_e2e: lib_ui_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
+app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
 	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
 	cd $(DESKTOP) && go build -tags debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd $(TESTS)/e2e/desktop && npm test

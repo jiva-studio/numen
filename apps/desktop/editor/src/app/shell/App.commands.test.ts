@@ -21,7 +21,7 @@ import {
   settle,
   sourceAnswer,
 } from '@/testing/window'
-import { Palette, type PaletteGroup } from '@numen/ui'
+import { Palette, type PaletteGroup } from '@numen/shell'
 import { WORDS } from '@/shared/words'
 
 describe('the palette', () => {

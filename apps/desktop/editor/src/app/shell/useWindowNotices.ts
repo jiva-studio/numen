@@ -2,7 +2,7 @@
  * System and status notices displayed in the corner of the window.
  */
 import { computed, type ComputedRef } from 'vue'
-import type { Notice } from '@numen/ui'
+import type { Notice } from '@numen/shell'
 import { getCornerNotices } from '@/shared/notices/corner'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { useWindowDisplay } from '../window/useWindowDisplay'

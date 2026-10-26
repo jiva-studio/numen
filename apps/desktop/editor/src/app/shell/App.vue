@@ -6,9 +6,9 @@
  * sees of it, and the binding between the two.
  */
 import { onMounted, onUnmounted } from 'vue'
-import { Notices, StatusBar, WorkspaceLayout } from '@numen/ui'
+import { Notices, StatusBar, WorkspaceLayout } from '@numen/shell'
 import '@numen/ui/styles.css'
-import './app.css'
+import '@numen/shell/styles.css'
 import { UnsavedChangesPrompt } from '@/features/file-conflict'
 import CoreFailureNotice from '@/shared/notices/CoreFailureNotice.vue'
 import { CommandPalette } from '@/features/command-palette'

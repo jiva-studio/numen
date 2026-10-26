@@ -6,7 +6,7 @@
  * the two: a question lands in a talk nobody can see.
  */
 import { describe, expect, it } from 'vitest'
-import { getPanes } from '@numen/ui'
+import { getPanes } from '@numen/shell'
 import {
   BOOK,
   CONVERSATION,

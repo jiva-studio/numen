@@ -19,7 +19,8 @@ export const root = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
  * - `written`, where its hand-written source stands, relative to the repository;
  * - `reads`, one file of it, relative to `at`, that a cruise has to have read —
  *   a count alone cannot say which tree was walked;
- * - `says`, the one line the drawing carries.
+ * - `says`, the one line the drawing carries;
+ * - `book`, the Storybook its stories are drawn in, as `ci-stories` names them.
  */
 export const modules = [
   {
@@ -29,6 +30,16 @@ export const modules = [
     written: 'libs/ui/core/src',
     reads: 'src/index.ts',
     says: 'The shared components. Reaches nothing of ours.',
+    book: 'ui',
+  },
+  {
+    name: '@numen/shell',
+    at: 'libs/ui/shell',
+    sources: ['src'],
+    written: 'libs/ui/shell/src',
+    reads: 'src/index.ts',
+    says: 'The chrome of the desktop windows: reaches the components.',
+    book: 'shell',
   },
   {
     name: '@numen/wire',
@@ -37,6 +48,7 @@ export const modules = [
     written: 'libs/wire',
     reads: 'index.ts',
     says: "What a window's ports are answered with.",
+    book: 'ui',
   },
   {
     name: '@numen/editor',
@@ -44,7 +56,8 @@ export const modules = [
     sources: ['src'],
     written: 'apps/desktop/editor/src',
     reads: 'src/app/App.vue',
-    says: 'The notes window: reaches the components, the wire and the schema.',
+    says: 'The notes window: reaches the components, the shell, the wire and the schema.',
+    book: 'shell',
   },
   {
     name: '@numen/flashcards',
@@ -52,7 +65,8 @@ export const modules = [
     sources: ['src'],
     written: 'apps/desktop/flashcards/src',
     reads: 'src/app/App.vue',
-    says: 'The review window: the same three, and never the other window.',
+    says: 'The review window: the same four, and never the other window.',
+    book: 'shell',
   },
   {
     name: '@numen/mobile',
@@ -61,6 +75,7 @@ export const modules = [
     written: 'apps/mobile/src',
     reads: 'src/App.vue',
     says: 'The phone: one vault, the components and the schema.',
+    book: 'ui',
   },
 ]
 

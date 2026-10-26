@@ -1,8 +1,7 @@
 import type { Preview } from '@storybook/vue3-vite'
 import { configure } from 'storybook/test'
 import '@numen/ui/styles.css'
-// The window's own sheet, which every tab in it is drawn under.
-import '../src/app/shell/app.css'
+import '@numen/shell/styles.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at

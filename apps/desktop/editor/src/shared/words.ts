@@ -6,7 +6,8 @@
  * the palette, the commands, the corner, and the quit.
  */
 // Stryker disable StringLiteral: interface copy
-import { commandKeyChord, keyChord } from '@numen/ui'
+import { keyChord } from '@numen/ui'
+import { commandKeyChord } from '@numen/shell'
 import { ERRORS } from '@numen/wire'
 
 export { ERRORS }

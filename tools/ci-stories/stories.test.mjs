@@ -24,14 +24,15 @@ test('a fault says which story it could not find', () => {
 /**
  * A walk that read the wrong folders finds nothing and says so in the same
  * words as a walk that read the right ones, so the stories it must have found
- * are named — one from the library, one from a window and one from a plugin —
- * with the Storybook each is drawn in.
+ * are named — one from the library, one from the shell, one from a window and
+ * one from a plugin — with the Storybook each is drawn in.
  */
 test('every story the tree declares is found where it stands', async () => {
   const declared = await stories()
   for (const [one, book] of [
-    ['workspace--crowded', 'ui'],
-    ['desktop-window--settings', 'ui'],
+    ['controls-menu--grouped', 'ui'],
+    ['workspace--crowded', 'shell'],
+    ['desktop-window--settings', 'shell'],
     ['flash-cards-window--cards-due', 'plugins'],
   ]) {
     assert.equal(declared.get(one), book, `${one} is declared in the ${book} Storybook`)

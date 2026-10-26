@@ -3,9 +3,9 @@
  * stopped again.
  *
  * Each shot is served by the Storybook its story is declared in: the
- * components' own or the plugins'. Only the ones a list of shots names are
- * started. `STORYBOOK_PORT` and `STORYBOOK_PLUGINS_PORT` name one already
- * running instead.
+ * components' own, the shell's or the plugins'. Only the ones a list of shots
+ * names are started. `STORYBOOK_PORT`, `STORYBOOK_SHELL_PORT` and
+ * `STORYBOOK_PLUGINS_PORT` name one already running instead.
  */
 import { spawn } from 'node:child_process'
 import { join } from 'node:path'
@@ -15,6 +15,7 @@ import { BOOKS, stories } from './stories.mjs'
 /** The port each Storybook is started on, and the variable naming one already up. */
 const PORTS = {
   ui: { given: 'STORYBOOK_PORT', port: 6098 },
+  shell: { given: 'STORYBOOK_SHELL_PORT', port: 6097 },
   plugins: { given: 'STORYBOOK_PLUGINS_PORT', port: 6096 },
 }
 

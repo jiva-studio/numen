@@ -1,4 +1,5 @@
-import type { Tab, WelcomeAction } from '@numen/ui'
+import type { WelcomeAction } from '@numen/ui'
+import type { Tab } from '@numen/shell'
 import type { CommandDeps, Commands, CommandTarget, SearchState } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
 

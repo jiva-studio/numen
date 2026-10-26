@@ -4,7 +4,7 @@
  * The workspace takes identities and gives them back; which component each one
  * stands for is settled in `App.vue`.
  */
-import { branch, pane, type Workspace } from '@numen/ui'
+import { branch, pane, type Workspace } from '@numen/shell'
 
 /** A note edited in the window, under the path the vault files it at. */
 export const NOTE = 'note'

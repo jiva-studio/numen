@@ -23,10 +23,10 @@ npm run shoot
 
 That starts the Storybooks the shots are declared in, takes each in light and
 in dark at two and a half times the pixels, writes them into `src/assets/` as
-WebP, and stops the Storybooks again. `STORYBOOK_PORT` and
-`STORYBOOK_PLUGINS_PORT` name ones already running instead. The plugins'
-Storybook reaches `@numen/ui` through its build, so `npm run build` in
-`libs/ui/core` comes first.
+WebP, and stops the Storybooks again. `STORYBOOK_PORT`,
+`STORYBOOK_SHELL_PORT` and `STORYBOOK_PLUGINS_PORT` name ones already running
+instead. The shell's and the plugins' Storybooks reach `@numen/ui` through its
+build, so `npm run build` in `libs/ui/core` comes first.
 
 The browser it drives is whichever Chrome is already on the machine, else
 Playwright's own — the same rule the story tests follow. `CHROME_PATH` names

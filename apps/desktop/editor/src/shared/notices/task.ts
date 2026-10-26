@@ -1,7 +1,7 @@
 /**
  * The work the application reports to the window while it goes on behind it.
  */
-import type { TallyUnit } from '@numen/ui'
+import type { TallyUnit } from '@numen/shell'
 
 /**
  * One piece of work the application is doing behind the window.

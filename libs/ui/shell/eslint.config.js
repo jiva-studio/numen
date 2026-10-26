@@ -1,63 +1,82 @@
-import js from '@eslint/js'
-import globals from 'globals'
+// Correctness and boundaries, as in `libs/ui/core`. The shell reaches the
+// components through `@numen/ui` and nothing else of ours.
+
 import tseslint from 'typescript-eslint'
-import prettier from 'eslint-config-prettier'
+import boundaries from 'eslint-plugin-boundaries'
+import { createBaseConfig, lifetimes } from '../../../tools/lint-layers/base-eslint.mjs'
+import { createLayerElements, createLayerPolicies } from '../../../tools/lint-layers/layers.mjs'
+
+const layerOrder = ['shared', 'features', 'screens']
+const sliceLayers = ['features']
+
+const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
+const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
+
+/** The files that stand outside the layers. */
+const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', 'src/vite.ts']
+
+const domainImports = [
+  {
+    group: [
+      '@numen/*',
+      '@numen/*/**',
+      '!@numen/ui',
+      // The same packages named by the path the install put them at.
+      '**/node_modules/@numen/**',
+    ],
+    message:
+      'the shell knows the components and nothing of the domain or the wire — take props in a drawing vocabulary and emit opaque identifiers',
+  },
+  {
+    group: ['**/apps/**', '**/libs/**'],
+    message: 'the dependency runs apps → libs/ui/shell → libs/ui/core, never back',
+  },
+]
 
 export default tseslint.config(
-  {
-    ignores: ['dist/**', 'coverage/**', 'node_modules/**'],
-  },
-
-  js.configs.recommended,
-  tseslint.configs.recommended,
+  ...createBaseConfig(import.meta.dirname),
 
   {
     languageOptions: {
-      globals: globals.browser,
       parserOptions: {
-        projectService: { allowDefaultProject: ['eslint.config.js'] },
-        tsconfigRootDir: import.meta.dirname,
+        projectService: {
+          allowDefaultProject: ['eslint.config.js'],
+        },
       },
     },
-    rules: {
-      'no-console': 'error',
-      '@typescript-eslint/no-floating-promises': 'error',
-      '@typescript-eslint/no-misused-promises': 'error',
-      '@typescript-eslint/await-thenable': 'error',
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
+  },
+
+  {
+    files: ['src/**/*.{ts,vue}'],
+    ignores: outsideLayers,
+    plugins: { boundaries },
+    settings: {
+      'import/resolver': { typescript: { alwaysTryTypes: true } },
+      'boundaries/elements': layerElements,
+      'boundaries/files': [
+        { category: 'public', pattern: 'src/features/*/index.ts' },
+        { category: 'entry', pattern: 'src/index.ts' },
       ],
     },
-  },
-
-  // Limits on complexity and file length for handwritten sources.
-  {
-    files: ['**/*.ts'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts'],
     rules: {
-      'max-lines': ['error', { max: 350, skipBlankLines: true, skipComments: true }],
-      'max-lines-per-function': ['error', { max: 60, skipBlankLines: true, skipComments: true }],
-      complexity: ['error', 10],
-      'max-depth': ['error', 3],
-      'max-params': ['error', 3],
-      'no-nested-ternary': 'error',
+      'boundaries/no-unknown-files': 'error',
+      'boundaries/dependencies': ['error', { default: 'disallow', policies: layerPolicies }],
+      'no-restricted-imports': ['error', { patterns: domainImports }],
     },
   },
 
-  // Package boundaries: no reaching out of the module via relative paths
   {
-    files: ['**/*.ts'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts'],
+    files: ['src/features/**/*.{ts,vue}'],
+    ignores: ['src/**/*.test.ts', 'src/**/*.spec.ts', ...outsideLayers],
     rules: {
       'no-restricted-imports': [
         'error',
         {
           patterns: [
+            ...domainImports,
             {
-              group: ['**/libs/**', '**/apps/**'],
-              message:
-                'reach libraries and other applications by their package names (@numen/*), never by relative paths out of the module',
+              group: ['@/features/**', '@/screens/**'],
+              message: 'a slice imports its own files by relative path and no other slice',
             },
           ],
         },
@@ -65,11 +84,25 @@ export default tseslint.config(
     },
   },
 
-  // Purity: pure wire layer does not touch non-deterministic clocks or random numbers
+  // Anything with a lifetime a test must hold still is a port.
   {
-    files: ['**/*.ts'],
-    ignores: ['**/*.test.ts', '**/*.spec.ts'],
+    files: ['src/**/*.ts'],
+    ignores: [
+      'src/**/*.test.ts',
+      'src/**/*.stories.ts',
+      'src/**/fixtures/**',
+      // The one function that turns an element into the rectangle the pure
+      // core reasons about.
+      'src/features/workspace/lib/drop.ts',
+    ],
     rules: {
+      'no-restricted-globals': [
+        'error',
+        ...lifetimes.map(({ name, port }) => ({
+          name,
+          message: `${name} has a lifetime a test must hold still — take ${port}`,
+        })),
+      ],
       'no-restricted-syntax': [
         'error',
         {
@@ -84,22 +117,15 @@ export default tseslint.config(
           selector: 'MemberExpression[object.name="Math"][property.name="random"]',
           message: 'the same input gives the same numbers on any machine on any day',
         },
+        {
+          selector: 'MemberExpression[property.name="getBoundingClientRect"]',
+          message: 'what the window measures is a port — take it as a value',
+        },
+        {
+          selector: 'MemberExpression[property.name="matchMedia"]',
+          message: 'a reader who asks for less motion is answered in CSS',
+        },
       ],
     },
   },
-
-  // Test exclusions
-  {
-    files: ['**/*.test.ts', '**/*.spec.ts'],
-    rules: {
-      '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'off',
-      '@typescript-eslint/no-floating-promises': 'off',
-      '@typescript-eslint/no-misused-promises': 'off',
-      '@typescript-eslint/await-thenable': 'off',
-      'no-console': 'off',
-    },
-  },
-
-  prettier,
 )

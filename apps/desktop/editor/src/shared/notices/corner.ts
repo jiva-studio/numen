@@ -5,8 +5,8 @@
  * in, and what it answered the last thing it was asked. A new kind of any of
  * them is an entry in one of the three lists and nothing here.
  */
-import { createNotice } from '@numen/ui'
-import type { Notice, Stay, Tone } from '@numen/ui'
+import { createNotice } from '@numen/shell'
+import type { Notice, Stay, Tone } from '@numen/shell'
 import type { Task } from './task'
 import { isTextSearchOnly, type IndexCoverage } from './coverage'
 import type { MessageKind, WindowMessage } from './messages'

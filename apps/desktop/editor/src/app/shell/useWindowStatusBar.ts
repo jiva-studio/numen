@@ -2,7 +2,7 @@
  * Adapts domain background tasks into status bar representations and handles interactions.
  */
 import { computed, ref, type Ref } from 'vue'
-import type { StatusBarTask } from '@numen/ui'
+import type { StatusBarTask } from '@numen/shell'
 import type { Task } from '@/shared/notices/task'
 
 export interface WindowStatusBarDeps {

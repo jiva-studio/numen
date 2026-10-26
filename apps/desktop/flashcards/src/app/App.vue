@@ -4,6 +4,7 @@
  */
 import type { Component } from 'vue'
 import '@numen/ui/styles.css'
+import '@numen/shell/styles.css'
 import { useShell } from './useShell'
 
 /* --------------------------------- State ---------------------------------- */

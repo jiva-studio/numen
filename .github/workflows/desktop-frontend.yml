@@ -77,8 +77,10 @@ jobs:
 
       - uses: ./.github/actions/setup-playwright
 
-      - name: Build the components
-        run: npm run build --prefix libs/ui/core
+      - name: Build the components and the shell
+        run: |
+          npm run build --prefix libs/ui/core
+          npm run build --prefix libs/ui/shell
 
       - name: Verify story references
         run: npm run check --prefix tools/ci-stories
@@ -101,7 +103,8 @@ jobs:
       - name: Run frontend tests
         run: |
           npm test --prefix libs/wire
-          npm test --prefix libs/ui/shell
+          npm run test:unit --prefix libs/ui/shell -- --coverage
+          npm run test:stories --prefix libs/ui/shell
           npm test --prefix libs/plugin-host-ts
           npm run test:unit --prefix apps/desktop/editor -- --coverage
           npm run test:stories --prefix apps/desktop/editor

@@ -10,7 +10,7 @@ import {
   VaultsErrorCode,
 } from '@numen/protocol'
 import type { Vault as VaultMessage } from '@numen/protocol'
-import type { TallyUnit } from '@numen/ui'
+import type { TallyUnit } from '@numen/shell'
 import { asFailure, asValue, getNames } from '@numen/wire'
 import type { SearchMode } from '@/features/command-palette'
 import type { Consent, Presence } from '@/entities/settings'

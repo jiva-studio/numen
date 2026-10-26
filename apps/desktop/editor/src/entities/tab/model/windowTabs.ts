@@ -16,8 +16,8 @@ import {
   type ShallowRef,
 } from 'vue'
 import type { Result } from '@numen/wire'
-import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/ui'
-import type { Tab, Workspace } from '@numen/ui'
+import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/shell'
+import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
 import { createUnavailableKind } from '../lib/unavailable'

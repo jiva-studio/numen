@@ -17,7 +17,8 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./styles.css": "./dist/numen-ui.css"
+    "./styles.css": "./dist/numen-ui.css",
+    "./theme.css": "./src/shared/tokens/theme.css"
   },
   "scripts": {
     "dev": "storybook dev -p 6006 --no-open",

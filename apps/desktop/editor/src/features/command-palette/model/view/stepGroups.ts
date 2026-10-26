@@ -6,7 +6,7 @@
  * Nothing here decides anything or asks the application for anything:
  * `palette.ts` holds the steps and does that.
  */
-import type { PaletteGroup, PaletteItem } from '@numen/ui'
+import type { PaletteGroup, PaletteItem } from '@numen/shell'
 import type { NoteType } from '@/entities/file'
 import type { Vault } from '@/entities/vault'
 import { isWebUrl } from '../../lib/url/url'

@@ -5,8 +5,8 @@
  * settles in and a picture can be taken of it.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { WorkspaceLayout, pane } from '@numen/ui'
-import type { Tab, Workspace } from '@numen/ui'
+import { WorkspaceLayout, pane } from '@numen/shell'
+import type { Tab, Workspace } from '@numen/shell'
 import { ref, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'

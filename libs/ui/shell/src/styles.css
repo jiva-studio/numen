@@ -1,0 +1,7 @@
+/*
+ * The utilities the shell's templates use, built with the theme of
+ * `@numen/ui`. The window loads the stylesheet of `@numen/ui` before this one,
+ * which carries the tokens and the base styles.
+ */
+@reference '@numen/ui/theme.css';
+@import 'tailwindcss/utilities.css' layer(utilities);

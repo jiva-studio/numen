@@ -15,12 +15,13 @@ import { join } from 'node:path'
 import { modules, root } from '../shared/modules.mjs'
 
 /**
- * The two Storybooks a story is drawn in, each by the folder it is started
- * from: the components' own, which draws the windows' screens beside them, and
- * the plugins', which draws every plugin's frontend.
+ * The three Storybooks a story is drawn in, each by the folder it is started
+ * from: the components' own, the shell's, which draws the windows' screens
+ * beside it, and the plugins', which draws every plugin's frontend.
  */
 export const BOOKS = {
   ui: 'libs/ui/core',
+  shell: 'libs/ui/shell',
   plugins: 'plugins',
 }
 
@@ -30,7 +31,7 @@ export const BOOKS = {
  * every plugin.
  */
 const ROOTS = [
-  ...modules.map((one) => ({ at: join(root, one.written), book: 'ui', only: /./ })),
+  ...modules.map((one) => ({ at: join(root, one.written), book: one.book, only: /./ })),
   { at: join(root, BOOKS.plugins), book: 'plugins', only: /^[^/]+\/frontend\// },
 ]
 

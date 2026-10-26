@@ -648,10 +648,10 @@ function verifyUiHoldsNoPluginView() {
 }
 
 function verifyUiDomainIsolation() {
-  const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/core/src/"], { cwd: REPO_ROOT });
+  const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire|shell)|apps|libs/ui/shell)", "libs/ui/core/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
   if (leaks) {
-    throw new Error("UI library imports domain, wire, protocol or apps:\n" + leaks);
+    throw new Error("UI library imports domain, wire, protocol, the shell or apps:\n" + leaks);
   }
   exec("npm run lint", path.join(MODULES_DIR, "libs/ui/core"));
 }
@@ -777,7 +777,7 @@ const VERIFIERS = [
     id: "ui-isolation",
     scope: "libs",
     module: "ui",
-    name: "UI Library Domain & Wire Isolation (0 domain, 0 protocol, 0 wire, 0 apps)",
+    name: "UI Library Domain & Wire Isolation (0 domain, 0 protocol, 0 wire, 0 shell, 0 apps)",
     run: verifyUiDomainIsolation,
   },
   {
