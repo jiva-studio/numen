@@ -16,6 +16,7 @@ import type {
   VaultChangeEvent,
   VaultFiles,
   VaultNotes,
+  ViewRegistration,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { PluginContextHost } from './types'
@@ -229,6 +230,11 @@ export function createPluginContext(
       add(host.registerContextMenu(pluginId, reg)),
     registerAgentProvider: (reg: AgentProviderRegistration) =>
       add(host.registerAgentProvider(pluginId, reg)),
+    registerView: (reg: ViewRegistration) => add(host.registerView(pluginId, reg)),
+    mountView: (capability: string, element: HTMLElement, context: unknown) => {
+      const view = host.mountView(capability, element, context)
+      return { focus: () => view.focus(), ...add(view) }
+    },
     getSetting: <T = unknown>(key: string) => host.getSetting<T>(pluginId, key),
     onSettingChange: <T = unknown>(key: string, h: (v: T) => void) =>
       add(host.onSettingChange<T>(pluginId, key, h)),

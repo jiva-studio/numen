@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'vitest'
+import { defineComponent, h } from 'vue'
+import { CONVERSATION } from '@numen/plugin-sdk'
 import { createShellHost, TARGET } from './host'
 
 const view = (kind: string, order?: number) => ({
@@ -47,5 +49,39 @@ describe('createShellHost', () => {
 
     expect(context.hasPermission?.('vault:read')).toBe(true)
     expect(context.hasPermission?.('vault:write')).toBe(false)
+  })
+
+  it('draws a view one plugin declares into the element of another, until the declaring one goes', () => {
+    const { host } = createShellHost()
+    const conversation = defineComponent({
+      props: { context: { type: Object, required: true } },
+      setup: (props) => () => h('p', (props.context as { focus: string }).focus),
+    })
+    host
+      .createContext('md.numen.chat')
+      .registerView({ capability: CONVERSATION, component: conversation })
+    const panel = document.createElement('section')
+
+    host
+      .createContext('md.numen.cards')
+      .mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
+    expect(panel.textContent).toBe('Decks/Physics.md')
+
+    host.disposePlugin('md.numen.chat')
+    expect(panel.textContent).toBe('')
+  })
+
+  it('takes the views a plugin mounted away with the plugin', () => {
+    const { host } = createShellHost()
+    const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
+    host
+      .createContext('md.numen.chat')
+      .registerView({ capability: CONVERSATION, component: conversation })
+    const panel = document.createElement('section')
+    host.createContext('md.numen.cards').mountView(CONVERSATION, panel, {})
+
+    host.disposePlugin('md.numen.cards')
+
+    expect(panel.textContent).toBe('')
   })
 })

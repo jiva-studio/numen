@@ -16,6 +16,7 @@ import type {
   TabKindRegistration,
   VaultChangeEvent,
 } from '@numen/plugin-sdk'
+import { createViewRegistry, type ViewRegistry } from '@numen/plugin-host'
 import { createPluginContext } from './context'
 import { addListener, notifyListeners, runCommand, type PluginListener } from './events'
 import { extractPaletteCommands } from './palette'
@@ -234,7 +235,11 @@ function createEventBridge(deps: PluginHostDeps, registry: HostRegistry): EventB
   }
 }
 
-function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): PluginContextHost {
+function createHostContextBridge(
+  deps: PluginHostDeps,
+  registry: HostRegistry,
+  views: ViewRegistry,
+): PluginContextHost {
   return {
     registerReader: (pluginId, registration) =>
       registerReaderEntry(deps, registry.readers, {
@@ -283,6 +288,8 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
         },
       }
     },
+    registerView: views.registerView,
+    mountView: views.mountView,
     getSetting: <T = unknown>(pluginId: string, key: string) =>
       deps.getSetting ? (deps.getSetting(pluginId, key) as T | undefined) : undefined,
     onSettingChange: <T = unknown>(
@@ -365,7 +372,7 @@ export function createPluginHost(deps: PluginHostDeps) {
     fileListeners: new Set(),
   }
 
-  const contextHost = createHostContextBridge(deps, registry)
+  const contextHost = createHostContextBridge(deps, registry, createViewRegistry())
   const disposePlugin = (pluginId: string) => disposePluginEntry(pluginId, registry, deps)
 
   return {

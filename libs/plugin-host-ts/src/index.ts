@@ -12,3 +12,4 @@ export {
   registerPluginStyle,
   unregisterPluginStyle,
 } from './styles'
+export { createViewRegistry, type ViewRegistry } from './views'

@@ -1,6 +1,7 @@
 import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { TextInput, VaultTexts } from './texts'
+import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
 // Disposable is a handle released on teardown.
@@ -198,6 +199,11 @@ export interface PluginContext {
   registerCommand(registration: CommandRegistration): Disposable
   registerContextMenu(registration: ContextMenuRegistration): Disposable
   registerAgentProvider(registration: AgentProviderRegistration): Disposable
+  // Declares a view other plugins mount by its capability.
+  registerView(registration: ViewRegistration): Disposable
+  // Draws the view a plugin declares for `capability` into `element`, passed `context`. While no
+  // plugin declares one the element stays empty, and the view is drawn once one does.
+  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
   getSetting<T = unknown>(key: string): T | undefined
   onSettingChange<T = unknown>(key: string, handler: (value: T) => void): Disposable
   onVaultChange(handler: (event: VaultChangeEvent) => void | Promise<void>): Disposable

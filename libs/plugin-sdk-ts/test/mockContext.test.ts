@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '../src/testing/mockContext'
 import type { PluginContext } from '../src/types'
+import { CONVERSATION } from '../src/views'
 
 describe('mock plugin context', () => {
   it('manages tab kind registrations', () => {
@@ -73,6 +74,29 @@ describe('mock plugin context', () => {
     expect(ctx.getRegisteredAgentProviders()[0]?.name).toBe('Custom LLM')
     d.dispose()
     expect(ctx.getRegisteredAgentProviders()).toHaveLength(0)
+  })
+
+  it('keeps the views a plugin declares and the views it mounts', () => {
+    const ctx = createMockPluginContext()
+    const declared = ctx.registerView({ capability: CONVERSATION, component: {} })
+    const element = {} as HTMLElement
+
+    const view = ctx.mountView(CONVERSATION, element, { focus: 'Decks/Physics.md' })
+    view.focus()
+    view.dispose()
+
+    expect(ctx.getRegisteredViews()).toStrictEqual([{ capability: CONVERSATION, component: {} }])
+    expect(ctx.getMountedViews()).toStrictEqual([
+      {
+        capability: CONVERSATION,
+        element,
+        context: { focus: 'Decks/Physics.md' },
+        isDisposed: true,
+        focusCount: 1,
+      },
+    ])
+    declared.dispose()
+    expect(ctx.getRegisteredViews()).toHaveLength(0)
   })
 
   it('reacts to setting changes', () => {

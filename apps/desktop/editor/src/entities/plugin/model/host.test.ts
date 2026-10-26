@@ -3,6 +3,7 @@ import { defineComponent, h } from 'vue'
 import { mount } from '@vue/test-utils'
 import { createPluginHost, createPluginPaneWrapper } from './host'
 import { registerPluginStyle } from '@numen/plugin-host'
+import { CONVERSATION } from '@numen/plugin-sdk'
 import type { PluginHostDeps } from './types'
 
 describe('createPluginHost', () => {
@@ -270,5 +271,41 @@ describe('createPluginHost', () => {
     expect(document.head.querySelector('link[data-plugin-id="sample.plugin"]')).toBeNull()
 
     wrapper.unmount()
+  })
+
+  it('draws a view one plugin declares into the element of another', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    const conversation = defineComponent({
+      props: { context: { type: Object, required: true } },
+      setup: (props) => () => h('p', (props.context as { focus: string }).focus),
+    })
+    host
+      .createContext('md.numen.chat')
+      .registerView({ capability: CONVERSATION, component: conversation })
+    const panel = document.createElement('section')
+
+    const mounted = host
+      .createContext('md.numen.cards')
+      .mountView(CONVERSATION, panel, { focus: 'Decks/Physics.md' })
+    expect(panel.textContent).toBe('Decks/Physics.md')
+
+    mounted.dispose()
+    expect(panel.textContent).toBe('')
+  })
+
+  it('takes a drawn view away with the plugin that declared it', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+    const conversation = defineComponent({ setup: () => () => h('p', 'conversation') })
+    host
+      .createContext('md.numen.chat')
+      .registerView({ capability: CONVERSATION, component: conversation })
+    const panel = document.createElement('section')
+    host.createContext('md.numen.cards').mountView(CONVERSATION, panel, {})
+
+    host.disposePlugin('md.numen.chat')
+
+    expect(panel.textContent).toBe('')
   })
 })

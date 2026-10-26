@@ -37,6 +37,8 @@ describe('PluginContext', () => {
         calls.registerAgentProvider++
         return { dispose: vi.fn() }
       }),
+      registerView: vi.fn((_id, _reg) => ({ dispose: vi.fn() })),
+      mountView: vi.fn((_capability, _element, _context) => ({ focus: vi.fn(), dispose: vi.fn() })),
       getSetting: vi.fn((_id: string, key: string) => {
         calls.getSetting++
         return key === 'enabled' ? true : undefined

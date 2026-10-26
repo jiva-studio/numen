@@ -1,7 +1,7 @@
 /**
- * The host the shell's plugins are activated in: a context for each plugin, and the tab kinds they
- * register. The shell draws one tab, the main-pane kind of the lowest order; every other
- * registration has nothing in this window to land in.
+ * The host the shell's plugins are activated in: a context for each plugin, the tab kinds they
+ * register and the views they declare for each other. The shell draws one tab, the main-pane kind
+ * of the lowest order; every other registration has nothing in this window to land in.
  */
 import { computed, shallowRef } from 'vue'
 import type {
@@ -10,7 +10,7 @@ import type {
   PluginManifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
-import type { LoaderHost } from '@numen/plugin-host'
+import { createViewRegistry, type LoaderHost } from '@numen/plugin-host'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -26,6 +26,7 @@ const NOTHING: Disposable = { dispose: () => {} }
 export function createShellHost() {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
+  const declaredViews = createViewRegistry()
 
   const addView = (view: PluginView): Disposable => {
     views.value = [...views.value, view]
@@ -48,6 +49,12 @@ export function createShellHost() {
       registerCommand: () => NOTHING,
       registerContextMenu: () => NOTHING,
       registerAgentProvider: () => NOTHING,
+      registerView: (registration) => add(declaredViews.registerView(pluginId, registration)),
+      mountView: (capability, element, viewContext) => {
+        const view = declaredViews.mountView(capability, element, viewContext)
+        add(view)
+        return view
+      },
       getSetting: () => undefined,
       onSettingChange: () => NOTHING,
       onVaultChange: () => NOTHING,

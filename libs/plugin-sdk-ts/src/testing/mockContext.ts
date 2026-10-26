@@ -10,6 +10,16 @@ import type {
   TabKindRegistration,
   VaultChangeEvent,
 } from '../types'
+import type { MountedView, ViewRegistration } from '../views'
+
+// MockMountedView records one mountView call of a plugin under test, and whether its view was disposed.
+export interface MockMountedView {
+  readonly capability: string
+  readonly element: HTMLElement
+  readonly context: unknown
+  isDisposed: boolean
+  focusCount: number
+}
 
 // MockPluginContext extends PluginContext with inspection and simulation methods.
 export interface MockPluginContext extends PluginContext {
@@ -18,6 +28,8 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
+  getRegisteredViews(): ViewRegistration[]
+  getMountedViews(): MockMountedView[]
   triggerCommand(commandId: string, note?: CommandNote): Promise<void>
   setSetting<T = unknown>(key: string, value: T): void
   dispose(): void
@@ -36,6 +48,8 @@ export function createMockPluginContext(
   const commands: CommandRegistration[] = []
   const contextMenus: ContextMenuRegistration[] = []
   const agentProviders: AgentProviderRegistration[] = []
+  const views: ViewRegistration[] = []
+  const mounted: MockMountedView[] = []
   const settings = new Map<string, unknown>(Object.entries(initialValues?.initialSettings ?? {}))
   const settingListeners = new Map<string, Set<(val: unknown) => void>>()
   const vaultListeners = new Set<(event: VaultChangeEvent) => void | Promise<void>>()
@@ -122,6 +136,38 @@ export function createMockPluginContext(
         },
       }
       return addDisposable(disposable)
+    },
+
+    registerView(registration: ViewRegistration): Disposable {
+      views.push(registration)
+      const disposable: Disposable = {
+        dispose: () => {
+          const idx = views.indexOf(registration)
+          if (idx !== -1) {
+            views.splice(idx, 1)
+          }
+        },
+      }
+      return addDisposable(disposable)
+    },
+
+    mountView(capability: string, element: HTMLElement, context: unknown): MountedView {
+      const view: MockMountedView = {
+        capability,
+        element,
+        context,
+        isDisposed: false,
+        focusCount: 0,
+      }
+      mounted.push(view)
+      return {
+        focus: () => {
+          view.focusCount++
+        },
+        dispose: () => {
+          view.isDisposed = true
+        },
+      }
     },
 
     getSetting<T = unknown>(key: string): T | undefined {
@@ -214,6 +260,14 @@ export function createMockPluginContext(
 
     getRegisteredAgentProviders(): AgentProviderRegistration[] {
       return [...agentProviders]
+    },
+
+    getRegisteredViews(): ViewRegistration[] {
+      return [...views]
+    },
+
+    getMountedViews(): MockMountedView[] {
+      return [...mounted]
     },
 
     async triggerCommand(

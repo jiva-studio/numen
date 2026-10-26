@@ -10,11 +10,13 @@ import type {
   ContextMenuTarget,
   Disposable,
   FileSelectEvent,
+  MountedView,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
   TabKindRegistration,
   VaultChangeEvent,
+  ViewRegistration,
   VaultFiles,
   VaultNotes,
   WorkspaceHost,
@@ -93,6 +95,8 @@ export interface PluginContextHost {
   registerCommand(pluginId: string, registration: CommandRegistration): Disposable
   registerContextMenu(pluginId: string, registration: ContextMenuRegistration): Disposable
   registerAgentProvider(pluginId: string, registration: AgentProviderRegistration): Disposable
+  registerView(pluginId: string, registration: ViewRegistration): Disposable
+  mountView(capability: string, element: HTMLElement, context: unknown): MountedView
   getSetting<T = unknown>(pluginId: string, key: string): T | undefined
   onSettingChange<T = unknown>(
     pluginId: string,
