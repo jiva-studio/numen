@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useTemplateRef } from 'vue'
-import { Book } from '@numen/ui'
+import { Book } from './book'
 import { ListTree } from '@lucide/vue'
 import type { BookHandle } from './types'
 import type { BookContentProps } from './BookContent.types'

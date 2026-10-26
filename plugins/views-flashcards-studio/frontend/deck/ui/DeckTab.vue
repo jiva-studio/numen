@@ -3,7 +3,12 @@
  * Displays flashcard deck editor in grid view and handles deck management gestures.
  */
 import { computed } from 'vue'
-import { cardBlanks, cardFields, DeckEditor, type InsertionPoint } from '@numen/ui'
+import {
+  getBlanks as cardBlanks,
+  getDeclaredFields as cardFields,
+  DeckEditor,
+  type InsertionPoint,
+} from '../../ui/cards'
 import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { DeckTabState } from '../types'

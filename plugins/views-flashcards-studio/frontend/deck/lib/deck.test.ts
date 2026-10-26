@@ -1,6 +1,6 @@
 /** What a gesture in a deck makes of the file, asked without a screen. */
 import { describe, expect, it } from 'vitest'
-import { CARD_HEAD, createCardRunEnd } from '@numen/ui'
+import { HEAD as CARD_HEAD, createRunEnd as createCardRunEnd } from '../../ui/cards'
 import type { VaultDeck } from '../../cards'
 import {
   addCard as addCardInternal,

@@ -34,19 +34,8 @@ export type { SegmentedChoice } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
-export { WeekdayChips } from './shared/ui/weekday-chips'
-export { WEEK } from './shared/ui/weekday-chips'
-export type { Day } from './shared/ui/weekday-chips'
-
-export { DueCount } from './features/cards'
-/** What a person did on each day, as a grid of weeks. */
-export { Heatmap } from './features/heatmap'
-export { dayName as heatmapDayName } from './features/heatmap'
-export type { Words as HeatmapWords } from './features/heatmap'
 /** A day of the calendar, written down, read back and counted against another. */
 export { dayAfter, parseDay, daysBetween, getDayName, isDay } from './shared/lib/time/day'
-export type { Tally as HeatmapTally } from './features/heatmap'
-export { getStretch as getHeatmapStretch } from './features/heatmap'
 export { WelcomePage } from './features/welcome'
 /** The letter a vault on that screen is opened by, and what a keystroke opens. */
 export { getVaultForKey, isTyping } from './features/welcome'
@@ -103,12 +92,16 @@ export type { Notice, Stay, Task } from './features/notices'
 export { Agent } from './screens/agent'
 export { Reader } from './features/reader'
 
-/** A book made for a screen, set in columns and turned a page at a time. */
-export { Book } from './features/book'
-/** What a book divides into, as a list to reach any of it by. */
-export { BookContents } from './features/book'
-export type { ContentsEntry } from './features/book'
 export type { Span } from './shared/lib/text/span'
+
+/** The size, room and placement a component outside this module lays itself out by. */
+export type { Size } from './shared/lib/math/geometry'
+export { clamp } from './shared/lib/math/bounds'
+export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
+export { browserViewport, useRoom, useViewport, type Viewport } from './shared/lib/dom/viewport'
+export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
+export { onNextFrame } from './shared/lib/time/clock'
+export { cn } from './shared/lib/dom/classes'
 
 export { WorkspaceLayout } from './features/workspace'
 export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'
@@ -120,29 +113,6 @@ export type { Tab, Workspace } from './features/workspace'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'
-
-export { StencilEditor } from './features/cards'
-export { DeckEditor } from './features/cards'
-export { CardProse } from './features/cards'
-
-/** The schemes a link in a card may point at. An address naming none is the caller's. */
-export { scheme } from './features/cards'
-/** For putting a card or a field where a person let it go, without drawing it. */
-export { orderNames, reorderFields } from './features/cards'
-export type { Half, InsertionPoint } from './features/cards'
-/**
- * Where a card let go at the head of a deck lands, before its first section,
- * and where one let go past the last card standing under a heading lands.
- */
-export {
-  getBlanks as cardBlanks,
-  getRunEnd,
-  createRunEnd as createCardRunEnd,
-  HEAD as CARD_HEAD,
-} from './features/cards'
-export { getDeclaredFields as cardFields } from './features/cards'
-export type { DeckCard, DeckSection } from './features/cards'
-export type { Stencil } from './features/cards'
 
 export { byLongPress } from './features/plex'
 export { byDoubleTap } from './features/plex'

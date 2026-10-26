@@ -5,7 +5,8 @@
  * top as one button. A deck below it is for the person who came for that deck.
  */
 import { computed } from 'vue'
-import { Button, DueCount, KeyCap } from '@numen/ui'
+import { Button, KeyCap } from '@numen/ui'
+import { DueCount } from '../../../../ui/cards'
 import Progress from './Progress.vue'
 import Presets from './Presets.vue'
 import { DeckRow } from './deck-row'

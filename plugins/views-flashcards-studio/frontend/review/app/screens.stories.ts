@@ -6,7 +6,8 @@
  * taken from, so every piece is drawn in the state it settles in.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
-import { dayAfter, getDayName, type HeatmapTally } from '@numen/ui'
+import { dayAfter, getDayName } from '@numen/ui'
+import type { Tally as HeatmapTally } from '../../ui/heatmap'
 import { h, type VNode } from 'vue'
 import { Decks } from '../pages/decks'
 import { Session } from '../pages/session'

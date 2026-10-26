@@ -2,7 +2,7 @@
  * Type declarations for the flashcards stencil tab domain.
  */
 import type { ComputedRef } from 'vue'
-import type { Half } from '@numen/ui'
+import type { Half } from '../ui/cards'
 import type { OpenNote } from '../buffer'
 import type { Marks } from '../cards'
 import type { BufferStencil } from './lib/stencil'

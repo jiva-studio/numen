@@ -3,7 +3,7 @@
  * Displays flashcard stencil editor and handles field and face definitions.
  */
 import { computed } from 'vue'
-import { StencilEditor, type InsertionPoint, type Half } from '@numen/ui'
+import { StencilEditor, type InsertionPoint, type Half } from '../../ui/cards'
 import { parseFileConflict } from '../../buffer'
 import FileConflictPrompt from '../../ui/FileConflictPrompt.vue'
 import type { StencilTabState } from '../types'

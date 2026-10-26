@@ -20,8 +20,6 @@ const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, inde
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
 const testdataReaders = [
   'src/shared/lib/text/address.test.ts',
-  'src/features/book/ui/spine.test.ts',
-  'src/features/cards/lib/fill.test.ts',
 ]
 
 /** The files that stand outside the layers. */

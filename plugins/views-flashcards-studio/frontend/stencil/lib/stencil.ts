@@ -6,7 +6,7 @@
  * were given. Minting those identities, and turning what a person did into the
  * fields and the faces a file is written from, is here.
  */
-import { orderNames, reorderFields, type InsertionPoint } from '@numen/ui'
+import { orderNames, reorderFields, type InsertionPoint } from '../../ui/cards'
 import {
   type VaultFace,
   type VaultStencil,

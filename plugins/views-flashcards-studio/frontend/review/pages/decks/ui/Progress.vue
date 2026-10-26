@@ -5,8 +5,8 @@
  *
  * It is read at a glance and stands above what they came here to do.
  */
-import { Heatmap, heatmapDayName } from '@numen/ui'
-import type { HeatmapTally, HeatmapWords } from '@numen/ui'
+import { Heatmap, dayName as heatmapDayName } from '../../../../ui/heatmap'
+import type { Tally as HeatmapTally, Words as HeatmapWords } from '../../../../ui/heatmap'
 
 import { GRADE_LABELS } from '../../../entities/card'
 

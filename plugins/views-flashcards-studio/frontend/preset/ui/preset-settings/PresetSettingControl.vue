@@ -3,16 +3,8 @@
  * The specific control for one preset setting row.
  */
 import { computed } from 'vue'
-import {
-  NumberField,
-  SegmentedControl,
-  Select,
-  Slider,
-  Switch,
-  WeekdayChips,
-  WEEK,
-  type Day,
-} from '@numen/ui'
+import { NumberField, SegmentedControl, Select, Slider, Switch } from '@numen/ui'
+import { WeekdayChips, WEEK, type Day } from '../../../ui/weekday-chips'
 import {
   type PresetTabState,
   type SettingValue,

@@ -766,7 +766,7 @@ export function createBaseConfig(dirname, options = {}) {
     },
 
     {
-      files: ['src/**/safe.ts', 'src/**/safe.stories.ts'],
+      files: ['**/safe.ts', '**/safe.stories.ts'],
       rules: {
         'no-control-regex': 'off',
       },

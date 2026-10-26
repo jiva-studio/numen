@@ -1,0 +1,268 @@
+import { describe, expect, it } from 'vitest'
+
+import { measureGrid, ROWS } from './grid'
+import { getCells, getDays, getGridHeight, getWeight, NOTHING } from './heatmap'
+import { getDayName } from '@numen/ui'
+import type { Tally } from './heatmap'
+
+describe('how much of a year fits', () => {
+  // A wide window shows more of the year and not the same weeks drawn
+  // larger, and a narrow one shows fewer and not a grid marooned in the
+  // middle of empty room.
+  it('takes as many columns as the room holds', () => {
+    const cell = 10
+    const gap = 2
+    expect(measureGrid({ width: 120, cell, gap }).columns).toBe(10)
+    expect(measureGrid({ width: 60, cell, gap }).columns).toBe(5)
+    expect(measureGrid({ width: 600, cell, gap }).columns).toBe(50)
+  })
+
+  it('draws a cell no larger than it is requested to, whatever the room', () => {
+    for (const width of [40, 200, 1000, 4000]) {
+      expect(measureGrid({ width, cell: 11, gap: 3 }).cell).toBe(11)
+    }
+  })
+
+  it('countSpreads what is left over between the cells, so the grid meets both edges', () => {
+    const room = measureGrid({ width: 200, cell: 10, gap: 2 })
+    const totalWidth = room.columns * 10 + (room.columns - 1) * room.gap
+    expect(totalWidth).toBeCloseTo(200, 5)
+    expect(room.gap).toBeGreaterThanOrEqual(2)
+  })
+
+  it('holds one column where there is room for none', () => {
+    expect(measureGrid({ width: 0, cell: 10, gap: 2 }).columns).toBe(1)
+    expect(measureGrid({ width: 4, cell: 10, gap: 2 }).columns).toBe(1)
+  })
+})
+
+/** The days a person answered on, as many cards as each says. */
+const createTallies = (days: [string, number][]) =>
+  new Map(
+    days.map(([day, reply]) => [
+      day,
+      { ...NOTHING, answered: reply, good: reply, asked: reply, recalled: reply },
+    ]),
+  )
+
+describe('the days a grid draws', () => {
+  const did = new Map<string, Tally>()
+
+  it('is a whole week to a column', () => {
+    expect(getDays(8, new Date('2026-08-29T12:00:00'), did)).toHaveLength(8 * ROWS)
+    expect(getDays(1, new Date('2026-08-29T12:00:00'), did)).toHaveLength(ROWS)
+  })
+
+  // The weeks behind run up to the one a person is in, and a few weeks of what
+  // is coming stand after it, so the grid says what is ahead as well.
+  it('keeps room after today for what is still to come', () => {
+    // Saturday.
+    const now = new Date('2026-08-29T12:00:00')
+    const days = getDays(20, now, did)
+    const today = days.filter((one) => one.isToday)
+
+    expect(today).toHaveLength(1)
+    expect(days[0]!.day < today[0]!.day).toBe(true)
+
+    const after = days.slice(days.indexOf(today[0]!) + 1)
+    expect(after.length).toBeGreaterThan(ROWS * 3)
+    for (const one of after) {
+      expect(one.isAhead).toBe(true)
+    }
+    for (const one of days.slice(0, days.indexOf(today[0]!) + 1)) {
+      expect(one.isAhead).toBe(false)
+    }
+  })
+
+  // The grid is as wide as the room it was given: a week to every column.
+  it('draws a week for every column it was given', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
+
+    expect(days).toHaveLength(30 * ROWS)
+    expect(days.some((one) => one.isToday)).toBe(true)
+  })
+
+  // Nobody wants years of empty squares from before they ever sat down. The
+  // grid opens on the week they began in, and the room past what they have yet
+  // done stretches out to the right.
+  it('opens on the week a person began in', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const days = getDays(30, now, createTallies([['2026-08-28', 3]]))
+
+    // The Monday of that week.
+    expect(days[0]!.day).toBe('2026-08-24')
+    expect(days[days.length - 1]!.isAhead).toBe(true)
+  })
+
+  // Once they have been here longer than the width holds, the oldest weeks
+  // fall off the left and the grid ends on what is still to come.
+  it('lets the oldest weeks go once there are more than it holds', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const long = createTallies([
+      ['2024-01-01', 5],
+      ['2026-08-28', 3],
+    ])
+    const days = getDays(12, now, long)
+
+    expect(days[0]!.day > '2024-01-01').toBe(true)
+    expect(days.some((one) => one.isToday)).toBe(true)
+    expect(days[days.length - 1]!.isAhead).toBe(true)
+  })
+
+  // A vault whose cards are all still ahead has a beginning too.
+  it('opens on this week for a vault with nothing behind it', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const days = getDays(30, now, { did: new Map(), due: new Map([['2026-09-03', 8]]) })
+
+    expect(days[0]!.day).toBe('2026-08-24')
+  })
+
+  it('gives the room to what is behind where there is little of it', () => {
+    const days = getDays(1, new Date('2026-08-29T12:00:00'), did)
+    expect(days).toHaveLength(ROWS)
+    expect(days.some((one) => one.isToday)).toBe(true)
+  })
+
+  // A day still to come holds what falls on it, and a day behind holds what was
+  // answered on it. Today holds what was answered: that is the number a person
+  // is adding to.
+  it('reads what is coming for the days still to come', () => {
+    const now = new Date('2026-08-29T12:00:00')
+    const isDone = createTallies([
+      ['2026-08-29', 4],
+      ['2026-09-02', 99],
+    ])
+    const coming = new Map([
+      ['2026-08-29', 99],
+      ['2026-09-02', 7],
+    ])
+    const days = getDays(12, now, { did: isDone, due: coming })
+
+    expect(days.find((one) => one.isToday)?.did).toBe(4)
+    const later = days.find((one) => one.day === '2026-09-02')
+    expect(later?.did).toBe(7)
+    expect(later?.isAhead).toBe(true)
+  })
+
+  it('reads what was done on each day it draws', () => {
+    const on = new Date('2026-08-29T12:00:00')
+    const counted = createTallies([
+      [getDayName(on), 12],
+      ['2026-08-28', 60],
+    ])
+    const days = getDays(4, on, counted)
+
+    expect(days.find((one) => one.isToday)?.did).toBe(12)
+    expect(days.find((one) => one.day === '2026-08-28')?.weight).toBe(4)
+    expect(days.find((one) => one.day === '2026-08-27')?.did).toBe(0)
+  })
+
+  it('draws no days where there is room for no column', () => {
+    expect(getDays(0, new Date('2026-08-29T12:00:00'), did)).toHaveLength(0)
+  })
+})
+
+describe('how dark a day is drawn', () => {
+  // A person who answered five cards did sit down, and the grid says so as
+  // plainly as it says a day of fifty.
+  it('is nothing for a day nobody answered on, and rises with what was done', () => {
+    expect(getWeight(0)).toBe(0)
+    expect(getWeight(1)).toBe(1)
+    expect(getWeight(4)).toBe(1)
+    expect(getWeight(5)).toBe(2)
+    expect(getWeight(19)).toBe(2)
+    expect(getWeight(20)).toBe(3)
+    expect(getWeight(49)).toBe(3)
+    expect(getWeight(50)).toBe(4)
+    expect(getWeight(5000)).toBe(4)
+  })
+})
+
+describe('where the days are drawn', () => {
+  const grid = { cell: 10, gap: 2 }
+
+  it('remains seven rows tall, with no gap past the last', () => {
+    expect(getGridHeight(grid)).toBe(7 * 12 - 2)
+  })
+
+  it('fills a column before it begins the next', () => {
+    const days = getDays(2, new Date('2026-01-31T12:00:00Z'), new Map())
+    const cells = getCells(grid, days)
+
+    expect(cells.slice(0, 7).map((one) => one.x)).toStrictEqual([0, 0, 0, 0, 0, 0, 0])
+    expect(cells.slice(0, 7).map((one) => one.y)).toStrictEqual([0, 12, 24, 36, 48, 60, 72])
+    expect(cells[7]?.x).toBe(12)
+    expect(cells[7]?.y).toBe(0)
+  })
+
+  it('draws every cell the size the grid measured', () => {
+    const days = getDays(1, new Date('2026-01-31T12:00:00Z'), new Map())
+
+    for (const cell of getCells(grid, days)) expect(cell.size).toBe(10)
+  })
+})
+
+describe('the first day a grid draws', () => {
+  // A Friday and a Sunday.
+  const friday = new Date('2026-09-18T12:00:00')
+  const sunday = new Date('2026-09-20T12:00:00')
+  const none = new Map<string, Tally>()
+
+  it('is the Monday of this week for a vault with no history, however wide the grid', () => {
+    const days = getDays(10, friday, none)
+
+    expect(days).toHaveLength(10 * ROWS)
+    expect(days[0]!.day).toBe('2026-09-14')
+  })
+
+  it('offsets history range when data exceeds grid capacity', () => {
+    const days = getDays(3, friday, createTallies([['2026-01-05', 1]]))
+
+    expect(days[0]!.day).toBe('2026-09-14')
+    expect(days[days.length - 1]!.day).toBe('2026-10-04')
+  })
+
+  it('keeps one week ahead for a grid of two columns', () => {
+    const days = getDays(2, friday, createTallies([['2026-01-05', 1]]))
+
+    expect(days[0]!.day).toBe('2026-09-14')
+    expect(days[days.length - 1]!.day).toBe('2026-09-27')
+  })
+
+  it('opens on the Monday before a Sunday that is now', () => {
+    expect(getDays(3, sunday, none)[0]!.day).toBe('2026-09-14')
+  })
+
+  it('opens on the Monday before a Sunday that began the history', () => {
+    const days = getDays(10, sunday, createTallies([['2026-09-13', 1]]))
+
+    expect(days[0]!.day).toBe('2026-09-07')
+  })
+
+  it('opens on this week where the only days are still to come', () => {
+    const days = getDays(10, friday, { did: none, due: new Map([['2026-10-01', 3]]) })
+
+    expect(days[0]!.day).toBe('2026-09-14')
+  })
+
+  it('opens on the week of the earliest day answered on, wherever it is retained', () => {
+    const did = createTallies([
+      ['2026-09-10', 1],
+      ['2026-09-01', 1],
+      ['2026-09-05', 1],
+    ])
+    const days = getDays(10, friday, { did, due: new Map([['2026-09-20', 2]]) })
+
+    expect(days[0]!.day).toBe('2026-08-31')
+  })
+
+  it('opens on the week of the earliest day among those still coming', () => {
+    const days = getDays(10, friday, {
+      did: createTallies([['2026-09-16', 1]]),
+      due: new Map([['2026-09-02', 2]]),
+    })
+
+    expect(days[0]!.day).toBe('2026-08-31')
+  })
+})

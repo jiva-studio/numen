@@ -7,7 +7,7 @@
  * here the way it reads where it was written.
  */
 import { ref } from 'vue'
-import { CardProse, scheme } from '@numen/ui'
+import { CardProse, scheme } from '../../../../ui/cards'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{

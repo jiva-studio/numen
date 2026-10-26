@@ -5,8 +5,8 @@
  * again whenever that vault moves, and what is held between the two is a rule.
  */
 import { ref } from 'vue'
-import { getHeatmapStretch } from '@numen/ui'
-import type { HeatmapTally } from '@numen/ui'
+import { getStretch as getHeatmapStretch } from '../../../../ui/heatmap'
+import type { Tally as HeatmapTally } from '../../../../ui/heatmap'
 
 /** What the application answers about a vault's days. */
 export interface ReviewDaysClient {

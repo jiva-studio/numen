@@ -1,7 +1,7 @@
 /**
  * Buffer parsing, marks caching, and field/face editing actions for stencil tabs.
  */
-import type { Half } from '@numen/ui'
+import type { Half } from '../../ui/cards'
 import {
   addFace,
   addField,

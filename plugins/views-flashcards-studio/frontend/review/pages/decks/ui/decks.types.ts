@@ -1,4 +1,4 @@
-import type { HeatmapTally } from '@numen/ui'
+import type { Tally as HeatmapTally } from '../../../../ui/heatmap'
 import type { VaultCardsDue } from '../../../entities/vault'
 import type { Preset } from '../types'
 

@@ -4,7 +4,7 @@
  * editor's stencil pane. Both draw it through `CardProse`, so the markup a face
  * evaluates to is the same in both, and this is what holds them to it.
  */
-import { CardProse } from '@numen/ui'
+import { CardProse } from '../../../../ui/cards'
 import { mount } from '@vue/test-utils'
 import { describe, expect, it } from 'vitest'
 

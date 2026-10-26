@@ -5,6 +5,8 @@ const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']
 
 /** The shared fixtures of the contract that a test reads by path. */
 const fixtureReaders = [
+  'readers-epub/frontend/book/ui/spine.test.ts',
+  'views-flashcards-studio/frontend/ui/cards/lib/fill.test.ts',
   'readers-epub/frontend/lib/markup.test.ts',
   'views-flashcards-studio/frontend/cards/lib/presets.test.ts',
   'views-flashcards-studio/frontend/preset/lib/sketch.test.ts',

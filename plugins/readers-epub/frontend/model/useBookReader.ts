@@ -2,7 +2,7 @@
  * Reader state and controls for an open book.
  */
 import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
-import type { ContentsEntry } from '@numen/ui'
+import type { ContentsEntry } from '../book'
 import { formatErrorMessage } from '@numen/wire'
 import type { Span } from '@numen/plugin-sdk'
 import type { MessageWriter } from './useBookDocument'

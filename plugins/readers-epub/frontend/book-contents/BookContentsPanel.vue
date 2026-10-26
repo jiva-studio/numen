@@ -4,7 +4,8 @@
  * landing outside it and the Escape key both put it away.
  */
 import { onBeforeUnmount, useTemplateRef, watch } from 'vue'
-import { BookContents, useOutsidePress, type ContentsEntry } from '@numen/ui'
+import { useOutsidePress } from '@numen/ui'
+import { BookContents, type ContentsEntry } from '../book'
 import { WORDS as words } from '../words'
 
 /* ----------------------------- Props & Emits ------------------------------ */

@@ -4,7 +4,8 @@
  * of it stands learned, and what it owes today.
  */
 import { computed } from 'vue'
-import { Button, DueCount, KeyCap, Skeleton } from '@numen/ui'
+import { Button, KeyCap, Skeleton } from '@numen/ui'
+import { DueCount } from '../../../../../ui/cards'
 
 import { getDeckName } from '../../../../entities/vault'
 import { getLetter } from '../../../../features/keyboard'

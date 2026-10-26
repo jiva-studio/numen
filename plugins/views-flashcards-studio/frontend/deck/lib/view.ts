@@ -1,7 +1,7 @@
 /**
  * UI representation mappings and comparisons for decks and stencils.
  */
-import type { DeckCard, DeckSection, Stencil } from '@numen/ui'
+import type { DeckCard, DeckSection, Stencil } from '../../ui/cards'
 import type { StencilSummary, VaultCard } from '../../cards'
 import type { BufferDeck } from '../types'
 import {

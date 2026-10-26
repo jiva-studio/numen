@@ -1,7 +1,7 @@
 /**
  * Pagination, table of contents, and document lookup calculations.
  */
-import type { ContentsEntry } from '@numen/ui'
+import type { ContentsEntry } from '../book'
 import type { Book, BookWords, SpineDocument } from '../types'
 
 export function getPageNumber(pageBytes: number, pages: number, offset: number): number {

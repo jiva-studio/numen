@@ -9,7 +9,8 @@
  * number will take and is not opened until it has one.
  */
 import { computed } from 'vue'
-import { DueCount, Spinner, WelcomePage } from '@numen/ui'
+import { Spinner, WelcomePage } from '@numen/ui'
+import { DueCount } from '../../../ui/cards'
 import type { VaultCardsDue } from '../../entities/vault'
 import { getDueByVault, getVaultRows } from './lib/rows'
 import { VAULTS_WORDS } from './words'
