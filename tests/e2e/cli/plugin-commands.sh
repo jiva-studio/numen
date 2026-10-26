@@ -20,6 +20,8 @@ printf '# Lectures\n\nA note about the talks.\n' >"$work/vault/lectures.md"
 cp "$repo/tests/e2e/desktop/fixtures/lecture.wav" "$work/vault/talks/lecture.wav"
 cp "$repo/tests/e2e/desktop/fixtures/flywheel.pdf" "$work/vault/books/flywheel.pdf"
 
+# The home, config and cache folders are the run's own. On mock models the host hands each
+# dependency a plugin declares as an empty placeholder, so nothing is fetched.
 export HOME="$work" XDG_CONFIG_HOME="$work/config" XDG_CACHE_HOME="$work/cache"
 export NUMEN_MOCK_ML=true NUMEN_PLUGINS_PATH="$repo/plugins"
 export HTTP_PROXY="http://127.0.0.1:$pages_port" NO_PROXY=127.0.0.1
@@ -34,15 +36,6 @@ http.createServer((req, res) => {
 ' "$repo/tests/e2e/desktop/fixtures/article.html" "$pages_port" &
 pages=$!
 trap 'kill $pages; rm -rf "$work"' EXIT
-
-# The mock models open no model file, so each model a plugin declares is marked as already fetched.
-arch=$(go env GOOS)-$(go env GOARCH)
-cat "$repo"/plugins/*/manifest.json |
-	jq -r '(.dependencies // [])[] | select(.kind == "model") | [.id, .metadata.fileName, .checksumSha256] | @tsv' |
-	while IFS="$(printf '\t')" read -r id name sum; do
-		dir="$HOME/.numen/dependencies/model/$id/latest-$arch"
-		mkdir -p "$dir" && : >"$dir/$name" && printf '%s\n%s\n' "$name" "$sum" >"$dir/.ready"
-	done
 
 cli() { "$work/bin/numen-cli" --registry "$work/vaults.json" --index "$work/index.db" "$@"; }
 

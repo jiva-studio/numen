@@ -7,7 +7,6 @@ import (
 	"flag"
 	"net/http"
 	"os"
-	"path/filepath"
 
 	"github.com/jiva-studio/numen/apps/desktop/internal/debugserve"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
@@ -37,20 +36,20 @@ type dependencySetter interface {
 }
 
 // apply has the plugins this run starts answer with mock models where the flag
-// asks for them. Mock models open no file, so their dependencies are placeholders
-// and nothing is fetched.
+// asks for them. The plugin host was made before the flag was read, so it is
+// handed the dependencies a run on mock models provisions: placeholders, and
+// nothing fetched.
 func (d *DebugOptions) apply(cfg container.Config) error {
 	if !d.IsMockML {
 		return nil
 	}
-	if host, ok := cfg.PluginHost.(dependencySetter); ok {
-		cache, err := os.UserCacheDir()
-		if err != nil {
-			return err
-		}
-		host.SetDependencies(newPlaceholderDependencies(filepath.Join(cache, "numen", "placeholder-dependencies")))
+	if err := os.Setenv("NUMEN_MOCK_ML", "true"); err != nil {
+		return err
 	}
-	return os.Setenv("NUMEN_MOCK_ML", "true")
+	if host, ok := cfg.PluginHost.(dependencySetter); ok {
+		host.SetDependencies(container.NewDependencies())
+	}
+	return nil
 }
 
 func (d *DebugOptions) ensureVault(cfg container.Config, vaultPath string) error {
