@@ -1,4 +1,4 @@
-package artifacts
+package domain
 
 import (
 	"maps"

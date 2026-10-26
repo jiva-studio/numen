@@ -1,4 +1,4 @@
-package artifacts
+package domain
 
 // A Rect is a place on a page, in fractions of it.
 type Rect struct {

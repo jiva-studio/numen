@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"github.com/jiva-studio/numen/libs/notes/domain/artifacts"
 	"github.com/jiva-studio/numen/libs/notes/domain/name"
 )
 
@@ -10,21 +9,6 @@ type (
 	SourceKind  = name.SourceKind
 	Fingerprint = name.Fingerprint
 	URL         = name.URL
-
-	// From artifacts subpackage
-	ArtifactFile   = artifacts.ArtifactFile
-	ArtifactName   = artifacts.ArtifactName
-	CorrectionLine = artifacts.CorrectionLine
-	Rect           = artifacts.Rect
-	HighlightBox   = artifacts.HighlightBox
-	OCRBox         = artifacts.OCRBox
-	OCRBlock       = artifacts.OCRBlock
-	OCRPageStart   = artifacts.OCRPageStart
-	OCRPart        = artifacts.OCRPart
-	Place          = artifacts.Place
-	ByteSpan       = artifacts.ByteSpan
-	UnitSpan       = artifacts.UnitSpan
-	TranscriptCue  = artifacts.TranscriptCue
 )
 
 const (
@@ -35,25 +19,6 @@ const (
 	KindURL       = name.KindURL
 	NoteExtension = name.NoteExtension
 	URLExtension  = name.URLExtension
-
-	// From artifacts subpackage
-	ASR                 = artifacts.ASR
-	OCR                 = artifacts.OCR
-	Captions            = artifacts.Captions
-	Article             = artifacts.Article
-	CopyExtension       = artifacts.CopyExtension
-	CopyType            = artifacts.CopyType
-	ArtifactText        = artifacts.ArtifactText
-	ArtifactPartial     = artifacts.ArtifactPartial
-	ArtifactCorrections = artifacts.ArtifactCorrections
-	ArtifactParts       = artifacts.ArtifactParts
-	ArtifactBoxes       = artifacts.ArtifactBoxes
-	ArtifactProofread   = artifacts.ArtifactProofread
-	ArtifactAnswer      = artifacts.ArtifactAnswer
-	ArtifactProducer    = artifacts.ArtifactProducer
-	ArtifactCopy        = artifacts.ArtifactCopy
-	ArtifactIndexClaim  = artifacts.ArtifactIndexClaim
-	MostHighlights      = artifacts.MostHighlights
 )
 
 var (
@@ -67,18 +32,4 @@ var (
 	Basename           = name.Basename
 	LinkName           = name.LinkName
 	ParseURL           = name.ParseURL
-
-	// From artifacts subpackage
-	Recordings          = artifacts.Recordings
-	NewArtifactName     = artifacts.NewArtifactName
-	NewCopyName         = artifacts.NewCopyName
-	NewIndexClaimName   = artifacts.NewIndexClaimName
-	IsTimedProducer     = artifacts.IsTimedProducer
-	GetAddressProducers = artifacts.GetAddressProducers
-	GetArtifactNames    = artifacts.GetArtifactNames
-	GetAddressTextNames = artifacts.GetAddressTextNames
-	GetCorrectedBoxes   = artifacts.GetCorrectedBoxes
-	GetCorrectedProse   = artifacts.GetCorrectedProse
-	MediaType           = artifacts.MediaType
-	RecordingExtensions = artifacts.RecordingExtensions
 )
