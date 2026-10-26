@@ -12,8 +12,18 @@ import { createBaseConfig, lifetimes } from '../../tools/lint-layers/base-eslint
 export default tseslint.config(
   ...createBaseConfig(import.meta.dirname, {
     extraIgnores: ['android/**'],
-    allowDefaultProject: ['capacitor.config.ts', 'vite.config.ts'],
   }),
+
+  // The `*.config.ts` files are in tsconfig.json; only this file is outside it.
+  {
+    languageOptions: {
+      parserOptions: {
+        projectService: {
+          allowDefaultProject: ['eslint.config.js'],
+        },
+      },
+    },
+  },
 
   // Limits on complexity and file length for handwritten sources.
   {
