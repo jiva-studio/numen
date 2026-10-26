@@ -198,21 +198,21 @@ export const TheRowsShareTheirColumns: Story = {
     // Every row the minutes goal produces, by the control it offers rather
     // than by the shape it is drawn in.
     const controls = [
-      canvas.getByRole('button', { name: 'Counts as learned' }),
+      canvas.getByRole('button', { name: 'Learned when' }),
       canvas.getByRole('spinbutton', { name: 'Days apart' }),
       canvas.getByRole('spinbutton', { name: 'Minutes per day' }),
       canvas.getByRole('slider', { name: 'Overdue share' }),
-      canvas.getByRole('toolbar', { name: 'Load by day' }),
+      canvas.getByRole('toolbar', { name: 'Load by weekday' }),
       canvas.getByRole('switch', { name: 'Even load' }),
     ]
 
     // The names of the rows, each in the first of the two columns.
     const names = [
-      'Counts as learned',
+      'Learned when',
       'Days apart',
       'Minutes per day',
       'Overdue share',
-      'Load by day',
+      'Load by weekday',
       'Even load',
     ].map((name) => within(settings).getByText(name).getBoundingClientRect())
 

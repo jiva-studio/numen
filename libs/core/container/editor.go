@@ -232,3 +232,6 @@ func (e EditorAssembly) OpenFileMenu() *textversion.FileMenu {
 func (e EditorAssembly) OpenCopy() *file.OpenCopy {
 	return file.NewOpenCopy(e.cfg.VaultReaders(), e.cfg.Copies())
 }
+
+// UnknownVaultError is a vault named at start that the registry does not hold.
+type UnknownVaultError = vault.UnknownError

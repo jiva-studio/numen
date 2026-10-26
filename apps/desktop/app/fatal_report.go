@@ -15,7 +15,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
 // failWithDialog shows what stopped the application, in a window.
@@ -112,7 +111,7 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
-	var unknown *vault.UnknownError
+	var unknown *container.UnknownVaultError
 	if errors.As(why, &unknown) {
 		return fatalReport{
 			Heading:  startingAtAll,

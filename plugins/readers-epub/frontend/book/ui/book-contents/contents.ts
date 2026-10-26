@@ -55,5 +55,5 @@ export interface ContentsWords {
 export const CONTENTS_WORDS: ContentsWords = {
   contents: 'Contents',
   find: 'Find in contents',
-  nothing: 'This book names nothing.',
+  nothing: 'No table of contents.',
 }
