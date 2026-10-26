@@ -141,7 +141,7 @@ func (s scaleSettings) validate() error {
 }
 
 func run(cfg container.Config, vault string, scaleFlags scaleSettings, debugOpts *DebugOptions) error {
-	if err := debugOpts.apply(); err != nil {
+	if err := debugOpts.apply(cfg); err != nil {
 		return err
 	}
 	if err := debugOpts.ensureVault(cfg, vault); err != nil {

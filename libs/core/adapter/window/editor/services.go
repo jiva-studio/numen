@@ -65,6 +65,9 @@ type Services struct {
 	// played here.
 	Playing *Loopback
 
+	// UpdateEndpoint is where the release manifest is asked for. Empty asks the published one.
+	UpdateEndpoint string
+
 	server *fileServer
 }
 

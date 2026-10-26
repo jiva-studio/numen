@@ -1107,3 +1107,29 @@ func TestServeAssetRendersPageFromDocumentService(t *testing.T) {
 		t.Errorf("unexpected render request: path=%q, page=%d, width=%d", docService.renderedPath, docService.renderedPage, docService.renderedWide)
 	}
 }
+
+func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
+	release := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/latest.json" {
+			http.NotFound(w, r)
+			return
+		}
+		_, _ = io.WriteString(w, `{"version":"9.9.9"}`)
+	}))
+	t.Cleanup(release.Close)
+
+	services := newBareServices()
+	services.UpdateEndpoint = release.URL + "/latest.json"
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	resp, err := server.Client().Get(server.URL + updateRoute)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+	body, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK || string(body) != `{"version":"9.9.9"}` {
+		t.Errorf("answered %d %q, want 200 and the manifest of the endpoint", resp.StatusCode, body)
+	}
+}

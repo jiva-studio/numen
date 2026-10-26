@@ -213,7 +213,11 @@ func (s *Services) serveUpdate(w http.ResponseWriter, r *http.Request) {
 	ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
 	defer cancel()
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, updateEndpoint, nil)
+	endpoint := s.UpdateEndpoint
+	if endpoint == "" {
+		endpoint = updateEndpoint
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, endpoint, nil)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
