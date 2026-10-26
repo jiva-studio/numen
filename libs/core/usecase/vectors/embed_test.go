@@ -287,15 +287,15 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 
 func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	ctx := t.Context()
-	index, shelf, made := newStore(), newLibrary(), newShelf()
+	index, shelf := newStore(), newLibrary()
 	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
-	made.hold(domain.NewIndexClaimName())
+	claim := &fakeClaim{isHeld: true}
 
 	model := &embedder{dims: dimensions}
 	embed := newEmbed(vaults{first.ID: shelf}, index, index)
-	embed.Derived = made
+	embed.Claim = claim
 	embed.Embedder = model
 	embed.BatchCharacters = 4000
 
@@ -314,7 +314,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	}
 
 	// Once released, embedding proceeds and completes.
-	_ = made.RemoveArtifact(ctx, domain.NewIndexClaimName())
+	_ = claim.release()
 	secondRes, err := embed.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)

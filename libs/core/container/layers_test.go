@@ -755,7 +755,7 @@ var _ vaultport.VaultReader = (*Reader)(nil)
 
 var _, _ vaultport.VaultWriter = (*Writer)(nil), (*Writer)(nil)
 
-var storePort vaultport.DerivedStore
+var storePort vaultport.IndexClaim
 
 func mount() {
 	var _ noteport.NoteQueries = (*sound)(nil)

@@ -70,9 +70,8 @@ func (e EditorAssembly) EmitEvent(event string) {
 
 func (e EditorAssembly) GetRegistry() vaultport.VaultRegistry { return e.registry }
 
-func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders   { return e.cfg.VaultReaders() }
-func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters   { return e.cfg.VaultWriters() }
-func (e EditorAssembly) GetDerivedStores() vaultport.DerivedStores { return e.cfg.GetDerivedStores() }
+func (e EditorAssembly) GetVaultReaders() vaultport.VaultReaders { return e.cfg.VaultReaders() }
+func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters { return e.cfg.VaultWriters() }
 
 func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity { return e.cfg.VaultIdentity() }
 func (e EditorAssembly) GetClock() machineport.Clock               { return e.cfg.Clock() }

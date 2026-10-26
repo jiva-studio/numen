@@ -16,7 +16,7 @@ func opening(b *testing.B) *derivedfile.DerivedStore {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		b.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -33,29 +33,29 @@ func BenchmarkDerived(b *testing.B) {
 	b.Run("Append", func(b *testing.B) {
 		derived := opening(b)
 		for b.Loop() {
-			if err := derived.Append(ctx, "ocr/run.txt", line); err != nil {
+			if err := derived.Append(ctx, "area/run.txt", line); err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 	b.Run("Read", func(b *testing.B) {
 		derived := opening(b)
-		if err := derived.Write(ctx, "ocr/run.txt", line); err != nil {
+		if err := derived.Write(ctx, "area/run.txt", line); err != nil {
 			b.Fatal(err)
 		}
 		for b.Loop() {
-			if _, err := derived.Read(ctx, "ocr/run.txt"); err != nil {
+			if _, err := derived.Read(ctx, "area/run.txt"); err != nil {
 				b.Fatal(err)
 			}
 		}
 	})
 	b.Run("List", func(b *testing.B) {
 		derived := opening(b)
-		if err := derived.Write(ctx, "ocr/run.txt", line); err != nil {
+		if err := derived.Write(ctx, "area/run.txt", line); err != nil {
 			b.Fatal(err)
 		}
 		for b.Loop() {
-			if _, err := derived.List(ctx, derivedfile.OCRDir); err != nil {
+			if _, err := derived.List(ctx, testArea); err != nil {
 				b.Fatal(err)
 			}
 		}

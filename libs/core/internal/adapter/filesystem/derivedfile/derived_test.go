@@ -19,13 +19,16 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
+// testArea is the one folder of the service folder the stores of these tests answer for.
+const testArea = "area"
+
 func store(t *testing.T) (*derivedfile.DerivedStore, string) {
 	t.Helper()
 	root := t.TempDir()
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,9 +41,9 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 	derived, root := store(t)
 	_ = derived
 
-	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir)
+	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, testArea)
 	if _, err := os.Stat(pos); !errors.Is(err, fs.ErrNotExist) {
-		t.Errorf("opening the store made %s: %v", derivedfile.OCRDir, err)
+		t.Errorf("opening the store made %s: %v", testArea, err)
 	}
 }
 
@@ -51,7 +54,7 @@ func TestOpeningTheStoreWritesNothing(t *testing.T) {
 func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+	if err := derived.Append(ctx, "area/run.txt", []byte("one\n")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -59,13 +62,13 @@ func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
+	if err := derived.Append(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
 		t.Errorf("appending into a vault that is gone gave %v", err)
 	}
-	if err := derived.Write(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
+	if err := derived.Write(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
 		t.Errorf("writing into a vault that is gone gave %v", err)
 	}
-	if _, err := derived.List(ctx, derivedfile.OCRDir); !errors.Is(err, derivedfile.ErrNotThisVault) {
+	if _, err := derived.List(ctx, testArea); !errors.Is(err, derivedfile.ErrNotThisVault) {
 		t.Errorf("listing a vault that is gone gave %v", err)
 	}
 	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
@@ -77,7 +80,7 @@ func TestAStoreRefusesAFolderThatIsNoLongerTheVault(t *testing.T) {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
+	if err := derived.Append(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
 		t.Errorf("appending into another vault at the same path gave %v", err)
 	}
 }
@@ -89,19 +92,19 @@ func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsMissing(t *testing.T) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := t.Context()
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+	if err := derived.Append(ctx, "area/run.txt", []byte("one\n")); err != nil {
 		t.Fatal(err)
 	}
 
 	if err := os.RemoveAll(root); err != nil {
 		t.Fatal(err)
 	}
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, fs.ErrNotExist) {
+	if err := derived.Append(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("appending into a folder that is gone gave %v", err)
 	}
 	if _, err := os.Stat(root); !errors.Is(err, fs.ErrNotExist) {
@@ -114,7 +117,7 @@ func TestAStoreOnAFolderWithNoIdentityRefusesItWhenItIsMissing(t *testing.T) {
 func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("one\n")); err != nil {
+	if err := derived.Append(ctx, "area/run.txt", []byte("one\n")); err != nil {
 		t.Fatal(err)
 	}
 
@@ -130,7 +133,7 @@ func TestAStoreNoticesTheIdentityChangingBelowIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := derived.Append(ctx, "ocr/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
+	if err := derived.Append(ctx, "area/run.txt", []byte("two\n")); !errors.Is(err, derivedfile.ErrNotThisVault) {
 		t.Errorf("appending into another vault at the same path gave %v", err)
 	}
 }
@@ -139,29 +142,29 @@ func TestWhatIsSavedIsRead(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
 
-	if err := derived.Write(ctx, "ocr/abc.txt", []byte("first")); err != nil {
+	if err := derived.Write(ctx, "area/abc.txt", []byte("first")); err != nil {
 		t.Fatal(err)
 	}
-	if got, err := derived.Read(ctx, "ocr/abc.txt"); err != nil || string(got) != "first" {
+	if got, err := derived.Read(ctx, "area/abc.txt"); err != nil || string(got) != "first" {
 		t.Fatalf("read %q, %v", got, err)
 	}
 
 	// Writing again replaces: one recognition run twice is the same bytes.
-	if err := derived.Write(ctx, "ocr/abc.txt", []byte("second")); err != nil {
+	if err := derived.Write(ctx, "area/abc.txt", []byte("second")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(ctx, "ocr/abc.txt"); string(got) != "second" {
+	if got, _ := derived.Read(ctx, "area/abc.txt"); string(got) != "second" {
 		t.Errorf("read %q after replacing", got)
 	}
 
-	if err := derived.Append(ctx, "ocr/abc.txt", []byte(" and more")); err != nil {
+	if err := derived.Append(ctx, "area/abc.txt", []byte(" and more")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(ctx, "ocr/abc.txt"); string(got) != "second and more" {
+	if got, _ := derived.Read(ctx, "area/abc.txt"); string(got) != "second and more" {
 		t.Errorf("read %q after appending", got)
 	}
 
-	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir, "abc.txt")
+	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, testArea, "abc.txt")
 	if _, err := os.Stat(pos); err != nil {
 		t.Errorf("the file is not where the store says it is: %v", err)
 	}
@@ -170,10 +173,10 @@ func TestWhatIsSavedIsRead(t *testing.T) {
 func TestAppendingToNothingBeginsIt(t *testing.T) {
 	derived, _ := store(t)
 
-	if err := derived.Append(t.Context(), "ocr/part.txt", []byte("one")); err != nil {
+	if err := derived.Append(t.Context(), "area/part.txt", []byte("one")); err != nil {
 		t.Fatal(err)
 	}
-	if got, _ := derived.Read(t.Context(), "ocr/part.txt"); string(got) != "one" {
+	if got, _ := derived.Read(t.Context(), "area/part.txt"); string(got) != "one" {
 		t.Errorf("read %q", got)
 	}
 }
@@ -183,10 +186,10 @@ func TestANameWithNothingBelowItIsAnAnswer(t *testing.T) {
 	// that happened, not a failure of the application.
 	derived, _ := store(t)
 
-	if _, err := derived.Read(t.Context(), "ocr/gone.txt"); !errors.Is(err, fs.ErrNotExist) {
+	if _, err := derived.Read(t.Context(), "area/gone.txt"); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("reading nothing gave %v, want fs.ErrNotExist", err)
 	}
-	if err := derived.Remove(t.Context(), "ocr/gone.txt"); err != nil {
+	if err := derived.Remove(t.Context(), "area/gone.txt"); err != nil {
 		t.Errorf("removing nothing gave %v, want it to be the outcome asked for", err)
 	}
 }
@@ -204,8 +207,8 @@ func TestTheStoreCannotNameTheVaultsIdentity(t *testing.T) {
 	}
 
 	for _, name := range []string{
-		"ocr/../config.json",
-		"ocr/../../.numen/config.json",
+		"area/../config.json",
+		"area/../../.numen/config.json",
 		"config.json",
 	} {
 		if err := derived.Write(t.Context(), name, []byte("overwritten")); err == nil {
@@ -227,7 +230,7 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
 	if err := os.WriteFile(note, []byte("# Note\n"), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	area := filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir)
+	area := filepath.Join(root, vaultconfig.DefaultServiceDir, testArea)
 	if err := os.MkdirAll(area, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -235,10 +238,10 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItself(t *testing.T) {
 		t.Skipf("this filesystem has no links: %v", err)
 	}
 
-	if err := derived.Write(t.Context(), "ocr/linked.txt", []byte("overwritten")); err == nil {
+	if err := derived.Write(t.Context(), "area/linked.txt", []byte("overwritten")); err == nil {
 		t.Error("the store wrote through a link out of itself")
 	}
-	if _, err := derived.Read(t.Context(), "ocr/linked.txt"); err == nil {
+	if _, err := derived.Read(t.Context(), "area/linked.txt"); err == nil {
 		t.Error("the store read through a link out of itself")
 	}
 	if got, _ := os.ReadFile(note); string(got) != "# Note\n" {
@@ -256,7 +259,7 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItsArea(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	area := filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir)
+	area := filepath.Join(root, vaultconfig.DefaultServiceDir, testArea)
 	if err := os.MkdirAll(area, 0o755); err != nil {
 		t.Fatal(err)
 	}
@@ -264,13 +267,13 @@ func TestTheStoreDoesNotWriteThroughALinkOutOfItsArea(t *testing.T) {
 		t.Skipf("this filesystem has no links: %v", err)
 	}
 
-	if err := derived.Append(t.Context(), "ocr/run.txt", []byte("transcript\n")); err == nil {
+	if err := derived.Append(t.Context(), "area/run.txt", []byte("transcript\n")); err == nil {
 		t.Error("the store appended through a link out of its area")
 	}
-	if err := derived.Write(t.Context(), "ocr/run.txt", []byte("transcript\n")); err == nil {
+	if err := derived.Write(t.Context(), "area/run.txt", []byte("transcript\n")); err == nil {
 		t.Error("the store wrote through a link out of its area")
 	}
-	if _, err := derived.Read(t.Context(), "ocr/run.txt"); err == nil {
+	if _, err := derived.Read(t.Context(), "area/run.txt"); err == nil {
 		t.Error("the store read the vault's identity back as a recognition")
 	}
 	if got, _ := os.ReadFile(identity); string(got) != string(before) {
@@ -292,19 +295,19 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 	// held for as long as that takes.
 	derived, _ := store(t)
 
-	release, err := derived.ClaimName(t.Context(), "ocr/abc.txt")
+	release, err := derived.ClaimName(t.Context(), "area/abc.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "ocr/abc.txt"); !errors.Is(err, vaultport.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "area/abc.txt"); !errors.Is(err, vaultport.ErrClaimed) {
 		t.Errorf("claiming a held name gave %v, want port.ErrClaimed", err)
 	}
 
 	if err := release(); err != nil {
 		t.Fatal(err)
 	}
-	again, err := derived.ClaimName(t.Context(), "ocr/abc.txt")
+	again, err := derived.ClaimName(t.Context(), "area/abc.txt")
 	if err != nil {
 		t.Fatalf("claiming a released name gave %v", err)
 	}
@@ -316,12 +319,12 @@ func TestANameIsClaimedByOneCallerAtATime(t *testing.T) {
 func TestTwoNamesAreClaimedTogether(t *testing.T) {
 	derived, _ := store(t)
 
-	first, err := derived.ClaimName(t.Context(), "ocr/one.txt")
+	first, err := derived.ClaimName(t.Context(), "area/one.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer first()
-	second, err := derived.ClaimName(t.Context(), "ocr/two.txt")
+	second, err := derived.ClaimName(t.Context(), "area/two.txt")
 	if err != nil {
 		t.Fatalf("claiming another name gave %v", err)
 	}
@@ -336,8 +339,8 @@ func TestAClaimCannotLeaveTheStore(t *testing.T) {
 	derived, _ := store(t)
 
 	for _, name := range []string{
-		"ocr/../config.json",
-		"ocr/../../elsewhere",
+		"area/../config.json",
+		"area/../../elsewhere",
 		"config.json",
 		"/etc/passwd",
 	} {
@@ -390,7 +393,7 @@ func TestAClaimHeldByAnotherProcessIsRefused(t *testing.T) {
 		t.Fatalf("the child never took the claim: %v", response.Err())
 	}
 
-	if _, err := derived.ClaimName(t.Context(), "ocr/held.txt"); !errors.Is(err, vaultport.ErrClaimed) {
+	if _, err := derived.ClaimName(t.Context(), "area/held.txt"); !errors.Is(err, vaultport.ErrClaimed) {
 		t.Errorf("claiming a name another process holds gave %v, want port.ErrClaimed", err)
 	}
 }
@@ -402,11 +405,11 @@ func TestContainingAClaimForAnotherProcess(t *testing.T) {
 	if root == "" {
 		t.Skip("this test is run by TestAClaimHeldByAnotherProcessIsRefused")
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
-	release, err := derived.ClaimName(t.Context(), "ocr/held.txt")
+	release, err := derived.ClaimName(t.Context(), "area/held.txt")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -422,26 +425,26 @@ func TestTheStoreReturnsWhatNamesItContains(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
 
-	if got, err := derived.List(ctx, derivedfile.OCRDir); err != nil || len(got) != 0 {
+	if got, err := derived.List(ctx, testArea); err != nil || len(got) != 0 {
 		t.Fatalf("an empty store lists %v, %v", got, err)
 	}
 
-	for _, name := range []string{"ocr/second.txt", "ocr/first.txt"} {
+	for _, name := range []string{"area/second.txt", "area/first.txt"} {
 		if err := derived.Write(ctx, name, []byte("in it")); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := derived.Write(ctx, "ocr/under/deeper.txt", []byte("below")); err != nil {
+	if err := derived.Write(ctx, "area/under/deeper.txt", []byte("below")); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := derived.List(ctx, derivedfile.OCRDir)
+	got, err := derived.List(ctx, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := []derivedfile.Listed{
-		{Name: "ocr/first.txt", Size: len("in it")},
-		{Name: "ocr/second.txt", Size: len("in it")},
+		{Name: "area/first.txt", Size: len("in it")},
+		{Name: "area/second.txt", Size: len("in it")},
 	}
 	if !slices.Equal(got, want) {
 		t.Errorf("listed %v, want the two files it holds with their lengths, sorted", got)
@@ -454,18 +457,18 @@ func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 	derived, _ := store(t)
 	ctx := t.Context()
 
-	if err := derived.Write(ctx, "ocr/one.txt", []byte("first")); err != nil {
+	if err := derived.Write(ctx, "area/one.txt", []byte("first")); err != nil {
 		t.Fatal(err)
 	}
-	if err := derived.Append(ctx, "ocr/one.txt", []byte(" and more")); err != nil {
+	if err := derived.Append(ctx, "area/one.txt", []byte(" and more")); err != nil {
 		t.Fatal(err)
 	}
 
-	got, err := derived.List(ctx, derivedfile.OCRDir)
+	got, err := derived.List(ctx, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := []derivedfile.Listed{{Name: "ocr/one.txt", Size: len("first and more")}}
+	want := []derivedfile.Listed{{Name: "area/one.txt", Size: len("first and more")}}
 	if !slices.Equal(got, want) {
 		t.Errorf("listed %v, want %v", got, want)
 	}
@@ -473,7 +476,7 @@ func TestAListingReturnsHowLongEachFileIs(t *testing.T) {
 
 func TestTheStoreListsNothingOutsideItself(t *testing.T) {
 	derived, _ := store(t)
-	if _, err := derived.List(t.Context(), "ocr/../.."); err == nil {
+	if _, err := derived.List(t.Context(), "area/../.."); err == nil {
 		t.Error("the store listed a folder outside itself")
 	}
 }
@@ -484,13 +487,13 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir, derivedfile.TranscriptDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea, "other")
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := t.Context()
 
-	for _, name := range []string{"ocr/abc.txt", "transcript/abc.asr.vtt"} {
+	for _, name := range []string{"area/abc.txt", "other/abc.vtt"} {
 		if err := derived.Write(ctx, name, []byte("said")); err != nil {
 			t.Fatalf("%s: %v", name, err)
 		}
@@ -498,7 +501,7 @@ func TestAStoreAnswersForEveryAreaItWasOpenedOn(t *testing.T) {
 	if err := derived.Write(ctx, "flashcards/abc.jsonl", []byte("answered")); err == nil {
 		t.Error("the store wrote into an area it was not opened on")
 	}
-	if area := derived.Area(); area != derivedfile.OCRDir {
+	if area := derived.Area(); area != testArea {
 		t.Errorf("the store is called %q, want the first area it was opened on", area)
 	}
 }
@@ -513,7 +516,7 @@ func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	if err := os.MkdirAll(root, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -522,14 +525,14 @@ func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 	}
 
 	ctx := t.Context()
-	if err := derived.Write(ctx, "ocr/abc.txt", []byte("read")); err != nil {
+	if err := derived.Write(ctx, "area/abc.txt", []byte("read")); err != nil {
 		t.Fatalf("writing into the folder the store now has: %v", err)
 	}
-	got, err := derived.Read(ctx, "ocr/abc.txt")
+	got, err := derived.Read(ctx, "area/abc.txt")
 	if err != nil || string(got) != "read" {
 		t.Errorf("read %q, %v", got, err)
 	}
-	if _, err := os.Stat(filepath.Join(target, derivedfile.OCRDir, "abc.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target, testArea, "abc.txt")); err != nil {
 		t.Errorf("the file did not land where the folder is: %v", err)
 	}
 }
@@ -537,7 +540,7 @@ func TestAStoreFollowsItsFolderWhereItIsInsertAfterwards(t *testing.T) {
 // the rest of it.
 func TestEveryAreaOfAStoreIsOneFolder(t *testing.T) {
 	root := t.TempDir()
-	if _, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir, "a/b"); err == nil {
+	if _, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea, "a/b"); err == nil {
 		t.Error("opened a store on a name that is not one folder")
 	}
 }
@@ -553,21 +556,21 @@ func TestAnAreaThatIsALinkContainsNothing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Symlink(".", filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir)); err != nil {
+	if err := os.Symlink(".", filepath.Join(root, vaultconfig.DefaultServiceDir, testArea)); err != nil {
 		t.Skipf("this filesystem has no links: %v", err)
 	}
 
 	ctx := t.Context()
-	if _, err := derived.Read(ctx, "ocr/config.json"); err == nil {
+	if _, err := derived.Read(ctx, "area/config.json"); err == nil {
 		t.Error("the store read the vault's identity through an area that is a link")
 	}
-	if err := derived.Write(ctx, "ocr/config.json", []byte(`{"id":"stolen"}`)); err == nil {
+	if err := derived.Write(ctx, "area/config.json", []byte(`{"id":"stolen"}`)); err == nil {
 		t.Error("the store wrote the vault's identity through an area that is a link")
 	}
-	if err := derived.Append(ctx, "ocr/config.json", []byte("transcript\n")); err == nil {
+	if err := derived.Append(ctx, "area/config.json", []byte("transcript\n")); err == nil {
 		t.Error("the store appended to the vault's identity through an area that is a link")
 	}
-	if _, err := derived.List(ctx, derivedfile.OCRDir); err == nil {
+	if _, err := derived.List(ctx, testArea); err == nil {
 		t.Error("the store listed the service folder as its area")
 	}
 	if got, _ := os.ReadFile(identity); string(got) != string(before) {
@@ -585,7 +588,7 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	target := t.TempDir()
 	old := filepath.Join(target, "old")
 	root := filepath.Join(t.TempDir(), "vault")
-	for _, folder := range []string{old, root, filepath.Join(target, derivedfile.OCRDir)} {
+	for _, folder := range []string{old, root, filepath.Join(target, testArea)} {
 		if err := os.MkdirAll(folder, 0o755); err != nil {
 			t.Fatal(err)
 		}
@@ -597,12 +600,12 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	if _, err := vaultconfig.Initialize(root, vaultconfig.DefaultServiceDir, time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	derived, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
 	ctx := t.Context()
-	if err := derived.Write(ctx, "ocr/a.txt", []byte("one")); err != nil {
+	if err := derived.Write(ctx, "area/a.txt", []byte("one")); err != nil {
 		t.Fatalf("writing into the folder the store has: %v", err)
 	}
 
@@ -615,28 +618,28 @@ func TestAStoreDoesNotWriteIntoWhereItsFolderWasBefore(t *testing.T) {
 	if err := os.Symlink(target, service); err != nil {
 		t.Fatal(err)
 	}
-	back := filepath.Join(target, derivedfile.OCRDir, "back")
-	if err := os.Symlink(filepath.Join("..", "old", derivedfile.OCRDir), back); err != nil {
+	back := filepath.Join(target, testArea, "back")
+	if err := os.Symlink(filepath.Join("..", "old", testArea), back); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := derived.Write(ctx, "ocr/back/x.txt", []byte("two")); err == nil {
+	if err := derived.Write(ctx, "area/back/x.txt", []byte("two")); err == nil {
 		t.Error("the store wrote into where its folder was before")
 	}
-	if _, err := os.Stat(filepath.Join(old, derivedfile.OCRDir, "x.txt")); err == nil {
+	if _, err := os.Stat(filepath.Join(old, testArea, "x.txt")); err == nil {
 		t.Error("the file landed in the old area")
 	}
-	fresh, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, derivedfile.OCRDir)
+	fresh, err := derivedfile.OpenDerived(root, vaultconfig.Options{}, testArea)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := fresh.Write(ctx, "ocr/back/y.txt", []byte("three")); err == nil {
+	if err := fresh.Write(ctx, "area/back/y.txt", []byte("three")); err == nil {
 		t.Error("a store opened after the move wrote into the old area")
 	}
-	if err := derived.Write(ctx, "ocr/b.txt", []byte("four")); err != nil {
+	if err := derived.Write(ctx, "area/b.txt", []byte("four")); err != nil {
 		t.Errorf("writing into the folder the store now has: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(target, derivedfile.OCRDir, "b.txt")); err != nil {
+	if _, err := os.Stat(filepath.Join(target, testArea, "b.txt")); err != nil {
 		t.Errorf("the file did not land where the folder is: %v", err)
 	}
 }

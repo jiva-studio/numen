@@ -13,29 +13,8 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/atomicfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
-)
-
-// The folders a vault's own store keeps what was made from its files in. Each
-// is a kind: what the files in it are.
-//
-// where a kind has more than one producer. A transcript is a transcript whether
-// a model here heard it or a site published it with a video, and one folder
-// holds both.
-const (
-	OCRDir = domain.OCR
-	// TranscriptDir is text with the times each stretch of it was said at.
-	TranscriptDir = "transcript"
-	// ArticleDir is the prose a page is written around.
-	ArticleDir = domain.Article
-	// CopyDir is the bytes of a video, kept to be played from this disk.
-	CopyDir = "copy"
-	// IndexDir is where claims and coordination for vault indexing live.
-	IndexDir = "index"
 )
 
 // DerivedStore is the application's own shelf inside one vault: where a file
@@ -115,26 +94,12 @@ func (s *fileInfo) isSameFile(now os.FileInfo) bool {
 // carries the identity the store was opened on.
 var ErrNotThisVault = errors.New("the folder is not the vault this store was opened on")
 
-// DerivedStores opens the shelf of whichever vault a use case is working on.
-type DerivedStores struct {
-	Options vaultconfig.Options
-	// Area is the folder inside the service folder these files belong to, and
-	// Areas are the further folders the same store answers for. A use case
-	// reading what two producers wrote names both.
-	Area  string
-	Areas []string
-}
-
-func (d DerivedStores) Open(v domain.Vault) (vaultport.DerivedStore, error) {
-	return OpenDerived(v.Path, d.Options, append([]string{d.Area}, d.Areas...)...)
-}
-
 // OpenDerived opens one vault's store, and holds on to the identity that vault
 // carries. Nothing is written: a store that created its folder on being opened
 // would put one in every vault the application looks at.
 //
 // The store answers for every area named and the first of them is what it is
-// called. Naming none is the default area alone.
+// called. A store names at least one.
 func OpenDerived(vaultRoot string, opts vaultconfig.Options, areas ...string) (*DerivedStore, error) {
 	validAreas := make([]string, 0, len(areas))
 	for _, area := range areas {
@@ -147,7 +112,7 @@ func OpenDerived(vaultRoot string, opts vaultconfig.Options, areas ...string) (*
 		validAreas = append(validAreas, area)
 	}
 	if len(validAreas) == 0 {
-		validAreas = []string{OCRDir}
+		return nil, errors.New("a store names at least one area")
 	}
 	abs, err := filepath.Abs(vaultRoot)
 	if err != nil {

@@ -17,11 +17,9 @@ type VaultAssembly interface {
 	GetRegistry() vaultport.VaultRegistry
 
 	// GetVaultReaders open a vault for reading and GetVaultWriters for
-	// changing; GetDerivedStores is the shelf the application keeps its own
-	// files on inside one.
+	// changing.
 	GetVaultReaders() vaultport.VaultReaders
 	GetVaultWriters() vaultport.VaultWriters
-	GetDerivedStores() vaultport.DerivedStores
 
 	GetVaultIdentity() vaultport.VaultIdentity
 

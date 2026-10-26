@@ -37,9 +37,9 @@ type Embed struct {
 	// Texts is optional. A chunk of a source cut from a text version is re-sliced
 	// out of that version; without it such a chunk is left owing its vector.
 	Texts textport.TextReaders
-	// Derived is optional. It holds the claim on the index that keeps a second
-	// process from embedding the vault at once; without it nothing is claimed.
-	Derived vaultport.DerivedStore
+	// Claim is optional. It keeps a second process from embedding the vault at
+	// once; without it nothing is claimed.
+	Claim vaultport.IndexClaim
 
 	// Embedder is optional. Without one nothing is embedded and a search answers
 	// on its words alone, which is a whole search: the vector index fills in
@@ -178,13 +178,13 @@ func (u Embed) Execute(ctx context.Context, v domain.Vault) (EmbedResult, error)
 	return res, nil
 }
 
-// claim takes the index claim when a derived store is present, and reports
-// isBusy when another process holds it.
+// claim takes the index claim when one is set, and reports isBusy when
+// another process holds it.
 func (u Embed) claim(ctx context.Context) (func() error, bool, error) {
-	if u.Derived == nil {
+	if u.Claim == nil {
 		return func() error { return nil }, false, nil
 	}
-	release, err := u.Derived.ClaimArtifact(ctx, domain.NewIndexClaimName())
+	release, err := u.Claim.ClaimIndex(ctx)
 	if errors.Is(err, vaultport.ErrClaimed) {
 		return nil, true, nil
 	}

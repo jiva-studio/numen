@@ -10,7 +10,7 @@ import (
 // was held on included.
 func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 	derived, root := store(t)
-	const name = "ocr/abc.txt"
+	const name = "area/abc.txt"
 
 	release, err := derived.ClaimName(t.Context(), name)
 	if err != nil {
@@ -27,7 +27,7 @@ func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
+	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "area"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -41,7 +41,7 @@ func TestANameRemovedPreservesNoClaimPriorIt(t *testing.T) {
 // the partial away as its last act, so the claim outlives the name it is on.
 func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 	derived, root := store(t)
-	const name = "ocr/abc.partial.txt"
+	const name = "area/abc.partial.txt"
 
 	release, err := derived.ClaimName(t.Context(), name)
 	if err != nil {
@@ -57,7 +57,7 @@ func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "ocr"))
+	remaining, err := os.ReadDir(filepath.Join(root, ".numen", "area"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,7 +69,7 @@ func TestANameIsRemovedWhileItsClaimIsHeld(t *testing.T) {
 // A name nothing ever claimed is removed as it always was.
 func TestANameNothingClaimedIsRemoved(t *testing.T) {
 	derived, root := store(t)
-	const name = "ocr/abc.txt"
+	const name = "area/abc.txt"
 
 	if err := derived.Write(t.Context(), name, []byte("what was read")); err != nil {
 		t.Fatal(err)

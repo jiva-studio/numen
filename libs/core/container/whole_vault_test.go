@@ -95,7 +95,7 @@ func TestTheVectorsOfASourceAreMadeByTheModelGiven(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if made.Derived == nil {
+	if made.Claim == nil {
 		t.Error("the vectors have no place to claim the index in")
 	}
 	if made.Texts != nil {

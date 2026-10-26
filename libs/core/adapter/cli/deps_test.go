@@ -11,7 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/cli"
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
@@ -24,16 +23,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
-
-// getDerived is the shelf this installation keeps its own files on inside a
-// vault: what a recognition wrote, and what a transcription wrote.
-func getDerived(options vaultconfig.Options) derivedfile.DerivedStores {
-	return derivedfile.DerivedStores{
-		Options: options,
-		Area:    derivedfile.OCRDir,
-		Areas:   []string{derivedfile.TranscriptDir},
-	}
-}
 
 // deps is what the commands of one session run through. The test assembles it
 // itself: a registry and an index of its own, the folders it made, and a trash
@@ -72,11 +61,6 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				return cli.Scan{}, err
 			}
 			readers := vaultreader.Readers{Options: options}
-			store, err := getDerived(options).Open(v)
-			if err != nil {
-				_ = db.Close()
-				return cli.Scan{}, err
-			}
 
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
@@ -89,7 +73,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 			// No vectors: a test reaches no model, and a vault answers by its
 			// words alone.
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
-			embed.Derived, embed.Texts = store, testsupport.Texts{Readers: readers}
+			embed.Texts = testsupport.Texts{Readers: readers}
 
 			return cli.Scan{
 				Read: vaults.NewReadWholeVault(notes, books, embed),

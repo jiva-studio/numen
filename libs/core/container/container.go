@@ -18,7 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/settings/hardware"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/appstate"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwatch"
@@ -296,17 +295,6 @@ func (c Config) vaultOptions() vaultconfig.Options {
 	return vaultconfig.Options{
 		ServiceDir:     c.ServiceDir,
 		BookExtensions: c.BookExtensions,
-	}
-}
-
-// GetDerivedStores returns storage for generated artifacts (transcripts, OCR, copies).
-func (c Config) GetDerivedStores() vaultport.DerivedStores {
-	return derivedfile.DerivedStores{
-		Options: c.vaultOptions(),
-		Area:    derivedfile.OCRDir,
-		Areas: []string{
-			derivedfile.TranscriptDir, derivedfile.ArticleDir, derivedfile.CopyDir, derivedfile.IndexDir,
-		},
 	}
 }
 

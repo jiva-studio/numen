@@ -10,7 +10,6 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 )
 
@@ -54,10 +53,10 @@ func capFileSize(t *testing.T, to int64) func() {
 func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	derived, root := store(t)
 	ctx := t.Context()
-	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, derivedfile.OCRDir, "run.txt")
+	pos := filepath.Join(root, vaultconfig.DefaultServiceDir, testArea, "run.txt")
 
 	first := strings.Repeat("a", 40) + "\n"
-	if err := derived.Append(ctx, "ocr/run.txt", []byte(first)); err != nil {
+	if err := derived.Append(ctx, "area/run.txt", []byte(first)); err != nil {
 		t.Fatal(err)
 	}
 
@@ -66,7 +65,7 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	// append is what reaches past it.
 	lift := capFileSize(t, fileCap)
 	divided := strings.Repeat("b", 4*fileCap) + "\n"
-	err := derived.Append(ctx, "ocr/run.txt", []byte(divided))
+	err := derived.Append(ctx, "area/run.txt", []byte(divided))
 	if err == nil {
 		t.Fatal("an append that could not land said it had")
 	}
@@ -80,7 +79,7 @@ func TestAnAppendThatLandsShortIsTakenBack(t *testing.T) {
 	lift()
 
 	third := strings.Repeat("c", 40) + "\n"
-	if err := derived.Append(ctx, "ocr/run.txt", []byte(third)); err != nil {
+	if err := derived.Append(ctx, "area/run.txt", []byte(third)); err != nil {
 		t.Fatal(err)
 	}
 	got, err := os.ReadFile(pos)

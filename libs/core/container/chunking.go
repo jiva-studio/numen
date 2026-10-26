@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -83,12 +84,12 @@ func (c Config) syncVectorIndex(ctx context.Context, db *Index, model embeddingp
 
 // Embed gives a vault's chunks the vectors they owe.
 func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault) (vectors.Embed, error) {
-	derived, err := c.GetDerivedStores().Open(v)
+	store, err := derivedfile.OpenDerived(v.Path, c.vaultOptions(), coreFolder)
 	if err != nil {
 		return vectors.Embed{}, err
 	}
 	embed := vectors.NewEmbed(c.VaultReaders(), db.VectorQueries(), db.Vectors())
-	embed.Derived = derived
+	embed.Claim = indexClaim{store: store}
 	embed.Texts = c.getTextReaders()
 	embed.Embedder = embedder
 	return embed, nil
@@ -107,4 +108,14 @@ func (c Config) Extract(sources sourceport.SourceRepository, queries sourceport.
 	extract.Legibility = cutter.Legibility
 	extract.ShouldRebuildIndex = c.ShouldRebuildIndex
 	return extract, nil
+}
+
+// indexClaim is the hold on a vault's vectors: a claim on one name of the
+// core's folder of that vault's store.
+type indexClaim struct {
+	store *derivedfile.DerivedStore
+}
+
+func (c indexClaim) ClaimIndex(ctx context.Context) (func() error, error) {
+	return c.store.ClaimName(ctx, coreFolder+"/indexing")
 }
