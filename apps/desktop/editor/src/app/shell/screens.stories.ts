@@ -10,7 +10,7 @@ import type { Tab, Workspace } from '@numen/ui'
 import { ref, type Component } from 'vue'
 
 import { SettingsTab, type Installation } from '@/pages/settings'
-import type { Model } from '@/entities/settings'
+import type { Model, PluginInfo } from '@/entities/settings'
 import { findTabKindIcon, SETTINGS } from '@/entities/tab'
 
 /** Every tab this file draws, under the identity the window opens it at. */
@@ -76,6 +76,63 @@ const AGENT_USE: Model = {
   presence: 'present',
 }
 
+/** One plugin as the settings list it: active, with no settings, secrets or failure of its own. */
+const plugin = (id: string, name: string, description: string): PluginInfo => ({
+  id,
+  name,
+  version: '1.0.0',
+  description,
+  isActive: true,
+  settings: [],
+  capabilities: [],
+  secrets: [],
+  storedSecrets: [],
+  consent: 'none',
+})
+
+/** Plugins of every category the list sorts by, as an installation ships them. */
+const PLUGINS: readonly PluginInfo[] = [
+  plugin(
+    'md.numen.agents.claude',
+    'Claude Code Agent',
+    'Claude Code CLI agent runner and provider service',
+  ),
+  plugin(
+    'md.numen.agents.tools.vault',
+    'Vault Knowledge Tools',
+    'Core vault, note, search and wikilink tools for agents',
+  ),
+  plugin(
+    'md.numen.editors.markdown',
+    'Markdown Editor',
+    'Markdown and plain text editor with wikilinks',
+  ),
+  plugin(
+    'md.numen.engines.embeddings',
+    'Vector Embeddings',
+    'Vector embeddings engine for semantic search',
+  ),
+  plugin('md.numen.engines.ocr', 'Document OCR', 'Recognises the text of scans and scanned PDFs'),
+  plugin(
+    'md.numen.engines.transcription',
+    'Audio/Video Transcription',
+    'Transcribes the recordings a person asks for',
+  ),
+  plugin('md.numen.readers.epub', 'EPUB Book Reader', 'EPUB reflowable book reader'),
+  plugin('md.numen.readers.pdf', 'PDF Reader', 'PDF document viewer and page renderer'),
+  plugin(
+    'md.numen.tools.media.importer',
+    'Media Importer',
+    'Keeps web addresses as links and fetches what is published there',
+  ),
+  plugin(
+    'md.numen.views.flashcards.studio',
+    'Flashcards Studio',
+    'Decks, stencils, presets and the review of the cards',
+  ),
+  plugin('md.numen.views.plex.graph', 'Plex Graph', 'Knowledge graph visualizer and plex explorer'),
+]
+
 /** What the settings were asked to do; a picture asks nothing. */
 const DONE: string[] = []
 
@@ -119,12 +176,13 @@ const INSTALLATION: Installation = {
     DONE.push(`write ${edits.length}`)
   },
   file: ref('/numen.json'),
+  plugins: ref(PLUGINS),
   openFile: () => {
     DONE.push('open')
   },
 }
 
-/** Everything in numen.json a person can change, in the groups the file keeps. */
+/** The settings of the window and of every plugin installed, each reached from its row. */
 export const Settings: Story = {
   render: () => window(SETTINGS, SettingsTab, { installation: INSTALLATION }),
 }

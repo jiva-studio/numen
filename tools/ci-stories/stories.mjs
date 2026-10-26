@@ -15,21 +15,36 @@ import { join } from 'node:path'
 import { modules, root } from '../shared/modules.mjs'
 
 /**
- * Everywhere a story can be written: the hand-written source of every module
- * the repository has. Storybook is pointed at three of these folders today,
- * and a list here would be a fourth copy of the same three.
+ * The two Storybooks a story is drawn in, each by the folder it is started
+ * from: the components' own, which draws the windows' screens beside them, and
+ * the plugins', which draws every plugin's frontend.
  */
-const ROOTS = modules.map((one) => join(root, one.written))
+export const BOOKS = {
+  ui: 'libs/ui',
+  plugins: 'plugins',
+}
 
 /**
- * Every story id the tree declares, spelled as Storybook spells it: the meta's
- * own title and the export's name, each cut to lower case and dashes.
+ * Everywhere a story can be written, and the Storybook that draws it: the
+ * hand-written source of every module the repository has, and the frontend of
+ * every plugin.
+ */
+const ROOTS = [
+  ...modules.map((one) => ({ at: join(root, one.written), book: 'ui', only: /./ })),
+  { at: join(root, BOOKS.plugins), book: 'plugins', only: /^[^/]+\/frontend\// },
+]
+
+/**
+ * Every story id the tree declares, spelled as Storybook spells it — the meta's
+ * own title and the export's name, each cut to lower case and dashes — against
+ * the Storybook it is drawn in. An id two Storybooks declare is drawn in
+ * `both`, which names neither.
  */
 export const stories = async () => {
-  const found = new Set()
-  for (const at of ROOTS) {
-    const files = (await readdir(at, { recursive: true })).filter((name) =>
-      name.endsWith('.stories.ts'),
+  const found = new Map()
+  for (const { at, book, only } of ROOTS) {
+    const files = (await readdir(at, { recursive: true })).filter(
+      (name) => name.endsWith('.stories.ts') && only.test(name) && !name.includes('node_modules'),
     )
     for (const file of files) {
       const source = await readFile(join(at, file), 'utf8')
@@ -37,7 +52,12 @@ export const stories = async () => {
       if (!meta) continue
       const under = meta[1].toLowerCase().replace(/[^a-z0-9]+/g, '-')
       for (const [, name] of source.matchAll(/^export const ([A-Z][A-Za-z0-9]*)\s*:/gm)) {
-        found.add(`${under}--${name.replace(/([a-z0-9])([A-Z])/g, '$1-$2').toLowerCase()}`)
+        const words = name
+          .replace(/([a-z0-9])([A-Z])/g, '$1-$2')
+          .replace(/([A-Z])([A-Z][a-z])/g, '$1-$2')
+        const id = `${under}--${words.toLowerCase()}`
+        const before = found.get(id)
+        found.set(id, before && before !== book ? 'both' : book)
       }
     }
   }
@@ -59,6 +79,12 @@ export const faults = (shots, declared) => {
   if (gone.length > 0) {
     wrong.push(
       `no story called ${gone.map((shot) => shot.story).join(', ')} — the pictures cannot be taken again`,
+    )
+  }
+  const twice = shots.filter((shot) => declared.get(shot.story) === 'both')
+  if (twice.length > 0) {
+    wrong.push(
+      `both Storybooks declare ${twice.map((shot) => shot.story).join(', ')} — the camera cannot tell which to start`,
     )
   }
   return wrong
@@ -105,6 +131,14 @@ export const REFUSES = [
     ],
   },
   {
+    what: 'a shot naming a story both Storybooks declare',
+    shots: [{ story: 'flash-cards-window--cards-due' }],
+    declared: [['flash-cards-window--cards-due', 'both']],
+    said: [
+      'both Storybooks declare flash-cards-window--cards-due — the camera cannot tell which to start',
+    ],
+  },
+  {
     what: 'a camera asking for no pictures',
     shots: [],
     declared: ['application-window--filing'],
@@ -116,7 +150,10 @@ export const REFUSES = [
 export const proves = () => {
   if (REFUSES.length === 0) return 'the rule is put through nothing'
   for (const one of REFUSES) {
-    const said = faults(one.shots, new Set(one.declared))
+    const declared = new Map(
+      one.declared.map((entry) => (Array.isArray(entry) ? entry : [entry, 'ui'])),
+    )
+    const said = faults(one.shots, declared)
     if (said.length !== one.said.length || said.some((was, at) => was !== one.said[at])) {
       return `of ${one.what} the rule says ${JSON.stringify(said)}, and not ${JSON.stringify(one.said)}`
     }

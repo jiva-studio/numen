@@ -523,38 +523,61 @@ const command = (id: string, title: string, keys?: PaletteKeys): PaletteItem => 
   ...(keys ? { keys } : {}),
 })
 
-/** What the commands offer, in the three groups the window draws them in. */
+/** The commands over the window itself, offered whatever is in front. */
+const OVER_WINDOW: PaletteGroup = {
+  id: 'window',
+  title: 'General',
+  items: [
+    command('note', 'New note', keyChord('n', KEYBOARD)),
+    command('plex', 'New plex'),
+    command('agent', 'New agent', keyChord('a', KEYBOARD, true)),
+    command('appearance', 'Change the theme'),
+  ],
+}
+
+/** The commands over the vault, offered whatever is in front. */
+const OVER_VAULT: PaletteGroup = {
+  id: 'vault',
+  title: 'Vault',
+  items: [
+    command('goto', 'Go to a note', keyChord('g', KEYBOARD)),
+    command('openVault', 'Open vault'),
+  ],
+}
+
+/** What the commands offer over a note, in the three groups the window draws them in. */
 const COMMANDS: readonly PaletteGroup[] = [
   {
     id: 'note',
-    title: 'This note',
+    title: 'Note',
     items: [
       command('read', 'Open the note'),
       command('beside', 'Open beside'),
       command('travel', 'Show in plex', keyChord('p', KEYBOARD, true)),
       command('child', 'New child note', keyChord('c', KEYBOARD, true)),
       command('parent', 'New parent note'),
-      command('ask', 'Ask the agent about this note'),
+      command('ask', 'Ask the agent'),
     ],
   },
+  OVER_WINDOW,
+  OVER_VAULT,
+]
+
+/**
+ * What the commands offer over a scanned book: the texts the plugins make of
+ * the file, each by the plugin that makes it, above the window and the vault.
+ */
+const FILE_COMMANDS: readonly PaletteGroup[] = [
   {
-    id: 'window',
-    title: 'This window',
+    id: 'file',
+    title: 'File',
     items: [
-      command('note', 'New note', keyChord('n', KEYBOARD)),
-      command('plex', 'New plex'),
-      command('agent', 'New agent', keyChord('a', KEYBOARD, true)),
-      command('appearance', 'Change the theme'),
+      command('recognise', 'Recognise the text with Document OCR'),
+      command('proofread', 'Proofread the text with LLM Proofreading'),
     ],
   },
-  {
-    id: 'vault',
-    title: 'This vault',
-    items: [
-      command('goto', 'Go to a note', keyChord('g', KEYBOARD)),
-      command('openVault', 'Open vault'),
-    ],
-  },
+  OVER_WINDOW,
+  OVER_VAULT,
 ]
 
 /** A note carrying a table, for the picture of one being typed in. */
@@ -594,6 +617,8 @@ interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
   readonly panel?: 'search' | 'commands' | null
+  /** What the commands panel offers, where it is the panel drawn. */
+  readonly commands?: readonly PaletteGroup[]
   /** What the map is looking at, which follows the room it is drawn in. */
   readonly neighbourhood?: PlexNeighbourhood
   /** What the note in a tab holds. */
@@ -615,6 +640,7 @@ interface Screen {
 const screen = ({
   workspace,
   panel = null,
+  commands = COMMANDS,
   neighbourhood = NEIGHBOURHOOD,
   markdown = MARKDOWN,
   headings = () => [],
@@ -671,7 +697,7 @@ const screen = ({
       selected,
       MENU,
       menuIcon,
-      groups: panel === 'commands' ? COMMANDS : GROUPS,
+      groups: panel === 'commands' ? commands : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
       picture: (pageIndex: number) => renderPage(pageIndex),
@@ -986,11 +1012,7 @@ export const Commanding: Story = {
     // the window sorts them into.
     await waitFor(() => {
       const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
-      expect(groups.map((group) => group.textContent?.trim())).toEqual([
-        'This note',
-        'This window',
-        'This vault',
-      ])
+      expect(groups.map((group) => group.textContent?.trim())).toEqual(['Note', 'General', 'Vault'])
     })
   },
 }
@@ -1047,6 +1069,36 @@ export const Reading: Story = {
       const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
       expect(page).not.toBeNull()
       expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
+    })
+  },
+}
+
+/**
+ * The commands over a scanned book beside the files, offering to read its pages
+ * with the plugin that recognises text.
+ */
+export const Recognising: Story = {
+  render: () =>
+    screen({
+      workspace: () => ({
+        root: branch(
+          'root',
+          [pane('aside', [FILES]), pane('main', [BOOK, NOTE], BOOK)],
+          [0.26, 0.74],
+        ),
+        axis: 'horizontal',
+        focus: 'main',
+      }),
+      panel: 'commands',
+      commands: FILE_COMMANDS,
+    }),
+  play: async () => {
+    // The file in front is a scan, so the commands open on what can be made of
+    // it, before the window's own and the vault's.
+    await waitFor(() => {
+      const groups = [...document.body.querySelectorAll('[data-palette="title"]')]
+      expect(groups.map((group) => group.textContent?.trim())).toEqual(['File', 'General', 'Vault'])
+      expect(within(document.body).getByText('Recognise the text with Document OCR')).toBeVisible()
     })
   },
 }

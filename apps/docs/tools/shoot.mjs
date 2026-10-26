@@ -3,10 +3,9 @@
  * from.
  *
  * Nothing here is cropped by hand: every picture is a story, drawn at the size
- * it is drawn at, in light and in dark. Storybook is started and stopped again,
- * so one command answers with the whole set.
+ * it is drawn at, in light and in dark. The Storybooks the stories are drawn in
+ * are started and stopped again, so one command answers with the whole set.
  */
-import { spawn } from 'node:child_process'
 import { accessSync, constants, readFileSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
@@ -14,24 +13,23 @@ import { fileURLToPath } from 'node:url'
 import { chromium } from 'playwright'
 import sharp from 'sharp'
 
+// By path and not by name, as the manual reads its story list.
+import { openBooks } from '../../../tools/ci-stories/books.mjs'
+
 import { SHOTS } from './shots.mjs'
 
 const HERE = dirname(fileURLToPath(import.meta.url))
-const UI = join(HERE, '..', '..', '..', 'libs', 'ui')
 const INTO = join(HERE, '..', 'src', 'assets')
 /** The palettes that ship inside the application, as the window wears them. */
 const PRESETS = join(HERE, '..', '..', '..', 'libs', 'core', 'internal', 'adapter', 'theme', 'presets')
 
-/** A Storybook already running, for a machine that keeps one up. */
-const GIVEN = process.env['STORYBOOK_PORT']
-const PORT = GIVEN ? Number(GIVEN) : 6098
 /** Pixels for one, so a picture holds up on a screen that has them. */
 const SCALE = 2
 /** How hard the pictures are pressed. Text stays clean at this. */
 const QUALITY = 82
 /** The fewest bytes a drawn window comes to. Under it, nothing was drawn. */
 const DRAWN = 15_000
-/** How long Storybook is given to answer before this gives up. */
+/** How long a story is given to draw before this gives up. */
 const PATIENCE = 120_000
 /** What a plex and an editor are given to settle once the page has loaded. */
 const SETTLING = 2_000
@@ -93,32 +91,9 @@ const systemChrome = () => {
   return undefined
 }
 
-const answering = async (url) => {
-  const until = Date.now() + PATIENCE
-  while (Date.now() < until) {
-    try {
-      const answer = await fetch(url)
-      if (answer.ok) return
-    } catch {
-      // Not up yet.
-    }
-    await new Promise((wake) => setTimeout(wake, 500))
-  }
-  throw new Error(`Storybook did not answer at ${url}`)
-}
-
-const storybook = GIVEN
-  ? { pid: 0 }
-  : spawn('npx', ['storybook', 'dev', '-p', String(PORT), '--no-open', '--quiet'], {
-      cwd: UI,
-      detached: true,
-      stdio: 'ignore',
-    })
+const books = await openBooks(SHOTS)
 
 try {
-  const base = `http://localhost:${PORT}`
-  await answering(`${base}/iframe.html`)
-
   const chrome = systemChrome()
   const browser = await chromium.launch(chrome ? { executablePath: chrome } : {})
   for (const theme of ['light', 'dark']) {
@@ -129,7 +104,7 @@ try {
         colorScheme: theme,
       })
       await page.goto(
-        `${base}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
+        `${books.getBase(shot.story)}/iframe.html?id=${shot.story}&viewMode=story&globals=theme:${theme}`,
         { waitUntil: 'networkidle' },
       )
       // The screen is waited for, not timed: a story reached through a module
@@ -160,7 +135,7 @@ try {
       // the bytes, and what the build would convert it to anyway.
       const name = `${shot.name}-${theme}.webp`
       const taken = await sharp(await page.screenshot()).webp({ quality: QUALITY }).toBuffer()
-      if (taken.length < DRAWN) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
+      if (taken.length < (shot.drawn ?? DRAWN)) throw new Error(`${name} is ${taken.length} bytes: the story had not drawn`)
       const at = join(INTO, name)
       if (await same(at, taken)) {
         console.log(`${name} — the same picture`)
@@ -173,5 +148,5 @@ try {
   }
   await browser.close()
 } finally {
-  if (storybook.pid) process.kill(-storybook.pid, 'SIGTERM')
+  books.close()
 }

@@ -12,17 +12,21 @@ npm run typecheck  # astro check
 
 ## The picture of the window
 
-The screenshot in `src/assets/` is taken from the story that draws the whole
-window — `Application/Window` in `libs/ui` — so the page shows the
-components the application is built from, in the state they settle in.
+The screenshots in `src/assets/` are taken from the stories that draw each
+screen — the window in `libs/ui`, and a plugin's tab in the plugins'
+Storybook — so the page shows the components the application is built from,
+in the state they settle in. `tools/shots.mjs` names them.
 
 ```
 npm run shoot
 ```
 
-That starts Storybook, takes the window in light and in dark at twice the
-pixels, writes both into `src/assets/` as WebP, and stops Storybook again.
-`STORYBOOK_PORT` names one already running instead.
+That starts the Storybooks the shots are declared in, takes each in light and
+in dark at two and a half times the pixels, writes them into `src/assets/` as
+WebP, and stops the Storybooks again. `STORYBOOK_PORT` and
+`STORYBOOK_PLUGINS_PORT` name ones already running instead. The plugins'
+Storybook reaches `@numen/ui` through its build, so `npm run build` in
+`libs/ui` comes first.
 
 The browser it drives is whichever Chrome is already on the machine, else
 Playwright's own — the same rule the story tests follow. `CHROME_PATH` names

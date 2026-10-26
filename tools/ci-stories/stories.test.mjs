@@ -16,7 +16,7 @@ test('the table walks both paths, so neither is an assumption', () => {
 })
 
 test('a fault says which story it could not find', () => {
-  assert.deepEqual(faults([{ story: 'flash-cards-window--owing' }], new Set(['a--b'])), [
+  assert.deepEqual(faults([{ story: 'flash-cards-window--owing' }], new Map([['a--b', 'ui']])), [
     'no story called flash-cards-window--owing — the pictures cannot be taken again',
   ])
 })
@@ -24,15 +24,16 @@ test('a fault says which story it could not find', () => {
 /**
  * A walk that read the wrong folders finds nothing and says so in the same
  * words as a walk that read the right ones, so the stories it must have found
- * are named — one from the library and one from each window.
+ * are named — one from the library, one from a window and one from a plugin —
+ * with the Storybook each is drawn in.
  */
 test('every story the tree declares is found where it stands', async () => {
   const declared = await stories()
-  for (const one of [
-    'workspace--crowded',
-    'desktop-window--settings',
-    'flash-cards-window--cards-due',
+  for (const [one, book] of [
+    ['workspace--crowded', 'ui'],
+    ['desktop-window--settings', 'ui'],
+    ['flash-cards-window--cards-due', 'plugins'],
   ]) {
-    assert.ok(declared.has(one), `${one} is declared in the tree and the walk did not find it`)
+    assert.equal(declared.get(one), book, `${one} is declared in the ${book} Storybook`)
   }
 })

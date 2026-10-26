@@ -11,7 +11,8 @@
  *
  * `over` names what the pointer is left on: the picture is taken once whatever
  * a hand resting there brings out is all the way out. `preset` names a palette
- * that ships with the application, which the window is drawn wearing.
+ * that ships with the application, which the window is drawn wearing. `drawn`
+ * is the fewest bytes the picture comes to, for a screen that is mostly empty.
  */
 export const SHOTS = [
   { name: 'window', story: 'application-window--plex-map', width: 1180, height: 740 },
@@ -33,12 +34,18 @@ export const SHOTS = [
   { name: 'reader', story: 'application-window--reading', width: 1180, height: 740 },
   { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
   { name: 'settings', story: 'desktop-window--settings', width: 1180, height: 740 },
-  { name: 'recording', story: 'desktop-window--recording', width: 1180, height: 740 },
-  { name: 'transcribe', story: 'desktop-window--transcribed', width: 1180, height: 740 },
-  { name: 'recognise', story: 'desktop-window--recognised', width: 1180, height: 740 },
-  { name: 'deck', story: 'desktop-window--deck', width: 1180, height: 740 },
-  { name: 'stencil', story: 'desktop-window--stencil', width: 1180, height: 740 },
-  { name: 'preset', story: 'desktop-window--preset', width: 1180, height: 740 },
+  { name: 'recording', story: 'recording-tab--playing', width: 1180, height: 740 },
+  {
+    name: 'transcribe',
+    story: 'recording-tab--no-transcript',
+    width: 1180,
+    height: 740,
+    drawn: 5_000,
+  },
+  { name: 'recognise', story: 'application-window--recognising', width: 1180, height: 740 },
+  { name: 'deck', story: 'flashcards-deck--deck', width: 1180, height: 740 },
+  { name: 'stencil', story: 'flashcards-stencil--stencil', width: 1180, height: 740 },
+  { name: 'preset', story: 'window-preset--a-preset', width: 1180, height: 740 },
   // The window a person runs their cards in, which is not a wide window.
   { name: 'decks', story: 'flash-cards-window--cards-due', width: 760, height: 540 },
   { name: 'session', story: 'flash-cards-window--reviewing', width: 760, height: 540 },
