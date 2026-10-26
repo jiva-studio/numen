@@ -419,6 +419,40 @@ function verifyAppPluginBoundary() {
   }
 }
 
+/** The tab kinds, note types and commands plugins own. */
+const PLUGIN_KINDS = ["deck", "stencil", "preset", "plex", "agent", "files"];
+
+/**
+ * Files of the window where one of PLUGIN_KINDS names something of the core: `agent` as the type
+ * and path of a setting, `files` and `agent` as services of the host a plugin is handed.
+ */
+const CORE_NAME_FILES = [
+  "apps/desktop/editor/src/entities/settings/",
+  "apps/desktop/editor/src/pages/settings/",
+  "apps/desktop/editor/src/entities/plugin/model/context.ts",
+];
+
+/** The window names no tab kind, note type or command of a plugin as a literal. */
+function verifyWindowNamesNoPluginKind() {
+  const literal = `['"\`](${PLUGIN_KINDS.join("|")})['"\`]`;
+  const grep = spawnSync(
+    "git",
+    [
+      "grep", "-nE", literal, "--",
+      "apps/desktop/editor/src/*.ts", "apps/desktop/editor/src/*.vue",
+      ":!*.test.ts", ":!*.spec.ts", ":!*.stories.ts",
+    ],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  const found = (grep.stdout || "")
+    .split("\n")
+    .filter(Boolean)
+    .filter((line) => !CORE_NAME_FILES.some((prefix) => line.split(":")[0].startsWith(prefix)));
+  if (found.length > 0) {
+    throw new Error("The window names plugin kinds:\n" + found.join("\n"));
+  }
+}
+
 function verifyUiDomainIsolation() {
   const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
@@ -534,6 +568,13 @@ const VERIFIERS = [
     module: "apps",
     name: "Applications Reach No Plugin (no path, alias, glob or import into plugins/)",
     run: verifyAppsReachNoPlugin,
+  },
+  {
+    id: "window-names-no-plugin-kind",
+    scope: "apps",
+    module: "desktop",
+    name: "Desktop Window Names No Plugin Kind (deck, stencil, preset, plex, agent, files)",
+    run: verifyWindowNamesNoPluginKind,
   },
   {
     id: "desktop-editor-fsd",
