@@ -453,3 +453,27 @@ func TestVersionChangeRequestsExtractionOfTheFileAgain(t *testing.T) {
 		t.Fatalf("waiting to be cut: %v, want each changed file once", got)
 	}
 }
+
+// The versions of a file changed are a pass that cuts it again and gives the
+// vault the vectors it owes.
+func TestVersionChangeEmbedsWhatTheVaultOwes(t *testing.T) {
+	model := &fakeEmbedder{dims: 64}
+	made, db := reading(t)
+	fit(t, db, model)
+
+	v := testsupport.NewVault(t, map[string]string{"Note.md": noteWith(before, 200)})
+	cut(t, made, db, v)
+
+	p := newPass(made, db, newRecorder(), model, model.GetModel().Recipe(), v)
+	p.session.ReportVersionsChanged(v, "books/scan.pdf")
+	<-p.worker.read
+	p.embedRecognised(t.Context())
+
+	target, embedded, err := db.Progress().GetProgress(t.Context(), v.ID, model.GetModel().Recipe())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if target == 0 || embedded != target {
+		t.Errorf("after a version change %d of %d chunks carry a vector", embedded, target)
+	}
+}
