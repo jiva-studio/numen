@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Settings for the AI agent and indexing model.
+ * Settings for the AI agent.
  */
 import { computed } from 'vue'
 import { NumberField, Select, Switch } from '@numen/ui'
@@ -42,10 +42,6 @@ const getChoices = (path: readonly string[]): readonly SelectChoice[] =>
   createModelChoices(fields, path, words)
 
 /* -------------------------------- Handlers -------------------------------- */
-function onIndexingModelChange(name: string) {
-  fields.chooseModel(paths.indexingModel, name)
-}
-
 function onAgentUseChange(name: string) {
   fields.chooseModel(paths.agent, name)
 }
@@ -68,26 +64,6 @@ function onAgentHooksChange(value: boolean) {
 </script>
 
 <template>
-  <section class="settings__group" :aria-label="words.indexing">
-    <h2 class="settings__heading">{{ words.indexing }}</h2>
-
-    <SettingRow
-      v-slot="{ labelledBy }"
-      at="indexing"
-      :name="words.indexingModel"
-      :detail="words.indexingModelDetail"
-    >
-      <Select
-        :model-value="fields.getString(paths.indexingModel)"
-        :choices="getChoices(paths.indexingModel)"
-        :name="words.indexingModel"
-        :aria-labelledby="labelledBy"
-        class="settings__choice"
-        @update:model-value="onIndexingModelChange"
-      />
-    </SettingRow>
-  </section>
-
   <section class="settings__group" :aria-label="words.agent">
     <h2 class="settings__heading">{{ words.agent }}</h2>
 

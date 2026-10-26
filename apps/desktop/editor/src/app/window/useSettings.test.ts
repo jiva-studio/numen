@@ -92,48 +92,6 @@ describe('the lists the palette offers for a setting', () => {
     ])
   })
 
-  it('offers the indexing models by group, with a model the file names first', () => {
-    const { settings } = createSettings()
-    const settingSpy = vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')
-    vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([
-      model(),
-      model({ name: 'bge-small', title: 'BGE small', group: '', presence: 'nothing to fetch' }),
-    ])
-
-    expect(settings.paletteLists.getStepGroups('indexingModel', '')).toStrictEqual([
-      {
-        id: `indexingModel-${WORDS.owned}`,
-        title: WORDS.owned,
-        items: [{ id: 'people/own-model', title: 'own-model', detail: 'people/own-model' }],
-      },
-      {
-        id: 'indexingModel-On this machine',
-        title: 'On this machine',
-        items: [{ id: 'e5-small-int8', title: 'E5 small', detail: WORDS.present }],
-      },
-      {
-        id: 'indexingModel-Other',
-        title: WORDS.indexingModel,
-        items: [{ id: 'bge-small', title: 'BGE small' }],
-      },
-    ])
-    expect(settingSpy).toHaveBeenCalledWith(['indexing', 'embedding', 'model', 'name'])
-  })
-
-  it('offers only the models there are where the file names no model in words', () => {
-    const { settings } = createSettings()
-    vi.spyOn(settings.rest, 'getSetting').mockReturnValue(5)
-    vi.spyOn(settings.rest, 'getModelsAt').mockReturnValue([model()])
-
-    expect(settings.paletteLists.getStepGroups('indexingModel', '')).toStrictEqual([
-      {
-        id: 'indexingModel-On this machine',
-        title: 'On this machine',
-        items: [{ id: 'e5-small-int8', title: 'E5 small', detail: WORDS.present }],
-      },
-    ])
-  })
-
   it('offers nothing for a command that is over no setting', () => {
     const { settings } = createSettings()
     vi.spyOn(settings.rest, 'getSetting').mockReturnValue('people/own-model')

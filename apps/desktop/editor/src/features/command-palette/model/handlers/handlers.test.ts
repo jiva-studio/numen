@@ -225,7 +225,6 @@ const window = (
       chooseNesting: async (selected) => void isDone.push(`nesting ${selected}`),
       chooseHeadings: async (selected) => void isDone.push(`headings ${selected}`),
       choosePerformance: async (selected) => void isDone.push(`performance ${selected}`),
-      chooseIndexingModel: async (selected) => void isDone.push(`indexingModel ${selected}`),
       choosePluginSetting: async (pluginId, key, selected) =>
         void isDone.push(`plugin ${pluginId} ${key} ${selected}`),
     },
@@ -1142,36 +1141,6 @@ describe('the open files a command reaches', () => {
     expect(one.notes.getPath('Gone.md')).toBe('Gone.md')
     expect(one.notes.asking('Gone.md')).toBe(false)
     expect(one.actions).toStrictEqual([])
-  })
-})
-
-describe('indexingModel command', () => {
-  it('changes the indexing model', async () => {
-    const isDone: string[] = []
-    const deps = {
-      navigator: { getOpeningNote: () => '' },
-      settings: {
-        chooseIndexingModel: async (c: string) => void isDone.push(`indexingModel ${c}`),
-      },
-      writeMessage: () => {},
-    } as unknown as Parameters<typeof runInvocation>[1]
-    await runInvocation(
-      {
-        id: 'indexingModel',
-        name: 'e5-small-int8',
-        path: '',
-        file: '',
-        title: '',
-        others: [],
-        vault: { id: 'v', name: 'V' },
-        kind: null,
-        tab: '',
-        note: null,
-      },
-      deps,
-      words,
-    )
-    expect(isDone).toStrictEqual(['indexingModel e5-small-int8'])
   })
 })
 

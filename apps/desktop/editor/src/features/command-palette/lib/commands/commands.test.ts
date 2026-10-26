@@ -62,7 +62,6 @@ describe('the commands that ask for a choice among a few', () => {
       'nesting',
       'headings',
       'performanceProfile',
-      'indexingModel',
     ])
   })
 })

@@ -95,8 +95,6 @@ export interface SettingsWriter {
   chooseHeadings(selected: string): Promise<void>
   /** The performance workload profile chosen. */
   choosePerformance(selected: string): Promise<void>
-  /** The indexing model chosen. */
-  chooseIndexingModel(selected: string): Promise<void>
   /** A declarative plugin setting chosen. */
   choosePluginSetting?(pluginId: string, key: string, selected: unknown): Promise<void>
 }

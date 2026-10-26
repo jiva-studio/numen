@@ -3,7 +3,6 @@ import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
 import { running } from '@/entities/artifact'
 import { useSettings } from '../window/useSettings'
 import { WORDS } from '@/shared/words'
-import type { Model } from '@/entities/settings'
 
 /** Every dependency a fake that records what it was handed. */
 const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
@@ -60,31 +59,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
 }
 
 describe('createCommandDeps', () => {
-  const model: Model = {
-    namedAt: ['indexing', 'model', 'name'],
-    name: 'e5-small-int8',
-    title: 'e5-small-int8',
-    group: 'On this machine',
-    isDefault: false,
-    presence: 'present',
-    writes: [{ at: ['indexing', 'model', 'name'], value: 'e5-small-int8' }],
-  }
-
-  it('chooses an indexing model when found in models', async () => {
-    const content: unknown[] = []
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: (w: unknown[]) => {
-          content.push(...w)
-        },
-        getModelsAt: () => [model],
-      } as unknown as CommandDepsOptions['rest'],
-    })
-
-    await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(content).toStrictEqual(model.writes)
-  })
-
   it('writes a plugin setting when chosen', async () => {
     const content: unknown[] = []
     const { deps } = createOptions({
@@ -97,21 +71,6 @@ describe('createCommandDeps', () => {
 
     await deps.settings.choosePluginSetting?.('transcription', 'autoRun', true)
     expect(content).toStrictEqual([{ at: ['plugins', 'transcription', 'autoRun'], value: 'true' }])
-  })
-
-  it('chooses an indexing model when not found in models', async () => {
-    const content: unknown[] = []
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: (w: unknown[]) => {
-          content.push(...w)
-        },
-        getModelsAt: () => [],
-      } as unknown as CommandDepsOptions['rest'],
-    })
-
-    await deps.settings.chooseIndexingModel('custom-model')
-    expect(content).toStrictEqual([{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }])
   })
 
   it('handles choosing performance profile', async () => {
@@ -311,50 +270,10 @@ describe('the commands reach the window', () => {
     createOptions().deps.copyPath('zoo/Llama.md')
     expect(writeText).toHaveBeenCalledWith('zoo/Llama.md')
   })
-
-  it('asks for the indexing models at the setting that names one', async () => {
-    const request: (readonly string[])[] = []
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: async () => {},
-        getModelsAt: (categoryPath) => {
-          request.push(categoryPath)
-          return []
-        },
-      },
-    })
-
-    await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(request).toStrictEqual([['indexing', 'model', 'name']])
-  })
-
-  it('writes the model of the name chosen, among several', async () => {
-    const content: unknown[] = []
-    const other = { name: 'bge-small', writes: [{ at: ['bge'], value: '1' }] }
-    const selected = { name: 'e5-small-int8', writes: [{ at: ['e5'], value: '1' }] }
-    const { deps } = createOptions({
-      rest: {
-        writeSettings: async (w) => void content.push(...w),
-        getModelsAt: () => [other, selected] as never,
-      },
-    })
-
-    await deps.settings.chooseIndexingModel('e5-small-int8')
-    expect(content).toStrictEqual(selected.writes)
-  })
-
-  it('writes the name chosen where the settings list no models', async () => {
-    const { deps, calls } = createOptions()
-
-    await deps.settings.chooseIndexingModel('custom-model')
-    expect(calls).toStrictEqual([
-      ['writeSettings', [{ at: ['indexing', 'model', 'name'], value: '"custom-model"' }]],
-    ])
-  })
 })
 
 describe('useSettings step groups', () => {
-  it('returns step groups for indexingModel and performanceProfile', () => {
+  it('returns step groups for performanceProfile', () => {
     const core = {
       fileKinds: async () => new Map(),
       fileChanges: () => () => {},
@@ -385,9 +304,6 @@ describe('useSettings step groups', () => {
     const perfGroups = settings.paletteLists.getStepGroups('performanceProfile', '')
     expect(perfGroups.length).toBe(1)
     expect(perfGroups[0]?.id).toBe('performance')
-
-    const indexingGroups = settings.paletteLists.getStepGroups('indexingModel', '')
-    expect(Array.isArray(indexingGroups)).toBe(true)
 
     const unknownGroups = settings.paletteLists.getStepGroups('unknown', '')
     expect(unknownGroups).toStrictEqual([])

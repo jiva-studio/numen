@@ -92,7 +92,6 @@ export const WORDS = {
   maximumDetail: 'Full hardware utilization for indexing and models',
   custom: 'Custom',
   customDetail: 'Manual concurrency and batch settings',
-  indexingModel: 'Set indexing model',
   byDefault: 'the default',
   present: 'on this machine',
   notFetched: 'not fetched yet',

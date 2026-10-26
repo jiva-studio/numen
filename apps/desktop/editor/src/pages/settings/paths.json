@@ -1,5 +1,4 @@
 {
-  "indexingModel": ["indexing", "embedding", "model", "name"],
   "profiles": ["indexing", "proofreading", "profiles"],
   "agent": ["agent", "use"],
   "agentTools": ["agent", "serve_tools"],

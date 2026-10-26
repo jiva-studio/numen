@@ -20,9 +20,8 @@ import {
 } from '@/features/settings-commands'
 import { type PluginInfo, type SettingEdit } from '@/entities/settings'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
-import { useSettingsTab, paths, createChoices } from '@/pages/settings'
+import { useSettingsTab } from '@/pages/settings'
 import { createSettingsFileTabKind } from '@/pages/settings-file'
-import type { SelectChoice } from '@numen/ui'
 import type { Command, PaletteLists } from '@/features/command-palette'
 import type { SettingsPort } from '@/app/ports/settings'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -52,30 +51,6 @@ function getPerformanceStepGroups(words: Words) {
       ],
     },
   ]
-}
-
-function getIndexingModelStepGroups(rest: ReturnType<typeof createSettingsStore>, words: Words) {
-  const models = rest.getModelsAt(paths.indexingModel)
-  const current = rest.getSetting(paths.indexingModel)
-  const choices = createChoices(models, typeof current === 'string' ? current : '', words)
-
-  const groups: Record<string, SelectChoice[]> = {}
-  for (const choice of choices) {
-    const groupName = choice.group ?? 'Other'
-    const list = groups[groupName] ?? []
-    list.push(choice)
-    groups[groupName] = list
-  }
-
-  return Object.entries(groups).map(([groupName, groupChoices]) => ({
-    id: `indexingModel-${groupName}`,
-    title: groupName === 'Other' ? words.indexingModel : groupName,
-    items: groupChoices.map((c) => ({
-      id: c.id,
-      title: c.text,
-      ...(c.detail ? { detail: c.detail } : {}),
-    })),
-  }))
 }
 
 interface PluginGroupContext {
@@ -245,7 +220,6 @@ function createSettingsPaletteLists(deps: PaletteListsDeps): PaletteLists {
       if (command === NESTING) return nesting.getNestingGroups()
       if (command === HEADINGS) return nesting.getHeadingsGroups()
       if (command === 'performanceProfile') return getPerformanceStepGroups(words)
-      if (command === 'indexingModel') return getIndexingModelStepGroups(rest, words)
       if (command.startsWith('plugin-setting:')) return getPluginStepGroups(command, rest, words)
       return []
     },

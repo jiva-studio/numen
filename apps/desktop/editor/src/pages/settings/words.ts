@@ -12,7 +12,6 @@ export const WORDS = {
   window: 'The window',
   naming: 'What a note is called',
   ocr: 'OCR',
-  indexing: 'Indexing',
   performance: 'Performance',
   agent: 'The agent',
   ai: 'AI',
@@ -40,9 +39,6 @@ export const WORDS = {
   syncingDetail: 'Whether renaming either of the two brings the other into line.',
   /** The profile naming none, which is what proofreads nothing. */
   proofreadingNone: 'Nothing',
-  /** Turning the vault into vectors. */
-  indexingModel: 'Embedding model',
-  indexingModelDetail: 'The model the text of the vault is turned into vectors by.',
   /** Workload and performance calibration. */
   performanceProfile: 'Performance profile',
   performanceProfileDetail:

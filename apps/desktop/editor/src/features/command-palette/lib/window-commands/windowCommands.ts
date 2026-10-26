@@ -121,13 +121,6 @@ export const createWindowFeatureCommands = (words: Words): readonly Command[] =>
     needs: 'choosing',
     isOffered: isAlwaysOffered,
   },
-  {
-    id: 'indexingModel',
-    text: words.indexingModel,
-    group: 'window',
-    needs: 'choosing',
-    isOffered: isAlwaysOffered,
-  },
   { id: 'settings', text: words.settings, group: 'window', isOffered: isAlwaysOffered },
 ]
 

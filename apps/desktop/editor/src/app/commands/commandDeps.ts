@@ -117,15 +117,6 @@ function createSettingsCommands(options: CommandDepsOptions): CommandDeps['setti
     choosePerformance: async (selected) => {
       await rest.writeSettings([{ at: ['performance', 'profile'], value: write(selected) }])
     },
-    chooseIndexingModel: async (selected) => {
-      const models = rest.getModelsAt?.(['indexing', 'model', 'name']) ?? []
-      const model = models.find((one) => one.name === selected)
-      if (model) {
-        await rest.writeSettings(model.writes)
-      } else {
-        await rest.writeSettings([{ at: ['indexing', 'model', 'name'], value: write(selected) }])
-      }
-    },
     choosePluginSetting: async (pluginId: string, key: string, selected: unknown) => {
       await rest.writeSettings([{ at: ['plugins', pluginId, key], value: write(selected) }])
     },

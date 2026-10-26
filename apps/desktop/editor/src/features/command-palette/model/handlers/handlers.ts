@@ -68,7 +68,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   nesting: (invocation, on) => on.settings.chooseNesting(invocation.name),
   headings: (invocation, on) => on.settings.chooseHeadings(invocation.name),
   performanceProfile: (invocation, on) => on.settings.choosePerformance(invocation.name),
-  indexingModel: (invocation, on) => on.settings.chooseIndexingModel(invocation.name),
   first: (_, on, words) => navigateToPath(on.navigator.getOpeningNote(), on, words),
   goto: (invocation, on, words) => navigateToPath(invocation.path, on, words),
   openVault: (invocation, on, words) => showVault(invocation.vault.id, on, words),
