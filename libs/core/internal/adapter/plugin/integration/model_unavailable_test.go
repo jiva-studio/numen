@@ -27,7 +27,6 @@ func (h *stubModelHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, 
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
-func (h *stubModelHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
 func (h *stubModelHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }

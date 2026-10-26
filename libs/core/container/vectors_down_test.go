@@ -30,7 +30,6 @@ func (h *downEmbeddingHost) ResolveCapability(string) (pluginport.DiscoveredPlug
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.embeddings"}}, nil
 }
 
-func (h *downEmbeddingHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
 func (h *downEmbeddingHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }

@@ -394,24 +394,6 @@ func (h *Host) ResolveCapability(capability string) (plugindir.DiscoveredPlugin,
 	return plugindir.EmptyDiscoveredPlugin(), missing
 }
 
-// ResolveCapabilities returns every enabled plugin that declares the capability, in the order of
-// their ids. In safe mode it returns none.
-func (h *Host) ResolveCapabilities(capability string) []plugindir.DiscoveredPlugin {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	var found []plugindir.DiscoveredPlugin
-	if h.safeMode {
-		return found
-	}
-	for _, p := range h.getPluginsInOrderLocked() {
-		if p.Manifest.HasCapability(capability) && h.isPluginEnabledLocked(p.Manifest.ID) {
-			found = append(found, p)
-		}
-	}
-	return found
-}
-
 // ResolveService finds the enabled plugin with the lowest id among those that serve the service to
 // the windows.
 func (h *Host) ResolveService(service string) (plugindir.DiscoveredPlugin, bool) {

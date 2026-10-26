@@ -13,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/embedderbridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -22,7 +21,6 @@ import (
 type bridgeHost interface {
 	embedderbridge.Host
 	agentbridge.Host
-	toolsbridge.Host
 }
 
 // bridgeCall makes one call through an open bridge and says whether the value it
@@ -34,9 +32,6 @@ type bridgeContract struct {
 	name string
 	open func(ctx context.Context, host bridgeHost) (io.Closer, bridgeCall, error)
 }
-
-// isLeased says whether opening the bridge takes a reference on its plugin. The tools take one only for the length of a call.
-func (c bridgeContract) isLeased() bool { return c.name != "tools" }
 
 // isZeroResult reports whether a call returned the zero value of its type.
 func isZeroResult[T any](value T, err error) (bool, error) {
@@ -65,12 +60,6 @@ var bridgeContracts = []bridgeContract{
 		b, err := agentbridge.OpenForPlugin(ctx, h, contractPluginID)
 		return createContract(b, err, func(b *agentbridge.Agent, ctx context.Context) (bool, error) {
 			return isZeroResult(b.GetPrograms(ctx, nil))
-		})
-	}},
-	{"tools", func(_ context.Context, h bridgeHost) (io.Closer, bridgeCall, error) {
-		b := toolsbridge.Open(h)
-		return createContract(b, nil, func(b *toolsbridge.Tools, ctx context.Context) (bool, error) {
-			return isZeroResult(b.ListPluginTools(ctx, contractPluginID))
 		})
 	}},
 }
@@ -211,7 +200,7 @@ func TestADoubleCloseProducesTheReferenceBackOnce(t *testing.T) {
 				t.Fatal(err)
 			}
 			target := host.Acquired.Load()
-			if tc.isLeased() && target == 0 {
+			if target == 0 {
 				t.Fatal("opening the bridge acquired no reference")
 			}
 			if got := host.Released.Load(); got != 0 {

@@ -14,12 +14,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/keychain"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/commandbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/serviceproxy"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolsbridge"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/vaultaccess"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
-	"github.com/jiva-studio/numen/libs/core/usecase/plugintool"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -77,16 +75,6 @@ func (c Config) StopPlugins(ctx context.Context) error {
 		return nil
 	}
 	return c.PluginHost.TeardownAll(ctx, pluginGracePeriod)
-}
-
-// GetPluginTools is the use cases that offer an agent the tools the plugins serve. Where there is
-// no plugin host they offer none.
-func (c Config) GetPluginTools() plugintool.Tools {
-	var tools pluginport.PluginTools
-	if c.PluginHost != nil {
-		tools = toolsbridge.Open(c.PluginHost)
-	}
-	return plugintool.NewTools(tools)
 }
 
 // GetPluginCommands is the use cases over the commands the plugins declare. Where there is no plugin

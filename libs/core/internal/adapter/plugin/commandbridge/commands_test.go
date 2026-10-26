@@ -65,8 +65,6 @@ func (h *commandHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, er
 	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 }
 
-func (h *commandHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
-
 func (h *commandHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }

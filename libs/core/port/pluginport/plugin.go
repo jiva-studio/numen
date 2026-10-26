@@ -132,9 +132,6 @@ type PluginResolver interface {
 	// ResolveCapability returns the plugin for the capability. Where none answers, the error is an
 	// *UnavailableError saying whether none is installed or every one is disabled.
 	ResolveCapability(capability string) (DiscoveredPlugin, error)
-	// ResolveCapabilities returns every enabled plugin that declares the capability, in the order
-	// of their ids. Where none does, it returns none.
-	ResolveCapabilities(capability string) []DiscoveredPlugin
 	// ResolveService returns the enabled plugin with the lowest id among those that serve the service
 	// to the windows, and false where none does.
 	ResolveService(service string) (DiscoveredPlugin, bool)
@@ -148,11 +145,6 @@ type PluginResolver interface {
 type PluginActivator interface {
 	EnsureActive(ctx context.Context, pluginID string) (Endpoint, error)
 	Release(pluginID string)
-}
-
-// PluginAuthorizer verifies plugin permissions.
-type PluginAuthorizer interface {
-	CheckPluginPermission(pluginID, permission string) error
 }
 
 // PluginDiscoverer scans for available plugins and returns their metadata in the order of their ids.
@@ -207,7 +199,6 @@ type PluginRegistryManager interface {
 	PluginResolver
 	PluginConfigurator
 	PluginEventEmitter
-	PluginAuthorizer
 }
 
 // PluginManager coordinates process lifecycle, discovery, settings, and RPC routing for modular extensions.

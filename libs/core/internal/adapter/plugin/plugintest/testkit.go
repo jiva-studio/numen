@@ -230,8 +230,6 @@ func (h *LeaseHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, erro
 	return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: "md.numen.stub"}}, nil
 }
 
-func (h *LeaseHost) ResolveCapabilities(string) []pluginport.DiscoveredPlugin { return nil }
-
 func (h *LeaseHost) ResolveService(string) (pluginport.DiscoveredPlugin, bool) {
 	return pluginport.DiscoveredPlugin{}, false
 }
