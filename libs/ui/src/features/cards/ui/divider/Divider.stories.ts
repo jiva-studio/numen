@@ -15,7 +15,7 @@ const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothi
 
 interface Knobs {
   /** What the action the rule holds says. */
-  said: string
+  label: string
   /** Where on the rule it stands. */
   at: 'middle' | 'start'
   /** How wide the window drawing the rule is. */
@@ -27,11 +27,11 @@ const meta: Meta<Knobs> = {
   component: Divider,
   parameters: { layout: 'fullscreen' },
   argTypes: {
-    said: { control: 'text' },
+    label: { control: 'text' },
     at: { control: 'inline-radio', options: ['middle', 'start'] },
     width: { control: 'text' },
   },
-  args: { said: 'Add a field', at: 'middle', width: '100%' },
+  args: { label: 'Add a field', at: 'middle', width: '100%' },
   render: (args) => ({
     components: { Divider, Button, Icon },
     setup: () => ({ args }),
@@ -65,21 +65,21 @@ const sides = (divider: HTMLElement): readonly number[] =>
 export const ADivider: Story = {}
 
 /** The shortest thing anything is added by. */
-export const One: Story = { args: { said: 'Add' } }
+export const One: Story = { args: { label: 'Add' } }
 
 /** A word far longer than anything a list is added to by. */
 export const FarTooMany: Story = {
-  args: { said: 'Add a field '.repeat(12).trim() },
+  args: { label: 'Add a field '.repeat(12).trim() },
 }
 
 /** A name that is not Latin. */
-export const OtherScripts: Story = { args: { said: 'Добавить поле' } }
+export const OtherScripts: Story = { args: { label: 'Добавить поле' } }
 
 /** A word with nothing in it to break at. */
-export const Unbroken: Story = { args: { said: UNBROKEN } }
+export const Unbroken: Story = { args: { label: UNBROKEN } }
 
 /** Nothing said at all. */
-export const NoTextAtAll: Story = { args: { said: '' } }
+export const NoTextAtAll: Story = { args: { label: '' } }
 
 /** A window too narrow for the word and the line both. */
 export const Narrow: Story = { args: { width: '10rem' } }
