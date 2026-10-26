@@ -77,9 +77,9 @@ test('a folder holding a Go module and a package names both by kind', () => {
 test('test data outside the package is found from the paths its tests import', () => {
   const tests = [
     {
-      path: 'libs/ui/core/src/shared/lib/address.test.ts',
+      path: 'libs/ui/core/src/shared/lib/text/address.test.ts',
       source:
-        "import cases from '../../../../protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../protocol/testdata/html/spine.html?raw'",
+        "import cases from '../../../../../../protocol/testdata/addresses.json'\nimport { read } from './address'\nimport raw from '../../../../../../protocol/testdata/html/spine.html?raw'",
     },
   ]
   assert.deepEqual(findTestdata('libs/ui/core', tests), ['libs/protocol/testdata'])
@@ -413,7 +413,7 @@ test('a Go cache written under another toolchain is dropped from the merge', () 
 /** Repository-relative TypeScript files, the first held by shard 1 of 2 and the second by shard 2. */
 const findTsFiles = () => {
   const files = Array.from({ length: 20 }, (_, index) => `libs/ui/core/src/lib/file${index}.ts`)
-  return [1, 2].map((index) => files.find((file) => getShardOf(`modules/${file}`, 2) === index))
+  return [1, 2].map((index) => files.find((file) => getShardOf(file, 2) === index))
 }
 
 const TESTS = 'libs/ui/core/src/lib/span.test.ts'

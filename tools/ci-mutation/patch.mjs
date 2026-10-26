@@ -26,7 +26,7 @@ export const patchSource = (source) => {
 }
 
 export const patchVitestRunner = () => {
-  const require = createRequire(join(root, 'modules/package.json'))
+  const require = createRequire(join(root, 'package.json'))
   const manifest = require.resolve('@stryker-mutator/vitest-runner/package.json')
   const { version } = JSON.parse(readFileSync(manifest, 'utf8'))
   if (version !== PATCHED_VERSION) {

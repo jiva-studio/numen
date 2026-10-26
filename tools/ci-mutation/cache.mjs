@@ -109,7 +109,7 @@ export const mergeStrykerReports = (count, previous, outputs, readSource) => {
     const remap = (testIds) =>
       testIds?.map((id) => ids.get(keysBySource[at].get(id))).filter((id) => id !== undefined)
     for (const [file, result] of Object.entries(report.files ?? {})) {
-      if (!isOwner(getShardOf(`modules/${file}`, count))) continue
+      if (!isOwner(getShardOf(file, count))) continue
       files[file] = {
         ...result,
         mutants: result.mutants.map((mutant) => ({
@@ -139,7 +139,7 @@ export const keepFiles = (report, mutated) => {
 const readJson = (path) => (existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null)
 
 const readSource = (file) => {
-  const path = join(root, 'modules', file)
+  const path = join(root, file)
   return existsSync(path) ? readFileSync(path, 'utf8') : undefined
 }
 

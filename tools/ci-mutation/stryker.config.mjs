@@ -1,6 +1,6 @@
 /**
  * Stryker's settings for one run of a `ts` target, handed over by `mutate.mjs`
- * in `NUMEN_MUTATION`. Stryker runs from `modules/`, and its sandbox holds the
+ * in `NUMEN_MUTATION`. Stryker runs from the repository root, and its sandbox holds the
  * target's package and the test data its tests read.
  */
 import { keepOnly } from './targets.mjs'
@@ -8,9 +8,7 @@ import { keepOnly } from './targets.mjs'
 const run = JSON.parse(process.env.NUMEN_MUTATION ?? 'null')
 if (!run) throw new Error('stryker.config.mjs is read by mutate.mjs, which sets NUMEN_MUTATION')
 
-const strip = (path) => path.replace(/^modules\//, '')
-
-const at = strip(run.target.at)
+const at = run.target.at
 
 export default {
   testRunner: 'vitest',
@@ -21,7 +19,7 @@ export default {
   ignoreStatic: true,
   mutate: run.mutate,
   ignorePatterns: [
-    ...keepOnly([at, '.mutation/vitest', ...run.target.testdata.map(strip)]),
+    ...keepOnly([at, 'tsconfig.base.json', '.mutation/vitest', ...run.target.testdata]),
     `/${at}/dist`,
     `/${at}/storybook-static`,
     `/${at}/coverage`,

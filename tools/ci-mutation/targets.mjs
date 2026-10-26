@@ -1,7 +1,7 @@
 /**
  * What is under mutation testing, found in the tracked tree.
  *
- * A `go` target is every Go module under `modules/` with a test of its own,
+ * A `go` target is every tracked Go module with a test of its own,
  * run with gomutants. A `ts` target is every workspace package with a
  * `vitest.config.ts` and source under `src/`, run with Stryker against its
  * projects that do not run in a browser. Each target is split into shards by
@@ -61,14 +61,14 @@ export const getShardCount = (kind, lines) =>
   Math.min(MAX_SHARDS, Math.max(1, Math.ceil(lines / SHARD_LINES[kind])))
 
 /**
- * Names for targets found at these folders: the path under `modules/` with
+ * Names for targets found at these folders: the repository path with
  * dashes, and the kind appended where one folder holds both.
  */
 export const nameTargets = (found) => {
   const kinds = new Map()
   for (const one of found) kinds.set(one.at, (kinds.get(one.at) ?? 0) + 1)
   return found.map((one) => {
-    const base = one.at.replace(/^modules\//, '').replaceAll('/', '-')
+    const base = one.at.replaceAll('/', '-')
     return { ...one, name: kinds.get(one.at) > 1 ? `${base}-${one.kind}` : base }
   })
 }
@@ -83,7 +83,7 @@ export const findTestdata = (at, tests) => {
   for (const { path, source } of tests) {
     for (const [, specifier] of source.matchAll(/['"](\.\.?\/[^'"?]+)(?:\?[^'"]*)?['"]/g)) {
       const resolved = normalize(join(dirname(path), specifier))
-      if (resolved.startsWith(`${at}/`) || !resolved.startsWith('modules/')) continue
+      if (resolved.startsWith(`${at}/`) || resolved.startsWith('..')) continue
       kept.add(dirname(resolved))
     }
   }
@@ -96,7 +96,7 @@ export const findTestdata = (at, tests) => {
 /* -------------------------------- Discovery ------------------------------- */
 
 const listTracked = () =>
-  execFileSync('git', ['ls-files', 'modules'], {
+  execFileSync('git', ['ls-files'], {
     cwd: root,
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
@@ -130,9 +130,9 @@ const findGoTargets = (tracked) => {
 }
 
 const readWorkspaces = () => {
-  const { workspaces } = JSON.parse(readFileSync(join(root, 'modules/package.json'), 'utf8'))
+  const { workspaces } = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'))
   return workspaces.map(
-    (glob) => new RegExp(`^modules/${glob.replaceAll('.', '\\.').replaceAll('*', '[^/]+')}$`),
+    (glob) => new RegExp(`^${glob.replaceAll('.', '\\.').replaceAll('*', '[^/]+')}$`),
   )
 }
 

@@ -4,7 +4,7 @@
  */
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
-import { isAbsolute, join, relative } from 'node:path'
+import { isAbsolute, join, normalize, relative } from 'node:path'
 import { OUTPUT, root } from './targets.mjs'
 
 /** Outcomes counted as the suite noticing the mutant. */
@@ -19,7 +19,7 @@ export const getPath = (target, key, mutant) => {
   // gomutants keys a file by its name alone; its module-relative path opens the mutant id, up to the first colon.
   if (target.kind === 'go')
     return join(target.at, mutant.id.includes(':') ? mutant.id.split(':')[0] : key)
-  return join('modules', key)
+  return normalize(key)
 }
 
 /** The source a mutant replaced, on one line. */

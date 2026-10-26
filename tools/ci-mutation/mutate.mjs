@@ -31,8 +31,6 @@ import {
   root,
 } from './targets.mjs'
 
-const MODULES = join(root, 'modules')
-
 /** The target holding a repository path: the deepest one of the file's kind. */
 export const findTarget = (targets, path) => {
   const kind = path.endsWith('.go') ? 'go' : 'ts'
@@ -130,7 +128,7 @@ const listSources = (target) =>
  * where Stryker's sandbox keeps it and rooted at the package.
  */
 export const renderVitestConfig = (at) => {
-  const up = `../../${at.replace(/^modules\//, '')}`
+  const up = `../../${at}`
   return [
     "import { fileURLToPath, URL } from 'node:url'",
     "import { defineConfig } from 'vitest/config'",
@@ -156,12 +154,12 @@ const writeVitestConfig = (target) => {
   const path = join(root, OUTPUT, 'vitest', `${target.name}.config.mts`)
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, renderVitestConfig(target.at))
-  return relative(MODULES, path)
+  return relative(root, path)
 }
 
 const runTs = (target, shard, { report, cache }, file) => {
   const sources = file ? [file] : pickShard(listSources(target), ...shard)
-  const mutate = sources.map((path) => relative('modules', path))
+  const mutate = sources
   if (mutate.length === 0) return null
   patchVitestRunner()
   const settings = {
@@ -169,15 +167,15 @@ const runTs = (target, shard, { report, cache }, file) => {
     vitestConfig: writeVitestConfig(target),
     mutate,
     concurrency: getWorkers(),
-    report: relative(MODULES, report),
-    html: relative(MODULES, report.replace(/\.json$/, '.html')),
-    incrementalFile: file ? null : relative(MODULES, cache),
+    report: relative(root, report),
+    html: relative(root, report.replace(/\.json$/, '.html')),
+    incrementalFile: file ? null : relative(root, cache),
   }
   const status = run(
     'npx',
-    ['stryker', 'run', join(MODULES, 'tools/mutation/stryker.config.mjs')],
+    ['stryker', 'run', join(root, 'tools/ci-mutation/stryker.config.mjs')],
     {
-      cwd: MODULES,
+      cwd: root,
       env: { ...process.env, NUMEN_MUTATION: JSON.stringify(settings) },
     },
   )
