@@ -1,22 +1,29 @@
-// Package service is the backend of the proofreading plugin.
+// Package service is the backend of the proofreading plugin: it takes a text version of a file,
+// asks a model to put its lines right, keeps the corrected text in the plugin's own folder of the
+// vault's store, and reports it to the host as a version made from the one it read.
 package service
 
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-
+	"os"
 	"strconv"
 	"sync"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
+
+// PluginID is the identity the manifest gives the plugin.
+const PluginID = "md.numen.tools.proofreading"
+
+// EnvMockML names the variable that has the plugin answer every question with the mock proofreader.
+const EnvMockML = "NUMEN_MOCK_ML"
 
 // Default proofreading sizes.
 const (
@@ -30,6 +37,23 @@ const purpose = "proofreading"
 
 // completer asks the host for the answer to a question.
 type completer func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error)
+
+// Host is what the plugin works through the host: the plugin's folder the corrected texts are kept
+// in, the text versions it reads and reports, and the queue it runs in.
+type Host struct {
+	Store host.Store
+	Texts host.Texts
+	Queue host.Queue
+}
+
+// openHostAt reaches the host at the endpoint.
+func openHostAt(endpoint hostcall.Endpoint) Host {
+	return Host{
+		Store: host.NewStoreClient(endpoint),
+		Texts: host.NewTextClient(endpoint),
+		Queue: host.NewQueueClient(endpoint),
+	}
+}
 
 type proofreadingConfig struct {
 	batchSize       int
@@ -47,22 +71,17 @@ func defaultProofreadingConfig() proofreadingConfig {
 	}
 }
 
-type proofreadingServer struct {
-	ask askModel
+// settings is the configuration the host last handed over.
+type settings struct {
 	mu  sync.RWMutex
 	cfg proofreadingConfig
 }
 
-// newProofreadingServer returns a server whose model is the one the host routes
-// the proofreading purpose to.
-func newProofreadingServer(complete completer) *proofreadingServer {
-	return &proofreadingServer{
-		ask: newAskModel(complete),
-		cfg: defaultProofreadingConfig(),
-	}
+func newSettings() *settings {
+	return &settings{cfg: defaultProofreadingConfig()}
 }
 
-func (s *proofreadingServer) updateConfig(values map[string]string) {
+func (s *settings) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	applyIntConfig(values, "batch_size", &s.cfg.batchSize, 1)
@@ -83,7 +102,7 @@ func applyIntConfig(values map[string]string, key string, target *int, minVal in
 	}
 }
 
-func (s *proofreadingServer) getConfig() proofreadingConfig {
+func (s *settings) getConfig() proofreadingConfig {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	return s.cfg
@@ -102,165 +121,62 @@ func newAskModel(complete completer) askModel {
 	}
 }
 
-// ProofreadText proofreads the lines of a request according to its kind.
-func (s *proofreadingServer) ProofreadText(
-	ctx context.Context,
-	req *connect.Request[numenv1.ProofreadTextRequest],
-) (*connect.Response[numenv1.ProofreadTextResponse], error) {
-	result, err := s.proofread(ctx, req.Msg)
-	if err != nil {
-		return nil, err
-	}
-	corrections := make([]*numenv1.ProofreadCorrection, len(result.corrections))
-	for i, line := range result.corrections {
-		corrections[i] = &numenv1.ProofreadCorrection{
-			Number: int32(line.Number),
-			Last:   int32(line.Last),
-			Text:   line.Text,
-		}
-	}
-	return connect.NewResponse(&numenv1.ProofreadTextResponse{
-		Corrections: corrections,
-		Uncorrected: int32(result.uncorrected),
-		NextLine:    int32(result.next),
-		IsDone:      result.isDone,
-	}), nil
-}
-
-// proofread runs a request under the kind it names. A kind with no options of
-func (s *proofreadingServer) proofread(ctx context.Context, msg *numenv1.ProofreadTextRequest) (textResult, error) {
-	groups := readGroups(msg.GetGroups())
-	var (
-		result textResult
-		err    error
-	)
-	switch msg.GetKind() {
-	case numenv1.ProofreadKind_PROOFREAD_KIND_SCAN:
-		result, err = s.proofreadScanRequest(ctx, msg, groups)
-	case numenv1.ProofreadKind_PROOFREAD_KIND_SPEECH:
-		result, err = s.proofreadSpeechRequest(ctx, msg, groups)
-	default:
-		return textResult{}, connect.NewError(connect.CodeInvalidArgument,
-			fmt.Errorf("unknown kind %s", msg.GetKind()))
-	}
-	if err != nil {
-		var connErr *connect.Error
-		if errors.As(err, &connErr) {
-			return textResult{}, connErr
-		}
-		return textResult{}, readModelError(ctx, err)
-	}
-	return result, nil
-}
-
-func (s *proofreadingServer) proofreadScanRequest(
-	ctx context.Context,
-	msg *numenv1.ProofreadTextRequest,
-	groups []Batch,
-) (textResult, error) {
-	options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Scan)
-	if !ok {
-		return textResult{}, connect.NewError(connect.CodeInvalidArgument, errScanOptions)
-	}
-	maxDist := options.Scan.GetMaxEditDistance()
-	if maxDist <= 0 {
-		maxDist = s.getConfig().maxEditDistance
-	}
-	return proofreadScan(ctx, s.ask, groups, maxDist)
-}
-
-func (s *proofreadingServer) proofreadSpeechRequest(
-	ctx context.Context,
-	msg *numenv1.ProofreadTextRequest,
-	groups []Batch,
-) (textResult, error) {
-	options, ok := msg.GetOptions().(*numenv1.ProofreadTextRequest_Speech)
-	if !ok {
-		return textResult{}, connect.NewError(connect.CodeInvalidArgument, errSpeechOptions)
-	}
-	cfg := s.getConfig()
-	speech := options.Speech
-	size := int(speech.GetSize())
-	if size <= 0 {
-		size = cfg.batchSize
-	}
-	overlap := int(speech.GetOverlap())
-	if overlap <= 0 && speech.GetSize() <= 0 {
-		overlap = cfg.overlap
-	}
-	fromLine := int(speech.GetFromLine())
-	lineLimit := int(speech.GetLineLimit())
-	if lineLimit <= 0 {
-		lineLimit = cfg.inFlight * size
-	}
-	var lines []Line
-	for _, group := range groups {
-		lines = append(lines, group.Lines...)
-	}
-	return proofreadSpeech(ctx, s.ask, lines, size, overlap, fromLine, lineLimit)
-}
-
-var (
-	errScanOptions   = errors.New("a scan request has scan options")
-	errSpeechOptions = errors.New("a speech request has speech options")
-)
-
-// readModelError maps a failure to reach the model to the code the caller reads
-// it by: a model nothing is routed to is unavailable, one the person has not let
-// this plugin ask is permission denied, and the end of the caller's context is
-// its own.
-func readModelError(ctx context.Context, err error) error {
-	if ctxErr := ctx.Err(); ctxErr != nil {
-		return connect.NewError(connect.CodeCanceled, ctxErr)
-	}
-	if errors.Is(err, ai.ErrNoConsent) {
-		return connect.NewError(connect.CodePermissionDenied, err)
-	}
-	if errors.Is(err, ai.ErrNoRoute) || errors.Is(err, ai.ErrUnavailable) || errors.Is(err, ai.ErrNoHost) {
-		return connect.NewError(connect.CodeUnavailable, err)
-	}
-	return connect.NewError(connect.CodeInternal, err)
-}
-
-// readGroups returns the batches a request contains.
-func readGroups(groups []*numenv1.ProofreadGroup) []Batch {
-	out := make([]Batch, len(groups))
-	for i, group := range groups {
-		lines := make([]Line, len(group.GetLines()))
-		for j, line := range group.GetLines() {
-			lines[j] = Line{Number: int(line.GetNumber()), Text: line.GetText()}
-		}
-		out[i] = Batch{Number: int(group.GetNumber()), Lines: lines}
-	}
-	return out
-}
-
-// Mount registers the proofreading service on s, asking the host named by the environment for each
-// completion.
+// Mount registers the text provider and the proofread command on s, working the host the
+// environment names. The model is the mock proofreader where the environment asks for mock models.
 func Mount(s *server.Server) error {
-	return mount(s, ai.Complete, nil)
+	endpoint, err := hostcall.FromEnv()
+	if err != nil {
+		return err
+	}
+	complete := completer(ai.Complete)
+	if os.Getenv(EnvMockML) == "true" {
+		complete = completeMock
+	}
+	return mount(s, openHostAt(endpoint), complete, nil)
 }
 
 // NewHandler returns the handler of the plugin's backend for a host that links the plugin in, made
 // from the variables a launched process of the plugin is given. It asks the host those name.
 func NewHandler(vars map[string]string) (http.Handler, error) {
+	endpoint, err := hostcall.FromVars(vars)
+	if err != nil {
+		return nil, err
+	}
+	complete := func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
+		client, err := ai.NewClientFromVars(vars)
+		if err != nil {
+			return "", err
+		}
+		return client.Complete(ctx, question)
+	}
+	if vars[EnvMockML] == "true" {
+		complete = completeMock
+	}
+	hosted := openHostAt(endpoint)
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
-		return mount(s, func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
-			client, err := ai.NewClientFromVars(vars)
-			if err != nil {
-				return "", err
-			}
-			return client.Complete(ctx, question)
-		}, vars)
+		return mount(s, hosted, complete, vars)
 	})
 }
 
-func mount(s *server.Server, complete completer, vars map[string]string) error {
-	srv := newProofreadingServer(complete)
-	if len(vars) > 0 {
-		srv.updateConfig(vars)
+var errIncompleteHost = errors.New("proofreading needs the store, the texts and the queue of the host")
+
+func mount(s *server.Server, h Host, complete completer, vars map[string]string) error {
+	if h.Store == nil || h.Texts == nil || h.Queue == nil {
+		return errIncompleteHost
 	}
-	s.SetUpdateConfig(srv.updateConfig)
-	s.Register(numenv1connect.NewProofreadingServiceHandler(srv, s.HandlerOptions()...))
+	config := newSettings()
+	if len(vars) > 0 {
+		config.updateConfig(vars)
+	}
+	proofreading := newProofreading(h, newAskModel(complete), config.getConfig)
+	provider := newProvider(proofreading, h.Store)
+	commands := command.New()
+	if err := commands.Add("proofread", newProofreadCommand(proofreading)); err != nil {
+		return err
+	}
+	s.SetUpdateConfig(config.updateConfig)
+	s.Register(host.NewTextProviderHandler(provider, s.HandlerOptions()...))
+	command.Mount(s, commands)
+	s.OnClose(provider.Close)
 	return nil
 }

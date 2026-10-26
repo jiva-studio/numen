@@ -54,6 +54,13 @@ describe('the commands the plugins declare', () => {
     expect(canRunOn(convert, 'books.pdf/Bees')).toBe(false)
     expect(canRunOn(convert, '')).toBe(false)
   })
+
+  it('run over a file of any type where they declare the extension *', () => {
+    const proofread = { ...convert, id: 'proofread', fileExtensions: ['*'] }
+    expect(canRunOn(proofread, 'talks/storage.wav')).toBe(true)
+    expect(canRunOn(proofread, 'README')).toBe(true)
+    expect(canRunOn(proofread, 'books/')).toBe(false)
+  })
 })
 
 describe('a run', () => {

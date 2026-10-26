@@ -3,11 +3,21 @@
   "name": "LLM Proofreading",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Proofreading and correction engine using large language models",
-  "capabilities": ["proofreading"],
+  "description": "Puts a transcript or a recognised text right with a language model, as a version made from the text it read",
   "targets": ["desktop.editor"],
-  "activationEvents": ["onCommand:proofread"],
-  "permissions": ["ai:complete"],
+  "activationEvents": [],
+  "permissions": ["vault:read", "vault:write", "ai:complete"],
+  "textInput": {
+    "formats": ["timed", "positioned"]
+  },
+  "commands": [
+    {
+      "id": "proofread",
+      "title": "Proofread the live text of a file",
+      "fileExtensions": ["*"],
+      "hiddenInPalette": true
+    }
+  ],
   "settings": [
     {
       "key": "agent",
@@ -41,8 +51,7 @@
       "type": "number",
       "title": "Max edit distance",
       "description": "How far a correction may stand from the line as read",
-      "default": 0.3,
-      "replaces": ["indexing.proofreading.max_edit_distance"]
+      "default": 0.3
     }
   ],
   "lifecycle": {
@@ -53,6 +62,6 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/tools-proofreading",
-    "serviceName": "numen.v1.ProofreadingService"
+    "serviceName": "numen.v1.TextProviderService"
   }
 }

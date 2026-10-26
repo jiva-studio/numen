@@ -1,17 +1,17 @@
 # Putting a text right
 
-What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines, and answers with the same numbers. The corrections go beside the artifact, which is never rewritten.
+What a second model corrects in a text the first one produced, what it is shown, and what is done with its answer. A scan and a recording are proofread by the same mechanism: the model is given numbered lines, and answers with the same numbers. The corrected text is a new text version of the file, made from the version that was read; the version read is never rewritten.
 
 ## One mechanism, two texts
 
 A machine that read a page and a machine that transcribed an hour both produce text nobody typed, and both get things wrong. What they got wrong is different — a scan carries letters a machine misread, speech carries words it took for others — and everything around that is the same, so one mechanism serves both.
 
-| Proofread | What it came out of | The unit | Where the corrections go |
+| Proofread | The format of the version read | The unit | Asked about |
 | --- | --- | --- | --- |
-| a recognition | a document's pages, read by a model | one printed line | `ocr/<hash>.corrected` |
-| a transcript | a recording, heard by a model | one cue | `transcript/<hash>.asr.corrected.vtt` |
+| a recognition, or a PDF's own text layer | positioned: parts in rectangles on pages | one part, a printed line or a block | a page at a time |
+| a transcript | timed: parts between moments of a recording | one cue | a window of batches at a time |
 
-What a recognition is and how its files hold together is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md).
+What a recognition is is [Recognising a document](recognising.md). What a transcript is and how a moment in it is named is [Transcribing](transcribing.md). What a text version is, and which one is live, is the plan's section B in `resources/plans/plugins.md` and `libs/core/usecase/textversion`.
 
 ## The model is never shown a coordinate
 
@@ -23,14 +23,14 @@ This is what makes a correction safe to apply. Putting a line's letters right le
 
 ```mermaid
 graph TD
-    ART["the artifact<br/>what was read or transcribed"]
+    ART["the live version<br/>what was read or transcribed"]
     COORD["the coordinates<br/>boxes, or cue times"]
     ASK["the batch<br/>prose, lines numbered inside it"]
     MODEL["the proofreader"]
     REPLY["the reply<br/>only the lines that changed"]
     GATES["the gates"]
-    FIX["the corrections<br/>.corrected, or .corrected.vtt"]
-    OUT["the text a chunk is a place in"]
+    FIX["the corrected lines<br/>in the places of the lines read"]
+    OUT["the version made from the live one"]
 
     ART --> ASK
     ASK --> MODEL
@@ -39,7 +39,7 @@ graph TD
     GATES -->|"a mark, or a number the batch did not name"| ART
     GATES --> FIX
     COORD -->|"reattached by number"| FIX
-    ART --> OUT
+    ART -->|"the lines nothing corrected"| OUT
     FIX --> OUT
 ```
 
@@ -105,64 +105,30 @@ A printed line holds its words: on a page they stay where they were printed. Spe
 
 ## Who does it
 
-The proofreading plugin does it, and the core does not. The core collects the numbered lines of a recognition or a transcript, sends them to the plugin with the kind of text and the sizes of the window, and applies the corrections that come back. The plugin builds the batches, holds the two instructions, applies the gates to each reply, gathers the replies of overlapping batches, and answers with corrections per line.
+The proofreading plugin, `md.numen.tools.proofreading`, does all of it, and the core knows nothing of proofreading. The plugin declares a text input of timed and positioned text and serves `numen.v1.TextProviderService`. The core offers **Proofread the text with LLM Proofreading** in a file's menu wherever that plugin is enabled and the file's live version is in one of those formats, and asks the plugin for a version made from the live one.
 
-The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md), which says which agent plugin answers, with which model, and how many questions at once. An agent that is not installed or cannot be reached fails the call as unavailable, and nothing is corrected. Before the person lets the plugin ask a model, the call fails as permission denied, and the list of what is being done says "AI access not allowed — allow it in Settings → AI". The plugin invents no text and holds no key.
+The plugin reads the live version through the host, numbers its parts from one, builds the batches, holds the two instructions, applies the gates to each reply, and gathers the replies of overlapping batches. The corrected lines take the places of the parts they answer for: a correction keeps its part's page and rectangles or its times, and a run of cues answered as one becomes one part spanning their times. The plugin keeps the corrected text in its folder of the vault's store, `.numen/md.numen.tools.proofreading/proofread-<hash>.json`, one file a version read, rewritten when that version is proofread again, and reports it to the host as a version whose input is the version it read.
 
-## Profiles
+The plugin names no model: it asks the host for a completion, and the host answers from the plugin's own `agent` setting, else from `ai.default` in [Settings](settings.md). An agent that is not installed or cannot be reached fails the proofreading, and no version is made. Before the person lets the plugin ask a model, the proofreading fails the same way, with "AI access not allowed — allow it in Settings → AI". The plugin invents no text and holds no key.
 
-A profile is the sizes a text is cut into requests at, under a name. `indexing.proofreading.profiles` is a map of name to profile, and each consumer names the profile it uses.
+A proofreading waits for its turn in the core's shared queue and shows its progress as a task, in lines. A failure stays shown as the task's error until the file is proofread again.
 
-A profile carries `batch_size` — how many lines one request carries — and `overlap` — how many lines neighbouring batches share. Overlap is what keeps a phrase torn at a batch boundary whole for at least one of the batches that see it. A line two batches both answered about is taken from the later of the two, which is the batch that saw more of what follows the line.
+## Which version is shown
 
-It also carries `in_flight`: how many batches one call answers. A transcript is answered a call at a time, each call a window of that many batches, and a run is as long as its windows are asked one after another. How many questions reach the model at once is `ai.default.concurrency`.
+The version shown, searched and handed to the next processor is the newest live one. A proofreading made from a recognition is live while the OCR plugin and the proofreading plugin are both enabled and the recognition is unchanged. With the OCR plugin off, both the recognition and the version made from it are dead, and the file falls back to the newest live version left — a PDF's own text layer, or a proofreading made from it. With the OCR plugin on again, the proofreading of the recognition is shown again.
 
-`indexing.proofreading.max_edit_distance` stands above the profiles. It is the Levenshtein distance between two lines' letters as a share of the longer of them, and a correction standing further than that from the line as read is dropped. It is one threshold for the installation: how far a correction may move a line's letters says nothing about what the correction was asked for through. The plugin's own limit is 0.30 where the file names nothing, because the measured distribution has a hole there — over 931 corrections of one book, every correction standing further apart than 0.30 was damage, and every one below it was a correction. It is a setting because the next book is not that book; the figures are in [Performance](performance.md).
-
-Every key is in [Settings](settings.md).
-
-## Who proofreads, and whether it runs by itself
-
-Each consumer names its profile and says whether it runs on its own:
-
-```json
-{
-  "indexing": {
-    "recognition": { "proofread": { "with": "scans", "automatically": true } }
-  }
-}
-```
-
-`automatically` false leaves proofreading to the hand: a person asks for it on the text in front of them.
-
-A `with` naming a profile the map does not carry is an error at startup. An installation that meant to proofread and misspelled the name is told so, and does not run for a week quietly proofreading nothing.
-
-## A run
-
-A run claims the text for as long as the proofreading takes, and a second run against the same text reports that somebody else has it.
-
-After each call a run writes the corrections, cuts the source again, and writes the count last. The count is what makes the batch before it count, so a batch no count claims is one the next run asks about again, and a run trims the corrections back to the count before it starts. A run stopped part way is taken up where it stopped. A text whose record names another proofreader is taken up from the beginning, with what that proofreader wrote taken away.
-
-What takes a run up is a vault opening. Where `automatically` is on, every recognition and every transcript standing short of its end is asked about again, and one no proofreader has been over is put right whole.
-
-One model proofreads, and no chain of them. A chunk whose text did not change keeps the vector already made for it.
-
-Neither artifact is rewritten: what the model read or transcribed stays on disk under its own name, and the corrections go beside it. What a recognition's corrections are kept in and how a corrected reading is composed is [Recognising a document](recognising.md); what a transcript's are kept in is [Transcribing](transcribing.md).
-
-## What a person sees
-
-In the recording tab the transcript is text, in the same editor a note is written in. One line a cue, the cue's timestamp in the gutter beside it. A person puts a name right the way they would put a word right in a note.
-
-It is read-only while the recording is still being listened to and while proofreading is running. The words are moving underneath, and what a person typed into a line a run is about to rewrite would be lost. When both are done, the text is editable and a save writes `.corrected.vtt`.
-
-**Proofread transcript** appears in the menu at the end of the player strip, and asks for the transcript in front to be put right now. It is offered where the recording has a transcript, where no run is going over it, and where the settings name a profile for speech; a run asked for this way is the run `automatically` would have started, and reports itself in the same line of the work behind the window.
-
-**Proofread document** appears in the document viewer toolbar, allowing on-demand proofreading of recognized PDF or scanned pages. A fingerprint check reuses existing corrections when the underlying source has not changed.
-
-Asking always answers in a sentence, because a person who pressed it is owed one. The run begins, or it says what it found instead: the transcript has already been put right, the words were written by hand, another run holds the recording, or nothing has been transcribed. The answer comes back before the work is over — what a run settles before it puts its first question to the proofreader is a few reads off the disk, and that is all the asking waits for. Where `automatically` is on, every transcript has already been put right, so this is the answer a person will usually get.
-
-A **follow** toggle says whether the view moves with the recording. On, the line being said is scrolled to as the player reaches it. Off, the view stays where the person put it and they read one part of a talk while another plays. The line being said is highlighted either way, so the position is visible without the page moving.
+**Delete the text LLM Proofreading made** in the file's menu asks the plugin to delete its version.
 
 ## Settings
 
-Every key named above lives in [Settings](settings.md): `indexing.proofreading.max_edit_distance`, and under `indexing.proofreading.profiles.<name>`, `batch_size`, `overlap` and `in_flight`, with `indexing.recognition.proofread` naming one of those profiles under `with` and saying `automatically`.
+The sizes a text is cut into requests at are the plugin's own settings: `batch_size`, `overlap`, `in_flight` and `max_edit_distance`, in [Settings](settings.md).
+
+A line two batches of a transcript both answered about is taken from the batch in which it stands further from the end. A transcript is asked about a window of `in_flight` batches at a time; a correction is kept from the window it begins in when it begins before the next window's first line, and the next window starts after the last line such a correction answers for.
+
+## From the command line
+
+`numen-cli proofread <vault> <file>` is the plugin's own command: it proofreads the file's live text, waits for the version, and says how many lines it read and put right.
+
+## Without a model
+
+With `NUMEN_MOCK_ML=true`, as `-debug-mock-ml` and the end-to-end tests set it, the plugin asks no model. The mock proofreader answers every numbered line with `[proofread]` after its words, and the gates treat that answer as any other: a short line of a recognition, where the mark moves the letters further than `max_edit_distance`, stays as it was read.

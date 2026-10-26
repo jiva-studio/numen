@@ -12,6 +12,9 @@ interface DeclaredArgument {
   readonly isRequired: boolean
 }
 
+/** The extension a command declares to run over a file of any type. */
+const ANY_FILE_EXTENSION = '*'
+
 /** One command a plugin declares. A command with no `fileExtensions` runs over no file. */
 export interface DeclaredCommand {
   readonly pluginId: string
@@ -73,6 +76,7 @@ export async function runDeclaredCommand(
 /** Whether the command runs over the file at the path, by its extension. */
 export function canRunOn(command: DeclaredCommand, path: string): boolean {
   const name = path.slice(path.lastIndexOf('/') + 1)
+  if (command.fileExtensions.includes(ANY_FILE_EXTENSION)) return name !== ''
   const dot = name.lastIndexOf('.')
   if (dot < 0) return false
   return command.fileExtensions.includes(name.slice(dot + 1).toLowerCase())

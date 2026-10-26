@@ -42,17 +42,31 @@ func TestAManifestDeclaresCommandsWithTheirFilesAndArguments(t *testing.T) {
 	}
 }
 
+func TestACommandOverAnyFileRunsOverEveryFile(t *testing.T) {
+	m, err := pluginport.ReadManifest(strings.NewReader(
+		commandManifestHead + `[{"id":"proofread","title":"Proofread","fileExtensions":["*"]}]}`,
+	))
+	if err != nil {
+		t.Fatal(err)
+	}
+	command := m.Commands[0]
+	if !command.HasFiles() || !command.CanRunOn("talks/a.wav") || !command.CanRunOn("README") || command.CanRunOn("") || command.CanRunOn("books/") {
+		t.Error("the command runs over the wrong files")
+	}
+}
+
 func TestACommandThatBreaksARuleIsAnInvalidCommand(t *testing.T) {
 	cases := map[string]struct {
 		commands string
 		want     error
 	}{
-		"an id in capitals":       {`[{"id":"Convert","title":"C"}]`, pluginport.ErrInvalidCommand},
-		"an id with a space":      {`[{"id":"convert pages","title":"C"}]`, pluginport.ErrInvalidCommand},
-		"an empty id":             {`[{"id":"","title":"C"}]`, pluginport.ErrInvalidCommand},
-		"an id declared twice":    {`[{"id":"convert","title":"C"},{"id":"convert","title":"D"}]`, pluginport.ErrInvalidCommand},
-		"no title":                {`[{"id":"convert","title":" "}]`, pluginport.ErrInvalidCommand},
-		"an extension with a dot": {`[{"id":"convert","title":"C","fileExtensions":[".pdf"]}]`, pluginport.ErrInvalidCommand},
+		"an id in capitals":        {`[{"id":"Convert","title":"C"}]`, pluginport.ErrInvalidCommand},
+		"an id with a space":       {`[{"id":"convert pages","title":"C"}]`, pluginport.ErrInvalidCommand},
+		"an empty id":              {`[{"id":"","title":"C"}]`, pluginport.ErrInvalidCommand},
+		"an id declared twice":     {`[{"id":"convert","title":"C"},{"id":"convert","title":"D"}]`, pluginport.ErrInvalidCommand},
+		"no title":                 {`[{"id":"convert","title":" "}]`, pluginport.ErrInvalidCommand},
+		"an extension with a dot":  {`[{"id":"convert","title":"C","fileExtensions":[".pdf"]}]`, pluginport.ErrInvalidCommand},
+		"an extension with a star": {`[{"id":"convert","title":"C","fileExtensions":["p*"]}]`, pluginport.ErrInvalidCommand},
 		"an extension in capitals": {
 			`[{"id":"convert","title":"C","fileExtensions":["PDF"]}]`, pluginport.ErrInvalidCommand,
 		},

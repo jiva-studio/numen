@@ -16,6 +16,9 @@ const (
 	CommandArgumentBoolean = "boolean"
 )
 
+// AnyFileExtension is the extension a command declares to run over a file of any type.
+const AnyFileExtension = "*"
+
 var (
 	ErrInvalidCommand         = errors.New("invalid command")
 	ErrInvalidCommandArgument = errors.New("invalid command argument")
@@ -31,8 +34,8 @@ var commandArgumentTypes = []string{CommandArgumentString, CommandArgumentNumber
 type PluginCommand struct {
 	ID    string `json:"id"`
 	Title string `json:"title"`
-	// FileExtensions are the extensions, without the dot, of the files the command runs over. None is
-	// a command over no file.
+	// FileExtensions are the extensions, without the dot, of the files the command runs over, and
+	// AnyFileExtension for a file of any type. None is a command over no file.
 	FileExtensions []string                `json:"fileExtensions,omitempty"`
 	Arguments      []PluginCommandArgument `json:"arguments,omitempty"`
 	// IsHiddenInPalette keeps the command out of the window's palette where the window offers the
@@ -55,6 +58,9 @@ func (c PluginCommand) HasFiles() bool {
 
 // CanRunOn reports whether the command runs over the file at path, by its extension.
 func (c PluginCommand) CanRunOn(path string) bool {
+	if slices.Contains(c.FileExtensions, AnyFileExtension) {
+		return path != "" && !strings.HasSuffix(path, "/")
+	}
 	dot := strings.LastIndexByte(path, '.')
 	if dot < 0 || strings.ContainsRune(path[dot:], '/') {
 		return false
@@ -90,12 +96,23 @@ func (m PluginManifest) listCommandIssues() []error {
 		if strings.TrimSpace(command.Title) == "" {
 			issues = append(issues, fmt.Errorf("%w: %q has no title", ErrInvalidCommand, command.ID))
 		}
-		for _, extension := range command.FileExtensions {
-			if extension == "" || extension != strings.ToLower(extension) || strings.ContainsAny(extension, "./") {
-				issues = append(issues, fmt.Errorf("%w: %q names extension %q, which is not lowercase without the dot", ErrInvalidCommand, command.ID, extension))
-			}
-		}
+		issues = append(issues, listCommandExtensionIssues(command)...)
 		issues = append(issues, listCommandArgumentIssues(command)...)
+	}
+	return issues
+}
+
+// listCommandExtensionIssues checks that every extension is lowercase without the dot, or is
+// AnyFileExtension.
+func listCommandExtensionIssues(command PluginCommand) []error {
+	var issues []error
+	for _, extension := range command.FileExtensions {
+		if extension == AnyFileExtension {
+			continue
+		}
+		if extension == "" || extension != strings.ToLower(extension) || strings.ContainsAny(extension, "./*") {
+			issues = append(issues, fmt.Errorf("%w: %q names extension %q, which is not lowercase without the dot", ErrInvalidCommand, command.ID, extension))
+		}
 	}
 	return issues
 }
