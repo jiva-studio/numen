@@ -44,6 +44,10 @@ The text version is the link's text, cut as any source's is. A search about a le
 
 Importing the address of a video copies it, up to the size `copy_max_size_mb` names, through the core's queue and shown as a task. The plugin declares `playback` for `.url` files, so `RecordingService.GetRecording` of a link answers the address the copy is played from on the window's loopback socket, and the link's tab plays it: offline, and with nothing of the site it came from loaded.
 
+## The link's commands
+
+Over a `.url` file the plugin declares three commands, offered in the palette under **This file** and by `numen-cli`: **Download the text again** (`download-text`) fetches the link's text again, **Download a copy** (`download-copy`) copies the video the link points at, and **Delete the copy** (`delete-copy`) removes that copy from the plugin's folder.
+
 ## The tools
 
 A page is fetched by the plugin itself — an ordinary request, and the prose found by a library — so every machine reaches one. `yt-dlp` reaches what a video site publishes, and `ffmpeg` joins what it fetched. Neither is shipped and neither is required: a machine without `yt-dlp` imports pages, and copies no video. Under `-debug-mock-ml` the plugin reaches video sites through a mock that publishes captions and copies a clip of quiet sound, offline.

@@ -11,7 +11,8 @@ Flashcards Studio provides the workspace views for editing flashcard decks, desi
 ## Layout
 
 - `frontend/deck`, `frontend/stencil`, `frontend/preset`: one tab kind each, with its state, components and tests.
-- `frontend/cards`: the decks, stencils and presets as the core's `CardsService` and `PresetsService` answer them.
+- `frontend/cards`: the decks, stencils and presets as the plugin's `CardsService` and `PresetsService` answer them, and in `frontend/cards/wire` the mapping of a preset's settings (`parseSettings`, `formatSettings`, `goalOf`), the wording of a stop reason (`formatStopReasonMessage`) and of the plugin's error codes (`formatErrorCodeMessage`).
+- `proto/numen/flashcards/v1`: the plugin's schemas, package `numen.flashcards.v1`: `CardsService`, `PresetsService`, `FlashcardsService` and the plugin's `ErrorCode`. `buf generate`, run in the plugin directory with the buf workspace of the repository root `buf.yaml`, writes the Go code into `gen/` and the TypeScript into `frontend/gen/`; the generated code is committed.
 - `frontend/ui`: the prompt a deck or a stencil puts when its file moved under it.
 
 ## What the plugin asks of the window

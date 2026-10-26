@@ -139,4 +139,5 @@ back.
 
 Each vault also carries a `.numen/` folder of its own, inside the folder of notes. It holds that
 vault's identity — which is how numen recognises the same vault after the folder is moved or
-renamed — and the text read out of any scanned [documents](/documents/).
+renamed — and what each plugin makes of its files, in a folder named after the plugin: the text
+read out of scanned [documents](/documents/), the transcript of a recording.

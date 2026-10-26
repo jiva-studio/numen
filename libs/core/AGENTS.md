@@ -84,8 +84,7 @@ a default.
 
 A rule about one value is a method on that value. A rule over several is a
 function in the package that owns the subject. `domain/` holds what is true of
-a note or a card; the arithmetic over a schedule is `flashcards/review`, and
-the format is `markdown`.
+a note, and the format is `markdown`.
 
 ## Writing a new rule
 

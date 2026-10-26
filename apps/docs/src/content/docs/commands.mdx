@@ -24,12 +24,17 @@ A command that needs something asks for it in the same panel, one step at a time
 call a note, a note to go to, a vault to open, a value to choose. <kbd>Backspace</kbd> in the
 empty field steps back, <kbd>Escape</kbd> leaves.
 
-Some ask you to confirm rather than to type: removing a vault says the folder stays, deleting
-the transcript of a recording says the words go and it can be transcribed again. Destroying a
+Some ask you to confirm rather than to type: removing a vault says the folder stays. Destroying a
 note and erasing a vault make you type the name first.
 
-The bands say what a command acts on: **this note**, **this file** — the runs a recording or a
-scan carries — **this window**, and **this vault**.
+The bands say what a command acts on: **this note**, **this file** — the texts a plugin makes of
+the file in front of you, and the commands a plugin offers over its type — **this window**, and
+**this vault**.
+
+Over a file, a command names the plugin that does it: each plugin that reads the file's type
+offers to recognise its text, each that reads the text offers to proofread it, and each text a
+plugin made can be deleted. A link (`.url`) also offers the Media Importer's commands: download
+the text again, download a copy to play from this disk, and delete that copy.
 
 A command that cannot act on what is in front of you stays on the list and says why —
 _nothing in front of you is a note_, _the vault is still being read_ — rather than quietly
@@ -60,13 +65,12 @@ disappearing.
 
 | | |
 | --- | --- |
-| Transcribe this recording |  |
-| Recognise the text of this document |  |
+| Recognise the text with *plugin* |  |
+| Proofread the text with *plugin* |  |
+| Delete the text *plugin* made |  |
 | Download the text again |  |
 | Download a copy |  |
-| Proofread the transcript of this recording |  |
-| Delete the transcript of this recording |  |
-| Delete the copy on this disk |  |
+| Delete the copy |  |
 
 ### This window
 

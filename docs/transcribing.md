@@ -6,7 +6,7 @@ The recording itself is never moved, copied or renamed. It plays where it lies, 
 
 ## Asking for a transcript
 
-A recording is transcribed when a person asks: **Transcribe** on the recording's menu, the palette, the button where the transcript would stand, or `numen-cli transcribe <vault> <file>`. The menu entry is the core's: the plugin declares that it reads `.wav`, `.mp3` and `.flac` files, and the menu of every such file offers it. The command is the plugin's: it declares `transcribe` over those files, and the command waits until the transcript is written down. The plugin does not run on its own.
+A recording is transcribed when a person asks: **Recognise the text with Audio/Video Transcription** on the recording's menu and in the palette, the button where the transcript would stand, or `numen-cli transcribe <vault> <file>`. The menu entry is the core's: the plugin declares that it reads `.wav`, `.mp3` and `.flac` files, and the menu of every such file offers it. The command is the plugin's: it declares `transcribe` over those files, and the command waits until the transcript is written down. The plugin does not run on its own.
 
 The run waits for the core's shared queue as a person's request, behind any other work holding the models and ahead of work nobody asked for, and is shown in the status bar as a task with the seconds heard of the seconds the recording runs. A run that cannot open the recording stays there with the reason.
 
@@ -56,7 +56,7 @@ The transcript under the player is edited in place. An edit is a new version of 
 
 ## Deleting a transcript
 
-**Delete transcript** on the recording's menu asks the plugin to remove the version and its file, and the recording is as it was before anything heard it.
+**Delete the text Audio/Video Transcription made** on the recording's menu asks the plugin to remove the version and its file, and the recording is as it was before anything heard it.
 
 ## Running without models
 

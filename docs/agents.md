@@ -54,16 +54,15 @@ The window a person runs their cards in opens neither: an answer there says wher
 
 ## The tools
 
-Seven families and a reader of files, served over the vault's own endpoint.
+Six families and a reader of files, served over the vault's own endpoint.
 
 | Family | What it is for |
 | --- | --- |
 | `note_*` | search the vault, look notes up by path and by the name a link writes, read and rewrite their prose, edit a stretch, rename, move, remove, and put one in front of the person |
-| `file_read` | read a range of a file the person put in the vault, by its path from the vault folder. What the application made is not one of those, and is read by `artifact_read` |
+| `file_read` | read a range of a file the person put in the vault, by its path from the vault folder |
 | `link_*` | add, change, remove and list the links a note carries |
 | `card_*` | list the stencils a vault holds, read a deck and the cards in it, and make, change and remove one card at a time |
 | `source_*` | list the documents a vault holds, read a range of one's text, ask for a scanned one to be read, and show the person a passage |
-| `artifact_*` | what this application made from one file and keeps beside it — a transcript, an article, an ocr, a copy — a range of one as it stands on disk, and a stretch of a transcript put right |
 | `url_import` | make a file holding a web address and fetch what is there, in one call |
 | `vault_*` | show the vault and what a scan could not act on, and list, add, rename, forget and open vaults |
 
@@ -91,23 +90,15 @@ These stand under a word other than the service that owns them:
 | `card_*` | the cards, in the plural the service is named in |
 | `card_current` | a session of review |
 | `source_list`, `source_read` | a document |
-| `source_recognise`, `source_transcribe` | an artifact being made |
-| `artifact_read`, `artifact_write` | a transcript, an article or a recognition, by which of them is asked for |
 | `vault_list`, `vault_add`, `vault_rename`, `vault_remove`, `vault_open` | the vaults the installation holds |
 
 `file_read` and `url_import` stand under no service at all: nothing owns the bytes of a file that is neither a note nor a document, and nothing owns a url.
 
-## The reviewer's surface
+## The servers
 
-The window a person runs their cards in serves a surface of its own. It reads the whole vault — `note_search`, `note_titles`, `note_read`, `note_neighbourhood`, `link_list`, `source_list`, `source_read`, `card_stencil_list`, `card_read` and `vault_get` — and writes cards alone: `card_add`, `card_edit`, `card_value_remove`, `card_remove`, `card_section_add`, `card_section_rename` and `card_section_remove`. It also serves `card_current`, which answers with the card in front of the person and is on no other surface. Nothing else is on it. A deck and a stencil are what a vault is arranged into, and nothing there makes one; no note, link or document is written there either.
+A tool declares the servers it is offered on: the full server, which an agent works the whole vault through, and the reading server, whose every tool reads. A tool that writes is on the full server alone; a tool that reads is on both. `card_current` answers with the card in front of the person in the window they run their cards in, and with an empty deck between cards.
 
-The reading half of it is a surface in its own right, with no writer on it at all.
-
-The tools themselves are the same tools: each family registers its reading half and its writing half separately, and the full surface is both halves.
-
-That window opens the index for reading alone, and nothing embeds behind it, so a search there answers by the words in the vault and not by what they mean. It serves its port on a loopback address the machine picks, with a token that lives in memory, and writes no `agents.json`: the address file names one window's vault, and a second window rewriting it would point a person's own agent at whichever started last.
-
-The agent is told which vault it works when it is started, so it is started when a session opens and stopped when a session opens on another vault or the window closes.
+The tools are registered by the plugins that own their subjects — `agents-tools-vault`, `agents-tools-window`, `views-flashcards-studio` — and `agents-mcp-server` gathers the tools of every plugin and of the host and serves them to an agent.
 
 ## An agent a person runs themselves
 

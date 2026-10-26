@@ -30,8 +30,9 @@ window.
 
 Two places are skipped whole:
 
-- `.numen/`, which is where the vault keeps its own identity and anything read out of scanned
-  [documents](/documents/);
+- `.numen/`, which is where the vault keeps its own identity and what each plugin makes of its
+  files, in a folder named after the plugin — the text read out of scanned
+  [documents](/documents/), the transcript of a recording;
 - any folder whose name begins with a dot, which is where other tools keep their state.
 
 Files removed from the vault are moved into `.trash/` inside it, which is a dot-folder and so is

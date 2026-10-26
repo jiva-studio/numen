@@ -31,7 +31,7 @@ There is no store framework and no module-level mutable state.
 ## Reaching the core
 
 A window talks to the core through the generated Connect clients, and the answer
-is mapped field by field into the window's own type. A fault is put into words by `formatErrorMessage` and an error code by `formatErrorCodeMessage`, both from `@numen/wire`; nothing prints an error by stringifying it. The settings of a preset are mapped by `parseSettings` and `formatSettings`, and a stop reason is worded by `formatStopReasonMessage`, from the same library.
+is mapped field by field into the window's own type. A fault is put into words by `formatErrorMessage` and an error code by `formatErrorCodeMessage`, both from `@numen/wire`; nothing prints an error by stringifying it.
 
 ## The one gotcha that costs an afternoon
 
