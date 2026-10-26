@@ -92,8 +92,7 @@ enum ToolServer {
   // The server an agent answers from, whose every tool reads.
   TOOL_SERVER_READING = 2;
 
-  // The server of the window a person reviews cards in.
-  TOOL_SERVER_REVIEW = 3;
+  reserved 3;
 }
 
 message CallToolRequest {

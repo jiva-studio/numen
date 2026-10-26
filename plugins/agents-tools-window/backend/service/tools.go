@@ -34,7 +34,7 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 			"paths, kinds, positions, and which tab is in front. Ask it before stating " +
 			"what is in front of the user.",
 		Effect:  tools.Reads,
-		Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ WindowTabsGetInput) (WindowTabsGetOutput, error) {
 		tabs, frontID := manager.GetOpenTabs()
 		requestContext := tools.Asked(ctx)
@@ -69,7 +69,7 @@ func addWindowFocusTab(registry *tools.Registry, manager *WindowManager) error {
 		Description: "Switch or focus a specific tab or note in the user window by tab ID, " +
 			"path, or title. Moves the window focus to the requested tab.",
 		Effect:  tools.Reads,
-		Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, in WindowFocusTabInput) (WindowFocusTabOutput, error) {
 		tab, err := manager.FocusTab(ctx, in)
 		if err != nil {
@@ -91,7 +91,7 @@ func addEditPreview(registry *tools.Registry, manager *WindowManager, vault host
 		Description: "Propose changes to a note with an interactive diff preview in the editor " +
 			"without directly modifying the vault file.",
 		Effect:  tools.Reads,
-		Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, in EditPreviewInput) (EditPreviewOutput, error) {
 		if in.Path == "" {
 			return EditPreviewOutput{}, errors.New("path is required")

@@ -26,7 +26,7 @@ func newRegistry(t *testing.T) *tools.Registry {
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
 		Name: "greet", Title: "Greet", Description: "Greets.", Effect: tools.Reads,
-		Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Search,
+		Servers: []tools.Server{tools.Full, tools.Reading}, Step: tools.Search,
 	}, func(_ context.Context, in greetIn) (greetOut, error) {
 		if in.Name == "" {
 			return greetOut{}, errors.New("recipient required")

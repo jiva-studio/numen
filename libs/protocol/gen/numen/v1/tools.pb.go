@@ -142,8 +142,6 @@ const (
 	ToolServer_TOOL_SERVER_FULL ToolServer = 1
 	// The server an agent answers from, whose every tool reads.
 	ToolServer_TOOL_SERVER_READING ToolServer = 2
-	// The server of the window a person reviews cards in.
-	ToolServer_TOOL_SERVER_REVIEW ToolServer = 3
 )
 
 // Enum value maps for ToolServer.
@@ -152,13 +150,11 @@ var (
 		0: "TOOL_SERVER_UNSPECIFIED",
 		1: "TOOL_SERVER_FULL",
 		2: "TOOL_SERVER_READING",
-		3: "TOOL_SERVER_REVIEW",
 	}
 	ToolServer_value = map[string]int32{
 		"TOOL_SERVER_UNSPECIFIED": 0,
 		"TOOL_SERVER_FULL":        1,
 		"TOOL_SERVER_READING":     2,
-		"TOOL_SERVER_REVIEW":      3,
 	}
 )
 
@@ -661,13 +657,12 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\x15TOOL_STEP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10TOOL_STEP_SEARCH\x10\x01\x12\x14\n" +
 	"\x10TOOL_STEP_REMOVE\x10\x02\x12\x12\n" +
-	"\x0eTOOL_STEP_MOVE\x10\x03*p\n" +
+	"\x0eTOOL_STEP_MOVE\x10\x03*^\n" +
 	"\n" +
 	"ToolServer\x12\x1b\n" +
 	"\x17TOOL_SERVER_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10TOOL_SERVER_FULL\x10\x01\x12\x17\n" +
-	"\x13TOOL_SERVER_READING\x10\x02\x12\x16\n" +
-	"\x12TOOL_SERVER_REVIEW\x10\x03*u\n" +
+	"\x13TOOL_SERVER_READING\x10\x02\"\x04\b\x03\x10\x03*u\n" +
 	"\rToolErrorCode\x12\x1f\n" +
 	"\x1bTOOL_ERROR_CODE_UNSPECIFIED\x10\x00\x12 \n" +
 	"\x1cTOOL_ERROR_CODE_UNKNOWN_TOOL\x10\x01\x12!\n" +

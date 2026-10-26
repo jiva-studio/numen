@@ -54,8 +54,6 @@ const (
 	Full Server = iota + 1
 	// Reading is the server an agent answers from, whose every tool reads.
 	Reading
-	// Review is the server of the window a person reviews cards in.
-	Review
 )
 
 // Spec says what a tool is called, what it is for and where it is offered.
@@ -264,8 +262,6 @@ func writeServers(servers []Server) []numenv1.ToolServer {
 			wire = append(wire, numenv1.ToolServer_TOOL_SERVER_FULL)
 		case Reading:
 			wire = append(wire, numenv1.ToolServer_TOOL_SERVER_READING)
-		case Review:
-			wire = append(wire, numenv1.ToolServer_TOOL_SERVER_REVIEW)
 		}
 	}
 	return wire

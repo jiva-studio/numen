@@ -50,7 +50,7 @@ type cardAddInput struct {
 
 func (t *Tools) addCardAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 		Name:  "card_add",
 		Title: "Add a card",
 		Description: "Write one card at the end of a deck, or at the end of one of its " +
@@ -92,7 +92,7 @@ type cardEditInput struct {
 
 func (t *Tools) addCardEdit(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 		Name:  "card_edit",
 		Title: "Edit a card",
 		Description: "Write values into one card of a deck. A field the card already " +
@@ -126,7 +126,7 @@ type cardValueRemoveInput struct {
 
 func (t *Tools) addCardValueRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_value_remove",
 		Title: "Remove a card's field",
 		Description: "Remove one field from one card: its heading, and what the person " +
@@ -153,7 +153,7 @@ type cardRemoveInput struct {
 
 func (t *Tools) addCardRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_remove",
 		Title: "Remove a card",
 		Description: "Remove one card from a deck: its heading, the stencil it named and " +
@@ -179,7 +179,7 @@ type cardSectionAddInput struct {
 
 func (t *Tools) addCardSectionAdd(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review},
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
 		Name:  "card_section_add",
 		Title: "Add a section",
 		Description: "Write a section at the end of a deck. A section is a name a person " +
@@ -204,7 +204,7 @@ type cardSectionRenameInput struct {
 
 func (t *Tools) addCardSectionRename(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Move,
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Move,
 		Name:  "card_section_rename",
 		Title: "Rename a section",
 		Description: "Give one of a deck's sections a different name. Only the heading " +
@@ -229,7 +229,7 @@ type cardSectionRemoveInput struct {
 
 func (t *Tools) addCardSectionRemove(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full, tools.Review}, Step: tools.Remove,
+		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Remove,
 		Name:  "card_section_remove",
 		Title: "Remove a section",
 		Description: "Remove the heading of one of a deck's sections. A section is a name " +

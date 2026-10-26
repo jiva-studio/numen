@@ -778,11 +778,6 @@ func TestTheCardInFrontOfThePersonIsAToolsAnswer(t *testing.T) {
 	if got := call[current](t, session, "card_current", map[string]any{}); got != (current{}) {
 		t.Errorf("a window that says nothing has a card in front of the person: %+v", got)
 	}
-	for _, one := range session.list(t) {
-		if one.GetName() == "card_current" && (len(one.GetServers()) != 1 || one.GetServers()[0] != v1.ToolServer_TOOL_SERVER_REVIEW) {
-			t.Errorf("card_current is offered on %v", one.GetServers())
-		}
-	}
 }
 
 // Every field a stencil declares is placed under its own heading in every card it
@@ -1003,13 +998,11 @@ func TestAStencilReadRefusesNonStencil(t *testing.T) {
 }
 
 // A tool is offered on the servers it belongs to and shown as what it does: the tools that read are
-// offered to every agent, the ones that change the cards to the agent of the vault and the one of
-// the review, and the ones that make or reshape a deck or a stencil to the agent of the vault alone.
+// offered to every agent, and the ones that change the cards to the agent of the vault alone.
 func TestEachToolIsOfferedOnItsServersAndShownAsWhatItDoes(t *testing.T) {
 	const (
 		full    = v1.ToolServer_TOOL_SERVER_FULL
 		reading = v1.ToolServer_TOOL_SERVER_READING
-		review  = v1.ToolServer_TOOL_SERVER_REVIEW
 	)
 	type placed struct {
 		effect  v1.ToolEffect
@@ -1019,17 +1012,17 @@ func TestEachToolIsOfferedOnItsServersAndShownAsWhatItDoes(t *testing.T) {
 	reads, writes := v1.ToolEffect_TOOL_EFFECT_READS, v1.ToolEffect_TOOL_EFFECT_WRITES
 	byEffect, remove, move := v1.ToolStep_TOOL_STEP_UNSPECIFIED, v1.ToolStep_TOOL_STEP_REMOVE, v1.ToolStep_TOOL_STEP_MOVE
 	want := map[string]placed{
-		"card_current":        {reads, byEffect, []v1.ToolServer{review}},
-		"card_stencil_list":   {reads, byEffect, []v1.ToolServer{full, reading, review}},
-		"card_stencil_read":   {reads, byEffect, []v1.ToolServer{full, reading, review}},
-		"card_read":           {reads, byEffect, []v1.ToolServer{full, reading, review}},
-		"card_add":            {writes, byEffect, []v1.ToolServer{full, review}},
-		"card_edit":           {writes, byEffect, []v1.ToolServer{full, review}},
-		"card_value_remove":   {writes, remove, []v1.ToolServer{full, review}},
-		"card_remove":         {writes, remove, []v1.ToolServer{full, review}},
-		"card_section_add":    {writes, byEffect, []v1.ToolServer{full, review}},
-		"card_section_rename": {writes, move, []v1.ToolServer{full, review}},
-		"card_section_remove": {writes, remove, []v1.ToolServer{full, review}},
+		"card_current":        {reads, byEffect, []v1.ToolServer{full, reading}},
+		"card_stencil_list":   {reads, byEffect, []v1.ToolServer{full, reading}},
+		"card_stencil_read":   {reads, byEffect, []v1.ToolServer{full, reading}},
+		"card_read":           {reads, byEffect, []v1.ToolServer{full, reading}},
+		"card_add":            {writes, byEffect, []v1.ToolServer{full}},
+		"card_edit":           {writes, byEffect, []v1.ToolServer{full}},
+		"card_value_remove":   {writes, remove, []v1.ToolServer{full}},
+		"card_remove":         {writes, remove, []v1.ToolServer{full}},
+		"card_section_add":    {writes, byEffect, []v1.ToolServer{full}},
+		"card_section_rename": {writes, move, []v1.ToolServer{full}},
+		"card_section_remove": {writes, remove, []v1.ToolServer{full}},
 		"card_deck_create":    {writes, byEffect, []v1.ToolServer{full}},
 		"card_stencil_create": {writes, byEffect, []v1.ToolServer{full}},
 		"card_stencil_edit":   {writes, byEffect, []v1.ToolServer{full}},

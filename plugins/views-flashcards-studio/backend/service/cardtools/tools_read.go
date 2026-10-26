@@ -24,7 +24,7 @@ func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 			"card and moves to the next while you work — and read the card itself with " +
 			"`card_read`. Nothing is in front of them between cards, and the deck comes " +
 			"back empty.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Review},
+		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
 		request := tools.Asked(ctx)
 		return CurrentCard{Deck: request[askedFocus], Card: request[askedMark], Face: request[askedFace]}, nil
@@ -50,7 +50,7 @@ func (t *Tools) addCardStencilList(registry *tools.Registry) error {
 			"for the fields that stencil declares. At most 50 come back, and `total` says " +
 			"how many the vault holds, so a list shorter than that was cut by the " +
 			"ceiling. A stencil with no fields listed is one that could not be read.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.listCardStencils)
 }
 
@@ -98,7 +98,7 @@ func (t *Tools) addCardStencilRead(registry *tools.Registry) error {
 		Description: "The fields and faces of one stencil: what it is called, the " +
 			"fields a card cut by it is asked for, and the ways a card is shown through " +
 			"it. Hand the fingerprint back to `card_stencil_edit` to edit the stencil in place.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.readCardStencil)
 }
 
@@ -166,7 +166,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 			"on the card it is against. The fingerprint is what the writing tools want: " +
 			"hand it back and a write fails if the person changed the deck in the " +
 			"meantime.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading, tools.Review},
+		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.readCards)
 }
 
