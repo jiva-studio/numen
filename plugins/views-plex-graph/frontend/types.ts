@@ -2,14 +2,8 @@
  * Type declarations for the plex tab domain.
  */
 import type { Component, ComputedRef, Ref } from 'vue'
-import type {
-  MenuItem,
-  MenuTrigger,
-  PlexNeighbourhood,
-  PlexHeading,
-  PlexRelation,
-  PlexDestination,
-} from '@numen/ui'
+import type { MenuItem, MenuTrigger } from '@numen/ui'
+import type { PlexNeighbourhood, PlexHeading, PlexRelation, PlexDestination } from './plex'
 import type { PathRename, PluginContext } from '@numen/plugin-sdk'
 
 /** What a note is: a note, or a type a plugin declares. */

@@ -2,7 +2,7 @@
  * The line the window draws while the application is still working the honest
  * one out. It is arithmetic over the settings alone, and it says so.
  */
-import { dayAfter, daysBetween } from '@numen/ui'
+import { dayAfter, daysBetween } from '../../lib/day'
 import {
   DEFAULTS,
   NO_CURVE_POINT,

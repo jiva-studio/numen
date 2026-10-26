@@ -2,7 +2,7 @@
  * The room a grid of days is laid out in: how many columns fit it, and the
  * stretch of time a grid that wide draws.
  */
-import { getDayName } from '@numen/ui'
+import { getDayName } from '../../../lib/day'
 
 /** How many days stand in one column. A column is a week. */
 export const ROWS = 7

@@ -6,7 +6,7 @@
  * says nothing about drawing.
  */
 import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../types'
-import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '@numen/ui'
+import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
 
 /**
  * plex draws a deck and a stencil as what they are.

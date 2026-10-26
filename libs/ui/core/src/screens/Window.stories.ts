@@ -1,38 +1,20 @@
 /**
- * The whole window at rest: the plex on the left, the note it is focused on
- * beside it, and the agent along the trailing edge.
+ * The whole window at rest: the files, the notes, a scanned book and the agent
+ * in the panes they were divided into.
  *
  * Nothing here moves and nothing here waits. It is the screen a picture of the
  * product is taken from, so every piece is drawn in the state it settles in.
+ * The book is a picture of its page: the reader that draws a document is the
+ * PDF plugin's, and its stories are in the plugins' Storybook.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
-import {
-  ArrowRightLeft,
-  Book,
-  BookOpen,
-  Bot,
-  Copy,
-  CornerDownRight,
-  CornerLeftUp,
-  FileText,
-  Folder,
-  FolderOpen,
-  FolderTree,
-  Link2,
-  Trash2,
-  Type,
-  Waypoints,
-} from '@lucide/vue'
+import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
 import { WorkspaceLayout } from '@/features/workspace'
-import { Plex } from '@/features/plex'
 import { Editor } from '@/features/editor'
 import { Palette } from '@/features/palette'
-import { Reader } from '@/features/reader'
 import { Tree } from '@/features/tree'
-import { Menu } from '@/shared/ui/menu'
-import type { MenuItem } from '@/shared/ui/menu'
 import { Agent } from './agent'
 import type { AgentModelOption } from '@/features/message-composer'
 import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
@@ -40,16 +22,9 @@ import { keyChord } from '@/features/palette'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
 import type { Span } from '@/shared/lib/text/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
-import type { PlexHeading } from '@/features/plex'
-import { RELATION_NAMES, type PlexRelation } from '@/features/plex'
-import type { PlexEdge } from '@/features/plex'
-import type { PlexNeighbourhood } from '@/features/plex'
-import type { PlexNode } from '@/features/plex'
 import type { Row } from '@/features/tree'
 import type { Turn } from '@/features/thread'
-import { hoverOver } from '@/shared/fixtures/colour'
 
-const PLEX = 'plex'
 const NOTE = 'note'
 const BOOK = 'book'
 const AGENT = 'agent'
@@ -57,7 +32,6 @@ const FILES = 'files'
 const OTHER_NOTE = 'demon'
 
 const TABS: readonly Tab[] = [
-  { id: PLEX, title: 'Plex' },
   { id: NOTE, title: 'Entropy' },
   { id: BOOK, title: 'Boltzmann 1877' },
   { id: OTHER_NOTE, title: "Maxwell's demon" },
@@ -66,8 +40,7 @@ const TABS: readonly Tab[] = [
 ]
 
 /** What each tab is drawn as before its name, as the application draws it. */
-const TAB_ICONS: Readonly<Record<string, typeof Waypoints>> = {
-  [PLEX]: Waypoints,
+const TAB_ICONS: Readonly<Record<string, typeof FileText>> = {
   [NOTE]: FileText,
   [OTHER_NOTE]: FileText,
   [BOOK]: BookOpen,
@@ -122,85 +95,6 @@ const getIcon = (id: string, open: boolean) => {
   if (row?.hasChildren) return open ? FolderOpen : Folder
   if (row?.name.endsWith('.pdf')) return Book
   return FileText
-}
-
-const node = (id: string, title: string, relation: PlexNode['relation']): PlexNode => ({
-  id,
-  title,
-  relation,
-})
-
-const RELATED: readonly PlexNode[] = [
-  node('thermodynamics', 'Thermodynamics', 'parent'),
-  node('information', 'Information theory', 'parent'),
-  node('second-law', 'The second law', 'child'),
-  node('boltzmann', "Boltzmann's constant", 'child'),
-  node('heat-death', 'Heat death', 'child'),
-  node('free-energy', 'Free energy', 'child'),
-  node('demon', "Maxwell's demon", 'jump'),
-  node('shannon', 'Shannon 1948', 'jump'),
-  node('temperature', 'Temperature', 'sibling'),
-  node('pressure', 'Pressure', 'sibling'),
-]
-
-const LABELS: Readonly<Record<string, string>> = {
-  thermodynamics: 'measures',
-  'second-law': 'states',
-  demon: 'costs',
-}
-
-/** A sibling hangs off the parent it shares; everything else meets the focus. */
-const createEdge = (neighbour: PlexNode): PlexEdge => {
-  const label = LABELS[neighbour.id]
-  if (neighbour.relation === 'sibling') return { from: 'thermodynamics', to: neighbour.id }
-  if (neighbour.relation === 'parent' || neighbour.relation === 'jump') {
-    return { from: neighbour.id, to: 'focus', ...(label ? { label } : {}) }
-  }
-  return { from: 'focus', to: neighbour.id, ...(label ? { label } : {}) }
-}
-
-const createNeighbourhood = (neighbours: readonly PlexNode[]): PlexNeighbourhood => ({
-  nodes: [node('focus', 'Entropy', 'focus'), ...neighbours],
-  edges: neighbours.map(createEdge),
-})
-
-/** What a pane of a divided window has the width for. */
-const NEIGHBOURHOOD = createNeighbourhood(RELATED)
-
-/** What a pane sharing its column with a note has the width for. */
-const CLOSE = createNeighbourhood(RELATED.slice(0, 6))
-
-/**
- * What a pane with the window to itself has the room for: wider at the sides,
- * and no deeper, so nothing is left off the picture.
- */
-const WIDE = createNeighbourhood([
-  ...RELATED,
-  node('landauer', "Landauer's principle", 'jump'),
-  node('carnot', 'Carnot cycle', 'jump'),
-  node('volume', 'Volume', 'sibling'),
-  node('work', 'Work', 'sibling'),
-])
-
-/**
- * them than stand at once, so the mark saying there is more to wind to is
- * drawn as well.
- */
-const HEADINGS: Readonly<Record<string, readonly PlexHeading[]>> = {
-  focus: [
-    { id: '4', text: 'What it measures', level: 2 },
-    { id: '19', text: "Boltzmann's formula", level: 3 },
-    { id: '38', text: 'Gibbs and the ensemble', level: 3 },
-    { id: '57', text: 'The arrow of time', level: 2 },
-    { id: '76', text: 'Missing information', level: 2 },
-    { id: '94', text: "Shannon's H", level: 3 },
-    { id: '118', text: 'The demon, and its bookkeeping', level: 2 },
-  ],
-  'second-law': [
-    { id: '3', text: 'As Clausius put it', level: 2 },
-    { id: '21', text: 'As Kelvin put it', level: 2 },
-    { id: '44', text: 'Why the two are one', level: 2 },
-  ],
 }
 
 /**
@@ -298,12 +192,7 @@ const BOOK_PAGES: readonly (readonly string[])[] = [
   ],
 ]
 
-/**
- * The volume those pages were bound in, and where in it they stand. The reader
- * counts the pages of the document it is given, so the number it says and the
- * number printed on the page are the same number.
- */
-const BOOK_LEAVES = 412
+/** Where in the volume those pages stand, which is the number printed on them. */
 const BOOK_FIRST = 372
 
 /** How a page of that document is drawn: letter paper, one line at a time. */
@@ -329,17 +218,6 @@ const renderPage = (page: number): string => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PAPER.wide}" height="${PAPER.high}"><rect width="100%" height="100%" fill="#fbfaf7"/>${activeSet}${number}</svg>`
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
-
-/** Where a run of lines relies on the page, in fractions of it. */
-const overLines = (from: number, to: number, ends: number) => ({
-  minX: (MARGIN - 4) / PAPER.wide,
-  maxX: (MARGIN + ends) / PAPER.wide,
-  minY: (FIRST + from * LEADING - 18) / PAPER.high,
-  maxY: (FIRST + to * LEADING + 6) / PAPER.high,
-})
-
-/** The passage a search found in it: the sentence the count is defined by. */
-const HIGHLIGHTS = [overLines(8, 9, 420), overLines(10, 11, 360)]
 
 const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
 
@@ -478,39 +356,6 @@ const GROUPS: readonly PaletteGroup[] = [
   },
 ]
 
-/**
- * What the menu on a node offers, in the groups the window draws it in: what
- * opens the note, what is done to its file, what is made off it in the plex,
- * what is asked of the agent, and what takes it out of the vault.
- */
-const MENU: readonly MenuItem[] = [
-  { id: 'read', text: 'Open the note', group: 'open' },
-  { id: 'travel', text: 'Show in plex', group: 'open' },
-  { id: 'copy', text: 'Copy path', group: 'file' },
-  { id: 'reveal', text: 'Show this note in the files', group: 'file' },
-  { id: 'child', text: 'New child note', group: 'plex' },
-  { id: 'parent', text: 'New parent note', group: 'plex' },
-  { id: 'jump', text: 'New jump note', group: 'plex' },
-  { id: 'title', text: 'Change title', group: 'plex' },
-  { id: 'ask', text: 'Ask the agent about this note', group: 'agent' },
-  { id: 'remove', text: 'Remove note', group: 'remove' },
-]
-
-const MENU_ICONS: Readonly<Record<string, typeof Waypoints>> = {
-  read: FileText,
-  travel: Waypoints,
-  copy: Copy,
-  reveal: FolderOpen,
-  child: CornerDownRight,
-  parent: CornerLeftUp,
-  jump: ArrowRightLeft,
-  title: Type,
-  ask: Bot,
-  remove: Trash2,
-}
-
-const menuIcon = (id: string) => MENU_ICONS[id]
-
 /** A keyboard to draw the chords for: this file settles on one. */
 const KEYBOARD = 'Macintosh'
 
@@ -619,19 +464,8 @@ interface Screen {
   readonly panel?: 'search' | 'commands' | null
   /** What the commands panel offers, where it is the panel drawn. */
   readonly commands?: readonly PaletteGroup[]
-  /** What the map is looking at, which follows the room it is drawn in. */
-  readonly neighbourhood?: PlexNeighbourhood
   /** What the note in a tab holds. */
   readonly markdown?: string
-  /** The headings a node hangs under its box, and none where there are none. */
-  readonly headings?: (id: string) => readonly PlexHeading[]
-  /**
-   * The relations a new note may be made in. None leaves the map at rest, with no
-   * handle on any node and nothing coming out from under one.
-   */
-  readonly creatable?: readonly PlexRelation[]
-  /** Where the menu on a node stands, and none at its current position nowhere. */
-  readonly menu?: { x: number; y: number } | null
   /** The rows of the vault the selection relies on. */
   readonly selected?: readonly string[]
 }
@@ -641,84 +475,39 @@ const screen = ({
   workspace,
   panel = null,
   commands = COMMANDS,
-  neighbourhood = NEIGHBOURHOOD,
   markdown = MARKDOWN,
-  headings = () => [],
-  creatable = [],
-  menu = null,
   selected = [],
 }: Screen) => ({
-  components: { WorkspaceLayout, Plex, Editor, Agent, Palette, Reader, Tree, Menu },
+  components: { WorkspaceLayout, Editor, Agent, Palette, Tree },
   setup() {
     const target = ref<State>(workspace())
     const text = ref(markdown)
     const other = ref(OTHER)
     const activePrompt = ref('')
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
-    const page = ref(BOOK_FIRST)
-    const currentNeighbourhood = ref(neighbourhood)
-
-    const onActivate = (id: string) => {
-      const all = [...WIDE.nodes, ...RELATED]
-      const clicked = all.find((n) => n.id === id)
-      if (clicked && clicked.id !== 'focus') {
-        currentNeighbourhood.value = {
-          nodes: [
-            { id: clicked.id, title: clicked.title, relation: 'focus' },
-            { id: 'focus', title: 'Entropy', relation: 'parent' },
-            { id: 'landauer', title: "Landauer's principle", relation: 'child' },
-            { id: 'shannon', title: 'Shannon 1948', relation: 'sibling' },
-            { id: 'information', title: 'Information theory', relation: 'parent' },
-            { id: 'second-law', title: 'The second law', relation: 'jump' },
-          ],
-          edges: [
-            { from: 'focus', to: clicked.id, label: 'measures' },
-            { from: clicked.id, to: 'landauer', label: 'costs' },
-            { from: 'information', to: clicked.id, label: 'explains' },
-            { from: clicked.id, to: 'second-law', label: 'tests' },
-          ],
-        }
-      }
-    }
-
     return {
       held: target,
       text,
       other,
       asking: activePrompt,
       typed: searchQuery,
-      page,
       panel,
-      currentNeighbourhood,
-      onActivate,
-      headings,
-      creatable,
-      menu,
       selected,
-      MENU,
-      menuIcon,
       groups: panel === 'commands' ? commands : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
-      pages: Array.from({ length: BOOK_LEAVES }, () => PAPER),
-      picture: (pageIndex: number) => renderPage(pageIndex),
-      highlightsOn: (pageIndex: number) => (pageIndex === BOOK_FIRST ? HIGHLIGHTS : []),
-      go: (targetPage: number) => {
-        page.value = Math.min(Math.max(targetPage, 0), BOOK_LEAVES - 1)
-      },
+      book: renderPage(BOOK_FIRST),
       TURNS,
       TABS,
       ROWS,
       OPEN,
       getIcon,
       iconOfTab,
-      PLEX,
       NOTE,
       BOOK,
       OTHER_NOTE,
       AGENT,
       AGENT_OPTIONS,
       FILES,
-      Link2,
     }
   },
   template: `
@@ -731,23 +520,10 @@ const screen = ({
             v-if="iconOfTab(id)"
             style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
           />
-          <Link2
-            v-if="id === PLEX || id === NOTE"
-            style="inline-size: 0.85rem; block-size: 0.85rem; stroke-width: 2.25; color: var(--numen-blue, #3b82f6); margin-inline-start: 2px"
-            aria-hidden="true"
-          />
         </template>
 
         <template #tab="{ id }">
-          <Plex
-            v-if="id === PLEX"
-            :neighbourhood="currentNeighbourhood"
-            :creatable="creatable"
-            :duration="420"
-            :headings="headings"
-            @activate="onActivate"
-          />
-          <Editor v-else-if="id === NOTE" v-model="text" />
+          <Editor v-if="id === NOTE" v-model="text" />
           <Editor v-else-if="id === OTHER_NOTE" v-model="other" />
           <Agent
             v-else-if="id === AGENT"
@@ -758,15 +534,12 @@ const screen = ({
             selected-model-id="claude-3-7-sonnet"
             placeholder="Ask about the vault"
           />
-          <Reader
+          <div
             v-else-if="id === BOOK"
-            class="h-full"
-            :pages="pages"
-            :at="page"
-            :picture="picture"
-            :highlights="highlightsOn"
-            @go="go"
-          />
+            style="block-size: 100%; overflow: auto; display: flex; justify-content: center; padding: 24px"
+          >
+            <img :src="book" alt="Page 373 of Boltzmann 1877" style="inline-size: 100%; max-inline-size: 612px; block-size: auto; align-self: flex-start" />
+          </div>
           <Tree
             v-else-if="id === FILES"
             :rows="ROWS"
@@ -788,15 +561,6 @@ const screen = ({
         :placeholder="placeholder"
       />
 
-      <Menu v-if="menu" :items="MENU" :at="menu" is-open name="What can be done to this note">
-        <template #icon="{ id }">
-          <component
-            :is="menuIcon(id)"
-            v-if="menuIcon(id)"
-            style="inline-size: 100%; block-size: 100%; stroke-width: 1.75; opacity: 0.75"
-          />
-        </template>
-      </Menu>
     </div>
   `,
 })
@@ -823,110 +587,6 @@ const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
 const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
-/** The map with the room, and the agent along the trailing edge. */
-export const PlexMap: Story = {
-  render: () =>
-    screen({
-      workspace: () => ({
-        root: branch('root', [pane('main', [PLEX]), pane('aside', [AGENT])], [0.71, 0.29]),
-        axis: 'horizontal',
-        focus: 'main',
-      }),
-      neighbourhood: WIDE,
-    }),
-  play: async ({ canvasElement }) => {
-    const map = getPane(canvasElement, 'main')
-    const aside = getPane(canvasElement, 'aside')
-
-    // The map is drawn around the note the window is focused on, and it has the
-    // room: most of the width, and the whole neighbourhood in it.
-    await waitFor(() => expect(within(map).getAllByLabelText(/, focus$/)).toHaveLength(1))
-    expect(within(map).getAllByLabelText(/, (parent|child|sibling|jump)$/).length).toBeGreaterThan(
-      3,
-    )
-    expect(map.getBoundingClientRect().width).toBeGreaterThan(aside.getBoundingClientRect().width)
-
-    // The agent is along the trailing edge, and is something to ask with.
-    within(aside).getByPlaceholderText('Ask about the vault')
-    expect(isPast(aside, map)).toBe(true)
-  },
-}
-
-/** The map with the whole window to itself. */
-export const Mapping: Story = {
-  render: () =>
-    screen({
-      workspace: () => ({
-        root: pane('main', [PLEX, NOTE, BOOK], PLEX),
-        axis: 'horizontal',
-        focus: 'main',
-      }),
-      neighbourhood: WIDE,
-      headings: (id: string) => HEADINGS[id] ?? [],
-      creatable: RELATION_NAMES,
-      // Asked for on a node off to the trailing side, at its current position clear of
-      // the map and of what a node is hanging.
-      menu: { x: 902, y: 396 },
-    }),
-  play: async ({ canvasElement }) => {
-    // The map has the window: one pane, and no second one beside it.
-    expect(canvasElement.querySelectorAll('[data-workspace-pane]')).toHaveLength(1)
-    await waitFor(() => expect(within(canvasElement).getAllByLabelText(/, focus$/)).toHaveLength(1))
-
-    // The menu was asked for on a node, and every item of it is in the window
-    // and not off the edge it was asked near.
-    const menu = within(document.body).getByRole('menu', {
-      name: 'What can be done to this note',
-    })
-    const box = menu.getBoundingClientRect()
-    expect(box.width).toBeGreaterThan(0)
-    expect(box.left).toBeGreaterThanOrEqual(0)
-    expect(box.right).toBeLessThanOrEqual(window.innerWidth + 1)
-    expect(box.top).toBeGreaterThanOrEqual(0)
-    expect(box.bottom).toBeLessThanOrEqual(window.innerHeight + 1)
-    expect(within(menu).getAllByRole('menuitem').length).toBeGreaterThan(0)
-  },
-}
-
-/**
- * under the box.
- */
-export const Nesting: Story = {
-  render: () =>
-    screen({
-      workspace: () => ({
-        root: pane('main', [PLEX, NOTE, BOOK], PLEX),
-        axis: 'horizontal',
-        focus: 'main',
-      }),
-      neighbourhood: WIDE,
-      headings: (id: string) => HEADINGS[id] ?? [],
-      creatable: RELATION_NAMES,
-    }),
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement)
-    const focus = await waitFor(() => canvas.getByLabelText(/, focus$/))
-
-    // They come in one after another, so the picture is let settle first.
-    const titles = (HEADINGS['focus'] ?? []).map((heading) => heading.text)
-    const suspended = () => titles.filter((words) => canvas.queryByText(words))
-    await hoverOver(focus)
-    await waitFor(() => expect(suspended().length).toBeGreaterThan(4), { timeout: 5000 })
-
-    // As many as the panel has room for, taken from the top of the note: what
-    // does not fit is wound to, not dropped from the middle.
-    const suspendedView = suspended()
-    expect(suspendedView).toEqual(titles.slice(0, suspendedView.length))
-
-    // They hang under the box, in the order the note sets them out. The box is
-    // the node's own rectangle: the group around it has grown to hold them.
-    const box = focus.querySelector('rect')!.getBoundingClientRect()
-    const tops = suspendedView.map((words) => canvas.getByText(words).getBoundingClientRect().top)
-    expect(Math.min(...tops)).toBeGreaterThan(box.bottom - 1)
-    expect([...tops].sort((one, other) => one - other)).toEqual(tops)
-  },
-}
-
 export const Writing: Story = {
   parameters: WRITING,
   render: () =>
@@ -935,7 +595,7 @@ export const Writing: Story = {
         root: branch(
           'root',
           [
-            pane('main', [PLEX]),
+            pane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
             // two notes stand one above the other.
             branch(
@@ -949,7 +609,6 @@ export const Writing: Story = {
         axis: 'horizontal',
         focus: 'upper',
       }),
-      neighbourhood: WIDE,
     }),
   play: async ({ canvasElement }) => {
     // Writing means somewhere to type: the note in the pane is drawn as text a
@@ -970,7 +629,7 @@ export const Searching: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
+          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
           [0.46, 0.54],
         ),
         axis: 'horizontal',
@@ -999,7 +658,7 @@ export const Commanding: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
+          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
           [0.46, 0.54],
         ),
         axis: 'horizontal',
@@ -1048,31 +707,6 @@ export const Asking: Story = {
   },
 }
 
-/** A document open where a search found something, and the note beside it. */
-export const Reading: Story = {
-  render: () =>
-    screen({
-      workspace: () => ({
-        root: branch(
-          'root',
-          [pane('main', [BOOK, NOTE], BOOK), pane('aside', [AGENT])],
-          [0.66, 0.34],
-        ),
-        axis: 'horizontal',
-        focus: 'main',
-      }),
-    }),
-  play: async ({ canvasElement }) => {
-    // Reading means the document is open at the page the search landed on,
-    // with the passage it found highlighted on it.
-    await waitFor(() => {
-      const page = canvasElement.querySelector(`.reader__page[data-page="${BOOK_FIRST}"]`)
-      expect(page).not.toBeNull()
-      expect(page?.querySelectorAll('.reader__highlight').length).toBeGreaterThan(0)
-    })
-  },
-}
-
 /**
  * The commands over a scanned book beside the files, offering to read its pages
  * with the plugin that recognises text.
@@ -1114,7 +748,11 @@ export const Filing: Story = {
           [
             pane('main', [FILES]),
             // A branch inside a horizontal one is drawn the other way, so the
-            branch('middle', [pane('map', [PLEX]), pane('note', [NOTE, BOOK], NOTE)], [0.52, 0.48]),
+            branch(
+              'middle',
+              [pane('map', [OTHER_NOTE]), pane('note', [NOTE, BOOK], NOTE)],
+              [0.52, 0.48],
+            ),
             pane('aside', [AGENT]),
           ],
           [0.22, 0.5, 0.28],
@@ -1122,7 +760,6 @@ export const Filing: Story = {
         axis: 'horizontal',
         focus: 'map',
       }),
-      neighbourhood: CLOSE,
       selected: ['entropy', 'landauer'],
     }),
   play: async ({ canvasElement }) => {
@@ -1154,7 +791,7 @@ export const Tabling: Story = {
       workspace: () => ({
         root: branch(
           'root',
-          [pane('main', [PLEX]), pane('middle', [NOTE, BOOK], NOTE)],
+          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
           [0.3, 0.7],
         ),
         axis: 'horizontal',

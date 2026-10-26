@@ -1,5 +1,5 @@
-import { getRelationName } from '@numen/ui'
-import type { PlexRelation } from '@numen/ui'
+import { getRelationName } from './plex'
+import type { PlexRelation } from './plex'
 
 /** What a plex tab is called, on its own and after the note it relies on. */
 export const WORDS = {

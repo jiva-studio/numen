@@ -2,7 +2,7 @@
  * Fetching and reactivity of the headings of notes drawn on a plex graph.
  */
 import { shallowRef, watch, type Ref } from 'vue'
-import type { PlexHeading } from '@numen/ui'
+import type { PlexHeading } from '../plex'
 import { createRequestGuard } from '../lib/requestGuard'
 import { convertHeadings } from '../lib/picture'
 import type { PlexTabDeps, NoteType } from '../types'

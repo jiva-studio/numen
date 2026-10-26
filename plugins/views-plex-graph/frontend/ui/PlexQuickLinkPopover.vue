@@ -4,7 +4,7 @@
  */
 import { computed, nextTick, onMounted, ref, useId, useTemplateRef, watch } from 'vue'
 import { useOutsidePress } from '@numen/ui'
-import type { PlexRelation } from '@numen/ui'
+import type { PlexRelation } from '../plex'
 import { useSearchResults } from '../lib/search'
 import { WORDS as words } from '../words'
 

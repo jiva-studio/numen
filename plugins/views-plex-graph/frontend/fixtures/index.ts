@@ -5,7 +5,7 @@
  * and everything the editor was asked to do is kept in the order it was asked.
  */
 import { ref } from 'vue'
-import type { PlexRelation } from '@numen/ui'
+import type { PlexRelation } from '../plex'
 import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
 
 /** A moment for whatever a gesture asked the vault for to come back. */

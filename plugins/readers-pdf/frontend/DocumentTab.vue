@@ -4,7 +4,8 @@
  * Renders document pages, toolbar controls, and text highlights.
  */
 import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
-import { Reader, Waiting } from '@numen/ui'
+import { Waiting } from '@numen/ui'
+import { Reader } from './reader'
 import { WORDS as words } from './words'
 import type { Span } from './types'
 import type { DocumentTabState } from './model/useDocumentTab'

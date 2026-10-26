@@ -5,7 +5,7 @@
  * reading in their own language reads their own dates.
  */
 
-import { parseDay } from '@numen/ui'
+import { parseDay } from '../../../lib/day'
 
 const full = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' })
 

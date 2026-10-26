@@ -15,15 +15,15 @@
  * is the fewest bytes the picture comes to, for a screen that is mostly empty.
  */
 export const SHOTS = [
-  { name: 'window', story: 'application-window--plex-map', width: 1180, height: 740 },
-  { name: 'theme-dracula', story: 'application-window--plex-map', width: 1180, height: 740, preset: 'dracula' },
-  { name: 'theme-solarized', story: 'application-window--plex-map', width: 1180, height: 740, preset: 'solarized' },
+  { name: 'window', story: 'application-window--writing', width: 1180, height: 740 },
+  { name: 'theme-dracula', story: 'application-window--writing', width: 1180, height: 740, preset: 'dracula' },
+  { name: 'theme-solarized', story: 'application-window--writing', width: 1180, height: 740, preset: 'solarized' },
   { name: 'searching', story: 'application-window--searching', width: 1180, height: 740 },
   { name: 'asking', story: 'application-window--asking', width: 1180, height: 740 },
-  { name: 'plex', story: 'application-window--mapping', width: 1180, height: 740 },
+  { name: 'plex', story: 'plex-map--mapping', width: 1180, height: 740 },
   {
     name: 'parts',
-    story: 'application-window--nesting',
+    story: 'plex-map--nesting',
     width: 1180,
     height: 740,
     over: '.plex__node--focus',
@@ -31,7 +31,7 @@ export const SHOTS = [
   { name: 'commands', story: 'application-window--commanding', width: 1180, height: 740 },
   { name: 'writing', story: 'application-window--writing', width: 1180, height: 740 },
   { name: 'table', story: 'application-window--tabling', width: 1180, height: 740 },
-  { name: 'reader', story: 'application-window--reading', width: 1180, height: 740 },
+  { name: 'reader', story: 'reading-book--reading', width: 1180, height: 740 },
   { name: 'files', story: 'application-window--filing', width: 1180, height: 740 },
   { name: 'settings', story: 'desktop-window--settings', width: 1180, height: 740 },
   { name: 'recording', story: 'recording-tab--playing', width: 1180, height: 740 },

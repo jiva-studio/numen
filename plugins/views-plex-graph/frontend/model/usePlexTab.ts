@@ -3,7 +3,7 @@
  */
 import { computed, ref, watch, type Component } from 'vue'
 import { findIcon } from '../lib/icons'
-import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui'
+import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
 import { getFileName } from '@numen/plugin-sdk'
 import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'

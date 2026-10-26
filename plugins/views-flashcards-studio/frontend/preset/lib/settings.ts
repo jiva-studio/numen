@@ -1,7 +1,7 @@
 /**
  * Settings calculation, bound clamping, and reconciliation for preset tabs.
  */
-import { dayAfter, daysBetween, isDay } from '@numen/ui'
+import { dayAfter, daysBetween, isDay } from '../../lib/day'
 import type {
   Bounds,
   BudgetUnit,

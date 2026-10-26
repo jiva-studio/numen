@@ -2,7 +2,8 @@
 // Stryker disable StringLiteral: interface copy
 import { StopReason } from '../../../gen/numen/flashcards/v1/presets_pb.js'
 import { formatStopReasonMessage } from '../../../cards/wire/stop'
-import { parseDay, daysBetween, many, percent } from '@numen/ui'
+import { many, percent } from '@numen/ui'
+import { parseDay, daysBetween } from '../../../lib/day'
 
 import { isSpent } from './lib/progress'
 import type { Preset, Settings } from './types'

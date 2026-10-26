@@ -19,7 +19,7 @@ export const SHOTS = [
   { name: 'editor', story: 'application-window--writing' },
   {
     name: 'graph',
-    story: 'application-window--mapping',
+    story: 'plex-map--mapping',
     over: '[aria-label="The second law, child"]',
   },
   { name: 'search', story: 'application-window--searching' },

@@ -5,7 +5,7 @@
  * The application works a curve out over the whole range in one pass, so moving
  * the control computes nothing.
  */
-import { dayAfter, daysBetween } from '@numen/ui'
+import { dayAfter, daysBetween } from '../../lib/day'
 import type { Bounds, Curve, Goal, Point, Settings, SettingsBounds } from '../types'
 
 /**

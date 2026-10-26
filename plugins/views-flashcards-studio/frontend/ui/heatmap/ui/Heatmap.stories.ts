@@ -11,7 +11,7 @@ import { h } from 'vue'
 
 import Heatmap from './Heatmap.vue'
 import { ROWS } from '../lib/grid'
-import { getDayName } from '@numen/ui'
+import { getDayName } from '../../../lib/day'
 import type { Tally } from '../lib/heatmap'
 import type { Words } from '../lib/words'
 import { lightness } from '../../fixtures/colour'

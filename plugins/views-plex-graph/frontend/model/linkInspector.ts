@@ -1,7 +1,7 @@
 /**
  * The links between two notes as the link inspector shows them, and the edits a person makes to the rows.
  */
-import type { PlexRelation } from '@numen/ui'
+import type { PlexRelation } from '../plex'
 import type { Neighbourhood, DirectionalLinkItem } from '../types'
 
 type Neighbour = Neighbourhood['related'][number]

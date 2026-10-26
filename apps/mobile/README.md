@@ -7,7 +7,7 @@ A phone showing one vault. The core is the one the window uses: `gomobile` binds
 - `bind/` — the Go side: `Start(dir)` opens the vault under `dir` and answers with the port it serves on. `Stop()` closes it.
 - `android/app/src/main/java/md/numen/spike/NumenCorePlugin.java` — the Capacitor plugin. It hands the core the folder the platform gave the application and passes the port to the page.
 - `src/core.ts` — the page's half: the port, then a generated client.
-- `src/App.vue` — what the vault holds, and one note more.
+- `src/App.vue` — the vault the core opened, and the note it opens on.
 
 ## Building
 

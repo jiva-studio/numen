@@ -11,7 +11,7 @@ import type { SettingsMessage } from '../../cards/wire/settings'
 
 import { useReviewCounter } from '../entities/vault'
 import type { CardsDueClient, VaultCardsDue } from '../entities/vault'
-import { getDayName } from '@numen/ui'
+import { getDayName } from '../../lib/day'
 import { useVaultPresets } from '../pages/decks'
 import type { PresetsClient } from '../pages/decks'
 

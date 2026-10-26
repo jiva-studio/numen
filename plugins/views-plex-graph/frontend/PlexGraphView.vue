@@ -3,8 +3,10 @@
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
-import { Menu, optionsForType, Plex, useTypeSize, Waiting } from '@numen/ui'
-import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
+import { Menu, Waiting } from '@numen/ui'
+import { optionsForType, Plex, useTypeSize } from './plex'
+import type { MenuTrigger } from '@numen/ui'
+import type { PlexRelation, PlexDestination } from './plex'
 import PlexQuickLinkPopover from './ui/PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './ui/PlexLinkInspectorPopover.vue'
 import type { DirectionalLinkItem, PlexTabState } from './types'

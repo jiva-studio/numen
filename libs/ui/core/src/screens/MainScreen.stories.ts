@@ -1,40 +1,34 @@
 /**
- * The screen the desktop opens on: the plex with the room, the agent along the
- * trailing edge, and both of them tabs that can be moved, split or closed.
+ * The screen the desktop opens on: a plugin's view with the room, the agent
+ * along the trailing edge, and both of them tabs that can be moved, split or
+ * closed.
  *
- * Where the pieces are judged together — whether the plex has the width it
- * needs beside a conversation, whether a strip of tabs reads as one line of
- * chrome above two very different things.
+ * Where the pieces are judged together — whether a strip of tabs reads as one
+ * line of chrome above two very different things. The view is a placeholder:
+ * the views themselves are drawn by the plugins' Storybook.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { onScopeDispose, ref } from 'vue'
 import { WorkspaceLayout } from '@/features/workspace'
-import { Plex } from '@/features/plex'
 import { Agent } from './agent'
 import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
-import { neighbourhoods } from '@/features/plex/fixtures/neighbourhoods'
 import { LONG, MULTILINE } from '@/shared/fixtures/prose'
-import type { PlexNeighbourhood } from '@/features/plex'
 import type { Turn } from '@/features/thread'
 
-const PLEX = 'plex'
+const VIEW = 'view'
 const AGENT = 'agent'
 
 const TABS: readonly Tab[] = [
-  { id: PLEX, title: 'Plex' },
+  { id: VIEW, title: 'View' },
   { id: AGENT, title: 'Agent' },
 ]
 
-/** The plex with the room, and the agent along the trailing edge. */
+/** The view with the room, and the agent along the trailing edge. */
 const opening = (): State => ({
-  root: branch('root', [pane('main', [PLEX]), pane('aside', [AGENT])], [0.72, 0.28]),
+  root: branch('root', [pane('main', [VIEW]), pane('aside', [AGENT])], [0.72, 0.28]),
   axis: 'horizontal',
   focus: 'main',
 })
-
-interface Knobs {
-  neighbourhood: PlexNeighbourhood
-}
 
 const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
 const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
@@ -44,20 +38,11 @@ const OPENING: readonly Turn[] = [
   createAnswered('2', MULTILINE),
 ]
 
-const meta: Meta<Knobs> = {
+const meta: Meta = {
   title: 'Application/Main screen',
   parameters: { layout: 'fullscreen' },
-  argTypes: {
-    neighbourhood: {
-      control: 'select',
-      options: Object.keys(neighbourhoods),
-      mapping: neighbourhoods,
-      description: 'What the plex is looking at.',
-    },
-  },
-  args: { neighbourhood: neighbourhoods.typical },
-  render: (args) => ({
-    components: { WorkspaceLayout, Plex, Agent },
+  render: () => ({
+    components: { WorkspaceLayout, Agent },
     setup() {
       const target = ref<State>(opening())
       const turns = ref<Turn[]>([...OPENING])
@@ -98,17 +83,19 @@ const meta: Meta<Knobs> = {
 
       onScopeDispose(settle)
 
-      return { held: target, args, turns, text, isWorking, onSubmit, TABS, PLEX, AGENT }
+      return { held: target, turns, text, isWorking, onSubmit, TABS, VIEW, AGENT }
     },
     template: `
       <div style="height: 100vh">
         <WorkspaceLayout v-model="held" :tabs="TABS">
           <template #tab="{ id }">
-            <Plex
-              v-if="id === PLEX"
-              :neighbourhood="args.neighbourhood"
-              :creatable="[]"
-            />
+            <div
+              v-if="id === VIEW"
+              class="grid h-full place-items-center text-sm text-hushed"
+              data-placeholder
+            >
+              A plugin's view
+            </div>
             <Agent
               v-else
               v-model="text"
@@ -125,7 +112,7 @@ const meta: Meta<Knobs> = {
 }
 
 export default meta
-type Story = StoryObj<Knobs>
+type Story = StoryObj
 
 /** What the window opens on. */
 export const Opening: Story = {}

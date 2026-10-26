@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { measureGrid, ROWS } from './grid'
 import { getCells, getDays, getGridHeight, getWeight, NOTHING } from './heatmap'
-import { getDayName } from '@numen/ui'
+import { getDayName } from '../../../lib/day'
 import type { Tally } from './heatmap'
 
 describe('how much of a year fits', () => {
