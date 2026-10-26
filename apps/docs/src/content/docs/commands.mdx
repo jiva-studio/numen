@@ -15,7 +15,6 @@ import Shot from '../../components/Shot.astro'
 />
 
 The same list is on a node in the [plex](/plex/): right-click one, or press <kbd>⇧</kbd>
-
 <kbd>F10</kbd> on it, and what you get is the commands over that note.
 
 ## What a command asks for
@@ -27,9 +26,9 @@ empty field steps back, <kbd>Escape</kbd> leaves.
 Some ask you to confirm rather than to type: removing a vault says the folder stays. Destroying a
 note and erasing a vault make you type the name first.
 
-The bands say what a command acts on: **this note**, **this file** — the texts a plugin makes of
-the file in front of you, and the commands a plugin offers over its type — **this window**, and
-**this vault**.
+The bands say what a command acts on: **Note**, the note in front of you; **File** — the texts a
+plugin makes of the file in front of you, and the commands a plugin offers over its type;
+**General**, the window; and **Vault**.
 
 Over a file, a command names the plugin that does it: each plugin that reads the file's type
 offers to recognise its text, each that reads the text offers to proofread it, and each text a
@@ -43,47 +42,41 @@ disappearing.
 ## Every command
 
 {/* BEGIN AUTOGEN */}
-### This note
+### Note
 
 | | |
 | --- | --- |
 | Open the note |  |
 | Open beside |  |
-| Show in plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> |
 | New child note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>C</kbd> |
 | New parent note |  |
 | New jump note |  |
 | Change title |  |
 | Remove note |  |
 | Destroy note |  |
-| Ask the agent |  |
 | Copy path |  |
+| Ask the agent |  |
 | Show this note in the files |  |
 | Open the preset |  |
+| Show in plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd> |
 
-### This file
+### File
 
 | | |
 | --- | --- |
-| Recognise the text with *plugin* |  |
-| Proofread the text with *plugin* |  |
-| Delete the text *plugin* made |  |
 | Download the text again |  |
 | Download a copy |  |
 | Delete the copy |  |
+| Recognise the text with *plugin* |  |
+| Proofread the text with *plugin* |  |
+| Delete the text *plugin* made |  |
 
-### This window
+### General
 
 | | |
 | --- | --- |
 | New note | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>N</kbd> |
-| New deck |  |
-| New stencil |  |
-| New preset |  |
 | Import an address |  |
-| New plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> |
-| Show the files of the vault |  |
-| New agent | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
 | Close this tab | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>W</kbd> |
 | Search the vault | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>K</kbd> |
 | Change the theme |  |
@@ -95,8 +88,15 @@ disappearing.
 | How many headings nest under a note |  |
 | Set performance profile |  |
 | Settings |  |
+| Audio/Video Transcription: Transcription Language |  |
+| New deck |  |
+| New stencil |  |
+| New preset |  |
+| New agent | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>A</kbd> |
+| Show the files of the vault |  |
+| New plex | <kbd>Ctrl</kbd>/<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>X</kbd> |
 
-### This vault
+### Vault
 
 | | |
 | --- | --- |

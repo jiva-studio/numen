@@ -12,10 +12,12 @@ import (
 type Appearance struct {
 	// InterfaceScale is how large the window is drawn: its chrome, its controls,
 	// the spacing between them and the type in them. A number outside
+	// InterfaceScaleBounds is refused, and a file naming no size at all is drawn
 	// at what the desktop asks for.
 	InterfaceScale float64 `json:"interface_scale"`
 
 	// TextScale is how large the text a person reads is set: a note, a book, an
+	// answer, the editor. A number outside TextScaleBounds is refused.
 	TextScale float64 `json:"text_scale"`
 
 	// Mode is which half of a colour pair the window takes: ModeSystem,
@@ -23,6 +25,7 @@ type Appearance struct {
 	// this nothing to choose.
 	Mode string `json:"mode"`
 
+	// Theme is the stylesheet applied to the window, named by its origin
 	// and its filename: `preset:dracula` ships here, `mine:dracula` is the
 	// person's file.
 	Theme string `json:"theme"`
@@ -34,10 +37,12 @@ type Appearance struct {
 
 	// NestedHeadingLimit is how many of those headings stand under a node at once,
 	// the rest being reached by scrolling. A number outside NestedHeadingLimitBounds is
+	// refused, and a file naming none stands DefaultNestedHeadingLimit of them.
 	NestedHeadingLimit int `json:"nested_heading_limit"`
 }
 
-// naming nothing hangs them.
+// HasNestedHeadings reports whether a node shows the headings of its note. An unset value
+// shows them.
 func (a Appearance) HasNestedHeadings() bool {
 	return a.NestHeadingsUnderNotes == nil || *a.NestHeadingsUnderNotes
 }

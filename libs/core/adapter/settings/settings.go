@@ -40,6 +40,7 @@ type Document interface {
 	AddNotice(reply string)
 }
 
+// Titles is whether a note's title and its filename are kept in sync.
 type Titles struct {
 	// SyncTitleAndFilename is whether renaming either of the two brings the
 	// other into line. A file leaving it out keeps them one name, and a file

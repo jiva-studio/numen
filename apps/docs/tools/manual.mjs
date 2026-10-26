@@ -1,5 +1,5 @@
 /**
- * The four pages of the manual the application writes itself.
+ * The five pages of the manual the application writes itself.
  *
  * A key on the keyboard page, a row on the commands page, a setting in the
  * reference and a flag on the starting page are all read out of the code that
@@ -16,10 +16,16 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 // and a package name is a link `npm ci` makes.
 import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
 
+const EDITOR = new URL('../../desktop/editor/src/', import.meta.url)
 // The window's shared layer, which is where the words stand.
-const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
+const UI = new URL('shared/', EDITOR)
 // The slice the commands and their keystrokes stand in.
-const PALETTE = new URL('../../desktop/editor/src/features/command-palette/', import.meta.url)
+const PALETTE = new URL('features/command-palette/', EDITOR)
+// Where the window adds the plugins' commands to its own.
+const APP = new URL('app/', EDITOR)
+const PLUGINS = new URL('../../../plugins/', import.meta.url)
+// The window the palette is drawn in, as a plugin manifest names it.
+const TARGET = 'desktop.editor'
 const GO = new URL('../../../libs/core/', import.meta.url)
 const CMD = new URL('../../desktop/cmd/numen/', import.meta.url)
 const PAGES = new URL('../src/content/docs/', import.meta.url)
@@ -53,8 +59,14 @@ const read = (base, path) => readFile(new URL(path, base), 'utf8')
 const listed = (source, from) => {
   const opens = source.slice(from).match(/=>?\s*\[/)
   if (!opens) return null
-  const at = from + opens.index + opens[0].length - 1
+  return readBracketed(source, from + opens.index + opens[0].length - 1)
+}
 
+/**
+ * The text from the bracket at `at` to the one that closes it, and how many
+ * braces open directly inside it.
+ */
+const readBracketed = (source, at) => {
   let depth = 0
   let entries = 0
   let quote = null
@@ -131,8 +143,26 @@ const chordOf = ({ letter, shift }) => {
 }
 
 /**
+ * The chord a plugin's shortcut is drawn as, such as `mod+shift+x`. The window
+ * draws a shortcut that is its modifier with a letter, and Shift or not; any
+ * other shortcut stops the build, as the window would draw it as nothing.
+ */
+const getShortcutChord = (shortcut, where) => {
+  const parts = shortcut.toLowerCase().split('+')
+  const letter = parts.at(-1)
+  const modifiers = parts.slice(0, -1)
+  const known = ['mod', 'ctrl', 'control', 'cmd', 'shift']
+  if (!/^[a-z]$/.test(letter) || modifiers.some((one) => !known.includes(one))) {
+    die(`${where} declares the shortcut '${shortcut}', which the window draws as nothing`)
+  }
+  return { letter, shift: modifiers.includes('shift') }
+}
+
+/**
  * What one entry of the words says. An entry standing for another module's is
- * followed there, which is where the four tab kinds keep their own names.
+ * followed there, which is where the four tab kinds keep their own names. An
+ * entry that is a function of one name is written with that name in italics,
+ * where the window puts what it names.
  */
 const said = async (whole, name, at = UI, seen = new Set()) => {
   // The words a person reads are one object. What is above it says what a
@@ -143,6 +173,9 @@ const said = async (whole, name, at = UI, seen = new Set()) => {
   const literal = words.match(new RegExp(`^\\s*${name}:\\s*'([^']+)',`, 'm'))
   if (literal) return literal[1]
 
+  const formed = words.match(new RegExp(`^\\s*${name}:\\s*\\((\\w+)[^)]*\\)\\s*=>\\s*\`([^\`]*)\`,`, 'm'))
+  if (formed) return formed[2].replaceAll(`\${${formed[1]}}`, `*${formed[1]}*`)
+
   const elsewhere = words.match(new RegExp(`^\\s*${name}:\\s*([a-z]+)\\.([A-Za-z]+),`, 'm'))
   if (!elsewhere) die(`the words say nothing under '${name}'`)
   const [, module, key] = elsewhere
@@ -150,19 +183,25 @@ const said = async (whole, name, at = UI, seen = new Set()) => {
 
   // The file names where it took the module from, so a part that moved is
   // followed without this knowing where any part stands.
-  const imported = whole.match(new RegExp(`^import \\{ WORDS as ${module} \\} from '([^']+)'`, 'm'))
-  if (!imported) die(`the words take nothing in as '${module}'`)
-  const path = new URL(`${imported[1]}.ts`, at)
+  const path = getWordsFile(whole, module, at)
   return said(await readFile(path, 'utf8'), key, path, new Set([...seen, module]))
 }
 
+/** The file a module takes one set of words in from, as `WORDS` or `WORDS as <module>`. */
+const getWordsFile = (source, module, at) => {
+  const named = module === 'WORDS' ? 'WORDS' : `WORDS as ${module}`
+  const imported = source.match(new RegExp(`^import \\{ ${named} \\} from '([^']+)'`, 'm'))
+  if (!imported) die(`the words take nothing in as '${module}'`)
+  return new URL(`${imported[1]}.ts`, at)
+}
+
 const keyboard = async () => {
-  const keys = await read(PALETTE, 'lib/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords/chords.ts')
   const words = await read(UI, 'words.ts')
 
   // The two the window keeps for itself are not in that table: they put the
   // palette up, and the palette answers them.
-  const palette = await read(PALETTE, 'ui/CommandPalette.vue')
+  const palette = await read(PALETTE, 'model/palette/shortcuts.ts')
   for (const letter of ['k', 'p']) {
     if (!palette.includes(`key === '${letter}'`)) {
       die(`the palette no longer answers '${letter}' itself`)
@@ -176,6 +215,11 @@ const keyboard = async () => {
   const declared = await readCommands()
   for (const chord of chords(keys)) {
     rows.push(`| ${chordOf(chord)} | ${await said(words, spoken(declared, chord.command))} |`)
+  }
+  for (const plugin of await readPlugins()) {
+    for (const command of plugin.commands) {
+      if (command.chord) rows.push(`| ${chordOf(command.chord)} | ${command.text} |`)
+    }
   }
   return ['| | |', '| --- | --- |', ...rows].join('\n')
 }
@@ -201,16 +245,13 @@ const rowsOf = ({ text, entries }, path = 'table.ts') => {
   }))
 }
 
-/**
- * Every command declared across the palette, read from table.ts and any slice
- * it composes.
- */
+/** The window's own commands, read from table.ts and every slice it composes, in its order. */
 const readCommands = async () => {
-  const source = await read(PALETTE, 'lib/table.ts')
-  const calls = [...source.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
-  if (calls.length === 0) {
-    return rowsOf(declaring(source, 'commandsOf', 'table.ts no longer lists its commands'), 'table.ts')
-  }
+  const at = new URL('lib/commands/table.ts', PALETTE)
+  const source = await readFile(at, 'utf8')
+  const list = declaring(source, 'createCommands', 'table.ts no longer lists its commands')
+  const calls = [...list.text.matchAll(/\.\.\.([A-Za-z0-9_]+)\(/g)].map((m) => m[1])
+  if (calls.length === 0) die('table.ts composes no commands')
   const imports = new Map(
     [...source.matchAll(/import\s*\{([^}]+)\}\s*from\s*'([^']+)'/g)].flatMap(([, names, specifier]) =>
       names.split(',').map((n) => [n.trim(), specifier]),
@@ -220,10 +261,9 @@ const readCommands = async () => {
   for (const fn of calls) {
     const specifier = imports.get(fn)
     if (!specifier) die(`table.ts calls '${fn}' without importing it`)
-    const path = `lib/${specifier.replace(/^\.\//, '')}.ts`
-    const partSource = await read(PALETTE, path)
-    const part = declaring(partSource, fn, `${path} no longer lists its commands`)
-    rows.push(...rowsOf(part, path))
+    const path = new URL(`${specifier}.ts`, at)
+    const part = declaring(await readFile(path, 'utf8'), fn, `${specifier} no longer lists ${fn}`)
+    rows.push(...rowsOf(part, specifier))
   }
   return rows
 }
@@ -236,25 +276,126 @@ const spoken = (declared, command) => {
   return found[1]
 }
 
+/**
+ * Every plugin the window loads, in the order the host lists them — by id —
+ * with the commands it adds to the palette:
+ *
+ * - `settings`, each setting its manifest offers in the palette, drawn as the
+ *   plugin's name and the setting's title;
+ * - `declared`, each command its manifest declares that the palette shows,
+ *   over a file where it names the files' extensions and over the window where
+ *   it names none;
+ * - `commands`, each command its frontend registers, over the note in front or
+ *   over the window, with the chord its shortcut is drawn as.
+ */
+const readPlugins = async () => {
+  const plugins = []
+  for (const entry of await readdir(PLUGINS, { withFileTypes: true })) {
+    if (!entry.isDirectory()) continue
+    const at = new URL(`${entry.name}/`, PLUGINS)
+    let manifest
+    try {
+      manifest = JSON.parse(await read(at, 'manifest.json'))
+    } catch {
+      continue
+    }
+    if (!(manifest.targets ?? []).includes(TARGET)) continue
+    plugins.push({
+      id: manifest.id,
+      settings: (manifest.settings ?? [])
+        .filter((one) => one.palette)
+        .map((one) => ({ text: `${manifest.name}: ${one.title}`, group: 'window' })),
+      declared: (manifest.commands ?? [])
+        .filter((one) => !one.hiddenInPalette)
+        .map((one) => ({ text: one.title, group: one.fileExtensions?.length ? 'file' : 'window' })),
+      commands: manifest.frontend ? await readRegisteredCommands(at, entry.name) : [],
+    })
+  }
+  return plugins.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0))
+}
+
+/**
+ * The commands one plugin's frontend registers. Every `registerCommand` call is
+ * read; one this cannot read an id and a title out of stops the build.
+ */
+const readRegisteredCommands = async (at, name) => {
+  const index = new URL('frontend/index.ts', at)
+  const source = await readFile(index, 'utf8')
+  const calls = [...source.matchAll(/\bregisterCommand\(\s*\{/g)]
+  const commands = []
+  for (const call of calls) {
+    const block = readBracketed(source, call.index + call[0].length - 1)
+    const id = block?.text.match(/\bid:\s*'([^']+)'/)
+    const title = block?.text.match(/\btitle:\s*([A-Za-z]+)\.([A-Za-z]+)\s*,/)
+    if (!id || !title) die(`${name} registers a command this cannot read`)
+    const scope = block.text.match(/\bscope:\s*'([a-z]+)'/)?.[1]
+    const shortcut = block.text.match(/\bshortcut:\s*'([^']+)'/)?.[1]
+    const words = getWordsFile(source, title[1], index)
+    commands.push({
+      id: id[1],
+      text: await said(await readFile(words, 'utf8'), title[2], words),
+      group: scope === 'note' ? 'note' : 'window',
+      ...(shortcut ? { chord: getShortcutChord(shortcut, name) } : {}),
+    })
+  }
+  return commands
+}
+
+/**
+ * The menu the text versions of the file in front make, as the palette names
+ * each entry: by the plugin that does it.
+ */
+const readFileMenu = async () => {
+  const source = await read(APP, 'commands/fileMenuCommands.ts')
+  const words = await read(UI, 'words.ts')
+  const named = [...source.matchAll(/return WORDS\.([A-Za-z]+)\(entry\.pluginName\)/g)]
+  if (named.length === 0) die('fileMenuCommands.ts names no entry of the menu')
+  return Promise.all(named.map(async ([, key]) => ({ text: await said(words, key), group: 'file' })))
+}
+
+/** That the window still draws a plugin's palette setting as its name and the setting's title. */
+const checkSettingCommands = async () => {
+  const source = await read(APP, 'window/useSettings.ts')
+  if (!source.includes('text: `${plugin.name}: ${setting.title}`')) {
+    die('useSettings.ts no longer names a plugin setting in the palette as its plugin and title')
+  }
+}
+
 /** Every command the palette offers, in the order it draws them. */
 const commands = async () => {
   const words = await read(UI, 'words.ts')
-  const keys = await read(PALETTE, 'lib/chords.ts')
+  const keys = await read(PALETTE, 'lib/chords/chords.ts')
   const table = chords(keys)
 
   const declared = await readCommands()
   if (declared.length === 0) die('no commands are declared in table.ts')
 
-
   // Every command declared is a command the page carries. One the words or the
   // groups say nothing about stops the build.
-  const rows = declared.map(({ id, said }) => {
-    const word = said.match(/text:\s*words\.([A-Za-z]+)/)
-    const group = said.match(/group:\s*'(note|file|window|vault)'/)
+  const own = []
+  for (const { id, said: row } of declared) {
+    const word = row.match(/text:\s*words\.([A-Za-z]+)/)
+    const group = row.match(/group:\s*'(note|file|window|vault)'/)
     if (!word) die(`no words draw the command '${id}'`)
     if (!group) die(`the command '${id}' stands in no group`)
-    return { id, word: word[1], group: group[1] }
-  })
+    const chord = table.find((one) => one.command === id)
+    const key = chord ? chordOf(chord) : id === 'find' ? chordOf({ letter: 'k' }) : ''
+    own.push({ text: await said(words, word[1]), group: group[1], key })
+  }
+
+  // The window's own commands come first, then what the plugins add, in the
+  // order useCommands.ts hands them to the palette.
+  await checkSettingCommands()
+  const plugins = await readPlugins()
+  const rows = [
+    ...own,
+    ...plugins.flatMap((one) => one.settings),
+    ...plugins.flatMap((one) => one.declared),
+    ...(await readFileMenu()),
+    ...plugins.flatMap((one) =>
+      one.commands.map(({ text, group, chord }) => ({ text, group, key: chord ? chordOf(chord) : '' })),
+    ),
+  ].map((row) => ({ key: '', ...row }))
 
   const groups = [
     ['note', 'noteGroupTitle'],
@@ -267,9 +408,7 @@ const commands = async () => {
   for (const [group, heading] of groups) {
     out.push(`### ${await said(words, heading)}`, '', '| | |', '| --- | --- |')
     for (const row of rows.filter((one) => one.group === group)) {
-      const chord = table.find((one) => one.command === row.id)
-      const key = chord ? chordOf(chord) : row.id === 'find' ? chordOf({ letter: 'k' }) : ''
-      out.push(`| ${await said(words, row.word)} | ${key} |`)
+      out.push(`| ${row.text} | ${row.key} |`)
     }
     out.push('')
   }
@@ -370,8 +509,7 @@ const VALUES = {
   ModeSystem: '`system`',
   ModeLight: '`light`',
   ModeDark: '`dark`',
-  PoolMean: '`mean`',
-  PoolHead: '`head`',
+  ProfileCustom: '`custom`',
 }
 
 /**
@@ -406,11 +544,7 @@ const meaning = (doc, name, keys) => {
 const PACKAGES = {
   container: 'container',
   settings: 'adapter/settings',
-  download: 'internal/adapter/download',
-  embed: 'internal/adapter/embed',
-  recognition: 'internal/adapter/recognition',
-  transcription: 'internal/adapter/transcription',
-  proofreading: 'internal/adapter/proofreading',
+  hardware: 'adapter/settings/hardware',
   completion: 'usecase/completion',
 }
 
