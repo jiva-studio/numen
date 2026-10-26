@@ -52,12 +52,12 @@ func TestABuildWithoutKeysServesNone(t *testing.T) {
 // The consent of a plugin travels to the window; a key never does.
 func TestAPluginTravelsWithItsConsent(t *testing.T) {
 	infos := NewWirePluginInfos([]setting.PluginInfo{{
-		ID: "md.numen.sample", Secrets: []string{"apiKey"}, StoredSecrets: []string{"apiKey"},
+		ID: "md.numen.sample", Secrets: []setting.PluginSecret{{Name: "apiKey", Title: "API key"}}, StoredSecrets: []string{"apiKey"},
 		Consent: setting.ConsentAsked,
 	}})
 	one := infos[0]
 	if one.GetCompletionConsent() != v1.CompletionConsent_COMPLETION_CONSENT_ASKED ||
-		len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0] != "apiKey" {
+		len(one.GetStoredSecrets()) != 1 || one.GetSecrets()[0].GetName() != "apiKey" {
 		t.Errorf("travelled as %v", one)
 	}
 	for _, consent := range []setting.Consent{

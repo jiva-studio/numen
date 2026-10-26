@@ -36,11 +36,11 @@ const createPlugin = (
 
 const PLUGINS: readonly PluginInfo[] = [
   createPlugin('sample.agent-a', 'Sample Agent A', {
-    secrets: ['apiKey'],
+    secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
     storedSecrets: ['apiKey'],
   }),
   createPlugin('sample.agent-b', 'Sample Agent B', {
-    secrets: ['apiKey'],
+    secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
   }),
   createPlugin('sample.asking', 'Sample Asking Plugin', {
     consent: 'asked',
@@ -80,6 +80,7 @@ const installation: Installation = {
   writeSecret: fn(),
   deleteSecret: fn(),
   retryPlugin: fn(),
+  choosePath: fn(async () => ''),
   plugins: ref(PLUGINS),
   file: ref('/numen.json'),
   openFile: fn(),

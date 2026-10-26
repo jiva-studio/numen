@@ -145,7 +145,7 @@ func newSecretHost(t *testing.T, store pluginport.KeyStore) (*Host, *configured)
 	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
 	host.plugins[secretPluginID] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
 		ID:      secretPluginID,
-		Secrets: []string{"apiKey"},
+		Secrets: []pluginport.PluginSecret{{Name: "apiKey", Title: "API key"}},
 		Settings: []plugindir.Setting{
 			{Key: "model", Type: "string", Title: "Model", Default: "sonnet"},
 		},

@@ -44,4 +44,13 @@ export interface SettingsPort {
    * again, and empty where it started.
    */
   retryPlugin(pluginId: string): Promise<string>
+  /**
+   * The machine's own picker put in front of the person for a plugin's setting of type file or
+   * folder, and the path chosen written. The problem is why the setting does not take the path,
+   * and empty where it was written.
+   */
+  choosePluginPath(
+    pluginId: string,
+    key: string,
+  ): Promise<{ readonly path: string; readonly isChosen: boolean; readonly problem: string }>
 }

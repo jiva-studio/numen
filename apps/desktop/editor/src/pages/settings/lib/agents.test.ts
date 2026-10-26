@@ -45,7 +45,7 @@ const ZETA = AGENTS[1]
 
 const ASKING: PluginInfo = createPluginInfo('test.asking', 'Asking', {
   consent: 'asked',
-  secrets: ['apiKey'],
+  secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
 })
 const PLUGINS = [ASKING, createPluginInfo('test.plain', 'Plain')]
 

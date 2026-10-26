@@ -95,6 +95,7 @@ const createSection = (file: Record<string, unknown> = {}, defaultUse = 'claude'
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
+    choosePath: vi.fn(async () => ''),
     file: ref('/test/settings.json'),
     openFile: vi.fn(),
   }

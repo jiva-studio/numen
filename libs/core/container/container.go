@@ -205,6 +205,9 @@ func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 			}
 			target = append(target, settings.Setting{At: one.Path, Written: value})
 		}
+		if err := checkPluginSettings(c.PluginHost, entries); err != nil {
+			return fmt.Errorf("%w: %w", settingsport.ErrNotASetting, err)
+		}
 		path, err := c.settingsFile()
 		if err != nil {
 			return err
@@ -219,6 +222,26 @@ func (c Config) GetSettingsWriter() func(entries []settingsport.Setting) error {
 }
 
 const pluginSettingsPrefix = "plugins"
+
+// checkPluginSettings reports the first plugin setting among the entries that does not take its value.
+func checkPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) error {
+	if host == nil {
+		return nil
+	}
+	for _, one := range entries {
+		if len(one.Path) != 3 || one.Path[0] != pluginSettingsPrefix {
+			continue
+		}
+		var val any
+		if err := json.Unmarshal([]byte(one.JSON), &val); err != nil {
+			return err
+		}
+		if err := host.CheckPluginSetting(one.Path[1], one.Path[2], val); err != nil {
+			return err
+		}
+	}
+	return nil
+}
 
 func notifyPluginSettings(host pluginport.PluginConfigurator, entries []settingsport.Setting) {
 	if host == nil {

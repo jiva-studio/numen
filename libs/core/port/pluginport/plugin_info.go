@@ -8,7 +8,7 @@ type PluginSetting struct {
 	Description string
 	DefaultJSON string
 	Palette     bool
-	Options     []string
+	Options     PluginSettingOptions
 	Min         *float64
 	Max         *float64
 	Step        *float64
@@ -17,6 +17,10 @@ type PluginSetting struct {
 	// Replaces are the places in the settings file the setting was kept before the plugin took it
 	// over, as the keys that lead to each joined by dots.
 	Replaces []string
+	// OptionsBy, When and Accept are as the manifest declares them.
+	OptionsBy *PluginSettingOptionsBy
+	When      *PluginSettingCondition
+	Accept    []string
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.
@@ -32,7 +36,7 @@ type PluginInfo struct {
 	Permissions []string
 	// Secrets are the names of the secrets the manifest declares, and
 	// StoredSecrets those of them that have a key stored. A key never appears here.
-	Secrets       []string
+	Secrets       []PluginSecret
 	StoredSecrets []string
 	// Consent is whether the person lets the plugin ask for model completions.
 	Consent CompletionConsent

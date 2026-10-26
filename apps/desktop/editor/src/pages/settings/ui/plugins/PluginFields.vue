@@ -1,15 +1,18 @@
 <script setup lang="ts">
 /**
  * Declarative settings fields for a plugin: agent choices, switches,
- * number inputs, sliders, selects, and text fields.
+ * number inputs, sliders, selects, paths, and text fields. A setting whose
+ * condition fails is not shown, and keeps its value.
  */
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { AgentChoice } from '../agent-choice'
+import { PathField } from '../path-field'
 import type { SettingsTabState } from '../../types'
 import {
   createSettingFields,
+  isShown,
   type CompletionChoice,
   type PluginInfo,
   type PluginSettingInfo,
@@ -24,6 +27,7 @@ import {
   getAgents,
   readChoice,
 } from '../../lib/agents'
+import { createEnumFields } from '../../lib/enums'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -39,11 +43,32 @@ const fields = createSettingFields(() => props.state.installation)
 const agents = computed(() => getAgents(installation.value))
 const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
 const agentSettings = computed(() => props.plugin.settings.filter((one) => one.type === 'agent'))
-const otherSettings = computed(() => props.plugin.settings.filter((one) => one.type !== 'agent'))
+const otherSettings = computed(() =>
+  props.plugin.settings.filter(
+    (one) => one.type !== 'agent' && isShown(props.plugin, one.when, readSetting),
+  ),
+)
+const { getEnumOptions, getEnumValue, getDetail, getOrigin } = createEnumFields(
+  () => props.plugin,
+  readSetting,
+  words,
+)
+/** Why a path setting did not take the path last chosen, by key. */
+const pathProblems = ref<Record<string, string>>({})
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
   fields.setValue(['plugins', props.plugin.id, key], value)
+}
+
+async function onPathChoose(key: string): Promise<void> {
+  const problem = await installation.value.choosePath(props.plugin.id, key)
+  pathProblems.value = { ...pathProblems.value, [key]: problem }
+}
+
+function onPathClear(key: string): void {
+  pathProblems.value = { ...pathProblems.value, [key]: '' }
+  onSettingChange(key, '')
 }
 
 function onAgentChoose(key: string, choice: CompletionChoice): void {
@@ -51,6 +76,10 @@ function onAgentChoose(key: string, choice: CompletionChoice): void {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function readSetting(key: string): unknown {
+  return installation.value.getSetting(['plugins', props.plugin.id, key])
+}
+
 function getChoice(key: string): CompletionChoice {
   return readChoice(installation.value.getSetting(['plugins', props.plugin.id, key]))
 }
@@ -117,7 +146,7 @@ function getStringSetting(key: string, fallback: unknown): string {
       v-slot="{ labelledBy }"
       :at="`${props.plugin.id}-${setting.key}`"
       :name="setting.title"
-      :detail="setting.description"
+      :detail="getDetail(setting)"
     >
       <Switch
         v-if="setting.type === 'boolean'"
@@ -153,14 +182,40 @@ function getStringSetting(key: string, fallback: unknown): string {
         </span>
       </div>
 
-      <Select
-        v-else-if="setting.type === 'enum' && setting.options"
-        :model-value="getStringSetting(setting.key, setting.default)"
-        :choices="setting.options.map((opt) => ({ id: opt, text: opt }))"
-        :name="setting.title"
-        :aria-labelledby="labelledBy"
-        class="settings__choice"
-        @update:model-value="(val) => onSettingChange(setting.key, val)"
+      <span
+        v-else-if="setting.type === 'enum'"
+        class="settings__enum"
+        :data-testid="`setting-${setting.key}`"
+      >
+        <span
+          v-if="getEnumOptions(setting).length === 1"
+          class="settings__fixed"
+          :aria-labelledby="labelledBy"
+        >
+          {{ getEnumOptions(setting)[0]?.title || getEnumValue(setting) }}
+        </span>
+        <Select
+          v-else
+          :model-value="getEnumValue(setting)"
+          :choices="
+            getEnumOptions(setting).map((opt) => ({ id: opt.value, text: opt.title || opt.value }))
+          "
+          :name="setting.title"
+          :aria-labelledby="labelledBy"
+          class="settings__choice"
+          @update:model-value="(val) => onSettingChange(setting.key, val)"
+        />
+        <span class="settings__origin">{{ getOrigin(setting) }}</span>
+      </span>
+
+      <PathField
+        v-else-if="setting.type === 'file' || setting.type === 'folder'"
+        :path="getStringSetting(setting.key, '')"
+        :problem="pathProblems[setting.key] ?? ''"
+        :labelled-by="labelledBy"
+        :words="words"
+        @choose="onPathChoose(setting.key)"
+        @clear="onPathClear(setting.key)"
       />
 
       <Select
@@ -219,6 +274,23 @@ function getStringSetting(key: string, fallback: unknown): string {
 
 .settings__choice {
   inline-size: var(--settings-choice, 16rem);
+}
+
+.settings__enum {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.125rem;
+}
+
+.settings__fixed {
+  color: var(--numen-ink);
+  font-size: var(--numen-text-2);
+}
+
+.settings__origin {
+  color: var(--numen-hushed);
+  font-size: var(--numen-text-1);
 }
 
 .settings__text-input {

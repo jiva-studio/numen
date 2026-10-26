@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"maps"
 	"os"
 	"os/exec"
 	"runtime"
@@ -850,7 +851,7 @@ func (h *Host) defaultLauncher(
 	process.ConfigureSysProcAttr(cmd)
 	cmd.Dir = workDir
 
-	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, p.Manifest.GetDependencyRequirements(p.Dir), port, token)
+	pluginVars, err := h.getLaunchVars(ctx, p.Manifest.ID, h.getRequirements(p), port, token)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -1255,24 +1256,20 @@ func (h *Host) GetPluginSettings(pluginID string) map[string]any {
 	return h.getPluginSettingsLocked(pluginID)
 }
 
+// getPluginSettingsLocked returns the values in force of the settings of the plugin, the settings whose
+// condition fails left out.
 func (h *Host) getPluginSettingsLocked(pluginID string) map[string]any {
-	result := make(map[string]any)
+	result := maps.Clone(h.settings[pluginID])
 	if p, ok := h.plugins[pluginID]; ok {
-		for _, s := range p.Manifest.Settings {
-			if s.Default != nil {
-				result[s.Key] = s.Default
-			}
-		}
+		result = p.Manifest.ResolveSettings(result)
 	}
-	if stored, ok := h.settings[pluginID]; ok {
-		for k, v := range stored {
-			result[k] = v
-		}
+	if result == nil {
+		result = map[string]any{}
 	}
 	delete(result, pluginport.SettingStoredSecrets)
 	delete(result, pluginport.SettingAIConsent)
 	if p, ok := h.plugins[pluginID]; ok {
-		for _, name := range p.Manifest.Secrets {
+		for _, name := range p.Manifest.GetSecretNames() {
 			delete(result, name)
 		}
 	}
@@ -1319,11 +1316,19 @@ func (h *Host) UpdatePluginSetting(ctx context.Context, pluginID, key string, va
 		return nil
 	}
 	h.mu.Lock()
+	before := h.getRequirementIDsLocked(pluginID)
 	if _, ok := h.settings[pluginID]; !ok {
 		h.settings[pluginID] = make(map[string]any)
 	}
 	h.settings[pluginID][key] = value
+	isRequirementChanged := !slices.Equal(before, h.getRequirementIDsLocked(pluginID))
 	h.mu.Unlock()
+
+	if isRequirementChanged && key != settingEnabled {
+		if err := h.stopPlugin(ctx, pluginID); err != nil {
+			return err
+		}
+	}
 
 	if key == settingEnabled {
 		if err := h.applyEnabledChange(ctx, pluginID, value); err != nil {
@@ -1419,7 +1424,7 @@ func (h *Host) notifyPluginConfigLocked(ctx context.Context, pluginID string) er
 	}
 	rawSettings := h.getPluginSettingsLocked(pluginID)
 	values := formatPluginSettings(rawSettings)
-	secretNames := slices.Clone(h.plugins[pluginID].Manifest.Secrets)
+	secretNames := h.getActiveSecretNamesLocked(pluginID)
 	stored := h.getStoredSecretsLocked(pluginID)
 	store := h.keyStore
 	h.mu.RUnlock()
@@ -1509,6 +1514,9 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 				Step:        &stepVal,
 				ModelsOf:    s.ModelsOf,
 				Replaces:    s.Replaces,
+				OptionsBy:   s.OptionsBy,
+				When:        s.When,
+				Accept:      s.Accept,
 			})
 		}
 
@@ -1529,77 +1537,6 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 		})
 	}
 	return result
-}
-
-// GetWirePluginInfos returns wire specifications of all registered plugins and their settings
-// schemas, in the order of their ids.
-func (h *Host) GetWirePluginInfos() []*v1.PluginInfo {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-
-	result := make([]*v1.PluginInfo, 0, len(h.plugins))
-	for _, p := range h.getPluginsInOrderLocked() {
-		isActive := h.isPluginActiveLocked(p.Manifest.ID)
-
-		settings := make([]*v1.PluginSetting, 0, len(p.Manifest.Settings))
-		for _, s := range p.Manifest.Settings {
-			defJSON := ""
-			if s.Default != nil {
-				if b, err := json.Marshal(s.Default); err == nil {
-					defJSON = string(b)
-				}
-			}
-			minVal := s.Min
-			maxVal := s.Max
-			stepVal := s.Step
-			settings = append(settings, &v1.PluginSetting{
-				Key:         s.Key,
-				Type:        s.Type,
-				Title:       s.Title,
-				Description: s.Description,
-				DefaultJson: defJSON,
-				Palette:     s.Palette,
-				Options:     s.Options,
-				Min:         &minVal,
-				Max:         &maxVal,
-				Step:        &stepVal,
-			})
-		}
-
-		result = append(result, &v1.PluginInfo{
-			Id:           p.Manifest.ID,
-			Name:         p.Manifest.Name,
-			Version:      p.Manifest.Version,
-			Description:  p.Manifest.Description,
-			Capabilities: p.Manifest.Capabilities,
-			Settings:     settings,
-			IsActive:     isActive,
-			Permissions:  p.Manifest.Permissions,
-			Secrets:      p.Manifest.Secrets,
-			HasFrontend:  p.Manifest.HasFrontend(),
-		})
-	}
-	return result
-}
-
-// PluginServiceServer implements numenv1connect.PluginServiceHandler.
-type PluginServiceServer struct {
-	host *Host
-}
-
-// NewPluginServiceServer creates a server exposing plugin schemas over Connect-RPC.
-func NewPluginServiceServer(host *Host) *PluginServiceServer {
-	return &PluginServiceServer{host: host}
-}
-
-// GetPlugins returns discovered plugins and declarative settings schemas.
-func (s *PluginServiceServer) GetPlugins(
-	_ context.Context,
-	_ *connect.Request[v1.GetPluginsRequest],
-) (*connect.Response[v1.GetPluginsResponse], error) {
-	return connect.NewResponse(&v1.GetPluginsResponse{
-		Plugins: s.host.GetWirePluginInfos(),
-	}), nil
 }
 
 func formatPluginSettings(rawSettings map[string]any) map[string]string {
@@ -1700,4 +1637,42 @@ func (h *Host) recordActivationFailure(pluginID string, cause error) *pluginport
 	failure := h.newPluginFailureLocked(pluginID, sup, cause)
 	h.failedPlugins = append(h.failedPlugins, failure)
 	return &failure
+}
+
+// getRequirements returns the dependencies the plugin is launched with under the settings in force.
+func (h *Host) getRequirements(p plugindir.DiscoveredPlugin) []pluginport.DependencyRequirement {
+	h.mu.RLock()
+	defer h.mu.RUnlock()
+	return p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(p.Manifest.ID))
+}
+
+// getActiveSecretNamesLocked returns the names of the secrets of the plugin whose condition holds
+// under the settings in force.
+func (h *Host) getActiveSecretNamesLocked(pluginID string) []string {
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		return nil
+	}
+	values := h.getPluginSettingsLocked(pluginID)
+	var names []string
+	for _, secret := range p.Manifest.Secrets {
+		if p.Manifest.IsSecretActive(secret, values) {
+			names = append(names, secret.Name)
+		}
+	}
+	return names
+}
+
+// getRequirementIDsLocked returns the ids of the dependencies the plugin is launched with under the
+// settings in force. A plugin launched with others is stopped, and the next call launches it with them.
+func (h *Host) getRequirementIDsLocked(pluginID string) []string {
+	p, ok := h.plugins[pluginID]
+	if !ok {
+		return nil
+	}
+	var ids []string
+	for _, req := range p.Manifest.GetDependencyRequirements(p.Dir, h.getPluginSettingsLocked(pluginID)) {
+		ids = append(ids, req.ID)
+	}
+	return ids
 }

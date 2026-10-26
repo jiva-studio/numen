@@ -22,17 +22,34 @@ export type Result<T, E = string> = { ok: true; value: T } | { ok: false; error:
 // SettingOption declares one choice in an enumerated setting.
 export interface SettingOption {
   value: string
-  label: string
+  /** What a person reads for the value; absent shows the value. */
+  title?: string
+  /** What a person reads under the setting while the value is in force. */
+  detail?: string
+  /** The ids of the dependencies the host provisions only while the value is in force. */
+  dependencies?: string[]
+}
+
+// SettingCondition holds while a setting holds one of the values listed.
+export interface SettingCondition {
+  setting: string
+  is: string[]
 }
 
 // SettingDeclaration declares a plugin configuration option.
 export interface SettingDeclaration {
   key: string
-  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select' | 'agent'
+  type: 'string' | 'boolean' | 'number' | 'range' | 'enum' | 'select' | 'agent' | 'file' | 'folder'
   title: string
   description?: string
-  default: unknown
-  options?: SettingOption[]
+  default?: unknown
+  options?: (string | SettingOption)[]
+  /** The options under each value of another enum setting; the first of a list is its default. */
+  optionsBy?: { setting: string; options: Record<string, (string | SettingOption)[]> }
+  /** The condition under which the setting is shown and handed to the plugin. */
+  when?: SettingCondition
+  /** The extensions a setting of type file takes, each with its leading dot. */
+  accept?: string[]
   min?: number
   max?: number
   step?: number
@@ -245,8 +262,8 @@ export interface PluginManifest {
   activationEvents?: string[]
   permissions?: string[]
   runtimes?: string[]
-  /** The names of the secrets the plugin asks the host to keep and hand it in Configure. */
-  secrets?: string[]
+  /** The secrets the plugin asks the host to keep and hand it in Configure. */
+  secrets?: { name: string; title: string; description?: string; when?: SettingCondition }[]
   lifecycle?: {
     idleTimeoutSeconds?: number
     keepAliveWhileVisible?: boolean

@@ -276,7 +276,10 @@ describe('the settings tab', () => {
             title: 'Engine',
             description: 'OCR Engine',
             default: 'tesseract',
-            options: ['tesseract', 'apple'],
+            options: [
+              { value: 'tesseract', title: '', detail: '' },
+              { value: 'apple', title: '', detail: '' },
+            ],
             palette: true,
           },
         ],

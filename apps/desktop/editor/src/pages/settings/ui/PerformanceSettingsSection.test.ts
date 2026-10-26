@@ -38,6 +38,7 @@ const createSection = (file: Record<string, unknown> = {}) => {
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
+    choosePath: vi.fn(async () => ''),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PerformanceSettingsSection, {

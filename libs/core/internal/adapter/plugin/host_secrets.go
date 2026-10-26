@@ -82,7 +82,7 @@ func (h *Host) getSecretStore(pluginID, name string) (pluginport.KeyStore, error
 	if !ok {
 		return nil, fmt.Errorf("secret %s: %w", name, errPluginNotFound)
 	}
-	if !slices.Contains(p.Manifest.Secrets, name) {
+	if !slices.Contains(p.Manifest.GetSecretNames(), name) {
 		return nil, fmt.Errorf("plugin %s, secret %q: %w", pluginID, name, errUndeclaredSecret)
 	}
 	if h.keyStore == nil {
@@ -138,7 +138,7 @@ func (h *Host) getStoredSecretsLocked(pluginID string) []string {
 			}
 		}
 	}
-	declared := h.plugins[pluginID].Manifest.Secrets
+	declared := h.plugins[pluginID].Manifest.GetSecretNames()
 	var stored []string
 	for _, name := range recorded {
 		if slices.Contains(declared, name) && !slices.Contains(stored, name) {

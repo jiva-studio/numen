@@ -6,6 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
+	setting "github.com/jiva-studio/numen/libs/core/usecase/settings"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
@@ -49,6 +50,10 @@ type Services struct {
 
 	// Plugin answers questions about the plugins installed in the application.
 	Plugin numenv1connect.PluginServiceHandler
+
+	// openChoosePath makes the use case that puts the picker for a plugin's path setting in front of the
+	// person. Nil is a build that serves none.
+	openChoosePath func(dialog machineport.PathDialog) *setting.ChoosePluginPath
 
 	// getPluginDir returns the root directory of an installed plugin by ID, or false if not found.
 	getPluginDir func(id string) (string, bool)
@@ -119,11 +124,14 @@ type noteHandler struct {
 	getLinkAddress    *note.GetLinkAddress
 }
 
-// SetFolderDialog puts the machine's folder dialog in front of the person when a
+// SetFolderDialog puts the machine's file and folder dialogs in front of the person when a
 // client asks for one.
-func (s *Services) SetFolderDialog(dialog machineport.FolderDialog) {
+func (s *Services) SetFolderDialog(dialog machineport.PathDialog) {
 	choose := vaults.NewChooseFolder(dialog)
 	s.Vaults.chooseFolder = &choose
+	if s.openChoosePath != nil && s.Settings != nil {
+		s.Settings.ChoosePath = s.openChoosePath(dialog)
+	}
 }
 
 // GetPickFolder is the use case that lets an agent put the same dialog in front

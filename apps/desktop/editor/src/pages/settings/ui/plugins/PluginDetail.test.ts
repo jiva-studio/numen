@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import PluginDetail from './PluginDetail.vue'
 import SettingRow from '../setting-row/SettingRow.vue'
@@ -158,14 +158,14 @@ describe('PluginDetail', () => {
 
   it('saves and deletes secret fields', () => {
     const plugin = createPluginInfo('test.plugin', 'Super Engine', {
-      secrets: ['AUTH_TOKEN'],
+      secrets: [{ name: 'AUTH_TOKEN', title: 'AUTH_TOKEN', description: '' }],
       storedSecrets: ['AUTH_TOKEN'],
     })
     const { wrapper, writeSecret, deleteSecret } = createDetail(plugin)
 
     const secretField = wrapper.findComponent(SecretField)
     expect(secretField.exists()).toBe(true)
-    expect(secretField.props('name')).toBe(`${words.keys}: AUTH_TOKEN`)
+    expect(secretField.props('name')).toBe('AUTH_TOKEN')
     expect(secretField.props('isStored')).toBe(true)
 
     secretField.vm.$emit('save', 'secret-key-123')
@@ -213,7 +213,12 @@ describe('PluginDetail', () => {
           title: 'Log Level',
           description: 'Severity level',
           default: 'info',
-          options: ['debug', 'info', 'warn', 'error'],
+          options: [
+            { value: 'debug', title: '', detail: '' },
+            { value: 'info', title: '', detail: '' },
+            { value: 'warn', title: '', detail: '' },
+            { value: 'error', title: '', detail: '' },
+          ],
         },
         {
           key: 'endpoint',
@@ -328,5 +333,129 @@ describe('PluginDetail', () => {
     const { wrapper } = createDetail(createPluginInfo('a', 'A', { failure }))
     expect(wrapper.find('.plugin-detail__header--ruled').exists()).toBe(true)
     expect(wrapper.find('.plugin-detail__stopped details').exists()).toBe(false)
+  })
+})
+
+describe('PluginDetail with settings that follow one another', () => {
+  const option = (value: string, title = '', detail = '') => ({ value, title, detail })
+  const LINKED = createPluginInfo('test.linked', 'Linked', {
+    secrets: [
+      {
+        name: 'apiKey',
+        title: 'API key',
+        description: '',
+        when: { setting: 'provider', is: ['remote'] },
+      },
+    ],
+    settings: [
+      {
+        key: 'model',
+        type: 'enum',
+        title: 'Model',
+        description: '',
+        default: 'large',
+        options: [option('large', 'Large'), option('small', 'Small')],
+      },
+      {
+        key: 'language',
+        type: 'enum',
+        title: 'Language',
+        description: 'Spoken language',
+        default: undefined,
+        optionsBy: {
+          setting: 'model',
+          options: {
+            large: [
+              option('auto', 'Detected by the model', 'Among 3 languages'),
+              option('en', 'English'),
+            ],
+            small: [option('en', 'English')],
+          },
+        },
+      },
+      {
+        key: 'provider',
+        type: 'enum',
+        title: 'Provider',
+        description: '',
+        default: 'local',
+        options: [option('local'), option('remote')],
+      },
+      {
+        key: 'url',
+        type: 'string',
+        title: 'URL',
+        description: '',
+        default: '',
+        when: { setting: 'provider', is: ['remote'] },
+      },
+      {
+        key: 'dictionary',
+        type: 'file',
+        title: 'Dictionary',
+        description: 'One character per line',
+        default: '',
+        accept: ['.txt'],
+      },
+    ],
+  })
+  const findRow = (wrapper: ReturnType<typeof mount>, key: string) =>
+    wrapper.findAllComponents(SettingRow).find((r) => r.props('at') === `test.linked-${key}`)
+
+  it('lists the languages of the current model and the origin of the value', () => {
+    const { wrapper } = createDetail(LINKED)
+    const row = findRow(wrapper, 'language')!
+    expect(row.findComponent(Select).props('choices')).toEqual([
+      { id: 'auto', text: 'Detected by the model' },
+      { id: 'en', text: 'English' },
+    ])
+    expect(row.props('detail')).toBe('Among 3 languages')
+    expect(row.find('.settings__origin').text()).toBe(words.valueFollowed('Model'))
+  })
+
+  it('shows the one language of a model as fixed, and a choice as the person’s', () => {
+    const small = createDetail(LINKED, { plugins: { 'test.linked': { model: 'small' } } })
+    const row = findRow(small.wrapper, 'language')!
+    expect(row.findComponent(Select).exists()).toBe(false)
+    expect(row.find('.settings__fixed').text()).toBe('English')
+
+    const choice = createDetail(LINKED, { plugins: { 'test.linked': { language: 'en' } } })
+    expect(findRow(choice.wrapper, 'language')!.find('.settings__origin').text()).toBe(
+      words.valueChosen,
+    )
+  })
+
+  it('shows the settings and the key of a provider only while it is chosen', () => {
+    const local = createDetail(LINKED)
+    expect(findRow(local.wrapper, 'url')).toBeUndefined()
+    expect(local.wrapper.findComponent(SecretField).exists()).toBe(false)
+
+    const remote = createDetail(LINKED, { plugins: { 'test.linked': { provider: 'remote' } } })
+    expect(findRow(remote.wrapper, 'url')).toBeDefined()
+    expect(remote.wrapper.findComponent(SecretField).props('name')).toBe('API key')
+  })
+
+  it('chooses a path with the picker, says why it was not taken, and clears it', async () => {
+    const { wrapper, installation, recordedWrites } = createDetail(LINKED, {
+      plugins: { 'test.linked': { dictionary: '/home/a/dicts/ru/letters.txt' } },
+    })
+    const choosePath = vi.fn(async () => 'letters.onnx: wrong type of file, expected .txt')
+    installation.choosePath = choosePath
+    const row = findRow(wrapper, 'dictionary')!
+    const label = row.find('[data-testid="setting-path"]')
+    expect(label.text()).toBe('…/ru/letters.txt')
+    expect(label.attributes('title')).toBe('/home/a/dicts/ru/letters.txt')
+
+    const [choose, clear] = row.findAll('button')
+    await choose!.trigger('click')
+    await flushPromises()
+    expect(choosePath).toHaveBeenCalledWith('test.linked', 'dictionary')
+    expect(row.find('[role="alert"]').text()).toContain('wrong type of file')
+
+    await clear!.trigger('click')
+    expect(recordedWrites).toContainEqual({
+      at: ['plugins', 'test.linked', 'dictionary'],
+      value: '""',
+    })
   })
 })

@@ -4,9 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"connectrpc.com/connect"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestHostSettingsOverlayAndPersistence(t *testing.T) {
@@ -97,18 +94,14 @@ func TestHostSettingsOverlayAndPersistence(t *testing.T) {
 		t.Fatalf("expected non-empty config json")
 	}
 
-	// 5. PluginServiceServer.GetPlugins
-	server := NewPluginServiceServer(host)
-	resp, err := server.GetPlugins(ctx, connect.NewRequest(&v1.GetPluginsRequest{}))
-	if err != nil {
-		t.Fatalf("GetPlugins failed: %v", err)
+	// 5. Host.GetPluginInfos
+	infos := host.GetPluginInfos()
+	if len(infos) != 1 {
+		t.Fatalf("expected 1 plugin info, got %d", len(infos))
 	}
-	if len(resp.Msg.Plugins) != 1 {
-		t.Fatalf("expected 1 plugin info, got %d", len(resp.Msg.Plugins))
-	}
-	pInfo := resp.Msg.Plugins[0]
-	if pInfo.Id != "md.numen.sample" {
-		t.Errorf("expected id md.numen.sample, got %s", pInfo.Id)
+	pInfo := infos[0]
+	if pInfo.ID != "md.numen.sample" {
+		t.Errorf("expected id md.numen.sample, got %s", pInfo.ID)
 	}
 	if len(pInfo.Settings) != 3 {
 		t.Fatalf("expected 3 settings in info, got %d", len(pInfo.Settings))

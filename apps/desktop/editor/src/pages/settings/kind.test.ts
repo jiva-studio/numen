@@ -41,6 +41,7 @@ const installation = (): Installation =>
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
+    choosePath: vi.fn(async () => ''),
     getSetting: () => undefined,
     getModels: () => [],
     write: vi.fn(),

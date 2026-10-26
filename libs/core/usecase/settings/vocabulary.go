@@ -10,16 +10,21 @@ import (
 // Setting is one setting of the file, and what to put there. Model is a model a
 // setting can name, and Presence is what its files are on this machine.
 type (
-	Setting          = settingsport.Setting
-	Model            = settingsport.Model
-	Presence         = settingsport.Presence
-	PluginSetting    = pluginport.PluginSetting
-	PluginInfo       = pluginport.PluginInfo
-	PluginFailure    = pluginport.PluginFailure
-	UnavailableError = pluginport.UnavailableError
-	AgentModel       = agentport.AgentModel
-	ReasoningLevel   = agentport.ReasoningLevel
-	Consent          = pluginport.CompletionConsent
+	Setting                = settingsport.Setting
+	Model                  = settingsport.Model
+	Presence               = settingsport.Presence
+	PluginSetting          = pluginport.PluginSetting
+	PluginInfo             = pluginport.PluginInfo
+	PluginFailure          = pluginport.PluginFailure
+	PluginSecret           = pluginport.PluginSecret
+	PluginSettingOption    = pluginport.PluginSettingOption
+	PluginSettingOptions   = pluginport.PluginSettingOptions
+	PluginSettingOptionsBy = pluginport.PluginSettingOptionsBy
+	PluginSettingCondition = pluginport.PluginSettingCondition
+	UnavailableError       = pluginport.UnavailableError
+	AgentModel             = agentport.AgentModel
+	ReasoningLevel         = agentport.ReasoningLevel
+	Consent                = pluginport.CompletionConsent
 )
 
 // Whether the person lets a plugin ask for model completions.

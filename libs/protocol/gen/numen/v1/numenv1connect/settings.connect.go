@@ -63,6 +63,9 @@ const (
 	// SettingsServiceRetryPluginProcedure is the fully-qualified name of the SettingsService's
 	// RetryPlugin RPC.
 	SettingsServiceRetryPluginProcedure = "/numen.v1.SettingsService/RetryPlugin"
+	// SettingsServiceChoosePluginPathProcedure is the fully-qualified name of the SettingsService's
+	// ChoosePluginPath RPC.
+	SettingsServiceChoosePluginPathProcedure = "/numen.v1.SettingsService/ChoosePluginPath"
 )
 
 // SettingsServiceClient is a client for the numen.v1.SettingsService service.
@@ -92,6 +95,10 @@ type SettingsServiceClient interface {
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
+	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
+	// of type file or folder, and writes the path they chose. A path the setting does not take is not
+	// written, and the answer says why.
+	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
 }
 
 // NewSettingsServiceClient constructs a client for the numen.v1.SettingsService service. By
@@ -147,6 +154,12 @@ func NewSettingsServiceClient(httpClient connect.HTTPClient, baseURL string, opt
 			connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
 			connect.WithClientOptions(opts...),
 		),
+		choosePluginPath: connect.NewClient[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse](
+			httpClient,
+			baseURL+SettingsServiceChoosePluginPathProcedure,
+			connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -159,6 +172,7 @@ type settingsServiceClient struct {
 	writePluginSecret  *connect.Client[v1.WritePluginSecretRequest, v1.WritePluginSecretResponse]
 	deletePluginSecret *connect.Client[v1.DeletePluginSecretRequest, v1.DeletePluginSecretResponse]
 	retryPlugin        *connect.Client[v1.RetryPluginRequest, v1.RetryPluginResponse]
+	choosePluginPath   *connect.Client[v1.ChoosePluginPathRequest, v1.ChoosePluginPathResponse]
 }
 
 // GetSettings calls numen.v1.SettingsService.GetSettings.
@@ -196,6 +210,11 @@ func (c *settingsServiceClient) RetryPlugin(ctx context.Context, req *connect.Re
 	return c.retryPlugin.CallUnary(ctx, req)
 }
 
+// ChoosePluginPath calls numen.v1.SettingsService.ChoosePluginPath.
+func (c *settingsServiceClient) ChoosePluginPath(ctx context.Context, req *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {
+	return c.choosePluginPath.CallUnary(ctx, req)
+}
+
 // SettingsServiceHandler is an implementation of the numen.v1.SettingsService service.
 type SettingsServiceHandler interface {
 	// GetSettings is every setting of the file, and the models the settings that
@@ -223,6 +242,10 @@ type SettingsServiceHandler interface {
 	// it once. A plugin that fails again is suspended again, and the call answers
 	// the reason.
 	RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error)
+	// ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
+	// of type file or folder, and writes the path they chose. A path the setting does not take is not
+	// written, and the answer says why.
+	ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error)
 }
 
 // NewSettingsServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -274,6 +297,12 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 		connect.WithSchema(settingsServiceMethods.ByName("RetryPlugin")),
 		connect.WithHandlerOptions(opts...),
 	)
+	settingsServiceChoosePluginPathHandler := connect.NewUnaryHandler(
+		SettingsServiceChoosePluginPathProcedure,
+		svc.ChoosePluginPath,
+		connect.WithSchema(settingsServiceMethods.ByName("ChoosePluginPath")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/numen.v1.SettingsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case SettingsServiceGetSettingsProcedure:
@@ -290,6 +319,8 @@ func NewSettingsServiceHandler(svc SettingsServiceHandler, opts ...connect.Handl
 			settingsServiceDeletePluginSecretHandler.ServeHTTP(w, r)
 		case SettingsServiceRetryPluginProcedure:
 			settingsServiceRetryPluginHandler.ServeHTTP(w, r)
+		case SettingsServiceChoosePluginPathProcedure:
+			settingsServiceChoosePluginPathHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -325,4 +356,8 @@ func (UnimplementedSettingsServiceHandler) DeletePluginSecret(context.Context, *
 
 func (UnimplementedSettingsServiceHandler) RetryPlugin(context.Context, *connect.Request[v1.RetryPluginRequest]) (*connect.Response[v1.RetryPluginResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.RetryPlugin is not implemented"))
+}
+
+func (UnimplementedSettingsServiceHandler) ChoosePluginPath(context.Context, *connect.Request[v1.ChoosePluginPathRequest]) (*connect.Response[v1.ChoosePluginPathResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.SettingsService.ChoosePluginPath is not implemented"))
 }

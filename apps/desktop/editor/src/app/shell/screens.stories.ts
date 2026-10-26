@@ -171,6 +171,10 @@ const INSTALLATION: Installation = {
   retryPlugin: () => {
     DONE.push('plugin retried')
   },
+  choosePath: async () => {
+    DONE.push('path chosen')
+    return ''
+  },
   getSetting: () => undefined,
   getModels: (path) => (path.join('.') === 'agent.use' ? [AGENT_USE] : []),
   write: (edits) => {

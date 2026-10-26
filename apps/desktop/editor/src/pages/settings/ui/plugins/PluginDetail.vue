@@ -9,7 +9,7 @@ import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
 import PluginFields from './PluginFields.vue'
 import type { SettingsTabState } from '../../types'
-import { createSettingFields, write, type PluginInfo } from '@/entities/settings'
+import { createSettingFields, isShown, write, type PluginInfo } from '@/entities/settings'
 import { formatFailedAt, getPluginState, type PluginState } from '../../lib/failures'
 import { WORDS as words } from '../../words'
 
@@ -33,14 +33,17 @@ const isEnabled = computed<boolean>(() => {
 })
 
 const failure = computed(() => props.plugin.failure)
-const hasSecrets = computed(() => props.plugin.secrets.length > 0)
+const read = (key: string) => installation.value.getSetting(['plugins', props.plugin.id, key])
+const shownSecrets = computed(() =>
+  props.plugin.secrets.filter((one) => isShown(props.plugin, one.when, read)),
+)
 const hasConsent = computed(() => props.plugin.consent !== 'none')
 const hasDeclarativeSettings = computed(() => props.plugin.settings.length > 0)
 const hasBody = computed(
   () =>
     failure.value !== undefined ||
     hasConsent.value ||
-    hasSecrets.value ||
+    shownSecrets.value.length > 0 ||
     hasDeclarativeSettings.value,
 )
 const pluginState = computed<PluginState>(() => getPluginState(props.plugin, isEnabled.value))
@@ -137,18 +140,16 @@ function onSecretDelete(name: string): void {
     </SettingRow>
 
     <!-- Secrets / API keys -->
-    <template v-if="hasSecrets">
-      <SecretField
-        v-for="name in props.plugin.secrets"
-        :key="`${props.plugin.id}-${name}`"
-        :at="`key-${props.plugin.id}-${name}`"
-        :name="`${words.keys}: ${name}`"
-        :is-stored="props.plugin.storedSecrets.includes(name)"
-        :words="words"
-        @save="(key) => onSecretSave(name, key)"
-        @delete="onSecretDelete(name)"
-      />
-    </template>
+    <SecretField
+      v-for="secret in shownSecrets"
+      :key="`${props.plugin.id}-${secret.name}`"
+      :at="`key-${props.plugin.id}-${secret.name}`"
+      :name="secret.title"
+      :is-stored="props.plugin.storedSecrets.includes(secret.name)"
+      :words="words"
+      @save="(key) => onSecretSave(secret.name, key)"
+      @delete="onSecretDelete(secret.name)"
+    />
 
     <!-- Declarative settings -->
     <PluginFields v-if="hasDeclarativeSettings" :state="props.state" :plugin="props.plugin" />

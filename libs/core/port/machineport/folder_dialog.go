@@ -28,3 +28,11 @@ type FolderDialog interface {
 	// ErrNoFolderDialog where this machine cannot put one up at all.
 	ChooseFolder(ctx context.Context, title, startingAt string) (string, bool, error)
 }
+
+// PathDialog is the person picking a file or a folder on this machine.
+type PathDialog interface {
+	FolderDialog
+	// ChooseFile puts the machine's own file picker in front of the person, showing the files whose
+	// extension is one of accept, or every file where accept is empty. It answers as ChooseFolder does.
+	ChooseFile(ctx context.Context, title, startingAt string, accept []string) (string, bool, error)
+}

@@ -44,7 +44,11 @@ const SAMPLE_PLUGIN: PluginInfo = {
       title: 'Language',
       description: 'Recognition language',
       default: 'auto',
-      options: ['auto', 'en', 'fr'],
+      options: [
+        { value: 'auto', title: '', detail: '' },
+        { value: 'en', title: '', detail: '' },
+        { value: 'fr', title: '', detail: '' },
+      ],
       palette: true,
     },
     {
@@ -90,6 +94,7 @@ const createSection = (
     writeSecret: vi.fn(),
     deleteSecret: vi.fn(),
     retryPlugin: vi.fn(),
+    choosePath: vi.fn(async () => ''),
   }
   const state: SettingsTabState = { installation }
   const wrapper = mount(PluginSettingsSection, {

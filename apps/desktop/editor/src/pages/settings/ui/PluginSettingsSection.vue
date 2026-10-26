@@ -176,7 +176,7 @@ function getStringSetting(pluginId: string, key: string, fallback: unknown): str
         <Select
           v-else-if="setting.type === 'enum' && setting.options"
           :model-value="getStringSetting(plugin.id, setting.key, setting.default)"
-          :choices="setting.options.map((opt) => ({ id: opt, text: opt }))"
+          :choices="setting.options.map((opt) => ({ id: opt.value, text: opt.title || opt.value }))"
           :name="setting.title"
           :aria-labelledby="labelledBy"
           class="settings__choice"

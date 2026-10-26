@@ -110,14 +110,19 @@ func GetDependencyKinds() []DependencyKind {
 	return []DependencyKind{DependencyKindRuntime, DependencyKindModel, DependencyKindBinary, DependencyKindDataset}
 }
 
-// GetDependencyRequirements is the requirements of the plugin: its declared
-// runtimes, each as a runtime requirement, then its dependencies.
-func (m PluginManifest) GetDependencyRequirements(pluginDir string) []DependencyRequirement {
+// GetDependencyRequirements is the requirements of the plugin under the settings in force: its
+// declared runtimes, each as a runtime requirement, then its dependencies. A dependency an option of a
+// setting provisions is a requirement only while that option is in force.
+func (m PluginManifest) GetDependencyRequirements(pluginDir string, values map[string]any) []DependencyRequirement {
+	optional, active := m.getOptionalDependencies(values)
 	out := make([]DependencyRequirement, 0, len(m.Runtimes)+len(m.Dependencies))
 	for _, name := range m.Runtimes {
 		out = append(out, DependencyRequirement{ID: name, Kind: DependencyKindRuntime, PluginDir: pluginDir})
 	}
 	for _, req := range m.Dependencies {
+		if optional[req.ID] && !active[req.ID] {
+			continue
+		}
 		req.PluginDir = pluginDir
 		out = append(out, req)
 	}
@@ -127,7 +132,7 @@ func (m PluginManifest) GetDependencyRequirements(pluginDir string) []Dependency
 // GetRuntimeIDs is the ids of the runtimes the plugin requires.
 func (m PluginManifest) GetRuntimeIDs() []string {
 	var ids []string
-	for _, req := range m.GetDependencyRequirements("") {
+	for _, req := range m.GetDependencyRequirements("", nil) {
 		if req.Kind == DependencyKindRuntime && !slices.Contains(ids, req.ID) {
 			ids = append(ids, req.ID)
 		}

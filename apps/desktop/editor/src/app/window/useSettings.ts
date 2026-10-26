@@ -18,7 +18,15 @@ import {
   useNestingSetting,
   createWindowAppearance,
 } from '@/features/settings-commands'
-import { type PluginInfo, type SettingEdit } from '@/entities/settings'
+import {
+  formatValue,
+  getOptions,
+  getValue,
+  type PluginInfo,
+  type PluginSettingOption,
+  type SettingEdit,
+} from '@/entities/settings'
+import { formatErrorMessage } from '@numen/wire'
 import { createPluginRetry, createSecretStore, createSettingsStore } from '@/entities/settings'
 import { useSettingsTab } from '@/pages/settings'
 import { createSettingsFileTabKind } from '@/pages/settings-file'
@@ -83,16 +91,16 @@ function createPluginBooleanGroup(ctx: PluginGroupContext, isOn: boolean) {
 function createPluginEnumGroup(
   ctx: PluginGroupContext,
   current: string,
-  options: readonly string[],
+  options: readonly PluginSettingOption[],
 ) {
   return [
     {
       id: ctx.id,
       title: ctx.title,
       items: options.map((opt) => ({
-        id: opt,
-        title: opt,
-        ...(opt === current ? { detail: ctx.words.current, isCurrent: true } : {}),
+        id: opt.value,
+        title: opt.title || opt.value,
+        ...(opt.value === current ? { detail: ctx.words.current, isCurrent: true } : {}),
       })),
     },
   ]
@@ -103,8 +111,8 @@ function findPluginSetting(plugins: readonly PluginInfo[], command: string) {
   if (!pluginId || !key) return null
   const plugin = plugins.find((p) => p.id === pluginId)
   const setting = plugin?.settings.find((s) => s.key === key)
-  if (!setting) return null
-  return { pluginId, key, setting }
+  if (!plugin || !setting) return null
+  return { plugin, pluginId, key, setting }
 }
 
 function getPluginStepGroups(
@@ -114,17 +122,18 @@ function getPluginStepGroups(
 ) {
   const match = findPluginSetting(rest.plugins.value, command)
   if (!match) return []
-  const { pluginId, key, setting } = match
-  const current = rest.getSetting(['plugins', pluginId, key])
+  const { plugin, pluginId, key, setting } = match
+  const read = (one: string) => rest.getSetting(['plugins', pluginId, one])
+  const current = read(key)
   const ctx: PluginGroupContext = { id: `plugin-${pluginId}-${key}`, title: setting.title, words }
 
   if (setting.type === 'boolean') {
     const isOn = current !== undefined ? Boolean(current) : Boolean(setting.default)
     return createPluginBooleanGroup(ctx, isOn)
   }
-  if (setting.type === 'enum' && setting.options) {
-    const currentVal = current !== undefined ? String(current) : String(setting.default ?? '')
-    return createPluginEnumGroup(ctx, currentVal, setting.options)
+  if (setting.type === 'enum') {
+    const currentVal = formatValue(getValue(plugin, setting, read).value)
+    return createPluginEnumGroup(ctx, currentVal, getOptions(plugin, setting, read))
   }
   return []
 }
@@ -154,10 +163,11 @@ interface SettingsTabConfigDeps {
   secrets: ReturnType<typeof createSecretStore>
   retry: ReturnType<typeof createPluginRetry>
   file: { openSettingsFile: () => void }
+  core: SettingsPort
 }
 
 function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
-  const { appearance, sync, nesting, rest, secrets, retry, file } = deps
+  const { appearance, sync, nesting, rest, secrets, retry, file, core } = deps
   return {
     themes: appearance.list,
     applied: appearance.applied,
@@ -184,6 +194,15 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
       secrets.writeSecret(pluginId, name, key),
     deleteSecret: (pluginId: string, name: string) => secrets.deleteSecret(pluginId, name),
     retryPlugin: (pluginId: string) => retry.retryPlugin(pluginId),
+    choosePath: async (pluginId: string, key: string): Promise<string> => {
+      try {
+        const answer = await core.choosePluginPath(pluginId, key)
+        if (answer.isChosen) await rest.start()
+        return answer.problem
+      } catch (caughtError) {
+        return formatErrorMessage(caughtError)
+      }
+    },
     plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),
@@ -250,7 +269,7 @@ export function useSettings({ core, words, log, windowTabs, onSizeChanged }: Set
 
   const configured = useSettingsTab(
     windowTabs.handle,
-    createSettingsTabConfig({ appearance, sync, nesting, rest, secrets, retry, file }),
+    createSettingsTabConfig({ appearance, sync, nesting, rest, secrets, retry, file, core }),
   )
 
   watch(appearance.sized, () => onSizeChanged())

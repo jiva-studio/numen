@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -74,4 +75,41 @@ func (d *folderDialog) release() {
 	d.mu.Lock()
 	defer d.mu.Unlock()
 	d.isOpen = false
+}
+
+// ChooseFile answers with the file the person chose, and with false where they closed the dialog.
+// The dialog shows the files whose extension is one of accept, or every file where accept is empty.
+func (d *folderDialog) ChooseFile(_ context.Context, title, startingAt string, accept []string) (string, bool, error) {
+	if !hasSchemas() {
+		return "", false, machineport.ErrNoFolderDialog
+	}
+	if !d.tryAcquire() {
+		return "", false, machineport.ErrChoosing
+	}
+	defer d.release()
+
+	if title == "" {
+		title = "Choose a file"
+	}
+	dialog := application.Get().Dialog.OpenFile().
+		AttachToWindow(d.window).
+		CanChooseDirectories(false).
+		CanChooseFiles(true).
+		SetTitle(title)
+	if len(accept) > 0 {
+		patterns := make([]string, 0, len(accept))
+		for _, extension := range accept {
+			patterns = append(patterns, "*"+extension)
+		}
+		dialog.AddFilter(strings.Join(accept, ", "), strings.Join(patterns, ";"))
+	}
+	if startingAt != "" {
+		dialog.SetDirectory(startingAt)
+	}
+
+	selected, err := dialog.PromptForSingleSelection()
+	if err != nil {
+		return "", false, err
+	}
+	return selected, selected != "", nil
 }

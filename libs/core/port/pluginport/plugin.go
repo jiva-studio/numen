@@ -169,6 +169,9 @@ type PluginConfigurator interface {
 	SetPluginSecret(ctx context.Context, pluginID, name, key string) error
 	DeletePluginSecret(ctx context.Context, pluginID, name string) error
 	UpdatePluginSetting(ctx context.Context, pluginID, key string, value any) error
+	// CheckPluginSetting reports why a setting the plugin declares does not take the value, and nil
+	// where it does.
+	CheckPluginSetting(pluginID, key string, value any) error
 }
 
 // PluginEventEmitter broadcasts events to plugins.

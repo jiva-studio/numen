@@ -40,15 +40,49 @@ export interface Model {
   readonly defaultReasoning?: string
 }
 
+/** One value an enum setting can hold, and what a person reads for it. */
+export interface PluginSettingOption {
+  readonly value: string
+  /** Empty shows the value. */
+  readonly title: string
+  /** What a person reads under the setting while the value is in force. */
+  readonly detail: string
+}
+
+/** A setting is shown, and handed to its plugin, while another holds one of the values listed. */
+export interface PluginSettingCondition {
+  readonly setting: string
+  readonly is: readonly string[]
+}
+
+/** The options of a setting under each value of another setting; the first of a list is its default. */
+export interface PluginSettingOptionsBy {
+  readonly setting: string
+  readonly options: Readonly<Record<string, readonly PluginSettingOption[]>>
+}
+
+/** A secret, such as an API key, a plugin asks the host to keep. */
+export interface PluginSecret {
+  /** What the plugin reads the key under. */
+  readonly name: string
+  readonly title: string
+  readonly description: string
+  readonly when?: PluginSettingCondition | undefined
+}
+
 /** Declarative setting schema and metadata exposed by a plugin. */
 export interface PluginSettingInfo {
   readonly key: string
-  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent'
+  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent' | 'file' | 'folder'
   readonly title: string
   readonly description: string
   readonly default: unknown
   readonly palette?: boolean | undefined
-  readonly options?: readonly string[] | undefined
+  readonly options?: readonly PluginSettingOption[] | undefined
+  readonly optionsBy?: PluginSettingOptionsBy | undefined
+  readonly when?: PluginSettingCondition | undefined
+  /** The file extensions a setting of type file takes, each with its leading dot. Empty takes any file. */
+  readonly accept?: readonly string[] | undefined
   readonly min?: number | undefined
   readonly max?: number | undefined
   readonly step?: number | undefined
@@ -82,8 +116,8 @@ export interface PluginInfo {
   readonly isActive: boolean
   readonly settings: readonly PluginSettingInfo[]
   readonly capabilities: readonly string[]
-  /** The names of the secrets the plugin declares, and those that have a key stored. */
-  readonly secrets: readonly string[]
+  /** The secrets the plugin declares, and the names of those that have a key stored. */
+  readonly secrets: readonly PluginSecret[]
   readonly storedSecrets: readonly string[]
   readonly consent: Consent
   /** Whether the plugin declares a frontend the window loads. */

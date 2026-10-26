@@ -45,13 +45,57 @@ message PluginSetting {
   string description = 4;
   string default_json = 5;
   bool palette = 6;
-  repeated string options = 7;
+  repeated PluginSettingOption options = 7;
   optional double min = 8;
   optional double max = 9;
   optional double step = 10;
   // The agent program whose models the setting is offered, as the program names itself. Empty is a
   // setting offered none, and a person types its value.
   string models_of = 11;
+  // The options of an enum setting under each value of another setting. The first of a list is the
+  // default under that value.
+  PluginSettingOptionsBy options_by = 12;
+  // The condition under which the setting is shown and handed to the plugin.
+  PluginSettingCondition when = 13;
+  // The file extensions a setting of type file takes, each with its leading dot. Empty takes any file.
+  repeated string accept = 14;
+}
+
+// PluginSettingOption is one value an enum setting can hold.
+message PluginSettingOption {
+  string value = 1;
+  // What a person reads for the value. Empty shows the value.
+  string title = 2;
+  // What a person reads under the setting while the value is in force.
+  string detail = 3;
+}
+
+// PluginSettingOptions is one list of options.
+message PluginSettingOptions {
+  repeated PluginSettingOption options = 1;
+}
+
+// PluginSettingOptionsBy gives a setting its options from the value of another setting.
+message PluginSettingOptionsBy {
+  // The key of the setting the options follow.
+  string setting = 1;
+  map<string, PluginSettingOptions> options = 2;
+}
+
+// PluginSettingCondition holds while a setting holds one of the values listed.
+message PluginSettingCondition {
+  string setting = 1;
+  repeated string is = 2;
+}
+
+// PluginSecret is one secret, such as an API key, a plugin asks the host to keep.
+message PluginSecret {
+  // What the plugin reads the key under.
+  string name = 1;
+  string title = 2;
+  string description = 3;
+  // The condition under which the secret is shown and handed to the plugin.
+  PluginSettingCondition when = 4;
 }
 
 // PluginInfo describes a discovered plugin and its declarative settings.
@@ -65,8 +109,8 @@ message PluginInfo {
   bool is_active = 7;
   // The permissions the manifest declares.
   repeated string permissions = 8;
-  // The names of the secrets the manifest declares.
-  repeated string secrets = 9;
+  // The secrets the manifest declares.
+  repeated PluginSecret secrets = 9;
   // The names of the secrets that have a key stored. A key never travels here.
   repeated string stored_secrets = 10;
   reserved 11;

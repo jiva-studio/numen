@@ -10,7 +10,7 @@ import { AgentChoice } from './agent-choice'
 import { SecretField } from './secret-field'
 import type { SettingsTabState } from '../types'
 import type { CompletionChoice, PluginInfo } from '@/entities/settings'
-import { write } from '@/entities/settings'
+import { isShown, write } from '@/entities/settings'
 import {
   DEFAULT_AGENT_AT,
   DEFAULT_MODEL_AT,
@@ -52,6 +52,12 @@ const modelChoices = computed(() =>
 const askingPlugins = computed(() => getAskingPlugins(plugins.value))
 const waitingPlugins = computed(() => askingPlugins.value.filter((one) => one.consent === 'asked'))
 const pluginsWithSecrets = computed(() => getPluginsWithSecrets(plugins.value))
+
+/** The secrets of the plugin whose condition holds. */
+function getShownSecrets(plugin: PluginInfo) {
+  const read = (key: string) => installation.value.getSetting(['plugins', plugin.id, key])
+  return plugin.secrets.filter((one) => isShown(plugin, one.when, read))
+}
 
 /* -------------------------------- Handlers -------------------------------- */
 function onDefaultChoose(choice: CompletionChoice) {
@@ -126,14 +132,14 @@ function onSecretDelete(pluginId: string, name: string) {
 
     <template v-for="plugin in pluginsWithSecrets" :key="`keys-${plugin.id}`">
       <SecretField
-        v-for="name in plugin.secrets"
-        :key="`${plugin.id}-${name}`"
-        :at="`key-${plugin.id}-${name}`"
-        :name="`${plugin.name}: ${name}`"
-        :is-stored="plugin.storedSecrets.includes(name)"
+        v-for="secret in getShownSecrets(plugin)"
+        :key="`${plugin.id}-${secret.name}`"
+        :at="`key-${plugin.id}-${secret.name}`"
+        :name="`${plugin.name}: ${secret.title}`"
+        :is-stored="plugin.storedSecrets.includes(secret.name)"
         :words="words"
-        @save="(key) => onSecretSave(plugin.id, name, key)"
-        @delete="onSecretDelete(plugin.id, name)"
+        @save="(key) => onSecretSave(plugin.id, secret.name, key)"
+        @delete="onSecretDelete(plugin.id, secret.name)"
       />
     </template>
   </section>

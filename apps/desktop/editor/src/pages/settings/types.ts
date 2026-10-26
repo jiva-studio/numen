@@ -47,6 +47,12 @@ export interface Installation {
   deleteSecret(pluginId: string, name: string): void
   /** A plugin the host suspends, started once more. */
   retryPlugin(pluginId: string): void
+  /**
+   * The machine's own picker put in front of the person for a plugin's setting of type file or
+   * folder, and the path chosen written. The answer is why the setting does not take the path,
+   * and empty where it was written or none was chosen.
+   */
+  choosePath(pluginId: string, key: string): Promise<string>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>

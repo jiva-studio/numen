@@ -38,7 +38,7 @@ func newONNXCatalog() *fakeCatalog {
 }
 
 func newRuntimeRequirements(dir string) []pluginport.DependencyRequirement {
-	return pluginport.PluginManifest{Runtimes: []string{pluginport.RuntimeONNX}}.GetDependencyRequirements(dir)
+	return pluginport.PluginManifest{Runtimes: []string{pluginport.RuntimeONNX}}.GetDependencyRequirements(dir, nil)
 }
 
 func TestThePluginEnvironmentCarriesTheRuntime(t *testing.T) {
@@ -85,7 +85,7 @@ func TestADeclaredDependencyInjectsItsEnvironment(t *testing.T) {
 	}})
 	manifest := pluginport.PluginManifest{Dependencies: []pluginport.DependencyRequirement{{ID: "whisper", Kind: pluginport.DependencyKindModel}}}
 
-	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a"), 5, "t")
+	vars, err := host.getLaunchVars(t.Context(), "md.numen.a", manifest.GetDependencyRequirements("/plugins/a", nil), 5, "t")
 	if err != nil {
 		t.Fatal(err)
 	}

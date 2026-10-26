@@ -235,3 +235,9 @@ func (e EditorAssembly) OpenCopy() *file.OpenCopy {
 
 // UnknownVaultError is a vault named at start that the registry does not hold.
 type UnknownVaultError = vault.UnknownError
+
+// OpenChoosePluginPath makes the use case that puts the picker for a plugin's path setting in front
+// of the person and writes the path chosen.
+func (e EditorAssembly) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
+	return settings.NewChoosePluginPath(dialog, e.cfg.Plugins(), e.cfg.GetSettingsWriter())
+}

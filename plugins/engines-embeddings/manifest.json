@@ -14,7 +14,7 @@
       "kind": "runtime"
     }
   ],
-  "secrets": ["apiKey"],
+  "secrets": [{ "name": "apiKey", "title": "API key" }],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
     "keepAliveWhileVisible": true,

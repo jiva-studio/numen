@@ -140,4 +140,12 @@ export const WORDS = {
   systemSettingsDetail: 'Theme, scale and filename sync.',
   searchPlugins: 'Search plugins…',
   noPluginsFound: 'No plugins found.',
+  /** Where the value of a plugin's setting comes from. */
+  valueChosen: 'Chosen',
+  valueDefault: 'Default',
+  valueFollowed: (title: string) => `${title} default`,
+  /** A plugin's setting of type file or folder. */
+  pathNone: 'None',
+  pathChoose: 'Choose…',
+  pathClear: 'Clear',
 }

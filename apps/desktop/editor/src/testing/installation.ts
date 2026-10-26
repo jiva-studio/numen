@@ -11,6 +11,7 @@ export const createInstallation = (overrides: Partial<Installation> = {}): Insta
   writeSecret: fn(),
   deleteSecret: fn(),
   retryPlugin: fn(),
+  choosePath: fn(async () => ''),
   plugins: ref([]),
   file: ref('/numen.json'),
   openFile: fn(),

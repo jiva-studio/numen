@@ -7,7 +7,7 @@ import { DEFAULT_HEADINGS } from '@/entities/settings'
 import { getSettingAt } from '@/entities/settings'
 import { write } from '@/entities/settings'
 import { formatErrorMessage, isStaleAnswer } from '@numen/wire'
-import type { Configuration, PluginSettingInfo } from '@/entities/settings'
+import type { Configuration, PluginSettingCondition, PluginSettingInfo } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
 import type { SettingsPort } from '@/app/ports/settings'
 
@@ -39,6 +39,19 @@ const writeSettings = async (
   }
   return null
 }
+
+/** One option of an enum setting as the window holds it. */
+const readOption = (one: { value: string; title: string; detail: string }) => ({
+  value: one.value,
+  title: one.title,
+  detail: one.detail,
+})
+
+/** The condition of a setting or a secret as the window holds it. */
+const readCondition = (
+  when: { setting: string; is: readonly string[] } | undefined,
+): PluginSettingCondition | undefined =>
+  when ? { setting: when.setting, is: [...when.is] } : undefined
 
 export const settingsCore: SettingsPort = {
   getSyncEnabled: async () => getSettingAt(await readSettings(), SYNCS) !== false,
@@ -82,7 +95,12 @@ export const settingsCore: SettingsPort = {
         description: p.description,
         isActive: p.isActive,
         capabilities: p.capabilities,
-        secrets: p.secrets,
+        secrets: p.secrets.map((one) => ({
+          name: one.name,
+          title: one.title || one.name,
+          description: one.description,
+          when: readCondition(one.when),
+        })),
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
         consent: consented[p.completionConsent],
@@ -111,7 +129,20 @@ export const settingsCore: SettingsPort = {
             description: s.description,
             default: defaultValue,
             palette: s.palette,
-            options: s.options,
+            options: s.options.length > 0 ? s.options.map(readOption) : undefined,
+            optionsBy: s.optionsBy
+              ? {
+                  setting: s.optionsBy.setting,
+                  options: Object.fromEntries(
+                    Object.entries(s.optionsBy.options).map(([value, list]) => [
+                      value,
+                      list.options.map(readOption),
+                    ]),
+                  ),
+                }
+              : undefined,
+            when: readCondition(s.when),
+            accept: s.accept,
             min: s.min,
             max: s.max,
             step: s.step,
@@ -142,6 +173,10 @@ export const settingsCore: SettingsPort = {
   },
   deletePluginSecret: async (pluginId, name) => {
     await settingsService.deletePluginSecret({ pluginId, name })
+  },
+  choosePluginPath: async (pluginId, key) => {
+    const answer = await settingsService.choosePluginPath({ pluginId, key })
+    return { path: answer.path, isChosen: answer.isChosen, problem: answer.problem }
   },
   retryPlugin: async (pluginId) => {
     const answer = await settingsService.retryPlugin({ pluginId })

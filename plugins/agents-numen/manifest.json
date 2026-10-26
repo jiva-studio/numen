@@ -8,7 +8,7 @@
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
-  "secrets": ["apiKey"],
+  "secrets": [{ "name": "apiKey", "title": "API key" }],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,

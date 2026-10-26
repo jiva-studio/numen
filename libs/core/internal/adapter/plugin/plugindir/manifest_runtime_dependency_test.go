@@ -23,7 +23,7 @@ func TestManifestTreatsAnONNXRuntimeDependencyAsTheRuntimesEntry(t *testing.T) {
 	same := func(a, b pluginport.DependencyRequirement) bool {
 		return a.ID == b.ID && a.Kind == b.Kind && a.SourceURL == b.SourceURL && a.PluginDir == b.PluginDir
 	}
-	if !slices.EqualFunc(legacy.GetDependencyRequirements("/p"), explicit.GetDependencyRequirements("/p"), same) {
-		t.Errorf("requirements = %v, want %v", explicit.GetDependencyRequirements("/p"), legacy.GetDependencyRequirements("/p"))
+	if !slices.EqualFunc(legacy.GetDependencyRequirements("/p", nil), explicit.GetDependencyRequirements("/p", nil), same) {
+		t.Errorf("requirements = %v, want %v", explicit.GetDependencyRequirements("/p", nil), legacy.GetDependencyRequirements("/p", nil))
 	}
 }

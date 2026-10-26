@@ -49,7 +49,7 @@ func writeSecretPlugin(t *testing.T) string {
 		"version": "1.0.0",
 		"capabilities": ["ai.agent.provider"],
 		"targets": ["desktop.editor"],
-		"secrets": ["apiKey"],
+		"secrets": [{"name": "apiKey", "title": "API key"}],
 		"backend": {"type": "process", "entrypoint": "bin/agent", "serviceName": "numen.v1.AgentService"}
 	}`
 	if err := os.WriteFile(filepath.Join(dir, "manifest.json"), []byte(manifest), 0o600); err != nil {

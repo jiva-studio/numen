@@ -24,7 +24,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/settings.proto.
  */
 export const file_numen_v1_settings: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Ir8BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBI1ChtuZXN0ZWRfaGVhZGluZ19saW1pdF9ib3VuZHMYBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSJQoHcGx1Z2lucxgHIAMoCzIULm51bWVuLnYxLlBsdWdpbkluZm9KBAgFEAZKBAgGEAci8QEKBU1vZGVsEhAKCG5hbWVkX2F0GAEgAygJEgwKBG5hbWUYAiABKAkSDQoFdGl0bGUYAyABKAkSDQoFZ3JvdXAYBCABKAkSEgoKaXNfZGVmYXVsdBgFIAEoCBIhCgZ3cml0ZXMYBiADKAsyES5udW1lbi52MS5TZXR0aW5nEiQKCHByZXNlbmNlGAcgASgOMhIubnVtZW4udjEuUHJlc2VuY2USMgoQcmVhc29uaW5nX2xldmVscxgIIAMoCzIYLm51bWVuLnYxLlJlYXNvbmluZ0xldmVsEhkKEWRlZmF1bHRfcmVhc29uaW5nGAkgASgJIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIhcKFVdyaXRlU2V0dGluZ3NSZXNwb25zZSIZChdSZWFkU2V0dGluZ3NGaWxlUmVxdWVzdCI5ChhSZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJIk8KGFdyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBIPCgd3cml0dGVuGAEgASgJEhUKCGJhc2VsaW5lGAIgASgJSACIAQFCCwoJX2Jhc2VsaW5lIk4KGVdyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiSAoYV3JpdGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgsKA2tleRgDIAEoCSIbChlXcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlIjwKGURlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgwKBG5hbWUYAiABKAkiHAoaRGVsZXRlUGx1Z2luU2VjcmV0UmVzcG9uc2UiJwoSUmV0cnlQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSImChNSZXRyeVBsdWdpblJlc3BvbnNlEg8KB2ZhaWx1cmUYASABKAkqcwoIUHJlc2VuY2USGAoUUFJFU0VOQ0VfVU5TUEVDSUZJRUQQABIUChBQUkVTRU5DRV9QUkVTRU5UEAESGAoUUFJFU0VOQ0VfTk9UX0ZFVENIRUQQAhIdChlQUkVTRU5DRV9OT1RISU5HX1RPX0ZFVENIEAMy8wQKD1NldHRpbmdzU2VydmljZRJKCgtHZXRTZXR0aW5ncxIcLm51bWVuLnYxLkdldFNldHRpbmdzUmVxdWVzdBodLm51bWVuLnYxLkdldFNldHRpbmdzUmVzcG9uc2USUAoNV3JpdGVTZXR0aW5ncxIeLm51bWVuLnYxLldyaXRlU2V0dGluZ3NSZXF1ZXN0Gh8ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1Jlc3BvbnNlElkKEFJlYWRTZXR0aW5nc0ZpbGUSIS5udW1lbi52MS5SZWFkU2V0dGluZ3NGaWxlUmVxdWVzdBoiLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVNldHRpbmdzRmlsZRIiLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBojLm51bWVuLnYxLldyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2USXAoRV3JpdGVQbHVnaW5TZWNyZXQSIi5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlcXVlc3QaIy5udW1lbi52MS5Xcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlEl8KEkRlbGV0ZVBsdWdpblNlY3JldBIjLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QaJC5udW1lbi52MS5EZWxldGVQbHVnaW5TZWNyZXRSZXNwb25zZRJKCgtSZXRyeVBsdWdpbhIcLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVxdWVzdBodLm51bWVuLnYxLlJldHJ5UGx1Z2luUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
+  fileDesc("ChdudW1lbi92MS9zZXR0aW5ncy5wcm90bxIIbnVtZW4udjEiFAoSR2V0U2V0dGluZ3NSZXF1ZXN0Ir8BChNHZXRTZXR0aW5nc1Jlc3BvbnNlEg8KB3dyaXR0ZW4YASABKAkSDAoEcGF0aBgCIAEoCRIfCgZtb2RlbHMYAyADKAsyDy5udW1lbi52MS5Nb2RlbBI1ChtuZXN0ZWRfaGVhZGluZ19saW1pdF9ib3VuZHMYBCABKAsyEC5udW1lbi52MS5Cb3VuZHMSJQoHcGx1Z2lucxgHIAMoCzIULm51bWVuLnYxLlBsdWdpbkluZm9KBAgFEAZKBAgGEAci8QEKBU1vZGVsEhAKCG5hbWVkX2F0GAEgAygJEgwKBG5hbWUYAiABKAkSDQoFdGl0bGUYAyABKAkSDQoFZ3JvdXAYBCABKAkSEgoKaXNfZGVmYXVsdBgFIAEoCBIhCgZ3cml0ZXMYBiADKAsyES5udW1lbi52MS5TZXR0aW5nEiQKCHByZXNlbmNlGAcgASgOMhIubnVtZW4udjEuUHJlc2VuY2USMgoQcmVhc29uaW5nX2xldmVscxgIIAMoCzIYLm51bWVuLnYxLlJlYXNvbmluZ0xldmVsEhkKEWRlZmF1bHRfcmVhc29uaW5nGAkgASgJIiQKB1NldHRpbmcSCgoCYXQYASADKAkSDQoFdmFsdWUYAiABKAkiOwoUV3JpdGVTZXR0aW5nc1JlcXVlc3QSIwoIc2V0dGluZ3MYASADKAsyES5udW1lbi52MS5TZXR0aW5nIhcKFVdyaXRlU2V0dGluZ3NSZXNwb25zZSIZChdSZWFkU2V0dGluZ3NGaWxlUmVxdWVzdCI5ChhSZWFkU2V0dGluZ3NGaWxlUmVzcG9uc2USDwoHd3JpdHRlbhgBIAEoCRIMCgRwYXRoGAIgASgJIk8KGFdyaXRlU2V0dGluZ3NGaWxlUmVxdWVzdBIPCgd3cml0dGVuGAEgASgJEhUKCGJhc2VsaW5lGAIgASgJSACIAQFCCwoJX2Jhc2VsaW5lIk4KGVdyaXRlU2V0dGluZ3NGaWxlUmVzcG9uc2USJwoFZXJyb3IYASABKA4yEy5udW1lbi52MS5FcnJvckNvZGVIAIgBAUIICgZfZXJyb3IiSAoYV3JpdGVQbHVnaW5TZWNyZXRSZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCRIMCgRuYW1lGAIgASgJEgsKA2tleRgDIAEoCSIbChlXcml0ZVBsdWdpblNlY3JldFJlc3BvbnNlIjwKGURlbGV0ZVBsdWdpblNlY3JldFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgwKBG5hbWUYAiABKAkiHAoaRGVsZXRlUGx1Z2luU2VjcmV0UmVzcG9uc2UiJwoSUmV0cnlQbHVnaW5SZXF1ZXN0EhEKCXBsdWdpbl9pZBgBIAEoCSImChNSZXRyeVBsdWdpblJlc3BvbnNlEg8KB2ZhaWx1cmUYASABKAkiOQoXQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QSEQoJcGx1Z2luX2lkGAEgASgJEgsKA2tleRgCIAEoCSJMChhDaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIRCglpc19jaG9zZW4YAiABKAgSDwoHcHJvYmxlbRgDIAEoCSpzCghQcmVzZW5jZRIYChRQUkVTRU5DRV9VTlNQRUNJRklFRBAAEhQKEFBSRVNFTkNFX1BSRVNFTlQQARIYChRQUkVTRU5DRV9OT1RfRkVUQ0hFRBACEh0KGVBSRVNFTkNFX05PVEhJTkdfVE9fRkVUQ0gQAzLOBQoPU2V0dGluZ3NTZXJ2aWNlEkoKC0dldFNldHRpbmdzEhwubnVtZW4udjEuR2V0U2V0dGluZ3NSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0U2V0dGluZ3NSZXNwb25zZRJQCg1Xcml0ZVNldHRpbmdzEh4ubnVtZW4udjEuV3JpdGVTZXR0aW5nc1JlcXVlc3QaHy5udW1lbi52MS5Xcml0ZVNldHRpbmdzUmVzcG9uc2USWQoQUmVhZFNldHRpbmdzRmlsZRIhLm51bWVuLnYxLlJlYWRTZXR0aW5nc0ZpbGVSZXF1ZXN0GiIubnVtZW4udjEuUmVhZFNldHRpbmdzRmlsZVJlc3BvbnNlElwKEVdyaXRlU2V0dGluZ3NGaWxlEiIubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXF1ZXN0GiMubnVtZW4udjEuV3JpdGVTZXR0aW5nc0ZpbGVSZXNwb25zZRJcChFXcml0ZVBsdWdpblNlY3JldBIiLm51bWVuLnYxLldyaXRlUGx1Z2luU2VjcmV0UmVxdWVzdBojLm51bWVuLnYxLldyaXRlUGx1Z2luU2VjcmV0UmVzcG9uc2USXwoSRGVsZXRlUGx1Z2luU2VjcmV0EiMubnVtZW4udjEuRGVsZXRlUGx1Z2luU2VjcmV0UmVxdWVzdBokLm51bWVuLnYxLkRlbGV0ZVBsdWdpblNlY3JldFJlc3BvbnNlEkoKC1JldHJ5UGx1Z2luEhwubnVtZW4udjEuUmV0cnlQbHVnaW5SZXF1ZXN0Gh0ubnVtZW4udjEuUmV0cnlQbHVnaW5SZXNwb25zZRJZChBDaG9vc2VQbHVnaW5QYXRoEiEubnVtZW4udjEuQ2hvb3NlUGx1Z2luUGF0aFJlcXVlc3QaIi5udW1lbi52MS5DaG9vc2VQbHVnaW5QYXRoUmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_plugin, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetSettingsRequest
@@ -437,6 +437,63 @@ export const RetryPluginResponseSchema: GenMessage<RetryPluginResponse> = /*@__P
   messageDesc(file_numen_v1_settings, 15);
 
 /**
+ * @generated from message numen.v1.ChoosePluginPathRequest
+ */
+export type ChoosePluginPathRequest = Message<"numen.v1.ChoosePluginPathRequest"> & {
+  /**
+   * @generated from field: string plugin_id = 1;
+   */
+  pluginId: string;
+
+  /**
+   * The key of the setting.
+   *
+   * @generated from field: string key = 2;
+   */
+  key: string;
+};
+
+/**
+ * Describes the message numen.v1.ChoosePluginPathRequest.
+ * Use `create(ChoosePluginPathRequestSchema)` to create a new message.
+ */
+export const ChoosePluginPathRequestSchema: GenMessage<ChoosePluginPathRequest> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 16);
+
+/**
+ * @generated from message numen.v1.ChoosePluginPathResponse
+ */
+export type ChoosePluginPathResponse = Message<"numen.v1.ChoosePluginPathResponse"> & {
+  /**
+   * The path the person chose, empty when they chose none.
+   *
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * Set when the person chose a path.
+   *
+   * @generated from field: bool is_chosen = 2;
+   */
+  isChosen: boolean;
+
+  /**
+   * Why the setting does not take the path, in words a person reads. Empty where it was written.
+   *
+   * @generated from field: string problem = 3;
+   */
+  problem: string;
+};
+
+/**
+ * Describes the message numen.v1.ChoosePluginPathResponse.
+ * Use `create(ChoosePluginPathResponseSchema)` to create a new message.
+ */
+export const ChoosePluginPathResponseSchema: GenMessage<ChoosePluginPathResponse> = /*@__PURE__*/
+  messageDesc(file_numen_v1_settings, 17);
+
+/**
  * Presence is what a model's files are on this machine. It says where files
  * stand and nothing else: it is no reason to prefer one model to another.
  *
@@ -565,6 +622,18 @@ export const SettingsService: GenService<{
     methodKind: "unary";
     input: typeof RetryPluginRequestSchema;
     output: typeof RetryPluginResponseSchema;
+  },
+  /**
+   * ChoosePluginPath puts the machine's own file or folder picker in front of the person for a setting
+   * of type file or folder, and writes the path they chose. A path the setting does not take is not
+   * written, and the answer says why.
+   *
+   * @generated from rpc numen.v1.SettingsService.ChoosePluginPath
+   */
+  choosePluginPath: {
+    methodKind: "unary";
+    input: typeof ChoosePluginPathRequestSchema;
+    output: typeof ChoosePluginPathResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_settings, 0);

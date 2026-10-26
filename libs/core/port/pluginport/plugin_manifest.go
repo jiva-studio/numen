@@ -86,6 +86,7 @@ var (
 	ErrReservedSettingKey     = errors.New("the setting key is kept by the host")
 	ErrInvalidAgentSetting    = errors.New("invalid agent setting")
 	ErrInvalidModelsOf        = errors.New("only a string setting is offered the models of a program")
+	ErrInvalidSetting         = errors.New("invalid setting")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
 	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
@@ -116,7 +117,16 @@ var (
 	manifestVersionPattern  = regexp.MustCompile(`^v?(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))(\.((0|[1-9][0-9]*)|([0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)))*)?(\+([0-9A-Za-z-]+)(\.[0-9A-Za-z-]+)*)?$`)
 )
 
-var validSettingTypes = []string{"boolean", "string", "number", "enum", "select", "range", SettingTypeAgent}
+// SettingTypeEnum is the type of a setting that holds one of its options.
+const SettingTypeEnum = "enum"
+
+// The types of a setting that holds a path on this machine.
+const (
+	SettingTypeFile   = "file"
+	SettingTypeFolder = "folder"
+)
+
+var validSettingTypes = []string{"boolean", "string", "number", SettingTypeEnum, "select", "range", SettingTypeAgent, SettingTypeFile, SettingTypeFolder}
 
 // PluginLifecycle defines when the host evicts an idle plugin from memory.
 type PluginLifecycle struct {
@@ -158,36 +168,6 @@ type PluginFrontend struct {
 	Styles     string `json:"styles"`
 }
 
-// PluginSettingOptions is a slice of option values supporting string arrays and object arrays.
-type PluginSettingOptions []string
-
-// UnmarshalJSON unmarshals either string array or object array with value field.
-func (o *PluginSettingOptions) UnmarshalJSON(data []byte) error {
-	if string(data) == "null" || len(data) == 0 {
-		*o = nil
-		return nil
-	}
-	var stringSlice []string
-	if err := json.Unmarshal(data, &stringSlice); err == nil {
-		*o = stringSlice
-		return nil
-	}
-
-	var objSlice []struct {
-		Value string `json:"value"`
-	}
-	if err := json.Unmarshal(data, &objSlice); err == nil {
-		vals := make([]string, len(objSlice))
-		for i, obj := range objSlice {
-			vals[i] = obj.Value
-		}
-		*o = vals
-		return nil
-	}
-
-	return fmt.Errorf("options must be array of strings or objects with value")
-}
-
 // PluginManifestSetting declares one configuration field managed by the core host.
 type PluginManifestSetting struct {
 	Key         string               `json:"key"`
@@ -207,6 +187,15 @@ type PluginManifestSetting struct {
 	// it over, each written as the keys that lead to it joined by dots, the newest first. The first of
 	// them the file holds gives the value to a person whose file has none for the plugin yet.
 	Replaces []string `json:"replaces,omitempty"`
+	// OptionsBy gives an enum setting its options from the value of another setting. The first option
+	// of each list is the default under that value.
+	OptionsBy *PluginSettingOptionsBy `json:"optionsBy,omitempty"`
+	// When is the condition under which the setting is shown and handed to the plugin. A setting
+	// whose condition fails keeps its stored value.
+	When *PluginSettingCondition `json:"when,omitempty"`
+	// Accept are the file extensions a setting of type file takes, each with its leading dot. Empty
+	// takes any file.
+	Accept []string `json:"accept,omitempty"`
 }
 
 // PluginManifest is the metadata declaring a plugin's identity, capabilities, and lifecycle.
@@ -230,7 +219,7 @@ type PluginManifest struct {
 	// Secrets are the names of the secrets, such as an API key, the plugin asks the
 	// host to keep. The host hands them over as Configure values, empty while a
 	// secret has no key, and never puts one in the environment or on the command line.
-	Secrets []string `json:"secrets,omitempty"`
+	Secrets []PluginSecret `json:"secrets,omitempty"`
 	// Services are the services the plugin serves to the windows, by their full names. A window that
 	// receives a call for one forwards it to the plugin; a service the host serves itself is never
 	// forwarded.
@@ -310,6 +299,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listTextInputIssues()...)
 	issues = append(issues, m.listPlaybackIssues()...)
 	issues = append(issues, m.listAgentSettingIssues()...)
+	issues = append(issues, m.listSettingLinkIssues()...)
 	return append(issues, listManifestSettingIssues(m.Settings)...)
 }
 
@@ -570,7 +560,9 @@ func (m PluginManifest) listRuntimeIssues() []error {
 func (m PluginManifest) listSecretIssues() []error {
 	var issues []error
 	observed := make(map[string]bool, len(m.Secrets))
-	for _, name := range m.Secrets {
+	for _, secret := range m.Secrets {
+		name := secret.Name
+		issues = append(issues, m.listConditionIssues("secret "+name, secret.When)...)
 		switch {
 		case !manifestSecretPattern.MatchString(name):
 			issues = append(issues, fmt.Errorf("%w: %q is not letters, digits, _ or -", ErrInvalidSecret, name))
@@ -622,7 +614,7 @@ func listManifestSettingIssue(s PluginManifestSetting, key string) []error {
 	if !slices.Contains(validSettingTypes, s.Type) {
 		issues = append(issues, fmt.Errorf("%w: %q for %s", ErrInvalidSettingType, s.Type, key))
 	}
-	if (s.Type == "enum" || s.Type == "select") && len(s.Options) == 0 {
+	if (s.Type == SettingTypeEnum || s.Type == "select") && len(s.Options) == 0 && s.OptionsBy == nil {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrEnumMissingOptions, key))
 	}
 	if s.Type == "range" && (s.Min != 0 || s.Max != 0) && s.Min > s.Max {
@@ -630,6 +622,20 @@ func listManifestSettingIssue(s PluginManifestSetting, key string) []error {
 	}
 	if s.ModelsOf != "" && s.Type != "string" {
 		issues = append(issues, fmt.Errorf("%w: %s", ErrInvalidModelsOf, key))
+	}
+	return append(issues, listAcceptIssues(s, key)...)
+}
+
+// listAcceptIssues checks that only a file setting accepts extensions, each with its leading dot.
+func listAcceptIssues(s PluginManifestSetting, key string) []error {
+	var issues []error
+	if len(s.Accept) > 0 && s.Type != SettingTypeFile {
+		issues = append(issues, fmt.Errorf("%w: %s accepts extensions and holds no file", ErrInvalidSetting, key))
+	}
+	for _, extension := range s.Accept {
+		if len(extension) < 2 || !strings.HasPrefix(extension, ".") {
+			issues = append(issues, fmt.Errorf("%w: %s accepts %q, which is no extension", ErrInvalidSetting, key, extension))
+		}
 	}
 	return issues
 }

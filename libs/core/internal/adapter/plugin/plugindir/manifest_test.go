@@ -253,7 +253,7 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onFile:.md"],"frontend":{"entrypoint":"dist/index.js"}}`, pluginport.ErrNoBackend},
 		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, pluginport.ErrNoBackend},
 		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, pluginport.ErrNoBackend},
-		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":["apiKey"]}`, pluginport.ErrNoBackend},
+		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":[{"name":"apiKey","title":"T"}]}`, pluginport.ErrNoBackend},
 		{"runtimes without a backend", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`, pluginport.ErrNoBackend},
 		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, pluginport.ErrInvalidFrontend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, pluginport.ErrEmptySettingTitle},
@@ -353,13 +353,13 @@ func TestAManifestDeclaresItsSecretsByPlainDistinctNames(t *testing.T) {
 		wrong   bool
 	}{
 		{"none", ``, false},
-		{"one", `"secrets":["apiKey"]`, false},
-		{"two", `"secrets":["apiKey","org_id-2"]`, false},
-		{"empty name", `"secrets":[""]`, true},
-		{"slash", `"secrets":["a/b"]`, true},
-		{"space", `"secrets":["api key"]`, true},
-		{"twice", `"secrets":["apiKey","apiKey"]`, true},
-		{"also a setting", `"secrets":["model"],"settings":[{"key":"model","type":"string","title":"Model"}]`, true},
+		{"one", `"secrets":[{"name":"apiKey","title":"API key"}]`, false},
+		{"two", `"secrets":[{"name":"apiKey","title":"API key"},{"name":"org_id-2","title":"Organisation"}]`, false},
+		{"empty name", `"secrets":[{"name":"","title":"T"}]`, true},
+		{"slash", `"secrets":[{"name":"a/b","title":"T"}]`, true},
+		{"space", `"secrets":[{"name":"api key","title":"T"}]`, true},
+		{"twice", `"secrets":[{"name":"apiKey","title":"T"},{"name":"apiKey","title":"T"}]`, true},
+		{"also a setting", `"secrets":[{"name":"model","title":"T"}],"settings":[{"key":"model","type":"string","title":"Model"}]`, true},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			text := `{"id":"a.b","name":"A","version":"1.0.0"`
@@ -382,9 +382,9 @@ func TestAManifestDoesNotTakeTheNameOfTheStoredSecrets(t *testing.T) {
 		field string
 	}{
 		{"a setting", `"settings":[{"key":"storedSecrets","type":"string","title":"Stored"}]`},
-		{"a secret", `"secrets":["storedSecrets"]`},
+		{"a secret", `"secrets":[{"name":"storedSecrets","title":"T"}]`},
 		{"the consent as a setting", `"settings":[{"key":"aiConsent","type":"boolean","title":"Allowed","default":true}]`},
-		{"the consent as a secret", `"secrets":["aiConsent"]`},
+		{"the consent as a secret", `"secrets":[{"name":"aiConsent","title":"T"}]`},
 	} {
 		t.Run(one.name, func(t *testing.T) {
 			_, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0",` + one.field + `}`))
@@ -473,7 +473,7 @@ func TestAManifestDeclaresDependencies(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := m.GetDependencyRequirements("/p")
+	got := m.GetDependencyRequirements("/p", nil)
 	if len(got) != 2 || got[0].Kind != pluginport.DependencyKindRuntime || got[0].ID != pluginport.RuntimeONNX || got[1].ID != "whisper" || got[1].Metadata["fileName"] != "w.bin" || got[1].PluginDir != "/p" {
 		t.Errorf("requirements = %+v", got)
 	}

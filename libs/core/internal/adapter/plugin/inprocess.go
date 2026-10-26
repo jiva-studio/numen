@@ -167,7 +167,7 @@ func (h *Host) startBuiltIn(ctx context.Context, p plugindir.DiscoveredPlugin, b
 	if err != nil {
 		return emptyEndpoint(), fmt.Errorf("generate token: %w", err)
 	}
-	runtimeVars, err := h.exportRuntimeVars(ctx, p.Manifest.GetDependencyRequirements(p.Dir))
+	runtimeVars, err := h.exportRuntimeVars(ctx, h.getRequirements(p))
 	if err != nil {
 		return emptyEndpoint(), fmt.Errorf("launch plugin %s: %w", p.Manifest.ID, err)
 	}

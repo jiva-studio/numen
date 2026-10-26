@@ -4,6 +4,7 @@ package settings
 import (
 	"context"
 	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
 
@@ -23,6 +24,8 @@ type Handler struct {
 	WriteSecret  *setting.WriteSecret
 	DeleteSecret *setting.DeleteSecret
 	PluginRetry  *setting.RetryPlugin
+	// ChoosePath is nil where the application has no window to put a picker in.
+	ChoosePath *setting.ChoosePluginPath
 }
 
 func NewHandler() *Handler { return &Handler{} }
@@ -163,11 +166,14 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 				Description: s.Description,
 				DefaultJson: s.DefaultJSON,
 				Palette:     s.Palette,
-				Options:     s.Options,
+				Options:     newWireOptions(s.Options),
 				Min:         s.Min,
 				Max:         s.Max,
 				Step:        s.Step,
 				ModelsOf:    s.ModelsOf,
+				OptionsBy:   newWireOptionsBy(s.OptionsBy),
+				When:        newWireCondition(s.When),
+				Accept:      s.Accept,
 			})
 		}
 		infos = append(infos, &v1.PluginInfo{
@@ -179,7 +185,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			Settings:     pluginSettings,
 			IsActive:     one.IsActive,
 			Permissions:  one.Permissions,
-			Secrets:      one.Secrets,
+			Secrets:      newWireSecrets(one.Secrets),
 			// The names of the stored secrets travel, and a key never does.
 			StoredSecrets:     one.StoredSecrets,
 			CompletionConsent: Consents[one.Consent],
@@ -268,4 +274,72 @@ func newWireReasoningLevels(target []setting.ReasoningLevel) []*v1.ReasoningLeve
 		levels = append(levels, &v1.ReasoningLevel{Name: one.Name, Title: one.Title})
 	}
 	return levels
+}
+
+// newWireOptions is the options of a setting as the wire carries them.
+func newWireOptions(target setting.PluginSettingOptions) []*v1.PluginSettingOption {
+	if len(target) == 0 {
+		return nil
+	}
+	options := make([]*v1.PluginSettingOption, 0, len(target))
+	for _, one := range target {
+		options = append(options, newWireOption(one))
+	}
+	return options
+}
+
+func newWireOption(one setting.PluginSettingOption) *v1.PluginSettingOption {
+	return &v1.PluginSettingOption{Value: one.Value, Title: one.Title, Detail: one.Detail}
+}
+
+// newWireOptionsBy is the options a setting takes from another, as the wire carries them.
+func newWireOptionsBy(target *setting.PluginSettingOptionsBy) *v1.PluginSettingOptionsBy {
+	if target == nil {
+		return nil
+	}
+	options := make(map[string]*v1.PluginSettingOptions, len(target.Options))
+	for value, list := range target.Options {
+		options[value] = &v1.PluginSettingOptions{Options: newWireOptions(list)}
+	}
+	return &v1.PluginSettingOptionsBy{Setting: target.Setting, Options: options}
+}
+
+// newWireCondition is the condition of a setting as the wire carries it.
+func newWireCondition(target *setting.PluginSettingCondition) *v1.PluginSettingCondition {
+	if target == nil {
+		return nil
+	}
+	return &v1.PluginSettingCondition{Setting: target.Setting, Is: target.Is}
+}
+
+// newWireSecrets is the secrets a plugin declares, as the wire carries them.
+func newWireSecrets(target []setting.PluginSecret) []*v1.PluginSecret {
+	secrets := make([]*v1.PluginSecret, 0, len(target))
+	for _, one := range target {
+		secrets = append(secrets, &v1.PluginSecret{
+			Name: one.Name, Title: one.Title, Description: one.Description, When: newWireCondition(one.When),
+		})
+	}
+	return secrets
+}
+
+// ChoosePluginPath puts the machine's own picker in front of the person for a plugin's path setting
+// and writes the path chosen. A path the setting does not take is answered with the reason.
+func (h *Handler) ChoosePluginPath(
+	ctx context.Context, r *connect.Request[v1.ChoosePluginPathRequest],
+) (*connect.Response[v1.ChoosePluginPathResponse], error) {
+	if h.ChoosePath == nil {
+		return nil, connect.NewError(connect.CodeUnimplemented, errNoSettings)
+	}
+	chosen, err := h.ChoosePath.Execute(ctx, r.Msg.GetPluginId(), r.Msg.GetKey())
+	reply := &v1.ChoosePluginPathResponse{Path: chosen.Path, IsChosen: chosen.IsChosen}
+	switch {
+	case errors.Is(err, setting.ErrNotASetting):
+		reply.Problem = strings.TrimPrefix(err.Error(), setting.ErrNotASetting.Error()+": ")
+	case errors.Is(err, setting.ErrNoPathSetting):
+		return nil, connect.NewError(connect.CodeNotFound, err)
+	case err != nil:
+		return nil, connect.NewError(connect.CodeFailedPrecondition, err)
+	}
+	return connect.NewResponse(reply), nil
 }

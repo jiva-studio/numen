@@ -29,10 +29,12 @@ const createPlugin = (
 })
 
 const AGENT_B = createPlugin('test.agent-b', 'Agent B', {
-  secrets: ['apiKey'],
+  secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
   storedSecrets: ['apiKey'],
 })
-const AGENT_A = createPlugin('test.agent-a', 'Agent A', { secrets: ['apiKey'] })
+const AGENT_A = createPlugin('test.agent-a', 'Agent A', {
+  secrets: [{ name: 'apiKey', title: 'apiKey', description: '' }],
+})
 const PROGRAMS: readonly ProgramFixture[] = [
   { name: 'agent-a', title: 'Agent A', isDefault: true },
   { name: 'agent-b', title: 'Agent B', models: [{ name: 'b-fast', title: 'B fast' }] },
@@ -59,6 +61,7 @@ const createSection = (
       secrets.push(`delete ${pluginId} ${name}`)
     },
     retryPlugin: vi.fn(),
+    choosePath: vi.fn(async () => ''),
     plugins: ref(plugins),
     file: ref('/numen.json'),
     openFile: vi.fn(),

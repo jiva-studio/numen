@@ -350,6 +350,7 @@ func (o *Installation) wireUseCases() {
 	services.Settings.WriteSecret = made.OpenWritePluginSecret()
 	services.Settings.DeleteSecret = made.OpenDeletePluginSecret()
 	services.Settings.PluginRetry = made.OpenRetryPlugin()
+	services.openChoosePath = made.OpenChoosePluginPath
 
 	target := &o.vaults
 	services.File.move = &target.Move

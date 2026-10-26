@@ -87,8 +87,4 @@ func TestPluginInfosMarkThePluginsWithAFrontend(t *testing.T) {
 	if len(infos) != 1 || !infos[0].HasFrontend {
 		t.Fatalf("GetPluginInfos = %+v, want the sketch plugin with a frontend", infos)
 	}
-	wire := host.GetWirePluginInfos()
-	if len(wire) != 1 || !wire[0].GetHasFrontend() {
-		t.Fatalf("GetWirePluginInfos = %+v, want the sketch plugin with a frontend", wire)
-	}
 }
