@@ -1,7 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ensureSyntaxTree, syntaxTree } from '@codemirror/language'
+import { ensureSyntaxTree } from '@codemirror/language'
 import { EditorState, type Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
+import type { Tree } from '@lezer/common'
 import { LANGUAGES } from '../config/languages'
 import { live } from './live/live'
 import { tabKeyBinding, escapeKeyBinding, preview, prose, setup, type Settings } from './setup'
@@ -80,28 +81,30 @@ describe('live preview', () => {
 })
 
 describe('the markdown the editor is written in', () => {
-  const createProse = (doc: string) => {
+  // The tree a state is made with is what its first parse reached in its time,
+  // so the whole tree is the one the parse finished.
+  const parseProse = (doc: string): Tree => {
     const state = EditorState.create({ doc, extensions: [prose()] })
-    ensureSyntaxTree(state, doc.length, 5000)
-    return state
+    const tree = ensureSyntaxTree(state, doc.length, 5000)
+    if (!tree) throw new Error('the parse did not finish in time')
+    return tree
   }
 
-  const getNames = (state: EditorState) => {
+  const getNames = (tree: Tree) => {
     const found = new Set<string>()
-    syntaxTree(state).iterate({ enter: (node) => void found.add(node.name) })
+    tree.iterate({ enter: (node) => void found.add(node.name) })
     return found
   }
 
   it('reads a table', () => {
-    expect(getNames(createProse('| a | b |\n|---|---|\n| c | d |\n'))).toContain('Table')
+    expect(getNames(parseProse('| a | b |\n|---|---|\n| c | d |\n'))).toContain('Table')
   })
 
   it('reads a fenced block in the language named after the fence', async () => {
     const javascript = LANGUAGES.find((language) => language.name === 'javascript')
     await javascript?.load()
     const doc = '```js\nlet total = 1\n```\n'
-    const state = createProse(doc)
-    expect(syntaxTree(state).resolveInner(doc.indexOf('total'), 1).name).not.toBe('CodeText')
+    expect(parseProse(doc).resolveInner(doc.indexOf('total'), 1).name).not.toBe('CodeText')
   })
 })
 
