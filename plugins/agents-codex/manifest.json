@@ -21,7 +21,7 @@
   "settings": [
     {
       "key": "executable_path",
-      "type": "string",
+      "type": "file",
       "title": "Executable Path",
       "description": "Path to the OpenAI Codex CLI executable. Empty finds it automatically.",
       "default": ""
