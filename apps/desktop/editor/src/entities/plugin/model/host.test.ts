@@ -147,6 +147,28 @@ describe('createPluginHost', () => {
     expect(closeTabsForPlugin).toHaveBeenCalledWith('test.plugin')
   })
 
+  it('gives each plugin its own notices and clears them when the plugin is disposed', () => {
+    const { deps } = createMockDeps()
+    const notices = { show: vi.fn(), setTasks: vi.fn() }
+    const getNotices = vi.fn(() => notices)
+    const clearNotices = vi.fn()
+    const host = createPluginHost({ ...deps, getNotices, clearNotices })
+
+    host.createContext('test.plugin').notices?.show('Saved.')
+    host.disposePlugin('test.plugin')
+
+    expect(getNotices).toHaveBeenCalledWith('test.plugin')
+    expect(notices.show).toHaveBeenCalledWith('Saved.')
+    expect(clearNotices).toHaveBeenCalledWith('test.plugin')
+  })
+
+  it('gives a plugin no notices where the window offers none', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+
+    expect(host.createContext('test.plugin').notices).toBeUndefined()
+  })
+
   it('registers context menu, removes it on dispose, and restores on reactivate', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)

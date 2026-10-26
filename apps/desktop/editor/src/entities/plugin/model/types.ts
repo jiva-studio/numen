@@ -11,6 +11,7 @@ import type {
   Disposable,
   FileSelectEvent,
   MountedView,
+  NoticeHost,
   PluginContext,
   PluginLifecycle,
   ReaderRegistration,
@@ -87,6 +88,10 @@ export interface PluginHostDeps {
   readonly getAgent?: () => AgentHost | undefined
   /** The open files of the window, once the window has made them. */
   readonly getBuffers?: () => BufferHost | undefined
+  /** The notices one plugin shows in the window's corner. */
+  readonly getNotices?: (pluginId: string) => NoticeHost
+  /** Everything a plugin showed, taken away with the plugin. */
+  readonly clearNotices?: (pluginId: string) => void
 }
 
 export interface PluginContextHost {
@@ -121,4 +126,5 @@ export interface PluginContextHost {
   getFiles?(): VaultFiles | undefined
   getAgent?(): AgentHost | undefined
   getBuffers?(): BufferHost | undefined
+  getNotices?(pluginId: string): NoticeHost | undefined
 }

@@ -1,16 +1,19 @@
 /**
  * The host the shell's plugins are activated in: a context for each plugin, the tab kinds they
- * register and the views they declare for each other. The shell draws one tab, the main-pane kind
- * of the lowest order; every other registration has nothing in this window to land in.
+ * register, the views they declare for each other and the notices they show. The shell draws one
+ * tab, the main-pane kind of the lowest order, and one list of notices; every other registration
+ * has nothing in this window to land in.
  */
 import { computed, shallowRef } from 'vue'
 import type {
   Disposable,
+  NoticeHost,
   PluginContext,
   PluginManifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
 import { createViewRegistry, type LoaderHost } from '@numen/plugin-host'
+import { createNoticeQueue, type NoticeQueue } from '@numen/shell'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'
@@ -23,10 +26,29 @@ export interface PluginView {
 
 const NOTHING: Disposable = { dispose: () => {} }
 
+/** The notices of one plugin, in the window's one list. */
+export const createPluginNotices = (queue: NoticeQueue, pluginId: string): NoticeHost => ({
+  show: (text, tone = 'plain') => queue.show(pluginId, text, tone),
+  setTasks: (tasks) =>
+    queue.setTasks(
+      pluginId,
+      tasks.map((task) => ({
+        id: task.id,
+        label: task.label,
+        about: task.about ?? '',
+        error: task.error ?? '',
+        isUserStarted: task.isUserStarted ?? false,
+        ...(task.done === undefined ? {} : { done: task.done }),
+        ...(task.total === undefined ? {} : { total: task.total }),
+      })),
+    ),
+})
+
 export function createShellHost() {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
+  const notices = createNoticeQueue()
 
   const addView = (view: PluginView): Disposable => {
     views.value = [...views.value, view]
@@ -62,6 +84,7 @@ export function createShellHost() {
       emitVaultChange: () => {},
       emitFileSelect: () => {},
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
+      notices: createPluginNotices(notices, pluginId),
     }
     contexts.set(pluginId, context)
     return context
@@ -71,6 +94,7 @@ export function createShellHost() {
     for (const one of contexts.get(pluginId)?.subscriptions.splice(0) ?? []) one.dispose()
     contexts.delete(pluginId)
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
+    notices.clear(pluginId)
   }
 
   const host: LoaderHost = {
@@ -90,5 +114,5 @@ export function createShellHost() {
     return mainViews[0] ?? null
   })
 
-  return { host, front }
+  return { host, front, notices }
 }

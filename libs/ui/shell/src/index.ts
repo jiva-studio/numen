@@ -21,6 +21,8 @@ export type { TallyUnit, Tone } from './features/notices'
 
 export { Notices } from './features/notices'
 export { createNotice } from './features/notices'
+/** One list of notices for a window, given by the parts it hosts. */
+export { createNoticeQueue, type NoticeQueue } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
 export { StatusBar } from './features/status-bar'

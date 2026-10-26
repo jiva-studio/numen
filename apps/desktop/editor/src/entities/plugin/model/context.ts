@@ -215,12 +215,14 @@ export function createPluginContext(
   const add = (d: Disposable) => trackSubscription(subscriptions, d)
   const target: PermissionTarget = { pluginId, manifest }
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
+  const notices = host.getNotices?.(pluginId)
 
   return {
     pluginId,
     target: EDITOR_TARGET,
     subscriptions,
     ...guardServices(host, requirePerm, add),
+    ...(notices ? { notices } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

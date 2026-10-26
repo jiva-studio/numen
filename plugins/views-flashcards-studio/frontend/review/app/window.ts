@@ -14,8 +14,8 @@ import { useScreens } from '../shared/screens'
 import { getDeckName, useReviewCounter, type VaultCardsDue } from '../entities/vault'
 import { useReviewDays, useVaultPresets } from '../pages/decks'
 import { useReviewSession } from '../pages/session'
-import type { Tone } from '@numen/ui'
-import { useNotices } from './notices'
+import type { NoticeHost, NoticeTone as Tone } from '@numen/plugin-sdk'
+import { createNotices } from './notices'
 import { usePanels } from './usePanels'
 import { createWindowKeys, type WindowScreen } from './windowKeys'
 import { useWindowStreams } from './useWindowStreams'
@@ -156,9 +156,9 @@ function useWindowScreens(deps: {
   })
 }
 
-function useWindowState() {
+function useWindowState(host: NoticeHost) {
   const vault = ref('')
-  const notices = useNotices()
+  const notices = createNotices(host)
   const counter = useReviewCounter({ cards, reportError: notices.reportError })
   const state = useReviewSession({ cards, reportError: notices.reportError })
   const reviewDaysInstance = useReviewDays({
@@ -174,7 +174,6 @@ function useWindowState() {
 
 function createWindowView(deps: {
   on: Ref<WindowScreen>
-  notices: ReturnType<typeof useNotices>
   actions: ReturnType<typeof createWindowActions>
   counter: ReturnType<typeof useReviewCounter>
   reviewDays: ReturnType<typeof useReviewDays>
@@ -185,8 +184,6 @@ function createWindowView(deps: {
 }) {
   return {
     on: deps.on,
-    notices: deps.notices.notices,
-    dismissNotice: deps.notices.dismissNotice,
     vaults: {
       list: deps.counter.vaults,
       isCounting: deps.counter.isCounting,
@@ -225,7 +222,7 @@ function useWindowListeners(deps: {
   panels: ReturnType<typeof usePanels>
   actions: ReturnType<typeof createWindowActions>
   page: Readonly<Ref<InstanceType<typeof NotesPanel> | null>>
-  notices: ReturnType<typeof useNotices>
+  notices: ReturnType<typeof createNotices>
   unreachable: Ref<string>
 }) {
   const { onKeyDown } = createWindowKeyboard({
@@ -254,8 +251,9 @@ function useWindowListeners(deps: {
   })
 }
 
-export const useWindow = () => {
-  const { vault, notices, counter, state, reviewDays, schedules, unreachable } = useWindowState()
+export const useWindow = (host: NoticeHost) => {
+  const { vault, notices, counter, state, reviewDays, schedules, unreachable } =
+    useWindowState(host)
   const panels = usePanels({
     card: () => state.card.value,
     unreachable: () => unreachable.value,
@@ -306,7 +304,6 @@ export const useWindow = () => {
 
   return createWindowView({
     on,
-    notices,
     actions,
     counter,
     reviewDays,

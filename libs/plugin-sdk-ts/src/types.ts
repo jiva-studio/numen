@@ -1,5 +1,6 @@
 import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
+import type { NoticeHost } from './notices'
 import type { TextInput, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
@@ -227,6 +228,8 @@ export interface PluginContext {
   readonly buffers?: BufferHost
   // The text versions of the vault the window shows, where the host offers them.
   readonly texts?: VaultTexts
+  // The notices of the window, where the host offers them.
+  readonly notices?: NoticeHost
 }
 
 // PluginManifest describes the metadata in manifest.json.

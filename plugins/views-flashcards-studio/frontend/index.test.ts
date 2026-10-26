@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import {
   createMockBufferHost,
+  createMockNoticeHost,
   createMockPluginContext,
   createMockTabWindow,
 } from '@numen/plugin-sdk/testing'
@@ -31,12 +32,21 @@ const createContext = () => {
 
 describe('flashcards-studio plugin', () => {
   it('draws only the review in the window of the flashcards target', () => {
-    const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+    const ctx = createMockPluginContext({
+      target: 'desktop.flashcards',
+      notices: createMockNoticeHost(),
+    })
     activate(ctx)
 
     const kinds = ctx.getRegisteredTabKinds()
     expect(kinds.map((one) => one.kind)).toStrictEqual([REVIEW])
     expect(kinds[0]?.placement).toStrictEqual({ pane: 'main', order: 0 })
+  })
+
+  it('refuses to draw the review in a window that offers no notices', () => {
+    const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+
+    expect(() => activate(ctx)).toThrow(/notices/)
   })
 
   it('registers the deck, stencil and preset tab kinds upon activation', () => {

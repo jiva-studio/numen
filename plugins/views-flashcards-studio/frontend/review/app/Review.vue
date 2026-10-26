@@ -6,7 +6,7 @@
  * What the window is made of is `window.ts`. What is here is what a person
  * sees of it, and the binding between the two.
  */
-import { Notices } from '@numen/ui'
+import type { NoticeHost } from '@numen/plugin-sdk'
 
 import { Vaults } from '../pages/vaults'
 import { Decks } from '../pages/decks'
@@ -14,8 +14,14 @@ import { AgentPanel, NotesPanel, Session, SessionSummary } from '../pages/sessio
 import { VERSION } from '../shared/version'
 import { useWindow } from './window'
 
+/* --------------------------------- Props ---------------------------------- */
+const props = defineProps<{
+  /** The corner of the window the notices are drawn in. */
+  notices: NoticeHost
+}>()
+
 /* --------------------------------- State ---------------------------------- */
-const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
+const { on, vaults, decks, session } = useWindow(props.notices)
 </script>
 
 <template>
@@ -71,9 +77,6 @@ const { on, notices, dismissNotice, vaults, decks, session } = useWindow()
       </template>
     </Session>
   </main>
-
-  <!-- What the window has to say, in the corner every window says it in. -->
-  <Notices :notices="notices" @dismiss="dismissNotice" />
 </template>
 
 <style scoped>

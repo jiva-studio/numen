@@ -24,8 +24,13 @@ export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
   if (context.target === FLASHCARDS_TARGET) {
+    if (!context.notices)
+      throw new Error('the review needs the notices of the window it is drawn in')
+    const notices = context.notices
     context.registerTabKind(
-      createReviewKind((capability, element, view) => context.mountView(capability, element, view)),
+      createReviewKind(notices, (capability, element, view) =>
+        context.mountView(capability, element, view),
+      ),
     )
     return
   }

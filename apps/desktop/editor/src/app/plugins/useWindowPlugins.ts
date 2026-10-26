@@ -5,7 +5,9 @@ import { registerNoteIcon } from '@/entities/note'
 import { DEFAULT_PLUGIN_ENABLED, createPluginLoader, type PluginLoader } from '@numen/plugin-host'
 import type { fileOpeners, useWindowTabs } from '@/entities/tab'
 import type { useTabLinks } from '@/features/tab-linking'
+import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
+import { createPluginNotices } from './pluginNotices'
 
 export interface PluginSupportDeps {
   readonly windowTabs: ReturnType<typeof useWindowTabs>
@@ -19,6 +21,8 @@ export interface PluginSupportDeps {
   readonly writeNote?: (path: string, body: string) => Promise<void>
   /** The window and the notes a plugin's tabs are given, filled once the window has made them. */
   readonly services?: PluginServices
+  /** The window's one list of notices, which each plugin shows its own in. */
+  readonly notices?: NoticeQueue
 }
 
 function createPluginSettingsAccessor(settingsHolder: {
@@ -45,6 +49,13 @@ function createPluginSettingsAccessor(settingsHolder: {
     )
 
   return { getSetting, onSettingChange }
+}
+
+function createNoticeAccess(queue: NoticeQueue) {
+  return {
+    getNotices: (pluginId: string) => createPluginNotices(queue, pluginId),
+    clearNotices: (pluginId: string) => queue.clear(pluginId),
+  }
 }
 
 export function createPluginSupport(deps: PluginSupportDeps) {
@@ -89,6 +100,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
     getBuffers: () => deps.services?.buffers,
+    ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
   const pluginLoader = createPluginLoader({
     host: pluginHost,

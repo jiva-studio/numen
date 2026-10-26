@@ -196,6 +196,34 @@ function verifyPluginsReachNoShell() {
   }
 }
 
+/** What draws the notices of a window, which the window owns and a plugin reaches through `ctx.notices`. */
+const NOTICE_NAMES = new Set(["Notices", "Notice", "createNotice", "createNoticeQueue", "NoticeQueue"]);
+
+/** Every import of a package by a plugin that names one of NOTICE_NAMES. */
+function findPluginNoticeImports() {
+  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const pattern = /^\s*import\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/gm;
+  const found = [];
+  for (const file of (listed.stdout || "").split("\n")) {
+    if (!/\.(ts|vue)$/.test(file)) continue;
+    const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+    for (const match of text.matchAll(pattern)) {
+      if (match[3].startsWith(".")) continue;
+      const names = match[1].split(",").map((one) => one.trim().replace(/^type\s+/, "").split(/\s+as\s+/)[0]);
+      for (const name of names.filter((one) => NOTICE_NAMES.has(one))) found.push(`${file}: ${name} from ${match[3]}`);
+    }
+  }
+  return found;
+}
+
+/** A plugin shows notices through `ctx.notices`; the window draws them, in one list. */
+function verifyPluginsDrawNoNotices() {
+  const found = findPluginNoticeImports();
+  if (found.length > 0) {
+    throw new Error("A plugin draws notices itself instead of showing them through ctx.notices:\n" + found.join("\n"));
+  }
+}
+
 /** The packages of the core that belong to a plugin, as directories, and as files of `container`. */
 const CORE_MOVED_DIRS = [
   "usecase/document",
@@ -830,6 +858,13 @@ const VERIFIERS = [
     module: "plugins",
     name: "Plugins Reach No Shell or Plugin Host (no @numen/shell, no @numen/plugin-host, no path into either)",
     run: verifyPluginsReachNoShell,
+  },
+  {
+    id: "plugins-draw-no-notices",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Draw No Notices (no Notices, Notice, createNotice or notice queue imported; ctx.notices instead)",
+    run: verifyPluginsDrawNoNotices,
   },
   {
     id: "apps-plugins-boundary",

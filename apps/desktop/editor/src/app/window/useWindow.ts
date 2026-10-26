@@ -8,6 +8,7 @@ import { createNoteLookup } from '../tabs/editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
 import { createMessageLog } from '@/shared/notices/messages'
+import { createNoticeQueue } from '@numen/shell'
 import { WORDS as words } from '@/shared/words'
 import { useTabLinks } from '@/features/tab-linking'
 import { createTabSync } from '../tabs/useTabSync'
@@ -146,12 +147,14 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const tabOpeners = fileOpeners({ ...core, reconcileTab: windowTabs.reconcileTab })
   const runs = runSupport()
   const pluginServices: PluginServices = {}
+  const pluginNotices = createNoticeQueue()
   const { pluginHost, pluginLoader } = createPluginSupport({
     windowTabs,
     tabLinks,
     tabOpeners,
     settingsHolder,
     services: pluginServices,
+    notices: pluginNotices,
     reportError: (pluginId, error) =>
       log.getWriter(`plugin:${pluginId}`)(
         `Plugin ${pluginId} failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -169,6 +172,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginHost,
     pluginLoader,
     pluginServices,
+    pluginNotices,
   }
 }
 
@@ -318,7 +322,13 @@ export const useWindow = () => {
   const { editing, window, settings } = services
   watchPluginSettings(settings, base.pluginLoader)
 
-  const notices = useWindowNotices({ log: base.log, window, settings, vaults: getVaults(ctx) })
+  const notices = useWindowNotices({
+    log: base.log,
+    plugins: base.pluginNotices,
+    window,
+    settings,
+    vaults: getVaults(ctx),
+  })
   const statusBar = useWindowStatusBar({
     tasks: window.tasks,
     resolveAction: (task) => resolveTaskAction(task, settings.rest.plugins?.value ?? []),
@@ -364,6 +374,10 @@ export const useWindow = () => {
     vaultList: getVaults(ctx).vaultList,
     log: base.log,
     notices,
+    dismissNotice: (id: string) => {
+      base.log.dismiss(id)
+      base.pluginNotices.dismiss(id)
+    },
     statusBar,
     palette: getCommands(ctx).palette,
     destinations: getKinds(ctx).destinations,

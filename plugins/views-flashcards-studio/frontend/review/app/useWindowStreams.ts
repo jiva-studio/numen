@@ -5,7 +5,7 @@
 import { onMounted, onUnmounted } from 'vue'
 import type { Ref } from 'vue'
 import { createFollower } from '@numen/ui'
-import type { Task } from '@numen/ui'
+import type { NoticeTask } from '@numen/plugin-sdk'
 
 import { WINDOW, agentService, cards, windowService } from '../shared/clients'
 import { WORDS } from '../pages/session'
@@ -15,7 +15,7 @@ export interface WindowStreamsDeps {
   /** What went wrong, in the person's own words. */
   readonly reportError: (why: unknown) => void
   /** What is being done behind the window, as cards to draw. */
-  readonly setTasks: (tasks: readonly Task[]) => void
+  readonly setTasks: (tasks: readonly NoticeTask[]) => void
   /** A key pressed anywhere in the window. */
   readonly onKeyDown: (press: KeyboardEvent) => void
   /** Everything the window shows, counted again. */

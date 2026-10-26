@@ -19,7 +19,7 @@ const listPlugins = async (): Promise<readonly string[]> =>
   (await pluginService.getPlugins({})).plugins.map((one) => one.id)
 
 export function useShell(deps: ShellDeps = {}) {
-  const { host, front } = createShellHost()
+  const { host, front, notices } = createShellHost()
   const loader = createPluginLoader({
     host,
     ...(deps.fetch ? { fetch: deps.fetch } : {}),
@@ -48,5 +48,5 @@ export function useShell(deps: ShellDeps = {}) {
 
   const style = computed(() => (front.value ? getPluginStyle(front.value.pluginId) : undefined))
 
-  return { front, style, failures, isLoading }
+  return { front, style, failures, isLoading, notices }
 }

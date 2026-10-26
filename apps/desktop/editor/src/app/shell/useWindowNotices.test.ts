@@ -3,11 +3,13 @@
  */
 import { ref } from 'vue'
 import { describe, expect, it } from 'vitest'
+import { createNoticeQueue, type NoticeQueue } from '@numen/shell'
 import { useWindowNotices } from './useWindowNotices'
 
-const notices = (windowLost: string, settingsLost: string) =>
+const getCorner = (windowLost: string, settingsLost: string, plugins = createNoticeQueue()) =>
   useWindowNotices({
     log: { messages: ref([]) } as never,
+    plugins,
     window: {
       unwatched: ref(''),
       error: ref(''),
@@ -17,7 +19,10 @@ const notices = (windowLost: string, settingsLost: string) =>
     } as never,
     settings: { appearance: { lost: ref(settingsLost) } } as never,
     vaults: { coverage: () => ({ chunks: 0, embedded: 0, isEmbedding: false }) } as never,
-  }).value.filter((one) => one.id === 'lost')
+  }).value
+
+const notices = (windowLost: string, settingsLost: string) =>
+  getCorner(windowLost, settingsLost).filter((one) => one.id === 'lost')
 
 describe('the lost notice', () => {
   it('names what the window lost', () => {
@@ -34,5 +39,17 @@ describe('the lost notice', () => {
 
   it('is absent when nothing was lost', () => {
     expect(notices('', '')).toEqual([])
+  })
+})
+
+describe('what the plugins show', () => {
+  it('follows the notices of the window', () => {
+    const plugins: NoticeQueue = createNoticeQueue()
+    plugins.show('md.numen.cards', 'Saved.', 'plain')
+
+    expect(getCorner('the vault', '', plugins).map((one) => one.text)).toEqual([
+      'the vault',
+      'Saved.',
+    ])
   })
 })

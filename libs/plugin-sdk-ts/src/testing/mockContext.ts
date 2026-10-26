@@ -71,6 +71,7 @@ export function createMockPluginContext(
     ...(initialValues?.agent ? { agent: initialValues.agent } : {}),
     ...(initialValues?.buffers ? { buffers: initialValues.buffers } : {}),
     ...(initialValues?.texts ? { texts: initialValues.texts } : {}),
+    ...(initialValues?.notices ? { notices: initialValues.notices } : {}),
     ...(initialValues?.closeTab ? { closeTab: initialValues.closeTab } : {}),
 
     registerReader(registration: ReaderRegistration): Disposable {

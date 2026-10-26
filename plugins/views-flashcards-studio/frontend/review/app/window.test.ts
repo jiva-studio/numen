@@ -11,6 +11,7 @@
 import { mount } from '@vue/test-utils'
 import { defineComponent, h, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { Code, ConnectError } from '@connectrpc/connect'
 
 const wire = vi.hoisted(() => {
@@ -172,6 +173,9 @@ const { useWindow } = await import('./window')
 
 type Window = ReturnType<typeof useWindow>
 
+/** The corner the window last opened says its notices in. */
+let notices = createMockNoticeHost()
+
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
 /**
@@ -199,11 +203,12 @@ const Page = defineComponent({
 
 /** The window made, in a page, with the counts on the screen. */
 const openWindow = async ({ isPageDrawn = true } = {}) => {
+  notices = createMockNoticeHost()
   let target: Window | null = null
   const page = mount(
     defineComponent({
       setup() {
-        target = useWindow()
+        target = useWindow(notices)
         return () => (isPageDrawn ? h(Page, { ref: 'page' }) : null)
       },
     }),
@@ -368,9 +373,9 @@ describe('a deck written underneath the window', () => {
 describe('a session sat down to', () => {
   it('says once what it could not act on', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 2 }
-    const sessionWindow = await openSession()
+    await openSession()
 
-    const response = sessionWindow.notices.value
+    const response = notices.getShown()
     expect(response).toHaveLength(2)
     expect(response.every((one) => one.tone === 'caution')).toBe(true)
     expect(response[0]!.text).toContain('Suffixes')
@@ -379,9 +384,9 @@ describe('a session sat down to', () => {
 
   it('names every deck it could not act on, in one line', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md', 'decks/Prefixes.md'], skipped: 0 }
-    const sessionWindow = await openSession()
+    await openSession()
 
-    expect(sessionWindow.notices.value.map((one) => one.text)).toEqual([
+    expect(notices.getShown().map((one) => one.text)).toEqual([
       'Not asked from Suffixes, Prefixes: the deck could not be written.',
     ])
   })
@@ -390,7 +395,7 @@ describe('a session sat down to', () => {
     const sessionWindow = await openSession()
 
     expect(sessionWindow.on.value).toBe('session')
-    expect(sessionWindow.notices.value).toHaveLength(0)
+    expect(notices.getShown()).toHaveLength(0)
   })
 
   it('reviews all preset decks and reports errors', async () => {
@@ -403,7 +408,7 @@ describe('a session sat down to', () => {
 
     expect(sessionWindow.on.value).toBe('session')
     expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
-    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['caution'])
+    expect(notices.getShown().map((one) => one.tone)).toEqual(['caution'])
   })
 
   it('stays on the decks when a preset’s session cannot be opened', async () => {
@@ -415,7 +420,7 @@ describe('a session sat down to', () => {
     await sessionWindow.decks.startPreset('presets/Daily.md')
 
     expect(sessionWindow.on.value).toBe('decks')
-    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['alarm'])
+    expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('ends the conversation with the card it was about', async () => {
@@ -449,7 +454,7 @@ describe('a session sat down to', () => {
     const sessionWindow = await openSession()
 
     expect(sessionWindow.on.value).toBe('decks')
-    expect(sessionWindow.notices.value.map((one) => one.tone)).toEqual(['alarm'])
+    expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('reads the notes of the vault it is on', async () => {
@@ -466,7 +471,7 @@ describe('a session sat down to', () => {
     sessionWindow.session.toggleAgent()
 
     expect(sessionWindow.session.agentPanel.open.value).toBe(true)
-    expect(sessionWindow.notices.value).toHaveLength(0)
+    expect(notices.getShown()).toHaveLength(0)
   })
 
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
@@ -475,9 +480,7 @@ describe('a session sat down to', () => {
     sessionWindow.session.toggleAgent()
 
     expect(sessionWindow.session.agentPanel.open.value).toBe(false)
-    expect(sessionWindow.notices.value).toMatchObject([
-      { text: 'no model is set up', tone: 'caution' },
-    ])
+    expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', tone: 'caution' }])
   })
 })
 

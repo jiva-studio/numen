@@ -40,6 +40,7 @@ const {
   vaultList,
   log,
   notices,
+  dismissNotice,
   statusBar,
   palette,
   destinations,
@@ -91,7 +92,7 @@ function onShowTab(id: string) {
 }
 
 function onDismissNotice(id: string) {
-  log.dismiss(id)
+  dismissNotice(id)
 }
 
 function onTabContextMenu(tabId: string, position: { x: number; y: number }) {

@@ -22,6 +22,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no `plugins/shared`; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.
    - `plugins-reach-no-app`: no plugin reaches `apps/` by a relative path, an alias or a Go import.
    - `plugins-reach-no-shell`: no plugin names `@numen/shell` or `@numen/plugin-host`, or reaches `libs/ui/shell` or `libs/plugin-host-ts` by a relative path; a plugin takes components from `@numen/ui` and is loaded by the host, never loads itself.
+   - `plugins-draw-no-notices`: no plugin imports `Notices`, `Notice`, `createNotice`, `createNoticeQueue` or `NoticeQueue` from a package; a plugin shows notices through `ctx.notices` and the window draws them in one list.
    - `apps-plugins-boundary`: an application compiles nothing from `plugins/`, and a plugin nothing from `apps/`.
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
 3. **Applications (`apps`)**:

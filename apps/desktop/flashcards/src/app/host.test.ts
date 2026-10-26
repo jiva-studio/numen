@@ -84,4 +84,30 @@ describe('createShellHost', () => {
 
     expect(panel.textContent).toBe('')
   })
+
+  it("draws what a plugin shows and the work it does in the window's one list", () => {
+    const { host, notices } = createShellHost()
+    const context = host.createContext('md.numen.example')
+
+    context.notices?.show('Could not save the deck.', 'alarm')
+    context.notices?.show('Saved.')
+    context.notices?.setTasks([{ id: 'index', label: 'Reading the vault', done: 2, total: 5 }])
+
+    expect(notices.notices.value.map((one) => [one.text, one.tone])).toEqual([
+      ['Reading the vault', undefined],
+      ['Could not save the deck.', 'alarm'],
+      ['Saved.', 'plain'],
+    ])
+    expect(notices.notices.value[0]).toMatchObject({ done: 2, total: 5, isWorking: true })
+  })
+
+  it('takes away what a plugin showed once it is disposed', () => {
+    const { host, notices } = createShellHost()
+    host.createContext('md.numen.example').notices?.show('Saved.')
+    host.createContext('md.numen.other').notices?.show('Drawn.')
+
+    host.disposePlugin('md.numen.example')
+
+    expect(notices.notices.value.map((one) => one.text)).toEqual(['Drawn.'])
+  })
 })

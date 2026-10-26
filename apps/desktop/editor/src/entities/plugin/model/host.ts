@@ -97,6 +97,7 @@ function cleanupProviderItems(items: Map<string, { pluginId: string }>, pluginId
 
 function disposePluginEntry(pluginId: string, registry: HostRegistry, deps?: PluginHostDeps): void {
   deps?.closeTabsForPlugin?.(pluginId)
+  deps?.clearNotices?.(pluginId)
   clearSubscriptions(registry.contexts.get(pluginId))
   registry.contexts.delete(pluginId)
   registry.manifests.delete(pluginId)
@@ -317,13 +318,17 @@ function createHostContextBridge(
 /** The host services a plugin context is given, as the window has made them. */
 function createServiceBridge(
   deps: PluginHostDeps,
-): Pick<PluginContextHost, 'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent' | 'getBuffers'> {
+): Pick<
+  PluginContextHost,
+  'getWorkspace' | 'getNotes' | 'getFiles' | 'getAgent' | 'getBuffers' | 'getNotices'
+> {
   return {
     getWorkspace: () => deps.getWorkspace?.(),
     getNotes: () => deps.getNotes?.(),
     getFiles: () => deps.getFiles?.(),
     getAgent: () => deps.getAgent?.(),
     getBuffers: () => deps.getBuffers?.(),
+    getNotices: (pluginId) => deps.getNotices?.(pluginId),
   }
 }
 

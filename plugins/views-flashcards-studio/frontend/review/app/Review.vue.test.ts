@@ -8,6 +8,7 @@
 import { mount } from '@vue/test-utils'
 import type { VueWrapper } from '@vue/test-utils'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 
 const { counted, started, waits } = vi.hoisted(() => ({
   /**
@@ -77,7 +78,10 @@ const { Decks } = await import('../pages/decks')
 
 /** The window drawn, with the vaults counted and on the screen. */
 const mountWindow = async () => {
-  const window = mount(Review, { attachTo: document.body })
+  const window = mount(Review, {
+    attachTo: document.body,
+    props: { notices: createMockNoticeHost() },
+  })
   windows.push(window)
   await settle()
   await settle()
