@@ -88,8 +88,9 @@ func (h *fileHandler) ListFiles(
 // so that a client holding a path opens what stands there in the editor made
 // for it.
 //
-// The kind is read off the vault and the type off the index, so a path nothing
-// has scanned is answered with the source that stands there. A window standing
+// The kind is read off the vault and the type off the index, or off the note
+// where nothing has scanned it yet, so a file a plugin has just written opens
+// in the editor made for it. A window standing
 // on nothing holds no source, and a path with nothing at it is left out.
 func (h *fileHandler) ListFileKinds(
 	ctx context.Context, r *connect.Request[v1.ListFileKindsRequest],

@@ -36,3 +36,24 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 		t.Errorf("the index was asked %v, want one question about the one note", index.requested)
 	}
 }
+
+func TestANoteTheIndexDoesNotHoldYetIsAnsweredWithTheTypeItsFileNames(t *testing.T) {
+	v := testsupport.NewVault(t, map[string]string{
+		"presets/gentle.md": "---\ntype: preset\n---\n# Gentle\n",
+		"plain.md":          "# plain\n",
+	})
+	index := &typed{types: map[string]domain.NoteType{}}
+
+	listing, err := file.NewGetFileKinds(vaultreader.Readers{}, index).Execute(
+		t.Context(), v, []string{"presets/gentle.md", "plain.md"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if listing.Types["presets/gentle.md"] != "preset" {
+		t.Errorf("the new preset is %q, want preset", listing.Types["presets/gentle.md"])
+	}
+	if listing.Types["plain.md"] != domain.TypeNote {
+		t.Errorf("the plain note is %q, want %q", listing.Types["plain.md"], domain.TypeNote)
+	}
+}
