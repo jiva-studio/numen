@@ -207,15 +207,13 @@ func (r *Recogniser) makeBlock(t recogniseTarget, found []read.RecResult) (Block
 	}, true
 }
 
+// cropRegion copies the region, widened by the margin, into an image whose bounds start at the origin:
+// the line detector reports its boxes from the origin, and the recogniser crops them out of the image
+// by its own bounds. The corner is the position of the copy on the page.
 func cropRegion(page image.Image, rect image.Rectangle, margin int) (image.Image, image.Point) {
 	wider := rect.Inset(-margin).Intersect(page.Bounds())
 	if wider.Empty() {
 		return nil, image.Point{}
-	}
-	if sub, ok := page.(interface {
-		SubImage(image.Rectangle) image.Image
-	}); ok {
-		return sub.SubImage(wider), wider.Min
 	}
 	out := image.NewRGBA(image.Rect(0, 0, wider.Dx(), wider.Dy()))
 	draw.Draw(out, out.Bounds(), page, wider.Min, draw.Src)

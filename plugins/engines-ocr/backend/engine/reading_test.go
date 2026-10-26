@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"image"
+	"image/color"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -191,8 +192,11 @@ func partsOf(rects ...image.Rectangle) func(image.Image) ([]Region, error) {
 	}
 }
 
-func TestCropRegionWithSubImage(t *testing.T) {
+// A region of a page that can be cut into sub-images is copied to an image that starts at the origin,
+// which is where the line detector reports its boxes from.
+func TestCropRegionStartsAtTheOrigin(t *testing.T) {
 	page := image.NewRGBA(image.Rect(0, 0, 600, 800))
+	page.Set(45, 55, color.RGBA{R: 255, A: 255})
 	rect := image.Rect(50, 60, 200, 300)
 	margin := 10
 
@@ -200,12 +204,14 @@ func TestCropRegionWithSubImage(t *testing.T) {
 	if crop == nil {
 		t.Fatal("crop returned nil")
 	}
-	wantRect := image.Rect(40, 50, 210, 310)
-	if crop.Bounds() != wantRect {
-		t.Errorf("crop bounds = %v, want %v", crop.Bounds(), wantRect)
+	if want := image.Rect(0, 0, 170, 260); crop.Bounds() != want {
+		t.Errorf("crop bounds = %v, want %v", crop.Bounds(), want)
 	}
-	if corner != wantRect.Min {
-		t.Errorf("corner = %v, want %v", corner, wantRect.Min)
+	if corner != image.Pt(40, 50) {
+		t.Errorf("corner = %v, want (40, 50)", corner)
+	}
+	if r, _, _, _ := crop.At(5, 5).RGBA(); r == 0 {
+		t.Error("the pixel of the page at (45, 55) is not at (5, 5) of the crop")
 	}
 }
 
