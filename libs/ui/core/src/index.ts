@@ -24,10 +24,8 @@ export { SegmentedControl } from './shared/ui/segmented'
 export { Select } from './shared/ui/select'
 export type { SelectChoice } from './shared/ui/select'
 
-export { WelcomePage } from './features/welcome'
-/** The letter a vault on that screen is opened by, and what a keystroke opens. */
-export { getVaultForKey, isTyping } from './features/welcome'
-export type { VaultRow, WelcomeAction } from './features/welcome'
+/** Whether a key was pressed into something being written in. */
+export { isTyping } from './shared/lib/dom/typing'
 
 export { KeyCap, keyChord } from './shared/ui/key-cap'
 export type { PaletteIcon, PaletteKeys } from './shared/ui/key-cap'
@@ -86,4 +84,3 @@ export { useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'
-
