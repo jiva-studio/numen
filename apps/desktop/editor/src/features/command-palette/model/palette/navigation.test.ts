@@ -18,7 +18,6 @@ const on: CommandTarget = {
   title: 'Llama',
   file: 'Llama.md',
   source: null,
-  made: {},
   vault: { id: 'v1', name: 'Zoo' },
   isReady: true,
 }

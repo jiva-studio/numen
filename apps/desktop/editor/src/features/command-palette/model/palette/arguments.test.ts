@@ -16,7 +16,6 @@ const front: CommandTarget = {
   title: 'Ontology',
   file: 'physics/Ontology.md',
   source: null,
-  made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
 }

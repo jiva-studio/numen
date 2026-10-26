@@ -8,7 +8,7 @@
  * draws anything.
  */
 import { formatErrorMessage } from '@numen/wire'
-import type { CommandDeps, CommandHandler, RunContext, Voice } from './deps'
+import type { CommandDeps, CommandHandler } from './deps'
 import type { CommandInvocation } from '../../types'
 import type { AnswerWords } from '../../words'
 import { joinAll, formatNames } from '../../lib/voice/voice'
@@ -23,7 +23,6 @@ import {
   flushTab,
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
-import type { Outcome, ArtifactState } from '@/entities/artifact'
 import { SETTINGS } from '@/entities/tab'
 
 /** What each command evaluates to. A command with no entry here does nothing. */
@@ -38,16 +37,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   title: (invocation, on, words) => renameNoteCommand(invocation, on, words),
   remove: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: false, words }),
   destroy: (invocation, on, words) => removeFiles(invocation, on, { isPermanent: true, words }),
-  deleteText: async (invocation, on, words) => {
-    if (await on.runs.deleteTranscript(invocation.file)) return
-    on.runSupport.cannotRun(invocation.id)
-    on.writeMessage(words.unrunnable, 'error')
-  },
-  deleteCopy: async (invocation, on, words) => {
-    if (await on.runs.deleteCopy(invocation.file)) return
-    on.runSupport.cannotRun(invocation.id)
-    on.writeMessage(words.unrunnable, 'error')
-  },
   copy: (invocation, on) => on.copyPath(invocation.path),
   settings: (_, on) => on.navigator.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
@@ -93,13 +82,6 @@ export const commands = {
 
 export const registerCommand = commands.registerCommand
 
-type ArtifactAction = (runs: CommandDeps['runs'], file: string) => Promise<Outcome>
-
-const DYNAMIC_ARTIFACTS: Record<string, ArtifactAction> = {
-  downloadText: (runs, file) => runs.fetchArtifact(file),
-  downloadCopy: (runs, file) => runs.createArtifact(file, 'copy'),
-}
-
 const DYNAMIC_CREATORS: Record<
   string,
   (makers: CommandDeps['makers'], name: string) => Promise<unknown>
@@ -116,14 +98,6 @@ const DYNAMIC_CREATORS: Record<
 }
 
 function resolveDynamicHandler(id: string): CommandHandler | undefined {
-  const artifactOp = DYNAMIC_ARTIFACTS[id]
-  if (artifactOp) {
-    return async (invocation, on, words) => {
-      const outcome = await artifactOp(on.runs, invocation.file)
-      reportOutcome(invocation, outcome, { on, words })
-    }
-  }
-
   const creatorOp = DYNAMIC_CREATORS[id]
   if (creatorOp) {
     return async (invocation, on) => {
@@ -174,35 +148,6 @@ export async function runInvocation(
   } catch (error) {
     on.writeMessage(formatErrorMessage(error), 'error')
   }
-}
-
-const ERROR_STATES: readonly ArtifactState[] = ['none', 'stopped', 'empty', 'failed']
-
-/**
- * the work behind the window. A build that cannot make it at all is told once
- * and offers it nowhere after that.
- */
-interface ReportOutcomeDeps {
-  readonly on: RunContext & Voice
-  readonly words: AnswerWords
-}
-
-const reportOutcome = (
-  invocation: CommandInvocation,
-  outcome: Outcome,
-  deps: ReportOutcomeDeps,
-): void => {
-  const { on, words } = deps
-  if (!outcome.able) {
-    on.runSupport.cannotRun(invocation.id)
-    return on.writeMessage(words.unrunnable, 'error')
-  }
-  const why =
-    invocation.id === 'downloadText'
-      ? words.fetched[outcome.made]
-      : (words.made[outcome.of] ?? words.fetched)[outcome.made]
-  const message = outcome.error ? `${why} ${outcome.error}` : why
-  on.writeMessage(message, ERROR_STATES.includes(outcome.made) ? 'error' : 'report')
 }
 
 const getInvocationPaths = (invocation: CommandInvocation): readonly string[] => [

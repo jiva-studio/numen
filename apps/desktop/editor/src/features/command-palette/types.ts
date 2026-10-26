@@ -7,7 +7,6 @@
  */
 import type { Component } from 'vue'
 import type { PaletteKeys } from '@numen/ui'
-import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
@@ -81,12 +80,6 @@ export interface CommandTarget {
    */
   readonly file: string
   readonly source: Source | null
-  /**
-   * What that file carries, and what has become of each. A file nothing has
-   * been asked about carries nothing here, and a command over it is offered on
-   * its kind alone.
-   */
-  readonly made: ArtifactStates
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef

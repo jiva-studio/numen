@@ -1,43 +1,16 @@
 /**
  * When a command is offered, and when it is not.
  *
- * A command is offered over what is in front of the person: a note, a vault, a
- * file of a kind, a file nothing has been made from yet. Each answer here is
- * one such question, and the table in `table.ts` names which it asks.
+ * A command is offered over what is in front of the person: a note or a vault.
+ * Each answer here is one such question, and the table in `table.ts` names
+ * which it asks.
  */
-import type { ArtifactState, ArtifactStates } from '@/entities/artifact'
-import type { Source } from '@/entities/file'
-import type { CommandTarget, RunSupport } from '../../types'
+import type { CommandTarget } from '../../types'
 
 /** A command over the note in front, which there has to be one of. */
 export const isNoteOpen = (target: CommandTarget): boolean => target.isReady && target.path !== ''
 
 /** A command over the vault in front, which there has to be one of. */
 export const isVaultOpen = (target: CommandTarget): boolean => target.vault.id !== ''
-
-/**
- * A run over the file in front, which the vault has to hold that kind of and
- * this build has to be able to do.
- */
-export const createSourceOffer =
-  (run: string, source: Source) =>
-  (target: CommandTarget, runs: RunSupport): boolean =>
-    target.isReady && target.file !== '' && target.source === source && runs.canRun(run)
-
-/**
- * A run over the file in front that is offered on what has been made from it,
- * and not on its kind alone: a book already read is not offered to be read. A
- * file nothing has been asked about carries nothing, and is offered.
- */
-export const createArtifactOffer =
-  (run: string, source: Source, isOffered: (states: ArtifactStates) => boolean) =>
-  (target: CommandTarget, runs: RunSupport): boolean =>
-    createSourceOffer(run, source)(target, runs) && (isEmpty(target.made) || isOffered(target.made))
-
-const isEmpty = (states: ArtifactStates): boolean => Object.keys(states).length === 0
-
-/** An artifact a run over the file would begin. */
-export const isArtifactMissing = (state: ArtifactState | undefined): boolean =>
-  state === undefined || state === 'none' || state === 'stopped'
 
 export const isAlwaysOffered = (): boolean => true

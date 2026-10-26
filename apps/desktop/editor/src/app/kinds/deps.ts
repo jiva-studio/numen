@@ -1,5 +1,5 @@
 import type { ContextMenuRegistration, ContextMenuTarget, MenuEntry } from '@numen/plugin-sdk'
-import type { CommandDeps, CommandTarget, runSupport, SearchDeps } from '@/features/command-palette'
+import type { CommandDeps, CommandTarget, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
 import type { NotePort } from '@/app/ports/notes'
@@ -8,7 +8,6 @@ import type { TabLinksState } from '@/features/tab-linking'
 import type { createTabSync } from '../tabs/useTabSync'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useSettings } from '../window/useSettings'
-import type { useVaults } from '../window/useVaults'
 import type { useWindowDisplay } from '../window/useWindowDisplay'
 
 export interface WindowKindsDeps {
@@ -16,10 +15,8 @@ export interface WindowKindsDeps {
   log: MessageLog
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
-  runs: ReturnType<typeof runSupport>
   editing: ReturnType<typeof createNoteEditors>
   settings: ReturnType<typeof useSettings>
-  vaults: ReturnType<typeof useVaults>
   window: ReturnType<typeof useWindowDisplay>
   getTarget: () => CommandTarget
   runCommand: (id: string, target: CommandTarget) => void

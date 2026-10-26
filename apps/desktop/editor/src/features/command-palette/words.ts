@@ -8,8 +8,6 @@
  */
 // Stryker disable StringLiteral: interface copy
 import type { PaletteKeys } from '@numen/ui'
-import { FETCHED, useArtifactRegistry } from '@/entities/artifact'
-import type { Artifact, ArtifactState } from '@/entities/artifact'
 import { VAULT_ERRORS } from '@/entities/vault'
 import type { VaultErrorCode } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
@@ -18,10 +16,6 @@ import type { EmptyWords } from './model/search/search'
 
 export const ANSWER_WORDS: AnswerWords = {
   ...WORDS,
-  get made() {
-    return useArtifactRegistry().getArtifactWords()
-  },
-  fetched: FETCHED,
   vaultErrors: VAULT_ERRORS,
 }
 
@@ -43,10 +37,6 @@ export interface AnswerWords {
   readonly stale: string
   /** A name at the destination is taken, and the file stayed where it was. */
   readonly occupied: string
-  readonly unrunnable: string
-  readonly made: Record<Artifact, Record<ArtifactState, string>>
-  /** What a run over the address a note points at came to. */
-  readonly fetched: Record<ArtifactState, string>
 }
 
 /** The words the step that asks for the name typed back is drawn in. */
@@ -79,21 +69,6 @@ export interface Words extends EmptyWords {
   readonly remove: string
   readonly destroy: string
   readonly copy: string
-  /** The run a person asks for over the recording in front. */
-  /** The transcript of the recording in front, put right by a proofreader. */
-  /** What is at the address a link note points at, fetched again. */
-  readonly downloadText: string
-  /** What a url points at, fetched onto this disk. */
-  readonly downloadCopy: string
-  /** The transcript of the recording in front, taken away, and the two answers. */
-  readonly deleteText: string
-  readonly keepsTranscript: string
-  readonly deletes: string
-  readonly deleted: string
-  /** The copy fetched for the url in front, taken off this disk, and its answers. */
-  readonly deleteCopy: string
-  readonly keepsCopy: string
-  readonly deletedCopy: string
   readonly newNote: string
   /** The note that points at a web address, made from the address. */
   readonly importUrl: string
@@ -198,12 +173,6 @@ export interface Words extends EmptyWords {
 
 /** What the menu on a row of the files tree offers besides the commands over a note. */
 export const PATH_WORDS = {
-  /** The runs a recording can be put through. */
-  /** The runs over a url: the text at its address, and a copy of what is there. */
-  downloadText: 'Download the text again',
-  downloadCopy: 'Download a copy',
-  deleteText: 'Delete the text',
-  deleteCopy: 'Delete the copy',
   remove: 'Remove',
   relation: 'Relation',
 }

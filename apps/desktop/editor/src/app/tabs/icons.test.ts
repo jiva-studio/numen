@@ -13,9 +13,6 @@ import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
 import type { Source } from '@/entities/file'
 
-/** A window that has been told nothing, which can do every run. */
-const canRunAnything = () => true
-
 /** An item of a menu, and the items it opens. */
 type Item = { readonly id: string; readonly children?: readonly Item[] | undefined }
 
@@ -26,10 +23,10 @@ const flatten = (items: readonly Item[]): readonly Item[] =>
 const onARow = flatten(
   [
     ...(['note', 'book', 'recording', 'url', 'other'] as Source[]).flatMap((source) => [
-      createPathCommands({ source, isFolder: false }, false, canRunAnything),
-      createPathCommands({ source, isFolder: true }, false, canRunAnything),
+      createPathCommands({ source, isFolder: false }, false),
+      createPathCommands({ source, isFolder: true }, false),
     ]),
-    createPathCommands({ source: 'note', isFolder: false }, true, canRunAnything),
+    createPathCommands({ source: 'note', isFolder: false }, true),
   ].flat(),
 )
 

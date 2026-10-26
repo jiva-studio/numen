@@ -17,7 +17,6 @@ const target = {
   tab: 't',
   kind: null,
   vault: { id: 'v', name: 'V' },
-  made: {},
   isReady: true,
   path: 'target',
   title: '',
@@ -138,15 +137,11 @@ describe('dynamic creator registration', () => {
 describe('the window’s commands over a row', () => {
   const createCommands = () => {
     const runCommand = vi.fn()
-    const canRun = vi.fn((run: string) => run !== 'transcribe')
-    const makes = { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) }
     const host = createPathCommandHost({
-      runs: { canRun },
-      vaults: { makes },
       getTarget: () => target as never,
       runCommand,
     })
-    return { host, runCommand, canRun }
+    return { host, runCommand }
   }
   const entry = (path: string, kind: 'note' | 'recording' | 'book' = 'note', isFolder = false) =>
     ({ path, name: path, isFolder, kind, type: 'note' }) as const
@@ -172,7 +167,7 @@ describe('the window’s commands over a row', () => {
     expect(pdf.map((one) => one.id)).toStrictEqual(['copy', 'remove'])
   })
 
-  it('run over the first path, with the rest as the others and what the vault made', () => {
+  it('run over the first path, with the rest as the others', () => {
     const { host, runCommand } = createCommands()
 
     host.runPathCommand('remove', {
@@ -189,13 +184,11 @@ describe('the window’s commands over a row', () => {
       title: 'Lecture',
       file: 'Lecture.mp3',
       source: 'recording',
-      made: { transcript: 'done' },
       others: ['b.md'],
     })
     expect(runCommand.mock.calls.at(1)?.at(1)).toMatchObject({
       path: '',
       file: '',
-      made: {},
       others: [],
     })
   })

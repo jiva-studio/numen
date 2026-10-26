@@ -18,10 +18,6 @@ export const requests = {
   pressed: [] as string[],
   /** The vaults the window asked to be shown, in the order it asked. */
   opened: [] as string[],
-  /** Every file the window asked what it carries, in the order it asked. */
-  carried: [] as string[],
-  /** Each run the window asked for, and each transcript it dropped. */
-  ran: [] as string[],
   /** How often a folder was asked for, which is a vault being added. */
   chose: 0,
   /** What the window said currently open, the last of it last. */
@@ -39,8 +35,6 @@ export const forgetRequests = () => {
   requests.measured = 0
   requests.pressed = []
   requests.opened = []
-  requests.carried = []
-  requests.ran = []
   requests.chose = 0
   requests.openTabs = []
 }

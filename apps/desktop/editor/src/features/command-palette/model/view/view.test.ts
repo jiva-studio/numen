@@ -19,7 +19,6 @@ const front = (overrides: Partial<CommandTarget> = {}): CommandTarget => ({
   title: 'Ontology',
   file: '',
   source: null,
-  made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
   ...overrides,

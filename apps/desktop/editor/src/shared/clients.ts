@@ -5,18 +5,13 @@
 import { createClient } from '@connectrpc/connect'
 import {
   AgentService,
-  ArtifactService,
-  BookService,
   CommandService,
-  DocumentService,
   FileService,
   NoteService,
-  RecordingService,
   SearchService,
   SettingsService,
   TextVersionService,
   ThemeService,
-  TranscriptService,
   VaultService,
   VaultsService,
   WindowService,
@@ -48,23 +43,8 @@ export const settingsService = createClient(SettingsService, transport)
 /** This window itself, which is the editor and not the one cards are run in. */
 export const windowService = createClient(WindowService, transport)
 
-/** What a model has made from the files of the vault. */
-export const artifacts = createClient(ArtifactService, transport)
-
-/** The recordings the vault holds, by their address and their duration. */
-export const recordings = createClient(RecordingService, transport)
-
-/** The cues a recording is written down in. */
-export const transcripts = createClient(TranscriptService, transport)
-
 /** The themes the window is drawn in, and how large. */
 export const theme = createClient(ThemeService, transport)
-
-/** What a book holds: its spine, its parts, and the markup of one document. */
-export const books = createClient(BookService, transport)
-
-/** The pages a document is laid out in. */
-export const documents = createClient(DocumentService, transport)
 
 /** The menu a file's text versions make, and running one of its entries. */
 export const textVersions = createClient(TextVersionService, transport)

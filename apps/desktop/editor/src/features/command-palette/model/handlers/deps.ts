@@ -5,7 +5,6 @@
  * through these, `vaults.ts` what it does to the vaults, and `../lib/voice.ts`
  * how what it has to say becomes one line.
  */
-import type { ArtifactRunner } from '@/entities/artifact'
 import type { Movement } from '@/entities/file'
 import type { NoteRelation, RemoveResult, RenameResult } from '@/entities/note'
 import type { Vaults } from '@/entities/vault'
@@ -117,9 +116,8 @@ export interface TabContext {
   readonly navigator: WindowNavigator
 }
 
-/** The runs a command asks for, and the ones this build has said it cannot do. */
+/** The runs this build has said it cannot do. */
 export interface RunContext {
-  readonly runs: ArtifactRunner
   /** The runs this window has been told this build cannot do. */
   readonly runSupport: RunSupport
 }

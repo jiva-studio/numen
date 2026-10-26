@@ -3,7 +3,7 @@
  * the window answers about the tab in front.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick, ref } from 'vue'
+import { ref } from 'vue'
 import { useWindow } from './useWindow'
 
 /** What each part was made with, and what it was made as. */
@@ -140,10 +140,8 @@ beforeEach(() => {
     },
     vaults: {
       reload: vi.fn(),
-      makes: ref(new Map<string, unknown>()),
       activeVault: ref({ id: 'vault' }),
       shown: ref({ id: 'vault' }),
-      loadArtifactStates: vi.fn(),
       coverage: {},
       setVaultName: vi.fn(),
       loadVaults: vi.fn(),
@@ -171,7 +169,6 @@ beforeEach(() => {
       dragged: ref([]),
       services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },
       made: {},
-      recorded: {},
       destinations: {},
     },
   }
@@ -188,7 +185,6 @@ describe('what the window answers about the tab in front', () => {
       title: '',
       file: '',
       source: null,
-      made: {},
       vault: { id: 'vault' },
       isReady: true,
     })
@@ -197,7 +193,6 @@ describe('what the window answers about the tab in front', () => {
   it('is what the kind of the tab says it remains over', () => {
     const kind = createKind({ file: 'a.md', path: 'a', title: 'A', source: 'src' })
     front.value = { id: 't1', kind, state: { target: 1 } }
-    h.f.vaults.makes.value = new Map([['a.md', { flashcards: true }]])
     const window = useWindow()
 
     expect(window.getTarget()).toEqual({
@@ -207,18 +202,10 @@ describe('what the window answers about the tab in front', () => {
       title: 'A',
       file: 'a.md',
       source: 'src',
-      made: { flashcards: true },
       vault: { id: 'vault' },
       isReady: true,
     })
     expect(kind.getTarget).toHaveBeenCalledWith({ target: 1 })
-  })
-
-  it('has made nothing from a file that nothing was made from', () => {
-    front.value = { id: 't1', kind: createKind({ file: 'a.md' }), state: {} }
-    const window = useWindow()
-
-    expect(window.getTarget().made).toEqual({})
   })
 
   it('remains over nothing where the tab in front is not retained', () => {
@@ -234,22 +221,6 @@ describe('what the window answers about the tab in front', () => {
     const window = useWindow()
 
     expect(window.getTarget().isReady).toBe(false)
-  })
-})
-
-describe('the states of the file in front', () => {
-  it('are loaded for no file as the window is made', () => {
-    useWindow()
-
-    expect(h.f.vaults.loadArtifactStates).toHaveBeenCalledWith('')
-  })
-
-  it('are loaded again for the file that evaluates to the front', async () => {
-    useWindow()
-    front.value = { id: 't1', kind: createKind({ file: 'a.md' }), state: {} }
-    await nextTick()
-
-    expect(h.f.vaults.loadArtifactStates).toHaveBeenLastCalledWith('a.md')
   })
 })
 

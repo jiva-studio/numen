@@ -1,6 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createCommandDeps, type CommandDepsOptions } from './commandDeps'
-import { running } from '@/entities/artifact'
 import { useSettings } from '../window/useSettings'
 import { WORDS } from '@/shared/words'
 
@@ -30,7 +29,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     } as never,
     setVaultName: record('setVaultName'),
     reload: record('reload'),
-    loadArtifactStates: vi.fn(),
     reached: {} as never,
     appearance: { chooseItem: vi.fn() },
     oneName: { choose: vi.fn() },
@@ -40,8 +38,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
         record('writeSettings')(content)
       },
     },
-    recorded: {},
-    pointed: {},
     travel: vi.fn(),
     leavePath: vi.fn(),
     getOpeningNote: () => '',
@@ -103,80 +99,6 @@ describe('the commands reach the window', () => {
       ['move', 'Llama.md', 'zoo/Llama.md'],
       ['createFolder', 'zoo'],
     ])
-  })
-
-  it('asks the runner what a file carries', async () => {
-    const states = { transcript: 'done' }
-    const request = vi.spyOn(running, 'getArtifactStates').mockResolvedValue(states as never)
-    const { deps } = createOptions()
-
-    expect(await deps.runs.getArtifactStates('talk.mp3')).toBe(states)
-    expect(request).toHaveBeenCalledWith('talk.mp3')
-  })
-
-  it.each(['createArtifact', 'fetchArtifact'] as const)(
-    'answers %s with what the runner answered, and reads what the file carries again',
-    async (run) => {
-      const outcome = { able: true }
-      const request = vi.spyOn(running, run).mockResolvedValue(outcome as never)
-      const loaded: string[] = []
-      const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
-
-      const ask = deps.runs[run] as (...args: unknown[]) => Promise<unknown>
-      expect(await ask('talk.mp3', 'transcript')).toBe(outcome)
-      expect(request).toHaveBeenCalledWith(
-        ...(run === 'createArtifact' ? ['talk.mp3', 'transcript'] : ['talk.mp3']),
-      )
-      expect(loaded).toStrictEqual(['talk.mp3'])
-    },
-  )
-
-  it('notifies the recording and the address tabs a transcript went, and reads the file again', async () => {
-    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
-    const notifiedCalls: string[] = []
-    const loaded: string[] = []
-    const { deps } = createOptions({
-      loadArtifactStates: async (path) => void loaded.push(path),
-      recorded: {
-        onDelete: (path) => void notifiedCalls.push(`recorded deleted ${path}`),
-        reloadTranscript: (path) => void notifiedCalls.push(`recorded reloaded ${path}`),
-      },
-      pointed: { reloadTranscript: (path) => void notifiedCalls.push(`pointed reloaded ${path}`) },
-    })
-
-    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
-    expect(notifiedCalls).toStrictEqual(['recorded deleted talk.mp3', 'pointed reloaded talk.mp3'])
-    expect(loaded).toStrictEqual(['talk.mp3'])
-  })
-
-  it('notifies no tab of a transcript that did not go', async () => {
-    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(false)
-    const notifiedCalls: string[] = []
-    const { deps } = createOptions({
-      recorded: { onDelete: (path) => void notifiedCalls.push(path) },
-      pointed: { onDelete: (path) => void notifiedCalls.push(path) },
-    })
-
-    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(false)
-    expect(notifiedCalls).toStrictEqual([])
-  })
-
-  it('deletes a transcript where no tab is listening', async () => {
-    vi.spyOn(running, 'deleteTranscript').mockResolvedValue(true)
-    const { deps } = createOptions()
-
-    expect(await deps.runs.deleteTranscript('talk.mp3')).toBe(true)
-  })
-
-  it('reads the file again only after a copy went', async () => {
-    const deleted = vi.spyOn(running, 'deleteCopy').mockResolvedValue(true)
-    const loaded: string[] = []
-    const { deps } = createOptions({ loadArtifactStates: async (path) => void loaded.push(path) })
-
-    expect(await deps.runs.deleteCopy('video.md')).toBe(true)
-    deleted.mockResolvedValue(false)
-    expect(await deps.runs.deleteCopy('other.md')).toBe(false)
-    expect(loaded).toStrictEqual(['video.md'])
   })
 
   it('makes every file as the makers make it', async () => {

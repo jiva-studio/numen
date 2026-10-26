@@ -38,8 +38,6 @@ interface MockVaultState {
   applied: string
   mode: 'system' | 'light' | 'dark'
   sizes: { interfaceScale: number; textScale: number }
-  carries: Record<string, Record<string, string>>
-  carrying: boolean
 }
 
 /** What the mocked vault answers about itself, set before the window draws. */
@@ -66,13 +64,6 @@ export const mockVaultState: MockVaultState = {
   applied: 'preset:numen',
   mode: 'system',
   sizes: { interfaceScale: 1, textScale: 1 },
-  /**
-   * What the file at each path carries, as the application answers it. A path
-   * it says nothing about carries nothing.
-   */
-  carries: {},
-  /** Whether the application answers what a file carries at all. */
-  carrying: true,
 }
 
 export const mockVaultList = {
@@ -224,8 +215,6 @@ export const forgetAnswers = () => {
   mockVaultState.applied = 'preset:numen'
   mockVaultState.mode = 'system'
   mockVaultState.sizes = { interfaceScale: 1, textScale: 1 }
-  mockVaultState.carries = {}
-  mockVaultState.carrying = true
   maker.forget()
   outside.forget()
   mockVaultList.vaults = [

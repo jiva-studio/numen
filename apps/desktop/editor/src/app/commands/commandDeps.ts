@@ -1,5 +1,4 @@
 import { vaults, type VaultCore } from '../vault'
-import { running } from '@/entities/artifact'
 import type {
   CommandDeps,
   Notes,
@@ -20,7 +19,6 @@ export interface CommandDepsOptions {
   made: ReturnType<typeof createFileCreators>
   setVaultName: (vault: VaultRef) => void
   reload: () => void
-  loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
@@ -32,8 +30,6 @@ export interface CommandDepsOptions {
     writeSettings: (content: readonly SettingEdit[]) => Promise<void> | void
     getModelsAt?: (targetPath: readonly string[]) => readonly import('@/entities/settings').Model[]
   }
-  recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   /** A note put in front of the person, where the plugin that shows notes puts it. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */
@@ -51,37 +47,6 @@ function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
     remove: (path, isPermanent) => core.remove(path, isPermanent),
     move: (from, to) => core.move(from, to),
     createFolder: (path) => core.createFolder(path),
-  }
-}
-
-function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
-  const { loadArtifactStates, recorded, pointed } = options
-  return {
-    getArtifactStates: (path) => running.getArtifactStates(path),
-    createArtifact: async (path, of) => {
-      const outcome = await running.createArtifact(path, of)
-      void loadArtifactStates(path)
-      return outcome
-    },
-    fetchArtifact: async (path) => {
-      const outcome = await running.fetchArtifact(path)
-      void loadArtifactStates(path)
-      return outcome
-    },
-    deleteTranscript: async (path) => {
-      const able = await running.deleteTranscript(path)
-      if (able) {
-        ;(recorded.onDelete ?? recorded.reloadTranscript)?.(path)
-        ;(pointed?.onDelete ?? pointed?.reloadTranscript)?.(path)
-      }
-      void loadArtifactStates(path)
-      return able
-    },
-    deleteCopy: async (path) => {
-      const able = await running.deleteCopy(path)
-      if (able) void loadArtifactStates(path)
-      return able
-    },
   }
 }
 
@@ -187,7 +152,6 @@ export function createCommandDeps(options: CommandDepsOptions): CommandDeps {
 
   return {
     files: createFileCommands(core, making),
-    runs: createRunCommands(options),
     makers: made,
     vaults: {
       ...vaults,

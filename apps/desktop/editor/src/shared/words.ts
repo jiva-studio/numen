@@ -50,19 +50,6 @@ export const WORDS = {
   deleteVersionOf: (plugin: string) => `Delete the text ${plugin} made`,
   /** What the corner says once a plugin was asked to make or delete a text. */
   textAsked: (plugin: string) => `${plugin} is working on it`,
-  /** The text at the address a url points at, fetched again. */
-  downloadText: 'Download the text again',
-  /** What a url points at, fetched onto this disk. */
-  downloadCopy: 'Download a copy',
-  /** The transcript of the recording in front, taken away, and the two answers. */
-  deleteText: 'Delete the transcript of this recording',
-  keepsTranscript: 'Keep the transcript',
-  deletes: 'Delete',
-  deleted: 'The words go, and the recording can be transcribed again',
-  /** The copy fetched for the url in front, taken off this disk, and its answers. */
-  deleteCopy: 'Delete the copy on this disk',
-  keepsCopy: 'Keep the copy',
-  deletedCopy: 'The copy goes, and it can be fetched from the address again',
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable:
     'That action is unavailable: the plugin providing it is disabled or failed to start.',
@@ -191,7 +178,6 @@ export const WORDS = {
   stale: 'that note changed on disk while this was asked, so nothing was written',
   /** A file landed where something of its name is filed, and stayed where it was. */
   occupied: 'something of that name is filed there, so the file stayed where it was',
-  unrunnable: 'this installation of numen cannot do that at all',
   /** What the action panel of the palette is called. */
   actions: 'Actions',
   findAction: 'Search actions',

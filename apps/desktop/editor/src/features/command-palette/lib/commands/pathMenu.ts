@@ -3,12 +3,10 @@
  * files tree offers them.
  *
  * A row standing for a note offers every command over a note that has a row of
- * its own in the palette; any other row offers what can be done to a file, and
- * the runs of its kind.
+ * its own in the palette; any other row offers what can be done to a file.
  */
 import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import type { MenuItem } from '@numen/ui'
-import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'
@@ -26,7 +24,6 @@ export type PathItem = MenuItem & {
 const GROUP = {
   open: 'open',
   file: 'file',
-  run: 'run',
   relation: 'relation',
   remove: 'remove',
 } as const
@@ -119,49 +116,14 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
   ]
 }
 
-/**
- * What a row standing for anything but a note offers, with the runs its kind
- * can be put through.
- */
-const getFileMenu = (...runs: readonly PathItem[]): readonly PathItem[] => [
-  ...getNoteCommand('copy', GROUP.file),
-  ...runs,
-  REMOVE,
-]
-
-const FILED = getFileMenu()
-
-/**
- * The runs a url can be put through. It carries two things — the text at its
- * address and a copy of what is there — and each is downloaded and deleted on its
- * own.
- */
-const DOWNLOAD_TEXT: PathItem = { id: 'downloadText', text: own.downloadText, group: GROUP.run }
-const DOWNLOAD_COPY: PathItem = { id: 'downloadCopy', text: own.downloadCopy, group: GROUP.run }
-const DELETE_TEXT: PathItem = { id: 'deleteText', text: own.deleteText, group: GROUP.run }
-const DELETE_COPY: PathItem = { id: 'deleteCopy', text: own.deleteCopy, group: GROUP.run }
-
-/**
- * What a url offers: everything a file offers, and the runs over what is at the
- * address. A build that cannot reach one offers none of them, which is how a
- */
-const urls = (canRun: RunGuard): readonly PathItem[] =>
-  getFileMenu(
-    ...(canRun(DOWNLOAD_TEXT.id) ? [DOWNLOAD_TEXT] : []),
-    ...(canRun(DOWNLOAD_COPY.id) ? [DOWNLOAD_COPY] : []),
-    ...(canRun(DELETE_TEXT.id) ? [DELETE_TEXT] : []),
-    ...(canRun(DELETE_COPY.id) ? [DELETE_COPY] : []),
-  )
+/** What a row standing for anything but a note offers. */
+const FILED: readonly PathItem[] = [...getNoteCommand('copy', GROUP.file), REMOVE]
 
 /** The row a menu was asked for on: what the vault holds there. */
 export interface MenuRow {
   readonly source: Source
   readonly isFolder: boolean
-  readonly made?: ArtifactStates | undefined
 }
-
-/** Whether the window the menu is drawn in can do a run at all. */
-export type RunGuard = (run: string) => boolean
 
 /**
  * The window's commands over a row, in the order they are drawn: removal over a
@@ -170,7 +132,6 @@ export type RunGuard = (run: string) => boolean
 export const createPathCommands = (
   on: MenuRow,
   hasSeveral: boolean,
-  canRun: RunGuard,
   contributions: readonly PathContribution[] = [],
 ): readonly PathItem[] => {
   if (hasSeveral) return [REMOVE]
@@ -187,6 +148,5 @@ export const createPathCommands = (
     return [...folderContributed, ...FILED]
   }
   if (on.source === 'note') return getNoteMenu(contributions)
-  if (on.source === 'url') return urls(canRun)
   return FILED
 }

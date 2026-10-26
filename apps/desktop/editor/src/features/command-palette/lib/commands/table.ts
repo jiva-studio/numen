@@ -1,7 +1,6 @@
 /**
  * Construction of the full list of commands offered by the application.
  */
-import { createArtifactCommands, createDeletionCommands } from '../file-commands/fileCommands'
 import { createNoteCommands } from '../note-commands/noteCommands'
 import { createVaultCommands } from '../vault-commands/vaultCommands'
 import {
@@ -25,8 +24,6 @@ export const createCommands = (
   agent: string = navigator.userAgent,
 ): readonly Command[] => [
   ...createNoteCommands(words, agent),
-  ...createArtifactCommands(words),
-  ...createDeletionCommands(words),
   ...createWindowCreationCommands(words, agent),
   ...createWindowNavigationCommands(words, agent),
   ...createWindowDisplayCommands(words),

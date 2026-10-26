@@ -54,7 +54,6 @@ export interface CommandsDepsOptions {
   made: ReturnType<typeof createFileCreators>
   setVaultName: (vault: VaultRef) => void
   reload: () => void
-  loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
@@ -67,8 +66,6 @@ export interface CommandsDepsOptions {
     getModelsAt?: (at: readonly string[]) => readonly import('@/entities/settings').Model[]
     plugins?: import('vue').Ref<readonly import('@/entities/settings').PluginInfo[]>
   }
-  recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   /** A note put in front of the person, where the plugin that shows notes puts it. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */

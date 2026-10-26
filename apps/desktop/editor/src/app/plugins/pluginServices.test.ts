@@ -33,8 +33,6 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
     writeMessage: vi.fn(),
     getMessageWriter: () => vi.fn(),
     today: () => '2026-09-04',
-    runs: { canRun: (run: string) => run !== 'transcribe' },
-    vaults: { makes: { value: new Map([['Lecture.mp3', { transcript: 'done' as const }]]) } },
     ...overrides,
   } satisfies WorkspaceHostDeps
   return { deps, failure, workspace: createWorkspaceHost(deps) }

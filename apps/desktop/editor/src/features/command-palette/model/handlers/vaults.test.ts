@@ -78,7 +78,6 @@ const target: CommandTarget = {
   title: 'Ontology',
   file: '',
   source: null,
-  made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
 }

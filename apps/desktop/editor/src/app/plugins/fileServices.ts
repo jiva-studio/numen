@@ -10,7 +10,6 @@ import type {
   VaultFiles,
   WorkspaceHost,
 } from '@numen/plugin-sdk'
-import type { ArtifactStates } from '@/entities/artifact'
 import { createFileCreators, type FileOpeners, type useWindowTabs } from '@/entities/tab'
 import type { CreateResult } from '@/entities/file'
 import {
@@ -20,7 +19,6 @@ import {
   runInvocation,
   type CommandDeps,
   type CommandTarget,
-  type RunSupport,
 } from '@/features/command-palette'
 import type { NoteCreator } from '@/entities/note'
 import { WORDS as words } from '@/shared/words'
@@ -125,8 +123,6 @@ export function createVaultFiles(deps: VaultFilesDeps): VaultFiles {
 
 /** What the window's commands over a row are offered and run with. */
 export interface PathCommandDeps {
-  readonly runs: Pick<RunSupport, 'canRun'>
-  readonly vaults: { readonly makes: { readonly value: ReadonlyMap<string, ArtifactStates> } }
   readonly getTarget: () => CommandTarget
   readonly runCommand: (id: string, target: CommandTarget) => void
   readonly getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
@@ -142,8 +138,6 @@ export function createPathCommandHost(
   deps: PathCommandDeps,
 ): Pick<WorkspaceHost, 'getPathCommands' | 'runPathCommand' | 'getCommandIcon' | 'getEntryIcon'> {
   const {
-    runs,
-    vaults,
     getTarget,
     runCommand,
     getContextMenuItems,
@@ -165,10 +159,8 @@ export function createPathCommandHost(
         {
           source: entry.kind,
           isFolder: entry.isFolder,
-          made: vaults.makes.value.get(entry.path),
         },
         isSeveral,
-        (id) => runs.canRun(id),
         contributions,
       )
     },
@@ -190,7 +182,6 @@ export function createPathCommandHost(
               title: name,
               file: path,
               source,
-              made: vaults.makes.value.get(path) ?? {},
               others: paths.slice(1),
             })
           }
@@ -203,7 +194,6 @@ export function createPathCommandHost(
         title: name,
         file: path,
         source,
-        made: vaults.makes.value.get(path) ?? {},
         others: paths.slice(1),
       })
     },

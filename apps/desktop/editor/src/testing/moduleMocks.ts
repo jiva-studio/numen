@@ -9,35 +9,6 @@ import { vi } from 'vitest'
 import { requests } from './requests'
 import { mockVaultState, pendingStream } from './answers'
 
-// The runs are answered here; what they are called is the window's own words,
-// and a test that reads one reads what the window would have shown.
-vi.mock('@/entities/artifact', async (original) => ({
-  ...(await original<typeof import('@/entities/artifact')>()),
-  running: {
-    getArtifactStates: async (path: string) => {
-      requests.carried.push(path)
-      if (!mockVaultState.carrying) throw new Error('what the file carries cannot be asked')
-      return mockVaultState.carries[path] ?? {}
-    },
-    createArtifact: async (path: string, of: string) => {
-      requests.ran.push(`${of} ${path}`)
-      return { able: true, of, made: 'queued', error: '' }
-    },
-    fetchArtifact: async (path: string) => {
-      requests.ran.push(`transcript ${path}`)
-      return { able: true, of: 'transcript' as const, made: 'queued' as const, error: '' }
-    },
-    deleteTranscript: async (path: string) => {
-      requests.ran.push(`drop ${path}`)
-      return true
-    },
-    deleteCopy: async (path: string) => {
-      requests.ran.push(`drop ${path}`)
-      return true
-    },
-  },
-}))
-
 vi.mock('@/app/plugins/agentPort', () => ({
   agentPort: { ask: pendingStream, finish: () => Promise.resolve() },
 }))

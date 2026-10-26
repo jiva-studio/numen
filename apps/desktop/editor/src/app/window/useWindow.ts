@@ -2,7 +2,6 @@
  * The window put together: the vault it reads, the kinds it declares, and the
  * few things one kind asks of another.
  */
-import { watch } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
@@ -35,11 +34,6 @@ import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOp
 import type { PluginServices } from '../plugins/pluginServices'
 import type { MessageWriter } from '@/shared/notices/messages'
 
-interface WindowKindsWithCommands extends ReturnType<typeof useWindowKinds> {
-  recorded?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-}
-
 interface WindowCommandsOptions {
   windowTabs: ReturnType<typeof useWindowTabs>
   getTarget: () => CommandTarget
@@ -48,7 +42,7 @@ interface WindowCommandsOptions {
   runs: ReturnType<typeof runSupport>
   vaultsModule: ReturnType<typeof useVaults>
   editing: ReturnType<typeof createNoteEditors>
-  kinds: WindowKindsWithCommands
+  kinds: ReturnType<typeof useWindowKinds>
   window: ReturnType<typeof useWindowDisplay>
   writeMessage: MessageWriter
   log: ReturnType<typeof createMessageLog>
@@ -73,14 +67,11 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     made: kinds.made,
     setVaultName: vaultsModule.setVaultName,
     reload: vaultsModule.reload,
-    loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
     appearance: settings.appearance,
     oneName: settings.oneName,
     nesting: settings.nesting,
     rest: settings.rest,
-    recorded: kinds.recorded ?? {},
-    pointed: kinds.pointed ?? {},
     travel: (path) => kinds.travel(path),
     leavePath: (from, to) => kinds.leavePath(from, to),
     getOpeningNote: () => window.opening.value,
@@ -185,7 +176,7 @@ type WindowCore = ReturnType<typeof initWindowCore>
 
 interface WindowContext {
   commands?: ReturnType<typeof useCommands>
-  kinds?: WindowKindsWithCommands
+  kinds?: ReturnType<typeof useWindowKinds>
   vaults?: ReturnType<typeof useVaults>
 }
 
@@ -265,12 +256,6 @@ function initWindowKindsAndCommands(
   const { editing, settings, window, tabSync } = services
   const getTarget = createTargetResolver(base.windowTabs, () => getVaults(ctx), window)
 
-  watch(
-    () => getTarget().file,
-    (file) => void getVaults(ctx).loadArtifactStates(file),
-    { immediate: true },
-  )
-
   const runCommand = (id: string, target: CommandTarget) => getCommands(ctx).runCommand(id, target)
 
   ctx.kinds = useWindowKinds({
@@ -278,10 +263,8 @@ function initWindowKindsAndCommands(
     log: base.log,
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
-    runs: base.runs,
     editing,
     settings,
-    vaults: getVaults(ctx),
     window,
     getTarget,
     runCommand,

@@ -44,8 +44,6 @@ export function createTargetResolver(
     const on = front && windowTabs.getTab(tab)?.kind.getTarget?.(front.state)
     return { tab, kind: front?.kind ?? null, on }
   }
-  const getMade = (file: string) => (file && getVaults().makes.value.get(file)) || {}
-
   return (): CommandTarget => {
     const { tab, kind, on } = getFront()
     const file = on?.file ?? ''
@@ -56,7 +54,6 @@ export function createTargetResolver(
       title: on?.title ?? '',
       file,
       source: on?.source ?? null,
-      made: getMade(file),
       vault: getVaults().activeVault.value,
       isReady: !window.failure.value,
     }

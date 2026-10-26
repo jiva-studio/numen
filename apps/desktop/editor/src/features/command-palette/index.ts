@@ -11,7 +11,7 @@ export {
 } from './lib/chords/chords'
 export { createCommands } from './lib/commands/table'
 export { createPathCommands } from './lib/commands/pathMenu'
-export type { MenuRow, PathItem, RunGuard } from './lib/commands/pathMenu'
+export type { MenuRow, PathItem } from './lib/commands/pathMenu'
 export { getNoteCommands } from './lib/commands/commands'
 export { createInvocation } from './lib/offers/invocation'
 export { createNotes } from './lib/notes/notes'

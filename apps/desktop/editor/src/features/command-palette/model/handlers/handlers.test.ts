@@ -5,7 +5,6 @@
  * the person.
  */
 import { describe, expect, it } from 'vitest'
-import { Code, ConnectError } from '@connectrpc/connect'
 import { createCommands } from '../../lib/commands/commands'
 import { runSupport } from '../palette/runSupport'
 import { createInvocation } from '../../lib/offers/invocation'
@@ -14,7 +13,6 @@ import type { VaultRef } from '../../types'
 import type { CommandDeps } from './deps'
 import type { CommandInvocation, CommandTarget, Store } from '../../types'
 import { commands, flushTab, registerCommand, runInvocation } from './handlers'
-import type { Artifact, ArtifactStates, Outcome, ArtifactState } from '@/entities/artifact'
 import { asFailure, asValue } from '@numen/wire'
 import type { Movement } from '@/entities/file'
 import type { RemovedNote, RemoveResult, RenamedNote, RenameResult } from '@/entities/note'
@@ -22,12 +20,6 @@ import type { Vault, VaultErrorCode, VaultResult } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import { WORDS } from '@/shared/words'
 import { ANSWER_WORDS as words } from '../../words'
-
-function getMadeWords(artifact: Artifact, state: ArtifactState): string {
-  const text = words.made[artifact]?.[state]
-  if (text === undefined) throw new Error(`no words for ${artifact} ${state}`)
-  return text
-}
 
 /** What is in front, which every invocation is carried out over. */
 const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
@@ -37,7 +29,6 @@ const front = (override: Partial<CommandTarget> = {}): CommandTarget => ({
   title: 'Ontology',
   file: '',
   source: null,
-  made: {},
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
   ...override,
@@ -59,13 +50,6 @@ const createRenameResult = (override: Partial<RenamedNote> = {}): RenameResult =
     moved: null,
     ...override,
   })
-
-const outcome = (of: Artifact, state: ArtifactState, error = ''): Outcome => ({
-  able: true,
-  of,
-  made: state,
-  error,
-})
 
 const createRemoveResult = (override: Partial<RemovedNote> = {}): RemoveResult =>
   asValue({
@@ -98,14 +82,6 @@ const window = (
     movement?: Movement
     /** What making a folder came back with. */
     folderError?: ErrorCode
-    /** What the file in front carries. */
-    carries?: ArtifactStates
-    /** How asking for an artifact of a file came out. */
-    outcome?: Outcome
-    /** What deleting the text came back with. */
-    deleteError?: string
-    /** Whether this build cannot delete the text at all. */
-    isUndeletable?: boolean
   } = {},
 ) => {
   const isDone: string[] = []
@@ -139,30 +115,6 @@ const window = (
       createFolder: async (path) => {
         isDone.push(`createFolder ${path}`)
         return answers.folderError ?? null
-      },
-    },
-    runs: {
-      getArtifactStates: async (path) => {
-        isDone.push(`carries ${path}`)
-        return answers.carries ?? {}
-      },
-      fetchArtifact: async (path) => {
-        isDone.push(`fetches ${path}`)
-        return answers.outcome ?? outcome('transcript', 'running')
-      },
-      createArtifact: async (path, of) => {
-        isDone.push(`makes ${of} ${path}`)
-        return answers.outcome ?? outcome(of, 'running')
-      },
-      deleteTranscript: async (path: string) => {
-        isDone.push(`deletes the text of ${path}`)
-        if (answers.deleteError)
-          throw new ConnectError(answers.deleteError, Code.FailedPrecondition)
-        return answers.isUndeletable !== true
-      },
-      deleteCopy: async (path: string) => {
-        isDone.push(`deletes the copy of ${path}`)
-        return answers.isUndeletable !== true
       },
     },
     makers: {
@@ -360,142 +312,6 @@ describe('a note made', () => {
     await carry(createInvocation('child', front(), ''), one.on)
 
     expect(one.actions).toStrictEqual([])
-  })
-})
-
-/**
- * that came off is one of these: only what did not is an error.
- */
-const REPORTED: readonly ArtifactState[] = ['queued', 'running', 'done']
-
-/** Everything an artifact can stand at, which the window has a sentence for. */
-const REACHED: readonly ArtifactState[] = [
-  'none',
-  'queued',
-  'running',
-  'stopped',
-  'done',
-  'empty',
-  'failed',
-]
-
-/** An artifact of the file in front asked for, as it came out. */
-const createArtifactRun = (state: ArtifactState, error = '') => {
-  const one = window({ outcome: outcome('copy', state, error) })
-  return { one, invocation: createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })) }
-}
-
-describe('an artifact requested for over a file', () => {
-  it('asks the application over that file', async () => {
-    const { one, invocation } = createArtifactRun('running')
-
-    await carry(invocation, one.on)
-
-    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
-  })
-
-  // happened.
-  it('says what it now remains at, in the window’s own words', async () => {
-    for (const createdItem of REACHED) {
-      const { one, invocation } = createArtifactRun(createdItem)
-
-      await carry(invocation, one.on)
-
-      expect(one.notices, createdItem).toStrictEqual([getMadeWords('copy', createdItem)])
-    }
-  })
-
-  // Only a run under way is a report. Everything else is an error: the person
-  // asked for work, and none is being done.
-  it('says a run under way as a report and the rest as errors', async () => {
-    for (const createdItem of REACHED) {
-      const { one, invocation } = createArtifactRun(createdItem)
-
-      await carry(invocation, one.on)
-
-      expect(one.tones, createdItem).toStrictEqual([
-        REPORTED.includes(createdItem) ? 'report' : 'error',
-      ])
-    }
-  })
-
-  // The person asked for this one by name, and a copy already made would
-  // otherwise look like a command that did nothing.
-  it('says a copy already made has been made', async () => {
-    const { one, invocation } = createArtifactRun('done')
-
-    await carry(invocation, one.on)
-
-    expect(one.notices).toStrictEqual([getMadeWords('copy', 'done')])
-  })
-
-  // A run that could not read the file wrote down what it got, and asking again
-  // gets the same until that record is taken away.
-  it('says what a run returned about a file it could not copy', async () => {
-    const reason = 'mp3: MPEG version 2.5 is not supported'
-    const { one, invocation } = createArtifactRun('failed', reason)
-
-    await carry(invocation, one.on)
-
-    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
-    expect(one.notices).toStrictEqual([`${getMadeWords('copy', 'failed')} ${reason}`])
-  })
-
-  // No two of them may say the same thing: a person reads the sentence and not
-  // the word behind it.
-  it('says something of its own for every artifact and every state', () => {
-    const texts = Object.values(words.made).flatMap((one) => Object.values(one))
-
-    expect(texts.filter((one) => one === '')).toStrictEqual([])
-    expect(new Set(texts).size).toBe(texts.length)
-  })
-
-  it('says this build cannot do it, and offers it nowhere after that', async () => {
-    const one = window({ outcome: { able: false } })
-
-    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.notices).toStrictEqual([words.unrunnable])
-    expect(one.runs.canRun('downloadCopy')).toBe(false)
-    expect(one.runs.canRun('deleteCopy')).toBe(true)
-  })
-
-  it('is returned only in the window it was requested in', async () => {
-    const one = window({ outcome: { able: false } })
-
-    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(window().runs.canRun('downloadCopy')).toBe(true)
-  })
-})
-
-describe('the transcript of a recording deleted', () => {
-  it('asks the application over the file the tab in front holds', async () => {
-    const one = window()
-
-    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.actions).toStrictEqual(['deletes the text of talks/Ants.mp3'])
-    expect(one.notices).toStrictEqual([])
-  })
-
-  it('says what the application rejected, in the words it sent', async () => {
-    const why = 'this recording is being listened to'
-    const one = window({ deleteError: why })
-
-    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.notices).toStrictEqual([why])
-    expect(one.tones).toStrictEqual(['error'])
-  })
-
-  it('says this build cannot do it, and offers it nowhere after that', async () => {
-    const one = window({ isUndeletable: true })
-
-    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.notices).toStrictEqual([words.unrunnable])
-    expect(one.runs.canRun('deleteText')).toBe(false)
   })
 })
 
@@ -1169,54 +985,6 @@ describe('an address made', () => {
     await carry(createInvocation('importUrl', front(), 'https://example.org'), one.on)
 
     expect(one.actions).toStrictEqual(['imports — https://example.org'])
-  })
-})
-
-describe('a copy or a text of a file requested for', () => {
-  it('asks the application for a copy over the file', async () => {
-    const one = window()
-
-    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.actions).toStrictEqual(['makes copy talks/Ants.mp3'])
-  })
-
-  it('says what fetching the address came to, in the words for an address', async () => {
-    const one = window({ outcome: outcome('transcript', 'done') })
-
-    await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)
-
-    expect(one.actions).toStrictEqual(['fetches https://example.org'])
-    expect(one.notices).toStrictEqual([words.fetched.done])
-    expect(one.tones).toStrictEqual(['report'])
-  })
-
-  it('says a run that came out wrong as an error, with what the run returned', async () => {
-    const one = window({ outcome: outcome('transcript', 'failed', 'no network') })
-
-    await carry(createInvocation('downloadText', front({ file: 'https://example.org' })), one.on)
-
-    expect(one.notices).toStrictEqual([`${words.fetched.failed} no network`])
-    expect(one.tones).toStrictEqual(['error'])
-  })
-
-  it('says as an error that this build cannot run it', async () => {
-    const one = window({ outcome: { able: false } })
-
-    await carry(createInvocation('downloadCopy', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.tones).toStrictEqual(['error'])
-  })
-
-  it('says as an error that this build cannot delete the text or the copy', async () => {
-    const one = window({ isUndeletable: true })
-
-    await carry(createInvocation('deleteText', front({ file: 'talks/Ants.mp3' })), one.on)
-    await carry(createInvocation('deleteCopy', front({ file: 'talks/Ants.mp3' })), one.on)
-
-    expect(one.notices).toStrictEqual([words.unrunnable, words.unrunnable])
-    expect(one.tones).toStrictEqual(['error', 'error'])
-    expect(one.runs.canRun('deleteCopy')).toBe(false)
   })
 })
 

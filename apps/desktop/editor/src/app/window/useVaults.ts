@@ -1,9 +1,7 @@
 /**
  * Vaults listing, active vault tracking, and coverage monitoring.
  */
-import { computed, ref, shallowRef, type Ref } from 'vue'
-import { running } from '@/entities/artifact'
-import type { ArtifactStates } from '@/entities/artifact'
+import { computed, ref, type Ref } from 'vue'
 import type { VaultList } from '@/entities/vault'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -61,20 +59,6 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
     isEmbedding: isEmbedding.value,
   })
 
-  const makes = shallowRef<ReadonlyMap<string, ArtifactStates>>(new Map())
-
-  const loadArtifactStates = async (path: string) => {
-    if (!path) return
-    try {
-      const target = await running.getArtifactStates(path)
-      makes.value = new Map(makes.value).set(path, target)
-    } catch {
-      // A file that cannot be asked about is one nothing is known of, and every
-      // command over it is offered as it was before anything could be listed.
-      makes.value = new Map(makes.value).set(path, {})
-    }
-  }
-
   return {
     reload,
     activeVault: displayedItems,
@@ -82,7 +66,5 @@ export function useVaults({ core, words, log, chunks, embedded, isEmbedding }: V
     vaultList: items,
     loadVaults,
     coverage,
-    makes,
-    loadArtifactStates,
   }
 }
