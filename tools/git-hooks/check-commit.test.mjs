@@ -10,7 +10,7 @@ import {
 
 const repoRoot = path.resolve(
   path.dirname(fileURLToPath(import.meta.url)),
-  '../../..'
+  '../..'
 )
 
 test('ALLOWED_TYPES contains standard conventional commit types', () => {
@@ -25,28 +25,26 @@ test('ALLOWED_TYPES contains standard conventional commit types', () => {
 test('getDynamicScopes discovers idiomatic plugin names and variants', () => {
   const scopes = getDynamicScopes(repoRoot)
 
-  // Discovered from engines.*
+  // Discovered from engines-*
   assert.ok(scopes.has('ocr'))
   assert.ok(scopes.has('transcription'))
   assert.ok(scopes.has('embeddings'))
-  assert.ok(scopes.has('engines.ocr'))
-  assert.ok(scopes.has('engines-ocr'))
   assert.ok(scopes.has('engine-ocr'))
 
-  // Discovered from readers.*
+  // Discovered from readers-*
   assert.ok(scopes.has('epub'))
   assert.ok(scopes.has('pdf'))
   assert.ok(scopes.has('reader-epub'))
   assert.ok(scopes.has('reader-pdf'))
 
-  // Discovered from agents.*
+  // Discovered from agents-*
   assert.ok(scopes.has('claude'))
   assert.ok(scopes.has('codex'))
   assert.ok(scopes.has('antigravity'))
   assert.ok(scopes.has('agent-claude'))
   assert.ok(scopes.has('agent-codex'))
 
-  // Discovered from views.*
+  // Discovered from views-*
   assert.ok(scopes.has('flashcards'))
   assert.ok(scopes.has('flashcards-studio'))
   assert.ok(scopes.has('plex'))

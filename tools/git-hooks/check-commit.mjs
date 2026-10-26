@@ -106,7 +106,7 @@ export function getDynamicScopes(repoRoot) {
         dynamic.add(name)
 
         if (isPlugin) {
-          const parts = name.split('.')
+          const parts = name.split('-')
           const prefix = parts[0]
           const singularPrefix = prefix.endsWith('s') ? prefix.slice(0, -1) : prefix
 
@@ -115,9 +115,7 @@ export function getDynamicScopes(repoRoot) {
 
           if (parts.length > 1) {
             const rest = parts.slice(1)
-            dynamic.add(rest.join('.'))
             dynamic.add(rest.join('-'))
-            dynamic.add(parts.join('-'))
             dynamic.add(`${singularPrefix}-${rest.join('-')}`)
 
             for (const part of rest) {
@@ -210,7 +208,7 @@ function main() {
 
   const content = fs.readFileSync(msgFile, 'utf8')
   const scriptDir = path.dirname(new URL(import.meta.url).pathname)
-  const repoRoot = path.resolve(scriptDir, '../../..')
+  const repoRoot = path.resolve(scriptDir, '../..')
 
   const result = validateCommitMessage(content, repoRoot)
   if (!result.ok) {
