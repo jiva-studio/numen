@@ -14,11 +14,12 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `core-imports-no-domain-proto`: no Go file of `libs/core` names a message, enum or service that `libs/protocol` generates from a domain proto (`transcript`, `ocr`, `article`, `artifact`, `cards`, `presets`, `flashcards`, `transcription`, `download`, `proofreading`). `recording.proto` and `embedding.proto` are the core's own contracts.
    - `notes-names-no-producer`: no Go file of `libs/notes` outside its tests holds the string literal of a producer (`asr`, `ocr`, `captions`, `article`, `copy`, `review-log`).
    - `ui-isolation`: `libs/ui/core/src` names no `@numen/protocol`, `@numen/wire` or `apps`, and `npm run lint` passes in `libs/ui/core`.
+   - `ui-holds-no-plugin-view`: `libs/ui/core/src` holds none of the directories of a view a plugin owns and `src/index.ts` exports none of its names (`views-agent-chat`: `screens/agent`, `features/thread`, `features/message-composer`; `Agent`, `Thread`, `MessageComposer`, `useConversation`, `Conversation`, `Turn`, `AgentModelOption`, `AgentPort`, `AgentStep`).
    - `shell-isolation`: the same for `libs/ui/shell/src`, and `npm run lint` passes in `libs/ui/shell`.
    - `plugin-host-isolation`: `libs/plugin-host-ts/src` imports only `vue` and `@numen/plugin-sdk` besides its own files (its tests also `vitest`, its `vite.ts` also `vite`), so the plugin loader knows nothing of `@numen/ui`, `@numen/shell`, the protocol, the wire or an application; and `npm run lint` passes in `libs/plugin-host-ts`.
 2. **Plugins (`plugins`)**:
    - `plugins-independence`: the `Plugin` tests of `libs/core/container`.
-   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no `plugins/shared`; no plugin imports `libs/core`; no plugin imports another.
+   - `plugins-leakage`: every `manifest.json` has an id, a name and a version; there is no `plugins/shared`; no plugin imports `libs/core`; no plugin imports another, by a Go import, by a relative TypeScript or Vue import that resolves into another plugin's directory, or by another plugin's package name.
    - `plugins-reach-no-app`: no plugin reaches `apps/` by a relative path, an alias or a Go import.
    - `plugins-reach-no-shell`: no plugin names `@numen/shell` or `@numen/plugin-host`, or reaches `libs/ui/shell` or `libs/plugin-host-ts` by a relative path; a plugin takes components from `@numen/ui` and is loaded by the host, never loads itself.
    - `apps-plugins-boundary`: an application compiles nothing from `plugins/`, and a plugin nothing from `apps/`.

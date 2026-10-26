@@ -75,6 +75,42 @@ function verifyPluginsStatic() {
       }
     }
   }
+
+  // 5. Verify no plugin frontend imports another plugin's files or package
+  const frontendLeaks = findCrossPluginImports(pluginNames);
+  if (frontendLeaks.length > 0) {
+    throw new Error("Cross-plugin import detected:\n" + frontendLeaks.join("\n"));
+  }
+}
+
+/**
+ * Every TypeScript or Vue import of a plugin that names another plugin: a relative path that
+ * resolves into the other plugin's directory, or the other plugin's package name.
+ */
+function findCrossPluginImports(pluginNames) {
+  const pluginsDir = path.join(MODULES_DIR, "plugins");
+  const packages = new Map();
+  for (const plugin of pluginNames) {
+    const manifest = path.join(pluginsDir, plugin, "package.json");
+    if (fs.existsSync(manifest)) packages.set(plugin, JSON.parse(fs.readFileSync(manifest, "utf8")).name);
+  }
+  const found = [];
+  for (const plugin of pluginNames) {
+    const listed = spawnSync("git", ["ls-files", "--", `plugins/${plugin}/*.ts`, `plugins/${plugin}/*.vue`], {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    });
+    for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
+      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+      for (const specifier of getImportSpecifiers(text)) {
+        const other = specifier.startsWith(".")
+          ? path.relative(pluginsDir, path.resolve(REPO_ROOT, path.dirname(file), specifier)).split(path.sep)[0]
+          : [...packages].find(([, name]) => specifier === name || specifier.startsWith(name + "/"))?.[0];
+        if (other && other !== plugin && pluginNames.includes(other)) found.push(`${file}: ${specifier}`);
+      }
+    }
+  }
+  return found;
 }
 
 /** The files that state the boundary between applications and plugins, and so name both sides. */
@@ -569,6 +605,48 @@ function verifyNotesNamesNoProducer() {
   }
 }
 
+/**
+ * The views plugins own, which `@numen/ui` neither holds nor exports: the directories they were
+ * moved out of `libs/ui/core/src` from, and the names `src/index.ts` exported them by.
+ */
+const PLUGIN_VIEWS = [
+  {
+    plugin: "views-agent-chat",
+    dirs: ["screens/agent", "features/thread", "features/message-composer"],
+    names: ["Agent", "Thread", "MessageComposer", "useConversation", "Conversation", "Turn", "AgentModelOption", "AgentPort", "AgentStep"],
+  },
+];
+
+/** The names `libs/ui/core/src/index.ts` exports in braces. */
+function getUiExports() {
+  const index = fs.readFileSync(path.join(MODULES_DIR, "libs/ui/core/src/index.ts"), "utf8");
+  return Array.from(index.matchAll(/^export\s+(?:type\s+)?\{([^}]*)\}/gm)).flatMap((match) =>
+    match[1]
+      .split(",")
+      .map((one) => one.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop())
+      .filter(Boolean),
+  );
+}
+
+/** `@numen/ui` holds and exports none of the views a plugin owns. */
+function verifyUiHoldsNoPluginView() {
+  const exported = new Set(getUiExports());
+  const found = [];
+  for (const { plugin, dirs, names } of PLUGIN_VIEWS) {
+    for (const dir of dirs) {
+      if (fs.existsSync(path.join(MODULES_DIR, "libs/ui/core/src", dir))) {
+        found.push(`libs/ui/core/src/${dir} belongs to ${plugin}`);
+      }
+    }
+    for (const name of names) {
+      if (exported.has(name)) found.push(`@numen/ui exports ${name}, which belongs to ${plugin}`);
+    }
+  }
+  if (found.length > 0) {
+    throw new Error("The UI library holds views plugins own:\n" + found.join("\n"));
+  }
+}
+
 function verifyUiDomainIsolation() {
   const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire)|apps)", "libs/ui/core/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
@@ -701,6 +779,13 @@ const VERIFIERS = [
     module: "ui",
     name: "UI Library Domain & Wire Isolation (0 domain, 0 protocol, 0 wire, 0 apps)",
     run: verifyUiDomainIsolation,
+  },
+  {
+    id: "ui-holds-no-plugin-view",
+    scope: "libs",
+    module: "ui",
+    name: "UI Library Holds No Plugin View (agent chat: Agent, thread, message composer)",
+    run: verifyUiHoldsNoPluginView,
   },
   {
     id: "shell-isolation",
