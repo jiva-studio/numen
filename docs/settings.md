@@ -286,27 +286,7 @@ A `with` naming a profile `profiles` does not carry is an error at startup. An i
 
 ## Reaching an address
 
-`importing` is how what a url points at is fetched. What is kept, and where, is [Importing an address](importing.md). Tool paths for `yt-dlp` and `ffmpeg` are configured on the Media Importer plugin.
-
-```json
-{
-  "importing": {
-    "captions": ["en"],
-    "automatic_captions": true,
-    "copy_max_size_mb": 500,
-    "copies_to_vault": false
-  }
-}
-```
-
-| | |
-| --- | --- |
-| `captions` | which languages published words are preferred in, best first. Empty defaults to the video's original audio language. |
-| `automatic_captions` | whether words a machine wrote count where a person published none. On. |
-| `copy_max_size_mb` | how large a copy of a video may be. A copy that runs past it stops there and nothing is kept. |
-| `copies_to_vault` | whether a copy is kept beside the url, under that file's own name, as a file of the person's own. Off, which keeps it in the application's folder, where losing it costs another fetch. |
-
-None of this is turned in the window. Every key here is a machine's answer rather than a person's taste, and a control for it would be a control for something set once, on the day the machine was set up.
+How a link's address is reached is the Media Importer plugin's settings, under `plugins.md.numen.tools.media.importer`: `yt_dlp` and `ffmpeg`, the paths of the programs (empty is the one on `PATH`); `captions`, the languages captions are taken in, best first, separated by commas; `automatic_captions`, whether captions a machine wrote count where a site publishes none (on); and `copy_max_size_mb`, how many megabytes a copy of a video may take (500, and 0 is no limit). What is kept, and where, is [Importing an address](importing.md).
 
 ## Which agent answers
 

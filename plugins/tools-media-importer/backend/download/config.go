@@ -6,21 +6,17 @@ import (
 	"slices"
 )
 
-// Config is what an installation says about reaching an address.
+// Config is the programs this machine reaches a video site with.
 type Config struct {
-	Captions          []string `json:"captions"`
-	AutomaticCaptions *bool    `json:"automatic_captions"`
-	CopyMaxSizeMB     int      `json:"copy_max_size_mb"`
-	CopiesToVault     *bool    `json:"copies_to_vault"`
-	Video             Tool     `json:"yt_dlp"`
-	Sound             Tool     `json:"ffmpeg"`
+	Video Tool
+	Sound Tool
 }
 
 // Tool is a program this machine holds.
 type Tool struct {
-	Command     []string          `json:"command"`
-	Arguments   []string          `json:"arguments"`
-	Environment map[string]string `json:"environment"`
+	Command     []string
+	Arguments   []string
+	Environment map[string]string
 }
 
 func (t Tool) getEnvironment() []string {
@@ -34,13 +30,5 @@ func (t Tool) getEnvironment() []string {
 	return out
 }
 
-// Defaults returns default settings.
-func Defaults() Config {
-	automatic := true
-	off := false
-	return Config{
-		AutomaticCaptions: &automatic,
-		CopyMaxSizeMB:     500,
-		CopiesToVault:     &off,
-	}
-}
+// Defaults is the programs PATH and the host name.
+func Defaults() Config { return Config{} }

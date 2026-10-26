@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -16,9 +15,10 @@ type Downloader struct {
 	providers []Provider
 }
 
-// New is a downloader for this machine.
-func New(_ context.Context, c Config) (*Downloader, error) {
-	return &Downloader{providers: []Provider{newYtDLP(c), NewPages()}}, nil
+// New is a downloader for this machine: yt-dlp on the video sites, and every other page read as an
+// article.
+func New(c Config) *Downloader {
+	return &Downloader{providers: []Provider{newYtDLP(c), NewPages()}}
 }
 
 // CanHandle reports whether any provider handles the address.
@@ -112,17 +112,13 @@ func (p program) buildCommand(ctx context.Context, arguments ...string) *exec.Cm
 
 const stopGrace = 5 * time.Second
 
-// resolveProgram picks the program a setting names, then the path the host
-// injects in envVar, then the tool on PATH.
-func resolveProgram(named Tool, tool, envVar string) program {
+// resolveProgram picks the program a setting names, then the tool on PATH.
+func resolveProgram(named Tool, tool string) program {
 	if len(named.Command) > 0 {
 		return program{
 			command: append(append([]string(nil), named.Command...), named.Arguments...),
 			env:     named.getEnvironment(),
 		}
-	}
-	if injected := os.Getenv(envVar); injected != "" {
-		return program{command: append([]string{injected}, named.Arguments...), env: named.getEnvironment()}
 	}
 	found, err := exec.LookPath(tool)
 	if err != nil {
@@ -155,4 +151,10 @@ func getLastLine(response string) string {
 		}
 	}
 	return "it said nothing"
+}
+
+// CanCopy reports whether the provider of the address copies what is published there.
+func (f *Downloader) CanCopy(address string) bool {
+	_, err := f.playerFor(address)
+	return err == nil
 }

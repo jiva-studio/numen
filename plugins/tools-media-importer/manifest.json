@@ -3,11 +3,42 @@
   "name": "Media Importer",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Media and web page downloader with transcript extraction via yt-dlp",
-  "capabilities": ["downloader"],
+  "description": "Keeps web addresses as links, fetches the articles and captions published there, and copies videos to play from this disk",
   "targets": ["desktop.editor"],
-  "activationEvents": ["onCommand:downloadMedia", "onCommand:downloader.open"],
-  "permissions": ["network:outbound", "vault:write"],
+  "activationEvents": ["onFile:*.url"],
+  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "textInput": {
+    "files": [".url"],
+    "autoRun": true
+  },
+  "playback": {
+    "files": [".url"]
+  },
+  "commands": [
+    {
+      "id": "import",
+      "title": "Import an address",
+      "arguments": [
+        { "name": "address", "title": "The address", "type": "string", "required": true }
+      ],
+      "hiddenInPalette": true
+    },
+    {
+      "id": "download-text",
+      "title": "Download the text again",
+      "fileExtensions": ["url"]
+    },
+    {
+      "id": "download-copy",
+      "title": "Download a copy",
+      "fileExtensions": ["url"]
+    },
+    {
+      "id": "delete-copy",
+      "title": "Delete the copy",
+      "fileExtensions": ["url"]
+    }
+  ],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
     "keepAliveWhileVisible": false,
@@ -16,30 +47,12 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/tools-media-importer",
-    "serviceName": "numen.v1.DownloadService"
+    "serviceName": "numen.v1.ArticleService"
   },
   "frontend": {
     "entrypoint": "dist/index.js",
     "styles": "dist/styles.css"
   },
-  "dependencies": [
-    {
-      "id": "yt-dlp",
-      "kind": "binary",
-      "metadata": {
-        "binary": "yt-dlp",
-        "envVar": "NUMEN_DEPENDENCY_YT_DLP"
-      }
-    },
-    {
-      "id": "ffmpeg",
-      "kind": "binary",
-      "metadata": {
-        "binary": "ffmpeg",
-        "envVar": "NUMEN_DEPENDENCY_FFMPEG"
-      }
-    }
-  ],
   "settings": [
     {
       "key": "yt_dlp",
@@ -56,6 +69,30 @@
       "description": "The path to the ffmpeg program",
       "default": "",
       "replaces": ["importing.ffmpeg"]
+    },
+    {
+      "key": "captions",
+      "type": "string",
+      "title": "Caption languages",
+      "description": "The languages captions are taken in, best first, separated by commas",
+      "default": ""
+    },
+    {
+      "key": "automatic_captions",
+      "type": "boolean",
+      "title": "Automatic captions",
+      "description": "Take the captions a machine wrote where a site publishes none of its own",
+      "default": true
+    },
+    {
+      "key": "copy_max_size_mb",
+      "type": "number",
+      "title": "Largest copy",
+      "description": "How many megabytes a copy of a video may take; 0 is no limit",
+      "default": 500,
+      "min": 0,
+      "max": 100000,
+      "step": 50
     }
   ]
 }

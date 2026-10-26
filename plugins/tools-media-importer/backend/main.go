@@ -1,4 +1,4 @@
-// Command downloader serves the media downloader plugin as a process.
+// Command tools-media-importer serves the media importer plugin as a process.
 package main
 
 import (
@@ -7,5 +7,5 @@ import (
 )
 
 func main() {
-	server.Run(service.Mount)
+	server.Run(service.MountFromEnv)
 }

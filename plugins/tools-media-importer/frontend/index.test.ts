@@ -1,43 +1,42 @@
 import { describe, expect, it } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin, { activate, MediaUrlTab } from './index'
+import { createActivate, LINK, LinkTab } from './index'
+import type { Links } from './types'
 
-describe('downloader frontend plugin', () => {
-  it('registers url tab kind upon activation', () => {
+const links = (made: string[]): Links => ({
+  getLink: async () => ({ ok: true, value: { url: '', isCopyable: false, copySize: 0 } }),
+  readArticle: async () => '',
+  getSource: async () => ({ mediaUrl: '', mediaType: '' }),
+  createLink: async (folder, url) => {
+    made.push(`${folder}|${url}`)
+    return { ok: true, value: { path: 'links/made.url' } }
+  },
+  watchWork: () => () => {},
+})
+
+describe('the media importer frontend', () => {
+  it('opens a link file in its tab', () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    activate(ctx)
+    createActivate(links([]))(ctx)
 
-    const tabKinds = ctx.getRegisteredTabKinds()
-    expect(tabKinds).toHaveLength(1)
-    expect(tabKinds[0]?.kind).toBe('url')
-    expect(tabKinds[0]?.component).toBe(MediaUrlTab)
-    expect(tabKinds[0]?.title).toBe('Download Media')
+    const readers = ctx.getRegisteredReaders()
+    expect(readers).toHaveLength(1)
+    expect(readers[0]?.fileExtensions).toEqual(['.url'])
+    expect(readers[0]?.component).toBe(LinkTab)
   })
 
-  it('registers downloader.open command that opens url tab', async () => {
+  it('makes the link of an address as the file of its kind', async () => {
+    const made: string[] = []
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    activate(ctx)
+    createActivate(links(made))(ctx)
 
-    const commands = ctx.getRegisteredCommands()
-    const openCmd = commands.find((c) => c.id === 'downloader.open')
-    expect(openCmd).toBeDefined()
-    expect(openCmd?.title).toBe('Media: Download from URL')
-
-    let openedKind = ''
-    ctx.openTab = (kind: string) => {
-      openedKind = kind
-      return Promise.resolve(kind)
-    }
-
-    await ctx.triggerCommand('downloader.open')
-    expect(openedKind).toBe('url')
-  })
-
-  it('activates using default plugin lifecycle', async () => {
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    await plugin.activate(ctx)
-
-    expect(ctx.getRegisteredTabKinds()).toHaveLength(1)
-    expect(ctx.getRegisteredTabKinds()[0]?.kind).toBe('url')
+    const kind = ctx.getRegisteredTabKinds().find((one) => one.kind === LINK)
+    expect(kind?.component).toBe(LinkTab)
+    const answer = await kind?.createFile?.('links', 'http://tidal-mills.numen.test/history/rance')
+    expect(answer).toEqual({ ok: true, value: { path: 'links/made.url' } })
+    expect(made).toEqual(['links|http://tidal-mills.numen.test/history/rance'])
+    expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.url', 'tab') as never)).toBe(
+      'Tidal mills',
+    )
   })
 })

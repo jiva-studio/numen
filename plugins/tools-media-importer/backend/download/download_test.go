@@ -62,19 +62,13 @@ func TestGetLastLineReturnsFallbackWhenSaidNothing(t *testing.T) {
 }
 
 func TestResolveProgramPrecedence(t *testing.T) {
-	const envVar = "NUMEN_TEST_DEPENDENCY_TOOL"
-	t.Setenv(envVar, "/injected/tool")
-	if got := resolveProgram(Tool{Command: []string{"/setting/tool"}}, "sh", envVar).command[0]; got != "/setting/tool" {
+	if got := resolveProgram(Tool{Command: []string{"/setting/tool"}}, "sh").command[0]; got != "/setting/tool" {
 		t.Errorf("setting path = %q, want /setting/tool", got)
 	}
-	if got := resolveProgram(Tool{}, "sh", envVar).command[0]; got != "/injected/tool" {
-		t.Errorf("injected path = %q, want /injected/tool", got)
-	}
-	t.Setenv(envVar, "")
-	if got := resolveProgram(Tool{}, "sh", envVar); !got.isPresent() || got.command[0] == "/injected/tool" {
+	if got := resolveProgram(Tool{}, "sh"); !got.isPresent() || got.command[0] == "sh" {
 		t.Errorf("PATH lookup = %v, want the sh found on PATH", got.command)
 	}
-	if got := resolveProgram(Tool{}, "no-such-numen-tool", envVar); got.isPresent() {
+	if got := resolveProgram(Tool{}, "no-such-numen-tool"); got.isPresent() {
 		t.Errorf("missing tool resolved to %v", got.command)
 	}
 }

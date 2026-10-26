@@ -29,26 +29,16 @@ func TestManifestDeclaresDownloaderSettings(t *testing.T) {
 	}
 }
 
-// The plugin declares yt-dlp and ffmpeg as system binaries without a download source.
-func TestManifestDeclaresBinaryDependencies(t *testing.T) {
+// The plugin declares no program as a dependency: an article is read without yt-dlp and ffmpeg, so
+// a machine without them starts the plugin, and only copies no video.
+func TestManifestDeclaresNoProgramTheHostMustFind(t *testing.T) {
 	var manifest struct {
-		Dependencies []struct {
-			ID        string            `json:"id"`
-			Kind      string            `json:"kind"`
-			SourceURL string            `json:"sourceUrl"`
-			Metadata  map[string]string `json:"metadata"`
-		} `json:"dependencies"`
+		Dependencies []json.RawMessage `json:"dependencies"`
 	}
 	if err := json.Unmarshal(Manifest, &manifest); err != nil {
 		t.Fatal(err)
 	}
-	want := map[string]string{"yt-dlp": "NUMEN_DEPENDENCY_YT_DLP", "ffmpeg": "NUMEN_DEPENDENCY_FFMPEG"}
-	if len(manifest.Dependencies) != len(want) {
-		t.Fatalf("dependencies = %d, want %d", len(manifest.Dependencies), len(want))
-	}
-	for _, one := range manifest.Dependencies {
-		if one.Kind != "binary" || one.SourceURL != "" || one.Metadata["envVar"] != want[one.ID] || one.Metadata["binary"] != one.ID {
-			t.Errorf("dependency %+v does not match the system binary declaration", one)
-		}
+	if len(manifest.Dependencies) != 0 {
+		t.Errorf("the plugin declares %d dependencies", len(manifest.Dependencies))
 	}
 }

@@ -28,10 +28,10 @@ type ytDLP struct {
 const defaultProbeTimeout = 2 * time.Minute
 
 func newYtDLP(c Config) *ytDLP {
-	command := resolveProgram(c.Video, "yt-dlp", "NUMEN_DEPENDENCY_YT_DLP")
+	command := resolveProgram(c.Video, "yt-dlp")
 	v := &ytDLP{
 		command:      command,
-		sound:        resolveProgram(c.Sound, "ffmpeg", "NUMEN_DEPENDENCY_FFMPEG"),
+		sound:        resolveProgram(c.Sound, "ffmpeg"),
 		probeTimeout: defaultProbeTimeout,
 		infoCache:    make(map[string]string),
 	}
