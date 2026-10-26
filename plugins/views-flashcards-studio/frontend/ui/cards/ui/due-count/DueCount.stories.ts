@@ -140,7 +140,7 @@ export const Dark: Story = {
  * its mode, and not `prefers-color-scheme`.
  */
 const drawAgainstSystem =
-  (system: 'light' | 'dark', isDark: boolean): Story['play'] =>
+  (system: 'light' | 'dark', isDark: boolean): NonNullable<Story['play']> =>
   async ({ canvasElement }) => {
     const { commands } = await import('vitest/browser')
     await commands.setSystemScheme(system)
