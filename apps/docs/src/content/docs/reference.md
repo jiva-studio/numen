@@ -5,7 +5,7 @@ description: Every key numen.json can hold, section by section, taken from the a
 
 Every key `numen.json` can hold. The pages under Settings say which of these are worth touching and why; this one is here so that nothing is missing.
 
-Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `model.name` under `indexing.embedding` is `indexing.embedding.model.name` if you write it out in full.
+Each heading below is a section of the file, and the keys under it are written the way they are written inside that section — `max_tokens` under `indexing.embedding` is `indexing.embedding.max_tokens` if you write it out in full.
 
 A key you leave out keeps its default, so a file naming one setting is a complete file. A key numen does not know is carried through untouched. Under `agent`, each program an agent plugin lists has a section named after it, `agent.<program>`, holding `command`, `model` and `max_steps`; any other key there is an option the program defines, such as `reads_hooks_and_skills` for Claude Code (see [the agent page](/agent/)). A row with no kind beside it is a group holding the keys under it.
 
@@ -36,17 +36,9 @@ How a vault is made searchable.
 
 | | | |
 | --- | --- | --- |
-| `embedding` |  | which model turns text into vectors, and how it is reached. |
-| `embedding.model` |  | what a vector is: everything that decides the space it lands in. |
-| `embedding.model.name` | text |  |
-| `embedding.model.dimensions` | a number |  |
-| `embedding.model.max_tokens` | a number |  |
-| `embedding.model.pooling` | text |  |
-| `embedding.indexing` |  | where a vector is made: on this machine, or by a service. |
-| `embedding.indexing.use` | text |  |
-| `embedding.query` |  | where a vector is made: on this machine, or by a service. |
-| `embedding.query.use` | text |  |
-| `embedding.floor` | a number |  |
+| `embedding` |  | how the index keeps and asks vectors. |
+| `embedding.max_tokens` | a number | the input bound, in tokens, of a chunk the index keeps a vector of. Zero cuts at the chunking defaults. |
+| `embedding.floor` | a number | how near a question a passage stands to be an answer at all. |
 | `recognition` |  | how a scanned document is read when a person asks for it. |
 | `recognition.recognise` |  | names the OCR model that reads scanned pages. |
 | `recognition.recognise.name` | text |  |

@@ -16,7 +16,7 @@ import (
 // CutNotes is how a source's text and a note are cut into the chunks the index
 // keeps: at this installation's sizes, keeping what reads as text.
 func (c Config) CutNotes() note.CutNotes {
-	cutter := note.NewCutNotes(c.Embedding.Indexing.Use != "", c.Embedding.Model.MaxTokens)
+	cutter := note.NewCutNotes(c.Embedding.MaxTokens)
 	if c.PluginHost != nil {
 		cutter.Profiles = c.PluginHost.ResolveNoteProfile
 	}

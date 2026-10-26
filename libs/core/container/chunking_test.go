@@ -28,7 +28,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	cfg := container.DefaultEmbedding()
-	cfg.Model.MaxTokens = 512
+	cfg.MaxTokens = 512
 	target := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 
 	trimmed, err := target.Extract(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
@@ -40,17 +40,15 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	}
 }
 
-func TestAVaultWithNoModelIsSplitAtTheDefaultBound(t *testing.T) {
-	cfg := container.DefaultEmbedding()
-	cfg.Indexing.Use = ""
-	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes; got != (chunking.Sizes{}) {
+func TestNoBoundSplitsAtTheDefaultBound(t *testing.T) {
+	if got := (container.Config{}).CutNotes().Sizes.Limit; got != chunking.DefaultLimit {
 		t.Errorf("got %+v", got)
 	}
 }
 
 func TestTheModelSaidIsWhatAChunkIsSplitBelow(t *testing.T) {
 	cfg := container.DefaultEmbedding()
-	cfg.Model.MaxTokens = 512
+	cfg.MaxTokens = 512
 	if got := (container.Config{Embedding: cfg}).CutNotes().Sizes.Limit; got != chunking.GetCharacterBound(512) {
 		t.Errorf("cut at %d, under %d", got, chunking.GetCharacterBound(512))
 	}
@@ -67,7 +65,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	t.Cleanup(func() { db.Close() })
 
 	cfg := container.DefaultEmbedding()
-	cfg.Model.MaxTokens = 8
+	cfg.MaxTokens = 8
 	target := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 	v := domain.Vault{ID: "v", Path: t.TempDir()}
 
@@ -96,7 +94,7 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 	if len(owing) == 0 {
 		t.Fatal("a note of a hundred lines owes no vector")
 	}
-	limit := chunking.GetCharacterBound(cfg.Model.MaxTokens)
+	limit := chunking.GetCharacterBound(cfg.MaxTokens)
 	for _, p := range owing {
 		if p.Length > limit {
 			t.Errorf("a chunk of %d characters is embedded by a model that reads %d", p.Length, limit)

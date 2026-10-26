@@ -71,7 +71,7 @@ type Config struct {
 	// Importing configures external URL and media download options.
 	Importing download.Config
 
-	// Embedding configures the model used to generate vector embeddings.
+	// Embedding is how the index keeps and asks vectors.
 	Embedding EmbeddingConfig
 
 	// Proofreading configures the recognition proofreading pipeline.

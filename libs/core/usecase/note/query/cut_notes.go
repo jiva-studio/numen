@@ -29,12 +29,9 @@ func (u CutNotes) getProfile(noteType domain.NoteType) domain.NoteProfile {
 	return domain.OrdinaryProfile()
 }
 
-// NewCutNotes cuts at the bound a model reading maxTokens tokens allows when the
-// installation embeds, and at the chunking defaults when it does not.
-func NewCutNotes(isEmbedding bool, maxTokens int) CutNotes {
-	if !isEmbedding {
-		return CutNotes{}
-	}
+// NewCutNotes cuts at the bound a model reading maxTokens tokens allows, and at
+// the chunking defaults where maxTokens is zero.
+func NewCutNotes(maxTokens int) CutNotes {
 	return CutNotes{Sizes: chunking.Sizes{Limit: chunking.GetCharacterBound(maxTokens)}}
 }
 

@@ -174,113 +174,27 @@ Free memory is what the operating system reports as available. When only install
 
 `Set performance profile` is a command of its own in the palette, over the window. Choosing a profile updates the configuration immediately.
 
-## What a vector is, and where it is made
+## How the index keeps vectors
+
+The Vector Embeddings plugin makes the vectors: which model, where it runs, and the key of a service are its own settings. The index keeps the vectors the plugin makes and searches them, and this section is about the index alone.
 
 ```json
 {
   "indexing": {
     "embedding": {
-      "model":    { "name": "…", "dimensions": 0, "max_tokens": 0, "pooling": "mean" },
-      "indexing": { "use": "local",   "local": {}, "service": {} },
-      "query":    { "use": "service", "local": {}, "service": {} },
+      "max_tokens": 256,
       "floor": 0.0
     }
   }
 }
 ```
 
-`model` is what a vector **is**. `indexing` and `query` are where one is **made**.
-
-They are separate because a stored vector outlives the place that made it. One name is run on this machine and served by more than one place, and the numbers each gives for one text are its own — so what a vector is kept under names the model and the address it was made at.
-
-A vault is filled by `indexing` and asked wherever `query` says, and both read the rows `indexing` made. What holds the two together is the comparison between them at startup, and not the name they are called by.
-
 | | |
 | --- | --- |
-| `model.name` | what the model is called here. Not how either place reaches it: a repository and a service call one model by two names. |
-| `model.dimensions` | how wide its vectors are. The coarse index is built for one width and records the recipe that filled it, and changing the width or the model rebuilds it from the vectors already kept, without a model call. |
-| `model.max_tokens` | where the model cuts off what it is given. A window cut somewhere else is a window whose vector describes text it does not hold. |
-| `model.pooling` | `mean` over the tokens, or `head` from the one that opens the text. |
+| `max_tokens` | the input bound, in tokens, a chunk that carries a vector is cut below. A chunk cut longer than the model reads is a chunk whose vector describes text it does not hold. Zero cuts at the chunking defaults. |
 | `floor` | how near a question a passage stands to be an answer, in cosine similarity. Zero takes what the search was built against. Where a model puts two pieces of text about different things is a fact about that model, so a model changed is a floor measured again. |
 
-Change any of `name`, `dimensions`, `max_tokens` or `pooling` and every stored vector is made again: they are what a vector is kept under. Nothing is thrown away, and setting them back finds the old vectors where they were.
-
-### pooling
-
-A model gathers what a text says either into the token that opens it or across all of them, and taken the wrong way it answers with vectors in a space of its own — near nothing, and no error anywhere.
-
-- `mean` — the E5 family, `sentence-transformers`, most of what is published.
-- `head` — BGE, including `bge-m3`.
-
-Where a model's own output is already one vector per text, nothing is pooled and this says nothing about it.
-
-## The two providers
-
-Each is `{"use": "local" | "service"}`.
-
-Trying the other for an afternoon costs nothing under `query`. Under `indexing` it is every vector made again, and the old ones are where they were if it goes back.
-
-`query` left with no `use` asks the way the vault was indexed. Naming it is what separates the two, and the reason to is that their costs are opposite:
-
-- **Filling an index** is a pass over the whole vault, once. A service does in an hour what this machine does in a day.
-- **Asking a question** is twenty tokens, all day. This machine answers in milliseconds where a network is a round trip — and answers with no network at all.
-
-Two providers are asked whether they are one model: both embed the same short text at startup, and vectors that do not land together mean the second is not used. Nothing in this file could show it — two providers name a model by whatever each of them calls it. Engine parameters like model directories, threads, and service URLs are configured on the Vector Embeddings plugin.
-
-## Worked examples, embedding
-
-### Nothing configured
-
-What a first run does: a model on this machine, fetched on first use, no key and no account. The file it writes carries every section filled in — this is the embedding part of it.
-
-```json
-{
-  "indexing": {
-    "embedding": {
-      "model": {
-        "name": "",
-        "dimensions": 384,
-        "max_tokens": 256,
-        "pooling": "mean"
-      },
-      "indexing": {
-        "use": "local"
-      },
-      "query": { "use": "" }
-    }
-  }
-}
-```
-
-### Indexed over a network, asked without one
-
-One model, `bge-m3`, in two places. The service fills the index; the question is embedded here, so search works on a train.
-
-The two names differ because that is what each place calls it — HuggingFace `BAAI/bge-m3`, OpenRouter `baai/bge-m3` — and `model.name` is neither.
-
-```json
-{
-  "indexing": {
-    "embedding": {
-      "model": { "name": "bge-m3", "dimensions": 1024, "max_tokens": 512, "pooling": "head" },
-      "indexing": {
-        "use": "service"
-      },
-      "query": {
-        "use": "local"
-      }
-    }
-  }
-}
-```
-
-### No model at all
-
-A vault searched by its words. Nothing is fetched, nothing is asked of a network, and every search is the lexical half answering alone.
-
-```json
-{ "indexing": { "embedding": { "indexing": { "use": "" } } } }
-```
+A vector is kept under the model the plugin answers with: its name, width, input bound and pooling, and where it was made. A model changed in the plugin makes every stored vector again, and going back finds the old vectors where they were. A vault with the plugin disabled is searched by its words alone.
 
 ## Recognising a scanned document
 

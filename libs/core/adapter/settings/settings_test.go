@@ -43,16 +43,13 @@ func newDocument() *container.Settings {
 	return &target
 }
 
-func TestAnUntouchedInstallationEmbedsLocallyAndIsGeneratedAsDesigned(t *testing.T) {
+func TestAnUntouchedInstallationIsGeneratedAsDesigned(t *testing.T) {
 	cfg, err := openAt(filepath.Join(t.TempDir(), "numen.json"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Indexing.Embedding.Indexing.Use != container.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
-	}
-	if cfg.Indexing.Embedding.Model.Dimensions == 0 {
-		t.Errorf("no model to run: %+v", cfg.Indexing.Embedding)
+	if cfg.Indexing.Embedding.MaxTokens == 0 {
+		t.Errorf("no chunk bound: %+v", cfg.Indexing.Embedding)
 	}
 	// Both sizes are as designed, so an installation nobody has sized draws
 	// every length at the number it was drawn with.
@@ -438,12 +435,9 @@ func TestAnInstallationNobodyConfiguredWritesItsSettingsDown(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Read back, the file says what the run it was written by was doing.
-	if back.Indexing.Embedding.Model != cfg.Indexing.Embedding.Model {
-		t.Errorf("the model is %+v, was %+v",
-			back.Indexing.Embedding.Model, cfg.Indexing.Embedding.Model)
-	}
-	if back.Indexing.Embedding.Indexing.Use != container.UseLocal {
-		t.Errorf("uses %q", back.Indexing.Embedding.Indexing.Use)
+	if back.Indexing.Embedding != cfg.Indexing.Embedding {
+		t.Errorf("the embedding section is %+v, was %+v",
+			back.Indexing.Embedding, cfg.Indexing.Embedding)
 	}
 	// A key nobody set is not a field of the file.
 	if strings.Contains(string(raw), `"key"`) {
@@ -459,77 +453,25 @@ func TestOneSettingIsAValidFile(t *testing.T) {
 	if cfg.Appearance.InterfaceScale != 1.5 {
 		t.Errorf("drawn at %v", cfg.Appearance.InterfaceScale)
 	}
-	// A file that names the window must leave the embedder alone. Both are
+	// A file that names the window must leave the index alone. Both are
 	// sections of one file, and the section nobody wrote about is unchanged.
-	if cfg.Indexing.Embedding.Indexing.Use != container.UseLocal {
-		t.Errorf("uses %q", cfg.Indexing.Embedding.Indexing.Use)
+	if cfg.Indexing.Embedding != container.DefaultEmbedding() {
+		t.Errorf("the embedding section is %+v", cfg.Indexing.Embedding)
 	}
 }
 
 // A file naming one field of one section leaves everything else alone.
 func TestAFileNamingOneFieldKeepsTheDefaultsForTheRest(t *testing.T) {
-	cfg, err := openAt(write(t,
-		`{"indexing":{"embedding":{"model":{"name":"text-embedding-3-large","dimensions":3072},
-		 "indexing":{"use":"service","service":{"name":"text-embedding-3-large"}}}}}`))
+	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"floor":0.3}}}`))
 	if err != nil {
 		t.Fatal(err)
 	}
 	e := cfg.Indexing.Embedding
-	if e.Indexing.Use != container.UseService {
-		t.Errorf("uses %q", e.Indexing.Use)
+	if e.Floor != 0.3 {
+		t.Errorf("the floor is %v", e.Floor)
 	}
-	if e.Model.Name != "text-embedding-3-large" || e.Model.Dimensions != 3072 {
-		t.Errorf("got %+v", e.Model)
-	}
-	// A field the file says nothing about keeps what the defaults set.
-	if e.Model.MaxTokens != container.DefaultEmbedding().Model.MaxTokens {
-		t.Errorf("the model cuts at %d", e.Model.MaxTokens)
-	}
-}
-
-// A model pooled one way is pooled under one word, whether the file says it or
-// leaves it out: two words for one pooling are two keys over one set of
-// vectors.
-func TestAPoolingLeftOutIsTheOneEveryModelHas(t *testing.T) {
-	cfg, err := openAt(write(t,
-		`{"indexing":{"embedding":{"model":{"name":"e5","dimensions":384}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding.Model.Pooling; got != container.PoolMean {
-		t.Errorf("pooled %q", got)
-	}
-}
-
-func TestAVaultIndexedByAServiceIsAskedOnThisMachine(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{
-		"model": {"name":"bge-m3","dimensions":1024,"max_tokens":512,"pooling":"head"},
-		"indexing": {"use":"service","service":{"base_url":"https://openrouter.ai/api/v1","name":"baai/bge-m3"}},
-		"query":    {"use":"local","local":{"name":"BAAI/bge-m3","download":true}}
-	}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	e := cfg.Indexing.Embedding
-	if e.Model.Name != "bge-m3" || e.Model.Dimensions != 1024 || e.Model.Pooling != container.PoolHead {
-		t.Errorf("the model is %+v", e.Model)
-	}
-	if e.Indexing.Use != container.UseService {
-		t.Errorf("indexed by %+v", e.Indexing)
-	}
-	if e.Query.Use != container.UseLocal {
-		t.Errorf("asked by %+v", e.Query)
-	}
-}
-
-// A vault searched by its words: nothing fetched, nothing asked of a network.
-func TestAnInstallationMayNameNoModelAtAll(t *testing.T) {
-	cfg, err := openAt(write(t, `{"indexing":{"embedding":{"indexing":{"use":""}}}}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding.Indexing.Use; got != "" {
-		t.Errorf("uses %q", got)
+	if e.MaxTokens != container.DefaultEmbedding().MaxTokens {
+		t.Errorf("a chunk is cut at %d tokens", e.MaxTokens)
 	}
 }
 
@@ -552,9 +494,6 @@ func TestNoEnvironmentVariableProducesTheServiceAKey(t *testing.T) {
 		"query":{"use":"service","service":{"name":"a-model","key_env":"OPENROUTER_API_KEY"}}}}}`))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if got := cfg.Indexing.Embedding.Indexing.Use; got != container.UseService {
-		t.Errorf("the service is %q", got)
 	}
 	raw, err := json.Marshal(cfg)
 	if err != nil {
