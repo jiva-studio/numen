@@ -143,8 +143,8 @@ func TestTheAnswerOfTheCliIsSaidOnce(t *testing.T) {
 		`echo '{"event":"init","conversation_id":"s-1","init":{"model":"m"}}'`+"\n"+
 			`echo '{"event":"step_update","step_update":{"conversation_id":"s-1","step_index":0,"state":"DONE","step_type":"user_input"}}'`+"\n"+
 			`echo '{"event":"step_update","step_update":{"conversation_id":"s-1","step_index":1,"state":"ACTIVE","step_type":"agent_response","text_delta":"ok"}}'`+"\n"+
-			`echo '{"event":"step_update","step_update":{"conversation_id":"s-1","step_index":1,"state":"DONE","step_type":"agent_response","text_delta":"\n"}}'`+"\n"+
-			`echo '{"event":"result","result":{"conversation_id":"s-1","status":"SUCCESS","response":"ok\n"}}'`+"\n")
+			`printf '%s\n' '{"event":"step_update","step_update":{"conversation_id":"s-1","step_index":1,"state":"DONE","step_type":"agent_response","text_delta":"\n"}}'`+"\n"+
+			`printf '%s\n' '{"event":"result","result":{"conversation_id":"s-1","status":"SUCCESS","response":"ok\n"}}'`+"\n")
 
 	got, reg := collect(t, script)
 
