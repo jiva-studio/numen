@@ -138,10 +138,7 @@ const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) 
     >
       <h2 class="stencil__heading caps-numen text-small text-hushed">{{ words.faces }}</h2>
 
-      <p
-        v-if="!renderedFaces.length"
-        class="stencil__silence caps-numen text-small text-hushed"
-      >
+      <p v-if="!renderedFaces.length" class="stencil__silence caps-numen text-small text-hushed">
         {{ words.noFaces }}
       </p>
 
@@ -170,12 +167,12 @@ const wrongWithFace = (id: string): readonly string[] => props.wrong.at.get(id) 
 </template>
 
 <style scoped>
+@import '../caret.css';
+
 .stencil__heading,
 .stencil__silence {
   margin: 0;
 }
-
-@import '../caret.css';
 
 .stencil {
   /* The room between one part and the next, and between the rows of a part. */
