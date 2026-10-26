@@ -42,7 +42,7 @@ export { clock } from './shared/lib/time/duration'
 export { createFollower } from './shared/lib/async/stream'
 
 export { Spinner } from './shared/ui/spinner'
-export { Waiting } from './shared/ui/waiting'
+export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */

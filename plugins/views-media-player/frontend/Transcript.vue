@@ -4,7 +4,7 @@
  * none. A time in the gutter is clicked to play from there.
  */
 import { watch } from 'vue'
-import { Editor, createTimeGutter, Waiting } from '@numen/ui'
+import { Editor, createTimeGutter, LoadingIndicator } from '@numen/ui'
 import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
@@ -57,7 +57,7 @@ function onSave() {
       {{ error }}
     </p>
 
-    <Waiting v-if="isLoading" :label="words.loading" />
+    <LoadingIndicator v-if="isLoading" :label="words.loading" />
 
     <div v-else-if="!hasText" class="transcript__silence">
       <p v-if="!isTranscribable" class="transcript__note">

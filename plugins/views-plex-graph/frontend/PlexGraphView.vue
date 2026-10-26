@@ -3,7 +3,7 @@
  * Displays the graph neighborhood of notes and handles graph interaction gestures.
  */
 import { computed } from 'vue'
-import { Menu, Waiting } from '@numen/ui'
+import { Menu, LoadingIndicator } from '@numen/ui'
 import { optionsForType, Plex, useTypeSize } from './plex'
 import type { MenuTrigger } from '@numen/ui'
 import type { PlexRelation, PlexDestination } from './plex'
@@ -105,7 +105,7 @@ function onDismissLinkInspector() {
 
     <!-- Until the first neighbourhood lands, an empty plex and one nobody has
          answered for yet are drawn the same way. -->
-    <Waiting v-if="props.state.view.isLoading.value" :label="words.loading" />
+    <LoadingIndicator v-if="props.state.view.isLoading.value" :label="words.loading" />
 
     <Plex
       v-else-if="neighbourhood"

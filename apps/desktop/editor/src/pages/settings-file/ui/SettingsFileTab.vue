@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Editor, Waiting } from '@numen/ui'
+import { Editor, LoadingIndicator } from '@numen/ui'
 import type { SettingsFileTabState } from '../model/useSettingsFile'
 import { WORDS as words } from '../words'
 
@@ -49,7 +49,7 @@ function onSave() {
       @update:model-value="onUpdateModelValue"
       @save="onSave"
     />
-    <Waiting v-else :label="words.loading" />
+    <LoadingIndicator v-else :label="words.loading" />
   </div>
 </template>
 

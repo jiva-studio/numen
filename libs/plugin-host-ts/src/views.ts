@@ -8,7 +8,7 @@
  */
 import { createApp, type App, type Component } from 'vue'
 import type { Disposable, MountedView, ViewRegistration } from '@numen/plugin-sdk'
-import { getPluginStyle } from './styles'
+import { adoptPluginStyle, getPluginStyle, type StyleRoot } from './styles'
 
 interface DeclaredView {
   readonly pluginId: string
@@ -19,6 +19,7 @@ interface ViewInstance {
   readonly view: DeclaredView
   readonly app: App
   readonly nodes: readonly HTMLElement[]
+  readonly release?: (() => void) | undefined
   readonly exposed: { focus?: () => void }
 }
 
@@ -43,7 +44,7 @@ function createRoot(): HTMLElement {
   return root
 }
 
-/** The stylesheet of the declaring plugin, and nothing where it carries none. */
+/** The stylesheet of the declaring plugin as a link, for a plugin whose sheet the root did not adopt. */
 function createStyle(pluginId: string): HTMLElement[] {
   const href = getPluginStyle(pluginId)
   if (!href) return []
@@ -56,17 +57,19 @@ function createStyle(pluginId: string): HTMLElement[] {
 
 function drawView(mount: Mount, view: DeclaredView): ViewInstance {
   const root = createRoot()
-  const nodes = [...createStyle(view.pluginId), root]
+  const release = adoptPluginStyle(view.pluginId, mount.element.getRootNode() as StyleRoot)
+  const nodes = release ? [root] : [...createStyle(view.pluginId), root]
   mount.element.append(...nodes)
   const app = createApp(view.registration.component as Component, { context: mount.context })
   const exposed = app.mount(root) as { focus?: () => void }
-  return { view, app, nodes, exposed }
+  return { view, app, nodes, exposed, release }
 }
 
 function eraseView(mount: Mount): void {
   if (!mount.instance) return
   mount.instance.app.unmount()
   for (const node of mount.instance.nodes) node.remove()
+  mount.instance.release?.()
   mount.instance = undefined
 }
 

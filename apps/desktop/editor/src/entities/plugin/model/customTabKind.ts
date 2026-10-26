@@ -4,6 +4,7 @@
 import {
   computed,
   defineComponent,
+  onBeforeUnmount,
   onErrorCaptured,
   onMounted,
   reactive,
@@ -11,6 +12,7 @@ import {
   type Component,
 } from 'vue'
 import type { PluginContext, ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
+import { adoptPluginStyle } from '@numen/plugin-host'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import {
   attachPluginShadow,
@@ -48,6 +50,7 @@ export function createPluginPaneWrapper(
       const hostEl = ref<HTMLElement | null>(null)
       const shadowRoot = ref<ShadowRoot | null>(null)
       const isReady = ref(false)
+      let releaseStyle: (() => void) | undefined
 
       onErrorCaptured((err) => {
         error.value = err instanceof Error ? err : new Error(String(err))
@@ -56,8 +59,10 @@ export function createPluginPaneWrapper(
 
       onMounted(() => {
         shadowRoot.value = attachPluginShadow(hostEl.value)
+        if (shadowRoot.value) releaseStyle = adoptPluginStyle(pluginId, shadowRoot.value)
         isReady.value = true
       })
+      onBeforeUnmount(() => releaseStyle?.())
 
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
@@ -69,6 +74,7 @@ export function createPluginPaneWrapper(
               shadowRoot: shadowRoot.value,
               containerClass: classes.container,
               context: getContext?.(),
+              hasAdoptedStyle: releaseStyle !== undefined,
             })
           : null
         return renderWrapper({ wrapperClass: classes.wrapper, pluginId, hostEl, content })

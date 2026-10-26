@@ -2,12 +2,11 @@
  * How a plugin module is found and read: its stylesheet, its lifecycle hooks, its loader.
  */
 import type { PluginLifecycle, PluginManifest } from '@numen/plugin-sdk'
-import { registerPluginStyle, unregisterPluginStyle } from './styles'
+import { loadPluginStyle, unregisterPluginStyle } from './styles'
 
-function injectPluginStyles(baseUrl: string, pluginId: string, stylesPath: string): void {
+function getStyleUrl(baseUrl: string, pluginId: string, stylesPath: string): string {
   const normalizedPath = stylesPath.startsWith('/') ? stylesPath.slice(1) : stylesPath
-  const fullUrl = `${baseUrl}/${pluginId}/${normalizedPath}`
-  registerPluginStyle(pluginId, fullUrl)
+  return `${baseUrl}/${pluginId}/${normalizedPath}`
 }
 
 export function removePluginStyles(pluginId: string): void {
@@ -65,7 +64,8 @@ async function loadDynamicModule(
   manifests.set(pluginId, manifest)
   if (manifest.frontend === undefined) return undefined
   if (manifest.frontend.styles) {
-    injectPluginStyles(baseUrl, pluginId, manifest.frontend.styles)
+    const styleUrl = getStyleUrl(baseUrl, pluginId, manifest.frontend.styles)
+    await loadPluginStyle(pluginId, styleUrl, fetchFn)
   }
   const entrypoint = manifest.frontend.entrypoint ?? 'dist/index.js'
   const normalizedEntrypoint = entrypoint.startsWith('/') ? entrypoint.slice(1) : entrypoint

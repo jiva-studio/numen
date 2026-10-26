@@ -2,10 +2,10 @@
  * A tab kind a plugin declares whole: what its tabs hold, and every hook the
  * window asks of a kind.
  */
-import { defineComponent, h, onErrorCaptured, ref, type Component } from 'vue'
+import { defineComponent, h, onBeforeUnmount, onErrorCaptured, ref, type Component } from 'vue'
 import type { TabKindRegistration } from '@numen/plugin-sdk'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
-import { getPluginStyle } from '@numen/plugin-host'
+import { adoptPluginStyle, getPluginStyle } from '@numen/plugin-host'
 import { renderFallback, resolvePluginComponent } from './styles'
 
 /** A registration that says what its tabs hold. */
@@ -58,6 +58,10 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
     name: `PluginKindPane[${pluginId}]`,
     props: { state: { type: null, required: true } },
     setup(props) {
+      // The sheet is adopted before the first render, so the pane is never drawn without it.
+      const release =
+        typeof document === 'undefined' ? undefined : adoptPluginStyle(pluginId, document)
+      onBeforeUnmount(() => release?.())
       const error = ref<Error | null>(null)
       onErrorCaptured((err) => {
         error.value = err instanceof Error ? err : new Error(String(err))
@@ -66,8 +70,8 @@ export function createDeclaredPane(pluginId: string, rawComponent: unknown): Com
       return () => {
         if (error.value) return renderFallback(pluginId, error.value)
         if (!component) return null
-        const styleUrl = getPluginStyle(pluginId)
         const node = h(component, { state: props.state })
+        const styleUrl = release ? undefined : getPluginStyle(pluginId)
         if (!styleUrl) return node
         return [h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': pluginId }), node]
       }

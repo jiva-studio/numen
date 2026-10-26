@@ -4,7 +4,7 @@
  */
 import { defineAsyncComponent, h, Teleport, type Component, type Ref, type VNodeChild } from 'vue'
 import type { PluginContext } from '@numen/plugin-sdk'
-import { getPluginStyle } from '@numen/plugin-host'
+import { createSheet, getPluginStyle } from '@numen/plugin-host'
 
 type AsyncComponentRegistration = {
   type: 'async'
@@ -78,8 +78,50 @@ export const PANE_HOST_STYLE: Record<string, string> = {
   flex: '1 1 0%',
 }
 
+/** Constructed copies of the window's own sheets, by the sheet they copy. */
+const hostSheetCopies = new WeakMap<CSSStyleSheet, CSSStyleSheet>()
+
+/** A constructed copy of a sheet of the window, read from its rules; nothing where it cannot be read. */
+function copyHostSheet(sheet: CSSStyleSheet): CSSStyleSheet | undefined {
+  const cached = hostSheetCopies.get(sheet)
+  if (cached) return cached
+  let text: string
+  try {
+    text = [...sheet.cssRules].map((rule) => rule.cssText).join('\n')
+    if (sheet.media.length > 0) text = `@media ${sheet.media.mediaText} {\n${text}\n}`
+  } catch {
+    return undefined
+  }
+  const copy = createSheet(text, sheet.href ?? undefined)
+  if (copy) hostSheetCopies.set(sheet, copy)
+  return copy
+}
+
+/**
+ * The window's sheets as copies a shadow root adopts at once, or nothing where one of them cannot
+ * be copied. A cloned link would draw the pane unstyled until it loads.
+ */
+function copyHostSheets(): CSSStyleSheet[] | undefined {
+  const copies: CSSStyleSheet[] = []
+  for (const sheet of [...document.styleSheets]) {
+    if (sheet.disabled) continue
+    const owner = sheet.ownerNode
+    if (owner instanceof Element && owner.hasAttribute('data-plugin-id')) continue
+    if (owner instanceof Element && !owner.closest('head')) continue
+    const copy = copyHostSheet(sheet)
+    if (!copy) return undefined
+    copies.push(copy)
+  }
+  return copies
+}
+
 export function adoptHostStyles(shadowRoot: ShadowRoot): void {
   if (typeof document === 'undefined') return
+  const copies = 'adoptedStyleSheets' in shadowRoot ? copyHostSheets() : undefined
+  if (copies) {
+    shadowRoot.adoptedStyleSheets = [...copies, ...shadowRoot.adoptedStyleSheets]
+    return
+  }
   const hostStyles = document.querySelectorAll<HTMLStyleElement | HTMLLinkElement>(
     'head style:not([data-plugin-id]), head link[rel="stylesheet"]:not([data-plugin-id])',
   )
@@ -117,6 +159,8 @@ export interface PaneContentDeps {
   readonly shadowRoot: ShadowRoot | null
   readonly containerClass: string
   readonly context?: PluginContext | undefined
+  /** Whether the shadow root adopted the plugin's sheet, so no link is drawn for it. */
+  readonly hasAdoptedStyle?: boolean
 }
 
 export function renderPaneContent(deps: PaneContentDeps) {
@@ -132,7 +176,7 @@ export function renderPaneContent(deps: PaneContentDeps) {
     state: deps.state,
     ...(deps.context ? { context: deps.context } : {}),
   })
-  const styleUrl = getPluginStyle(deps.pluginId)
+  const styleUrl = deps.hasAdoptedStyle ? undefined : getPluginStyle(deps.pluginId)
   const styleNode = styleUrl
     ? h('link', { rel: 'stylesheet', href: styleUrl, 'data-plugin-id': deps.pluginId })
     : null

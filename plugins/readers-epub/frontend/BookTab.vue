@@ -4,7 +4,7 @@
  */
 import { ref, useTemplateRef, watch, watchEffect } from 'vue'
 import type { Span } from '@numen/plugin-sdk'
-import { Waiting } from '@numen/ui'
+import { LoadingIndicator } from '@numen/ui'
 import BookContent from './BookContent.vue'
 import { BookListing } from './book-contents'
 import { WORDS as words } from './words'
@@ -97,7 +97,7 @@ function onFollow(destPath: string) {
   >
     <!-- Until the book has been read, a blank page and a book with no text in
          it are drawn the same way. -->
-    <Waiting v-if="tabState.isLoading.value" :label="words.loading" />
+    <LoadingIndicator v-if="tabState.isLoading.value" :label="words.loading" />
 
     <div v-else class="book-tab__reading">
       <BookListing

@@ -4,7 +4,7 @@
  * Renders document pages, toolbar controls, and text highlights.
  */
 import { computed, onMounted, onUnmounted, useTemplateRef, watch } from 'vue'
-import { Waiting } from '@numen/ui'
+import { LoadingIndicator } from '@numen/ui'
 import { Reader } from './reader'
 import { WORDS as words } from './words'
 import type { Span } from './types'
@@ -114,7 +114,7 @@ function onSetPageHandle(reader: unknown) {
       @measure="onWiden"
     >
       <template #silence>
-        <Waiting v-if="activeState.isLoading.value" :label="words.loading" />
+        <LoadingIndicator v-if="activeState.isLoading.value" :label="words.loading" />
         <p v-else-if="activeState.error.value" class="fallback-panel fallback-message">
           {{ activeState.error.value }}
         </p>
