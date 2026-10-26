@@ -2,8 +2,6 @@ package source
 
 import "strings"
 
-const documentPath = "library/scan.pdf"
-
 const recordingPath = "library/talk.mp3"
 
 // here reads them: what the recording says comes from the model, and the model

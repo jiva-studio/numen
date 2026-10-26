@@ -12,25 +12,19 @@ type (
 	URL         = name.URL
 
 	// From artifacts subpackage
-	ArtifactFile        = artifacts.ArtifactFile
-	ArtifactName        = artifacts.ArtifactName
-	CorrectionLine      = artifacts.CorrectionLine
-	Rect                = artifacts.Rect
-	HighlightBox        = artifacts.HighlightBox
-	OCRBox              = artifacts.OCRBox
-	OCRBlock            = artifacts.OCRBlock
-	OCRPageStart        = artifacts.OCRPageStart
-	OCRPart             = artifacts.OCRPart
-	Place               = artifacts.Place
-	ByteSpan            = artifacts.ByteSpan
-	UnitSpan            = artifacts.UnitSpan
-	ProofreadLine       = artifacts.ProofreadLine
-	ProofreadPage       = artifacts.ProofreadPage
-	ProofreadCorrection = artifacts.ProofreadCorrection
-	ScanProofreading    = artifacts.ScanProofreading
-	SpeechWindow        = artifacts.SpeechWindow
-	SpeechProofreading  = artifacts.SpeechProofreading
-	TranscriptCue       = artifacts.TranscriptCue
+	ArtifactFile   = artifacts.ArtifactFile
+	ArtifactName   = artifacts.ArtifactName
+	CorrectionLine = artifacts.CorrectionLine
+	Rect           = artifacts.Rect
+	HighlightBox   = artifacts.HighlightBox
+	OCRBox         = artifacts.OCRBox
+	OCRBlock       = artifacts.OCRBlock
+	OCRPageStart   = artifacts.OCRPageStart
+	OCRPart        = artifacts.OCRPart
+	Place          = artifacts.Place
+	ByteSpan       = artifacts.ByteSpan
+	UnitSpan       = artifacts.UnitSpan
+	TranscriptCue  = artifacts.TranscriptCue
 )
 
 const (
@@ -75,17 +69,16 @@ var (
 	ParseURL           = name.ParseURL
 
 	// From artifacts subpackage
-	Recordings            = artifacts.Recordings
-	NewArtifactName       = artifacts.NewArtifactName
-	NewCopyName           = artifacts.NewCopyName
-	NewIndexClaimName     = artifacts.NewIndexClaimName
-	IsTimedProducer       = artifacts.IsTimedProducer
-	GetAddressProducers   = artifacts.GetAddressProducers
-	GetArtifactNames      = artifacts.GetArtifactNames
-	GetAddressTextNames   = artifacts.GetAddressTextNames
-	GetCorrectedBoxes     = artifacts.GetCorrectedBoxes
-	GetCorrectedProse     = artifacts.GetCorrectedProse
-	FindUnaskedCorrection = artifacts.FindUnaskedCorrection
-	MediaType             = artifacts.MediaType
-	RecordingExtensions   = artifacts.RecordingExtensions
+	Recordings          = artifacts.Recordings
+	NewArtifactName     = artifacts.NewArtifactName
+	NewCopyName         = artifacts.NewCopyName
+	NewIndexClaimName   = artifacts.NewIndexClaimName
+	IsTimedProducer     = artifacts.IsTimedProducer
+	GetAddressProducers = artifacts.GetAddressProducers
+	GetArtifactNames    = artifacts.GetArtifactNames
+	GetAddressTextNames = artifacts.GetAddressTextNames
+	GetCorrectedBoxes   = artifacts.GetCorrectedBoxes
+	GetCorrectedProse   = artifacts.GetCorrectedProse
+	MediaType           = artifacts.MediaType
+	RecordingExtensions = artifacts.RecordingExtensions
 )
