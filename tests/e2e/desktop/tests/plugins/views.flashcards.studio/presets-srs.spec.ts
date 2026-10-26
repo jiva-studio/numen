@@ -13,6 +13,7 @@ test.describe('Spaced Repetition and Preset Editor', () => {
 
     // Select New preset command
     await paletteInput.fill('New preset')
+    await expect(page.getByRole('option', { name: /New preset/ }).first()).toBeVisible()
     await page.waitForTimeout(300)
     await page.keyboard.press('Enter')
 
@@ -113,5 +114,33 @@ test.describe('Spaced Repetition and Preset Editor', () => {
     await expect(page.getByRole('region', { name: 'Goal', exact: true })).toBeVisible({
       timeout: 10_000,
     })
+  })
+
+  test('says a deck naming no preset is scheduled by the defaults', async ({ page }) => {
+    await page.goto('/')
+    await expect(page.locator('text=Ready')).toBeVisible()
+
+    await page.getByText('Files').first().click()
+    const cardsRow = page.locator('[data-tree-row="cards"]')
+    await expect(cardsRow).toBeVisible()
+    await cardsRow.press('Enter')
+    const deckRow = page.locator('[data-tree-row="cards/Animals.md"]')
+    await expect(deckRow).toBeVisible()
+    await deckRow.press('Enter')
+    await expect(page.getByRole('tab', { name: /Animals/ }).first()).toBeVisible({
+      timeout: 10_000,
+    })
+
+    await page.keyboard.press('Control+p')
+    const paletteInput = page.locator('input[data-palette="field"]').first()
+    await expect(paletteInput).toBeVisible({ timeout: 5_000 })
+    await paletteInput.fill('Open the preset')
+    await page.waitForTimeout(300)
+    await page.keyboard.press('Enter')
+
+    await expect(
+      page.getByText('This deck names no preset, so it is scheduled by the defaults.').first(),
+    ).toBeVisible({ timeout: 10_000 })
+    await expect(page.getByRole('region', { name: 'Goal', exact: true })).toHaveCount(0)
   })
 })
