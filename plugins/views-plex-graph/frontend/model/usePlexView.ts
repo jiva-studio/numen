@@ -26,6 +26,8 @@ export function usePlexView(core: Neighbours) {
   const here = ref('')
   /** What this plex could not show, in words the window sets up for it. */
   const error = ref('')
+  /** A note asked for before the vault held it, gone to again on the next change of the vault. */
+  const missingPath = ref('')
 
   /**
    * Whether the first neighbourhood is still on its way. An empty plex and one
@@ -43,9 +45,11 @@ export function usePlexView(core: Neighbours) {
       if (!mine.isCurrent) return
       if (!answer.focus.path) {
         error.value = `${path} is not in the vault`
+        missingPath.value = path
         return
       }
       error.value = ''
+      missingPath.value = ''
       here.value = path
       if (!areNeighbourhoodsEqual(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (caughtError) {
@@ -67,5 +71,5 @@ export function usePlexView(core: Neighbours) {
     guard.close()
   }
 
-  return { neighbourhood, here, error, isLoading, go, followMoves, close }
+  return { neighbourhood, here, error, missingPath, isLoading, go, followMoves, close }
 }

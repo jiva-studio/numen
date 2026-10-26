@@ -281,3 +281,21 @@ describe('a plex whose vault failed to answer', () => {
     expect(plex.here.value).toBe('Second')
   })
 })
+
+describe('a note the vault does not hold yet', () => {
+  it('is kept as the missing path until an answer holds it', async () => {
+    const indexed = new Set<string>()
+    const plex = usePlexView(
+      fake(async (path) => (indexed.has(path) ? answer(path) : createEmptyNeighbourhood())),
+    )
+
+    await plex.go('Quantum.md')
+    expect(plex.missingPath.value).toBe('Quantum.md')
+
+    indexed.add('Quantum.md')
+    await plex.go(plex.missingPath.value)
+
+    expect(plex.missingPath.value).toBe('')
+    expect(plex.here.value).toBe('Quantum.md')
+  })
+})

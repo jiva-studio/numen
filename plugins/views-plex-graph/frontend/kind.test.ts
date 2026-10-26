@@ -96,6 +96,16 @@ describe('a plex tab as it opens', () => {
 })
 
 describe('a change to the vault', () => {
+  it('navigates a plex to its missing path on refresh', async () => {
+    const one = window()
+    const plex = await one.openTab('One.md')
+    plex.state.view.missingPath.value = 'Quantum.md'
+
+    await one.refresh({})
+
+    expect(one.views[0]?.went.at(-1)).toBe('Quantum.md')
+  })
+
   it('asks every plex for the note it is standing on, each of its own', async () => {
     const one = window()
     await one.openTab('One.md')

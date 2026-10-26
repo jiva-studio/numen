@@ -60,6 +60,7 @@ export const viewOn = (
     neighbourhood: ref<Neighbourhood | null>(createNeighbourhood(initialPath, neighbours, types)),
     here: ref(initialPath),
     error: ref(''),
+    missingPath: ref(''),
     isLoading: ref(false),
     go: async (path: string) => {
       went.push(path)
