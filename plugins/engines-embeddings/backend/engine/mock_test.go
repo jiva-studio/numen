@@ -33,7 +33,7 @@ func TestAMockQuestionIsFarFromAPassageSharingNoConcept(t *testing.T) {
 	}
 }
 
-func TestAMockQuestionIsNearAPassageHoldingItsWord(t *testing.T) {
+func TestMockQuestionIsNearPassageWithItsWord(t *testing.T) {
 	question := embedMock("Entropy")
 	passage := embedMock("Entropy\n\nA measure of uncertainty. To Jaynes it is a property of the description, not of the system.")
 	if got := cosine(question, passage); got < floor {

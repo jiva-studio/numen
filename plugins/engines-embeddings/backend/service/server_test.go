@@ -127,7 +127,7 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 	}
 }
 
-func TestTheIndexLeavesAQuestionOnePassOfTheModel(t *testing.T) {
+func TestIndexShareReservesOnePassForQuestions(t *testing.T) {
 	for _, tc := range []struct{ passes, want int }{{1, 1}, {2, 1}, {4, 3}} {
 		if got := getIndexShare(tc.passes); got != tc.want {
 			t.Errorf("a model of %d passes gives the index %d, want %d", tc.passes, got, tc.want)
