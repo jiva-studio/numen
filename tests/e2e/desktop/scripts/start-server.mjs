@@ -64,6 +64,10 @@ fs.writeFileSync(
   '# Markdown heading\nContent from extra markdown file.',
 )
 fs.writeFileSync(
+  path.join(tmpVault, 'notes', 'crossing.md'),
+  '# Crossing\n\nThe ferry leaves the harbour at dawn with the morning post.',
+)
+fs.writeFileSync(
   path.join(tmpVault, 'notes', 'trash-target.md'),
   '# Disposable Note\nThis note is created for deletion testing.',
 )
