@@ -170,9 +170,11 @@
 }
 
 /* Where the keyboard stands is said by whatever is drawing it, and nowhere
-   else. Left to itself the webview rings the element in the machine's accent
-   colour, which belongs to no theme numen wears. Specificity is nil, so
-   anything that draws its own ring keeps it. */
-:where(.numen, .numen *):where(:focus, :focus-visible) {
+   else. Left to itself the webview rings a focused element in the machine's
+   accent colour, which belongs to no theme numen wears, on a click as well as
+   on a key. The rule holds for the whole window, its status bar and every
+   shadow root a plugin view is drawn in. Specificity is nil, so anything that
+   draws its own ring keeps it. */
+:where(:focus, :focus-visible) {
   outline: none;
 }

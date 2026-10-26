@@ -172,3 +172,22 @@ export const DismissedByEscape: Story = {
     await waitFor(() => expect(isPopoverOpen(canvasElement)).toBe(false))
   },
 }
+
+/**
+ * The trigger rings in no colour of the machine's, pressed or reached by Tab: the bar stands
+ * outside the workspace, and what says where focus stands is its own hover ground.
+ */
+export const NoRingOnFocus: Story = {
+  play: async ({ canvasElement }) => {
+    const trigger = await within(canvasElement).findByRole('button', { name: /active/ })
+    await userEvent.click(trigger)
+    await expect(trigger).toHaveFocus()
+    await expect(getComputedStyle(trigger).outlineStyle).toBe('none')
+    await userEvent.keyboard('{Escape}')
+
+    trigger.blur()
+    await userEvent.tab()
+    await expect(trigger).toHaveFocus()
+    await expect(getComputedStyle(trigger).outlineStyle).toBe('none')
+  },
+}
