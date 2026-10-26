@@ -7,7 +7,7 @@
  * standing at it, which is the letter drawn on that row.
  */
 import { computed, onMounted, onUnmounted } from 'vue'
-import { getVaultForKey, WelcomePage } from '@numen/ui'
+import { getVaultForKey, WelcomePage } from '@numen/shell'
 import {
   runInvocation,
   createInvocation,

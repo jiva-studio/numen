@@ -27,3 +27,7 @@ export type { Notice, Stay, Task } from './features/notices'
 
 export { StatusBar } from './features/status-bar'
 export type { StatusBarTask } from './features/status-bar'
+
+/** The screen a window opens on, and the letter a vault on it is opened by. */
+export { WelcomePage, getVaultForKey } from './features/welcome'
+export type { VaultRow, WelcomeAction } from './features/welcome'

@@ -4,7 +4,8 @@
  * The screen draws these rows and decides nothing, so a test can ask what a
  * window standing on a vault, or on none, puts in front of the person.
  */
-import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
+import type { PaletteKeys } from '@numen/ui'
+import type { VaultRow, WelcomeAction } from '@numen/shell'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
 

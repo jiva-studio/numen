@@ -4,7 +4,7 @@
  */
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
-import type { VaultRow } from '@numen/ui'
+import type { VaultRow } from '@numen/shell'
 import { formatErrorMessage } from '@numen/wire'
 import { pluginService, vaultsService } from '@/shared/clients'
 import { createShellHost } from './host'

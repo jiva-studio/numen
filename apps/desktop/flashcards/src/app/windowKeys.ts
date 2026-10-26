@@ -2,7 +2,7 @@
  * What a keystroke asks of the window: the tab in front takes it where one is
  * open, and on the list of vaults a letter opens the vault standing at it.
  */
-import { getVaultForKey, type VaultRow } from '@numen/ui'
+import { getVaultForKey, type VaultRow } from '@numen/shell'
 import type { WindowTab } from './host'
 
 export interface WindowKeysDeps {

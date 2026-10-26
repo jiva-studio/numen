@@ -6,7 +6,7 @@
  * not.
  */
 import type { Component } from 'vue'
-import type { PaletteKeys } from '@/shared/ui/key-cap'
+import type { PaletteKeys } from '@numen/ui'
 
 /** One way in: what it is called, what draws it, and the keystroke that reaches it. */
 export interface WelcomeAction {

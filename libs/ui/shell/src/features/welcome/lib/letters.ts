@@ -6,6 +6,8 @@
  * works.
  */
 
+import { isTyping } from '@numen/ui'
+
 /**
  * The letters the vaults are picked by, in the order they are listed. They are
  * capitals, which is how every letter on a key cap is drawn.
@@ -36,14 +38,3 @@ export function getVaultForKey(press: KeyboardEvent, vaults: number): number | n
   return index >= 0 && index < vaults ? index : null
 }
 
-/**
- * Whether the key was pressed into something being written in. A letter is text
- * there, and no screen reads its own keys out of a field.
- */
-export const isTyping = (press: KeyboardEvent): boolean => {
-  const target = press.target as HTMLElement | null
-  if (!target) return false
-  return (
-    target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable === true
-  )
-}

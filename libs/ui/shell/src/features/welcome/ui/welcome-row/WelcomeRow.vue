@@ -6,8 +6,8 @@
  * What pressing it does is the caller's.
  */
 import type { Component } from 'vue'
-import { KeyCap } from '@/shared/ui/key-cap'
-import type { PaletteKeys } from '@/shared/ui/key-cap'
+import { KeyCap } from '@numen/ui'
+import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
   /** What is drawn in front of it. A row with none is drawn without one. */

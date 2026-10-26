@@ -3,7 +3,7 @@ import { defineComponent, h } from 'vue'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { VAULT_SUMMARY } from '@numen/plugin-sdk'
 import { formatErrorMessage } from '@numen/wire'
-import type { VaultRow } from '@numen/ui'
+import type { VaultRow } from '@numen/shell'
 
 const wire = vi.hoisted(() => {
   async function* waits(): AsyncGenerator<never> {

@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { type VueWrapper } from '@vue/test-utils'
-import { WelcomePage } from '@numen/ui'
+import { WelcomePage } from '@numen/shell'
 import { WorkspaceLayout } from '@numen/shell'
 import { requests, cards, listed, mountWindow, said, settle, getTabs } from '@/testing/window'
 

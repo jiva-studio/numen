@@ -7,7 +7,7 @@ import { FolderRoot } from '@lucide/vue'
 import { WelcomeRow } from '../../welcome-row'
 import { vaultLetter } from '../../../lib/letters'
 import type { VaultRow } from '../../../lib/welcome'
-import type { PaletteKeys } from '@/shared/ui/key-cap'
+import type { PaletteKeys } from '@numen/ui'
 
 defineProps<{
   vaults: readonly VaultRow[]
