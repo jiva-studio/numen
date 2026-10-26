@@ -43,7 +43,7 @@ func applyProvider(opts *ort.SessionOptions, requested Provider, _ ComputeUnits)
 func enableDirectML(opts *ort.SessionOptions) error {
 	engine, loadedPath := runtimeState.GetLoaded()
 
-	if engine == nil || at == "" {
+	if engine == nil || loadedPath == "" {
 		return fmt.Errorf("onnx runtime not loaded")
 	}
 
