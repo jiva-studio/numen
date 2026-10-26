@@ -113,6 +113,11 @@ export function createPluginSupport(deps: PluginSupportDeps) {
   return { pluginHost, pluginLoader }
 }
 
+/** The plugins whose frontend the window loads: a plugin that declares none has nothing to fetch. */
+export const getFrontendPluginIds = (
+  plugins: readonly { id: string; hasFrontend: boolean }[],
+): string[] => plugins.filter((plugin) => plugin.hasFrontend).map((plugin) => plugin.id)
+
 export function watchPluginSettings(
   settings: ReturnType<typeof useSettings>,
   pluginLoader: PluginLoader,
@@ -120,7 +125,7 @@ export function watchPluginSettings(
   watch(
     () => settings.rest?.plugins?.value ?? [],
     (plugins) => {
-      void pluginLoader.trackPlugins(plugins.map((plugin) => plugin.id))
+      void pluginLoader.trackPlugins(getFrontendPluginIds(plugins))
     },
   )
 }

@@ -29,6 +29,8 @@ const (
 	PluginDisabled
 	// PluginFailed is a plugin that could not be started or reached.
 	PluginFailed
+	// PluginWithoutBackend is a plugin that declares no backend, so there is nothing to start.
+	PluginWithoutBackend
 )
 
 // UnavailableError is a plugin, or a capability, that no plugin answers for, and why. It is
@@ -55,6 +57,8 @@ func (e *UnavailableError) Error() string {
 		response = subject + " is not installed"
 	case PluginDisabled:
 		response = subject + " is disabled"
+	case PluginWithoutBackend:
+		response = subject + " has no backend"
 	default:
 		response = subject + " failed to start"
 	}

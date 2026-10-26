@@ -85,7 +85,7 @@ func newEventHost(t *testing.T, subscriptions map[string][]string, ports map[str
 	t.Helper()
 	host := NewHost("desktop.editor")
 	for id, events := range subscriptions {
-		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events}}
+		host.plugins[id] = plugindir.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id, ActivationEvents: events, Backend: pluginport.PluginBackend{Entrypoint: "bin/plugin"}}}
 	}
 	var mu sync.Mutex
 	var procs []*os.Process

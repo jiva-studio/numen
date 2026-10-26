@@ -161,7 +161,7 @@ func TestThePageLoadsThePluginsOfItsTarget(t *testing.T) {
 	cfg, db, vaults, _, _ := makeWindow(t)
 	api := makeWindowAPI(cfg, makeNotes(cfg, db, vaults))
 
-	if api.GetPluginIDs == nil || api.GetPluginDir == nil {
+	if api.GetFrontendPluginIDs == nil || api.GetPluginDir == nil {
 		t.Error("the page is not told the plugins it loads")
 	}
 	if api.Window.Named != platform.TargetFlashcards {

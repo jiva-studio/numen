@@ -200,6 +200,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       consent: 'none',
+      hasFrontend: false,
       settings: [],
     }
     const { tab } = createTab(false, {}, [samplePlugin])
@@ -283,6 +284,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       consent: 'none',
+      hasFrontend: false,
       settings: [],
     }
     const { tab } = createTab(false, {}, [samplePlugin])

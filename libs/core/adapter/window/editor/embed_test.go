@@ -379,7 +379,8 @@ func TestTheEmbedderConfiguredIsTheOneOnHand(t *testing.T) {
 		"name": "Vector Embeddings",
 		"version": "1.0.0",
 		"capabilities": ["embedding"],
-		"targets": ["desktop.editor"]
+		"targets": ["desktop.editor"],
+		"backend": {"entrypoint": "bin/embeddings"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)

@@ -28,7 +28,11 @@ import { useWindowStatusBar } from '../shell/useWindowStatusBar'
 import { resolveTaskAction, resolveTaskPlugin } from '../shell/taskActions'
 import { useAppHotkeys } from '../commands/useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
-import { createPluginSupport, watchPluginSettings } from '../plugins/useWindowPlugins'
+import {
+  createPluginSupport,
+  getFrontendPluginIds,
+  watchPluginSettings,
+} from '../plugins/useWindowPlugins'
 import { createPluginNotes } from '../plugins/pluginNotes'
 
 import { createDisplayOptions, createTargetResolver } from './useWindowDisplayOptions'
@@ -124,7 +128,7 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
     // The plugins the settings name are active before the layout opens the tabs of their kinds.
     startPlugins: async () => {
       const plugins = settings.rest?.plugins?.value ?? []
-      await deps.pluginLoader?.trackPlugins(plugins.map((plugin) => plugin.id))
+      await deps.pluginLoader?.trackPlugins(getFrontendPluginIds(plugins))
       await deps.pluginLoader?.start()
     },
     startWindow: () => window.start(),

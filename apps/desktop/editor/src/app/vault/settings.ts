@@ -84,6 +84,7 @@ export const settingsCore: SettingsPort = {
         capabilities: p.capabilities,
         secrets: p.secrets,
         storedSecrets: p.storedSecrets,
+        hasFrontend: p.hasFrontend,
         consent: consented[p.completionConsent],
         ...(p.failure
           ? {

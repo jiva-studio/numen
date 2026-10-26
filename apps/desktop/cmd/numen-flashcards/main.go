@@ -134,12 +134,12 @@ func run(cfg container.Config, debug debugOptions) error {
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	agent := cfg.GetSettingsAgent()
 	return &shell.API{
-		GetAgent:       func() agentport.Agent { return agent },
-		IsVaultIndexed: notes.IsVaultIndexed,
-		Window:         shell.NewWindow(platform.TargetFlashcards, nil),
-		GetPluginIDs:   cfg.GetPluginIDs,
-		GetPluginDir:   cfg.GetPluginDir,
-		PluginServices: cfg.GetPluginServices(),
+		GetAgent:             func() agentport.Agent { return agent },
+		IsVaultIndexed:       notes.IsVaultIndexed,
+		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
+		GetFrontendPluginIDs: cfg.GetFrontendPluginIDs,
+		GetPluginDir:         cfg.GetPluginDir,
+		PluginServices:       cfg.GetPluginServices(),
 	}
 }
 

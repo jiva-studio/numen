@@ -88,6 +88,7 @@ var (
 	ErrInvalidModelsOf        = errors.New("only a string setting is offered the models of a program")
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
+	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -298,6 +299,7 @@ func (m PluginManifest) ListIssues() []error {
 		issues = append(issues, fmt.Errorf("%w: idleTimeoutSeconds cannot be negative", ErrInvalidLifecycle))
 	}
 	issues = append(issues, m.listEntrypointIssues()...)
+	issues = append(issues, m.listBackendlessIssues()...)
 	issues = append(issues, m.listPermissionIssues()...)
 	issues = append(issues, m.listRuntimeIssues()...)
 	issues = append(issues, m.listDependencyIssues()...)
@@ -451,6 +453,43 @@ func (m PluginManifest) listEntrypointIssues() []error {
 	}
 	if m.Frontend != (PluginFrontend{}) && strings.TrimSpace(m.Frontend.Entrypoint) == "" {
 		issues = append(issues, fmt.Errorf("%w: entrypoint cannot be empty", ErrInvalidFrontend))
+	}
+	return issues
+}
+
+// HasBackend reports whether the plugin declares a process the host starts.
+func (m PluginManifest) HasBackend() bool {
+	return strings.TrimSpace(m.Backend.Entrypoint) != ""
+}
+
+// HasFrontend reports whether the plugin declares a bundle the windows load.
+func (m PluginManifest) HasFrontend() bool {
+	return strings.TrimSpace(m.Frontend.Entrypoint) != ""
+}
+
+// listBackendlessIssues names each field of a plugin without a backend that only a backend serves:
+// the host would start a process to answer it.
+func (m PluginManifest) listBackendlessIssues() []error {
+	if m.Backend != (PluginBackend{}) {
+		return nil
+	}
+	fields := []struct {
+		name       string
+		isDeclared bool
+	}{
+		{"activationEvents", len(m.ActivationEvents) > 0},
+		{"commands", len(m.Commands) > 0},
+		{"services", len(m.Services) > 0},
+		{"secrets", len(m.Secrets) > 0},
+		{"runtimes", len(m.Runtimes) > 0},
+		{"textInput", m.TextInput != nil},
+		{"playback", m.Playback != nil},
+	}
+	var issues []error
+	for _, field := range fields {
+		if field.isDeclared {
+			issues = append(issues, fmt.Errorf("%w: %s", ErrNoBackend, field.name))
+		}
 	}
 	return issues
 }

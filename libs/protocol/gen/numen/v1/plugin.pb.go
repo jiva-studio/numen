@@ -565,7 +565,9 @@ type PluginInfo struct {
 	// Whether the person lets the plugin ask for model completions.
 	CompletionConsent CompletionConsent `protobuf:"varint,12,opt,name=completion_consent,json=completionConsent,proto3,enum=numen.v1.CompletionConsent" json:"completion_consent,omitempty"`
 	// Set while the host suspends the plugin after it failed to start.
-	Failure       *PluginFailure `protobuf:"bytes,13,opt,name=failure,proto3" json:"failure,omitempty"`
+	Failure *PluginFailure `protobuf:"bytes,13,opt,name=failure,proto3" json:"failure,omitempty"`
+	// Whether the plugin declares a frontend bundle a window loads.
+	HasFrontend   bool `protobuf:"varint,14,opt,name=has_frontend,json=hasFrontend,proto3" json:"has_frontend,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -682,6 +684,13 @@ func (x *PluginInfo) GetFailure() *PluginFailure {
 		return x.Failure
 	}
 	return nil
+}
+
+func (x *PluginInfo) GetHasFrontend() bool {
+	if x != nil {
+		return x.HasFrontend
+	}
+	return false
 }
 
 // PluginFailure is why a plugin is suspended, and when it was.
@@ -963,7 +972,7 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\tmodels_of\x18\v \x01(\tR\bmodelsOfB\x06\n" +
 	"\x04_minB\x06\n" +
 	"\x04_maxB\a\n" +
-	"\x05_step\"\xd2\x03\n" +
+	"\x05_step\"\xf5\x03\n" +
 	"\n" +
 	"PluginInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
@@ -978,7 +987,8 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0estored_secrets\x18\n" +
 	" \x03(\tR\rstoredSecrets\x12J\n" +
 	"\x12completion_consent\x18\f \x01(\x0e2\x1b.numen.v1.CompletionConsentR\x11completionConsent\x121\n" +
-	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailureJ\x04\b\v\x10\fR\x06models\"j\n" +
+	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailure\x12!\n" +
+	"\fhas_frontend\x18\x0e \x01(\bR\vhasFrontendJ\x04\b\v\x10\fR\x06models\"j\n" +
 	"\rPluginFailure\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\x12)\n" +
 	"\x11failed_at_unix_ms\x18\x02 \x01(\x03R\x0efailedAtUnixMs\x12\x16\n" +

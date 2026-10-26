@@ -9,7 +9,7 @@ import (
 )
 
 func TestManifestTreatsAnONNXRuntimeDependencyAsTheRuntimesEntry(t *testing.T) {
-	legacy, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`))
+	legacy, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"backend":{"entrypoint":"bin/a"}}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}

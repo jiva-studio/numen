@@ -184,6 +184,7 @@ func NewWirePluginInfos(target []setting.PluginInfo) []*v1.PluginInfo {
 			StoredSecrets:     one.StoredSecrets,
 			CompletionConsent: Consents[one.Consent],
 			Failure:           newWirePluginFailure(one.Failure),
+			HasFrontend:       one.HasFrontend,
 		})
 	}
 	return infos

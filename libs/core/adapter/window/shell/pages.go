@@ -27,7 +27,7 @@ func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 // AgentService.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
-	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetPluginIDs})
+	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
 	agentRoute, agent := numenv1connect.NewAgentServiceHandler(&wire.AgentHandler{GetAgent: a.GetAgent})
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.ListVaults})
 	var themesRoute string

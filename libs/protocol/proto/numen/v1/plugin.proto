@@ -75,6 +75,8 @@ message PluginInfo {
   CompletionConsent completion_consent = 12;
   // Set while the host suspends the plugin after it failed to start.
   PluginFailure failure = 13;
+  // Whether the plugin declares a frontend bundle a window loads.
+  bool has_frontend = 14;
 }
 
 // PluginFailure is why a plugin is suspended, and when it was.

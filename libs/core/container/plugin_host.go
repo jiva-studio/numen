@@ -334,14 +334,18 @@ func (c Config) GetPluginDir(id string) (string, bool) {
 	return p.Dir, true
 }
 
-// GetPluginIDs are the plugins of the host's target, in the order of their ids.
-func (c Config) GetPluginIDs() []string {
+// GetFrontendPluginIDs are the plugins of the host's target that declare a frontend, in the order of
+// their ids.
+func (c Config) GetFrontendPluginIDs() []string {
 	if c.PluginHost == nil {
 		return nil
 	}
 	infos := c.PluginHost.GetPluginInfos()
 	ids := make([]string, 0, len(infos))
 	for _, info := range infos {
+		if !info.HasFrontend {
+			continue
+		}
 		ids = append(ids, info.ID)
 	}
 	return ids

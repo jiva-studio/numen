@@ -96,6 +96,7 @@ describe('what remains at a setting', () => {
               secrets: [],
               storedSecrets: [],
               consent: 'none',
+              hasFrontend: false,
               settings: [
                 {
                   key: 'enabled',
@@ -135,6 +136,7 @@ describe('what remains at a setting', () => {
               secrets: [],
               storedSecrets: [],
               consent: 'none',
+              hasFrontend: false,
               settings: [
                 {
                   key: 'enabled',

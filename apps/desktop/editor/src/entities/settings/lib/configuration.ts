@@ -86,6 +86,8 @@ export interface PluginInfo {
   readonly secrets: readonly string[]
   readonly storedSecrets: readonly string[]
   readonly consent: Consent
+  /** Whether the plugin declares a frontend the window loads. */
+  readonly hasFrontend: boolean
   /** Set while the host suspends the plugin. */
   readonly failure?: PluginFailure | undefined
 }

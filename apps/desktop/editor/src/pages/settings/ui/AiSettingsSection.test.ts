@@ -24,6 +24,7 @@ const createPlugin = (
   secrets: [],
   storedSecrets: [],
   consent: 'none',
+  hasFrontend: false,
   ...overrides,
 })
 

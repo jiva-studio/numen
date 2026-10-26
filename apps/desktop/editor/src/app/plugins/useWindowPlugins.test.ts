@@ -5,7 +5,7 @@ import { createNoticeQueue } from '@numen/shell'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { AgentHost, PluginContext, PluginManifest, WorkspaceHost } from '@numen/plugin-sdk'
-import { createPluginSupport } from './useWindowPlugins'
+import { createPluginSupport, getFrontendPluginIds } from './useWindowPlugins'
 
 const createSupport = () => {
   const windowTabs = useWindowTabs()
@@ -166,5 +166,16 @@ describe('the settings and notices a plugin is given', () => {
     const { pluginHost } = createWith({})
 
     expect(pluginHost.createContext('md.numen.a').notices).toBeUndefined()
+  })
+})
+
+describe('the plugins the window loads', () => {
+  it('are the ones that declare a frontend, so a backend alone is never fetched', () => {
+    const plugins = [
+      { id: 'md.numen.agents.server', hasFrontend: false },
+      { id: 'md.numen.views.sketch', hasFrontend: true },
+    ]
+
+    expect(getFrontendPluginIds(plugins)).toStrictEqual(['md.numen.views.sketch'])
   })
 })

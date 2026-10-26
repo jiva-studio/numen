@@ -250,6 +250,11 @@ func TestManifestRulesReportTheirSentinel(t *testing.T) {
 		{"negative idle timeout", `{"id":"a.b","name":"A","version":"1.0.0","lifecycle":{"idleTimeoutSeconds":-1}}`, pluginport.ErrInvalidLifecycle},
 		{"wasm backend", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"wasm","entrypoint":"x.wasm"}}`, pluginport.ErrInvalidBackend},
 		{"backend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","backend":{"type":"process"}}`, pluginport.ErrInvalidBackend},
+		{"activation events without a backend", `{"id":"a.b","name":"A","version":"1.0.0","activationEvents":["onFile:.md"],"frontend":{"entrypoint":"dist/index.js"}}`, pluginport.ErrNoBackend},
+		{"commands without a backend", `{"id":"a.b","name":"A","version":"1.0.0","commands":[{"id":"run","title":"Run"}]}`, pluginport.ErrNoBackend},
+		{"services without a backend", `{"id":"a.b","name":"A","version":"1.0.0","services":["numen.v1.SketchService"]}`, pluginport.ErrNoBackend},
+		{"secrets without a backend", `{"id":"a.b","name":"A","version":"1.0.0","secrets":["apiKey"]}`, pluginport.ErrNoBackend},
+		{"runtimes without a backend", `{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`, pluginport.ErrNoBackend},
 		{"frontend without entrypoint", `{"id":"a.b","name":"A","version":"1.0.0","frontend":{"styles":"s.css"}}`, pluginport.ErrInvalidFrontend},
 		{"setting without title", `{"id":"a.b","name":"A","version":"1.0.0","settings":[{"key":"k","type":"boolean"}]}`, pluginport.ErrEmptySettingTitle},
 		{"unknown permission", `{"id":"a.b","name":"A","version":"1.0.0","permissions":["shell"]}`, pluginport.ErrInvalidPermission},
@@ -321,7 +326,7 @@ func TestManifestNetworkAlias(t *testing.T) {
 }
 
 func TestManifestAcceptsTheONNXRuntime(t *testing.T) {
-	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"]}`))
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"backend":{"entrypoint":"bin/a"}}`))
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -437,7 +442,7 @@ func TestTheServicesAPluginServesAreFullNamesListedOnce(t *testing.T) {
 	}
 	for _, one := range cases {
 		t.Run(one.name, func(t *testing.T) {
-			text := `{"id":"a.b","name":"A","version":"1.0.0","services":` + one.services + `}`
+			text := `{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"services":` + one.services + `}`
 
 			manifest, err := pluginport.ReadManifest(strings.NewReader(text))
 
@@ -464,7 +469,7 @@ func TestReadManifestKeepsTheProgramWhoseModelsASettingIsOffered(t *testing.T) {
 
 func TestAManifestDeclaresDependencies(t *testing.T) {
 	sum := strings.Repeat("a", 64)
-	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","runtimes":["onnxruntime"],"dependencies":[{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
+	m, err := ReadManifest(strings.NewReader(`{"id":"a.b","name":"A","version":"1.0.0","backend":{"entrypoint":"bin/a"},"runtimes":["onnxruntime"],"dependencies":[{"id":"whisper","kind":"model","version":"1","sourceUrl":"https://example.com/w.bin","checksumSha256":"` + sum + `","metadata":{"fileName":"w.bin"}}]}`))
 	if err != nil {
 		t.Fatal(err)
 	}

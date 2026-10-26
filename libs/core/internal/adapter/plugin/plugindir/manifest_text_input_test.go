@@ -14,7 +14,7 @@ import (
 func readTextManifest(t *testing.T, input string) (pluginport.PluginManifest, error) {
 	t.Helper()
 	return pluginport.ReadManifest(strings.NewReader(`{
-		"id": "org.example.ocr", "name": "OCR", "version": "1.0.0",
+		"id": "org.example.ocr", "name": "OCR", "version": "1.0.0", "backend": {"entrypoint": "bin/ocr"},
 		"textInput": ` + input + `
 	}`))
 }

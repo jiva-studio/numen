@@ -214,6 +214,7 @@ describe('the settings tab', () => {
       secrets: [],
       storedSecrets: [],
       consent: 'none' as const,
+      hasFrontend: false,
       settings: [
         {
           key: 'autoScan',
@@ -259,6 +260,7 @@ describe('the settings tab', () => {
         secrets: [],
         storedSecrets: [],
         consent: 'none',
+        hasFrontend: false,
         settings: [
           {
             key: 'autoScan',

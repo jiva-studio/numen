@@ -161,6 +161,7 @@ describe('every setting', () => {
               secrets: ['apiKey'],
               storedSecrets: ['apiKey'],
               completionConsent: CompletionConsent.ASKED,
+              hasFrontend: true,
               settings: [
                 {
                   key: 'autoRun',
@@ -191,6 +192,7 @@ describe('every setting', () => {
         secrets: ['apiKey'],
         storedSecrets: ['apiKey'],
         consent: 'asked',
+        hasFrontend: true,
         settings: [
           {
             key: 'autoRun',

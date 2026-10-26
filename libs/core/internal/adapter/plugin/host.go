@@ -518,6 +518,9 @@ func (h *Host) prepareSupervisorLocked(pluginID string) (plugindir.DiscoveredPlu
 	if !h.isPluginEnabledLocked(pluginID) {
 		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginDisabled}
 	}
+	if _, isBuiltIn := h.getBuiltInLocked(pluginID); !isBuiltIn && !p.Manifest.HasBackend() {
+		return plugindir.DiscoveredPlugin{}, nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginWithoutBackend}
+	}
 
 	return p, sup, nil
 }
@@ -1522,6 +1525,7 @@ func (h *Host) GetPluginInfos() []pluginport.PluginInfo {
 			StoredSecrets: h.getStoredSecretsLocked(p.Manifest.ID),
 			Consent:       h.getCompletionConsentLocked(p.Manifest),
 			Failure:       h.getFailureLocked(p.Manifest.ID),
+			HasFrontend:   p.Manifest.HasFrontend(),
 		})
 	}
 	return result
@@ -1572,6 +1576,7 @@ func (h *Host) GetWirePluginInfos() []*v1.PluginInfo {
 			IsActive:     isActive,
 			Permissions:  p.Manifest.Permissions,
 			Secrets:      p.Manifest.Secrets,
+			HasFrontend:  p.Manifest.HasFrontend(),
 		})
 	}
 	return result

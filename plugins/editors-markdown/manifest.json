@@ -7,7 +7,7 @@
   "capabilities": [],
   "targets": ["desktop.editor"],
   "fileExtensions": [".md", ".markdown", ".txt", ".note"],
-  "activationEvents": ["onFile:.md", "onFile:.markdown", "onFile:.txt", "onFile:.note"],
+  "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 300,

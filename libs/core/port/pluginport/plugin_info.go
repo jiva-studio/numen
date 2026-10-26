@@ -38,6 +38,8 @@ type PluginInfo struct {
 	Consent CompletionConsent
 	// Failure is set while the host suspends the plugin after it failed to start.
 	Failure *PluginFailure
+	// HasFrontend is whether the plugin declares a bundle the windows load.
+	HasFrontend bool
 }
 
 // CompletionConsent is whether the person lets a plugin ask for model

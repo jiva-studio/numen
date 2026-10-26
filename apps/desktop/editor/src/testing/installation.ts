@@ -48,6 +48,7 @@ export const createPluginInfo = (
   secrets: [],
   storedSecrets: [],
   consent: 'none',
+  hasFrontend: false,
   ...overrides,
 })
 

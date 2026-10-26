@@ -28,8 +28,8 @@ type API struct {
 	// Window is this window itself: everything being done behind it, and everyone drawing it for
 	// the moment it goes.
 	Window *wire.Window
-	// GetPluginIDs are the plugins of the window's target.
-	GetPluginIDs func() []string
+	// GetFrontendPluginIDs are the plugins of the window's target that declare a frontend.
+	GetFrontendPluginIDs func() []string
 	// GetPluginDir is the folder of an installed plugin, and false for one not installed.
 	GetPluginDir func(id string) (string, bool)
 	// PluginServices is where the calls for the services plugins serve are forwarded.
