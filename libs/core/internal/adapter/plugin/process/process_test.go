@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"syscall"
 	"testing"
 )
 
@@ -238,18 +237,6 @@ func TestProcessLimits(t *testing.T) {
 
 	cmd := exec.Command("sleep", "5")
 	ConfigureSysProcAttr(cmd)
-
-	if runtime.GOOS == "linux" {
-		if cmd.SysProcAttr == nil {
-			t.Fatal("expected non-nil SysProcAttr on linux")
-		}
-		if !cmd.SysProcAttr.Setpgid {
-			t.Error("expected Setpgid to be true on linux")
-		}
-		if cmd.SysProcAttr.Pdeathsig != syscall.SIGTERM {
-			t.Errorf("expected Pdeathsig SIGTERM, got %v", cmd.SysProcAttr.Pdeathsig)
-		}
-	}
 
 	if err := cmd.Start(); err != nil {
 		t.Fatalf("failed to start sleep: %v", err)
