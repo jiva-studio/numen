@@ -1,11 +1,18 @@
-import { test, expect } from 'playwright/test'
+import { test, expect, type Locator } from 'playwright/test'
 import { openVaultFile, openWorkspace } from '../../support/workspace.js'
 
 /** What the player says where it cannot play a recording, in any of its forms. */
-const FAILURE = /cannot play|could not be (played|read)|cannot decode|does not play|was stopped/i
+const FAILURE = /failed to play|unreadable|not supported|loading stopped/i
 
 /** The length of `fixtures/talk.mp3`, a VBR mp3 with a Xing header. */
 const LENGTH_MS = 187_000
+
+/**
+ * The length the player's bar runs to, which is the length the engine reads: Chromium reads 187.0 s
+ * and WebKit 187.2 s, the frame count of the Xing header. A length read off the first frames is far
+ * shorter.
+ */
+const getBarLength = async (bar: Locator): Promise<number> => Number(await bar.getAttribute('max'))
 
 test.describe('An mp3 recording', () => {
   test('shows its whole length, seeks, and says nothing failed while it loads', async ({
@@ -37,12 +44,12 @@ test.describe('An mp3 recording', () => {
     const bar = player.getByRole('slider')
 
     await expect(player).toContainText('3:07')
-    await expect(bar).toHaveAttribute('max', String(LENGTH_MS))
+    await expect.poll(() => getBarLength(bar)).toBeCloseTo(LENGTH_MS, -3)
 
     await bar.fill('120000')
     await player.getByRole('button', { name: /^Play/ }).click()
     await expect(player).toContainText(/2:0[0-9]/)
-    await expect(bar).toHaveAttribute('max', String(LENGTH_MS))
+    await expect.poll(() => getBarLength(bar)).toBeCloseTo(LENGTH_MS, -3)
 
     const failures = await page.evaluate(
       () => (window as unknown as { shownFailures: string[] }).shownFailures,
