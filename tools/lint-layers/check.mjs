@@ -419,6 +419,90 @@ function verifyAppPluginBoundary() {
   }
 }
 
+/** The protos of the domains plugins own. Every one generates into the shared `numen/v1` package. */
+const DOMAIN_PROTOS = [
+  "transcript",
+  "ocr",
+  "article",
+  "recording",
+  "artifact",
+  "cards",
+  "presets",
+  "flashcards",
+  "transcription",
+  "download",
+  "proofreading",
+  "embedding",
+];
+const PROTOCOL_GEN = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1";
+
+/** The exported top-level names a generated Go file declares. */
+function readGoExports(file) {
+  if (!fs.existsSync(file)) return [];
+  const names = [];
+  let block = "";
+  for (const line of fs.readFileSync(file, "utf8").split("\n")) {
+    const open = line.match(/^(const|var) \($/);
+    if (open) { block = open[1]; continue; }
+    if (block && line === ")") { block = ""; continue; }
+    const member = block && line.match(/^\t([A-Z]\w*)\b/);
+    if (member) names.push(member[1]);
+    const top = line.match(/^(?:type|func|const|var) ([A-Z]\w*)/);
+    if (top) names.push(top[1]);
+  }
+  return names;
+}
+
+/** Which domain proto each generated name comes from, by package: `v1` and `numenv1connect`. */
+function readDomainSymbols() {
+  const gen = path.join(REPO_ROOT, "libs/protocol/gen/numen/v1");
+  const symbols = { [PROTOCOL_GEN]: new Map(), [PROTOCOL_GEN + "/numenv1connect"]: new Map() };
+  for (const proto of DOMAIN_PROTOS) {
+    for (const name of readGoExports(path.join(gen, proto + ".pb.go"))) {
+      symbols[PROTOCOL_GEN].set(name, proto);
+    }
+    for (const name of readGoExports(path.join(gen, "numenv1connect", proto + ".connect.go"))) {
+      symbols[PROTOCOL_GEN + "/numenv1connect"].set(name, proto);
+    }
+  }
+  return symbols;
+}
+
+/** The core names no message, enum or service of a domain proto. */
+function verifyCoreImportsNoDomainProto() {
+  const symbols = readDomainSymbols();
+  const files = spawnSync("git", ["ls-files", "--", "libs/core/*.go"], { cwd: REPO_ROOT, encoding: "utf8" })
+    .stdout.split("\n")
+    .filter((f) => f && fs.existsSync(path.join(REPO_ROOT, f)));
+  const found = [];
+  const byProto = new Map();
+  for (const file of files) {
+    const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+    const aliases = new Map();
+    for (const [, alias, pkg] of text.matchAll(/^\s*(?:import\s+)?(\w+\s+)?"([^"]+)"\s*$/gm)) {
+      if (!symbols[pkg]) continue;
+      aliases.set(alias ? alias.trim() : path.basename(pkg) === "v1" ? "numenv1" : path.basename(pkg), symbols[pkg]);
+    }
+    if (aliases.size === 0) continue;
+    text.split("\n").forEach((line, i) => {
+      const hits = new Set();
+      for (const [, alias, name] of line.matchAll(/\b(\w+)\.([A-Z]\w*)\b/g)) {
+        const proto = aliases.get(alias)?.get(name);
+        if (!proto) continue;
+        hits.add(`${name} (${proto}.proto)`);
+        byProto.set(proto, (byProto.get(proto) ?? 0) + 1);
+      }
+      if (hits.size > 0) found.push(`${file}:${i + 1}: ${[...hits].join(", ")}`);
+    });
+  }
+  if (found.length > 0) {
+    const summary = [...byProto].sort().map(([proto, count]) => `  ${proto}.proto: ${count}`);
+    throw new Error(
+      "The core names domain protos:\n" + summary.join("\n") + "\n" + found.join("\n"),
+    );
+  }
+}
+
 /** The tab kinds, note types and commands plugins own. */
 const PLUGIN_KINDS = ["deck", "stencil", "preset", "plex", "agent", "files"];
 
@@ -450,6 +534,22 @@ function verifyWindowNamesNoPluginKind() {
     .filter((line) => !CORE_NAME_FILES.some((prefix) => line.split(":")[0].startsWith(prefix)));
   if (found.length > 0) {
     throw new Error("The window names plugin kinds:\n" + found.join("\n"));
+  }
+}
+
+/** The texts made from a file and the files a plugin keeps, named by the plugin that makes them. */
+const PRODUCERS = ["asr", "ocr", "captions", "article", "copy", "review-log"];
+
+/** The notes library names no producer of a text or of a plugin's file. */
+function verifyNotesNamesNoProducer() {
+  const grep = spawnSync(
+    "git",
+    ["grep", "-nE", `"(${PRODUCERS.join("|")})"`, "--", "libs/notes/*.go", ":!*_test.go"],
+    { cwd: REPO_ROOT, encoding: "utf8" },
+  );
+  const found = (grep.stdout || "").split("\n").filter(Boolean);
+  if (found.length > 0) {
+    throw new Error("The notes library names producers:\n" + found.join("\n"));
   }
 }
 
@@ -485,13 +585,6 @@ const VERIFIERS = [
     },
   },
   {
-    id: "core-holds-no-plugin-package",
-    scope: "libs",
-    module: "core",
-    name: "Core Holds No Plugin Package (embedding)",
-    run: verifyCoreHoldsNoPluginPackage,
-  },
-  {
     id: "notes-depguard",
     scope: "libs",
     module: "notes",
@@ -504,8 +597,22 @@ const VERIFIERS = [
     id: "core-holds-no-plugin-package",
     scope: "libs",
     module: "core",
-    name: "Core Holds No Plugin Package (document, recognition, transcription, links, proofreading)",
+    name: "Core Holds No Plugin Package (document, recognition, transcription, links, proofreading, embedding)",
     run: verifyCoreHoldsNoPluginPackage,
+  },
+  {
+    id: "core-imports-no-domain-proto",
+    scope: "libs",
+    module: "core",
+    name: "Core Imports No Domain Proto (transcript, ocr, article, recording, artifact, cards, ...)",
+    run: verifyCoreImportsNoDomainProto,
+  },
+  {
+    id: "notes-names-no-producer",
+    scope: "libs",
+    module: "notes",
+    name: "Notes Library Names No Producer (asr, ocr, captions, article, copy, review-log)",
+    run: verifyNotesNamesNoProducer,
   },
   {
     id: "sdk-isolation",
