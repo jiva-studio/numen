@@ -103,10 +103,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 	if err := o.vaults.RecordOpen.Execute(v.ID); err != nil {
 		fmt.Fprintf(o.out, "not recording %s as the vault opened: %v\n", v.Name, err)
 	}
-	on, err := o.buildSession(v, rebuild)
-	if err != nil {
-		return err
-	}
+	on := o.buildSession(v, rebuild)
 	// Last, so a request that reads a run reads the one belonging to the vault
 	// in front of it.
 	o.State.setSession(on)
@@ -115,7 +112,7 @@ func (o *Installation) startVault(v domain.Vault, rebuild bool) error {
 
 // buildSession builds the half of the window that belongs to one vault: the scan
 // and the watch behind it.
-func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession, error) {
+func (o *Installation) buildSession(v domain.Vault, rebuild bool) *vaultSession {
 	watching, stop := context.WithCancel(o.ctx)
 
 	// What a plugin writes as a text version is cut where every other cut happens.
@@ -133,7 +130,7 @@ func (o *Installation) buildSession(v domain.Vault, rebuild bool) (*vaultSession
 		ctx:     watching,
 		cancel:  stop,
 		wait:    ended,
-	}, nil
+	}
 }
 
 // stopVault takes down the half of the window that belongs to the vault it is
