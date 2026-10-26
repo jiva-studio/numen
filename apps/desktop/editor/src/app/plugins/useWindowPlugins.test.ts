@@ -1,4 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
+import { nextTick, ref } from 'vue'
+import { DEFAULT_PLUGIN_ENABLED } from '@numen/plugin-host'
+import { createNoticeQueue } from '@numen/shell'
 import { useWindowTabs } from '@/entities/tab'
 import type { AnyTabKind } from '@/entities/tab'
 import type { AgentHost, PluginContext, PluginManifest, WorkspaceHost } from '@numen/plugin-sdk'
@@ -100,5 +103,68 @@ describe('the tab kind a plugin adds', () => {
 
     expect(windowTabs.hasKind('chat')).toBe(false)
     expect(windowTabs.getTab(id)).toBeNull()
+  })
+})
+
+describe('the settings and notices a plugin is given', () => {
+  const createWith = (more: Partial<Parameters<typeof createPluginSupport>[0]>) =>
+    createPluginSupport({
+      windowTabs: useWindowTabs(),
+      tabLinks: { removeClosedTab: vi.fn() } as never,
+      tabOpeners: {
+        registerExtensionReader: vi.fn(() => () => undefined),
+        registerEditor: vi.fn(() => () => undefined),
+      } as never,
+      settingsHolder: {},
+      ...more,
+    })
+
+  it('reads a setting of the plugin, and the default of its switch where none is written', () => {
+    const settings = ref<Record<string, unknown>>({ fontSize: 14 })
+    const rest = { getSetting: (path: readonly string[]) => settings.value[path[2] ?? ''] }
+    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const ctx = pluginHost.createContext('md.numen.a')
+
+    expect(ctx.getSetting('fontSize')).toBe(14)
+    expect(ctx.getSetting('enabled')).toBe(DEFAULT_PLUGIN_ENABLED)
+    expect(ctx.getSetting('missing')).toBeUndefined()
+  })
+
+  it('reads no setting before the window has its settings', () => {
+    const { pluginHost } = createWith({})
+
+    expect(pluginHost.createContext('md.numen.a').getSetting('enabled')).toBeUndefined()
+  })
+
+  it('calls the handler of a followed setting once per changed value', async () => {
+    const settings = ref<Record<string, unknown>>({ fontSize: 14 })
+    const rest = { getSetting: (path: readonly string[]) => settings.value[path[2] ?? ''] }
+    const { pluginHost } = createWith({ settingsHolder: { current: { rest } as never } })
+    const handler = vi.fn()
+    pluginHost.createContext('md.numen.a').onSettingChange('fontSize', handler)
+
+    settings.value = { fontSize: 14 }
+    await nextTick()
+    settings.value = { fontSize: 16 }
+    await nextTick()
+
+    expect(handler).toHaveBeenCalledExactlyOnceWith(16)
+  })
+
+  it("shows a plugin's notices in the window's one list, and clears them with the plugin", () => {
+    const notices = createNoticeQueue()
+    const { pluginHost } = createWith({ notices })
+
+    pluginHost.createContext('md.numen.a').notices?.show('Saved.', 'caution')
+    expect(notices.notices.value.map((one) => one.text)).toStrictEqual(['Saved.'])
+
+    pluginHost.disposePlugin('md.numen.a')
+    expect(notices.notices.value).toStrictEqual([])
+  })
+
+  it('gives a plugin no notices where the window keeps no list', () => {
+    const { pluginHost } = createWith({})
+
+    expect(pluginHost.createContext('md.numen.a').notices).toBeUndefined()
   })
 })
