@@ -82,9 +82,8 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	return nil
 }
 
-// describeSources puts the extraction of what nobody typed here into words: the
-// books of a vault and the recordings in it. Nothing is said about a vault
-// holding none.
+// describeSources puts the extraction of the files that are not notes into words: the
+// files the plugins read text from. Nothing is said about a vault holding none.
 func describeSources(r source.ExtractResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)

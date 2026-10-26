@@ -11,7 +11,7 @@ import (
 	"io"
 )
 
-const usage = `numen-cli — notes with typed links and spaced repetition
+const usage = `numen-cli — notes with typed links
 
 usage:
   numen-cli vault add <path> [--name <name>]   give a folder an identity and remember it
@@ -20,11 +20,10 @@ usage:
   numen-cli vault remove <vault>               take a vault off the list, leaving its folder
   numen-cli vault erase <vault> [--yes]        remove it, and put its folder in the trash
   numen-cli vault open <vault>                 the vault the next window opens
-  numen-cli scan <vault> [--rebuild-index]      bring the index up to date with a vault
+  numen-cli scan <vault> [--rebuild-index]     bring the index up to date with a vault
                                                --rebuild-index reads every file again, forgets
                                                the vectors of every model but the one in use,
                                                and gives their space back
-  numen-cli transcribe <vault> <file>          transcribe a recording with the plugin that reads it
   numen-cli search <vault> <query>             full-text search within one vault
   numen-cli links <vault> <note>               what a note points at, and what points at it
   numen-cli problems <vault> [<check>...]      what the vault holds that was not guessed at
@@ -86,8 +85,6 @@ func Run(ctx context.Context, out, errOut io.Writer, args []string,
 		return runVaultCommand(ctx, out, deps, rest[1:])
 	case "scan":
 		return runScanCommand(ctx, out, deps, rest[1:])
-	case "transcribe":
-		return runTranscribeCommand(ctx, out, deps, rest[1:])
 	case "search":
 		return runSearchCommand(ctx, out, errOut, deps, rest[1:])
 	case "links":

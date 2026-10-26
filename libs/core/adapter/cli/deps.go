@@ -5,9 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -30,8 +28,7 @@ type Locations struct {
 // command, and nothing opened until the command that needs it asks.
 //
 // A command pays only for its own machinery: listing vaults opens no index, a
-// search opens no provider that fills one, and asking for the text of a file opens
-// no index of another vault.
+// search opens no provider that fills one.
 type Deps struct {
 	// Vaults is the list of vaults this installation keeps and what the vault
 	// commands work on. Every command opens it: what a person typed is a name,
@@ -39,23 +36,19 @@ type Deps struct {
 	Vaults func() (Vaults, error)
 
 	// Scan opens the walk that brings the index level with one vault, the
-	// extraction of its books and the making of its vectors. rebuild reads every
+	// extraction of the text of its other files and the making of its vectors. rebuild reads every
 	// file, whatever the index remembers.
 	Scan func(ctx context.Context, v domain.Vault, rebuild bool) (Scan, error)
 
-	// Search opens the search a question is answered by. errorHandler is where a
+	// Search opens the search a question about v is answered by. errorHandler is where a
 	// half of it that could not run says so.
-	Search func(ctx context.Context, errorHandler windowport.ErrorHandler) (Search, error)
+	Search func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (Search, error)
 
 	// Links opens what a note points at and what points at it.
 	Links func(ctx context.Context) (Links, error)
 
 	// Problems opens what a scan could not act on.
 	Problems func(ctx context.Context) (Problems, error)
-
-	// TextMenu opens the menu a file offers about its text, carried out by the
-	// plugins that make text.
-	TextMenu func(ctx context.Context, v domain.Vault) (TextMenu, error)
 
 	// PluginCommands opens the commands the enabled plugins declare. Left nil, there are none.
 	PluginCommands func() PluginCommands
@@ -95,7 +88,7 @@ type VaultRows struct {
 
 // Scan is one vault made searchable.
 type Scan struct {
-	// Read is the walk, the books and the vectors, in the order they run in.
+	// Read is the walk, the text of the other files and the vectors, in the order they run in.
 	Read vault.ReadWholeVault
 	// Summary is what the index holds about the vault, asked once the walk is
 	// over.
@@ -136,19 +129,4 @@ func closeIfOpen(closer func() error) {
 	if closer != nil {
 		_ = closer()
 	}
-}
-
-// TextMenu is the menu the files of one vault offer about their text, the tasks the plugins report
-// while they carry an entry out, and the cut that makes a file searchable from its live text.
-type TextMenu struct {
-	Menu  TextMenuRunner
-	Tasks *run.Tasks
-	Cut   func(ctx context.Context, v domain.Vault, path string) error
-	Close func() error
-}
-
-// TextMenuRunner is what a file's menu offers about its text, and the entry carried out.
-type TextMenuRunner interface {
-	GetMenu(ctx context.Context, v domain.Vault, path string) ([]textversion.MenuEntry, error)
-	RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry textversion.MenuEntry) error
 }

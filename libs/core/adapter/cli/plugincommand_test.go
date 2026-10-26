@@ -150,3 +150,55 @@ func TestACommandNoPluginDeclaresIsUnknown(t *testing.T) {
 		t.Errorf("the command answered %v", err)
 	}
 }
+
+// The commands of a domain come from the plugin that owns it: without plugins the core's own command
+// line neither runs nor mentions one.
+func TestTheCoreHasNoCommandOfADomain(t *testing.T) {
+	domainCommands := []string{"transcribe", "recognise", "import", "proofread"}
+	deps := cli.Deps{Vaults: createVaultList(notebook)}
+
+	help, err := runWithDeps(deps, "help")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range domainCommands {
+		if strings.Contains(help, name) {
+			t.Errorf("the help of the core mentions %q:\n%s", name, help)
+		}
+		if _, err := runWithDeps(deps, name, "notebook", "talks/lecture.wav"); err == nil ||
+			!strings.Contains(err.Error(), `unknown command "`+name+`"`) {
+			t.Errorf("the core answered %s with %v", name, err)
+		}
+	}
+}
+
+func TestADomainCommandRunsInThePluginThatDeclaresIt(t *testing.T) {
+	declared := &pluginCommands{entries: []plugincommand.Entry{{
+		PluginID: "md.numen.engines.transcription",
+		Command:  plugincommand.Command{ID: "transcribe", Title: "Transcribe a recording", FileExtensions: []string{"wav"}},
+	}}}
+	commands := plugincommand.NewCommands(declared)
+	deps := cli.Deps{
+		Vaults: createVaultList(notebook),
+		PluginCommands: func() cli.PluginCommands {
+			return cli.PluginCommands{
+				List: commands.List,
+				Open: func(context.Context, domain.Vault) (plugincommand.Run, func() error, error) {
+					return commands.Run, nil, nil
+				},
+			}
+		},
+	}
+
+	help, err := runWithDeps(deps, "help")
+	if err != nil || !strings.Contains(help, "numen-cli transcribe <vault> <file>\n      Transcribe a recording") {
+		t.Fatalf("the help reads %q (%v)", help, err)
+	}
+	if _, err := runWithDeps(deps, "transcribe", "notebook", "talks/lecture.wav"); err != nil {
+		t.Fatal(err)
+	}
+	if len(declared.calls) != 1 || declared.calls[0].PluginID != "md.numen.engines.transcription" ||
+		declared.calls[0].Path != "talks/lecture.wav" {
+		t.Errorf("the plugin was sent %+v", declared.calls)
+	}
+}

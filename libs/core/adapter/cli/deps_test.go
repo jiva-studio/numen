@@ -102,7 +102,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 
 		// No embedder: a test reaches no model, so a question is answered by its
 		// words alone.
-		Search: func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+		Search: func(ctx context.Context, _ domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 			db, err := index.Open(ctx, where.Index)
 			if err != nil {
 				return cli.Search{}, err

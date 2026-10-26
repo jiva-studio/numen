@@ -27,10 +27,6 @@ numen-cli search Research "entropy"
 | `numen-cli vault erase <vault> [--yes]` | remove it, and put its folder in the trash |
 | `numen-cli vault open <vault>` | the vault the next window opens |
 | `numen-cli scan <vault> [--rebuild-index]` | bring the index up to date with a vault --rebuild-index reads every file again, forgets the vectors of every model but the one in use, and gives their space back |
-| `numen-cli recognise <vault> <file>` | recognise a scanned document with a model |
-| `numen-cli proofread <vault> <file>` | put a document's recognition right with a model |
-| `numen-cli transcribe <vault> <file>` | transcribe a recording with the plugin that reads it |
-| `numen-cli import <vault> <note> [--again] [--copy]` | fetch what an address holds, and --copy the video itself |
 | `numen-cli search <vault> <query>` | full-text search within one vault |
 | `numen-cli links <vault> <note>` | what a note points at, and what points at it |
 | `numen-cli problems <vault> [<check>...]` | what the vault holds that was not guessed at |
@@ -54,10 +50,6 @@ numen-cli search Research "entropy"
 
 **`scan`** brings the index up to date with what is on disk: what changed is read again, what is gone is dropped. `--rebuild-index` reads every file whatever the index remembers, which is the answer when search is returning something stale. Vectors are made here too, and unlike the window, which does it in the background, the command waits for them.
 
-**`recognise`** reads a scanned document with the OCR models, page by page, and writes the text into the vault's own folder. This is the long job worth leaving in a terminal overnight, and it is the same work the window would do — do it here and the window finds it done.
-
-**`proofread`** corrects that text afterwards with the model named in [the settings](/reader/#correcting-what-ocr-read). With nothing named there, it has nothing to correct with and says so.
-
 **`search`** is the words half of what the window does: names and text, in one vault.
 
 **`links`** prints what a note points at and what points at it, which is the plex written out.
@@ -70,6 +62,19 @@ numen-cli search Research "entropy"
 | `frontmatter` | a block between the `---` lines that is not YAML. |
 | `ambiguous` | a link that reaches more than one note. |
 | `dangling` | a link that reaches nothing. |
+
+## Commands of the plugins
+
+Every other command comes from an enabled plugin, which declares it; `numen-cli help` lists them under "commands of the plugins", each with the arguments it takes. A command over a file takes the file after the vault, and an argument is a flag. The plugins run without a window, and a command waits until its plugin is done:
+
+| | |
+| --- | --- |
+| `numen-cli transcribe <vault> <file>` | transcribe a recording (`engines-transcription`) |
+| `numen-cli recognise <vault> <file>` | recognise the text of a scan, page by page (`engines-ocr`) |
+| `numen-cli proofread <vault> <file>` | put the live text of a file right with the model named in [the settings](/reader/#correcting-what-ocr-read) (`tools-proofreading`) |
+| `numen-cli import <vault> --address <url>` | keep an address as a link and fetch its text (`tools-media-importer`) |
+
+What a command makes is a text version of the file. The next `scan` reads it into the index, as the window does, and `search` finds it. A plugin turned off takes its commands with it.
 
 ## Where it puts things
 

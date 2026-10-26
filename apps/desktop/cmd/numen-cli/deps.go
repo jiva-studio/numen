@@ -25,7 +25,7 @@ func configureLocations(cfg container.Config, where cli.Locations) container.Con
 // are made here and the terminal is handed them.
 //
 // Each one opens when its command asks and not before: a person listing vaults
-// waits for no index, and one asking about a scan waits for no transcriber.
+// waits for no index, and one asking about links starts no plugin.
 func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 	return func(where cli.Locations) cli.Deps {
 		cfg = configureLocations(cfg, where)
@@ -34,14 +34,10 @@ func makeDeps(cfg container.Config) func(cli.Locations) cli.Deps {
 			Vaults: func() (cli.Vaults, error) { return createVaults(cfg) },
 			Links:  func(ctx context.Context) (cli.Links, error) { return createLinks(ctx, cfg) },
 			Scan: func(ctx context.Context, v domain.Vault, rebuild bool) (cli.Scan, error) {
-				cfg.SetPluginVaultPath(v.Path)
 				return createScan(ctx, cfg, v, rebuild)
 			},
-			TextMenu: func(ctx context.Context, v domain.Vault) (cli.TextMenu, error) {
-				return createTextMenu(ctx, cfg, v)
-			},
-			Search: func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
-				return createSearch(ctx, cfg, errorHandler)
+			Search: func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+				return createSearch(ctx, cfg, v, errorHandler)
 			},
 			Problems:       func(ctx context.Context) (cli.Problems, error) { return createProblems(ctx, cfg) },
 			PluginCommands: func() cli.PluginCommands { return createPluginCommands(cfg) },
@@ -88,11 +84,15 @@ func createLinks(ctx context.Context, cfg container.Config) (cli.Links, error) {
 func createScan(
 	ctx context.Context, cfg container.Config, v domain.Vault, rebuild bool,
 ) (cli.Scan, error) {
-	cfg.SetPluginVaultPath(v.Path)
 	indexing := cfg
 	indexing.ShouldRebuildIndex = rebuild
 	db, err := indexing.OpenIndex(ctx)
 	if err != nil {
+		return cli.Scan{}, err
+	}
+	indexing, err = indexing.OpenPluginWork(ctx, db, v)
+	if err != nil {
+		_ = db.Close()
 		return cli.Scan{}, err
 	}
 	embedder, closeEmbedder, why := indexing.Embedder(ctx)
@@ -122,30 +122,27 @@ func closeIfOpen(closeFn func() error) {
 	}
 }
 
-// createTextMenu is the menu the files of a vault offer about their text.
-func createTextMenu(ctx context.Context, cfg container.Config, v domain.Vault) (cli.TextMenu, error) {
-	opened, err := cfg.OpenTextMenu(ctx, v)
-	if err != nil {
-		return cli.TextMenu{}, err
-	}
-	return cli.TextMenu{Menu: opened.Menu, Tasks: opened.Tasks, Cut: opened.Cut, Close: opened.Close}, nil
-}
-
-// createSearch is the search over the index. Only the provider that embeds
-// questions is opened, because nothing a search does fills an index.
+// createSearch is the search over the index, reading the text of a passage through the text
+// versions of the vault. Only the provider that embeds questions is opened, because nothing a
+// search does fills an index.
 func createSearch(
-	ctx context.Context, cfg container.Config, errorHandler windowport.ErrorHandler,
+	ctx context.Context, cfg container.Config, v domain.Vault, errorHandler windowport.ErrorHandler,
 ) (cli.Search, error) {
 	db, err := cfg.OpenIndex(ctx)
 	if err != nil {
 		return cli.Search{}, err
 	}
-	asking, closeAsking, why := cfg.Embedder(ctx)
+	asking, err := cfg.OpenPluginWork(ctx, db, v)
+	if err != nil {
+		_ = db.Close()
+		return cli.Search{}, err
+	}
+	embedder, closeEmbedder, why := asking.Embedder(ctx)
 	return cli.Search{
-		Search: cfg.NewSearch(db, asking, errorHandler),
+		Search: asking.NewSearch(db, embedder, errorHandler),
 		Words:  why,
 		Close: func() error {
-			closeIfOpen(closeAsking)
+			closeIfOpen(closeEmbedder)
 			return db.Close()
 		},
 	}, nil

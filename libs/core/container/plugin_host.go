@@ -102,30 +102,40 @@ func (c Config) GetPluginCommands() plugincommand.Commands {
 // and the queue through the host with no window, and answers how to run a command of theirs and
 // how to close what it opened.
 func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (plugincommand.Run, func() error, error) {
-	c.SetPluginVaultPath(v.Path)
-	versions, err := c.NewTextVersions()
-	if err != nil {
-		return plugincommand.Run{}, nil, err
-	}
-	c.TextVersions = versions
-	registry, err := c.Registry()
-	if err != nil {
-		return plugincommand.Run{}, nil, err
-	}
 	db, err := c.OpenIndex(ctx)
 	if err != nil {
 		return plugincommand.Run{}, nil, err
 	}
+	if _, err := c.OpenPluginWork(ctx, db, v); err != nil {
+		_ = db.Close()
+		return plugincommand.Run{}, nil, err
+	}
+	return c.GetPluginCommands().Run, db.Close, nil
+}
+
+// OpenPluginWork lets the plugins work one vault, its text versions and the queue through the host
+// with no window, over the index given. The configuration it returns reads the text of a file
+// through the text versions, as a window does.
+func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
+	c.SetPluginVaultPath(v.Path)
+	versions, err := c.NewTextVersions()
+	if err != nil {
+		return c, err
+	}
+	c.TextVersions = versions
+	registry, err := c.Registry()
+	if err != nil {
+		return c, err
+	}
 	current := func() (domain.Vault, bool) { return v, true }
 	vault, err := c.OpenPluginVault(registry, db, current, PluginVaultHooks{})
 	if err != nil {
-		_ = db.Close()
-		return plugincommand.Run{}, nil, err
+		return c, err
 	}
 	c.SetPluginWork(run.NewTasks(), &run.Lock{})
 	c.SetPluginVault(vault)
 	c.SetPluginTexts(ctx, current)
-	return c.GetPluginCommands().Run, db.Close, nil
+	return c, nil
 }
 
 // PluginServices is where a window forwards the calls it receives for the services plugins serve.

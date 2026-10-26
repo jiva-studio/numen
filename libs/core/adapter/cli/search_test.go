@@ -46,7 +46,7 @@ func newVault(folder string) domain.Vault {
 func createSearchDeps(folder string, index fakeSearchIndex, words error) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(newVault(folder)),
-		Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) {
+		Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) {
 			return cli.Search{
 				Search: search.New(index, vaultreader.Readers{}, nil, nil, 0, nil),
 				Words:  words,
@@ -82,7 +82,7 @@ func TestSearchReturnsWhatWentWrong(t *testing.T) {
 		},
 		"the search cannot be opened": {
 			Vaults: createVaultList(newVault(folder)),
-			Search: func(context.Context, windowport.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
+			Search: func(context.Context, domain.Vault, windowport.ErrorHandler) (cli.Search, error) { return cli.Search{}, errRefused },
 		},
 		"the index cannot answer": createSearchDeps(folder, fakeSearchIndex{err: errRefused}, nil),
 	} {
@@ -166,9 +166,9 @@ func TestAHalfThatCannotRunIsHeardAboutAdjacentTheAnswer(t *testing.T) {
 	t.Parallel()
 	provided := createSearchDeps(t.TempDir(), fakeSearchIndex{}, nil)
 	open := provided.Search
-	provided.Search = func(ctx context.Context, errorHandler windowport.ErrorHandler) (cli.Search, error) {
+	provided.Search = func(ctx context.Context, v domain.Vault, errorHandler windowport.ErrorHandler) (cli.Search, error) {
 		errorHandler(errRefused)
-		return open(ctx, errorHandler)
+		return open(ctx, v, errorHandler)
 	}
 
 	_, stderr, err := runWithStderr(t, provided, "search", "shelf", "bees")
