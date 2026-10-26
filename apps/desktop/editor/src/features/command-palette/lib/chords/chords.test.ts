@@ -6,7 +6,14 @@
  * command the window does not have would draw a cap over silence.
  */
 import { describe, expect, it } from 'vitest'
-import { isChord, findChordCommand, findChordKeys, createRowKeys, CHORDS } from './chords'
+import {
+  isChord,
+  findChordCommand,
+  findChordKeys,
+  createRowKeys,
+  findShortcutKeys,
+  CHORDS,
+} from './chords'
 import { createCommands } from '../commands/commands'
 import { WORDS as words } from '@/shared/words'
 
@@ -44,9 +51,7 @@ describe('the command a letter asks for', () => {
   })
 
   it('is another command entirely when Shift is retained with the letter', () => {
-    expect(findChordCommand('p', true)).toBe('travel')
     expect(findChordCommand('c', true)).toBe('child')
-    expect(findChordCommand('a', true)).toBe('agent')
     expect(findChordCommand('w', true)).toBe('close')
     expect(findChordCommand('n', true)).toBe('newVault')
   })
@@ -76,9 +81,9 @@ describe('how a keystroke is drawn on the row that names it', () => {
   })
 
   it('carries Shift where the chord holds it', () => {
-    expect(findChordKeys('travel', 'MacIntel')).toEqual({
+    expect(findChordKeys('child', 'MacIntel')).toEqual({
       icons: ['command', 'shift'],
-      letter: 'P',
+      letter: 'C',
     })
     expect(findChordKeys('close', 'Linux x86_64')).toEqual({
       icons: ['control', 'shift'],
@@ -89,6 +94,26 @@ describe('how a keystroke is drawn on the row that names it', () => {
   it('is nothing for a command no keystroke reaches', () => {
     expect(findChordKeys('destroy', 'Linux x86_64')).toBeUndefined()
     expect(createRowKeys('destroy', 'Linux x86_64')).toEqual({})
+  })
+})
+
+describe('how a shortcut a plugin declares is drawn', () => {
+  it('is the modifier of the window with the letter, and Shift where the shortcut names it', () => {
+    expect(findShortcutKeys('mod+shift+x', 'MacIntel')).toEqual({
+      icons: ['command', 'shift'],
+      letter: 'X',
+    })
+    expect(findShortcutKeys('Ctrl + G', 'Linux x86_64')).toEqual({
+      icons: ['control'],
+      letter: 'G',
+    })
+  })
+
+  it('is nothing for a shortcut the palette draws no keystroke of', () => {
+    expect(findShortcutKeys('shift+x', 'MacIntel')).toBeUndefined()
+    expect(findShortcutKeys('mod+alt+x', 'MacIntel')).toBeUndefined()
+    expect(findShortcutKeys('mod+f5', 'MacIntel')).toBeUndefined()
+    expect(findShortcutKeys('', 'MacIntel')).toBeUndefined()
   })
 })
 

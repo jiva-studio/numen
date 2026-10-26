@@ -15,15 +15,20 @@ const h = vi.hoisted(() => ({
   depsOptions: null as unknown,
   registerCommand: vi.fn(),
   getExtraCommands: null as null | (() => readonly unknown[]),
+  searchOptions: null as null | { getTravel?: () => string },
 }))
 
 vi.mock('@/features/command-palette', () => ({
   ANSWER_WORDS: { name: 'answer words' },
   isChord: h.isChord,
   findChordCommand: h.findChordCommand,
+  findShortcutKeys: (shortcut: string) => ({ letter: shortcut }),
   runInvocation: h.runInvocation,
   registerCommand: h.registerCommand,
-  useSearch: () => ({ setOpen: h.setPaletteOpen }),
+  useSearch: (_core: unknown, _words: unknown, options: { getTravel?: () => string }) => {
+    h.searchOptions = options
+    return { setOpen: h.setPaletteOpen }
+  },
   useCommandPalette: (...args: unknown[]) => {
     h.getExtraCommands = args[7] as () => readonly unknown[]
     return {
@@ -187,11 +192,23 @@ describe('a key press', () => {
 
 describe('a plugin command over a note', () => {
   const PRESET = { id: 'plugin:preset', title: 'Open the preset', scope: 'note' as const }
+  const GRAPH = {
+    id: 'plugin:graph',
+    title: 'New graph',
+    shortcut: 'mod+shift+x',
+    icon: 'graph icon',
+  }
+  const SHOW = {
+    id: 'plugin:show',
+    title: 'Show in the graph',
+    scope: 'note' as const,
+    isNoteDestination: true,
+  }
 
-  const setupPlugin = () => {
+  const setupPlugin = (declared: readonly object[] = [PRESET]) => {
     const executeCommand = vi.fn(async () => true)
     const pluginHost = {
-      getPaletteCommands: () => [PRESET],
+      getPaletteCommands: () => declared,
       hasCommand: (id: string) => id === 'preset',
       executeCommand,
       handleShortcut: () => false,
@@ -250,6 +267,52 @@ describe('a plugin command over a note', () => {
       title: 'Animals',
       type: 'deck',
     })
+  })
+
+  it('draws a plugin command with the keystroke and the icon it declares', () => {
+    setupPlugin([GRAPH])
+    const offers = (h.getExtraCommands?.() ?? []) as {
+      id: string
+      keys?: unknown
+      icon?: unknown
+    }[]
+    const offer = offers.find((one) => one.id === GRAPH.id)
+
+    expect(offer?.keys).toStrictEqual({ letter: 'mod+shift+x' })
+    expect(offer?.icon).toBe('graph icon')
+  })
+
+  it('offers the commands over the window as ways in, and those over a note to the menus', () => {
+    const one = setupPlugin([PRESET, GRAPH])
+
+    expect(one.pluginWays.value).toStrictEqual([
+      { id: GRAPH.id, text: GRAPH.title, keys: { letter: 'mod+shift+x' }, icon: 'graph icon' },
+    ])
+    expect(one.getNoteCommands()).toStrictEqual([
+      { id: PRESET.id, text: PRESET.title, group: 'note' },
+    ])
+  })
+
+  it('puts a note in front through the command declared for it, and offers it to the search', async () => {
+    const one = setupPlugin([PRESET, SHOW])
+
+    await expect(one.showNote('Animals.md')).resolves.toBe(true)
+
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(SHOW.id, {
+      path: 'Animals.md',
+      title: '',
+      type: 'deck',
+    })
+    expect(h.searchOptions?.getTravel?.()).toBe(SHOW.title)
+  })
+
+  it('puts no note in front where no plugin declares a command for it', async () => {
+    const one = setupPlugin([PRESET])
+
+    await expect(one.showNote('Animals.md')).resolves.toBe(false)
+
+    expect(one.executeCommand).not.toHaveBeenCalled()
+    expect(h.searchOptions?.getTravel?.()).toBe('')
   })
 
   it('runs by id with the note of the target', async () => {

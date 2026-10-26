@@ -249,6 +249,7 @@ export function createPluginContext(
       host.emitFileSelect(pluginId, e)
     },
     openTab: (kind: string, targetPath?: string) => host.openTab?.(kind, targetPath),
+    navigateTab: (kind: string, targetPath: string) => host.navigateTab?.(kind, targetPath),
     closeTab: (id: string) => {
       host.closeTab?.(id)
     },

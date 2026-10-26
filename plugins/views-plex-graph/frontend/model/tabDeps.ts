@@ -36,8 +36,11 @@ export function createPlexTabDeps({ workspace, notes }: PlexHost, id: string): P
       workspace.syncPath(id, path, title ?? '')
     },
     readHeadings: (paths) => notes.getHeadings(paths),
-    askAgent: (text) => workspace.ask(text),
     runCommand: (command, path, title) => workspace.runCommand(command, { path, title }),
+    getNoteCommands: () => workspace.getNoteCommands(),
+    getCommandIcon: (command) => workspace.getCommandIcon(command),
+    getNoteIcon: (type) =>
+      workspace.getEntryIcon({ path: '', name: '', isFolder: false, kind: 'note', type }, false),
     openingPath: workspace.openingPath,
     readOpeningPath: () => workspace.readOpeningPath(),
     dragged: workspace.draggedPaths,

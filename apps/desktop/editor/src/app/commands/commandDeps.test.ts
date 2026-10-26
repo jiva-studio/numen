@@ -42,14 +42,8 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     },
     recorded: {},
     pointed: {},
-    files: () => ({ revealPath: record('revealPath') }),
     travel: vi.fn(),
     leavePath: vi.fn(),
-    agents: () => ({
-      askQuestion: (text: string) => {
-        record('askQuestion')(text)
-      },
-    }),
     getOpeningNote: () => '',
     runs: {} as never,
     writeMessage: vi.fn(),
@@ -203,15 +197,11 @@ describe('the commands reach the window', () => {
   it('routes where a command points', async () => {
     const { deps, calls } = createOptions()
 
-    deps.navigator.revealPath('Llama.md')
     deps.navigator.openTab('settings')
     deps.navigator.closeTab('tab-1')
-    deps.navigator.ask('what is a llama?')
     expect(calls).toStrictEqual([
-      ['revealPath', 'Llama.md'],
       ['openTabOfKind', 'settings'],
       ['requestClose', 'tab-1'],
-      ['askQuestion', 'what is a llama?'],
     ])
   })
 

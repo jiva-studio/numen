@@ -48,6 +48,39 @@ describe('view-agent-chat plugin', () => {
     expect(second.userQuestion.value).toBe('')
   })
 
+  it('declares a new conversation over the window, and a question about a note', async () => {
+    const openCalls: (readonly [string, string | undefined])[] = []
+    const { host, recorded } = createHost()
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.agent.chat',
+      workspace: host.workspace,
+      agent: host.agent,
+      openTab: (kind, path) => {
+        openCalls.push([kind, path])
+        return Promise.resolve('')
+      },
+    })
+    activate(ctx)
+
+    expect(
+      ctx.getRegisteredCommands().map((one) => [one.id, one.scope, one.shortcut]),
+    ).toStrictEqual([
+      ['agent', undefined, 'mod+shift+a'],
+      ['ask', 'note', undefined],
+    ])
+    await ctx.triggerCommand('agent')
+    await ctx.triggerCommand('ask', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.getRegisteredContextMenus()[0]!.handler({
+      path: 'Two.md',
+      name: 'Two',
+      isFolder: false,
+      kind: 'note',
+    })
+
+    expect(openCalls).toStrictEqual([[AGENT, undefined]])
+    expect(recorded.questions).toStrictEqual(['One.md — ', 'Two.md — '])
+  })
+
   it('refuses to activate in a window that offers no workspace or agent', () => {
     expect(() =>
       activate(createMockPluginContext({ pluginId: 'md.numen.views.agent.chat' })),

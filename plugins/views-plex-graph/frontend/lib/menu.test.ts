@@ -2,23 +2,11 @@
  * The menu on a node, and what it offers.
  */
 import { describe, expect, it } from 'vitest'
-import { ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
+import { createNodeItems, ITEMS, NEW_NOTE, NONE, OFFERED } from './menu'
 
 describe('what the menu offers', () => {
-  it('offers commands over a note', () => {
-    const expected = [
-      'read',
-      'travel',
-      'preset',
-      'copy',
-      'reveal',
-      'child',
-      'parent',
-      'jump',
-      'title',
-      'ask',
-      'remove',
-    ]
+  it('offers the commands of the window over a note', () => {
+    const expected = ['read', 'copy', 'child', 'parent', 'jump', 'title', 'remove']
     expect([...ITEMS.map((item) => item.id)].sort()).toStrictEqual([...expected].sort())
   })
 
@@ -31,7 +19,7 @@ describe('what the menu offers', () => {
   it('remains the items in groups, each group whole and unbroken', () => {
     const groups = ITEMS.map((item) => item.group)
     for (const item of ITEMS) expect(item.group).not.toBeUndefined()
-    expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'agent', 'remove'])
+    expect([...new Set(groups)]).toStrictEqual(['open', 'file', 'plex', 'remove'])
     expect(groups.filter((group, index) => group !== groups[index - 1])).toStrictEqual([
       ...new Set(groups),
     ])
@@ -42,6 +30,31 @@ describe('what the menu offers', () => {
 
     expect(OFFERED.has('destroy')).toBe(false)
     expect(OFFERED.has('constructor')).toBe(false)
+  })
+})
+
+describe('what the menu on a node offers of the commands plugins declare', () => {
+  it('draws them after what opens the note, in a band of their own', () => {
+    const items = createNodeItems([
+      { id: 'plugin:share', text: 'Share the note' },
+      { id: 'plugin:print', text: 'Print the note' },
+    ])
+
+    expect(items.map((item) => [item.id, item.group])).toStrictEqual([
+      ['read', 'open'],
+      ['plugin:share', 'declared'],
+      ['plugin:print', 'declared'],
+      ['copy', 'file'],
+      ['child', 'plex'],
+      ['parent', 'plex'],
+      ['jump', 'plex'],
+      ['title', 'plex'],
+      ['remove', 'remove'],
+    ])
+  })
+
+  it('is the commands of the window alone where no plugin declares one', () => {
+    expect(createNodeItems([])).toStrictEqual(ITEMS)
   })
 })
 

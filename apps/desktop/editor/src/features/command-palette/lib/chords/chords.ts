@@ -24,10 +24,7 @@ export const CHORDS: readonly Chord[] = [
   { command: 'note', letter: 'n', hasShift: false },
   { command: 'newVault', letter: 'n', hasShift: true },
   { command: 'goto', letter: 'g', hasShift: false },
-  { command: 'travel', letter: 'p', hasShift: true },
-  { command: 'plex', letter: 'x', hasShift: true },
   { command: 'child', letter: 'c', hasShift: true },
-  { command: 'agent', letter: 'a', hasShift: true },
   { command: 'close', letter: 'w', hasShift: true },
 ]
 
@@ -56,4 +53,23 @@ export const findChordKeys = (command: string, agent: string): PaletteKeys | und
 export const createRowKeys = (command: string, agent: string): { keys?: PaletteKeys } => {
   const chordKeys = findChordKeys(command, agent)
   return chordKeys ? { keys: chordKeys } : {}
+}
+
+/** The keys that hold the window's modifier in a shortcut a plugin declares, such as `mod+shift+x`. */
+const MODIFIERS: ReadonlySet<string> = new Set(['mod', 'ctrl', 'control', 'cmd'])
+
+/**
+ * How a shortcut a plugin declares is drawn on the keyboard in hand, and nothing
+ * for one that is not the window's modifier with a letter, and Shift or not.
+ */
+export const findShortcutKeys = (shortcut: string, agent: string): PaletteKeys | undefined => {
+  const parts = shortcut
+    .toLowerCase()
+    .split('+')
+    .map((part) => part.trim())
+  const letter = parts.at(-1) ?? ''
+  const modifiers = parts.slice(0, -1)
+  if (!/^[a-z]$/.test(letter) || !modifiers.some((one) => MODIFIERS.has(one))) return undefined
+  if (modifiers.some((one) => !MODIFIERS.has(one) && one !== 'shift')) return undefined
+  return keyChord(letter, agent, modifiers.includes('shift'))
 }

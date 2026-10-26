@@ -27,25 +27,45 @@ vi.mock('../plugins/fileServices', () => ({
   createPathCommandHost: () => ({}),
 }))
 
-/** The plex tab the window holds, and what its kind says it is over. */
-interface Plex {
+/** A tool tab that follows a note, and what its kind says it is over. */
+interface Graph {
   readonly target?: { path: string; title: string }
 }
 
-const create = ({ plex, hasPlexKind = true }: { plex?: Plex; hasPlexKind?: boolean } = {}) => {
+/** A kind of tab that takes text put to it. */
+const CHAT = { kind: 'chat', isTool: true, receiveText: () => {} }
+
+const create = ({
+  graph,
+  hasChat = true,
+  showsNotes = true,
+}: { graph?: Graph; hasChat?: boolean; showsNotes?: boolean } = {}) => {
   const writer = vi.fn()
+  const graphKind = {
+    kind: 'graph',
+    isTool: true,
+    navigate: () => {},
+    getTarget: () => graph?.target,
+  }
+  const open = new Map<string, { kind: object; state: string }>([
+    ['graph:1', { kind: graphKind, state: 'graph state' }],
+    ['chat:1', { kind: CHAT, state: 'chat state' }],
+  ])
   const deps = {
     log: { getWriter: vi.fn(() => writer) },
     tabOpeners: { openFileAt: vi.fn(), openFile: vi.fn(() => Promise.resolve()) },
     windowTabs: {
       registerKinds: vi.fn(),
-      sendText: vi.fn(() => Promise.resolve('agent:1')),
-      hasKind: vi.fn(() => hasPlexKind),
-      navigateTab: vi.fn(() => Promise.resolve('plex:1')),
+      sendText: vi.fn(() => Promise.resolve('chat:1')),
+      findKind: vi.fn((isWanted: (kind: object) => boolean) =>
+        [graphKind, ...(hasChat ? [CHAT] : [])].find(isWanted),
+      ),
       navigateTabsAt: vi.fn(() => Promise.resolve()),
-      handle: { last: vi.fn(() => (plex ? { id: 'plex:1', state: 'plex state' } : null)) },
-      getTab: vi.fn(() => ({ kind: { getTarget: () => plex?.target } })),
+      tabs: ref(graph ? [{ id: 'graph:1' }, { id: 'chat:1' }] : [{ id: 'chat:1' }]),
+      getTab: vi.fn((id: string) => open.get(id)),
     },
+    showNote: vi.fn(() => Promise.resolve(showsNotes)),
+    getNoteCommands: () => [],
     editing: { making: {}, fileFlush: { addHandler: vi.fn(), raise: vi.fn() } },
     settings: {
       kinds: ['settings'],
@@ -83,27 +103,17 @@ describe('the window kinds', () => {
     expect(deps.windowTabs.registerKinds).toHaveBeenCalledWith(['settings'])
   })
 
-  it('makes files through the makers it passes the commands, and reveals a path in the files tab', async () => {
-    const { deps, window } = create()
+  it('makes files through the makers it passes the commands', () => {
+    const { window } = create()
 
     expect(window.made).toBe('made')
     expect(window.services.files).toStrictEqual({ name: 'files' })
-    await window.files.revealPath('notes/a.md')
-    expect(deps.windowTabs.navigateTab).toHaveBeenCalledWith('files', 'notes/a.md')
-  })
-
-  it('reveals nothing where the window has no files kind', async () => {
-    const { deps, window } = create({ hasPlexKind: false })
-
-    await window.files.revealPath('notes/a.md')
-
-    expect(deps.windowTabs.navigateTab).not.toHaveBeenCalled()
   })
 })
 
 describe('the note the window relies on', () => {
-  it('is what the plex the person was last in is over', () => {
-    const { window } = create({ plex: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
+  it('is what the tool that follows a note the person was last in is over', () => {
+    const { window } = create({ graph: { target: { path: 'Ideas/Plan.md', title: 'The plan' } } })
 
     expect(window.services.workspace?.getNoteInFocus()).toEqual({
       path: 'Ideas/Plan.md',
@@ -111,9 +121,9 @@ describe('the note the window relies on', () => {
     })
   })
 
-  it('is no note at all in a window holding no plex, or one over nothing', () => {
+  it('is no note at all in a window holding no such tool, or one over nothing', () => {
     expect(create().window.services.workspace?.getNoteInFocus()).toEqual({ path: '', title: '' })
-    expect(create({ plex: {} }).window.services.workspace?.getNoteInFocus()).toEqual({
+    expect(create({ graph: {} }).window.services.workspace?.getNoteInFocus()).toEqual({
       path: '',
       title: '',
     })
@@ -121,21 +131,20 @@ describe('the note the window relies on', () => {
 })
 
 describe('a note travelled to', () => {
-  it('is put in the plex the person was last in', async () => {
+  it('is put in front by the command a plugin declares for it', async () => {
     const { deps, window } = create()
 
     await window.travel('a.md')
 
-    expect(deps.windowTabs.navigateTab).toHaveBeenCalledWith('plex', 'a.md')
+    expect(deps.showNote).toHaveBeenCalledWith('a.md')
     expect(deps.tabOpeners.openFile).not.toHaveBeenCalled()
   })
 
-  it('is opened in its editor where the window has no plex kind', async () => {
-    const { deps, window } = create({ hasPlexKind: false })
+  it('is opened in its editor where no plugin declares one', async () => {
+    const { deps, window } = create({ showsNotes: false })
 
     await window.destinations.travel('a.md')
 
-    expect(deps.windowTabs.navigateTab).not.toHaveBeenCalled()
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'here')
   })
 
@@ -183,7 +192,7 @@ describe('the services the window gives a plugin', () => {
     workspace?.showError('the link was not written')
     workspace?.getMessageWriter('stencil')('named a stencil')
 
-    expect(deps.windowTabs.sendText).toHaveBeenCalledWith('agent', 'what is this?')
+    expect(deps.windowTabs.sendText).toHaveBeenCalledWith('chat', 'what is this?')
     expect(window.dragged.value).toStrictEqual(['a.md'])
     expect(writer).toHaveBeenCalledWith('the link was not written', 'error')
     expect(deps.log.getWriter).toHaveBeenCalledWith('stencil')
@@ -204,8 +213,8 @@ describe('the services the window gives a plugin', () => {
     expect(writer).toHaveBeenCalledWith(expect.any(String), 'error')
   })
 
-  it('tell the person a question cannot be put where the window has no agent tab kind', async () => {
-    const { deps, window, writer } = create({ hasPlexKind: false })
+  it('tell the person a question cannot be put where no kind of tab takes text', async () => {
+    const { deps, window, writer } = create({ hasChat: false })
 
     window.services.workspace?.ask('what is this?')
     await Promise.resolve()

@@ -5,6 +5,7 @@ export { fileOpeners } from './model/openers'
 export type {
   EditorKind,
   FileOpener,
+  FilePlacement,
   FileOpeners,
   OpenPlacement,
   SourceReader,
@@ -13,15 +14,12 @@ export type { OpenTabs, Tab } from './lib/tab'
 export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './lib/kinds'
 export { useWindowTabs } from './model/windowTabs'
 export {
-  AGENT,
   BOOK,
   CONVERSATION,
   createWorkspace,
   DOCUMENT,
-  FILES,
   generateId,
   NOTE,
-  PLEX,
   RECORDING,
   SETTINGS,
   SETTINGS_FILE,

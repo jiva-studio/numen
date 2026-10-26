@@ -5,11 +5,8 @@
 import { computed } from 'vue'
 import { Menu, optionsForType, Plex, useTypeSize, Waiting } from '@numen/ui'
 import type { MenuTrigger, PlexRelation, PlexDestination } from '@numen/ui'
-import type { LucideIcon } from '@lucide/vue'
 import PlexQuickLinkPopover from './ui/PlexQuickLinkPopover.vue'
 import PlexLinkInspectorPopover from './ui/PlexLinkInspectorPopover.vue'
-import { ITEMS, NONE } from './lib/menu'
-import { findIcon, getNoteIcon } from './lib/icons'
 import type { DirectionalLinkItem, PlexTabState } from './types'
 import { WORDS as words } from './words'
 import { usePlexCanvas } from './model/usePlexCanvas'
@@ -27,7 +24,7 @@ const options = computed(() => ({
   maxHeadings: maxHeadings.value,
 }))
 
-const items = computed(() => (menu.value?.node === null ? NONE : ITEMS))
+const { menuItems: items, getMenuIcon, getNodeIcon } = props.state
 
 const { rootElement, picture, lastPointer, onPointerUp, onContextMenu, onEdgeMenu, closeMenu } =
   usePlexCanvas({ state: props.state })
@@ -96,12 +93,6 @@ function onSaveLinkInspector(rows: readonly DirectionalLinkItem[]) {
 function onDismissLinkInspector() {
   props.state.dismissLinkInspector()
 }
-
-/* -------------------------------- Helpers --------------------------------- */
-function getNodeIcon(node: string): LucideIcon | null {
-  const type = props.state.getType(node)
-  return type === 'note' ? null : getNoteIcon(type)
-}
 </script>
 
 <template>
@@ -135,7 +126,7 @@ function getNodeIcon(node: string): LucideIcon | null {
       @edge-menu="onEdgeMenu"
       @dismiss="onDismissPicture"
     >
-      <!-- A deck, a stencil and a preset are drawn as the tree draws them. An
+      <!-- A note of a type a plugin declares is drawn as the tree draws it. An
            ordinary note is drawn its title and nothing before it. -->
       <template #icon="{ node }: { node: { id: string } }">
         <component
@@ -157,7 +148,12 @@ function getNodeIcon(node: string): LucideIcon | null {
       @dismiss="onDismissMenu"
     >
       <template #icon="{ id }">
-        <component :is="findIcon(id)" v-if="findIcon(id)" class="plex__icon" aria-hidden="true" />
+        <component
+          :is="getMenuIcon(id)"
+          v-if="getMenuIcon(id)"
+          class="plex__icon"
+          aria-hidden="true"
+        />
       </template>
     </Menu>
 

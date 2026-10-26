@@ -13,6 +13,8 @@ export function extractPaletteCommands(
       title: reg.title,
       ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
       ...(reg.scope ? { scope: reg.scope } : {}),
+      ...(reg.icon ? { icon: reg.icon } : {}),
+      ...(reg.isNoteDestination ? { isNoteDestination: true } : {}),
     })
   }
   return list

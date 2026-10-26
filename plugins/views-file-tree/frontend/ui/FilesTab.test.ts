@@ -224,7 +224,7 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
-      'plex',
+      'relation',
       'agent',
       'remove',
     ])

@@ -880,6 +880,14 @@ describe('the kinds the window holds', () => {
     release()
     expect(window.hasKind('thing')).toBe(false)
   })
+  it('finds the first registered that answers, and none where none does', () => {
+    const window = useWindowTabs()
+    window.registerKind(kind().one)
+    window.registerKind(kind({ kind: 'chat', receiveText: () => {} }).one)
+
+    expect(window.findKind((one) => one.receiveText !== undefined)?.kind).toBe('chat')
+    expect(window.findKind((one) => one.isTool === true)).toBeUndefined()
+  })
 })
 
 describe('a window opened with nothing to restore', () => {

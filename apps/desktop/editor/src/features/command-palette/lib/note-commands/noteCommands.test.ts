@@ -19,16 +19,13 @@ describe('the commands over a note', () => {
     expect(needs).toStrictEqual({
       read: undefined,
       beside: undefined,
-      travel: undefined,
       child: 'naming',
       parent: 'naming',
       jump: 'naming',
       title: 'naming',
       remove: undefined,
       destroy: 'exactly',
-      ask: undefined,
       copy: undefined,
-      reveal: undefined,
     })
   })
 })

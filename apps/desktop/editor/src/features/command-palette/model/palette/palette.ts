@@ -7,7 +7,15 @@
  * step it relies on is what the field means. What a step draws is read again
  * on every keystroke, so a vault moving under an open step is drawn as it is.
  */
-import { computed, ref, shallowRef, type ComputedRef, type Ref, type ShallowRef } from 'vue'
+import {
+  computed,
+  ref,
+  shallowRef,
+  type Component,
+  type ComputedRef,
+  type Ref,
+  type ShallowRef,
+} from 'vue'
 import { createRequestGuard as latest } from '@/shared/requestGuard'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
 import type { Vault } from '@/entities/vault'
@@ -353,7 +361,10 @@ function createPalettePresentation(
     on,
   })
 
-  return { groups, findNoteType: draws.findNoteType, ...execution }
+  /** The icon a command declares, and nothing for one that declares none. */
+  const findCommandIcon = (id: string): Component | null => byId.value.get(id)?.icon ?? null
+
+  return { groups, findNoteType: draws.findNoteType, findCommandIcon, ...execution }
 }
 
 export function useCommandPalette(
@@ -393,6 +404,7 @@ export function useCommandPalette(
     leaveStep: steps.leaveStep,
     goBack: steps.goBack,
     findNoteType: presentation.findNoteType,
+    findCommandIcon: presentation.findCommandIcon,
   }
   return api
 }

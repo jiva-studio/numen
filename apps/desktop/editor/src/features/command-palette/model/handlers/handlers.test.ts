@@ -210,13 +210,11 @@ const window = (
       reload: () => void isDone.push('reloads'),
     },
     navigator: {
-      revealPath: (path) => void isDone.push(`revealPath ${path}`),
       travel: async (path) => void isDone.push(`travel ${path}`),
       leave: async (from, to) => void isDone.push(`leave ${from} ${to}`),
       getOpeningNote: () => 'Root.md',
       openTab: (kind) => void isDone.push(`openTab ${kind}`),
       closeTab: (tab) => void isDone.push(`closeTab ${tab}`),
-      ask: (text) => void isDone.push(`ask ${text}`),
       search: () => void isDone.push('search'),
     },
     settings: {
@@ -313,14 +311,6 @@ describe('a note put in front of the person', () => {
       'openFile physics/Ontology.md Ontology beside',
     ])
   })
-
-  it('is travelled to in the plex, where that is what was requested', async () => {
-    const one = window()
-
-    await carry(createInvocation('travel', front()), one.on)
-
-    expect(one.actions).toStrictEqual(['travel physics/Ontology.md'])
-  })
 })
 
 describe('a note made', () => {
@@ -340,7 +330,7 @@ describe('a note made', () => {
     expect(one.actions[0]).toBe('createNote Entropy — —')
   })
 
-  it('is travelled to in the plex the person is looking at', async () => {
+  it('is put in front of the person', async () => {
     const one = window()
 
     await carry(createInvocation('child', front(), 'Entropy'), one.on)
@@ -869,14 +859,13 @@ describe('a note that moved between the answer and the invocation', () => {
 })
 
 describe('a command over the window', () => {
-  it('opens a tab of the kind requested for, and closes the one in front', async () => {
+  it('opens the settings, and closes the tab in front', async () => {
     const one = window()
 
-    await carry(createInvocation('plex', front()), one.on)
-    await carry(createInvocation('agent', front()), one.on)
+    await carry(createInvocation('settings', front()), one.on)
     await carry(createInvocation('close', front()), one.on)
 
-    expect(one.actions).toStrictEqual(['openTab plex', 'openTab agent', 'closeTab tab'])
+    expect(one.actions).toStrictEqual(['openTab settings', 'closeTab tab'])
   })
 
   it('passes the field back to the search', async () => {
@@ -920,13 +909,12 @@ describe('a command over the vault', () => {
 })
 
 describe('what the window is requested about a note', () => {
-  it('is put to the agent, and its path put on the clipboard', async () => {
+  it('has its path put on the clipboard', async () => {
     const one = window()
 
-    await carry(createInvocation('ask', front()), one.on)
     await carry(createInvocation('copy', front()), one.on)
 
-    expect(one.actions).toStrictEqual(['ask physics/Ontology.md — ', 'copies physics/Ontology.md'])
+    expect(one.actions).toStrictEqual(['copies physics/Ontology.md'])
   })
 })
 

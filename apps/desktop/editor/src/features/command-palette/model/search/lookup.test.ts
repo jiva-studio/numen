@@ -16,7 +16,6 @@ const WORDS: Words = {
   names: 'Names',
   text: 'Text',
   meaning: 'Meaning',
-  travel: 'Show in plex',
   read: 'Open the note',
   readAt: 'Open at this heading',
   readDocument: 'Open the document',
@@ -25,6 +24,9 @@ const WORDS: Words = {
   wordsOnly: 'Words only',
   notEmbedded: 'Not read for meaning yet',
 }
+
+/** The words of the command a plugin declares to put a note in front. */
+const SHOW = 'Show in the graph'
 
 const createName = (overrides: Partial<NameMatch> = {}): NameMatch => ({
   path: 'physics/Ontology.md',
@@ -56,53 +58,66 @@ const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   line: -1,
   start: 0,
   length: 0,
-  offers: ['note', 'plex', 'document'],
+  offers: ['note', 'travel', 'document'],
   type: 'note',
   kind: 'note',
   ...overrides,
 })
 
 describe('a note found by its title', () => {
-  it('is placed under its path, offers the plex first, and is a note', () => {
-    const row = createNameItem(createName(), WORDS)
+  it('is placed under its path, offers putting it in front first, and is a note', () => {
+    const row = createNameItem(createName(), WORDS, SHOW)
 
     expect(row.item.id).toBe('physics/Ontology.md')
     expect(row.item.actions).toStrictEqual([
-      { id: 'plex', text: WORDS.travel },
+      { id: 'travel', text: SHOW },
       { id: 'note', text: WORDS.read },
     ])
-    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['plex', 'note'], kind: 'note' }))
+    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['travel', 'note'], kind: 'note' }))
+  })
+})
+
+describe('a note found where no plugin puts a note in front', () => {
+  it('offers the note alone, by name, heading and passage', () => {
+    const read = [{ id: 'note', text: WORDS.read }]
+
+    expect(createNameItem(createName(), WORDS, '').item.actions).toStrictEqual(read)
+    expect(createNameItem(createName(), WORDS, '').hit.offers).toStrictEqual(['note'])
+    expect(
+      createNameItem(createName({ heading: 'Being', line: 7 }), WORDS, '').hit.offers,
+    ).toStrictEqual(['note'])
+    expect(createPassageItem('text', createPassage(), WORDS, '').item.actions).toStrictEqual(read)
   })
 })
 
 describe('a heading found by its name', () => {
   it('is placed under its path and line, offers the note first, and is a note', () => {
-    const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'deck' }), WORDS)
+    const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'deck' }), WORDS, SHOW)
 
     expect(row.item.id).toBe('physics/Ontology.md#7')
     expect(row.item.title).toBe('Being')
     expect(row.item.detail).toBe('Ontology')
     expect(row.item.actions).toStrictEqual([
       { id: 'note', text: WORDS.readAt },
-      { id: 'plex', text: WORDS.travel },
+      { id: 'travel', text: SHOW },
     ])
     expect(row.hit).toStrictEqual(
-      createHit({ line: 7, offers: ['note', 'plex'], type: 'deck', kind: 'note' }),
+      createHit({ line: 7, offers: ['note', 'travel'], type: 'deck', kind: 'note' }),
     )
   })
 })
 
 describe('a passage found in a note', () => {
-  it('offers the note and the plex, and remains at its line', () => {
-    const row = createPassageItem('text', createPassage(), WORDS)
+  it('offers the note and putting it in front, and remains at its line', () => {
+    const row = createPassageItem('text', createPassage(), WORDS, SHOW)
 
     expect(row.item.id).toBe('text:physics/Ontology.md:12')
     expect(row.item.actions).toStrictEqual([
       { id: 'note', text: WORDS.read },
-      { id: 'plex', text: WORDS.travel },
+      { id: 'travel', text: SHOW },
     ])
     expect(row.hit).toStrictEqual(
-      createHit({ line: 3, start: 12, length: 4, offers: ['note', 'plex'] }),
+      createHit({ line: 3, start: 12, length: 4, offers: ['note', 'travel'] }),
     )
   })
 })
@@ -113,6 +128,7 @@ describe('a passage found in a source that is not a note', () => {
       'meaning',
       createPassage({ isNote: false, kind: 'book', title: '', type: 'deck' }),
       WORDS,
+      SHOW,
     )
 
     expect(row.item.title).toBe('physics/Ontology.md')
@@ -134,12 +150,12 @@ describe('a passage found in a source that is not a note', () => {
 describe('where choosing an item takes the person', () => {
   it('is nowhere where nothing was found, or the item does not offer that', () => {
     expect(resolveDestination(undefined, 'note')).toBeNull()
-    expect(resolveDestination(createHit({ offers: ['note'] }), 'plex')).toBeNull()
+    expect(resolveDestination(createHit({ offers: ['note'] }), 'travel')).toBeNull()
   })
 
-  it('is the plex, by the note it remains in', () => {
-    expect(resolveDestination(createHit(), 'plex')).toStrictEqual({
-      at: 'plex',
+  it('is the note put in front, by the note it remains in', () => {
+    expect(resolveDestination(createHit(), 'travel')).toStrictEqual({
+      at: 'travel',
       path: 'physics/Ontology.md',
       title: 'Ontology',
     })

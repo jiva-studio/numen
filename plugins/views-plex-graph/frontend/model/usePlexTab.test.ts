@@ -6,14 +6,18 @@
  * it only from the node it was made from.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { usePlexTab, type PlexTabState, type PlexTabDeps } from './usePlexTab'
-import { ITEMS, NEW_NOTE } from '../lib/menu'
+import { ITEMS, NEW_NOTE, NONE } from '../lib/menu'
 import { usePlexView as viewing, type PlexView } from './usePlexView'
 import { WORDS as words } from '../words'
 import { createVault, settle, viewOn, type Types, type NeighbourSpec } from '../fixtures'
 import type { NoteHeading, NoteRelation, PathRename } from '../types'
 import { getRenamedPath } from '@numen/plugin-sdk'
+
+/** The icons the window draws a declared command and a note of a declared type with. */
+const SHARE_ICON = defineComponent({ name: 'ShareIcon', render: () => null })
+const DECK_ICON = defineComponent({ name: 'DeckIcon', render: () => null })
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (
@@ -56,7 +60,9 @@ const tab = (
       headingsAsked.push(paths)
       return new Map([...divides.value].filter(([path]) => paths.includes(path)))
     },
-    askAgent: (text) => request.push(text),
+    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
+    getCommandIcon: (id) => (id === 'plugin:share' ? SHARE_ICON : null),
+    getNoteIcon: (type) => (type === 'deck' ? DECK_ICON : null),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
     readOpeningPath: async () => 'Opening.md',
@@ -173,6 +179,28 @@ describe('the menu on a node', () => {
     expect(one.ran.map(([id]) => id)).toStrictEqual(ITEMS.map((item) => item.id))
   })
 
+  it('offers the commands plugins declare over a note after what opens it, and runs them', () => {
+    const one = tab('Root.md', ['Child.md'])
+    one.state.openMenu(createMenuRequest(one.node('Child.md')))
+
+    expect(one.state.menuItems.value.map((item) => item.id).slice(0, 3)).toStrictEqual([
+      'read',
+      'plugin:share',
+      'copy',
+    ])
+    one.state.chooseMenuItem('plugin:share')
+
+    expect(one.ran).toEqual([['plugin:share', 'Child.md', 'Child']])
+  })
+
+  it('draws its own items with its own icons, and a declared command with the one the window gives', () => {
+    const one = tab('Root.md')
+
+    expect(one.state.getMenuIcon('plugin:share')).toBe(SHARE_ICON)
+    expect(one.state.getMenuIcon('read')).not.toBeNull()
+    expect(one.state.getMenuIcon('plugin:unknown')).toBeNull()
+  })
+
   it('does nothing when it relies on nothing', () => {
     const one = tab('Root.md')
 
@@ -212,7 +240,9 @@ describe('a plex drawing nothing', () => {
       headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
-      askAgent: () => {},
+      getNoteCommands: () => [],
+      getCommandIcon: () => null,
+      getNoteIcon: () => null,
       runCommand: () => {},
       openingPath: ref(''),
       readOpeningPath: async () => '',
@@ -267,6 +297,13 @@ describe('the menu off every node', () => {
     expect(one.went).toStrictEqual([])
   })
 
+  it('offers a note to be made and no command a plugin declares over a note', () => {
+    const one = tab('Root.md')
+    one.state.openMenu(request)
+
+    expect(one.state.menuItems.value).toStrictEqual(NONE)
+  })
+
   it('makes nothing of a command over a note, there being no note it is over', async () => {
     const one = tab('Root.md')
     one.state.openMenu(request)
@@ -303,7 +340,9 @@ describe('the picture', () => {
       headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
-      askAgent: () => {},
+      getNoteCommands: () => [],
+      getCommandIcon: () => null,
+      getNoteIcon: () => null,
       runCommand: () => {},
       openingPath: ref(''),
       readOpeningPath: async () => '',
@@ -477,7 +516,9 @@ describe('the headings a node nests', () => {
       headings: ref(6),
       openNote: () => {},
       readHeadings: () => new Promise((isDone) => answers.push(isDone)),
-      askAgent: () => {},
+      getNoteCommands: () => [],
+      getCommandIcon: () => null,
+      getNoteIcon: () => null,
       runCommand: () => {},
       openingPath: ref('Root.md'),
       readOpeningPath: async () => 'Root.md',
@@ -677,7 +718,9 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     openNote: (path, options) =>
       openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here']),
     readHeadings: async () => new Map(),
-    askAgent: () => {},
+    getNoteCommands: () => [],
+    getCommandIcon: () => null,
+    getNoteIcon: () => null,
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref(''),
     readOpeningPath: async () => '',
@@ -988,6 +1031,13 @@ describe('what a node remains for', () => {
     expect(one.state.getType(one.node('Stencil.md'))).toBe('stencil')
     expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
+
+  it('is drawn with the icon the window gives its type, and an ordinary note with none', () => {
+    const one = tab('Root.md', ['Deck.md'], true, { 'Deck.md': 'deck' })
+
+    expect(one.state.getNodeIcon(one.node('Deck.md'))).toBe(DECK_ICON)
+    expect(one.state.getNodeIcon(one.node('Root.md'))).toBeNull()
+  })
 })
 
 describe('quick-link popover from a node handle', () => {
@@ -1087,7 +1137,9 @@ describe('quick-link popover from a node handle', () => {
       headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
-      askAgent: () => {},
+      getNoteCommands: () => [],
+      getCommandIcon: () => null,
+      getNoteIcon: () => null,
       runCommand: () => {},
       openingPath: ref('Opening.md'),
       readOpeningPath: async () => 'Opening.md',
@@ -1109,7 +1161,9 @@ describe('quick-link popover from a node handle', () => {
       headings: ref(6),
       openNote: () => {},
       readHeadings: async () => new Map(),
-      askAgent: () => {},
+      getNoteCommands: () => [],
+      getCommandIcon: () => null,
+      getNoteIcon: () => null,
       runCommand: () => {},
       openingPath: ref('Opening.md'),
       readOpeningPath: async () => 'Opening.md',

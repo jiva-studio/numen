@@ -18,9 +18,6 @@ vi.mock('@/features/command-palette', () => ({ runSupport: () => ({ name: 'runs'
 vi.mock('@/features/tab-linking', () => ({ useTabLinks: () => h.f.tabLinks }))
 vi.mock('@/shared/notices/messages', () => ({ createMessageLog: () => h.f.log }))
 vi.mock('@/entities/tab', () => ({
-  AGENT: 'agent',
-  FILES: 'files',
-  PLEX: 'plex',
   createWorkspace: vi.fn(),
   fileOpeners: (args: unknown) => {
     h.args.openers = args
@@ -160,15 +157,19 @@ beforeEach(() => {
       commandDeps: { name: 'commandDeps' },
       palette: {},
       onKeyDown: vi.fn(),
+      showNote: vi.fn(() => Promise.resolve(true)),
+      getNoteCommands: vi.fn(() => [{ id: 'plugin:share', text: 'Share', group: 'note' }]),
+      pluginWays: ref([]),
     },
-    pluginHost: { notifyVaultChange: vi.fn() },
+    pluginHost: {
+      notifyVaultChange: vi.fn(),
+      getPaletteCommands: vi.fn(() => [{ id: 'plugin:share', title: 'Share', icon: 'icon' }]),
+    },
     kinds: {
-      files: { name: 'files' },
       travel: vi.fn(),
       leavePath: vi.fn(),
       dragged: ref([]),
       services: { workspace: { name: 'workspace' }, notes: { name: 'notes' } },
-      agents: { name: 'agents' },
       made: {},
       recorded: {},
       destinations: {},
@@ -303,15 +304,25 @@ describe('the parts of the window', () => {
     expect(h.args.kinds.commandDeps()).toBe(h.f.commands.commandDeps)
   })
 
+  it('hand the kinds what the commands declare of the plugins', async () => {
+    useWindow()
+
+    await expect(h.args.kinds.showNote('a.md')).resolves.toBe(true)
+    expect(h.f.commands.showNote).toHaveBeenCalledWith('a.md')
+    expect(h.args.kinds.getNoteCommands()).toStrictEqual([
+      { id: 'plugin:share', text: 'Share', group: 'note' },
+    ])
+    expect(h.args.kinds.getPluginCommandIcon('plugin:share')).toBe('icon')
+    expect(h.args.kinds.getPluginCommandIcon('plugin:none')).toBeUndefined()
+  })
+
   it('hand the commands the kinds as they stand', () => {
     useWindow()
 
-    expect(h.args.commands.files()).toBe(h.f.kinds.files)
     h.args.commands.travel('a.md')
     h.args.commands.leavePath('a.md', 'b.md')
     expect(h.f.kinds.travel).toHaveBeenCalledWith('a.md')
     expect(h.f.kinds.leavePath).toHaveBeenCalledWith('a.md', 'b.md')
-    expect(h.args.commands.agents()).toBe(h.f.kinds.agents)
     expect(h.args.commands.getOpeningNote()).toBe('opening')
   })
 })

@@ -26,7 +26,7 @@ export interface Passage {
   title: string
   /**
    * Whether the text was read out of a note. It says what the palette offers
-   * over the passage: a book is not a node, so there is nowhere to travel to.
+   * over the passage: a book is no note, so nothing puts it in front as one.
    */
   isNote: boolean
   /** Which of four that note is. It says nothing about a source that is not one. */
@@ -49,7 +49,7 @@ export interface Passage {
  * carries a line, one at a document a span of the source's own text.
  */
 export interface SearchDestination {
-  at: 'plex' | 'file' | 'document'
+  at: 'travel' | 'file' | 'document'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
@@ -60,8 +60,12 @@ export interface SearchDestination {
   length?: number
 }
 
-/** The things that can be done to anything the palette turns up. */
-export const PLEX = 'plex'
+/**
+ * The things that can be done to anything the palette turns up. A note is put
+ * in front where the plugin that shows notes puts it, which only a window with
+ * such a plugin offers.
+ */
+export const TRAVEL = 'travel'
 export const NOTE = 'note'
 export const DOCUMENT = 'document'
 
@@ -87,7 +91,23 @@ export interface SearchRow {
   hit: SearchHit
 }
 
-export function createNameItem(one: NameMatch, words: Words): SearchRow {
+/** What the search says over a note, the action that puts it in front among them where there is one. */
+const getNoteActions = (travel: string, first: { id: string; text: string }) => ({
+  actions: travel ? [first, { id: TRAVEL, text: travel }] : [first],
+  offers: travel ? [first.id, TRAVEL] : [first.id],
+})
+
+/**
+ * A name the search turned up. A note found by its name is put in front first,
+ * and a heading is opened at first. `travel` is the words of the action that puts
+ * a note in front, and empty where nothing does.
+ */
+export function createNameItem(one: NameMatch, words: Words, travel: string): SearchRow {
+  const atHeading = getNoteActions(travel, { id: NOTE, text: words.readAt })
+  const read = { id: NOTE, text: words.read }
+  const byName = travel
+    ? { actions: [{ id: TRAVEL, text: travel }, read], offers: [TRAVEL, NOTE] }
+    : { actions: [read], offers: [NOTE] }
   return one.heading
     ? {
         item: {
@@ -95,10 +115,7 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
           title: one.heading,
           at: one.at,
           detail: one.title,
-          actions: [
-            { id: NOTE, text: words.readAt },
-            { id: PLEX, text: words.travel },
-          ],
+          actions: atHeading.actions,
         },
         hit: {
           path: one.path,
@@ -106,7 +123,7 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
           line: one.line,
           start: 0,
           length: 0,
-          offers: [NOTE, PLEX],
+          offers: atHeading.offers,
           type: one.type,
           kind: 'note',
         },
@@ -116,10 +133,7 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
           id: one.path,
           title: one.title,
           at: one.at,
-          actions: [
-            { id: PLEX, text: words.travel },
-            { id: NOTE, text: words.read },
-          ],
+          actions: byName.actions,
         },
         hit: {
           path: one.path,
@@ -127,26 +141,27 @@ export function createNameItem(one: NameMatch, words: Words): SearchRow {
           line: -1,
           start: 0,
           length: 0,
-          offers: [PLEX, NOTE],
+          offers: byName.offers,
           type: one.type,
           kind: 'note',
         },
       }
 }
 
-export function createPassageItem(group: string, one: Passage, words: Words): SearchRow {
+export function createPassageItem(
+  group: string,
+  one: Passage,
+  words: Words,
+  travel: string,
+): SearchRow {
+  const note = getNoteActions(travel, { id: NOTE, text: words.read })
   return {
     item: {
       id: `${group}:${one.path}:${one.start}`,
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      actions: one.isNote
-        ? [
-            { id: NOTE, text: words.read },
-            { id: PLEX, text: words.travel },
-          ]
-        : [{ id: DOCUMENT, text: words.readDocument }],
+      actions: one.isNote ? note.actions : [{ id: DOCUMENT, text: words.readDocument }],
     },
     hit: {
       path: one.path,
@@ -154,7 +169,7 @@ export function createPassageItem(group: string, one: Passage, words: Words): Se
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
-      offers: one.isNote ? [NOTE, PLEX] : [DOCUMENT],
+      offers: one.isNote ? note.offers : [DOCUMENT],
       type: one.isNote ? one.type : null,
       kind: one.kind,
     },
@@ -167,7 +182,7 @@ export function resolveDestination(
 ): SearchDestination | null {
   if (!hit || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
-  if (action === PLEX) return { at: 'plex', ...named }
+  if (action === TRAVEL) return { at: 'travel', ...named }
   if (action === DOCUMENT) {
     return { at: 'document', ...named, start: hit.start, length: hit.length }
   }

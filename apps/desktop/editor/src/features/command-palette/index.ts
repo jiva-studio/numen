@@ -2,7 +2,13 @@
  * The command palette: the window it opens, the commands it offers, and the
  */
 export { default as CommandPalette } from './ui/CommandPalette.vue'
-export { isChord, findChordCommand, findChordKeys, createRowKeys } from './lib/chords/chords'
+export {
+  isChord,
+  findChordCommand,
+  findChordKeys,
+  createRowKeys,
+  findShortcutKeys,
+} from './lib/chords/chords'
 export { createCommands } from './lib/commands/table'
 export { createPathCommands } from './lib/commands/pathMenu'
 export type { MenuRow, PathItem, RunGuard } from './lib/commands/pathMenu'
@@ -18,7 +24,7 @@ export { runSupport } from './model/palette/runSupport'
 export { useSearch } from './model/search/search'
 export type { SearchDeps, SearchMode, SearchState } from './model/search/search'
 export type { SearchDestination } from './model/search/lookup'
-export type { CommandDeps } from './model/handlers/deps'
+export type { CommandDeps, VaultWriter } from './model/handlers/deps'
 export { ANSWER_WORDS } from './words'
 export type { AnswerWords } from './words'
 export type {

@@ -35,7 +35,7 @@ const getTabPath = (tab: WindowTab): string => {
 }
 
 export function useWindowTabs() {
-  const { byKind, registerKinds, registerKind, hasKind } = createTabRegistry()
+  const { byKind, registerKinds, registerKind, hasKind, findKind } = createTabRegistry()
   const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
   const layout = ref<Workspace>({
@@ -77,6 +77,7 @@ export function useWindowTabs() {
     registerKinds,
     registerKind,
     hasKind,
+    findKind,
     openPlacedTabs,
     createFileOfKind: request.createFileOfKind,
     navigateTab: navigation.navigateTab,
@@ -112,7 +113,10 @@ function createTabRegistry() {
     }
   }
   const hasKind = (kind: string): boolean => byKind.has(kind)
-  return { byKind, registerKinds, registerKind, hasKind }
+  /** The first kind registered that answers yes, and nothing where none does. */
+  const findKind = (isWanted: (kind: AnyTabKind) => boolean): AnyTabKind | undefined =>
+    [...byKind.values()].find(isWanted)
+  return { byKind, registerKinds, registerKind, hasKind, findKind }
 }
 
 /** What a window asks of the kinds it holds about a file. */

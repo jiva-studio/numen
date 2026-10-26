@@ -38,15 +38,46 @@ describe('view-file-tree plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds two subscriptions, the tab kind and the vault, and releases both', () => {
+  it('holds the tab kind, the vault and its two commands, and releases them all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(2)
+    expect(ctx.subscriptions).toHaveLength(4)
 
     ctx.dispose()
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
+    expect(ctx.getRegisteredCommands()).toHaveLength(0)
+  })
+
+  it('puts the files in front, and a note shown in them', async () => {
+    const openCalls: (readonly [string, string | undefined])[] = []
+    const navigateCalls: (readonly [string, string])[] = []
+    const { host } = createHost({ folders: { '': [] } })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.file.tree',
+      workspace: host.workspace,
+      files: host.files,
+      openTab: (kind, path) => {
+        openCalls.push([kind, path])
+        return Promise.resolve('')
+      },
+      navigateTab: (kind, path) => {
+        navigateCalls.push([kind, path])
+        return Promise.resolve('')
+      },
+    })
+    activate(ctx)
+
+    expect(ctx.getRegisteredCommands().map((one) => [one.id, one.scope])).toStrictEqual([
+      ['files', undefined],
+      ['reveal', 'note'],
+    ])
+    await ctx.triggerCommand('files')
+    await ctx.triggerCommand('reveal', { path: 'notes/A.md', title: 'A', type: 'note' })
+
+    expect(openCalls).toStrictEqual([[FILES, undefined]])
+    expect(navigateCalls).toStrictEqual([[FILES, 'notes/A.md']])
   })
 
   it('reads the folders of every files tab again when the vault changes', async () => {

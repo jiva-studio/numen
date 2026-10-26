@@ -2,12 +2,14 @@
  * Command palette, keyboard shortcut dispatch, and command execution.
  */
 
-import { watch } from 'vue'
-import type { CommandNote } from '@numen/plugin-sdk'
+import { computed, watch, type Component } from 'vue'
+import type { CommandNote, MenuEntry } from '@numen/plugin-sdk'
+import type { WelcomeAction } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
 import {
   isChord,
   findChordCommand,
+  findShortcutKeys,
   registerCommand,
   runInvocation,
   useCommandPalette,
@@ -32,6 +34,7 @@ import { WORDS } from '@/shared/words'
 import { createPluginSettingCommands } from '../window/useSettings'
 import type { NoteCreator } from '@/entities/note'
 import type { VaultCore } from '../vault'
+import type { PluginPaletteCommand } from '@/entities/plugin'
 
 type Words = typeof WORDS
 
@@ -66,12 +69,10 @@ export interface CommandsDepsOptions {
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  files: () => { revealPath: (path: string) => void }
-  /** A note put in front of the person in the plex they were last in. */
+  /** A note put in front of the person, where the plugin that shows notes puts it. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
-  agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   writeMessage: MessageWriter
   pluginHost?: import('@/entities/plugin').PluginHost | undefined
@@ -83,41 +84,50 @@ export interface CommandsDepsOptions {
 
 export function useCommands(options: CommandsDepsOptions) {
   const { core, words, windowTabs, getTarget, knows, kept, runs, coverage, writeMessage } = options
+  const { pluginHost } = options
 
-  const tabRuns: RunSupport = {
-    canRun(run: string) {
-      if (run === 'plex' || run === 'files' || run === 'agent') {
-        if (!windowTabs.hasKind(run)) return false
-      }
-      return runs.canRun(run)
-    },
-    cannotRun(run: string) {
-      runs.cannotRun(run)
-    },
+  const getPluginCommands = () => pluginHost?.getPaletteCommands() ?? []
+  /** How a plugin's command is drawn: its keystroke and its icon, where it declares them. */
+  const getPluginLooks = (cmd: PluginPaletteCommand) => {
+    const keys = cmd.shortcut ? findShortcutKeys(cmd.shortcut, navigator.userAgent) : undefined
+    return {
+      ...(keys ? { keys } : {}),
+      ...(cmd.icon ? { icon: cmd.icon as Component } : {}),
+    }
   }
+  /** The command a plugin declares to put a note in front, and nothing where none does. */
+  const findNoteDestination = () => getPluginCommands().find((cmd) => cmd.isNoteDestination)
 
-  const palette = useSearch(core, words, { coverage })
-  const commands = useCommandPalette(
-    core,
-    words,
-    getTarget,
-    knows,
-    kept,
-    tabRuns,
-    undefined,
-    () => [
-      ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
-      ...(options.declaredCommands?.paletteCommands.value ?? []),
-      ...(options.fileMenuCommands?.paletteCommands.value ?? []),
-      ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
-        id: cmd.id,
-        text: cmd.title,
-        group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
-        isOffered: (target: CommandTarget) =>
-          cmd.scope !== 'note' || (target.isReady && target.path !== ''),
-      })) ?? []),
-    ],
+  const palette = useSearch(core, words, {
+    coverage,
+    getTravel: () => findNoteDestination()?.title ?? '',
+  })
+  const commands = useCommandPalette(core, words, getTarget, knows, kept, runs, undefined, () => [
+    ...createPluginSettingCommands(options.rest.plugins?.value ?? []),
+    ...(options.declaredCommands?.paletteCommands.value ?? []),
+    ...(options.fileMenuCommands?.paletteCommands.value ?? []),
+    ...getPluginCommands().map((cmd) => ({
+      id: cmd.id,
+      text: cmd.title,
+      ...getPluginLooks(cmd),
+      group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
+      isOffered: (target: CommandTarget) =>
+        cmd.scope !== 'note' || (target.isReady && target.path !== ''),
+    })),
+  ])
+
+  /** The commands the plugins declare over the window, as the screen of a window with no tab offers them. */
+  const pluginWays = computed<readonly WelcomeAction[]>(() =>
+    getPluginCommands()
+      .filter((cmd) => cmd.scope !== 'note')
+      .map((cmd) => ({ id: cmd.id, text: cmd.title, ...getPluginLooks(cmd) })),
   )
+
+  /** The commands the plugins declare over one note, in the words the palette offers them by. */
+  const getNoteCommands = (): readonly MenuEntry[] =>
+    getPluginCommands()
+      .filter((cmd) => cmd.scope === 'note')
+      .map((cmd) => ({ id: cmd.id, text: cmd.title, group: 'note' }))
 
   const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({
     path,
@@ -125,7 +135,13 @@ export function useCommands(options: CommandsDepsOptions) {
     type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
   })
 
-  const { pluginHost } = options
+  /** The note put in front by the command a plugin declares for it; false where none declares one. */
+  const showNote = async (path: string): Promise<boolean> => {
+    const destination = findNoteDestination()
+    if (!destination || !pluginHost) return false
+    return pluginHost.executeCommand(destination.id, await getCommandNote(path, ''))
+  }
+
   if (pluginHost) {
     let unregisterAll: readonly (() => void)[] = []
     watch(
@@ -208,5 +224,8 @@ export function useCommands(options: CommandsDepsOptions) {
     commandDeps,
     runCommand,
     onKeyDown,
+    pluginWays,
+    getNoteCommands,
+    showNote,
   }
 }

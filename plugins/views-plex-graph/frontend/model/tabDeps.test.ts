@@ -63,16 +63,17 @@ describe('what else a plex tab asks of the window', () => {
     ])
   })
 
-  it('runs a command over a note, asks the agent and says what failed', () => {
+  it('runs a command over a note, lists the declared ones and says what failed', () => {
     const { host, recorded } = createHost()
     const deps = createPlexTabDeps(host, 'plex:1')
 
     deps.runCommand('rename', 'One.md', 'One')
-    deps.askAgent('what is One?')
     deps.showMessage('the link was not written')
 
     expect(recorded.commands).toStrictEqual([['rename', { path: 'One.md', title: 'One' }]])
-    expect(recorded.questions).toStrictEqual(['what is One?'])
+    expect(deps.getNoteCommands()).toStrictEqual([
+      { id: 'plugin:share', text: 'Share the note', group: 'note' },
+    ])
     expect(recorded.errors).toStrictEqual(['the link was not written'])
   })
 

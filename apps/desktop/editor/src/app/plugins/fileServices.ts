@@ -133,6 +133,8 @@ export interface PathCommandDeps {
   readonly runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
   /** The icon a plugin draws its menu item with, and nothing for an item it draws none for. */
   readonly getContextMenuIcon?: (id: string) => unknown
+  /** The icon a plugin draws its command with, and nothing for one it draws none for. */
+  readonly getPluginCommandIcon?: (id: string) => unknown
 }
 
 /** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
@@ -147,6 +149,7 @@ export function createPathCommandHost(
     getContextMenuItems,
     runContextMenu,
     getContextMenuIcon,
+    getPluginCommandIcon,
   } = deps
   return {
     getPathCommands: ({ entry, isSeveral }) => {
@@ -205,7 +208,9 @@ export function createPathCommandHost(
       })
     },
     getCommandIcon: (id) =>
-      findIcon(id) ?? (getContextMenuIcon?.(id) as Component | undefined) ?? null,
+      findIcon(id) ??
+      ((getContextMenuIcon?.(id) ?? getPluginCommandIcon?.(id)) as Component | undefined) ??
+      null,
     getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen),
   }
 }

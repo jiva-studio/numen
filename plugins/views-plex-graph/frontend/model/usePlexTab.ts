@@ -1,10 +1,11 @@
 /**
  * Tab state, window registration, and interactions for an open plex graph tab.
  */
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, type Component } from 'vue'
+import { findIcon } from '../lib/icons'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '@numen/ui'
 import { getFileName } from '@numen/plugin-sdk'
-import { NEW_NOTE, OFFERED } from '../lib/menu'
+import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
 import { WORDS as words } from '../words'
@@ -173,6 +174,10 @@ function usePlexMenu(options: {
 }) {
   const { map, tabDeps: deps, getName, createNote } = options
   const menu = ref<MenuRequest | null>(null)
+  const declared = computed(() => (menu.value?.node === null ? [] : deps.getNoteCommands()))
+  const menuItems = computed(() =>
+    menu.value?.node === null ? NONE : createNodeItems(declared.value),
+  )
 
   const openMenu = (request: MenuRequest) => {
     menu.value = request
@@ -186,12 +191,15 @@ function usePlexMenu(options: {
       if (id === NEW_NOTE) void createNote()
       return
     }
-    if (!OFFERED.has(id)) return
+    if (!OFFERED.has(id) && !declared.value.some((one) => one.id === id)) return
     const path = map.getNodePath(on.node)
     if (path) deps.runCommand(id, path, getName(path))
   }
 
-  return { menu, openMenu, chooseMenuItem }
+  /** The icon of an item: the plex's own, or the one the window gives a declared command. */
+  const getMenuIcon = (id: string): Component | null => findIcon(id) ?? deps.getCommandIcon(id)
+
+  return { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon }
 }
 
 function getPlexNodeName(neighbourhood: PlexView['neighbourhood']['value'], path: string): string {
@@ -224,7 +232,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     getName,
     openQuickLink: quickLinkModel.openQuickLink,
   })
-  const { menu, openMenu, chooseMenuItem } = usePlexMenu({
+  const { menu, menuItems, openMenu, chooseMenuItem, getMenuIcon } = usePlexMenu({
     map,
     tabDeps: deps,
     getName,
@@ -237,6 +245,12 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     empty,
     dragged,
     menu,
+    menuItems,
+    getMenuIcon,
+    getNodeIcon: (node: string) => {
+      const type = getType(node)
+      return type === 'note' ? null : deps.getNoteIcon(type)
+    },
     creatable: deps.creatable,
     getType,
     getHeadings,

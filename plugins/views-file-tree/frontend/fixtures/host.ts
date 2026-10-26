@@ -23,10 +23,10 @@ const NOTE = [
   command('read', 'open'),
   command('travel', 'open'),
   COPY,
-  command('child', 'plex'),
-  command('parent', 'plex'),
-  command('jump', 'plex'),
-  command('title', 'plex'),
+  command('child', 'relation'),
+  command('parent', 'relation'),
+  command('jump', 'relation'),
+  command('title', 'relation'),
   command('ask', 'agent'),
   command('remove', 'remove', 'Remove note'),
 ]
@@ -87,6 +87,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
       return linked[tabId] ?? false
     },
     runCommand: () => {},
+    getNoteCommands: () => [],
     ask: () => {},
     showError: (text) => void recorded.errors.push(text),
     getMessageWriter: () => () => {},

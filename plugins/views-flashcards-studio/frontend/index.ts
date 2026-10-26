@@ -52,6 +52,7 @@ export function activate(context: PluginContext): void {
     id: 'preset',
     title: presetWords.openPreset,
     scope: 'note',
+    icon: Gauge,
     handler: async (note) => {
       await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
     },

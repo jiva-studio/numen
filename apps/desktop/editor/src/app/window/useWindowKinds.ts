@@ -5,7 +5,6 @@ import { shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { DestinationDeps } from '@/features/command-palette'
-import { AGENT, FILES, PLEX } from '@/entities/tab'
 import { agentPort } from '../plugins/agentPort'
 import type { WindowKindsDeps } from '../kinds/deps'
 import {
@@ -25,11 +24,15 @@ function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`
 }
 
-/** Something to ask, put in the agent the person was last in and put in front. */
+/**
+ * Something to ask, put in the tab the person was last in of the kind that takes
+ * text, and put in front.
+ */
 function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessage: MessageWriter) {
   return {
     askQuestion: (text: string): void => {
-      if (!windowTabs.hasKind(AGENT)) {
+      const textKind = windowTabs.findKind((kind) => kind.receiveText !== undefined)
+      if (!textKind) {
         writeMessage(
           'The agent chat is not available: its plugin is off or did not start.',
           'error',
@@ -37,7 +40,7 @@ function createAgentAsker(windowTabs: WindowKindsDeps['windowTabs'], writeMessag
         return
       }
       windowTabs
-        .sendText(AGENT, text)
+        .sendText(textKind.kind, text)
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
   }
@@ -51,16 +54,21 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const writeMessage = log.getWriter('command')
   const dragged = shallowRef<readonly string[]>([])
 
-  /** A note put in front of the person in the plex they were last in, and in its editor where the window has no plex. */
+  /** A note put in front of the person where a plugin shows notes, and in its editor where none does. */
   const travel = async (path: string): Promise<void> => {
-    if (windowTabs.hasKind(PLEX)) await windowTabs.navigateTab(PLEX, path)
-    else await tabOpeners.openFile(path, '', 'here')
+    if (!(await deps.showNote(path))) await tabOpeners.openFile(path, '', 'here')
   }
 
-  /** The note the plex the person was last in relies on, which a talk is about. */
-  const getPlexTarget = () => {
-    const last = windowTabs.handle.last(PLEX)
-    const target = last ? windowTabs.getTab(last.id)?.kind.getTarget?.(last.state) : undefined
+  /**
+   * The note the tool tab the person was last in relies on, among the tools that
+   * follow a note: those that move to a path and say what they stand on.
+   */
+  const getNoteInFocus = () => {
+    const last = [...windowTabs.tabs.value]
+      .reverse()
+      .map((one) => windowTabs.getTab(one.id))
+      .find((one) => one?.kind.isTool && one.kind.navigate && one.kind.getTarget)
+    const target = last?.kind.getTarget?.(last.state)
     return { path: target?.path ?? '', title: target?.title ?? '' }
   }
 
@@ -85,7 +93,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       ...deps,
       nesting: settings.nesting,
       dragged,
-      getNoteInFocus: getPlexTarget,
+      getNoteInFocus,
       ask: (text) => agents.askQuestion(text),
       writeMessage,
       getMessageWriter: (name) => log.getWriter(name),
@@ -98,12 +106,6 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   }
 
   return {
-    agents,
-    files: {
-      revealPath: async (path: string): Promise<void> => {
-        if (windowTabs.hasKind(FILES)) await windowTabs.navigateTab(FILES, path)
-      },
-    },
     made: createdItem,
     destinations,
     dragged,

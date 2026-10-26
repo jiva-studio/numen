@@ -38,16 +38,15 @@ export const WORDS = {
   apply: 'Done',
   /** Button to cancel and close inspector without saving. */
   cancel: 'Cancel',
+  /** The commands the plugin declares: a plex opened, and a note put in front in one. */
+  newPlex: 'New plex',
+  travel: 'Show in plex',
   /** Menu command labels */
   read: 'Open the note',
-  travel: 'Show in plex',
-  preset: 'Open the preset',
   copy: 'Copy path',
-  reveal: 'Show this note in the files',
   child: 'New child note',
   parent: 'New parent note',
   jump: 'New jump note',
   title: 'Change title',
-  ask: 'Ask the agent',
   remove: 'Remove note',
 }

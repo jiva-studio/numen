@@ -78,7 +78,6 @@ export interface Words extends EmptyWords {
   readonly title: string
   readonly remove: string
   readonly destroy: string
-  readonly ask: string
   readonly copy: string
   /** The run a person asks for over the recording in front. */
   /** The transcript of the recording in front, put right by a proofreader. */
@@ -95,15 +94,9 @@ export interface Words extends EmptyWords {
   readonly deleteCopy: string
   readonly keepsCopy: string
   readonly deletedCopy: string
-  /** The note in front, shown where the vault files it. */
-  readonly reveal: string
   readonly newNote: string
   /** The note that points at a web address, made from the address. */
   readonly importUrl: string
-  readonly newPlex: string
-  /** The folders and files of the vault, put in front of the person. */
-  readonly files: string
-  readonly newAgent: string
   readonly close: string
   /**
    * The four commands over how the window is drawn: the theme, the halves, and

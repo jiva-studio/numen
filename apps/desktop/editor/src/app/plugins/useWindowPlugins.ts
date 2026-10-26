@@ -76,6 +76,7 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     registerEditor: tabOpeners.registerEditor,
     openTab: windowTabs.openTabOfKind,
     openTabBeside: windowTabs.openTabBesideOfKind,
+    navigateTab: windowTabs.navigateTab,
     closeTab: windowTabs.finishClose,
     getTabState: (id: string) => windowTabs.getTab(id)?.state,
     getSetting,

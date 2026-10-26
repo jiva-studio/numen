@@ -7,7 +7,6 @@
 import type { PaletteKeys, VaultRow, WelcomeAction } from '@numen/ui'
 import type { VaultList } from '@/entities/vault'
 import { createRowKeys } from '@/features/command-palette'
-import { WORDS as own } from '../words'
 
 /** What the welcome screen is drawn over. */
 export interface CurrentVault {
@@ -25,7 +24,6 @@ export interface Words {
   readonly commandsKeys: PaletteKeys
   /** What each of the ways into the vault the window names is called. */
   readonly newNote: string
-  readonly newAgent: string
   /** Everything this installation is configured as. */
   readonly settings: string
   /** The vaults, and what a row of that list carries beside its name. */
@@ -47,7 +45,7 @@ export const SETTINGS = 'settings'
  * installation's, so they are offered last and are offered always. The rest
  * stand on a vault: a window showing none offers none of them, and the list
  * below is where a person goes first. A note is offered once the vault has
- * been read.
+ * been read. The commands the plugins declare over the window stand after it.
  *
  * Every keystroke drawn here is the one the table binds, so a key a person sees
  * is a key that works.
@@ -56,6 +54,7 @@ export const createWelcomeActions = (
   currentVault: CurrentVault,
   words: Words,
   agent: string,
+  contributed: readonly WelcomeAction[] = [],
 ): readonly WelcomeAction[] => {
   const settings: WelcomeAction = {
     id: SETTINGS,
@@ -70,8 +69,7 @@ export const createWelcomeActions = (
     { id: 'find', text: words.find, keys: words.findKeys },
     { id: COMMANDS, text: words.commands, keys: words.commandsKeys },
     ...note,
-    { id: 'plex', text: own.plex, ...createRowKeys('plex', agent) },
-    { id: 'agent', text: words.newAgent, ...createRowKeys('agent', agent) },
+    ...contributed,
     settings,
   ]
 }

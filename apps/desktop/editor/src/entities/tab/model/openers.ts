@@ -4,7 +4,6 @@
  * the vault says it holds there decides between the editors, the reader and the
  * player. A kind of tab hands over the way it opens a file and keeps none.
  */
-import type { PlexDestination } from '@numen/ui'
 import type { BookFormat, DocumentFormat, FileKind, NoteType } from '@/entities/file/@x/tab'
 import type { Span } from '@/shared/span'
 
@@ -14,14 +13,17 @@ import type { Span } from '@/shared/span'
  */
 export type EditorKind = NoteType | 'url' | (string & {})
 
+/** Where a file opens: in the pane the person is in, or beside it. */
+export type FilePlacement = 'here' | 'beside'
+
 export interface OpenPlacement {
-  where?: PlexDestination | undefined
+  where?: FilePlacement | undefined
   line?: number | undefined
 }
 
 export interface OpenNewFileOptions {
   type: EditorKind
-  where?: PlexDestination | undefined
+  where?: FilePlacement | undefined
   line?: number | undefined
 }
 
@@ -32,7 +34,7 @@ export interface OpenNewFileOptions {
 export type FileOpener = (
   path: string,
   title: string,
-  options?: PlexDestination | OpenPlacement,
+  options?: FilePlacement | OpenPlacement,
 ) => void
 
 /**
@@ -144,7 +146,7 @@ export function fileOpeners(vault: FileOpenerDeps) {
   const openFile = async (
     path: string,
     title = '',
-    options?: PlexDestination | OpenPlacement,
+    options?: FilePlacement | OpenPlacement,
   ): Promise<void> => {
     emitFileEvent(path, vault.emitEvent)
     const kind = await fetchFileKind(vault, path)

@@ -8,7 +8,7 @@ import type { SearchState } from '../../model/search/search'
 export function findRowIcon(id: string, commands: Commands, search: SearchState) {
   if (commands.open.value) {
     const picked = commands.findNoteType(id)
-    return picked ? getNoteIcon(picked) : findIcon(id)
+    return picked ? getNoteIcon(picked) : (findIcon(id) ?? commands.findCommandIcon(id))
   }
   if (id === CREATE_NOTE_ID) return findIcon('note')
   const type = search.findNoteType(id)

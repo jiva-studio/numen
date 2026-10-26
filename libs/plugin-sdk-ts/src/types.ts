@@ -129,6 +129,11 @@ export interface CommandRegistration {
   canShowInPalette?: boolean
   // 'note' offers the command only while a note is in front, in the palette's group of note commands.
   scope?: 'note'
+  // The icon the command is drawn with wherever it is offered.
+  icon?: unknown
+  // With scope 'note': the command puts a note in front of the person. The window runs it for a note
+  // chosen in the search, gone to, or named by the agent, and opens the note's file where none declares it.
+  isNoteDestination?: boolean
 }
 
 // AgentProviderRegistration registers an AI agent provider.
@@ -200,6 +205,8 @@ export interface PluginContext {
   emitVaultChange(event: VaultChangeEvent): void
   emitFileSelect(event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string> | void
+  // The tab of the kind the person was last in, put in front and moved to `path`; a tab of it opened there where none is open.
+  navigateTab?(kind: string, path: string): Promise<string> | void
   closeTab?(id: string): void
   hasPermission?(permission: string): boolean
   // The window the plugin's tabs are drawn in, where the host offers one.

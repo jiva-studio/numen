@@ -24,7 +24,7 @@ export const WORDS = {
   names: 'Names',
   text: 'Text',
   meaning: 'Meaning',
-  travel: 'Show in plex',
+  travel: 'Show the note',
   read: 'Open the note',
   readAt: 'Open at this heading',
   readDocument: 'Open the document here',
@@ -43,7 +43,6 @@ export const WORDS = {
   title: 'Change title',
   remove: 'Remove note',
   destroy: 'Destroy note',
-  ask: 'Ask the agent',
   copy: 'Copy path',
   /** The menu the text versions of the file in front make, each entry by the plugin that does it. */
   recogniseWith: (plugin: string) => `Recognise the text with ${plugin}`,
@@ -64,16 +63,12 @@ export const WORDS = {
   deleteCopy: 'Delete the copy on this disk',
   keepsCopy: 'Keep the copy',
   deletedCopy: 'The copy goes, and it can be fetched from the address again',
-  reveal: 'Show this note in the files',
   /** What a file is made as when the plugin that offers it is off or did not start. */
   unavailable:
     'That action is unavailable: the plugin providing it is disabled or failed to start.',
   newNote: 'New note',
   /** The note that points at a web address. */
   importUrl: 'Import an address',
-  newPlex: 'New plex',
-  newAgent: 'New agent',
-  files: 'Show the files of the vault',
   close: 'Close this tab',
   appearance: 'Change the theme',
   mode: 'Light or dark',

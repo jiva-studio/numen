@@ -1,6 +1,12 @@
 import { vaults, type VaultCore } from '../vault'
 import { running } from '@/entities/artifact'
-import type { CommandDeps, Notes, RunSupport, VaultRef } from '@/features/command-palette'
+import type {
+  CommandDeps,
+  Notes,
+  RunSupport,
+  VaultRef,
+  VaultWriter,
+} from '@/features/command-palette'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { createFileCreators } from '@/entities/tab'
 import type { useWindowTabs } from '@/entities/tab'
@@ -28,19 +34,17 @@ export interface CommandDepsOptions {
   }
   recorded: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
   pointed?: { reloadTranscript?: (path: string) => void; onDelete?: (path: string) => void }
-  files: () => { revealPath: (path: string) => void }
-  /** A note put in front of the person in the plex they were last in. */
+  /** A note put in front of the person, where the plugin that shows notes puts it. */
   travel: (path: string) => Promise<void> | void
   /** Every tab standing on a path moved to another. */
   leavePath: (from: string, to: string) => Promise<void> | void
-  agents: () => { askQuestion: (text: string) => Promise<void> | void }
   getOpeningNote: () => string
   runs: RunSupport
   writeMessage: MessageWriter
   search?: () => void
 }
 
-function createFileCommands(core: VaultCore, making: NoteCreator): CommandDeps['files'] {
+function createFileCommands(core: VaultCore, making: NoteCreator): VaultWriter {
   return {
     createNote: (title, from, relation) => making.createWithTitle(title, from, relation),
     rename: (path, title) => core.rename(path, title),
@@ -82,9 +86,8 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
-  const { files, travel, leavePath, agents, windowTabs, getOpeningNote, search } = options
+  const { travel, leavePath, windowTabs, getOpeningNote, search } = options
   return {
-    revealPath: (path) => void files().revealPath(path),
     travel: async (path) => {
       await travel(path)
     },
@@ -94,7 +97,6 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
     getOpeningNote,
     openTab: (kind) => void windowTabs.openTabOfKind(kind),
     closeTab: (tab) => windowTabs.requestClose(tab),
-    ask: (text) => void agents().askQuestion(text),
     search: search ?? (() => {}),
   }
 }

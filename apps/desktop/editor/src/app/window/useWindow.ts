@@ -81,10 +81,8 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     rest: settings.rest,
     recorded: kinds.recorded ?? {},
     pointed: kinds.pointed ?? {},
-    files: () => kinds.files,
     travel: (path) => kinds.travel(path),
     leavePath: (from, to) => kinds.leavePath(from, to),
-    agents: () => kinds.agents,
     getOpeningNote: () => window.opening.value,
     writeMessage,
     ...(deps.pluginHost !== undefined ? { pluginHost: deps.pluginHost } : {}),
@@ -293,6 +291,10 @@ function initWindowKindsAndCommands(
     getContextMenuItems: (target) => base.pluginHost.getContextMenuItems(target),
     runContextMenu: (id, target) => base.pluginHost.runContextMenu(id, target),
     getContextMenuIcon: (id) => base.pluginHost.getContextMenuIcon(id),
+    getPluginCommandIcon: (id) =>
+      base.pluginHost.getPaletteCommands().find((one) => one.id === id)?.icon,
+    showNote: (path) => getCommands(ctx).showNote(path),
+    getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
   Object.assign(base.pluginServices, getKinds(ctx).services)
@@ -370,6 +372,7 @@ export const useWindow = () => {
   const api = {
     runCommand,
     commands: getCommands(ctx).commands,
+    pluginWays: getCommands(ctx).pluginWays,
     commandDeps: getCommands(ctx).commandDeps,
     failure: window.failure,
     fileFlush: editing.fileFlush,

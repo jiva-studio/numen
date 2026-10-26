@@ -7,7 +7,7 @@
  * the name of the note and by nothing else.
  */
 import { describe, expect, it, vi } from 'vitest'
-import { ref } from 'vue'
+import { defineComponent, ref } from 'vue'
 import { runSupport } from './runSupport'
 import type { CommandTarget, NoteLookup, PaletteLists, RunSupport, StepGroup } from '../../types'
 import { useCommandPalette } from './palette'
@@ -153,24 +153,10 @@ describe('the commands as they open', () => {
     const { commands } = createPalette()
 
     expect(getItemIds(commands.groups)).toStrictEqual({
-      note: [
-        'read',
-        'travel',
-        'child',
-        'parent',
-        'jump',
-        'title',
-        'remove',
-        'ask',
-        'copy',
-        'reveal',
-      ],
+      note: ['read', 'child', 'parent', 'jump', 'title', 'remove', 'copy'],
       window: [
         'note',
         'importUrl',
-        'plex',
-        'files',
-        'agent',
         'close',
         'find',
         'appearance',
@@ -248,9 +234,6 @@ describe('what is in front', () => {
 
     expect(getItemIds(commands.groups)).toStrictEqual({
       window: [
-        'plex',
-        'files',
-        'agent',
         'close',
         'find',
         'appearance',
@@ -1701,5 +1684,26 @@ describe('a row of a list the window holds', () => {
     expect(commands.groups.value[0]?.items.map((item) => item.at)).toStrictEqual([
       [{ from: 1, to: 4 }],
     ])
+  })
+})
+
+describe('the icon of a command', () => {
+  it('is the one its declaration gives, and none for a command that gives none', () => {
+    const icon = defineComponent({ name: 'GraphIcon', render: () => null })
+    const commands = useCommandPalette(
+      { names: async () => [], vaults: async () => installation(vault('physics', 'Physics')) },
+      words,
+      () => front(),
+      createLookup().knows,
+      createLists({}).paletteLists,
+      runSupport(),
+      async () => {},
+      () => [
+        { id: 'plugin:graph', text: 'New graph', icon, group: 'window', isOffered: () => true },
+      ],
+    )
+
+    expect(commands.findCommandIcon('plugin:graph')).toBe(icon)
+    expect(commands.findCommandIcon('read')).toBeNull()
   })
 })

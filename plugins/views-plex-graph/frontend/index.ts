@@ -1,6 +1,7 @@
+import { Waypoints } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
-import { createPlexKind } from './kind'
+import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
 import { WORDS } from './words'
 
@@ -23,14 +24,37 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(plexes.kind)
   context.onVaultChange((event) => plexes.refresh(event))
 
+  /** The note put in front in the plex the person was last in, and in a new plex where none is open. */
+  const travel = async (path: string): Promise<void> => {
+    await context.navigateTab?.(PLEX, path)
+  }
+
+  context.registerCommand({
+    id: 'plex',
+    title: WORDS.newPlex,
+    shortcut: 'mod+shift+x',
+    icon: Waypoints,
+    handler: async () => {
+      await context.openTab?.(PLEX)
+    },
+  })
+  context.registerCommand({
+    id: 'travel',
+    title: WORDS.travel,
+    scope: 'note',
+    shortcut: 'mod+shift+p',
+    icon: Waypoints,
+    isNoteDestination: true,
+    handler: (note) => travel(note.path),
+  })
+
   context.registerContextMenu({
     id: 'travel',
     text: WORDS.travel,
     group: 'open',
     target: 'note',
-    handler: (target) => {
-      workspace.runCommand('travel', { path: target.path, title: target.name ?? '' })
-    },
+    icon: Waypoints,
+    handler: (target) => travel(target.path),
   })
   context.registerContextMenu({
     id: 'child',

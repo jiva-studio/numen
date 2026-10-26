@@ -5,10 +5,9 @@
  * through these, `vaults.ts` what it does to the vaults, and `../lib/voice.ts`
  * how what it has to say becomes one line.
  */
-import type { PlexRelation } from '@numen/ui'
 import type { ArtifactRunner } from '@/entities/artifact'
 import type { Movement } from '@/entities/file'
-import type { RemoveResult, RenameResult } from '@/entities/note'
+import type { NoteRelation, RemoveResult, RenameResult } from '@/entities/note'
 import type { Vaults } from '@/entities/vault'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -24,7 +23,7 @@ export interface NewNote {
 /** The vault as a command changes what it holds. */
 export interface VaultWriter {
   /** A note made under the name it is given, in a relation of another one. */
-  createNote(title: string, from: string, relation: PlexRelation | null): Promise<NewNote | null>
+  createNote(title: string, from: string, relation: NoteRelation | null): Promise<NewNote | null>
   /** A note given a different name, and its file renamed with it where the two are one name. */
   rename(path: string, title: string): Promise<RenameResult>
   /** A note taken out of the vault, into the trash or off the disk. */
@@ -61,11 +60,9 @@ export interface VaultSwitcher extends Vaults {
 
 /** Where a command takes the window. */
 export interface WindowNavigator {
-  /** The files of the vault put in front of the person, opened down to a path. */
-  revealPath(path: string): void
-  /** A note put in front of the person, in the plex they are looking at. */
+  /** A note put in front of the person, where the plugin that shows notes puts it. */
   travel(path: string): Promise<void>
-  /** Every plex standing on a note travels to another one. */
+  /** Every tab standing on a note moves to another one. */
   leave(from: string, to: string): Promise<void>
   /** The note the vault opens with. */
   getOpeningNote(): string
@@ -73,8 +70,6 @@ export interface WindowNavigator {
   openTab(kind: string): void
   /** A tab release. */
   closeTab(tab: string): void
-  /** Something to ask, put in the agent the person was last in. */
-  ask(text: string): void
   /** The search, in place of the commands. */
   search(): void
 }

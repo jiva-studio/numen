@@ -6,6 +6,7 @@ import { formatErrorMessage } from '@numen/wire'
 import type {
   AgentHost,
   BufferHost,
+  MenuEntry,
   NoteRef,
   VaultFiles,
   VaultNotes,
@@ -46,6 +47,8 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
   readonly ask: (text: string) => void
   /** The note the tool tab the person was last in relies on. */
   readonly getNoteInFocus: () => NoteRef
+  /** The commands the plugins declare over one note. */
+  readonly getNoteCommands: () => readonly MenuEntry[]
   readonly writeMessage: MessageWriter
   /** A writer of messages under a name of its own. */
   readonly getMessageWriter: (name: string) => MessageWriter
@@ -80,6 +83,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     getNoteInFocus: () => deps.getNoteInFocus(),
     syncPath: (tabId, path, title) => deps.tabSync?.syncPathFromTab(tabId, path, title) ?? false,
     runCommand: (id, { path, title }) => deps.runCommand(id, { ...deps.getTarget(), path, title }),
+    getNoteCommands: () => deps.getNoteCommands(),
     ask: (text) => deps.ask(text),
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),

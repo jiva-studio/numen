@@ -105,6 +105,8 @@ export interface WorkspaceHost {
   syncPath(tabId: string, path: string, title?: string): boolean
   // A command of the window, run over one note.
   runCommand(id: string, target: NoteRef): void
+  // The commands the plugins declare over one note, in the words the palette offers them by.
+  getNoteCommands(): readonly MenuEntry[]
   // A question for the agent, put in front of the person.
   ask(text: string): void
   showError(text: string): void

@@ -5,9 +5,8 @@
  * written into it as it is made. What a relation means for what gets written is
  * decided here: the plex reports the shape of a gesture and nothing else.
  */
-import type { PlexRelation } from '@numen/ui'
 import { formatErrorMessage } from '@numen/wire'
-import type { Link, NewNote, PairLink, Role } from '../lib/note'
+import type { Link, NewNote, NoteRelation, PairLink, Role } from '../lib/note'
 import type { CreateResult } from '@/entities/file/@x/note'
 import type { ErrorCode } from '@/shared/errors'
 import type { MessageWriter } from '@/shared/notices/messages'
@@ -37,7 +36,7 @@ type CreatableRelation = 'parent' | 'child' | 'jump'
 export const CREATABLE: readonly CreatableRelation[] = ['parent', 'child', 'jump']
 
 /** The role a link carries to put a note in that relation, and nothing for a sibling. */
-const getRole = (relation: PlexRelation): CreatableRelation | undefined =>
+const getRole = (relation: NoteRelation): CreatableRelation | undefined =>
   CREATABLE.find((one) => one === relation)
 
 /**
@@ -45,7 +44,7 @@ const getRole = (relation: PlexRelation): CreatableRelation | undefined =>
  * relation the gesture named, so from at its current position the other one takes the
  * opposite relation.
  */
-const opposites: Partial<Record<PlexRelation, CreatableRelation>> = {
+const opposites: Partial<Record<NoteRelation, CreatableRelation>> = {
   parent: 'child',
   child: 'parent',
   jump: 'jump',
@@ -57,7 +56,7 @@ const opposites: Partial<Record<PlexRelation, CreatableRelation>> = {
  */
 const resolveRelationLinks = (
   from: string,
-  relation: PlexRelation | null,
+  relation: NoteRelation | null,
 ): readonly Link[] | null => {
   if (!relation) return []
   const role = opposites[relation]
@@ -119,14 +118,14 @@ function createNoteFactory(core: NoteMaker, writeMessage: MessageWriter) {
   async function createWithTitle(
     title: string,
     from: string,
-    relation: PlexRelation | null,
+    relation: NoteRelation | null,
   ): Promise<NoteRef | null> {
     const links = resolveRelationLinks(from, relation)
     if (!links) return null
     return reportNoteResult(await createNote(title, from ? getParentFolder(from) : '', links))
   }
 
-  async function createInRelation(from: string, relation: PlexRelation): Promise<NoteRef | null> {
+  async function createInRelation(from: string, relation: NoteRelation): Promise<NoteRef | null> {
     const links = resolveRelationLinks(from, relation)
     if (!links) return null
     return createUntitled(getParentFolder(from), links)
@@ -155,7 +154,7 @@ async function runLinkOp(
 
 function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
   async function join(
-    ...[from, to, relation, label]: [string, string, PlexRelation, string?]
+    ...[from, to, relation, label]: [string, string, NoteRelation, string?]
   ): Promise<boolean> {
     const role = getRole(relation)
     if (!role) return false
@@ -170,7 +169,7 @@ function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
     )
   }
 
-  async function removeLink(from: string, to: string, relation?: PlexRelation): Promise<boolean> {
+  async function removeLink(from: string, to: string, relation?: NoteRelation): Promise<boolean> {
     const role = relation ? getRole(relation) : undefined
     return runLinkOp(() => core.removeLink(from, to, role), writeMessage)
   }
@@ -178,7 +177,7 @@ function createNoteLinkWriter(core: NoteMaker, writeMessage: MessageWriter) {
   async function replaceLinks(
     first: string,
     second: string,
-    links: readonly { from: string; to: string; relation: PlexRelation; label: string }[],
+    links: readonly { from: string; to: string; relation: NoteRelation; label: string }[],
   ): Promise<boolean> {
     const pairs: PairLink[] = []
     for (const { relation, ...link } of links) {

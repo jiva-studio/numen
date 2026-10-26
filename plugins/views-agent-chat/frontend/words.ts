@@ -11,5 +11,8 @@ export const WORDS = {
   stopped: 'The agent stopped here',
   nothingSaid: 'Nothing said yet',
   agent: 'Agent',
+  /** The commands the plugin declares: a conversation opened, and a note asked about. */
+  newAgent: 'New agent',
+  askAbout: 'Ask the agent',
   reasoning: 'Reasoning',
 }

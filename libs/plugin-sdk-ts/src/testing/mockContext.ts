@@ -186,8 +186,14 @@ export function createMockPluginContext(
       }
     },
 
-    openTab(kind: string, at?: string): Promise<string> {
-      return Promise.resolve(`${kind}:${at ?? ''}`)
+    openTab(kind: string, path?: string): Promise<string> | void {
+      if (initialValues?.openTab) return initialValues.openTab(kind, path)
+      return Promise.resolve(`${kind}:${path ?? ''}`)
+    },
+
+    navigateTab(kind: string, path: string): Promise<string> | void {
+      if (initialValues?.navigateTab) return initialValues.navigateTab(kind, path)
+      return Promise.resolve(`${kind}:${path}`)
     },
 
     getRegisteredReaders(): ReaderRegistration[] {

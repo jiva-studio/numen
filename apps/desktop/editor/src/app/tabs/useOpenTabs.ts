@@ -3,7 +3,6 @@
  */
 import { computed, watch, type Component } from 'vue'
 import { findTabKindIcon } from '@/entities/tab'
-import { AGENT } from '@/entities/tab'
 import type { OpenTabs } from '@/entities/tab'
 import type { VaultPort } from '@/app/ports/vault'
 import type { OpenTab, useWindowTabs } from '@/entities/tab'
@@ -22,13 +21,15 @@ const getTabSource = (tab: OpenTab<'document' | 'recording' | 'book'> | undefine
 })
 
 export function useOpenTabs({ core, windowTabs }: OpenTabsDeps) {
-  /** Returns the ID of the front/active tab. */
+  /** Whether a tab is of a kind that takes text put to it: a conversation, with no file of its own. */
+  const isTakingText = (id: string): boolean =>
+    windowTabs.getTab(id)?.kind.receiveText !== undefined
+
+  /** The tab in front, and the last one that takes no text where the one in front does. */
   const getActiveTabId = (): string => {
     const frontTab = windowTabs.handle.front()
-    if (frontTab && frontTab.kind !== AGENT) return frontTab.id
-    const nextTabs = [...windowTabs.tabs.value]
-      .reverse()
-      .find((one) => windowTabs.getTab(one.id)?.kind.kind !== AGENT)
+    if (frontTab && !isTakingText(frontTab.id)) return frontTab.id
+    const nextTabs = [...windowTabs.tabs.value].reverse().find((one) => !isTakingText(one.id))
     return nextTabs?.id ?? frontTab?.id ?? ''
   }
 

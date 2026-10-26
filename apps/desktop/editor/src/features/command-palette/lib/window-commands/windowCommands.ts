@@ -26,26 +26,6 @@ export const createWindowCreationCommands = (words: Words, agent: string): reado
 
 export const createWindowNavigationCommands = (words: Words, agent: string): readonly Command[] => [
   {
-    id: 'plex',
-    text: words.newPlex,
-    ...createRowKeys('plex', agent),
-    group: 'window',
-    isOffered: (_target, runs) => runs.canRun('plex'),
-  },
-  {
-    id: 'files',
-    text: words.files,
-    group: 'window',
-    isOffered: (_target, runs) => runs.canRun('files'),
-  },
-  {
-    id: 'agent',
-    text: words.newAgent,
-    ...createRowKeys('agent', agent),
-    group: 'window',
-    isOffered: (_target, runs) => runs.canRun('agent'),
-  },
-  {
     id: 'close',
     text: words.close,
     ...createRowKeys('close', agent),

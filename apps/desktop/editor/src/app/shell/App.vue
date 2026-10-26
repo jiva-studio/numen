@@ -31,6 +31,7 @@ const unsaved = {
 const {
   runCommand,
   commands,
+  pluginWays,
   commandDeps,
   failure,
   fileFlush,
@@ -137,6 +138,7 @@ function onTabContextMenu(tabId: string, position: { x: number; y: number }) {
           :search="palette"
           :doing="commandDeps"
           :get-target="getTarget"
+          :plugin-ways="pluginWays"
           :run-command="runCommand"
         />
       </template>

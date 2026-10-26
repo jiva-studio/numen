@@ -27,11 +27,11 @@ describe('view-plex-graph plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
-  it('holds subscriptions for tab kind, vault, and context menus, and releases all', () => {
+  it('holds subscriptions for tab kind, vault, commands and context menus, and releases all', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(ctx.subscriptions).toHaveLength(6)
+    expect(ctx.subscriptions).toHaveLength(8)
     const menus = ctx.getRegisteredContextMenus()
     expect(menus).toHaveLength(4)
     expect(menus.map((m) => m.id)).toEqual(['travel', 'child', 'parent', 'jump'])
@@ -40,6 +40,54 @@ describe('view-plex-graph plugin', () => {
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
     expect(ctx.getRegisteredContextMenus()).toHaveLength(0)
+    expect(ctx.getRegisteredCommands()).toHaveLength(0)
+  })
+
+  it('declares a new plex over the window and the plex as where a note is put in front', () => {
+    const { ctx } = createContext()
+    activate(ctx)
+
+    const commands = ctx.getRegisteredCommands()
+    expect(commands.map((one) => [one.id, one.scope, one.shortcut])).toStrictEqual([
+      ['plex', undefined, 'mod+shift+x'],
+      ['travel', 'note', 'mod+shift+p'],
+    ])
+    expect(commands.map((one) => one.isNoteDestination === true)).toStrictEqual([false, true])
+  })
+
+  it('opens a plex, and moves the plex last in front to a note', async () => {
+    const openCalls: (readonly [string, string | undefined])[] = []
+    const navigateCalls: (readonly [string, string])[] = []
+    const { host } = createHost({ opening: 'Root.md' })
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.plex.graph',
+      workspace: host.workspace,
+      notes: host.notes,
+      openTab: (kind, path) => {
+        openCalls.push([kind, path])
+        return Promise.resolve('')
+      },
+      navigateTab: (kind, path) => {
+        navigateCalls.push([kind, path])
+        return Promise.resolve('')
+      },
+    })
+    activate(ctx)
+
+    await ctx.triggerCommand('plex')
+    await ctx.triggerCommand('travel', { path: 'One.md', title: 'One', type: 'note' })
+    await ctx.getRegisteredContextMenus()[0]!.handler({
+      path: 'Two.md',
+      name: 'Two',
+      isFolder: false,
+      kind: 'note',
+    })
+
+    expect(openCalls).toStrictEqual([[PLEX, undefined]])
+    expect(navigateCalls).toStrictEqual([
+      [PLEX, 'One.md'],
+      [PLEX, 'Two.md'],
+    ])
   })
 
   it('asks every plex for its picture again when the vault changes', async () => {

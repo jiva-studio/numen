@@ -6,9 +6,7 @@
  */
 import { branch, pane, type Workspace } from '@numen/ui'
 
-/** The kinds of tab the window can open a second of. */
-export const PLEX = 'plex'
-export const AGENT = 'agent'
+/** A note edited in the window, under the path the vault files it at. */
 export const NOTE = 'note'
 /** A document read in the window, under the path the vault files it at. */
 export const DOCUMENT = 'document'
@@ -17,8 +15,6 @@ export const BOOK = 'book'
 export const RECORDING = 'recording'
 /** A url opened in the window, under the path the vault files it at. */
 export const URL = 'url'
-/** The folders and files of the vault, one tab of them to a window. */
-export const FILES = 'files'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
 /** The settings file itself, opened whole as text, one tab of it to a window. */

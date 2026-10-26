@@ -1,8 +1,9 @@
 /**
  * Type declarations for the plex tab domain.
  */
-import type { ComputedRef, Ref } from 'vue'
+import type { Component, ComputedRef, Ref } from 'vue'
 import type {
+  MenuItem,
   MenuTrigger,
   PlexNeighbourhood,
   PlexHeading,
@@ -141,8 +142,13 @@ export interface PlexTabDeps {
   openNote(path: string, options?: OpenNoteOptions): void
   onSelectPath?(path: string, title?: string, state?: PlexTabState): void
   readHeadings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
-  askAgent(text: string): void
   runCommand(id: string, path: string, title: string): void
+  /** The commands the plugins declare over one note. */
+  getNoteCommands(): readonly { readonly id: string; readonly text: string }[]
+  /** The icon the window draws a command with, and nothing for one it draws none for. */
+  getCommandIcon(id: string): Component | null
+  /** The icon the window draws a type of note with. */
+  getNoteIcon(type: NoteType): Component | null
   readonly openingPath: Readonly<Ref<string>>
   readonly dragged: Readonly<Ref<readonly string[]>>
   showMessage(text: string): void
@@ -163,6 +169,11 @@ export interface PlexViewState {
 
 export interface PlexMenuState {
   readonly menu: Ref<MenuRequest | null>
+  /** What the menu offers where it is open: on a node, or off every node. */
+  readonly menuItems: ComputedRef<readonly MenuItem[]>
+  getMenuIcon(id: string): Component | null
+  /** The icon a node is drawn with, and nothing for an ordinary note. */
+  getNodeIcon(node: string): Component | null
   openMenu(request: MenuRequest): void
   dismiss(): void
   chooseMenuItem(id: string): void

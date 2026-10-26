@@ -5,10 +5,11 @@
  * each is offered is `lib/availability.ts`, the words they are drawn in are `words.ts`,
  * and what the window offers one being carried out is `model/deps.ts`.
  */
-import type { PaletteKeys, PlexDestination } from '@numen/ui'
+import type { Component } from 'vue'
+import type { PaletteKeys } from '@numen/ui'
 import type { ArtifactStates } from '@/entities/artifact'
 import type { Source } from '@/entities/file'
-import type { EditorKind } from '@/entities/tab'
+import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
 import type { ConfirmWords, RetypeWords } from './words'
@@ -103,6 +104,8 @@ export interface Command {
   readonly text: string
   /** The keystroke that reaches it away from the palette. */
   readonly keys?: PaletteKeys
+  /** The icon it is drawn with, where the one who declares it gives one. */
+  readonly icon?: Component
   /** What it asks for before it happens. */
   readonly needs?: PromptStep
   /** The step it asks for once the first one is answered. */
@@ -233,7 +236,7 @@ export interface Notes {
   openNewFile(
     path: string,
     title: string,
-    options: EditorKind | { type: EditorKind; where?: PlexDestination },
+    options: EditorKind | { type: EditorKind; where?: FilePlacement },
   ): void
 }
 

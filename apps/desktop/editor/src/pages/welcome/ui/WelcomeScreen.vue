@@ -41,8 +41,9 @@ const ways = computed(() => {
     { vault: target.vault.id, isReady: target.isReady },
     words,
     navigator.userAgent,
+    props.pluginWays,
   ).map((one) => {
-    const icon = findIcon(one.id)
+    const icon = one.icon ?? findIcon(one.id)
     return { ...one, ...(icon ? { icon } : {}) }
   })
 })

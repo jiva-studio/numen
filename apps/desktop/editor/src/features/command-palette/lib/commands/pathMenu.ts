@@ -27,8 +27,7 @@ const GROUP = {
   open: 'open',
   file: 'file',
   run: 'run',
-  plex: 'plex',
-  agent: 'agent',
+  relation: 'relation',
   remove: 'remove',
 } as const
 
@@ -50,14 +49,6 @@ const getNoteCommand = (id: string, group: string): readonly PathItem[] => {
   return [{ id, text: NOTED.get(id) ?? id, group }]
 }
 
-/** What a row standing for a note offers out of core. */
-const _CORE_NOTE: readonly PathItem[] = [
-  ...getNoteCommand('read', GROUP.open),
-  ...getNoteCommand('copy', GROUP.file),
-  ...getNoteCommand('ask', GROUP.agent),
-  ...getNoteCommand('remove', GROUP.remove),
-]
-
 /** The removal of a file or of several. */
 const REMOVE: PathItem = { id: 'remove', text: own.remove, group: GROUP.remove }
 
@@ -72,7 +63,7 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
     }))
 
   const relationContributed = contributions.filter(
-    (one) => one.parentId === 'relation' || one.group === GROUP.plex,
+    (one) => one.parentId === 'relation' || one.group === GROUP.relation,
   )
 
   const relationSubmenu: PathItem[] =
@@ -81,11 +72,11 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
           {
             id: 'relation',
             text: own.relation,
-            group: GROUP.plex,
+            group: GROUP.relation,
             children: relationContributed.map((one) => ({
               id: one.id,
               text: one.text,
-              group: GROUP.plex,
+              group: GROUP.relation,
               isDisabled: typeof one.isDisabled === 'boolean' ? one.isDisabled : false,
             })),
           },
@@ -107,7 +98,7 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
       (one) =>
         one.group !== GROUP.open &&
         one.parentId !== 'relation' &&
-        one.group !== GROUP.plex &&
+        one.group !== GROUP.relation &&
         one.parentId !== 'new',
     )
     .map((one) => ({
@@ -122,9 +113,8 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
     ...openContributed,
     ...getNoteCommand('copy', GROUP.file),
     ...newContributed,
-    ...otherContributed,
     ...relationSubmenu,
-    ...getNoteCommand('ask', GROUP.agent),
+    ...otherContributed,
     REMOVE,
   ]
 }

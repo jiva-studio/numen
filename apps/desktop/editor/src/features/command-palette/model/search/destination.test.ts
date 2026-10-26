@@ -31,10 +31,10 @@ const landing = (overrides: Partial<SearchDestination>): SearchDestination => ({
 })
 
 describe('a name chosen', () => {
-  it('travels in the plex the person is looking at, and opens no tab', async () => {
+  it('is put in front where the plugin that shows notes puts it, and opens no tab', async () => {
     const one = window()
 
-    await openDestination(landing({ at: 'plex' }), one.places)
+    await openDestination(landing({ at: 'travel' }), one.places)
 
     expect(one.travelled).toStrictEqual(['Note.md'])
     expect(one.openedFiles).toStrictEqual([])

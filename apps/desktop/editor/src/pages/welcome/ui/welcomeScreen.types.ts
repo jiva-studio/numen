@@ -1,4 +1,4 @@
-import type { Tab } from '@numen/ui'
+import type { Tab, WelcomeAction } from '@numen/ui'
 import type { CommandDeps, Commands, CommandTarget, SearchState } from '@/features/command-palette'
 import type { VaultList } from '@/entities/vault'
 
@@ -11,6 +11,8 @@ export interface WelcomeScreenProps {
   search: SearchState
   doing: CommandDeps
   getTarget: () => CommandTarget
+  /** The commands the plugins declare over the window, offered as ways in. */
+  pluginWays: readonly WelcomeAction[]
   /** A command asked for, which is what every way in but the commands evaluates to. */
   runCommand: (id: string, target: CommandTarget) => void
 }

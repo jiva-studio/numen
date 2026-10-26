@@ -14,6 +14,8 @@ interface Entry {
   openTab?: Record<string, string>
   /** The tab is listed but the window cannot resolve it. */
   unresolved?: boolean
+  /** The kind of the tab takes text put to it, as a conversation does. */
+  takesText?: boolean
 }
 
 const create = (entries: Entry[], front: { id: string; kind: string } | null = null) => {
@@ -27,7 +29,12 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
       if (!one || one.unresolved) return undefined
       return {
         state: {},
-        kind: { kind: one.kind ?? 'note', icon: one.icon, getOpenTab: () => one.openTab },
+        kind: {
+          kind: one.kind ?? 'note',
+          icon: one.icon,
+          getOpenTab: () => one.openTab,
+          ...(one.takesText ? { receiveText: () => {} } : {}),
+        },
       }
     },
   } as unknown as Parameters<typeof useOpenTabs>[0]['windowTabs']
@@ -99,35 +106,36 @@ describe('the active tab', () => {
     expect(target.open.value.front).toBe('a')
   })
 
-  it('is the last tab that is not the agent when the agent is in front', () => {
+  it('is the last tab that takes no text when one that takes text is in front', () => {
     const target = create(
       [
         { id: 'a', title: 'A', kind: 'note' },
-        { id: 'b', title: 'B', kind: 'plex' },
-        { id: 'ag', title: 'Agent', kind: 'agent' },
+        { id: 'b', title: 'B', kind: 'graph' },
+        { id: 'ag', title: 'Chat', kind: 'chat', takesText: true },
       ],
-      { id: 'ag', kind: 'agent' },
+      { id: 'ag', kind: 'chat' },
     )
 
     expect(target.getActiveTabId()).toBe('b')
   })
 
-  it('counts a tab the window cannot resolve as not the agent', () => {
+  it('counts a tab the window cannot resolve as one that takes no text', () => {
     const target = create(
       [
         { id: 'a', title: 'A', kind: 'note' },
+        { id: 'ag', title: 'Chat', kind: 'chat', takesText: true },
         { id: 'gone', title: 'Gone', unresolved: true },
       ],
-      { id: 'ag', kind: 'agent' },
+      { id: 'ag', kind: 'chat' },
     )
 
     expect(target.getActiveTabId()).toBe('gone')
   })
 
-  it('is the agent when it is the only tab', () => {
-    const target = create([{ id: 'ag', title: 'Agent', kind: 'agent' }], {
+  it('is the tab that takes text when it is the only tab', () => {
+    const target = create([{ id: 'ag', title: 'Chat', kind: 'chat', takesText: true }], {
       id: 'ag',
-      kind: 'agent',
+      kind: 'chat',
     })
 
     expect(target.getActiveTabId()).toBe('ag')

@@ -21,7 +21,6 @@ const WORDS: Words = {
   names: 'Names',
   text: 'Text',
   meaning: 'Meaning',
-  travel: 'Show in plex',
   read: 'Open the note',
   readAt: 'Open at this heading',
   readDocument: 'Open the document',
@@ -102,7 +101,10 @@ const getGroup = (groups: readonly { id: string }[], id: string) =>
 describe('asking', () => {
   it('draws no group at all until something is typed', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     expect(palette.groups.value).toHaveLength(0)
     expect(vault.queries).toHaveLength(0)
@@ -110,7 +112,10 @@ describe('asking', () => {
 
   it('asks all three questions at once, about what was typed', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -122,7 +127,10 @@ describe('asking', () => {
 
   it('asks about the words and not about the spaces around them', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('  ent  ')
     await flushPromises()
@@ -132,7 +140,10 @@ describe('asking', () => {
 
   it('asks nothing at all once what was typed is taken back', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -147,7 +158,10 @@ describe('asking', () => {
 describe('answers arriving', () => {
   it('fills each group on its own, while the others are still out', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -163,7 +177,10 @@ describe('answers arriving', () => {
 
   it('drops an answer to a question nobody is asking any more', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -182,7 +199,10 @@ describe('answers arriving', () => {
 
   it('says a group could not be requested in the window’s own words, and fills the others', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -198,7 +218,10 @@ describe('answers arriving', () => {
 
   it('says nothing of a group that was requested and came back with nothing', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -242,7 +265,10 @@ describe('answers arriving', () => {
 
   it('shows meaning search results with meaning item ids', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -268,7 +294,10 @@ describe('answers arriving', () => {
 
   it('lets go of everything when the palette is put away', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     palette.setOpen(true)
     void palette.setTyped('ent')
@@ -287,7 +316,10 @@ describe('answers arriving', () => {
 describe('where a thing found takes the person', () => {
   const createFilledPalette = async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -305,12 +337,12 @@ describe('where a thing found takes the person', () => {
     return palette
   }
 
-  it('opens a note found by its own name in the plex, and its text on the other key', async () => {
+  it('puts a note found by its own name in front, and opens its text on the other key', async () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chooseItem(item.id, 'plex')).toEqual({
-      at: 'plex',
+    expect(palette.chooseItem(item.id, 'travel')).toEqual({
+      at: 'travel',
       path: 'notes/entropy.md',
       title: 'Entropy',
     })
@@ -331,9 +363,9 @@ describe('where a thing found takes the person', () => {
       title: 'The Carnot cycle',
       line: 12,
     })
-    // The plex draws notes and not the lines inside them.
-    expect(palette.chooseItem(item.id, 'plex')).toEqual({
-      at: 'plex',
+    // A note is put in front whole, and not at the lines inside it.
+    expect(palette.chooseItem(item.id, 'travel')).toEqual({
+      at: 'travel',
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
     })
@@ -341,7 +373,10 @@ describe('where a thing found takes the person', () => {
 
   it('opens a passage as the note it was read out of, on the line it relies on', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -360,14 +395,17 @@ describe('where a thing found takes the person', () => {
 
   it('takes nobody anywhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
-    expect(palette.chooseItem('notes/nowhere.md', 'plex')).toBeNull()
+    expect(palette.chooseItem('notes/nowhere.md', 'travel')).toBeNull()
   })
 })
 
 describe('what a key reaches, per kind of thing found', () => {
-  it('offers the plex first for a name and the note first for a place', async () => {
+  it('offers putting it in front first for a name and the note first for a place', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -383,16 +421,19 @@ describe('what a key reaches, per kind of thing found', () => {
         (one) => one.id,
       )
 
-    expect(getActions('names', 0)).toEqual(['plex', 'note'])
-    expect(getActions('names', 1)).toEqual(['note', 'plex'])
-    expect(getActions('text', 0)).toEqual(['note', 'plex'])
+    expect(getActions('names', 0)).toEqual(['travel', 'note'])
+    expect(getActions('names', 1)).toEqual(['note', 'travel'])
+    expect(getActions('text', 0)).toEqual(['note', 'travel'])
   })
 })
 
 describe('a passage from something that is not a note', () => {
   it('offers the document, opened where the words were found', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('war')
     await flushPromises()
 
@@ -424,16 +465,19 @@ describe('a passage from something that is not a note', () => {
       start: 40_512,
       length: 31,
     })
-    // It is neither a note nor a node, and neither is answered for.
+    // It is no note, and neither is answered for.
     expect(palette.chooseItem(item.id, 'note')).toBeNull()
-    expect(palette.chooseItem(item.id, 'plex')).toBeNull()
+    expect(palette.chooseItem(item.id, 'travel')).toBeNull()
   })
 })
 
 describe('what a row is drawn as', () => {
   it('says what kind each name found is', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -456,7 +500,10 @@ describe('what a row is drawn as', () => {
 
   it('draws a heading as the note it remains in', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -477,7 +524,10 @@ describe('what a row is drawn as', () => {
 
   it('draws a passage as the note it was read out of', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -499,7 +549,10 @@ describe('what a row is drawn as', () => {
 
   it('says what the vault holds where a passage was read out of', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -518,7 +571,10 @@ describe('what a row is drawn as', () => {
 
   it('says a name remains in a note, whatever kind of note it is', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -534,7 +590,10 @@ describe('what a row is drawn as', () => {
 
   it('says nothing about an item it is not drawing', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     expect(palette.findNoteType('notes/entropy.md')).toBeNull()
     expect(palette.findHitSource('notes/entropy.md')).toBeNull()
   })
@@ -543,7 +602,10 @@ describe('what a row is drawn as', () => {
 describe('a group landing under the keyboard', () => {
   it('names a passage by at its current position in the vault, not by at its current position in the list', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('war')
     await flushPromises()
 
@@ -612,7 +674,10 @@ describe('the hold before a question', () => {
 
   it('draws every group working once the hold is out and nothing has answered', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('ent')
     await flushPromises()
@@ -663,7 +728,10 @@ describe('what was typed taken back', () => {
 
   it('draws no group at all where only spaces are typed', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
 
     void palette.setTyped('   ')
     await flushPromises()
@@ -675,7 +743,10 @@ describe('what was typed taken back', () => {
 describe('answers to a question overtaken', () => {
   it('draws no failure of a question nobody is asking any more', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
     void palette.setTyped('entr')
@@ -691,7 +762,10 @@ describe('answers to a question overtaken', () => {
 
   it('keeps the group working where only the overtaken question has answered', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
     void palette.setTyped('entr')
@@ -705,7 +779,10 @@ describe('answers to a question overtaken', () => {
 
   it('holds nothing in a group whose question failed', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     void palette.setTyped('ent')
     await flushPromises()
 
@@ -719,7 +796,10 @@ describe('answers to a question overtaken', () => {
 describe('the palette opened and put away', () => {
   it('keeps what was typed and what answered when it is opened while open', async () => {
     const vault = createVault()
-    const palette = useSearch(vault.core, WORDS, { wait: now })
+    const palette = useSearch(vault.core, WORDS, {
+      wait: now,
+      getTravel: () => 'Show in the graph',
+    })
     palette.setOpen(true)
     void palette.setTyped('ent')
     await flushPromises()

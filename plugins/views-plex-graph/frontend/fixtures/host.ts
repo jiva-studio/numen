@@ -46,6 +46,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       return linked[tabId] ?? false
     },
     runCommand: (id, target) => void recorded.commands.push([id, target]),
+    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note', group: 'note' }],
     ask: (text) => void recorded.questions.push(text),
     showError: (text) => void recorded.errors.push(text),
     getMessageWriter: () => () => {},

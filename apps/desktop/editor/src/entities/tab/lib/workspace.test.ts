@@ -8,13 +8,10 @@
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/ui'
 import {
-  AGENT,
   BOOK,
   CONVERSATION,
   DOCUMENT,
-  FILES,
   NOTE,
-  PLEX,
   RECORDING,
   SETTINGS,
   SETTINGS_FILE,
@@ -25,34 +22,22 @@ import {
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
-    const names = [generateId(PLEX), generateId(PLEX), generateId(PLEX)]
+    const names = [generateId(NOTE), generateId(NOTE), generateId(NOTE)]
 
     expect(new Set(names).size).toBe(3)
   })
 
   it('is never the name of a tab of another kind', () => {
-    expect(generateId(PLEX)).not.toBe(generateId(AGENT))
+    expect(generateId(NOTE)).not.toBe(generateId(DOCUMENT))
   })
 
   it('says what kind of thing the tab holds', () => {
-    expect(generateId(AGENT).startsWith(`${AGENT}:`)).toBe(true)
+    expect(generateId(SETTINGS).startsWith(`${SETTINGS}:`)).toBe(true)
   })
 })
 
 describe('the kinds a tab is filed under', () => {
-  const kinds = [
-    PLEX,
-    AGENT,
-    NOTE,
-    DOCUMENT,
-    BOOK,
-    RECORDING,
-    URL,
-    FILES,
-    SETTINGS,
-    SETTINGS_FILE,
-    CONVERSATION,
-  ]
+  const kinds = [NOTE, DOCUMENT, BOOK, RECORDING, URL, SETTINGS, SETTINGS_FILE, CONVERSATION]
 
   it('are each a word, so an identity names its kind', () => {
     for (const kind of kinds) expect(kind).not.toBe('')

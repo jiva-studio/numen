@@ -17,7 +17,6 @@ import {
   type CurrentVault,
   type Words,
 } from './screen'
-import { WORDS as own } from '../words'
 
 const APPLE = 'MacIntel'
 const LINUX = 'Linux x86_64'
@@ -29,7 +28,6 @@ const words: Words = {
   commands: 'commands',
   commandsKeys: keyChord('p', APPLE),
   newNote: 'new note',
-  newAgent: 'new agent',
   vaults: 'vaults',
   current: 'current',
   gone: 'gone',
@@ -57,6 +55,12 @@ const createVaultList = (vaults: readonly Vault[], current: string): VaultList =
   showing: current,
 })
 
+/** The commands the plugins declare over the window, as the screen is handed them. */
+const CONTRIBUTED = [
+  { id: 'plugin:graph', text: 'new graph', keys: keyChord('x', APPLE, true) },
+  { id: 'plugin:chat', text: 'new chat' },
+]
+
 const two = createVaultList([vault('a', 'Physics'), vault('b', 'Heat')], 'a')
 
 describe('the ways into the vault', () => {
@@ -74,34 +78,50 @@ describe('the ways into the vault', () => {
     ).toStrictEqual([SETTINGS])
   })
 
-  it('are the six of a vault that has been read, in the order they are drawn', () => {
-    const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
+  it('are those of a vault that has been read, the commands of the plugins after the note', () => {
+    const ways = createWelcomeActions(createCurrentVault(), words, APPLE, CONTRIBUTED)
     expect(ways.map((one) => one.id)).toStrictEqual([
       'find',
       COMMANDS,
       'note',
-      'plex',
-      'agent',
+      'plugin:graph',
+      'plugin:chat',
       SETTINGS,
     ])
   })
 
-  it('are each called what the window calls them, and the plex what the screen does', () => {
-    const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
+  it('are each called what the window calls them, and a plugin command what it is declared as', () => {
+    const ways = createWelcomeActions(createCurrentVault(), words, APPLE, CONTRIBUTED)
     expect(ways.map((one) => one.text)).toStrictEqual([
       words.find,
       words.commands,
       words.newNote,
-      own.plex,
-      words.newAgent,
+      'new graph',
+      'new chat',
       words.settings,
     ])
   })
 
+  it('are those of the window alone where no plugin declares a command over the window', () => {
+    const ways = createWelcomeActions(createCurrentVault(), words, APPLE)
+    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'note', SETTINGS])
+  })
+
   /** A note cannot be made in a vault that never opened. The rest stand. */
   it('leave out the new note where the vault could not be opened', () => {
-    const ways = createWelcomeActions(createCurrentVault({ isReady: false }), words, APPLE)
-    expect(ways.map((one) => one.id)).toStrictEqual(['find', COMMANDS, 'plex', 'agent', SETTINGS])
+    const ways = createWelcomeActions(
+      createCurrentVault({ isReady: false }),
+      words,
+      APPLE,
+      CONTRIBUTED,
+    )
+    expect(ways.map((one) => one.id)).toStrictEqual([
+      'find',
+      COMMANDS,
+      'plugin:graph',
+      'plugin:chat',
+      SETTINGS,
+    ])
   })
 
   /** The settings are the installation's, so they are offered last of all. */
@@ -115,17 +135,17 @@ describe('the ways into the vault', () => {
 
 describe('the keystroke drawn on a way', () => {
   const getKeys = (id: string, agent = APPLE) =>
-    createWelcomeActions(createCurrentVault(), words, agent).find((one) => one.id === id)?.keys
+    createWelcomeActions(createCurrentVault(), words, agent, CONTRIBUTED).find(
+      (one) => one.id === id,
+    )?.keys
 
   it('is the one the table binds to that command', () => {
     expect(getKeys('note')).toStrictEqual(findChordKeys('note', APPLE))
-    expect(getKeys('plex')).toStrictEqual(findChordKeys('plex', APPLE))
-    expect(getKeys('agent')).toStrictEqual(findChordKeys('agent', APPLE))
+    expect(getKeys('plugin:graph')).toStrictEqual(CONTRIBUTED[0]!.keys)
   })
 
   it('is the key the keyboard in hand holds', () => {
     expect(getKeys('note', LINUX)).toStrictEqual({ icons: ['control'], letter: 'N' })
-    expect(getKeys('agent', LINUX)).toStrictEqual({ icons: ['control', 'shift'], letter: 'A' })
   })
 
   it('is the two the window keeps for itself, as the window passes them over', () => {

@@ -24,13 +24,12 @@ import {
 } from './noteHandlers'
 import { addVault, renameVault, removeVault, showVault } from './vaults'
 import type { Outcome, ArtifactState } from '@/entities/artifact'
-import { AGENT, FILES, PLEX, SETTINGS } from '@/entities/tab'
+import { SETTINGS } from '@/entities/tab'
 
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
   read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
   beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
-  travel: (invocation, on) => on.navigator.travel(invocation.path),
   child: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'child', words }),
   parent: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'parent', words }),
@@ -49,15 +48,10 @@ const HANDLERS: Record<string, CommandHandler> = {
     on.runSupport.cannotRun(invocation.id)
     on.writeMessage(words.unrunnable, 'error')
   },
-  ask: (invocation, on) => on.navigator.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copyPath(invocation.path),
-  reveal: (invocation, on) => on.navigator.revealPath(invocation.path),
   settings: (_, on) => on.navigator.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
   createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),
-  plex: (_, on) => on.navigator.openTab(PLEX),
-  files: (_, on) => on.navigator.openTab(FILES),
-  agent: (_, on) => on.navigator.openTab(AGENT),
   close: (invocation, on) => on.navigator.closeTab(invocation.tab),
   find: (_, on) => on.navigator.search(),
   appearance: (invocation, on) => on.settings.chooseAppearance(invocation.name),

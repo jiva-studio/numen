@@ -40,10 +40,15 @@ export function createHost({
     settings: [] as [readonly string[], unknown][],
     finished: [] as string[],
     resolved: [] as (readonly string[])[],
+    questions: [] as string[],
   }
 
-  const request: Pick<WorkspaceHost, 'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady'> = {
+  const request: Pick<
+    WorkspaceHost,
+    'openFile' | 'openFileAt' | 'getNoteInFocus' | 'isReady' | 'ask'
+  > = {
     openFile: (path, options) => void recorded.opened.push([path, options]),
+    ask: (text) => void recorded.questions.push(text),
     openFileAt: (path, spans) => void recorded.openedAt.push([path, spans]),
     getNoteInFocus: () => focus,
     isReady: ref(true),

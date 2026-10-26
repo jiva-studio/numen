@@ -301,6 +301,7 @@ function createHostContextBridge(deps: PluginHostDeps, registry: HostRegistry): 
     },
     ...createEventBridge(deps, registry),
     openTab: (kind: string, target?: string) => deps.openTab(kind, target),
+    navigateTab: (kind: string, target: string) => deps.navigateTab?.(kind, target),
     closeTab: (id: string) => deps.closeTab?.(id),
     ...createServiceBridge(deps),
   }

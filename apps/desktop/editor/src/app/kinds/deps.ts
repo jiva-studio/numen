@@ -1,4 +1,4 @@
-import type { ContextMenuRegistration, ContextMenuTarget } from '@numen/plugin-sdk'
+import type { ContextMenuRegistration, ContextMenuTarget, MenuEntry } from '@numen/plugin-sdk'
 import type { CommandDeps, CommandTarget, runSupport, SearchDeps } from '@/features/command-palette'
 import type { FileOpeners, useWindowTabs } from '@/entities/tab'
 import type { MessageLog } from '@/shared/notices/messages'
@@ -29,4 +29,10 @@ export interface WindowKindsDeps {
   getContextMenuItems?: (target: ContextMenuTarget) => readonly ContextMenuRegistration[]
   runContextMenu?: (id: string, target: ContextMenuTarget) => Promise<boolean>
   getContextMenuIcon?: (id: string) => unknown
+  /** The icon a plugin draws its command with, and nothing for one it draws none for. */
+  getPluginCommandIcon?: (id: string) => unknown
+  /** The note put in front by the command a plugin declares for it; false where none declares one. */
+  showNote: (path: string) => Promise<boolean>
+  /** The commands the plugins declare over one note. */
+  getNoteCommands: () => readonly MenuEntry[]
 }

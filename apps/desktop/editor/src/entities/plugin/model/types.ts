@@ -41,6 +41,10 @@ export interface PluginPaletteCommand {
   readonly shortcut?: string
   /** 'note' where it is offered only while a note is in front. */
   readonly scope?: 'note'
+  /** The icon it is drawn with. */
+  readonly icon?: unknown
+  /** Whether it puts a note in front of the person. */
+  readonly isNoteDestination?: boolean
 }
 
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown
@@ -54,6 +58,7 @@ export interface PluginHostDeps {
   ) => (() => void) | void
   readonly openTab: (kind: string, at?: string) => Promise<string>
   readonly openTabBeside?: (kind: string, at?: string) => Promise<string>
+  readonly navigateTab?: (kind: string, path: string) => Promise<string>
   readonly closeTab?: (id: string) => void
   readonly getTabState?: (id: string) => unknown
   readonly getSetting?: (pluginId: string, key: string) => unknown
@@ -105,6 +110,7 @@ export interface PluginContextHost {
   emitVaultChange(pluginId: string, event: VaultChangeEvent): void
   emitFileSelect(pluginId: string, event: FileSelectEvent): void
   openTab?(kind: string, at?: string): Promise<string>
+  navigateTab?(kind: string, path: string): Promise<string> | undefined
   closeTab?(id: string): void
   getWorkspace?(): WorkspaceHost | undefined
   getNotes?(): VaultNotes | undefined

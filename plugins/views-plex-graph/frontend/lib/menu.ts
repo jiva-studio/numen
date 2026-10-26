@@ -13,23 +13,31 @@ const BAND = {
   open: 'open',
   file: 'file',
   plex: 'plex',
-  agent: 'agent',
+  declared: 'declared',
   remove: 'remove',
 } as const
 
-/** What is offered on a node, in the order it is drawn. */
+/** What the window does to a node's note, offered on every node in the order it is drawn. */
 export const ITEMS: readonly MenuItem[] = [
   { id: 'read', text: words.read, group: BAND.open },
-  { id: 'travel', text: words.travel, group: BAND.open },
-  { id: 'preset', text: words.preset, group: BAND.open },
   { id: 'copy', text: words.copy, group: BAND.file },
-  { id: 'reveal', text: words.reveal, group: BAND.file },
   { id: 'child', text: words.child, group: BAND.plex },
   { id: 'parent', text: words.parent, group: BAND.plex },
   { id: 'jump', text: words.jump, group: BAND.plex },
   { id: 'title', text: words.title, group: BAND.plex },
-  { id: 'ask', text: words.ask, group: BAND.agent },
   { id: 'remove', text: words.remove, group: BAND.remove },
+]
+
+/**
+ * What is offered on a node: what opens its note, the commands the plugins
+ * declare over a note in a band of their own, and the rest of what the window does.
+ */
+export const createNodeItems = (
+  declared: readonly { readonly id: string; readonly text: string }[],
+): readonly MenuItem[] => [
+  ...ITEMS.filter((item) => item.group === BAND.open),
+  ...declared.map((one) => ({ id: one.id, text: one.text, group: BAND.declared })),
+  ...ITEMS.filter((item) => item.group !== BAND.open),
 ]
 
 /** What is offered off every node. */
