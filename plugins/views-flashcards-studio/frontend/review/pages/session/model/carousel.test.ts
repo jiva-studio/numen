@@ -293,6 +293,20 @@ describe('a hand', () => {
     expect(capture).toHaveBeenCalledWith(7)
   })
 
+  // A strip holding the pointer would take the click of the control it went down on.
+  it('leaves a press on a control in a panel to the control', () => {
+    const { window_, capture, taking, onPointerDown } = createStrip('here')
+    const send = document.createElement('button')
+    window_.append(send)
+    const event = press({ clientX: 500 })
+    Object.defineProperty(event, 'target', { value: send })
+
+    onPointerDown(event)
+
+    expect(taking.value).toBe(false)
+    expect(capture).not.toHaveBeenCalled()
+  })
+
   it('takes the strip with the main button alone', () => {
     const { window_, capture, taking, onPointerDown, onPointerMove } = createStrip('here')
 

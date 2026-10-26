@@ -51,6 +51,12 @@ function createCarouselStops(window_: Ref<HTMLElement | null>, middle: Ref<HTMLE
   return { getStops, findNearest }
 }
 
+/** The elements a press is meant for. A strip that captured the pointer would take their clicks. */
+const CONTROLS = 'button, a[href], input, textarea, select, [contenteditable="true"]'
+
+const isOnControl = (target: EventTarget | null): boolean =>
+  target instanceof Element && target.closest(CONTROLS) !== null
+
 function useCarouselDrag(deps: {
   readonly window_: Ref<HTMLElement | null>
   readonly currentPlace: Ref<PanelPlace>
@@ -63,7 +69,7 @@ function useCarouselDrag(deps: {
 
   const onPointerDown = (press: PointerEvent) => {
     const place = deps.window_.value
-    if (!place || press.button !== 0) return
+    if (!place || press.button !== 0 || isOnControl(press.target)) return
     taking.value = true
     from = press.clientX
     was = place.scrollLeft
