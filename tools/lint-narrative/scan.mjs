@@ -1004,6 +1004,28 @@ function isIgnoredDir(name) {
   return (name.startsWith('.') && name !== '.agents') || IGNORED_DIRS.has(name)
 }
 
+/** The folders git ignores under rootDir, such as built pages, as absolute paths. */
+function getGitIgnoredDirs() {
+  try {
+    const stdout = execSync('git ls-files --others --ignored --exclude-standard --directory', {
+      encoding: 'utf8',
+      cwd: rootDir,
+      stdio: ['ignore', 'pipe', 'ignore'],
+      maxBuffer: 64 * 1024 * 1024,
+    })
+    return new Set(
+      stdout
+        .split('\n')
+        .filter((line) => line.endsWith('/'))
+        .map((line) => path.resolve(rootDir, line)),
+    )
+  } catch {
+    return new Set()
+  }
+}
+
+const gitIgnoredDirs = getGitIgnoredDirs()
+
 function walk(dir) {
   let entries = []
   try {
@@ -1017,7 +1039,7 @@ function walk(dir) {
 
     const fullPath = path.join(dir, entry.name)
     if (entry.isDirectory()) {
-      walk(fullPath)
+      if (!gitIgnoredDirs.has(fullPath)) walk(fullPath)
     } else if (entry.isFile()) {
       scanFile(fullPath)
     }
