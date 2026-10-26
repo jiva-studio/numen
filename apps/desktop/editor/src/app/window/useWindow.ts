@@ -86,7 +86,7 @@ interface AppLifecycleDeps {
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   editing: ReturnType<typeof createNoteEditors>
-  pluginLoader?: import('@numen/shell').PluginLoader
+  pluginLoader?: import('@numen/plugin-host').PluginLoader
   writeMessage: MessageWriter
 }
 

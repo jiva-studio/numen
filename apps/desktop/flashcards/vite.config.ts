@@ -2,11 +2,11 @@ import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import {
-  LIGHTNING_CSS,
   createHostModuleEntries,
   getEntryFileName,
   hostModuleInputs,
-} from '@numen/shell/vite'
+} from '@numen/plugin-host/vite'
+import { LIGHTNING_CSS } from '@numen/shell/vite'
 
 export default defineConfig({
   plugins: [vue(), createHostModuleEntries()],

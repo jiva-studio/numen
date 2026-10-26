@@ -1,0 +1,26 @@
+{
+  "name": "@numen/plugin-host",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The loader of plugin frontends in an application: manifest, bundle, stylesheet, activation with a context the application makes, deactivation by setting; and the build of the host modules the application serves to plugin bundles.",
+  "main": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./vite": "./src/vite.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --build --force",
+    "test": "vitest run",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@numen/plugin-sdk": "*",
+    "vue": "^3.5.44"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "^5.0.3"
+  }
+}

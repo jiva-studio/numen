@@ -3,7 +3,7 @@
  * the view the window draws from them.
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/shell'
+import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
 import { formatErrorMessage } from '@numen/wire'
 import { pluginService } from '@/shared/clients'
 import { createShellHost } from './host'

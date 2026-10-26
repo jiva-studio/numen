@@ -3,7 +3,7 @@ import { defineComponent, h, type PropType } from 'vue'
 import { mount } from '@vue/test-utils'
 import type { PluginContext, TabKindRegistration } from '@numen/plugin-sdk'
 import { createPluginHost } from './host'
-import { registerPluginStyle, unregisterPluginStyle } from '@numen/shell'
+import { registerPluginStyle, unregisterPluginStyle } from '@numen/plugin-host'
 import {
   createDeclaredPane,
   createDeclaredTabKind,

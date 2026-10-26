@@ -37,6 +37,7 @@ export const ALLOWED_BASE_SCOPES = new Set([
   'plugin-sdk',
   'plugin-sdk-go',
   'plugin-sdk-ts',
+  'plugin-host',
 
   // Apps
   'desktop',

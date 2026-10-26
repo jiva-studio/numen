@@ -12,12 +12,12 @@
  *
  * Scopes:
  *   all       - Run all architectural layer checks (default)
- *   libs      - All library boundaries (core hexagon, notes, ui and shell isolation, sdk isolation)
+ *   libs      - All library boundaries (core hexagon, notes, ui, shell and plugin host isolation, sdk isolation)
  *   plugins   - Native plugin sandboxing, non-leakage, and frontend contracts
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, ui, shell, wire, sdk, plugins, boundary, desktop, editor, flashcards
+ *   core, notes, ui, shell, host, wire, sdk, plugins, boundary, desktop, editor, flashcards
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -149,11 +149,14 @@ function verifyPluginsReachNoApp() {
   }
 }
 
-/** A plugin takes components from `@numen/ui` and never reaches the application shell. */
+/** A plugin takes components from `@numen/ui` and never reaches the window shell or the plugin loader. */
 function verifyPluginsReachNoShell() {
-  const crossings = findCrossings("plugins", "libs/ui/shell", ["['\"]@numen/shell\\b"]);
+  const crossings = [
+    ...findCrossings("plugins", "libs/ui/shell", ["['\"]@numen/shell\\b"]),
+    ...findCrossings("plugins", "libs/plugin-host-ts", ["['\"]@numen/plugin-host\\b"]),
+  ];
   if (crossings.length > 0) {
-    throw new Error("A plugin reaches @numen/shell:\n" + crossings.join("\n"));
+    throw new Error("A plugin reaches @numen/shell or @numen/plugin-host:\n" + crossings.join("\n"));
   }
 }
 
@@ -584,6 +587,53 @@ function verifyShellDomainIsolation() {
   exec("npm run lint", path.join(MODULES_DIR, "libs/ui/shell"));
 }
 
+/**
+ * What `libs/plugin-host-ts/src` may import besides its own files: Vue and the plugin SDK; its
+ * tests also vitest, and `vite.ts`, the build of the host modules, also vite.
+ */
+const PLUGIN_HOST_IMPORTS = [
+  { files: /./, specifiers: /^(vue|@numen\/plugin-sdk)(\/|$)/ },
+  { files: /\.test\.ts$/, specifiers: /^vitest$/ },
+  { files: /^vite\.ts$/, specifiers: /^vite$/ },
+];
+
+/**
+ * The module specifiers a TypeScript source names in an `import` or `export … from` statement and
+ * in `import()`. A statement starts its line, so the source of a module a string holds is not read.
+ */
+function getImportSpecifiers(source) {
+  const pattern =
+    /^\s*(?:(?:import|export)\s[^'"();=]*?\bfrom|import)\s*(['"])([^'"]+)\1|\bimport\s*\(\s*(['"])([^'"]+)\3/gm;
+  return Array.from(source.matchAll(pattern), (match) => match[2] ?? match[4]);
+}
+
+/** Every import of `libs/plugin-host-ts/src` that is neither relative nor in PLUGIN_HOST_IMPORTS. */
+function findPluginHostImports() {
+  const src = path.join(MODULES_DIR, "libs/plugin-host-ts/src");
+  const found = [];
+  for (const file of fs.readdirSync(src, { recursive: true })) {
+    if (!/\.(ts|vue)$/.test(file)) continue;
+    const text = fs.readFileSync(path.join(src, file), "utf8");
+    for (const specifier of getImportSpecifiers(text)) {
+      if (specifier.startsWith(".")) continue;
+      const allowed = PLUGIN_HOST_IMPORTS.some(
+        (rule) => rule.files.test(path.basename(file)) && rule.specifiers.test(specifier),
+      );
+      if (!allowed) found.push(`libs/plugin-host-ts/src/${file}: ${specifier}`);
+    }
+  }
+  return found;
+}
+
+/** The plugin loader knows Vue and the plugin SDK, and nothing of the UI, the shell, the wire or an application. */
+function verifyPluginHostIsolation() {
+  const found = findPluginHostImports();
+  if (found.length > 0) {
+    throw new Error("The plugin host imports beyond vue and @numen/plugin-sdk:\n" + found.join("\n"));
+  }
+  exec("npm run lint", path.join(MODULES_DIR, "libs/plugin-host-ts"));
+}
+
 const VERIFIERS = [
   {
     id: "core-hexagon",
@@ -660,6 +710,13 @@ const VERIFIERS = [
     run: verifyShellDomainIsolation,
   },
   {
+    id: "plugin-host-isolation",
+    scope: "libs",
+    module: "host",
+    name: "Plugin Host Isolation (imports only vue and @numen/plugin-sdk)",
+    run: verifyPluginHostIsolation,
+  },
+  {
     id: "plugins-independence",
     scope: "plugins",
     module: "plugins",
@@ -686,7 +743,7 @@ const VERIFIERS = [
     id: "plugins-reach-no-shell",
     scope: "plugins",
     module: "plugins",
-    name: "Plugins Reach No Shell (no @numen/shell, no path into libs/ui/shell)",
+    name: "Plugins Reach No Shell or Plugin Host (no @numen/shell, no @numen/plugin-host, no path into either)",
     run: verifyPluginsReachNoShell,
   },
   {
@@ -806,6 +863,7 @@ function getChangedModules() {
     if (file.startsWith("libs/plugin-sdk-go/")) matched.add("sdk");
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
     if (file.startsWith("libs/ui/shell/")) matched.add("shell");
+    if (file.startsWith("libs/plugin-host-ts/")) matched.add("host");
     if (file.startsWith("plugins/")) matched.add("plugins");
     if (file.startsWith("apps/desktop/")) matched.add("desktop");
     if (file.startsWith("apps/")) matched.add("apps");

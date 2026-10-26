@@ -3,25 +3,18 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "What the desktop windows share as shells over plugins: the loader of plugin frontends and the build of the host modules they import.",
-  "main": "./src/index.ts",
+  "description": "The chrome of the desktop windows, and the build settings they share.",
   "exports": {
-    ".": "./src/index.ts",
     "./vite": "./src/vite.ts"
   },
   "scripts": {
     "typecheck": "tsc --build --force",
-    "test": "vitest run",
+    "test": "vitest run --passWithNoTests",
     "lint": "eslint ."
-  },
-  "dependencies": {
-    "@numen/plugin-sdk": "*",
-    "vue": "^3.5.44"
   },
   "devDependencies": {
     "lightningcss": "^1.33.0",
     "typescript": "^6.0.3",
-    "vite": "^8.3.4",
     "vitest": "^5.0.3"
   }
 }

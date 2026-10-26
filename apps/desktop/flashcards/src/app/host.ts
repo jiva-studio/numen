@@ -10,7 +10,7 @@ import type {
   PluginManifest,
   TabKindRegistration,
 } from '@numen/plugin-sdk'
-import type { LoaderHost } from '@numen/shell'
+import type { LoaderHost } from '@numen/plugin-host'
 
 /** The target of this window, which names the plugins it loads. */
 export const TARGET = 'desktop.flashcards'

@@ -4,6 +4,7 @@ NOTES    := libs/notes
 UI       := libs/ui/core
 WIRE     := libs/wire
 SHELL_LIB := libs/ui/shell
+PLUGIN_HOST := libs/plugin-host-ts
 PROTOCOL := libs/protocol
 PLUGIN_SDK := libs/plugin-sdk-ts
 PLUGIN_SDK_GO := libs/plugin-sdk-go
@@ -44,7 +45,7 @@ install: ## fetch all workspace dependencies
 	$(INSTALL)
 
 .PHONY: compile
-compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_shell_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
+compile: lib_core_compile lib_notes_compile lib_protocol_compile lib_ui_compile lib_wire_compile lib_shell_compile lib_plugin_host_compile lib_plugin_sdk_go_compile app_desktop_compile app_mobile_compile app_docs_compile app_landing_compile ## compile all modules and typecheck interfaces
 
 .PHONY: build
 build: interface lib_core_build app_desktop_build ## build all application artifacts
@@ -246,6 +247,22 @@ lib_shell_test: ## run shell tests
 .PHONY: lib_shell_lint
 lib_shell_lint: ## lint the shell package
 	cd $(SHELL_LIB) && npm run lint && npm run typecheck
+
+# ------------------------------ Lib: Plugin Host ------------------------------
+.PHONY: lib_plugin_host_typecheck
+lib_plugin_host_typecheck: ## typecheck the plugin-host package
+	cd $(PLUGIN_HOST) && npm run typecheck
+
+.PHONY: lib_plugin_host_compile
+lib_plugin_host_compile: lib_plugin_host_typecheck
+
+.PHONY: lib_plugin_host_test
+lib_plugin_host_test: ## run plugin-host tests
+	cd $(PLUGIN_HOST) && npm test
+
+.PHONY: lib_plugin_host_lint
+lib_plugin_host_lint: ## lint the plugin-host package
+	cd $(PLUGIN_HOST) && npm run lint && npm run typecheck
 
 # ------------------------------ Lib: Plugin SDK -------------------------------
 .PHONY: lib_plugin_sdk_typecheck
