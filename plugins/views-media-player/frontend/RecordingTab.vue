@@ -27,7 +27,7 @@ const props = defineProps<{
 const targetPath = props.path || props.file || props.state?.path || props.state?.file || ''
 
 const tab = useTranscript(props.recordings ?? servedRecordings, targetPath, props.how)
-const { now, runs, isPlaying, isPlayable } = tab.playback
+const { now, runs, isPlaying, isUnplayable } = tab.playback
 const { isProofreadable, isDeletable } = tab.offers
 
 /** What the menu offers over this recording: each item only where it applies. */
@@ -78,7 +78,7 @@ function onSeek(ms: number) {
   <MediaLayout :state="tab" :menu-items="menuItems" @choose="onChoose">
     <template #player>
       <Player
-        v-if="isPlayable"
+        v-if="!isUnplayable"
         class="recording__player"
         :at="now"
         :length="runs"

@@ -38,12 +38,12 @@ const createPlayback = (how: { isPlayable?: boolean } = {}) => {
 }
 
 describe('a recording that does not know its address yet', () => {
-  it('has none, runs nowhere, and cannot be played', () => {
-    const { playback } = createPlayback()
+  it('has none, runs nowhere, and is not called unplayable before it is read', () => {
+    const { playback } = createPlayback({ isPlayable: false })
 
     expect(playback.url.value).toBe('')
     expect(playback.runs.value).toBe(0)
-    expect(playback.isPlayable.value).toBe(false)
+    expect(playback.isUnplayable.value).toBe(false)
   })
 })
 
@@ -91,14 +91,21 @@ describe('a recording another holds the player for', () => {
 })
 
 describe('whether the window can play a recording', () => {
+  it('is unplayable where the application named no address', () => {
+    const { playback } = createPlayback()
+    playback.setSource({ ...FILE, mediaUrl: '' })
+
+    expect(playback.isUnplayable.value).toBe(true)
+  })
+
   it('follows what the window says of the type', () => {
     const playable = createPlayback()
     playable.playback.setSource(FILE)
     const unplayable = createPlayback({ isPlayable: false })
     unplayable.playback.setSource(FILE)
 
-    expect(playable.playback.isPlayable.value).toBe(true)
-    expect(unplayable.playback.isPlayable.value).toBe(false)
+    expect(playable.playback.isUnplayable.value).toBe(false)
+    expect(unplayable.playback.isUnplayable.value).toBe(true)
   })
 })
 

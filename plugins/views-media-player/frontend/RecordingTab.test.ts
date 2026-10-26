@@ -9,6 +9,7 @@ import RecordingTab from './RecordingTab.vue'
 import {
   CUES,
   DELETE_ENTRY,
+  TALK_URL,
   TRANSCRIBE_ENTRY,
   createPlayer,
   createRecordings,
@@ -53,6 +54,22 @@ describe('a recording tab', () => {
     await flush()
 
     expect(tab.find('.recording__player').exists()).toBe(false)
+    expect(tab.find('.recording__note').text()).toBe(WORDS.unplayable)
+    tab.unmount()
+  })
+
+  it('says nothing about playing while the recording is still being read', async () => {
+    const { recordings } = createRecordings()
+    let answer: (source: { mediaUrl: string; mediaType: string }) => void = () => {}
+    recordings.getSource = () => new Promise((resolve) => (answer = resolve))
+    const { tab } = mountTab(recordings, false)
+    await flush()
+
+    expect(tab.find('.recording__note').exists()).toBe(false)
+    expect(tab.text()).not.toContain(WORDS.unplayable)
+
+    answer({ mediaUrl: TALK_URL, mediaType: 'audio/mpeg' })
+    await flush()
     expect(tab.find('.recording__note').text()).toBe(WORDS.unplayable)
     tab.unmount()
   })

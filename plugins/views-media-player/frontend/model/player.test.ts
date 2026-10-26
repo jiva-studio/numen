@@ -23,6 +23,7 @@ function createElement() {
     preload: '',
     currentTime: 0,
     duration: Number.NaN,
+    readyState: 0,
     paused: true,
     error: null as { code: number } | null,
     /** Every address it was given, in the order it was given them. */
@@ -255,6 +256,57 @@ describe('how long a recording runs', () => {
     setDuration(Number.POSITIVE_INFINITY)
 
     expect(plays.duration.value).toBe(0)
+  })
+
+  it('is read again where the element learns it without a durationchange', () => {
+    const { plays, element, emit, setDuration } = player()
+    plays.load(TALK)
+    element.readyState = 4
+    setDuration(0)
+    emit('loadedmetadata')
+    expect(plays.duration.value).toBe(0)
+
+    // WebKitGTK sets the estimated length of a VBR mp3 with no Xing header this way.
+    element.duration = 3352.4
+    emit('canplay')
+
+    expect(plays.duration.value).toBe(3_352_400)
+  })
+
+  it('is polled while it is unknown after loadedmetadata', () => {
+    vi.useFakeTimers()
+    try {
+      const { plays, element, setDuration } = player()
+      plays.load(TALK)
+      element.readyState = 1
+      setDuration(0)
+
+      element.duration = 187
+      vi.advanceTimersByTime(300)
+
+      expect(plays.duration.value).toBe(187_000)
+      expect(vi.getTimerCount()).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('stops asking for the length of a recording another one replaced', () => {
+    vi.useFakeTimers()
+    try {
+      const { plays, element, setDuration } = player()
+      plays.load(TALK)
+      element.readyState = 1
+      setDuration(0)
+
+      plays.load(OTHER)
+      vi.advanceTimersByTime(300)
+
+      expect(vi.getTimerCount()).toBe(0)
+      expect(plays.duration.value).toBe(0)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('reports zero duration until the element reports one', () => {

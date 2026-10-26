@@ -15,6 +15,8 @@ const MEDIA_ERR_ABORTED = 1
 const MEDIA_ERR_NETWORK = 2
 const MEDIA_ERR_DECODE = 3
 const MEDIA_ERR_SRC_NOT_SUPPORTED = 4
+/** The readyState at which the element has read the metadata. */
+const HAVE_METADATA = 1
 
 /** What each of them is called where a person reads it. */
 const FAILED: Record<number, string> = {
@@ -23,6 +25,20 @@ const FAILED: Record<number, string> = {
   [MEDIA_ERR_DECODE]: WORDS.undecoded,
   [MEDIA_ERR_SRC_NOT_SUPPORTED]: WORDS.unwanted,
 }
+
+/** The events after which the element may know a length it did not know before, besides play, timeupdate and seeked. */
+const DURATION_EVENTS = [
+  'durationchange',
+  'loadedmetadata',
+  'loadeddata',
+  'canplay',
+  'canplaythrough',
+  'progress',
+]
+
+/** How often, and how many times, a length still unknown once the metadata is read is asked for again. */
+const DURATION_POLL_MS = 250
+const DURATION_POLLS = 40
 
 /** What plays a recording, as whatever draws the controls reads it. */
 export interface Player {
@@ -59,17 +75,42 @@ function bindAudioListeners(
   },
 ) {
   audio.preload = 'metadata'
-  audio.addEventListener('timeupdate', () => {
-    state.position.value = Math.round(audio.currentTime * 1000)
-  })
-  audio.addEventListener('seeked', () => {
-    state.position.value = Math.round(audio.currentTime * 1000)
-  })
-  audio.addEventListener('durationchange', () => {
+  // WebKitGTK reports a VBR mp3 with no Xing header as 0 s long at durationchange and
+  // loadedmetadata, then sets the estimated length without another durationchange. The length is
+  // read again at each of these, and polled while it is still unknown.
+  let poll: ReturnType<typeof setInterval> | undefined
+  const stopPoll = () => {
+    clearInterval(poll)
+    poll = undefined
+  }
+  const readDuration = () => {
     const runs = audio.duration
-    state.duration.value = Number.isFinite(runs) ? Math.round(runs * 1000) : 0
+    const ms = Number.isFinite(runs) && runs > 0 ? Math.round(runs * 1000) : 0
+    state.duration.value = ms
+    if (ms > 0 || audio.readyState < HAVE_METADATA) {
+      stopPoll()
+      return
+    }
+    if (poll !== undefined) return
+    const src = audio.src
+    let remainingPolls = DURATION_POLLS
+    poll = setInterval(() => {
+      remainingPolls--
+      if (audio.src !== src || remainingPolls <= 0) stopPoll()
+      else readDuration()
+    }, DURATION_POLL_MS)
+  }
+  for (const name of DURATION_EVENTS) audio.addEventListener(name, readDuration)
+  const readPosition = () => {
+    state.position.value = Math.round(audio.currentTime * 1000)
+    readDuration()
+  }
+  audio.addEventListener('timeupdate', readPosition)
+  audio.addEventListener('seeked', readPosition)
+  audio.addEventListener('play', () => {
+    state.isPlaying.value = true
+    readDuration()
   })
-  audio.addEventListener('play', () => void (state.isPlaying.value = true))
   audio.addEventListener('pause', () => void (state.isPlaying.value = false))
   audio.addEventListener('ended', () => void (state.isPlaying.value = false))
   audio.addEventListener('error', () => {

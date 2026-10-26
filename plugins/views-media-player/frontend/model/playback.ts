@@ -12,6 +12,7 @@ import type { RecordingSource } from '../types'
 export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: () => boolean) {
   const url = ref('')
   const type = ref('')
+  const isSourceRead = ref(false)
   let pendingSeek = -1
 
   const isLoaded = computed(() => url.value !== '' && audioPlayer.url.value === url.value)
@@ -20,6 +21,8 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   const isPlaying = computed(() => isLoaded.value && audioPlayer.isPlaying.value)
   const failure = computed(() => (isLoaded.value ? audioPlayer.error.value : ''))
   const isPlayable = computed(() => url.value !== '' && plays(type.value))
+  /** True once the source is known and its address or media type cannot play in this window. */
+  const isUnplayable = computed(() => isSourceRead.value && !isPlayable.value)
 
   const go = (ms: number) => {
     if (!isOpen()) return
@@ -32,6 +35,7 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
   }
 
   const setSource = (source: RecordingSource) => {
+    isSourceRead.value = true
     url.value = source.mediaUrl
     type.value = source.mediaType
     if (!url.value) return
@@ -58,7 +62,7 @@ export function usePlayback(audioPlayer: Player, plays: MediaTypeProbe, isOpen: 
     now,
     isPlaying,
     failure,
-    isPlayable,
+    isUnplayable,
     setSource,
     controls: { go, play, pause },
   }
