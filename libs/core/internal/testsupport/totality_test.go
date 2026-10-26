@@ -18,7 +18,6 @@ import (
 // below, and a value added to an enum already here fails in the test named
 // beside it.
 var walked = map[protoreflect.FullName]string{
-	"numen.v1.ArtifactKind":         "adapter/window/editor: named by standing",
 	"numen.v1.ArticleErrorCode":     "plugins/tools-media-importer: written by getErrorCode",
 	"numen.v1.BookFormat":           "adapter/window/editor: written by formatOf",
 	"numen.v1.BudgetName":           "internal/adapterlib/wire: answered one by one against BudgetOf",
@@ -49,7 +48,6 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.TextErrorCode":        "internal/adapter/plugin/textproviderbridge: read by readError",
 	"numen.v1.TextFormat":           "internal/adapter/plugin/textwire: round trip through ReadFormat and WriteFormat",
 	"numen.v1.SourceKind":           "adapter/window/editor: written by kindOf",
-	"numen.v1.State":                "adapter/window/editor: written by stood and by run",
 	"numen.v1.StopReason":           "internal/adapterlib/wire: written by StopReasonOf",
 	"numen.v1.ToolEffect":           "internal/adapter/plugin: read by readToolEffect",
 	"numen.v1.ToolErrorCode":        "internal/adapter/plugin: read by CallTool",

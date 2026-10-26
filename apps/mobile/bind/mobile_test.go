@@ -179,9 +179,6 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		"/numen.v1.TranscriptService/ReadTranscript",
 		"/numen.v1.TranscriptService/WriteTranscript",
 		"/numen.v1.ArticleService/ReadArticle",
-		"/numen.v1.ArtifactService/ListArtifacts",
-		"/numen.v1.ArtifactService/CreateArtifact",
-		"/numen.v1.ArtifactService/DeleteArtifact",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))
