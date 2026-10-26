@@ -37,6 +37,10 @@ type embeddingServer struct {
 	apiKey   string
 	baseURL  string
 	provider string
+	// localName is the name of the model the plugin runs on this machine, and remoteModel the model
+	// the settings name for a remote service.
+	localName   string
+	remoteModel string
 }
 
 // textEmbedder is a model that turns texts into vectors.
@@ -48,6 +52,9 @@ type textEmbedder interface {
 
 // openEmbedder loads the model a server embeds with.
 type openEmbedder func(ctx context.Context, info engine.ModelInfo, local engine.LocalModel) (textEmbedder, error)
+
+// providerLocal is the provider that runs the model on this machine.
+const providerLocal = "local"
 
 // envMockML names the variable that selects the mock embedder for automated tests.
 const envMockML = "NUMEN_MOCK_ML"
@@ -64,26 +71,32 @@ func openMockModel(context.Context, engine.ModelInfo, engine.LocalModel) (textEm
 	return engine.MockEmbedder{}, nil
 }
 
+// updateConfig takes the settings of the provider the settings name: the host hands over the URL of a
+// custom service, and the model and the key of a remote one, only while that provider is chosen. A
+// key the host leaves out is kept.
 func (s *embeddingServer) updateConfig(values map[string]string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if provider, ok := values["provider"]; ok && provider != "" {
+	if provider := values["provider"]; provider != "" {
 		s.provider = provider
 	}
-	if model, ok := values["model"]; ok && model != "" {
-		s.modelInfo.Name = model
+	if model := values["model"]; model != "" {
+		s.remoteModel = model
 	}
 	if key, ok := server.ReadSecret(values, server.SecretAPIKey); ok {
 		s.apiKey = key
 	}
-	if base, ok := values["baseUrl"]; ok {
-		s.baseURL = base
+	s.baseURL = values["baseUrl"]
+	s.modelInfo.Name = s.localName
+	if s.provider != providerLocal && s.remoteModel != "" {
+		s.modelInfo.Name = s.remoteModel
 	}
 }
 
 func newEmbeddingServer() *embeddingServer {
 	if os.Getenv(envMockML) == "true" {
-		return &embeddingServer{modelInfo: engine.GetMockModel(), open: openMockModel, isMock: true}
+		info := engine.GetMockModel()
+		return &embeddingServer{modelInfo: info, localName: info.Name, open: openMockModel, isMock: true}
 	}
 	info, local := engine.DefaultBGEM3Config()
 	applyModelOverrides(&info, &local)
@@ -92,6 +105,7 @@ func newEmbeddingServer() *embeddingServer {
 
 	return &embeddingServer{
 		modelInfo:  info,
+		localName:  info.Name,
 		localModel: local,
 		open:       openLocalModel,
 	}
@@ -276,17 +290,17 @@ type openAIEmbeddingResponse struct {
 func (s *embeddingServer) getService() (key, baseURL string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.isMock || s.provider == "local" {
+	switch {
+	case s.isMock || s.provider == providerLocal:
 		return "", ""
+	case s.provider == "openai":
+		return s.apiKey, "https://api.openai.com/v1"
+	case s.provider == "openrouter":
+		return s.apiKey, "https://openrouter.ai/api/v1"
 	}
 	baseURL = s.baseURL
 	if baseURL == "" {
 		baseURL = os.Getenv("NUMEN_EMBEDDING_URL")
-	}
-	if s.provider == "openai" && baseURL == "" {
-		baseURL = "https://api.openai.com/v1"
-	} else if s.provider == "openrouter" && baseURL == "" {
-		baseURL = "https://openrouter.ai/api/v1"
 	}
 	return s.apiKey, baseURL
 }

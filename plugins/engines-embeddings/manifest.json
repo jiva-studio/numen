@@ -14,7 +14,17 @@
       "kind": "runtime"
     }
   ],
-  "secrets": [{ "name": "apiKey", "title": "API key" }],
+  "secrets": [
+    {
+      "name": "apiKey",
+      "title": "API key",
+      "description": "Key of the remote service",
+      "when": {
+        "setting": "provider",
+        "is": ["openrouter", "openai", "custom"]
+      }
+    }
+  ],
   "lifecycle": {
     "idleTimeoutSeconds": 0,
     "keepAliveWhileVisible": true,
@@ -29,24 +39,53 @@
     {
       "key": "provider",
       "type": "enum",
-      "title": "Embedding Provider",
-      "description": "Embedding provider engine (local on-device or remote service)",
-      "options": ["local", "openrouter", "openai", "custom"],
-      "default": "local"
+      "title": "Provider",
+      "description": "Where texts are turned into vectors",
+      "default": "local",
+      "options": [
+        {
+          "value": "local",
+          "title": "Local",
+          "detail": "BGE-M3 on this machine: 100+ languages, 1024 dimensions"
+        },
+        {
+          "value": "openrouter",
+          "title": "OpenRouter",
+          "detail": "OpenRouter embeddings API"
+        },
+        {
+          "value": "openai",
+          "title": "OpenAI",
+          "detail": "OpenAI embeddings API"
+        },
+        {
+          "value": "custom",
+          "title": "Custom service",
+          "detail": "Any OpenAI-compatible embeddings API"
+        }
+      ]
     },
     {
       "key": "baseUrl",
       "type": "string",
       "title": "Service URL",
-      "description": "Base URL for OpenAI-compatible embeddings API",
-      "default": "https://openrouter.ai/api/v1"
+      "description": "Base URL of the embeddings API, for example https://example.org/v1",
+      "default": "",
+      "when": {
+        "setting": "provider",
+        "is": ["custom"]
+      }
     },
     {
       "key": "model",
       "type": "string",
       "title": "Model",
-      "description": "Model name for embeddings",
-      "default": "text-embedding-3-small"
+      "description": "Model name the service lists, for example text-embedding-3-small",
+      "default": "text-embedding-3-small",
+      "when": {
+        "setting": "provider",
+        "is": ["openrouter", "openai", "custom"]
+      }
     }
   ]
 }

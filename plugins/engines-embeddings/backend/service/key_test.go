@@ -33,12 +33,12 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) 
 		}
 	}
 
-	configure(map[string]string{"baseUrl": service.URL})
+	configure(map[string]string{"provider": "custom", "baseUrl": service.URL})
 	if key, _ := emb.getService(); key != "" {
 		t.Fatalf("key = %q while Configure handed over none", key)
 	}
 
-	configure(map[string]string{server.SecretAPIKey: "host-key"})
+	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: "host-key"})
 	res, err := emb.EmbedBatch(t.Context(), connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"a fixture sentence"}}))
 	if err != nil {
 		t.Fatal(err)
@@ -51,7 +51,7 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) 
 		t.Errorf("the service was asked with %v, want only the key Configure handed over", auth)
 	}
 
-	configure(map[string]string{server.SecretAPIKey: ""})
+	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: ""})
 	if key, _ := emb.getService(); key != "" {
 		t.Errorf("key = %q after Configure dropped it", key)
 	}
@@ -82,5 +82,26 @@ func TestProviderSetting(t *testing.T) {
 	})
 	if _, url := emb.getService(); url != "https://api.openai.com/v1" {
 		t.Errorf("expected openai default URL, got %q", url)
+	}
+}
+
+// The backend takes the settings of the provider chosen: the URL of a custom service only while it
+// is chosen, the model of a remote service only while one is chosen, and the local model otherwise.
+func TestOnlyTheSettingsOfTheChosenProviderAreTaken(t *testing.T) {
+	emb := newEmbeddingServer()
+	local := emb.getModelName()
+	emb.updateConfig(map[string]string{"provider": "custom", "baseUrl": "https://embeddings.example.org/v1", "model": "fixture-embed", server.SecretAPIKey: "key"})
+	if key, url := emb.getService(); key != "key" || url != "https://embeddings.example.org/v1" || emb.getModelName() != "fixture-embed" {
+		t.Errorf("custom: %q, %q, %q", key, url, emb.getModelName())
+	}
+
+	emb.updateConfig(map[string]string{"provider": "openai", "model": "fixture-embed"})
+	if _, url := emb.getService(); url != "https://api.openai.com/v1" {
+		t.Errorf("openai asks %q, a URL of another provider", url)
+	}
+
+	emb.updateConfig(map[string]string{"provider": "local"})
+	if key, url := emb.getService(); key != "" || url != "" || emb.getModelName() != local {
+		t.Errorf("local: %q, %q, model %q, want the local model %q", key, url, emb.getModelName(), local)
 	}
 }

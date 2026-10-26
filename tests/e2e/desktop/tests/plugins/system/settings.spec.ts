@@ -121,3 +121,49 @@ test.describe('OCR settings', () => {
     await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
   })
 })
+
+test.describe('Embeddings settings', () => {
+  test('shows the settings of the chosen provider, and keeps the values of the others', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await runPaletteCommand(page, 'Settings', 'Settings')
+    const pluginRow = page.getByRole('button', { name: /Vector Embeddings/i }).first()
+    const provider = page.getByTestId('setting-provider')
+    await expect(pluginRow.or(provider)).toBeVisible({ timeout: 10_000 })
+    if (await pluginRow.isVisible()) await pluginRow.click()
+
+    await expect(provider.locator('.settings__choice')).toHaveText('Local')
+    await expect(
+      page.getByText('BGE-M3 on this machine: 100+ languages, 1024 dimensions'),
+    ).toBeVisible()
+    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Model', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('API key', { exact: true })).toHaveCount(0)
+
+    await provider.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Custom service', exact: true }).click()
+    await expect(page.getByText('Service URL', { exact: true })).toBeVisible()
+    await expect(page.getByText('Model', { exact: true })).toBeVisible()
+    await expect(page.getByText('API key', { exact: true }).first()).toBeVisible()
+    const url = page.getByRole('textbox', { name: 'Service URL' })
+    await url.fill('http://127.0.0.1:9/v1')
+    await url.press('Tab')
+    await expect(page.getByRole('textbox', { name: 'Service URL' })).not.toBeFocused()
+
+    await provider.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'OpenAI', exact: true }).click()
+    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
+    await expect(page.getByText('Model', { exact: true })).toBeVisible()
+
+    await provider.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Custom service', exact: true }).click()
+    await expect(page.getByRole('textbox', { name: 'Service URL' })).toHaveValue(
+      'http://127.0.0.1:9/v1',
+    )
+
+    await provider.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Local', exact: true }).click()
+    await expect(page.getByText('Service URL', { exact: true })).toHaveCount(0)
+  })
+})
