@@ -164,7 +164,6 @@ describe('the commands as they open', () => {
         'ask',
         'copy',
         'reveal',
-        'preset',
       ],
       window: [
         'note',

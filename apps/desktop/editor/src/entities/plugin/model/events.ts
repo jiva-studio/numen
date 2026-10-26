@@ -1,4 +1,4 @@
-import type { CommandRegistration, Disposable } from '@numen/plugin-sdk'
+import type { CommandNote, CommandRegistration, Disposable } from '@numen/plugin-sdk'
 import type { PluginHostDeps } from './types'
 
 export interface PluginListener<E> {
@@ -36,9 +36,10 @@ export async function runCommand(
   deps: PluginHostDeps,
   pluginId: string,
   reg: CommandRegistration,
+  note: CommandNote,
 ): Promise<void> {
   try {
-    await reg.handler()
+    await reg.handler(note)
   } catch (error) {
     reportError(deps, pluginId, error)
   }

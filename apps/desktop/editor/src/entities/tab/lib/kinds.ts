@@ -1,6 +1,6 @@
 /** A kind of tab: what one of its tabs holds, and what a kind may ask of the window. */
 import type { Component } from 'vue'
-import type { NoteType, TabPlacement, TabResolution } from '@numen/plugin-sdk'
+import type { TabPlacement } from '@numen/plugin-sdk'
 import type { Result } from '@numen/wire'
 import type { Source } from '@/entities/file/@x/tab'
 import type { ProgressOf } from './tab'
@@ -81,12 +81,6 @@ export interface TabKind<TabState, K extends string = string> {
   flushPending?(state: TabState): Promise<void>
   /** A file made in a folder under a name, as the file this kind edits. */
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
-  /** Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none. */
-  resolveCommand?(
-    targetPath: string,
-    command: string,
-    type: NoteType,
-  ): Promise<TabResolution | null>
   /** The icon its tabs carry before their title. */
   readonly icon?: Component
   /** Where a tab of it opens in a window that starts with nothing to restore. */

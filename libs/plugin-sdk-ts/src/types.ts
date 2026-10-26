@@ -72,11 +72,6 @@ export interface TabPlacement {
   readonly order: number
 }
 
-// TabResolution is where a command over a file leads: a tab of a kind opened on a path, or why it leads nowhere.
-export type TabResolution =
-  | { readonly ok: true; readonly kind: string; readonly at: string }
-  | { readonly ok: false; readonly text: string; readonly severity: 'error' | 'caution' }
-
 // TabKindRegistration registers a kind of workspace tab. A registration that
 // declares open owns what its tabs hold; one that does not holds the note at
 // the path its tab opens on.
@@ -112,24 +107,28 @@ export interface TabKindRegistration<State = unknown> {
   flushPending?(state: State): Promise<void>
   // A file made in a folder under a name, as the file this kind edits.
   createFile?(folder: string, name: string): Promise<Result<{ path: string }, string>>
-  // Where a command named `command` over the file at `at`, of the type given, leads, and nothing where this kind has none.
-  resolveCommand?(
-    targetPath: string,
-    command: string,
-    type: NoteType,
-  ): Promise<TabResolution | null>
   // The icon its tabs carry before their title.
   icon?: unknown
   placement?: TabPlacement
+}
+
+// CommandNote is the note a command runs over: the note in front, or the one a menu was opened on.
+// Its path is empty where there is none.
+export interface CommandNote {
+  readonly path: string
+  readonly title: string
+  readonly type: NoteType
 }
 
 // CommandRegistration registers a palette or keybound action.
 export interface CommandRegistration {
   id: string
   title: string
-  handler: () => void | Promise<void>
+  handler: (note: CommandNote) => void | Promise<void>
   shortcut?: string
   canShowInPalette?: boolean
+  // 'note' offers the command only while a note is in front, in the palette's group of note commands.
+  scope?: 'note'
 }
 
 // AgentProviderRegistration registers an AI agent provider.

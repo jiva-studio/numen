@@ -15,10 +15,6 @@ const TAB_CODES: ReadonlySet<string> = new Set<NoteErrorCode>([
 ])
 
 const TAB_CODE_OF: Readonly<Record<string, NoteErrorCode>> = {
-  deckTooLarge: 'tooLarge',
-  notAStencil: 'notANote',
-  notADeck: 'notANote',
-  notAPreset: 'notANote',
   missing: 'unreadable',
   occupied: 'unreadable',
   unnameable: 'unreadable',

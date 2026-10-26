@@ -215,7 +215,6 @@ const window = (
       leave: async (from, to) => void isDone.push(`leave ${from} ${to}`),
       getOpeningNote: () => 'Root.md',
       openTab: (kind) => void isDone.push(`openTab ${kind}`),
-      openPreset: async (path) => void isDone.push(`preset ${path}`),
       closeTab: (tab) => void isDone.push(`closeTab ${tab}`),
       ask: (text) => void isDone.push(`ask ${text}`),
       search: () => void isDone.push('search'),

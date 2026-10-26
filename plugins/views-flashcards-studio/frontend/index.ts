@@ -4,6 +4,7 @@ import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { useStencilTabs } from './stencil/kind'
 import { usePresetTab } from './preset/kind'
+import { WORDS as presetWords } from './preset/words'
 import { createReviewKind, FLASHCARDS_TARGET } from './review'
 
 export { DECK } from './deck/kind'
@@ -47,6 +48,14 @@ export function activate(context: PluginContext): void {
   context.registerTabKind(decks.kind)
   context.registerTabKind(stencils.kind)
   context.registerTabKind(schedules.kind)
+  context.registerCommand({
+    id: 'preset',
+    title: presetWords.openPreset,
+    scope: 'note',
+    handler: async (note) => {
+      await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))
+    },
+  })
 
   if (files) {
     const getFolder = (path: string, isFolder: boolean): string => {

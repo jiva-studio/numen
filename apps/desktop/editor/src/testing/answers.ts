@@ -17,7 +17,7 @@ interface MockVaultState {
     heading: string
     line: number
     at: []
-    type: 'note' | 'deck' | 'stencil'
+    type: string
   }[]
   passages: {
     path: string
@@ -28,10 +28,10 @@ interface MockVaultState {
     length: number
     line: number
     at: []
-    type: 'note' | 'deck' | 'stencil'
+    type: string
     kind: 'note' | 'book' | 'recording' | 'other'
   }[]
-  types: Record<string, 'note' | 'deck' | 'stencil'>
+  types: Record<string, string>
   embedded: number
   listable: boolean
   writeError: string
@@ -152,7 +152,7 @@ export const outside = (() => {
 })()
 
 /**
- * The vault as it makes a deck or a stencil: the file is named after the title,
+ * The vault as it makes a note of a plugin type: the file is named after the title,
  * and the extension is the vault's own and no caller's. It is not markdown
  * here, so a window building the path for itself reaches nothing.
  */
@@ -180,11 +180,7 @@ export const maker = (() => {
 })()
 
 /** One name the vault answers a search with, of a note of some kind. */
-export const nameAnswer = (
-  path: string,
-  title: string,
-  type: 'note' | 'deck' | 'stencil' = 'note',
-) => ({
+export const nameAnswer = (path: string, title: string, type: string = 'note') => ({
   path,
   title,
   heading: '',
@@ -194,11 +190,7 @@ export const nameAnswer = (
 })
 
 /** One passage the search answers with, read out of a note of some kind. */
-export const passageAnswer = (
-  path: string,
-  title: string,
-  type: 'note' | 'deck' | 'stencil' = 'note',
-) => ({
+export const passageAnswer = (path: string, title: string, type: string = 'note') => ({
   path,
   title,
   isNote: true,

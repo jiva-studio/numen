@@ -110,7 +110,6 @@ beforeEach(() => {
       releaseTab: vi.fn(() => true),
       reconcileTab: vi.fn(),
       openTabOfKind: vi.fn(),
-      resolveCommand: vi.fn(),
       close: vi.fn(),
     },
     editing: {
@@ -423,41 +422,6 @@ describe('the window started and closed', () => {
     expect(h.f.editing.close).toHaveBeenCalledOnce()
     expect(h.f.windowTabs.close).toHaveBeenCalledOnce()
     expect(h.f.settings.close).toHaveBeenCalledOnce()
-  })
-})
-
-describe('a preset opened', () => {
-  const mockFileKind = (type: string) =>
-    h.core.fileKinds.mockResolvedValue(new Map([['a.md', { type }]]))
-
-  it('is requested of the kinds of the window with the type the vault names the file', async () => {
-    mockFileKind('deck')
-    h.f.windowTabs.resolveCommand.mockResolvedValue({
-      ok: true,
-      kind: 'preset',
-      at: 'Presets/Fast.md',
-    })
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.f.windowTabs.resolveCommand).toHaveBeenCalledWith('a.md', 'preset', 'deck')
-    expect(h.f.windowTabs.openTabOfKind).toHaveBeenCalledWith('preset', 'Presets/Fast.md')
-  })
-
-  it('says why it leads nowhere', async () => {
-    mockFileKind('deck')
-    h.f.windowTabs.resolveCommand.mockResolvedValue({
-      ok: false,
-      text: 'no preset',
-      severity: 'caution',
-    })
-    useWindow()
-
-    await h.args.commands.openPreset('a.md')
-
-    expect(h.f.writer).toHaveBeenCalledWith('no preset', 'caution')
-    expect(h.f.windowTabs.openTabOfKind).not.toHaveBeenCalled()
   })
 })
 

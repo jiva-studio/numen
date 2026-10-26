@@ -92,11 +92,24 @@ describe('flashcards-studio plugin', () => {
     )
   })
 
-  it('answers where a command over a file leads from the preset kind', () => {
+  it('offers opening the preset of the note in front as a command over a note', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    expect(typeof ctx.getRegisteredTabKinds()[2]?.resolveCommand).toBe('function')
+    const commands = ctx.getRegisteredCommands()
+    expect(commands.map(({ id, title, scope }) => ({ id, title, scope }))).toStrictEqual([
+      { id: 'preset', title: 'Open the preset', scope: 'note' },
+    ])
+  })
+
+  it('opens a note that is no deck as its own preset', async () => {
+    const { ctx } = createContext()
+    const openTab = vi.spyOn(ctx, 'openTab')
+    activate(ctx)
+
+    await ctx.triggerCommand('preset', { path: 'Plan.md', title: 'Plan', type: 'note' })
+
+    expect(openTab).toHaveBeenCalledExactlyOnceWith(PRESET, 'Plan.md')
   })
 
   it('passes the closing of a tab that took its own close to the window', async () => {

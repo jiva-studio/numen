@@ -58,7 +58,6 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['ask', Bot],
   ['copy', Copy],
   ['reveal', FolderOpen],
-  ['preset', Gauge],
   ['remove', Trash2],
   ['destroy', Trash2],
   ['downloadText', RefreshCw],

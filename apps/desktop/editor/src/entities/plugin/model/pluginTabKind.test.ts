@@ -103,7 +103,6 @@ describe('the hooks a registration passes over', () => {
       isAsking: () => true,
       flushPending: async () => {},
       createFile: async () => ({ ok: true as const, value: { path: 'a.md' } }),
-      resolveCommand: async () => null,
     }
 
     expect(pickDeclaredHooks({ kind: 'k', component: null, ...hooks })).toStrictEqual(hooks)

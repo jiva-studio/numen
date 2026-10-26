@@ -213,7 +213,7 @@ export interface RunSupport {
 
 /**
  * The files the window has an editor open on, as a command reaches them. A
- * note, a deck and a stencil each answer here.
+ * note of every type answers here.
  */
 export interface Notes {
   /** The identity of the tab standing at a file, and nothing where none does. */
@@ -238,8 +238,8 @@ export interface Notes {
 }
 
 /**
- * One store of open files, as a command reaches what it holds. The notes, the
- * decks and the stencils each keep one.
+ * One store of open files, as a command reaches what it holds. Each editor of a
+ * note type keeps one.
  */
 export interface Store {
   /** Whether this store holds a file open under that identity. */

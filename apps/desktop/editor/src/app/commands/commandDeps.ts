@@ -16,7 +16,6 @@ export interface CommandDepsOptions {
   reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
-  openPreset: (path: string) => Promise<void>
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   nesting: {
@@ -83,8 +82,7 @@ function createRunCommands(options: CommandDepsOptions): CommandDeps['runs'] {
 }
 
 function createNavigationCommands(options: CommandDepsOptions): CommandDeps['navigator'] {
-  const { files, travel, leavePath, agents, windowTabs, openPreset, getOpeningNote, search } =
-    options
+  const { files, travel, leavePath, agents, windowTabs, getOpeningNote, search } = options
   return {
     revealPath: (path) => void files().revealPath(path),
     travel: async (path) => {
@@ -95,7 +93,6 @@ function createNavigationCommands(options: CommandDepsOptions): CommandDeps['nav
     },
     getOpeningNote,
     openTab: (kind) => void windowTabs.openTabOfKind(kind),
-    openPreset: (path) => openPreset(path),
     closeTab: (tab) => windowTabs.requestClose(tab),
     ask: (text) => void agents().askQuestion(text),
     search: search ?? (() => {}),

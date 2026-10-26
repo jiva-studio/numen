@@ -29,7 +29,6 @@ describe('the commands over a note', () => {
       ask: undefined,
       copy: undefined,
       reveal: undefined,
-      preset: undefined,
     })
   })
 })

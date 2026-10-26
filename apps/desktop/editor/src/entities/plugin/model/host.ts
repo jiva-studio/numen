@@ -4,6 +4,7 @@
 import { shallowRef } from 'vue'
 import type {
   AgentProviderRegistration,
+  CommandNote,
   CommandRegistration,
   ContextMenuRegistration,
   ContextMenuTarget,
@@ -387,10 +388,10 @@ export function createPluginHost(deps: PluginHostDeps) {
     },
     getPaletteCommands: () => extractPaletteCommands(registry.commands.value),
     hasCommand: (id: string): boolean => resolveCommand(registry.commands.value, id) !== undefined,
-    executeCommand: async (id: string): Promise<boolean> => {
+    executeCommand: async (id: string, note: CommandNote): Promise<boolean> => {
       const entry = resolveCommand(registry.commands.value, id)
       if (!entry) return false
-      await runCommand(deps, entry.pluginId, entry.reg)
+      await runCommand(deps, entry.pluginId, entry.reg, note)
       return true
     },
     getContextMenuItems: (target: ContextMenuTarget): readonly ContextMenuRegistration[] => {
@@ -409,10 +410,13 @@ export function createPluginHost(deps: PluginHostDeps) {
       await entry.reg.handler(target)
       return true
     },
-    handleShortcut: (event: KeyboardEvent): boolean => {
+    handleShortcut: (event: KeyboardEvent, getNote: () => Promise<CommandNote>): boolean => {
       for (const { pluginId, reg } of registry.commands.value.values()) {
         if (matchesShortcut(event, reg.shortcut)) {
-          void runCommand(deps, pluginId, reg)
+          void getNote().then((note) => {
+            if (reg.scope === 'note' && note.path === '') return
+            return runCommand(deps, pluginId, reg, note)
+          })
           return true
         }
       }

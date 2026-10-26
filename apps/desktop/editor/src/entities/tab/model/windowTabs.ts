@@ -15,7 +15,6 @@ import {
   type Ref,
   type ShallowRef,
 } from 'vue'
-import type { NoteType, TabResolution } from '@numen/plugin-sdk'
 import type { Result } from '@numen/wire'
 import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@numen/ui'
 import type { Tab, Workspace } from '@numen/ui'
@@ -79,7 +78,6 @@ export function useWindowTabs() {
     registerKind,
     hasKind,
     openPlacedTabs,
-    resolveCommand: request.resolveCommand,
     createFileOfKind: request.createFileOfKind,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
@@ -119,19 +117,6 @@ function createTabRegistry() {
 
 /** What a window asks of the kinds it holds about a file. */
 function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
-  /** Where a command over a file leads, as the first kind that answers for it says. */
-  const resolveCommand = async (
-    targetPath: string,
-    command: string,
-    type: NoteType,
-  ): Promise<TabResolution | null> => {
-    for (const one of byKind.values()) {
-      const resolved = await one.resolveCommand?.(targetPath, command, type)
-      if (resolved) return resolved
-    }
-    return null
-  }
-
   /** A file made as the kind given edits it, and nothing where no kind of that name makes one. */
   const createFileOfKind = (
     kind: string,
@@ -140,7 +125,7 @@ function createKindQuestions(byKind: ReadonlyMap<string, AnyTabKind>) {
   ): Promise<Result<{ path: string }, string>> | undefined =>
     byKind.get(kind)?.createFile?.(folder, name)
 
-  return { resolveCommand, createFileOfKind }
+  return { createFileOfKind }
 }
 
 /** The pane a placed kind opens in, the main one first, and its place there. */

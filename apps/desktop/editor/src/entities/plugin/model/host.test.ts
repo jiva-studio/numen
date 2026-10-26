@@ -84,7 +84,7 @@ describe('createPluginHost', () => {
     expect(palette[0]?.id).toBe('plugin:test.run')
 
     // Execute command
-    await host.executeCommand('plugin:test.run')
+    await host.executeCommand('plugin:test.run', { path: '', title: '', type: 'note' })
     expect(executed).toBe(true)
 
     // Shortcut matching
@@ -94,8 +94,9 @@ describe('createPluginHost', () => {
       ctrlKey: true,
       shiftKey: true,
     })
-    const handled = host.handleShortcut(event)
+    const handled = host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
     expect(handled).toBe(true)
+    await new Promise((resolve) => setTimeout(resolve, 0))
     expect(executed).toBe(true)
 
     // Cleanups via dispose

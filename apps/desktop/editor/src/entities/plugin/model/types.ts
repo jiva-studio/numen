@@ -39,7 +39,8 @@ export interface PluginPaletteCommand {
   readonly id: string
   readonly title: string
   readonly shortcut?: string
-  isOffered(): boolean
+  /** 'note' where it is offered only while a note is in front. */
+  readonly scope?: 'note'
 }
 
 export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unknown

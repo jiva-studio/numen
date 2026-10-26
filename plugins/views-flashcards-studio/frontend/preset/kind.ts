@@ -7,6 +7,7 @@ import { ERRORS } from '@numen/wire'
 import {
   getFileName,
   type BufferHost,
+  type CommandNote,
   type MessageWriter,
   type PathRename,
   type TabKindRegistration,
@@ -33,6 +34,14 @@ export type { PresetTabState, SettingValue }
 
 /** The word preset tabs are filed under. */
 export const PRESET = 'preset'
+
+/** The note type of a deck, whose preset is the one it is scheduled by. */
+const DECK_TYPE = 'deck'
+
+/** Where the preset of a note is, or why there is none to open. */
+export type PresetPlace =
+  | { readonly ok: true; readonly at: string }
+  | { readonly ok: false; readonly text: string; readonly severity: 'error' | 'caution' }
 
 /** What the preset tabs of a window are made from. */
 export interface PresetTabDeps {
@@ -102,16 +111,6 @@ function createPresetKind(deps: KindDeps): TabKindRegistration<PresetTabState> {
     onDestroy: () => {},
     flushPending: (one) => flush(one),
     createFile: (folder, name) => core.createPreset(name, folder),
-    resolveCommand: async (targetPath, command, type) => {
-      if (command !== 'preset') return null
-      if (type !== 'deck') return { ok: true, kind: PRESET, at: targetPath }
-      const answer = await core.getDeckPreset(targetPath)
-      if (!answer.ok) return { ok: false, text: ERRORS[answer.error], severity: 'error' }
-      const readItem = answer.value.preset
-      if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'caution' }
-      if (readItem.title) titles.set(readItem.path, readItem.title)
-      return { ok: true, kind: PRESET, at: readItem.path }
-    },
   }
 }
 
@@ -193,5 +192,26 @@ export function usePresetTab(deps: PresetTabDeps) {
 
   buffers.addFlushHandler(flush)
 
-  return { kind, getState, applyPathChanges, getTitle, flush }
+  /** The preset of a note: the note itself, or the preset a deck is scheduled by. */
+  const findPreset = async (note: CommandNote): Promise<PresetPlace> => {
+    if (note.type !== DECK_TYPE) return { ok: true, at: note.path }
+    const answer = await core.getDeckPreset(note.path)
+    if (!answer.ok) return { ok: false, text: ERRORS[answer.error], severity: 'error' }
+    const readItem = answer.value.preset
+    if (!readItem?.path) return { ok: false, text: words.noPreset, severity: 'caution' }
+    if (readItem.title) titles.set(readItem.path, readItem.title)
+    return { ok: true, at: readItem.path }
+  }
+
+  /** The preset of a note, in a tab of its own, or a message saying why there is none. */
+  const openPresetOf = async (
+    note: CommandNote,
+    openTab: (kind: string, path: string) => unknown,
+  ): Promise<void> => {
+    const place = await findPreset(note)
+    if (place.ok) await openTab(PRESET, place.at)
+    else writeMessage(place.text, place.severity)
+  }
+
+  return { kind, getState, applyPathChanges, getTitle, flush, findPreset, openPresetOf }
 }

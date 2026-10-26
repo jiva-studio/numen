@@ -5,7 +5,6 @@
 import { watch } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { core } from '../vault'
-import { openCommandTab } from '../commands/commandTabs'
 import { createNoteLookup } from '../tabs/editorTabs'
 import { runSupport, type CommandTarget, type NoteLookup } from '@/features/command-palette'
 import { fileOpeners, useWindowTabs } from '@/entities/tab'
@@ -76,8 +75,6 @@ function initWindowCommands(deps: WindowCommandsOptions) {
     reload: vaultsModule.reload,
     loadArtifactStates: vaultsModule.loadArtifactStates,
     reached: editing.reached,
-    openPreset: (path) =>
-      openCommandTab({ vaultCore: core, windowTabs, writeMessage }, path, 'preset'),
     appearance: settings.appearance,
     oneName: settings.oneName,
     nesting: settings.nesting,

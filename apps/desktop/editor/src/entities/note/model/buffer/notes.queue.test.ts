@@ -9,10 +9,6 @@ type ErrorCode = string
 
 describe('what a failed call is reported as', () => {
   it.each<[ErrorCode, string]>([
-    ['deckTooLarge', 'tooLarge'],
-    ['notAStencil', 'notANote'],
-    ['notADeck', 'notANote'],
-    ['notAPreset', 'notANote'],
     ['missing', 'unreadable'],
     ['occupied', 'unreadable'],
     ['unnameable', 'unreadable'],
@@ -199,12 +195,12 @@ describe('the queue of an open note', () => {
     })
 
     it('reports any other failure by the name the tab knows it by', async () => {
-      const { queue, turned } = setup({ read: async () => asFailure('deckTooLarge') })
+      const { queue, turned } = setup({ read: async () => asFailure('occupied') })
 
       await queue.read('a', 'Note.md', 2)
 
       expect(turned).toEqual([
-        ['a', { kind: 'read', generation: 2, answer: { kind: 'error', error: 'tooLarge' } }],
+        ['a', { kind: 'read', generation: 2, answer: { kind: 'error', error: 'unreadable' } }],
       ])
     })
 
@@ -254,12 +250,12 @@ describe('the queue of an open note', () => {
     })
 
     it('reports any other failure by the name the tab knows it by', async () => {
-      const { queue, turned } = setup({ write: async () => asFailure('notADeck') })
+      const { queue, turned } = setup({ write: async () => asFailure('unnameable') })
 
       await queue.write('a', { path: 'Note.md', body: 'text', baseline: null })
 
       expect(turned).toEqual([
-        ['a', { kind: 'written', answer: { kind: 'error', error: 'notANote' } }],
+        ['a', { kind: 'written', answer: { kind: 'error', error: 'unreadable' } }],
       ])
     })
 

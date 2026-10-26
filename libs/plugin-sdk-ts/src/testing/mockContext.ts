@@ -1,5 +1,6 @@
 import type {
   AgentProviderRegistration,
+  CommandNote,
   CommandRegistration,
   ContextMenuRegistration,
   Disposable,
@@ -17,7 +18,7 @@ export interface MockPluginContext extends PluginContext {
   getRegisteredCommands(): CommandRegistration[]
   getRegisteredContextMenus(): ContextMenuRegistration[]
   getRegisteredAgentProviders(): AgentProviderRegistration[]
-  triggerCommand(commandId: string): Promise<void>
+  triggerCommand(commandId: string, note?: CommandNote): Promise<void>
   setSetting<T = unknown>(key: string, value: T): void
   dispose(): void
 }
@@ -209,12 +210,15 @@ export function createMockPluginContext(
       return [...agentProviders]
     },
 
-    async triggerCommand(commandId: string): Promise<void> {
+    async triggerCommand(
+      commandId: string,
+      note: CommandNote = { path: '', title: '', type: 'note' },
+    ): Promise<void> {
       const cmd = commands.find((c) => c.id === commandId)
       if (!cmd) {
         throw new Error(`Command not registered: ${commandId}`)
       }
-      await cmd.handler()
+      await cmd.handler(note)
     },
 
     dispose(): void {

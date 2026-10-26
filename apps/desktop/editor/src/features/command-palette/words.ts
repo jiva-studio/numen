@@ -97,8 +97,6 @@ export interface Words extends EmptyWords {
   readonly deletedCopy: string
   /** The note in front, shown where the vault files it. */
   readonly reveal: string
-  /** The preset the note in front is, or the one the deck in front is scheduled by. */
-  readonly preset: string
   readonly newNote: string
   /** The note that points at a web address, made from the address. */
   readonly importUrl: string

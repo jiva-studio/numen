@@ -3,10 +3,12 @@
  */
 
 import { watch } from 'vue'
+import type { CommandNote } from '@numen/plugin-sdk'
 import { formatErrorMessage } from '@numen/wire'
 import {
   isChord,
   findChordCommand,
+  registerCommand,
   runInvocation,
   useCommandPalette,
   useSearch,
@@ -51,7 +53,6 @@ export interface CommandsDepsOptions {
   reload: () => void
   loadArtifactStates: (path: string) => Promise<void>
   reached: Notes
-  openPreset: (path: string) => Promise<void>
   appearance: { chooseItem: (item: string) => Promise<void> | void }
   oneName: { choose: (item: string) => Promise<void> | void }
   nesting: {
@@ -111,11 +112,38 @@ export function useCommands(options: CommandsDepsOptions) {
       ...(options.pluginHost?.getPaletteCommands().map((cmd) => ({
         id: cmd.id,
         text: cmd.title,
-        group: 'window' as const,
-        isOffered: () => cmd.isOffered(),
+        group: cmd.scope === 'note' ? ('note' as const) : ('window' as const),
+        isOffered: (target: CommandTarget) =>
+          cmd.scope !== 'note' || (target.isReady && target.path !== ''),
       })) ?? []),
     ],
   )
+
+  const getCommandNote = async (path: string, title: string): Promise<CommandNote> => ({
+    path,
+    title,
+    type: path === '' ? 'note' : ((await core.fileKinds([path])).get(path)?.type ?? 'note'),
+  })
+
+  const { pluginHost } = options
+  if (pluginHost) {
+    let unregisterAll: readonly (() => void)[] = []
+    watch(
+      () => pluginHost.getPaletteCommands(),
+      (list) => {
+        for (const unregister of unregisterAll) unregister()
+        unregisterAll = list.map((cmd) =>
+          registerCommand(cmd.id, async (invocation) => {
+            await pluginHost.executeCommand(
+              cmd.id,
+              await getCommandNote(invocation.path, invocation.title),
+            )
+          }),
+        )
+      },
+      { immediate: true },
+    )
+  }
 
   const { declaredCommands } = options
   if (declaredCommands) {
@@ -149,9 +177,11 @@ export function useCommands(options: CommandsDepsOptions) {
   })
 
   const runCommand = (id: string, target: CommandTarget) => {
-    if (options.pluginHost?.hasCommand(id)) {
+    if (pluginHost?.hasCommand(id)) {
       commands.setOpen(false)
-      void options.pluginHost.executeCommand(id)
+      void getCommandNote(target.path, target.title).then((note) =>
+        pluginHost.executeCommand(id, note),
+      )
       return
     }
     const invocation = commands.startCommand(id, target)
@@ -163,7 +193,8 @@ export function useCommands(options: CommandsDepsOptions) {
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.defaultPrevented) return
     if (windowTabs.onKeyPress(event)) return event.preventDefault()
-    if (options.pluginHost?.handleShortcut(event)) return event.preventDefault()
+    const getNote = () => getCommandNote(getTarget().path, getTarget().title)
+    if (pluginHost?.handleShortcut(event, getNote)) return event.preventDefault()
     if (!isChord(event)) return
     const command = findChordCommand(event.key.toLowerCase(), event.shiftKey)
     if (!command) return

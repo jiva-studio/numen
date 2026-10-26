@@ -33,10 +33,6 @@ const createOptions = (override: Partial<CommandDepsOptions> = {}) => {
     reload: record('reload'),
     loadArtifactStates: vi.fn(),
     reached: {} as never,
-    openPreset: async (path) => {
-      await Promise.resolve()
-      record('openPreset')(path)
-    },
     appearance: { chooseItem: vi.fn() },
     oneName: { choose: vi.fn() },
     nesting: { choose: vi.fn(), chooseCount: vi.fn() },
@@ -250,13 +246,11 @@ describe('the commands reach the window', () => {
 
     deps.navigator.revealPath('Llama.md')
     deps.navigator.openTab('settings')
-    await deps.navigator.openPreset('presets/Default.md')
     deps.navigator.closeTab('tab-1')
     deps.navigator.ask('what is a llama?')
     expect(calls).toStrictEqual([
       ['revealPath', 'Llama.md'],
       ['openTabOfKind', 'settings'],
-      ['openPreset', 'presets/Default.md'],
       ['requestClose', 'tab-1'],
       ['askQuestion', 'what is a llama?'],
     ])

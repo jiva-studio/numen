@@ -92,7 +92,10 @@ describe('command handlers', () => {
       },
     })
 
-    const handled = host.handleShortcut(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }))
+    const handled = host.handleShortcut(
+      new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }),
+      async () => ({ path: '', title: '', type: 'note' }),
+    )
     await new Promise((resolve) => setTimeout(resolve, 0))
 
     expect(handled).toBe(true)
@@ -111,8 +114,51 @@ describe('command handlers', () => {
       },
     })
 
-    await expect(host.executeCommand('plugin:run')).resolves.toBe(true)
+    await expect(
+      host.executeCommand('plugin:run', { path: '', title: '', type: 'note' }),
+    ).resolves.toBe(true)
     expect(onError).toHaveBeenCalledWith('cmd.plugin', fault)
+  })
+})
+
+describe('a command over a note', () => {
+  const NOTE = { path: 'Animals.md', title: 'Animals', type: 'deck' }
+
+  it('is offered as one over a note, and runs with the note it is given', async () => {
+    const host = createPluginHost(createDeps())
+    const handler = vi.fn()
+    host.createContext('cmd.plugin').registerCommand({
+      id: 'preset',
+      title: 'Open the preset',
+      scope: 'note',
+      handler,
+    })
+
+    await host.executeCommand('plugin:preset', NOTE)
+
+    expect(host.getPaletteCommands()).toStrictEqual([
+      { id: 'plugin:preset', title: 'Open the preset', scope: 'note' },
+    ])
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
+  })
+
+  it('does not run from its shortcut while no note is in front', async () => {
+    const host = createPluginHost(createDeps())
+    const handler = vi.fn()
+    host.createContext('cmd.plugin').registerCommand({
+      id: 'preset',
+      title: 'Open the preset',
+      shortcut: 'ctrl+p',
+      scope: 'note',
+      handler,
+    })
+    const event = new KeyboardEvent('keydown', { key: 'p', ctrlKey: true })
+
+    host.handleShortcut(event, async () => ({ path: '', title: '', type: 'note' }))
+    host.handleShortcut(event, async () => NOTE)
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    expect(handler).toHaveBeenCalledExactlyOnceWith(NOTE)
   })
 })
 

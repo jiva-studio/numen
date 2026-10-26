@@ -58,5 +58,4 @@ export const createNoteCommands = (words: Words, agent: string): readonly Comman
     group: 'note',
     isOffered: (target, runs) => isNoteOpen(target) && runs.canRun('files'),
   },
-  { id: 'preset', text: words.preset, group: 'note', isOffered: isNoteOpen },
 ]

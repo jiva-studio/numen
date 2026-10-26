@@ -23,6 +23,8 @@ import {
 
 export const WORDS = {
   preset: 'Preset',
+  /** The command that opens the preset of the note in front. */
+  openPreset: 'Open the preset',
   /** What a preset tab is called before the vault has said what the note is. */
   newPreset: 'Preset',
   /** The deck in front names no preset, so the defaults schedule it. */

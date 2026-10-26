@@ -12,7 +12,7 @@ export function extractPaletteCommands(
       id: `plugin:${reg.id}`,
       title: reg.title,
       ...(reg.shortcut ? { shortcut: reg.shortcut } : {}),
-      isOffered: () => true,
+      ...(reg.scope ? { scope: reg.scope } : {}),
     })
   }
   return list

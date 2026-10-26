@@ -105,6 +105,7 @@ const openPresetTab = async (
   const content: Settings[] = []
   const request: Goal[] = []
   const closed: string[] = []
+  const messages: [string, string | undefined][] = []
   let times = 0
   let writes = 0
   const core: Presets = {
@@ -142,7 +143,7 @@ const openPresetTab = async (
     core,
     buffers,
     closeTab: (tab: string) => void closed.push(tab),
-    writeMessage: () => {},
+    writeMessage: (text, severity) => void messages.push([text, severity]),
     today: () => NOW,
   })
   const state = await kind.kind.open?.('Steady.md', 'preset:Steady.md')
@@ -156,6 +157,7 @@ const openPresetTab = async (
     writtenFiles: content,
     requests: request,
     closed,
+    messages,
     buffers,
     core,
     kind,
@@ -1135,77 +1137,91 @@ describe('the knob, as a field is typed', () => {
   })
 })
 
-describe('a command over a file', () => {
+describe('the preset of a note', () => {
   const deck = (preset: Preset | null, error?: ErrorCode) => async () =>
     error ? asFailure(error) : asValue({ preset, at: '', bounds: NO_BOUNDS })
+  const note = (path: string, type: string) => ({ path, title: '', type })
+  const SLOW: Preset = {
+    path: 'presets/Slow.md',
+    title: 'Slow',
+    settings: STEADY,
+    problems: [],
+    stops: StopReason.NOTHING,
+    stopsOn: StopReason.NOTHING,
+  }
 
-  it('leads a preset to itself, and a note too', async () => {
+  it('is a preset itself, and a note too', async () => {
     const { kind } = await openPresetTab()
 
-    expect(await kind.kind.resolveCommand?.('Plan.md', 'preset', 'preset')).toStrictEqual({
+    expect(await kind.findPreset(note('Plan.md', 'preset'))).toStrictEqual({
       ok: true,
-      kind: 'preset',
       at: 'Plan.md',
     })
-    expect(await kind.kind.resolveCommand?.('Plan.md', 'preset', 'note')).toStrictEqual({
+    expect(await kind.findPreset(note('Plan.md', 'note'))).toStrictEqual({
       ok: true,
-      kind: 'preset',
       at: 'Plan.md',
     })
   })
 
-  it('leads a deck to the preset it is scheduled by, called what that preset is called', async () => {
+  it('of a deck is the preset it is scheduled by, called what that preset is called', async () => {
     const { kind, core } = await openPresetTab()
-    core.getDeckPreset = deck({
-      path: 'presets/Slow.md',
-      title: 'Slow',
-      settings: STEADY,
-      problems: [],
-      stops: StopReason.NOTHING,
-      stopsOn: StopReason.NOTHING,
-    })
+    core.getDeckPreset = deck(SLOW)
 
-    expect(await kind.kind.resolveCommand?.('Animals.md', 'preset', 'deck')).toStrictEqual({
+    expect(await kind.findPreset(note('Animals.md', 'deck'))).toStrictEqual({
       ok: true,
-      kind: 'preset',
       at: 'presets/Slow.md',
     })
     expect(kind.getTitle('presets/Slow.md')).toBe('Slow')
   })
 
-  it('leads a deck naming no preset nowhere, and says the defaults schedule it', async () => {
+  it('of a deck naming no preset is none, and the defaults schedule it', async () => {
     const { kind, core } = await openPresetTab()
-    core.getDeckPreset = deck({
-      path: '',
-      title: '',
-      settings: STEADY,
-      problems: [],
-      stops: StopReason.NOTHING,
-      stopsOn: StopReason.NOTHING,
-    })
+    core.getDeckPreset = deck({ ...SLOW, path: '', title: '' })
 
-    expect(await kind.kind.resolveCommand?.('Animals.md', 'preset', 'deck')).toStrictEqual({
+    expect(await kind.findPreset(note('Animals.md', 'deck'))).toStrictEqual({
       ok: false,
       text: words.noPreset,
       severity: 'caution',
     })
   })
 
-  it('leads a deck the vault would not read nowhere, and says why', async () => {
+  it('of a deck the vault would not read is none, with the reason', async () => {
     const { kind, core } = await openPresetTab()
     core.getDeckPreset = deck(null, 'notADeck')
 
-    expect(await kind.kind.resolveCommand?.('Animals.md', 'preset', 'deck')).toStrictEqual({
+    expect(await kind.findPreset(note('Animals.md', 'deck'))).toStrictEqual({
       ok: false,
       text: ERRORS.notADeck,
       severity: 'error',
     })
   })
 
-  it('leads nowhere for a command that is not its own', async () => {
-    const { kind } = await openPresetTab()
+  it('opens in a preset tab where there is one', async () => {
+    const { kind, core, messages } = await openPresetTab()
+    core.getDeckPreset = deck(SLOW)
+    const openedTabs: [string, string][] = []
 
-    expect(await kind.kind.resolveCommand?.('Plan.md', 'travel', 'note')).toBeNull()
+    await kind.openPresetOf(
+      note('Animals.md', 'deck'),
+      (one, path) => void openedTabs.push([one, path]),
+    )
+
+    expect(openedTabs).toStrictEqual([['preset', 'presets/Slow.md']])
+    expect(messages).toStrictEqual([])
+  })
+
+  it('writes why there is none and opens nothing', async () => {
+    const { kind, core, messages } = await openPresetTab()
+    core.getDeckPreset = deck({ ...SLOW, path: '', title: '' })
+    const openedTabs: [string, string][] = []
+
+    await kind.openPresetOf(
+      note('Animals.md', 'deck'),
+      (one, path) => void openedTabs.push([one, path]),
+    )
+
+    expect(openedTabs).toStrictEqual([])
+    expect(messages).toStrictEqual([[words.noPreset, 'caution']])
   })
 })
 

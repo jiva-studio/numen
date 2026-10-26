@@ -52,7 +52,6 @@ const HANDLERS: Record<string, CommandHandler> = {
   ask: (invocation, on) => on.navigator.ask(`${invocation.path} — `),
   copy: (invocation, on) => on.copyPath(invocation.path),
   reveal: (invocation, on) => on.navigator.revealPath(invocation.path),
-  preset: (invocation, on) => on.navigator.openPreset(invocation.path),
   settings: (_, on) => on.navigator.openTab(SETTINGS),
   move: (invocation, on, words) => moveFileCommand(invocation, on, words),
   createFolder: (invocation, on, words) => createFolderCommand(invocation, on, words),

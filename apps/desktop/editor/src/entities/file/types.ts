@@ -37,7 +37,7 @@ export interface Entry {
   readonly type: NoteType
 }
 
-/** Where a note, a deck or a stencil was filed, or why none was made. */
+/** Where a note was filed, or why none was made. */
 export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 
 /**

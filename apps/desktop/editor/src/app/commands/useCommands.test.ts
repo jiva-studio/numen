@@ -13,6 +13,8 @@ const h = vi.hoisted(() => ({
   isChord: vi.fn(),
   findChordCommand: vi.fn(),
   depsOptions: null as unknown,
+  registerCommand: vi.fn(),
+  getExtraCommands: null as null | (() => readonly unknown[]),
 }))
 
 vi.mock('@/features/command-palette', () => ({
@@ -20,13 +22,17 @@ vi.mock('@/features/command-palette', () => ({
   isChord: h.isChord,
   findChordCommand: h.findChordCommand,
   runInvocation: h.runInvocation,
+  registerCommand: h.registerCommand,
   useSearch: () => ({ setOpen: h.setPaletteOpen }),
-  useCommandPalette: () => ({
-    startCommand: h.startCommand,
-    getObjection: h.getObjection,
-    setOpen: h.setCommandsOpen,
-    open: h.isCommandsOpen,
-  }),
+  useCommandPalette: (...args: unknown[]) => {
+    h.getExtraCommands = args[7] as () => readonly unknown[]
+    return {
+      startCommand: h.startCommand,
+      getObjection: h.getObjection,
+      setOpen: h.setCommandsOpen,
+      open: h.isCommandsOpen,
+    }
+  },
 }))
 vi.mock('./commandDeps', () => ({
   createCommandDeps: (options: unknown) => {
@@ -176,5 +182,87 @@ describe('a key press', () => {
 
     expect(h.startCommand).not.toHaveBeenCalled()
     expect(event.preventDefault).not.toHaveBeenCalled()
+  })
+})
+
+describe('a plugin command over a note', () => {
+  const PRESET = { id: 'plugin:preset', title: 'Open the preset', scope: 'note' as const }
+
+  const setupPlugin = () => {
+    const executeCommand = vi.fn(async () => true)
+    const pluginHost = {
+      getPaletteCommands: () => [PRESET],
+      hasCommand: (id: string) => id === 'preset',
+      executeCommand,
+      handleShortcut: () => false,
+    }
+    const fileKinds = vi.fn(
+      async (paths: readonly string[]) => new Map(paths.map((one) => [one, { type: 'deck' }])),
+    )
+    const options = {
+      core: { fileKinds },
+      words: {},
+      windowTabs: { onKeyPress: () => false },
+      getTarget: () => target,
+      knows: {},
+      kept: {},
+      runs: {},
+      coverage: () => ({}),
+      rest: {},
+      writeMessage: vi.fn(),
+      pluginHost,
+    } as unknown as CommandsDepsOptions
+    return { executeCommand, ...useCommands(options) }
+  }
+
+  const findOffer = () => {
+    const offers = (h.getExtraCommands?.() ?? []) as {
+      id: string
+      group: string
+      isOffered: (target: CommandTarget) => boolean
+    }[]
+    const offer = offers.find((one) => one.id === PRESET.id)
+    if (!offer) throw new Error('the palette has no plugin command')
+    return offer
+  }
+
+  it('is offered among the note commands only while a note is in front', () => {
+    setupPlugin()
+    const offer = findOffer()
+
+    expect(offer.group).toBe('note')
+    expect(offer.isOffered({ isReady: true, path: 'a.md' } as unknown as CommandTarget)).toBe(true)
+    expect(offer.isOffered({ isReady: true, path: '' } as unknown as CommandTarget)).toBe(false)
+  })
+
+  it('runs from the palette with the note and the type the vault files it as', async () => {
+    const one = setupPlugin()
+    const [id, handler] = h.registerCommand.mock.calls[0] as [
+      string,
+      (invocation: { path: string; title: string }) => Promise<void>,
+    ]
+
+    await handler({ path: 'Animals.md', title: 'Animals' })
+
+    expect(id).toBe(PRESET.id)
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith(PRESET.id, {
+      path: 'Animals.md',
+      title: 'Animals',
+      type: 'deck',
+    })
+  })
+
+  it('runs by id with the note of the target', async () => {
+    const one = setupPlugin()
+
+    one.runCommand('preset', { path: 'Animals.md', title: 'Animals' } as unknown as CommandTarget)
+    await vi.waitFor(() => expect(one.executeCommand).toHaveBeenCalled())
+
+    expect(one.executeCommand).toHaveBeenCalledExactlyOnceWith('preset', {
+      path: 'Animals.md',
+      title: 'Animals',
+      type: 'deck',
+    })
+    expect(h.startCommand).not.toHaveBeenCalled()
   })
 })

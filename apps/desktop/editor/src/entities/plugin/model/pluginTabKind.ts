@@ -32,7 +32,6 @@ const OPTIONAL_HOOKS = [
   'isAsking',
   'flushPending',
   'createFile',
-  'resolveCommand',
   'getMark',
   'isTool',
   'icon',

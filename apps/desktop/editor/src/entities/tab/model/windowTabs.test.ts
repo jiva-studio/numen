@@ -1078,49 +1078,6 @@ describe('text put to the tabs of a kind', () => {
   })
 })
 
-describe('where a command over a file leads', () => {
-  it('is where the first kind that answers for it says, requested with the type of the file', async () => {
-    const request: string[][] = []
-    const window = notifiedCalls([
-      kind({
-        resolveCommand: async (targetPath, command, type) => {
-          request.push([targetPath, command, type])
-          return { ok: true, kind: 'preset', at: 'Slow.md' }
-        },
-      }).declared,
-    ])
-
-    expect(await window.resolveCommand('Animals.md', 'preset', 'deck')).toStrictEqual({
-      ok: true,
-      kind: 'preset',
-      at: 'Slow.md',
-    })
-    expect(request).toStrictEqual([['Animals.md', 'preset', 'deck']])
-  })
-
-  it('is requested of the next kind where one answers nothing', async () => {
-    const window = notifiedCalls([
-      kind({ resolveCommand: async () => null }).declared,
-      kind({
-        kind: 'second',
-        resolveCommand: async () => ({ ok: false, text: 'no', severity: 'caution' }),
-      }).declared,
-    ])
-
-    expect(await window.resolveCommand('a.md', 'preset', 'note')).toStrictEqual({
-      ok: false,
-      text: 'no',
-      severity: 'caution',
-    })
-  })
-
-  it('is nowhere where no kind answers', async () => {
-    const window = notifiedCalls([kind().declared])
-
-    expect(await window.resolveCommand('a.md', 'preset', 'note')).toBeNull()
-  })
-})
-
 describe('a file made as the kind that edits it', () => {
   it('is requested of that kind, under the folder and the name given', async () => {
     const createdItem: string[][] = []

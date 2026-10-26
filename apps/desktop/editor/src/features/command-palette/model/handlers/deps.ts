@@ -71,11 +71,6 @@ export interface WindowNavigator {
   getOpeningNote(): string
   /** A tab of a kind, opened and put in front. */
   openTab(kind: string): void
-  /**
-   * The preset of a note, in a tab of its own: the note itself where it is one,
-   * and the preset a deck is scheduled by where it is a deck.
-   */
-  openPreset(path: string): Promise<void>
   /** A tab release. */
   closeTab(tab: string): void
   /** Something to ask, put in the agent the person was last in. */
