@@ -98,7 +98,9 @@ const createTimeGutterExtension = (goToLine: (line: number) => void): Extension 
   })
 
 /* The times take the room the longest of them needs, so an hour in and a
-   minute in line up. */
+   minute in line up. A time is set on the baseline of its line's first row:
+   the gutter element keeps the line's font and line height, and only the time
+   inside it is smaller. */
 const timeGutterTheme = EditorView.theme({
   '.cm-gutters': {
     backgroundColor: 'transparent',
@@ -106,14 +108,11 @@ const timeGutterTheme = EditorView.theme({
     color: 'inherit',
   },
   '.cm-times': {
-    minWidth: '4ch',
+    minWidth: '3.5ch',
     fontVariantNumeric: 'tabular-nums',
-    fontSize: '0.85em',
   },
   '.cm-times .cm-gutterElement': {
-    display: 'flex',
-    alignItems: 'flex-end',
-    justifyContent: 'flex-end',
+    textAlign: 'right',
     padding: '0 0.5rem 0 0',
   },
   '.cm-time': {
@@ -122,6 +121,8 @@ const timeGutterTheme = EditorView.theme({
     background: 'none',
     color: 'var(--numen-hushed)',
     font: 'inherit',
+    fontSize: '0.85em',
+    verticalAlign: 'baseline',
     cursor: 'pointer',
     userSelect: 'none',
   },
