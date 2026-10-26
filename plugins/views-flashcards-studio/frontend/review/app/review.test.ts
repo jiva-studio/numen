@@ -214,9 +214,9 @@ const openReview = async ({ isPageDrawn = true } = {}) => {
 
 /** The review taken into the session over the vault's one deck. */
 const openSession = async () => {
-  const opened = await openReview()
-  await opened.review.decks.start('decks/Suffixes.md')
-  return opened.review
+  const result = await openReview()
+  await result.review.decks.start('decks/Suffixes.md')
+  return result.review
 }
 
 /**
@@ -378,8 +378,8 @@ describe('a deck written underneath the review', () => {
   })
 })
 
-describe('whether a card can be asked about', () => {
-  it('is asked once as the review opens, and the asking ends when it closes', async () => {
+describe('agent availability', () => {
+  it('asks the agent once on open and aborts the request on close', async () => {
     wire.agent = () => new Promise<never>(() => {})
     const { close } = await openReview()
     expect(wire.agentCalls).toHaveLength(1)
@@ -390,7 +390,7 @@ describe('whether a card can be asked about', () => {
     expect(wire.agentCalls[0]!.aborted).toBe(true)
   })
 
-  it('is no, in the review own words, when the agent cannot be asked', async () => {
+  it('keeps the agent panel closed and shows a notice when the agent is unreachable', async () => {
     wire.agent = async () => {
       throw new Error('the connection went')
     }
