@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { Conversation, Turn } from '@numen/ui'
+import type { Conversation, Turn } from './thread'
 import { AGENT, createAgentKind } from './kind'
 import { createHost, type HostOptions } from './fixtures'
 import { useAgentConversation, type AgentTabState } from './model/useAgentConversation'

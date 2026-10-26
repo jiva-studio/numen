@@ -50,11 +50,6 @@ export { Spinner } from './shared/ui/spinner'
 export { Waiting } from './shared/ui/waiting'
 export { Skeleton } from './shared/ui/skeleton'
 
-export type { Turn } from './features/thread'
-export { useConversation } from './features/thread'
-export type { Conversation } from './features/thread'
-export type { AgentPort, AgentStep } from './features/thread'
-
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export { isNoteAddress, getWikilinks } from './shared/lib/text/address'
 
@@ -62,7 +57,7 @@ export { isNoteAddress, getWikilinks } from './shared/lib/text/address'
 export { interceptExternalLinks, isExternalLink } from './shared/lib/text/externalLink'
 
 /** Numbers as they are read out, which both windows read the same way. */
-export { many, percent, plural } from './shared/lib/format/digits'
+export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
 
@@ -73,15 +68,19 @@ export { Notices } from './features/notices'
 export { createNotice } from './features/notices'
 export type { Notice, Stay, Task } from './features/notices'
 
-export { Agent } from './screens/agent'
-
 export type { Span } from './shared/lib/text/span'
 
 /** The size, room and placement a component outside this module lays itself out by. */
 export type { Position, Size } from './shared/lib/math/geometry'
 export { clamp } from './shared/lib/math/bounds'
 export { getAdjacentPlace, type Box } from './shared/lib/dom/place'
-export { browserViewport, useRoom, useViewport, type Viewport } from './shared/lib/dom/viewport'
+export {
+  browserViewport,
+  useRoom,
+  useViewport,
+  useWholeViewport,
+  type Viewport,
+} from './shared/lib/dom/viewport'
 export { getPageNavigationAction, type PageNavigationAction } from './shared/lib/dom/pageNavigation'
 export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/time/clock'
 export { createRefRegistry } from './shared/lib/dom/refs'
@@ -97,8 +96,6 @@ export type { Tab, Workspace } from './features/workspace'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'
-
-export type { AgentModelOption } from './features/message-composer'
 
 export { StatusBar } from './features/status-bar'
 export type { StatusBarTask } from './features/status-bar'

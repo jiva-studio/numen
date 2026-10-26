@@ -1,18 +1,26 @@
 import { Bot } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
-import { useConversation } from '@numen/ui'
+import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
+import { ConversationView } from './conversation'
 import { AGENT, createAgentKind } from './kind'
 import { useAgentConversation } from './model/useAgentConversation'
 import { WORDS } from './words'
 
 export { AgentTab }
 export { AGENT, createAgentKind } from './kind'
+export { ConversationView } from './conversation'
 export { useAgentConversation } from './model/useAgentConversation'
 export * from './types'
 export { WORDS } from './words'
 
+/** The window a person runs their cards in, which draws no agent tab. */
+const FLASHCARDS_TARGET = 'desktop.flashcards'
+
 export function activate(context: PluginContext): void {
+  context.registerView({ capability: CONVERSATION, component: ConversationView })
+  if (context.target === FLASHCARDS_TARGET) return
+
   const { workspace, agent } = context
   if (!workspace || !agent) {
     throw new Error('an agent chat needs the window it is drawn in and the agent it asks')

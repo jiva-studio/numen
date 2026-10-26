@@ -5,7 +5,8 @@
  * Nothing here moves and nothing here waits. It is the screen a picture of the
  * product is taken from, so every piece is drawn in the state it settles in.
  * The book is a picture of its page: the reader that draws a document is the
- * PDF plugin's, and its stories are in the plugins' Storybook.
+ * PDF plugin's, and its stories are in the plugins' Storybook. The agent's
+ * pane is empty for the same reason: views-agent-chat draws the agent chat.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
@@ -15,15 +16,12 @@ import { WorkspaceLayout } from '@/features/workspace'
 import { Editor } from '@/features/editor'
 import { Palette } from '@/features/palette'
 import { Tree } from '@/features/tree'
-import { Agent } from './agent'
-import type { AgentModelOption } from '@/features/message-composer'
 import { branch, pane, type Tab, type Workspace as State } from '@/features/workspace'
 import { keyChord } from '@/features/palette'
 import type { PaletteAction, PaletteGroup, PaletteItem } from '@/features/palette'
 import type { Span } from '@/shared/lib/text/span'
 import type { PaletteKeys } from '@/shared/ui/key-cap'
 import type { Row } from '@/features/tree'
-import type { Turn } from '@/features/thread'
 
 const NOTE = 'note'
 const BOOK = 'book'
@@ -219,43 +217,6 @@ const renderPage = (page: number): string => {
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`
 }
 
-const createAsked = (id: string, text: string): Turn => ({ id, voice: 'prompt', text })
-
-const did = (id: string, text: string, subject: string, aside: string): Turn => ({
-  id,
-  voice: 'doing',
-  text,
-  subject,
-  aside,
-  canOpen: true,
-})
-
-const createAnswered = (id: string, text: string): Turn => ({ id, voice: 'response', text })
-
-const TURNS: readonly Turn[] = [
-  createAsked('1', 'What does this note leave out?'),
-  did('2', 'note neighbourhood', 'Entropy', '4 links'),
-  createAnswered(
-    '3',
-    'Two things. The note says the demon has to pay, but not where the payment ' +
-      'lands — that is Landauer, and you have no note for him. And the passage on ' +
-      'p. 373 counts arrangements of a **fixed** energy, which is the assumption ' +
-      'the free-energy note quietly drops. Everywhere else you treat the two as ' +
-      'the same measure, so one of them is wrong and it is not the one you wrote ' +
-      'first.',
-  ),
-  createAsked('4', 'Then make the Landauer note and put it under Entropy.'),
-  did('5', 'note create', "Landauer's principle", 'under Entropy'),
-  createAnswered(
-    '6',
-    'Made and filed under Entropy, written from p. 373 and the 1961 paper: what ' +
-      'clearing one bit costs, and why the sorting is what pays it. I linked it ' +
-      "across to Maxwell's demon, since that is where the debt is run up, and " +
-      'left the free-energy note alone — its assumption is still worth a note of ' +
-      'its own.',
-  ),
-]
-
 /** Where a run of a title stands, every time it stands there. */
 const marks = (title: string, word: string): Span[] => {
   const spans: Span[] = []
@@ -439,25 +400,6 @@ The middle column is the one to watch: it is the same sentence three times, and
 only the noun changes.
 `
 
-/** Available models for the model selector pill inside the agent composer. */
-const AGENT_OPTIONS: readonly AgentModelOption[] = [
-  {
-    agentId: 'claude',
-    agentTitle: 'Claude',
-    modelId: 'claude-3-7-sonnet',
-    modelTitle: 'Sonnet 3.7',
-    isAvailable: true,
-    isDefault: true,
-  },
-  {
-    agentId: 'gemini',
-    agentTitle: 'Gemini',
-    modelId: 'gemini-2.5-pro',
-    modelTitle: '2.5 Pro',
-    isAvailable: true,
-  },
-]
-
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
@@ -478,25 +420,22 @@ const screen = ({
   markdown = MARKDOWN,
   selected = [],
 }: Screen) => ({
-  components: { WorkspaceLayout, Editor, Agent, Palette, Tree },
+  components: { WorkspaceLayout, Editor, Palette, Tree },
   setup() {
     const target = ref<State>(workspace())
     const text = ref(markdown)
     const other = ref(OTHER)
-    const activePrompt = ref('')
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
     return {
       held: target,
       text,
       other,
-      asking: activePrompt,
       typed: searchQuery,
       panel,
       selected,
       groups: panel === 'commands' ? commands : GROUPS,
       placeholder: panel === 'commands' ? 'Type a command' : 'Search',
       book: renderPage(BOOK_FIRST),
-      TURNS,
       TABS,
       ROWS,
       OPEN,
@@ -506,7 +445,6 @@ const screen = ({
       BOOK,
       OTHER_NOTE,
       AGENT,
-      AGENT_OPTIONS,
       FILES,
     }
   },
@@ -525,15 +463,7 @@ const screen = ({
         <template #tab="{ id }">
           <Editor v-if="id === NOTE" v-model="text" />
           <Editor v-else-if="id === OTHER_NOTE" v-model="other" />
-          <Agent
-            v-else-if="id === AGENT"
-            v-model="asking"
-            :turns="TURNS"
-            :options="AGENT_OPTIONS"
-            selected-agent-id="claude"
-            selected-model-id="claude-3-7-sonnet"
-            placeholder="Ask about the vault"
-          />
+          <section v-else-if="id === AGENT" class="h-full" aria-label="Agent" />
           <div
             v-else-if="id === BOOK"
             style="block-size: 100%; overflow: auto; display: flex; justify-content: center; padding: 24px"
@@ -700,10 +630,8 @@ export const Asking: Story = {
     expect(isPast(note, source)).toBe(true)
     expect(isPast(aside, note)).toBe(true)
 
-    // The agent is something to ask with, and it is already carrying the
-    // asking it is beside the note about.
-    within(aside).getByPlaceholderText('Ask about the vault')
-    expect(within(aside).getAllByText(/entropy/i).length).toBeGreaterThan(0)
+    // The aside holds the agent's pane, which the views-agent-chat plugin draws.
+    within(aside).getByRole('region', { name: 'Agent' })
   },
 }
 

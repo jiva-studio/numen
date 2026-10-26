@@ -5,7 +5,7 @@
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent, waitFor, within } from 'storybook/test'
 import { defineComponent, h, ref } from 'vue'
-import type { Conversation, Turn } from '@numen/ui'
+import type { Conversation, Turn } from '../thread'
 import AgentTab from './AgentTab.vue'
 import { createAgentKind } from '../kind'
 import { createHost } from '../fixtures'

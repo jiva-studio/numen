@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { ref } from 'vue'
-import type { Conversation } from '@numen/ui'
+import type { Conversation } from '../thread'
 import type { AgentModel } from '@numen/plugin-sdk'
 import { useAgentConversation } from './useAgentConversation'
 

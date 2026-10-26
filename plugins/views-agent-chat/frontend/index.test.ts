@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
+import { CONVERSATION } from '@numen/plugin-sdk'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import plugin, { activate, AgentTab, AGENT } from './index'
+import plugin, { activate, AgentTab, AGENT, ConversationView } from './index'
 import { createHost } from './fixtures'
 
 const createContext = () => {
@@ -25,6 +26,27 @@ describe('view-agent-chat plugin', () => {
     expect(tabKinds[0]?.open).toBeTypeOf('function')
   })
 
+  it('declares the conversation view other plugins mount', () => {
+    const { ctx } = createContext()
+    activate(ctx)
+
+    expect(ctx.getRegisteredViews()).toStrictEqual([
+      { capability: CONVERSATION, component: ConversationView },
+    ])
+  })
+
+  it('declares only the conversation view in the flashcards window, which offers no tabs', () => {
+    const ctx = createMockPluginContext({
+      pluginId: 'md.numen.views.agent.chat',
+      target: 'desktop.flashcards',
+    })
+    activate(ctx)
+
+    expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([CONVERSATION])
+    expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
+    expect(ctx.getRegisteredCommands()).toHaveLength(0)
+  })
+
   it('removes the agent tab kind when the plugin is disabled', () => {
     const { ctx } = createContext()
     activate(ctx)
@@ -33,6 +55,7 @@ describe('view-agent-chat plugin', () => {
 
     expect(ctx.subscriptions).toHaveLength(0)
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
+    expect(ctx.getRegisteredViews()).toHaveLength(0)
   })
 
   it('opens a tab whose conversation is its own', () => {

@@ -24,7 +24,9 @@ export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
   if (context.target === FLASHCARDS_TARGET) {
-    context.registerTabKind(createReviewKind())
+    context.registerTabKind(
+      createReviewKind((capability, element, view) => context.mountView(capability, element, view)),
+    )
     return
   }
   const { workspace, buffers, files } = context

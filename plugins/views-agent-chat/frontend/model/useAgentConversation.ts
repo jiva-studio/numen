@@ -2,13 +2,9 @@
  * Conversation state for agent tabs.
  */
 import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vue'
-import {
-  isNoteAddress,
-  getWikilinks,
-  type Conversation,
-  type Turn,
-  type AgentModelOption,
-} from '@numen/ui'
+import { isNoteAddress, getWikilinks } from '@numen/ui'
+import type { AgentModelOption } from '../message-composer'
+import type { Conversation, Turn } from '../thread'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
 import type { AgentTabDeps } from '../types'
 

@@ -5,7 +5,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { nextTick, ref } from 'vue'
 import * as ui from '@numen/ui'
-import type { Conversation, Turn } from '@numen/ui'
+import type { Conversation, Turn } from '../thread'
 import { useAgentConversation } from './useAgentConversation'
 import type { Span } from '@numen/plugin-sdk'
 

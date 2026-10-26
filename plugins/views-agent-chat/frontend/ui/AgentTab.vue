@@ -1,6 +1,8 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
-import { Agent, type Turn, type AgentModelOption } from '@numen/ui'
+import { Agent } from '../agent'
+import type { AgentModelOption } from '../message-composer'
+import type { Turn } from '../thread'
 import { WORDS as words } from '../words'
 import type { AgentTabState } from '../model/useAgentConversation'
 

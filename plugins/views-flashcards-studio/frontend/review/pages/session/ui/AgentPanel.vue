@@ -1,57 +1,30 @@
 <script setup lang="ts">
 /**
- * The panel a card is asked about in: the talk, and the field it is carried on
- * with.
- *
- * Why the agent cannot be reached is the window's to know, and it stands where
- * the answers do.
+ * The panel a card is asked about in: the conversation view a plugin declares, mounted into it.
+ * Where no plugin declares one, the panel stays empty and the review goes on without it.
  */
-import { nextTick, useTemplateRef, watch } from 'vue'
-import { Agent } from '@numen/ui'
+import { inject, useTemplateRef } from 'vue'
 
-import { WORDS as words } from '../lib/agentWords'
+import { MOUNT_VIEW, mountNothing } from '../../../shared/views'
+import { useMountedConversation } from '../model/mountedConversation'
 import type { AgentPanelState } from '../model/panel'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ panel: AgentPanelState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const talk = useTemplateRef<InstanceType<typeof Agent>>('talk')
+const element = useTemplateRef<HTMLElement>('element')
 
-/* --------------------------------- Hooks ---------------------------------- */
-// A panel opened is a panel opened to write in, so the field takes the keyboard
-// as it arrives. Taking it scrolls nothing, because the panel is still moving.
-watch(
-  () => props.panel.open.value,
-  (up) => {
-    if (up) void nextTick(() => talk.value?.focus({ preventScroll: true }))
-  },
-)
+useMountedConversation({
+  element,
+  context: () => props.panel.context.value,
+  open: () => props.panel.open.value,
+  mountView: inject(MOUNT_VIEW, mountNothing),
+})
 </script>
 
 <template>
-  <section class="asking" aria-label="Ask about this card">
-    <!-- The field sends by a control of its own: enter in a panel inside a
-         session would otherwise be read as an answer to the card. -->
-    <Agent
-      ref="talk"
-      class="asking__talk"
-      :model-value="props.panel.written.value"
-      :turns="props.panel.turns.value"
-      :is-working="props.panel.isWorking.value"
-      :placeholder="words.ask"
-      :send-label="words.send"
-      :stop-label="words.stop"
-      @update:model-value="(text: string) => props.panel.setWritten(text)"
-      @submit="(text: string) => props.panel.send(text)"
-      @stop="props.panel.stop()"
-    >
-      <template #silence>{{ props.panel.unreachable() || words.nothingSaid }}</template>
-      <template #failure="{ turn }">
-        {{ turn.voice === 'prompt' ? words.unsent : words.stopped }}
-      </template>
-    </Agent>
-  </section>
+  <section ref="element" class="asking" aria-label="Ask about this card" />
 </template>
 
 <style scoped>
@@ -67,10 +40,5 @@ watch(
   border: 1px solid var(--numen-rule);
   border-radius: var(--numen-radius);
   background: var(--numen-raised);
-}
-
-.asking__talk {
-  flex: 1;
-  min-block-size: 0;
 }
 </style>
