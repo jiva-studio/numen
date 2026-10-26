@@ -28,6 +28,7 @@ on:
       - "plugins/*/frontend/**"
       - "!plugins/*/frontend/**/*.md"
       - "tools/ci-stories/**"
+      - "tools/ci-commands/**"
       - "apps/docs/tools/**"
       - "apps/docs/src/content/**"
       - "apps/landing/tools/**"

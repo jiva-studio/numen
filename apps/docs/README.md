@@ -23,6 +23,8 @@ Only what somebody using numen needs. The specifications under `docs/` in this r
 | `starting.md` | the flags `cmd/numen/main.go` declares |
 | `cli.md` | what `numen-cli` prints when it is asked, in `adapter/cli/cli.go` |
 
+What the plugins add is read by `tools/ci-commands/commands.mjs`, out of each plugin's `manifest.json` and `frontend/index.ts`: an application reaches no plugin, so the manual takes the list from that tool.
+
 Each is one block between `<!-- BEGIN AUTOGEN -->` and `<!-- END AUTOGEN -->`; the prose around it is written by hand.
 
 ```

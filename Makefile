@@ -17,6 +17,7 @@ LANDING  := apps/landing
 
 ICON     := tools/build-icons
 STORIES  := tools/ci-stories
+COMMANDS := tools/ci-commands
 LAYERS   := tools/lint-layers
 QUALITY  := tools/lint-quality
 NARRATIVE := tools/lint-narrative
@@ -448,6 +449,10 @@ tool_icon_build: ## cut application icons
 .PHONY: tool_stories_check
 tool_stories_check: ## verify story references
 	cd $(STORIES) && npm run check
+
+.PHONY: tool_commands_check
+tool_commands_check: ## verify how plugin commands are read for the manual
+	cd $(COMMANDS) && npm run check
 
 .PHONY: check_layers tool_layers_check
 check_layers tool_layers_check: ## validate architectural layer boundaries (usage: make check_layers [target=libs|plugins|apps|<module>])
