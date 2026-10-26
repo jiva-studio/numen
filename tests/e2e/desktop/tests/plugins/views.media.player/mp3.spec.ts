@@ -33,7 +33,7 @@ test.describe('An mp3 recording', () => {
 
     await openWorkspace(page)
     const tab = await openVaultFile(page, 'assets', 'talk.mp3')
-    const player = tab.getByRole('group', { name: 'The recording' })
+    const player = tab.getByRole('group', { name: 'Recording' })
     const bar = player.getByRole('slider')
 
     await expect(player).toContainText('3:07')
@@ -53,12 +53,12 @@ test.describe('An mp3 recording', () => {
   test('shows its own length while another recording plays', async ({ page }) => {
     await openWorkspace(page)
     const talk = await openVaultFile(page, 'assets', 'talk.mp3')
-    const talkPlayer = talk.getByRole('group', { name: 'The recording' })
+    const talkPlayer = talk.getByRole('group', { name: 'Recording' })
     await talkPlayer.getByRole('button', { name: /^Play/ }).click()
     await expect(talkPlayer.getByRole('button', { name: /^Pause/ })).toBeVisible()
 
     const lecture = await openVaultFile(page, 'assets', 'lecture.wav')
-    const lecturePlayer = lecture.getByRole('group', { name: 'The recording' })
+    const lecturePlayer = lecture.getByRole('group', { name: 'Recording' })
 
     await expect(lecturePlayer.getByRole('slider')).toHaveAttribute('max', '6000')
     await expect(lecturePlayer).toContainText(/0:00\s*0:06/)
