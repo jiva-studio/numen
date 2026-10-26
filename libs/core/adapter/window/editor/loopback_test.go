@@ -2,10 +2,12 @@ package editor
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -212,6 +214,38 @@ func TestTheSocketAnswersAPiece(t *testing.T) {
 	}
 	if got := out.Body.String(); got != sound[4:13] {
 		t.Errorf("the piece came back as %q", got)
+	}
+}
+
+// A player learns the size of a recording from the first answer and asks for its end, which is
+// what the length of a VBR mp3 with no Xing header is estimated from.
+func TestTheSocketAnswersTheSizeAndTheEnd(t *testing.T) {
+	api, _ := openRecordingWindow(t, nil)
+	back, handler := openLoopback(t, api)
+	address := back.Address(api.state.GetCurrentVault(), statOf(t, api, api.state.GetCurrentVault(), talk))
+
+	whole := ask(handler, address)
+	if got := whole.Header().Get("Accept-Ranges"); got != "bytes" {
+		t.Errorf("Accept-Ranges is %q", got)
+	}
+	if got := whole.Header().Get("Content-Length"); got != strconv.Itoa(len(sound)) {
+		t.Errorf("Content-Length is %q, the recording is %d bytes", got, len(sound))
+	}
+
+	out := httptest.NewRecorder()
+	r := httptest.NewRequest(http.MethodGet, address, nil)
+	r.Header.Set("Range", "bytes=-4")
+	handler.ServeHTTP(out, r)
+
+	if out.Code != http.StatusPartialContent {
+		t.Fatalf("asked for the end and got %d", out.Code)
+	}
+	want := fmt.Sprintf("bytes %d-%d/%d", len(sound)-4, len(sound)-1, len(sound))
+	if got := out.Header().Get("Content-Range"); got != want {
+		t.Errorf("Content-Range is %q, want %q", got, want)
+	}
+	if got := out.Body.String(); got != sound[len(sound)-4:] {
+		t.Errorf("the end came back as %q", got)
 	}
 }
 

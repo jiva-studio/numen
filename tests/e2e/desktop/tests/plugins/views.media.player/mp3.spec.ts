@@ -1,0 +1,52 @@
+import { test, expect } from 'playwright/test'
+import { openVaultFile, openWorkspace } from '../../support/workspace.js'
+
+/** What the player says where it cannot play a recording, in any of its forms. */
+const FAILURE = /cannot play|could not be (played|read)|cannot decode|does not play|was stopped/i
+
+/** The length of `fixtures/talk.mp3`, a VBR mp3 with a Xing header. */
+const LENGTH_MS = 187_000
+
+test.describe('An mp3 recording', () => {
+  test('shows its whole length, seeks, and says nothing failed while it loads', async ({
+    page,
+  }) => {
+    // Every text drawn in the page and in the shadow roots the plugins are drawn in is checked as
+    // it changes, so a failure shown for a moment is kept.
+    await page.addInitScript((source) => {
+      const failure = new RegExp(source, 'i')
+      const failures: string[] = []
+      ;(window as unknown as { shownFailures: string[] }).shownFailures = failures
+      const watch = (root: Node) =>
+        new MutationObserver(() => {
+          const found = (root.textContent ?? '').match(failure)
+          if (found) failures.push(found[0])
+        }).observe(root, { subtree: true, childList: true, characterData: true })
+      const attachShadow = Element.prototype.attachShadow
+      Element.prototype.attachShadow = function (init) {
+        const root = attachShadow.call(this, init)
+        watch(root)
+        return root
+      }
+      watch(document)
+    }, FAILURE.source)
+
+    await openWorkspace(page)
+    const tab = await openVaultFile(page, 'assets', 'talk.mp3')
+    const player = tab.getByRole('group', { name: 'The recording' })
+    const bar = player.getByRole('slider')
+
+    await expect(player).toContainText('3:07')
+    await expect(bar).toHaveAttribute('max', String(LENGTH_MS))
+
+    await bar.fill('120000')
+    await player.getByRole('button', { name: /^Play/ }).click()
+    await expect(player).toContainText(/2:0[0-9]/)
+    await expect(bar).toHaveAttribute('max', String(LENGTH_MS))
+
+    const failures = await page.evaluate(
+      () => (window as unknown as { shownFailures: string[] }).shownFailures,
+    )
+    expect(failures).toEqual([])
+  })
+})
