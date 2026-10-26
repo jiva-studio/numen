@@ -7,10 +7,14 @@ body,
 }
 
 /* On the page itself, so it covers the canvas whatever layout a story asks
-   for. */
+   for. The root keeps the size the tokens give it, which `rem` is measured
+   from, as in the window. */
 html {
   background: var(--numen-surface);
   color: var(--numen-ink);
   font-family: var(--numen-font-sans);
+}
+
+body {
   font-size: var(--numen-font-size);
 }

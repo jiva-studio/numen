@@ -235,7 +235,10 @@ export const NoLineCutInHalf: Story = {
     const paper = getPaper(canvasElement)
     const line = Number.parseFloat(getComputedStyle(paper).lineHeight)
     await expect(line).toBeGreaterThan(0)
-    await expect(paper.getBoundingClientRect().height % line).toBeCloseTo(0, 1)
+    // The built stylesheet rounds the line height, so a whole number of lines
+    // may fall a hair short of a multiple of it.
+    const rest = paper.getBoundingClientRect().height % line
+    await expect(Math.min(rest, line - rest)).toBeCloseTo(0, 1)
     await expect(paper.getBoundingClientRect().height).toBeLessThanOrEqual(
       getArea(canvasElement).clientHeight + 1,
     )
