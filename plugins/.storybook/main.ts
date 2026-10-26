@@ -1,6 +1,7 @@
 import type { StorybookConfig } from '@storybook/vue3-vite'
 import vue from '@vitejs/plugin-vue'
 import { getPluginAliases } from '../vite.shared.ts'
+import { createStoryUtilitiesPlugin } from '../vite.styles.ts'
 
 /**
  * A story drawn for a picture is served by `storybook dev`, which reads no
@@ -11,7 +12,7 @@ const drawing = !process.env['VITEST']
 
 const reaching: NonNullable<StorybookConfig['viteFinal']> = (config) => ({
   ...config,
-  plugins: [...(config.plugins ?? []), vue()],
+  plugins: [...(config.plugins ?? []), vue(), createStoryUtilitiesPlugin()],
   resolve: {
     ...config.resolve,
     alias: getPluginAliases([

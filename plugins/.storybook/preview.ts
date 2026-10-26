@@ -5,6 +5,7 @@ import { configure } from 'storybook/test'
 import { reachCheck, type Proof } from '../../libs/ui/.storybook/check'
 import { toolbar } from '../../libs/ui/.storybook/toolbar'
 import '@numen/ui/styles.css'
+import 'virtual:plugin-utilities.css'
 import './preview.css'
 
 // A story waits on a real browser drawing a frame, and two engines draw at

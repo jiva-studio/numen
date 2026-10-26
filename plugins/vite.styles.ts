@@ -8,7 +8,7 @@
  * theme of `@numen/ui` and appended to that file, less every declaration the `@numen/ui` build
  * already carries.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { compile } from '@tailwindcss/node'
 import { Scanner } from '@tailwindcss/oxide'
@@ -289,6 +289,33 @@ export function createUtilitiesPlugin(): Plugin {
         const lines = [...missing].map(([file, classes]) => `  ${file}: ${classes.join(' ')}`)
         this.error(`utilities no stylesheet defines:\n${lines.join('\n')}`)
       }
+    },
+  }
+}
+
+/** The id the stories import the utilities of every plugin frontend by. */
+const STORY_UTILITIES = 'virtual:plugin-utilities.css'
+
+/** Every source file of every plugin frontend, stories and tests left out. */
+function getFrontendFiles(): string[] {
+  return readdirSync(import.meta.dirname, { recursive: true, encoding: 'utf8' })
+    .filter((path) => /^[^/]+\/frontend\/.+\.(vue|ts)$/.test(path.split(sep).join('/')))
+    .filter((path) => !/\.(stories|test)\.ts$/.test(path))
+    .map((path) => resolve(import.meta.dirname, path))
+}
+
+/**
+ * Serves `virtual:plugin-utilities.css` to the stories: the utilities every plugin frontend uses
+ * that the build of `@numen/ui` does not carry, as each plugin's `dist/styles.css` carries them.
+ */
+export function createStoryUtilitiesPlugin(): Plugin {
+  return {
+    name: 'numen-story-utilities',
+    resolveId: (id) => (id === STORY_UTILITIES ? `\0${STORY_UTILITIES}` : undefined),
+    async load(id) {
+      if (id !== `\0${STORY_UTILITIES}`) return undefined
+      const css = await getUtilityCss(getCandidates(getFrontendFiles()))
+      return removePresent(css, readFileSync(UI_STYLES, 'utf8'))
     },
   }
 }

@@ -11,6 +11,7 @@ import vue from '@vitejs/plugin-vue'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { getStoryBrowser } from '../libs/ui/.storybook/browser'
 import { getPluginAliases } from './vite.shared'
+import { createStoryUtilitiesPlugin } from './vite.styles'
 
 const alias = getPluginAliases([
   '@plugins',
@@ -26,6 +27,7 @@ const alias = getPluginAliases([
 export default defineConfig({
   plugins: [
     vue(),
+    createStoryUtilitiesPlugin(),
     storybookTest({ configDir: fileURLToPath(new URL('./.storybook', import.meta.url)) }),
   ],
   resolve: { alias },
