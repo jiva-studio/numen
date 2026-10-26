@@ -14,7 +14,7 @@ import { readFile, readdir, writeFile } from 'node:fs/promises'
 
 // By path and not by name: this file is run by `node` with nothing installed,
 // and a package name is a link `npm ci` makes.
-import { faults, proves, stories } from '../../../tools/ci.stories/stories.mjs'
+import { faults, proves, stories } from '../../../tools/ci-stories/stories.mjs'
 
 // The window's shared layer, which is where the words stand.
 const UI = new URL('../../desktop/editor/src/shared/', import.meta.url)
