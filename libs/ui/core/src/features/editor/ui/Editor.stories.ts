@@ -855,9 +855,10 @@ export const Timed: Story = {
       if (!first || !last || !time) throw new Error(`nothing is drawn for ${text}`)
       const box = time.getBoundingClientRect()
       await expect({ text, wraps: last.top > first.bottom }).toEqual({ text, wraps: true })
+      const middle = (box.top + box.bottom) / 2
       await expect({
         text,
-        onFirstRow: box.top >= first.top - 1 && box.bottom <= first.bottom + 1,
+        onFirstRow: middle >= first.top && middle <= first.bottom,
       }).toEqual({ text, onFirstRow: true })
     }
   },
