@@ -29,11 +29,8 @@ export { WelcomePage } from './features/welcome'
 export { getVaultForKey, isTyping } from './features/welcome'
 export type { VaultRow, WelcomeAction } from './features/welcome'
 
-export { Palette } from './features/palette'
-export { KeyCap } from './shared/ui/key-cap'
-export { commandKeyChord, keyChord } from './features/palette'
-export type { ActionWords, PaletteItem, PaletteGroup } from './features/palette'
-export type { PaletteKeys } from './shared/ui/key-cap'
+export { KeyCap, keyChord } from './shared/ui/key-cap'
+export type { PaletteIcon, PaletteKeys } from './shared/ui/key-cap'
 
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
@@ -61,13 +58,6 @@ export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
 
-/** What a count counts, and how a notice about it reads. */
-export type { TallyUnit, Tone } from './features/notices'
-
-export { Notices } from './features/notices'
-export { createNotice } from './features/notices'
-export type { Notice, Stay, Task } from './features/notices'
-
 export type { Span } from './shared/lib/text/span'
 
 /** The size, room and placement a component outside this module lays itself out by. */
@@ -86,16 +76,14 @@ export { browserClock, onNextFrame, type Clock, type Paint } from './shared/lib/
 export { createRefRegistry } from './shared/lib/dom/refs'
 export { cn } from './shared/lib/dom/classes'
 
-export { WorkspaceLayout } from './features/workspace'
-export { closeTab, openTab, openTabBeside } from './features/workspace'
+/** A row of a list the arrow keys walk, and a pair of UTF-16 units read as one character. */
+export { stepTo } from './shared/lib/dom/roving'
+export { isLeading, isTrailing } from './shared/lib/text/surrogate'
 
-/** For arranging without drawing, or reading a gesture without this renderer. */
-export { branch, pane } from './features/workspace'
-export { paneById, getPanes } from './features/workspace'
-export type { Tab, Workspace } from './features/workspace'
+/** A thing carried under the pointer, and a menu put away by a press outside it or Escape. */
+export { DragPreview, usePressDrag } from './shared/ui/drag-preview'
+export { useMenuDismissal } from './shared/ui/menu/interaction/menuDismissal'
 
 export { Tree } from './features/tree'
 export type { Row, RowMarker } from './features/tree'
 
-export { StatusBar } from './features/status-bar'
-export type { StatusBarTask } from './features/status-bar'
