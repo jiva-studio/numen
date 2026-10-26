@@ -240,6 +240,9 @@ const renderWithSource =
     `,
   })
 
+/** The key CodeMirror reads as Mod: Command on a Mac, Control elsewhere. */
+const MOD = /Mac/.test(navigator.platform) ? 'Meta' : 'Control'
+
 /** What the note now holds. */
 const source = (canvas: HTMLElement) =>
   canvas.querySelector<HTMLElement>('[data-source]')?.textContent ?? ''
@@ -258,7 +261,7 @@ const TABLED = `${TABLE}\nSomething well away from the table.\n`
  */
 const asATable = async (canvas: HTMLElement) => {
   canvas.querySelector<HTMLElement>('.cm-content')?.focus()
-  await userEvent.keyboard('{Control>}{End}{/Control}')
+  await userEvent.keyboard(`{${MOD}>}{End}{/${MOD}}`)
   await waitFor(() => expect(cells(canvas).length).toBeGreaterThan(0))
 }
 
@@ -648,7 +651,7 @@ export const Kept: Story = {
     await nextFrame()
     await expect(view.hasFocus).toBe(true)
 
-    await userEvent.keyboard('{Control>}s{/Control}')
+    await userEvent.keyboard(`{${MOD}>}s{/${MOD}}`)
     await nextFrame()
 
     await expect(getText('data-asked')).toBe('1')
