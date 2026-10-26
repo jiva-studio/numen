@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -36,6 +37,9 @@ type API struct {
 	// GetAgent is the agent the plugins' questions go to. Nil, or one returning nil, is a window with
 	// none.
 	GetAgent func() agent.Agent
+	// ListVaults is every vault the installation holds, which the page offers to choose from. Nil is a
+	// window that lists none.
+	ListVaults func() ([]domain.Vault, error)
 
 	indexRuns indexRuns
 
