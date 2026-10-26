@@ -76,11 +76,11 @@ export function createShellHost() {
 
   /** The view the window draws, and nothing while no plugin offers one. */
   const front = computed<PluginView | null>(() => {
-    const placed = views.value.filter((one) => one.registration.placement?.pane === 'main')
-    placed.sort(
+    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
+    mainViews.sort(
       (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
     )
-    return placed[0] ?? null
+    return mainViews[0] ?? null
   })
 
   return { host, front }
