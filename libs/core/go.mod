@@ -28,7 +28,7 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/google/uuid v1.6.0 // indirect
+	github.com/google/uuid v1.6.0
 	github.com/jiva-studio/numen/libs/notes v0.0.0
 	github.com/jiva-studio/numen/libs/protocol v0.0.0
 	github.com/mattn/go-isatty v0.0.24 // indirect
