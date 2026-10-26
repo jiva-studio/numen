@@ -36,6 +36,8 @@ type EditorAssembly struct {
 	cfg      Config
 	registry vaultport.VaultRegistry
 	db       *Index
+	// agent keeps which plugin each conversation was asked in, so it is made once for the window.
+	agent agentport.Agent
 }
 
 // GetEditorAssembly opens the cache and binds everything that window relies on
@@ -56,7 +58,7 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 // NewEditorAssembly is that assembly over a list of vaults and a cache already
 // open, for a caller that opened them itself.
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
-	return EditorAssembly{cfg: cfg, registry: registry, db: db}
+	return EditorAssembly{cfg: cfg, registry: registry, db: db, agent: cfg.AgentProvider()}
 }
 
 func (e EditorAssembly) GetPluginDir(id string) (string, bool) { return e.cfg.GetPluginDir(id) }
@@ -202,8 +204,8 @@ func (e EditorAssembly) GetPluginServices() PluginServices { return e.cfg.GetPlu
 // GetPluginCommands is the use cases over the commands the enabled plugins declare.
 func (e EditorAssembly) GetPluginCommands() plugincommand.Commands { return e.cfg.GetPluginCommands() }
 
-// GetAgent returns the agent provider for running tasks.
-func (e EditorAssembly) GetAgent() agentport.Agent { return e.cfg.AgentProvider() }
+// GetAgent returns the agent provider for running tasks, the same one at every call.
+func (e EditorAssembly) GetAgent() agentport.Agent { return e.agent }
 
 // SetTextVersionListener names the index that hears the versions of a file changed.
 func (e EditorAssembly) SetTextVersionListener(listener textport.VersionListener) {
