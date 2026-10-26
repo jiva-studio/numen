@@ -25,7 +25,7 @@ func TestManifestDeclaresDependencies(t *testing.T) {
 	for _, dep := range manifest.Dependencies {
 		ids = append(ids, dep.ID)
 	}
-	for _, expected := range []string{"onnxruntime", "pp-doclayout", "pp-ocr-det", "pp-ocr-rec"} {
+	for _, expected := range []string{"onnxruntime", "pp-doclayout", "pp-ocr-det", "rec-pp-ocrv6-tiny", "rec-pp-ocrv5-eslav"} {
 		if !slices.Contains(ids, expected) {
 			t.Errorf("dependencies missing %s: got %v", expected, ids)
 		}

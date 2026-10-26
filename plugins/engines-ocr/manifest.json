@@ -46,10 +46,70 @@
       }
     },
     {
-      "id": "pp-ocr-rec",
+      "id": "rec-pp-ocrv6-tiny",
       "kind": "model",
       "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_tiny.onnx",
       "checksumSha256": "e16e242de5937ad92609223f19bc2aff3727ee40b095f996907c24749bad251b",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv6-small",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv6/rec/PP-OCRv6_rec_small.onnx",
+      "checksumSha256": "6f327246b50388f3c176ae304bd95767ea6dc0c9ae92153ef8cbe210b3c14884",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv5-latin",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/latin_PP-OCRv5_rec_mobile.onnx",
+      "checksumSha256": "b20bd37c168a570f583afbc8cd7925603890efbcdc000a59e22c269d160b5f5a",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv5-eslav",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/eslav_PP-OCRv5_rec_mobile.onnx",
+      "checksumSha256": "08705d6721849b1347d26187f15a5e362c431963a2a62bfff4feac578c489aab",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv5-cyrillic",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/cyrillic_PP-OCRv5_rec_mobile.onnx",
+      "checksumSha256": "90f761b4bfcce0c8c561c0cb5c887b0971d3ec01c32164bdf7374a35b0982711",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv5-devanagari",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/devanagari_PP-OCRv5_rec_mobile.onnx",
+      "checksumSha256": "d6f0a906580e3fa6b324a318718f1f31f268b6ea8ef985f91c2012a37f52c91e",
+      "metadata": {
+        "fileName": "pp-ocr-rec.onnx",
+        "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
+      }
+    },
+    {
+      "id": "rec-pp-ocrv5-greek",
+      "kind": "model",
+      "sourceUrl": "https://www.modelscope.cn/models/RapidAI/RapidOCR/resolve/4e9666f0fbf5fac850d30e530bf0a2e0d886aa78/onnx/PP-OCRv5/rec/el_PP-OCRv5_rec_mobile.onnx",
+      "checksumSha256": "b4368bccd557123c702b7549fee6cd1e94b581337d1c9b65310f109131542b7f",
       "metadata": {
         "fileName": "pp-ocr-rec.onnx",
         "envVar": "NUMEN_DEPENDENCY_PP_OCR_REC"
@@ -68,36 +128,113 @@
   },
   "settings": [
     {
-      "key": "dpi",
-      "type": "range",
-      "title": "Scan DPI",
-      "description": "Image rendering DPI before OCR extraction",
-      "default": 300,
-      "min": 150,
-      "max": 600,
-      "step": 50
-    },
-    {
-      "key": "language",
+      "key": "model",
       "type": "enum",
-      "title": "Language",
-      "description": "Primary recognition language model",
-      "options": ["auto", "cyrillic", "latin", "ch"],
-      "default": "auto"
+      "title": "Model",
+      "description": "Text recognition model",
+      "default": "pp-ocrv6-tiny",
+      "options": [
+        {
+          "value": "pp-ocrv6-tiny",
+          "title": "PP-OCRv6 tiny",
+          "detail": "Chinese, English and Latin-script languages, 4.5 MB",
+          "dependencies": ["rec-pp-ocrv6-tiny"]
+        },
+        {
+          "value": "pp-ocrv6-small",
+          "title": "PP-OCRv6 small",
+          "detail": "Chinese, English, Japanese and Latin-script languages, 21 MB",
+          "dependencies": ["rec-pp-ocrv6-small"]
+        },
+        {
+          "value": "pp-ocrv5-latin",
+          "title": "PP-OCRv5 Latin",
+          "detail": "English, French, German, Spanish, Italian, Portuguese, Dutch, Polish, Czech, Slovak, Hungarian, Romanian, Croatian, Slovenian, Danish, Swedish, Norwegian, Finnish, Estonian, Lithuanian, Latvian, Turkish, Latin and other Latin-script languages, 7.9 MB",
+          "dependencies": ["rec-pp-ocrv5-latin"]
+        },
+        {
+          "value": "pp-ocrv5-eslav",
+          "title": "PP-OCRv5 East Slavic",
+          "detail": "Russian, Ukrainian, Belarusian, English, 7.9 MB",
+          "dependencies": ["rec-pp-ocrv5-eslav"]
+        },
+        {
+          "value": "pp-ocrv5-cyrillic",
+          "title": "PP-OCRv5 Cyrillic",
+          "detail": "Russian, Ukrainian, Belarusian, Bulgarian, Serbian, Macedonian, Mongolian, Kazakh, Kyrgyz, Tajik, Tatar and other Cyrillic-script languages, English, 8.1 MB",
+          "dependencies": ["rec-pp-ocrv5-cyrillic"]
+        },
+        {
+          "value": "pp-ocrv5-devanagari",
+          "title": "PP-OCRv5 Devanagari",
+          "detail": "Hindi, Sanskrit, Marathi, Nepali, Konkani, Maithili, Bhojpuri, English, 7.9 MB",
+          "dependencies": ["rec-pp-ocrv5-devanagari"]
+        },
+        {
+          "value": "pp-ocrv5-greek",
+          "title": "PP-OCRv5 Greek",
+          "detail": "Greek, English, 7.8 MB",
+          "dependencies": ["rec-pp-ocrv5-greek"]
+        },
+        {
+          "value": "custom",
+          "title": "Custom model",
+          "detail": "Languages unknown: they are those of the model file"
+        }
+      ]
     },
     {
       "key": "custom_model_path",
-      "type": "string",
-      "title": "Custom Model Path",
-      "description": "Path to custom ONNX recognition model file",
-      "default": ""
+      "type": "file",
+      "title": "Model file",
+      "description": "PaddleOCR text recognition model in ONNX format",
+      "accept": [".onnx"],
+      "default": "",
+      "when": {
+        "setting": "model",
+        "is": ["custom"]
+      }
     },
     {
       "key": "custom_dict_path",
-      "type": "string",
-      "title": "Custom Dictionary Path",
-      "description": "Path to custom character dictionary file",
-      "default": ""
+      "type": "file",
+      "title": "Character dictionary",
+      "description": "UTF-8 text, one character per line. Empty for a model that carries its own",
+      "accept": [".txt"],
+      "default": "",
+      "when": {
+        "setting": "model",
+        "is": ["custom"]
+      }
+    },
+    {
+      "key": "dpi",
+      "type": "enum",
+      "title": "Scan resolution",
+      "description": "Resolution a page is rendered at before recognition",
+      "default": "300",
+      "options": [
+        {
+          "value": "150",
+          "title": "150 dpi"
+        },
+        {
+          "value": "200",
+          "title": "200 dpi"
+        },
+        {
+          "value": "300",
+          "title": "300 dpi"
+        },
+        {
+          "value": "400",
+          "title": "400 dpi"
+        },
+        {
+          "value": "600",
+          "title": "600 dpi"
+        }
+      ]
     }
   ]
 }

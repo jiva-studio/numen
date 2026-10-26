@@ -47,7 +47,8 @@ func newEngines(cfg engine.Config, factory engineFactory) *engines {
 }
 
 // updateConfig takes the settings the host hands over. A resolution that is no positive number is
-// left as it was.
+// left as it was, and so is a model the plugin does not provision. The paths of a custom model are
+// handed over only while the custom model is chosen, and are empty otherwise.
 func (e *engines) updateConfig(values map[string]string) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -55,13 +56,17 @@ func (e *engines) updateConfig(values map[string]string) {
 		e.cfg.Recognise.DPI = dpi
 		e.dropLocked()
 	}
-	for key, target := range map[string]*string{
-		"language": &e.cfg.Recognise.Name, "custom_model_path": &e.cfg.Recognise.Path, "custom_dict_path": &e.cfg.Recognise.Dict,
-	} {
-		if value, ok := values[key]; ok && *target != value {
-			*target = value
-			e.dropLocked()
+	recognise := e.cfg.Recognise
+	if address, ok := engine.FindRecogniser(values["model"]); ok {
+		recognise.Name = address
+		if address == "" {
+			recognise.Name = engine.RecogniserCustom
 		}
+	}
+	recognise.Path, recognise.Dict = values["custom_model_path"], values["custom_dict_path"]
+	if recognise != e.cfg.Recognise {
+		e.cfg.Recognise = recognise
+		e.dropLocked()
 	}
 }
 

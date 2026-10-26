@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"os"
 	"strings"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	ocr "github.com/jiva-studio/numen/plugins/engines-ocr"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/engine"
 	"github.com/jiva-studio/numen/plugins/engines-ocr/backend/recognition"
 )
@@ -40,12 +42,12 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	models.updateConfig(map[string]string{"dpi": "450", "custom_model_path": "/opt/models/rec.onnx"})
+	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
 	if models.cfg.Recognise.DPI != 450 || models.cfg.Recognise.Path != "/opt/models/rec.onnx" || o.closed != 1 {
 		t.Fatalf("config %+v, %d closed; want the new settings and the recogniser closed", models.cfg.Recognise, o.closed)
 	}
 	for _, invalid := range []string{"-100", "0", "not-a-number"} {
-		models.updateConfig(map[string]string{"dpi": invalid})
+		models.updateConfig(map[string]string{"dpi": invalid, "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
 		if models.cfg.Recognise.DPI != 450 {
 			t.Errorf("a resolution of %q set it to %d", invalid, models.cfg.Recognise.DPI)
 		}
@@ -53,7 +55,7 @@ func TestUpdateConfigReopensEngine(t *testing.T) {
 	if _, err := models.getEngine(t.Context()); err != nil || o.opened != 2 {
 		t.Fatalf("%d opened (%v), want the recogniser opened again", o.opened, err)
 	}
-	models.updateConfig(map[string]string{"language": models.cfg.Recognise.Name})
+	models.updateConfig(map[string]string{"dpi": "450", "model": "custom", "custom_model_path": "/opt/models/rec.onnx"})
 	if err := models.close(); err != nil || o.closed != 2 {
 		t.Fatalf("%d closed (%v): an unchanged setting closed the recogniser, or close did not", o.closed, err)
 	}
@@ -101,5 +103,81 @@ func TestGetEngineReturnsOpenError(t *testing.T) {
 	})
 	if _, err := models.getEngine(t.Context()); err == nil {
 		t.Fatal("a recogniser that could not open was opened")
+	}
+}
+
+// The recogniser opens with the model the settings name, and the paths of a custom model only
+// while the custom model is chosen.
+func TestTheRecogniserOpensWithTheModelOfTheSettings(t *testing.T) {
+	var got engine.Config
+	models := newEngines(engine.Defaults(), func(_ context.Context, cfg engine.Config) (recogniser, error) {
+		got = cfg
+		return engine.MockRecogniser{}, nil
+	})
+	for _, tc := range []struct {
+		values     map[string]string
+		model      string
+		path, dict string
+	}{
+		{map[string]string{"model": "pp-ocrv5-eslav"}, "eslav_PP-OCRv5_rec_mobile.onnx", "", ""},
+		{map[string]string{"model": "custom", "custom_model_path": "/m/rec.onnx", "custom_dict_path": "/m/dict.txt"}, engine.RecogniserCustom, "/m/rec.onnx", "/m/dict.txt"},
+		{map[string]string{"model": "pp-ocrv6-tiny"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
+		{map[string]string{"model": "tesseract"}, "PP-OCRv6_rec_tiny.onnx", "", ""},
+	} {
+		models.updateConfig(tc.values)
+		if _, err := models.getEngine(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		if !strings.HasSuffix(got.Recognise.Name, tc.model) || got.Recognise.Path != tc.path || got.Recognise.Dict != tc.dict {
+			t.Errorf("settings %v: opened %+v", tc.values, got.Recognise)
+		}
+	}
+}
+
+// Each model the manifest offers is one the engine runs, fetched from the address the engine knows.
+func TestEveryModelOfTheManifestIsOneTheEngineRuns(t *testing.T) {
+	var manifest struct {
+		Dependencies []struct {
+			ID        string `json:"id"`
+			SourceURL string `json:"sourceUrl"`
+		} `json:"dependencies"`
+		Settings []struct {
+			Key     string `json:"key"`
+			Options []struct {
+				Value        string   `json:"value"`
+				Dependencies []string `json:"dependencies"`
+			} `json:"options"`
+		} `json:"settings"`
+	}
+	if err := json.Unmarshal(ocr.Manifest, &manifest); err != nil {
+		t.Fatal(err)
+	}
+	sources := map[string]string{}
+	for _, one := range manifest.Dependencies {
+		sources[one.ID] = one.SourceURL
+	}
+	count := 0
+	for _, setting := range manifest.Settings {
+		if setting.Key != "model" {
+			continue
+		}
+		for _, option := range setting.Options {
+			count++
+			address, ok := engine.FindRecogniser(option.Value)
+			if !ok {
+				t.Errorf("the manifest offers %s, which the engine does not run", option.Value)
+				continue
+			}
+			var provisioned []string
+			for _, id := range option.Dependencies {
+				provisioned = append(provisioned, sources[id])
+			}
+			if address != "" && (len(provisioned) != 1 || provisioned[0] != address) {
+				t.Errorf("%s provisions %v, and the engine fetches %s", option.Value, provisioned, address)
+			}
+		}
+	}
+	if count == 0 {
+		t.Fatal("the manifest offers no model")
 	}
 }

@@ -15,19 +15,15 @@ const (
 	valueField    = 2
 )
 
+// alphabet writes the characters the model reads, from the dictionary the settings name or else from
+// the model's metadata, as the recogniser takes them: one per line and the space last. The model knows
+// them, the space, and the blank of CTC.
 func alphabet(model string, cfg RecogniserModel) (int64, string, error) {
-	if cfg.Dict != "" {
-		if cfg.Classes <= 0 {
-			return 0, "", fmt.Errorf("a dictionary was named without saying how many characters the model knows")
-		}
-		return cfg.Classes, cfg.Dict, nil
-	}
-
-	characters, err := readMetadata(model, alphabetKey)
+	characters, err := readAlphabet(model, cfg.Dict)
 	if err != nil {
-		return 0, "", fmt.Errorf("%s carries no alphabet, and none was configured: %w", model, err)
+		return 0, "", err
 	}
-	lines := strings.Split(strings.TrimRight(characters, "\n"), "\n")
+	lines := strings.Split(strings.TrimRight(strings.ReplaceAll(characters, "\r\n", "\n"), "\n"), "\n")
 
 	classes := int64(len(lines)) + 2
 	lines = append(lines, " ")
@@ -131,4 +127,21 @@ func readPayload(raw []byte, wire byte) (body []byte, size int, ok bool) {
 		return nil, 4, true
 	}
 	return nil, 0, false
+}
+
+// readAlphabet reads a PaddleOCR character dictionary, UTF-8 with one character per line, from the
+// file named, or else from the model's metadata.
+func readAlphabet(model, dict string) (string, error) {
+	if dict != "" {
+		raw, err := os.ReadFile(dict)
+		if err != nil {
+			return "", fmt.Errorf("the character dictionary: %w", err)
+		}
+		return string(raw), nil
+	}
+	characters, err := readMetadata(model, alphabetKey)
+	if err != nil {
+		return "", fmt.Errorf("%s carries no alphabet, and none was configured: %w", model, err)
+	}
+	return characters, nil
 }

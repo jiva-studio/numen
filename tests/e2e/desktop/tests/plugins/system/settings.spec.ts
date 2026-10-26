@@ -86,3 +86,38 @@ test.describe('Plugin Settings and Configuration', () => {
     await expect(page.locator('[data-tree-row="assets"]').first()).toBeVisible({ timeout: 10_000 })
   })
 })
+
+test.describe('OCR settings', () => {
+  test('offers the recognition models, and the custom model files only for the custom model', async ({
+    page,
+  }) => {
+    await openWorkspace(page)
+    await runPaletteCommand(page, 'Settings', 'Settings')
+    const pluginRow = page.getByRole('button', { name: /Document OCR/i }).first()
+    const model = page.getByTestId('setting-model')
+    await expect(pluginRow.or(model)).toBeVisible({ timeout: 10_000 })
+    if (await pluginRow.isVisible()) await pluginRow.click()
+
+    await expect(model.locator('.settings__choice')).toHaveText('PP-OCRv6 tiny')
+    await expect(page.getByTestId('setting-dpi').locator('.settings__choice')).toHaveText('300 dpi')
+    await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
+
+    await model.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'PP-OCRv5 East Slavic', exact: true }).click()
+    await expect(page.getByText('Russian, Ukrainian, Belarusian, English, 7.9 MB')).toBeVisible()
+
+    await model.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'Custom model', exact: true }).click()
+    await expect(
+      page.getByText('Languages unknown: they are those of the model file'),
+    ).toBeVisible()
+    await expect(page.getByText('Model file', { exact: true })).toBeVisible()
+    await expect(page.getByText('Character dictionary', { exact: true })).toBeVisible()
+    await expect(page.getByTestId('setting-path').first()).toHaveText('None')
+    await expect(page.getByRole('button', { name: 'Choose…' })).toHaveCount(2)
+
+    await model.locator('.settings__choice').click()
+    await page.getByRole('menuitemradio', { name: 'PP-OCRv6 tiny', exact: true }).click()
+    await expect(page.getByText('Model file', { exact: true })).toHaveCount(0)
+  })
+})
