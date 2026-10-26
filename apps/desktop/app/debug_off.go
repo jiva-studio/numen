@@ -1,4 +1,4 @@
-//go:build !debug
+//go:build !numen_debug
 
 package app
 

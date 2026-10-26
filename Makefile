@@ -398,8 +398,8 @@ app_desktop_stories: lib_shell_build ## draw the stories of the editor, one engi
 
 .PHONY: app_desktop_e2e
 app_desktop_e2e: lib_shell_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
-	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
-	cd $(DESKTOP) && go build -tags debug -o numen-flashcards-debug ./cmd/numen-flashcards
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-debug ./cmd/numen
+	cd $(DESKTOP) && go build -tags numen_debug -o numen-flashcards-debug ./cmd/numen-flashcards
 	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 

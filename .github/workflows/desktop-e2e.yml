@@ -82,7 +82,7 @@ jobs:
       - name: Build debug desktop binary
         run: |
           cd apps/desktop
-          go build -tags debug -o numen-debug ./cmd/numen
+          go build -tags numen_debug -o numen-debug ./cmd/numen
 
       - name: Allow user namespaces, where the suite cuts the network
         run: |

@@ -1,4 +1,4 @@
-//go:build debug
+//go:build numen_debug
 
 // Package debugserve serves a window's handler over HTTP without an OS window, for a test run of a
 // debug build.
