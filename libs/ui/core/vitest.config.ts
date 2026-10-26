@@ -14,7 +14,7 @@ export default defineConfig({
     coverage: {
       include: ['src/**'],
       // A story is the corpus a test run draws, not code under test.
-      exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts'],
+      exclude: [...coverageConfigDefaults.exclude, '**/*.stories.ts', 'src/vite.ts'],
       reporter: ['text-summary'],
       thresholds: { statements: 89, branches: 84, functions: 89, lines: 91 },
     },

@@ -12,40 +12,16 @@ import { readFileSync, readdirSync } from 'node:fs'
 import { dirname, extname, resolve, sep } from 'node:path'
 import { compile } from '@tailwindcss/node'
 import { Scanner } from '@tailwindcss/oxide'
-import { Features, transform } from 'lightningcss'
-import postcss, { type AtRule, type ChildNode, type Container, type Root } from 'postcss'
+import postcss from 'postcss'
 import { parse as parseSfc } from '@vue/compiler-sfc'
 import type { Node as BabelNode } from '@babel/types'
 import type { Plugin } from 'vite'
+import { UI_STYLES, getNormalCss, removePresent } from '@numen/ui/vite'
 
 const modules = resolve(import.meta.dirname, '..')
 
 /** The stylesheet of `@numen/ui` the utilities are built from. */
 const THEME = resolve(modules, 'libs/ui/core/src/shared/tokens/theme.css')
-
-/** The build of `@numen/ui` the window loads ahead of every plugin's stylesheet. */
-export const UI_STYLES = resolve(modules, 'libs/ui/core/dist/numen-ui.css')
-
-/**
- * The Lightning CSS options of a plugin's stylesheet, the ones the windows build theirs with.
- * `light-dark()` stays as written: the window chooses a half with `color-scheme`, which the
- * lowered form does not read.
- */
-export const LIGHTNING_CSS = { exclude: Features.LightDark } as const
-
-const TARGETS = { safari: (16 << 16) | (4 << 8), chrome: 111 << 16, firefox: 128 << 16 }
-
-/** The stylesheet minified the way both sides of a comparison are. */
-function getNormalCss(css: string): string {
-  return transform({
-    filename: 'styles.css',
-    code: Buffer.from(css),
-    minify: true,
-    targets: TARGETS,
-    exclude: LIGHTNING_CSS.exclude,
-    errorRecovery: true,
-  }).code.toString()
-}
 
 /** The candidates Tailwind finds in the templates and scripts of these files. */
 export function getCandidates(files: readonly string[]): string[] {
@@ -69,65 +45,6 @@ export async function getUtilityCss(candidates: readonly string[]): Promise<stri
     onDependency: () => {},
   })
   return getNormalCss(compiler.build([...candidates]))
-}
-
-/** The at-rules and the selector a node is nested in, from the outside in. */
-function getContext(node: ChildNode): string {
-  const path: string[] = []
-  for (
-    let parent: Container | undefined = node.parent;
-    parent && parent.type !== 'root';
-    parent = parent.parent
-  ) {
-    if (parent.type === 'rule') path.unshift((parent as postcss.Rule).selector)
-    if (parent.type === 'atrule')
-      path.unshift(`atrule ${(parent as AtRule).name} ${(parent as AtRule).params}`)
-  }
-  return path.join('\n')
-}
-
-/** The key a declaration, or an at-rule without a block, is compared by. */
-function getKey(node: ChildNode): string | null {
-  if (node.type === 'decl') return `${getContext(node)}\n${node.prop}:${node.value}`
-  if (node.type === 'atrule' && !node.nodes) {
-    return `${getContext(node)}\natrule ${node.name} ${node.params}`
-  }
-  return null
-}
-
-function getKeys(root: Root): Set<string> {
-  const keys = new Set<string>()
-  root.walk((node) => {
-    const key = getKey(node)
-    if (key) keys.add(key)
-  })
-  return keys
-}
-
-/** Removes the rules and at-rules left without a declaration. */
-function removeEmpty(container: Container): void {
-  for (const node of [...(container.nodes ?? [])]) {
-    if (node.type !== 'rule' && node.type !== 'atrule') continue
-    if (!node.nodes) continue
-    removeEmpty(node)
-    if (node.nodes.length === 0) node.remove()
-  }
-}
-
-/** The stylesheet less every declaration `present` carries in the same place. */
-export function removePresent(css: string, present: string): string {
-  const keys = getKeys(postcss.parse(getNormalCss(present)))
-  const root = postcss.parse(css)
-  root.walk((node) => {
-    const key = getKey(node)
-    if (key && keys.has(key)) node.remove()
-  })
-  // The order of the layers is the one the window's stylesheets declare ahead of this one.
-  root.walkAtRules('layer', (rule) => {
-    if (!rule.nodes) rule.remove()
-  })
-  removeEmpty(root)
-  return root.nodes.some((node) => node.type !== 'comment') ? getNormalCss(root.toString()) : ''
 }
 
 /** Every class a selector of the stylesheet names. */

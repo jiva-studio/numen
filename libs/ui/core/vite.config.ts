@@ -6,7 +6,11 @@ import dts from 'vite-plugin-dts'
 import { Features } from 'lightningcss'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), dts({ include: ['src'], entryRoot: 'src' })],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    dts({ include: ['src'], exclude: ['src/vite.ts'], entryRoot: 'src' }),
+  ],
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
   },

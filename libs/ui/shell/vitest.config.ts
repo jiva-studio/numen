@@ -3,6 +3,7 @@ import { coverageConfigDefaults, defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import tailwindcss from '@tailwindcss/vite'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
+import { createLayeredStylesPlugin } from '@numen/ui/vite'
 import { getStoryBrowser } from '../core/.storybook/browser'
 
 const src = fileURLToPath(new URL('./src', import.meta.url))
@@ -48,6 +49,7 @@ export default defineConfig({
         plugins: [
           vue(),
           tailwindcss(),
+          createLayeredStylesPlugin(`${src}/styles.css`),
           storybookTest({
             configDir: fileURLToPath(new URL('./.storybook', import.meta.url)),
           }),

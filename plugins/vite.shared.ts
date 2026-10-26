@@ -9,7 +9,8 @@ import { existsSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Plugin, PluginOption, UserConfig } from 'vite'
 import { HOST_MODULES } from '@numen/plugin-sdk/host-modules'
-import { LIGHTNING_CSS, createUtilitiesPlugin } from './vite.styles.ts'
+import { LIGHTNING_CSS } from '@numen/ui/vite'
+import { createUtilitiesPlugin } from './vite.styles.ts'
 
 const modules = resolve(import.meta.dirname, '..')
 

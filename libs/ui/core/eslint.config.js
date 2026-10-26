@@ -18,12 +18,16 @@ const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
-const testdataReaders = [
-  'src/shared/lib/text/address.test.ts',
-]
+const testdataReaders = ['src/shared/lib/text/address.test.ts']
 
 /** The files that stand outside the layers. */
-const outsideLayers = ['src/**/*.stories.ts', 'src/**/fixtures/**', ...testdataReaders]
+const outsideLayers = [
+  'src/**/*.stories.ts',
+  'src/**/fixtures/**',
+  'src/vite.ts',
+  'src/vite.test.ts',
+  ...testdataReaders,
+]
 
 const domainImports = [
   {
