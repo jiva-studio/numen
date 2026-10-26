@@ -307,3 +307,40 @@ func (p *completionPrograms) StartRun(ctx context.Context, task agentport.Task) 
 	task.Options = section.Options
 	return p.provider.StartRun(ctx, task)
 }
+
+// GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
+// every task. A task naming no program goes to the one agent.use names, else to the default of the
+// plugins. It is nil where AgentProvider is.
+func (c Config) GetSettingsAgent() agentport.Agent {
+	provider := c.AgentProvider()
+	if provider == nil {
+		return nil
+	}
+	return &settingsAgent{programs: &completionPrograms{
+		provider: provider,
+		getAgent: func() settings.Agent { return c.getSettingsOrDefaults().Agent },
+	}}
+}
+
+// settingsAgent starts each task on the program the task or the settings name.
+type settingsAgent struct {
+	programs *completionPrograms
+}
+
+// StartRun starts the task on the program it names, else on the one the settings choose, with the
+// command line, the options and the model the settings give that program.
+func (a *settingsAgent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
+	if task.Agent == "" {
+		program, err := a.programs.GetProgram(ctx, "")
+		if err != nil {
+			return nil, err
+		}
+		task.Agent = program.Name
+	}
+	return a.programs.StartRun(ctx, task)
+}
+
+// EndConversation says a conversation is over to every plugin it was asked in.
+func (a *settingsAgent) EndConversation(ctx context.Context, conversation string) error {
+	return a.programs.provider.EndConversation(ctx, conversation)
+}

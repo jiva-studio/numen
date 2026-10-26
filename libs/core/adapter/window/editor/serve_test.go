@@ -1003,7 +1003,7 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentport.Task, 1)}
-	services.Agent.getAgent = func() agentport.Agent { return agent }
+	services.Agent.GetAgent = func() agentport.Agent { return agent }
 	plugins := &testInterceptingPlugins{}
 	services.PluginServices = plugins
 

@@ -23,6 +23,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -128,9 +129,11 @@ func run(cfg container.Config, debug debugOptions) error {
 }
 
 // makeWindowAPI is the window of the desktop.flashcards target: its plugins, the services they serve,
-// and whether the index carries a vault.
+// the agent the settings choose, and whether the index carries a vault.
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
+	agent := cfg.GetSettingsAgent()
 	return &shell.API{
+		GetAgent:       func() agentport.Agent { return agent },
 		IsVaultIndexed: notes.IsVaultIndexed,
 		Window:         shell.NewWindow(platform.TargetFlashcards, nil),
 		GetPluginIDs:   cfg.GetPluginIDs,

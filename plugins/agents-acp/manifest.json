@@ -5,7 +5,7 @@
   "protocol": 1,
   "description": "Generic Agent Client Protocol client: discovers programs that speak ACP and answers completions through them",
   "capabilities": ["agent", "ai.agent.provider"],
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": ["onCommand:askAgent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {

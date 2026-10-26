@@ -1,12 +1,6 @@
 package editor
 
 import (
-	"context"
-	"errors"
-
-	"connectrpc.com/connect"
-
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
@@ -20,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
-	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -40,7 +33,7 @@ type Services struct {
 	Search    *search.Handler
 	Vaults    *vaultsHandler
 	Settings  *settings.Handler
-	Agent     *agentHandler
+	Agent     *wire.AgentHandler
 	Command   *command.Handler
 	Recording *recordingHandler
 	// TextVersion answers the menu a file's text versions make.
@@ -83,7 +76,7 @@ func createServices(state *State) *Services {
 		Search:      search.NewHandler(state),
 		Vaults:      &vaultsHandler{state: state},
 		Settings:    settings.NewHandler(),
-		Agent:       &agentHandler{state: state},
+		Agent:       newAgentHandler(state),
 		Command:     command.NewHandler(plugincommand.NewCommands(nil)),
 		Recording:   &recordingHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
@@ -143,65 +136,11 @@ func (s *Services) GetPickFolder() *vaults.PickFolder {
 	return &pick
 }
 
-// agentHandler answers for the agent the panel's tasks go to.
-type agentHandler struct {
-	numenv1connect.UnimplementedAgentServiceHandler
-	state    *State
-	getAgent func() agentport.Agent
-}
-
-// errNoAgent is an installation with none. Whether one can be reached is asked
-// of GetAgentState.
-var errNoAgent = errors.New("no agent is set up for this vault")
-
-// GetAgentState is whether an agent can be reached at all. Which agent answers
-// is the installation's, so every window asks it here.
-func (h *agentHandler) GetAgentState(
-	_ context.Context, _ *connect.Request[v1.GetAgentStateRequest],
-) (*connect.Response[v1.GetAgentStateResponse], error) {
-	return connect.NewResponse(&v1.GetAgentStateResponse{Unreachable: h.state.Unreachable.Why()}), nil
-}
-
-// AskAgent runs the task on the agent provider.
-func (h *agentHandler) AskAgent(
-	ctx context.Context,
-	r *connect.Request[v1.AskAgentRequest],
-	stream *connect.ServerStream[v1.AskAgentResponse],
-) error {
-	var taking agentport.Agent
-	if h.getAgent != nil {
-		taking = h.getAgent()
+// newAgentHandler answers for the agent the panel's tasks go to. A task naming no folder is started
+// in the vault open in the window.
+func newAgentHandler(state *State) *wire.AgentHandler {
+	return &wire.AgentHandler{
+		GetRoot:        func() string { return state.GetCurrentVault().Path },
+		GetUnreachable: state.Unreachable.Why,
 	}
-	if taking == nil {
-		return connect.NewError(connect.CodeFailedPrecondition, errNoAgent)
-	}
-
-	root := r.Msg.GetRoot()
-	if root == "" && h.state != nil {
-		root = h.state.GetCurrentVault().Path
-	}
-
-	task := agentport.Task{
-		Question:     r.Msg.GetPrompt(),
-		Focus:        r.Msg.GetFocus(),
-		Conversation: r.Msg.GetConversation(),
-		Agent:        r.Msg.GetAgent(),
-		Model:        r.Msg.GetModel(),
-		Reasoning:    r.Msg.GetReasoning(),
-		Root:         root,
-	}
-	return wire.StreamAgentTask(ctx, taking, task, stream)
-}
-
-// FinishConversation ends conversation with the agent provider.
-func (h *agentHandler) FinishConversation(
-	ctx context.Context,
-	r *connect.Request[v1.FinishConversationRequest],
-) (*connect.Response[v1.FinishConversationResponse], error) {
-	if h.getAgent != nil {
-		if taking := h.getAgent(); taking != nil && r.Msg.GetConversation() != "" {
-			_ = taking.EndConversation(ctx, r.Msg.GetConversation())
-		}
-	}
-	return connect.NewResponse(&v1.FinishConversationResponse{}), nil
 }

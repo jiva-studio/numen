@@ -11,6 +11,7 @@ import (
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
+	"github.com/jiva-studio/numen/libs/core/usecase/agent"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -32,6 +33,9 @@ type API struct {
 	GetPluginDir func(id string) (string, bool)
 	// PluginServices is where the calls for the services plugins serve are forwarded.
 	PluginServices PluginServices
+	// GetAgent is the agent the plugins' questions go to. Nil, or one returning nil, is a window with
+	// none.
+	GetAgent func() agent.Agent
 
 	indexRuns indexRuns
 

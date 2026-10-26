@@ -343,7 +343,7 @@ func (o *Installation) wireUseCases() {
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
 	}
-	services.Agent.getAgent = made.GetAgent
+	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()
 	services.Settings.GetFile = made.OpenGetSettingsFile()
 	services.Settings.WriteFile = made.OpenWriteSettingsFile()

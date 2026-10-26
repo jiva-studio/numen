@@ -5,7 +5,7 @@
   "protocol": 1,
   "description": "OpenAI Codex CLI agent runner and provider service",
   "capabilities": ["agent", "ai.agent.provider"],
-  "targets": ["desktop.editor"],
+  "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": ["onCommand:askCodex"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
