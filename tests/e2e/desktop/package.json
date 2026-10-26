@@ -5,10 +5,10 @@
   "type": "module",
   "description": "End-to-end tests for the desktop application",
   "scripts": {
-    "test": "playwright test",
+    "test": "node scripts/run-offline.mjs",
     "test:headed": "playwright test --headed",
-    "test:video": "PLAYWRIGHT_VIDEO=1 playwright test",
+    "test:video": "PLAYWRIGHT_VIDEO=1 node scripts/run-offline.mjs",
     "test:report": "playwright show-report",
-    "test:flashcards": "playwright test -c playwright.flashcards.config.ts"
+    "test:flashcards": "node scripts/run-offline.mjs -c playwright.flashcards.config.ts"
   }
 }

@@ -4,6 +4,7 @@ import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { STAND_IN_MODEL, startStandIns } from './stand-ins.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const sourceVault = path.resolve(__dirname, '../../../vault')
@@ -95,8 +96,44 @@ fs.mkdirSync(testConfigDir, { recursive: true })
 // Each server keeps its index in a cache folder of its own.
 const testCacheDir = path.join(tmpVault, '.cache')
 fs.mkdirSync(testCacheDir, { recursive: true })
+// The trash, the dependencies and whatever a plugin keeps under the home folder stay in the run too.
+const testDataDir = path.join(tmpVault, '.data')
+fs.mkdirSync(testDataDir, { recursive: true })
+const testStateDir = path.join(tmpVault, '.state')
+fs.mkdirSync(testStateDir, { recursive: true })
+const testHomeDir = path.join(tmpVault, '.home')
+fs.mkdirSync(testHomeDir, { recursive: true })
+
+const standIns = await startStandIns()
+
+// The agent panel answers from numen's own agent over the stand-in chat API. The agents that
+// run a program the machine has installed stay off: those programs reach their own services.
+const settingsDir =
+  process.platform === 'darwin'
+    ? path.join(testHomeDir, 'Library', 'Application Support', 'numen')
+    : path.join(testConfigDir, 'numen')
+fs.mkdirSync(settingsDir, { recursive: true })
+fs.writeFileSync(
+  path.join(settingsDir, 'numen.json'),
+  JSON.stringify(
+    {
+      v: 1,
+      agent: { use: 'numen' },
+      plugins: {
+        'md.numen.agents.numen': { baseUrl: standIns.chatUrl, model: STAND_IN_MODEL },
+        'md.numen.agents.claude': { enabled: false },
+        'md.numen.agents.codex': { enabled: false },
+        'md.numen.agents.antigravity': { enabled: false },
+        'md.numen.agents.acp': { enabled: false },
+      },
+    },
+    null,
+    2,
+  ),
+)
 
 function cleanup() {
+  standIns.close()
   try {
     fs.rmSync(tmpVault, { recursive: true, force: true })
   } catch {
@@ -120,13 +157,22 @@ pages.listen(pagesPort, host)
 
 const child = spawn(
   binaryPath,
-  [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${tmpVault}`],
+  [
+    `-debug-http-addr=${host}:${port}`,
+    '-debug-mock-ml',
+    `-debug-update-url=${standIns.updateUrl}`,
+    '-no-mcp',
+    `-vault=${tmpVault}`,
+  ],
   {
     stdio: 'inherit',
     env: {
       ...process.env,
       XDG_CONFIG_HOME: testConfigDir,
       XDG_CACHE_HOME: testCacheDir,
+      XDG_DATA_HOME: testDataDir,
+      XDG_STATE_HOME: testStateDir,
+      HOME: testHomeDir,
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
       HTTP_PROXY: `http://${host}:${pagesPort}`,

@@ -19,9 +19,16 @@ fs.cpSync(sourceVault, vault, { recursive: true })
 const configDir = `${vault}.config`
 fs.rmSync(configDir, { recursive: true, force: true })
 fs.mkdirSync(configDir, { recursive: true })
+// The home, cache, data and state folders stay in the run too.
+const homeDir = `${vault}.home`
+fs.rmSync(homeDir, { recursive: true, force: true })
+const cacheDir = path.join(homeDir, '.cache')
+const dataDir = path.join(homeDir, '.local', 'share')
+const stateDir = path.join(homeDir, '.local', 'state')
+for (const dir of [cacheDir, dataDir, stateDir]) fs.mkdirSync(dir, { recursive: true })
 
 function cleanup() {
-  for (const dir of [vault, configDir]) {
+  for (const dir of [vault, configDir, homeDir]) {
     try {
       fs.rmSync(dir, { recursive: true, force: true })
     } catch {
@@ -32,7 +39,15 @@ function cleanup() {
 
 const child = spawn(binaryPath, [`-debug-http-addr=127.0.0.1:${port}`, `-debug-vault=${vault}`], {
   stdio: 'inherit',
-  env: { ...process.env, XDG_CONFIG_HOME: configDir, NUMEN_PLUGINS_PATH: pluginsPath },
+  env: {
+    ...process.env,
+    HOME: homeDir,
+    XDG_CONFIG_HOME: configDir,
+    XDG_CACHE_HOME: cacheDir,
+    XDG_DATA_HOME: dataDir,
+    XDG_STATE_HOME: stateDir,
+    NUMEN_PLUGINS_PATH: pluginsPath,
+  },
 })
 
 child.on('exit', (code) => {

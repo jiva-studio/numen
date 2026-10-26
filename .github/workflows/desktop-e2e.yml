@@ -82,8 +82,14 @@ jobs:
           cd apps/desktop
           go build -tags debug -o numen-debug ./cmd/numen
 
+      - name: Allow user namespaces, where the suite cuts the network
+        run: |
+          if sysctl -n kernel.apparmor_restrict_unprivileged_userns > /dev/null 2>&1; then
+            sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+          fi
+
       - name: Run desktop E2E tests
-        run: cd tests/e2e/desktop && ../../../node_modules/.bin/playwright test
+        run: cd tests/e2e/desktop && npm test
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()

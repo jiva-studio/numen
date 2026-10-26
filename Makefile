@@ -357,7 +357,7 @@ app_desktop_stories: lib_ui_build ## draw the stories of the editor, one engine 
 app_desktop_e2e: lib_ui_build app_desktop_editor_build app_desktop_flashcards_build plugins_build ## run desktop end-to-end tests
 	cd $(DESKTOP) && go build -tags debug -o numen-debug ./cmd/numen
 	cd $(DESKTOP) && go build -tags debug -o numen-flashcards-debug ./cmd/numen-flashcards
-	cd $(TESTS)/e2e/desktop && npx playwright test
+	cd $(TESTS)/e2e/desktop && npm test
 	cd $(TESTS)/e2e/desktop && npm run test:flashcards
 
 .PHONY: app_desktop_lint
