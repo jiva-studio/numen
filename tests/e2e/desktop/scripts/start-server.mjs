@@ -1,5 +1,6 @@
 import { spawn } from 'node:child_process'
 import fs from 'node:fs'
+import http from 'node:http'
 import os from 'node:os'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -103,6 +104,20 @@ function cleanup() {
   }
 }
 
+// The proxy every plain-http fetch of the binary and its plugins goes through. It serves PAGES by
+// host and answers every other host 404, so a page a test imports is never fetched from the network.
+const pagesPort = Number(port) + 1
+const PAGES = new Map([['tidal-mills.numen.test', path.join(fixturesDir, 'article.html')]])
+const pages = http.createServer((req, res) => {
+  const page = PAGES.get(new URL(req.url ?? '/', 'http://' + req.headers.host).hostname)
+  if (!page) {
+    res.writeHead(404).end()
+    return
+  }
+  res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' }).end(fs.readFileSync(page))
+})
+pages.listen(pagesPort, host)
+
 const child = spawn(
   binaryPath,
   [`-debug-http-addr=${host}:${port}`, '-debug-mock-ml', '-no-mcp', `-vault=${tmpVault}`],
@@ -114,11 +129,14 @@ const child = spawn(
       XDG_CACHE_HOME: testCacheDir,
       NUMEN_MOCK_ML: 'true',
       NUMEN_PLUGINS_PATH: pluginsPath,
+      HTTP_PROXY: `http://${host}:${pagesPort}`,
+      NO_PROXY: host,
     },
   },
 )
 
 child.on('exit', (code) => {
+  pages.close()
   cleanup()
   process.exit(code ?? 0)
 })
