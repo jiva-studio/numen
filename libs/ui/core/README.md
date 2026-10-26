@@ -8,7 +8,7 @@ Interface components shared by the desktop and mobile clients.
 
 **A component here reaches nothing of the application.** No import from the application's domain, no wire types, nothing from `apps/**` — not in the components, not in the stories, not in the fixtures. A component takes props it defines itself and emits events carrying opaque identifiers; whoever renders it translates what it holds into that shape.
 
-**A concept takes the word its field gives it, and that includes the domain's own.** Where a component draws a vault it says vault: the welcome page names its rows `vaults`, and `letters.ts` gives each of them the letter it is reached by. A shape word coined to keep the domain out of the module would be a second name for the thing on the screen, and the naming rule refuses one. What is refused is the dependency, not the vocabulary.
+**A concept takes the word its field gives it, and that includes the domain's own.** Where a component draws a vault it says vault: the welcome page of `@numen/shell`, built on these components, names its rows `vaults`, and its `letters.ts` gives each of them the letter it is reached by. A shape word coined to keep the domain out of the module would be a second name for the thing on the screen, and the naming rule refuses one. What is refused is the dependency, not the vocabulary.
 
 The dependency runs one way: `apps/*` depends on `libs/ui/core`. Never the reverse, and never sideways.
 

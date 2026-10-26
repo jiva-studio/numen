@@ -675,6 +675,26 @@ function verifyUiHoldsNoPluginView() {
   }
 }
 
+/** The window chrome `@numen/shell` holds: its directories under `src/` and the names it exports. */
+const SHELL_PARTS = {
+  dirs: ["features/workspace", "features/palette", "features/status-bar", "features/notices", "features/welcome", "screens"],
+  names: ["WorkspaceLayout", "Palette", "StatusBar", "Notices", "createNoticeQueue", "WelcomePage", "getVaultForKey", "VaultRow", "WelcomeAction"],
+};
+
+/** `@numen/ui` holds and exports none of the window chrome `@numen/shell` owns. */
+function verifyUiHoldsNoShellPart() {
+  const exported = new Set(getUiExports());
+  const found = [
+    ...SHELL_PARTS.dirs
+      .filter((dir) => fs.existsSync(path.join(MODULES_DIR, "libs/ui/core/src", dir)))
+      .map((dir) => `libs/ui/core/src/${dir} belongs to libs/ui/shell`),
+    ...SHELL_PARTS.names.filter((name) => exported.has(name)).map((name) => `@numen/ui exports ${name}, which belongs to @numen/shell`),
+  ];
+  if (found.length > 0) {
+    throw new Error("The UI library holds the window chrome:\n" + found.join("\n"));
+  }
+}
+
 function verifyUiDomainIsolation() {
   const leakCheck = spawnSync("git", ["grep", "-E", "(@numen/(protocol|wire|shell)|apps|libs/ui/shell)", "libs/ui/core/src/"], { cwd: REPO_ROOT });
   const leaks = (leakCheck.stdout ? leakCheck.stdout.toString() : "").trim();
@@ -814,6 +834,13 @@ const VERIFIERS = [
     module: "ui",
     name: "UI Library Holds No Plugin View (agent chat: Agent, thread, message composer)",
     run: verifyUiHoldsNoPluginView,
+  },
+  {
+    id: "ui-holds-no-shell-part",
+    scope: "libs",
+    module: "ui",
+    name: "UI Library Holds No Window Chrome (workspace, palette, status bar, notices, welcome page)",
+    run: verifyUiHoldsNoShellPart,
   },
   {
     id: "shell-isolation",
