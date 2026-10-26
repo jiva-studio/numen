@@ -10,6 +10,14 @@
   "textInput": {
     "files": [".wav", ".mp3", ".flac"]
   },
+  "commands": [
+    {
+      "id": "transcribe",
+      "title": "Transcribe a recording",
+      "fileExtensions": ["wav", "mp3", "flac"],
+      "hiddenInPalette": true
+    }
+  ],
   "dependencies": [
     {
       "id": "onnxruntime",

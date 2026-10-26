@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
@@ -47,7 +48,11 @@ type vaultFiles struct {
 }
 
 func (f vaultFiles) ReadFile(ctx context.Context, vault domain.VaultID, path string) ([]byte, error) {
-	raw, _, err := f.vault.With(vault).Read(ctx, path)
+	reader := f.vault
+	if vault != "" {
+		reader = reader.With(vault)
+	}
+	raw, _, err := reader.Read(ctx, path)
 	return raw, err
 }
 
@@ -122,11 +127,26 @@ func Mount(s *server.Server, hosted Host, cfg engine.Config, isMock bool) {
 	s.SetUpdateConfig(model.updateConfig)
 	s.Register(host.NewTextProviderHandler(provider{stores: hosted.Store, transcriber: transcriber}, s.HandlerOptions()...))
 	s.Register(numenv1connect.NewTranscriptServiceHandler(transcriptServer{stores: hosted.Store, texts: hosted.Texts}, s.HandlerOptions()...))
+	commands := command.New()
+	// The registry is new, so the one id cannot be added twice.
+	_ = commands.Add("transcribe", newTranscribeCommand(transcriber))
+	command.Mount(s, commands)
 	s.OnClose(func() {
 		transcriber.Close()
 		// The plugin is stopping, and a model that will not close leaves nothing to retry.
 		_ = model.close()
 	})
+}
+
+// newTranscribeCommand transcribes the recording a person named, in the vault the host shows, and
+// waits for it.
+func newTranscribeCommand(transcriber *Transcriber) command.Run {
+	return func(ctx context.Context, req command.Request) (command.Result, error) {
+		if err := transcriber.Transcribe(ctx, "", req.Path); err != nil {
+			return command.Result{}, err
+		}
+		return command.Result{Message: "transcribed " + req.Path}, nil
+	}
 }
 
 // MountFromEnv mounts the plugin over the host the process was started for.

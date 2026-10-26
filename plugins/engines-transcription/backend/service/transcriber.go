@@ -73,24 +73,54 @@ func getTaskID(path string) string { return "transcription:" + path }
 // Start begins transcribing a recording and returns once the task is shown. A recording already
 // being transcribed is left to the run that has it.
 func (t *Transcriber) Start(ctx context.Context, vault domain.VaultID, path string) error {
-	key := string(vault) + "\x00" + path
-	t.mu.Lock()
-	if t.running[key] {
-		t.mu.Unlock()
+	key, isClaimed := t.claim(vault, path)
+	if !isClaimed {
 		return nil
 	}
-	t.running[key] = true
-	t.mu.Unlock()
-
 	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
 		t.clearRunning(key)
 		return err
 	}
 	t.wg.Go(func() {
 		defer t.clearRunning(key)
-		t.transcribe(t.ctx, vault, path)
+		_ = t.transcribe(t.ctx, vault, path)
 	})
 	return nil
+}
+
+// errAlreadyTranscribing is a recording another run is transcribing.
+var errAlreadyTranscribing = errors.New("the recording is already being transcribed")
+
+// Transcribe hears a recording and returns once its transcript is written down, with the error the
+// transcription stopped on. It ends when ctx ends or the plugin stops.
+func (t *Transcriber) Transcribe(ctx context.Context, vault domain.VaultID, path string) error {
+	key, isClaimed := t.claim(vault, path)
+	if !isClaimed {
+		return fmt.Errorf("%s: %w", path, errAlreadyTranscribing)
+	}
+	defer t.clearRunning(key)
+	t.wg.Add(1)
+	defer t.wg.Done()
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	defer context.AfterFunc(t.ctx, cancel)() //nolint:contextcheck // the plugin stopping ends the command too
+
+	if err := t.queue.ReportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, IsUserStarted: true}); err != nil {
+		return err
+	}
+	return t.transcribe(ctx, vault, path)
+}
+
+// claim marks the recording as being transcribed, and is false where a run already has it.
+func (t *Transcriber) claim(vault domain.VaultID, path string) (string, bool) {
+	key := string(vault) + "\x00" + path
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	if t.running[key] {
+		return key, false
+	}
+	t.running[key] = true
+	return key, true
 }
 
 func (t *Transcriber) clearRunning(key string) {
@@ -101,7 +131,7 @@ func (t *Transcriber) clearRunning(key string) {
 
 // transcribe is one recording heard and reported. A failure stays in the list of tasks under the
 // recording until the next run of it.
-func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string) {
+func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path string) error {
 	err := t.run(ctx, vault, path)
 	switch {
 	case err == nil, errors.Is(err, context.Canceled):
@@ -109,6 +139,7 @@ func (t *Transcriber) transcribe(ctx context.Context, vault domain.VaultID, path
 	default:
 		t.reportTask(ctx, host.Task{ID: getTaskID(path), Title: taskTranscribing, About: path, Error: err.Error(), IsUserStarted: true})
 	}
+	return err
 }
 
 // job is the state of one recording being heard.
@@ -127,9 +158,13 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return fmt.Errorf("read %s: %w", path, err)
 	}
 	fileHash := domain.HashContent(raw)
+	stores := t.stores
+	if vault != "" {
+		stores = stores.With(vault)
+	}
 	j := &job{
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
-		store: transcripts{store: t.stores.With(vault)},
+		store: transcripts{store: stores},
 	}
 	if isWhole, err := j.store.hasWhole(ctx, j.key); err != nil || isWhole {
 		if err != nil {

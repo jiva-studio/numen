@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
@@ -326,5 +327,32 @@ func TestDeleteTextRemovesStoreFiles(t *testing.T) {
 	}
 	if _, err := s.provider.GetText(t.Context(), host.TextRequest{Vault: s.vault.Vault().ID, Path: lecture, Key: version.Key}); !errors.Is(err, host.ErrNotExist) {
 		t.Errorf("a deleted text was read with %v", err)
+	}
+}
+
+func TestTranscribeCommandWaitsForTranscript(t *testing.T) {
+	s := newScene(t)
+	run := newTranscribeCommand(s.transcriber)
+
+	res, err := run(t.Context(), command.Request{Command: "transcribe", Path: lecture})
+	if err != nil || res.Message != "transcribed "+lecture {
+		t.Fatalf("answered %+v (%v)", res, err)
+	}
+	if _, text := s.readLive(t); text != "first words\nsecond words" {
+		t.Errorf("the version reads %q once the command answered", text)
+	}
+	if tasks := s.queue.ListTasks(); len(tasks) != 0 {
+		t.Errorf("the tasks %+v are still shown", tasks)
+	}
+}
+
+func TestTranscribeCommandReportsUnopenableRecording(t *testing.T) {
+	s := newScene(t)
+	s.model.isBroken = true
+
+	_, err := newTranscribeCommand(s.transcriber)(t.Context(), command.Request{Command: "transcribe", Path: lecture})
+
+	if err == nil || !strings.Contains(err.Error(), "cannot be opened") {
+		t.Errorf("a recording that cannot be opened was answered %v", err)
 	}
 }
