@@ -20,15 +20,11 @@ export { NumberField } from './shared/ui/number-field'
 
 export { Switch } from './shared/ui/switch'
 
-/** An hour and a minute of the day, typed on the clock the machine draws. */
-export { TimeField } from './shared/ui/time-field'
-
 /** One value along a track, moved by a handle. */
 export { Slider } from './shared/ui/slider'
 
 /** Two to four choices side by side, one of them chosen. */
 export { SegmentedControl } from './shared/ui/segmented'
-export type { SegmentedChoice } from './shared/ui/segmented'
 
 /** One choice out of a list, taken from a menu the machine draws. */
 export { Select } from './shared/ui/select'
@@ -53,8 +49,7 @@ export { optionsForType, useTypeSize } from './features/plex'
 export { Editor } from './features/editor'
 /** A time against every line of an editor, and the line being said now. */
 export { createTimeGutter } from './features/editor'
-export { createWikilinkCompletion } from './features/editor'
-export type { WikilinkOption, WikilinkCompletionOptions, Extension } from './features/editor'
+export type { Extension } from './features/editor'
 
 /** A moment of a recording as a player writes one. */
 export { clock } from './shared/lib/time/duration'
@@ -63,13 +58,13 @@ export { clock } from './shared/lib/time/duration'
 export { createFollower } from './shared/lib/async/stream'
 
 export { Spinner } from './shared/ui/spinner'
-export { LoadingOverlay, Waiting } from './shared/ui/waiting'
+export { Waiting } from './shared/ui/waiting'
 export { Skeleton } from './shared/ui/skeleton'
 
 export type { Turn } from './features/thread'
 export { useConversation } from './features/thread'
 export type { Conversation } from './features/thread'
-export type { AgentPort, AgentQuery, AgentStep } from './features/thread'
+export type { AgentPort, AgentStep } from './features/thread'
 
 /** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
 export { isNoteAddress, getWikilinks } from './shared/lib/text/address'
@@ -104,7 +99,7 @@ export { onNextFrame } from './shared/lib/time/clock'
 export { cn } from './shared/lib/dom/classes'
 
 export { WorkspaceLayout } from './features/workspace'
-export { closeTab, openTab, openTabBeside, type OpenBesidePlacement } from './features/workspace'
+export { closeTab, openTab, openTabBeside } from './features/workspace'
 
 /** For arranging without drawing, or reading a gesture without this renderer. */
 export { branch, pane } from './features/workspace'
@@ -116,15 +111,14 @@ export type { Row, RowMarker } from './features/tree'
 
 export { byLongPress } from './features/plex'
 export { byDoubleTap } from './features/plex'
-export type { PlexHeading, PlexPending } from './features/plex'
+export type { PlexHeading } from './features/plex'
 export type { EdgeArrow, PlexEdge } from './features/plex'
 export type { PlexNeighbourhood } from './features/plex'
 export type { PlexNode, Position } from './features/plex'
 export type { PlexRelation } from './features/plex'
 export type { PlexDestination } from './features/plex'
-export { createThreadPath } from './features/plex'
 
-export type { AgentModelOption, ReasoningLevelOption } from './features/message-composer'
+export type { AgentModelOption } from './features/message-composer'
 
 export { StatusBar } from './features/status-bar'
-export type { StatusBarTask, TaskState } from './features/status-bar'
+export type { StatusBarTask } from './features/status-bar'
