@@ -1,10 +1,11 @@
 /**
  * The host the shell's plugins are activated in: a context for each plugin, the tab kinds they
  * register, the views they declare for each other and the notices they show. The shell draws one
- * tab, the main-pane kind of the lowest order, and one list of notices; every other registration
- * has nothing in this window to land in.
+ * tab, of the main-pane kind of the lowest order, opened on the vault a person chose; one list of
+ * notices; and the views declared for the list of vaults. Every other registration has nothing in
+ * this window to land in.
  */
-import { computed, shallowRef } from 'vue'
+import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
 import type {
   Disposable,
   NoticeHost,
@@ -22,6 +23,15 @@ export const TARGET = 'desktop.flashcards'
 export interface PluginView {
   readonly pluginId: string
   readonly registration: TabKindRegistration
+}
+
+/** The one tab the window draws: a kind opened on a vault, and what the kind made of it. */
+export interface WindowTab {
+  readonly id: string
+  readonly vault: string
+  readonly view: PluginView
+  readonly state: unknown
+  readonly scope: EffectScope
 }
 
 const NOTHING: Disposable = { dispose: () => {} }
@@ -44,11 +54,55 @@ export const createPluginNotices = (queue: NoticeQueue, pluginId: string): Notic
     ),
 })
 
+/** The window's one tab: opened on a vault over the front kind, and closed back to the vaults. */
+function createWindowTab(front: () => PluginView | null) {
+  const tab = shallowRef<WindowTab | null>(null)
+  let tabCount = 0
+
+  /** The tab closed, by its identity, or whichever is open where none is named. */
+  const closeTab = (id?: string) => {
+    const one = tab.value
+    if (!one || (id !== undefined && one.id !== id)) return
+    tab.value = null
+    one.view.registration.onDestroy?.(one.state, one.id)
+    one.scope.stop()
+  }
+
+  /** The front kind opened on a vault, in a scope of its own the kind's state lives in. */
+  const openTab = (vault: string) => {
+    const view = front()
+    if (!view) return
+    closeTab()
+    tabCount += 1
+    const id = `${view.registration.kind}#${tabCount}`
+    const scope = effectScope(true)
+    try {
+      const state = scope.run(() => view.registration.open?.(vault, id))
+      tab.value = { id, vault, view, state, scope }
+    } catch (error) {
+      scope.stop()
+      throw error
+    }
+  }
+
+  return { tab, openTab, closeTab }
+}
+
 export function createShellHost() {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
   const notices = createNoticeQueue()
+
+  /** The view the window draws, and nothing while no plugin offers one. */
+  const front = computed<PluginView | null>(() => {
+    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
+    mainViews.sort(
+      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
+    )
+    return mainViews[0] ?? null
+  })
+  const { tab, openTab, closeTab } = createWindowTab(() => front.value)
 
   const addView = (view: PluginView): Disposable => {
     views.value = [...views.value, view]
@@ -77,6 +131,7 @@ export function createShellHost() {
         add(view)
         return view
       },
+      closeTab: (id) => closeTab(id),
       getSetting: () => undefined,
       onSettingChange: () => NOTHING,
       onVaultChange: () => NOTHING,
@@ -91,6 +146,7 @@ export function createShellHost() {
   }
 
   const disposePlugin = (pluginId: string) => {
+    if (tab.value?.view.pluginId === pluginId) closeTab()
     for (const one of contexts.get(pluginId)?.subscriptions.splice(0) ?? []) one.dispose()
     contexts.delete(pluginId)
     views.value = views.value.filter((one) => one.pluginId !== pluginId)
@@ -105,14 +161,14 @@ export function createShellHost() {
     },
   }
 
-  /** The view the window draws, and nothing while no plugin offers one. */
-  const front = computed<PluginView | null>(() => {
-    const mainViews = views.value.filter((one) => one.registration.placement?.pane === 'main')
-    mainViews.sort(
-      (a, b) => (a.registration.placement?.order ?? 0) - (b.registration.placement?.order ?? 0),
-    )
-    return mainViews[0] ?? null
-  })
-
-  return { host, front, notices }
+  return {
+    host,
+    front,
+    tab,
+    openTab,
+    closeTab,
+    notices,
+    /** A view a plugin declares, drawn into an element of the window itself. */
+    mountView: declaredViews.mountView,
+  }
 }

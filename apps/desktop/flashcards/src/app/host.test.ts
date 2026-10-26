@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { defineComponent, h } from 'vue'
-import { CONVERSATION } from '@numen/plugin-sdk'
+import { defineComponent, h, onScopeDispose } from 'vue'
+import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-sdk'
 import { createShellHost, TARGET } from './host'
 
 const view = (kind: string, order?: number) => ({
@@ -109,5 +109,125 @@ describe('createShellHost', () => {
     host.disposePlugin('md.numen.example')
 
     expect(notices.notices.value.map((one) => one.text)).toEqual(['Drawn.'])
+  })
+})
+
+describe('the tab of the window', () => {
+  /** A kind that opens on a vault, keeping what it was opened on and when it was let go. */
+  const createKind = (order = 0) => {
+    const released: string[] = []
+    const destroyed: string[] = []
+    const registration = {
+      kind: 'review',
+      component: {},
+      placement: { pane: 'main' as const, order },
+      open: (vault: string, id: string) => {
+        onScopeDispose(() => released.push(id))
+        return { vault, id }
+      },
+      onDestroy: (_: unknown, id: string) => destroyed.push(id),
+      onKeyPress: (_: unknown, event: KeyboardEvent) => event.key === 'Escape',
+    }
+    return { registration, released, destroyed }
+  }
+
+  it('opens nothing while no plugin offers a view', () => {
+    const { tab, openTab } = createShellHost()
+
+    openTab('roots')
+
+    expect(tab.value).toBeNull()
+  })
+
+  it('opens the front kind on the vault chosen, in a scope of its own', () => {
+    const { host, tab, openTab } = createShellHost()
+    const { registration } = createKind()
+    host.createContext('md.numen.cards').registerTabKind(registration)
+
+    openTab('roots')
+
+    expect(tab.value?.vault).toBe('roots')
+    expect(tab.value?.view.pluginId).toBe('md.numen.cards')
+    expect(tab.value?.state).toStrictEqual({ vault: 'roots', id: tab.value?.id })
+  })
+
+  it('closes the tab a plugin names, which takes the window back to its vaults', () => {
+    const { host, tab, openTab } = createShellHost()
+    const { registration, released, destroyed } = createKind()
+    const context = host.createContext('md.numen.cards')
+    context.registerTabKind(registration)
+    openTab('roots')
+    const id = tab.value!.id
+
+    context.closeTab?.('another')
+    expect(tab.value?.id).toBe(id)
+
+    context.closeTab?.(id)
+    expect(tab.value).toBeNull()
+    expect(released).toStrictEqual([id])
+    expect(destroyed).toStrictEqual([id])
+  })
+
+  it('lets go of the open tab before it opens another', () => {
+    const { host, tab, openTab } = createShellHost()
+    const { registration, released } = createKind()
+    host.createContext('md.numen.cards').registerTabKind(registration)
+
+    openTab('roots')
+    const first = tab.value!.id
+    openTab('words')
+
+    expect(released).toStrictEqual([first])
+    expect(tab.value?.vault).toBe('words')
+    expect(tab.value?.id).not.toBe(first)
+  })
+
+  it('closes the tab of a plugin that is disposed, and of no other', () => {
+    const { host, tab, openTab } = createShellHost()
+    host.createContext('md.numen.cards').registerTabKind(createKind().registration)
+    host.createContext('md.numen.other')
+    openTab('roots')
+
+    host.disposePlugin('md.numen.other')
+    expect(tab.value).not.toBeNull()
+
+    host.disposePlugin('md.numen.cards')
+    expect(tab.value).toBeNull()
+  })
+
+  it('opens no tab when the kind fails to open, and lets go of what it began', () => {
+    const { host, tab, openTab } = createShellHost()
+    const released: string[] = []
+    host.createContext('md.numen.cards').registerTabKind({
+      kind: 'review',
+      component: {},
+      placement: { pane: 'main', order: 0 },
+      open: () => {
+        onScopeDispose(() => released.push('scope'))
+        throw new Error('the vault is gone')
+      },
+    })
+
+    expect(() => openTab('roots')).toThrow('the vault is gone')
+    expect(tab.value).toBeNull()
+    expect(released).toStrictEqual(['scope'])
+  })
+
+  it("draws a view a plugin declares into the window's own element", () => {
+    const { host, mountView } = createShellHost()
+    host.createContext('md.numen.cards').registerView({
+      capability: VAULT_SUMMARY,
+      component: defineComponent({
+        props: { context: { type: Object, required: true } },
+        setup: (props) => () => h('b', (props.context as { vault: string }).vault),
+      }),
+    })
+    const row = document.createElement('span')
+
+    const view = mountView(VAULT_SUMMARY, row, { vault: 'roots' })
+    expect(row.textContent).toBe('roots')
+
+    view.dispose()
+    expect(row.textContent).toBe('')
   })
 })

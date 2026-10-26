@@ -32,3 +32,13 @@ export interface ConversationContext {
   // Why nothing can be asked, empty while something can. The view shows it where the answers stand.
   readonly getUnreachable?: () => string
 }
+
+// VAULT_SUMMARY is the capability of a view drawn beside a vault on the list a window offers to
+// choose from, such as what the vault owes today. A window mounts one for each vault on its list.
+export const VAULT_SUMMARY = 'vault-summary'
+
+// VaultSummaryContext is what a window passes the vault summary view it mounts.
+export interface VaultSummaryContext {
+  // The identity of the vault the row stands for.
+  readonly vault: string
+}

@@ -5,7 +5,13 @@ import { useDeckTabs } from './deck/model/useDeckTabs'
 import { useStencilTabs } from './stencil/kind'
 import { usePresetTab } from './preset/kind'
 import { WORDS as presetWords } from './preset/words'
-import { createReviewKind, FLASHCARDS_TARGET } from './review'
+import {
+  createNotices,
+  createReviewKind,
+  createVaultCounts,
+  createVaultSummaryView,
+  FLASHCARDS_TARGET,
+} from './review'
 
 export { DECK } from './deck/kind'
 export { STENCIL } from './stencil/kind'
@@ -24,13 +30,20 @@ export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
   if (context.target === FLASHCARDS_TARGET) {
-    if (!context.notices)
-      throw new Error('the review needs the notices of the window it is drawn in')
-    const notices = context.notices
+    const { notices, closeTab } = context
+    if (!notices || !closeTab) {
+      throw new Error('the review needs the notices of the window it is drawn in and its tabs')
+    }
+    const counts = createVaultCounts({ reportError: createNotices(notices).reportError })
+    context.subscriptions.push({ dispose: counts.dispose })
+    context.registerView(createVaultSummaryView(counts))
     context.registerTabKind(
-      createReviewKind(notices, (capability, element, view) =>
-        context.mountView(capability, element, view),
-      ),
+      createReviewKind({
+        counts,
+        notices,
+        mountView: (capability, element, view) => context.mountView(capability, element, view),
+        closeTab: (id) => closeTab(id),
+      }),
     )
     return
   }

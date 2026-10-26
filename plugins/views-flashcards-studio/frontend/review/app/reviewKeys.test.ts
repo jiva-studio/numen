@@ -4,8 +4,8 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 
-import { createWindowKeys } from './windowKeys'
-import type { WindowKeysDeps, WindowScreen } from './windowKeys'
+import { createReviewKeys } from './reviewKeys'
+import type { ReviewKeysDeps, ReviewScreen } from './reviewKeys'
 import type { VaultCardsDue } from '../entities/vault'
 
 /** One keystroke, as the window meets it. */
@@ -38,18 +38,16 @@ const createVault = (more: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
 })
 
 const createKeys = (
-  screen: WindowScreen,
+  screen: ReviewScreen,
   vault: VaultCardsDue,
-  more: Partial<WindowKeysDeps> = {},
+  more: Partial<ReviewKeysDeps> = {},
 ) => {
-  const deps: WindowKeysDeps = {
+  const deps: ReviewKeysDeps = {
     getScreen: () => screen,
-    getVaults: () => [vault],
     getChosenVault: () => vault,
     getPresetsByDeck: () => new Map(),
     isShown: () => false,
     getShowing: () => 'here',
-    choose: vi.fn(),
     start: vi.fn(),
     show: vi.fn(),
     answer: vi.fn(),
@@ -63,20 +61,8 @@ const createKeys = (
     closeNotes: vi.fn(),
     ...more,
   }
-  return { ...createWindowKeys(deps), deps }
+  return { ...createReviewKeys(deps), deps }
 }
-
-describe('the keys of the vaults screen', () => {
-  it('opens the vault a letter remains at, and keeps the letter from the page', () => {
-    const { onKeyDown, deps } = createKeys('vaults', createVault())
-    const press = createPress('a')
-
-    onKeyDown(press)
-
-    expect(deps.choose).toHaveBeenCalledWith('garden')
-    expect(press.preventDefault).toHaveBeenCalled()
-  })
-})
 
 describe('the keys of the decks screen', () => {
   it('opens vault with only new cards and consumes key event', () => {
@@ -173,5 +159,31 @@ describe('the keys of the session screen', () => {
     expect(deps.closeNotes).toHaveBeenCalled()
     expect(deps.closeAgent).not.toHaveBeenCalled()
     expect(deps.leave).not.toHaveBeenCalled()
+  })
+})
+
+describe('the keys of the decks screen, before the vault is counted', () => {
+  it('pick nothing, and are left to the page', () => {
+    const { onKeyDown, deps } = createKeys('decks', createVault(), { getChosenVault: () => null })
+    const press = new KeyboardEvent('keydown', { key: 'Enter', cancelable: true })
+
+    expect(onKeyDown(press)).toBe(false)
+    expect(deps.start).not.toHaveBeenCalled()
+  })
+})
+
+describe('the answer a key gets', () => {
+  it('is that the page is kept from a key the review acts on', () => {
+    const { onKeyDown, deps } = createKeys('decks', createVault())
+    const press = new KeyboardEvent('keydown', { key: 'Escape', cancelable: true })
+
+    expect(onKeyDown(press)).toBe(true)
+    expect(deps.goToVaults).toHaveBeenCalledOnce()
+  })
+
+  it('is that the page keeps a key the review leaves to it', () => {
+    const { onKeyDown } = createKeys('session', createVault(), { isShown: () => true })
+
+    expect(onKeyDown(new KeyboardEvent('keydown', { key: '3', cancelable: true }))).toBe(false)
   })
 })

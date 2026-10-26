@@ -1,2 +1,2 @@
-/** The vaults screen: every vault the installation holds, and what each owes. */
-export { default as Vaults } from './Vaults.vue'
+/** What a vault owes today, drawn beside it on the window's list of vaults. */
+export { default as VaultSummary } from './VaultSummary.vue'

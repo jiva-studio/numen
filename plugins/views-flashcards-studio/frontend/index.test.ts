@@ -5,7 +5,8 @@ import {
   createMockPluginContext,
   createMockTabWindow,
 } from '@numen/plugin-sdk/testing'
-import type { WorkspaceHost } from '@numen/plugin-sdk'
+import { VAULT_SUMMARY, type WorkspaceHost } from '@numen/plugin-sdk'
+import { effectScope } from 'vue'
 import plugin, { activate, DECK, PRESET, REVIEW, STENCIL } from './index'
 import { cards, presets } from './cards'
 
@@ -31,22 +32,56 @@ const createContext = () => {
 }
 
 describe('flashcards-studio plugin', () => {
-  it('draws only the review in the window of the flashcards target', () => {
+  it('draws only the review and the summary of each vault in the window of the flashcards target', () => {
     const ctx = createMockPluginContext({
       target: 'desktop.flashcards',
       notices: createMockNoticeHost(),
+      closeTab: vi.fn(),
     })
     activate(ctx)
 
     const kinds = ctx.getRegisteredTabKinds()
     expect(kinds.map((one) => one.kind)).toStrictEqual([REVIEW])
     expect(kinds[0]?.placement).toStrictEqual({ pane: 'main', order: 0 })
+    expect(typeof kinds[0]?.open).toBe('function')
+    expect(typeof kinds[0]?.onKeyPress).toBe('function')
+    expect(ctx.getRegisteredViews().map((one) => one.capability)).toStrictEqual([VAULT_SUMMARY])
   })
 
   it('refuses to draw the review in a window that offers no notices', () => {
-    const ctx = createMockPluginContext({ target: 'desktop.flashcards' })
+    const ctx = createMockPluginContext({ target: 'desktop.flashcards', closeTab: vi.fn() })
 
     expect(() => activate(ctx)).toThrow(/notices/)
+  })
+
+  it('refuses to draw the review in a window that cannot close its tab', () => {
+    const ctx = createMockPluginContext({
+      target: 'desktop.flashcards',
+      notices: createMockNoticeHost(),
+    })
+
+    expect(() => activate(ctx)).toThrow(/tabs/)
+  })
+
+  it('takes the window back to its vaults by closing the review tab', async () => {
+    const closeTab = vi.fn()
+    const ctx = createMockPluginContext({
+      target: 'desktop.flashcards',
+      notices: createMockNoticeHost(),
+      closeTab,
+    })
+    activate(ctx)
+    const kind = ctx.getRegisteredTabKinds()[0]!
+    const scope = effectScope()
+    const state = scope.run(() => kind.open!('roots', 'tab-1')) as {
+      decks: { goToVaults: () => void }
+    }
+
+    state.decks.goToVaults()
+
+    expect(closeTab).toHaveBeenCalledExactlyOnceWith('tab-1')
+    scope.stop()
+    ctx.dispose()
   })
 
   it('registers the deck, stencil and preset tab kinds upon activation', () => {

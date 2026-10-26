@@ -21,6 +21,10 @@ Each kind registers through `registerTabKind` with the hooks the window asks of 
 
 The open decks and stencils are `FileBuffers` handed to `context.buffers.track`, so the window writes them out when it quits and puts a file that moved under a tab to the person. The presets' pending writes go through `context.buffers.addFlushHandler`. Messages are written through `context.workspace.getMessageWriter`, and the review day is `context.workspace.getToday`.
 
+## The review in the flashcards window
+
+In the window of the `desktop.flashcards` target the plugin registers one tab kind, `flashcards.review`, and one view, `vault-summary`. The window lists the vaults and mounts the summary beside each one: what the vault owes today, or why it has no number. Choosing a vault opens the review tab on it: `open(vault, id)` makes the review of that vault (its decks, the session and the agent panel, which mounts the conversation another plugin declares through `mountView`), and `onKeyPress` takes the keys the window hands it while the tab is in front. Going back to the vaults is `context.closeTab(id)`. What the review says goes to `context.notices`. One count of every vault (`frontend/review/app/counts.ts`) serves both, started by the first that asks and ended when the plugin is disposed.
+
 ## Activation
 
 The plugin activates automatically on startup or when opening a deck, stencil, or review preset tab.

@@ -1,12 +1,10 @@
 /**
- * What a keystroke asks of the window, screen by screen.
+ * What a keystroke asks of the review, screen by screen.
  *
- * Each screen reads its own keys: the vaults screen opens the vault a letter
- * turns cards over and answers them. What a key means is the keyboard's answer;
- * what is done about it is the window's.
+ * The decks screen picks a deck by its letter, and the session turns cards
+ * over and answers them. What a key means is the keyboard's answer; what is
+ * done about it is the review's.
  */
-import { getVaultForKey } from '@numen/ui'
-
 import { getPickerKeyIntent, getSessionKeyIntent, shouldConsumeKey } from '../features/keyboard'
 import { canStart } from '../pages/decks'
 import type { Grade } from '../entities/card'
@@ -14,24 +12,20 @@ import type { VaultCardsDue } from '../entities/vault'
 import type { SessionKeyIntent } from '../features/keyboard'
 import type { Preset } from '../pages/decks'
 
-/** The screens the window relies on, in the order a person goes through them. */
-export type WindowScreen = 'vaults' | 'decks' | 'session'
+/** The screens of the review, in the order a person goes through them. */
+export type ReviewScreen = 'decks' | 'session'
 
-/** What the keys ask of the window: what it is showing, and what it can do. */
-export interface WindowKeysDeps {
+/** What the keys ask of the review: what it is showing, and what it can do. */
+export interface ReviewKeysDeps {
   /** Which screen is on. */
-  readonly getScreen: () => WindowScreen
-  /** The vaults, in the order they are drawn. */
-  readonly getVaults: () => readonly VaultCardsDue[]
-  /** The vault whose decks are open, and nothing before one is. */
+  readonly getScreen: () => ReviewScreen
+  /** The vault whose decks are open, and nothing before it is counted. */
   readonly getChosenVault: () => VaultCardsDue | null
   /** The preset each deck is scheduled by, by the path the deck is filed under. */
   readonly getPresetsByDeck: () => ReadonlyMap<string, Preset>
   /** Whether the answer is already showing. */
   readonly isShown: () => boolean
   readonly getShowing: () => 'reading' | 'here' | 'asking'
-  /** Into a vault. */
-  readonly choose: (vault: string) => void
   /** Sit down to one deck, or to the whole vault under an empty path. */
   readonly start: (deck: string) => void
   /** Turn the card over. */
@@ -42,7 +36,7 @@ export interface WindowKeysDeps {
   readonly takeBack: () => void
   /** Out of the session and back to the decks. */
   readonly leave: () => void
-  /** Back to the vaults. */
+  /** Out of the vault, back to the window's list of vaults. */
   readonly goToVaults: () => void
   /** The panel a card is asked about in, brought in or taken away. */
   readonly toggleAgent: () => void
@@ -56,16 +50,7 @@ export interface WindowKeysDeps {
   readonly closeNotes: () => void
 }
 
-const applyVaultKey = (press: KeyboardEvent, deps: WindowKeysDeps) => {
-  const vaults = deps.getVaults()
-  const vaultIndex = getVaultForKey(press, vaults.length)
-  const one = vaults[vaultIndex ?? -1]
-  if (!one?.isCounted) return
-  press.preventDefault()
-  deps.choose(one.vault)
-}
-
-const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: WindowKeysDeps) => {
+const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: ReviewKeysDeps) => {
   const request = getPickerKeyIntent(press, vault.decks.length)
   if (!request) return
   press.preventDefault()
@@ -87,7 +72,7 @@ const applyDeckKey = (press: KeyboardEvent, vault: VaultCardsDue, deps: WindowKe
 
 const applySessionIntent = (
   intent: SessionKeyIntent,
-  deps: WindowKeysDeps,
+  deps: ReviewKeysDeps,
   closeShownPanel: () => void,
 ) => {
   switch (intent.does) {
@@ -118,7 +103,7 @@ const applySessionIntent = (
   }
 }
 
-export const createWindowKeys = (deps: WindowKeysDeps) => {
+export const createReviewKeys = (deps: ReviewKeysDeps) => {
   const closeShownPanel = () => {
     if (deps.getShowing() === 'asking') deps.closeAgent()
     else deps.closeNotes()
@@ -135,14 +120,14 @@ export const createWindowKeys = (deps: WindowKeysDeps) => {
     applySessionIntent(request, deps, closeShownPanel)
   }
 
-  const onKeyDown = (press: KeyboardEvent) => {
-    const on = deps.getScreen()
-    if (on === 'vaults') return applyVaultKey(press, deps)
-    if (on === 'decks') {
+  /** A key pressed while the review is in front, answered with whether the page is kept from it. */
+  const onKeyDown = (press: KeyboardEvent): boolean => {
+    if (deps.getScreen() === 'session') onSessionKey(press)
+    else {
       const vault = deps.getChosenVault()
-      return vault ? applyDeckKey(press, vault, deps) : undefined
+      if (vault) applyDeckKey(press, vault, deps)
     }
-    onSessionKey(press)
+    return press.defaultPrevented
   }
 
   return { onKeyDown }

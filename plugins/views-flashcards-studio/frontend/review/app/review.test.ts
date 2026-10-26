@@ -1,15 +1,14 @@
 // @vitest-environment jsdom
 /**
- * A person who goes in and comes back out finds the window as they opened it.
+ * The review of one vault, as the window opens it and closes it.
  *
- * What a screen took up is declared beside the screen and release when the
- * screen is left. Nothing here names those holdings: it walks everything the
- * window hands out and compares the round trip against the opening. So a
- * collaborator left un-forgotten fails this whether or not anybody remembered
+ * What a screen took up is declared beside the screen and released when the
+ * screen is left. The round trip below names none of those holdings: it walks
+ * everything the review hands out and compares it against the opening. So a
+ * collaborator left un-forgotten fails it whether or not anybody remembered
  * to write a case for it.
  */
-import { mount } from '@vue/test-utils'
-import { defineComponent, h, isRef } from 'vue'
+import { effectScope, isRef } from 'vue'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createMockNoticeHost } from '@numen/plugin-sdk/testing'
 import { Code, ConnectError } from '@connectrpc/connect'
@@ -47,6 +46,9 @@ const wire = vi.hoisted(() => {
     reloads: createChannel(),
     /** Whether a count stays on its way until the window ends it. */
     isCountHeld: false,
+    /** Whether the count names the vault's own numbers, after the list. */
+    isVaultCounted: true,
+    agentCalls: [] as AbortSignal[],
     counts: [] as AbortSignal[],
     daysAsked: [] as { vault: string; from: string; to: string }[],
     presetsAsked: [] as unknown[],
@@ -73,7 +75,7 @@ const VAULT = {
   decks: [{ deck: 'decks/Suffixes.md', faces: 2, due: 2, new: 0, learned: 0, unbegun: 0 }],
   presets: [],
   unread: '',
-  reading: false,
+  isIndexing: false,
 }
 
 vi.mock('../shared/clients', async (original) => ({
@@ -83,7 +85,7 @@ vi.mock('../shared/clients', async (original) => ({
       const signal = how?.signal ?? new AbortController().signal
       wire.counts.push(signal)
       yield { day: '2026-04-02', vaults: [VAULT] }
-      yield { day: '', vaults: [], counted: VAULT }
+      if (wire.isVaultCounted) yield { day: '', vaults: [], counted: VAULT }
       if (!wire.isCountHeld) return
       await new Promise<never>((_, fail) => {
         signal.addEventListener('abort', () => fail(new Error('the count was ended')))
@@ -163,23 +165,62 @@ vi.mock('../shared/clients', async (original) => ({
       return {}
     },
   },
-  // Whether a card can be asked about is the agent's to answer, and the window
-  // asks it as it opens.
-  agentService: { getAgentState: () => wire.agent() },
-  windowService: { watchTasks: () => wire.waits() },
+  // Whether a card can be asked about is the agent's to answer, and the
+  // review asks it as it opens.
+  agentService: {
+    getAgentState: (_: unknown, how?: { signal?: AbortSignal }) => {
+      if (how?.signal) wire.agentCalls.push(how.signal)
+      return wire.agent()
+    },
+  },
 }))
 
-const { useWindow } = await import('./window')
+const { useReview } = await import('./review')
+const { createVaultCounts } = await import('./counts')
+const { WORDS } = await import('../pages/session')
+const { mountNothing } = await import('../shared/views')
 
-type Window = ReturnType<typeof useWindow>
+type Review = ReturnType<typeof useReview>
 
-/** The corner the window last opened says its notices in. */
+/** The corner the review last opened says its notices in. */
 let notices = createMockNoticeHost()
+
+/** What the review last opened asked of the window to go back to the vaults. */
+let goToVaults = vi.fn()
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
+/** What ends each review a test opened, and the counting under it. */
+const closers: (() => void)[] = []
+
+/** The review opened on the vault, with the counts in, as the window opens it. */
+const openReview = async ({ isPageDrawn = true } = {}) => {
+  notices = createMockNoticeHost()
+  goToVaults = vi.fn()
+  const counts = createVaultCounts({ reportError: vi.fn() })
+  const scope = effectScope()
+  const review = scope.run(() =>
+    useReview({ vault: 'roots', counts, notices, mountView: mountNothing, goToVaults }),
+  ) as Review
+  if (isPageDrawn) {
+    review.notesPage.value = { scrollPage: (back: boolean) => wire.scrolled.push(back) }
+  }
+  const close = () => scope.stop()
+  closers.push(close, counts.dispose)
+  await settle()
+  await settle()
+  return { review, close }
+}
+
+/** The review taken into the session over the vault's one deck. */
+const openSession = async () => {
+  const opened = await openReview()
+  await opened.review.decks.start('decks/Suffixes.md')
+  return opened.review
+}
+
 /**
- * Everything the window hands out, as plain values: a ref stands for what it
+ * Everything the review hands out, as plain values: a ref stands for what it
  * holds, and what cannot be compared — the functions — stands for nothing.
  */
 const shot = (value: unknown): unknown => {
@@ -193,48 +234,13 @@ const shot = (value: unknown): unknown => {
   return value
 }
 
-/** What the reading is drawn in, as far as the keys reach into it. */
-const Page = defineComponent({
-  setup(_, { expose }) {
-    expose({ scrollPage: (back: boolean) => wire.scrolled.push(back) })
-    return () => null
-  },
-})
-
-/** The window made, in a page, with the counts on the screen. */
-const openWindow = async ({ isPageDrawn = true } = {}) => {
-  notices = createMockNoticeHost()
-  let target: Window | null = null
-  const page = mount(
-    defineComponent({
-      setup() {
-        target = useWindow(notices)
-        return () => (isPageDrawn ? h(Page, { ref: 'page' }) : null)
-      },
-    }),
-  )
-  pages.push(page)
-  await settle()
-  await settle()
-  return target as unknown as Window
-}
-
-/** The window taken into the session over the vault's one deck. */
-const openSession = async () => {
-  const sessionWindow = await openWindow()
-  sessionWindow.vaults.choose('roots')
-  await settle()
-  await sessionWindow.decks.start('decks/Suffixes.md')
-  return sessionWindow
-}
-
-/** A key pressed anywhere in the window, as the page then holds it. */
-const press = async (key: string) => {
+/** A key pressed while the review is in front, as the window hands it over. */
+const press = async (review: Review, key: string) => {
   const event = new KeyboardEvent('keydown', { key, cancelable: true })
-  window.dispatchEvent(event)
+  const isKept = review.onKeyDown(event)
   await settle()
   await settle()
-  return event
+  return { event, isKept }
 }
 
 /** The screen and the page drawn at the given widths, in layout pixels. */
@@ -246,12 +252,12 @@ const setWidths = (screen: number, page: number) => {
   })
 }
 
-const pages: { unmount(): void }[] = []
-
 beforeEach(() => {
   wire.reloads = wire.createChannel()
   wire.isCountHeld = false
+  wire.isVaultCounted = true
   wire.counts.length = 0
+  wire.agentCalls.length = 0
   wire.daysAsked.length = 0
   wire.presetsAsked.length = 0
   wire.notesAsked.length = 0
@@ -265,76 +271,74 @@ beforeEach(() => {
 })
 
 afterEach(() => {
-  for (const page of pages.splice(0)) page.unmount()
+  for (const close of closers.splice(0)) close()
   Reflect.deleteProperty(window.screen, 'width')
   Reflect.deleteProperty(document.documentElement, 'clientWidth')
 })
 
-describe('a person who went in and came back out', () => {
-  it('finds the window as they opened it', async () => {
-    const window = await openWindow()
-    const asOpened = shot(window)
+describe('a person who sat down and came back to the decks', () => {
+  it('finds the review as it opened', async () => {
+    const { review } = await openReview()
+    const asOpened = shot(review)
 
-    window.vaults.choose('roots')
-    await settle()
-    await window.decks.start('decks/Suffixes.md')
-    window.session.toggleAgent()
-    window.session.toggleNotes()
-    window.session.state.show()
+    await review.decks.start('decks/Suffixes.md')
+    review.session.toggleAgent()
+    review.session.toggleNotes()
+    review.session.state.show()
     await settle()
     await settle()
 
-    await window.session.leave()
-    await window.decks.goToVaults()
+    await review.session.leave()
     await settle()
     await settle()
 
-    expect(shot(window)).toStrictEqual(asOpened)
+    expect(shot(review)).toStrictEqual(asOpened)
   })
 
   it('was holding something on the way', async () => {
-    const window = await openWindow()
-
-    window.vaults.choose('roots')
-    await settle()
-    await window.decks.start('decks/Suffixes.md')
-    window.session.toggleAgent()
-    window.session.toggleNotes()
+    const review = await openSession()
+    review.session.toggleAgent()
+    review.session.toggleNotes()
     await settle()
 
-    expect(window.on.value).toBe('session')
-    expect(window.session.state.card.value?.mark).toBe('mark-1')
-    expect(window.decks.reviewDays.streak.value).toBe(4)
-    expect(window.session.agentPanel.about.value).not.toBeNull()
-    expect(window.session.notesPanel.notes.value).toHaveLength(1)
+    expect(review.on.value).toBe('session')
+    expect(review.session.state.card.value?.mark).toBe('mark-1')
+    expect(review.decks.reviewDays.streak.value).toBe(4)
+    expect(review.session.agentPanel.about.value).not.toBeNull()
+    expect(review.session.notesPanel.notes.value).toHaveLength(1)
   })
 })
 
-describe('a vault chosen', () => {
-  it('ends the counting of the vaults', async () => {
+describe('a review opened on a vault', () => {
+  it('ends the counting of the vaults once its own is counted', async () => {
     wire.isCountHeld = true
-    const sessionWindow = await openWindow()
-    expect(wire.counts[0]!.aborted).toBe(false)
+    await openReview()
 
-    sessionWindow.vaults.choose('roots')
-
+    expect(wire.counts).toHaveLength(1)
     expect(wire.counts[0]!.aborted).toBe(true)
   })
 
   it('asks which preset schedules each of its decks', async () => {
-    const sessionWindow = await openWindow()
-    sessionWindow.vaults.choose('roots')
-    await settle()
+    await openReview()
 
     expect(wire.presetsAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
+  })
+
+  it('waits for its vault to be counted, and keeps the counting going until it is', async () => {
+    wire.isCountHeld = true
+    wire.isVaultCounted = false
+    const { review } = await openReview()
+
+    expect(review.vaultCount.value?.isCounted).toBe(false)
+    expect(wire.presetsAsked).toEqual([])
+    expect(wire.counts[0]!.aborted).toBe(false)
+    expect(wire.daysAsked.map((one) => one.vault)).toEqual(['roots'])
   })
 
   it('asks for the days the wider of the screen and the page would draw', async () => {
     const askDays = async (screen: number, page: number) => {
       setWidths(screen, page)
-      const sessionWindow = await openWindow()
-      sessionWindow.vaults.choose('roots')
-      await settle()
+      await openReview()
       const { from, to } = wire.daysAsked.at(-1)!
       return { from, to }
     }
@@ -344,29 +348,71 @@ describe('a vault chosen', () => {
     expect(await askDays(2000, 400)).toEqual(wideDays)
     expect(await askDays(400, 400)).not.toEqual(wideDays)
   })
+
+  it('goes back to the vaults counting them again', async () => {
+    const { review } = await openReview()
+    const counted = wire.counts.length
+
+    review.decks.goToVaults()
+    await settle()
+
+    expect(goToVaults).toHaveBeenCalledOnce()
+    expect(wire.counts).toHaveLength(counted + 1)
+  })
 })
 
-describe('a deck written underneath the window', () => {
-  it('reads the days of the open vault again, and of no vault while none is open', async () => {
-    const sessionWindow = await openWindow()
+describe('a deck written underneath the review', () => {
+  it('reads the days of its vault again, and nothing once the review is closed', async () => {
+    const { close } = await openReview()
 
-    wire.reloads.send({ reload: true })
-    await settle()
-    await settle()
-    expect(wire.daysAsked).toHaveLength(0)
-
-    sessionWindow.vaults.choose('roots')
-    await settle()
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
     expect(wire.daysAsked.map((one) => one.vault)).toEqual(['roots', 'roots'])
 
-    await sessionWindow.decks.goToVaults()
+    close()
     wire.reloads.send({ reload: true })
     await settle()
     await settle()
     expect(wire.daysAsked).toHaveLength(2)
+  })
+})
+
+describe('whether a card can be asked about', () => {
+  it('is asked once as the review opens, and the asking ends when it closes', async () => {
+    wire.agent = () => new Promise<never>(() => {})
+    const { close } = await openReview()
+    expect(wire.agentCalls).toHaveLength(1)
+    expect(wire.agentCalls[0]!.aborted).toBe(false)
+
+    close()
+
+    expect(wire.agentCalls[0]!.aborted).toBe(true)
+  })
+
+  it('is no, in the review own words, when the agent cannot be asked', async () => {
+    wire.agent = async () => {
+      throw new Error('the connection went')
+    }
+    const review = await openSession()
+    review.session.toggleAgent()
+
+    expect(review.session.agentPanel.open.value).toBe(false)
+    expect(notices.getShown()).toMatchObject([{ text: WORDS.unreachable, tone: 'caution' }])
+  })
+})
+
+describe('a review closed by the window', () => {
+  it('lets go of the session it was in', async () => {
+    const review = await openSession()
+    review.session.toggleAgent()
+    expect(review.session.agentPanel.about.value).not.toBeNull()
+
+    for (const close of closers.splice(0)) close()
+
+    expect(review.on.value).toBe('decks')
+    expect(review.session.state.card.value).toBeNull()
+    expect(review.session.agentPanel.about.value).toBeNull()
   })
 })
 
@@ -392,51 +438,49 @@ describe('a session sat down to', () => {
   })
 
   it('says nothing when it could act on everything', async () => {
-    const sessionWindow = await openSession()
+    const review = await openSession()
 
-    expect(sessionWindow.on.value).toBe('session')
+    expect(review.on.value).toBe('session')
     expect(notices.getShown()).toHaveLength(0)
   })
 
   it('reviews all preset decks and reports errors', async () => {
     wire.opened = { unwritten: ['decks/Suffixes.md'], skipped: 0 }
-    const sessionWindow = await openWindow()
-    sessionWindow.vaults.choose('roots')
+    const { review } = await openReview()
     await settle()
 
-    await sessionWindow.decks.startPreset('presets/Daily.md')
+    await review.decks.startPreset('presets/Daily.md')
 
-    expect(sessionWindow.on.value).toBe('session')
+    expect(review.on.value).toBe('session')
     expect(wire.sessionsAsked).toEqual([{ vault: 'roots', deck: '', preset: 'presets/Daily.md' }])
     expect(notices.getShown().map((one) => one.tone)).toEqual(['caution'])
   })
 
   it('stays on the decks when a preset’s session cannot be opened', async () => {
     wire.isStartRefused = true
-    const sessionWindow = await openWindow()
-    sessionWindow.vaults.choose('roots')
+    const { review } = await openReview()
     await settle()
 
-    await sessionWindow.decks.startPreset('presets/Daily.md')
+    await review.decks.startPreset('presets/Daily.md')
 
-    expect(sessionWindow.on.value).toBe('decks')
+    expect(review.on.value).toBe('decks')
     expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('ends the conversation with the card it was about', async () => {
-    const sessionWindow = await openSession()
-    sessionWindow.session.toggleAgent()
-    expect(sessionWindow.session.agentPanel.about.value).not.toBeNull()
+    const review = await openSession()
+    review.session.toggleAgent()
+    expect(review.session.agentPanel.about.value).not.toBeNull()
 
-    sessionWindow.session.state.show()
-    await sessionWindow.session.answerCard('good')
+    review.session.state.show()
+    await review.session.answerCard('good')
 
-    expect(sessionWindow.session.agentPanel.about.value).toBeNull()
-    expect(sessionWindow.session.agentPanel.open.value).toBe(false)
+    expect(review.session.agentPanel.about.value).toBeNull()
+    expect(review.session.agentPanel.open.value).toBe(false)
   })
 
   it('is left alone by a deck written underneath it', async () => {
-    const sessionWindow = await openSession()
+    const review = await openSession()
     const counted = wire.counts.length
     const daysRead = wire.daysAsked.length
 
@@ -444,22 +488,22 @@ describe('a session sat down to', () => {
     await settle()
     await settle()
 
-    expect(sessionWindow.on.value).toBe('session')
+    expect(review.on.value).toBe('session')
     expect(wire.counts).toHaveLength(counted)
     expect(wire.daysAsked).toHaveLength(daysRead)
   })
 
   it('stays on the decks when the session cannot be opened', async () => {
     wire.isStartRefused = true
-    const sessionWindow = await openSession()
+    const review = await openSession()
 
-    expect(sessionWindow.on.value).toBe('decks')
+    expect(review.on.value).toBe('decks')
     expect(notices.getShown().map((one) => one.tone)).toEqual(['alarm'])
   })
 
   it('reads the notes of the vault it is on', async () => {
-    const sessionWindow = await openSession()
-    sessionWindow.session.toggleNotes()
+    const review = await openSession()
+    review.session.toggleNotes()
     await settle()
 
     expect(wire.notesAsked).toEqual([{ vault: 'roots', deck: 'decks/Suffixes.md' }])
@@ -467,54 +511,53 @@ describe('a session sat down to', () => {
 
   it('lets the conversation in before the agent has returned whether it can be reached', async () => {
     wire.agent = () => new Promise<never>(() => {})
-    const sessionWindow = await openSession()
-    sessionWindow.session.toggleAgent()
+    const review = await openSession()
+    review.session.toggleAgent()
 
-    expect(sessionWindow.session.agentPanel.open.value).toBe(true)
+    expect(review.session.agentPanel.open.value).toBe(true)
     expect(notices.getShown()).toHaveLength(0)
   })
 
   it('keeps the conversation out when the agent cannot be reached, and says why', async () => {
     wire.agent = async () => ({ unreachable: 'no model is set up' })
-    const sessionWindow = await openSession()
-    sessionWindow.session.toggleAgent()
+    const review = await openSession()
+    review.session.toggleAgent()
 
-    expect(sessionWindow.session.agentPanel.open.value).toBe(false)
+    expect(review.session.agentPanel.open.value).toBe(false)
     expect(notices.getShown()).toMatchObject([{ text: 'no model is set up', tone: 'caution' }])
   })
 })
 
-describe('the keys of the window', () => {
+describe('the keys of the review', () => {
   it('turn the card over, answer it and take the answer back', async () => {
-    const sessionWindow = await openSession()
+    const review = await openSession()
 
-    expect((await press(' ')).defaultPrevented).toBe(true)
-    expect(sessionWindow.session.state.isAnswerShown.value).toBe(true)
+    expect((await press(review, ' ')).isKept).toBe(true)
+    expect(review.session.state.isAnswerShown.value).toBe(true)
 
     // With the answer showing, the space bar asks nothing of the card and is
     // left to the page.
-    expect((await press(' ')).defaultPrevented).toBe(false)
+    expect((await press(review, ' ')).isKept).toBe(false)
 
-    await press('3')
+    await press(review, '3')
     expect(wire.responses).toMatchObject([{ mark: 'mark-1' }])
 
-    await press('u')
+    await press(review, 'u')
     expect(wire.takenBack).toHaveLength(1)
-    expect(sessionWindow.session.state.card.value?.mark).toBe('mark-1')
+    expect(review.session.state.card.value?.mark).toBe('mark-1')
   })
 
   it('scroll nothing, and break nothing, while no reading is drawn', async () => {
-    const sessionWindow = await openWindow({ isPageDrawn: false })
-    sessionWindow.vaults.choose('roots')
+    const { review } = await openReview({ isPageDrawn: false })
     await settle()
-    await sessionWindow.decks.start('decks/Suffixes.md')
-    sessionWindow.session.toggleNotes()
+    await review.decks.start('decks/Suffixes.md')
+    review.session.toggleNotes()
     await settle()
     const faults: unknown[] = []
     const onFault = (event: ErrorEvent) => faults.push(event.error)
     window.addEventListener('error', onFault)
 
-    await press(' ')
+    await press(review, ' ')
     window.removeEventListener('error', onFault)
 
     expect(faults).toEqual([])
@@ -522,27 +565,27 @@ describe('the keys of the window', () => {
   })
 
   it('scroll the reading with the space bar while it is up', async () => {
-    const sessionWindow = await openSession()
-    sessionWindow.session.toggleNotes()
+    const review = await openSession()
+    review.session.toggleNotes()
     await settle()
 
-    await press(' ')
+    await press(review, ' ')
 
     expect(wire.scrolled).toEqual([false])
-    expect(sessionWindow.session.state.isAnswerShown.value).toBe(false)
+    expect(review.session.state.isAnswerShown.value).toBe(false)
   })
 
-  it('leave the session for the decks counted again, and the decks for the vaults', async () => {
-    const sessionWindow = await openSession()
+  it('leave the session for the decks counted again, and the decks for the vaults of the window', async () => {
+    const review = await openSession()
     const counted = wire.counts.length
     const daysRead = wire.daysAsked.length
 
-    await press('Escape')
-    expect(sessionWindow.on.value).toBe('decks')
+    await press(review, 'Escape')
+    expect(review.on.value).toBe('decks')
     expect(wire.counts).toHaveLength(counted + 1)
     expect(wire.daysAsked).toHaveLength(daysRead + 1)
 
-    await press('Escape')
-    expect(sessionWindow.on.value).toBe('vaults')
+    await press(review, 'Escape')
+    expect(goToVaults).toHaveBeenCalledOnce()
   })
 })
