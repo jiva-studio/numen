@@ -40,12 +40,12 @@ func TestARetriedPluginThatStartsIsAnsweredWithNoFailure(t *testing.T) {
 // A plugin that fails again is answered with its reason.
 func TestARetriedPluginThatFailsAgainIsAnsweredWithItsReason(t *testing.T) {
 	handler := newRetryHandler(t, func(context.Context, string) (*setting.PluginFailure, error) {
-		return &setting.PluginFailure{PluginID: "md.numen.sample", Reason: "The plugin did not finish starting in time."}, nil
+		return &setting.PluginFailure{PluginID: "md.numen.sample", Reason: "Timed out while starting"}, nil
 	})
 
 	answer, err := handler.RetryPlugin(t.Context(), connect.NewRequest(&v1.RetryPluginRequest{PluginId: "md.numen.sample"}))
 
-	if err != nil || answer.Msg.GetFailure() != "The plugin did not finish starting in time." {
+	if err != nil || answer.Msg.GetFailure() != "Timed out while starting" {
 		t.Fatalf("answered %v, %v", answer, err)
 	}
 }
@@ -76,16 +76,16 @@ func TestABuildWithoutSettingsServesNoRetry(t *testing.T) {
 	}
 }
 
-// The failure of a plugin travels to the window with its reason and its time, and a plugin that has not failed travels with none.
-func TestAFailedPluginTravelsWithItsReasonAndTime(t *testing.T) {
+// The failure of a plugin travels to the window with its reason, its detail and its time, and a plugin that has not failed travels with none.
+func TestAFailedPluginTravelsWithItsReasonDetailAndTime(t *testing.T) {
 	pos := time.UnixMilli(1_700_000_000_123)
 	infos := NewWirePluginInfos([]setting.PluginInfo{
-		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "The plugin did not finish starting in time.", At: pos}},
+		{ID: "md.numen.sample", Failure: &setting.PluginFailure{Reason: "Timed out while starting", Detail: "handshake timeout", At: pos}},
 		{ID: "md.numen.other"},
 	})
 
 	failure := infos[0].GetFailure()
-	if failure.GetReason() != "The plugin did not finish starting in time." || failure.GetFailedAtUnixMs() != pos.UnixMilli() {
+	if failure.GetReason() != "Timed out while starting" || failure.GetDetail() != "handshake timeout" || failure.GetFailedAtUnixMs() != pos.UnixMilli() {
 		t.Errorf("travelled as %v", failure)
 	}
 	if infos[1].GetFailure() != nil {

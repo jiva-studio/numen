@@ -15,9 +15,10 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
-// refuse draws what stopped the application, in a window.
+// failWithDialog shows what stopped the application, in a window.
 //
 // A person who opened numen from a dock has no terminal, and a message written
 // to one is a window that never appeared. Whatever this build could not do, it
@@ -52,29 +53,30 @@ func failWithDialog(cfg container.Config, why error) {
 	_ = app.Run()
 }
 
-// facts behind it, and what to do about it.
+// fatalReport is the start failure page: a heading, a one-line reason, the
+// paths involved, the next step, and the raw error behind a disclosure.
 type fatalReport struct {
 	Heading  string
 	Sentence string
 	Facts    []detail
 	Remedy   string
+	// Error is the underlying error text, shown on request. Empty where the
+	// sentence already says everything.
+	Error string
 }
 
 type detail struct{ Name, Content string }
 
-// The headings an error is drawn under. Each names the thing that could not be
-// opened, which is the index or the person's own settings file.
+// Page headings. Each names what failed: the index, the settings file, or the start itself.
 const (
-	openingTheIndex    = "numen cannot open its index"
-	readingTheSettings = "numen cannot read its settings"
-	startingAtAll      = "numen cannot start"
+	openingTheIndex    = "Numen can't open its index"
+	readingTheSettings = "Numen can't read its settings"
+	startingAtAll      = "Numen can't start"
 )
 
 const factSettings = "settings"
 
-// page is the rejection as one document. Everything it needs is inside it: a
-// build that could not open its own index cannot serve its own interface
-// either.
+// page is the report as one self-contained document; a build that failed to start cannot serve its own assets.
 func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	response := getFatalReport(cfg, why)
 
@@ -96,8 +98,7 @@ func (fatalReport) page(cfg container.Config, why error) ([]byte, error) {
 	return []byte(out.String()), nil
 }
 
-// getRefusal is the state the application is in, said in its own words: what it
-// could not open, what it found, and what a person can do about it.
+// getFatalReport maps a start error to the page: what failed, the paths involved, and the next step.
 func getFatalReport(cfg container.Config, why error) fatalReport {
 	var outside *settings.OutsideBounds
 	if errors.As(why, &outside) {
@@ -111,28 +112,38 @@ func getFatalReport(cfg container.Config, why error) fatalReport {
 		return getIndexFatalReport(cfg, coded.Code(), why)
 	}
 
+	var unknown *vault.UnknownError
+	if errors.As(why, &unknown) {
+		return fatalReport{
+			Heading:  startingAtAll,
+			Sentence: "Vault not found: " + unknown.Name,
+			Facts:    []detail{{"vault", unknown.Name}, {factSettings, getSettingsPath(cfg)}},
+			Remedy:   "Start Numen without -vault to choose a vault from the list.",
+		}
+	}
+
 	var syntax *json.SyntaxError
 	var typeErr *json.UnmarshalTypeError
 	if errors.As(why, &syntax) || errors.As(why, &typeErr) {
 		return fatalReport{
 			Heading:  readingTheSettings,
-			Sentence: "This settings file is not JSON, so numen cannot tell what it was asked for.",
-			Facts:    []detail{{factSettings, getSettingsPath(cfg)}, {"what was read", why.Error()}},
-			Remedy: "Put the file right, or move it aside: " +
-				"numen writes a new one holding what it is doing.",
+			Sentence: "The settings file is not valid JSON.",
+			Facts:    []detail{{factSettings, getSettingsPath(cfg)}},
+			Remedy:   "Fix the file, or move it aside and Numen creates a new one.",
+			Error:    why.Error(),
 		}
 	}
 
 	return fatalReport{
 		Heading:  startingAtAll,
-		Sentence: why.Error(),
+		Sentence: "An unexpected error stopped the start.",
 		Facts:    []detail{{"index", getIndexPath(cfg)}, {factSettings, getSettingsPath(cfg)}},
-		Remedy:   "Start numen again, and report what this window says if it stops here every time.",
+		Remedy:   "Start Numen again. If this page comes back, report the details below.",
+		Error:    why.Error(),
 	}
 }
 
-// getSizeRefusal is a number a size does not take, from the file or from the
-// command line.
+// getSizeFatalReport is a scale value out of range, from the file or the command line.
 func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) fatalReport {
 	far := fmt.Sprintf("%v to %v", outside.Least, outside.Most)
 	content := fmt.Sprint(outside.Number)
@@ -140,25 +151,25 @@ func getSizeFatalReport(cfg container.Config, outside *settings.OutsideBounds) f
 	if strings.HasPrefix(outside.At, "-") {
 		return fatalReport{
 			Heading:  startingAtAll,
-			Sentence: fmt.Sprintf("%s was given a number the size does not take.", outside.At),
+			Sentence: fmt.Sprintf("%s is out of range.", outside.At),
 			Facts: []detail{
-				{"on the command line", outside.At},
-				{"given", content},
-				{"as far as the size goes", far},
+				{"flag", outside.At},
+				{"value", content},
+				{"range", far},
 			},
 			Remedy: fmt.Sprintf("Give %s a number from %s, or leave it out.", outside.At, far),
 		}
 	}
 	return fatalReport{
 		Heading:  readingTheSettings,
-		Sentence: fmt.Sprintf("%s is a number the size does not take.", outside.At),
+		Sentence: fmt.Sprintf("%s is out of range.", outside.At),
 		Facts: []detail{
 			{factSettings, getSettingsPath(cfg)},
 			{"field", outside.At},
-			{"written", content},
-			{"as far as the size goes", far},
+			{"value", content},
+			{"range", far},
 		},
-		Remedy: fmt.Sprintf("Write a number from %s in %s, or take the field out to run at 1.",
+		Remedy: fmt.Sprintf("Write a number from %s in %s, or remove the field to use 1.",
 			far, outside.At),
 	}
 }
@@ -170,8 +181,7 @@ const (
 	cannotOpen   = 14
 )
 
-// getIndexRefusal is the index refusing to open, which is one fault for each
-// way a path can fail to be an index.
+// getIndexFatalReport is the index failing to open, one report per way a path can fail.
 func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport {
 	pos := getIndexPath(cfg)
 	response := fatalReport{Heading: openingTheIndex, Facts: []detail{{"index", pos}}}
@@ -183,20 +193,20 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 
 	switch {
 	case code == notADatabase:
-		response.Sentence = "This file is not a numen index."
-		response.Remedy = "Move it aside. The index is a cache: numen makes a new one " +
-			"and fills it from your vaults."
+		response.Sentence = "This file is not a Numen index."
+		response.Remedy = "Move it aside. The index is a cache; Numen rebuilds it from your vaults."
 	case code == cannotOpen && folder:
-		response.Sentence = "An index is a file, and this path is a folder."
+		response.Sentence = "The index path is a folder."
 		response.Remedy = "Point -index at a file, or move the folder out of the way."
 	case code == cannotOpen:
-		response.Sentence = "numen could neither open an index here nor make one."
+		response.Sentence = "The index can't be opened or created here."
 		response.Facts = append(response.Facts, detail{"folder", filepath.Dir(pos)})
-		response.Remedy = "Give yourself permission to write in the folder, " +
-			"or point -index somewhere you can write."
+		response.Remedy = "Allow writing in the folder (check its permission), " +
+			"or point -index at a writable path."
 	default:
-		response.Sentence = why.Error()
-		response.Remedy = "Point -index at another path, and report what this window says."
+		response.Sentence = "The index can't be opened."
+		response.Remedy = "Point -index at another path. If that fails too, report the details below."
+		response.Error = why.Error()
 	}
 	return response
 }
@@ -230,7 +240,7 @@ var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>numen</title>
+<title>Numen</title>
 <style>
   :root { color-scheme: light dark; }
   body {
@@ -245,6 +255,9 @@ var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
   dt { color: light-dark(#7b7f87, #8b9098); }
   dd { margin: 0; font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
   .do { margin-top: 2rem; font-weight: 600; }
+  details { margin-top: 1.5rem; color: light-dark(#7b7f87, #8b9098); }
+  summary { cursor: pointer; }
+  pre { margin: 0.5rem 0 0; font-family: ui-monospace, monospace; white-space: pre-wrap; overflow-wrap: anywhere; }
 </style>
 </head>
 <body>
@@ -257,6 +270,9 @@ var fatalPage = template.Must(template.New("fatal").Parse(`<!doctype html>
   </dl>
   {{- if .Remedy }}
   <p class="do">{{ .Remedy }}</p>
+  {{- end }}
+  {{- if .Error }}
+  <details><summary>Details</summary><pre>{{ .Error }}</pre></details>
   {{- end }}
 </body>
 </html>

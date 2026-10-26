@@ -95,6 +95,9 @@ func TestARetryThatFailsAgainContainsThePluginOffAtOnce(t *testing.T) {
 	if failure == nil || failure.Reason != lifecycle.DescribeFailure(errors.New("launch plugin md.numen.engines.ocr: exec format error")) {
 		t.Fatalf("failure = %+v, want the reason the start failed for", failure)
 	}
+	if failure.Detail != "launch plugin md.numen.engines.ocr: exec format error" {
+		t.Fatalf("failure detail = %q, want the launch error", failure.Detail)
+	}
 	if got := getFailure(t, host, failingPluginID); got == nil || got.Reason != failure.Reason {
 		t.Fatalf("listed failure = %+v, want %+v", got, failure)
 	}
@@ -141,9 +144,9 @@ func TestAFailureIsDescribedInWordsAPersonReads(t *testing.T) {
 		cause error
 		want  string
 	}{
-		{"an unsupported protocol", pluginport.ErrUnsupportedProtocol, "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."},
-		{"a handshake that never came", transport.ErrHandshakeTimeout, "The plugin did not finish starting in time."},
-		{"anything else", errors.New("exec format error"), "The plugin could not be started: exec format error"},
+		{"an unsupported protocol", pluginport.ErrUnsupportedProtocol, "Unsupported plugin protocol. Update the plugin or Numen"},
+		{"a handshake that never came", transport.ErrHandshakeTimeout, "Timed out while starting"},
+		{"anything else", errors.New("exec format error"), "Failed to start"},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

@@ -18,6 +18,7 @@ type (
 	GetVaultToShow = registry.GetVaultToShow
 	Find           = registry.Find
 	List           = registry.List
+	UnknownError   = registry.UnknownError
 )
 
 var (

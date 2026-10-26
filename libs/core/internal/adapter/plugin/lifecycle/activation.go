@@ -110,16 +110,16 @@ func (s *Supervisor) GetActivationFailure() (bool, error) {
 	return s.failed, s.failure
 }
 
-// DescribeFailure is why a plugin failed to start, in words a person reads.
+// DescribeFailure returns a short UI label for why a plugin failed to start. The error itself is the detail.
 func DescribeFailure(cause error) string {
 	switch {
 	case errors.Is(cause, pluginport.ErrUnsupportedProtocol):
-		return "The plugin speaks a plugin protocol version this Numen does not support. Update the plugin or Numen."
+		return "Unsupported plugin protocol. Update the plugin or Numen"
 	case errors.Is(cause, transport.ErrHandshakeTimeout):
-		return "The plugin did not finish starting in time."
+		return "Timed out while starting"
 	case errors.Is(cause, ErrMemoryExceeded):
-		return "The plugin was stopped because it exceeded its memory limit."
+		return "Exceeded its memory limit"
 	default:
-		return "The plugin could not be started: " + cause.Error()
+		return "Failed to start"
 	}
 }

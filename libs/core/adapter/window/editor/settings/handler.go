@@ -231,7 +231,7 @@ func newWirePluginFailure(failure *setting.PluginFailure) *v1.PluginFailure {
 	if failure == nil {
 		return nil
 	}
-	return &v1.PluginFailure{Reason: failure.Reason, FailedAtUnixMs: failure.At.UnixMilli()}
+	return &v1.PluginFailure{Reason: failure.Reason, Detail: failure.Detail, FailedAtUnixMs: failure.At.UnixMilli()}
 }
 
 // RetryPlugin starts a plugin the host suspends once more. A plugin that fails

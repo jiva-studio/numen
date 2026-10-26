@@ -2,6 +2,8 @@ package app
 
 import (
 	"errors"
+	"fmt"
+	"html"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index"
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
+	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
 // What stopped the application is said where a person is: in a window, with
@@ -25,11 +28,11 @@ func TestError_MessageContainsFound(t *testing.T) {
 	response := string(page)
 
 	for _, want := range []string{
-		readingTheSettings,        // what could not be read
-		"appearance.text_scale",   // which field
-		">4<",                     // what was written there
-		"as far as the size goes", // what it may be
-		"Write a number",          // what to do
+		html.EscapeString(readingTheSettings), // what could not be read
+		"appearance.text_scale",               // which field
+		">4<",                                 // what was written there
+		"range",                               // what it may be
+		"Write a number",                      // what to do
 	} {
 		if !strings.Contains(response, want) {
 			t.Errorf("the page does not say %q", want)
@@ -245,5 +248,36 @@ func TestSizeResponse_MatchingOffset(t *testing.T) {
 	line := getFatalReport(container.Config{}, settings.TextScaleBounds.Check("-text-scale", 4))
 	if !strings.Contains(line.Remedy, "-text-scale") {
 		t.Errorf("a size on the command line is answered with %q", line.Remedy)
+	}
+}
+
+// A vault named on the command line that the registry does not hold is reported by its name, without the Go error chain.
+func TestFatalReport_UnknownVault(t *testing.T) {
+	why := fmt.Errorf("open vault: %w", &vault.UnknownError{Name: "/home/someone/Notes"})
+	response := getFatalReport(container.Config{}, why)
+
+	if response.Heading != startingAtAll {
+		t.Errorf("heading = %q, want %q", response.Heading, startingAtAll)
+	}
+	if response.Sentence != "Vault not found: /home/someone/Notes" {
+		t.Errorf("sentence = %q", response.Sentence)
+	}
+	if !strings.Contains(response.Remedy, "-vault") {
+		t.Errorf("remedy = %q, want a way to choose another vault", response.Remedy)
+	}
+	if response.Error != "" {
+		t.Errorf("error = %q, want none", response.Error)
+	}
+}
+
+// An error with no specific report keeps its text out of the sentence and in the details.
+func TestFatalReport_UnknownErrorGoesToDetails(t *testing.T) {
+	response := getFatalReport(container.Config{}, errors.New("open thing: broken pipe"))
+
+	if strings.Contains(response.Sentence, "broken pipe") {
+		t.Errorf("sentence = %q, want no Go error text", response.Sentence)
+	}
+	if response.Error != "open thing: broken pipe" {
+		t.Errorf("error = %q, want the raw error", response.Error)
 	}
 }

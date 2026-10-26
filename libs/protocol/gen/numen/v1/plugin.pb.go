@@ -687,12 +687,14 @@ func (x *PluginInfo) GetFailure() *PluginFailure {
 // PluginFailure is why a plugin is suspended, and when it was.
 type PluginFailure struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The reason, in words a person reads.
+	// A short UI label for the failure, such as "Failed to start".
 	Reason string `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
 	// When the host gave the plugin up, in milliseconds since the Unix epoch.
 	FailedAtUnixMs int64 `protobuf:"varint,2,opt,name=failed_at_unix_ms,json=failedAtUnixMs,proto3" json:"failed_at_unix_ms,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	// The underlying error, shown on request.
+	Detail        string `protobuf:"bytes,3,opt,name=detail,proto3" json:"detail,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PluginFailure) Reset() {
@@ -737,6 +739,13 @@ func (x *PluginFailure) GetFailedAtUnixMs() int64 {
 		return x.FailedAtUnixMs
 	}
 	return 0
+}
+
+func (x *PluginFailure) GetDetail() string {
+	if x != nil {
+		return x.Detail
+	}
+	return ""
 }
 
 type GetPluginsRequest struct {
@@ -969,10 +978,11 @@ const file_numen_v1_plugin_proto_rawDesc = "" +
 	"\x0estored_secrets\x18\n" +
 	" \x03(\tR\rstoredSecrets\x12J\n" +
 	"\x12completion_consent\x18\f \x01(\x0e2\x1b.numen.v1.CompletionConsentR\x11completionConsent\x121\n" +
-	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailureJ\x04\b\v\x10\fR\x06models\"R\n" +
+	"\afailure\x18\r \x01(\v2\x17.numen.v1.PluginFailureR\afailureJ\x04\b\v\x10\fR\x06models\"j\n" +
 	"\rPluginFailure\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\x12)\n" +
-	"\x11failed_at_unix_ms\x18\x02 \x01(\x03R\x0efailedAtUnixMs\"\x13\n" +
+	"\x11failed_at_unix_ms\x18\x02 \x01(\x03R\x0efailedAtUnixMs\x12\x16\n" +
+	"\x06detail\x18\x03 \x01(\tR\x06detail\"\x13\n" +
 	"\x11GetPluginsRequest\"D\n" +
 	"\x12GetPluginsResponse\x12.\n" +
 	"\aplugins\x18\x01 \x03(\v2\x14.numen.v1.PluginInfoR\aplugins\"+\n" +

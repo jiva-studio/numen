@@ -590,6 +590,7 @@ func (h *Host) newPluginFailureLocked(pluginID string, sup *lifecycle.Supervisor
 		PluginID: pluginID,
 		Name:     h.plugins[pluginID].Manifest.Name,
 		Reason:   lifecycle.DescribeFailure(cause),
+		Detail:   cause.Error(),
 		At:       sup.GetFailedAt(),
 	}
 }

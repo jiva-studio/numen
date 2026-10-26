@@ -79,8 +79,10 @@ type PluginFailure struct {
 	PluginID string
 	// Name is what the plugin is called to a person.
 	Name string
-	// Reason is why the plugin failed, in words a person reads.
+	// Reason is a short UI label for the failure, such as "Failed to start".
 	Reason string
+	// Detail is the underlying error, shown on request.
+	Detail string
 	// At is when the host gave the plugin up.
 	At time.Time
 }

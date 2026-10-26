@@ -79,10 +79,12 @@ message PluginInfo {
 
 // PluginFailure is why a plugin is suspended, and when it was.
 message PluginFailure {
-  // The reason, in words a person reads.
+  // A short UI label for the failure, such as "Failed to start".
   string reason = 1;
   // When the host gave the plugin up, in milliseconds since the Unix epoch.
   int64 failed_at_unix_ms = 2;
+  // The underlying error, shown on request.
+  string detail = 3;
 }
 
 // CompletionConsent is whether the person lets a plugin ask for model

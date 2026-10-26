@@ -16,7 +16,16 @@ var ErrNoName = errors.New("name the vault, as vault_list gives it")
 var ErrShowing = errors.New("this is the vault the window is showing")
 
 // ErrUnknown is a name, a path or an identity no vault on the list answers to.
-var ErrUnknown = errors.New("this installation holds no such vault")
+var ErrUnknown = errors.New("vault not found")
+
+// UnknownError is ErrUnknown for the name, path or identity that was looked up.
+type UnknownError struct {
+	Name string
+}
+
+func (e *UnknownError) Error() string { return fmt.Sprintf("%s: %q", ErrUnknown, e.Name) }
+
+func (e *UnknownError) Unwrap() error { return ErrUnknown }
 
 // Find resolves what the user typed — a name, a path or an identity — into
 // a vault. It is shared by every use case that works on one.
@@ -39,7 +48,7 @@ func (u Find) Execute(nameOrPath string) (domain.Vault, error) {
 		return domain.Vault{}, err
 	}
 	if !found {
-		return domain.Vault{}, fmt.Errorf("%w: no vault called %q", ErrUnknown, nameOrPath)
+		return domain.Vault{}, &UnknownError{Name: nameOrPath}
 	}
 	return v, nil
 }
