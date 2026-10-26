@@ -1,5 +1,3 @@
-modules/libs/protocol/src/
-modules/libs/protocol/gen/
 libs/protocol/src/
 libs/protocol/gen/
 **/dist/**
@@ -8,3 +6,4 @@ libs/protocol/gen/
 **/testdata/**
 **/.tmp/**
 **/node_modules/**
+libs/core/adapter/window/*/pages/app/
