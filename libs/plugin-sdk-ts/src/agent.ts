@@ -51,12 +51,17 @@ export interface AgentModel {
   readonly defaultReasoning?: string | undefined
 }
 
-// AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
-export interface AgentHost {
+// AgentPort answers the questions of a conversation: the agent of the window, or one a plugin
+// makes for questions about something of its own.
+export interface AgentPort {
   // Asks about what is in focus, and reads what happens as it happens.
   ask(query: AgentQuery): AsyncIterable<AgentStep>
   // Ends a conversation; whatever is still being answered in it stops.
   finish(conversation: string): Promise<void>
+}
+
+// AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
+export interface AgentHost extends AgentPort {
   // The vault path each written name stands for, and empty where a name stands for none.
   resolve(content: readonly string[]): Promise<ReadonlyMap<string, string>>
   // Why the agent cannot be reached, and empty where it can.

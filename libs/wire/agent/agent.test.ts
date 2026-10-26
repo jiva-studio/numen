@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { create } from '@bufbuild/protobuf'
 import { AskAgentResponseSchema, ToolCallSchema } from '@numen/protocol'
 import type { AskAgentResponse } from '@numen/protocol'
-import type { AgentStep } from '@numen/ui'
+import type { AgentStep } from '@numen/plugin-sdk'
 
 import { createAgentPort } from './agent'
 import type { AgentClient } from './agent'

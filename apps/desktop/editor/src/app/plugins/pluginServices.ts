@@ -5,6 +5,7 @@ import { computed, type Ref, type ShallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import type {
   AgentHost,
+  AgentPort,
   BufferHost,
   MenuEntry,
   NoteRef,
@@ -16,7 +17,6 @@ import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import { CREATABLE, type NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
-import type { AgentPort } from '@numen/ui'
 import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'

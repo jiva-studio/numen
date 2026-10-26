@@ -6,7 +6,7 @@
  * says what its answers mean.
  */
 import type { AskAgentResponse, Span } from '@numen/protocol'
-import type { AgentPort } from '@numen/ui'
+import type { AgentPort } from '@numen/plugin-sdk'
 
 /** The span a call named, and one naming no place inside the source. */
 const normalizeSpan = (span: Span | undefined) => ({ from: span?.from ?? 0, to: span?.to ?? 0 })
