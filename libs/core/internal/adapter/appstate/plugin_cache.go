@@ -59,11 +59,11 @@ func (c *PluginCaches) Write(
 }
 
 // at is the folder one plugin keeps one name in. A plugin and a name that carry a separator or a dot
-func (c *PluginCaches) at(pluginID, name string) (*Schedules, error) {
+func (c *PluginCaches) at(pluginID, name string) (*VaultFiles, error) {
 	for _, part := range []string{pluginID, name} {
 		if part == "" || strings.ContainsAny(part, `/\`) || strings.HasPrefix(part, ".") || strings.Contains(part, "..") {
 			return nil, fmt.Errorf("%q is not a name a cache is kept under", part)
 		}
 	}
-	return SchedulesAt(filepath.Join(c.dir, pluginID, name)), nil
+	return VaultFilesAt(filepath.Join(c.dir, pluginID, name)), nil
 }

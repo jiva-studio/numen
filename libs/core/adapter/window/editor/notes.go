@@ -252,8 +252,8 @@ func (h *noteHandler) GetNeighbourhood(
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	// Which of four each note on the picture is, asked once for the whole of
-	// it, so a client draws a deck and a stencil as what they are.
+	// The type of each note on the picture, asked once for the whole of
+	// it, so a client draws a note of a plugin type as what it is.
 	paths := []string{found.Focus.Path}
 	for _, related := range found.Related {
 		paths = append(paths, related.Path)

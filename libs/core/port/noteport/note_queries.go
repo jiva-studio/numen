@@ -46,7 +46,7 @@ type NoteQueries interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
 
 	// GetPathsOfType is every note of one type the vault holds, by path. A caller after
-	// the decks or the stencils of a vault asks for them, and opens no file to
+	// the notes of one type asks for them, and opens no file to
 	// find out what each note is.
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 
@@ -67,7 +67,7 @@ type LinkQueries interface {
 
 	// ResolveLinks returns where each of those addresses lands, written in one note
 	// and keyed by what was written. It answers the question a link is answered
-	// with, asked about text nobody recorded as a link: the wikilink a card
-	// names its stencil by. An address that reaches nothing is absent.
+	// with, asked about text nobody recorded as a link, such as a wikilink a
+	// plugin reads out of a note. An address that reaches nothing is absent.
 	ResolveLinks(ctx context.Context, vaultID domain.VaultID, from string, content []string) (map[string]domain.ResolvedLink, error)
 }

@@ -82,8 +82,8 @@ func (o Options) GetDebounceDelay() time.Duration {
 	return o.DebounceDelay
 }
 
-// NoteExtensions is what counts as a note. A note, a deck, a stencil and a
-// preset are all markdown, and a vault holds them under one extension.
+// NoteExtensions is what counts as a note. A note of every type a plugin
+// declares is markdown, and a vault holds them under one extension.
 var NoteExtensions = []string{domain.NoteExtension}
 
 // DefaultBookExtensions is what counts as a book: the formats a reader takes

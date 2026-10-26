@@ -17,8 +17,8 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 	old := syscall.Umask(0)
 	t.Cleanup(func() { syscall.Umask(old) })
 
-	dir := filepath.Join(t.TempDir(), "flashcards")
-	if err := appstate.SchedulesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
+	dir := filepath.Join(t.TempDir(), "cache")
+	if err := appstate.VaultFilesAt(dir).Write(t.Context(), "vault-a", []byte("{}")); err != nil {
 		t.Fatal(err)
 	}
 	info, err := os.Stat(dir)
@@ -34,7 +34,7 @@ func TestAMadeFolderIsTheOwnersAlone(t *testing.T) {
 // descriptor open.
 func TestAWriteThatRunsOutOfRoomPreservesNothingPrior(t *testing.T) {
 	dir := t.TempDir()
-	schedules := appstate.SchedulesAt(dir)
+	files := appstate.VaultFilesAt(dir)
 
 	signal.Ignore(syscall.SIGXFSZ)
 	t.Cleanup(func() { signal.Reset(syscall.SIGXFSZ) })
@@ -50,7 +50,7 @@ func TestAWriteThatRunsOutOfRoomPreservesNothingPrior(t *testing.T) {
 		t.Skipf("the file size cannot be limited: %v", err)
 	}
 	before, canCount := countDescriptors()
-	err := schedules.Write(t.Context(), "vault-a", make([]byte, 2<<20))
+	err := files.Write(t.Context(), "vault-a", make([]byte, 2<<20))
 	after, _ := countDescriptors()
 	if restoreErr := syscall.Setrlimit(syscall.RLIMIT_FSIZE, &old); restoreErr != nil {
 		t.Fatal(restoreErr)

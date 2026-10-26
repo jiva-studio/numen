@@ -52,7 +52,7 @@ type Installation struct {
 	Embedder embeddingport.Embedder
 	Asking   embeddingport.Embedder
 
-	// notes, cards and vaults are this installation's use cases, built once.
+	// notes and vaults are this installation's use cases, built once.
 	// Everything else working the same vault is served these, so a dependency
 	// named here is named for all of them.
 	notes  note.Scenarios
@@ -320,7 +320,7 @@ func createWindow(
 func (o *Installation) wireUseCases(ctx context.Context) {
 	made, services := o.made, o.Services
 
-	// Everything that acts on this installation's notes, cards and vaults, built
+	// Everything that acts on this installation's notes and vaults, built
 	// once. Whatever else works the same vault — the tools an agent calls — is
 	// served these and builds none of its own.
 	//
