@@ -11,7 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
 
@@ -25,7 +25,7 @@ type Vault struct {
 	Notes   noteport.NoteQueries
 	Links   noteport.LinkQueries
 	// Problems answers what parsing turned up. Without it nothing is.
-	Problems recognitionport.ProblemQueries
+	Problems problemport.ProblemQueries
 	Stores   pluginport.PluginStores
 	Cache    pluginport.PluginCache
 	Watcher  vaultport.VaultWatcher

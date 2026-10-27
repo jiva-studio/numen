@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/vault/check"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
 // GetProblems lists what a vault contains that could not be acted on and was
@@ -20,7 +20,7 @@ func NewGetProblems(checks check.Checks) *GetProblems {
 }
 
 // NewStandardGetProblems holds the vault to the standard checks, and to none where there are no problem queries.
-func NewStandardGetProblems(problems recognitionport.ProblemQueries) *GetProblems {
+func NewStandardGetProblems(problems problemport.ProblemQueries) *GetProblems {
 	if problems == nil {
 		return NewGetProblems(check.Checks{})
 	}

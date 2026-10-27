@@ -6,7 +6,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
 // danglingCheck is a link that reaches nothing.
@@ -20,7 +20,7 @@ import (
 // Adding the missing note repairs it, without anyone touching the link: what a
 // name reaches is worked out at the moment it is asked.
 type danglingCheck struct {
-	queries recognitionport.ProblemQueries
+	queries problemport.ProblemQueries
 }
 
 func (danglingCheck) Name() domain.Check { return domain.CheckDangling }

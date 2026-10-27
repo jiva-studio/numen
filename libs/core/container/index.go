@@ -12,7 +12,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 )
@@ -125,4 +125,4 @@ func (i *Index) Path() string { return i.path }
 func (i *Index) Links() noteport.LinkQueries { return i.db.NoteQueries() }
 
 // Problems reports what a scan could not act on.
-func (i *Index) Problems() recognitionport.ProblemQueries { return i.db.NoteQueries() }
+func (i *Index) Problems() problemport.ProblemQueries { return i.db.NoteQueries() }

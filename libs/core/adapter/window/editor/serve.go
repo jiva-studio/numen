@@ -25,7 +25,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 )
 
@@ -186,9 +186,9 @@ func (o *Installation) Close() error {
 // The cache this window answers out of, as the ports it hands on. Whatever else
 // works the same vault in the same process asks it here, so the window and the
 // tools an agent calls read one index.
-func (o *Installation) Queries() noteport.NoteQueries            { return o.made.GetNoteQueries() }
-func (o *Installation) Problems() recognitionport.ProblemQueries { return o.made.GetProblemQueries() }
-func (o *Installation) Passages() sourceport.PassageQueries      { return o.made.GetPassageQueries() }
+func (o *Installation) Queries() noteport.NoteQueries        { return o.made.GetNoteQueries() }
+func (o *Installation) Problems() problemport.ProblemQueries { return o.made.GetProblemQueries() }
+func (o *Installation) Passages() sourceport.PassageQueries  { return o.made.GetPassageQueries() }
 func (o *Installation) SourcesKnown() sourceport.SourceQueries {
 	return o.made.GetSourceQueries()
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 )
@@ -119,7 +119,7 @@ type Links struct {
 // vault is the core's own vocabulary and no part of an installation, so the
 // terminal takes the standard set and this opens what answers them.
 type Problems struct {
-	Problems recognitionport.ProblemQueries
+	Problems problemport.ProblemQueries
 	Close    func() error
 }
 

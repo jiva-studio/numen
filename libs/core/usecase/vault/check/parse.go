@@ -5,7 +5,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
 // parseCheck is what reading one file turned up, and the scan already knows it:
@@ -15,7 +15,7 @@ import (
 // parsed, which is the only place that can see what the file says without
 // reading it again.
 type parseCheck struct {
-	queries recognitionport.ProblemQueries
+	queries problemport.ProblemQueries
 }
 
 func (parseCheck) Name() domain.Check { return domain.CheckParse }

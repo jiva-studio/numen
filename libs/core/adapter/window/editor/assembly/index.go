@@ -3,7 +3,7 @@ package assembly
 import (
 	"github.com/jiva-studio/numen/libs/core/port/indexport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
@@ -14,7 +14,7 @@ type IndexAssembly interface {
 	// file back.
 	GetNoteQueries() noteport.NoteQueries
 	GetLinkQueries() noteport.LinkQueries
-	GetProblemQueries() recognitionport.ProblemQueries
+	GetProblemQueries() problemport.ProblemQueries
 	GetIndexProgress() indexport.IndexProgress
 	GetSourceRepository() sourceport.SourceRepository
 	GetSourceQueries() sourceport.SourceQueries

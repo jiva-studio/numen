@@ -22,7 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
 var errRefused = errors.New("rejected on purpose")
@@ -208,7 +208,7 @@ func (fixedProblemQueries) GetDanglingLinks(context.Context, domain.VaultID) ([]
 	return nil, nil
 }
 
-func problemsDeps(queries recognitionport.ProblemQueries) cli.Deps {
+func problemsDeps(queries problemport.ProblemQueries) cli.Deps {
 	return cli.Deps{
 		Vaults: createVaultList(notebook),
 		Problems: func(context.Context) (cli.Problems, error) {

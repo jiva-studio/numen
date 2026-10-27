@@ -7,7 +7,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 )
 
 // ambiguousCheck is a link that reaches more than one note.
@@ -21,7 +21,7 @@ import (
 // somebody opens to settle it, by naming which note they meant. Neither of the
 // notes it could mean has anything to answer for.
 type ambiguousCheck struct {
-	queries recognitionport.ProblemQueries
+	queries problemport.ProblemQueries
 }
 
 func (ambiguousCheck) Name() domain.Check { return domain.CheckAmbiguous }

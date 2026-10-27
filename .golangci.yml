@@ -215,7 +215,7 @@ linters:
       # defaults is filled by its own resolver, and listing it here would ask
       # every caller to fill the blanks a second way.
       include:
-        - .*/core/port/(embeddingport\.(EmbeddingModel|Vector)|recognitionport\.RecognitionModel|transcriptionport\.TranscriptionModel)$
+        - .*/core/port/(embeddingport\.(EmbeddingModel|Vector)|transcriptionport\.TranscriptionModel)$
         - .*/notes/domain\.Address$
       # A zero value handed back with an error, or declared and filled after, is
       # the absence of an identity and not a half-written one.

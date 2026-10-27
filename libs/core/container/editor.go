@@ -19,7 +19,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/sourceport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
@@ -78,10 +78,10 @@ func (e EditorAssembly) GetVaultWriters() vaultport.VaultWriters { return e.cfg.
 func (e EditorAssembly) GetVaultIdentity() vaultport.VaultIdentity { return e.cfg.VaultIdentity() }
 func (e EditorAssembly) GetClock() machineport.Clock               { return e.cfg.Clock() }
 
-func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries              { return e.db.Queries() }
-func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries              { return e.db.Links() }
-func (e EditorAssembly) GetProblemQueries() recognitionport.ProblemQueries { return e.db.Problems() }
-func (e EditorAssembly) GetIndexProgress() indexport.IndexProgress         { return e.db.Progress() }
+func (e EditorAssembly) GetNoteQueries() noteport.NoteQueries          { return e.db.Queries() }
+func (e EditorAssembly) GetLinkQueries() noteport.LinkQueries          { return e.db.Links() }
+func (e EditorAssembly) GetProblemQueries() problemport.ProblemQueries { return e.db.Problems() }
+func (e EditorAssembly) GetIndexProgress() indexport.IndexProgress     { return e.db.Progress() }
 
 func (e EditorAssembly) GetSourceRepository() sourceport.SourceRepository { return e.db.Sources() }
 func (e EditorAssembly) GetSourceQueries() sourceport.SourceQueries       { return e.db.SourcesKnown() }

@@ -6,7 +6,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
 	"github.com/jiva-studio/numen/libs/core/port/noteport"
-	"github.com/jiva-studio/numen/libs/core/port/recognitionport"
+	"github.com/jiva-studio/numen/libs/core/port/problemport"
 	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
@@ -59,7 +59,7 @@ func (c Config) GetKnownVaults(registry vaultport.VaultRegistry) *vault.GetKnown
 }
 
 // GetProblems holds the vault to the standard checks.
-func (Config) GetProblems(problems recognitionport.ProblemQueries) *vault.GetProblems {
+func (Config) GetProblems(problems problemport.ProblemQueries) *vault.GetProblems {
 	return vault.NewStandardGetProblems(problems)
 }
 
