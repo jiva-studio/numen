@@ -17,7 +17,11 @@
  *   apps      - Application FSD layer hierarchies (desktop editor, flashcards)
  *
  * Modules:
- *   core, notes, ui, shell, host, wire, sdk, plugins, boundary, desktop, editor, flashcards
+ *   core, notes, protocol, kinds, ui, shell, host, wire, sdk, plugins, boundary, desktop, editor, flashcards
+ *
+ * Options:
+ *   --update-baseline  remove baseline.json entries that no longer occur
+ *   --no-baseline      list every violation of the checks that read baseline.json
  */
 import { execSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
@@ -280,12 +284,19 @@ const GO_MODULE_ROOT = "github.com/jiva-studio/numen/";
 /** The source files read for references, by extension. */
 const SCRIPT_EXTENSIONS = new Set([".ts", ".tsx", ".mts", ".cts", ".js", ".mjs", ".cjs", ".vue"]);
 
-/**
- * Lists every string literal of a script with its line, comments left out.
- * A template literal is read up to its first substitution.
- */
+/** Lists every string literal of a script with its line, comments left out. */
 function getScriptLiterals(source) {
+  return readScript(source).literals;
+}
+
+/**
+ * Lists every string literal of a script with its line, and returns the script with its comments,
+ * regular expressions and literals blanked so lines keep their numbers. A template literal is read
+ * up to its first substitution.
+ */
+function readScript(source) {
   const literals = [];
+  const blanked = [];
   let line = 1;
   let i = 0;
   let previous = "";
@@ -297,8 +308,10 @@ function getScriptLiterals(source) {
       i++;
       continue;
     }
+    const from = i;
     if (c === "/" && next === "/") {
       while (i < source.length && source[i] !== "\n") i++;
+      blanked.push([from, i]);
       continue;
     }
     if (c === "/" && next === "*") {
@@ -308,6 +321,7 @@ function getScriptLiterals(source) {
         i++;
       }
       i += 2;
+      blanked.push([from, i]);
       continue;
     }
     if (c === "/" && (previous === "" || "(,=:[!&|?{};+-*%<>~^".includes(previous))) {
@@ -322,6 +336,7 @@ function getScriptLiterals(source) {
       }
       i++;
       previous = "/";
+      blanked.push([from, i]);
       continue;
     }
     if (c === "'" || c === '"' || c === "`") {
@@ -343,12 +358,19 @@ function getScriptLiterals(source) {
       i++;
       literals.push({ line: start, value });
       previous = "'";
+      blanked.push([from, i]);
       continue;
     }
     if (!/\s/.test(c)) previous = c;
     i++;
   }
-  return literals;
+  let code = "";
+  let at = 0;
+  for (const [from, to] of blanked) {
+    code += source.slice(at, from) + source.slice(from, to).replace(/[^\n]/g, " ");
+    at = to;
+  }
+  return { literals, code: code + source.slice(at) };
 }
 
 /** The `<script>` blocks of a single-file component, blanked elsewhere so lines keep their numbers. */
@@ -760,6 +782,345 @@ function verifyPluginHostIsolation() {
   exec("npm run lint", path.join(MODULES_DIR, "libs/plugin-host-ts"));
 }
 
+/**
+ * Lists every string literal of a Go or proto source with its line, and returns the source with its
+ * comments and literals blanked so lines keep their numbers.
+ */
+function readGo(source) {
+  const literals = [];
+  let code = "";
+  let line = 1;
+  let i = 0;
+  const blank = (text) => text.replace(/[^\n]/g, " ");
+  while (i < source.length) {
+    const c = source[i];
+    const from = i;
+    if (c === "/" && source[i + 1] === "/") {
+      while (i < source.length && source[i] !== "\n") i++;
+      code += blank(source.slice(from, i));
+      continue;
+    }
+    if (c === "/" && source[i + 1] === "*") {
+      const end = source.indexOf("*/", i + 2);
+      i = end < 0 ? source.length : end + 2;
+      const text = source.slice(from, i);
+      line += text.split("\n").length - 1;
+      code += blank(text);
+      continue;
+    }
+    if (c === '"' || c === "'" || c === "`") {
+      let value = "";
+      i++;
+      while (i < source.length && source[i] !== c && (c === "`" || source[i] !== "\n")) {
+        if (c !== "`" && source[i] === "\\") {
+          value += source[i + 1] ?? "";
+          i += 2;
+          continue;
+        }
+        value += source[i];
+        i++;
+      }
+      i++;
+      literals.push({ line, value });
+      const text = source.slice(from, i);
+      line += text.split("\n").length - 1;
+      code += blank(text);
+      continue;
+    }
+    if (c === "\n") line++;
+    code += c;
+    i++;
+  }
+  return { literals, code };
+}
+
+/** Reads a tracked source file as literals and code, by its extension; null for any other file. */
+function readSource(file) {
+  const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+  if (/\.(go|proto)$/.test(file)) return readGo(text);
+  if (file.endsWith(".vue")) return readScript(getVueScript(text));
+  if (/\.(ts|tsx|mts|cts|js|mjs|cjs)$/.test(file)) return readScript(text);
+  return null;
+}
+
+/** Every match of `pattern` in the code of a source, with its line and the text it matched. */
+function findInCode(code, pattern) {
+  const found = [];
+  code.split("\n").forEach((text, index) => {
+    for (const match of text.matchAll(pattern)) found.push({ line: index + 1, symbol: match[1] ?? match[0] });
+  });
+  return found;
+}
+
+/** Tests, stories, test kits of a window, fixtures and generated code. */
+const NOT_SHIPPED = /(_test\.go|\.(test|spec|stories)\.ts|\.pb\.go|\.connect\.go)$|(^|\/)(testing|testdata|e2e|gen)\//;
+
+/** The tracked files under `pathspecs` that ship: no test, story, fixture or generated file. */
+function listShippedFiles(pathspecs) {
+  const listed = spawnSync("git", ["ls-files", "--", ...pathspecs], { cwd: REPO_ROOT, encoding: "utf8" });
+  return (listed.stdout || "")
+    .split("\n")
+    .filter((file) => file && !NOT_SHIPPED.test(file) && fs.existsSync(path.join(REPO_ROOT, file)));
+}
+
+/**
+ * The known violations of the checks that read one, by check id, as `<file>: <symbol>` and the
+ * number of times it occurs there. Line numbers are left out so an edit above does not move them.
+ */
+const BASELINE_FILE = path.join(SCRIPT_DIR, "baseline.json");
+const baseline = fs.existsSync(BASELINE_FILE) ? JSON.parse(fs.readFileSync(BASELINE_FILE, "utf8")) : {};
+let isBaselineChanged = false;
+
+/**
+ * Fails on a finding the baseline does not hold, and on a baseline entry found fewer times than it
+ * lists. `--update-baseline` lowers the listed counts to what is found and never raises one;
+ * `--no-baseline` fails on every finding.
+ */
+function checkAgainstBaseline(id, title, findings) {
+  const counts = new Map();
+  for (const { file, symbol } of findings) {
+    const key = `${file}: ${symbol}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  if (flags.has("--no-baseline")) {
+    if (findings.length === 0) return;
+    const listed = findings.map(({ file, line, symbol }) => `${file}:${line}: ${symbol}`);
+    throw new Error(`${title} (${findings.length}):\n` + listed.join("\n"));
+  }
+  const known = baseline[id] ?? {};
+  const added = [...counts]
+    .filter(([key, count]) => count > (known[key] ?? 0))
+    .map(([key, count]) => `${key} (found ${count}, baseline ${known[key] ?? 0})`);
+  const gone = Object.entries(known)
+    .filter(([key, count]) => (counts.get(key) ?? 0) < count)
+    .map(([key, count]) => `${key} (found ${counts.get(key) ?? 0}, baseline ${count})`);
+  if (flags.has("--update-baseline") && gone.length > 0) {
+    const kept = Object.entries(known)
+      .map(([key, count]) => [key, Math.min(count, counts.get(key) ?? 0)])
+      .filter(([, count]) => count > 0);
+    baseline[id] = Object.fromEntries(kept);
+    isBaselineChanged = true;
+    gone.length = 0;
+  }
+  const problems = [];
+  if (added.length > 0) problems.push(`${title}, not in ${path.basename(BASELINE_FILE)}:\n` + added.join("\n"));
+  if (gone.length > 0) {
+    problems.push(
+      `Baseline entries of ${id} that no longer occur; run node check.mjs --update-baseline ${id}:\n` + gone.join("\n"),
+    );
+  }
+  if (problems.length > 0) throw new Error(problems.join("\n"));
+}
+
+/** Writes the baseline back when `--update-baseline` lowered it. */
+function writeBaseline() {
+  if (!isBaselineChanged) return;
+  const sorted = Object.fromEntries(
+    Object.keys(baseline)
+      .sort()
+      .filter((id) => Object.keys(baseline[id]).length > 0)
+      .map((id) => [id, Object.fromEntries(Object.entries(baseline[id]).sort(([a], [b]) => a.localeCompare(b)))]),
+  );
+  fs.writeFileSync(BASELINE_FILE, JSON.stringify(sorted, null, 2) + "\n");
+  console.log("Baseline written: " + path.relative(REPO_ROOT, BASELINE_FILE));
+}
+
+/**
+ * The services, enums, values, messages and calls of `numen.v1` that a single plugin owns. Each moves
+ * into the plugin's own proto package or gives way to a shared mechanism.
+ */
+const PLUGIN_PROTO_SYMBOLS = [
+  "TranscriptService",
+  "ArticleService",
+  "BookService",
+  "DocumentService",
+  "SOURCE_KIND_BOOK",
+  "SOURCE_KIND_RECORDING",
+  "SOURCE_KIND_URL",
+  "BookFormat",
+  "FILE_MENU_ACTION_RECOGNISE",
+  "FILE_MENU_ACTION_PROOFREAD",
+  "BookProgress",
+  "RecordingProgress",
+  "SetVaultInUse",
+  "SetVaultInUseRequest",
+  "SetVaultInUseResponse",
+];
+
+/** The fields of `agent.proto` that name a card of the flashcards plugin. */
+const PLUGIN_AGENT_FIELDS = ["mark", "face"];
+
+/** Every name of PLUGIN_PROTO_SYMBOLS and field of PLUGIN_AGENT_FIELDS in the code of `numen.v1`. */
+function findPluginProtoSymbols() {
+  const symbols = new RegExp(`\\b(${PLUGIN_PROTO_SYMBOLS.join("|")})\\b`, "g");
+  const fields = new RegExp(`^\\s*(?:repeated\\s+|optional\\s+)?[\\w.]+\\s+(${PLUGIN_AGENT_FIELDS.join("|")})\\s*=\\s*\\d+`, "g");
+  const found = [];
+  for (const file of listShippedFiles(["libs/protocol/proto/numen/v1/*.proto"])) {
+    const { code } = readSource(file);
+    for (const hit of findInCode(code, symbols)) found.push({ file, ...hit });
+    if (path.basename(file) !== "agent.proto") continue;
+    for (const hit of findInCode(code, fields)) found.push({ file, line: hit.line, symbol: `field ${hit.symbol}` });
+  }
+  return found;
+}
+
+/** `numen.v1` holds the contracts of the core and its extension points, and nothing one plugin owns. */
+function verifyProtocolHoldsNoPluginContract() {
+  checkAgainstBaseline("protocol-holds-no-plugin-contract", "numen.v1 holds what a plugin owns", findPluginProtoSymbols());
+}
+
+/** The code that knows no file format and no source kind: it finds a plugin by content type instead. */
+const FILE_KIND_FREE_PATHS = [
+  "libs/core",
+  "libs/notes",
+  "libs/plugin-sdk-go",
+  "libs/plugin-sdk-ts",
+  "libs/ui/core",
+  "libs/ui/shell",
+  "apps/desktop/editor/src",
+];
+
+/** The extensions of the files plugins read: books, documents, recordings and their captions. */
+const PLUGIN_EXTENSIONS = [
+  "pdf", "epub", "djvu", "fb2", "mobi",
+  "mp3", "m4a", "wav", "ogg", "oga", "opus", "flac", "aac", "wma",
+  "mp4", "m4v", "mkv", "webm", "mov", "avi",
+  "vtt", "srt",
+];
+
+/** The source kinds plugins own. */
+const PLUGIN_SOURCE_KINDS = ["book", "recording", "url", "document"];
+
+/** A literal that is an extension, a glob of one, or a file name ending in one: `"pdf"`, `".pdf"`, `"onFile:*.pdf"`. */
+const EXTENSION_LITERAL = new RegExp(`^(?:[^\\s/]*\\.)?(?:${PLUGIN_EXTENSIONS.join("|")})$`, "i");
+
+/** A literal that is a source kind: `"book"`. */
+const SOURCE_KIND_LITERAL = new RegExp(`^(?:${PLUGIN_SOURCE_KINDS.join("|")})$`);
+
+/**
+ * The names a source kind takes in code: `KindBook`, `TabRecording`, `SOURCE_KIND_URL`,
+ * `SourceKind.BOOK`, `BookFormat`, `DefaultBookExtensions`, `BookProgress`, `ReadBooks`, and the
+ * services of the book, document, transcript and article plugins.
+ */
+const SOURCE_KIND_NAMES = [
+  "\\b(\\w*(?:Kind|Tab|Capability)(?:Book|Recording|URL|Url|Document))\\b",
+  "\\b(\\w*SOURCE_KIND_(?:BOOK|RECORDING|URL|DOCUMENT)|\\w*BOOK_FORMAT_\\w+)\\b",
+  "\\b(\\w*Kinds?\\.(?:BOOK|RECORDING|URL|DOCUMENT))\\b",
+  "\\b(\\w*(?:Book|Document)Formats?\\w*)\\b",
+  "\\b(\\w*(?:Book|Recording)(?:Extensions|Progress)\\w*)\\b",
+  "\\b(\\w*Books\\w*)\\b",
+  "\\b(\\w*(?:Book|Document|Transcript|Article)Service\\w*)\\b",
+].map((pattern) => new RegExp(pattern, "g"));
+
+/** The constants a script names a source kind by. `URL` is left out: it is also the platform's class. */
+const SCRIPT_SOURCE_KIND_NAMES = /(?<![.\w])(BOOK|RECORDING|DOCUMENT)\b(?![\w(])/g;
+
+/** Every literal, and every double-quoted string inside one, such as a JSON manifest a Go raw string holds. */
+function getLiteralValues(literals) {
+  return literals.flatMap(({ line, value }) => [
+    { line, value },
+    ...Array.from(value.matchAll(/"((?:[^"\\\n]|\\.)*)"/g), (match) => ({
+      line: line + value.slice(0, match.index).split("\n").length - 1,
+      value: match[1],
+    })),
+  ]);
+}
+
+/** Every extension literal, source kind literal and source kind name in FILE_KIND_FREE_PATHS. */
+function findFileKinds() {
+  const found = [];
+  for (const file of listShippedFiles(FILE_KIND_FREE_PATHS)) {
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of getLiteralValues(source.literals)) {
+      if (EXTENSION_LITERAL.test(value) || SOURCE_KIND_LITERAL.test(value)) {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
+    }
+    const patterns = /\.go$/.test(file) ? SOURCE_KIND_NAMES : [...SOURCE_KIND_NAMES, SCRIPT_SOURCE_KIND_NAMES];
+    for (const pattern of patterns) {
+      for (const hit of findInCode(source.code, pattern)) found.push({ file, ...hit });
+    }
+  }
+  return found;
+}
+
+/** The core, the notes library, the SDKs, the UI libraries and the window name no file format and no source kind. */
+function verifyNoFileKindOutsidePlugins() {
+  checkAgainstBaseline("no-file-kind-outside-plugins", "File formats and source kinds outside plugins", findFileKinds());
+}
+
+/** The Markdown editor of `@numen/ui`, which the notes plugin owns, and the wikilink helpers the core replaces. */
+const UI_EDITOR = {
+  dirs: ["features/editor"],
+  modules: ["./features/editor", "./shared/lib/text/address"],
+  names: ["Editor", "createTimeGutter", "isNoteAddress", "getWikilinks"],
+};
+
+/** Every editor directory `libs/ui/core/src` holds, and every editor or wikilink name `src/index.ts` exports. */
+function findUiEditor() {
+  const found = UI_EDITOR.dirs
+    .filter((dir) => fs.existsSync(path.join(REPO_ROOT, "libs/ui/core/src", dir)))
+    .map((dir) => ({ file: `libs/ui/core/src/${dir}`, line: 0, symbol: "directory" }));
+  const file = "libs/ui/core/src/index.ts";
+  const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+  for (const match of text.matchAll(/^export\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/gm)) {
+    const line = text.slice(0, match.index).split("\n").length;
+    const fromEditor = UI_EDITOR.modules.some((one) => match[3] === one || match[3].startsWith(one + "/"));
+    for (const name of match[1].split(",").map((one) => one.trim().replace(/^type\s+/, "").split(/\s+as\s+/).pop())) {
+      if (name && (fromEditor || UI_EDITOR.names.includes(name))) found.push({ file, line, symbol: `export ${name}` });
+    }
+  }
+  return found;
+}
+
+/** `@numen/ui` holds and exports no editor and no wikilink helper. */
+function verifyUiExportsNoEditor() {
+  checkAgainstBaseline("ui-exports-no-editor", "The UI library holds the editor or wikilink helpers", findUiEditor());
+}
+
+/** The ids of the application's windows. */
+const WINDOW_IDS = ["editor", "flashcards"];
+
+/** Every window id literal and every name of the window's service in the shipped code of a plugin. */
+function findPluginWindowNames() {
+  const service = /\b((?:New)?WindowService(?:Client)?)\b/g;
+  const found = [];
+  for (const file of listShippedFiles(["plugins"])) {
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of source.literals) {
+      if (WINDOW_IDS.includes(value)) found.push({ file, line, symbol: JSON.stringify(value) });
+    }
+    for (const hit of findInCode(source.code, service)) found.push({ file, ...hit });
+  }
+  return found;
+}
+
+/** A plugin reaches the window through the SDK: it names no window and creates no `WindowService` client. */
+function verifyPluginsNameNoWindow() {
+  checkAgainstBaseline("plugins-name-no-window", "A plugin names a window or its service", findPluginWindowNames());
+}
+
+/** The calls of Go's `os` package that change the file system. */
+const OS_WRITES = /\b(os\.(?:WriteFile|Create|CreateTemp|OpenFile|Mkdir|MkdirAll|MkdirTemp|Rename|Remove|RemoveAll|Symlink|Link|Chmod|Chtimes|Truncate))\(/g;
+
+/** Every `os` write in a shipped Go file of a plugin that names the vault's `.numen` folder. */
+function findPluginDataWrites() {
+  const found = [];
+  for (const file of listShippedFiles(["plugins/*.go"])) {
+    const { literals, code } = readSource(file);
+    if (!literals.some(({ value }) => value === ".numen" || value.startsWith(".numen/"))) continue;
+    for (const hit of findInCode(code, OS_WRITES)) found.push({ file, ...hit });
+  }
+  return found;
+}
+
+/** A plugin writes under `.numen/` through the host store, never with `os`. */
+function verifyPluginsWriteDataThroughHost() {
+  checkAgainstBaseline("plugins-write-data-through-host", "A plugin writes under .numen/ with os", findPluginDataWrites());
+}
+
 const VERIFIERS = [
   {
     id: "core-hexagon",
@@ -822,6 +1183,20 @@ const VERIFIERS = [
     },
   },
   {
+    id: "protocol-holds-no-plugin-contract",
+    scope: "libs",
+    module: "protocol",
+    name: "numen.v1 Holds No Plugin Contract (transcript, article, book, document services, book and recording kinds, card fields)",
+    run: verifyProtocolHoldsNoPluginContract,
+  },
+  {
+    id: "no-file-kind-outside-plugins",
+    scope: "libs",
+    module: "kinds",
+    name: "Core, Notes, SDKs, UI and Window Name No File Format or Source Kind (.pdf, .mp3, book, recording, url, document)",
+    run: verifyNoFileKindOutsidePlugins,
+  },
+  {
     id: "ui-isolation",
     scope: "libs",
     module: "ui",
@@ -841,6 +1216,13 @@ const VERIFIERS = [
     module: "ui",
     name: "UI Library Holds No Window Chrome (workspace, palette, status bar, notices, welcome page)",
     run: verifyUiHoldsNoShellPart,
+  },
+  {
+    id: "ui-exports-no-editor",
+    scope: "libs",
+    module: "ui",
+    name: "UI Library Exports No Editor or Wikilink Helper (features/editor, isNoteAddress, getWikilinks)",
+    run: verifyUiExportsNoEditor,
   },
   {
     id: "shell-isolation",
@@ -892,6 +1274,20 @@ const VERIFIERS = [
     module: "plugins",
     name: "Plugins Draw No Notices (no Notices, Notice, createNotice or notice queue imported; ctx.notices instead)",
     run: verifyPluginsDrawNoNotices,
+  },
+  {
+    id: "plugins-name-no-window",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Name No Window (no 'editor' window id, no WindowService client)",
+    run: verifyPluginsNameNoWindow,
+  },
+  {
+    id: "plugins-write-data-through-host",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Write Under .numen/ Through the Host Store (no os writes)",
+    run: verifyPluginsWriteDataThroughHost,
   },
   {
     id: "apps-plugins-boundary",
@@ -946,10 +1342,13 @@ const VERIFIERS = [
 const SCOPES = ["all", "libs", "plugins", "apps"];
 const MODULE_NAMES = Array.from(new Set(VERIFIERS.map((v) => v.module)));
 
-const args = process.argv.slice(2);
+/** The options of a run; every other argument is a target. */
+const FLAGS = ["--update-baseline", "--no-baseline", "--list", "--help", "-h"];
+const flags = new Set(process.argv.slice(2).filter((arg) => FLAGS.includes(arg)));
+const args = process.argv.slice(2).filter((arg) => !FLAGS.includes(arg));
 
-if (args.includes("--help") || args.includes("-h")) {
-  console.log("Usage: node check.mjs [target...] [--list] [--help]");
+if (flags.has("--help") || flags.has("-h")) {
+  console.log("Usage: node check.mjs [target...] [--list] [--help] [--update-baseline] [--no-baseline]");
   console.log("");
   console.log("Targets can be scopes or module names:");
   console.log("  Scopes:  " + SCOPES.join(", "));
@@ -961,10 +1360,14 @@ if (args.includes("--help") || args.includes("-h")) {
   console.log("  node check.mjs plugins       # validate plugin isolation and boundaries");
   console.log("  node check.mjs apps          # validate application FSD layers");
   console.log("  node check.mjs core ui       # validate core and UI library");
+  console.log("");
+  console.log("Baseline (baseline.json, read by the checks that list known violations):");
+  console.log("  --update-baseline            # remove entries that no longer occur; never adds one");
+  console.log("  --no-baseline                # list every violation, known or not");
   process.exit(0);
 }
 
-if (args.includes("--list")) {
+if (flags.has("--list")) {
   console.log("Registered architectural verifiers:");
   for (const v of VERIFIERS) {
     console.log("  [" + v.scope.padEnd(7) + " / " + v.module.padEnd(8) + "] " + v.id + ": " + v.name);
@@ -1007,6 +1410,9 @@ function getChangedModules() {
   for (const file of files) {
     if (file.startsWith("libs/core/")) matched.add("core");
     if (file.startsWith("libs/notes/")) matched.add("notes");
+    if (file.startsWith("libs/protocol/") || file.startsWith("tools/lint-layers/")) matched.add("protocol");
+    if (/^(libs\/(core|notes|plugin-sdk-go|plugin-sdk-ts|ui)|apps\/desktop\/editor|tools\/lint-layers)\//.test(file)) matched.add("kinds");
+    if (file.startsWith("tools/lint-layers/")) ["ui", "plugins"].forEach((one) => matched.add(one));
     if (file.startsWith("libs/plugin-sdk-go/")) matched.add("sdk");
     if (file.startsWith("libs/ui/core/")) matched.add("ui");
     if (file.startsWith("libs/ui/shell/")) matched.add("shell");
@@ -1089,6 +1495,8 @@ for (const verifier of activeVerifiers) {
     exitCode = 1;
   }
 }
+
+writeBaseline();
 
 console.log("\n\x1b[1m=== Validation Summary ===\x1b[0m");
 for (const res of results) {
