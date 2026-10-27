@@ -6,4 +6,4 @@ Google Antigravity CLI agent runner and provider service.
 
 - Executes Antigravity CLI agent subprocesses to answer assistant queries.
 - Serves `numen.v1.AgentService`.
-- Activates on `onCommand:askAntigravity`.
+- Started by the host when a task is routed to it.

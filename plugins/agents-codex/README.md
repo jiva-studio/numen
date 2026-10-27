@@ -6,4 +6,4 @@ OpenAI Codex CLI agent runner and provider service.
 
 - Executes Codex CLI processes to handle code and query requests.
 - Serves `numen.v1.AgentService`.
-- Activates on `onCommand:askCodex`.
+- Started by the host when a task is routed to it.
