@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -994,6 +995,10 @@ func (p *testInterceptingPlugins) Serves(_ string) bool {
 	return true
 }
 
+func (p *testInterceptingPlugins) ServeRoute(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "plugin not found", http.StatusNotFound)
+}
+
 func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	p.servedPaths = append(p.servedPaths, r.URL.Path)
 	http.Error(w, "should not be called for AgentService", http.StatusInternalServerError)
@@ -1044,67 +1049,60 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	}
 }
 
-type testDocumentService struct {
-	numenv1connect.UnimplementedDocumentServiceHandler
-	renderedPath string
-	renderedPage int32
-	renderedWide int32
+// routedPlugins records the requests forwarded on the plugin route.
+type routedPlugins struct {
+	routed []string
 }
 
-func (s *testDocumentService) RenderPage(ctx context.Context, req *connect.Request[v1.RenderPageRequest]) (*connect.Response[v1.RenderPageResponse], error) {
-	s.renderedPath = req.Msg.GetPath()
-	s.renderedPage = req.Msg.GetPage()
-	s.renderedWide = req.Msg.GetWidth()
-	return connect.NewResponse(&v1.RenderPageResponse{
-		ImageData:   []byte("fake-png-bytes"),
-		ContentType: "image/png",
-		Width:       800,
-		Height:      600,
-	}), nil
+func (p *routedPlugins) Serves(string) bool { return false }
+
+func (p *routedPlugins) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "no plugin serves this service", http.StatusNotFound)
 }
 
-type testDocumentPluginServices struct {
-	mux *http.ServeMux
+func (p *routedPlugins) ServeRoute(w http.ResponseWriter, r *http.Request) {
+	p.routed = append(p.routed, r.URL.RequestURI())
+	w.Header().Set("Content-Type", "image/jpeg")
+	_, _ = io.WriteString(w, "page bytes")
 }
 
-func (p *testDocumentPluginServices) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	p.mux.ServeHTTP(w, r)
-}
-
-func (p *testDocumentPluginServices) Serves(urlPath string) bool {
-	return strings.HasPrefix(urlPath, "/numen.v1.DocumentService/")
-}
-
-func TestServeAssetRendersPageFromDocumentService(t *testing.T) {
-	docService := &testDocumentService{}
-	path, handler := numenv1connect.NewDocumentServiceHandler(docService)
-	mux := http.NewServeMux()
-	mux.Handle(path, handler)
-
+func TestPluginRouteReachesThePluginServices(t *testing.T) {
+	plugins := &routedPlugins{}
 	services := newBareServices()
-	services.PluginServices = &testDocumentPluginServices{mux: mux}
-
+	services.PluginServices = plugins
 	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
 
-	resp, err := server.Client().Get(server.URL + "/assets/books%2Fpaper.pdf/pages/2?wide=1024")
+	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.pdf")
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("status %d, want 200", resp.StatusCode)
-	}
-	if ct := resp.Header.Get("Content-Type"); ct != "image/png" {
-		t.Errorf("content-type %q, want image/png", ct)
-	}
 	body, _ := io.ReadAll(resp.Body)
-	if string(body) != "fake-png-bytes" {
-		t.Errorf("body %q, want fake-png-bytes", string(body))
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK || string(body) != "page bytes" {
+		t.Fatalf("answered %d %q", resp.StatusCode, body)
 	}
-	if docService.renderedPath != "books/paper.pdf" || docService.renderedPage != 2 || docService.renderedWide != 1024 {
-		t.Errorf("unexpected render request: path=%q, page=%d, width=%d", docService.renderedPath, docService.renderedPage, docService.renderedWide)
+	if !slices.Equal(plugins.routed, []string{"/plugin/org.example.reader/pages/2?path=a.pdf"}) {
+		t.Errorf("forwarded %q", plugins.routed)
+	}
+}
+
+func TestPluginRouteIsNotServedByANarrowBuild(t *testing.T) {
+	plugins := &routedPlugins{}
+	services := newBareServices()
+	services.PluginServices = plugins
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler(), numenv1connect.NoteServiceName))
+	t.Cleanup(server.Close)
+
+	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if resp.StatusCode != http.StatusNotFound || len(plugins.routed) != 0 {
+		t.Errorf("answered %d, forwarded %q", resp.StatusCode, plugins.routed)
 	}
 }
 

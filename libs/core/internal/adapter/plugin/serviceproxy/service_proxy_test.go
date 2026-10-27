@@ -21,6 +21,7 @@ import (
 type servingHost struct {
 	services  map[string]string
 	endpoints map[string]pluginport.Endpoint
+	manifests map[string]pluginport.PluginManifest
 	mu        sync.Mutex
 	released  int
 }
@@ -29,8 +30,9 @@ func (h *servingHost) ResolveCapability(string) (pluginport.DiscoveredPlugin, er
 	return pluginport.DiscoveredPlugin{}, &pluginport.UnavailableError{Reason: pluginport.PluginNotInstalled}
 }
 
-func (h *servingHost) GetPlugin(string) (pluginport.DiscoveredPlugin, bool) {
-	return pluginport.DiscoveredPlugin{}, false
+func (h *servingHost) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
+	manifest, found := h.manifests[id]
+	return pluginport.DiscoveredPlugin{Manifest: manifest}, found
 }
 
 func (h *servingHost) ResolveService(service string) (pluginport.DiscoveredPlugin, bool) {

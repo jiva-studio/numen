@@ -6,12 +6,10 @@ import (
 	"errors"
 	"io"
 	"net/http"
-	"net/http/httptest"
 	"net/url"
 	"os"
 	"path/filepath"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,7 +17,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/internal/csp"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
@@ -39,6 +36,8 @@ type PluginServices = interface {
 	http.Handler
 	// Serves reports whether an enabled plugin serves the service the path names.
 	Serves(urlPath string) bool
+	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
+	ServeRoute(w http.ResponseWriter, r *http.Request)
 }
 
 // served is one service this build answers: where its calls arrive, and what
@@ -60,15 +59,12 @@ func mount(pos string, to http.Handler) served { return served{posVal: pos, to: 
 // it. Naming none is a build that answers the whole schema.
 func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler {
 	routes := s.newRoutes(named)
-	// The bytes of a vault file are served only where documents are answered about.
-	hasAssets := isServed(named, numenv1connect.DocumentServiceName) || isServed(named, numenv1connect.BookServiceName)
+	// Only a build that answers the whole schema serves the bytes of vault files and the plugin route.
+	isWhole := len(named) == 0
 
 	// Where a recording is played from is known once the socket it is served
 	// over is open, which is before a page is ever asked for.
-	policy := csp.Sources{
-		Media:   s.Playing.getPlayOrigins(),
-		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
-	}.Policy()
+	policy := csp.Sources{Media: s.Playing.getPlayOrigins()}.Policy()
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Security-Policy", policy)
 		// A window being taken away answers nothing.
@@ -78,7 +74,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 		}
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
-		if !isAgent && len(named) == 0 && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+		if !isAgent && isWhole && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
 			s.PluginServices.ServeHTTP(w, r)
 			return
 		}
@@ -88,7 +84,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 				return
 			}
 		}
-		s.serveBeside(w, r, hasAssets, files)
+		s.serveBeside(w, r, isWhole, files)
 	})
 }
 
@@ -179,7 +175,7 @@ const updateEndpoint = "https://dl.numen.md/latest/latest.json"
 
 // serveBeside answers what no service does: the bytes of a file, the page the
 // interface opens at, and every other file the interface is made of.
-func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets bool, files http.Handler) {
+func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, isWhole bool, files http.Handler) {
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)
@@ -190,7 +186,14 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, hasAssets
 		}
 		defer s.state.questions.finish()
 		wire.ServePluginAsset(w, r, s.getPluginDir)
-	case hasAssets && strings.HasPrefix(r.URL.Path, assetsRoute):
+	case isWhole && s.PluginServices != nil && strings.HasPrefix(r.URL.Path, wire.PluginRoute):
+		if !s.state.questions.begin() {
+			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
+			return
+		}
+		defer s.state.questions.finish()
+		s.PluginServices.ServeRoute(w, r)
+	case isWhole && strings.HasPrefix(r.URL.Path, assetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
@@ -254,60 +257,14 @@ func (s *Services) newQuestionCounter() connect.HandlerOption {
 	))
 }
 
-// assetsRoute is the path prefix where document pages and vault file assets are served.
+// assetsRoute is the path prefix where the bytes of vault files are served.
 const assetsRoute = "/assets/"
-
-type localHTTPClient struct {
-	handler http.Handler
-}
-
-func (c *localHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	rec := httptest.NewRecorder()
-	c.handler.ServeHTTP(rec, req)
-	return rec.Result(), nil
-}
-
-func parseAssetPage(r *http.Request) (string, int32, int32, bool) {
-	escaped := r.URL.EscapedPath()
-	rest := strings.TrimPrefix(escaped, assetsRoute)
-	if rest == "" || rest == escaped {
-		return "", 0, 0, false
-	}
-	idx := strings.Index(rest, "/pages/")
-	if idx == -1 {
-		return "", 0, 0, false
-	}
-	pathEscaped := rest[:idx]
-	pageStr := rest[idx+len("/pages/"):]
-	if slashIdx := strings.Index(pageStr, "/"); slashIdx != -1 {
-		pageStr = pageStr[:slashIdx]
-	}
-	pathUnescaped, err := url.PathUnescape(pathEscaped)
-	if err != nil || pathUnescaped == "" {
-		return "", 0, 0, false
-	}
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page < 0 {
-		return "", 0, 0, false
-	}
-	wide, _ := strconv.Atoi(r.URL.Query().Get("wide"))
-	if wide < 0 {
-		wide = 0
-	}
-	return pathUnescaped, int32(page), int32(wide), true
-}
 
 func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	path, page, width, isPage := parseAssetPage(r)
-	if isPage {
-		s.serveDocumentPage(w, r, path, page, width)
-		return
-	}
-
 	rest := strings.TrimPrefix(r.URL.EscapedPath(), assetsRoute)
 	unescapedPath, err := url.PathUnescape(rest)
 	if err != nil || unescapedPath == "" {
@@ -318,31 +275,6 @@ func (s *Services) serveAsset(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Error(w, "asset not found", http.StatusNotFound)
-}
-
-func (s *Services) serveDocumentPage(w http.ResponseWriter, r *http.Request, path string, page, width int32) {
-	if s.PluginServices == nil {
-		http.Error(w, "no document plugin available", http.StatusServiceUnavailable)
-		return
-	}
-	client := numenv1connect.NewDocumentServiceClient(&localHTTPClient{handler: s.PluginServices}, "http://local")
-	resp, err := client.RenderPage(r.Context(), connect.NewRequest(&v1.RenderPageRequest{
-		Path:  path,
-		Page:  page,
-		Width: width,
-	}))
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadGateway)
-		return
-	}
-	contentType := resp.Msg.ContentType
-	if contentType == "" {
-		contentType = "image/png"
-	}
-	w.Header().Set("Content-Type", contentType)
-	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
-	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(resp.Msg.ImageData)
 }
 
 func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unescapedPath string) bool {

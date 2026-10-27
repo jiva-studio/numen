@@ -94,9 +94,7 @@ func getResponse(handler http.Handler, path string) *httptest.ResponseRecorder {
 // is the whole of what stops one reaching the network: a remote `url()` is
 // into is permitted by `style-src`.
 func TestTheWindowIsHeldToOnePolicy(t *testing.T) {
-	target := csp.Sources{
-		Connect: []string{"https://dl.numen.md", "https://numen-dl.b-cdn.net"},
-	}.Policy()
+	target := csp.Sources{}.Policy()
 
 	handler := newBareServices().NewHandler(http.NotFoundHandler())
 	for _, path := range []string{"", "/", "/index.html", "/built/index.css"} {

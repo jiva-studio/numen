@@ -12,6 +12,10 @@ import (
 // PluginAssetsRoute is the path prefix where plugin bundles and assets are served.
 const PluginAssetsRoute = "/api/plugins/"
 
+// PluginRoute is the path prefix the window forwards to plugin backends: /plugin/<id>/<rest> reaches
+// the backend of the plugin with that id at /plugin/<rest>.
+const PluginRoute = "/plugin/"
+
 func setPluginAssetContentType(w http.ResponseWriter, path string) {
 	switch filepath.Ext(path) {
 	case ".js", ".mjs":

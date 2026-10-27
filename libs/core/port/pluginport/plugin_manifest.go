@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"net/url"
 	"regexp"
 	"slices"
 	"strings"
@@ -90,6 +91,7 @@ var (
 	ErrInvalidService         = errors.New("invalid service name")
 	ErrInvalidNoteType        = errors.New("invalid note type")
 	ErrNoBackend              = errors.New("only a backend serves this, and the plugin declares none")
+	ErrInvalidOrigin          = errors.New("invalid origin")
 )
 
 // SettingStoredSecrets is the setting under which the host records, for a plugin,
@@ -233,6 +235,9 @@ type PluginManifest struct {
 	TextInput *PluginTextInput `json:"textInput,omitempty"`
 	// Playback is the file types the plugin keeps a copy to play of. A plugin that keeps none declares none.
 	Playback *PluginPlayback `json:"playback,omitempty"`
+	// Origins are the https origins what the plugin serves on its route may load images, media and
+	// data from, such as "https://example.org".
+	Origins []string `json:"origins,omitempty"`
 }
 
 // PluginNoteType declares one type of note and how the index keeps the notes of it.
@@ -294,6 +299,7 @@ func (m PluginManifest) ListIssues() []error {
 	issues = append(issues, m.listDependencyIssues()...)
 	issues = append(issues, m.listSecretIssues()...)
 	issues = append(issues, m.listServiceIssues()...)
+	issues = append(issues, m.listOriginIssues()...)
 	issues = append(issues, m.listNoteTypeIssues()...)
 	issues = append(issues, m.listCommandIssues()...)
 	issues = append(issues, m.listTextInputIssues()...)
@@ -315,6 +321,21 @@ func (m PluginManifest) listServiceIssues() []error {
 			issues = append(issues, fmt.Errorf("%w: %q is listed twice", ErrInvalidService, name))
 		}
 		observed[name] = true
+	}
+	return issues
+}
+
+// listOriginIssues checks that each origin is an https scheme and host with nothing after it, so
+// that it can stand in a Content-Security-Policy source list.
+func (m PluginManifest) listOriginIssues() []error {
+	var issues []error
+	for _, origin := range m.Origins {
+		parsed, err := url.Parse(origin)
+		if err != nil || parsed.Scheme != "https" || parsed.Host == "" || parsed.User != nil ||
+			parsed.Path != "" || parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" ||
+			strings.ContainsAny(origin, " ;,'") {
+			issues = append(issues, fmt.Errorf("%w: %q", ErrInvalidOrigin, origin))
+		}
 	}
 	return issues
 }

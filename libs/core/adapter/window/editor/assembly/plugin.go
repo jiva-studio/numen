@@ -13,6 +13,7 @@ import (
 type PluginServices = interface {
 	Serves(string) bool
 	ServeHTTP(http.ResponseWriter, *http.Request)
+	ServeRoute(http.ResponseWriter, *http.Request)
 }
 
 // PluginAssembly is what this window asks to manage, reach, and report plugins.

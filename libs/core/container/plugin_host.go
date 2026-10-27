@@ -131,6 +131,8 @@ type PluginServices = interface {
 	http.Handler
 	// Serves reports whether an enabled plugin serves the service the path names.
 	Serves(urlPath string) bool
+	// ServeRoute forwards a request on the plugin route, /plugin/<id>/..., to that plugin.
+	ServeRoute(w http.ResponseWriter, r *http.Request)
 }
 
 // GetPluginServices is the forwarding of the services plugins serve to the windows. Where there is
@@ -149,6 +151,10 @@ func (noPluginServices) Serves(string) bool { return false }
 
 func (noPluginServices) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 	http.Error(w, "no plugin serves this service", http.StatusNotFound)
+}
+
+func (noPluginServices) ServeRoute(w http.ResponseWriter, _ *http.Request) {
+	http.Error(w, "plugin not found", http.StatusNotFound)
 }
 
 // GetPluginRetrier starts, as the window asks, a plugin the host suspends once more.
