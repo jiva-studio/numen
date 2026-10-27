@@ -95,6 +95,27 @@ describe('two questions in flight', () => {
   })
 })
 
+describe('a question in flight', () => {
+  it('names its note until the answer lands', async () => {
+    let release: () => void = () => {}
+    const plex = usePlexView(
+      fake(async (path) => {
+        await new Promise<void>((resolve) => (release = resolve))
+        return answer(path)
+      }),
+    )
+
+    const going = plex.go('Quantum')
+    expect(plex.nextPath.value).toBe('Quantum')
+    expect(plex.here.value).toBe('')
+
+    release()
+    await going
+    expect(plex.nextPath.value).toBe('')
+    expect(plex.here.value).toBe('Quantum')
+  })
+})
+
 describe('a note that moved while a question was in flight', () => {
   it('lets go of the answer about where it was', async () => {
     let release = () => {}
@@ -290,12 +311,12 @@ describe('a note the vault does not hold yet', () => {
     )
 
     await plex.go('Quantum.md')
-    expect(plex.missingPath.value).toBe('Quantum.md')
+    expect(plex.nextPath.value).toBe('Quantum.md')
 
     indexed.add('Quantum.md')
-    await plex.go(plex.missingPath.value)
+    await plex.go(plex.nextPath.value)
 
-    expect(plex.missingPath.value).toBe('')
+    expect(plex.nextPath.value).toBe('')
     expect(plex.here.value).toBe('Quantum.md')
   })
 })

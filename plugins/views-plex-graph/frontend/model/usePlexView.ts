@@ -26,8 +26,11 @@ export function usePlexView(core: Neighbours) {
   const here = ref('')
   /** What this plex could not show, in words the window sets up for it. */
   const error = ref('')
-  /** A note asked for before the vault held it, gone to again on the next change of the vault. */
-  const missingPath = ref('')
+  /**
+   * The note a change of the vault asks for again: one asked for whose answer has not landed, or one
+   * the vault did not hold yet. Empty where there is none, and the plex is asked for `here`.
+   */
+  const nextPath = ref('')
 
   /**
    * Whether the first neighbourhood is still on its way. An empty plex and one
@@ -40,20 +43,21 @@ export function usePlexView(core: Neighbours) {
   async function go(path: string) {
     if (!guard.open()) return
     const mine = guard.acquireRequest()
+    nextPath.value = path
     try {
       const answer = await core.neighbourhood(path)
       if (!mine.isCurrent) return
       if (!answer.focus.path) {
         error.value = `${path} is not in the vault`
-        missingPath.value = path
         return
       }
       error.value = ''
-      missingPath.value = ''
+      nextPath.value = ''
       here.value = path
       if (!areNeighbourhoodsEqual(neighbourhood.value, answer)) neighbourhood.value = answer
     } catch (caughtError) {
       if (!mine.isCurrent) return
+      nextPath.value = ''
       error.value = formatErrorMessage(caughtError)
     } finally {
       if (mine.isCurrent) isLoading.value = false
@@ -71,5 +75,5 @@ export function usePlexView(core: Neighbours) {
     guard.close()
   }
 
-  return { neighbourhood, here, error, missingPath, isLoading, go, followMoves, close }
+  return { neighbourhood, here, error, nextPath, isLoading, go, followMoves, close }
 }

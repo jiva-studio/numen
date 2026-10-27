@@ -121,8 +121,8 @@ export interface PlexView {
   readonly neighbourhood: Ref<Neighbourhood | null>
   readonly here: Ref<string>
   readonly error: Ref<string>
-  /** A note asked for that the vault did not hold yet, and empty where none is. */
-  readonly missingPath: Ref<string>
+  /** A note asked for whose answer has not landed, or that the vault did not hold yet; empty where none is. */
+  readonly nextPath: Ref<string>
   readonly isLoading: Ref<boolean>
   go(path: string): Promise<void>
   followMoves(renames: readonly PathRename[]): void

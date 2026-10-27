@@ -7,6 +7,7 @@ import { createPlexKind, PLEX } from './kind'
 import { createHost, type HostOptions } from './fixtures/host'
 import { settle, viewOn } from './fixtures'
 import type { PlexTabState } from './types'
+import { usePlexView } from './model/usePlexView'
 
 /** The plex tabs of a window, opened, shown and closed the way the window does it. */
 const window = (options: HostOptions = {}) => {
@@ -99,11 +100,35 @@ describe('a change to the vault', () => {
   it('navigates a plex to its missing path on refresh', async () => {
     const one = window()
     const plex = await one.openTab('One.md')
-    plex.state.view.missingPath.value = 'Quantum.md'
+    plex.state.view.nextPath.value = 'Quantum.md'
 
     await one.refresh({})
 
     expect(one.views[0]?.went.at(-1)).toBe('Quantum.md')
+  })
+
+  it('keeps a plex on the note it is on its way to when the vault changes before the answer lands', async () => {
+    const fixture = createHost()
+    const answers: (() => void)[] = []
+    const plexes = createPlexKind(fixture.host, () =>
+      usePlexView({
+        neighbourhood: async (path) => {
+          await new Promise<void>((resolve) => answers.push(resolve))
+          return { focus: { path, title: path }, focusType: 'note', related: [] }
+        },
+      }),
+    )
+    const state = effectScope(true).run(() => plexes.kind.open!('One.md', `${PLEX}:1`))!
+    answers.shift()?.()
+    await settle()
+
+    const going = state.view.go('Quantum.md')
+    const refreshing = plexes.refresh({})
+    await settle()
+    answers.splice(0).forEach((release) => release())
+    await Promise.all([going, refreshing])
+
+    expect(state.view.here.value).toBe('Quantum.md')
   })
 
   it('asks every plex for the note it is standing on, each of its own', async () => {
