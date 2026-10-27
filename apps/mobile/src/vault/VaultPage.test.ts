@@ -45,9 +45,12 @@ describe('a core that cannot be reached', () => {
 })
 
 describe('a core that answers', () => {
-  it('opens the seeded note, and opens it again from its row once closed', async () => {
+  it('opens the opening note, and opens it again from its row once closed', async () => {
     const readNote = vi.fn().mockResolvedValue({ body: '# Physics\n', at: undefined })
-    vi.mocked(startCore).mockResolvedValueOnce({ notes: { readNote } } as unknown as Core)
+    const getOpeningNote = vi.fn().mockResolvedValue({ note: { path: 'Physics.md' } })
+    vi.mocked(startCore).mockResolvedValueOnce({
+      notes: { readNote, getOpeningNote },
+    } as unknown as Core)
     const page = mount(VaultPage, { attachTo: document.body })
     await flushPromises()
 
@@ -61,6 +64,18 @@ describe('a core that answers', () => {
     await page.get('[data-testid="note"]').trigger('click')
     await flushPromises()
     expect(page.getComponent(NoteSheet).props('path')).toBe('Physics.md')
+
+    page.unmount()
+  })
+
+  it('opens no note and shows no row for a vault without an opening note', async () => {
+    const getOpeningNote = vi.fn().mockResolvedValue({ note: undefined })
+    vi.mocked(startCore).mockResolvedValueOnce({ notes: { getOpeningNote } } as unknown as Core)
+    const page = mount(VaultPage, { attachTo: document.body })
+    await flushPromises()
+
+    expect(page.findComponent(NoteSheet).exists()).toBe(false)
+    expect(page.find('[data-testid="note"]').exists()).toBe(false)
 
     page.unmount()
   })

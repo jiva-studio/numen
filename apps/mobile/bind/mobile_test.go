@@ -15,10 +15,42 @@ import (
 	"github.com/jiva-studio/numen/apps/mobile/bind"
 )
 
+// graphCentre is the note of writeGraph with every relation: a parent, two
+// children, a sibling and a jump.
+const graphCentre = "Physics.md"
+
+// writeGraph writes a small graph of notes into the vault folder.
+func writeGraph(t *testing.T, root string) {
+	t.Helper()
+	if err := os.MkdirAll(root, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	notes := map[string]string{
+		"Sciences.md": "---\ntitle: Sciences\nlinks:\n" +
+			"  - to: \"[[Physics]]\"\n    role: child\n" +
+			"  - to: \"[[Optics]]\"\n    role: child\n---\n\n# Sciences\n",
+		"Physics.md": "---\ntitle: Physics\nlinks:\n" +
+			"  - to: \"[[Sciences]]\"\n    role: parent\n" +
+			"  - to: \"[[Entropy]]\"\n    role: child\n" +
+			"  - to: \"[[Tides]]\"\n    role: child\n" +
+			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n# Physics\n",
+		"Optics.md":  "# Optics\n",
+		"Entropy.md": "# Entropy\n",
+		"Tides.md":   "# Tides\n",
+		"Vellum.md":  "# Vellum\n",
+	}
+	for name, text := range notes {
+		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
 // TestStartAnswers is the whole of what a phone does: the core comes up, the
 // listing arrives, a note is made, and the listing has it.
 func TestStartAnswers(t *testing.T) {
 	dir := t.TempDir()
+	writeGraph(t, filepath.Join(dir, "vault"))
 	port, err := bind.Start(dir)
 	if err != nil {
 		t.Fatalf("starting: %v", err)
@@ -63,17 +95,16 @@ func TestStartAnswers(t *testing.T) {
 	}
 
 	if got := len(names()); got == 0 {
-		t.Fatal("the vault it seeded lists nothing")
+		t.Fatal("the vault lists nothing")
 	}
 
-	// picture worth drawing. The vault is read behind the caller, so the relations
-	// arrive and not being there.
+	// The vault is read behind the caller, so the relations are polled for.
 	wanted := []string{"RELATION_PARENT", "RELATION_CHILD", "RELATION_JUMP", "RELATION_SIBLING"}
 	relations := map[string]int{}
 	for until := time.Now().Add(10 * time.Second); time.Now().Before(until); {
 		relations = map[string]int{}
 		around, _ := ask("NoteService", "GetNeighbourhood",
-			map[string]any{"path": bind.Seeded})["related"].([]any)
+			map[string]any{"path": graphCentre})["related"].([]any)
 		for _, one := range around {
 			relations[one.(map[string]any)["relation"].(string)]++
 		}
@@ -84,7 +115,7 @@ func TestStartAnswers(t *testing.T) {
 	}
 	for _, relation := range wanted {
 		if relations[relation] == 0 {
-			t.Errorf("%s has no %s: %v", bind.Seeded, relation, relations)
+			t.Errorf("%s has no %s: %v", graphCentre, relation, relations)
 		}
 	}
 

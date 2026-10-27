@@ -63,9 +63,6 @@ func Start(dir string) (int, error) {
 
 	cfg := makeConfig(dir, os.Stderr)
 
-	if err := seedVault(root); err != nil {
-		return 0, err
-	}
 	// The list holds a folder under the name it resolves to, and that is the
 	// name the vault is opened by.
 	filed, err := registerVault(cfg, root)
@@ -227,46 +224,6 @@ func registerVault(cfg container.Config, root string) (string, error) {
 		return "", err
 	}
 	return added.Path, nil
-}
-
-// relation at once: a parent above it, two children below, a sibling beside and a
-// jump across.
-const Seeded = "Physics.md"
-
-// seedVault writes a small graph into a vault that holds none, so that a picture has
-// something to draw.
-func seedVault(root string) error {
-	target, err := os.ReadDir(root)
-	if err != nil {
-		return err
-	}
-	for _, entry := range target {
-		if strings.HasSuffix(entry.Name(), ".md") {
-			return nil
-		}
-	}
-	content := map[string]string{
-		"Sciences.md": "---\ntitle: Sciences\nlinks:\n" +
-			"  - to: \"[[Physics]]\"\n    role: child\n" +
-			"  - to: \"[[Optics]]\"\n    role: child\n---\n\n" +
-			"# Sciences\n\nWhat is asked of the world, sorted by the asking.\n",
-		"Physics.md": "---\ntitle: Physics\nlinks:\n" +
-			"  - to: \"[[Sciences]]\"\n    role: parent\n" +
-			"  - to: \"[[Entropy]]\"\n    role: child\n" +
-			"  - to: \"[[Tides]]\"\n    role: child\n    type: measures\n" +
-			"  - to: \"[[Vellum]]\"\n    role: jump\n---\n\n" +
-			"# Physics\n\nMatter, and what it does when nobody is looking.\n",
-		"Optics.md":  "# Optics\n\nLight, bent and counted.\n",
-		"Entropy.md": "# Entropy\n\nWhat a measure counts is the ways a thing can be arranged.\n",
-		"Tides.md":   "# Tides\n\nTwo bulges, one turning planet, and a day with four of them in it.\n",
-		"Vellum.md":  "# Vellum\n\nA skin scraped thin enough to write on and thick enough to fold.\n",
-	}
-	for name, text := range content {
-		if err := os.WriteFile(filepath.Join(root, name), []byte(text), 0o644); err != nil {
-			return fmt.Errorf("seeding %s: %w", name, err)
-		}
-	}
-	return nil
 }
 
 // Page is the origin the platform serves this application's own page from:

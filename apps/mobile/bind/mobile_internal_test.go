@@ -126,7 +126,7 @@ func TestStartAnswersTheErrorOfAFolderItCannotMakeAVaultIn(t *testing.T) {
 	}
 }
 
-func TestStartMakesTheVaultFolderReadableByEveryoneAndSeedsItReadable(t *testing.T) {
+func TestStartCreatesAnEmptyVaultFolderReadableByEveryone(t *testing.T) {
 	setUmask(t, 0)
 	dir := t.TempDir()
 	startIn(t, dir)
@@ -138,12 +138,14 @@ func TestStartMakesTheVaultFolderReadableByEveryoneAndSeedsItReadable(t *testing
 	if got := info.Mode().Perm(); got != 0o755 {
 		t.Errorf("the vault folder is %v, want 0755", got)
 	}
-	seeded, err := os.Stat(filepath.Join(root, Seeded))
+	entries, err := os.ReadDir(root)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := seeded.Mode().Perm(); got != 0o644 {
-		t.Errorf("the seeded note is %v, want 0644", got)
+	for _, entry := range entries {
+		if strings.HasSuffix(entry.Name(), ".md") {
+			t.Errorf("the vault folder holds the note %s after the start, want no notes", entry.Name())
+		}
 	}
 }
 
@@ -271,35 +273,6 @@ func TestPortIsZeroOnceTheServerEndedOnItsOwn(t *testing.T) {
 	mu.Unlock()
 	if got := Port(); got != 0 {
 		t.Errorf("Port() = %d for a server that ended", got)
-	}
-}
-
-func TestSeed_PreservesExistingVaultNotes(t *testing.T) {
-	root := t.TempDir()
-	for _, name := range []string{"a.txt", "b.md"} {
-		if err := os.WriteFile(filepath.Join(root, name), nil, 0o600); err != nil {
-			t.Fatal(err)
-		}
-	}
-	if err := seedVault(root); err != nil {
-		t.Fatal(err)
-	}
-	target, err := os.ReadDir(root)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(target) != 2 {
-		t.Errorf("the vault holds %d entries after seeding, want the 2 it had", len(target))
-	}
-}
-
-func TestSeedAnswersTheErrorOfAFolderItCannotList(t *testing.T) {
-	err := seedVault(filepath.Join(t.TempDir(), "missing"))
-	if !errors.Is(err, os.ErrNotExist) {
-		t.Fatalf("seed answered %v, want the folder's own error", err)
-	}
-	if strings.Contains(err.Error(), "seeding") {
-		t.Errorf("a folder that could not be listed was reported as a failed write: %v", err)
 	}
 }
 
@@ -458,49 +431,12 @@ func checkCORSHeaders(t *testing.T, head http.Header) {
 	}
 }
 
-func TestSeedAnswersTheErrorOfANoteItCannotWrite(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("a superuser writes into any folder")
-	}
-	root := t.TempDir()
-	if err := os.Chmod(root, 0o500); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
-	err := seedVault(root)
-	if !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") {
-		t.Errorf("seed answered %v, want the permission error naming the note it was writing", err)
-	}
-}
-
 // checkNoIndexOpened holds that a start which ended before it opened the index
 // left none behind.
 func checkNoIndexOpened(t *testing.T, dir string) {
 	t.Helper()
 	if _, err := os.Stat(filepath.Join(dir, "index.db")); !errors.Is(err, fs.ErrNotExist) {
 		t.Errorf("a start that failed before the index was opened left it behind: %v", err)
-	}
-}
-
-func TestStart_SeedError_FailsAndCleansUp(t *testing.T) {
-	if os.Geteuid() == 0 {
-		t.Skip("a superuser writes into any folder")
-	}
-	keepEnvironment(t)
-	dir := t.TempDir()
-	root := filepath.Join(dir, "vault")
-	if err := os.Mkdir(root, 0o500); err != nil {
-		t.Fatal(err)
-	}
-	t.Cleanup(func() { _ = os.Chmod(root, 0o700) })
-	port, err := Start(dir)
-	if err == nil || !errors.Is(err, fs.ErrPermission) || !strings.Contains(err.Error(), "seeding ") || port != 0 {
-		_ = Stop()
-		t.Fatalf("Start answered %d, %v for a vault folder it cannot write into, want 0 and the error of seeding", port, err)
-	}
-	checkNoIndexOpened(t, dir)
-	if Port() != 0 {
-		t.Errorf("a start that failed listens on %d", Port())
 	}
 }
 
