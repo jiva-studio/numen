@@ -40,6 +40,15 @@ func getRecordName(path string) string {
 	return hex.EncodeToString(sum[:]) + ".json"
 }
 
+// getVersionName returns the store file name of the text version of a path's recognition.
+func getVersionName(path string) string {
+	sum := sha256.Sum256([]byte(path))
+	return hex.EncodeToString(sum[:]) + ".jsonl"
+}
+
+// textKind is the kind of the text versions the plugin makes.
+const textKind domain.TextKind = "recognition"
+
 // readRecord returns the stored record of the path, or nil when there is none.
 func readRecord(ctx context.Context, store host.Store, path string) (*record, error) {
 	raw, err := store.Read(ctx, getRecordName(path))
@@ -77,26 +86,24 @@ func (r *record) isCompleteFor(inputHash string) bool {
 	return r != nil && r.InputHash == inputHash && r.IsComplete
 }
 
-// getTextParts is the parts of one page as the host reads them.
-func (r *record) getTextParts(index int) []domain.TextPart {
-	out := make([]domain.TextPart, 0, len(r.Pages[index]))
+// getTextSegments is the segments of one page as the version file holds them: the page counted
+// from 1 and the rectangles of each segment in its selector.
+func (r *record) getTextSegments(index int) []domain.TextSegment {
+	out := make([]domain.TextSegment, 0, len(r.Pages[index]))
 	for _, one := range r.Pages[index] {
-		rects := make([]domain.Rect, 0, len(one.Rects))
-		for _, rect := range one.Rects {
-			rects = append(rects, domain.Rect{MinX: rect[0], MinY: rect[1], MaxX: rect[2], MaxY: rect[3]})
-		}
-		out = append(out, domain.TextPart{Text: one.Text, Section: one.Section, Place: domain.TextPlace{Page: index, Rects: rects}})
+		selector := host.Selector{Page: index + 1, Boxes: one.Rects}
+		out = append(out, domain.TextSegment{Text: one.Text, Heading: one.Section, Selector: selector.Encode()})
 	}
 	return out
 }
 
 // getText is the whole text of the record, as the host joins its parts.
 func (r *record) getText() domain.VersionText {
-	var parts []domain.TextPart
+	var segments []domain.TextSegment
 	for index := range r.Pages {
-		parts = append(parts, r.getTextParts(index)...)
+		segments = append(segments, r.getTextSegments(index)...)
 	}
-	return domain.NewVersionText(domain.TextVersion{Format: domain.TextFormatPositioned}, parts)
+	return domain.NewVersionText(domain.TextVersion{Kind: textKind}, segments)
 }
 
 // blockGap ends every block of a page.

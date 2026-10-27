@@ -46,12 +46,12 @@ type record struct {
 	Downloader string `json:"downloader"`
 }
 
-// readParts is the text kept under the key as the parts of a text version, and its format: the
-// prose whole, or one part to a caption. A key with no text gets host.ErrNotExist.
-func (t texts) readParts(ctx context.Context, key string) ([]domain.TextPart, domain.TextFormat, error) {
+// readSegments is the text kept under the key as the segments of a text version, and its kind:
+// the prose whole, or one segment to a caption. A key with no text gets host.ErrNotExist.
+func (t texts) readSegments(ctx context.Context, key string) ([]domain.TextSegment, domain.TextKind, error) {
 	raw, err := t.store.Read(ctx, key+captionExt)
 	if err == nil {
-		return getCaptionParts(captions.Parse(raw)), domain.TextFormatTimed, nil
+		return getCaptionSegments(captions.Parse(raw)), kindCaptions, nil
 	}
 	if !errors.Is(err, host.ErrNotExist) {
 		return nil, "", err
@@ -60,8 +60,17 @@ func (t texts) readParts(ctx context.Context, key string) ([]domain.TextPart, do
 	if err != nil {
 		return nil, "", err
 	}
-	return []domain.TextPart{{Text: string(raw)}}, domain.TextFormatPlain, nil
+	return []domain.TextSegment{{Text: string(raw)}}, kindArticle, nil
 }
+
+// The kinds of the text versions of links.
+const (
+	kindArticle  domain.TextKind = "article"
+	kindCaptions domain.TextKind = "transcript"
+)
+
+// versionExt ends the file of a link's text in the common format of text versions.
+const versionExt = ".jsonl"
 
 // writeText keeps what was fetched under the key, the captions or the prose, with its record, and
 // takes away what an earlier fetch kept of the other kind.
@@ -93,17 +102,6 @@ func (t texts) readRecord(ctx context.Context, key string) (record, error) {
 	}
 	var rec record
 	return rec, json.Unmarshal(raw, &rec)
-}
-
-// deleteText takes away the text kept under the key, and marks it as one the host's asking does not
-// fetch again.
-func (t texts) deleteText(ctx context.Context, key string) error {
-	return errors.Join(
-		t.store.Delete(ctx, key+proseExt),
-		t.store.Delete(ctx, key+captionExt),
-		t.store.Delete(ctx, key+recordExt),
-		t.store.Write(ctx, key+noneExt, nil),
-	)
 }
 
 // markNone marks the key as an address that publishes no text.
@@ -164,26 +162,15 @@ func (t texts) deleteCopy(ctx context.Context, key string) error {
 	return errors.Join(errs...)
 }
 
-// getCaptionParts is the captions as the parts of a timed text, one line to a caption.
-func getCaptionParts(cues []download.Cue) []domain.TextPart {
-	parts := make([]domain.TextPart, len(cues))
+// getCaptionSegments is the captions as the segments of a text version, one line to a caption,
+// each with its span in seconds as its selector.
+func getCaptionSegments(cues []download.Cue) []domain.TextSegment {
+	segments := make([]domain.TextSegment, len(cues))
 	for i, cue := range cues {
-		text := cue.Text
-		if i < len(cues)-1 {
-			text += "\n"
+		segments[i] = domain.TextSegment{
+			Text:     cue.Text + "\n",
+			Selector: host.Selector{T: []float64{float64(cue.From) / 1000, float64(cue.To) / 1000}}.Encode(),
 		}
-		parts[i] = domain.TextPart{Text: text, Place: domain.TextPlace{
-			Start: msToDuration(cue.From), End: msToDuration(cue.To),
-		}}
 	}
-	return parts
-}
-
-// hashParts is the hash of the text the parts make.
-func hashParts(parts []domain.TextPart) string {
-	var b strings.Builder
-	for _, part := range parts {
-		b.WriteString(part.Text)
-	}
-	return domain.HashContent([]byte(b.String()))
+	return segments
 }

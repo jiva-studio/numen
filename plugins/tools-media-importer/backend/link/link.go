@@ -13,7 +13,6 @@ import (
 	pathpkg "path"
 	"strings"
 	"sync"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
@@ -236,12 +235,15 @@ func (l *Links) fetchText(ctx context.Context, folder texts, link Link) error {
 
 // putVersion reports the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, folder texts, link Link) error {
-	parts, format, err := folder.readParts(ctx, link.Key)
+	segments, kind, err := folder.readSegments(ctx, link.Key)
 	if err != nil {
 		return err
 	}
+	if err := host.WriteText(ctx, folder.store, link.Key+versionExt, segments); err != nil {
+		return err
+	}
 	_, err = l.host.Texts.PutVersion(ctx, host.TextPut{
-		Path: link.Path, Key: link.Key, Format: format, InputHash: link.Key, Hash: hashParts(parts),
+		Path: link.Path, Key: link.Key, Kind: kind, SourceHash: link.Key, File: link.Key + versionExt,
 	})
 	return err
 }
@@ -407,5 +409,3 @@ func (w *storeWriter) send(chunk []byte) error {
 	w.report(w.byteCount)
 	return nil
 }
-
-func msToDuration(ms int) time.Duration { return time.Duration(ms) * time.Millisecond }

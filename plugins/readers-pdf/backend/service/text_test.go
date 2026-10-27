@@ -40,8 +40,7 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	}
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(func() string { return root }, texts)
-	texts.Provide(pluginID, server)
+	server := NewTextServer(func() string { return root }, texts, texts.GetStore(pluginID))
 	return texts, server, raw
 }
 
@@ -65,28 +64,25 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 	return domain.VersionText{}
 }
 
-func TestTheTextLayerOfAFileIsItsLivePositionedVersion(t *testing.T) {
+func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 	texts, server, raw := newVault(t, "books/tiny.pdf", "tiny.pdf")
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "vault", Path: "books/tiny.pdf"}); err != nil {
+	if err := server.CreateText(t.Context(), host.TextCreation{Path: "books/tiny.pdf"}); err != nil {
 		t.Fatalf("CreateText: %v", err)
 	}
 
 	text := readLive(t, texts, "books/tiny.pdf")
-	if text.Version.Format != domain.TextFormatPositioned {
-		t.Errorf("format %q, want positioned", text.Version.Format)
+	if text.Version.Kind != textKind {
+		t.Errorf("kind %q, want %q", text.Version.Kind, textKind)
 	}
-	if text.Version.InputHash != domain.HashContent(raw) || !text.Version.IsFromFile() {
+	if text.Version.SourceHash != domain.HashContent(raw) || !text.Version.IsFromFile() {
 		t.Errorf("version %+v is not made from the file as it is", text.Version)
 	}
 	if want := "Alpha beta gamma\nDelta epsilon zeta\n"; text.Text != want {
 		t.Errorf("text %q, want %q", text.Text, want)
 	}
-	if text.Version.Hash != domain.HashContent([]byte(text.Text)) {
-		t.Errorf("the version's hash is not the hash of its text")
-	}
-	if got := text.Locate(strings.Index(text.Text, "epsilon")); got != "page 2 of the file" {
-		t.Errorf("epsilon is located at %q, want page 2 of the file", got)
+	if got := text.GetSelector(strings.Index(text.Text, "epsilon")); !strings.HasPrefix(string(got), `{"page":2,`) {
+		t.Errorf("epsilon has selector %s, want page 2", got)
 	}
 }
 
@@ -98,7 +94,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 	text := readLive(t, texts, "tiny.pdf")
 
 	from := strings.Index(text.Text, "Delta")
-	boxes := text.GetBoxes(domain.ByteSpan{From: from, To: from + len("Delta epsilon")})
+	boxes := getBoxes(text, domain.ByteSpan{From: from, To: from + len("Delta epsilon")})
 
 	if len(boxes) != 2 {
 		t.Fatalf("%d boxes, want one a word of the two: %+v", len(boxes), boxes)
@@ -123,7 +119,7 @@ func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sections := readLive(t, texts, "outline.pdf").GetSections()
+	sections := readLive(t, texts, "outline.pdf").GetHeadings()
 
 	if len(sections) != len(book.Parts) {
 		t.Fatalf("%d sections, want the %d the outline names", len(sections), len(book.Parts))
@@ -157,10 +153,10 @@ func TestPagesOfTheLayerJoinIntoTheWholeText(t *testing.T) {
 	sections := 0
 	for page := range book.Pages {
 		for _, part := range getLayerParts(book, page, page+1, boxes) {
-			if part.Place.Page != page {
-				t.Errorf("a part of page %d is placed on page %d", page, part.Place.Page)
+			if selector, err := host.ParseSelector(part.Selector); err != nil || selector.Page != page+1 {
+				t.Errorf("a segment of page %d has selector %s", page, part.Selector)
 			}
-			if part.Section != "" {
+			if part.Heading != "" {
 				sections++
 			}
 			joined.WriteString(part.Text)
@@ -200,9 +196,6 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 			if len(listing.Versions) != 0 {
 				t.Errorf("versions %v, want none", listing.Versions)
 			}
-			if _, err := server.GetText(t.Context(), host.TextRequest{Path: name, Key: textKey}); !errors.Is(err, host.ErrNotExist) {
-				t.Errorf("GetText = %v, want ErrNotExist", err)
-			}
 		})
 	}
 }
@@ -210,7 +203,7 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 func TestTheReaderMakesTextOfFilesOnly(t *testing.T) {
 	_, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
 
-	err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf", Input: "md.numen.engines.ocr/page"})
+	err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf", Source: "md.numen.engines.ocr/page"})
 
 	if !errors.Is(err, host.ErrInvalidVersion) {
 		t.Errorf("CreateText of a version = %v, want ErrInvalidVersion", err)

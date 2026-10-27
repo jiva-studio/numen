@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -18,14 +17,18 @@ import (
 // textKey is the key the plugin keeps the text layer of a file under.
 const textKey = "layer"
 
-// pagesPerTextPage is how many pages of a document one page of its text holds.
-const pagesPerTextPage = 16
+// pagesPerBatch is how many pages of a document are cut into segments at once.
+const pagesPerBatch = 16
 
-// TextServer gives the host the text layer of the vault's PDF files as positioned text: every word
-// with the rectangle it covers on its page.
+// textKind is the kind of the text versions the plugin makes.
+const textKind domain.TextKind = "page-text"
+
+// TextServer writes the text layer of the vault's PDF files into the plugin's folder as text
+// versions: every word with its page and the rectangle it covers in its selector.
 type TextServer struct {
 	vaultRoot func() string
 	texts     host.Texts
+	store     host.Store
 
 	mu   sync.Mutex
 	last layer
@@ -33,9 +36,10 @@ type TextServer struct {
 
 var _ host.TextProvider = (*TextServer)(nil)
 
-// NewTextServer is the text layers of the files of the vault at vaultRoot, reported to texts.
-func NewTextServer(vaultRoot func() string, texts host.Texts) *TextServer {
-	return &TextServer{vaultRoot: vaultRoot, texts: texts}
+// NewTextServer is the text layers of the files of the vault at vaultRoot, written into store and
+// reported to texts.
+func NewTextServer(vaultRoot func() string, texts host.Texts, store host.Store) *TextServer {
+	return &TextServer{vaultRoot: vaultRoot, texts: texts, store: store}
 }
 
 // layer is one file's bytes and the document read from them.
@@ -80,8 +84,8 @@ func (s *TextServer) readLayer(path string) (layer, error) {
 // CreateText reports the text layer of a file as a version made from the file. A file that is no
 // PDF, a locked one and a scan have no text layer, and get no version.
 func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
-	if req.Input != "" {
-		return fmt.Errorf("%w: the PDF reader reads files, and %s is a version", host.ErrInvalidVersion, req.Input)
+	if req.Source != "" {
+		return fmt.Errorf("%w: the PDF reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
 	}
 	read, err := s.readLayer(req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
@@ -93,69 +97,47 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if !read.hasText() {
 		return nil
 	}
+	segments, err := read.getSegments()
+	if err != nil {
+		return fmt.Errorf("read the words of %s: %w", req.Path, err)
+	}
+	store := s.store
+	if req.Vault != "" {
+		store = store.With(req.Vault)
+	}
+	file := read.hash + ".jsonl"
+	if err := host.WriteText(ctx, store, file, segments); err != nil {
+		return err
+	}
 	_, err = s.texts.PutVersion(ctx, host.TextPut{
-		Path:      req.Path,
-		Key:       textKey,
-		Format:    domain.TextFormatPositioned,
-		InputHash: read.hash,
-		Hash:      domain.HashContent([]byte(read.book.Text)),
+		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err
 }
 
-// GetText is the text layer of pagesPerTextPage pages of a file. The cursor is the index of the
-// first page.
-func (s *TextServer) GetText(_ context.Context, req host.TextRequest) (host.TextPage, error) {
-	if req.Key != textKey {
-		return host.TextPage{}, fmt.Errorf("%w: the PDF reader keeps no text under %q", host.ErrNotExist, req.Key)
-	}
-	first := 0
-	if req.Cursor != "" {
-		n, err := strconv.Atoi(req.Cursor)
-		if err != nil || n < 0 {
-			return host.TextPage{}, fmt.Errorf("cursor %q is not a page", req.Cursor)
+// getSegments is the text layer of every page of the file, cut pagesPerBatch pages at a time.
+func (l layer) getSegments() ([]domain.TextSegment, error) {
+	var segments []domain.TextSegment
+	pages := len(l.book.Pages)
+	for first := 0; first < pages; first += pagesPerBatch {
+		last := min(first+pagesPerBatch, pages)
+		wanted := make([]int, 0, last-first)
+		for i := first; i < last; i++ {
+			wanted = append(wanted, i)
 		}
-		first = n
+		boxes, err := l.book.Highlights(l.raw, wanted)
+		if err != nil {
+			return nil, err
+		}
+		segments = append(segments, getLayerParts(l.book, first, last, boxes)...)
 	}
-	read, err := s.readLayer(req.Path)
-	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
-		return host.TextPage{}, fmt.Errorf("%w: %s has no text layer: %w", host.ErrNotExist, req.Path, err)
-	}
-	if err != nil {
-		return host.TextPage{}, fmt.Errorf("read %s: %w", req.Path, err)
-	}
-	if !read.hasText() {
-		return host.TextPage{}, fmt.Errorf("%w: %s has no text layer", host.ErrNotExist, req.Path)
-	}
-	pages := len(read.book.Pages)
-	if first >= pages {
-		return host.TextPage{}, fmt.Errorf("cursor %q is past the last page of %s", req.Cursor, req.Path)
-	}
-	last := min(first+pagesPerTextPage, pages)
-	wanted := make([]int, 0, last-first)
-	for i := first; i < last; i++ {
-		wanted = append(wanted, i)
-	}
-	boxes, err := read.book.Highlights(read.raw, wanted)
-	if err != nil {
-		return host.TextPage{}, fmt.Errorf("read the words of %s: %w", req.Path, err)
-	}
-	page := host.TextPage{Parts: getLayerParts(read.book, first, last, boxes)}
-	if last < pages {
-		page.NextCursor = strconv.Itoa(last)
-	}
-	return page, nil
-}
-
-// DeleteText keeps nothing to delete: the text layer is the file's own.
-func (s *TextServer) DeleteText(context.Context, domain.VaultID, string, string) error {
-	return nil
+	return segments, nil
 }
 
 // getLayerParts is the text of pages [first, last) as parts: each word with the rectangle it covers,
 // the runs between words with none, and an empty part opening each outline entry where it begins.
 // The boxes are the words of those pages, ascending by offset.
-func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []domain.TextPart {
+func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []domain.TextSegment {
 	end := len(book.Text)
 	if last < len(book.Pages) {
 		end = book.Pages[last].Offset
@@ -180,7 +162,7 @@ func getLayerParts(book *pdf.Book, first, last int, boxes []pdf.HighlightBox) []
 type layerCut struct {
 	text     string
 	sections []pdf.Part
-	parts    []domain.TextPart
+	parts    []domain.TextSegment
 }
 
 // addPage cuts the text of one page, [from, to), at the words of the boxes on it, and returns the
@@ -195,7 +177,7 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 			continue
 		}
 		c.add(pos, start, page, nil)
-		c.add(start, end, page, []domain.Rect{{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}})
+		c.add(start, end, page, [][4]float32{{box.MinX, box.MinY, box.MaxX, box.MaxY}})
 		pos = end
 	}
 	c.add(pos, to, page, nil)
@@ -203,17 +185,17 @@ func (c *layerCut) addPage(page, from, to int, boxes []pdf.HighlightBox) []pdf.H
 }
 
 // add is the text [from, to) on a page, split where an outline entry begins inside it.
-func (c *layerCut) add(from, to, page int, rects []domain.Rect) {
+func (c *layerCut) add(from, to, page int, boxes [][4]float32) {
 	for from < to {
 		for len(c.sections) > 0 && c.sections[0].Offset <= from {
-			c.parts = append(c.parts, domain.TextPart{Section: c.sections[0].Title, Place: domain.TextPlace{Page: page}})
+			c.parts = append(c.parts, domain.TextSegment{Heading: c.sections[0].Title, Selector: host.Selector{Page: page + 1}.Encode()})
 			c.sections = c.sections[1:]
 		}
 		end := to
 		if len(c.sections) > 0 && c.sections[0].Offset < to {
 			end = c.sections[0].Offset
 		}
-		c.parts = append(c.parts, domain.TextPart{Text: c.text[from:end], Place: domain.TextPlace{Page: page, Rects: rects}})
+		c.parts = append(c.parts, domain.TextSegment{Text: c.text[from:end], Selector: host.Selector{Page: page + 1, Boxes: boxes}.Encode()})
 		from = end
 	}
 }

@@ -26,8 +26,7 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Text
 	}
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(func() string { return root }, texts)
-	texts.Provide(pluginID, server)
+	server := NewTextServer(func() string { return root }, texts, texts.GetStore(pluginID))
 	return texts, server
 }
 
@@ -51,7 +50,7 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 	return domain.VersionText{}
 }
 
-func TestTheTextOfABookIsItsLivePlainVersion(t *testing.T) {
+func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 	raw := createPictureEpub(t)
 	texts, server := newTextVault(t, "book.epub", raw)
 	book, err := epub.Read(raw)
@@ -59,21 +58,21 @@ func TestTheTextOfABookIsItsLivePlainVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "vault", Path: "book.epub"}); err != nil {
+	if err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
 		t.Fatalf("CreateText: %v", err)
 	}
 
 	text := readLive(t, texts, "book.epub")
-	if text.Version.Format != domain.TextFormatPlain || !text.Version.IsFromFile() {
-		t.Errorf("version %+v, want a plain version made from the file", text.Version)
+	if text.Version.Kind != textKind || !text.Version.IsFromFile() {
+		t.Errorf("version %+v, want a book text made from the file", text.Version)
 	}
-	if text.Version.InputHash != domain.HashContent(raw) || text.Version.Hash != domain.HashContent([]byte(book.Text)) {
+	if text.Version.SourceHash != domain.HashContent(raw) || text.Version.File != domain.HashContent(raw)+".jsonl" {
 		t.Errorf("version %+v does not name the file and the text as they are", text.Version)
 	}
 	if text.Text != book.Text {
 		t.Errorf("text %q, want the text the reader sets the book with, %q", text.Text, book.Text)
 	}
-	sections := text.GetSections()
+	sections := text.GetHeadings()
 	if len(sections) != len(book.Parts) {
 		t.Fatalf("sections %v, want the %d parts the book names", sections, len(book.Parts))
 	}
@@ -106,9 +105,6 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 			if len(listing.Versions) != 0 {
 				t.Errorf("versions %v, want none", listing.Versions)
 			}
-			if _, err := server.GetText(t.Context(), host.TextRequest{Path: name, Key: textKey}); !errors.Is(err, host.ErrNotExist) {
-				t.Errorf("GetText = %v, want ErrNotExist", err)
-			}
 		})
 	}
 }
@@ -116,7 +112,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 func TestTheBookReaderMakesTextOfFilesOnly(t *testing.T) {
 	_, server := newTextVault(t, "book.epub", createPictureEpub(t))
 
-	err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub", Input: "md.numen.tools.proofreading/fix"})
+	err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub", Source: "md.numen.tools.proofreading/fix"})
 
 	if !errors.Is(err, host.ErrInvalidVersion) {
 		t.Errorf("CreateText of a version = %v, want ErrInvalidVersion", err)
@@ -138,8 +134,8 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 		if part.Text != "" && !utf8.RuneStart(part.Text[0]) {
 			t.Errorf("a part begins inside a character")
 		}
-		if part.Section != "" {
-			named = append(named, part.Section)
+		if part.Heading != "" {
+			named = append(named, part.Heading)
 		}
 		joined.WriteString(part.Text)
 	}
@@ -149,11 +145,11 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	if strings.Join(named, ",") != "One,Inner,Two" {
 		t.Errorf("sections %v, want One, Inner and Two", named)
 	}
-	version := domain.NewVersionText(domain.TextVersion{Format: domain.TextFormatPlain}, parts)
-	if got := version.GetNamesAt(0); strings.Join(got, ",") != "One,Inner" {
+	version := domain.NewVersionText(domain.TextVersion{Kind: textKind}, parts)
+	if got := version.GetHeadingsAt(0); strings.Join(got, ",") != "One,Inner" {
 		t.Errorf("names at 0 are %v, want One and Inner", got)
 	}
-	if got := version.GetSections(); got[2].Offset != 2*partBytes {
+	if got := version.GetHeadings(); got[2].Offset != 2*partBytes {
 		t.Errorf("Two begins at %d, want %d", got[2].Offset, 2*partBytes)
 	}
 }

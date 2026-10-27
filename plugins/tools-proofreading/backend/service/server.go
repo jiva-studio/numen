@@ -169,7 +169,7 @@ func mount(s *server.Server, h Host, complete completer, vars map[string]string)
 		config.updateConfig(vars)
 	}
 	proofreading := newProofreading(h, newAskModel(complete), config.getConfig)
-	provider := newProvider(proofreading, h.Store)
+	provider := newProvider(proofreading)
 	commands := command.New()
 	if err := commands.Add("proofread", newProofreadCommand(proofreading)); err != nil {
 		return err

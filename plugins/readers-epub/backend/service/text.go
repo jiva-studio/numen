@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 	"sync"
 	"unicode/utf8"
@@ -19,18 +18,19 @@ import (
 // textKey is the key the plugin keeps the text of a book under.
 const textKey = "text"
 
-// The bounds of what one answer carries: a part holds at most partBytes of text, and a page of the
-// text at most pageBytes, or one part where that is more.
-const (
-	partBytes = 64 << 10
-	pageBytes = 1 << 20
-)
+// partBytes is the most text one segment holds.
+const partBytes = 64 << 10
 
-// TextServer gives the host the text of the vault's EPUB books as plain text, each named section
-// opened where it begins. The text and its offsets are the ones the reader sets the book with.
+// textKind is the kind of the text versions the plugin makes.
+const textKind domain.TextKind = "book-text"
+
+// TextServer writes the text of the vault's EPUB books into the plugin's folder as text versions,
+// each named section opened where it begins. The text and its offsets are the ones the reader sets
+// the book with.
 type TextServer struct {
 	vaultRoot func() string
 	texts     host.Texts
+	store     host.Store
 
 	mu   sync.Mutex
 	last bookText
@@ -38,16 +38,17 @@ type TextServer struct {
 
 var _ host.TextProvider = (*TextServer)(nil)
 
-// NewTextServer is the texts of the books of the vault at vaultRoot, reported to texts.
-func NewTextServer(vaultRoot func() string, texts host.Texts) *TextServer {
-	return &TextServer{vaultRoot: vaultRoot, texts: texts}
+// NewTextServer is the texts of the books of the vault at vaultRoot, written into store and
+// reported to texts.
+func NewTextServer(vaultRoot func() string, texts host.Texts, store host.Store) *TextServer {
+	return &TextServer{vaultRoot: vaultRoot, texts: texts, store: store}
 }
 
-// bookText is one file's text as parts, and the hash of the bytes it was read from.
+// bookText is one file's text as segments, and the hash of the bytes it was read from.
 type bookText struct {
-	hash  string
-	text  string
-	parts []domain.TextPart
+	hash     string
+	text     string
+	segments []domain.TextSegment
 }
 
 // isUnreadable reports whether a failure to read a book is a file that holds no text to give: no
@@ -79,7 +80,7 @@ func (s *TextServer) readBook(path string) (bookText, error) {
 	if err != nil {
 		return bookText{}, err
 	}
-	read := bookText{hash: hash, text: book.Text, parts: getBookParts(book.Text, book.Parts)}
+	read := bookText{hash: hash, text: book.Text, segments: getBookParts(book.Text, book.Parts)}
 	s.mu.Lock()
 	s.last = read
 	s.mu.Unlock()
@@ -89,8 +90,8 @@ func (s *TextServer) readBook(path string) (bookText, error) {
 // CreateText reports the text of a book as a version made from the file. A file that is no book, a
 // locked book and a book with no text get no version.
 func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
-	if req.Input != "" {
-		return fmt.Errorf("%w: the EPUB reader reads files, and %s is a version", host.ErrInvalidVersion, req.Input)
+	if req.Source != "" {
+		return fmt.Errorf("%w: the EPUB reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
 	}
 	read, err := s.readBook(req.Path)
 	if isUnreadable(err) {
@@ -102,67 +103,28 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if strings.TrimSpace(read.text) == "" {
 		return nil
 	}
+	store := s.store
+	if req.Vault != "" {
+		store = store.With(req.Vault)
+	}
+	file := read.hash + ".jsonl"
+	if err := host.WriteText(ctx, store, file, read.segments); err != nil {
+		return err
+	}
 	_, err = s.texts.PutVersion(ctx, host.TextPut{
-		Path:      req.Path,
-		Key:       textKey,
-		Format:    domain.TextFormatPlain,
-		InputHash: read.hash,
-		Hash:      domain.HashContent([]byte(read.text)),
+		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err
 }
 
-// GetText is one page of the text of a book. The cursor is the index of the first part.
-func (s *TextServer) GetText(_ context.Context, req host.TextRequest) (host.TextPage, error) {
-	if req.Key != textKey {
-		return host.TextPage{}, fmt.Errorf("%w: the EPUB reader keeps no text under %q", host.ErrNotExist, req.Key)
-	}
-	first := 0
-	if req.Cursor != "" {
-		n, err := strconv.Atoi(req.Cursor)
-		if err != nil || n < 0 {
-			return host.TextPage{}, fmt.Errorf("cursor %q is not a part", req.Cursor)
-		}
-		first = n
-	}
-	read, err := s.readBook(req.Path)
-	if isUnreadable(err) {
-		return host.TextPage{}, fmt.Errorf("%w: %s has no text: %w", host.ErrNotExist, req.Path, err)
-	}
-	if err != nil {
-		return host.TextPage{}, fmt.Errorf("read %s: %w", req.Path, err)
-	}
-	if strings.TrimSpace(read.text) == "" {
-		return host.TextPage{}, fmt.Errorf("%w: %s has no text", host.ErrNotExist, req.Path)
-	}
-	if first >= len(read.parts) {
-		return host.TextPage{}, fmt.Errorf("cursor %q is past the last part of %s", req.Cursor, req.Path)
-	}
-	last, size := first, 0
-	for last < len(read.parts) && (last == first || size+len(read.parts[last].Text) <= pageBytes) {
-		size += len(read.parts[last].Text)
-		last++
-	}
-	page := host.TextPage{Parts: read.parts[first:last]}
-	if last < len(read.parts) {
-		page.NextCursor = strconv.Itoa(last)
-	}
-	return page, nil
-}
-
-// DeleteText keeps nothing to delete: the text is the book's own.
-func (s *TextServer) DeleteText(context.Context, domain.VaultID, string, string) error {
-	return nil
-}
-
-// getBookParts is a book's text as parts of at most partBytes, cut on whole characters, with an
-// empty part opening each named section where it begins. The sections ascend by offset.
-func getBookParts(text string, sections []epub.Part) []domain.TextPart {
-	var parts []domain.TextPart
+// getBookParts is a book's text as segments of at most partBytes, cut on whole characters, with an
+// empty segment opening each named section where it begins. The sections ascend by offset.
+func getBookParts(text string, sections []epub.Part) []domain.TextSegment {
+	var parts []domain.TextSegment
 	from := 0
 	for from < len(text) || len(sections) > 0 {
 		for len(sections) > 0 && sections[0].Offset <= from {
-			parts = append(parts, domain.TextPart{Section: sections[0].Title})
+			parts = append(parts, domain.TextSegment{Heading: sections[0].Title})
 			sections = sections[1:]
 		}
 		if from >= len(text) {
@@ -179,7 +141,7 @@ func getBookParts(text string, sections []epub.Part) []domain.TextPart {
 		if len(sections) > 0 && sections[0].Offset < to {
 			to = sections[0].Offset
 		}
-		parts = append(parts, domain.TextPart{Text: text[from:to]})
+		parts = append(parts, domain.TextSegment{Text: text[from:to]})
 		from = to
 	}
 	return parts

@@ -90,7 +90,7 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	if err := p.host.Queue.ReportTask(ctx, *task); err != nil {
 		return Result{}, err
 	}
-	corrections, uncorrected, err := p.correct(ctx, input.Format, parts, lines, task)
+	corrections, uncorrected, err := p.correct(ctx, input.Kind, parts, lines, task)
 	if err != nil {
 		return Result{}, err
 	}
@@ -101,12 +101,12 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 		store = store.With(req.Vault)
 	}
 	key := getVersionKey(input.GetID())
-	if err := (textFiles{store: store}).write(ctx, key, corrected); err != nil {
+	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
 	version, err := p.host.Texts.PutVersion(ctx, host.TextPut{
-		Path: req.Path, Key: key, Input: input.GetID(), Format: input.Format,
-		InputHash: input.Hash, Hash: hashParts(corrected),
+		Path: req.Path, Key: key, Source: input.GetID(), Kind: input.Kind,
+		SourceHash: input.Hash, File: getFileName(key),
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the proofreading of %s: %w", req.Path, err)
@@ -127,8 +127,8 @@ func (p *Proofreading) findInput(ctx context.Context, filePath string, id domain
 		if id == "" || version.GetID() != id {
 			continue
 		}
-		if !isReadFormat(version.Format) {
-			return domain.TextVersion{}, fmt.Errorf("%s is %s text: %w", id, version.Format, errFormat)
+		if !isReadKind(version.Kind) {
+			return domain.TextVersion{}, fmt.Errorf("%s is %s text: %w", id, version.Kind, errFormat)
 		}
 		return version, nil
 	}
@@ -138,20 +138,27 @@ func (p *Proofreading) findInput(ctx context.Context, filePath string, id domain
 	return domain.TextVersion{}, fmt.Errorf("%s of %s: %w", id, filePath, host.ErrNotExist)
 }
 
-// isReadFormat reports whether the plugin proofreads text of the format.
-func isReadFormat(format domain.TextFormat) bool {
-	return format == domain.TextFormatTimed || format == domain.TextFormatPositioned
+// The kinds of text the plugin proofreads: speech, and the lines of pages.
+const (
+	kindTranscript  domain.TextKind = "transcript"
+	kindRecognition domain.TextKind = "recognition"
+	kindPageText    domain.TextKind = "page-text"
+)
+
+// isReadKind reports whether the plugin proofreads text of the kind.
+func isReadKind(kind domain.TextKind) bool {
+	return kind == kindTranscript || kind == kindRecognition || kind == kindPageText
 }
 
 // readParts is every page of the version's text, in order.
-func (p *Proofreading) readParts(ctx context.Context, version domain.TextVersion) ([]domain.TextPart, error) {
-	var parts []domain.TextPart
+func (p *Proofreading) readParts(ctx context.Context, version domain.TextVersion) ([]domain.TextSegment, error) {
+	var parts []domain.TextSegment
 	for cursor := ""; ; {
 		page, err := p.host.Texts.ReadText(ctx, version.Path, version.GetID(), cursor)
 		if err != nil {
 			return nil, err
 		}
-		parts = append(parts, page.Parts...)
+		parts = append(parts, page.Segments...)
 		if page.NextCursor == "" || page.NextCursor == cursor {
 			return parts, nil
 		}
@@ -159,12 +166,12 @@ func (p *Proofreading) readParts(ctx context.Context, version domain.TextVersion
 	}
 }
 
-// correct asks the model about the lines as the format reads them: the cues of a recording as
+// correct asks the model about the lines as the kind reads them: the cues of a recording as
 // speech, a window at a time, and the lines of each page as a scan.
 func (p *Proofreading) correct(
-	ctx context.Context, format domain.TextFormat, parts []domain.TextPart, lines []Line, task *host.Task,
+	ctx context.Context, kind domain.TextKind, parts []domain.TextSegment, lines []Line, task *host.Task,
 ) ([]Line, int, error) {
-	if format == domain.TextFormatTimed {
+	if kind == kindTranscript {
 		return p.correctSpeech(ctx, lines, task)
 	}
 	return p.correctScan(ctx, readPages(parts, lines), task)
@@ -230,7 +237,7 @@ func getLastLine(line Line) int {
 
 // readLines is the parts as numbered lines, one to a part and counted from one, with the space
 // around each part's words left out.
-func readLines(parts []domain.TextPart) []Line {
+func readLines(parts []domain.TextSegment) []Line {
 	lines := make([]Line, len(parts))
 	for i, part := range parts {
 		lines[i] = Line{Number: i + 1, Text: strings.TrimSpace(part.Text)}
@@ -240,10 +247,11 @@ func readLines(parts []domain.TextPart) []Line {
 
 // readPages is the lines in a batch for each run of lines on one page, numbered by the page. The
 // lines are numbered as readLines numbers the parts.
-func readPages(parts []domain.TextPart, lines []Line) []Batch {
+func readPages(parts []domain.TextSegment, lines []Line) []Batch {
 	var out []Batch
 	for _, line := range lines {
-		page := parts[line.Number-1].Place.Page
+		selector, _ := host.ParseSelector(parts[line.Number-1].Selector)
+		page := selector.Page
 		if len(out) == 0 || out[len(out)-1].Number != page {
 			out = append(out, Batch{Number: page})
 		}

@@ -130,7 +130,7 @@ func (s *DocumentServer) GetHighlights(
 	}
 	out := &numenv1.GetHighlightsResponse{Runs: make([]*numenv1.DocumentRun, 0, len(runs))}
 	for _, run := range runs {
-		out.Runs = append(out.Runs, &numenv1.DocumentRun{Places: writePlaces(text.GetBoxes(run))})
+		out.Runs = append(out.Runs, &numenv1.DocumentRun{Places: writePlaces(getBoxes(text, run))})
 	}
 	return connect.NewResponse(out), nil
 }
@@ -150,15 +150,15 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 		return domain.VersionText{}, nil
 	}
 	live := listing.Versions[i]
-	var parts []domain.TextPart
+	var parts []domain.TextSegment
 	size, cursor := 0, ""
 	for {
 		page, err := texts.ReadText(ctx, path, live.GetID(), cursor)
 		if err != nil {
 			return domain.VersionText{}, err
 		}
-		parts = append(parts, page.Parts...)
-		for _, part := range page.Parts {
+		parts = append(parts, page.Segments...)
+		for _, part := range page.Segments {
 			size += len(part.Text)
 		}
 		if page.NextCursor == "" || page.NextCursor == cursor || size >= end {
@@ -169,15 +169,40 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 }
 
 // writePlaces is the boxes of a run as places, one a page, in the order the pages come.
-func writePlaces(boxes []domain.HighlightBox) []*numenv1.TextPlace {
-	var places []*numenv1.TextPlace
+func writePlaces(boxes []domain.HighlightBox) []*numenv1.DocumentPlace {
+	var places []*numenv1.DocumentPlace
 	for _, box := range boxes {
-		rect := &numenv1.TextRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+		rect := &numenv1.DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		if n := len(places); n > 0 && places[n-1].GetPage() == int32(box.Page) {
 			places[n-1].Rects = append(places[n-1].Rects, rect)
 			continue
 		}
-		places = append(places, &numenv1.TextPlace{Page: int32(box.Page), Rects: []*numenv1.TextRect{rect}})
+		places = append(places, &numenv1.DocumentPlace{Page: int32(box.Page), Rects: []*numenv1.DocumentRect{rect}})
 	}
 	return places
+}
+
+// getBoxes is the rectangles of the segments a run of the text overlaps, each with the run of the
+// segment it covers. A segment's selector names its page, counted from 1, and its boxes.
+func getBoxes(text domain.VersionText, run domain.ByteSpan) []domain.HighlightBox {
+	if run.Empty() {
+		return nil
+	}
+	var boxes []domain.HighlightBox
+	from := 0
+	for _, segment := range text.GetSegments() {
+		to := from + len(segment.Text)
+		if to > run.From && from < run.To {
+			if selector, err := host.ParseSelector(segment.Selector); err == nil && selector.Page > 0 {
+				for _, box := range selector.Boxes {
+					boxes = append(boxes, domain.HighlightBox{
+						Page: selector.Page - 1, ByteSpan: domain.ByteSpan{From: from, To: to},
+						Rect: domain.Rect{MinX: box[0], MinY: box[1], MaxX: box[2], MaxY: box[3]},
+					})
+				}
+			}
+		}
+		from = to
+	}
+	return boxes
 }

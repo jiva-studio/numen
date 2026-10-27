@@ -8,7 +8,7 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete"],
   "textInput": {
-    "kinds": ["transcript", "recognition"]
+    "kinds": ["transcript", "recognition", "page-text"]
   },
   "commands": [
     {

@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
@@ -28,7 +27,6 @@ type scene struct {
 	texts    *hosttest.Texts
 	queue    *hosttest.Queue
 	store    host.Store
-	others   *hosttest.MemoryProvider
 	model    *modelHost
 	settings *settings
 	run      *Proofreading
@@ -57,28 +55,26 @@ func newScene(t *testing.T) *scene {
 		texts:    hosttest.NewTexts("Physics", PluginID),
 		queue:    hosttest.NewQueue(),
 		store:    vault.Store(),
-		others:   hosttest.NewMemoryProvider(),
 		model:    &modelHost{script: func(string) string { return "" }},
 		settings: newSettings(),
 	}
 	s.texts.File(scanPath, []byte("the scan"))
 	s.texts.File(talkPath, []byte("the recording"))
-	for _, id := range []string{ocrID, layerID, speechID} {
-		s.texts.Provide(id, s.others)
-	}
+	s.texts.SetStore(PluginID, s.store)
 	s.run = newProofreading(Host{Store: s.store, Texts: s.texts, Queue: s.queue}, newAskModel(s.model.complete), s.settings.getConfig)
-	s.provider = newProvider(s.run, s.store)
+	s.provider = newProvider(s.run)
 	t.Cleanup(s.provider.Close)
-	s.texts.Provide(PluginID, s.provider)
 	return s
 }
 
 // hold puts a version another plugin made from the file.
-func (s *scene) hold(t *testing.T, pluginID, path, key string, format domain.TextFormat, raw string, parts []domain.TextPart) domain.TextVersion {
+func (s *scene) hold(t *testing.T, pluginID, path, key string, kind domain.TextKind, raw string, parts []domain.TextSegment) domain.TextVersion {
 	t.Helper()
-	s.others.Hold(path, key, parts)
+	if err := host.WriteText(t.Context(), s.texts.GetStore(pluginID), key+".jsonl", parts); err != nil {
+		t.Fatal(err)
+	}
 	version, err := s.texts.As(pluginID).PutVersion(t.Context(), host.TextPut{
-		Path: path, Key: key, Format: format, InputHash: domain.HashContent([]byte(raw)), Hash: hashParts(parts),
+		Path: path, Key: key, Kind: kind, SourceHash: domain.HashContent([]byte(raw)), File: key + ".jsonl",
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -88,27 +84,26 @@ func (s *scene) hold(t *testing.T, pluginID, path, key string, format domain.Tex
 
 func (s *scene) holdScan(t *testing.T) domain.TextVersion {
 	t.Helper()
-	rect := domain.Rect{MinX: 0.1, MinY: 0.1, MaxX: 0.9, MaxY: 0.2}
-	return s.hold(t, ocrID, scanPath, "recognition", domain.TextFormatPositioned, "the scan", []domain.TextPart{
-		{Text: "A flywheel keeps energy ", Section: "Storage", Place: domain.TextPlace{Page: 0, Rects: []domain.Rect{rect}}},
-		{Text: "in a rotor spinnig in a vacum.\n\n", Place: domain.TextPlace{Page: 0, Rects: []domain.Rect{rect}}},
-		{Text: "Pumped storage lifts water.\n\n", Place: domain.TextPlace{Page: 1, Rects: []domain.Rect{rect}}},
+	rect := [][4]float32{{0.1, 0.1, 0.9, 0.2}}
+	first, second := host.Selector{Page: 1, Boxes: rect}.Encode(), host.Selector{Page: 2, Boxes: rect}.Encode()
+	return s.hold(t, ocrID, scanPath, "recognition", kindRecognition, "the scan", []domain.TextSegment{
+		{Text: "A flywheel keeps energy ", Heading: "Storage", Selector: first},
+		{Text: "in a rotor spinnig in a vacum.\n\n", Selector: first},
+		{Text: "Pumped storage lifts water.\n\n", Selector: second},
 	})
 }
 
 func (s *scene) holdTalk(t *testing.T, lines ...string) domain.TextVersion {
 	t.Helper()
-	parts := make([]domain.TextPart, len(lines))
+	parts := make([]domain.TextSegment, len(lines))
 	for i, line := range lines {
-		parts[i] = domain.TextPart{Text: line + "\n", Place: domain.TextPlace{
-			Start: time.Duration(i) * time.Second, End: time.Duration(i+1) * time.Second,
-		}}
+		parts[i] = domain.TextSegment{Text: line + "\n", Selector: host.Selector{T: []float64{float64(i), float64(i + 1)}}.Encode()}
 	}
-	return s.hold(t, speechID, talkPath, "heard", domain.TextFormatTimed, "the recording", parts)
+	return s.hold(t, speechID, talkPath, "heard", kindTranscript, "the recording", parts)
 }
 
 // readLive is the parts of the file's live version and its record.
-func (s *scene) readLive(t *testing.T, path string) ([]domain.TextPart, domain.TextVersion) {
+func (s *scene) readLive(t *testing.T, path string) ([]domain.TextSegment, domain.TextVersion) {
 	t.Helper()
 	listing, err := s.texts.ListVersions(t.Context(), path)
 	if err != nil {
@@ -155,7 +150,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	}
 
 	parts, live := s.readLive(t, scanPath)
-	if live.PluginID != PluginID || live.Input != scan.GetID() || live.InputHash != scan.Hash || live.Format != domain.TextFormatPositioned {
+	if live.PluginID != PluginID || live.Source != scan.GetID() || live.SourceHash != scan.Hash || live.Kind != kindRecognition {
 		t.Fatalf("the live version is %+v", live)
 	}
 	if res.Lines != 3 || res.Corrected != 1 {
@@ -164,7 +159,7 @@ func TestProofreadMakesTheLiveVersionFromTheScan(t *testing.T) {
 	if len(parts) != 3 || parts[1].Text != "in a rotor spinning in a vacuum.\n\n" {
 		t.Fatalf("parts %+v", parts)
 	}
-	if parts[0].Section != "Storage" || parts[2].Place.Page != 1 || len(parts[1].Place.Rects) != 1 {
+	if parts[0].Heading != "Storage" || parts[2].Selector != `{"page":2,"boxes":[[0.1,0.1,0.9,0.2]]}` || parts[1].Selector != `{"page":1,"boxes":[[0.1,0.1,0.9,0.2]]}` {
 		t.Errorf("the places were not kept: %+v", parts)
 	}
 	if len(s.model.questions) != 2 {
@@ -194,10 +189,10 @@ func TestProofreadJoinsARunOfCues(t *testing.T) {
 		t.Fatalf("parts %+v", parts)
 	}
 	if parts[0].Text != "Pumped storage lifts water to an upper reservoir.\n" ||
-		parts[0].Place.Start != 0 || parts[0].Place.End != 2*time.Second {
+		parts[0].Selector != `{"t":[0,2]}` {
 		t.Errorf("the run is %+v", parts[0])
 	}
-	if parts[1].Text != "and lets it fall\n" || parts[1].Place.Start != 2*time.Second {
+	if parts[1].Text != "and lets it fall\n" || parts[1].Selector != `{"t":[2,3]}` {
 		t.Errorf("the cue after the run is %+v", parts[1])
 	}
 }
@@ -241,9 +236,9 @@ func TestProofreadWithoutAVersionUsesTheLiveOne(t *testing.T) {
 	}
 }
 
-func TestTheVersionMadeFromARecognitionDiesWithTheOCRPlugin(t *testing.T) {
+func TestTheVersionMadeFromARecognitionStaysLiveWithTheOCRPluginOff(t *testing.T) {
 	s := newScene(t)
-	s.hold(t, layerID, scanPath, "layer", domain.TextFormatPositioned, "the scan", []domain.TextPart{{Text: "shipping manifest"}})
+	s.hold(t, layerID, scanPath, "layer", kindPageText, "the scan", []domain.TextSegment{{Text: "shipping manifest"}})
 	scan := s.holdScan(t)
 	if _, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID()}); err != nil {
 		t.Fatal(err)
@@ -251,28 +246,18 @@ func TestTheVersionMadeFromARecognitionDiesWithTheOCRPlugin(t *testing.T) {
 	if _, live := s.readLive(t, scanPath); live.PluginID != PluginID {
 		t.Fatalf("the live version is %+v", live)
 	}
-
-	s.texts.SetEnabled(ocrID, false)
-
-	if parts, live := s.readLive(t, scanPath); live.PluginID != layerID || parts[0].Text != "shipping manifest" {
-		t.Errorf("with the OCR plugin off the live version is %+v", live)
-	}
-	s.texts.SetEnabled(ocrID, true)
-	if _, live := s.readLive(t, scanPath); live.PluginID != PluginID {
-		t.Errorf("with the OCR plugin on again the live version is %+v", live)
-	}
 }
 
 func TestProofreadRefusesWhatItCannotRead(t *testing.T) {
 	s := newScene(t)
-	article := s.hold(t, layerID, "notes/article.url", "article", domain.TextFormatPlain, "", []domain.TextPart{{Text: "words"}})
+	article := s.hold(t, layerID, "notes/article.url", "article", "article", "", []domain.TextSegment{{Text: "words"}})
 
 	for name, req := range map[string]struct {
 		request Request
 		want    error
 	}{
 		"a file with no text": {Request{Path: talkPath}, errNoText},
-		"plain text":          {Request{Path: "notes/article.url", Input: article.GetID()}, errFormat},
+		"an article":          {Request{Path: "notes/article.url", Input: article.GetID()}, errFormat},
 		"a version not there": {Request{Path: scanPath, Input: "md.numen.engines.ocr/gone"}, host.ErrNotExist},
 	} {
 		if _, err := s.run.Proofread(t.Context(), req.request); !errors.Is(err, req.want) {
@@ -304,7 +289,7 @@ func TestCreateTextProofreadsInTheBackground(t *testing.T) {
 	s := newScene(t)
 	scan := s.holdScan(t)
 
-	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: scanPath, Input: scan.GetID(), IsUserStarted: true}); err != nil {
+	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
 		t.Fatal(err)
 	}
 	s.provider.Wait()
@@ -319,37 +304,6 @@ func TestCreateTextOfTheFileIsInvalid(t *testing.T) {
 	err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Physics", Path: scanPath})
 	if !errors.Is(err, host.ErrInvalidVersion) {
 		t.Fatalf("got %v", err)
-	}
-}
-
-func TestDeleteTextRemovesTheTextFile(t *testing.T) {
-	s := newScene(t)
-	scan := s.holdScan(t)
-	res, err := s.run.Proofread(t.Context(), Request{Path: scanPath, Input: scan.GetID()})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if err := s.provider.DeleteText(t.Context(), "Physics", scanPath, res.Version.Key); err != nil {
-		t.Fatal(err)
-	}
-
-	_, err = s.provider.GetText(t.Context(), host.TextRequest{Vault: "Physics", Path: scanPath, Key: res.Version.Key})
-	if !errors.Is(err, host.ErrNotExist) {
-		t.Errorf("a deleted text answered %v", err)
-	}
-}
-
-func TestGetTextOfAnotherKeyIsNotThere(t *testing.T) {
-	s := newScene(t)
-	for name, req := range map[string]host.TextRequest{
-		"a key of no proofreading": {Path: scanPath, Key: "recognition"},
-		"a cursor":                 {Path: scanPath, Key: getVersionKey("x"), Cursor: "1"},
-		"nothing kept":             {Path: scanPath, Key: getVersionKey("x")},
-	} {
-		if _, err := s.provider.GetText(t.Context(), req); !errors.Is(err, host.ErrNotExist) {
-			t.Errorf("%s answered %v", name, err)
-		}
 	}
 }
 

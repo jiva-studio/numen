@@ -148,7 +148,7 @@ func mount(s *server.Server, h recognition.Host, models *engines) error {
 	if err != nil {
 		return err
 	}
-	provider := recognition.NewProvider(recognitions, h.Store)
+	provider := recognition.NewProvider(recognitions)
 	commands := command.New()
 	if err := commands.Add("recognise", newRecogniseCommand(recognitions)); err != nil {
 		return err

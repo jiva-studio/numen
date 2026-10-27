@@ -16,8 +16,12 @@ func Mount(s *server.Server) error {
 	if err != nil {
 		return err
 	}
+	store, err := host.NewStoreClientFromEnv()
+	if err != nil {
+		return err
+	}
 	vaultRoot := func() string { return os.Getenv("NUMEN_VAULT_PATH") }
-	return mount(s, NewBookServer(), NewTextServer(vaultRoot, texts))
+	return mount(s, NewBookServer(), NewTextServer(vaultRoot, texts, store))
 }
 
 func mount(s *server.Server, books *BookServer, texts *TextServer) error {
@@ -36,7 +40,11 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 		if err != nil {
 			return err
 		}
+		store, err := host.NewStoreClientFromVars(vars)
+		if err != nil {
+			return err
+		}
 		root := vars["NUMEN_VAULT_PATH"]
-		return mount(s, NewBookServerIn(root), NewTextServer(func() string { return root }, texts))
+		return mount(s, NewBookServerIn(root), NewTextServer(func() string { return root }, texts, store))
 	})
 }

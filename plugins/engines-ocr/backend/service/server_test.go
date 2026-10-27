@@ -79,8 +79,10 @@ func TestRecogniseCommandReportsPages(t *testing.T) {
 		t.Fatal(err)
 	}
 	v.File("books/scan.pdf", string(raw))
+	texts := hosttest.NewTexts("Physics", "md.numen.engines.ocr")
+	texts.SetStore("md.numen.engines.ocr", v.Store())
 	recognitions, err := recognition.New(
-		recognition.Host{Vault: v, Store: v.Store(), Texts: hosttest.NewTexts("Physics", "md.numen.engines.ocr"), Queue: hosttest.NewQueue()},
+		recognition.Host{Vault: v, Store: v.Store(), Texts: texts, Queue: hosttest.NewQueue()},
 		func(context.Context) (recognition.Recogniser, error) { return engine.MockRecogniser{}, nil },
 	)
 	if err != nil {

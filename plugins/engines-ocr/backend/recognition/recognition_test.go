@@ -87,6 +87,7 @@ func newScene(t *testing.T) *scene {
 		recogniser: &pages{says: "page"},
 	}
 	s.store = s.vault.Store()
+	s.texts.SetStore(pluginID, s.store)
 	for path, name := range map[string]string{"books/scan.pdf": "scan.pdf", "books/layer.pdf": "tiny.pdf"} {
 		raw := readFixture(t, name)
 		s.vault.File(path, raw)
@@ -103,9 +104,8 @@ func newScene(t *testing.T) *scene {
 	return s
 }
 
-func (s *scene) readLive(t *testing.T, path string, provider host.TextProvider) domain.VersionText {
+func (s *scene) readLive(t *testing.T, path string) domain.VersionText {
 	t.Helper()
-	s.texts.Provide(pluginID, provider)
 	listing, err := s.texts.ListVersions(t.Context(), path)
 	if err != nil || listing.Live == "" {
 		t.Fatalf("%s has no live version: %+v (%v)", path, listing, err)
@@ -130,19 +130,19 @@ func TestRecognisePDFWritesPositionedText(t *testing.T) {
 	if err != nil || res.Pages != 2 || res.IsSkipped || res.IsEmpty {
 		t.Fatalf("recognised %+v (%v), want two pages", res, err)
 	}
-	text := s.readLive(t, "books/scan.pdf", recognition.NewProvider(s.run, s.store))
-	if text.Version.Format != domain.TextFormatPositioned || text.Version.Key != recognition.VersionKey {
+	text := s.readLive(t, "books/scan.pdf")
+	if text.Version.Kind != "recognition" || text.Version.Key != recognition.VersionKey {
 		t.Fatalf("the version is %+v", text.Version)
 	}
 	if !strings.Contains(text.Text, "page two\n\nHeading") {
 		t.Errorf("the text reads %q, want the pages in order with their blocks apart", text.Text)
 	}
 	offset := strings.LastIndex(text.Text, "page two")
-	boxes := text.GetBoxes(domain.ByteSpan{From: offset, To: offset + len("page two")})
-	if len(boxes) != 1 || boxes[0].Page != 1 || boxes[0].MinY != 0.5 || boxes[0].MaxY != 1 {
-		t.Errorf("boxes of the last line: %+v, want the bottom half of the second page", boxes)
+	selector, err := host.ParseSelector(text.GetSelector(offset))
+	if err != nil || selector.Page != 2 || len(selector.Boxes) != 1 || selector.Boxes[0][1] != 0.5 || selector.Boxes[0][3] != 1 {
+		t.Errorf("selector of the last line: %+v (%v), want the bottom half of the second page", selector, err)
 	}
-	if got := text.Locate(offset); got != "Heading, page 2 of the file" {
+	if got := text.Locate(offset); got != "Heading" {
 		t.Errorf("location of the last line: %q", got)
 	}
 	if tasks := s.queue.ListTasks(); len(tasks) != 0 {

@@ -189,9 +189,12 @@ func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *rec
 	if err := writeRecord(ctx, store, rec); err != nil {
 		return Result{}, err
 	}
+	file := getVersionName(rec.Path)
+	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
+		return Result{}, err
+	}
 	_, err := r.host.Texts.PutVersion(ctx, host.TextPut{
-		Path: rec.Path, Key: VersionKey, Format: domain.TextFormatPositioned,
-		InputHash: rec.InputHash, Hash: domain.HashContent([]byte(text.Text)),
+		Path: rec.Path, Key: VersionKey, Kind: textKind, SourceHash: rec.InputHash, File: file,
 	})
 	if err != nil {
 		return Result{}, fmt.Errorf("report the recognition of %s: %w", rec.Path, err)

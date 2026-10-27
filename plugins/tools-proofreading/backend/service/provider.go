@@ -3,19 +3,16 @@ package service
 import (
 	"context"
 	"fmt"
-	"strings"
 	"sync"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
-// provider is the plugin's texts as the host reads them, a proofreading started for the host, and
-// one deleted. A started proofreading runs until it ends or the provider is closed.
+// provider starts a proofreading for the host. A started proofreading runs until it ends or the
+// provider is closed.
 type provider struct {
 	proofreading *Proofreading
-	store        host.Store
 
 	ctx    context.Context
 	cancel context.CancelFunc
@@ -27,9 +24,9 @@ type provider struct {
 
 var _ host.TextProvider = (*provider)(nil)
 
-func newProvider(proofreading *Proofreading, store host.Store) *provider {
+func newProvider(proofreading *Proofreading) *provider {
 	ctx, cancel := context.WithCancel(context.Background())
-	return &provider{proofreading: proofreading, store: store, ctx: ctx, cancel: cancel, running: map[string]bool{}}
+	return &provider{proofreading: proofreading, ctx: ctx, cancel: cancel, running: map[string]bool{}}
 }
 
 // Wait waits for the proofreadings it started to end.
@@ -41,26 +38,14 @@ func (p *provider) Close() {
 	p.Wait()
 }
 
-// GetText is the whole corrected text kept under the key, as one page.
-func (p *provider) GetText(ctx context.Context, req host.TextRequest) (host.TextPage, error) {
-	if req.Cursor != "" || !strings.HasPrefix(req.Key, keyPrefix) {
-		return host.TextPage{}, fmt.Errorf("key %q, cursor %q: %w", req.Key, req.Cursor, host.ErrNotExist)
-	}
-	parts, err := textFiles{store: p.getStore(req.Vault)}.read(ctx, req.Key)
-	if err != nil {
-		return host.TextPage{}, err
-	}
-	return host.TextPage{Parts: parts}, nil
-}
-
 // CreateText starts proofreading the version the request names and returns. The plugin reads
 // versions, so a request for text of the file itself is invalid. A version being proofread already
 // is not started again.
 func (p *provider) CreateText(_ context.Context, req host.TextCreation) error {
-	if req.Input == "" {
+	if req.Source == "" {
 		return fmt.Errorf("the plugin proofreads versions and not the file %s: %w", req.Path, host.ErrInvalidVersion)
 	}
-	key := string(req.Vault) + "\x00" + req.Path + "\x00" + string(req.Input)
+	key := string(req.Vault) + "\x00" + req.Path + "\x00" + string(req.Source)
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	if p.running[key] {
@@ -71,7 +56,7 @@ func (p *provider) CreateText(_ context.Context, req host.TextCreation) error {
 		defer p.finish(key)
 		// Proofread reports a failure as a task error.
 		_, _ = p.proofreading.Proofread(p.ctx, Request{
-			Vault: req.Vault, Path: req.Path, Input: req.Input, IsUserStarted: req.IsUserStarted,
+			Vault: req.Vault, Path: req.Path, Input: req.Source, IsUserStarted: req.IsUserStarted,
 		})
 	})
 	return nil
@@ -81,22 +66,6 @@ func (p *provider) finish(key string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	delete(p.running, key)
-}
-
-// DeleteText removes the corrected text kept under the key.
-func (p *provider) DeleteText(ctx context.Context, vault domain.VaultID, _, key string) error {
-	if !strings.HasPrefix(key, keyPrefix) {
-		return nil
-	}
-	return textFiles{store: p.getStore(vault)}.remove(ctx, key)
-}
-
-// getStore is the plugin's folder in the vault, the shown one where the vault is empty.
-func (p *provider) getStore(vault domain.VaultID) host.Store {
-	if vault == "" {
-		return p.store
-	}
-	return p.store.With(vault)
 }
 
 // newProofreadCommand proofreads the live text of the file a person named and waits for it.

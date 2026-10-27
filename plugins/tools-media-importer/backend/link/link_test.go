@@ -87,7 +87,7 @@ func newWorld(t *testing.T) *world {
 	w.links = link.New(link.Host{Vault: vault, Store: w.store, Texts: w.texts, Queue: w.queue},
 		func() link.Fetcher { return w.sites },
 		func() link.Settings { return link.Settings{CopyMaxSize: w.limit} })
-	w.texts.Provide(pluginID, link.NewProvider(w.links))
+	w.texts.SetStore(pluginID, w.store)
 	t.Cleanup(w.links.Close)
 	return w
 }
@@ -141,8 +141,8 @@ func TestAnArticleIsThePlainTextVersionOfItsLink(t *testing.T) {
 	if err != nil || len(listing.Versions) != 1 || listing.Live == "" {
 		t.Fatalf("the versions are %+v (%v)", listing, err)
 	}
-	if format := listing.Versions[0].Format; format != domain.TextFormatPlain {
-		t.Errorf("an article is %q text", format)
+	if kind := listing.Versions[0].Kind; kind != "article" {
+		t.Errorf("an article is %q text", kind)
 	}
 	text, err := w.links.ReadArticle(t.Context(), made.Path)
 	if err != nil || text != "A tidal mill stored seawater behind a sluice gate." {
@@ -164,14 +164,14 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 		t.Fatal(err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
-	if err != nil || len(listing.Versions) != 1 || listing.Versions[0].Format != domain.TextFormatTimed {
+	if err != nil || len(listing.Versions) != 1 || listing.Versions[0].Kind != "transcript" {
 		t.Fatalf("the versions are %+v (%v)", listing, err)
 	}
 	page, err := w.texts.ReadText(t.Context(), made.Path, listing.Live, "")
-	if err != nil || len(page.Parts) != 2 {
+	if err != nil || len(page.Segments) != 2 {
 		t.Fatalf("the captions read as %+v (%v)", page, err)
 	}
-	if second := page.Parts[1]; second.Text != "The wheel turns." || second.Place.Start.Milliseconds() != 1500 {
+	if second := page.Segments[1]; second.Text != "The wheel turns.\n" || second.Selector != `{"t":[1.5,3]}` {
 		t.Errorf("the second caption is %+v", second)
 	}
 }
@@ -196,25 +196,6 @@ func TestAnAddressThatPublishesNothingIsNotAskedAgainUnlessAPersonAsks(t *testin
 	}
 }
 
-func TestATextAPersonDeletedIsNotFetchedAgainOnItsOwn(t *testing.T) {
-	w := newWorld(t)
-	made := w.create(t, articleAddress)
-	if err := w.links.FetchText(t.Context(), made, true); err != nil {
-		t.Fatal(err)
-	}
-
-	provider := link.NewProvider(w.links)
-	if err := provider.DeleteText(t.Context(), w.vault.Vault().ID, made.Path, made.Key); err != nil {
-		t.Fatal(err)
-	}
-	if _, err := provider.GetText(t.Context(), host.TextRequest{Vault: w.vault.Vault().ID, Path: made.Path, Key: made.Key}); !errors.Is(err, host.ErrNotExist) {
-		t.Errorf("the deleted text is still read: %v", err)
-	}
-	if err := w.links.FetchText(t.Context(), made, false); err != nil || w.sites.texts.Load() != 1 {
-		t.Errorf("the host asking fetched the deleted text again (%d fetches, %v)", w.sites.texts.Load(), err)
-	}
-}
-
 func TestTheHostAsksForTheTextOfALinkAndItIsFetched(t *testing.T) {
 	w := newWorld(t)
 	made := w.create(t, articleAddress)
@@ -227,7 +208,7 @@ func TestTheHostAsksForTheTextOfALinkAndItIsFetched(t *testing.T) {
 	if text, err := w.links.ReadArticle(t.Context(), made.Path); err != nil || text == "" {
 		t.Errorf("the article reads %q (%v)", text, err)
 	}
-	if err := provider.CreateText(t.Context(), host.TextCreation{Vault: w.vault.Vault().ID, Path: made.Path, Input: "v1"}); !errors.Is(err, host.ErrInvalidVersion) {
+	if err := provider.CreateText(t.Context(), host.TextCreation{Vault: w.vault.Vault().ID, Path: made.Path, Source: "v1"}); !errors.Is(err, host.ErrInvalidVersion) {
 		t.Errorf("a request made from a version was answered %v", err)
 	}
 }
