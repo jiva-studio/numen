@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"os/exec"
 	"slices"
@@ -14,7 +15,6 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // defaultModelName is the model the program lists for the choice of its own.
@@ -46,7 +46,7 @@ func (m claudeModel) getLevels() []reasoning.Level {
 }
 
 // toProto returns the model in the schema's words.
-func (m claudeModel) toProto() *numenv1.AgentModel {
+func (m claudeModel) toProto() *agentrun.AgentModel {
 	return reasoning.NewModel(m.Value, m.DisplayName, m.getLevels(), "")
 }
 

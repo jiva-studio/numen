@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
@@ -27,13 +26,13 @@ func TestTheToolCallsOfCodexAreReported(t *testing.T) {
 			"echo plain text\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = w.Stop() }()
 
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -58,11 +57,11 @@ func TestTheMessagesOfCodexAreSaid(t *testing.T) {
 			`echo '{"type":"item.completed","item":{"type":"reasoning","text":"hidden"}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -76,11 +75,11 @@ func TestACodexToolCallNamesItsToolByTheToolField(t *testing.T) {
 		`echo '{"type":"item.started","item":{"type":"mcp_tool_call","server":"numen","tool":"search_notes","arguments":{"q":"x"}}}'`+"\n")
 	var reg agentrun.Registry
 
-	w, err := start(t.Context(), &reg, newSpec(&numenv1.AskAgentRequest{Command: []string{script}}))
+	w, err := start(t.Context(), &reg, newSpec(&agentrun.AskAgentRequest{Command: []string{script}}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}

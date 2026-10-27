@@ -6,10 +6,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // The key in the environment of the plugin is not a key: the remote service is
@@ -28,7 +25,7 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) 
 	life := server.NewLifecycleServer(make(chan struct{}), server.WithLifecycleUpdateConfig(emb.updateConfig))
 	configure := func(values map[string]string) {
 		t.Helper()
-		if _, err := life.Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{Values: values})); err != nil {
+		if _, err := life.ApplyConfig(t.Context(), values); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -39,12 +36,11 @@ func TestTheRemoteServiceIsAskedOnlyWithTheKeyConfigurePassesOver(t *testing.T) 
 	}
 
 	configure(map[string]string{"provider": "custom", "baseUrl": service.URL, server.SecretAPIKey: "host-key"})
-	res, err := emb.EmbedBatch(t.Context(), connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"a fixture sentence"}}))
+	vectors, err := emb.EmbedTexts(t.Context(), []string{"a fixture sentence"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectors := res.Msg.GetVectors()
-	if len(vectors) != 1 || len(vectors[0].GetValues()) != 2 || vectors[0].GetValues()[0] != 0.5 {
+	if len(vectors) != 1 || len(vectors[0]) != 2 || vectors[0][0] != 0.5 {
 		t.Errorf("vectors = %v, want the one the service answered", vectors)
 	}
 	if len(auth) != 1 || auth[0] != "Bearer host-key" {

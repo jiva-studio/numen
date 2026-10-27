@@ -1,9 +1,6 @@
 package reasoning
 
-import (
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"strings"
-)
+import "strings"
 
 // Listed is a model as a program lists it.
 type Listed struct {
@@ -28,7 +25,7 @@ type Family struct {
 }
 
 // ToProto is the family in the schema's words.
-func (f Family) ToProto() *numenv1.AgentModel {
+func (f Family) ToProto() *AgentModel {
 	return NewModel(f.Name, f.Title, f.Levels, f.Default)
 }
 

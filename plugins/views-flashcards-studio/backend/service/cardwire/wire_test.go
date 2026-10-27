@@ -8,7 +8,7 @@ import (
 
 	"google.golang.org/protobuf/proto"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards"
@@ -65,7 +65,7 @@ func TestACardModelSummaryGoesOutWhole(t *testing.T) {
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
-	pos := &v1.FileStat{}
+	pos := &host.WireFileStat{}
 	got := NewRenameResponse(cards.RenameResult{
 		Decks: []string{"a.md"},
 		Cards: 7,

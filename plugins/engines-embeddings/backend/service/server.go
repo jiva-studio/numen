@@ -17,15 +17,12 @@ import (
 
 	"connectrpc.com/connect"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/engines-embeddings/backend/engine"
 )
 
 type embeddingServer struct {
-	numenv1connect.UnimplementedEmbeddingServiceHandler
-
 	modelInfo  engine.ModelInfo
 	localModel engine.LocalModel
 
@@ -191,10 +188,7 @@ func (s *embeddingServer) Close() error {
 	return nil
 }
 
-func (s *embeddingServer) GetEmbeddingModel(
-	_ context.Context,
-	_ *connect.Request[numenv1.GetEmbeddingModelRequest],
-) (*connect.Response[numenv1.GetEmbeddingModelResponse], error) {
+func (s *embeddingServer) GetModelInfo(_ context.Context) (embedding.ModelInfo, error) {
 	s.mu.Lock()
 	info := s.modelInfo
 	s.mu.Unlock()
@@ -202,14 +196,14 @@ func (s *embeddingServer) GetEmbeddingModel(
 	if passes <= 0 {
 		passes = 4
 	}
-	return connect.NewResponse(&numenv1.GetEmbeddingModelResponse{
+	return embedding.ModelInfo{
 		Name:        info.Name,
 		Dimensions:  int32(info.Dimensions),
 		MaxTokens:   int32(info.MaxTokens),
 		Pooling:     info.Pooling,
 		From:        info.From,
 		Concurrency: int32(getIndexShare(passes)),
-	}), nil
+	}, nil
 }
 
 // getIndexShare returns how many calls the index may have in flight on a model
@@ -219,32 +213,22 @@ func getIndexShare(passes int) int {
 	return max(passes-1, 1)
 }
 
-func (s *embeddingServer) EmbedBatch(
-	ctx context.Context,
-	req *connect.Request[numenv1.EmbedBatchRequest],
-) (*connect.Response[numenv1.EmbedBatchResponse], error) {
-	texts := req.Msg.GetTexts()
+func (s *embeddingServer) EmbedTexts(ctx context.Context, texts []string) ([][]float32, error) {
 	if len(texts) == 0 {
-		return connect.NewResponse(&numenv1.EmbedBatchResponse{
-			Vectors: nil,
-		}), nil
+		return nil, nil
 	}
 
 	if key, baseURL := s.getService(); key != "" && baseURL != "" {
 		model := s.getModelName()
-		vectors := make([]*numenv1.FloatVector, len(texts))
+		vectors := make([][]float32, len(texts))
 		for i, t := range texts {
 			vec, err := computeServiceVector(ctx, key, baseURL, model, t)
 			if err != nil {
 				return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("service text %d: %w", i, err))
 			}
-			vectors[i] = &numenv1.FloatVector{
-				Values: vec,
-			}
+			vectors[i] = vec
 		}
-		return connect.NewResponse(&numenv1.EmbedBatchResponse{
-			Vectors: vectors,
-		}), nil
+		return vectors, nil
 	}
 
 	emb, err := s.getEmbedder(ctx)
@@ -260,16 +244,7 @@ func (s *embeddingServer) EmbedBatch(
 		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("expected %d vectors, got %d", len(texts), len(denseVectors)))
 	}
 
-	vectors := make([]*numenv1.FloatVector, len(denseVectors))
-	for i, v := range denseVectors {
-		vectors[i] = &numenv1.FloatVector{
-			Values: v,
-		}
-	}
-
-	return connect.NewResponse(&numenv1.EmbedBatchResponse{
-		Vectors: vectors,
-	}), nil
+	return denseVectors, nil
 }
 
 type openAIEmbeddingRequest struct {
@@ -360,7 +335,7 @@ func computeServiceVector(ctx context.Context, key, baseURL, model, text string)
 func Mount(s *server.Server) error {
 	embedSrv := newEmbeddingServer()
 	s.SetUpdateConfig(embedSrv.updateConfig)
-	s.Register(numenv1connect.NewEmbeddingServiceHandler(embedSrv, s.HandlerOptions()...))
+	embedding.Mount(s, embedSrv)
 	s.OnClose(func() { _ = embedSrv.Close() })
 	return nil
 }

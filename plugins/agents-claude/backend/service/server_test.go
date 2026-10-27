@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,18 +15,16 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // startAgent serves the agent over HTTP and answers with a client of it.
-func startAgent(t *testing.T, agentSvc *agentServer) numenv1connect.AgentServiceClient {
+func startAgent(t *testing.T, agentSvc *agentServer) agentrun.AgentServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(agentSvc))
+	mux.Handle(agentrun.NewAgentServiceHandler(agentSvc))
 	testServer := httptest.NewServer(mux)
 	t.Cleanup(testServer.Close)
-	return numenv1connect.NewAgentServiceClient(http.DefaultClient, testServer.URL)
+	return agentrun.NewAgentServiceClient(http.DefaultClient, testServer.URL)
 }
 
 // writeScript writes an executable shell script and answers with its path.
@@ -50,15 +49,15 @@ func TestLifecycleServer(t *testing.T) {
 	}))
 
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginLifecycleServiceHandler(life))
+	mux.Handle(server.NewPluginLifecycleServiceHandler(life))
 
 	testServer := httptest.NewServer(mux)
 	defer testServer.Close()
 
-	client := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, testServer.URL)
+	client := server.NewPluginLifecycleServiceClient(http.DefaultClient, testServer.URL)
 	ctx := context.Background()
 
-	pingResp, err := client.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	pingResp, err := client.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
 	if err != nil {
 		t.Fatalf("Ping failed: %v", err)
 	}
@@ -66,7 +65,7 @@ func TestLifecycleServer(t *testing.T) {
 		t.Errorf("unexpected status: %s", pingResp.Msg.GetStatus())
 	}
 
-	_, err = client.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{
+	_, err = client.Configure(ctx, connect.NewRequest(&server.ConfigureRequest{
 		Values: map[string]string{"model": "m1"},
 	}))
 	if err != nil {
@@ -80,14 +79,14 @@ func TestLifecycleServer(t *testing.T) {
 func TestAgentServiceRPC(t *testing.T) {
 	client := startAgent(t, &agentServer{
 		systemPrompt: "Base prompt.",
-		tools: []*numenv1.AgentToolDefinition{
+		tools: []*agentrun.AgentToolDefinition{
 			{Name: "search_tool", Description: "Search notes"},
 		},
 	})
 	ctx := context.Background()
 
-	regResp, err := client.RegisterTool(ctx, connect.NewRequest(&numenv1.RegisterToolRequest{
-		Tool: &numenv1.AgentToolDefinition{Name: "new_tool", Description: "New tool"},
+	regResp, err := client.RegisterTool(ctx, connect.NewRequest(&agentrun.RegisterToolRequest{
+		Tool: &agentrun.AgentToolDefinition{Name: "new_tool", Description: "New tool"},
 	}))
 	if err != nil {
 		t.Fatalf("RegisterTool failed: %v", err)
@@ -96,7 +95,7 @@ func TestAgentServiceRPC(t *testing.T) {
 		t.Errorf("expected success true")
 	}
 
-	extResp, err := client.ExtendSystemPrompt(ctx, connect.NewRequest(&numenv1.ExtendSystemPromptRequest{
+	extResp, err := client.ExtendSystemPrompt(ctx, connect.NewRequest(&agentrun.ExtendSystemPromptRequest{
 		Extension: " Extra instructions.",
 	}))
 	if err != nil {
@@ -106,7 +105,7 @@ func TestAgentServiceRPC(t *testing.T) {
 		t.Errorf("unexpected full prompt: %q", extResp.Msg.GetFullPrompt())
 	}
 
-	toolsResp, err := client.GetAgentTools(ctx, connect.NewRequest(&numenv1.GetAgentToolsRequest{}))
+	toolsResp, err := client.GetAgentTools(ctx, connect.NewRequest(&agentrun.GetAgentToolsRequest{}))
 	if err != nil {
 		t.Fatalf("GetAgentTools failed: %v", err)
 	}
@@ -114,7 +113,7 @@ func TestAgentServiceRPC(t *testing.T) {
 		t.Errorf("expected 2 tools, got %d", len(toolsResp.Msg.GetTools()))
 	}
 
-	finResp, err := client.FinishConversation(ctx, connect.NewRequest(&numenv1.FinishConversationRequest{
+	finResp, err := client.FinishConversation(ctx, connect.NewRequest(&agentrun.FinishConversationRequest{
 		Conversation: "conv-1",
 	}))
 	if err != nil {
@@ -131,7 +130,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})
 
-	state, err := client.GetAgentState(t.Context(), connect.NewRequest(&numenv1.GetAgentStateRequest{}))
+	state, err := client.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,7 +138,7 @@ func TestTheProgramIsUnreachableWhereItIsNotInstalled(t *testing.T) {
 		t.Error("an agent that is not installed was said to be reachable")
 	}
 
-	programs, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	programs, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -154,7 +153,7 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", ""))
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -177,24 +176,24 @@ func TestTheProgramListNamesClaudeWithItsModels(t *testing.T) {
 }
 
 // wordStep words one step of a run.
-func wordStep(msg *numenv1.AskAgentResponse) string {
+func wordStep(msg *agentrun.AskAgentResponse) string {
 	switch s := msg.GetStep().(type) {
-	case *numenv1.AskAgentResponse_ModelStarted:
+	case *agentrun.AskAgentResponse_ModelStarted:
 		return "model_started"
-	case *numenv1.AskAgentResponse_ToolCall:
+	case *agentrun.AskAgentResponse_ToolCall:
 		return "tool_call:" + s.ToolCall.GetTool()
-	case *numenv1.AskAgentResponse_ToolFinished:
+	case *agentrun.AskAgentResponse_ToolFinished:
 		return "tool_finished"
-	case *numenv1.AskAgentResponse_Text:
+	case *agentrun.AskAgentResponse_Text:
 		return "said:" + s.Text
-	case *numenv1.AskAgentResponse_Stopped:
+	case *agentrun.AskAgentResponse_Stopped:
 		return "stopped:" + s.Stopped
 	}
 	return ""
 }
 
 // readSteps reads a run to its end and words each step.
-func readSteps(stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) ([]string, error) {
+func readSteps(stream *connect.ServerStreamForClient[agentrun.AskAgentResponse]) ([]string, error) {
 	var steps []string
 	for stream.Receive() {
 		if word := wordStep(stream.Msg()); word != "" {
@@ -205,7 +204,7 @@ func readSteps(stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) 
 }
 
 // collectSteps is readSteps, failing the test on an error.
-func collectSteps(t *testing.T, stream *connect.ServerStreamForClient[numenv1.AskAgentResponse]) []string {
+func collectSteps(t *testing.T, stream *connect.ServerStreamForClient[agentrun.AskAgentResponse]) []string {
 	t.Helper()
 	steps, err := readSteps(stream)
 	if err != nil {
@@ -226,7 +225,7 @@ func TestAskAgentWithMockScript(t *testing.T) {
 		"JSONEOF\n")
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:  "Find algebra notes",
 		Command: []string{script},
 	}))
@@ -276,7 +275,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:     "the question",
 		Command:    []string{script, "--first"},
 		Root:       root,
@@ -332,7 +331,7 @@ func TestAConversationResumesItsSession(t *testing.T) {
 	client := startAgent(t, &agentServer{})
 
 	ask := func() []string {
-		stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+		stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 			Prompt: "q", Command: []string{script}, Conversation: "c-1",
 		}))
 		if err != nil {
@@ -352,7 +351,7 @@ func TestAConversationResumesItsSession(t *testing.T) {
 	assertPair(t, ask(), "--resume", "s-1")
 
 	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
-		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		&agentrun.FinishConversationRequest{Conversation: "c-1"})); err != nil {
 		t.Fatal(err)
 	}
 	if again := ask(); slices.Contains(again, "--resume") {
@@ -366,7 +365,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 	script := writeScript(t, "mock-claude.sh", announce+"sleep 120\n")
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt: "q", Command: []string{script}, Conversation: "c-1",
 	}))
 	if err != nil {
@@ -375,7 +374,7 @@ func TestFinishingAConversationStopsItsRun(t *testing.T) {
 	awaitUp(t, stream)
 
 	if _, err := client.FinishConversation(t.Context(), connect.NewRequest(
-		&numenv1.FinishConversationRequest{Conversation: "c-1"})); err != nil {
+		&agentrun.FinishConversationRequest{Conversation: "c-1"})); err != nil {
 		t.Fatal(err)
 	}
 	endsWithin(t, "the finished conversation", 30*time.Second, func() {
@@ -393,7 +392,7 @@ func TestAskAgent_NotInstalled(t *testing.T) {
 	withoutClaudeAnywhere(t)
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{Prompt: "q"}))
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{Prompt: "q"}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -409,7 +408,7 @@ func TestAskAgent_ClosedAgent(t *testing.T) {
 	_ = agentSvc.registry.Close()
 	client := startAgent(t, agentSvc)
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt: "q", Command: []string{"true"},
 	}))
 	if err != nil {
@@ -429,8 +428,8 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "")
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{
 			{Program: "codex", Command: []string{"/bin/codex"}},
 			{Program: "claude", Command: []string{"/opt/claude/bin/claude"}},
 		},
@@ -461,8 +460,8 @@ func TestGetAgentProgramsIgnoresCommandsForOtherPrograms(t *testing.T) {
 	t.Setenv("ANTHROPIC_API_KEY", "")
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{
 			{Program: "other", Command: []string{"/bin/other"}},
 		},
 	}))
@@ -482,14 +481,14 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 		"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+out+".argv\n"+
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	agentSvc := &agentServer{
-		tools: []*numenv1.AgentToolDefinition{
+		tools: []*agentrun.AgentToolDefinition{
 			{Name: "note_read"},
 			{Name: "note_write"},
 		},
 	}
 	client := startAgent(t, agentSvc)
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:     "q",
 		Command:    []string{script},
 		ToolsUrl:   "http://127.0.0.1:7717/mcp",
@@ -532,7 +531,7 @@ func TestAskAgentRunsWithTheEnvironmentAndTheConfiguredModel(t *testing.T) {
 	agentSvc.applyConfig(map[string]string{"apiKey": "host-key", "model": "m1"})
 	client := startAgent(t, agentSvc)
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt: "q", Command: []string{script},
 	}))
 	if err != nil {
@@ -559,7 +558,7 @@ func TestAskAgentAppendsSystemPrompt(t *testing.T) {
 	agentSvc := &agentServer{systemPrompt: "vault prompt"}
 	client := startAgent(t, agentSvc)
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:       "q",
 		Command:      []string{script},
 		Instructions: "task instructions",
@@ -582,7 +581,7 @@ func TestAskAgent_McpConfigWriteFailure(t *testing.T) {
 	t.Setenv("TMPDIR", "/dev/null/nowhere")
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:     "q",
 		Command:    []string{script},
 		Tools:      []string{"note_read"},
@@ -607,7 +606,7 @@ func TestAskAgentDropsInternalClaudeEnvironmentVariables(t *testing.T) {
 			"echo '{\"type\":\"result\",\"is_error\":false}'\n")
 	client := startAgent(t, &agentServer{})
 
-	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Prompt:  "q",
 		Command: []string{script},
 	}))
@@ -634,7 +633,7 @@ func TestTheProgramListNeedsNoKey(t *testing.T) {
 	agentSvc.applyConfig(map[string]string{})
 	client := startAgent(t, agentSvc)
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

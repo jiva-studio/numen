@@ -3,8 +3,8 @@ package service
 import (
 	"time"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 // stamp is when a file last changed, as the schema carries it. Zero is a file nothing was said
@@ -25,16 +25,16 @@ func instant(nanos int64) time.Time {
 
 // writeFileStat is what a file was, as the schema carries it. A file nothing is known of is
 // carried as nothing.
-func writeFileStat(ref domain.FileStat) *v1.FileStat {
+func writeFileStat(ref domain.FileStat) *host.WireFileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &host.WireFileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
 // readFileStat is what a client says a file was when it read it. Nothing said is nothing
 // compared.
-func readFileStat(pos *v1.FileStat) domain.FileStat {
+func readFileStat(pos *host.WireFileStat) domain.FileStat {
 	if pos == nil {
 		return domain.FileStat{}
 	}

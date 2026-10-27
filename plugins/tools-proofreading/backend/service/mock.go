@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 )
 
 // MockMark is what the mock proofreader adds to the end of every line it is asked about.
@@ -13,7 +13,7 @@ const MockMark = "[proofread]"
 
 // completeMock answers a question as a model would, with no model: every numbered line of the
 // prompt comes back with MockMark after its words. It reaches nothing outside the process.
-func completeMock(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
+func completeMock(ctx context.Context, question *ai.Question) (string, error) {
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}

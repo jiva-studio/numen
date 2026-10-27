@@ -1,6 +1,6 @@
 package format
 
-import "github.com/jiva-studio/numen/libs/notes/domain"
+import "github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 
 // The types a note carries when the cards are made of it: the `type` key of its frontmatter.
 const (

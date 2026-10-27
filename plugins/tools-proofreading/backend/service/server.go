@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
@@ -37,7 +36,7 @@ const (
 const purpose = "proofreading"
 
 // completer asks the host for the answer to a question.
-type completer func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error)
+type completer func(ctx context.Context, question *ai.Question) (string, error)
 
 // Host is what the plugin works through the host: the plugin's folder the corrected texts are kept
 // in, the text versions it reads and reports, and the queue it runs in.
@@ -112,9 +111,9 @@ func (s *settings) getConfig() proofreadingConfig {
 // newAskModel returns the model as a system instruction and a prompt are put to it.
 func newAskModel(complete completer) askModel {
 	return func(ctx context.Context, instruction, prompt string) (string, error) {
-		return complete(ctx, &numenv1.CompletionQuestion{
+		return complete(ctx, &ai.Question{
 			Purpose: purpose,
-			Messages: []*numenv1.CompletionMessage{
+			Messages: []ai.Message{
 				{Role: "system", Text: instruction},
 				{Role: "user", Text: prompt},
 			},
@@ -143,7 +142,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	if err != nil {
 		return nil, err
 	}
-	complete := func(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
+	complete := func(ctx context.Context, question *ai.Question) (string, error) {
 		client, err := ai.NewClientFromVars(vars)
 		if err != nil {
 			return "", err

@@ -6,11 +6,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/ai"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/command"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	proofreading "github.com/jiva-studio/numen/plugins/tools-proofreading"
 )
 
@@ -43,10 +43,10 @@ type scene struct {
 type modelHost struct {
 	script    func(prompt string) string
 	failure   error
-	questions []*numenv1.CompletionQuestion
+	questions []*ai.Question
 }
 
-func (m *modelHost) complete(_ context.Context, question *numenv1.CompletionQuestion) (string, error) {
+func (m *modelHost) complete(_ context.Context, question *ai.Question) (string, error) {
 	m.questions = append(m.questions, question)
 	if m.failure != nil {
 		return "", m.failure
@@ -354,7 +354,7 @@ func TestTheMockMarksTheLinesTheGatesLetThrough(t *testing.T) {
 }
 
 func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
-	question := &numenv1.CompletionQuestion{Messages: []*numenv1.CompletionMessage{
+	question := &ai.Question{Messages: []ai.Message{
 		{Role: "system", Text: speechInstruction},
 		{Role: "user", Text: "What it holds\n\n" + buildPrompt(Batch{Lines: []Line{{Number: 4, Text: "one"}, {Number: 5, Text: "two"}}})},
 	}}

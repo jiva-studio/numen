@@ -1,14 +1,13 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"slices"
 	"strings"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 var codexPlaces = []string{
@@ -54,7 +53,7 @@ func FindCodex(customPath ...string) string {
 	return "codex"
 }
 
-func programCommand(commands []*numenv1.AgentProgramCommand, name string) []string {
+func programCommand(commands []*agentrun.AgentProgramCommand, name string) []string {
 	for _, one := range commands {
 		if one.GetProgram() == name {
 			return one.GetCommand()

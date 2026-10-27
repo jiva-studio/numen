@@ -2,10 +2,10 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // Mount registers the agent's services on s and hands the settings and secrets Configure receives to
@@ -13,7 +13,7 @@ import (
 func Mount(s *server.Server) error {
 	agent := &Server{}
 	s.SetUpdateConfig(agent.Configure)
-	s.Register(numenv1connect.NewAgentServiceHandler(agent, s.HandlerOptions()...))
+	s.Register(agentrun.NewAgentServiceHandler(agent, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agent.Close() })
 	return nil
 }

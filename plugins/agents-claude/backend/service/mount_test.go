@@ -1,13 +1,11 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http/httptest"
 	"testing"
 
 	"connectrpc.com/connect"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // The handler a host that links the plugin in serves lists Claude Code, with the token it was given.
@@ -19,8 +17,8 @@ func TestTheLinkedHandlerListsClaudeCode(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	client := numenv1connect.NewAgentServiceClient(web.Client(), web.URL)
-	req := connect.NewRequest(&numenv1.GetAgentProgramsRequest{})
+	client := agentrun.NewAgentServiceClient(web.Client(), web.URL)
+	req := connect.NewRequest(&agentrun.GetAgentProgramsRequest{})
 	req.Header().Set("Authorization", "Bearer linked-token")
 	resp, err := client.GetAgentPrograms(t.Context(), req)
 	if err != nil {

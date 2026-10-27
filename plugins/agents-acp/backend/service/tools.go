@@ -6,7 +6,6 @@ import (
 	"slices"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // serverName is what the run's tools are served to the agent under.
@@ -78,7 +77,7 @@ func (s *acpSession) isRunTool(callID, name string) bool {
 
 // readToolEndpoint is where the task's tools are served. A task that names no tool, or no endpoint,
 // has none.
-func readToolEndpoint(task *numenv1.AskAgentRequest) toolEndpoint {
+func readToolEndpoint(task *agentrun.AskAgentRequest) toolEndpoint {
 	if !agentrun.HasTools(task) || task.GetToolsUrl() == "" {
 		return toolEndpoint{}
 	}

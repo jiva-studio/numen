@@ -6,7 +6,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -50,7 +49,7 @@ func NewStoreClientOver(httpClient connect.HTTPClient, endpoint hostcall.Endpoin
 	return &StoreClient{rpc: numenv1connect.NewHostStoreServiceClient(httpClient, endpoint.BaseURL, endpoint.Options()...)}
 }
 
-func (c *StoreClient) With(id domain.VaultID) Store {
+func (c *StoreClient) With(id VaultID) Store {
 	linked := *c
 	linked.vault = string(id)
 	return &linked

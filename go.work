@@ -1,0 +1,41 @@
+go 1.26.9
+
+use (
+	./apps/desktop
+	./apps/desktop/build/pgonorm
+	./apps/desktop/build/tools
+	./apps/mobile
+	./libs/core
+	./libs/notes
+	./libs/plugin-sdk-go
+	./libs/plugin-sdk-go/agent
+	./libs/plugin-sdk-go/host
+	./libs/plugin-sdk-go/onnx
+	./libs/protocol
+	./plugins/agents-acp
+	./plugins/agents-antigravity
+	./plugins/agents-claude
+	./plugins/agents-codex
+	./plugins/agents-mcp-server
+	./plugins/agents-numen
+	./plugins/agents-tools-vault
+	./plugins/agents-tools-window
+	./plugins/engines-embeddings
+	./plugins/engines-ocr
+	./plugins/engines-transcription
+	./plugins/readers-epub
+	./plugins/readers-pdf
+	./plugins/tools-media-importer
+	./plugins/tools-proofreading
+	./plugins/views-flashcards-studio
+)
+
+replace (
+	github.com/jiva-studio/numen/libs/core v0.0.0 => ./libs/core
+	github.com/jiva-studio/numen/libs/notes v0.0.0 => ./libs/notes
+	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0 => ./libs/plugin-sdk-go
+	github.com/jiva-studio/numen/libs/plugin-sdk-go/agent v0.0.0 => ./libs/plugin-sdk-go/agent
+	github.com/jiva-studio/numen/libs/plugin-sdk-go/host v0.0.0 => ./libs/plugin-sdk-go/host
+	github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx v0.0.0 => ./libs/plugin-sdk-go/onnx
+	github.com/jiva-studio/numen/libs/protocol v0.0.0 => ./libs/protocol
+)

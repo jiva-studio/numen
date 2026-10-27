@@ -17,7 +17,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 )
 
 var errPageGone = errors.New("the page is gone")

@@ -5,14 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	neturl "net/url"
 	"slices"
 	"strings"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // errPlainToken is a tool server the token would reach unencrypted.
@@ -45,7 +44,7 @@ func (b bearer) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // openToolbox connects to the tool server of the task and lists the tools of it the task names. An
 // empty url, or a task naming no tool, is a run with no tools, and no connection is made.
-func openToolbox(ctx context.Context, task *numenv1.AskAgentRequest) (*toolbox, error) {
+func openToolbox(ctx context.Context, task *agentrun.AskAgentRequest) (*toolbox, error) {
 	url, named := task.GetToolsUrl(), task.GetTools()
 	if url == "" || len(named) == 0 {
 		return &toolbox{}, nil

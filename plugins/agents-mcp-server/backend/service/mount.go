@@ -6,14 +6,14 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 // Mount registers the plugin's services and handlers on the plugin server.
 func Mount(s *server.Server) error {
 	var client ToolClient
 	if endpoint, err := hostcall.FromEnv(); err == nil {
-		client = numenv1connect.NewPluginToolServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...)
+		client = tools.NewClient(endpoint)
 	}
 
 	cfg := readConfig(nil)
@@ -29,17 +29,9 @@ func Mount(s *server.Server) error {
 	s.SetConfigure(func(ctx context.Context, values map[string]string) error {
 		if srv.aggregator.client == nil {
 			if endpoint, err := hostcall.FromVars(values); err == nil {
-				srv.aggregator.client = numenv1connect.NewPluginToolServiceClient(
-					hostcall.HTTPClient(),
-					endpoint.BaseURL,
-					endpoint.Options()...,
-				)
+				srv.aggregator.client = tools.NewClient(endpoint)
 			} else if endpoint, err := hostcall.FromEnv(); err == nil {
-				srv.aggregator.client = numenv1connect.NewPluginToolServiceClient(
-					hostcall.HTTPClient(),
-					endpoint.BaseURL,
-					endpoint.Options()...,
-				)
+				srv.aggregator.client = tools.NewClient(endpoint)
 			}
 		}
 

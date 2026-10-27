@@ -8,7 +8,6 @@ require (
 	github.com/gomlx/go-huggingface v0.4.3
 	github.com/jiva-studio/numen/libs/plugin-sdk-go v0.0.0
 	github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx v0.0.0
-	github.com/jiva-studio/numen/libs/protocol v0.0.0
 )
 
 require (
@@ -22,9 +21,3 @@ require (
 	golang.org/x/text v0.43.0 // indirect
 	google.golang.org/protobuf v1.36.12 // indirect
 )
-
-replace github.com/jiva-studio/numen/libs/plugin-sdk-go => ../../libs/plugin-sdk-go
-
-replace github.com/jiva-studio/numen/libs/plugin-sdk-go/onnx => ../../libs/plugin-sdk-go/onnx
-
-replace github.com/jiva-studio/numen/libs/protocol => ../../libs/protocol

@@ -14,8 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // ProgramName is what a task asks for the agent by, and what the settings keep its section under.
@@ -43,7 +41,7 @@ var errClosing = errors.New("this agent is closing")
 // or linked into the one that hosts the vault. The zero value asks the default chat API with no
 // key.
 type Server struct {
-	numenv1connect.UnimplementedAgentServiceHandler
+	agentrun.UnimplementedAgentServiceHandler
 
 	// Client sends the requests to the chat API. Nil sends them with a client of its own.
 	Client *http.Client
@@ -119,14 +117,14 @@ func (s *Server) getModel(named string) string {
 // and why it stopped. A conversation goes on from the transcript in it before.
 func (s *Server) AskAgent(
 	ctx context.Context,
-	req *connect.Request[numenv1.AskAgentRequest],
-	stream *connect.ServerStream[numenv1.AskAgentResponse],
+	req *connect.Request[agentrun.AskAgentRequest],
+	stream *connect.ServerStream[agentrun.AskAgentResponse],
 ) error {
 	return s.Ask(ctx, req.Msg, stream.Send)
 }
 
 // Ask is AskAgent with the steps going to send.
-func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send func(*numenv1.AskAgentResponse) error) error {
+func (s *Server) Ask(ctx context.Context, task *agentrun.AskAgentRequest, send func(*agentrun.AskAgentResponse) error) error {
 	taskCtx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -143,7 +141,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 		if taskCtx.Err() != nil {
 			return nil
 		}
-		return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{
+		return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{
 			Stopped: fmt.Sprintf("the agent could not reach this vault: %v", err),
 		}})
 	}
@@ -179,7 +177,7 @@ func (s *Server) Ask(ctx context.Context, task *numenv1.AskAgentRequest, send fu
 	if reason == reasonDone || reason == reasonTurns || reason == reasonCut {
 		s.appendConversation(conversation, transcript[len(messages)-1:])
 	}
-	return send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
+	return send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
 }
 
 // getConversation is the transcript in the conversation so far, oldest first.
@@ -210,8 +208,8 @@ func (s *Server) appendConversation(conversation string, transcript []message) {
 // said in it.
 func (s *Server) FinishConversation(
 	ctx context.Context,
-	req *connect.Request[numenv1.FinishConversationRequest],
-) (*connect.Response[numenv1.FinishConversationResponse], error) {
+	req *connect.Request[agentrun.FinishConversationRequest],
+) (*connect.Response[agentrun.FinishConversationResponse], error) {
 	conversation := req.Msg.GetConversation()
 	if err := s.registry.EndConversation(ctx, conversation); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -219,15 +217,15 @@ func (s *Server) FinishConversation(
 	s.mu.Lock()
 	delete(s.conversations, conversation)
 	s.mu.Unlock()
-	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
+	return connect.NewResponse(&agentrun.FinishConversationResponse{}), nil
 }
 
 // GetAgentState is unreachable while the chat API does not list its models.
 func (s *Server) GetAgentState(
 	ctx context.Context,
-	_ *connect.Request[numenv1.GetAgentStateRequest],
-) (*connect.Response[numenv1.GetAgentStateResponse], error) {
-	res := &numenv1.GetAgentStateResponse{}
+	_ *connect.Request[agentrun.GetAgentStateRequest],
+) (*connect.Response[agentrun.GetAgentStateResponse], error) {
+	res := &agentrun.GetAgentStateResponse{}
 	if _, err := s.listModels(ctx); err != nil {
 		res.Unreachable = fmt.Sprintf("the chat API cannot be reached: %v", err)
 	}
@@ -239,23 +237,23 @@ func (s *Server) GetAgentState(
 // the vault tools a task names.
 func (s *Server) GetAgentPrograms(
 	ctx context.Context,
-	_ *connect.Request[numenv1.GetAgentProgramsRequest],
-) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	_ *connect.Request[agentrun.GetAgentProgramsRequest],
+) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
 	models, err := s.listModels(ctx)
 	configured := s.getModel("")
-	program := &numenv1.AgentProgram{
+	program := &agentrun.AgentProgram{
 		Name:        ProgramName,
 		Title:       programTitle,
 		IsInstalled: err == nil,
 		LimitsTools: true,
 	}
 	for _, one := range models {
-		program.Models = append(program.Models, &numenv1.AgentModel{
+		program.Models = append(program.Models, &agentrun.AgentModel{
 			Name: one.Name, Title: one.Title, IsDefault: one.Name == configured,
 			ReasoningLevels: reasoning.ToProto(one.ReasoningLevels), DefaultReasoning: one.DefaultReasoning,
 		})
 	}
-	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{Programs: []*numenv1.AgentProgram{program}}), nil
+	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{Programs: []*agentrun.AgentProgram{program}}), nil
 }
 
 // listModels is what the chat API lists: what it listed under the present settings, or what it

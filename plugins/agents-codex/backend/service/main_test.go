@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
@@ -12,8 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"connectrpc.com/connect"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // The program list names Codex, installed where it is found, with the models it lists under the command
@@ -32,8 +31,8 @@ func TestTheProgramListNamesCodexWithTheModelsItLists(t *testing.T) {
 			"while read -r _; do :; done\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -57,7 +56,7 @@ func TestAProgramThatIsNotInstalledListsNoModels(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -122,8 +121,8 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 			"while read -r _; do :; done\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{{Program: "codex", Command: []string{appServer}}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -179,7 +178,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
 		Prompt:     "the question",
 		Command:    []string{script, "--first"},
 		Root:       root,
@@ -206,7 +205,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A program that fails is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAFailedRun(t *testing.T) {
 	script := agenttest.WriteScript(t, "codex", "echo 'not signed in' >&2\nexit 2\n")
-	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Command: []string{script},
 	}))
 	if err != nil {
@@ -230,7 +229,7 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "codex")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},

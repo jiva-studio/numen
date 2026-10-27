@@ -20,8 +20,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 // programName is what a task asks for the program by, and what the settings keep its section under.
@@ -34,10 +32,10 @@ const readsHooksOption = "reads_hooks_and_skills"
 const programTitle = "Claude Code"
 
 type agentServer struct {
-	numenv1connect.UnimplementedAgentServiceHandler
+	agentrun.UnimplementedAgentServiceHandler
 	mu             sync.RWMutex
 	systemPrompt   string
-	tools          []*numenv1.AgentToolDefinition
+	tools          []*agentrun.AgentToolDefinition
 	registry       agentrun.Registry
 	defaultModel   string
 	executablePath string
@@ -87,7 +85,7 @@ func combineInstructions(instructions, systemPrompt string) string {
 }
 
 func (s *agentServer) prepareClaudeArgs(
-	msg *numenv1.AskAgentRequest, instructions, defaultModel string,
+	msg *agentrun.AskAgentRequest, instructions, defaultModel string,
 ) (claudeArgs []string, configFile string, err error) {
 	toolNames := msg.GetTools()
 	if len(toolNames) > 0 {
@@ -119,8 +117,8 @@ func (s *agentServer) prepareClaudeArgs(
 
 func (s *agentServer) AskAgent(
 	ctx context.Context,
-	req *connect.Request[numenv1.AskAgentRequest],
-	stream *connect.ServerStream[numenv1.AskAgentResponse],
+	req *connect.Request[agentrun.AskAgentRequest],
+	stream *connect.ServerStream[agentrun.AskAgentResponse],
 ) error {
 	msg := req.Msg
 	s.mu.RLock()
@@ -132,13 +130,13 @@ func (s *agentServer) AskAgent(
 
 	cmdName, cmdArgs := s.getCommand(msg.GetCommand())
 	if cmdName == "" {
-		_ = stream.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Text{
+		_ = stream.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Text{
 				Text: "Claude Code CLI is not installed or not found on PATH.",
 			},
 		})
-		return stream.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Stopped{
+		return stream.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Stopped{
 				Stopped: "claude not installed",
 			},
 		})
@@ -164,8 +162,8 @@ func (s *agentServer) AskAgent(
 	defer removeFile(configFile)
 
 	// The wait for the model begins with the program, and the stream opens on saying so.
-	if err := stream.Send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_ModelStarted{ModelStarted: &numenv1.ModelStarted{}},
+	if err := stream.Send(&agentrun.AskAgentResponse{
+		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
 	}); err != nil {
 		return err
 	}
@@ -186,8 +184,8 @@ func (s *agentServer) AskAgent(
 		return nil
 	}
 
-	return stream.Send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_Stopped{
+	return stream.Send(&agentrun.AskAgentResponse{
+		Step: &agentrun.AskAgentResponse_Stopped{
 			Stopped: stoppedReason,
 		},
 	})
@@ -197,7 +195,7 @@ func (s *agentServer) launchAgentCmd(
 	ctx context.Context,
 	cmdName string,
 	cmdArgs, claudeArgs []string,
-	msg *numenv1.AskAgentRequest,
+	msg *agentrun.AskAgentRequest,
 ) (*exec.Cmd, io.ReadCloser, *strings.Builder, error) {
 	cmd := exec.CommandContext(ctx, cmdName, slices.Concat(cmdArgs, claudeArgs)...)
 	cmd.Dir = msg.GetRoot()
@@ -259,31 +257,31 @@ func (s *agentServer) getCommand(command []string) (string, []string) {
 
 func (s *agentServer) FinishConversation(
 	ctx context.Context,
-	req *connect.Request[numenv1.FinishConversationRequest],
-) (*connect.Response[numenv1.FinishConversationResponse], error) {
+	req *connect.Request[agentrun.FinishConversationRequest],
+) (*connect.Response[agentrun.FinishConversationResponse], error) {
 	if err := s.registry.EndConversation(ctx, req.Msg.GetConversation()); err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
-	return connect.NewResponse(&numenv1.FinishConversationResponse{}), nil
+	return connect.NewResponse(&agentrun.FinishConversationResponse{}), nil
 }
 
 func (s *agentServer) GetAgentState(
 	_ context.Context,
-	_ *connect.Request[numenv1.GetAgentStateRequest],
-) (*connect.Response[numenv1.GetAgentStateResponse], error) {
+	_ *connect.Request[agentrun.GetAgentStateRequest],
+) (*connect.Response[agentrun.GetAgentStateResponse], error) {
 	var unreachable string
 	if s.findClaude() == "" {
 		unreachable = "Claude Code CLI not found"
 	}
-	return connect.NewResponse(&numenv1.GetAgentStateResponse{Unreachable: unreachable}), nil
+	return connect.NewResponse(&agentrun.GetAgentStateResponse{Unreachable: unreachable}), nil
 }
 
 // GetAgentPrograms lists Claude Code, whether it is installed under the command line the installation
 // set or where it is found, and the models it accepts.
 func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
-	req *connect.Request[numenv1.GetAgentProgramsRequest],
-) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	req *connect.Request[agentrun.GetAgentProgramsRequest],
+) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
 	var configured []string
 	for _, one := range req.Msg.GetCommands() {
 		if one.GetProgram() == programName {
@@ -291,7 +289,7 @@ func (s *agentServer) GetAgentPrograms(
 		}
 	}
 	command, extra := s.getCommand(configured)
-	program := &numenv1.AgentProgram{
+	program := &agentrun.AgentProgram{
 		Name:        programName,
 		Title:       programTitle,
 		IsInstalled: command != "",
@@ -299,33 +297,33 @@ func (s *agentServer) GetAgentPrograms(
 		LimitsTools: true,
 	}
 	program.Models = s.listModels(ctx, command, extra)
-	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
-		Programs: []*numenv1.AgentProgram{program},
+	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{
+		Programs: []*agentrun.AgentProgram{program},
 	}), nil
 }
 
 func (s *agentServer) RegisterTool(
 	_ context.Context,
-	req *connect.Request[numenv1.RegisterToolRequest],
-) (*connect.Response[numenv1.RegisterToolResponse], error) {
+	req *connect.Request[agentrun.RegisterToolRequest],
+) (*connect.Response[agentrun.RegisterToolResponse], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.tools = append(s.tools, req.Msg.GetTool())
-	return connect.NewResponse(&numenv1.RegisterToolResponse{
+	return connect.NewResponse(&agentrun.RegisterToolResponse{
 		Success: true,
 	}), nil
 }
 
 func (s *agentServer) ExtendSystemPrompt(
 	_ context.Context,
-	req *connect.Request[numenv1.ExtendSystemPromptRequest],
-) (*connect.Response[numenv1.ExtendSystemPromptResponse], error) {
+	req *connect.Request[agentrun.ExtendSystemPromptRequest],
+) (*connect.Response[agentrun.ExtendSystemPromptResponse], error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	s.systemPrompt += req.Msg.GetExtension()
-	return connect.NewResponse(&numenv1.ExtendSystemPromptResponse{
+	return connect.NewResponse(&agentrun.ExtendSystemPromptResponse{
 		Success:    true,
 		FullPrompt: s.systemPrompt,
 	}), nil
@@ -333,15 +331,15 @@ func (s *agentServer) ExtendSystemPrompt(
 
 func (s *agentServer) GetAgentTools(
 	_ context.Context,
-	_ *connect.Request[numenv1.GetAgentToolsRequest],
-) (*connect.Response[numenv1.GetAgentToolsResponse], error) {
+	_ *connect.Request[agentrun.GetAgentToolsRequest],
+) (*connect.Response[agentrun.GetAgentToolsResponse], error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	toolsCopy := make([]*numenv1.AgentToolDefinition, len(s.tools))
+	toolsCopy := make([]*agentrun.AgentToolDefinition, len(s.tools))
 	copy(toolsCopy, s.tools)
 
-	return connect.NewResponse(&numenv1.GetAgentToolsResponse{
+	return connect.NewResponse(&agentrun.GetAgentToolsResponse{
 		Tools:                 toolsCopy,
 		SystemPromptExtension: s.systemPrompt,
 	}), nil
@@ -355,7 +353,7 @@ func Mount(s *server.Server) error {
 
 func mount(s *server.Server, agentSvc *agentServer) error {
 	s.SetUpdateConfig(agentSvc.applyConfig)
-	s.Register(numenv1connect.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
+	s.Register(agentrun.NewAgentServiceHandler(agentSvc, s.HandlerOptions()...))
 	s.OnClose(func() { _ = agentSvc.registry.Close() })
 	return nil
 }
@@ -381,7 +379,7 @@ func removeFile(path string) {
 
 // listModels returns the models the program offers, as it lists them. The aliases of the fallback
 // stand where it is not installed or does not answer.
-func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*numenv1.AgentModel {
+func (s *agentServer) listModels(ctx context.Context, command string, extra []string) []*agentrun.AgentModel {
 	var models []claudeModel
 	var err error
 	if command == "" {
@@ -393,7 +391,7 @@ func (s *agentServer) listModels(ctx context.Context, command string, extra []st
 		fmt.Fprintf(os.Stderr, "list models of claude: %v\n", err)
 		models = fallbackModels
 	}
-	out := make([]*numenv1.AgentModel, 0, len(models))
+	out := make([]*agentrun.AgentModel, 0, len(models))
 	for _, one := range models {
 		out = append(out, one.toProto())
 	}

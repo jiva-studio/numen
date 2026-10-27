@@ -7,65 +7,64 @@ import (
 	"sync"
 	"testing"
 
-	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 type fakeToolClient struct {
 	mu       sync.Mutex
-	tools    []*numenv1.PluginTool
-	lastCall *numenv1.CallToolRequest
-	callResp *numenv1.CallToolResponse
+	tools    []*tools.ToolInfo
+	lastCall *tools.Call
+	callResp *tools.CallResponse
 	callErr  error
 	listErr  error
 }
 
-func (f *fakeToolClient) ListTools(_ context.Context, _ *connect.Request[numenv1.ListToolsRequest]) (*connect.Response[numenv1.ListToolsResponse], error) {
+func (f *fakeToolClient) ListToolInfos(_ context.Context) ([]*tools.ToolInfo, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
-	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: f.tools}), nil
+	return f.tools, nil
 }
 
-func (f *fakeToolClient) CallTool(_ context.Context, req *connect.Request[numenv1.CallToolRequest]) (*connect.Response[numenv1.CallToolResponse], error) {
+func (f *fakeToolClient) InvokeTool(_ context.Context, call tools.Call) (*tools.CallResponse, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
-	f.lastCall = req.Msg
+	f.lastCall = &call
 	if f.callErr != nil {
 		return nil, f.callErr
 	}
 	if f.callResp != nil {
-		return connect.NewResponse(f.callResp), nil
+		return f.callResp, nil
 	}
-	return connect.NewResponse(&numenv1.CallToolResponse{
-		Result: &numenv1.ToolResult{
+	return &tools.CallResponse{
+		Result: &tools.CallResult{
 			Text: "default answer",
 		},
-	}), nil
+	}, nil
 }
 
 func TestToolAggregatorSyncTools(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeToolClient{
-		tools: []*numenv1.PluginTool{
+		tools: []*tools.ToolInfo{
 			{
 				Name:        "note_read",
 				Title:       "Read Note",
 				Description: "Reads note contents",
 				InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+				Effect:      tools.ReadOnly,
 			},
 			{
 				Name:        "note_write",
 				Title:       "Write Note",
 				Description: "Writes note contents",
 				InputSchema: []byte(`{"type":"object"}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE,
+				Effect:      tools.ReadWrite,
 			},
 		},
 	}
@@ -77,14 +76,14 @@ func TestToolAggregatorSyncTools(t *testing.T) {
 		t.Fatalf("SyncTools failed: %v", err)
 	}
 
-	tools := agg.GetRegisteredTools()
-	if len(tools) != 2 || tools[0] != "note_read" || tools[1] != "note_write" {
-		t.Fatalf("unexpected registered tools: %v", tools)
+	names := agg.GetRegisteredTools()
+	if len(names) != 2 || names[0] != "note_read" || names[1] != "note_write" {
+		t.Fatalf("unexpected registered tools: %v", names)
 	}
 
 	// Update host tools: remove note_write, add note_search
 	client.mu.Lock()
-	client.tools = []*numenv1.PluginTool{
+	client.tools = []*tools.ToolInfo{
 		{
 			Name:        "note_read",
 			InputSchema: []byte(`{"type":"object"}`),
@@ -110,8 +109,8 @@ func TestToolAggregatorExecuteSuccess(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeToolClient{
-		callResp: &numenv1.CallToolResponse{
-			Result: &numenv1.ToolResult{
+		callResp: &tools.CallResponse{
+			Result: &tools.CallResult{
 				Text:       "note content here",
 				Structured: []byte(`{"found":true}`),
 			},
@@ -146,8 +145,8 @@ func TestToolAggregatorExecuteMarksDeniedResultAsError(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeToolClient{
-		callResp: &numenv1.CallToolResponse{
-			Result: &numenv1.ToolResult{
+		callResp: &tools.CallResponse{
+			Result: &tools.CallResult{
 				Text:      "permission denied to note",
 				IsRefusal: true,
 			},
@@ -169,8 +168,8 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 	t.Parallel()
 
 	client := &fakeToolClient{
-		callResp: &numenv1.CallToolResponse{
-			Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL,
+		callResp: &tools.CallResponse{
+			Error: tools.ErrorCodeUnknownTool,
 		},
 	}
 	mcpServer := sdk.NewServer(&sdk.Implementation{Name: "test"}, nil)
@@ -184,8 +183,8 @@ func TestToolAggregatorExecuteToolErrors(t *testing.T) {
 		t.Fatal("expected IsError true for unknown tool")
 	}
 
-	client.callResp = &numenv1.CallToolResponse{
-		Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS,
+	client.callResp = &tools.CallResponse{
+		Error: tools.ErrorCodeBadArguments,
 	}
 	result, err = agg.ExecuteTool(context.Background(), "note_read", []byte(`invalid-json`))
 	if err != nil {

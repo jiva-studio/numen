@@ -7,9 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -22,12 +21,10 @@ func TestMountAndConfigure(t *testing.T) {
 		t.Fatalf("Mount failed: %v", err)
 	}
 
-	_, err := s.Lifecycle().Configure(context.Background(), connect.NewRequest(&numenv1.ConfigureRequest{
-		Values: map[string]string{
-			"token":           "configured-token",
-			"NUMEN_HOST_PORT": "12345",
-		},
-	}))
+	_, err := s.Lifecycle().ApplyConfig(context.Background(), map[string]string{
+		"token":           "configured-token",
+		"NUMEN_HOST_PORT": "12345",
+	})
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
@@ -62,7 +59,7 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 	t.Parallel()
 
 	hostClient := &fakeToolClient{
-		tools: []*numenv1.PluginTool{
+		tools: []*tools.ToolInfo{
 			{
 				Name:        "stream_tool",
 				Title:       "Stream Tool",
@@ -70,8 +67,8 @@ func TestStreamableHTTPEndpoint(t *testing.T) {
 				InputSchema: []byte(`{"type":"object"}`),
 			},
 		},
-		callResp: &numenv1.CallToolResponse{
-			Result: &numenv1.ToolResult{
+		callResp: &tools.CallResponse{
+			Result: &tools.CallResult{
 				Text: "streamable response",
 			},
 		},

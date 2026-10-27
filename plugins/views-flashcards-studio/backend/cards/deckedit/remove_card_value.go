@@ -3,7 +3,7 @@ package deckedit
 import (
 	"context"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )

@@ -4,11 +4,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"connectrpc.com/connect"
-
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/internal/vaulttest"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
@@ -34,32 +31,32 @@ func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) 
 }
 
 // invoke calls one tool and returns what it answered.
-func (s *session) invoke(t *testing.T, name string, args any) *v1.CallToolResponse {
+func (s *session) invoke(t *testing.T, name string, args any) *tools.CallResponse {
 	t.Helper()
 	raw, err := json.Marshal(args)
 	if err != nil {
 		t.Fatal(err)
 	}
-	res, err := s.registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		Name: name, Arguments: raw, Context: s.toolContext, VaultId: string(s.vault),
-	}))
+	res, err := s.registry.InvokeTool(t.Context(), tools.Call{
+		Name: name, Arguments: raw, Context: s.toolContext, VaultID: string(s.vault),
+	})
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
 	}
-	if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("%s: rejected as %v", name, res.Msg.GetError())
+	if res.GetError() != tools.ErrorCodeUnspecified {
+		t.Fatalf("%s: rejected as %v", name, res.GetError())
 	}
-	return res.Msg
+	return res
 }
 
 // list is the tools the plugin offers.
-func (s *session) list(t *testing.T) []*v1.PluginTool {
+func (s *session) list(t *testing.T) []*tools.ToolInfo {
 	t.Helper()
-	res, err := s.registry.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	listed, err := s.registry.ListToolInfos(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	return res.Msg.GetTools()
+	return listed
 }
 
 // call is a tool called and its answer read as T.

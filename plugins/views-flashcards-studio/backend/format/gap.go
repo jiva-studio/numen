@@ -3,7 +3,7 @@ package format
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/notes/markdown"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 )
 
 // formatSection is what stands beneath a heading: a blank line, the text, and a

@@ -23,8 +23,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/protocol/schematest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/schematest"
 )
 
 // deck is one vault of one card model and one deck, whose single card stands

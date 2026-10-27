@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -40,7 +39,7 @@ type reader struct {
 	sentCount    int
 }
 
-func (r *reader) Send(resp *numenv1.AskAgentResponse) {
+func (r *reader) Send(resp *agentrun.AskAgentResponse) {
 	select {
 	case r.work.Output <- resp:
 	case <-r.work.Stopped():
@@ -67,7 +66,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
+	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -161,7 +160,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text + "\n"}})
+			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text + "\n"}})
 		}
 		if r.isOverLimit() {
 			r.reportLimit()
@@ -189,7 +188,7 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec is the run of the Antigravity CLI the request asks for.
-func newSpec(req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
+func newSpec(req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
 		execPath = customPath[0]
@@ -217,7 +216,7 @@ func resolveCommand(command []string, customPath ...string) (string, []string) {
 }
 
 func makeAntigravityCommand(
-	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
+	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func(), error) {
 	if !agentrun.HasTools(req) {
 		return makeAnswerCommand(runCtx, req, reg, customPath...)
@@ -252,7 +251,7 @@ func makeAntigravityCommand(
 // permission granted beforehand, and an empty folder to run in. The home and the folder go when the
 // run does.
 func makeAnswerCommand(
-	runCtx context.Context, req *numenv1.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
+	runCtx context.Context, req *agentrun.AskAgentRequest, reg *agentrun.Registry, customPath ...string,
 ) (*exec.Cmd, func(), error) {
 	tempHome, cleanHome, err := setupAntigravityHome(nil)
 	if err != nil {

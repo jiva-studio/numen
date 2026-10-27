@@ -8,16 +8,15 @@ import (
 	"strings"
 	"sync"
 
-	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 // ToolClient reaches the host or plugin tool service.
 type ToolClient interface {
-	ListTools(ctx context.Context, req *connect.Request[numenv1.ListToolsRequest]) (*connect.Response[numenv1.ListToolsResponse], error)
-	CallTool(ctx context.Context, req *connect.Request[numenv1.CallToolRequest]) (*connect.Response[numenv1.CallToolResponse], error)
+	ListToolInfos(ctx context.Context) ([]*tools.ToolInfo, error)
+	InvokeTool(ctx context.Context, call tools.Call) (*tools.CallResponse, error)
 }
 
 // ToolAggregator discovers tools from the host and exposes them through an MCP server.
@@ -41,12 +40,12 @@ func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator
 func (a *ToolAggregator) GetRegisteredTools() []string {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
-	tools := make([]string, 0, len(a.registered))
+	names := make([]string, 0, len(a.registered))
 	for name := range a.registered {
-		tools = append(tools, name)
+		names = append(names, name)
 	}
-	slices.Sort(tools)
-	return tools
+	slices.Sort(names)
+	return names
 }
 
 // SyncTools queries the host for available tools and updates the MCP server registry.
@@ -55,7 +54,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 		return nil
 	}
 
-	res, err := a.client.ListTools(ctx, connect.NewRequest(&numenv1.ListToolsRequest{}))
+	wireTools, err := a.client.ListToolInfos(ctx)
 	if err != nil {
 		return fmt.Errorf("list host tools: %w", err)
 	}
@@ -64,7 +63,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	defer a.mu.Unlock()
 
 	current := make(map[string]bool)
-	for _, wireTool := range res.Msg.GetTools() {
+	for _, wireTool := range wireTools {
 		name := wireTool.GetName()
 		if name == "" {
 			continue
@@ -77,7 +76,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 			Description: wireTool.GetDescription(),
 			InputSchema: sanitizeInputSchema(wireTool.GetInputSchema()),
 			Annotations: &sdk.ToolAnnotations{
-				ReadOnlyHint: wireTool.GetEffect() == numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+				ReadOnlyHint: wireTool.GetEffect() == tools.ReadOnly,
 			},
 		}
 		if len(wireTool.GetOutputSchema()) > 0 {
@@ -118,25 +117,23 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 		}, nil
 	}
 
-	req := &numenv1.CallToolRequest{
+	res, err := a.client.InvokeTool(ctx, tools.Call{
 		Name:      name,
 		Arguments: []byte(args),
-	}
-
-	res, err := a.client.CallTool(ctx, connect.NewRequest(req))
+	})
 	if err != nil {
 		return nil, fmt.Errorf("call host tool %s: %w", name, err)
 	}
 
-	if res.Msg.GetError() != numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
+	if res.GetError() != tools.ErrorCodeUnspecified {
 		var errMsg string
-		switch res.Msg.GetError() {
-		case numenv1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL:
+		switch res.GetError() {
+		case tools.ErrorCodeUnknownTool:
 			errMsg = "unknown tool: " + name
-		case numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS:
+		case tools.ErrorCodeBadArguments:
 			errMsg = "invalid tool arguments"
 		default:
-			errMsg = fmt.Sprintf("tool error: %v", res.Msg.GetError())
+			errMsg = fmt.Sprintf("tool error: %v", res.GetError())
 		}
 		return &sdk.CallToolResult{
 			IsError: true,
@@ -144,7 +141,7 @@ func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json
 		}, nil
 	}
 
-	wireResult := res.Msg.GetResult()
+	wireResult := res.GetResult()
 	if wireResult == nil {
 		return &sdk.CallToolResult{}, nil
 	}

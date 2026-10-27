@@ -9,7 +9,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type agentServer struct {
@@ -35,12 +34,12 @@ func (s *agentServer) getExecutablePath() string {
 
 func (s *agentServer) AskAgent(
 	ctx context.Context,
-	req *connect.Request[numenv1.AskAgentRequest],
-	stream *connect.ServerStream[numenv1.AskAgentResponse],
+	req *connect.Request[agentrun.AskAgentRequest],
+	stream *connect.ServerStream[agentrun.AskAgentResponse],
 ) error {
-	if err := stream.Send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_ModelStarted{
-			ModelStarted: &numenv1.ModelStarted{},
+	if err := stream.Send(&agentrun.AskAgentResponse{
+		Step: &agentrun.AskAgentResponse_ModelStarted{
+			ModelStarted: &agentrun.ModelStarted{},
 		},
 	}); err != nil {
 		return err
@@ -49,8 +48,8 @@ func (s *agentServer) AskAgent(
 	s.resolveModel(ctx, req.Msg)
 	work, err := start(ctx, &s.Registry, newSpec(req.Msg, &s.Registry, s.getExecutablePath()))
 	if err != nil {
-		return stream.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Stopped{Stopped: err.Error()},
+		return stream.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Stopped{Stopped: err.Error()},
 		})
 	}
 	return agentrun.ForwardResponses(ctx, work, stream)
@@ -58,27 +57,27 @@ func (s *agentServer) AskAgent(
 
 func (s *agentServer) GetAgentState(
 	_ context.Context,
-	_ *connect.Request[numenv1.GetAgentStateRequest],
-) (*connect.Response[numenv1.GetAgentStateResponse], error) {
+	_ *connect.Request[agentrun.GetAgentStateRequest],
+) (*connect.Response[agentrun.GetAgentStateResponse], error) {
 	if !IsAntigravityInstalled(s.getExecutablePath()) {
-		return connect.NewResponse(&numenv1.GetAgentStateResponse{
+		return connect.NewResponse(&agentrun.GetAgentStateResponse{
 			Unreachable: "Antigravity was not found on this machine",
 		}), nil
 	}
-	return connect.NewResponse(&numenv1.GetAgentStateResponse{}), nil
+	return connect.NewResponse(&agentrun.GetAgentStateResponse{}), nil
 }
 
 // GetAgentPrograms lists Antigravity, whether it is installed, and the models it lists.
 func (s *agentServer) GetAgentPrograms(
 	ctx context.Context,
-	req *connect.Request[numenv1.GetAgentProgramsRequest],
-) (*connect.Response[numenv1.GetAgentProgramsResponse], error) {
+	req *connect.Request[agentrun.GetAgentProgramsRequest],
+) (*connect.Response[agentrun.GetAgentProgramsResponse], error) {
 	command := programCommand(req.Msg.GetCommands(), "antigravity")
 	customPath := s.getExecutablePath()
 	if len(command) == 0 && customPath != "" {
 		command = []string{customPath}
 	}
-	antigravity := &numenv1.AgentProgram{
+	antigravity := &agentrun.AgentProgram{
 		Name: "antigravity", Title: "Antigravity", IsInstalled: IsAntigravityInstalled(customPath) || len(command) > 0,
 	}
 	if antigravity.GetIsInstalled() {
@@ -86,8 +85,8 @@ func (s *agentServer) GetAgentPrograms(
 			antigravity.Models = append(antigravity.Models, one.ToProto())
 		}
 	}
-	return connect.NewResponse(&numenv1.GetAgentProgramsResponse{
-		Programs: []*numenv1.AgentProgram{antigravity},
+	return connect.NewResponse(&agentrun.GetAgentProgramsResponse{
+		Programs: []*agentrun.AgentProgram{antigravity},
 	}), nil
 }
 
@@ -104,7 +103,7 @@ func (s *agentServer) getFamilies(ctx context.Context, command []string) []reaso
 
 // resolveModel sets the model of the request to the one the program lists for the model and the level
 // the request names.
-func (s *agentServer) resolveModel(ctx context.Context, req *numenv1.AskAgentRequest) {
+func (s *agentServer) resolveModel(ctx context.Context, req *agentrun.AskAgentRequest) {
 	if req.GetModel() == "" || req.GetModel() == "default" {
 		return
 	}

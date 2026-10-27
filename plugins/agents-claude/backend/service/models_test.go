@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"slices"
 	"strings"
@@ -9,8 +10,6 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // initializeFixture is the answer of Claude Code 2.1.303 to the initialize request, cut to its models.
@@ -25,7 +24,7 @@ func readFixture(t *testing.T) string {
 	return string(raw)
 }
 
-func getLevelNames(levels []*numenv1.ReasoningLevel) []string {
+func getLevelNames(levels []*agentrun.ReasoningLevel) []string {
 	names := []string{}
 	for _, one := range levels {
 		names = append(names, one.GetName())
@@ -39,7 +38,7 @@ func TestTheModelsAreReadFromTheAnswerOfTheProgram(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byName := map[string]*numenv1.AgentModel{}
+	byName := map[string]*agentrun.AgentModel{}
 	for _, one := range models {
 		byName[one.Value] = one.toProto()
 	}
@@ -80,7 +79,7 @@ func TestTheProgramIsAskedForItsModels(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", script)
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -101,7 +100,7 @@ func TestAProgramThatCannotListItsModelsOffersTheFallback(t *testing.T) {
 	t.Setenv("NUMEN_CLAUDE_COMMAND", writeScript(t, "claude", "exit 1\n"))
 	client := startAgent(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

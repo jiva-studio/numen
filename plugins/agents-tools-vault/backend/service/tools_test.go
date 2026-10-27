@@ -5,11 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"connectrpc.com/connect"
-
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/agents-tools-vault/backend/service"
 )
 
@@ -29,24 +26,24 @@ func TestNoteRead(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      "note_read",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
-	res, err := registry.CallTool(ctx, connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("unexpected tool error code: %v", res.Msg.GetError())
+	if res.GetError() != tools.ErrorCodeUnspecified {
+		t.Fatalf("unexpected tool error code: %v", res.GetError())
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
 	var out service.NoteReadOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 
@@ -64,20 +61,20 @@ func TestNoteRead(t *testing.T) {
 	}
 
 	// Test note resolution without .md
-	callReq2 := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq2 := tools.Call{
+		VaultID:   testVault,
 		Name:      "note_read",
 		Arguments: []byte(`{"path":"Heat"}`),
 	}
-	res2, err := registry.CallTool(ctx, connect.NewRequest(callReq2))
+	res2, err := registry.InvokeTool(ctx, callReq2)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused for Heat: %s", res2.Msg.GetResult().GetText())
+	if res2.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused for Heat: %s", res2.GetResult().GetText())
 	}
 	var out2 service.NoteReadOutput
-	if err := json.Unmarshal(res2.Msg.GetResult().GetStructured(), &out2); err != nil {
+	if err := json.Unmarshal(res2.GetResult().GetStructured(), &out2); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 	if out2.Path != "Heat.md" {
@@ -94,20 +91,20 @@ func TestNoteWrite(t *testing.T) {
 	}
 
 	// 1. Create a new note
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity attracts."}`),
 	}
-	res, err := registry.CallTool(ctx, connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 	var writeOut service.NoteWriteOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &writeOut); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &writeOut); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 	if writeOut.Fingerprint == "" {
@@ -115,32 +112,32 @@ func TestNoteWrite(t *testing.T) {
 	}
 
 	// 2. Atomic update with valid file stat
-	callReq2 := &v1.CallToolRequest{
-		VaultId: testVault,
+	callReq2 := tools.Call{
+		VaultID: testVault,
 		Name:    "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
-	res2, err := registry.CallTool(ctx, connect.NewRequest(callReq2))
+	res2, err := registry.InvokeTool(ctx, callReq2)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res2.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res2.Msg.GetResult().GetText())
+	if res2.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res2.GetResult().GetText())
 	}
 
 	// 3. Stale update with old file stat fails
-	callReq3 := &v1.CallToolRequest{
-		VaultId: testVault,
+	callReq3 := tools.Call{
+		VaultID: testVault,
 		Name:    "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nConflict.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
-	res3, err := registry.CallTool(ctx, connect.NewRequest(callReq3))
+	res3, err := registry.InvokeTool(ctx, callReq3)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if !res3.Msg.GetResult().GetIsRefusal() {
+	if !res3.GetResult().GetIsRefusal() {
 		t.Error("expected refusal on stale fingerprint write")
 	}
 }
@@ -153,21 +150,21 @@ func TestNoteHeadings(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      "note_headings",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
-	res, err := registry.CallTool(ctx, connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(ctx, callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
 	var out service.NoteHeadingsOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 
@@ -184,21 +181,21 @@ func TestNoteHeadings(t *testing.T) {
 
 func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{"query":"thermodynamic"}`),
 	}
-	res, err := registry.CallTool(context.Background(), connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(context.Background(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
 	var out service.NoteSearchOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 
@@ -236,21 +233,21 @@ func TestNoteSearch(t *testing.T) {
 
 func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
-	res, err := registry.CallTool(context.Background(), connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(context.Background(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
 	var out service.LinkListOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 
@@ -278,21 +275,21 @@ func TestNoteNeighbourhood(t *testing.T) {
 
 func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
-	callReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	callReq := tools.Call{
+		VaultID:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{}`),
 	}
-	res, err := registry.CallTool(context.Background(), connect.NewRequest(callReq))
+	res, err := registry.InvokeTool(context.Background(), callReq)
 	if err != nil {
 		t.Fatalf("call tool: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("tool refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("tool refused: %s", res.GetResult().GetText())
 	}
 
 	var out service.VaultInfoOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil {
 		t.Fatalf("unmarshal result: %v", err)
 	}
 
@@ -327,20 +324,20 @@ func TestFileReadAndCreate(t *testing.T) {
 	}
 
 	// 1. file_read
-	readReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	readReq := tools.Call{
+		VaultID:   testVault,
 		Name:      "file_read",
 		Arguments: []byte(`{"path":"data.txt","start":0,"length":6}`),
 	}
-	res, err := registry.CallTool(ctx, connect.NewRequest(readReq))
+	res, err := registry.InvokeTool(ctx, readReq)
 	if err != nil {
 		t.Fatalf("call file_read: %v", err)
 	}
-	if res.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("file_read refused: %s", res.Msg.GetResult().GetText())
+	if res.GetResult().GetIsRefusal() {
+		t.Fatalf("file_read refused: %s", res.GetResult().GetText())
 	}
 	var readOut service.FileReadOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &readOut); err != nil {
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &readOut); err != nil {
 		t.Fatalf("unmarshal file_read: %v", err)
 	}
 	if readOut.Content != "line 1" {
@@ -351,25 +348,25 @@ func TestFileReadAndCreate(t *testing.T) {
 	}
 
 	// 2. file_create
-	createReq := &v1.CallToolRequest{
-		VaultId:   testVault,
+	createReq := tools.Call{
+		VaultID:   testVault,
 		Name:      "file_create",
 		Arguments: []byte(`{"path":"new_data.txt","content":"hello world"}`),
 	}
-	createRes, err := registry.CallTool(ctx, connect.NewRequest(createReq))
+	createRes, err := registry.InvokeTool(ctx, createReq)
 	if err != nil {
 		t.Fatalf("call file_create: %v", err)
 	}
-	if createRes.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("file_create refused: %s", createRes.Msg.GetResult().GetText())
+	if createRes.GetResult().GetIsRefusal() {
+		t.Fatalf("file_create refused: %s", createRes.GetResult().GetText())
 	}
 
 	// 3. creating already existing file should fail
-	createAgainRes, err := registry.CallTool(ctx, connect.NewRequest(createReq))
+	createAgainRes, err := registry.InvokeTool(ctx, createReq)
 	if err != nil {
 		t.Fatalf("call file_create duplicate: %v", err)
 	}
-	if !createAgainRes.Msg.GetResult().GetIsRefusal() {
+	if !createAgainRes.GetResult().GetIsRefusal() {
 		t.Error("expected refusal creating file that already exists")
 	}
 }
@@ -382,7 +379,7 @@ func TestListTools(t *testing.T) {
 		t.Fatalf("registry: %v", err)
 	}
 
-	res, err := registry.ListTools(ctx, connect.NewRequest(&v1.ListToolsRequest{}))
+	listed, err := registry.ListToolInfos(ctx)
 	if err != nil {
 		t.Fatalf("list tools: %v", err)
 	}
@@ -401,7 +398,7 @@ func TestListTools(t *testing.T) {
 		"file_create":        false,
 	}
 
-	for _, tool := range res.Msg.GetTools() {
+	for _, tool := range listed {
 		if _, ok := expectedTools[tool.GetName()]; ok {
 			expectedTools[tool.GetName()] = true
 		}
@@ -429,24 +426,24 @@ func TestACallWorksTheVaultItNames(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		VaultId: "garden-vault", Name: "note_read", Arguments: []byte(`{"path":"Beds.md"}`),
-	}))
+	res, err := registry.InvokeTool(t.Context(), tools.Call{
+		VaultID: "garden-vault", Name: "note_read", Arguments: []byte(`{"path":"Beds.md"}`),
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	var out service.NoteReadOutput
-	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil || out.Path != "Beds.md" {
-		t.Errorf("the call read %s (%v)", res.Msg.GetResult().GetText(), err)
+	if err := json.Unmarshal(res.GetResult().GetStructured(), &out); err != nil || out.Path != "Beds.md" {
+		t.Errorf("the call read %s (%v)", res.GetResult().GetText(), err)
 	}
 
-	res, err = registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+	res, err = registry.InvokeTool(t.Context(), tools.Call{
 		Name: "note_read", Arguments: []byte(`{"path":"Entropy.md"}`),
-	}))
+	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !res.Msg.GetResult().GetIsRefusal() || res.Msg.GetResult().GetText() != "the call names no vault" {
-		t.Errorf("a call naming no vault answered %v", res.Msg.GetResult())
+	if !res.GetResult().GetIsRefusal() || res.GetResult().GetText() != "the call names no vault" {
+		t.Errorf("a call naming no vault answered %v", res.GetResult())
 	}
 }

@@ -3,15 +3,13 @@ package agentrun
 import (
 	"context"
 	"sync"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // Work is one task being worked: the responses it reports, the reader producing them, and what
 // stops it.
 type Work struct {
 	// Output is where the reader writes the responses. The reader closes it when it is done.
-	Output chan *numenv1.AskAgentResponse
+	Output chan *AskAgentResponse
 
 	conversation string
 	stop         func()
@@ -24,7 +22,7 @@ type Work struct {
 // the reader reads.
 func NewWork(conversation string, buffer int, stop func()) *Work {
 	return &Work{
-		Output:       make(chan *numenv1.AskAgentResponse, buffer),
+		Output:       make(chan *AskAgentResponse, buffer),
 		conversation: conversation,
 		stop:         stop,
 		stopped:      make(chan struct{}),
@@ -60,7 +58,7 @@ func stopAll(works []*Work) {
 // ForwardResponses sends the responses of the work to the stream until the work is done, and stops the work
 // when the stream or the call ends first.
 func ForwardResponses(ctx context.Context, work *Work, stream interface {
-	Send(*numenv1.AskAgentResponse) error
+	Send(*AskAgentResponse) error
 }) error {
 	for {
 		select {

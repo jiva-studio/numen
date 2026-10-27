@@ -1,13 +1,13 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"slices"
 	"testing"
 
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestTheModelsAreTheLinesThatHoldANameAndATitle(t *testing.T) {
@@ -32,8 +32,8 @@ func TestGetAgentPrograms_ModelListGroupedByLevel(t *testing.T) {
 		`if [ "$1" = models ]; then printf 'Fetching available models...\nm-high\tModel (High)\nm-low\tModel (Low)\n'; fi`+"\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{{Program: "antigravity", Command: []string{script}}},
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{{Program: "antigravity", Command: []string{script}}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -57,8 +57,8 @@ func TestGetAgentPrograms_ModelListFailure(t *testing.T) {
 	script := agenttest.WriteScript(t, "agy", "exit 1\n")
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{{Program: "antigravity", Command: []string{script}}},
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{{Program: "antigravity", Command: []string{script}}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -84,7 +84,7 @@ func TestTheLevelOfARequestChoosesTheListedModel(t *testing.T) {
 		{"default", "high", "default"},
 	}
 	for _, one := range cases {
-		req := &numenv1.AskAgentRequest{Model: one.model, Reasoning: one.reasoning, Command: []string{script}}
+		req := &agentrun.AskAgentRequest{Model: one.model, Reasoning: one.reasoning, Command: []string{script}}
 		(&agentServer{}).resolveModel(t.Context(), req)
 		if req.GetModel() != one.want {
 			t.Errorf("model %q at %q became %q, want %q", one.model, one.reasoning, req.GetModel(), one.want)
@@ -113,7 +113,7 @@ esac
 // askStub runs a request with no tool against the stub and returns what the run said and why it stopped.
 func askStub(t *testing.T, script, model, level string) (said, stopReason string) {
 	t.Helper()
-	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Command: []string{script}, Model: model, Reasoning: level, Prompt: "q",
 	}))
 	if err != nil {

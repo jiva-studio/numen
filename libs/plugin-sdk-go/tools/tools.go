@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"slices"
 	"sync"
@@ -17,6 +18,7 @@ import (
 	"connectrpc.com/connect"
 	"github.com/google/jsonschema-go/jsonschema"
 
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -274,4 +276,373 @@ func writeServers(servers []Server) []numenv1.ToolServer {
 		}
 	}
 	return wire
+}
+
+// ErrorCode is the result status of a tool call.
+type ErrorCode int32
+
+const (
+	ErrorCodeUnspecified  ErrorCode = 0
+	ErrorCodeUnknownTool  ErrorCode = 1
+	ErrorCodeBadArguments ErrorCode = 2
+)
+
+// Call describes an invocation of a tool.
+type Call struct {
+	Name      string
+	Arguments []byte
+	Context   map[string]string
+	VaultID   string
+}
+
+func (c *Call) GetName() string {
+	if c == nil {
+		return ""
+	}
+	return c.Name
+}
+
+func (c *Call) GetArguments() []byte {
+	if c == nil {
+		return nil
+	}
+	return c.Arguments
+}
+
+func (c *Call) GetContext() map[string]string {
+	if c == nil {
+		return nil
+	}
+	return c.Context
+}
+
+// CallResult is the output returned by a tool execution.
+type CallResult struct {
+	Text       string
+	Structured []byte
+	IsRefusal  bool
+}
+
+func (r *CallResult) GetText() string {
+	if r == nil {
+		return ""
+	}
+	return r.Text
+}
+
+func (r *CallResult) GetStructured() []byte {
+	if r == nil {
+		return nil
+	}
+	return r.Structured
+}
+
+func (r *CallResult) GetIsRefusal() bool {
+	if r == nil {
+		return false
+	}
+	return r.IsRefusal
+}
+
+// CallResponse is the response from a tool invocation.
+type CallResponse struct {
+	Result *CallResult
+	Error  ErrorCode
+}
+
+func (r *CallResponse) GetResult() *CallResult {
+	if r == nil {
+		return nil
+	}
+	return r.Result
+}
+
+func (r *CallResponse) GetError() ErrorCode {
+	if r == nil {
+		return ErrorCodeUnspecified
+	}
+	return r.Error
+}
+
+// ToolInfo describes a declared tool.
+type ToolInfo struct {
+	Name         string
+	Title        string
+	Description  string
+	InputSchema  []byte
+	OutputSchema []byte
+	Effect       Effect
+	Step         Step
+	Servers      []Server
+}
+
+func (t *ToolInfo) GetName() string {
+	if t == nil {
+		return ""
+	}
+	return t.Name
+}
+
+func (t *ToolInfo) GetTitle() string {
+	if t == nil {
+		return ""
+	}
+	return t.Title
+}
+
+func (t *ToolInfo) GetDescription() string {
+	if t == nil {
+		return ""
+	}
+	return t.Description
+}
+
+func (t *ToolInfo) GetInputSchema() []byte {
+	if t == nil {
+		return nil
+	}
+	return t.InputSchema
+}
+
+func (t *ToolInfo) GetOutputSchema() []byte {
+	if t == nil {
+		return nil
+	}
+	return t.OutputSchema
+}
+
+func (t *ToolInfo) GetEffect() Effect {
+	if t == nil {
+		return 0
+	}
+	return t.Effect
+}
+
+func (t *ToolInfo) GetStep() Step {
+	if t == nil {
+		return ByEffect
+	}
+	return t.Step
+}
+
+func (t *ToolInfo) GetServers() []Server {
+	if t == nil {
+		return nil
+	}
+	return t.Servers
+}
+
+func readEffect(effect numenv1.ToolEffect) Effect {
+	switch effect {
+	case numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY:
+		return ReadOnly
+	case numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE:
+		return ReadWrite
+	default:
+		return 0
+	}
+}
+
+func readStep(step numenv1.ToolStep) Step {
+	switch step {
+	case numenv1.ToolStep_TOOL_STEP_SEARCH:
+		return Search
+	case numenv1.ToolStep_TOOL_STEP_REMOVE:
+		return Remove
+	case numenv1.ToolStep_TOOL_STEP_MOVE:
+		return Move
+	default:
+		return ByEffect
+	}
+}
+
+func readServers(servers []numenv1.ToolServer) []Server {
+	var out []Server
+	for _, s := range servers {
+		switch s {
+		case numenv1.ToolServer_TOOL_SERVER_FULL:
+			out = append(out, Full)
+		case numenv1.ToolServer_TOOL_SERVER_READING:
+			out = append(out, Reading)
+		}
+	}
+	return out
+}
+
+func readToolInfo(t *numenv1.PluginTool) *ToolInfo {
+	if t == nil {
+		return nil
+	}
+	return &ToolInfo{
+		Name:         t.GetName(),
+		Title:        t.GetTitle(),
+		Description:  t.GetDescription(),
+		InputSchema:  t.GetInputSchema(),
+		OutputSchema: t.GetOutputSchema(),
+		Effect:       readEffect(t.GetEffect()),
+		Step:         readStep(t.GetStep()),
+		Servers:      readServers(t.GetServers()),
+	}
+}
+
+func writeToolInfo(t *ToolInfo) *numenv1.PluginTool {
+	if t == nil {
+		return nil
+	}
+	return &numenv1.PluginTool{
+		Name:         t.Name,
+		Title:        t.Title,
+		Description:  t.Description,
+		InputSchema:  t.InputSchema,
+		OutputSchema: t.OutputSchema,
+		Effect:       writeEffect(t.Effect),
+		Step:         writeStep(t.Step),
+		Servers:      writeServers(t.Servers),
+	}
+}
+
+func readCallResponse(res *numenv1.CallToolResponse) *CallResponse {
+	if res == nil {
+		return nil
+	}
+	out := &CallResponse{Error: ErrorCode(res.GetError())}
+	if r := res.GetResult(); r != nil {
+		out.Result = &CallResult{
+			Text:       r.GetText(),
+			Structured: r.GetStructured(),
+			IsRefusal:  r.GetIsRefusal(),
+		}
+	}
+	return out
+}
+
+func writeCallResponse(res *CallResponse) *numenv1.CallToolResponse {
+	if res == nil {
+		return &numenv1.CallToolResponse{}
+	}
+	out := &numenv1.CallToolResponse{Error: numenv1.ToolErrorCode(res.Error)}
+	if res.Result != nil {
+		out.Result = &numenv1.ToolResult{
+			Text:       res.Result.Text,
+			Structured: res.Result.Structured,
+			IsRefusal:  res.Result.IsRefusal,
+		}
+	}
+	return out
+}
+
+// ListToolInfos returns the tools in the registry.
+func (r *Registry) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+	res, err := r.ListTools(ctx, connect.NewRequest(&numenv1.ListToolsRequest{}))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*ToolInfo, len(res.Msg.GetTools()))
+	for i, t := range res.Msg.GetTools() {
+		out[i] = readToolInfo(t)
+	}
+	return out, nil
+}
+
+// InvokeTool invokes a tool in the registry.
+func (r *Registry) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
+	res, err := r.CallTool(ctx, connect.NewRequest(&numenv1.CallToolRequest{
+		Name:      call.Name,
+		Arguments: call.Arguments,
+		Context:   call.Context,
+		VaultId:   call.VaultID,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return readCallResponse(res.Msg), nil
+}
+
+// Client calls a PluginToolService endpoint.
+type Client interface {
+	ListToolInfos(ctx context.Context) ([]*ToolInfo, error)
+	InvokeTool(ctx context.Context, call Call) (*CallResponse, error)
+}
+
+type rpcClient struct {
+	rpc numenv1connect.PluginToolServiceClient
+}
+
+// NewClient creates a Client reaching the given endpoint.
+func NewClient(endpoint hostcall.Endpoint) Client {
+	return &rpcClient{
+		rpc: numenv1connect.NewPluginToolServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...),
+	}
+}
+
+func (c *rpcClient) ListToolInfos(ctx context.Context) ([]*ToolInfo, error) {
+	res, err := c.rpc.ListTools(ctx, connect.NewRequest(&numenv1.ListToolsRequest{}))
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*ToolInfo, len(res.Msg.GetTools()))
+	for i, t := range res.Msg.GetTools() {
+		out[i] = readToolInfo(t)
+	}
+	return out, nil
+}
+
+func (c *rpcClient) InvokeTool(ctx context.Context, call Call) (*CallResponse, error) {
+	res, err := c.rpc.CallTool(ctx, connect.NewRequest(&numenv1.CallToolRequest{
+		Name:      call.Name,
+		Arguments: call.Arguments,
+		Context:   call.Context,
+		VaultId:   call.VaultID,
+	}))
+	if err != nil {
+		return nil, err
+	}
+	return readCallResponse(res.Msg), nil
+}
+
+// ServiceHandler handles tool listing and invocation with request headers.
+type ServiceHandler interface {
+	ListToolInfos(ctx context.Context, header http.Header) ([]*ToolInfo, error)
+	InvokeTool(ctx context.Context, header http.Header, call Call) (*CallResponse, error)
+}
+
+type serviceAdapter struct {
+	numenv1connect.UnimplementedPluginToolServiceHandler
+	h ServiceHandler
+}
+
+func (a *serviceAdapter) ListTools(
+	ctx context.Context,
+	req *connect.Request[numenv1.ListToolsRequest],
+) (*connect.Response[numenv1.ListToolsResponse], error) {
+	infos, err := a.h.ListToolInfos(ctx, req.Header())
+	if err != nil {
+		return nil, err
+	}
+	wire := make([]*numenv1.PluginTool, len(infos))
+	for i, t := range infos {
+		wire[i] = writeToolInfo(t)
+	}
+	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: wire}), nil
+}
+
+func (a *serviceAdapter) CallTool(
+	ctx context.Context,
+	req *connect.Request[numenv1.CallToolRequest],
+) (*connect.Response[numenv1.CallToolResponse], error) {
+	res, err := a.h.InvokeTool(ctx, req.Header(), Call{
+		Name:      req.Msg.GetName(),
+		Arguments: req.Msg.GetArguments(),
+		Context:   req.Msg.GetContext(),
+		VaultID:   req.Msg.GetVaultId(),
+	})
+	if err != nil {
+		return nil, err
+	}
+	return connect.NewResponse(writeCallResponse(res)), nil
+}
+
+// NewServiceHandler mounts a ServiceHandler as a PluginToolService HTTP handler.
+func NewServiceHandler(h ServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewPluginToolServiceHandler(&serviceAdapter{h: h}, opts...)
 }

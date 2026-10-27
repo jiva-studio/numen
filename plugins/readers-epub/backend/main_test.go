@@ -14,7 +14,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/service"
 )
 
@@ -23,19 +22,19 @@ func TestLifecycleServerPingAndShutdown(t *testing.T) {
 	life := server.NewLifecycleServer(shutdownTrigger)
 
 	ctx := context.Background()
-	pingResp, err := life.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	status, err := life.CheckStatus(ctx)
 	if err != nil {
 		t.Fatalf("unexpected ping error: %v", err)
 	}
-	if pingResp.Msg.GetStatus() != "ok" {
-		t.Fatalf("expected status 'ok', got %q", pingResp.Msg.GetStatus())
+	if status != "ok" {
+		t.Fatalf("expected status 'ok', got %q", status)
 	}
 
-	shutResp, err := life.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	shutOk, err := life.RequestShutdown(ctx)
 	if err != nil {
 		t.Fatalf("unexpected shutdown error: %v", err)
 	}
-	if !shutResp.Msg.GetSuccess() {
+	if !shutOk {
 		t.Fatalf("expected success true, got false")
 	}
 
@@ -229,7 +228,7 @@ func TestAuthCheckInterceptor(t *testing.T) {
 	ctx := context.Background()
 
 	// Missing token -> unauthenticated
-	req := connect.NewRequest(&numenv1.PingRequest{})
+	req := connect.NewRequest(&epubv1.GetBookRequest{})
 	_, err := wrapped(ctx, req)
 	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("expected CodeUnauthenticated for missing token, got %v", err)

@@ -5,7 +5,7 @@ import (
 
 	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
 
-	"github.com/jiva-studio/numen/libs/protocol/schematest"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/schematest"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )

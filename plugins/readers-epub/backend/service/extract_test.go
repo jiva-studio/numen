@@ -12,8 +12,8 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 var pngBytes = []byte("\x89PNG\r\n\x1a\nnot really a picture")
@@ -84,7 +84,7 @@ func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
 	return dir, name, info.Size(), info.ModTime().UnixNano()
 }
 
-func readEntry(t *testing.T, path, entry string, baseline *numenv1.FileStat) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
+func readEntry(t *testing.T, path, entry string, baseline *host.WireFileStat) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	t.Helper()
 	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
 	t.Cleanup(server.Close)
@@ -94,7 +94,7 @@ func readEntry(t *testing.T, path, entry string, baseline *numenv1.FileStat) (*c
 
 func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 	_, name, size, mtime := writeBook(t)
-	resp, err := readEntry(t, name, "EPUB/cover.png", &numenv1.FileStat{Path: name, Size: size, Mtime: mtime})
+	resp, err := readEntry(t, name, "EPUB/cover.png", &host.WireFileStat{Path: name, Size: size, Mtime: mtime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestReadBookEntryAnswersWithoutABaseline(t *testing.T) {
 
 func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 	_, name, size, mtime := writeBook(t)
-	cases := map[string]*numenv1.FileStat{
+	cases := map[string]*host.WireFileStat{
 		"another size":  {Path: name, Size: size + 1, Mtime: mtime},
 		"another stamp": {Path: name, Size: size, Mtime: mtime + 1},
 	}
@@ -193,7 +193,7 @@ func TestReadBookEntryRefusesNotFound(t *testing.T) {
 
 func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
 	_, name, size, _ := writeBook(t)
-	if _, err := readEntry(t, name, "EPUB/cover.png", &numenv1.FileStat{Path: name, Size: size, Mtime: 0}); err != nil {
+	if _, err := readEntry(t, name, "EPUB/cover.png", &host.WireFileStat{Path: name, Size: size, Mtime: 0}); err != nil {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
 }

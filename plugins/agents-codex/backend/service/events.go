@@ -2,8 +2,7 @@ package service
 
 import (
 	"encoding/json"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // newEventHandler is what the run calls with each event of the Codex output.
@@ -21,21 +20,21 @@ func handleCodexEvent(r *reader, rawMap map[string]any) {
 	switch {
 	case evType == "item.completed" && item["type"] == "agent_message":
 		if text, _ := item["text"].(string); text != "" {
-			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
+			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
 		}
 	case evType == "item.started" && item["type"] == "mcp_tool_call":
-		r.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_ToolCall{
-				ToolCall: &numenv1.ToolCall{
+		r.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_ToolCall{
+				ToolCall: &agentrun.ToolCall{
 					Tool:  getToolName(item),
 					About: getToolArguments(item),
 				},
 			},
 		})
 	case evType == "item.completed" && item["type"] == "mcp_tool_call":
-		r.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_ToolFinished{
-				ToolFinished: &numenv1.ToolFinished{},
+		r.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_ToolFinished{
+				ToolFinished: &agentrun.ToolFinished{},
 			},
 		})
 	}

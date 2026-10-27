@@ -15,6 +15,10 @@ type Level struct {
 	Title string
 }
 
+type ReasoningLevel = numenv1.ReasoningLevel
+
+type AgentModel = numenv1.AgentModel
+
 // order lists the level names from the least reasoning to the most.
 var order = []string{"minimal", "low", "medium", "high", "xhigh", "max", "ultra"}
 
@@ -76,23 +80,23 @@ func GetDefault(levels []Level) string {
 }
 
 // ToProto is the levels in the schema's words.
-func ToProto(levels []Level) []*numenv1.ReasoningLevel {
+func ToProto(levels []Level) []*ReasoningLevel {
 	if len(levels) == 0 {
 		return nil
 	}
-	out := make([]*numenv1.ReasoningLevel, 0, len(levels))
+	out := make([]*ReasoningLevel, 0, len(levels))
 	for _, one := range levels {
-		out = append(out, &numenv1.ReasoningLevel{Name: one.Name, Title: one.Title})
+		out = append(out, &ReasoningLevel{Name: one.Name, Title: one.Title})
 	}
 	return out
 }
 
 // NewModel is a model offered with the levels. The default is empty where it is not one of them.
-func NewModel(name, title string, levels []Level, byDefault string) *numenv1.AgentModel {
+func NewModel(name, title string, levels []Level, byDefault string) *AgentModel {
 	if !Contains(levels, byDefault) {
 		byDefault = ""
 	}
-	return &numenv1.AgentModel{
+	return &AgentModel{
 		Name: name, Title: title, ReasoningLevels: ToProto(levels), DefaultReasoning: byDefault,
 	}
 }

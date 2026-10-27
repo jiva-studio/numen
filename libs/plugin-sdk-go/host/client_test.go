@@ -98,7 +98,7 @@ func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 
 	fp, err := clientTo(t, a).StatFile(context.Background(), "n.md")
 
-	want := domain.FileStat{Path: "n.md", Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
+	want := domain.FileStat{Path: "n.md", Kind: domain.KindFile, Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
 	if err != nil || fp != want || a.authHeader != "Bearer tok" {
 		t.Errorf("got %+v (%v) authHeader as %q", fp, err, a.authHeader)
 	}

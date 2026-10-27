@@ -8,7 +8,7 @@ import (
 
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
@@ -21,17 +21,17 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 	t.Parallel()
 
 	hostClient := &fakeToolClient{
-		tools: []*numenv1.PluginTool{
+		tools: []*tools.ToolInfo{
 			{
 				Name:        "note_get",
 				Title:       "Get Note",
 				Description: "Gets a note by path",
 				InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+				Effect:      tools.ReadOnly,
 			},
 		},
-		callResp: &numenv1.CallToolResponse{
-			Result: &numenv1.ToolResult{
+		callResp: &tools.CallResponse{
+			Result: &tools.CallResult{
 				Text: "note text for test",
 			},
 		},
@@ -120,7 +120,7 @@ func assertDynamicDiscovery(t *testing.T, session *sdk.ClientSession, ctx contex
 	t.Helper()
 
 	hostClient.mu.Lock()
-	hostClient.tools = append(hostClient.tools, &numenv1.PluginTool{
+	hostClient.tools = append(hostClient.tools, &tools.ToolInfo{
 		Name:        "new_vault_tool",
 		Title:       "New Tool",
 		Description: "Newly registered tool",

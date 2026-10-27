@@ -50,7 +50,7 @@ func newDependencyClient(t *testing.T, p *provisioning) *host.DependencyClient {
 func TestDependencyClientGetStatusAndList(t *testing.T) {
 	c := newDependencyClient(t, &provisioning{})
 	st, err := c.GetStatus(context.Background(), "whisper")
-	if err != nil || st.GetId() != "whisper" || st.GetState() != v1.DependencyState_DEPENDENCY_STATE_MISSING {
+	if err != nil || st.GetId() != "whisper" || st.GetState() != host.DependencyStateMissing {
 		t.Fatalf("GetStatus = %v, %v", st, err)
 	}
 	list, err := c.List(context.Background())
@@ -62,14 +62,14 @@ func TestDependencyClientGetStatusAndList(t *testing.T) {
 func TestDependencyClientProvisionStreamsUntilReady(t *testing.T) {
 	p := &provisioning{}
 	c := newDependencyClient(t, p)
-	var states []v1.DependencyState
-	for st, err := range c.Provision(context.Background(), &v1.DependencyRequirement{Id: "whisper"}) {
+	var states []host.DependencyState
+	for st, err := range c.Provision(context.Background(), &host.DependencyRequirement{ID: "whisper"}) {
 		if err != nil {
 			t.Fatal(err)
 		}
 		states = append(states, st.GetState())
 	}
-	if len(states) != 2 || states[1] != v1.DependencyState_DEPENDENCY_STATE_READY || p.provisioned.GetId() != "whisper" {
+	if len(states) != 2 || states[1] != host.DependencyStateReady || p.provisioned.GetId() != "whisper" {
 		t.Fatalf("states = %v", states)
 	}
 }
@@ -77,7 +77,7 @@ func TestDependencyClientProvisionStreamsUntilReady(t *testing.T) {
 func TestDependencyClientProvisionYieldsStreamError(t *testing.T) {
 	c := newDependencyClient(t, &provisioning{})
 	var got error
-	for _, err := range c.Provision(context.Background(), &v1.DependencyRequirement{Id: "broken"}) {
+	for _, err := range c.Provision(context.Background(), &host.DependencyRequirement{ID: "broken"}) {
 		got = err
 	}
 	if connect.CodeOf(got) != connect.CodeInternal {

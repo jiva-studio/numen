@@ -4,20 +4,20 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/notes/markdown"
+	notesmarkdown "github.com/jiva-studio/numen/libs/notes/markdown"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
 // getKind is what sort of source a file is, from its name alone, as the core decides it.
-func getKind(filePath string) domain.SourceKind {
+func getKind(filePath string) host.SourceKind {
 	if isNote(filePath) {
-		return domain.KindNote
+		return host.KindNote
 	}
-	return domain.KindFile
+	return host.KindFile
 }
 
 // isNote says whether the index holds the file as a note.
-func isNote(path string) bool { return strings.HasSuffix(strings.ToLower(path), domain.NoteExtension) }
+func isNote(path string) bool { return strings.HasSuffix(strings.ToLower(path), host.NoteExtension) }
 
 // isIgnored says whether the vault leaves the file alone: a file in a hidden folder, or a hidden file.
 func isIgnored(filePath string) bool {
@@ -32,8 +32,8 @@ func isIgnored(filePath string) bool {
 // parsed is every note the index holds. The index is a picture of the files as they were when it was
 // last brought level, and a file changed since is read again only once the index is told of it. The
 // caller holds the lock.
-func (v *Vault) parsed() map[string]domain.Note {
-	out := make(map[string]domain.Note, len(v.indexed))
+func (v *Vault) parsed() map[string]host.Note {
+	out := make(map[string]host.Note, len(v.indexed))
 	for filePath, target := range v.indexed {
 		out[filePath] = target
 	}
@@ -54,7 +54,7 @@ func (v *Vault) rescan(paths ...string) {
 			delete(v.indexed, filePath)
 			continue
 		}
-		v.indexed[filePath] = markdown.Parse(fp, raw)
+		v.indexed[filePath] = notesmarkdown.Parse(fp, raw)
 	}
 }
 
@@ -62,11 +62,11 @@ func (v *Vault) rescan(paths ...string) {
 func (v *Vault) Reindex() {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	v.indexed = map[string]domain.Note{}
+	v.indexed = map[string]host.Note{}
 	v.rescan(v.files.paths()...)
 }
 
-func sortedPaths(notes map[string]domain.Note) []string {
+func sortedPaths(notes map[string]host.Note) []string {
 	paths := make([]string, 0, len(notes))
 	for path := range notes {
 		paths = append(paths, path)
@@ -77,11 +77,11 @@ func sortedPaths(notes map[string]domain.Note) []string {
 
 // candidates is everything a name could mean in the vault: a path from the root, the same with the
 // extension, or a file with that name anywhere.
-func candidates(notes map[string]domain.Note, name string) []string {
-	base := domain.FoldName(domain.LinkName(name))
+func candidates(notes map[string]host.Note, name string) []string {
+	base := host.FoldName(host.LinkName(name))
 	var out []string
 	for _, path := range sortedPaths(notes) {
-		if path == name || path == name+domain.NoteExtension || domain.FoldName(domain.Basename(path)) == base {
+		if path == name || path == name+host.NoteExtension || host.FoldName(host.Basename(path)) == base {
 			out = append(out, path)
 		}
 	}
@@ -89,9 +89,9 @@ func candidates(notes map[string]domain.Note, name string) []string {
 }
 
 // resolve says where a link lands.
-func (v *Vault) resolve(notes map[string]domain.Note, from string, r *domain.ResolvedLink) {
+func (v *Vault) resolve(notes map[string]host.Note, from string, r *host.ResolvedLink) {
 	switch r.Target.Scheme {
-	case domain.SchemeNote:
+	case host.SchemeNote:
 		for _, holder := range v.vaultsHolding() {
 			for path, n := range holder.parsed() {
 				if n.ID != "" && n.ID == r.Target.Value {
@@ -100,8 +100,8 @@ func (v *Vault) resolve(notes map[string]domain.Note, from string, r *domain.Res
 				}
 			}
 		}
-	case domain.SchemeName:
-		r.To, r.IsAmbiguous = domain.ChooseMatch(from, r.Target.Value, candidates(notes, r.Target.Value))
+	case host.SchemeName:
+		r.To, r.IsAmbiguous = host.ChooseMatch(from, r.Target.Value, candidates(notes, r.Target.Value))
 		if r.To != "" {
 			r.ToVault = v.vault.ID
 		}
@@ -113,9 +113,9 @@ func (v *Vault) vaultsHolding() []*Vault { return v.world.members }
 
 // dedupe folds links that turn out to point at the same note: the described one wins over a mention
 // in prose.
-func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
+func dedupe(links []host.ResolvedLink) []host.ResolvedLink {
 	observed := map[string]int{}
-	var out []domain.ResolvedLink
+	var out []host.ResolvedLink
 	for _, l := range links {
 		key := l.To
 		if key == "" {
@@ -127,7 +127,7 @@ func dedupe(links []domain.ResolvedLink) []domain.ResolvedLink {
 			out = append(out, l)
 			continue
 		}
-		if out[at].Role == domain.RoleRef && l.Role != domain.RoleRef {
+		if out[at].Role == host.RoleRef && l.Role != host.RoleRef {
 			out[at] = l
 		}
 	}

@@ -8,47 +8,39 @@ import (
 	"sync"
 	"testing"
 
-	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 // standInHost serves PluginToolService as the host does: it lists the vault tools of the other
 // plugins to the token it gave this plugin, and answers a call with the note it read.
 type standInHost struct {
-	numenv1connect.UnimplementedPluginToolServiceHandler
-
 	mu      sync.Mutex
 	headers []string
-	calls   []*numenv1.CallToolRequest
+	calls   []tools.Call
 }
 
-func (h *standInHost) ListTools(
-	_ context.Context, req *connect.Request[numenv1.ListToolsRequest],
-) (*connect.Response[numenv1.ListToolsResponse], error) {
-	h.record(req.Header(), nil)
-	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: []*numenv1.PluginTool{{
-		Name: "note_read", Title: "Read a note", Effect: numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
+func (h *standInHost) ListToolInfos(_ context.Context, header http.Header) ([]*tools.ToolInfo, error) {
+	h.record(header, nil)
+	return []*tools.ToolInfo{{
+		Name: "note_read", Title: "Read a note", Effect: tools.ReadOnly,
 		InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-	}}}), nil
+	}}, nil
 }
 
-func (h *standInHost) CallTool(
-	_ context.Context, req *connect.Request[numenv1.CallToolRequest],
-) (*connect.Response[numenv1.CallToolResponse], error) {
-	h.record(req.Header(), req.Msg)
-	return connect.NewResponse(&numenv1.CallToolResponse{Result: &numenv1.ToolResult{Text: "# Garden\nRaised beds."}}), nil
+func (h *standInHost) InvokeTool(_ context.Context, header http.Header, call tools.Call) (*tools.CallResponse, error) {
+	h.record(header, &call)
+	return &tools.CallResponse{Result: &tools.CallResult{Text: "# Garden\nRaised beds."}}, nil
 }
 
-func (h *standInHost) record(header http.Header, call *numenv1.CallToolRequest) {
+func (h *standInHost) record(header http.Header, call *tools.Call) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.headers = append(h.headers, header.Get("Authorization"))
 	if call != nil {
-		h.calls = append(h.calls, call)
+		h.calls = append(h.calls, *call)
 	}
 }
 
@@ -57,11 +49,11 @@ func (h *standInHost) record(header http.Header, call *numenv1.CallToolRequest) 
 func TestAProgramCallsAVaultToolThroughTheHost(t *testing.T) {
 	host := &standInHost{}
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewPluginToolServiceHandler(host))
+	mux.Handle(tools.NewServiceHandler(host))
 	served := httptest.NewServer(mux)
 	t.Cleanup(served.Close)
 	endpoint := hostcall.Endpoint{BaseURL: served.URL, Token: "plugin-token"}
-	srv, err := NewServer(Config{}, numenv1connect.NewPluginToolServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...))
+	srv, err := NewServer(Config{}, tools.NewClient(endpoint))
 	if err != nil {
 		t.Fatal(err)
 	}

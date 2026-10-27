@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -12,8 +13,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 const testToken = "plugin-token"
@@ -50,8 +49,8 @@ func withToken() connect.ClientOption {
 func TestThePluginAnswersPingWithTheProtocolVersion(t *testing.T) {
 	pos := startPlugin(t)
 
-	res, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Ping(t.Context(), connect.NewRequest(&numenv1.PingRequest{}))
+	res, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
+		Ping(t.Context(), connect.NewRequest(&server.PingRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,12 +70,12 @@ func TestConfigure_PropagatesSettingsToAgent(t *testing.T) {
 	defer chat.Close()
 	pos := startPlugin(t)
 
-	if _, err := numenv1connect.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
-		Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewPluginLifecycleServiceClient(http.DefaultClient, pos, withToken()).
+		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
 		t.Fatal(err)
 	}
-	res, err := numenv1connect.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewAgentServiceClient(http.DefaultClient, pos, withToken()).
+		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,12 +101,12 @@ func TestNewHandler_PropagatesSettingsToAgent(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	if _, err := numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL, withToken()).
-		Configure(t.Context(), connect.NewRequest(&numenv1.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
+	if _, err := server.NewPluginLifecycleServiceClient(web.Client(), web.URL, withToken()).
+		Configure(t.Context(), connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": chat.URL, "apiKey": "host-key"}})); err != nil {
 		t.Fatal(err)
 	}
-	res, err := numenv1connect.NewAgentServiceClient(web.Client(), web.URL, withToken()).
-		GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	res, err := agentrun.NewAgentServiceClient(web.Client(), web.URL, withToken()).
+		GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

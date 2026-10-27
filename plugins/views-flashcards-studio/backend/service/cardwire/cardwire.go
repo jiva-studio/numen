@@ -3,7 +3,7 @@
 package cardwire
 
 import (
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
 
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cardid"
@@ -41,7 +41,7 @@ func NewWireSummary(s cards.CardModelSummary) *flashcardsv1.CardModelSummary {
 // NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func NewRenameResponse(r cards.RenameResult, stat *v1.FileStat) *flashcardsv1.RenameCardModelFieldResponse {
+func NewRenameResponse(r cards.RenameResult, stat *host.WireFileStat) *flashcardsv1.RenameCardModelFieldResponse {
 	out := &flashcardsv1.RenameCardModelFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),

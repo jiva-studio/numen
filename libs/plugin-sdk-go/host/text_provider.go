@@ -7,7 +7,6 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
@@ -16,9 +15,9 @@ import (
 // file itself. IsUserStarted is set for text a person asked for, which runs before text nobody
 // asked for.
 type TextCreation struct {
-	Vault         domain.VaultID
+	Vault         VaultID
 	Path          string
-	Source        domain.TextVersionID
+	Source        TextVersionID
 	IsUserStarted bool
 }
 
@@ -60,7 +59,7 @@ func (s providerService) CreateText(
 ) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error) {
 	m := req.Msg
 	code, err := writeTextError(s.provider.CreateText(ctx, TextCreation{
-		Vault: domain.VaultID(m.GetVaultId()), Path: m.GetPath(), Source: domain.TextVersionID(m.GetSourceVersionId()),
+		Vault: VaultID(m.GetVaultId()), Path: m.GetPath(), Source: TextVersionID(m.GetSourceVersionId()),
 		IsUserStarted: m.GetIsUserStarted(),
 	}))
 	if err != nil {

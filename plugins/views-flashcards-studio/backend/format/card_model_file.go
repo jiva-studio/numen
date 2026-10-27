@@ -6,7 +6,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/notes/markdown"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 )
 
 // ErrNoSuchField is what changing a field says when the card model declares no

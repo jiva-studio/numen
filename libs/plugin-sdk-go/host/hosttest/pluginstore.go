@@ -6,7 +6,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
@@ -54,7 +53,7 @@ func (s *Store) File(name string, content []byte) {
 	s.vault.getFolder().files[name] = bytes.Clone(content)
 }
 
-func (s *Store) With(id domain.VaultID) host.Store {
+func (s *Store) With(id host.VaultID) host.Store {
 	s.vault.world.mu.Lock()
 	defer s.vault.world.mu.Unlock()
 	return &Store{vault: s.vault.find(id)}

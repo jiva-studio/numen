@@ -10,7 +10,6 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1/epubv1connect"
@@ -175,7 +174,7 @@ func (s *BookServer) ReadBookEntry(
 
 // isStatOf is whether a file of the size and the stamp given is the bytes the
 // file stat names. A stamp of zero names no time.
-func isStatOf(named *numenv1.FileStat, size, mtime int64) bool {
+func isStatOf(named *host.WireFileStat, size, mtime int64) bool {
 	if named.GetSize() != size {
 		return false
 	}

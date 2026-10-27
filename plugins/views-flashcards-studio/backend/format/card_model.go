@@ -3,8 +3,8 @@ package format
 import (
 	"strings"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/notes/markdown"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/markdown"
 )
 
 // The two headings a template is made of.

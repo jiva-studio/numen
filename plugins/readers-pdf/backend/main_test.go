@@ -9,7 +9,6 @@ import (
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/service"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
@@ -60,7 +59,7 @@ func TestPdfAuthCheckInterceptor(t *testing.T) {
 	ctx := context.Background()
 
 	// Missing token -> unauthenticated
-	req := connect.NewRequest(&numenv1.PingRequest{})
+	req := connect.NewRequest(&pdfv1.GetDocumentRequest{})
 	_, err := wrapped(ctx, req)
 	if err == nil || connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("expected CodeUnauthenticated for missing token, got %v", err)

@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"os"
 	"path/filepath"
 	"slices"
@@ -10,8 +11,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"connectrpc.com/connect"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // withoutAgentsAnywhere makes this machine hold none of the programs, wherever they are searched for.
@@ -35,7 +34,7 @@ func TestTheProgramListNamesAntigravityWithoutModels(t *testing.T) {
 	t.Setenv("PATH", bin)
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{}))
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,8 +54,8 @@ func TestGetAgentPrograms_ExplicitCommandInstallation(t *testing.T) {
 	withoutAgentsAnywhere(t)
 	client := agenttest.Serve(t, &agentServer{})
 
-	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&numenv1.GetAgentProgramsRequest{
-		Commands: []*numenv1.AgentProgramCommand{{Program: "antigravity", Command: []string{"/opt/agy"}}},
+	got, err := client.GetAgentPrograms(t.Context(), connect.NewRequest(&agentrun.GetAgentProgramsRequest{
+		Commands: []*agentrun.AgentProgramCommand{{Program: "antigravity", Command: []string{"/opt/agy"}}},
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -71,7 +70,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 	root := t.TempDir()
 	script, read := agenttest.RecordingProgram(t, "agy")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
 		Prompt:  "the question",
 		Command: []string{script, "--first"},
 		Root:    root,
@@ -96,7 +95,7 @@ func TestAskAgentStartsTheProgramFromTheRequest(t *testing.T) {
 // A home that cannot be set up is reported to the stream as the reason the run stopped.
 func TestAskAgentReportsAHomeThatCannotBeSetUp(t *testing.T) {
 	setUnusableTempDir(t)
-	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&numenv1.AskAgentRequest{
+	stream, err := agenttest.Serve(t, &agentServer{}).AskAgent(t.Context(), connect.NewRequest(&agentrun.AskAgentRequest{
 		Command:  []string{"agy"},
 		ToolsUrl: "http://127.0.0.1:1/mcp",
 	}))
@@ -133,7 +132,7 @@ func TestAskAgentOffersNoToolWhenRequestToolsEmpty(t *testing.T) {
 			"for a in \"$@\"; do printf '%s\\n' \"$a\"; done > "+agenttest.QuoteShell(out+".argv")+"\n"+
 			"cat \"$HOME/.gemini/config/mcp_config.json\" > "+agenttest.QuoteShell(out+".mcp")+"\n")
 
-	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &numenv1.AskAgentRequest{
+	agenttest.Ask(t, agenttest.Serve(t, &agentServer{}), &agentrun.AskAgentRequest{
 		Prompt:       "the question",
 		Instructions: "be brief",
 		Command:      []string{script},

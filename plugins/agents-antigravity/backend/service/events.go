@@ -2,9 +2,8 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type eventReader struct {
@@ -39,17 +38,17 @@ func (r *eventReader) handle(rawMap map[string]any) {
 	}
 
 	if thinking, ok := rawMap["thinking"].(string); ok && thinking != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_ModelStarted{
-				ModelStarted: &numenv1.ModelStarted{},
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_ModelStarted{
+				ModelStarted: &agentrun.ModelStarted{},
 			},
 		})
 	}
 	r.handleToolCalls(rawMap)
 
 	if content, ok := rawMap["content"].(string); ok && content != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Text{
 				Text: content,
 			},
 		})
@@ -71,9 +70,9 @@ func (r *eventReader) handleStreamEvent(rawMap map[string]any) {
 		r.continueBlock(evObj)
 	case "content_block_stop":
 		if r.currentTool != "" {
-			r.reader.Send(&numenv1.AskAgentResponse{
-				Step: &numenv1.AskAgentResponse_ToolCall{
-					ToolCall: &numenv1.ToolCall{
+			r.reader.Send(&agentrun.AskAgentResponse{
+				Step: &agentrun.AskAgentResponse_ToolCall{
+					ToolCall: &agentrun.ToolCall{
 						Tool:  r.currentTool,
 						About: r.currentArgs.String(),
 					},
@@ -107,8 +106,8 @@ func (r *eventReader) continueBlock(evObj map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Text{
 				Text: text,
 			},
 		})
@@ -130,9 +129,9 @@ func (r *eventReader) handleToolCalls(rawMap map[string]any) {
 		}
 		name, _ := tc["name"].(string)
 		args, _ := json.Marshal(tc["arguments"])
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_ToolCall{
-				ToolCall: &numenv1.ToolCall{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_ToolCall{
+				ToolCall: &agentrun.ToolCall{
 					Tool:  name,
 					About: string(args),
 				},
@@ -148,8 +147,8 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 		return
 	}
 	if text, ok := delta["text"].(string); ok && text != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Text{
 				Text: text,
 			},
 		})
@@ -158,15 +157,15 @@ func (r *eventReader) handleStepUpdate(rawMap map[string]any) {
 
 func (r *eventReader) handleResult(rawMap map[string]any) {
 	if text, ok := rawMap["result"].(string); ok && text != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Text{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Text{
 				Text: text,
 			},
 		})
 	}
 	if reason, ok := rawMap["stopped"].(string); ok && reason != "" {
-		r.reader.Send(&numenv1.AskAgentResponse{
-			Step: &numenv1.AskAgentResponse_Stopped{
+		r.reader.Send(&agentrun.AskAgentResponse{
+			Step: &agentrun.AskAgentResponse_Stopped{
 				Stopped: reason,
 			},
 		})
@@ -200,7 +199,7 @@ func (r *eventReader) handleCliStep(step map[string]any) {
 		return
 	}
 	r.isTextStreamed = true
-	r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
+	r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
 }
 
 // handleCliResult says the response of a run that streamed none, and stops a run whose status is
@@ -214,10 +213,10 @@ func (r *eventReader) handleCliResult(result map[string]any) {
 		if reason == "" {
 			reason = "the run ended with status " + status
 		}
-		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
+		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
 		return
 	}
 	if response, _ := result["response"].(string); response != "" && !r.isTextStreamed {
-		r.reader.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: response}})
+		r.reader.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: response}})
 	}
 }

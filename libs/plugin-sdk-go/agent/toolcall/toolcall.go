@@ -17,8 +17,14 @@ type Declaration struct {
 	Title, Kind, About, Element, Match, Text string
 }
 
+type ToolDeclaration = numenv1.ToolDeclaration
+
+type ToolCall = numenv1.ToolCall
+
+type Range = numenv1.Range
+
 // IndexDeclarations indexes the declarations of the vault's tools by tool name.
-func IndexDeclarations(declarations []*numenv1.ToolDeclaration) map[string]Declaration {
+func IndexDeclarations(declarations []*ToolDeclaration) map[string]Declaration {
 	words := make(map[string]Declaration, len(declarations))
 	for _, d := range declarations {
 		words[d.GetName()] = Declaration{
@@ -35,9 +41,9 @@ func IndexDeclarations(declarations []*numenv1.ToolDeclaration) map[string]Decla
 
 // tool the vault declared is shown by its title, with its effect and what the call is about read by
 // the arguments it declared. The arguments may not have finished arriving.
-func Describe(words map[string]Declaration, name, call, args string) *numenv1.ToolCall {
+func Describe(words map[string]Declaration, name, call, args string) *ToolCall {
 	declared, isDeclared := words[name]
-	described := &numenv1.ToolCall{Tool: name, Call: call, Length: int32(len([]rune(args)))}
+	described := &ToolCall{Tool: name, Call: call, Length: int32(len([]rune(args)))}
 	if !isDeclared {
 		described.About, described.Path, described.Range = readCallDetails(args)
 		return described

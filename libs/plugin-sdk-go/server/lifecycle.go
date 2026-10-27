@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"net/http"
 	"sync"
 
 	"connectrpc.com/connect"
@@ -10,6 +11,32 @@ import (
 )
 
 const ProtocolVersion = 1
+
+type PingRequest = numenv1.PingRequest
+
+type PingResponse = numenv1.PingResponse
+
+type ConfigureRequest = numenv1.ConfigureRequest
+
+type ConfigureResponse = numenv1.ConfigureResponse
+
+type ShutdownRequest = numenv1.ShutdownRequest
+
+type ShutdownResponse = numenv1.ShutdownResponse
+
+type PluginLifecycleServiceHandler = numenv1connect.PluginLifecycleServiceHandler
+
+type PluginLifecycleServiceClient = numenv1connect.PluginLifecycleServiceClient
+
+// NewPluginLifecycleServiceHandler builds an HTTP handler for the lifecycle service.
+func NewPluginLifecycleServiceHandler(svc PluginLifecycleServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	return numenv1connect.NewPluginLifecycleServiceHandler(svc, opts...)
+}
+
+// NewPluginLifecycleServiceClient constructs a client for the lifecycle service.
+func NewPluginLifecycleServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) PluginLifecycleServiceClient {
+	return numenv1connect.NewPluginLifecycleServiceClient(httpClient, baseURL, opts...)
+}
 
 // LifecycleOption configures a LifecycleServer instance.
 type LifecycleOption func(*LifecycleServer)
@@ -161,4 +188,31 @@ func (s *LifecycleServer) AllConfigs() map[string]string {
 		res[k] = v
 	}
 	return res
+}
+
+// CheckStatus executes a Ping check and returns the status string.
+func (s *LifecycleServer) CheckStatus(ctx context.Context) (string, error) {
+	res, err := s.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	if err != nil {
+		return "", err
+	}
+	return res.Msg.GetStatus(), nil
+}
+
+// ApplyConfig applies configuration values through Configure.
+func (s *LifecycleServer) ApplyConfig(ctx context.Context, values map[string]string) (bool, error) {
+	res, err := s.Configure(ctx, connect.NewRequest(&numenv1.ConfigureRequest{Values: values}))
+	if err != nil {
+		return false, err
+	}
+	return res.Msg.GetSuccess(), nil
+}
+
+// RequestShutdown triggers shutdown through Shutdown.
+func (s *LifecycleServer) RequestShutdown(ctx context.Context) (bool, error) {
+	res, err := s.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	if err != nil {
+		return false, err
+	}
+	return res.Msg.GetSuccess(), nil
 }

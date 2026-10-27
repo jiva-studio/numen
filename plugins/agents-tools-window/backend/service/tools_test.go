@@ -7,10 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestRegisterTools(t *testing.T) {
@@ -20,13 +18,13 @@ func TestRegisterTools(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	resp, err := registry.ListTools(context.Background(), connect.NewRequest(&numenv1.ListToolsRequest{}))
+	listed, err := registry.ListToolInfos(context.Background())
 	if err != nil {
 		t.Fatalf("ListTools: %v", err)
 	}
 
-	names := make([]string, 0, len(resp.Msg.GetTools()))
-	for _, tool := range resp.Msg.GetTools() {
+	names := make([]string, 0, len(listed))
+	for _, tool := range listed {
 		names = append(names, tool.GetName())
 	}
 
@@ -44,15 +42,14 @@ func TestWindowTabsGetEmpty(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	result := resp.Msg.GetResult()
+	result := resp.GetResult()
 	if result.GetIsRefusal() {
 		t.Fatalf("unexpected refusal: %s", result.GetText())
 	}
@@ -81,17 +78,16 @@ func TestWindowTabsGetWithTabs(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 
 	var output WindowTabsGetOutput
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if len(output.Tabs) != 2 {
@@ -112,18 +108,17 @@ func TestWindowTabsGetWithAskedFocus(t *testing.T) {
 		t.Fatalf("RegisterTools: %v", err)
 	}
 
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_tabs_get",
 		Arguments: []byte(`{}`),
 		Context:   map[string]string{"focus": "notes/inferred.md"},
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 
 	var output WindowTabsGetOutput
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if len(output.Tabs) != 1 {
@@ -151,16 +146,15 @@ func TestWindowFocusTab(t *testing.T) {
 
 	// Focus existing tab by ID
 	args, _ := json.Marshal(WindowFocusTabInput{TabID: "t2"})
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 	var output WindowFocusTabOutput
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if !output.Success || output.Tab.ID != "t2" {
@@ -169,15 +163,14 @@ func TestWindowFocusTab(t *testing.T) {
 
 	// Focus new note by Path
 	args, _ = json.Marshal(WindowFocusTabInput{Path: "notes/c.md"})
-	req = connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err = registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
-	resp, err = registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if !output.Success || output.Tab.Path != "notes/c.md" {
@@ -186,15 +179,14 @@ func TestWindowFocusTab(t *testing.T) {
 
 	// Focus with empty arguments produces refusal
 	args, _ = json.Marshal(WindowFocusTabInput{})
-	req = connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err = registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "window_focus_tab",
 		Arguments: args,
 	})
-	resp, err = registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.Msg.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsRefusal() {
 		t.Errorf("expected refusal for empty focus arguments")
 	}
 }
@@ -217,20 +209,19 @@ func TestEditPreviewFromVault(t *testing.T) {
 		ProposedContent: "hello world\nline 2 modified\nnew line\n",
 	}
 	args, _ := json.Marshal(input)
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(ctx, tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
-	resp, err := registry.CallTool(ctx, req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if resp.Msg.GetResult().GetIsRefusal() {
-		t.Fatalf("refusal: %s", resp.Msg.GetResult().GetText())
+	if resp.GetResult().GetIsRefusal() {
+		t.Fatalf("refusal: %s", resp.GetResult().GetText())
 	}
 
 	var output EditPreviewOutput
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if output.Path != "notes/sample.md" {
@@ -261,17 +252,16 @@ func TestEditPreviewWithDirectDiff(t *testing.T) {
 		Path: "notes/custom.md",
 		Diff: customDiff,
 	})
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
 
 	var output EditPreviewOutput
-	if err := json.Unmarshal(resp.Msg.GetResult().GetStructured(), &output); err != nil {
+	if err := json.Unmarshal(resp.GetResult().GetStructured(), &output); err != nil {
 		t.Fatalf("unmarshal output: %v", err)
 	}
 	if output.Additions != 1 || output.Deletions != 1 {
@@ -288,29 +278,27 @@ func TestEditPreviewValidation(t *testing.T) {
 
 	// Missing path
 	args, _ := json.Marshal(EditPreviewInput{ProposedContent: "abc"})
-	req := connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err := registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
-	resp, err := registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.Msg.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsRefusal() {
 		t.Errorf("expected refusal for missing path")
 	}
 
 	// Missing content and diff
 	args, _ = json.Marshal(EditPreviewInput{Path: "notes/a.md"})
-	req = connect.NewRequest(&numenv1.CallToolRequest{
+	resp, err = registry.InvokeTool(context.Background(), tools.Call{
 		Name:      "edit_preview",
 		Arguments: args,
 	})
-	resp, err = registry.CallTool(context.Background(), req)
 	if err != nil {
 		t.Fatalf("CallTool: %v", err)
 	}
-	if !resp.Msg.GetResult().GetIsRefusal() {
+	if !resp.GetResult().GetIsRefusal() {
 		t.Errorf("expected refusal for missing content and diff")
 	}
 }

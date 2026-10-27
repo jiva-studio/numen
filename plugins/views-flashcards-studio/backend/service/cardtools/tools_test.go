@@ -8,9 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
 // The operations an agent works a deck through: the cards of a file are read as
@@ -1005,32 +1004,32 @@ func TestACardModelReadRefusesNonCardModel(t *testing.T) {
 // offered to every agent, and the ones that change the cards to the agent of the vault alone.
 func TestEachToolIsOfferedOnItsServersAndShownAsWhatItDoes(t *testing.T) {
 	const (
-		full    = v1.ToolServer_TOOL_SERVER_FULL
-		reading = v1.ToolServer_TOOL_SERVER_READING
+		full    = tools.Full
+		reading = tools.Reading
 	)
 	type placed struct {
-		effect  v1.ToolEffect
-		step    v1.ToolStep
-		servers []v1.ToolServer
+		effect  tools.Effect
+		step    tools.Step
+		servers []tools.Server
 	}
-	reads, writes := v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolEffect_TOOL_EFFECT_READ_WRITE
-	byEffect, remove, move := v1.ToolStep_TOOL_STEP_UNSPECIFIED, v1.ToolStep_TOOL_STEP_REMOVE, v1.ToolStep_TOOL_STEP_MOVE
+	reads, writes := tools.ReadOnly, tools.ReadWrite
+	byEffect, remove, move := tools.ByEffect, tools.Remove, tools.Move
 	want := map[string]placed{
-		"card_current":        {reads, byEffect, []v1.ToolServer{full, reading}},
-		"card_model_list":     {reads, byEffect, []v1.ToolServer{full, reading}},
-		"card_model_read":     {reads, byEffect, []v1.ToolServer{full, reading}},
-		"card_read":           {reads, byEffect, []v1.ToolServer{full, reading}},
-		"card_add":            {writes, byEffect, []v1.ToolServer{full}},
-		"card_edit":           {writes, byEffect, []v1.ToolServer{full}},
-		"card_value_remove":   {writes, remove, []v1.ToolServer{full}},
-		"card_remove":         {writes, remove, []v1.ToolServer{full}},
-		"card_section_add":    {writes, byEffect, []v1.ToolServer{full}},
-		"card_section_rename": {writes, move, []v1.ToolServer{full}},
-		"card_section_remove": {writes, remove, []v1.ToolServer{full}},
-		"card_deck_create":    {writes, byEffect, []v1.ToolServer{full}},
-		"card_model_create":   {writes, byEffect, []v1.ToolServer{full}},
-		"card_model_edit":     {writes, byEffect, []v1.ToolServer{full}},
-		"card_field_rename":   {writes, move, []v1.ToolServer{full}},
+		"card_current":        {reads, byEffect, []tools.Server{full, reading}},
+		"card_model_list":     {reads, byEffect, []tools.Server{full, reading}},
+		"card_model_read":     {reads, byEffect, []tools.Server{full, reading}},
+		"card_read":           {reads, byEffect, []tools.Server{full, reading}},
+		"card_add":            {writes, byEffect, []tools.Server{full}},
+		"card_edit":           {writes, byEffect, []tools.Server{full}},
+		"card_value_remove":   {writes, remove, []tools.Server{full}},
+		"card_remove":         {writes, remove, []tools.Server{full}},
+		"card_section_add":    {writes, byEffect, []tools.Server{full}},
+		"card_section_rename": {writes, move, []tools.Server{full}},
+		"card_section_remove": {writes, remove, []tools.Server{full}},
+		"card_deck_create":    {writes, byEffect, []tools.Server{full}},
+		"card_model_create":   {writes, byEffect, []tools.Server{full}},
+		"card_model_edit":     {writes, byEffect, []tools.Server{full}},
+		"card_field_rename":   {writes, move, []tools.Server{full}},
 	}
 	session, _ := newSession(t, vault())
 

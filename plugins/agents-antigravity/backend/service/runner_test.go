@@ -9,7 +9,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun/agenttest"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestResolveCommandWithEmptyCommand(t *testing.T) {
@@ -25,7 +24,7 @@ func TestTheSessionOfTheConversationIsHandedToTheNextRun(t *testing.T) {
 	var reg agentrun.Registry
 	reg.SetSession("c-1", "s-1")
 
-	cmd, _, _ := makeAntigravityCommand(t.Context(), &numenv1.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
+	cmd, _, _ := makeAntigravityCommand(t.Context(), &agentrun.AskAgentRequest{Conversation: "c-1", Prompt: "q"}, &reg)
 
 	if !slices.Contains(cmd.Args, "--conversation") || !slices.Contains(cmd.Args, "s-1") {
 		t.Errorf("the arguments are %v", cmd.Args)
@@ -39,13 +38,13 @@ func TestTheSessionAndTheContentOfAntigravityAreReported(t *testing.T) {
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&numenv1.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
+		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1"}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = w.Stop() }()
 
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -62,7 +61,7 @@ func TestAFailedHomeSetupEndsTheRunBeforeItStarts(t *testing.T) {
 	var reg agentrun.Registry
 
 	_, err := start(t.Context(), &reg, newSpec(
-		&numenv1.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
+		&agentrun.AskAgentRequest{Command: []string{"agy"}, ToolsUrl: "http://127.0.0.1:1/mcp"}, &reg))
 
 	if err == nil || !strings.Contains(err.Error(), "set up the Antigravity home") {
 		t.Errorf("got %v", err)
@@ -75,11 +74,11 @@ func TestTheToolCallsOfAntigravityAreCountedAgainstTheStepLimit(t *testing.T) {
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
+		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 2}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -97,11 +96,11 @@ done`+"\n")
 	var reg agentrun.Registry
 
 	w, err := start(t.Context(), &reg, newSpec(
-		&numenv1.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
+		&agentrun.AskAgentRequest{Command: []string{script}, MaxSteps: 1}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}
@@ -120,16 +119,16 @@ func setUnusableTempDir(t *testing.T) {
 }
 
 // collect reads every response of the run of the script a request with no tools asks for.
-func collect(t *testing.T, script string) ([]*numenv1.AskAgentResponse, *agentrun.Registry) {
+func collect(t *testing.T, script string) ([]*agentrun.AskAgentResponse, *agentrun.Registry) {
 	t.Helper()
 	var reg agentrun.Registry
 	w, err := start(t.Context(), &reg, newSpec(
-		&numenv1.AskAgentRequest{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
+		&agentrun.AskAgentRequest{Command: []string{script}, Conversation: "c-1", Prompt: "q"}, &reg))
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() { _ = w.Stop() }()
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	for resp := range w.Output {
 		got = append(got, resp)
 	}

@@ -76,9 +76,57 @@ func newClientAt(endpoint hostcall.Endpoint) *Client {
 	return NewClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Token)
 }
 
+// Message is one message in a completion question.
+type Message struct {
+	Role string
+	Text string
+}
+
+// GetRole returns the role of the message.
+func (m Message) GetRole() string { return m.Role }
+
+// GetText returns the text of the message.
+func (m Message) GetText() string { return m.Text }
+
+// Question is a completion question sent to the host's routed AI model.
+type Question struct {
+	Purpose  string
+	Messages []Message
+}
+
+// GetPurpose returns the purpose of the question.
+func (q *Question) GetPurpose() string {
+	if q == nil {
+		return ""
+	}
+	return q.Purpose
+}
+
+// GetMessages returns the messages of the question.
+func (q *Question) GetMessages() []Message {
+	if q == nil {
+		return nil
+	}
+	return q.Messages
+}
+
+func toProtoQuestion(q *Question) *numenv1.CompletionQuestion {
+	if q == nil {
+		return nil
+	}
+	msgs := make([]*numenv1.CompletionMessage, len(q.Messages))
+	for i, m := range q.Messages {
+		msgs[i] = &numenv1.CompletionMessage{Role: m.Role, Text: m.Text}
+	}
+	return &numenv1.CompletionQuestion{
+		Purpose:  q.Purpose,
+		Messages: msgs,
+	}
+}
+
 // Complete asks the host to answer the question and returns the text.
-func (c *Client) Complete(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
-	res, err := c.host.Complete(ctx, connect.NewRequest(&numenv1.HostServiceCompleteRequest{Question: question}))
+func (c *Client) Complete(ctx context.Context, question *Question) (string, error) {
+	res, err := c.host.Complete(ctx, connect.NewRequest(&numenv1.HostServiceCompleteRequest{Question: toProtoQuestion(question)}))
 	if err != nil {
 		return "", fmt.Errorf("ai: complete: %w", err)
 	}
@@ -107,7 +155,7 @@ func readRefusal(code numenv1.CompletionErrorCode, detail string) error {
 }
 
 // Complete asks the host named by the environment to answer the question.
-func Complete(ctx context.Context, question *numenv1.CompletionQuestion) (string, error) {
+func Complete(ctx context.Context, question *Question) (string, error) {
 	c, err := NewClientFromEnv()
 	if err != nil {
 		return "", err

@@ -9,8 +9,8 @@ import (
 
 	"connectrpc.com/connect"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/embedding"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 )
 
 // The handler a host that links the plugin in serves embeds with the base URL and the key its own
@@ -35,13 +35,13 @@ func TestTheLinkedHandlerEmbedsThroughTheServiceItsConfigureNames(t *testing.T) 
 		}
 	}))
 
-	_, err = numenv1connect.NewPluginLifecycleServiceClient(web.Client(), web.URL, token).Configure(t.Context(),
-		connect.NewRequest(&numenv1.ConfigureRequest{Values: map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"}}))
+	_, err = server.NewPluginLifecycleServiceClient(web.Client(), web.URL, token).Configure(t.Context(),
+		connect.NewRequest(&server.ConfigureRequest{Values: map[string]string{"baseUrl": remote.URL, "apiKey": "remote-key"}}))
 	if err != nil {
 		t.Fatalf("Configure: %v", err)
 	}
-	resp, err := numenv1connect.NewEmbeddingServiceClient(web.Client(), web.URL, token).EmbedBatch(t.Context(),
-		connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"words"}}))
+	resp, err := embedding.NewEmbeddingServiceClient(web.Client(), web.URL, token).EmbedBatch(t.Context(),
+		connect.NewRequest(&embedding.EmbedBatchRequest{Texts: []string{"words"}}))
 	if err != nil {
 		t.Fatalf("EmbedBatch: %v", err)
 	}
@@ -67,7 +67,7 @@ func TestTheModelIsReadWhileConfigureChangesIt(t *testing.T) {
 	}()
 
 	for range 200 {
-		if _, err := srv.GetEmbeddingModel(t.Context(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{})); err != nil {
+		if _, err := srv.GetModelInfo(t.Context()); err != nil {
 			t.Fatal(err)
 		}
 	}

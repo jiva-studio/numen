@@ -1,14 +1,13 @@
 package service
 
 import (
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
 	"sync"
-
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
 type agentServer struct {
-	numenv1connect.UnimplementedAgentServiceHandler
+	agentrun.UnimplementedAgentServiceHandler
 	// acpAgents returns the agents the programs are listed for. Nil is those the settings name.
 	acpAgents func() []acpAgent
 	acpModels acpModelCache

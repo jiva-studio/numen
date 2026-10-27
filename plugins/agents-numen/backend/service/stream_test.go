@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"net/http"
 	"net/http/httptest"
 	"slices"
 	"strings"
 	"testing"
-
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestTheReplyIsSaidPieceByPieceInTheOrderItIsSaved(t *testing.T) {
@@ -145,8 +144,8 @@ func TestACancelledRunStopsReadingTheStream(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 
-	var steps []*numenv1.AskAgentResponse
-	err := s.Ask(ctx, newTask("", "Plan?"), func(r *numenv1.AskAgentResponse) error {
+	var steps []*agentrun.AskAgentResponse
+	err := s.Ask(ctx, newTask("", "Plan?"), func(r *agentrun.AskAgentResponse) error {
 		steps = append(steps, r)
 		if r.GetText() != "" {
 			cancel()
@@ -169,7 +168,7 @@ func TestAStepThatCannotBeSentEndsTheStream(t *testing.T) {
 	removed := errors.New("the window is gone")
 
 	pieces := 0
-	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *numenv1.AskAgentResponse) error {
+	err := s.Ask(t.Context(), newTask("", "Plan?"), func(r *agentrun.AskAgentResponse) error {
 		if r.GetText() == "" {
 			return nil
 		}

@@ -7,7 +7,6 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestLifecycleServer(t *testing.T) {
@@ -15,7 +14,7 @@ func TestLifecycleServer(t *testing.T) {
 	srv := server.NewLifecycleServer(ch)
 
 	ctx := context.Background()
-	pingResp, err := srv.Ping(ctx, connect.NewRequest(&numenv1.PingRequest{}))
+	pingResp, err := srv.Ping(ctx, connect.NewRequest(&server.PingRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +22,7 @@ func TestLifecycleServer(t *testing.T) {
 		t.Errorf("expected ok, got %s", pingResp.Msg.GetStatus())
 	}
 
-	shutResp, err := srv.Shutdown(ctx, connect.NewRequest(&numenv1.ShutdownRequest{}))
+	shutResp, err := srv.Shutdown(ctx, connect.NewRequest(&server.ShutdownRequest{}))
 	if err != nil {
 		t.Fatal(err)
 	}

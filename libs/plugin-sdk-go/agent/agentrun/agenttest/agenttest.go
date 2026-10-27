@@ -13,8 +13,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 )
 
 // NeedsShell skips a test that runs a script where the system has no shell to run it.
@@ -43,13 +42,13 @@ func QuoteShell(s string) string {
 }
 
 // Serve serves the handler over HTTP for the length of the test and returns a client of it.
-func Serve(t *testing.T, handler numenv1connect.AgentServiceHandler) numenv1connect.AgentServiceClient {
+func Serve(t *testing.T, handler agentrun.AgentServiceHandler) agentrun.AgentServiceClient {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.Handle(numenv1connect.NewAgentServiceHandler(handler))
+	mux.Handle(agentrun.NewAgentServiceHandler(handler))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)
-	return numenv1connect.NewAgentServiceClient(http.DefaultClient, server.URL)
+	return agentrun.NewAgentServiceClient(http.DefaultClient, server.URL)
 }
 
 // RecordingProgram writes a program that records the folder it ran in and its arguments, one on a
@@ -74,7 +73,7 @@ func RecordingProgram(t *testing.T, name string) (string, func() (dir string, ar
 }
 
 // Ask sends the request and waits until the stream ends.
-func Ask(t *testing.T, client numenv1connect.AgentServiceClient, req *numenv1.AskAgentRequest) {
+func Ask(t *testing.T, client agentrun.AgentServiceClient, req *agentrun.AskAgentRequest) {
 	t.Helper()
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(req))
 	if err != nil {
@@ -103,14 +102,14 @@ func CheckLinkedHandler(t *testing.T, newHandler func(map[string]string) (http.H
 	}
 	web := httptest.NewServer(handler)
 	defer web.Close()
-	client := numenv1connect.NewAgentServiceClient(web.Client(), web.URL)
+	client := agentrun.NewAgentServiceClient(web.Client(), web.URL)
 
-	req := connect.NewRequest(&numenv1.GetAgentStateRequest{})
+	req := connect.NewRequest(&agentrun.GetAgentStateRequest{})
 	req.Header().Set("Authorization", "Bearer linked-token")
 	if _, err := client.GetAgentState(t.Context(), req); err != nil {
 		t.Fatalf("call with the token: %v", err)
 	}
-	_, err = client.GetAgentState(t.Context(), connect.NewRequest(&numenv1.GetAgentStateRequest{}))
+	_, err = client.GetAgentState(t.Context(), connect.NewRequest(&agentrun.GetAgentStateRequest{}))
 	if connect.CodeOf(err) != connect.CodeUnauthenticated {
 		t.Fatalf("call without the token = %v, want unauthenticated", err)
 	}

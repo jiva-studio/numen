@@ -11,7 +11,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
 
@@ -48,7 +47,7 @@ func (v twoVaults) getCurrentRoot() string { return v.current.Vault().Path }
 func TestGetHighlightsReadsTheTextOfTheVaultTheRequestNames(t *testing.T) {
 	v := newTwoVaults(t)
 	documents := NewDocumentServer(v.current, v.getCurrentRoot, v.texts)
-	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Ranges: []*numenv1.Range{{Start: 0, End: 4}}})
+	req := connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: "tiny.pdf", Ranges: []*host.WireRange{{Start: 0, End: 4}}})
 	req.Header().Set("Numen-Vault", "Chemistry")
 
 	res, err := documents.GetHighlights(t.Context(), req)

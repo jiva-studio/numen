@@ -13,7 +13,6 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -47,7 +46,7 @@ type reader struct {
 	sentCount    int
 }
 
-func (r *reader) Send(resp *numenv1.AskAgentResponse) {
+func (r *reader) Send(resp *agentrun.AskAgentResponse) {
 	select {
 	case r.work.Output <- resp:
 	case <-r.work.Stopped():
@@ -68,7 +67,7 @@ func (r *reader) reportLimit() {
 }
 
 func (r *reader) reportStop(reason string) {
-	r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Stopped{Stopped: reason}})
+	r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Stopped{Stopped: reason}})
 }
 
 func start(ctx context.Context, reg *agentrun.Registry, s spec) (*agentrun.Work, error) {
@@ -162,7 +161,7 @@ func scanOutput(
 		if err := json.Unmarshal(line, &event); err == nil {
 			handle(event)
 		} else if text := strings.TrimSpace(string(line)); text != "" {
-			r.Send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text + "\n"}})
+			r.Send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text + "\n"}})
 		}
 		if r.isOverLimit() {
 			r.reportLimit()
@@ -190,7 +189,7 @@ func reportExit(r *reader, scanErr, waitErr error, stderr string) {
 }
 
 // newSpec is the run of the Codex CLI the request asks for.
-func newSpec(req *numenv1.AskAgentRequest, customPath ...string) spec {
+func newSpec(req *agentrun.AskAgentRequest, customPath ...string) spec {
 	execPath := ""
 	if len(customPath) > 0 {
 		execPath = customPath[0]
@@ -221,7 +220,7 @@ func resolveCommand(command []string, customPath ...string) (string, []string) {
 	return FindCodex(customPath...), nil
 }
 
-func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest, customPath ...string) *exec.Cmd {
+func makeCodexCommand(runCtx context.Context, req *agentrun.AskAgentRequest, customPath ...string) *exec.Cmd {
 	binName, baseArgs := resolveCommand(req.GetCommand(), customPath...)
 	args := append([]string{}, baseArgs...)
 	args = append(args,
@@ -242,7 +241,7 @@ func makeCodexCommand(runCtx context.Context, req *numenv1.AskAgentRequest, cust
 // makeAnswerCommand is the run of the Codex CLI that gives one answer: no MCP server, none of the
 // tools Codex has of its own that can be turned off, nothing the user's configuration adds, a
 // sandbox that writes nothing and an empty folder to run in. The folder goes when the run does.
-func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest, customPath ...string) (*exec.Cmd, func(), error) {
+func makeAnswerCommand(runCtx context.Context, req *agentrun.AskAgentRequest, customPath ...string) (*exec.Cmd, func(), error) {
 	dir, cleanDir, err := agentrun.CreateTempDir("numen-codex-*")
 	if err != nil {
 		return nil, nil, fmt.Errorf("create the folder to run in: %w", err)
@@ -269,7 +268,7 @@ func makeAnswerCommand(runCtx context.Context, req *numenv1.AskAgentRequest, cus
 }
 
 // appendModelArguments adds the model the request names and the level of reasoning it asks for.
-func appendModelArguments(args []string, req *numenv1.AskAgentRequest) []string {
+func appendModelArguments(args []string, req *agentrun.AskAgentRequest) []string {
 	if model := req.GetModel(); model != "" && model != "default" {
 		args = append(args, "--model", model)
 	}

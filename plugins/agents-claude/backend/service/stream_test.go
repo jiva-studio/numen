@@ -2,13 +2,13 @@ package service
 
 import (
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"slices"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 var testWords = map[string]toolcall.Declaration{
@@ -16,10 +16,10 @@ var testWords = map[string]toolcall.Declaration{
 	"note_read": {Title: "Read notes", Kind: "read", About: "paths", Element: "path"},
 }
 
-func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*numenv1.AskAgentResponse, string) {
+func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...string) ([]*agentrun.AskAgentResponse, string) {
 	t.Helper()
-	var got []*numenv1.AskAgentResponse
-	send := func(r *numenv1.AskAgentResponse) error {
+	var got []*agentrun.AskAgentResponse
+	send := func(r *agentrun.AskAgentResponse) error {
 		got = append(got, r)
 		return nil
 	}
@@ -29,8 +29,8 @@ func parseLines(t *testing.T, words map[string]toolcall.Declaration, lines ...st
 	return got, reason
 }
 
-func toolCalls(steps []*numenv1.AskAgentResponse) []*numenv1.ToolCall {
-	var calls []*numenv1.ToolCall
+func toolCalls(steps []*agentrun.AskAgentResponse) []*agentrun.ToolCall {
+	var calls []*agentrun.ToolCall
 	for _, s := range steps {
 		if c := s.GetToolCall(); c != nil {
 			calls = append(calls, c)
@@ -102,8 +102,8 @@ func TestACallNamingARunOfTextCarriesItsSpan(t *testing.T) {
 	}
 }
 
-func editProgress(steps []*numenv1.AskAgentResponse) []*numenv1.EditProgress {
-	var out []*numenv1.EditProgress
+func editProgress(steps []*agentrun.AskAgentResponse) []*agentrun.EditProgress {
+	var out []*agentrun.EditProgress
 	for _, s := range steps {
 		if e := s.GetEditProgress(); e != nil {
 			out = append(out, e)
@@ -137,9 +137,9 @@ func TestAChangeIsReportedAsItsReplacementArrives(t *testing.T) {
 }
 
 func TestChangesCloserThanTheIntervalAreReportedOnce(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	p := &streamParser{
-		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
+		send:  func(r *agentrun.AskAgentResponse) error { got = append(got, r); return nil },
 		words: testWords,
 		now:   func() time.Time { return time.Unix(100, 0) },
 	}
@@ -170,7 +170,7 @@ func TestParseLines_VaultMcpFailure(t *testing.T) {
 
 func TestParseLines_NoVaultExpected(t *testing.T) {
 	line := `{"type":"system","subtype":"init","mcp_servers":[]}`
-	reason := parseStreamWithClock(context.Background(), strings.NewReader(line+"\n"), func(*numenv1.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
+	reason := parseStreamWithClock(context.Background(), strings.NewReader(line+"\n"), func(*agentrun.AskAgentResponse) error { return nil }, nil, nil, time.Now, false)
 	if reason != "" {
 		t.Fatalf("expected empty reason when no vault is expected, got %q", reason)
 	}
@@ -240,9 +240,9 @@ func TestBuildEnvironment_SessionSanitization(t *testing.T) {
 }
 
 func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
+	var got []*agentrun.AskAgentResponse
 	p := &streamParser{
-		send:  func(r *numenv1.AskAgentResponse) error { got = append(got, r); return nil },
+		send:  func(r *agentrun.AskAgentResponse) error { got = append(got, r); return nil },
 		words: map[string]toolcall.Declaration{"note_edit": {About: "title", Match: "stood", Text: "becomes"}},
 		now:   func() time.Time { return time.Unix(100, 0) },
 	}
@@ -256,8 +256,8 @@ func TestAChangeIsLocatedByThePathArgumentAlone(t *testing.T) {
 }
 
 func TestStreamParserPreviewIntervalPacing(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
-	send := func(r *numenv1.AskAgentResponse) error {
+	var got []*agentrun.AskAgentResponse
+	send := func(r *agentrun.AskAgentResponse) error {
 		got = append(got, r)
 		return nil
 	}
@@ -284,7 +284,7 @@ func TestStreamParserPreviewIntervalPacing(t *testing.T) {
 }
 
 func TestStreamParserInitSessionRecord(t *testing.T) {
-	send := func(r *numenv1.AskAgentResponse) error {
+	send := func(r *agentrun.AskAgentResponse) error {
 		return nil
 	}
 	var recorded []string
@@ -304,8 +304,8 @@ func TestStreamParserInitSessionRecord(t *testing.T) {
 }
 
 func TestStreamParserToolCallChunkAndReset(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
-	send := func(r *numenv1.AskAgentResponse) error {
+	var got []*agentrun.AskAgentResponse
+	send := func(r *agentrun.AskAgentResponse) error {
 		got = append(got, r)
 		return nil
 	}
@@ -325,7 +325,7 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 	parseStreamWithClock(context.Background(), r, send, nil, nil, time.Now)
 
 	calls := toolCalls(got)
-	var t2Calls []*numenv1.ToolCall
+	var t2Calls []*agentrun.ToolCall
 	for _, c := range calls {
 		if c.GetTool() == "t2" {
 			t2Calls = append(t2Calls, c)
@@ -337,7 +337,7 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 	if t2Calls[1].GetLength() != 200 {
 		t.Errorf("expected written 200 for chunk, got %d", t2Calls[1].GetLength())
 	}
-	var t3Calls []*numenv1.ToolCall
+	var t3Calls []*agentrun.ToolCall
 	for _, c := range calls {
 		if c.GetTool() == "t3" {
 			t3Calls = append(t3Calls, c)
@@ -349,8 +349,8 @@ func TestStreamParserToolCallChunkAndReset(t *testing.T) {
 }
 
 func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
-	send := func(r *numenv1.AskAgentResponse) error {
+	var got []*agentrun.AskAgentResponse
+	send := func(r *agentrun.AskAgentResponse) error {
 		got = append(got, r)
 		return nil
 	}
@@ -373,8 +373,8 @@ func TestStreamParserAssistantMessageIgnoredWhenStreaming(t *testing.T) {
 }
 
 func TestReportEditIgnoredWhenToolHasNoTextDeclaration(t *testing.T) {
-	var got []*numenv1.AskAgentResponse
-	send := func(r *numenv1.AskAgentResponse) error {
+	var got []*agentrun.AskAgentResponse
+	send := func(r *agentrun.AskAgentResponse) error {
 		got = append(got, r)
 		return nil
 	}

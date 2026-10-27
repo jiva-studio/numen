@@ -2,8 +2,6 @@ package host
 
 import (
 	"context"
-
-	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // StoreFile is a file of the plugin's folder: its name, and how many bytes it holds.
@@ -21,7 +19,7 @@ type StoreFile struct {
 type Store interface {
 	// With is the folder in the vault of the identity. A call on it returns ErrUnknownVault when the
 	// installation knows no such vault.
-	With(id domain.VaultID) Store
+	With(id VaultID) Store
 
 	// Read returns the whole file.
 	Read(ctx context.Context, name string) ([]byte, error)

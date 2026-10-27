@@ -14,17 +14,16 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
 // Vault is a vault the host shows. Its notes are in the index as soon as their files are there.
 type Vault struct {
 	world    *world
-	vault    domain.Vault
+	vault    host.VaultInfo
 	isShown  bool
 	files    store
-	indexed  map[string]domain.Note
+	indexed  map[string]host.Note
 	rejected map[string]error
 	// unwritable are the files that may be read and not written.
 	unwritable map[string]error
@@ -42,7 +41,7 @@ var _ host.Vault = (*Vault)(nil)
 
 // New is a vault of the name, shown by the host, whose files are held in memory.
 func New(name string) *Vault {
-	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, newMemory())
+	return newVault(host.VaultInfo{ID: host.VaultID(name), Name: name, Path: "/vaults/" + name}, newMemory())
 }
 
 // OnDisk is a vault of the notes given, written into a folder of the test's own. The notes are
@@ -59,17 +58,17 @@ func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 			tb.Fatal(err)
 		}
 	}
-	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, disk{root: root})
+	v := newVault(host.VaultInfo{ID: host.VaultID(name), Name: name, Path: root}, disk{root: root})
 	v.Reindex()
 	return v
 }
 
-func newVault(v domain.Vault, files store) *Vault {
+func newVault(v host.VaultInfo, files store) *Vault {
 	made := &Vault{
 		vault:    v,
 		isShown:  true,
 		files:    files,
-		indexed:  map[string]domain.Note{},
+		indexed:  map[string]host.Note{},
 		rejected: map[string]error{},
 
 		unwritable: map[string]error{},
@@ -88,7 +87,7 @@ type world struct {
 }
 
 // Vault is the vault as the host names it: its identity, its name and where it is.
-func (v *Vault) Vault() domain.Vault { return v.vault }
+func (v *Vault) Vault() host.VaultInfo { return v.vault }
 
 // RefuseWriting makes every write of the file fail with err, as a file in a folder the host may not
 // change does, and leaves it readable. A nil err lets it be written again.
@@ -232,60 +231,60 @@ func (v *Vault) check(ctx context.Context, filePath string) error {
 	return v.rejected[filePath]
 }
 
-func (v *Vault) GetVault(ctx context.Context) (domain.Vault, error) {
+func (v *Vault) GetVault(ctx context.Context) (host.VaultInfo, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
-		return domain.Vault{}, err
+		return host.VaultInfo{}, err
 	}
 	return v.vault, nil
 }
 
-func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat, error) {
+func (v *Vault) StatFile(ctx context.Context, filePath string) (host.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return domain.FileStat{}, err
+		return host.FileStat{}, err
 	}
 	at, err := v.files.stat(filePath)
 	if err == nil && isIgnored(filePath) {
-		return domain.FileStat{}, host.ErrNotANote
+		return host.FileStat{}, host.ErrNotANote
 	}
 	return at, err
 }
 
-func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
+func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, host.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return nil, domain.FileStat{}, err
+		return nil, host.FileStat{}, err
 	}
 	fp, err := v.files.stat(filePath)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return nil, host.FileStat{}, err
 	}
 	content, err := v.files.read(filePath)
 	if err != nil {
-		return nil, domain.FileStat{}, err
+		return nil, host.FileStat{}, err
 	}
 	return content, fp, nil
 }
 
-func (v *Vault) Write(ctx context.Context, filePath string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
+func (v *Vault) Write(ctx context.Context, filePath string, content []byte, baseline host.FileStat) (host.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return domain.FileStat{}, err
+		return host.FileStat{}, err
 	}
 	if failErr := v.unwritable[filePath]; failErr != nil {
-		return domain.FileStat{}, failErr
+		return host.FileStat{}, failErr
 	}
 	now, err := v.files.stat(filePath)
 	if err != nil {
-		return domain.FileStat{}, err
+		return host.FileStat{}, err
 	}
 	if !baseline.IsZero() && !now.IsUnchanged(baseline) {
-		return domain.FileStat{}, host.ErrStale
+		return host.FileStat{}, host.ErrStale
 	}
 	return v.files.write(filePath, content)
 }
@@ -323,30 +322,30 @@ func (v *Vault) Scan(ctx context.Context, paths []string) error {
 	return nil
 }
 
-func (v *Vault) GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error) {
+func (v *Vault) GetNotes(ctx context.Context, paths []string) (map[string]host.NoteRef, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
-	out := map[string]domain.NoteRef{}
+	out := map[string]host.NoteRef{}
 	for _, p := range paths {
 		if n, ok := notes[p]; ok {
-			out[p] = domain.NoteRef{Path: p, Title: n.Title, ID: n.ID}
+			out[p] = host.NoteRef{Path: p, Title: n.Title, ID: n.ID}
 		}
 	}
 	return out, nil
 }
 
-func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error) {
+func (v *Vault) GetTypes(ctx context.Context, paths []string) (map[string]host.NoteType, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
-	out := map[string]domain.NoteType{}
+	out := map[string]host.NoteType{}
 	for _, p := range paths {
 		if n, ok := notes[p]; ok {
 			out[p] = n.Type
@@ -361,17 +360,17 @@ func (v *Vault) GetNamedPaths(ctx context.Context, name string) ([]string, error
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
-	folded := domain.FoldName(name)
+	folded := host.FoldName(name)
 	var out []string
 	for _, p := range sortedPaths(v.parsed()) {
-		if domain.FoldName(domain.Basename(p)) == folded {
+		if host.FoldName(host.Basename(p)) == folded {
 			out = append(out, p)
 		}
 	}
 	return out, nil
 }
 
-func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([]string, error) {
+func (v *Vault) GetPathsOfType(ctx context.Context, noteType host.NoteType) ([]string, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -387,7 +386,7 @@ func (v *Vault) GetPathsOfType(ctx context.Context, noteType domain.NoteType) ([
 	return out, nil
 }
 
-func (v *Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLink, error) {
+func (v *Vault) GetLinks(ctx context.Context, from string) ([]host.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -398,16 +397,16 @@ func (v *Vault) GetLinks(ctx context.Context, from string) ([]domain.ResolvedLin
 	if !ok {
 		return nil, nil
 	}
-	out := make([]domain.ResolvedLink, 0, len(n.Links))
+	out := make([]host.ResolvedLink, 0, len(n.Links))
 	for _, l := range n.Links {
-		r := domain.ResolvedLink{Link: l, From: from}
+		r := host.ResolvedLink{Link: l, From: from}
 		v.resolve(notes, from, &r)
 		out = append(out, r)
 	}
 	return dedupe(out), nil
 }
 
-func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedLink, error) {
+func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]host.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
@@ -418,16 +417,16 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 	if !ok {
 		return nil, nil
 	}
-	base := domain.FoldName(domain.Basename(to))
-	var out []domain.ResolvedLink
+	base := host.FoldName(host.Basename(to))
+	var out []host.ResolvedLink
 	for _, from := range sortedPaths(notes) {
 		for _, l := range notes[from].Links {
-			mayReach := (l.Target.Scheme == domain.SchemeNote && target.ID != "" && l.Target.Value == target.ID) ||
-				(l.Target.Scheme == domain.SchemeName && domain.FoldName(domain.LinkName(l.Target.Value)) == base)
+			mayReach := (l.Target.Scheme == host.SchemeNote && target.ID != "" && l.Target.Value == target.ID) ||
+				(l.Target.Scheme == host.SchemeName && host.FoldName(host.LinkName(l.Target.Value)) == base)
 			if !mayReach {
 				continue
 			}
-			r := domain.ResolvedLink{Link: l, From: from}
+			r := host.ResolvedLink{Link: l, From: from}
 			v.resolve(notes, from, &r)
 			if r.To == to && r.ToVault == v.vault.ID {
 				out = append(out, r)
@@ -438,16 +437,16 @@ func (v *Vault) GetBacklinks(ctx context.Context, to string) ([]domain.ResolvedL
 }
 
 // ResolveLinks answers each written link by the links the note holds whose target is written so.
-func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (map[string]domain.ResolvedLink, error) {
+func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (map[string]host.ResolvedLink, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
-	out := map[string]domain.ResolvedLink{}
+	out := map[string]host.ResolvedLink{}
 	for _, raw := range links {
-		r := domain.ResolvedLink{Link: domain.Link{Target: domain.ParseAddress(raw)}, From: from}
+		r := host.ResolvedLink{Link: host.Link{Target: host.ParseAddress(raw)}, From: from}
 		v.resolve(notes, from, &r)
 		if r.To != "" {
 			out[raw] = r
@@ -456,17 +455,17 @@ func (v *Vault) ResolveLinks(ctx context.Context, from string, links []string) (
 	return out, nil
 }
 
-func (v *Vault) GetParseProblems(ctx context.Context) ([]domain.VaultProblem, error) {
+func (v *Vault) GetParseProblems(ctx context.Context) ([]host.VaultProblem, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.gate(ctx); err != nil {
 		return nil, err
 	}
 	notes := v.parsed()
-	var out []domain.VaultProblem
+	var out []host.VaultProblem
 	for _, p := range sortedPaths(notes) {
 		for _, detail := range notes[p].Problems {
-			out = append(out, domain.VaultProblem{Path: p, Kind: domain.CheckParse, Detail: detail})
+			out = append(out, host.VaultProblem{Path: p, Kind: host.CheckParse, Detail: detail})
 		}
 	}
 	return out, nil
@@ -525,10 +524,10 @@ func (v *Vault) Watch(ctx context.Context) (<-chan host.Change, error) {
 	return out, nil
 }
 
-func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
+func (v *Vault) GetVaults(ctx context.Context) ([]host.VaultInfo, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
-	out := []domain.Vault{}
+	out := []host.VaultInfo{}
 	if v.isShown {
 		out = append(out, v.vault)
 	}
@@ -541,14 +540,14 @@ func (v *Vault) GetVaults(ctx context.Context) ([]domain.Vault, error) {
 	return out, nil
 }
 
-func (v *Vault) With(id domain.VaultID) host.Vault {
+func (v *Vault) With(id host.VaultID) host.Vault {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	return v.find(id)
 }
 
 // find is the vault of the identity among those the host knows. The caller holds the world's lock.
-func (v *Vault) find(id domain.VaultID) *Vault {
+func (v *Vault) find(id host.VaultID) *Vault {
 	if v.vault.ID == id {
 		return v
 	}

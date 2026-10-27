@@ -16,7 +16,6 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/reasoning"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 const (
@@ -77,7 +76,7 @@ type acpSession struct {
 	// words are the declarations of the run's tools, which a call is shown by.
 	words map[string]toolcall.Declaration
 	// report sends a step of the run as it happens. Nil sends none.
-	report func(*numenv1.AskAgentResponse) error
+	report func(*agentrun.AskAgentResponse) error
 }
 
 // openACPSession starts the agent, initializes the connection and opens a session in an empty

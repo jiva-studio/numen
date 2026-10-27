@@ -39,10 +39,10 @@ func startHost(t *testing.T, h *fakeHost) *httptest.Server {
 	return srv
 }
 
-func newQuestion() *numenv1.CompletionQuestion {
-	return &numenv1.CompletionQuestion{
+func newQuestion() *Question {
+	return &Question{
 		Purpose: "proofreading",
-		Messages: []*numenv1.CompletionMessage{
+		Messages: []Message{
 			{Role: "user", Text: "fix this"},
 		},
 	}

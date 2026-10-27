@@ -4,18 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func TestEmbeddingServerGetModel(t *testing.T) {
 	srv := newEmbeddingServer()
-	resp, err := srv.GetEmbeddingModel(context.Background(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{}))
+	msg, err := srv.GetModelInfo(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	msg := resp.Msg
 	if msg.GetName() != "bge-m3" {
 		t.Errorf("expected name bge-m3, got %s", msg.GetName())
 	}
@@ -37,11 +34,10 @@ func TestEmbeddingServerEnvOverrides(t *testing.T) {
 	t.Setenv("NUMEN_EMBEDDING_POOLING", "mean")
 
 	srv := newEmbeddingServer()
-	resp, err := srv.GetEmbeddingModel(context.Background(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{}))
+	msg, err := srv.GetModelInfo(context.Background())
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	msg := resp.Msg
 	if msg.GetName() != "custom-model" {
 		t.Errorf("expected custom-model, got %s", msg.GetName())
 	}
@@ -60,17 +56,13 @@ func TestLifecycleConfigure(t *testing.T) {
 	emb := newEmbeddingServer()
 	life := server.NewLifecycleServer(make(chan struct{}), server.WithLifecycleUpdateConfig(emb.updateConfig))
 
-	req := connect.NewRequest(&numenv1.ConfigureRequest{
-		PluginId: "md.numen.engines.embeddings",
-		Values: map[string]string{
-			"model": "text-embedding-3-small",
-		},
+	success, err := life.ApplyConfig(context.Background(), map[string]string{
+		"model": "text-embedding-3-small",
 	})
-	resp, err := life.Configure(context.Background(), req)
 	if err != nil {
 		t.Fatalf("configure failed: %v", err)
 	}
-	if !resp.Msg.GetSuccess() {
+	if !success {
 		t.Error("configure success = false, want true")
 	}
 	if emb.modelInfo.Name != "text-embedding-3-small" {
@@ -106,24 +98,23 @@ func TestTheMockEmbedderServesWhereTheEnvironmentAsksForIt(t *testing.T) {
 	t.Setenv(envMockML, "true")
 	srv := newEmbeddingServer()
 
-	model, err := srv.GetEmbeddingModel(t.Context(), connect.NewRequest(&numenv1.GetEmbeddingModelRequest{}))
+	model, err := srv.GetModelInfo(t.Context())
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.Msg.GetFrom() != "mock" {
-		t.Errorf("the model is from %q, want mock", model.Msg.GetFrom())
+	if model.GetFrom() != "mock" {
+		t.Errorf("the model is from %q, want mock", model.GetFrom())
 	}
 
-	resp, err := srv.EmbedBatch(t.Context(), connect.NewRequest(&numenv1.EmbedBatchRequest{Texts: []string{"boat", "ferry"}}))
+	vectors, err := srv.EmbedTexts(t.Context(), []string{"boat", "ferry"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	vectors := resp.Msg.GetVectors()
 	if len(vectors) != 2 {
 		t.Fatalf("got %d vectors for 2 texts", len(vectors))
 	}
-	if got := len(vectors[0].GetValues()); got != int(model.Msg.GetDimensions()) {
-		t.Errorf("got %d dimensions, want %d", got, model.Msg.GetDimensions())
+	if got := len(vectors[0]); got != int(model.GetDimensions()) {
+		t.Errorf("got %d dimensions, want %d", got, model.GetDimensions())
 	}
 }
 

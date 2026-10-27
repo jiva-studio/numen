@@ -2,10 +2,10 @@ package service
 
 import (
 	"encoding/json"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // acpCall is one tool call of a session as the agent reported it so far.
@@ -31,7 +31,7 @@ type acpToolCall struct {
 // readToolStep keeps what a tool_call or tool_call_update of this session says of the call, and
 // returns the step it is: the call, as far as it is known, or its end once it completed or failed.
 // Any other update is no step. A call is reported finished once.
-func (s *acpSession) readToolStep(params json.RawMessage) *numenv1.AskAgentResponse {
+func (s *acpSession) readToolStep(params json.RawMessage) *agentrun.AskAgentResponse {
 	var update struct {
 		SessionID string      `json:"sessionId"`
 		Update    acpToolCall `json:"update"`
@@ -54,9 +54,9 @@ func (s *acpSession) readToolStep(params json.RawMessage) *numenv1.AskAgentRespo
 	}
 	if reported.Status != nil && (*reported.Status == "completed" || *reported.Status == "failed") {
 		call.isFinished = true
-		return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolFinished{ToolFinished: &numenv1.ToolFinished{}}}
+		return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolFinished{ToolFinished: &agentrun.ToolFinished{}}}
 	}
-	return &numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolCall{
+	return &agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{
 		ToolCall: toolcall.Describe(s.words, call.getShownName(), reported.ToolCallID, call.arguments),
 	}}
 }

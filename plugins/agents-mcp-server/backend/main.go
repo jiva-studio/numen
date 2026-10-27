@@ -8,7 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 	"github.com/jiva-studio/numen/plugins/agents-mcp-server/backend/service"
 )
 
@@ -25,7 +25,7 @@ func main() {
 func runStdio() {
 	var client service.ToolClient
 	if endpoint, err := hostcall.FromEnv(); err == nil {
-		client = numenv1connect.NewPluginToolServiceClient(hostcall.HTTPClient(), endpoint.BaseURL, endpoint.Options()...)
+		client = tools.NewClient(endpoint)
 	}
 	srv, err := service.NewServer(service.Config{}, client)
 	if err != nil {

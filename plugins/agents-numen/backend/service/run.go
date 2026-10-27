@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/agentrun"
 	"log"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/agent/toolcall"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // defaultTurns is how many requests to the model one task may make where the task names no limit.
@@ -38,7 +38,7 @@ type run struct {
 	tools   *toolbox
 	words   map[string]toolcall.Declaration
 	turns   int
-	send    func(*numenv1.AskAgentResponse) error
+	send    func(*agentrun.AskAgentResponse) error
 	isPlain bool
 }
 
@@ -69,14 +69,14 @@ func (r *run) answer(ctx context.Context, messages []message) ([]message, string
 }
 
 func (r *run) turn(ctx context.Context, messages []message) ([]message, string, bool, error) {
-	if err := r.send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_ModelStarted{ModelStarted: &numenv1.ModelStarted{}},
+	if err := r.send(&agentrun.AskAgentResponse{
+		Step: &agentrun.AskAgentResponse_ModelStarted{ModelStarted: &agentrun.ModelStarted{}},
 	}); err != nil {
 		return messages, "", false, err
 	}
 	var unsent error
 	emit := func(text string) error {
-		unsent = r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_Text{Text: text}})
+		unsent = r.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_Text{Text: text}})
 		return unsent
 	}
 	reply, finished, err := r.ask(ctx, messages, emit)
@@ -127,15 +127,15 @@ func (r *run) runToolCalls(ctx context.Context, messages []message, calls []tool
 func (r *run) callTool(ctx context.Context, call toolCall) (string, error) {
 	name, args := call.Function.Name, call.Function.Arguments
 	described := toolcall.Describe(r.words, name, call.ID, args)
-	if err := r.send(&numenv1.AskAgentResponse{Step: &numenv1.AskAgentResponse_ToolCall{ToolCall: described}}); err != nil {
+	if err := r.send(&agentrun.AskAgentResponse{Step: &agentrun.AskAgentResponse_ToolCall{ToolCall: described}}); err != nil {
 		return "", err
 	}
 	result := r.tools.call(ctx, name, args)
 	if err := ctx.Err(); err != nil {
 		return "", err
 	}
-	if err := r.send(&numenv1.AskAgentResponse{
-		Step: &numenv1.AskAgentResponse_ToolFinished{ToolFinished: &numenv1.ToolFinished{}},
+	if err := r.send(&agentrun.AskAgentResponse{
+		Step: &agentrun.AskAgentResponse_ToolFinished{ToolFinished: &agentrun.ToolFinished{}},
 	}); err != nil {
 		return "", err
 	}

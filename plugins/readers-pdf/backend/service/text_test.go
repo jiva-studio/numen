@@ -9,10 +9,9 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
@@ -216,7 +215,7 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: "tiny.pdf",
-		Ranges: []*numenv1.Range{
+		Ranges: []*host.WireRange{
 			{Start: int32(zeta), End: int32(zeta + len("zeta"))},
 			{Start: int32(beta), End: int32(zeta + len("zeta"))},
 		},
@@ -246,7 +245,7 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	documents := newDocumentServer(server, texts)
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
-		Path: "tiny.pdf", Ranges: []*numenv1.Range{{Start: 0, End: 5}},
+		Path: "tiny.pdf", Ranges: []*host.WireRange{{Start: 0, End: 5}},
 	}))
 	if err != nil {
 		t.Fatalf("GetHighlights: %v", err)
