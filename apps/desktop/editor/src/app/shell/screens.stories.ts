@@ -103,11 +103,7 @@ const PLUGINS: readonly PluginInfo[] = [
     'Vault Knowledge Tools',
     'Core vault, note, search and wikilink tools for agents',
   ),
-  plugin(
-    'md.numen.editors.markdown',
-    'Markdown Editor',
-    'Markdown and plain text editor with wikilinks',
-  ),
+  plugin('md.numen.notes', 'Notes', 'Notes written in Markdown, with wikilinks'),
   plugin(
     'md.numen.engines.embeddings',
     'Vector Embeddings',

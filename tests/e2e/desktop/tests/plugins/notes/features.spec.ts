@@ -1,7 +1,7 @@
 import { test, expect } from 'playwright/test'
 import { openWorkspace } from '../../support/workspace.js'
 
-test.describe('Markdown Editor Features and Editing', () => {
+test.describe('Note editor features and editing', () => {
   test('triggers wikilink autocomplete dropdown on bracket input', async ({ page }) => {
     await page.goto('/')
 

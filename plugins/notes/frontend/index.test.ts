@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { PluginContext } from '@numen/plugin-sdk'
 import { activate, deactivate } from './index'
 
-describe('editor-markdown plugin lifecycle', () => {
+describe('notes plugin lifecycle', () => {
   it('registers markdown reader and note tab kind on activation', () => {
     const registerReader = vi.fn()
     const registerTabKind = vi.fn()
@@ -15,7 +15,7 @@ describe('editor-markdown plugin lifecycle', () => {
 
     expect(registerReader).toHaveBeenCalledWith(
       expect.objectContaining({
-        id: 'editor-markdown',
+        id: 'markdown',
         title: 'Markdown Note Editor',
         source: 'note',
       }),

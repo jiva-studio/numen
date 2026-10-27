@@ -1,13 +1,13 @@
 {
-  "id": "md.numen.editors.markdown",
-  "name": "Markdown Editor",
+  "id": "md.numen.notes",
+  "name": "Notes",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",
+  "description": "Notes written in Markdown: the live editor, wikilinks and the note editor view",
   "capabilities": [],
   "targets": ["desktop.editor"],
   "readers": [
-    { "id": "editor-markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
+    { "id": "markdown", "contentTypes": ["text/markdown", "text/plain"], "rank": "default" }
   ],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],

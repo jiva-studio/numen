@@ -1,6 +1,6 @@
 import { test, expect } from 'playwright/test'
 
-test.describe('Markdown Editor Live Formatting and Styling', () => {
+test.describe('Note editor live formatting and styling', () => {
   test('renders markdown blockquote with cm-quote styling in editor', async ({ page }) => {
     await page.goto('/')
 

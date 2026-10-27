@@ -111,7 +111,7 @@ describe('createReaderTabKind', () => {
 
 describe('createCustomTabKind', () => {
   it('computes note title and note target', () => {
-    const customKind = createCustomTabKind('md.numen.editors.markdown', {
+    const customKind = createCustomTabKind('md.numen.notes', {
       kind: 'note',
       component: null,
       title: 'Markdown Note',
@@ -149,7 +149,7 @@ describe('createCustomTabKind', () => {
   it('populates note body from readNote dependency', async () => {
     let savedBody = ''
     const customKind = createCustomTabKind(
-      'md.numen.editors.markdown',
+      'md.numen.notes',
       {
         kind: 'note',
         component: null,
@@ -193,7 +193,7 @@ describe('createCustomTabKind (loading)', () => {
     ...(readNote ? { readNote } : {}),
   })
   const open = (readNote?: (path: string) => Promise<string | undefined>) =>
-    createCustomTabKind('md.numen.editors.markdown', registration, createHost(readNote)).open(
+    createCustomTabKind('md.numen.notes', registration, createHost(readNote)).open(
       'notes/test.md',
       'tab',
     ) as { isLoading: { value: boolean } }
@@ -230,7 +230,7 @@ describe('createCustomTabKind (failed writes)', () => {
   })
   const open = (writeNote: (path: string, body: string) => Promise<void>) =>
     createCustomTabKind(
-      'md.numen.editors.markdown',
+      'md.numen.notes',
       { kind: 'note', component: null, title: 'Markdown Note' },
       host(writeNote),
     ).open('notes/test.md', 'tab') as {

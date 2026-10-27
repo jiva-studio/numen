@@ -1,5 +1,5 @@
 /**
- * Frontend entrypoint for the Markdown Editor plugin.
+ * Frontend entrypoint of the notes plugin.
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
@@ -36,7 +36,7 @@ export function readMarkdownEditorPreferences(
 
 export function activate(context: PluginContext): void {
   context.registerReader({
-    id: 'editor-markdown',
+    id: 'markdown',
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
     source: 'note',

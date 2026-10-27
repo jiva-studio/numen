@@ -1,9 +1,9 @@
 {
-  "name": "@numen/editors.markdown",
+  "name": "@numen/notes",
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Modular Markdown and plain text editor with CodeMirror 6 and wikilinks support",
+  "description": "Notes written in Markdown: the live editor, wikilinks and the note editor view",
   "main": "./frontend/index.ts",
   "types": "./frontend/index.ts",
   "scripts": {
