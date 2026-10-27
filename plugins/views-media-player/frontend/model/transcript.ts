@@ -30,8 +30,8 @@ export interface TranscriptOptions {
 /** The entries of a menu a recording tab offers, each where the menu holds one. */
 export function findOffers(entries: readonly MenuEntry[]) {
   return {
-    transcribe: entries.find((one) => one.action === 'recognise'),
-    proofread: entries.find((one) => one.action === 'proofread'),
+    transcribe: entries.find((one) => one.action === 'createText' && one.versionId === ''),
+    proofread: entries.find((one) => one.action === 'createText' && one.isLive),
     deleteText: entries.find((one) => one.action === 'deleteVersion' && one.isLive),
   }
 }

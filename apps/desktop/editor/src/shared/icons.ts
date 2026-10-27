@@ -8,6 +8,8 @@
 import {
   ALargeSmall,
   ArrowRightLeft,
+  AudioLines,
+  Captions,
   Command,
   Compass,
   Contrast,
@@ -20,20 +22,25 @@ import {
   FolderRoot,
   Gauge,
   Globe,
+  Languages,
   Navigation,
   Palette,
   PenLine,
   Plus,
+  Puzzle,
   RefreshCw,
   Ruler,
   ScanText,
   Search,
   SlidersHorizontal,
   SpellCheck,
+  Sparkles,
   SquareX,
+  TextSearch,
   Trash2,
   Type,
   Waypoints,
+  WandSparkles,
   X,
   type LucideIcon,
 } from '@lucide/vue'
@@ -75,16 +82,28 @@ const ICONS: ReadonlyMap<string, LucideIcon> = new Map([
   ['eraseVault', Trash2],
 ])
 
-/** The icons of the entries of a file's menu, by what each does. */
-const FILE_MENU_ICONS: ReadonlyMap<string, LucideIcon> = new Map([
-  ['recognise', ScanText],
-  ['proofread', SpellCheck],
-  ['delete-version', Trash2],
+/**
+ * The icons a plugin's manifest can name, by their Lucide names. The window draws only the icons it
+ * bundles, so a name not listed here is drawn as a puzzle piece.
+ */
+const NAMED_ICONS: ReadonlyMap<string, LucideIcon> = new Map([
+  ['audio-lines', AudioLines],
+  ['captions', Captions],
+  ['file-text', FileText],
+  ['languages', Languages],
+  ['scan-text', ScanText],
+  ['sparkles', Sparkles],
+  ['spell-check', SpellCheck],
+  ['text-search', TextSearch],
+  ['wand-sparkles', WandSparkles],
 ])
+
+/** The icon a plugin's manifest names. */
+export const getNamedIcon = (name: string): LucideIcon => NAMED_ICONS.get(name) ?? Puzzle
 
 /** The icon for a command, and nothing where it has none. */
 export const findIcon = (id: string): LucideIcon | null => {
   if (id.startsWith('plugin-setting:')) return SlidersHorizontal
-  if (id.startsWith('file-menu:')) return FILE_MENU_ICONS.get(id.split(':')[1] ?? '') ?? null
+  if (id.startsWith('file-menu:delete-version:')) return Trash2
   return ICONS.get(id) ?? null
 }

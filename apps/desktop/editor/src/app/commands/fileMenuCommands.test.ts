@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { commands, runInvocation, ANSWER_WORDS, type CommandDeps } from '@/features/command-palette'
 import type { FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
-import { findIcon } from '@/shared/icons'
+import { findIcon, getNamedIcon } from '@/shared/icons'
 import {
   createFileMenuPaletteCommands,
   getFileMenuId,
@@ -15,16 +15,20 @@ import {
 } from './fileMenuCommands'
 
 const recognise: FileMenuEntry = {
-  action: 'recognise',
-  pluginId: 'md.numen.engines.ocr',
-  pluginName: 'Document OCR',
+  action: 'create-text',
+  pluginId: 'org.example.ocr',
+  pluginName: 'Example OCR',
+  title: 'Read the scan',
+  icon: 'scan-text',
   versionId: '',
 }
 const deleteVersion: FileMenuEntry = {
   action: 'delete-version',
-  pluginId: 'md.numen.engines.ocr',
-  pluginName: 'Document OCR',
-  versionId: 'md.numen.engines.ocr/recognition',
+  pluginId: 'org.example.ocr',
+  pluginName: 'Example OCR',
+  title: '',
+  icon: '',
+  versionId: 'org.example.ocr/recognition',
 }
 
 const front = (file: string, isReady = true) => ({
@@ -55,13 +59,9 @@ const invoke = (entry: FileMenuEntry, file: string) => ({
 const runs = { canRun: () => true, cannotRun: () => {} }
 
 describe('file menu palette commands', () => {
-  it('names each entry by action and plugin', () => {
-    expect(getFileMenuText(recognise)).toBe(WORDS.recogniseWith('Document OCR'))
-    expect(getFileMenuText({ ...recognise, action: 'proofread' })).toBe(
-      WORDS.proofreadWith('Document OCR'),
-    )
-    expect(getFileMenuText(deleteVersion)).toBe(WORDS.deleteVersionOf('Document OCR'))
-    expect(getFileMenuText(recognise)).toMatch(/^Recognise/)
+  it('shows the title the plugin declares, by the plugin', () => {
+    expect(getFileMenuText(recognise)).toBe('Read the scan with Example OCR')
+    expect(getFileMenuText(deleteVersion)).toBe(WORDS.deleteVersionOf('Example OCR'))
   })
 
   it('is offered only over the loaded file', () => {
@@ -76,10 +76,11 @@ describe('file menu palette commands', () => {
     )
   })
 
-  it('uses the icon of the action', () => {
-    expect(findIcon(getFileMenuId(recognise))).not.toBeNull()
+  it('draws the icon the plugin names, and a deletion as a deletion', () => {
+    const [made] = createFileMenuPaletteCommands('books/Scan.pdf', [recognise])
+    expect(made?.icon).toBe(getNamedIcon('scan-text'))
+    expect(made?.icon).not.toBe(getNamedIcon('no-such-icon'))
     expect(findIcon(getFileMenuId(deleteVersion))).not.toBeNull()
-    expect(findIcon(getFileMenuId(recognise))).not.toBe(findIcon(getFileMenuId(deleteVersion)))
   })
 })
 
@@ -99,7 +100,7 @@ describe('useFileMenuCommands', () => {
 
     expect(get).toHaveBeenCalledWith('books/Scan.pdf')
     expect(run).toHaveBeenCalledWith('books/Scan.pdf', recognise)
-    expect(writeMessage).toHaveBeenLastCalledWith(WORDS.textAsked('Document OCR'), 'report')
+    expect(writeMessage).toHaveBeenLastCalledWith(WORDS.textAsked('Example OCR'), 'report')
     expect(menu.paletteCommands.value.map((one) => one.id)).toStrictEqual([
       getFileMenuId(recognise),
     ])

@@ -13,6 +13,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
+	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -56,7 +57,10 @@ func TestActionsCoverEveryFileMenuAction(t *testing.T) {
 
 func TestGetFileMenuReturnsEntries(t *testing.T) {
 	m := &menu{entries: []textversion.MenuEntry{
-		{Action: textversion.ActionRecognise, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR"},
+		{
+			Action: textversion.ActionCreateText, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR",
+			Item: textport.MenuItem{Title: "Recognise text", Icon: "scan-text"},
+		},
 		{Action: textversion.ActionDeleteVersion, PluginID: "md.numen.engines.ocr", PluginName: "Document OCR", Version: "md.numen.engines.ocr/recognition", IsLive: true},
 	}}
 	h := NewHandler(vault, m)
@@ -67,7 +71,8 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 	}
 	got := res.Msg.GetEntries()
 	if len(got) != 2 ||
-		got[0].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_RECOGNISE || got[0].GetPluginName() != "Document OCR" ||
+		got[0].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT || got[0].GetPluginName() != "Document OCR" ||
+		got[0].GetTitle() != "Recognise text" || got[0].GetIcon() != "scan-text" || got[1].GetTitle() != "" ||
 		got[1].GetAction() != v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION || got[1].GetVersionId() != "md.numen.engines.ocr/recognition" ||
 		got[0].GetIsLive() || !got[1].GetIsLive() {
 		t.Fatalf("answered %v", got)
@@ -78,14 +83,14 @@ func TestGetFileMenuReturnsEntries(t *testing.T) {
 }
 
 func TestFileMenuWithoutVaultIsEmpty(t *testing.T) {
-	m := &menu{entries: []textversion.MenuEntry{{Action: textversion.ActionRecognise, PluginID: "p"}}}
+	m := &menu{entries: []textversion.MenuEntry{{Action: textversion.ActionCreateText, PluginID: "p"}}}
 	h := NewHandler(shown{}, m)
 
 	res, err := h.GetFileMenu(t.Context(), connect.NewRequest(&v1.GetFileMenuRequest{Path: "scan.pdf"}))
 	if err != nil || len(res.Msg.GetEntries()) != 0 {
 		t.Errorf("answered %v (%v), want nothing", res.Msg.GetEntries(), err)
 	}
-	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_RECOGNISE, PluginId: "p"}))
+	_, err = h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT, PluginId: "p"}))
 	if connect.CodeOf(err) != connect.CodeFailedPrecondition || len(m.ran) != 0 {
 		t.Errorf("a run was answered %v and ran %v", err, m.ran)
 	}
@@ -99,12 +104,12 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 	h := NewHandler(vault, m)
 
 	_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{
-		Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_PROOFREAD, PluginId: "p", VersionId: "q/k",
+		Path: "scan.pdf", Action: v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT, PluginId: "p", VersionId: "q/k",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := textversion.MenuEntry{Action: textversion.ActionProofread, PluginID: "p", Version: "q/k"}
+	want := textversion.MenuEntry{Action: textversion.ActionCreateText, PluginID: "p", Version: "q/k"}
 	if len(m.ran) != 1 || m.ran[0] != want {
 		t.Fatalf("ran %+v, want %+v", m.ran, want)
 	}

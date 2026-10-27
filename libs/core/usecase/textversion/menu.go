@@ -13,51 +13,56 @@ import (
 type MenuAction string
 
 const (
-	// ActionRecognise asks a plugin that reads the file's type for text of the file.
-	ActionRecognise MenuAction = "recognise"
-	// ActionProofread asks a plugin that reads text for a version made from the live one.
-	ActionProofread MenuAction = "proofread"
+	// ActionCreateText asks a plugin for text of the file, or of Version where it is set.
+	ActionCreateText MenuAction = "create-text"
 	// ActionDeleteVersion deletes a version and its file.
 	ActionDeleteVersion MenuAction = "delete-version"
 )
 
-// MenuEntry is one entry of a file's menu. Version is the input of a
-// proofreading and the target of a deletion, and empty for a recognition.
-// PluginName is the name of the plugin that does it, as a person reads it.
-// IsLive says Version is the version shown and indexed now.
+// MenuEntry is one entry of a file's menu. Version is the input of a text made
+// from a version and the target of a deletion, and empty for a text made from
+// the file. PluginName is the name of the plugin that does it, as a person
+// reads it. Item is what the plugin declares its entry reads and is drawn
+// with, and is empty for a deletion. IsLive says Version is the version shown
+// and indexed now.
 type MenuEntry struct {
 	Action     MenuAction
 	PluginID   string
 	PluginName string
+	Item       textport.MenuItem
 	Version    domain.TextVersionID
 	IsLive     bool
 }
 
 // GetMenu is what a file's menu offers, as the enabled plugins and the file's
-// versions say: a recognition by every plugin that reads the file's type, a
-// proofreading of the live version by every plugin that reads its kind, and a
-// deletion of every version, whether or not its plugin is enabled.
+// versions say: the entry of every plugin that declares one and takes the
+// file's type or the kind of its live version, and a deletion of every
+// version, whether or not its plugin is enabled. A plugin that takes both is
+// offered the file.
 func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash string) ([]MenuEntry, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
-	plugins := u.plugins.GetTextPlugins()
 	live, hasLive, err := u.findLive(ctx, v, versions, fileHash)
 	if err != nil {
 		return nil, err
 	}
 
 	var entries []MenuEntry
-	for _, plugin := range plugins {
-		if plugin.Files.IsFileAccepted(path) {
-			entries = append(entries, MenuEntry{Action: ActionRecognise, PluginID: plugin.ID, PluginName: plugin.Name})
+	for _, plugin := range u.plugins.GetTextPlugins() {
+		if plugin.Menu.Title == "" {
+			continue
 		}
-	}
-	for _, plugin := range plugins {
-		if hasLive && slices.Contains(plugin.Kinds, live.Kind) {
-			entries = append(entries, MenuEntry{Action: ActionProofread, PluginID: plugin.ID, PluginName: plugin.Name, Version: live.GetID(), IsLive: true})
+		entry := MenuEntry{Action: ActionCreateText, PluginID: plugin.ID, PluginName: plugin.Name, Item: plugin.Menu}
+		switch {
+		case plugin.Files.IsFileAccepted(path):
+		case hasLive && slices.Contains(plugin.Kinds, live.Kind):
+			entry.Version, entry.IsLive = live.GetID(), true
+		default:
+			continue
 		}
+		entries = append(entries, entry)
 	}
 	for _, version := range versions {
 		name := version.PluginID
@@ -75,9 +80,7 @@ func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash s
 // RunMenuEntry does what a menu entry offers.
 func (u *Versions) RunMenuEntry(ctx context.Context, v domain.Vault, path string, entry MenuEntry) error {
 	switch entry.Action {
-	case ActionRecognise:
-		return u.CreateText(ctx, v, entry.PluginID, path, "")
-	case ActionProofread:
+	case ActionCreateText:
 		return u.CreateText(ctx, v, entry.PluginID, path, entry.Version)
 	case ActionDeleteVersion:
 		return u.DeleteVersion(ctx, v, path, entry.Version)

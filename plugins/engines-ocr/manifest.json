@@ -10,7 +10,8 @@
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
     "contentTypes": ["application/pdf", "image/png", "image/jpeg", "image/gif", "image/webp"],
-    "autoRun": true
+    "autoRun": true,
+    "menuEntry": { "title": "Recognise text", "icon": "scan-text" }
   },
   "commands": [
     {

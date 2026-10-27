@@ -42,8 +42,7 @@ func NewHandler(vaults VaultProvider, menu Menu) *Handler {
 var errNoVault = errors.New("the window shows no vault")
 
 var actions = map[textversion.MenuAction]v1.FileMenuAction{
-	textversion.ActionRecognise:     v1.FileMenuAction_FILE_MENU_ACTION_RECOGNISE,
-	textversion.ActionProofread:     v1.FileMenuAction_FILE_MENU_ACTION_PROOFREAD,
+	textversion.ActionCreateText:    v1.FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT,
 	textversion.ActionDeleteVersion: v1.FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION,
 }
 
@@ -66,7 +65,7 @@ func (h *Handler) GetFileMenu(
 	for _, one := range entries {
 		out = append(out, &v1.FileMenuEntry{
 			Action: actions[one.Action], PluginId: one.PluginID, PluginName: one.PluginName, VersionId: string(one.Version),
-			IsLive: one.IsLive,
+			IsLive: one.IsLive, Title: one.Item.Title, Icon: one.Item.Icon,
 		})
 	}
 	return connect.NewResponse(&v1.GetFileMenuResponse{Entries: out}), nil

@@ -49,8 +49,7 @@ export const WORDS = {
   destroy: 'Destroy note',
   copy: 'Copy path',
   /** The menu the text versions of the file in front make, each entry by the plugin that does it. */
-  recogniseWith: (plugin: string) => `Recognise text with ${plugin}`,
-  proofreadWith: (plugin: string) => `Proofread text with ${plugin}`,
+  runWith: (title: string, plugin: string) => `${title} with ${plugin}`,
   deleteVersionOf: (plugin: string) => `Delete text from ${plugin}`,
   /** What the corner says once a plugin was asked to make or delete a text. */
   textAsked: (plugin: string) => `${plugin}: working`,

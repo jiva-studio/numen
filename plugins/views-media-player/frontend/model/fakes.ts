@@ -12,7 +12,7 @@ export const CUES: readonly Cue[] = [
 ]
 
 export const TRANSCRIBE_ENTRY: MenuEntry = {
-  action: 'recognise',
+  action: 'createText',
   pluginId: 'md.numen.engines.transcription',
   versionId: '',
   isLive: false,

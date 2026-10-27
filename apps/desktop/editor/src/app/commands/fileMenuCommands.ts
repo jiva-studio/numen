@@ -1,29 +1,24 @@
 /**
  * The menu the text versions of the file in front make, offered in the
- * palette: making text of the file, a version of its live text, and deleting a
- * version, each by the plugin the application names.
+ * palette: the entry each plugin declares, under its title and icon, and
+ * deleting a version, each by the plugin the application names.
  */
 import { computed, shallowRef } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { registerCommand, type Command } from '@/features/command-palette'
 import { getFileMenu, runFileMenuEntry, type FileMenuEntry } from '@/entities/text-version'
 import { WORDS } from '@/shared/words'
+import { getNamedIcon } from '@/shared/icons'
 
 /** What the palette files an entry under: the action, the plugin and the version it is over. */
 export const getFileMenuId = (entry: FileMenuEntry): string =>
   `file-menu:${entry.action}:${entry.pluginId}:${entry.versionId}`
 
 /** What an entry is called in the palette, by the plugin that does it. */
-export const getFileMenuText = (entry: FileMenuEntry): string => {
-  switch (entry.action) {
-    case 'recognise':
-      return WORDS.recogniseWith(entry.pluginName)
-    case 'proofread':
-      return WORDS.proofreadWith(entry.pluginName)
-    case 'delete-version':
-      return WORDS.deleteVersionOf(entry.pluginName)
-  }
-}
+export const getFileMenuText = (entry: FileMenuEntry): string =>
+  entry.action === 'delete-version'
+    ? WORDS.deleteVersionOf(entry.pluginName)
+    : WORDS.runWith(entry.title, entry.pluginName)
 
 /** The palette's commands for the entries of the menu of the file at `file`, offered over that file alone. */
 export function createFileMenuPaletteCommands(
@@ -33,6 +28,7 @@ export function createFileMenuPaletteCommands(
   return entries.map((entry): Command => ({
     id: getFileMenuId(entry),
     text: getFileMenuText(entry),
+    ...(entry.action === 'create-text' ? { icon: getNamedIcon(entry.icon) } : {}),
     group: 'file',
     isOffered: (target) => target.isReady && target.file !== '' && target.file === file,
   }))

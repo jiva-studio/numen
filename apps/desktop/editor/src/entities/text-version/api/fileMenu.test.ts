@@ -14,59 +14,66 @@ const request = {
 
 const { getFileMenu, runFileMenuEntry } = await import('./fileMenu')
 
+const wire = (action: FileMenuAction, versionId: string, title = '', icon = '') => ({
+  action,
+  pluginId: 'fix',
+  pluginName: 'Fix',
+  title,
+  icon,
+  versionId,
+})
+
 describe('getFileMenu', () => {
-  it('maps the entries to window actions', async () => {
+  it('keeps the title and icon the plugin declares', async () => {
     request.getFileMenu.mockResolvedValue({
       entries: [
-        { action: FileMenuAction.RECOGNISE, pluginId: 'ocr', pluginName: 'OCR', versionId: '' },
-        {
-          action: FileMenuAction.PROOFREAD,
-          pluginId: 'fix',
-          pluginName: 'Fix',
-          versionId: 'ocr/k',
-        },
-        {
-          action: FileMenuAction.DELETE_VERSION,
-          pluginId: 'ocr',
-          pluginName: 'OCR',
-          versionId: 'ocr/k',
-        },
-        { action: FileMenuAction.UNSPECIFIED, pluginId: 'x', pluginName: 'X', versionId: '' },
+        wire(FileMenuAction.CREATE_TEXT, 'ocr/k', 'Proofread', 'spell-check'),
+        wire(FileMenuAction.DELETE_VERSION, 'fix/k'),
+        wire(FileMenuAction.UNSPECIFIED, ''),
       ],
     })
 
     const entries = await getFileMenu('books/Scan.pdf')
 
     expect(request.getFileMenu).toHaveBeenCalledWith({ path: 'books/Scan.pdf' })
-    expect(entries.map((one) => one.action)).toStrictEqual([
-      'recognise',
-      'proofread',
-      'delete-version',
+    expect(entries).toStrictEqual([
+      {
+        action: 'create-text',
+        pluginId: 'fix',
+        pluginName: 'Fix',
+        title: 'Proofread',
+        icon: 'spell-check',
+        versionId: 'ocr/k',
+      },
+      {
+        action: 'delete-version',
+        pluginId: 'fix',
+        pluginName: 'Fix',
+        title: '',
+        icon: '',
+        versionId: 'fix/k',
+      },
     ])
-    expect(entries[1]).toStrictEqual({
-      action: 'proofread',
-      pluginId: 'fix',
-      pluginName: 'Fix',
-      versionId: 'ocr/k',
-    })
   })
 })
 
 describe('runFileMenuEntry', () => {
-  it('sends the schema action of the entry', async () => {
+  it('sends the schema action of the entry and the plugin that runs it', async () => {
     request.runFileMenuEntry.mockResolvedValue({})
 
     await runFileMenuEntry('books/Scan.pdf', {
-      action: 'delete-version',
-      pluginId: 'ocr',
-      pluginName: 'OCR',
+      action: 'create-text',
+      pluginId: 'fix',
+      pluginName: 'Fix',
+      title: 'Proofread',
+      icon: 'spell-check',
       versionId: 'ocr/k',
     })
 
     expect(request.runFileMenuEntry).toHaveBeenCalledWith({
       path: 'books/Scan.pdf',
-      action: FileMenuAction.DELETE_VERSION,
-      pluginId: 'ocr',
+      action: FileMenuAction.CREATE_TEXT,
+      pluginId: 'fix',
       versionId: 'ocr/k',
     })
   })

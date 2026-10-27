@@ -12,11 +12,7 @@ const entry = (action: FileMenuAction) => ({
 
 describe('a menu entry', () => {
   it('crosses the wire and back as the action it is', () => {
-    for (const action of [
-      FileMenuAction.RECOGNISE,
-      FileMenuAction.PROOFREAD,
-      FileMenuAction.DELETE_VERSION,
-    ]) {
+    for (const action of [FileMenuAction.CREATE_TEXT, FileMenuAction.DELETE_VERSION]) {
       const [read] = readMenuEntries([entry(action)])
       expect(read && writeMenuAction(read.action)).toBe(action)
     }

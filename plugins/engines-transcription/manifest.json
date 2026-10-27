@@ -8,7 +8,8 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "textInput": {
-    "contentTypes": ["audio/*", "video/*"]
+    "contentTypes": ["audio/*", "video/*"],
+    "menuEntry": { "title": "Transcribe", "icon": "audio-lines" }
   },
   "commands": [
     {

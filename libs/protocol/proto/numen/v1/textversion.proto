@@ -21,24 +21,26 @@ service TextVersionService {
 // nothing.
 enum FileMenuAction {
   FILE_MENU_ACTION_UNSPECIFIED = 0;
-  // A plugin that reads the file's type makes text of the file.
-  FILE_MENU_ACTION_RECOGNISE = 1;
-  // A plugin that reads the live version's format makes a version of it.
-  FILE_MENU_ACTION_PROOFREAD = 2;
+  // The plugin makes text of the file, or of version_id where it is set.
+  FILE_MENU_ACTION_CREATE_TEXT = 1;
   // The plugin that made a version deletes it.
-  FILE_MENU_ACTION_DELETE_VERSION = 3;
+  FILE_MENU_ACTION_DELETE_VERSION = 2;
 }
 
 // FileMenuEntry is one entry of a file's menu. version_id is the input of a
-// proofreading and the target of a deletion, and empty for a recognition.
-// plugin_name is the plugin's name as its manifest gives it. is_live is set
-// when version_id is the version shown and indexed now.
+// text made from a version and the target of a deletion, and empty for a text
+// made from the file. plugin_name is the plugin's name as its manifest gives
+// it. title and icon are what the plugin's manifest declares for its entry,
+// and empty for a deletion; icon is a Lucide icon name. is_live is set when
+// version_id is the version shown and indexed now.
 message FileMenuEntry {
   FileMenuAction action = 1;
   string plugin_id = 2;
   string plugin_name = 3;
   string version_id = 4;
   bool is_live = 5;
+  string title = 6;
+  string icon = 7;
 }
 
 message GetFileMenuRequest {

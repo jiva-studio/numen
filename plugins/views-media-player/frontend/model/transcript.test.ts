@@ -3,7 +3,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { formatErrorMessage } from '@numen/wire'
-import { useTranscript } from './transcript'
+import { findOffers, useTranscript } from './transcript'
 import {
   CUES,
   DELETE_ENTRY,
@@ -58,6 +58,19 @@ describe('a recording firstRead', () => {
 })
 
 describe('what the menu offers', () => {
+  it('takes text made from the file as transcribing and from the live version as proofreading', () => {
+    const proofread = {
+      ...TRANSCRIBE_ENTRY,
+      pluginId: 'md.numen.tools.proofreading',
+      versionId: DELETE_ENTRY.versionId,
+      isLive: true,
+    }
+    const offers = findOffers([TRANSCRIBE_ENTRY, proofread, DELETE_ENTRY])
+    expect(offers.transcribe).toBe(TRANSCRIBE_ENTRY)
+    expect(offers.proofread).toBe(proofread)
+    expect(offers.deleteText).toBe(DELETE_ENTRY)
+  })
+
   it('is transcribing where nothing was heard, and not deleting', async () => {
     const { tab } = open(createRecordings([], [TRANSCRIBE_ENTRY]))
     await tab.content.firstRead

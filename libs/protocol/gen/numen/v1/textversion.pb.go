@@ -27,27 +27,23 @@ type FileMenuAction int32
 
 const (
 	FileMenuAction_FILE_MENU_ACTION_UNSPECIFIED FileMenuAction = 0
-	// A plugin that reads the file's type makes text of the file.
-	FileMenuAction_FILE_MENU_ACTION_RECOGNISE FileMenuAction = 1
-	// A plugin that reads the live version's format makes a version of it.
-	FileMenuAction_FILE_MENU_ACTION_PROOFREAD FileMenuAction = 2
+	// The plugin makes text of the file, or of version_id where it is set.
+	FileMenuAction_FILE_MENU_ACTION_CREATE_TEXT FileMenuAction = 1
 	// The plugin that made a version deletes it.
-	FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION FileMenuAction = 3
+	FileMenuAction_FILE_MENU_ACTION_DELETE_VERSION FileMenuAction = 2
 )
 
 // Enum value maps for FileMenuAction.
 var (
 	FileMenuAction_name = map[int32]string{
 		0: "FILE_MENU_ACTION_UNSPECIFIED",
-		1: "FILE_MENU_ACTION_RECOGNISE",
-		2: "FILE_MENU_ACTION_PROOFREAD",
-		3: "FILE_MENU_ACTION_DELETE_VERSION",
+		1: "FILE_MENU_ACTION_CREATE_TEXT",
+		2: "FILE_MENU_ACTION_DELETE_VERSION",
 	}
 	FileMenuAction_value = map[string]int32{
 		"FILE_MENU_ACTION_UNSPECIFIED":    0,
-		"FILE_MENU_ACTION_RECOGNISE":      1,
-		"FILE_MENU_ACTION_PROOFREAD":      2,
-		"FILE_MENU_ACTION_DELETE_VERSION": 3,
+		"FILE_MENU_ACTION_CREATE_TEXT":    1,
+		"FILE_MENU_ACTION_DELETE_VERSION": 2,
 	}
 )
 
@@ -79,9 +75,11 @@ func (FileMenuAction) EnumDescriptor() ([]byte, []int) {
 }
 
 // FileMenuEntry is one entry of a file's menu. version_id is the input of a
-// proofreading and the target of a deletion, and empty for a recognition.
-// plugin_name is the plugin's name as its manifest gives it. is_live is set
-// when version_id is the version shown and indexed now.
+// text made from a version and the target of a deletion, and empty for a text
+// made from the file. plugin_name is the plugin's name as its manifest gives
+// it. title and icon are what the plugin's manifest declares for its entry,
+// and empty for a deletion; icon is a Lucide icon name. is_live is set when
+// version_id is the version shown and indexed now.
 type FileMenuEntry struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Action        FileMenuAction         `protobuf:"varint,1,opt,name=action,proto3,enum=numen.v1.FileMenuAction" json:"action,omitempty"`
@@ -89,6 +87,8 @@ type FileMenuEntry struct {
 	PluginName    string                 `protobuf:"bytes,3,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	VersionId     string                 `protobuf:"bytes,4,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
 	IsLive        bool                   `protobuf:"varint,5,opt,name=is_live,json=isLive,proto3" json:"is_live,omitempty"`
+	Title         string                 `protobuf:"bytes,6,opt,name=title,proto3" json:"title,omitempty"`
+	Icon          string                 `protobuf:"bytes,7,opt,name=icon,proto3" json:"icon,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,6 +156,20 @@ func (x *FileMenuEntry) GetIsLive() bool {
 		return x.IsLive
 	}
 	return false
+}
+
+func (x *FileMenuEntry) GetTitle() string {
+	if x != nil {
+		return x.Title
+	}
+	return ""
+}
+
+func (x *FileMenuEntry) GetIcon() string {
+	if x != nil {
+		return x.Icon
+	}
+	return ""
 }
 
 type GetFileMenuRequest struct {
@@ -354,7 +368,7 @@ var File_numen_v1_textversion_proto protoreflect.FileDescriptor
 
 const file_numen_v1_textversion_proto_rawDesc = "" +
 	"\n" +
-	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\xb7\x01\n" +
+	"\x1anumen/v1/textversion.proto\x12\bnumen.v1\"\xe1\x01\n" +
 	"\rFileMenuEntry\x120\n" +
 	"\x06action\x18\x01 \x01(\x0e2\x18.numen.v1.FileMenuActionR\x06action\x12\x1b\n" +
 	"\tplugin_id\x18\x02 \x01(\tR\bpluginId\x12\x1f\n" +
@@ -362,7 +376,9 @@ const file_numen_v1_textversion_proto_rawDesc = "" +
 	"pluginName\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x04 \x01(\tR\tversionId\x12\x17\n" +
-	"\ais_live\x18\x05 \x01(\bR\x06isLive\"(\n" +
+	"\ais_live\x18\x05 \x01(\bR\x06isLive\x12\x14\n" +
+	"\x05title\x18\x06 \x01(\tR\x05title\x12\x12\n" +
+	"\x04icon\x18\a \x01(\tR\x04icon\"(\n" +
 	"\x12GetFileMenuRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"H\n" +
 	"\x13GetFileMenuResponse\x121\n" +
@@ -373,12 +389,11 @@ const file_numen_v1_textversion_proto_rawDesc = "" +
 	"\tplugin_id\x18\x03 \x01(\tR\bpluginId\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x04 \x01(\tR\tversionId\"\x1a\n" +
-	"\x18RunFileMenuEntryResponse*\x97\x01\n" +
+	"\x18RunFileMenuEntryResponse*y\n" +
 	"\x0eFileMenuAction\x12 \n" +
-	"\x1cFILE_MENU_ACTION_UNSPECIFIED\x10\x00\x12\x1e\n" +
-	"\x1aFILE_MENU_ACTION_RECOGNISE\x10\x01\x12\x1e\n" +
-	"\x1aFILE_MENU_ACTION_PROOFREAD\x10\x02\x12#\n" +
-	"\x1fFILE_MENU_ACTION_DELETE_VERSION\x10\x032\xbb\x01\n" +
+	"\x1cFILE_MENU_ACTION_UNSPECIFIED\x10\x00\x12 \n" +
+	"\x1cFILE_MENU_ACTION_CREATE_TEXT\x10\x01\x12#\n" +
+	"\x1fFILE_MENU_ACTION_DELETE_VERSION\x10\x022\xbb\x01\n" +
 	"\x12TextVersionService\x12J\n" +
 	"\vGetFileMenu\x12\x1c.numen.v1.GetFileMenuRequest\x1a\x1d.numen.v1.GetFileMenuResponse\x12Y\n" +
 	"\x10RunFileMenuEntry\x12!.numen.v1.RunFileMenuEntryRequest\x1a\".numen.v1.RunFileMenuEntryResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"

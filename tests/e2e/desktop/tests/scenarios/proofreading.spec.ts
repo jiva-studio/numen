@@ -37,7 +37,7 @@ test.describe('Proofreading', () => {
   test('puts the transcript of a recording right', async ({ page }) => {
     await openWorkspace(page)
     const tab = await openVaultFile(page, 'assets', 'lecture.wav')
-    await runCommand(page, 'Recognise', /Audio\/Video Transcription/)
+    await runCommand(page, 'Transcribe', /^Transcribe with Audio\/Video Transcription/)
     await expect(tab.getByText(/Mock transcribed text/)).toBeVisible({ timeout: 30_000 })
 
     await runCommand(page, 'Proofread', /^Proofread/)

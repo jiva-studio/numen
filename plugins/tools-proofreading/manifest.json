@@ -8,7 +8,8 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete"],
   "textInput": {
-    "kinds": ["transcript", "recognition", "page-text"]
+    "kinds": ["transcript", "recognition", "page-text"],
+    "menuEntry": { "title": "Proofread", "icon": "spell-check" }
   },
   "commands": [
     {

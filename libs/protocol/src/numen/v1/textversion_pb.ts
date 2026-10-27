@@ -10,13 +10,15 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/textversion.proto.
  */
 export const file_numen_v1_textversion: GenFile = /*@__PURE__*/
-  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEihgEKDUZpbGVNZW51RW50cnkSKAoGYWN0aW9uGAEgASgOMhgubnVtZW4udjEuRmlsZU1lbnVBY3Rpb24SEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEhIKCnZlcnNpb25faWQYBCABKAkSDwoHaXNfbGl2ZRgFIAEoCCIiChJHZXRGaWxlTWVudVJlcXVlc3QSDAoEcGF0aBgBIAEoCSI/ChNHZXRGaWxlTWVudVJlc3BvbnNlEigKB2VudHJpZXMYASADKAsyFy5udW1lbi52MS5GaWxlTWVudUVudHJ5IngKF1J1bkZpbGVNZW51RW50cnlSZXF1ZXN0EgwKBHBhdGgYASABKAkSKAoGYWN0aW9uGAIgASgOMhgubnVtZW4udjEuRmlsZU1lbnVBY3Rpb24SEQoJcGx1Z2luX2lkGAMgASgJEhIKCnZlcnNpb25faWQYBCABKAkiGgoYUnVuRmlsZU1lbnVFbnRyeVJlc3BvbnNlKpcBCg5GaWxlTWVudUFjdGlvbhIgChxGSUxFX01FTlVfQUNUSU9OX1VOU1BFQ0lGSUVEEAASHgoaRklMRV9NRU5VX0FDVElPTl9SRUNPR05JU0UQARIeChpGSUxFX01FTlVfQUNUSU9OX1BST09GUkVBRBACEiMKH0ZJTEVfTUVOVV9BQ1RJT05fREVMRVRFX1ZFUlNJT04QAzK7AQoSVGV4dFZlcnNpb25TZXJ2aWNlEkoKC0dldEZpbGVNZW51EhwubnVtZW4udjEuR2V0RmlsZU1lbnVSZXF1ZXN0Gh0ubnVtZW4udjEuR2V0RmlsZU1lbnVSZXNwb25zZRJZChBSdW5GaWxlTWVudUVudHJ5EiEubnVtZW4udjEuUnVuRmlsZU1lbnVFbnRyeVJlcXVlc3QaIi5udW1lbi52MS5SdW5GaWxlTWVudUVudHJ5UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM");
+  fileDesc("ChpudW1lbi92MS90ZXh0dmVyc2lvbi5wcm90bxIIbnVtZW4udjEiowEKDUZpbGVNZW51RW50cnkSKAoGYWN0aW9uGAEgASgOMhgubnVtZW4udjEuRmlsZU1lbnVBY3Rpb24SEQoJcGx1Z2luX2lkGAIgASgJEhMKC3BsdWdpbl9uYW1lGAMgASgJEhIKCnZlcnNpb25faWQYBCABKAkSDwoHaXNfbGl2ZRgFIAEoCBINCgV0aXRsZRgGIAEoCRIMCgRpY29uGAcgASgJIiIKEkdldEZpbGVNZW51UmVxdWVzdBIMCgRwYXRoGAEgASgJIj8KE0dldEZpbGVNZW51UmVzcG9uc2USKAoHZW50cmllcxgBIAMoCzIXLm51bWVuLnYxLkZpbGVNZW51RW50cnkieAoXUnVuRmlsZU1lbnVFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIoCgZhY3Rpb24YAiABKA4yGC5udW1lbi52MS5GaWxlTWVudUFjdGlvbhIRCglwbHVnaW5faWQYAyABKAkSEgoKdmVyc2lvbl9pZBgEIAEoCSIaChhSdW5GaWxlTWVudUVudHJ5UmVzcG9uc2UqeQoORmlsZU1lbnVBY3Rpb24SIAocRklMRV9NRU5VX0FDVElPTl9VTlNQRUNJRklFRBAAEiAKHEZJTEVfTUVOVV9BQ1RJT05fQ1JFQVRFX1RFWFQQARIjCh9GSUxFX01FTlVfQUNUSU9OX0RFTEVURV9WRVJTSU9OEAIyuwEKElRleHRWZXJzaW9uU2VydmljZRJKCgtHZXRGaWxlTWVudRIcLm51bWVuLnYxLkdldEZpbGVNZW51UmVxdWVzdBodLm51bWVuLnYxLkdldEZpbGVNZW51UmVzcG9uc2USWQoQUnVuRmlsZU1lbnVFbnRyeRIhLm51bWVuLnYxLlJ1bkZpbGVNZW51RW50cnlSZXF1ZXN0GiIubnVtZW4udjEuUnVuRmlsZU1lbnVFbnRyeVJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
 
 /**
  * FileMenuEntry is one entry of a file's menu. version_id is the input of a
- * proofreading and the target of a deletion, and empty for a recognition.
- * plugin_name is the plugin's name as its manifest gives it. is_live is set
- * when version_id is the version shown and indexed now.
+ * text made from a version and the target of a deletion, and empty for a text
+ * made from the file. plugin_name is the plugin's name as its manifest gives
+ * it. title and icon are what the plugin's manifest declares for its entry,
+ * and empty for a deletion; icon is a Lucide icon name. is_live is set when
+ * version_id is the version shown and indexed now.
  *
  * @generated from message numen.v1.FileMenuEntry
  */
@@ -45,6 +47,16 @@ export type FileMenuEntry = Message<"numen.v1.FileMenuEntry"> & {
    * @generated from field: bool is_live = 5;
    */
   isLive: boolean;
+
+  /**
+   * @generated from field: string title = 6;
+   */
+  title: string;
+
+  /**
+   * @generated from field: string icon = 7;
+   */
+  icon: string;
 };
 
 /**
@@ -146,25 +158,18 @@ export enum FileMenuAction {
   UNSPECIFIED = 0,
 
   /**
-   * A plugin that reads the file's type makes text of the file.
+   * The plugin makes text of the file, or of version_id where it is set.
    *
-   * @generated from enum value: FILE_MENU_ACTION_RECOGNISE = 1;
+   * @generated from enum value: FILE_MENU_ACTION_CREATE_TEXT = 1;
    */
-  RECOGNISE = 1,
-
-  /**
-   * A plugin that reads the live version's format makes a version of it.
-   *
-   * @generated from enum value: FILE_MENU_ACTION_PROOFREAD = 2;
-   */
-  PROOFREAD = 2,
+  CREATE_TEXT = 1,
 
   /**
    * The plugin that made a version deletes it.
    *
-   * @generated from enum value: FILE_MENU_ACTION_DELETE_VERSION = 3;
+   * @generated from enum value: FILE_MENU_ACTION_DELETE_VERSION = 2;
    */
-  DELETE_VERSION = 3,
+  DELETE_VERSION = 2,
 }
 
 /**

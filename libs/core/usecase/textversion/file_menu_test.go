@@ -32,8 +32,10 @@ func (r fileReader) Read(_ context.Context, path string) ([]byte, error) {
 	return raw, nil
 }
 
-func hasAction(entries []textversion.MenuEntry, action textversion.MenuAction) bool {
-	return slices.ContainsFunc(entries, func(e textversion.MenuEntry) bool { return e.Action == action })
+func hasProofreading(entries []textversion.MenuEntry) bool {
+	return slices.ContainsFunc(entries, func(e textversion.MenuEntry) bool {
+		return e.Action == textversion.ActionCreateText && e.PluginID == proofreader
+	})
 }
 
 func TestFileMenuUsesCurrentFileHash(t *testing.T) {
@@ -47,12 +49,12 @@ func TestFileMenuUsesCurrentFileHash(t *testing.T) {
 	}
 
 	entries, err := menu.GetMenu(t.Context(), s.vault, scanPath)
-	if err != nil || !hasAction(entries, textversion.ActionProofread) {
+	if err != nil || !hasProofreading(entries) {
 		t.Fatalf("a file with a live version is offered %+v (%v), want a proofreading", entries, err)
 	}
 	s.files[scanPath] = []byte("%PDF scan, second printing")
 	entries, err = menu.GetMenu(t.Context(), s.vault, scanPath)
-	if err != nil || hasAction(entries, textversion.ActionProofread) {
+	if err != nil || hasProofreading(entries) {
 		t.Fatalf("a file replaced since its version was made is offered %+v (%v), want no proofreading", entries, err)
 	}
 	if _, err := menu.GetMenu(t.Context(), s.vault, "books/gone.pdf"); err == nil {
@@ -66,7 +68,7 @@ func TestFileMenuRunIsUserStarted(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{Action: textversion.ActionRecognise, PluginID: ocr}); err != nil {
+	if err := menu.RunMenuEntry(t.Context(), s.vault, scanPath, textversion.MenuEntry{Action: textversion.ActionCreateText, PluginID: ocr}); err != nil {
 		t.Fatal(err)
 	}
 	if !slices.Equal(s.ocr.isUserStarted, []bool{true}) {

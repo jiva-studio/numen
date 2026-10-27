@@ -46,13 +46,23 @@ type TextProviders interface {
 // TextPlugin is an enabled plugin that makes text, and what it makes text
 // from: files of the types Files names, and versions of the kinds Kinds
 // names. IsAutoRun asks for the plugin to be run on a file of its types that
-// has no live version. Name is the plugin's name as a person reads it.
+// has no live version. Name is the plugin's name as a person reads it. Menu is
+// the plugin's entry in the menu of a file its input takes, and has no title
+// for a plugin not offered there.
 type TextPlugin struct {
 	ID        string
 	Name      string
 	Files     domain.FileInput
 	Kinds     []domain.TextKind
 	IsAutoRun bool
+	Menu      MenuItem
+}
+
+// MenuItem is what a plugin's entry in a file's menu reads and is drawn with.
+// Icon is a Lucide icon name.
+type MenuItem struct {
+	Title string
+	Icon  string
 }
 
 // TextPlugins is the plugins that make text.

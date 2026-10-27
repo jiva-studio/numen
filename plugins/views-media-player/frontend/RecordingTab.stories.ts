@@ -40,7 +40,7 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
 }, [])
 
 const TRANSCRIBE: MenuEntry = {
-  action: 'recognise',
+  action: 'createText',
   pluginId: 'md.numen.engines.transcription',
   versionId: '',
   isLive: false,

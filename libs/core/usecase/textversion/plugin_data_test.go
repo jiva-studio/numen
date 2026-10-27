@@ -51,7 +51,7 @@ func (s folderStore) List(context.Context) ([]pluginport.PluginStoreFile, error)
 func TestDeletePluginDataRemovesTheFolderAndTheRecords(t *testing.T) {
 	s := newScene(t)
 	s.requestText(t)
-	s.runEntry(t, textversion.ActionRecognise, ocr)
+	s.runEntry(t, ocr)
 	s.listener.take()
 	data, err := textversion.NewPluginData(s.versions, folderStores{files: s.folders})
 	if err != nil {

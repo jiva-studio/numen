@@ -23,8 +23,7 @@ export const setTaskHost = (host: TaskHost | undefined) => {
 }
 
 const ACTIONS: ReadonlyMap<FileMenuAction, MenuAction> = new Map([
-  [FileMenuAction.RECOGNISE, 'recognise'],
-  [FileMenuAction.PROOFREAD, 'proofread'],
+  [FileMenuAction.CREATE_TEXT, 'createText'],
   [FileMenuAction.DELETE_VERSION, 'deleteVersion'],
 ])
 

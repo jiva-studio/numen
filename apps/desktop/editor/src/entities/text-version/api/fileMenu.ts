@@ -1,29 +1,32 @@
 /**
- * The menu a file's text versions make: making text of the file, making a
- * version of its live text, and deleting a version, each by the plugin named.
- * The application decides what the menu holds from the enabled plugins and the
- * versions the file has.
+ * The menu a file's text versions make: the entry each enabled plugin declares
+ * for files or texts it takes, and deleting a version by the plugin that made
+ * it. The application decides what the menu holds from the enabled plugins and
+ * the versions the file has.
  */
 import { FileMenuAction } from '@numen/protocol'
 import { textVersions } from '@/shared/clients'
 
-/** What an entry of a file's menu does. */
-export type FileMenuActionName = 'recognise' | 'proofread' | 'delete-version'
+/** What an entry of a file's menu does: a plugin makes text, or deletes a version it made. */
+export type FileMenuActionName = 'create-text' | 'delete-version'
 
 /**
- * One entry of a file's menu. `versionId` is the input of a proofreading and
- * the target of a deletion, and empty for a recognition.
+ * One entry of a file's menu. `versionId` is the text a plugin makes text from
+ * and the target of a deletion, and empty for text made from the file. `title`
+ * and `icon` are what the plugin's manifest declares for its entry, and empty
+ * for a deletion; `icon` is a Lucide icon name.
  */
 export interface FileMenuEntry {
   readonly action: FileMenuActionName
   readonly pluginId: string
   readonly pluginName: string
+  readonly title: string
+  readonly icon: string
   readonly versionId: string
 }
 
 const ACTIONS: ReadonlyMap<FileMenuAction, FileMenuActionName> = new Map([
-  [FileMenuAction.RECOGNISE, 'recognise'],
-  [FileMenuAction.PROOFREAD, 'proofread'],
+  [FileMenuAction.CREATE_TEXT, 'create-text'],
   [FileMenuAction.DELETE_VERSION, 'delete-version'],
 ])
 
@@ -34,7 +37,14 @@ export async function getFileMenu(path: string): Promise<readonly FileMenuEntry[
     const action = ACTIONS.get(one.action)
     if (action === undefined) return []
     return [
-      { action, pluginId: one.pluginId, pluginName: one.pluginName, versionId: one.versionId },
+      {
+        action,
+        pluginId: one.pluginId,
+        pluginName: one.pluginName,
+        title: one.title,
+        icon: one.icon,
+        versionId: one.versionId,
+      },
     ]
   })
 }
