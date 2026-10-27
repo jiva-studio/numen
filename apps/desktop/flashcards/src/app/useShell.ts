@@ -6,7 +6,8 @@ import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
 import { formatErrorMessage } from '@numen/wire'
-import { pluginService, vaultsService } from '@/shared/clients'
+import { agentService, pluginService, vaultsService } from '@/shared/clients'
+import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'
 import { createWindowKeys } from './windowKeys'
 import { useWindowTasks, WINDOW_SOURCE } from './useWindowTasks'
@@ -17,6 +18,7 @@ export interface ShellDeps {
   readonly listVaults?: () => Promise<readonly VaultRow[]>
   readonly fetch?: PluginLoaderDeps['fetch']
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
+  readonly agentClient?: WindowAgentClient
 }
 
 const listPlugins = async (): Promise<readonly string[]> =>
@@ -48,7 +50,8 @@ function useVaults(list: () => Promise<readonly VaultRow[]>, onError: (text: str
 }
 
 export function useShell(deps: ShellDeps = {}) {
-  const { host, front, tab, openTab, notices, mountView } = createShellHost()
+  const windowAgent = createWindowAgent(deps.agentClient ?? agentService)
+  const { host, front, tab, openTab, notices, mountView } = createShellHost(windowAgent.agent)
   const loader = createPluginLoader({
     host,
     ...(deps.fetch ? { fetch: deps.fetch } : {}),
@@ -80,6 +83,7 @@ export function useShell(deps: ShellDeps = {}) {
   onUnmounted(() => {
     window.removeEventListener('keydown', onKeyDown)
     void loader.close()
+    windowAgent.dispose()
   })
 
   /** Why the window draws no view: the plugins could not be listed, or each one failed to start. */

@@ -162,3 +162,30 @@ describe('the depth of reasoning', () => {
     expect(await ask()).not.toHaveProperty('reasoning')
   })
 })
+
+describe('the context of a question', () => {
+  const ask = async (context?: Record<string, string>) => {
+    const { agent, requests } = service([])
+    const port = createAgentPort(agent)
+    for await (const step of port.ask({
+      question: 'what is this card?',
+      focus: '',
+      conversation: 'one',
+      signal: new AbortController().signal,
+      ...(context === undefined ? {} : { context }),
+    }))
+      void step
+    return requests[0]?.request
+  }
+
+  it('is handed to the service where the view gives one', async () => {
+    expect(await ask({ 'md.example.cards/card': 'k7' })).toMatchObject({
+      context: { 'md.example.cards/card': 'k7' },
+    })
+  })
+
+  it('is left out where the view gives none', async () => {
+    expect(await ask({})).not.toHaveProperty('context')
+    expect(await ask()).not.toHaveProperty('context')
+  })
+})

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { defineComponent, h, onScopeDispose } from 'vue'
-import { CONVERSATION, VAULT_SUMMARY } from '@numen/plugin-sdk'
+import { CONVERSATION, createMockAgentHost, VAULT_SUMMARY } from '@numen/plugin-sdk'
 import { createShellHost, TARGET } from './host'
 
 const view = (kind: string, order?: number) => ({
@@ -229,5 +229,14 @@ describe('the tab of the window', () => {
 
     view.dispose()
     expect(row.textContent).toBe('')
+  })
+})
+
+describe('the agent of the window', () => {
+  it('is given to every plugin where the window has one', () => {
+    const agent = createMockAgentHost()
+
+    expect(createShellHost(agent).host.createContext('md.numen.example').agent).toBe(agent)
+    expect(createShellHost().host.createContext('md.numen.example').agent).toBeUndefined()
   })
 })

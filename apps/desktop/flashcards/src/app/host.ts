@@ -7,6 +7,7 @@
  */
 import { computed, effectScope, shallowRef, type EffectScope } from 'vue'
 import type {
+  AgentHost,
   Disposable,
   NoticeHost,
   PluginContext,
@@ -88,7 +89,8 @@ function createWindowTab(front: () => PluginView | null) {
   return { tab, openTab, closeTab }
 }
 
-export function createShellHost() {
+/** The host of the window, whose plugins are given the agent where the window has one. */
+export function createShellHost(agent?: AgentHost) {
   const views = shallowRef<readonly PluginView[]>([])
   const contexts = new Map<string, PluginContext>()
   const declaredViews = createViewRegistry()
@@ -140,6 +142,7 @@ export function createShellHost() {
       emitFileSelect: () => {},
       hasPermission: (permission) => manifest?.permissions?.includes(permission) ?? false,
       notices: createPluginNotices(notices, pluginId),
+      ...(agent ? { agent } : {}),
     }
     contexts.set(pluginId, context)
     return context

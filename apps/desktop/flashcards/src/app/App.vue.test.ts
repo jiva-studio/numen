@@ -18,6 +18,11 @@ const wire = vi.hoisted(() => {
   }
 })
 vi.mock('@/shared/clients', () => ({
+  agentService: {
+    getAgentState: async () => ({ unreachable: '' }),
+    askAgent: wire.waits,
+    finishConversation: async () => ({}),
+  },
   pluginService: { getPlugins: wire.getPlugins },
   vaultsService: { listVaults: wire.listVaults },
   windowService: {

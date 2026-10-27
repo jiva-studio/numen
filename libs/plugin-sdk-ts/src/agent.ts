@@ -31,6 +31,9 @@ export interface AgentQuery {
   readonly modelId?: string | undefined
   // The depth of reasoning, by the name of one of the levels the model offers.
   readonly reasoning?: string | undefined
+  // What the asking view shows, handed to every tool the agent calls. Each key starts with the id of
+  // the plugin that wrote it and a slash: "md.numen.views.flashcards.studio/card".
+  readonly context?: Readonly<Record<string, string>> | undefined
 }
 
 // ReasoningLevel is one depth of reasoning a model can be asked to work at.

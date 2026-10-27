@@ -6,4 +6,6 @@ export const WORDS = {
   listing: 'Loading vaults…',
   /** Said where no plugin of the window draws a view. */
   empty: 'No plugin views.',
+  /** Said where the agent cannot be asked whether it can be reached. */
+  agentUnreachable: 'Agent unreachable.',
 } as const

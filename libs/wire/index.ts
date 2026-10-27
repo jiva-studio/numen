@@ -5,6 +5,7 @@
  * never translates. What turns one into the other stands here, once.
  */
 export { createAgentPort } from './agent/agent'
+export type { AgentClient } from './agent/agent'
 export { getNames } from './settings/enumNames'
 export { transport } from './transport'
 export { formatErrorMessage, formatErrorCodeMessage } from './errors/error'
