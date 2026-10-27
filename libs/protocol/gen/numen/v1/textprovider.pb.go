@@ -21,75 +21,19 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TextFormat is the shape of a text's places. The zero value means nothing and
-// is never a version's format.
-type TextFormat int32
-
-const (
-	TextFormat_TEXT_FORMAT_UNSPECIFIED TextFormat = 0
-	// TEXT_FORMAT_PLAIN is text with no places.
-	TextFormat_TEXT_FORMAT_PLAIN TextFormat = 1
-	// TEXT_FORMAT_TIMED is text whose parts stand between moments of a recording.
-	TextFormat_TEXT_FORMAT_TIMED TextFormat = 2
-	// TEXT_FORMAT_POSITIONED is text whose parts stand in rectangles on pages.
-	TextFormat_TEXT_FORMAT_POSITIONED TextFormat = 3
-)
-
-// Enum value maps for TextFormat.
-var (
-	TextFormat_name = map[int32]string{
-		0: "TEXT_FORMAT_UNSPECIFIED",
-		1: "TEXT_FORMAT_PLAIN",
-		2: "TEXT_FORMAT_TIMED",
-		3: "TEXT_FORMAT_POSITIONED",
-	}
-	TextFormat_value = map[string]int32{
-		"TEXT_FORMAT_UNSPECIFIED": 0,
-		"TEXT_FORMAT_PLAIN":       1,
-		"TEXT_FORMAT_TIMED":       2,
-		"TEXT_FORMAT_POSITIONED":  3,
-	}
-)
-
-func (x TextFormat) Enum() *TextFormat {
-	p := new(TextFormat)
-	*p = x
-	return p
-}
-
-func (x TextFormat) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (TextFormat) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_textprovider_proto_enumTypes[0].Descriptor()
-}
-
-func (TextFormat) Type() protoreflect.EnumType {
-	return &file_numen_v1_textprovider_proto_enumTypes[0]
-}
-
-func (x TextFormat) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use TextFormat.Descriptor instead.
-func (TextFormat) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{0}
-}
-
-// TextErrorCode is why a text call was served and answered no. The zero value
-// is a call that succeeded.
+// TextErrorCode is the reason a served text call did not succeed. The zero
+// value is a call that succeeded.
 type TextErrorCode int32
 
 const (
 	TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED TextErrorCode = 0
-	// TEXT_ERROR_CODE_MISSING is a file, a version or a key that is not there.
+	// TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
 	TextErrorCode_TEXT_ERROR_CODE_MISSING TextErrorCode = 1
 	// TEXT_ERROR_CODE_NO_VAULT is a call while the host shows no vault.
 	TextErrorCode_TEXT_ERROR_CODE_NO_VAULT TextErrorCode = 2
-	// TEXT_ERROR_CODE_INVALID is a version the host does not take: no format, an
-	// empty key, or an input that is no version of the file.
+	// TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
+	// empty key, a file that is missing or is not JSON Lines of segments, or a
+	// source that is no version of the file.
 	TextErrorCode_TEXT_ERROR_CODE_INVALID TextErrorCode = 3
 	// TEXT_ERROR_CODE_NOT_OWNER is a version another plugin made.
 	TextErrorCode_TEXT_ERROR_CODE_NOT_OWNER TextErrorCode = 4
@@ -124,11 +68,11 @@ func (x TextErrorCode) String() string {
 }
 
 func (TextErrorCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_textprovider_proto_enumTypes[1].Descriptor()
+	return file_numen_v1_textprovider_proto_enumTypes[0].Descriptor()
 }
 
 func (TextErrorCode) Type() protoreflect.EnumType {
-	return &file_numen_v1_textprovider_proto_enumTypes[1]
+	return &file_numen_v1_textprovider_proto_enumTypes[0]
 }
 
 func (x TextErrorCode) Number() protoreflect.EnumNumber {
@@ -137,174 +81,40 @@ func (x TextErrorCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TextErrorCode.Descriptor instead.
 func (TextErrorCode) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{1}
-}
-
-// TextRect is a rectangle on a page, in fractions of the page.
-type TextRect struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MinX          float32                `protobuf:"fixed32,1,opt,name=min_x,json=minX,proto3" json:"min_x,omitempty"`
-	MinY          float32                `protobuf:"fixed32,2,opt,name=min_y,json=minY,proto3" json:"min_y,omitempty"`
-	MaxX          float32                `protobuf:"fixed32,3,opt,name=max_x,json=maxX,proto3" json:"max_x,omitempty"`
-	MaxY          float32                `protobuf:"fixed32,4,opt,name=max_y,json=maxY,proto3" json:"max_y,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextRect) Reset() {
-	*x = TextRect{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[0]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextRect) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextRect) ProtoMessage() {}
-
-func (x *TextRect) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[0]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextRect.ProtoReflect.Descriptor instead.
-func (*TextRect) Descriptor() ([]byte, []int) {
 	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *TextRect) GetMinX() float32 {
-	if x != nil {
-		return x.MinX
-	}
-	return 0
-}
-
-func (x *TextRect) GetMinY() float32 {
-	if x != nil {
-		return x.MinY
-	}
-	return 0
-}
-
-func (x *TextRect) GetMaxX() float32 {
-	if x != nil {
-		return x.MaxX
-	}
-	return 0
-}
-
-func (x *TextRect) GetMaxY() float32 {
-	if x != nil {
-		return x.MaxY
-	}
-	return 0
-}
-
-// TextPlace is where a part stands: page and rectangles for positioned text,
-// moments in milliseconds for timed text. Pages count from zero.
-type TextPlace struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
-	Rects         []*TextRect            `protobuf:"bytes,2,rep,name=rects,proto3" json:"rects,omitempty"`
-	StartMs       int64                  `protobuf:"varint,3,opt,name=start_ms,json=startMs,proto3" json:"start_ms,omitempty"`
-	EndMs         int64                  `protobuf:"varint,4,opt,name=end_ms,json=endMs,proto3" json:"end_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextPlace) Reset() {
-	*x = TextPlace{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[1]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextPlace) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextPlace) ProtoMessage() {}
-
-func (x *TextPlace) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[1]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextPlace.ProtoReflect.Descriptor instead.
-func (*TextPlace) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{1}
-}
-
-func (x *TextPlace) GetPage() int32 {
-	if x != nil {
-		return x.Page
-	}
-	return 0
-}
-
-func (x *TextPlace) GetRects() []*TextRect {
-	if x != nil {
-		return x.Rects
-	}
-	return nil
-}
-
-func (x *TextPlace) GetStartMs() int64 {
-	if x != nil {
-		return x.StartMs
-	}
-	return 0
-}
-
-func (x *TextPlace) GetEndMs() int64 {
-	if x != nil {
-		return x.EndMs
-	}
-	return 0
-}
-
-// TextPart is one run of a text and its place. section names the section the
-// part opens, and is empty for a part inside one.
-type TextPart struct {
+// TextSegment is one segment of a text. A version file holds one segment per
+// line as JSON: {"text", "heading"?, "selector"?}.
+//
+// heading is the heading the segment opens, and empty for a segment inside one.
+// selector locates the segment in the file the text was made from, as JSON; it
+// is empty for none. The host stores it as is and returns it with search hits.
+// The SDK documents its keys.
+type TextSegment struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Text          string                 `protobuf:"bytes,1,opt,name=text,proto3" json:"text,omitempty"`
-	Place         *TextPlace             `protobuf:"bytes,2,opt,name=place,proto3" json:"place,omitempty"`
-	Section       string                 `protobuf:"bytes,3,opt,name=section,proto3" json:"section,omitempty"`
+	Heading       string                 `protobuf:"bytes,2,opt,name=heading,proto3" json:"heading,omitempty"`
+	Selector      string                 `protobuf:"bytes,3,opt,name=selector,proto3" json:"selector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *TextPart) Reset() {
-	*x = TextPart{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[2]
+func (x *TextSegment) Reset() {
+	*x = TextSegment{}
+	mi := &file_numen_v1_textprovider_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *TextPart) String() string {
+func (x *TextSegment) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*TextPart) ProtoMessage() {}
+func (*TextSegment) ProtoMessage() {}
 
-func (x *TextPart) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[2]
+func (x *TextSegment) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_textprovider_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -315,168 +125,39 @@ func (x *TextPart) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use TextPart.ProtoReflect.Descriptor instead.
-func (*TextPart) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use TextSegment.ProtoReflect.Descriptor instead.
+func (*TextSegment) Descriptor() ([]byte, []int) {
+	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *TextPart) GetText() string {
+func (x *TextSegment) GetText() string {
 	if x != nil {
 		return x.Text
 	}
 	return ""
 }
 
-func (x *TextPart) GetPlace() *TextPlace {
+func (x *TextSegment) GetHeading() string {
 	if x != nil {
-		return x.Place
-	}
-	return nil
-}
-
-func (x *TextPart) GetSection() string {
-	if x != nil {
-		return x.Section
+		return x.Heading
 	}
 	return ""
 }
 
-type TextProviderServiceGetTextRequest struct {
-	state   protoimpl.MessageState `protogen:"open.v1"`
-	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Path    string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	Key     string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
-	// cursor is the next_cursor of the page before, and empty for the first.
-	Cursor        string `protobuf:"bytes,4,opt,name=cursor,proto3" json:"cursor,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextProviderServiceGetTextRequest) Reset() {
-	*x = TextProviderServiceGetTextRequest{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextProviderServiceGetTextRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextProviderServiceGetTextRequest) ProtoMessage() {}
-
-func (x *TextProviderServiceGetTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[3]
+func (x *TextSegment) GetSelector() string {
 	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextProviderServiceGetTextRequest.ProtoReflect.Descriptor instead.
-func (*TextProviderServiceGetTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *TextProviderServiceGetTextRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
+		return x.Selector
 	}
 	return ""
-}
-
-func (x *TextProviderServiceGetTextRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *TextProviderServiceGetTextRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-func (x *TextProviderServiceGetTextRequest) GetCursor() string {
-	if x != nil {
-		return x.Cursor
-	}
-	return ""
-}
-
-type TextProviderServiceGetTextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Parts         []*TextPart            `protobuf:"bytes,1,rep,name=parts,proto3" json:"parts,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	Error         TextErrorCode          `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextProviderServiceGetTextResponse) Reset() {
-	*x = TextProviderServiceGetTextResponse{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextProviderServiceGetTextResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextProviderServiceGetTextResponse) ProtoMessage() {}
-
-func (x *TextProviderServiceGetTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextProviderServiceGetTextResponse.ProtoReflect.Descriptor instead.
-func (*TextProviderServiceGetTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *TextProviderServiceGetTextResponse) GetParts() []*TextPart {
-	if x != nil {
-		return x.Parts
-	}
-	return nil
-}
-
-func (x *TextProviderServiceGetTextResponse) GetNextCursor() string {
-	if x != nil {
-		return x.NextCursor
-	}
-	return ""
-}
-
-func (x *TextProviderServiceGetTextResponse) GetError() TextErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
 }
 
 type TextProviderServiceCreateTextRequest struct {
 	state   protoimpl.MessageState `protogen:"open.v1"`
 	VaultId string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	Path    string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	// input_version_id is the version the text is made from, and empty for the
+	// source_version_id is the version the text is made from, and empty for the
 	// file itself.
-	InputVersionId string `protobuf:"bytes,3,opt,name=input_version_id,json=inputVersionId,proto3" json:"input_version_id,omitempty"`
+	SourceVersionId string `protobuf:"bytes,3,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
 	// is_user_started is set for a text a person asked for, which runs before
 	// text nobody asked for.
 	IsUserStarted bool `protobuf:"varint,4,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
@@ -486,7 +167,7 @@ type TextProviderServiceCreateTextRequest struct {
 
 func (x *TextProviderServiceCreateTextRequest) Reset() {
 	*x = TextProviderServiceCreateTextRequest{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[5]
+	mi := &file_numen_v1_textprovider_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -498,7 +179,7 @@ func (x *TextProviderServiceCreateTextRequest) String() string {
 func (*TextProviderServiceCreateTextRequest) ProtoMessage() {}
 
 func (x *TextProviderServiceCreateTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[5]
+	mi := &file_numen_v1_textprovider_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -511,7 +192,7 @@ func (x *TextProviderServiceCreateTextRequest) ProtoReflect() protoreflect.Messa
 
 // Deprecated: Use TextProviderServiceCreateTextRequest.ProtoReflect.Descriptor instead.
 func (*TextProviderServiceCreateTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{5}
+	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *TextProviderServiceCreateTextRequest) GetVaultId() string {
@@ -528,9 +209,9 @@ func (x *TextProviderServiceCreateTextRequest) GetPath() string {
 	return ""
 }
 
-func (x *TextProviderServiceCreateTextRequest) GetInputVersionId() string {
+func (x *TextProviderServiceCreateTextRequest) GetSourceVersionId() string {
 	if x != nil {
-		return x.InputVersionId
+		return x.SourceVersionId
 	}
 	return ""
 }
@@ -551,7 +232,7 @@ type TextProviderServiceCreateTextResponse struct {
 
 func (x *TextProviderServiceCreateTextResponse) Reset() {
 	*x = TextProviderServiceCreateTextResponse{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[6]
+	mi := &file_numen_v1_textprovider_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -563,7 +244,7 @@ func (x *TextProviderServiceCreateTextResponse) String() string {
 func (*TextProviderServiceCreateTextResponse) ProtoMessage() {}
 
 func (x *TextProviderServiceCreateTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[6]
+	mi := &file_numen_v1_textprovider_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -576,114 +257,10 @@ func (x *TextProviderServiceCreateTextResponse) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use TextProviderServiceCreateTextResponse.ProtoReflect.Descriptor instead.
 func (*TextProviderServiceCreateTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{6}
+	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *TextProviderServiceCreateTextResponse) GetError() TextErrorCode {
-	if x != nil {
-		return x.Error
-	}
-	return TextErrorCode_TEXT_ERROR_CODE_UNSPECIFIED
-}
-
-type TextProviderServiceDeleteTextRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	VaultId       string                 `protobuf:"bytes,1,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
-	Path          string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
-	Key           string                 `protobuf:"bytes,3,opt,name=key,proto3" json:"key,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextProviderServiceDeleteTextRequest) Reset() {
-	*x = TextProviderServiceDeleteTextRequest{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextProviderServiceDeleteTextRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextProviderServiceDeleteTextRequest) ProtoMessage() {}
-
-func (x *TextProviderServiceDeleteTextRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextProviderServiceDeleteTextRequest.ProtoReflect.Descriptor instead.
-func (*TextProviderServiceDeleteTextRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *TextProviderServiceDeleteTextRequest) GetVaultId() string {
-	if x != nil {
-		return x.VaultId
-	}
-	return ""
-}
-
-func (x *TextProviderServiceDeleteTextRequest) GetPath() string {
-	if x != nil {
-		return x.Path
-	}
-	return ""
-}
-
-func (x *TextProviderServiceDeleteTextRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-type TextProviderServiceDeleteTextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Error         TextErrorCode          `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *TextProviderServiceDeleteTextResponse) Reset() {
-	*x = TextProviderServiceDeleteTextResponse{}
-	mi := &file_numen_v1_textprovider_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *TextProviderServiceDeleteTextResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*TextProviderServiceDeleteTextResponse) ProtoMessage() {}
-
-func (x *TextProviderServiceDeleteTextResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_textprovider_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use TextProviderServiceDeleteTextResponse.ProtoReflect.Descriptor instead.
-func (*TextProviderServiceDeleteTextResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_textprovider_proto_rawDescGZIP(), []int{8}
-}
-
-func (x *TextProviderServiceDeleteTextResponse) GetError() TextErrorCode {
 	if x != nil {
 		return x.Error
 	}
@@ -694,62 +271,27 @@ var File_numen_v1_textprovider_proto protoreflect.FileDescriptor
 
 const file_numen_v1_textprovider_proto_rawDesc = "" +
 	"\n" +
-	"\x1bnumen/v1/textprovider.proto\x12\bnumen.v1\"^\n" +
-	"\bTextRect\x12\x13\n" +
-	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
-	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
-	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
-	"\x05max_y\x18\x04 \x01(\x02R\x04maxY\"{\n" +
-	"\tTextPlace\x12\x12\n" +
-	"\x04page\x18\x01 \x01(\x05R\x04page\x12(\n" +
-	"\x05rects\x18\x02 \x03(\v2\x12.numen.v1.TextRectR\x05rects\x12\x19\n" +
-	"\bstart_ms\x18\x03 \x01(\x03R\astartMs\x12\x15\n" +
-	"\x06end_ms\x18\x04 \x01(\x03R\x05endMs\"c\n" +
-	"\bTextPart\x12\x12\n" +
-	"\x04text\x18\x01 \x01(\tR\x04text\x12)\n" +
-	"\x05place\x18\x02 \x01(\v2\x13.numen.v1.TextPlaceR\x05place\x12\x18\n" +
-	"\asection\x18\x03 \x01(\tR\asection\"|\n" +
-	"!TextProviderServiceGetTextRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x10\n" +
-	"\x03key\x18\x03 \x01(\tR\x03key\x12\x16\n" +
-	"\x06cursor\x18\x04 \x01(\tR\x06cursor\"\x9e\x01\n" +
-	"\"TextProviderServiceGetTextResponse\x12(\n" +
-	"\x05parts\x18\x01 \x03(\v2\x12.numen.v1.TextPartR\x05parts\x12\x1f\n" +
-	"\vnext_cursor\x18\x02 \x01(\tR\n" +
-	"nextCursor\x12-\n" +
-	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"\xa7\x01\n" +
+	"\x1bnumen/v1/textprovider.proto\x12\bnumen.v1\"W\n" +
+	"\vTextSegment\x12\x12\n" +
+	"\x04text\x18\x01 \x01(\tR\x04text\x12\x18\n" +
+	"\aheading\x18\x02 \x01(\tR\aheading\x12\x1a\n" +
+	"\bselector\x18\x03 \x01(\tR\bselector\"\xa9\x01\n" +
 	"$TextProviderServiceCreateTextRequest\x12\x19\n" +
 	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12(\n" +
-	"\x10input_version_id\x18\x03 \x01(\tR\x0einputVersionId\x12&\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12*\n" +
+	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x12&\n" +
 	"\x0fis_user_started\x18\x04 \x01(\bR\risUserStarted\"V\n" +
 	"%TextProviderServiceCreateTextResponse\x12-\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"g\n" +
-	"$TextProviderServiceDeleteTextRequest\x12\x19\n" +
-	"\bvault_id\x18\x01 \x01(\tR\avaultId\x12\x12\n" +
-	"\x04path\x18\x02 \x01(\tR\x04path\x12\x10\n" +
-	"\x03key\x18\x03 \x01(\tR\x03key\"V\n" +
-	"%TextProviderServiceDeleteTextResponse\x12-\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error*s\n" +
-	"\n" +
-	"TextFormat\x12\x1b\n" +
-	"\x17TEXT_FORMAT_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11TEXT_FORMAT_PLAIN\x10\x01\x12\x15\n" +
-	"\x11TEXT_FORMAT_TIMED\x10\x02\x12\x1a\n" +
-	"\x16TEXT_FORMAT_POSITIONED\x10\x03*\xa7\x01\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error*\xa7\x01\n" +
 	"\rTextErrorCode\x12\x1f\n" +
 	"\x1bTEXT_ERROR_CODE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17TEXT_ERROR_CODE_MISSING\x10\x01\x12\x1c\n" +
 	"\x18TEXT_ERROR_CODE_NO_VAULT\x10\x02\x12\x1b\n" +
 	"\x17TEXT_ERROR_CODE_INVALID\x10\x03\x12\x1d\n" +
-	"\x19TEXT_ERROR_CODE_NOT_OWNER\x10\x042\xd9\x02\n" +
-	"\x13TextProviderService\x12d\n" +
-	"\aGetText\x12+.numen.v1.TextProviderServiceGetTextRequest\x1a,.numen.v1.TextProviderServiceGetTextResponse\x12m\n" +
+	"\x19TEXT_ERROR_CODE_NOT_OWNER\x10\x042\x84\x01\n" +
+	"\x13TextProviderService\x12m\n" +
 	"\n" +
-	"CreateText\x12..numen.v1.TextProviderServiceCreateTextRequest\x1a/.numen.v1.TextProviderServiceCreateTextResponse\x12m\n" +
-	"\n" +
-	"DeleteText\x12..numen.v1.TextProviderServiceDeleteTextRequest\x1a/.numen.v1.TextProviderServiceDeleteTextResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"CreateText\x12..numen.v1.TextProviderServiceCreateTextRequest\x1a/.numen.v1.TextProviderServiceCreateTextResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
 
 var (
 	file_numen_v1_textprovider_proto_rawDescOnce sync.Once
@@ -763,39 +305,23 @@ func file_numen_v1_textprovider_proto_rawDescGZIP() []byte {
 	return file_numen_v1_textprovider_proto_rawDescData
 }
 
-var file_numen_v1_textprovider_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_numen_v1_textprovider_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_numen_v1_textprovider_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_v1_textprovider_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_numen_v1_textprovider_proto_goTypes = []any{
-	(TextFormat)(0),    // 0: numen.v1.TextFormat
-	(TextErrorCode)(0), // 1: numen.v1.TextErrorCode
-	(*TextRect)(nil),   // 2: numen.v1.TextRect
-	(*TextPlace)(nil),  // 3: numen.v1.TextPlace
-	(*TextPart)(nil),   // 4: numen.v1.TextPart
-	(*TextProviderServiceGetTextRequest)(nil),     // 5: numen.v1.TextProviderServiceGetTextRequest
-	(*TextProviderServiceGetTextResponse)(nil),    // 6: numen.v1.TextProviderServiceGetTextResponse
-	(*TextProviderServiceCreateTextRequest)(nil),  // 7: numen.v1.TextProviderServiceCreateTextRequest
-	(*TextProviderServiceCreateTextResponse)(nil), // 8: numen.v1.TextProviderServiceCreateTextResponse
-	(*TextProviderServiceDeleteTextRequest)(nil),  // 9: numen.v1.TextProviderServiceDeleteTextRequest
-	(*TextProviderServiceDeleteTextResponse)(nil), // 10: numen.v1.TextProviderServiceDeleteTextResponse
+	(TextErrorCode)(0),                            // 0: numen.v1.TextErrorCode
+	(*TextSegment)(nil),                           // 1: numen.v1.TextSegment
+	(*TextProviderServiceCreateTextRequest)(nil),  // 2: numen.v1.TextProviderServiceCreateTextRequest
+	(*TextProviderServiceCreateTextResponse)(nil), // 3: numen.v1.TextProviderServiceCreateTextResponse
 }
 var file_numen_v1_textprovider_proto_depIdxs = []int32{
-	2,  // 0: numen.v1.TextPlace.rects:type_name -> numen.v1.TextRect
-	3,  // 1: numen.v1.TextPart.place:type_name -> numen.v1.TextPlace
-	4,  // 2: numen.v1.TextProviderServiceGetTextResponse.parts:type_name -> numen.v1.TextPart
-	1,  // 3: numen.v1.TextProviderServiceGetTextResponse.error:type_name -> numen.v1.TextErrorCode
-	1,  // 4: numen.v1.TextProviderServiceCreateTextResponse.error:type_name -> numen.v1.TextErrorCode
-	1,  // 5: numen.v1.TextProviderServiceDeleteTextResponse.error:type_name -> numen.v1.TextErrorCode
-	5,  // 6: numen.v1.TextProviderService.GetText:input_type -> numen.v1.TextProviderServiceGetTextRequest
-	7,  // 7: numen.v1.TextProviderService.CreateText:input_type -> numen.v1.TextProviderServiceCreateTextRequest
-	9,  // 8: numen.v1.TextProviderService.DeleteText:input_type -> numen.v1.TextProviderServiceDeleteTextRequest
-	6,  // 9: numen.v1.TextProviderService.GetText:output_type -> numen.v1.TextProviderServiceGetTextResponse
-	8,  // 10: numen.v1.TextProviderService.CreateText:output_type -> numen.v1.TextProviderServiceCreateTextResponse
-	10, // 11: numen.v1.TextProviderService.DeleteText:output_type -> numen.v1.TextProviderServiceDeleteTextResponse
-	9,  // [9:12] is the sub-list for method output_type
-	6,  // [6:9] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	0, // 0: numen.v1.TextProviderServiceCreateTextResponse.error:type_name -> numen.v1.TextErrorCode
+	2, // 1: numen.v1.TextProviderService.CreateText:input_type -> numen.v1.TextProviderServiceCreateTextRequest
+	3, // 2: numen.v1.TextProviderService.CreateText:output_type -> numen.v1.TextProviderServiceCreateTextResponse
+	2, // [2:3] is the sub-list for method output_type
+	1, // [1:2] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_textprovider_proto_init() }
@@ -808,8 +334,8 @@ func file_numen_v1_textprovider_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_textprovider_proto_rawDesc), len(file_numen_v1_textprovider_proto_rawDesc)),
-			NumEnums:      2,
-			NumMessages:   9,
+			NumEnums:      1,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

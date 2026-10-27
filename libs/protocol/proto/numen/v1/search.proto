@@ -135,4 +135,8 @@ message Passage {
   // What the vault holds at that path, so a client draws a book and a
   // recording as what they are.
   SourceKind kind = 9;
+
+  // The selector of the text version segment the hit is in, as JSON, and empty
+  // for a note. It locates the hit in the file; the SDK documents its keys.
+  string selector = 10;
 }

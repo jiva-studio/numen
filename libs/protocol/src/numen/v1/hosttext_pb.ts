@@ -4,7 +4,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { TextErrorCode, TextFormat, TextPart } from "./textprovider_pb.js";
+import type { TextErrorCode, TextSegment } from "./textprovider_pb.js";
 import { file_numen_v1_textprovider } from "./textprovider_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -12,13 +12,17 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/hosttext.proto.
  */
 export const file_numen_v1_hosttext: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEixgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIYChBpbnB1dF92ZXJzaW9uX2lkGAUgASgJEiQKBmZvcm1hdBgGIAEoDjIULm51bWVuLnYxLlRleHRGb3JtYXQSEgoKaW5wdXRfaGFzaBgHIAEoCRIMCgRoYXNoGAggASgJEhsKE2NyZWF0ZV90aW1lX3VuaXhfbXMYCSABKAMilAEKFVB1dFRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCRIYChBpbnB1dF92ZXJzaW9uX2lkGAMgASgJEiQKBmZvcm1hdBgEIAEoDjIULm51bWVuLnYxLlRleHRGb3JtYXQSEgoKaW5wdXRfaGFzaBgFIAEoCRIMCgRoYXNoGAYgASgJImgKFlB1dFRleHRWZXJzaW9uUmVzcG9uc2USJgoHdmVyc2lvbhgBIAEoCzIVLm51bWVuLnYxLlRleHRWZXJzaW9uEiYKBWVycm9yGAIgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSI1ChhSZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QSDAoEcGF0aBgBIAEoCRILCgNrZXkYAiABKAkiQwoZUmVtb3ZlVGV4dFZlcnNpb25SZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUiJwoXTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKEAQoYTGlzdFRleHRWZXJzaW9uc1Jlc3BvbnNlEicKCHZlcnNpb25zGAEgAygLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SFwoPbGl2ZV92ZXJzaW9uX2lkGAIgASgJEiYKBWVycm9yGAMgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSJDCg9SZWFkVGV4dFJlcXVlc3QSDAoEcGF0aBgBIAEoCRISCgp2ZXJzaW9uX2lkGAIgASgJEg4KBmN1cnNvchgDIAEoCSJyChBSZWFkVGV4dFJlc3BvbnNlEiEKBXBhcnRzGAEgAygLMhIubnVtZW4udjEuVGV4dFBhcnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlMuICCg9Ib3N0VGV4dFNlcnZpY2USUwoOUHV0VGV4dFZlcnNpb24SHy5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlcXVlc3QaIC5udW1lbi52MS5QdXRUZXh0VmVyc2lvblJlc3BvbnNlElwKEVJlbW92ZVRleHRWZXJzaW9uEiIubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXF1ZXN0GiMubnVtZW4udjEuUmVtb3ZlVGV4dFZlcnNpb25SZXNwb25zZRJZChBMaXN0VGV4dFZlcnNpb25zEiEubnVtZW4udjEuTGlzdFRleHRWZXJzaW9uc1JlcXVlc3QaIi5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USQQoIUmVhZFRleHQSGS5udW1lbi52MS5SZWFkVGV4dFJlcXVlc3QaGi5udW1lbi52MS5SZWFkVGV4dFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_textprovider]);
+  fileDesc("ChdudW1lbi92MS9ob3N0dGV4dC5wcm90bxIIbnVtZW4udjEivgEKC1RleHRWZXJzaW9uEgoKAmlkGAEgASgJEgwKBHBhdGgYAiABKAkSEQoJcGx1Z2luX2lkGAMgASgJEgsKA2tleRgEIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgFIAEoCRIMCgRraW5kGAYgASgJEhMKC3NvdXJjZV9oYXNoGAcgASgJEgwKBGhhc2gYCCABKAkSGwoTY3JlYXRlX3RpbWVfdW5peF9tcxgJIAEoAxIMCgRmaWxlGAogASgJIn4KFVB1dFRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgDIAEoCRIMCgRraW5kGAQgASgJEhMKC3NvdXJjZV9oYXNoGAUgASgJEgwKBGZpbGUYBiABKAkiaAoWUHV0VGV4dFZlcnNpb25SZXNwb25zZRImCgd2ZXJzaW9uGAEgASgLMhUubnVtZW4udjEuVGV4dFZlcnNpb24SJgoFZXJyb3IYAiABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIjUKGFJlbW92ZVRleHRWZXJzaW9uUmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2tleRgCIAEoCSJDChlSZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSInChdMaXN0VGV4dFZlcnNpb25zUmVxdWVzdBIMCgRwYXRoGAEgASgJIoQBChhMaXN0VGV4dFZlcnNpb25zUmVzcG9uc2USJwoIdmVyc2lvbnMYASADKAsyFS5udW1lbi52MS5UZXh0VmVyc2lvbhIXCg9saXZlX3ZlcnNpb25faWQYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIkMKD1JlYWRUZXh0UmVxdWVzdBIMCgRwYXRoGAEgASgJEhIKCnZlcnNpb25faWQYAiABKAkSDgoGY3Vyc29yGAMgASgJIngKEFJlYWRUZXh0UmVzcG9uc2USJwoIc2VnbWVudHMYASADKAsyFS5udW1lbi52MS5UZXh0U2VnbWVudBITCgtuZXh0X2N1cnNvchgCIAEoCRImCgVlcnJvchgDIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUy4gIKD0hvc3RUZXh0U2VydmljZRJTCg5QdXRUZXh0VmVyc2lvbhIfLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVxdWVzdBogLm51bWVuLnYxLlB1dFRleHRWZXJzaW9uUmVzcG9uc2USXAoRUmVtb3ZlVGV4dFZlcnNpb24SIi5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlcXVlc3QaIy5udW1lbi52MS5SZW1vdmVUZXh0VmVyc2lvblJlc3BvbnNlElkKEExpc3RUZXh0VmVyc2lvbnMSIS5udW1lbi52MS5MaXN0VGV4dFZlcnNpb25zUmVxdWVzdBoiLm51bWVuLnYxLkxpc3RUZXh0VmVyc2lvbnNSZXNwb25zZRJBCghSZWFkVGV4dBIZLm51bWVuLnYxLlJlYWRUZXh0UmVxdWVzdBoaLm51bWVuLnYxLlJlYWRUZXh0UmVzcG9uc2VCQVo/Z2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9saWJzL3Byb3RvY29sL2dlbi9udW1lbi92MTtudW1lbnYxYgZwcm90bzM", [file_numen_v1_textprovider]);
 
 /**
- * TextVersion is the host's record of one text of a file. input_version_id is
- * empty for a version made from the file. input_hash is the SHA-256, in hex, of
- * the file's bytes for such a version, and the hash of the input version
- * otherwise. hash is the version's own text as it is now.
+ * TextVersion is the host's record of one text of a file.
+ *
+ * source_version_id is empty for a version made from the file. source_hash is
+ * the SHA-256, in hex, of the file's bytes for such a version, and the hash of
+ * the source version otherwise. file is the name of the version's file in the
+ * folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+ * kind is what the text is, as plugins name it ("transcript", "recognition");
+ * the host compares it as an opaque string.
  *
  * @generated from message numen.v1.TextVersion
  */
@@ -44,19 +48,19 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
   key: string;
 
   /**
-   * @generated from field: string input_version_id = 5;
+   * @generated from field: string source_version_id = 5;
    */
-  inputVersionId: string;
+  sourceVersionId: string;
 
   /**
-   * @generated from field: numen.v1.TextFormat format = 6;
+   * @generated from field: string kind = 6;
    */
-  format: TextFormat;
+  kind: string;
 
   /**
-   * @generated from field: string input_hash = 7;
+   * @generated from field: string source_hash = 7;
    */
-  inputHash: string;
+  sourceHash: string;
 
   /**
    * @generated from field: string hash = 8;
@@ -67,6 +71,11 @@ export type TextVersion = Message<"numen.v1.TextVersion"> & {
    * @generated from field: int64 create_time_unix_ms = 9;
    */
   createTimeUnixMs: bigint;
+
+  /**
+   * @generated from field: string file = 10;
+   */
+  file: string;
 };
 
 /**
@@ -91,24 +100,26 @@ export type PutTextVersionRequest = Message<"numen.v1.PutTextVersionRequest"> & 
   key: string;
 
   /**
-   * @generated from field: string input_version_id = 3;
+   * @generated from field: string source_version_id = 3;
    */
-  inputVersionId: string;
+  sourceVersionId: string;
 
   /**
-   * @generated from field: numen.v1.TextFormat format = 4;
+   * @generated from field: string kind = 4;
    */
-  format: TextFormat;
+  kind: string;
 
   /**
-   * @generated from field: string input_hash = 5;
+   * @generated from field: string source_hash = 5;
    */
-  inputHash: string;
+  sourceHash: string;
 
   /**
-   * @generated from field: string hash = 6;
+   * file is the name of the version's file in the calling plugin's folder.
+   *
+   * @generated from field: string file = 6;
    */
-  hash: string;
+  file: string;
 };
 
 /**
@@ -240,6 +251,8 @@ export type ReadTextRequest = Message<"numen.v1.ReadTextRequest"> & {
   versionId: string;
 
   /**
+   * cursor is the next_cursor of the page before, and empty for the first.
+   *
    * @generated from field: string cursor = 3;
    */
   cursor: string;
@@ -257,11 +270,13 @@ export const ReadTextRequestSchema: GenMessage<ReadTextRequest> = /*@__PURE__*/
  */
 export type ReadTextResponse = Message<"numen.v1.ReadTextResponse"> & {
   /**
-   * @generated from field: repeated numen.v1.TextPart parts = 1;
+   * @generated from field: repeated numen.v1.TextSegment segments = 1;
    */
-  parts: TextPart[];
+  segments: TextSegment[];
 
   /**
+   * next_cursor is empty on the last page.
+   *
    * @generated from field: string next_cursor = 2;
    */
   nextCursor: string;
@@ -280,9 +295,9 @@ export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*
   messageDesc(file_numen_v1_hosttext, 8);
 
 /**
- * HostTextService is what the host answers for a plugin about the text
- * versions of the vault it shows. The host knows the plugin by its token; a
- * call that reads needs vault:read and one that changes a version vault:write.
+ * HostTextService serves the text versions of the vault the host shows to the
+ * plugins. The host identifies the plugin by its token; a call that reads needs
+ * vault:read and one that changes a version vault:write.
  *
  * A version made by the calling plugin is named by its key; any version is
  * named by its id, which is the plugin id and the key joined by "/".
@@ -292,8 +307,9 @@ export const ReadTextResponseSchema: GenMessage<ReadTextResponse> = /*@__PURE__*
 export const HostTextService: GenService<{
   /**
    * PutTextVersion records a version of the calling plugin, or replaces the
-   * record of one it already has under the key. Every put tells the host the
-   * text of the file changed.
+   * record it has under the key. The plugin writes the version's file into its
+   * folder first; the host reads the file and records its hash. Every put
+   * reindexes the file.
    *
    * @generated from rpc numen.v1.HostTextService.PutTextVersion
    */
@@ -313,7 +329,7 @@ export const HostTextService: GenService<{
     output: typeof RemoveTextVersionResponseSchema;
   },
   /**
-   * ListTextVersions lists the versions of a file, and names the live one.
+   * ListTextVersions lists the versions of a file and names the live one.
    *
    * @generated from rpc numen.v1.HostTextService.ListTextVersions
    */
@@ -323,8 +339,8 @@ export const HostTextService: GenService<{
     output: typeof ListTextVersionsResponseSchema;
   },
   /**
-   * ReadText answers one page of any version's text, asked of the plugin that
-   * made it.
+   * ReadText returns one page of any version's segments, read by the host from
+   * the version's file.
    *
    * @generated from rpc numen.v1.HostTextService.ReadText
    */

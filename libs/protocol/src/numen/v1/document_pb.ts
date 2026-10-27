@@ -12,15 +12,13 @@ import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegen
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { Fingerprint, Span } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
-import type { TextPlace } from "./textprovider_pb.js";
-import { file_numen_v1_textprovider } from "./textprovider_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/v1/document.proto.
  */
 export const file_numen_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiQwoUR2V0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iPAoVR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlEiMKBHJ1bnMYASADKAsyFS5udW1lbi52MS5Eb2N1bWVudFJ1biIyCgtEb2N1bWVudFJ1bhIjCgZwbGFjZXMYASADKAsyEy5udW1lbi52MS5UZXh0UGxhY2Uy+AEKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlElAKDUdldEhpZ2hsaWdodHMSHi5udW1lbi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBofLm51bWVuLnYxLkdldEhpZ2hsaWdodHNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared, file_numen_v1_textprovider]);
+  fileDesc("ChdudW1lbi92MS9kb2N1bWVudC5wcm90bxIIbnVtZW4udjEiIgoSR2V0RG9jdW1lbnRSZXF1ZXN0EgwKBHBhdGgYASABKAkiYAoTR2V0RG9jdW1lbnRSZXNwb25zZRIdCgVwYWdlcxgBIAMoCzIOLm51bWVuLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJLChFSZW5kZXJQYWdlUmVxdWVzdBIMCgRwYXRoGAEgASgJEgwKBHBhZ2UYAiABKAUSCwoDZHBpGAMgASgFEg0KBXdpZHRoGAQgASgFIl0KElJlbmRlclBhZ2VSZXNwb25zZRISCgppbWFnZV9kYXRhGAEgASgMEhQKDGNvbnRlbnRfdHlwZRgCIAEoCRINCgV3aWR0aBgDIAEoARIOCgZoZWlnaHQYBCABKAEiQwoUR2V0SGlnaGxpZ2h0c1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIdCgVzcGFucxgCIAMoCzIOLm51bWVuLnYxLlNwYW4iPAoVR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlEiMKBHJ1bnMYASADKAsyFS5udW1lbi52MS5Eb2N1bWVudFJ1biI2CgtEb2N1bWVudFJ1bhInCgZwbGFjZXMYASADKAsyFy5udW1lbi52MS5Eb2N1bWVudFBsYWNlIkQKDURvY3VtZW50UGxhY2USDAoEcGFnZRgBIAEoBRIlCgVyZWN0cxgCIAMoCzIWLm51bWVuLnYxLkRvY3VtZW50UmVjdCJKCgxEb2N1bWVudFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIy+AEKD0RvY3VtZW50U2VydmljZRJKCgtHZXREb2N1bWVudBIcLm51bWVuLnYxLkdldERvY3VtZW50UmVxdWVzdBodLm51bWVuLnYxLkdldERvY3VtZW50UmVzcG9uc2USRwoKUmVuZGVyUGFnZRIbLm51bWVuLnYxLlJlbmRlclBhZ2VSZXF1ZXN0GhwubnVtZW4udjEuUmVuZGVyUGFnZVJlc3BvbnNlElAKDUdldEhpZ2hsaWdodHMSHi5udW1lbi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBofLm51bWVuLnYxLkdldEhpZ2hsaWdodHNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.GetDocumentRequest
@@ -211,9 +209,9 @@ export const GetHighlightsResponseSchema: GenMessage<GetHighlightsResponse> = /*
  */
 export type DocumentRun = Message<"numen.v1.DocumentRun"> & {
   /**
-   * @generated from field: repeated numen.v1.TextPlace places = 1;
+   * @generated from field: repeated numen.v1.DocumentPlace places = 1;
    */
-  places: TextPlace[];
+  places: DocumentPlace[];
 };
 
 /**
@@ -222,6 +220,64 @@ export type DocumentRun = Message<"numen.v1.DocumentRun"> & {
  */
 export const DocumentRunSchema: GenMessage<DocumentRun> = /*@__PURE__*/
   messageDesc(file_numen_v1_document, 7);
+
+/**
+ * DocumentPlace is rectangles on one page of a document. Pages count from zero.
+ *
+ * @generated from message numen.v1.DocumentPlace
+ */
+export type DocumentPlace = Message<"numen.v1.DocumentPlace"> & {
+  /**
+   * @generated from field: int32 page = 1;
+   */
+  page: number;
+
+  /**
+   * @generated from field: repeated numen.v1.DocumentRect rects = 2;
+   */
+  rects: DocumentRect[];
+};
+
+/**
+ * Describes the message numen.v1.DocumentPlace.
+ * Use `create(DocumentPlaceSchema)` to create a new message.
+ */
+export const DocumentPlaceSchema: GenMessage<DocumentPlace> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 8);
+
+/**
+ * DocumentRect is a rectangle on a page, in fractions of the page.
+ *
+ * @generated from message numen.v1.DocumentRect
+ */
+export type DocumentRect = Message<"numen.v1.DocumentRect"> & {
+  /**
+   * @generated from field: float min_x = 1;
+   */
+  minX: number;
+
+  /**
+   * @generated from field: float min_y = 2;
+   */
+  minY: number;
+
+  /**
+   * @generated from field: float max_x = 3;
+   */
+  maxX: number;
+
+  /**
+   * @generated from field: float max_y = 4;
+   */
+  maxY: number;
+};
+
+/**
+ * Describes the message numen.v1.DocumentRect.
+ * Use `create(DocumentRectSchema)` to create a new message.
+ */
+export const DocumentRectSchema: GenMessage<DocumentRect> = /*@__PURE__*/
+  messageDesc(file_numen_v1_document, 9);
 
 /**
  * DocumentService answers what a document is, for whatever opens one.

@@ -1,127 +1,90 @@
 package domain
 
 import (
-	"fmt"
 	"sort"
-	"strconv"
-	"strings"
-	"time"
 )
 
-// TextPlace is where a part of a text lies in the file it was made from: on
-// a page and inside rectangles of it, for positioned text; between two moments,
-// for timed text. Plain text has no place.
-//
-// Page counts from zero. Rects are fractions of the page.
-type TextPlace struct {
-	Page  int
-	Rects []Rect
-	Start time.Duration
-	End   time.Duration
+// Selector locates a segment in the file its text was made from, as JSON text
+// (W3C Web Annotation selector). The core stores and returns it as is; the
+// plugin SDK documents its keys.
+type Selector string
+
+// TextSegment is one segment of a version's text. Heading is the heading the
+// segment opens, and empty for a segment inside one.
+type TextSegment struct {
+	Text     string
+	Heading  string
+	Selector Selector
 }
 
-// TextPart is one run of a version's text and its place. Section names
-// the section the part opens, and is empty for a part inside one.
-type TextPart struct {
-	Text    string
-	Place   TextPlace
-	Section string
-}
-
-// VersionText is a version's text as one string, and the parts it was given
+// VersionText is a version's text as one string, and the segments it was given
 // in, each at the byte offset it begins at.
 type VersionText struct {
-	Version TextVersion
-	Text    string
-	parts   []TextPart
-	offsets []int
+	Version  TextVersion
+	Text     string
+	segments []TextSegment
+	offsets  []int
 }
 
-// NewVersionText joins the parts of a version's text in the order given.
-func NewVersionText(version TextVersion, parts []TextPart) VersionText {
-	var b strings.Builder
-	offsets := make([]int, len(parts))
-	for i, p := range parts {
-		offsets[i] = b.Len()
-		b.WriteString(p.Text)
+// NewVersionText joins the segments of a version's text in the order given.
+func NewVersionText(version TextVersion, segments []TextSegment) VersionText {
+	var b []byte
+	offsets := make([]int, len(segments))
+	for i, s := range segments {
+		offsets[i] = len(b)
+		b = append(b, s.Text...)
 	}
-	return VersionText{Version: version, Text: b.String(), parts: parts, offsets: offsets}
+	return VersionText{Version: version, Text: string(b), segments: segments, offsets: offsets}
 }
 
-// GetSections is where each named section begins.
-func (t VersionText) GetSections() []PartStart {
+// GetSegments is the segments of the text, in order.
+func (t VersionText) GetSegments() []TextSegment { return t.segments }
+
+// GetHeadings is where each heading begins.
+func (t VersionText) GetHeadings() []PartStart {
 	var out []PartStart
-	for i, p := range t.parts {
-		if p.Section != "" {
-			out = append(out, PartStart{Title: p.Section, Offset: t.offsets[i]})
+	for i, s := range t.segments {
+		if s.Heading != "" {
+			out = append(out, PartStart{Title: s.Heading, Offset: t.offsets[i]})
 		}
 	}
 	return out
 }
 
-// GetNamesAt is the names of the sections that begin exactly at an offset, in
-// the order their parts were given.
-func (t VersionText) GetNamesAt(offset int) []string {
+// GetHeadingsAt is the headings that begin exactly at an offset, in the order
+// their segments were given.
+func (t VersionText) GetHeadingsAt(offset int) []string {
 	var names []string
-	for i, p := range t.parts {
-		if t.offsets[i] == offset && p.Section != "" {
-			names = append(names, p.Section)
+	for i, s := range t.segments {
+		if t.offsets[i] == offset && s.Heading != "" {
+			names = append(names, s.Heading)
 		}
 	}
 	return names
 }
 
-// Locate describes an offset: the section it falls in, and the page or the
-// moment of its part. Empty where the version names
-// neither.
+// Locate is the heading an offset falls under, and empty where none precedes it.
 func (t VersionText) Locate(offset int) string {
-	i := sort.Search(len(t.offsets), func(i int) bool { return t.offsets[i] > offset }) - 1
+	for j := t.findSegment(offset); j >= 0; j-- {
+		if t.segments[j].Heading != "" {
+			return t.segments[j].Heading
+		}
+	}
+	return ""
+}
+
+// GetSelector is the selector of the segment an offset falls in, and empty
+// where the offset is before the first segment or the segment has none.
+func (t VersionText) GetSelector(offset int) Selector {
+	i := t.findSegment(offset)
 	if i < 0 {
 		return ""
 	}
-	var named []string
-	for j := i; j >= 0; j-- {
-		if t.parts[j].Section != "" {
-			named = append(named, t.parts[j].Section)
-			break
-		}
-	}
-	switch t.Version.Format {
-	case TextFormatPositioned:
-		named = append(named, fmt.Sprintf("page %d of the file", t.parts[i].Place.Page+1))
-	case TextFormatTimed:
-		named = append(named, FormatClock(t.parts[i].Place.Start))
-	case TextFormatPlain:
-	}
-	return strings.Join(named, ", ")
+	return t.segments[i].Selector
 }
 
-// GetBoxes is the rectangles of the positioned parts a run of the text
-// overlaps, each with the run of the part it covers.
-func (t VersionText) GetBoxes(run ByteSpan) []HighlightBox {
-	if t.Version.Format != TextFormatPositioned || run.Empty() {
-		return nil
-	}
-	var boxes []HighlightBox
-	for i, p := range t.parts {
-		from, to := t.offsets[i], t.offsets[i]+len(p.Text)
-		if to <= run.From || from >= run.To {
-			continue
-		}
-		for _, rect := range p.Place.Rects {
-			boxes = append(boxes, HighlightBox{Page: p.Place.Page, ByteSpan: ByteSpan{From: from, To: to}, Rect: rect})
-		}
-	}
-	return boxes
-}
-
-// FormatClock is a moment of a recording as a person reads it: minutes and
-// seconds, with hours in front once there are any.
-func FormatClock(offset time.Duration) string {
-	whole := max(int64(offset/time.Second), 0)
-	m, s := whole/60%60, whole%60
-	if hours := whole / 3600; hours > 0 {
-		return strconv.FormatInt(hours, 10) + fmt.Sprintf(":%02d:%02d", m, s)
-	}
-	return strconv.FormatInt(whole/60, 10) + fmt.Sprintf(":%02d", s)
+// findSegment is the index of the last segment that begins at or before an
+// offset, and -1 where none does.
+func (t VersionText) findSegment(offset int) int {
+	return sort.Search(len(t.offsets), func(i int) bool { return t.offsets[i] > offset }) - 1
 }

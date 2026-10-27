@@ -8,7 +8,6 @@ syntax = "proto3";
 package numen.v1;
 
 import "numen/v1/shared.proto";
-import "numen/v1/textprovider.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
@@ -87,5 +86,19 @@ message GetHighlightsResponse {
 // A DocumentRun is where one run of the text stands: the rectangles it covers,
 // a place a page. A run standing nowhere has no places.
 message DocumentRun {
-  repeated TextPlace places = 1;
+  repeated DocumentPlace places = 1;
+}
+
+// DocumentPlace is rectangles on one page of a document. Pages count from zero.
+message DocumentPlace {
+  int32 page = 1;
+  repeated DocumentRect rects = 2;
+}
+
+// DocumentRect is a rectangle on a page, in fractions of the page.
+message DocumentRect {
+  float min_x = 1;
+  float min_y = 2;
+  float max_x = 3;
+  float max_y = 4;
 }

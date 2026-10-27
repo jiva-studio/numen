@@ -421,7 +421,7 @@ func (x *GetHighlightsResponse) GetRuns() []*DocumentRun {
 // a place a page. A run standing nowhere has no places.
 type DocumentRun struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Places        []*TextPlace           `protobuf:"bytes,1,rep,name=places,proto3" json:"places,omitempty"`
+	Places        []*DocumentPlace       `protobuf:"bytes,1,rep,name=places,proto3" json:"places,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -456,18 +456,140 @@ func (*DocumentRun) Descriptor() ([]byte, []int) {
 	return file_numen_v1_document_proto_rawDescGZIP(), []int{7}
 }
 
-func (x *DocumentRun) GetPlaces() []*TextPlace {
+func (x *DocumentRun) GetPlaces() []*DocumentPlace {
 	if x != nil {
 		return x.Places
 	}
 	return nil
 }
 
+// DocumentPlace is rectangles on one page of a document. Pages count from zero.
+type DocumentPlace struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Rects         []*DocumentRect        `protobuf:"bytes,2,rep,name=rects,proto3" json:"rects,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DocumentPlace) Reset() {
+	*x = DocumentPlace{}
+	mi := &file_numen_v1_document_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DocumentPlace) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DocumentPlace) ProtoMessage() {}
+
+func (x *DocumentPlace) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_document_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DocumentPlace.ProtoReflect.Descriptor instead.
+func (*DocumentPlace) Descriptor() ([]byte, []int) {
+	return file_numen_v1_document_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *DocumentPlace) GetPage() int32 {
+	if x != nil {
+		return x.Page
+	}
+	return 0
+}
+
+func (x *DocumentPlace) GetRects() []*DocumentRect {
+	if x != nil {
+		return x.Rects
+	}
+	return nil
+}
+
+// DocumentRect is a rectangle on a page, in fractions of the page.
+type DocumentRect struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MinX          float32                `protobuf:"fixed32,1,opt,name=min_x,json=minX,proto3" json:"min_x,omitempty"`
+	MinY          float32                `protobuf:"fixed32,2,opt,name=min_y,json=minY,proto3" json:"min_y,omitempty"`
+	MaxX          float32                `protobuf:"fixed32,3,opt,name=max_x,json=maxX,proto3" json:"max_x,omitempty"`
+	MaxY          float32                `protobuf:"fixed32,4,opt,name=max_y,json=maxY,proto3" json:"max_y,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *DocumentRect) Reset() {
+	*x = DocumentRect{}
+	mi := &file_numen_v1_document_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *DocumentRect) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*DocumentRect) ProtoMessage() {}
+
+func (x *DocumentRect) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_v1_document_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use DocumentRect.ProtoReflect.Descriptor instead.
+func (*DocumentRect) Descriptor() ([]byte, []int) {
+	return file_numen_v1_document_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *DocumentRect) GetMinX() float32 {
+	if x != nil {
+		return x.MinX
+	}
+	return 0
+}
+
+func (x *DocumentRect) GetMinY() float32 {
+	if x != nil {
+		return x.MinY
+	}
+	return 0
+}
+
+func (x *DocumentRect) GetMaxX() float32 {
+	if x != nil {
+		return x.MaxX
+	}
+	return 0
+}
+
+func (x *DocumentRect) GetMaxY() float32 {
+	if x != nil {
+		return x.MaxY
+	}
+	return 0
+}
+
 var File_numen_v1_document_proto protoreflect.FileDescriptor
 
 const file_numen_v1_document_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/document.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\x1a\x1bnumen/v1/textprovider.proto\"(\n" +
+	"\x17numen/v1/document.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"t\n" +
 	"\x13GetDocumentResponse\x12$\n" +
@@ -491,9 +613,17 @@ const file_numen_v1_document_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12$\n" +
 	"\x05spans\x18\x02 \x03(\v2\x0e.numen.v1.SpanR\x05spans\"B\n" +
 	"\x15GetHighlightsResponse\x12)\n" +
-	"\x04runs\x18\x01 \x03(\v2\x15.numen.v1.DocumentRunR\x04runs\":\n" +
-	"\vDocumentRun\x12+\n" +
-	"\x06places\x18\x01 \x03(\v2\x13.numen.v1.TextPlaceR\x06places2\xf8\x01\n" +
+	"\x04runs\x18\x01 \x03(\v2\x15.numen.v1.DocumentRunR\x04runs\">\n" +
+	"\vDocumentRun\x12/\n" +
+	"\x06places\x18\x01 \x03(\v2\x17.numen.v1.DocumentPlaceR\x06places\"Q\n" +
+	"\rDocumentPlace\x12\x12\n" +
+	"\x04page\x18\x01 \x01(\x05R\x04page\x12,\n" +
+	"\x05rects\x18\x02 \x03(\v2\x16.numen.v1.DocumentRectR\x05rects\"b\n" +
+	"\fDocumentRect\x12\x13\n" +
+	"\x05min_x\x18\x01 \x01(\x02R\x04minX\x12\x13\n" +
+	"\x05min_y\x18\x02 \x01(\x02R\x04minY\x12\x13\n" +
+	"\x05max_x\x18\x03 \x01(\x02R\x04maxX\x12\x13\n" +
+	"\x05max_y\x18\x04 \x01(\x02R\x04maxY2\xf8\x01\n" +
 	"\x0fDocumentService\x12J\n" +
 	"\vGetDocument\x12\x1c.numen.v1.GetDocumentRequest\x1a\x1d.numen.v1.GetDocumentResponse\x12G\n" +
 	"\n" +
@@ -512,7 +642,7 @@ func file_numen_v1_document_proto_rawDescGZIP() []byte {
 	return file_numen_v1_document_proto_rawDescData
 }
 
-var file_numen_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_v1_document_proto_goTypes = []any{
 	(*GetDocumentRequest)(nil),    // 0: numen.v1.GetDocumentRequest
 	(*GetDocumentResponse)(nil),   // 1: numen.v1.GetDocumentResponse
@@ -522,27 +652,29 @@ var file_numen_v1_document_proto_goTypes = []any{
 	(*GetHighlightsRequest)(nil),  // 5: numen.v1.GetHighlightsRequest
 	(*GetHighlightsResponse)(nil), // 6: numen.v1.GetHighlightsResponse
 	(*DocumentRun)(nil),           // 7: numen.v1.DocumentRun
-	(*Fingerprint)(nil),           // 8: numen.v1.Fingerprint
-	(*Span)(nil),                  // 9: numen.v1.Span
-	(*TextPlace)(nil),             // 10: numen.v1.TextPlace
+	(*DocumentPlace)(nil),         // 8: numen.v1.DocumentPlace
+	(*DocumentRect)(nil),          // 9: numen.v1.DocumentRect
+	(*Fingerprint)(nil),           // 10: numen.v1.Fingerprint
+	(*Span)(nil),                  // 11: numen.v1.Span
 }
 var file_numen_v1_document_proto_depIdxs = []int32{
 	2,  // 0: numen.v1.GetDocumentResponse.pages:type_name -> numen.v1.Page
-	8,  // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	9,  // 2: numen.v1.GetHighlightsRequest.spans:type_name -> numen.v1.Span
+	10, // 1: numen.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	11, // 2: numen.v1.GetHighlightsRequest.spans:type_name -> numen.v1.Span
 	7,  // 3: numen.v1.GetHighlightsResponse.runs:type_name -> numen.v1.DocumentRun
-	10, // 4: numen.v1.DocumentRun.places:type_name -> numen.v1.TextPlace
-	0,  // 5: numen.v1.DocumentService.GetDocument:input_type -> numen.v1.GetDocumentRequest
-	3,  // 6: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderPageRequest
-	5,  // 7: numen.v1.DocumentService.GetHighlights:input_type -> numen.v1.GetHighlightsRequest
-	1,  // 8: numen.v1.DocumentService.GetDocument:output_type -> numen.v1.GetDocumentResponse
-	4,  // 9: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderPageResponse
-	6,  // 10: numen.v1.DocumentService.GetHighlights:output_type -> numen.v1.GetHighlightsResponse
-	8,  // [8:11] is the sub-list for method output_type
-	5,  // [5:8] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	8,  // 4: numen.v1.DocumentRun.places:type_name -> numen.v1.DocumentPlace
+	9,  // 5: numen.v1.DocumentPlace.rects:type_name -> numen.v1.DocumentRect
+	0,  // 6: numen.v1.DocumentService.GetDocument:input_type -> numen.v1.GetDocumentRequest
+	3,  // 7: numen.v1.DocumentService.RenderPage:input_type -> numen.v1.RenderPageRequest
+	5,  // 8: numen.v1.DocumentService.GetHighlights:input_type -> numen.v1.GetHighlightsRequest
+	1,  // 9: numen.v1.DocumentService.GetDocument:output_type -> numen.v1.GetDocumentResponse
+	4,  // 10: numen.v1.DocumentService.RenderPage:output_type -> numen.v1.RenderPageResponse
+	6,  // 11: numen.v1.DocumentService.GetHighlights:output_type -> numen.v1.GetHighlightsResponse
+	9,  // [9:12] is the sub-list for method output_type
+	6,  // [6:9] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_document_proto_init() }
@@ -551,14 +683,13 @@ func file_numen_v1_document_proto_init() {
 		return
 	}
 	file_numen_v1_shared_proto_init()
-	file_numen_v1_textprovider_proto_init()
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_document_proto_rawDesc), len(file_numen_v1_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

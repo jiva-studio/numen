@@ -21,21 +21,26 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// TextVersion is the host's record of one text of a file. input_version_id is
-// empty for a version made from the file. input_hash is the SHA-256, in hex, of
-// the file's bytes for such a version, and the hash of the input version
-// otherwise. hash is the version's own text as it is now.
+// TextVersion is the host's record of one text of a file.
+//
+// source_version_id is empty for a version made from the file. source_hash is
+// the SHA-256, in hex, of the file's bytes for such a version, and the hash of
+// the source version otherwise. file is the name of the version's file in the
+// folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+// kind is what the text is, as plugins name it ("transcript", "recognition");
+// the host compares it as an opaque string.
 type TextVersion struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	Id               string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Path             string                 `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
 	PluginId         string                 `protobuf:"bytes,3,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
 	Key              string                 `protobuf:"bytes,4,opt,name=key,proto3" json:"key,omitempty"`
-	InputVersionId   string                 `protobuf:"bytes,5,opt,name=input_version_id,json=inputVersionId,proto3" json:"input_version_id,omitempty"`
-	Format           TextFormat             `protobuf:"varint,6,opt,name=format,proto3,enum=numen.v1.TextFormat" json:"format,omitempty"`
-	InputHash        string                 `protobuf:"bytes,7,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
+	SourceVersionId  string                 `protobuf:"bytes,5,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
+	Kind             string                 `protobuf:"bytes,6,opt,name=kind,proto3" json:"kind,omitempty"`
+	SourceHash       string                 `protobuf:"bytes,7,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
 	Hash             string                 `protobuf:"bytes,8,opt,name=hash,proto3" json:"hash,omitempty"`
 	CreateTimeUnixMs int64                  `protobuf:"varint,9,opt,name=create_time_unix_ms,json=createTimeUnixMs,proto3" json:"create_time_unix_ms,omitempty"`
+	File             string                 `protobuf:"bytes,10,opt,name=file,proto3" json:"file,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -98,23 +103,23 @@ func (x *TextVersion) GetKey() string {
 	return ""
 }
 
-func (x *TextVersion) GetInputVersionId() string {
+func (x *TextVersion) GetSourceVersionId() string {
 	if x != nil {
-		return x.InputVersionId
+		return x.SourceVersionId
 	}
 	return ""
 }
 
-func (x *TextVersion) GetFormat() TextFormat {
+func (x *TextVersion) GetKind() string {
 	if x != nil {
-		return x.Format
+		return x.Kind
 	}
-	return TextFormat_TEXT_FORMAT_UNSPECIFIED
+	return ""
 }
 
-func (x *TextVersion) GetInputHash() string {
+func (x *TextVersion) GetSourceHash() string {
 	if x != nil {
-		return x.InputHash
+		return x.SourceHash
 	}
 	return ""
 }
@@ -133,16 +138,24 @@ func (x *TextVersion) GetCreateTimeUnixMs() int64 {
 	return 0
 }
 
+func (x *TextVersion) GetFile() string {
+	if x != nil {
+		return x.File
+	}
+	return ""
+}
+
 type PutTextVersionRequest struct {
-	state          protoimpl.MessageState `protogen:"open.v1"`
-	Path           string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	Key            string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
-	InputVersionId string                 `protobuf:"bytes,3,opt,name=input_version_id,json=inputVersionId,proto3" json:"input_version_id,omitempty"`
-	Format         TextFormat             `protobuf:"varint,4,opt,name=format,proto3,enum=numen.v1.TextFormat" json:"format,omitempty"`
-	InputHash      string                 `protobuf:"bytes,5,opt,name=input_hash,json=inputHash,proto3" json:"input_hash,omitempty"`
-	Hash           string                 `protobuf:"bytes,6,opt,name=hash,proto3" json:"hash,omitempty"`
-	unknownFields  protoimpl.UnknownFields
-	sizeCache      protoimpl.SizeCache
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	Path            string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Key             string                 `protobuf:"bytes,2,opt,name=key,proto3" json:"key,omitempty"`
+	SourceVersionId string                 `protobuf:"bytes,3,opt,name=source_version_id,json=sourceVersionId,proto3" json:"source_version_id,omitempty"`
+	Kind            string                 `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	SourceHash      string                 `protobuf:"bytes,5,opt,name=source_hash,json=sourceHash,proto3" json:"source_hash,omitempty"`
+	// file is the name of the version's file in the calling plugin's folder.
+	File          string `protobuf:"bytes,6,opt,name=file,proto3" json:"file,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *PutTextVersionRequest) Reset() {
@@ -189,30 +202,30 @@ func (x *PutTextVersionRequest) GetKey() string {
 	return ""
 }
 
-func (x *PutTextVersionRequest) GetInputVersionId() string {
+func (x *PutTextVersionRequest) GetSourceVersionId() string {
 	if x != nil {
-		return x.InputVersionId
+		return x.SourceVersionId
 	}
 	return ""
 }
 
-func (x *PutTextVersionRequest) GetFormat() TextFormat {
+func (x *PutTextVersionRequest) GetKind() string {
 	if x != nil {
-		return x.Format
-	}
-	return TextFormat_TEXT_FORMAT_UNSPECIFIED
-}
-
-func (x *PutTextVersionRequest) GetInputHash() string {
-	if x != nil {
-		return x.InputHash
+		return x.Kind
 	}
 	return ""
 }
 
-func (x *PutTextVersionRequest) GetHash() string {
+func (x *PutTextVersionRequest) GetSourceHash() string {
 	if x != nil {
-		return x.Hash
+		return x.SourceHash
+	}
+	return ""
+}
+
+func (x *PutTextVersionRequest) GetFile() string {
+	if x != nil {
+		return x.File
 	}
 	return ""
 }
@@ -471,10 +484,11 @@ func (x *ListTextVersionsResponse) GetError() TextErrorCode {
 }
 
 type ReadTextRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	VersionId     string                 `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
-	Cursor        string                 `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
+	state     protoimpl.MessageState `protogen:"open.v1"`
+	Path      string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	VersionId string                 `protobuf:"bytes,2,opt,name=version_id,json=versionId,proto3" json:"version_id,omitempty"`
+	// cursor is the next_cursor of the page before, and empty for the first.
+	Cursor        string `protobuf:"bytes,3,opt,name=cursor,proto3" json:"cursor,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -531,10 +545,11 @@ func (x *ReadTextRequest) GetCursor() string {
 }
 
 type ReadTextResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Parts         []*TextPart            `protobuf:"bytes,1,rep,name=parts,proto3" json:"parts,omitempty"`
-	NextCursor    string                 `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
-	Error         TextErrorCode          `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
+	state    protoimpl.MessageState `protogen:"open.v1"`
+	Segments []*TextSegment         `protobuf:"bytes,1,rep,name=segments,proto3" json:"segments,omitempty"`
+	// next_cursor is empty on the last page.
+	NextCursor    string        `protobuf:"bytes,2,opt,name=next_cursor,json=nextCursor,proto3" json:"next_cursor,omitempty"`
+	Error         TextErrorCode `protobuf:"varint,3,opt,name=error,proto3,enum=numen.v1.TextErrorCode" json:"error,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -569,9 +584,9 @@ func (*ReadTextResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hosttext_proto_rawDescGZIP(), []int{8}
 }
 
-func (x *ReadTextResponse) GetParts() []*TextPart {
+func (x *ReadTextResponse) GetSegments() []*TextSegment {
 	if x != nil {
-		return x.Parts
+		return x.Segments
 	}
 	return nil
 }
@@ -594,26 +609,28 @@ var File_numen_v1_hosttext_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\n" +
-	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1bnumen/v1/textprovider.proto\"\x9a\x02\n" +
+	"\x17numen/v1/hosttext.proto\x12\bnumen.v1\x1a\x1bnumen/v1/textprovider.proto\"\x98\x02\n" +
 	"\vTextVersion\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x1b\n" +
 	"\tplugin_id\x18\x03 \x01(\tR\bpluginId\x12\x10\n" +
-	"\x03key\x18\x04 \x01(\tR\x03key\x12(\n" +
-	"\x10input_version_id\x18\x05 \x01(\tR\x0einputVersionId\x12,\n" +
-	"\x06format\x18\x06 \x01(\x0e2\x14.numen.v1.TextFormatR\x06format\x12\x1d\n" +
-	"\n" +
-	"input_hash\x18\a \x01(\tR\tinputHash\x12\x12\n" +
+	"\x03key\x18\x04 \x01(\tR\x03key\x12*\n" +
+	"\x11source_version_id\x18\x05 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
+	"\x04kind\x18\x06 \x01(\tR\x04kind\x12\x1f\n" +
+	"\vsource_hash\x18\a \x01(\tR\n" +
+	"sourceHash\x12\x12\n" +
 	"\x04hash\x18\b \x01(\tR\x04hash\x12-\n" +
-	"\x13create_time_unix_ms\x18\t \x01(\x03R\x10createTimeUnixMs\"\xc8\x01\n" +
+	"\x13create_time_unix_ms\x18\t \x01(\x03R\x10createTimeUnixMs\x12\x12\n" +
+	"\x04file\x18\n" +
+	" \x01(\tR\x04file\"\xb2\x01\n" +
 	"\x15PutTextVersionRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x10\n" +
-	"\x03key\x18\x02 \x01(\tR\x03key\x12(\n" +
-	"\x10input_version_id\x18\x03 \x01(\tR\x0einputVersionId\x12,\n" +
-	"\x06format\x18\x04 \x01(\x0e2\x14.numen.v1.TextFormatR\x06format\x12\x1d\n" +
-	"\n" +
-	"input_hash\x18\x05 \x01(\tR\tinputHash\x12\x12\n" +
-	"\x04hash\x18\x06 \x01(\tR\x04hash\"x\n" +
+	"\x03key\x18\x02 \x01(\tR\x03key\x12*\n" +
+	"\x11source_version_id\x18\x03 \x01(\tR\x0fsourceVersionId\x12\x12\n" +
+	"\x04kind\x18\x04 \x01(\tR\x04kind\x12\x1f\n" +
+	"\vsource_hash\x18\x05 \x01(\tR\n" +
+	"sourceHash\x12\x12\n" +
+	"\x04file\x18\x06 \x01(\tR\x04file\"x\n" +
 	"\x16PutTextVersionResponse\x12/\n" +
 	"\aversion\x18\x01 \x01(\v2\x15.numen.v1.TextVersionR\aversion\x12-\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error\"@\n" +
@@ -632,9 +649,9 @@ const file_numen_v1_hosttext_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1d\n" +
 	"\n" +
 	"version_id\x18\x02 \x01(\tR\tversionId\x12\x16\n" +
-	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x8c\x01\n" +
-	"\x10ReadTextResponse\x12(\n" +
-	"\x05parts\x18\x01 \x03(\v2\x12.numen.v1.TextPartR\x05parts\x12\x1f\n" +
+	"\x06cursor\x18\x03 \x01(\tR\x06cursor\"\x95\x01\n" +
+	"\x10ReadTextResponse\x121\n" +
+	"\bsegments\x18\x01 \x03(\v2\x15.numen.v1.TextSegmentR\bsegments\x12\x1f\n" +
 	"\vnext_cursor\x18\x02 \x01(\tR\n" +
 	"nextCursor\x12-\n" +
 	"\x05error\x18\x03 \x01(\x0e2\x17.numen.v1.TextErrorCodeR\x05error2\xe2\x02\n" +
@@ -667,33 +684,30 @@ var file_numen_v1_hosttext_proto_goTypes = []any{
 	(*ListTextVersionsResponse)(nil),  // 6: numen.v1.ListTextVersionsResponse
 	(*ReadTextRequest)(nil),           // 7: numen.v1.ReadTextRequest
 	(*ReadTextResponse)(nil),          // 8: numen.v1.ReadTextResponse
-	(TextFormat)(0),                   // 9: numen.v1.TextFormat
-	(TextErrorCode)(0),                // 10: numen.v1.TextErrorCode
-	(*TextPart)(nil),                  // 11: numen.v1.TextPart
+	(TextErrorCode)(0),                // 9: numen.v1.TextErrorCode
+	(*TextSegment)(nil),               // 10: numen.v1.TextSegment
 }
 var file_numen_v1_hosttext_proto_depIdxs = []int32{
-	9,  // 0: numen.v1.TextVersion.format:type_name -> numen.v1.TextFormat
-	9,  // 1: numen.v1.PutTextVersionRequest.format:type_name -> numen.v1.TextFormat
-	0,  // 2: numen.v1.PutTextVersionResponse.version:type_name -> numen.v1.TextVersion
-	10, // 3: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
-	10, // 4: numen.v1.RemoveTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
-	0,  // 5: numen.v1.ListTextVersionsResponse.versions:type_name -> numen.v1.TextVersion
-	10, // 6: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.TextErrorCode
-	11, // 7: numen.v1.ReadTextResponse.parts:type_name -> numen.v1.TextPart
-	10, // 8: numen.v1.ReadTextResponse.error:type_name -> numen.v1.TextErrorCode
-	1,  // 9: numen.v1.HostTextService.PutTextVersion:input_type -> numen.v1.PutTextVersionRequest
-	3,  // 10: numen.v1.HostTextService.RemoveTextVersion:input_type -> numen.v1.RemoveTextVersionRequest
-	5,  // 11: numen.v1.HostTextService.ListTextVersions:input_type -> numen.v1.ListTextVersionsRequest
-	7,  // 12: numen.v1.HostTextService.ReadText:input_type -> numen.v1.ReadTextRequest
-	2,  // 13: numen.v1.HostTextService.PutTextVersion:output_type -> numen.v1.PutTextVersionResponse
-	4,  // 14: numen.v1.HostTextService.RemoveTextVersion:output_type -> numen.v1.RemoveTextVersionResponse
-	6,  // 15: numen.v1.HostTextService.ListTextVersions:output_type -> numen.v1.ListTextVersionsResponse
-	8,  // 16: numen.v1.HostTextService.ReadText:output_type -> numen.v1.ReadTextResponse
-	13, // [13:17] is the sub-list for method output_type
-	9,  // [9:13] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	0,  // 0: numen.v1.PutTextVersionResponse.version:type_name -> numen.v1.TextVersion
+	9,  // 1: numen.v1.PutTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
+	9,  // 2: numen.v1.RemoveTextVersionResponse.error:type_name -> numen.v1.TextErrorCode
+	0,  // 3: numen.v1.ListTextVersionsResponse.versions:type_name -> numen.v1.TextVersion
+	9,  // 4: numen.v1.ListTextVersionsResponse.error:type_name -> numen.v1.TextErrorCode
+	10, // 5: numen.v1.ReadTextResponse.segments:type_name -> numen.v1.TextSegment
+	9,  // 6: numen.v1.ReadTextResponse.error:type_name -> numen.v1.TextErrorCode
+	1,  // 7: numen.v1.HostTextService.PutTextVersion:input_type -> numen.v1.PutTextVersionRequest
+	3,  // 8: numen.v1.HostTextService.RemoveTextVersion:input_type -> numen.v1.RemoveTextVersionRequest
+	5,  // 9: numen.v1.HostTextService.ListTextVersions:input_type -> numen.v1.ListTextVersionsRequest
+	7,  // 10: numen.v1.HostTextService.ReadText:input_type -> numen.v1.ReadTextRequest
+	2,  // 11: numen.v1.HostTextService.PutTextVersion:output_type -> numen.v1.PutTextVersionResponse
+	4,  // 12: numen.v1.HostTextService.RemoveTextVersion:output_type -> numen.v1.RemoveTextVersionResponse
+	6,  // 13: numen.v1.HostTextService.ListTextVersions:output_type -> numen.v1.ListTextVersionsResponse
+	8,  // 14: numen.v1.HostTextService.ReadText:output_type -> numen.v1.ReadTextResponse
+	11, // [11:15] is the sub-list for method output_type
+	7,  // [7:11] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_hosttext_proto_init() }

@@ -10,167 +10,42 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/textprovider.proto.
  */
 export const file_numen_v1_textprovider: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi92MS90ZXh0cHJvdmlkZXIucHJvdG8SCG51bWVuLnYxIkYKCFRleHRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCIl4KCVRleHRQbGFjZRIMCgRwYWdlGAEgASgFEiEKBXJlY3RzGAIgAygLMhIubnVtZW4udjEuVGV4dFJlY3QSEAoIc3RhcnRfbXMYAyABKAMSDgoGZW5kX21zGAQgASgDIk0KCFRleHRQYXJ0EgwKBHRleHQYASABKAkSIgoFcGxhY2UYAiABKAsyEy5udW1lbi52MS5UZXh0UGxhY2USDwoHc2VjdGlvbhgDIAEoCSJgCiFUZXh0UHJvdmlkZXJTZXJ2aWNlR2V0VGV4dFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEcGF0aBgCIAEoCRILCgNrZXkYAyABKAkSDgoGY3Vyc29yGAQgASgJIoQBCiJUZXh0UHJvdmlkZXJTZXJ2aWNlR2V0VGV4dFJlc3BvbnNlEiEKBXBhcnRzGAEgAygLMhIubnVtZW4udjEuVGV4dFBhcnQSEwoLbmV4dF9jdXJzb3IYAiABKAkSJgoFZXJyb3IYAyABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlInkKJFRleHRQcm92aWRlclNlcnZpY2VDcmVhdGVUZXh0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJEhgKEGlucHV0X3ZlcnNpb25faWQYAyABKAkSFwoPaXNfdXNlcl9zdGFydGVkGAQgASgIIk8KJVRleHRQcm92aWRlclNlcnZpY2VDcmVhdGVUZXh0UmVzcG9uc2USJgoFZXJyb3IYASABKA4yFy5udW1lbi52MS5UZXh0RXJyb3JDb2RlIlMKJFRleHRQcm92aWRlclNlcnZpY2VEZWxldGVUZXh0UmVxdWVzdBIQCgh2YXVsdF9pZBgBIAEoCRIMCgRwYXRoGAIgASgJEgsKA2tleRgDIAEoCSJPCiVUZXh0UHJvdmlkZXJTZXJ2aWNlRGVsZXRlVGV4dFJlc3BvbnNlEiYKBWVycm9yGAEgASgOMhcubnVtZW4udjEuVGV4dEVycm9yQ29kZSpzCgpUZXh0Rm9ybWF0EhsKF1RFWFRfRk9STUFUX1VOU1BFQ0lGSUVEEAASFQoRVEVYVF9GT1JNQVRfUExBSU4QARIVChFURVhUX0ZPUk1BVF9USU1FRBACEhoKFlRFWFRfRk9STUFUX1BPU0lUSU9ORUQQAyqnAQoNVGV4dEVycm9yQ29kZRIfChtURVhUX0VSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIbChdURVhUX0VSUk9SX0NPREVfTUlTU0lORxABEhwKGFRFWFRfRVJST1JfQ09ERV9OT19WQVVMVBACEhsKF1RFWFRfRVJST1JfQ09ERV9JTlZBTElEEAMSHQoZVEVYVF9FUlJPUl9DT0RFX05PVF9PV05FUhAEMtkCChNUZXh0UHJvdmlkZXJTZXJ2aWNlEmQKB0dldFRleHQSKy5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlR2V0VGV4dFJlcXVlc3QaLC5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlR2V0VGV4dFJlc3BvbnNlEm0KCkNyZWF0ZVRleHQSLi5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlcXVlc3QaLy5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlc3BvbnNlEm0KCkRlbGV0ZVRleHQSLi5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlRGVsZXRlVGV4dFJlcXVlc3QaLy5udW1lbi52MS5UZXh0UHJvdmlkZXJTZXJ2aWNlRGVsZXRlVGV4dFJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z");
+  fileDesc("ChtudW1lbi92MS90ZXh0cHJvdmlkZXIucHJvdG8SCG51bWVuLnYxIj4KC1RleHRTZWdtZW50EgwKBHRleHQYASABKAkSDwoHaGVhZGluZxgCIAEoCRIQCghzZWxlY3RvchgDIAEoCSJ6CiRUZXh0UHJvdmlkZXJTZXJ2aWNlQ3JlYXRlVGV4dFJlcXVlc3QSEAoIdmF1bHRfaWQYASABKAkSDAoEcGF0aBgCIAEoCRIZChFzb3VyY2VfdmVyc2lvbl9pZBgDIAEoCRIXCg9pc191c2VyX3N0YXJ0ZWQYBCABKAgiTwolVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXNwb25zZRImCgVlcnJvchgBIAEoDjIXLm51bWVuLnYxLlRleHRFcnJvckNvZGUqpwEKDVRleHRFcnJvckNvZGUSHwobVEVYVF9FUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASGwoXVEVYVF9FUlJPUl9DT0RFX01JU1NJTkcQARIcChhURVhUX0VSUk9SX0NPREVfTk9fVkFVTFQQAhIbChdURVhUX0VSUk9SX0NPREVfSU5WQUxJRBADEh0KGVRFWFRfRVJST1JfQ09ERV9OT1RfT1dORVIQBDKEAQoTVGV4dFByb3ZpZGVyU2VydmljZRJtCgpDcmVhdGVUZXh0Ei4ubnVtZW4udjEuVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXF1ZXN0Gi8ubnVtZW4udjEuVGV4dFByb3ZpZGVyU2VydmljZUNyZWF0ZVRleHRSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw");
 
 /**
- * TextRect is a rectangle on a page, in fractions of the page.
+ * TextSegment is one segment of a text. A version file holds one segment per
+ * line as JSON: {"text", "heading"?, "selector"?}.
  *
- * @generated from message numen.v1.TextRect
- */
-export type TextRect = Message<"numen.v1.TextRect"> & {
-  /**
-   * @generated from field: float min_x = 1;
-   */
-  minX: number;
-
-  /**
-   * @generated from field: float min_y = 2;
-   */
-  minY: number;
-
-  /**
-   * @generated from field: float max_x = 3;
-   */
-  maxX: number;
-
-  /**
-   * @generated from field: float max_y = 4;
-   */
-  maxY: number;
-};
-
-/**
- * Describes the message numen.v1.TextRect.
- * Use `create(TextRectSchema)` to create a new message.
- */
-export const TextRectSchema: GenMessage<TextRect> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 0);
-
-/**
- * TextPlace is where a part stands: page and rectangles for positioned text,
- * moments in milliseconds for timed text. Pages count from zero.
+ * heading is the heading the segment opens, and empty for a segment inside one.
+ * selector locates the segment in the file the text was made from, as JSON; it
+ * is empty for none. The host stores it as is and returns it with search hits.
+ * The SDK documents its keys.
  *
- * @generated from message numen.v1.TextPlace
+ * @generated from message numen.v1.TextSegment
  */
-export type TextPlace = Message<"numen.v1.TextPlace"> & {
-  /**
-   * @generated from field: int32 page = 1;
-   */
-  page: number;
-
-  /**
-   * @generated from field: repeated numen.v1.TextRect rects = 2;
-   */
-  rects: TextRect[];
-
-  /**
-   * @generated from field: int64 start_ms = 3;
-   */
-  startMs: bigint;
-
-  /**
-   * @generated from field: int64 end_ms = 4;
-   */
-  endMs: bigint;
-};
-
-/**
- * Describes the message numen.v1.TextPlace.
- * Use `create(TextPlaceSchema)` to create a new message.
- */
-export const TextPlaceSchema: GenMessage<TextPlace> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 1);
-
-/**
- * TextPart is one run of a text and its place. section names the section the
- * part opens, and is empty for a part inside one.
- *
- * @generated from message numen.v1.TextPart
- */
-export type TextPart = Message<"numen.v1.TextPart"> & {
+export type TextSegment = Message<"numen.v1.TextSegment"> & {
   /**
    * @generated from field: string text = 1;
    */
   text: string;
 
   /**
-   * @generated from field: numen.v1.TextPlace place = 2;
+   * @generated from field: string heading = 2;
    */
-  place?: TextPlace | undefined;
+  heading: string;
 
   /**
-   * @generated from field: string section = 3;
+   * @generated from field: string selector = 3;
    */
-  section: string;
+  selector: string;
 };
 
 /**
- * Describes the message numen.v1.TextPart.
- * Use `create(TextPartSchema)` to create a new message.
+ * Describes the message numen.v1.TextSegment.
+ * Use `create(TextSegmentSchema)` to create a new message.
  */
-export const TextPartSchema: GenMessage<TextPart> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 2);
-
-/**
- * @generated from message numen.v1.TextProviderServiceGetTextRequest
- */
-export type TextProviderServiceGetTextRequest = Message<"numen.v1.TextProviderServiceGetTextRequest"> & {
-  /**
-   * @generated from field: string vault_id = 1;
-   */
-  vaultId: string;
-
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
-
-  /**
-   * @generated from field: string key = 3;
-   */
-  key: string;
-
-  /**
-   * cursor is the next_cursor of the page before, and empty for the first.
-   *
-   * @generated from field: string cursor = 4;
-   */
-  cursor: string;
-};
-
-/**
- * Describes the message numen.v1.TextProviderServiceGetTextRequest.
- * Use `create(TextProviderServiceGetTextRequestSchema)` to create a new message.
- */
-export const TextProviderServiceGetTextRequestSchema: GenMessage<TextProviderServiceGetTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 3);
-
-/**
- * @generated from message numen.v1.TextProviderServiceGetTextResponse
- */
-export type TextProviderServiceGetTextResponse = Message<"numen.v1.TextProviderServiceGetTextResponse"> & {
-  /**
-   * @generated from field: repeated numen.v1.TextPart parts = 1;
-   */
-  parts: TextPart[];
-
-  /**
-   * @generated from field: string next_cursor = 2;
-   */
-  nextCursor: string;
-
-  /**
-   * @generated from field: numen.v1.TextErrorCode error = 3;
-   */
-  error: TextErrorCode;
-};
-
-/**
- * Describes the message numen.v1.TextProviderServiceGetTextResponse.
- * Use `create(TextProviderServiceGetTextResponseSchema)` to create a new message.
- */
-export const TextProviderServiceGetTextResponseSchema: GenMessage<TextProviderServiceGetTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 4);
+export const TextSegmentSchema: GenMessage<TextSegment> = /*@__PURE__*/
+  messageDesc(file_numen_v1_textprovider, 0);
 
 /**
  * @generated from message numen.v1.TextProviderServiceCreateTextRequest
@@ -187,12 +62,12 @@ export type TextProviderServiceCreateTextRequest = Message<"numen.v1.TextProvide
   path: string;
 
   /**
-   * input_version_id is the version the text is made from, and empty for the
+   * source_version_id is the version the text is made from, and empty for the
    * file itself.
    *
-   * @generated from field: string input_version_id = 3;
+   * @generated from field: string source_version_id = 3;
    */
-  inputVersionId: string;
+  sourceVersionId: string;
 
   /**
    * is_user_started is set for a text a person asked for, which runs before
@@ -208,7 +83,7 @@ export type TextProviderServiceCreateTextRequest = Message<"numen.v1.TextProvide
  * Use `create(TextProviderServiceCreateTextRequestSchema)` to create a new message.
  */
 export const TextProviderServiceCreateTextRequestSchema: GenMessage<TextProviderServiceCreateTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 5);
+  messageDesc(file_numen_v1_textprovider, 1);
 
 /**
  * @generated from message numen.v1.TextProviderServiceCreateTextResponse
@@ -225,95 +100,11 @@ export type TextProviderServiceCreateTextResponse = Message<"numen.v1.TextProvid
  * Use `create(TextProviderServiceCreateTextResponseSchema)` to create a new message.
  */
 export const TextProviderServiceCreateTextResponseSchema: GenMessage<TextProviderServiceCreateTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 6);
+  messageDesc(file_numen_v1_textprovider, 2);
 
 /**
- * @generated from message numen.v1.TextProviderServiceDeleteTextRequest
- */
-export type TextProviderServiceDeleteTextRequest = Message<"numen.v1.TextProviderServiceDeleteTextRequest"> & {
-  /**
-   * @generated from field: string vault_id = 1;
-   */
-  vaultId: string;
-
-  /**
-   * @generated from field: string path = 2;
-   */
-  path: string;
-
-  /**
-   * @generated from field: string key = 3;
-   */
-  key: string;
-};
-
-/**
- * Describes the message numen.v1.TextProviderServiceDeleteTextRequest.
- * Use `create(TextProviderServiceDeleteTextRequestSchema)` to create a new message.
- */
-export const TextProviderServiceDeleteTextRequestSchema: GenMessage<TextProviderServiceDeleteTextRequest> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 7);
-
-/**
- * @generated from message numen.v1.TextProviderServiceDeleteTextResponse
- */
-export type TextProviderServiceDeleteTextResponse = Message<"numen.v1.TextProviderServiceDeleteTextResponse"> & {
-  /**
-   * @generated from field: numen.v1.TextErrorCode error = 1;
-   */
-  error: TextErrorCode;
-};
-
-/**
- * Describes the message numen.v1.TextProviderServiceDeleteTextResponse.
- * Use `create(TextProviderServiceDeleteTextResponseSchema)` to create a new message.
- */
-export const TextProviderServiceDeleteTextResponseSchema: GenMessage<TextProviderServiceDeleteTextResponse> = /*@__PURE__*/
-  messageDesc(file_numen_v1_textprovider, 8);
-
-/**
- * TextFormat is the shape of a text's places. The zero value means nothing and
- * is never a version's format.
- *
- * @generated from enum numen.v1.TextFormat
- */
-export enum TextFormat {
-  /**
-   * @generated from enum value: TEXT_FORMAT_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * TEXT_FORMAT_PLAIN is text with no places.
-   *
-   * @generated from enum value: TEXT_FORMAT_PLAIN = 1;
-   */
-  PLAIN = 1,
-
-  /**
-   * TEXT_FORMAT_TIMED is text whose parts stand between moments of a recording.
-   *
-   * @generated from enum value: TEXT_FORMAT_TIMED = 2;
-   */
-  TIMED = 2,
-
-  /**
-   * TEXT_FORMAT_POSITIONED is text whose parts stand in rectangles on pages.
-   *
-   * @generated from enum value: TEXT_FORMAT_POSITIONED = 3;
-   */
-  POSITIONED = 3,
-}
-
-/**
- * Describes the enum numen.v1.TextFormat.
- */
-export const TextFormatSchema: GenEnum<TextFormat> = /*@__PURE__*/
-  enumDesc(file_numen_v1_textprovider, 0);
-
-/**
- * TextErrorCode is why a text call was served and answered no. The zero value
- * is a call that succeeded.
+ * TextErrorCode is the reason a served text call did not succeed. The zero
+ * value is a call that succeeded.
  *
  * @generated from enum numen.v1.TextErrorCode
  */
@@ -324,7 +115,7 @@ export enum TextErrorCode {
   UNSPECIFIED = 0,
 
   /**
-   * TEXT_ERROR_CODE_MISSING is a file, a version or a key that is not there.
+   * TEXT_ERROR_CODE_MISSING is a file, a version or a key that does not exist.
    *
    * @generated from enum value: TEXT_ERROR_CODE_MISSING = 1;
    */
@@ -338,8 +129,9 @@ export enum TextErrorCode {
   NO_VAULT = 2,
 
   /**
-   * TEXT_ERROR_CODE_INVALID is a version the host does not take: no format, an
-   * empty key, or an input that is no version of the file.
+   * TEXT_ERROR_CODE_INVALID is a version the host does not accept: no kind, an
+   * empty key, a file that is missing or is not JSON Lines of segments, or a
+   * source that is no version of the file.
    *
    * @generated from enum value: TEXT_ERROR_CODE_INVALID = 3;
    */
@@ -357,32 +149,22 @@ export enum TextErrorCode {
  * Describes the enum numen.v1.TextErrorCode.
  */
 export const TextErrorCodeSchema: GenEnum<TextErrorCode> = /*@__PURE__*/
-  enumDesc(file_numen_v1_textprovider, 1);
+  enumDesc(file_numen_v1_textprovider, 0);
 
 /**
  * TextProviderService is served by every plugin that makes text of vault files.
  * The host calls it; plugins never call one another's.
  *
- * A plugin keeps each of its texts of a file under a key of its own, and the
- * host names the text by the vault, the path and that key.
+ * A plugin writes each text it makes into its own folder of the vault's store,
+ * as JSON Lines of TextSegment, and records it through
+ * HostTextService.PutTextVersion. The host reads the file itself.
  *
  * @generated from service numen.v1.TextProviderService
  */
 export const TextProviderService: GenService<{
   /**
-   * GetText answers one page of a text, in order. A response with an empty
-   * next_cursor is the last page.
-   *
-   * @generated from rpc numen.v1.TextProviderService.GetText
-   */
-  getText: {
-    methodKind: "unary";
-    input: typeof TextProviderServiceGetTextRequestSchema;
-    output: typeof TextProviderServiceGetTextResponseSchema;
-  },
-  /**
    * CreateText asks the plugin to make text of a file, or of a version of it.
-   * The work goes on after the call returns, and the plugin reports each
+   * The work continues after the call returns, and the plugin records each
    * version through HostTextService.PutTextVersion.
    *
    * @generated from rpc numen.v1.TextProviderService.CreateText
@@ -391,17 +173,6 @@ export const TextProviderService: GenService<{
     methodKind: "unary";
     input: typeof TextProviderServiceCreateTextRequestSchema;
     output: typeof TextProviderServiceCreateTextResponseSchema;
-  },
-  /**
-   * DeleteText removes a text the plugin keeps. The host removes the version's
-   * record once the call succeeds.
-   *
-   * @generated from rpc numen.v1.TextProviderService.DeleteText
-   */
-  deleteText: {
-    methodKind: "unary";
-    input: typeof TextProviderServiceDeleteTextRequestSchema;
-    output: typeof TextProviderServiceDeleteTextResponseSchema;
   },
 }> = /*@__PURE__*/
   serviceDesc(file_numen_v1_textprovider, 0);

@@ -33,29 +33,17 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// TextProviderServiceGetTextProcedure is the fully-qualified name of the TextProviderService's
-	// GetText RPC.
-	TextProviderServiceGetTextProcedure = "/numen.v1.TextProviderService/GetText"
 	// TextProviderServiceCreateTextProcedure is the fully-qualified name of the TextProviderService's
 	// CreateText RPC.
 	TextProviderServiceCreateTextProcedure = "/numen.v1.TextProviderService/CreateText"
-	// TextProviderServiceDeleteTextProcedure is the fully-qualified name of the TextProviderService's
-	// DeleteText RPC.
-	TextProviderServiceDeleteTextProcedure = "/numen.v1.TextProviderService/DeleteText"
 )
 
 // TextProviderServiceClient is a client for the numen.v1.TextProviderService service.
 type TextProviderServiceClient interface {
-	// GetText answers one page of a text, in order. A response with an empty
-	// next_cursor is the last page.
-	GetText(context.Context, *connect.Request[v1.TextProviderServiceGetTextRequest]) (*connect.Response[v1.TextProviderServiceGetTextResponse], error)
 	// CreateText asks the plugin to make text of a file, or of a version of it.
-	// The work goes on after the call returns, and the plugin reports each
+	// The work continues after the call returns, and the plugin records each
 	// version through HostTextService.PutTextVersion.
 	CreateText(context.Context, *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error)
-	// DeleteText removes a text the plugin keeps. The host removes the version's
-	// record once the call succeeds.
-	DeleteText(context.Context, *connect.Request[v1.TextProviderServiceDeleteTextRequest]) (*connect.Response[v1.TextProviderServiceDeleteTextResponse], error)
 }
 
 // NewTextProviderServiceClient constructs a client for the numen.v1.TextProviderService service. By
@@ -69,22 +57,10 @@ func NewTextProviderServiceClient(httpClient connect.HTTPClient, baseURL string,
 	baseURL = strings.TrimRight(baseURL, "/")
 	textProviderServiceMethods := v1.File_numen_v1_textprovider_proto.Services().ByName("TextProviderService").Methods()
 	return &textProviderServiceClient{
-		getText: connect.NewClient[v1.TextProviderServiceGetTextRequest, v1.TextProviderServiceGetTextResponse](
-			httpClient,
-			baseURL+TextProviderServiceGetTextProcedure,
-			connect.WithSchema(textProviderServiceMethods.ByName("GetText")),
-			connect.WithClientOptions(opts...),
-		),
 		createText: connect.NewClient[v1.TextProviderServiceCreateTextRequest, v1.TextProviderServiceCreateTextResponse](
 			httpClient,
 			baseURL+TextProviderServiceCreateTextProcedure,
 			connect.WithSchema(textProviderServiceMethods.ByName("CreateText")),
-			connect.WithClientOptions(opts...),
-		),
-		deleteText: connect.NewClient[v1.TextProviderServiceDeleteTextRequest, v1.TextProviderServiceDeleteTextResponse](
-			httpClient,
-			baseURL+TextProviderServiceDeleteTextProcedure,
-			connect.WithSchema(textProviderServiceMethods.ByName("DeleteText")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -92,14 +68,7 @@ func NewTextProviderServiceClient(httpClient connect.HTTPClient, baseURL string,
 
 // textProviderServiceClient implements TextProviderServiceClient.
 type textProviderServiceClient struct {
-	getText    *connect.Client[v1.TextProviderServiceGetTextRequest, v1.TextProviderServiceGetTextResponse]
 	createText *connect.Client[v1.TextProviderServiceCreateTextRequest, v1.TextProviderServiceCreateTextResponse]
-	deleteText *connect.Client[v1.TextProviderServiceDeleteTextRequest, v1.TextProviderServiceDeleteTextResponse]
-}
-
-// GetText calls numen.v1.TextProviderService.GetText.
-func (c *textProviderServiceClient) GetText(ctx context.Context, req *connect.Request[v1.TextProviderServiceGetTextRequest]) (*connect.Response[v1.TextProviderServiceGetTextResponse], error) {
-	return c.getText.CallUnary(ctx, req)
 }
 
 // CreateText calls numen.v1.TextProviderService.CreateText.
@@ -107,23 +76,12 @@ func (c *textProviderServiceClient) CreateText(ctx context.Context, req *connect
 	return c.createText.CallUnary(ctx, req)
 }
 
-// DeleteText calls numen.v1.TextProviderService.DeleteText.
-func (c *textProviderServiceClient) DeleteText(ctx context.Context, req *connect.Request[v1.TextProviderServiceDeleteTextRequest]) (*connect.Response[v1.TextProviderServiceDeleteTextResponse], error) {
-	return c.deleteText.CallUnary(ctx, req)
-}
-
 // TextProviderServiceHandler is an implementation of the numen.v1.TextProviderService service.
 type TextProviderServiceHandler interface {
-	// GetText answers one page of a text, in order. A response with an empty
-	// next_cursor is the last page.
-	GetText(context.Context, *connect.Request[v1.TextProviderServiceGetTextRequest]) (*connect.Response[v1.TextProviderServiceGetTextResponse], error)
 	// CreateText asks the plugin to make text of a file, or of a version of it.
-	// The work goes on after the call returns, and the plugin reports each
+	// The work continues after the call returns, and the plugin records each
 	// version through HostTextService.PutTextVersion.
 	CreateText(context.Context, *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error)
-	// DeleteText removes a text the plugin keeps. The host removes the version's
-	// record once the call succeeds.
-	DeleteText(context.Context, *connect.Request[v1.TextProviderServiceDeleteTextRequest]) (*connect.Response[v1.TextProviderServiceDeleteTextResponse], error)
 }
 
 // NewTextProviderServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -133,32 +91,16 @@ type TextProviderServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewTextProviderServiceHandler(svc TextProviderServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	textProviderServiceMethods := v1.File_numen_v1_textprovider_proto.Services().ByName("TextProviderService").Methods()
-	textProviderServiceGetTextHandler := connect.NewUnaryHandler(
-		TextProviderServiceGetTextProcedure,
-		svc.GetText,
-		connect.WithSchema(textProviderServiceMethods.ByName("GetText")),
-		connect.WithHandlerOptions(opts...),
-	)
 	textProviderServiceCreateTextHandler := connect.NewUnaryHandler(
 		TextProviderServiceCreateTextProcedure,
 		svc.CreateText,
 		connect.WithSchema(textProviderServiceMethods.ByName("CreateText")),
 		connect.WithHandlerOptions(opts...),
 	)
-	textProviderServiceDeleteTextHandler := connect.NewUnaryHandler(
-		TextProviderServiceDeleteTextProcedure,
-		svc.DeleteText,
-		connect.WithSchema(textProviderServiceMethods.ByName("DeleteText")),
-		connect.WithHandlerOptions(opts...),
-	)
 	return "/numen.v1.TextProviderService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case TextProviderServiceGetTextProcedure:
-			textProviderServiceGetTextHandler.ServeHTTP(w, r)
 		case TextProviderServiceCreateTextProcedure:
 			textProviderServiceCreateTextHandler.ServeHTTP(w, r)
-		case TextProviderServiceDeleteTextProcedure:
-			textProviderServiceDeleteTextHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -168,14 +110,6 @@ func NewTextProviderServiceHandler(svc TextProviderServiceHandler, opts ...conne
 // UnimplementedTextProviderServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedTextProviderServiceHandler struct{}
 
-func (UnimplementedTextProviderServiceHandler) GetText(context.Context, *connect.Request[v1.TextProviderServiceGetTextRequest]) (*connect.Response[v1.TextProviderServiceGetTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.TextProviderService.GetText is not implemented"))
-}
-
 func (UnimplementedTextProviderServiceHandler) CreateText(context.Context, *connect.Request[v1.TextProviderServiceCreateTextRequest]) (*connect.Response[v1.TextProviderServiceCreateTextResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.TextProviderService.CreateText is not implemented"))
-}
-
-func (UnimplementedTextProviderServiceHandler) DeleteText(context.Context, *connect.Request[v1.TextProviderServiceDeleteTextRequest]) (*connect.Response[v1.TextProviderServiceDeleteTextResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.TextProviderService.DeleteText is not implemented"))
 }

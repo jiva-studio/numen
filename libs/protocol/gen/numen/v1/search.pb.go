@@ -403,7 +403,10 @@ type Passage struct {
 	Type string `protobuf:"bytes,8,opt,name=type,proto3" json:"type,omitempty"`
 	// What the vault holds at that path, so a client draws a book and a
 	// recording as what they are.
-	Kind          SourceKind `protobuf:"varint,9,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
+	Kind SourceKind `protobuf:"varint,9,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
+	// The selector of the text version segment the hit is in, as JSON, and empty
+	// for a note. It locates the hit in the file; the SDK documents its keys.
+	Selector      string `protobuf:"bytes,10,opt,name=selector,proto3" json:"selector,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -501,6 +504,13 @@ func (x *Passage) GetKind() SourceKind {
 	return SourceKind_SOURCE_KIND_UNSPECIFIED
 }
 
+func (x *Passage) GetSelector() string {
+	if x != nil {
+		return x.Selector
+	}
+	return ""
+}
+
 var File_numen_v1_search_proto protoreflect.FileDescriptor
 
 const file_numen_v1_search_proto_rawDesc = "" +
@@ -523,7 +533,7 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12(\n" +
 	"\x04mode\x18\x03 \x01(\x0e2\x14.numen.v1.SearchModeR\x04mode\"A\n" +
 	"\x16SearchPassagesResponse\x12'\n" +
-	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\x9b\x02\n" +
+	"\x05found\x18\x01 \x03(\v2\x11.numen.v1.PassageR\x05found\"\xb7\x02\n" +
 	"\aPassage\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
 	"\x04note\x18\x02 \x01(\v2\x0e.numen.v1.NoteH\x00R\x04note\x88\x01\x01\x12\x12\n" +
@@ -533,7 +543,9 @@ const file_numen_v1_search_proto_rawDesc = "" +
 	"\x04span\x18\x06 \x01(\v2\x0e.numen.v1.SpanR\x04span\x12\x12\n" +
 	"\x04line\x18\a \x01(\x05R\x04line\x12\x12\n" +
 	"\x04type\x18\b \x01(\tR\x04type\x12(\n" +
-	"\x04kind\x18\t \x01(\x0e2\x14.numen.v1.SourceKindR\x04kindB\a\n" +
+	"\x04kind\x18\t \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12\x1a\n" +
+	"\bselector\x18\n" +
+	" \x01(\tR\bselectorB\a\n" +
 	"\x05_note*\x88\x01\n" +
 	"\n" +
 	"SearchMode\x12\x1b\n" +

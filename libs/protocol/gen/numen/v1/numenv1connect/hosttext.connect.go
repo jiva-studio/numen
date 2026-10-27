@@ -50,15 +50,16 @@ const (
 // HostTextServiceClient is a client for the numen.v1.HostTextService service.
 type HostTextServiceClient interface {
 	// PutTextVersion records a version of the calling plugin, or replaces the
-	// record of one it already has under the key. Every put tells the host the
-	// text of the file changed.
+	// record it has under the key. The plugin writes the version's file into its
+	// folder first; the host reads the file and records its hash. Every put
+	// reindexes the file.
 	PutTextVersion(context.Context, *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error)
 	// RemoveTextVersion removes the record of a version of the calling plugin.
 	RemoveTextVersion(context.Context, *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error)
-	// ListTextVersions lists the versions of a file, and names the live one.
+	// ListTextVersions lists the versions of a file and names the live one.
 	ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error)
-	// ReadText answers one page of any version's text, asked of the plugin that
-	// made it.
+	// ReadText returns one page of any version's segments, read by the host from
+	// the version's file.
 	ReadText(context.Context, *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error)
 }
 
@@ -131,15 +132,16 @@ func (c *hostTextServiceClient) ReadText(ctx context.Context, req *connect.Reque
 // HostTextServiceHandler is an implementation of the numen.v1.HostTextService service.
 type HostTextServiceHandler interface {
 	// PutTextVersion records a version of the calling plugin, or replaces the
-	// record of one it already has under the key. Every put tells the host the
-	// text of the file changed.
+	// record it has under the key. The plugin writes the version's file into its
+	// folder first; the host reads the file and records its hash. Every put
+	// reindexes the file.
 	PutTextVersion(context.Context, *connect.Request[v1.PutTextVersionRequest]) (*connect.Response[v1.PutTextVersionResponse], error)
 	// RemoveTextVersion removes the record of a version of the calling plugin.
 	RemoveTextVersion(context.Context, *connect.Request[v1.RemoveTextVersionRequest]) (*connect.Response[v1.RemoveTextVersionResponse], error)
-	// ListTextVersions lists the versions of a file, and names the live one.
+	// ListTextVersions lists the versions of a file and names the live one.
 	ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error)
-	// ReadText answers one page of any version's text, asked of the plugin that
-	// made it.
+	// ReadText returns one page of any version's segments, read by the host from
+	// the version's file.
 	ReadText(context.Context, *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error)
 }
 

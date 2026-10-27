@@ -6,52 +6,59 @@ import "numen/v1/textprovider.proto";
 
 option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
 
-// HostTextService is what the host answers for a plugin about the text
-// versions of the vault it shows. The host knows the plugin by its token; a
-// call that reads needs vault:read and one that changes a version vault:write.
+// HostTextService serves the text versions of the vault the host shows to the
+// plugins. The host identifies the plugin by its token; a call that reads needs
+// vault:read and one that changes a version vault:write.
 //
 // A version made by the calling plugin is named by its key; any version is
 // named by its id, which is the plugin id and the key joined by "/".
 service HostTextService {
   // PutTextVersion records a version of the calling plugin, or replaces the
-  // record of one it already has under the key. Every put tells the host the
-  // text of the file changed.
+  // record it has under the key. The plugin writes the version's file into its
+  // folder first; the host reads the file and records its hash. Every put
+  // reindexes the file.
   rpc PutTextVersion(PutTextVersionRequest) returns (PutTextVersionResponse);
 
   // RemoveTextVersion removes the record of a version of the calling plugin.
   rpc RemoveTextVersion(RemoveTextVersionRequest) returns (RemoveTextVersionResponse);
 
-  // ListTextVersions lists the versions of a file, and names the live one.
+  // ListTextVersions lists the versions of a file and names the live one.
   rpc ListTextVersions(ListTextVersionsRequest) returns (ListTextVersionsResponse);
 
-  // ReadText answers one page of any version's text, asked of the plugin that
-  // made it.
+  // ReadText returns one page of any version's segments, read by the host from
+  // the version's file.
   rpc ReadText(ReadTextRequest) returns (ReadTextResponse);
 }
 
-// TextVersion is the host's record of one text of a file. input_version_id is
-// empty for a version made from the file. input_hash is the SHA-256, in hex, of
-// the file's bytes for such a version, and the hash of the input version
-// otherwise. hash is the version's own text as it is now.
+// TextVersion is the host's record of one text of a file.
+//
+// source_version_id is empty for a version made from the file. source_hash is
+// the SHA-256, in hex, of the file's bytes for such a version, and the hash of
+// the source version otherwise. file is the name of the version's file in the
+// folder of the plugin that made it; hash is the SHA-256 of that file's bytes.
+// kind is what the text is, as plugins name it ("transcript", "recognition");
+// the host compares it as an opaque string.
 message TextVersion {
   string id = 1;
   string path = 2;
   string plugin_id = 3;
   string key = 4;
-  string input_version_id = 5;
-  TextFormat format = 6;
-  string input_hash = 7;
+  string source_version_id = 5;
+  string kind = 6;
+  string source_hash = 7;
   string hash = 8;
   int64 create_time_unix_ms = 9;
+  string file = 10;
 }
 
 message PutTextVersionRequest {
   string path = 1;
   string key = 2;
-  string input_version_id = 3;
-  TextFormat format = 4;
-  string input_hash = 5;
-  string hash = 6;
+  string source_version_id = 3;
+  string kind = 4;
+  string source_hash = 5;
+  // file is the name of the version's file in the calling plugin's folder.
+  string file = 6;
 }
 
 message PutTextVersionResponse {
@@ -82,11 +89,13 @@ message ListTextVersionsResponse {
 message ReadTextRequest {
   string path = 1;
   string version_id = 2;
+  // cursor is the next_cursor of the page before, and empty for the first.
   string cursor = 3;
 }
 
 message ReadTextResponse {
-  repeated TextPart parts = 1;
+  repeated TextSegment segments = 1;
+  // next_cursor is empty on the last page.
   string next_cursor = 2;
   TextErrorCode error = 3;
 }

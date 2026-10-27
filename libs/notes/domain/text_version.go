@@ -9,28 +9,9 @@ import (
 	"time"
 )
 
-// TextFormat is the shape of a text version's places. The core reads three, and
-// every plugin that gives text writes one of them.
-type TextFormat string
-
-const (
-	// TextFormatPlain is text with no places: an article.
-	TextFormatPlain TextFormat = "plain"
-	// TextFormatTimed is text whose parts stand at moments of a recording: a
-	// transcript, subtitles.
-	TextFormatTimed TextFormat = "timed"
-	// TextFormatPositioned is text whose parts stand in rectangles on pages: a
-	// recognition, the text layer of a PDF.
-	TextFormatPositioned TextFormat = "positioned"
-)
-
-// TextFormats is every format the core reads.
-func TextFormats() []TextFormat {
-	return []TextFormat{TextFormatPlain, TextFormatTimed, TextFormatPositioned}
-}
-
-// IsValid reports whether the format is one the core reads.
-func (f TextFormat) IsValid() bool { return slices.Contains(TextFormats(), f) }
+// TextKind is what a text version is, as the plugin that makes it names it:
+// "transcript", "recognition". The core compares it as an opaque string.
+type TextKind string
 
 // TextVersionID names a text version among the versions of one file. It is the
 // plugin that made the version and the key that plugin gave it.
@@ -41,21 +22,24 @@ func NewTextVersionID(pluginID, key string) TextVersionID {
 	return TextVersionID(pluginID + "/" + key)
 }
 
-// A TextVersion is one text of a vault file: who made it, from what, in which
-// format, and from which input. It is the core's record; the text itself is
-// kept by the plugin that made it.
+// A TextVersion is the core's record of one text of a vault file: who made it,
+// from what, of which kind, and the file in the maker's plugin folder that
+// holds its segments.
 //
-// Input is empty for a version made from the file itself, and names another
-// version of the same file otherwise. InputHash is HashContent of the file for
-// the first, and the Hash of the input version for the second, as both were
-// when the version was made. Hash is what the version's own text is now.
+// Source is empty for a version made from the file itself, and names another
+// version of the same file otherwise. SourceHash is HashContent of the file for
+// the first, and the Hash of the source version for the second, as both were
+// when the version was made. File is the name of the version's file in the
+// folder of PluginID; Hash is HashContent of that file's bytes when the version
+// was recorded.
 type TextVersion struct {
 	Path       string
 	PluginID   string
 	Key        string
-	Input      TextVersionID
-	Format     TextFormat
-	InputHash  string
+	Source     TextVersionID
+	Kind       TextKind
+	File       string
+	SourceHash string
 	Hash       string
 	CreateTime time.Time
 }
@@ -64,23 +48,20 @@ type TextVersion struct {
 func (v TextVersion) GetID() TextVersionID { return NewTextVersionID(v.PluginID, v.Key) }
 
 // IsFromFile reports whether the version was made from the file itself.
-func (v TextVersion) IsFromFile() bool { return v.Input == "" }
+func (v TextVersion) IsFromFile() bool { return v.Source == "" }
 
-// HashContent is the hash a file's input is compared by: SHA-256 of its bytes,
-// in lowercase hex.
+// HashContent is the hash a file's content is compared by: SHA-256 of its
+// bytes, in lowercase hex.
 func HashContent(raw []byte) string {
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:])
 }
 
-// IsLiveVersion reports whether a version is live: every version of its chain,
-// down to the file, was made by an enabled plugin, and every input is still
-// what it was when the version above it was made.
+// IsChainValid reports whether every source in a version's chain, down to the
+// file, is still what it was when the version above it was made.
 //
 // fileHash is HashContent of the file as it is now.
-func IsLiveVersion(
-	versions []TextVersion, id TextVersionID, fileHash string, isEnabled func(pluginID string) bool,
-) bool {
+func IsChainValid(versions []TextVersion, id TextVersionID, fileHash string) bool {
 	byID := make(map[TextVersionID]TextVersion, len(versions))
 	for _, v := range versions {
 		byID[v.GetID()] = v
@@ -88,26 +69,27 @@ func IsLiveVersion(
 	visited := map[TextVersionID]bool{}
 	for {
 		v, ok := byID[id]
-		if !ok || visited[id] || !isEnabled(v.PluginID) {
+		if !ok || visited[id] {
 			return false
 		}
 		visited[id] = true
 		if v.IsFromFile() {
-			return v.InputHash == fileHash
+			return v.SourceHash == fileHash
 		}
-		input, ok := byID[v.Input]
-		if !ok || input.Hash != v.InputHash {
+		source, ok := byID[v.Source]
+		if !ok || source.Hash != v.SourceHash {
 			return false
 		}
-		id = v.Input
+		id = v.Source
 	}
 }
 
-// FindLiveVersion is the newest live version of a file, and false where none is
-// live. Newer is a later CreateTime; of two made at one instant the later in
-// the list is newer.
+// FindLiveVersion is the newest version of a file whose chain is valid and
+// whose own file isIntact reports unchanged, and false where none is. Newer is
+// a later CreateTime; of two made at one instant the later in the list is
+// newer. The plugin that made a version need not be enabled.
 func FindLiveVersion(
-	versions []TextVersion, fileHash string, isEnabled func(pluginID string) bool,
+	versions []TextVersion, fileHash string, isIntact func(TextVersion) bool,
 ) (TextVersion, bool) {
 	order := make([]int, len(versions))
 	for i := range order {
@@ -120,32 +102,11 @@ func FindLiveVersion(
 		return cmp.Compare(b, a)
 	})
 	for _, i := range order {
-		if IsLiveVersion(versions, versions[i].GetID(), fileHash, isEnabled) {
+		if IsChainValid(versions, versions[i].GetID(), fileHash) && isIntact(versions[i]) {
 			return versions[i], true
 		}
 	}
 	return TextVersion{}, false
-}
-
-// HasPluginInChain reports whether the plugin made the version or any version
-// it was made from.
-func HasPluginInChain(versions []TextVersion, id TextVersionID, pluginID string) bool {
-	byID := make(map[TextVersionID]TextVersion, len(versions))
-	for _, v := range versions {
-		byID[v.GetID()] = v
-	}
-	visited := map[TextVersionID]bool{}
-	for {
-		v, ok := byID[id]
-		if !ok || visited[id] {
-			return false
-		}
-		if v.PluginID == pluginID {
-			return true
-		}
-		visited[id] = true
-		id = v.Input
-	}
 }
 
 // FileInput is the files a plugin makes text from, by extension with its dot.

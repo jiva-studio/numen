@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package numen.v1;
+
+import "numen/v1/hosttext.proto";
+import "numen/v1/textprovider.proto";
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// TextService serves the text versions of the shown vault's files to the views
+// of a window. A view reads it through the plugin SDK.
+service TextService {
+  // ReadLiveText returns the live version of a file and its segments. A file
+  // with no live version returns no version and no segments.
+  rpc ReadLiveText(ReadLiveTextRequest) returns (ReadLiveTextResponse);
+
+  // CreateTextEdit records a person's edit of a version as a new version made
+  // from it. The host writes the segments into the folder of the plugin whose
+  // view the person edits in, and the new version becomes the live one.
+  rpc CreateTextEdit(CreateTextEditRequest) returns (CreateTextEditResponse);
+}
+
+message ReadLiveTextRequest {
+  string path = 1;
+}
+
+message ReadLiveTextResponse {
+  TextVersion version = 1;
+  repeated TextSegment segments = 2;
+}
+
+message CreateTextEditRequest {
+  // plugin_id is the plugin whose view the person edits in.
+  string plugin_id = 1;
+  string path = 2;
+  string source_version_id = 3;
+  repeated TextSegment segments = 4;
+}
+
+message CreateTextEditResponse {
+  TextVersion version = 1;
+  TextErrorCode error = 2;
+}
