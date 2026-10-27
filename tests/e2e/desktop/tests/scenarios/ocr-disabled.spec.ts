@@ -7,12 +7,12 @@ import {
   waitForPassage,
 } from '../support/workspace.js'
 
-/** The words of the page as pixels, which only a recognition reads. */
+/** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page; the text layer does not hold them. */
 const SCANNED_WORDS = 'rotor spinning in a vacuum'
 /** The words of the text layer the scanner wrote into the file. */
 const LAYER_WORDS = 'shipping manifest'
 const PATH = 'assets/flywheel.pdf'
-/** What the mock proofreader adds to the end of every line it puts right. */
+/** What the mock proofreader of `-debug-mock-ml` adds to the end of every line it puts right. */
 const PROOFREAD_MARK = 'proofread'
 
 const setOcrEnabled = async (page: Page, isEnabled: boolean): Promise<void> => {

@@ -7,6 +7,9 @@ import {
   waitForPassage,
 } from '../support/workspace.js'
 
+/** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page. */
+const MOCK_RECOGNISED_WORDS = 'recovers kinetic energy'
+
 test.describe('A scanned document', () => {
   test.describe.configure({ timeout: 180_000 })
 
@@ -21,7 +24,7 @@ test.describe('A scanned document', () => {
 
     const passage = await waitForPassage(
       page,
-      'recovers kinetic energy',
+      MOCK_RECOGNISED_WORDS,
       'assets/regenerative-braking.pdf',
     )
     await expect(passage).toContainText(/kinetic energy/i)
