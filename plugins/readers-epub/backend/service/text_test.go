@@ -2,8 +2,6 @@ package service
 
 import (
 	"errors"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"unicode/utf8"
@@ -20,13 +18,11 @@ const pluginID = "md.numen.readers.epub"
 // providing, and the plugin's text server.
 func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextServer) {
 	t.Helper()
-	root := t.TempDir()
-	if err := os.WriteFile(filepath.Join(root, name), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	files := hosttest.New("vault")
+	files.File(name, string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(func() string { return root }, texts, texts.GetStore(pluginID))
+	server := NewTextServer(files, texts, texts.GetStore(pluginID))
 	return texts, server
 }
 
@@ -151,5 +147,29 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	}
 	if got := version.GetHeadings(); got[2].Offset != 2*partBytes {
 		t.Errorf("Two begins at %d, want %d", got[2].Offset, 2*partBytes)
+	}
+}
+
+func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
+	raw := createPictureEpub(t)
+	physics := hosttest.New("Physics")
+	chemistry := hosttest.New("Chemistry")
+	physics.Beside(chemistry)
+	chemistry.File("book.epub", string(raw))
+	texts := hosttest.NewTexts("Physics", pluginID)
+	other := texts.With("Chemistry").(*hosttest.Texts)
+	other.File("book.epub", raw)
+	other.SetStore(pluginID, chemistry.Store())
+	server := NewTextServer(physics, texts, physics.Store())
+
+	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: "book.epub"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if text := readLive(t, other, "book.epub"); text.Version.Kind != textKind {
+		t.Errorf("Chemistry's live version is %+v", text.Version)
+	}
+	if inShown, _ := texts.ListVersions(t.Context(), "book.epub"); len(inShown.Versions) != 0 {
+		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

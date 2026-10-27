@@ -4,14 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 	"unicode/utf8"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
 )
 
@@ -28,9 +26,9 @@ const textKind domain.TextKind = "book-text"
 // each named section opened where it begins. The text and its offsets are the ones the reader sets
 // the book with.
 type TextServer struct {
-	vaultRoot func() string
-	texts     host.Texts
-	store     host.Store
+	files host.Vault
+	texts host.Texts
+	store host.Store
 
 	mu   sync.Mutex
 	last bookText
@@ -38,10 +36,10 @@ type TextServer struct {
 
 var _ host.TextProvider = (*TextServer)(nil)
 
-// NewTextServer is the texts of the books of the vault at vaultRoot, written into store and
-// reported to texts.
-func NewTextServer(vaultRoot func() string, texts host.Texts, store host.Store) *TextServer {
-	return &TextServer{vaultRoot: vaultRoot, texts: texts, store: store}
+// NewTextServer is the texts of the books read through files, written into store and reported to
+// texts.
+func NewTextServer(files host.Vault, texts host.Texts, store host.Store) *TextServer {
+	return &TextServer{files: files, texts: texts, store: store}
 }
 
 // bookText is one file's text as segments, and the hash of the bytes it was read from.
@@ -60,12 +58,8 @@ func isUnreadable(err error) bool {
 
 // readBook reads the book at a path of the vault. The book last read is kept while the file is the
 // same bytes.
-func (s *TextServer) readBook(path string) (bookText, error) {
-	clean, err := vault.ValidatePathIn(s.vaultRoot(), path)
-	if err != nil {
-		return bookText{}, err
-	}
-	raw, err := os.ReadFile(clean)
+func (s *TextServer) readBook(ctx context.Context, files host.Vault, path string) (bookText, error) {
+	raw, _, err := files.Read(ctx, path)
 	if err != nil {
 		return bookText{}, err
 	}
@@ -93,7 +87,11 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if req.Source != "" {
 		return fmt.Errorf("%w: the EPUB reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
 	}
-	read, err := s.readBook(req.Path)
+	files, texts, store := s.files, s.texts, s.store
+	if req.Vault != "" {
+		files, texts, store = files.With(req.Vault), texts.With(req.Vault), store.With(req.Vault)
+	}
+	read, err := s.readBook(ctx, files, req.Path)
 	if isUnreadable(err) {
 		return nil
 	}
@@ -103,15 +101,11 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if strings.TrimSpace(read.text) == "" {
 		return nil
 	}
-	store := s.store
-	if req.Vault != "" {
-		store = store.With(req.Vault)
-	}
 	file := read.hash + ".jsonl"
 	if err := host.WriteText(ctx, store, file, read.segments); err != nil {
 		return err
 	}
-	_, err = s.texts.PutVersion(ctx, host.TextPut{
+	_, err = texts.PutVersion(ctx, host.TextPut{
 		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err

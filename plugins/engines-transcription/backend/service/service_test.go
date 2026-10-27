@@ -282,3 +282,26 @@ func TestTranscribeCommandReportsUnopenableRecording(t *testing.T) {
 		t.Errorf("a recording that cannot be opened was answered %v", err)
 	}
 }
+
+func TestCreateTextRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
+	s := newScene(t)
+	chemistry := hosttest.New("Chemistry")
+	s.vault.Beside(chemistry)
+	chemistry.File(lecture, lectureSound)
+	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other.SetStore(PluginID, chemistry.Store())
+	other.File(lecture, []byte(lectureSound))
+
+	if err := s.provider.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: lecture}); err != nil {
+		t.Fatal(err)
+	}
+	s.transcriber.Wait()
+
+	inChemistry, err := other.ListVersions(t.Context(), lecture)
+	if err != nil || inChemistry.Live == "" {
+		t.Fatalf("Chemistry lists %+v (%v), want the transcript live", inChemistry, err)
+	}
+	if inShown, _ := s.texts.ListVersions(t.Context(), lecture); len(inShown.Versions) != 0 {
+		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
+	}
+}

@@ -326,3 +326,29 @@ func TestNewRequiresHostAndRecogniser(t *testing.T) {
 		t.Error("a recognition was made with nothing to recognise with")
 	}
 }
+
+func TestRecogniseRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
+	s := newScene(t)
+	chemistry := hosttest.New("Chemistry")
+	s.vault.Beside(chemistry)
+	raw := readFixture(t, "scan.pdf")
+	chemistry.File("books/scan.pdf", raw)
+	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other.SetStore(pluginID, chemistry.Store())
+	other.File("books/scan.pdf", []byte(raw))
+
+	if _, err := s.run.Recognise(t.Context(), recognition.Request{Vault: "Chemistry", Path: "books/scan.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	inChemistry, err := other.ListVersions(t.Context(), "books/scan.pdf")
+	if err != nil || inChemistry.Live == "" {
+		t.Fatalf("Chemistry lists %+v (%v), want the recognition live", inChemistry, err)
+	}
+	if inPhysics, _ := s.texts.ListVersions(t.Context(), "books/scan.pdf"); len(inPhysics.Versions) != 0 {
+		t.Errorf("the shown vault holds %+v, want no version", inPhysics.Versions)
+	}
+	if names, _ := s.store.List(t.Context()); len(names) != 0 {
+		t.Errorf("the shown vault's folder holds %v, want nothing", names)
+	}
+}

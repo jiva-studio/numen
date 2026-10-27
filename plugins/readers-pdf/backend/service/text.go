@@ -4,13 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"strings"
 	"sync"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -26,9 +24,9 @@ const textKind domain.TextKind = "page-text"
 // TextServer writes the text layer of the vault's PDF files into the plugin's folder as text
 // versions: every word with its page and the rectangle it covers in its selector.
 type TextServer struct {
-	vaultRoot func() string
-	texts     host.Texts
-	store     host.Store
+	files host.Vault
+	texts host.Texts
+	store host.Store
 
 	mu   sync.Mutex
 	last layer
@@ -36,10 +34,10 @@ type TextServer struct {
 
 var _ host.TextProvider = (*TextServer)(nil)
 
-// NewTextServer is the text layers of the files of the vault at vaultRoot, written into store and
-// reported to texts.
-func NewTextServer(vaultRoot func() string, texts host.Texts, store host.Store) *TextServer {
-	return &TextServer{vaultRoot: vaultRoot, texts: texts, store: store}
+// NewTextServer is the text layers of the files read through files, written into store and reported
+// to texts.
+func NewTextServer(files host.Vault, texts host.Texts, store host.Store) *TextServer {
+	return &TextServer{files: files, texts: texts, store: store}
 }
 
 // layer is one file's bytes and the document read from them.
@@ -54,12 +52,8 @@ func (l layer) hasText() bool { return strings.TrimSpace(l.book.Text) != "" }
 
 // readLayer reads the file at a path of the vault. The document last read is kept while the file is
 // the same bytes.
-func (s *TextServer) readLayer(path string) (layer, error) {
-	clean, err := vault.ValidatePathIn(s.vaultRoot(), path)
-	if err != nil {
-		return layer{}, err
-	}
-	raw, err := os.ReadFile(clean)
+func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path string) (layer, error) {
+	raw, _, err := files.Read(ctx, path)
 	if err != nil {
 		return layer{}, err
 	}
@@ -87,7 +81,11 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if req.Source != "" {
 		return fmt.Errorf("%w: the PDF reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
 	}
-	read, err := s.readLayer(req.Path)
+	files, texts, store := s.files, s.texts, s.store
+	if req.Vault != "" {
+		files, texts, store = files.With(req.Vault), texts.With(req.Vault), store.With(req.Vault)
+	}
+	read, err := s.readLayer(ctx, files, req.Path)
 	if errors.Is(err, pdf.ErrNotPDF) || errors.Is(err, pdf.ErrEncrypted) {
 		return nil
 	}
@@ -101,15 +99,11 @@ func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) erro
 	if err != nil {
 		return fmt.Errorf("read the words of %s: %w", req.Path, err)
 	}
-	store := s.store
-	if req.Vault != "" {
-		store = store.With(req.Vault)
-	}
 	file := read.hash + ".jsonl"
 	if err := host.WriteText(ctx, store, file, segments); err != nil {
 		return err
 	}
-	_, err = s.texts.PutVersion(ctx, host.TextPut{
+	_, err = texts.PutVersion(ctx, host.TextPut{
 		Path: req.Path, Key: textKey, Kind: textKind, SourceHash: read.hash, File: file,
 	})
 	return err

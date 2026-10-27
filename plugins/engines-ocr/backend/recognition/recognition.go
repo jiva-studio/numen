@@ -71,15 +71,15 @@ type Result struct {
 // pages carry text of their own, and one already recognised as it is now. A failure is shown as a
 // task until the file is recognised again.
 func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error) {
-	vault, store := r.host.Vault, r.host.Store
+	on := reach{vault: r.host.Vault, store: r.host.Store, texts: r.host.Texts}
 	if req.Vault != "" {
-		vault, store = vault.With(req.Vault), store.With(req.Vault)
+		on = reach{vault: on.vault.With(req.Vault), store: on.store.With(req.Vault), texts: on.texts.With(req.Vault)}
 	}
 	task := host.Task{
 		ID: "recognise:" + req.Path, Title: "Recognising " + path.Base(req.Path), About: req.Path,
 		Unit: host.UnitThings, IsUserStarted: req.IsUserStarted,
 	}
-	res, err := r.recognise(ctx, vault, store, req, &task)
+	res, err := r.recognise(ctx, on, req, &task)
 	if err != nil && ctx.Err() == nil {
 		task.Error = err.Error()
 		if reportErr := r.host.Queue.ReportTask(context.WithoutCancel(ctx), task); reportErr != nil {
@@ -93,19 +93,26 @@ func (r *Recognition) Recognise(ctx context.Context, req Request) (Result, error
 	return res, err
 }
 
-func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store host.Store, req Request, task *host.Task) (Result, error) {
-	raw, _, err := vault.Read(ctx, req.Path)
+// reach is the vault a recognition reads, its store and its text versions, all of one vault.
+type reach struct {
+	vault host.Vault
+	store host.Store
+	texts host.Texts
+}
+
+func (r *Recognition) recognise(ctx context.Context, on reach, req Request, task *host.Task) (Result, error) {
+	raw, _, err := on.vault.Read(ctx, req.Path)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s: %w", req.Path, err)
 	}
 	inputHash := domain.HashContent(raw)
 	if !req.IsUserStarted {
-		isRecognised, err := r.isRecognised(ctx, req.Path, inputHash)
+		isRecognised, err := hasRecognition(ctx, on.texts, req.Path, inputHash)
 		if err != nil || isRecognised {
 			return Result{IsSkipped: isRecognised}, err
 		}
 	}
-	rec, err := readRecord(ctx, store, req.Path)
+	rec, err := readRecord(ctx, on.store, req.Path)
 	if err != nil {
 		return Result{}, err
 	}
@@ -133,10 +140,10 @@ func (r *Recognition) recognise(ctx context.Context, vault host.Vault, store hos
 		rec = &record{Path: req.Path, InputHash: inputHash, Recipe: recipe, PageCount: doc.GetPageCount()}
 	}
 
-	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: store, task: task}, rec); err != nil {
+	if err := r.readPages(ctx, pageReading{doc: doc, recogniser: recogniser, dpi: model.DPI, store: on.store, task: task}, rec); err != nil {
 		return Result{}, err
 	}
-	return r.putVersion(ctx, store, rec)
+	return putVersion(ctx, on, rec)
 }
 
 // pageReading is what the pages of one file are read with.
@@ -180,7 +187,8 @@ func (r *Recognition) readPages(ctx context.Context, on pageReading, rec *record
 
 // putVersion writes the text of a complete record as the file's version, reports it, and deletes
 // the record. A record that says no text is deleted and reported as no version.
-func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *record) (Result, error) {
+func putVersion(ctx context.Context, on reach, rec *record) (Result, error) {
+	store := on.store
 	text := rec.getText()
 	if strings.TrimSpace(text.Text) == "" {
 		if err := store.Delete(ctx, getRecordName(rec.Path)); err != nil {
@@ -192,7 +200,7 @@ func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *rec
 	if err := host.WriteText(ctx, store, file, text.GetSegments()); err != nil {
 		return Result{}, err
 	}
-	_, err := r.host.Texts.PutVersion(ctx, host.TextPut{
+	_, err := on.texts.PutVersion(ctx, host.TextPut{
 		Path: rec.Path, Key: VersionKey, Kind: textKind, SourceHash: rec.InputHash, File: file,
 	})
 	if err != nil {
@@ -204,9 +212,9 @@ func (r *Recognition) putVersion(ctx context.Context, store host.Store, rec *rec
 	return Result{Pages: rec.PageCount}, nil
 }
 
-// isRecognised reports whether the file has a version of the plugin made from the content hash.
-func (r *Recognition) isRecognised(ctx context.Context, path, inputHash string) (bool, error) {
-	listing, err := r.host.Texts.ListVersions(ctx, path)
+// hasRecognition reports whether the file has a version of the plugin made from the content hash.
+func hasRecognition(ctx context.Context, texts host.Texts, path, inputHash string) (bool, error) {
+	listing, err := texts.ListVersions(ctx, path)
 	if err != nil {
 		return false, fmt.Errorf("list the versions of %s: %w", path, err)
 	}

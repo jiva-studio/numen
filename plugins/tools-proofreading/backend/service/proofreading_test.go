@@ -29,6 +29,7 @@ const (
 // scene is a vault with a scan and a recording, the versions other plugins made of them, and the
 // proofreading over them.
 type scene struct {
+	vault    *hosttest.Vault
 	texts    *hosttest.Texts
 	queue    *hosttest.Queue
 	store    host.Store
@@ -57,6 +58,7 @@ func newScene(t *testing.T) *scene {
 	t.Helper()
 	vault := hosttest.New("Physics")
 	s := &scene{
+		vault:    vault,
 		texts:    hosttest.NewTexts("Physics", PluginID),
 		queue:    hosttest.NewQueue(),
 		store:    vault.Store(),
@@ -120,7 +122,7 @@ func (s *scene) readLive(t *testing.T, path string) ([]domain.TextSegment, domai
 	}
 	for _, version := range listing.Versions {
 		if version.GetID() == listing.Live {
-			parts, err := s.run.readParts(t.Context(), version)
+			parts, err := readParts(t.Context(), s.texts, version)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -365,5 +367,38 @@ func TestTheMockAnswersTheSameQuestionTheSameWay(t *testing.T) {
 
 	if want := "4|one " + MockMark + "\n5|two " + MockMark; first != want || second != want {
 		t.Errorf("the mock answered %q and %q, want %q", first, second, want)
+	}
+}
+
+func TestProofreadRecordsTheVersionInTheVaultTheRequestNames(t *testing.T) {
+	s := newScene(t)
+	chemistry := hosttest.New("Chemistry")
+	s.vault.Beside(chemistry)
+	other := s.texts.With("Chemistry").(*hosttest.Texts)
+	other.File(scanPath, []byte("the scan"))
+	other.SetStore(PluginID, chemistry.Store())
+	if err := host.WriteText(t.Context(), other.GetStore(ocrID), "recognition.jsonl", []domain.TextSegment{{Text: "A rotor spinnig.\n\n"}}); err != nil {
+		t.Fatal(err)
+	}
+	scan, err := other.As(ocrID).PutVersion(t.Context(), host.TextPut{
+		Path: scanPath, Key: "recognition", Kind: kindRecognition, SourceHash: domain.HashContent([]byte("the scan")), File: "recognition.jsonl",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.run.Proofread(t.Context(), Request{Vault: "Chemistry", Path: scanPath, Source: scan.GetID(), IsUserStarted: true}); err != nil {
+		t.Fatal(err)
+	}
+
+	inChemistry, err := other.ListVersions(t.Context(), scanPath)
+	if err != nil || len(inChemistry.Versions) != 2 || !strings.HasPrefix(string(inChemistry.Live), PluginID+"/") {
+		t.Fatalf("Chemistry lists %+v (%v), want the proofreading live beside the scan", inChemistry, err)
+	}
+	if inShown, _ := s.texts.ListVersions(t.Context(), scanPath); len(inShown.Versions) != 0 {
+		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
+	}
+	if names, _ := s.store.List(t.Context()); len(names) != 0 {
+		t.Errorf("the shown vault's folder holds %v, want nothing", names)
 	}
 }

@@ -71,11 +71,15 @@ func (p *Proofreading) Proofread(ctx context.Context, req Request) (Result, erro
 }
 
 func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Task) (Result, error) {
-	source, err := p.findSource(ctx, req.Path, req.Source)
+	store, texts := p.host.Store, p.host.Texts
+	if req.Vault != "" {
+		store, texts = store.With(req.Vault), texts.With(req.Vault)
+	}
+	source, err := p.findSource(ctx, texts, req.Path, req.Source)
 	if err != nil {
 		return Result{}, err
 	}
-	parts, err := p.readParts(ctx, source)
+	parts, err := readParts(ctx, texts, source)
 	if err != nil {
 		return Result{}, fmt.Errorf("read %s of %s: %w", source.GetID(), req.Path, err)
 	}
@@ -97,15 +101,11 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 	}
 	corrected := applyCorrections(parts, corrections)
 
-	store := p.host.Store
-	if req.Vault != "" {
-		store = store.With(req.Vault)
-	}
 	key := getVersionKey(source.GetID())
 	if err := host.WriteText(ctx, store, getFileName(key), corrected); err != nil {
 		return Result{}, err
 	}
-	version, err := p.host.Texts.PutVersion(ctx, host.TextPut{
+	version, err := texts.PutVersion(ctx, host.TextPut{
 		Path: req.Path, Key: key, Source: source.GetID(), Kind: source.Kind,
 		SourceHash: source.Hash, File: getFileName(key),
 	})
@@ -116,8 +116,8 @@ func (p *Proofreading) proofread(ctx context.Context, req Request, task *host.Ta
 }
 
 // findSource is the version of the file the id names, or its live version where the id is empty.
-func (p *Proofreading) findSource(ctx context.Context, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
-	listing, err := p.host.Texts.ListVersions(ctx, filePath)
+func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePath string, id domain.TextVersionID) (domain.TextVersion, error) {
+	listing, err := texts.ListVersions(ctx, filePath)
 	if err != nil {
 		return domain.TextVersion{}, err
 	}
@@ -140,10 +140,10 @@ func (p *Proofreading) findSource(ctx context.Context, filePath string, id domai
 }
 
 // readParts is every page of the version's text, in order.
-func (p *Proofreading) readParts(ctx context.Context, version domain.TextVersion) ([]domain.TextSegment, error) {
+func readParts(ctx context.Context, texts host.Texts, version domain.TextVersion) ([]domain.TextSegment, error) {
 	var parts []domain.TextSegment
 	for cursor := ""; ; {
-		page, err := p.host.Texts.ReadText(ctx, version.Path, version.GetID(), cursor)
+		page, err := texts.ReadText(ctx, version.Path, version.GetID(), cursor)
 		if err != nil {
 			return nil, err
 		}

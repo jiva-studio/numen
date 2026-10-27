@@ -148,6 +148,7 @@ type job struct {
 	key      string
 	fileHash string
 	store    transcripts
+	texts    host.Texts
 	turn     host.Turn
 }
 
@@ -157,13 +158,13 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 		return fmt.Errorf("read %s: %w", path, err)
 	}
 	fileHash := domain.HashContent(raw)
-	stores := t.stores
+	stores, texts := t.stores, t.texts
 	if vault != "" {
-		stores = stores.With(vault)
+		stores, texts = stores.With(vault), texts.With(vault)
 	}
 	j := &job{
 		vault: vault, path: path, key: getTranscriptionKey(fileHash), fileHash: fileHash,
-		store: transcripts{store: stores},
+		store: transcripts{store: stores}, texts: texts,
 	}
 	if isWhole, err := j.store.hasWhole(ctx, j.key); err != nil || isWhole {
 		if err != nil {
@@ -204,7 +205,7 @@ func (t *Transcriber) run(ctx context.Context, vault domain.VaultID, path string
 // putWholeVersion puts the version of a transcript a run before this one finished, where the host
 // has no record of it.
 func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
-	listing, err := t.texts.ListVersions(ctx, j.path)
+	listing, err := j.texts.ListVersions(ctx, j.path)
 	if err != nil {
 		return err
 	}
@@ -218,7 +219,7 @@ func (t *Transcriber) putWholeVersion(ctx context.Context, j *job) error {
 
 // putVersion records the transcript in the file of the plugin's folder named.
 func (t *Transcriber) putVersion(ctx context.Context, j *job, file string) error {
-	_, err := t.texts.PutVersion(ctx, host.TextPut{
+	_, err := j.texts.PutVersion(ctx, host.TextPut{
 		Path: j.path, Key: j.key, Kind: textKind, SourceHash: j.fileHash, File: file,
 	})
 	return err

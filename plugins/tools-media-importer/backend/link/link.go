@@ -106,8 +106,10 @@ func (l *Links) Close() {
 func (l *Links) Wait() { l.wg.Wait() }
 
 // Link is one link note. Key names the text stored for its address, and Hash is the content hash of
-// the note, which names the copy of its video and is the source hash of its text version.
+// the note, which names the copy of its video and is the source hash of its text version. Vault is
+// the vault the note is in, and empty for the one the host shows.
 type Link struct {
+	Vault   domain.VaultID
 	Path    string
 	Address address.URL
 	Key     string
@@ -173,6 +175,22 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	return newLink(path, parsed, content), nil
 }
 
+// getStore is the plugin's folder in the vault of the link.
+func (l *Links) getStore(link Link) host.Store {
+	if link.Vault == "" {
+		return l.host.Store
+	}
+	return l.host.Store.With(link.Vault)
+}
+
+// getTexts is the text versions of the vault of the link.
+func (l *Links) getTexts(link Link) host.Texts {
+	if link.Vault == "" {
+		return l.host.Texts
+	}
+	return l.host.Texts.With(link.Vault)
+}
+
 // claim takes one kind of work on a link for this run alone, and returns false where another run
 // has it.
 func (l *Links) claim(work, key string) bool {
@@ -197,7 +215,8 @@ func (l *Links) IsCopyable(parsed address.URL) bool { return l.fetcher().CanCopy
 // FindCopy is the size of the copy stored for a link, and zero where none is. A copy kept under the
 // hash the note had before an edit is renamed to the hash it has now, so the host finds it.
 func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
-	folder := folder{store: l.host.Store}
+	store := l.getStore(link)
+	folder := folder{store: store}
 	if found, ok, err := folder.findCopy(ctx, link.Hash); err != nil || ok {
 		return found.Size, err
 	}
@@ -205,7 +224,7 @@ func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
 	if err != nil || rec.Copy == "" {
 		return 0, err
 	}
-	files, err := l.host.Store.List(ctx)
+	files, err := store.List(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -214,7 +233,7 @@ func (l *Links) FindCopy(ctx context.Context, link Link) (int64, error) {
 			continue
 		}
 		target := link.Hash + pathpkg.Ext(one.Name)
-		if err := l.host.Store.Rename(ctx, one.Name, target); err != nil {
+		if err := store.Rename(ctx, one.Name, target); err != nil {
 			return 0, err
 		}
 		rec.Copy = target
@@ -265,7 +284,7 @@ func (l *Links) FetchText(ctx context.Context, link Link, isUserStarted bool) er
 		return ErrBeingFetched
 	}
 	defer l.release("text", link.Key)
-	folder := folder{store: l.host.Store}
+	folder := folder{store: l.getStore(link)}
 	if !isUserStarted {
 		isDone, err := l.reuseText(ctx, folder, link)
 		if err != nil || isDone {
@@ -324,7 +343,7 @@ func (l *Links) fetchText(ctx context.Context, folder folder, link Link) error {
 // ensureVersion puts the stored text of a link as its version where the note has none made from it
 // as it reads now.
 func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKind) error {
-	listing, err := l.host.Texts.ListVersions(ctx, link.Path)
+	listing, err := l.getTexts(link).ListVersions(ctx, link.Path)
 	if err != nil {
 		return err
 	}
@@ -338,7 +357,7 @@ func (l *Links) ensureVersion(ctx context.Context, link Link, kind domain.TextKi
 
 // putVersion puts the text stored for a link to the host as the link's version.
 func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind) error {
-	_, err := l.host.Texts.PutVersion(ctx, host.TextPut{
+	_, err := l.getTexts(link).PutVersion(ctx, host.TextPut{
 		Path: link.Path, Key: link.Key, Kind: kind, SourceHash: link.Hash, File: link.Key + textExt,
 	})
 	return err
@@ -346,7 +365,7 @@ func (l *Links) putVersion(ctx context.Context, link Link, kind domain.TextKind)
 
 // IsTextDeleted reports whether the text of a link was fetched and its version deleted since.
 func (l *Links) IsTextDeleted(ctx context.Context, link Link) (bool, error) {
-	folder := folder{store: l.host.Store}
+	folder := folder{store: l.getStore(link)}
 	if rec, err := folder.readRecord(ctx, link.Key); err != nil || rec.Kind == "" {
 		return false, err
 	}
@@ -393,11 +412,12 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 	defer turn.Release()
 
 	part := link.Hash + partExt
-	if err := l.host.Store.Delete(ctx, part); err != nil {
+	store := l.getStore(link)
+	if err := store.Delete(ctx, part); err != nil {
 		return 0, err
 	}
 	into := &storeWriter{
-		ctx: ctx, store: l.host.Store, name: part, limit: settings.CopyMaxSize,
+		ctx: ctx, store: store, name: part, limit: settings.CopyMaxSize,
 		report: func(byteCount int64) {
 			task.Done, task.Total = byteCount, meta.Bytes
 			l.reportTask(ctx, task)
@@ -408,13 +428,13 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 		err = into.flush()
 	}
 	if err != nil {
-		return 0, errors.Join(err, l.host.Store.Delete(context.WithoutCancel(ctx), part))
+		return 0, errors.Join(err, store.Delete(context.WithoutCancel(ctx), part))
 	}
 	ext := strings.ToLower(copied.Extension)
 	if !isCopyExt(ext) {
-		return 0, errors.Join(fmt.Errorf("a copy in a %q file is not played", ext), l.host.Store.Delete(ctx, part))
+		return 0, errors.Join(fmt.Errorf("a copy in a %q file is not played", ext), store.Delete(ctx, part))
 	}
-	if err := l.host.Store.Rename(ctx, part, link.Hash+ext); err != nil {
+	if err := store.Rename(ctx, part, link.Hash+ext); err != nil {
 		return 0, err
 	}
 	return into.byteCount, l.recordCopy(ctx, link, link.Hash+ext)
@@ -422,7 +442,7 @@ func (l *Links) copy(ctx context.Context, fetcher Fetcher, settings Settings, li
 
 // recordCopy writes down the file the copy of a link is kept in.
 func (l *Links) recordCopy(ctx context.Context, link Link, name string) error {
-	folder := folder{store: l.host.Store}
+	folder := folder{store: l.getStore(link)}
 	rec, err := folder.readRecord(ctx, link.Key)
 	if err != nil {
 		return err
@@ -433,7 +453,7 @@ func (l *Links) recordCopy(ctx context.Context, link Link, name string) error {
 
 // DeleteCopy takes away the copy stored for a link.
 func (l *Links) DeleteCopy(ctx context.Context, link Link) error {
-	folder := folder{store: l.host.Store}
+	folder := folder{store: l.getStore(link)}
 	if err := folder.deleteCopy(ctx, link.Hash); err != nil {
 		return err
 	}
@@ -467,7 +487,7 @@ func (l *Links) ReadArticle(ctx context.Context, path string) (string, error) {
 // GetTitle is what the page at a link's address calls itself, and nothing where no text was
 // fetched.
 func (l *Links) GetTitle(ctx context.Context, link Link) (string, error) {
-	rec, err := folder{store: l.host.Store}.readRecord(ctx, link.Key)
+	rec, err := folder{store: l.getStore(link)}.readRecord(ctx, link.Key)
 	return rec.Title, err
 }
 

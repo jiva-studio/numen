@@ -31,16 +31,10 @@ func newVault(t *testing.T, name, fixture string) (*hosttest.Texts, *TextServer,
 
 func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextServer, []byte) {
 	t.Helper()
-	root := t.TempDir()
-	if err := os.MkdirAll(filepath.Dir(filepath.Join(root, name)), 0o755); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.WriteFile(filepath.Join(root, name), raw, 0o644); err != nil {
-		t.Fatal(err)
-	}
+	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(func() string { return root }, texts, texts.GetStore(pluginID))
+	server := NewTextServer(files, texts, texts.GetStore(pluginID))
 	return texts, server, raw
 }
 
@@ -215,7 +209,7 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
 		t.Fatal(err)
 	}
-	documents := NewDocumentServerIn(server.vaultRoot(), texts)
+	documents := NewDocumentServerIn(getRoot(server), texts)
 	text := readLive(t, texts, "tiny.pdf")
 	beta, zeta := strings.Index(text.Text, "beta"), strings.Index(text.Text, "zeta")
 
@@ -248,7 +242,7 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 
 func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	documents := NewDocumentServerIn(server.vaultRoot(), texts)
+	documents := NewDocumentServerIn(getRoot(server), texts)
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&numenv1.GetHighlightsRequest{
 		Path: "tiny.pdf", Spans: []*numenv1.Span{{From: 0, To: 5}},
@@ -259,5 +253,37 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 
 	if runs := res.Msg.GetRuns(); len(runs) != 1 || len(runs[0].GetPlaces()) != 0 {
 		t.Errorf("runs %v, want one standing nowhere", runs)
+	}
+}
+
+// getRoot is the folder on disk of the vault the server reads.
+func getRoot(server *TextServer) string {
+	return server.files.(*hosttest.Vault).Vault().Path
+}
+
+func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
+	raw, err := os.ReadFile(filepath.Join("..", "pdf", "testdata", "tiny.pdf"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	physics := hosttest.New("Physics")
+	chemistry := hosttest.New("Chemistry")
+	physics.Beside(chemistry)
+	chemistry.File("tiny.pdf", string(raw))
+	texts := hosttest.NewTexts("Physics", pluginID)
+	other := texts.With("Chemistry").(*hosttest.Texts)
+	other.File("tiny.pdf", raw)
+	other.SetStore(pluginID, chemistry.Store())
+	server := NewTextServer(physics, texts, physics.Store())
+
+	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"}); err != nil {
+		t.Fatal(err)
+	}
+
+	if text := readLive(t, other, "tiny.pdf"); text.Version.Kind != textKind {
+		t.Errorf("Chemistry's live version is %+v", text.Version)
+	}
+	if inShown, _ := texts.ListVersions(t.Context(), "tiny.pdf"); len(inShown.Versions) != 0 {
+		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
 	}
 }

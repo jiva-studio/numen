@@ -23,10 +23,15 @@ func (p Provider) CreateText(ctx context.Context, req host.TextCreation) error {
 	if req.Source != "" {
 		return fmt.Errorf("%s: %w", req.Source, host.ErrInvalidVersion)
 	}
-	link, err := readLink(ctx, p.links.host.Vault.With(req.Vault), req.Path)
+	vault := p.links.host.Vault
+	if req.Vault != "" {
+		vault = vault.With(req.Vault)
+	}
+	link, err := readLink(ctx, vault, req.Path)
 	if err != nil {
 		return err
 	}
+	link.Vault = req.Vault
 	p.links.StartFetchText(link, req.IsUserStarted)
 	return nil
 }
