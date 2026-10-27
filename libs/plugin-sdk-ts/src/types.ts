@@ -1,6 +1,7 @@
 import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { NoticeHost } from './notices'
+import type { TaskHost } from './tasks'
 import type { TextInput, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
@@ -247,6 +248,8 @@ export interface PluginContext {
   readonly texts?: VaultTexts
   // The notices of the window, where the host offers them.
   readonly notices?: NoticeHost
+  // The tasks the plugins report, where the host offers them.
+  readonly tasks?: TaskHost
 }
 
 // PluginManifest describes the metadata in manifest.json.

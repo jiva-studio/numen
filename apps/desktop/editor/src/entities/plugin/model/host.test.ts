@@ -169,6 +169,23 @@ describe('createPluginHost', () => {
     expect(host.createContext('test.plugin').notices).toBeUndefined()
   })
 
+  it('gives each plugin the task host for its own id', () => {
+    const { deps } = createMockDeps()
+    const tasks = { watch: vi.fn(), watchAll: vi.fn() }
+    const getTasks = vi.fn(() => tasks)
+    const host = createPluginHost({ ...deps, getTasks })
+
+    expect(host.createContext('test.plugin').tasks).toBe(tasks)
+    expect(getTasks).toHaveBeenCalledWith('test.plugin')
+  })
+
+  it('gives a plugin no task host where the window offers none', () => {
+    const { deps } = createMockDeps()
+    const host = createPluginHost(deps)
+
+    expect(host.createContext('test.plugin').tasks).toBeUndefined()
+  })
+
   it('registers context menu, removes it on dispose, and restores on reactivate', () => {
     const { deps } = createMockDeps()
     const host = createPluginHost(deps)

@@ -25,7 +25,7 @@ import { useWindowDisplay } from './useWindowDisplay'
 import { useWindowNotices } from '../shell/useWindowNotices'
 import { useWindowKinds } from './useWindowKinds'
 import { useWindowStatusBar } from '../shell/useWindowStatusBar'
-import { resolveTaskAction, resolveTaskPlugin } from '../shell/taskActions'
+import { resolveTaskAction } from '../shell/taskActions'
 import { useAppHotkeys } from '../commands/useAppHotkeys'
 import { useAppBootstrap } from './useAppBootstrap'
 import {
@@ -297,7 +297,7 @@ function initWindowKindsAndCommands(
     getNoteCommands: () => getCommands(ctx).getNoteCommands(),
   })
 
-  Object.assign(base.pluginServices, getKinds(ctx).services)
+  Object.assign(base.pluginServices, getKinds(ctx).services, { taskList: window.tasks })
 
   const knows: NoteLookup = createNoteLookup(editing, base.windowTabs)
 
@@ -344,14 +344,8 @@ export const useWindow = () => {
   })
   const statusBar = useWindowStatusBar({
     tasks: window.tasks,
-    resolveAction: (task) => resolveTaskAction(task, settings.rest.plugins?.value ?? []),
-    onAction: (id) => {
-      const task = window.tasks.value.find((t) => t.id === id)
-      const pluginId = task
-        ? resolveTaskPlugin(task, settings.rest.plugins?.value ?? [])
-        : undefined
-      settings.configured.openSettings(pluginId)
-    },
+    resolveAction: resolveTaskAction,
+    onAction: (pluginId) => settings.configured.openSettings(pluginId),
   })
   const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs })
 

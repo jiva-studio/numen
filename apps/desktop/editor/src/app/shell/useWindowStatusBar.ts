@@ -4,34 +4,20 @@
 import { computed, ref, type Ref } from 'vue'
 import type { StatusBarTask } from '@numen/shell'
 import type { Task } from '@/shared/notices/task'
+import { WORDS as words } from '@/shared/words'
 
 export interface WindowStatusBarDeps {
   tasks: Ref<readonly Task[]>
   onCancel?(id: string): void
   onRetry?(id: string): void
-  onAction?(id: string): void
+  /** Opens the settings of the plugin whose task action was pressed. */
+  onAction?(pluginId: string): void
   resolveAction?: (task: Task) => { label?: string; pluginId?: string | undefined } | undefined
 }
 
-const GROUP_PATTERNS: readonly { readonly group: string; readonly pattern: RegExp }[] = [
-  { group: 'Dependencies & Setup', pattern: /provision|download|runtime|model|dependency/i },
-  { group: 'Indexing', pattern: /index|book|epub/i },
-  { group: 'Audio & Transcription', pattern: /transcrib|audio|speech|hear/i },
-  { group: 'Text Recognition', pattern: /ocr|recogni|pdf/i },
-  { group: 'Vault Scanning', pattern: /vault|scan|watch/i },
-]
-
-/**
- * Derives a human-friendly category group for a given task.
- */
-function getTaskGroup(label: string, about: string): string {
-  const combined = `${label} ${about}`
-  for (const item of GROUP_PATTERNS) {
-    if (item.pattern.test(combined)) {
-      return item.group
-    }
-  }
-  return label || 'Background Tasks'
+/** The group a task is listed under: the plugin that reported it, or the core. */
+export function getTaskGroup(task: Task): string {
+  return task.pluginName || task.pluginId || words.coreTasks
 }
 
 function getTaskCounting(counting: string): string | undefined {
@@ -49,7 +35,7 @@ function createStatusBarTask(
   return {
     id: task.id,
     label: task.label,
-    group: getTaskGroup(task.label, task.about),
+    group: getTaskGroup(task),
     about: task.about || undefined,
     progress: hasTotal ? Math.round((task.completedCount / task.total) * 100) : undefined,
     done: hasTotal ? task.completedCount : undefined,
@@ -94,7 +80,8 @@ export function useWindowStatusBar({
   }
 
   function onActionTask(id: string) {
-    onAction?.(id)
+    const pluginId = tasks.value.find((task) => task.id === id)?.pluginId
+    if (pluginId) onAction?.(pluginId)
   }
 
   return {

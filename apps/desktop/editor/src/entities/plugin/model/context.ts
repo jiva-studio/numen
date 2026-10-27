@@ -216,6 +216,7 @@ export function createPluginContext(
   const target: PermissionTarget = { pluginId, manifest }
   const requirePerm = (p: string, op: string) => checkPermission(target, p, op)
   const notices = host.getNotices?.(pluginId)
+  const tasks = host.getTasks?.(pluginId)
 
   return {
     pluginId,
@@ -223,6 +224,7 @@ export function createPluginContext(
     subscriptions,
     ...guardServices(host, requirePerm, add),
     ...(notices ? { notices } : {}),
+    ...(tasks ? { tasks } : {}),
     hasPermission: (p: string) => manifest?.permissions?.includes(p) ?? false,
     registerReader: (reg: ReaderRegistration) => add(host.registerReader(pluginId, reg)),
     registerTabKind: <State>(reg: TabKindRegistration<State>) =>

@@ -494,6 +494,8 @@ describe('what the application is doing', () => {
     counting: 'items',
     error: '',
     isUserStarted: true,
+    pluginId: '',
+    pluginName: '',
   })
 
   it('is what the stream last returned, whole', async () => {

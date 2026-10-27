@@ -16,6 +16,7 @@ import type {
   PluginLifecycle,
   ReaderRegistration,
   TabKindRegistration,
+  TaskHost,
   VaultChangeEvent,
   ViewRegistration,
   VaultFiles,
@@ -35,6 +36,7 @@ export type {
   PluginLifecycle,
   ReaderRegistration,
   TabKindRegistration,
+  TaskHost,
   VaultChangeEvent,
 }
 
@@ -90,6 +92,8 @@ export interface PluginHostDeps {
   readonly getBuffers?: () => BufferHost | undefined
   /** The notices one plugin shows in the window's corner. */
   readonly getNotices?: (pluginId: string) => NoticeHost
+  /** The tasks the plugins report, as one plugin watches them. */
+  readonly getTasks?: (pluginId: string) => TaskHost | undefined
   /** Everything a plugin showed, taken away with the plugin. */
   readonly clearNotices?: (pluginId: string) => void
 }
@@ -127,4 +131,5 @@ export interface PluginContextHost {
   getAgent?(): AgentHost | undefined
   getBuffers?(): BufferHost | undefined
   getNotices?(pluginId: string): NoticeHost | undefined
+  getTasks?(pluginId: string): TaskHost | undefined
 }

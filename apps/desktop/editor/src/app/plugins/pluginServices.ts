@@ -17,6 +17,7 @@ import type { SearchDeps } from '@/features/command-palette'
 import type { FileOpeners } from '@/entities/tab'
 import { CREATABLE, type NoteCreator } from '@/entities/note'
 import type { MessageWriter } from '@/shared/notices/messages'
+import type { Task } from '@/shared/notices/task'
 import type { NotePort } from '@/app/ports/notes'
 import type { useSettings } from '../window/useSettings'
 import { createPathCommandHost, type PathCommandDeps } from './fileServices'
@@ -28,6 +29,8 @@ export interface PluginServices {
   files?: VaultFiles
   agent?: AgentHost
   buffers?: BufferHost
+  /** The window's task list, which each plugin's task host reads. */
+  taskList?: Readonly<Ref<readonly Task[]>>
 }
 
 /** What the window hands a plugin's tabs. */

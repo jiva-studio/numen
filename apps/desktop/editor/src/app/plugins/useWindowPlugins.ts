@@ -8,6 +8,7 @@ import type { useTabLinks } from '@/features/tab-linking'
 import type { NoticeQueue } from '@numen/shell'
 import type { useSettings } from '../window/useSettings'
 import { createPluginNotices } from './pluginNotices'
+import { createPluginTasks } from './pluginTasks'
 
 export interface PluginSupportDeps {
   readonly windowTabs: ReturnType<typeof useWindowTabs>
@@ -102,6 +103,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
     getFiles: () => deps.services?.files,
     getAgent: () => deps.services?.agent,
     getBuffers: () => deps.services?.buffers,
+    getTasks: (pluginId) => {
+      const list = deps.services?.taskList
+      return list ? createPluginTasks(list, pluginId) : undefined
+    },
     ...(deps.notices !== undefined ? createNoticeAccess(deps.notices) : {}),
   })
   const reportLoadError = deps.reportLoadError ?? deps.reportError

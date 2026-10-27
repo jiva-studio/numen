@@ -48,6 +48,8 @@ const task = (id: string): Task => ({
   counting: 'items',
   error: '',
   isUserStarted: false,
+  pluginId: '',
+  pluginName: '',
 })
 
 describe('following the vault', () => {

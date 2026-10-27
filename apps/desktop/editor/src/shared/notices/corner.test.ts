@@ -44,6 +44,8 @@ const createTask = (overrides: Partial<Task> = {}): Task => ({
   counting: 'items',
   error: '',
   isUserStarted: true,
+  pluginId: '',
+  pluginName: '',
   ...overrides,
 })
 

@@ -70,6 +70,8 @@ export const sessionCore: SessionCore = {
         counting: counted[task.unit] ?? 'things',
         error: task.error,
         isUserStarted: task.isUserStarted,
+        pluginId: task.pluginId,
+        pluginName: task.pluginName,
       }))
     }
   },

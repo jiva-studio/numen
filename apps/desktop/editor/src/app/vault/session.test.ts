@@ -143,6 +143,8 @@ describe('the streams a window follows', () => {
             unit: Unit.BYTES,
             error: '',
             isUserStarted: true,
+            pluginId: 'md.example.scans',
+            pluginName: 'Scan reader',
           },
           {
             id: 'later',
@@ -153,6 +155,8 @@ describe('the streams a window follows', () => {
             unit: 99,
             error: 'stopped',
             isUserStarted: false,
+            pluginId: '',
+            pluginName: '',
           },
         ],
       }
@@ -169,6 +173,8 @@ describe('the streams a window follows', () => {
           counting: 'bytes',
           error: '',
           isUserStarted: true,
+          pluginId: 'md.example.scans',
+          pluginName: 'Scan reader',
         },
         {
           id: 'later',
@@ -179,6 +185,8 @@ describe('the streams a window follows', () => {
           counting: 'things',
           error: 'stopped',
           isUserStarted: false,
+          pluginId: '',
+          pluginName: '',
         },
       ],
     ])

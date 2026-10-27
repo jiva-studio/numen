@@ -1,13 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { isConfigurableError, resolveTaskPlugin, resolveTaskAction } from './taskActions'
+import { isConfigurableError, resolveTaskAction } from './taskActions'
 import type { Task } from '@/shared/notices/task'
 
-const PLUGINS = [
-  { id: 'md.numen.agents.acp', name: 'ACP Agents' },
-  { id: 'md.numen.agents.claude', name: 'Claude CLI' },
-  { id: 'md.numen.engines.transcription', name: 'Audio/Video Transcription' },
-  { id: 'md.numen.tools.proofreading', name: 'AI Proofreading' },
-]
+const failed: Task = {
+  id: 'task',
+  label: 'Working',
+  about: 'notes/one.md',
+  completedCount: 0,
+  total: 0,
+  counting: 'items',
+  error: 'OAuth session expired and could not be refreshed',
+  isUserStarted: false,
+  pluginId: 'md.example.engine',
+  pluginName: 'Example Engine',
+}
 
 describe('isConfigurableError', () => {
   it('rejects file missing and filesystem errors', () => {
@@ -25,72 +31,21 @@ describe('isConfigurableError', () => {
   })
 })
 
-describe('resolveTaskPlugin', () => {
-  it('does not falsely match ACP when error mentions generic agent word', () => {
-    const task: Task = {
-      id: 'task-1',
-      label: 'Proofreading a recognition',
-      about: 'Books/manual.pdf',
-      completedCount: 0,
-      total: 0,
-      counting: 'items',
-      error:
-        'routed agent did not answer: the agent stopped: Failed to authenticate: OAuth session expired',
-      isUserStarted: true,
-    }
-
-    const matched = resolveTaskPlugin(task, PLUGINS)
-    // A proofreading task resolves to the proofreading plugin.
-    expect(matched).toBe('md.numen.tools.proofreading')
-  })
-
-  it('matches specific agent when named in error', () => {
-    const task: Task = {
-      id: 'task-2',
-      label: 'Agent run',
-      about: 'chat',
-      completedCount: 0,
-      total: 0,
-      counting: 'items',
-      error: 'claude process failed to authenticate',
-      isUserStarted: true,
-    }
-
-    expect(resolveTaskPlugin(task, PLUGINS)).toBe('md.numen.agents.claude')
-  })
-})
-
 describe('resolveTaskAction', () => {
   it('returns undefined for file missing errors', () => {
-    const task: Task = {
-      id: 'task-missing',
-      label: 'Transcribing a recording',
-      about: 'assets/sample.flac',
-      completedCount: 0,
-      total: 0,
-      counting: 'items',
-      error: 'stat assets/sample.flac: no such file or directory',
-      isUserStarted: false,
-    }
+    const task = { ...failed, error: 'stat assets/sample.flac: no such file or directory' }
 
-    expect(resolveTaskAction(task, PLUGINS)).toBeUndefined()
+    expect(resolveTaskAction(task)).toBeUndefined()
   })
 
-  it('returns configure action for authentication errors', () => {
-    const task: Task = {
-      id: 'task-auth',
-      label: 'Proofreading a recognition',
-      about: 'Books/manual.pdf',
-      completedCount: 0,
-      total: 0,
-      counting: 'items',
-      error: 'OAuth session expired and could not be refreshed',
-      isUserStarted: false,
-    }
-
-    expect(resolveTaskAction(task, PLUGINS)).toEqual({
+  it('returns the configure action for the plugin that reported the task', () => {
+    expect(resolveTaskAction(failed)).toEqual({
       label: 'Configure in settings',
-      pluginId: 'md.numen.tools.proofreading',
+      pluginId: 'md.example.engine',
     })
+  })
+
+  it('returns undefined for a core task', () => {
+    expect(resolveTaskAction({ ...failed, pluginId: '', pluginName: '' })).toBeUndefined()
   })
 })

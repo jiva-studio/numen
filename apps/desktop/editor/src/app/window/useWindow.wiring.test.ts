@@ -434,9 +434,11 @@ describe('the layout started with an initial tab', () => {
 })
 
 describe('the services a plugin is given', () => {
-  it('are the ones the kinds made, handed to the plugins once the kinds are made', () => {
+  it('are the ones the kinds made and the window task list, handed to the plugins', () => {
     useWindow()
 
-    expect(h.args.plugins.services).toStrictEqual(h.f.kinds.services)
+    const { taskList, ...made } = h.args.plugins.services
+    expect(made).toStrictEqual(h.f.kinds.services)
+    expect(taskList).toBe(h.f.display.tasks)
   })
 })

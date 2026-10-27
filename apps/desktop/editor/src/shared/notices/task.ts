@@ -25,4 +25,7 @@ export interface Task {
   readonly error: string
   /** Whether a person asked for this and is waiting to be told it began. */
   readonly isUserStarted: boolean
+  /** The plugin that reported the work and its name; both empty for the core's own work. */
+  readonly pluginId: string
+  readonly pluginName: string
 }

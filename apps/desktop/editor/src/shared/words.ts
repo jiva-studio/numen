@@ -182,6 +182,10 @@ export const WORDS = {
   /** The corner where what is running behind the window is shown. */
   wordsOnly: 'Text search only: no embedding model set',
   isWorking: 'Background work',
+  /** The status bar group of the core's own tasks. */
+  coreTasks: 'Numen',
+  /** The action on a plugin task that failed for want of configuration. */
+  configure: 'Configure in settings',
   dismiss: 'Dismiss',
   more: 'more',
 }

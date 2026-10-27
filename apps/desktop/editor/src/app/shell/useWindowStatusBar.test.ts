@@ -2,7 +2,23 @@ import { describe, expect, it, vi } from 'vitest'
 import { ref } from 'vue'
 import { useWindowStatusBar } from './useWindowStatusBar'
 import type { Task } from '@/shared/notices/task'
+import { WORDS as words } from '@/shared/words'
 import { pick } from '@/testing/pick'
+
+const base: Task = {
+  id: 't',
+  label: 'Reading',
+  about: '',
+  completedCount: 1,
+  total: 4,
+  counting: 'items',
+  error: '',
+  isUserStarted: false,
+  pluginId: '',
+  pluginName: '',
+}
+
+const first = (task: Task) => pick(useWindowStatusBar({ tasks: ref([task]) }).tasks.value, 0)
 
 describe('useWindowStatusBar', () => {
   it('maps empty tasks to empty status bar tasks', () => {
@@ -12,78 +28,14 @@ describe('useWindowStatusBar', () => {
     expect(statusBar.tasks.value).toEqual([])
   })
 
-  it('maps running tasks with progress percentage and groups them', () => {
-    const tasks = ref<readonly Task[]>([
-      {
-        id: 'task-1',
-        label: 'Indexing book',
-        about: 'War and Peace.epub',
-        completedCount: 50,
-        total: 100,
-        counting: 'items',
-        error: '',
-        isUserStarted: false,
-      },
-      {
-        id: 'task-2',
-        label: 'Transcribing speech',
-        about: 'audio.mp3',
-        completedCount: 0,
-        total: 0,
-        counting: 'seconds',
-        error: '',
-        isUserStarted: false,
-      },
-    ])
+  it('maps a running task to its progress percentage', () => {
+    const task = first({ ...base, completedCount: 50, total: 100 })
 
-    const statusBar = useWindowStatusBar({ tasks })
-
-    expect(statusBar.tasks.value).toHaveLength(2)
-    const task1 = pick(statusBar.tasks.value, 0)
-    expect(task1.id).toBe('task-1')
-    expect(task1.label).toBe('Indexing book')
-    expect(task1.progress).toBe(50)
-    expect(task1.state).toBe('running')
-    expect(task1.group).toBe('Indexing')
-
-    const task2 = pick(statusBar.tasks.value, 1)
-    expect(task2.progress).toBeUndefined()
-    expect(task2.state).toBe('running')
-    expect(task2.group).toBe('Audio & Transcription')
-  })
-
-  it('groups a dependency download under Dependencies & Setup', () => {
-    const tasks = ref<readonly Task[]>([
-      {
-        id: 'provision:onnxruntime',
-        label: 'Downloading onnxruntime',
-        about: '',
-        completedCount: 10,
-        total: 100,
-        counting: 'bytes',
-        error: '',
-        isUserStarted: false,
-      },
-    ])
-
-    const statusBar = useWindowStatusBar({ tasks })
-
-    expect(pick(statusBar.tasks.value, 0).group).toBe('Dependencies & Setup')
+    expect(task).toMatchObject({ id: 't', label: 'Reading', progress: 50, state: 'running' })
   })
 
   it('handles failed tasks and allows dismissing them', () => {
-    const tasks = ref<readonly Task[]>([
-      {
-        id: 'failed-task',
-        label: 'Reading file',
-        about: 'doc.pdf',
-        completedCount: 0,
-        total: 10,
-        counting: 'items',
-        error: 'File is corrupted',
-        isUserStarted: false,
-      },
-    ])
+    const tasks = ref<readonly Task[]>([{ ...base, id: 'failed-task', error: 'File is corrupted' }])
 
     const statusBar = useWindowStatusBar({ tasks })
 
@@ -91,25 +43,41 @@ describe('useWindowStatusBar', () => {
     expect(statusBar.tasks.value[0]?.state).toBe('failed')
     expect(statusBar.tasks.value[0]?.error).toBe('File is corrupted')
 
-    // Dismissing the failed task removes it from the status bar display
     statusBar.onDismissTask('failed-task')
     expect(statusBar.tasks.value).toHaveLength(0)
   })
 })
 
-describe('useWindowStatusBar detail and unit', () => {
-  const base: Task = {
-    id: 't',
-    label: 'Reading',
-    about: '',
-    completedCount: 1,
-    total: 4,
-    counting: 'items',
-    error: '',
-    isUserStarted: false,
-  }
-  const first = (task: Task) => pick(useWindowStatusBar({ tasks: ref([task]) }).tasks.value, 0)
+describe('useWindowStatusBar groups', () => {
+  it('groups tasks by the name of the plugin that reported them', () => {
+    const tasks = ref<readonly Task[]>([
+      { ...base, id: 'a', label: 'Step one', pluginId: 'md.example.first', pluginName: 'First' },
+      { ...base, id: 'b', label: 'Step two', pluginId: 'md.example.second', pluginName: 'Second' },
+      { ...base, id: 'c', label: 'Step three', pluginId: 'md.example.first', pluginName: 'First' },
+    ])
 
+    const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
+
+    expect(groups).toEqual(['First', 'Second', 'First'])
+  })
+
+  it('groups a plugin task without a name under the plugin id', () => {
+    expect(first({ ...base, pluginId: 'md.example.first' }).group).toBe('md.example.first')
+  })
+
+  it('groups the core work under one group whatever its label says', () => {
+    const tasks = ref<readonly Task[]>([
+      { ...base, id: 'a', label: 'Transcribing speech' },
+      { ...base, id: 'b', label: 'Recognising a scan' },
+    ])
+
+    const groups = useWindowStatusBar({ tasks }).tasks.value.map((one) => one.group)
+
+    expect(groups).toEqual([words.coreTasks, words.coreTasks])
+  })
+})
+
+describe('useWindowStatusBar detail and unit', () => {
   it('carries what the task is about, and nothing where it is about nothing', () => {
     expect(first({ ...base, about: 'doc.pdf' }).about).toBe('doc.pdf')
     expect(first(base).about).toBeUndefined()
@@ -133,87 +101,49 @@ describe('useWindowStatusBar detail and unit', () => {
   })
 })
 
-describe('useWindowStatusBar groups and handlers', () => {
-  const defaultTask: Task = {
-    id: 't',
-    label: 'Sorting',
-    about: 'shelf',
-    completedCount: 0,
-    total: 0,
-    counting: 'items',
-    error: '',
-    isUserStarted: false,
-  }
-
-  it('groups a task that matches no pattern under its label, or under a general name without one', () => {
-    const bar = useWindowStatusBar({
-      tasks: ref([defaultTask, { ...defaultTask, id: 'u', label: '' }]),
-    })
-    expect(bar.tasks.value.map((one) => one.group)).toEqual(['Sorting', 'Background Tasks'])
-  })
-
+describe('useWindowStatusBar handlers', () => {
   it('passes cancel and retry to the callbacks given, and does nothing without them', () => {
     const onCancel = vi.fn()
     const onRetry = vi.fn()
-    const bar = useWindowStatusBar({ tasks: ref([defaultTask]), onCancel, onRetry })
+    const bar = useWindowStatusBar({ tasks: ref([base]), onCancel, onRetry })
     bar.onCancelTask('t')
     bar.onRetryTask('t')
     expect(onCancel).toHaveBeenCalledWith('t')
     expect(onRetry).toHaveBeenCalledWith('t')
 
-    const barWithoutCallbacks = useWindowStatusBar({ tasks: ref([defaultTask]) })
+    const barWithoutCallbacks = useWindowStatusBar({ tasks: ref([base]) })
     expect(() => barWithoutCallbacks.onCancelTask('t')).not.toThrow()
     expect(() => barWithoutCallbacks.onRetryTask('t')).not.toThrow()
   })
-})
 
-describe('a proofreading the person has not allowed', () => {
-  it('remains failed in the status bar, saying where to allow it', () => {
-    const reason = 'AI access not allowed — allow it in Settings → AI'
-    const tasks = ref<readonly Task[]>([
-      {
-        id: 'proofread-talks/one.mp3',
-        label: 'Proofreading a transcript',
-        about: 'talks/one.mp3',
-        completedCount: 0,
-        total: 0,
-        counting: 'items',
-        error: reason,
-        isUserStarted: true,
-      },
-    ])
-
-    const [taskItem] = useWindowStatusBar({ tasks }).tasks.value
-
-    expect(taskItem).toMatchObject({ state: 'failed', error: reason, canCancel: false })
-  })
-
-  it('populates action and triggers onAction callback when onActionTask is called', () => {
+  it('shows the action and passes the task plugin id to onAction', () => {
     const onAction = vi.fn()
     const task: Task = {
+      ...base,
       id: 'task-err',
-      label: 'Proofreading a recognition',
-      about: 'doc.pdf',
-      completedCount: 0,
-      total: 0,
-      counting: 'items',
       error: 'OAuth session expired',
-      isUserStarted: true,
+      pluginId: 'md.example.agent',
     }
     const statusBar = useWindowStatusBar({
       tasks: ref([task]),
-      resolveAction: (_t) => ({
-        label: 'Configure in settings',
-        pluginId: 'md.numen.agents.claude',
-      }),
+      resolveAction: (one) => ({ label: 'Configure in settings', pluginId: one.pluginId }),
       onAction,
     })
 
     const [item] = statusBar.tasks.value
     expect(item?.actionLabel).toBe('Configure in settings')
-    expect(item?.actionId).toBe('md.numen.agents.claude')
+    expect(item?.actionId).toBe('md.example.agent')
 
     statusBar.onActionTask('task-err')
-    expect(onAction).toHaveBeenCalledWith('task-err')
+    expect(onAction).toHaveBeenCalledWith('md.example.agent')
+  })
+
+  it('does not call onAction for a core task', () => {
+    const onAction = vi.fn()
+    const statusBar = useWindowStatusBar({ tasks: ref([base]), onAction })
+
+    statusBar.onActionTask('t')
+
+    expect(onAction).not.toHaveBeenCalled()
   })
 })
