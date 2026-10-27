@@ -21,6 +21,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/opentabs"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/vault"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/testonly"
@@ -142,6 +143,10 @@ func (d *DB) Sources() sources {
 // TextVersions is the text versions of every vault. A rebuild of the index
 // reads the vaults again and leaves them as they are.
 func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d.read, d.write) }
+
+// OpenTabs is the tabs the window has open on every vault. A rebuild of the
+// index leaves them as they are.
+func (d *DB) OpenTabs() *opentabs.Repository { return opentabs.NewRepository(d.read, d.write) }
 
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(pragmas), pos.synchronous))
