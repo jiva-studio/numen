@@ -28,10 +28,10 @@ func TestContainerSafeModeDegradation(t *testing.T) {
 		"id": "md.numen.pdf",
 		"name": "PDF",
 		"version": "1.0.0",
-		"capabilities": ["document", "transcription", "proofreading", "embedding"],
+		"capabilities": ["embedding"],
 		"targets": ["desktop.editor"],
 		"permissions": ["vault:read"],
-		"backend": {"type": "process", "entrypoint": "bin/doc", "serviceName": "numen.v1.DocumentService"}
+		"backend": {"type": "process", "entrypoint": "bin/doc", "serviceName": "numen.sample.v1.SampleService"}
 	}`
 	if err := os.WriteFile(filepath.Join(pDir, "manifest.json"), []byte(manifest), 0o600); err != nil {
 		t.Fatal(err)

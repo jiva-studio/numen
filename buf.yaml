@@ -5,6 +5,8 @@ modules:
   - path: libs/protocol/proto
   - path: plugins/views-flashcards-studio/proto
   - path: plugins/tools-media-importer/proto
+  - path: plugins/readers-pdf/proto
+  - path: plugins/readers-epub/proto
 lint:
   use:
     - STANDARD

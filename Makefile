@@ -54,10 +54,10 @@ build: interface lib_core_build app_desktop_build ## build all application artif
 interface: lib_shell_build app_desktop_editor_build ## build UI pages into assets
 
 .PHONY: generate
-generate: lib_protocol_generate plugin_flashcards_generate plugin_importer_generate ## generate code from schema
+generate: lib_protocol_generate plugin_flashcards_generate plugin_importer_generate plugin_pdf_generate plugin_epub_generate ## generate code from schema
 
 .PHONY: generate-check
-generate-check: lib_protocol_generate_check plugin_flashcards_generate_check plugin_importer_generate_check ## verify generated code matches schema
+generate-check: lib_protocol_generate_check plugin_flashcards_generate_check plugin_importer_generate_check plugin_pdf_generate_check plugin_epub_generate_check ## verify generated code matches schema
 
 .PHONY: desktop
 desktop: app_desktop_build ## build desktop application
@@ -180,6 +180,28 @@ plugin_importer_generate: ## generate the media importer plugin's own schema
 plugin_importer_generate_check: plugin_importer_generate ## verify the media importer plugin's schema is up to date
 	git add -AN -- $(IMPORTER_PLUGIN)/gen $(IMPORTER_PLUGIN)/frontend/gen
 	git diff --exit-code -- $(IMPORTER_PLUGIN)/gen $(IMPORTER_PLUGIN)/frontend/gen
+
+PDF_PLUGIN := plugins/readers-pdf
+
+.PHONY: plugin_pdf_generate
+plugin_pdf_generate: ## generate the PDF reader plugin's own schema
+	cd $(PDF_PLUGIN) && buf generate
+
+.PHONY: plugin_pdf_generate_check
+plugin_pdf_generate_check: plugin_pdf_generate ## verify the PDF reader plugin's schema is up to date
+	git add -AN -- $(PDF_PLUGIN)/gen $(PDF_PLUGIN)/frontend/gen
+	git diff --exit-code -- $(PDF_PLUGIN)/gen $(PDF_PLUGIN)/frontend/gen
+
+EPUB_PLUGIN := plugins/readers-epub
+
+.PHONY: plugin_epub_generate
+plugin_epub_generate: ## generate the EPUB reader plugin's own schema
+	cd $(EPUB_PLUGIN) && buf generate
+
+.PHONY: plugin_epub_generate_check
+plugin_epub_generate_check: plugin_epub_generate ## verify the EPUB reader plugin's schema is up to date
+	git add -AN -- $(EPUB_PLUGIN)/gen $(EPUB_PLUGIN)/frontend/gen
+	git diff --exit-code -- $(EPUB_PLUGIN)/gen $(EPUB_PLUGIN)/frontend/gen
 
 .PHONY: lib_protocol_generate_check
 lib_protocol_generate_check: lib_protocol_generate ## verify protocol schema is up to date

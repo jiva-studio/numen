@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "EPUB book reader and metadata parser",
-  "capabilities": ["book"],
+  "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write"],
@@ -21,7 +21,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/readers-epub",
-    "serviceName": "numen.v1.BookService"
+    "serviceName": "numen.epub.v1.BookService"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

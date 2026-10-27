@@ -18,10 +18,10 @@ const sampleManifest = `{
 	"id": "md.numen.sample",
 	"name": "Sample",
 	"version": "1.0.0",
-	"capabilities": ["document"],
+	"capabilities": [],
 	"targets": ["desktop.editor"],
 	"permissions": ["vault:read"],
-	"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.v1.DocumentService"}
+	"backend": {"type": "process", "entrypoint": "bin/sample", "serviceName": "numen.sample.v1.SampleService"}
 }`
 
 func newFailingConfig(t *testing.T) Config {

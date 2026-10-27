@@ -43,8 +43,6 @@ func PluginPermissions() []string {
 // PluginCapabilities is every core capability the guide lists.
 func PluginCapabilities() []string {
 	return []string{
-		"document",
-		"book",
 		"embedding",
 		"tools",
 		"agent",

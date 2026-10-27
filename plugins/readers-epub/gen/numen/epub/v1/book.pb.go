@@ -2,20 +2,25 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: numen/v1/book.proto
+// source: numen/epub/v1/book.proto
 
+// What the EPUB reader's tab asks of the plugin's backend about a book: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //
 // Such a book has no pages of its own. It is set in columns against the room
 // the reader has, so a place in it is an offset into its one text stream, and
 // every number here is counted in bytes of that text. The bytes of one picture
-// are at an address of their own, because a browser's own elements speak bytes
-// and not this.
+// are on the plugin route,
+// /plugin/md.numen.readers.epub/entries/<entry>?path=<path>, because a
+// browser's own elements read bytes and not this. Every call works the vault
+// its Numen-Vault header names, which the window sets on each request it
+// forwards.
 
-package numenv1
+package epubv1
 
 import (
+	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -40,7 +45,7 @@ type GetBookRequest struct {
 
 func (x *GetBookRequest) Reset() {
 	*x = GetBookRequest{}
-	mi := &file_numen_v1_book_proto_msgTypes[0]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +57,7 @@ func (x *GetBookRequest) String() string {
 func (*GetBookRequest) ProtoMessage() {}
 
 func (x *GetBookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[0]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +70,7 @@ func (x *GetBookRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBookRequest.ProtoReflect.Descriptor instead.
 func (*GetBookRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{0}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *GetBookRequest) GetPath() string {
@@ -87,9 +92,10 @@ type GetBookResponse struct {
 	// offset. A book naming nothing is reached by these, and most books carry
 	// none.
 	PrintedPages []*PrintedPage `protobuf:"bytes,4,rep,name=printed_pages,json=printedPages,proto3" json:"printed_pages,omitempty"`
-	// own, so they are counted over its text and not over anything drawn.
+	// How many pages the book has. A book has no pages of its own, so they are
+	// counted over its text and not over anything drawn.
 	PageCount int32 `protobuf:"varint,5,opt,name=page_count,json=pageCount,proto3" json:"page_count,omitempty"`
-	// How many bytes the book's text is, and how many of them stand on one page.
+	// How many bytes the book's text is, and how many of them make one page.
 	// A page is a number of letters and a letter is several bytes in most of the
 	// scripts a book is written in, so the size is measured in this book's own.
 	//
@@ -97,16 +103,20 @@ type GetBookResponse struct {
 	// page wherever it is counted.
 	TextBytes int32 `protobuf:"varint,6,opt,name=text_bytes,json=textBytes,proto3" json:"text_bytes,omitempty"`
 	PageBytes int32 `protobuf:"varint,7,opt,name=page_bytes,json=pageBytes,proto3" json:"page_bytes,omitempty"`
-	// a document and in the address the bytes of a picture are answered at, so
-	// both name one reading of one file.
-	Fingerprint   *Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	// The bytes the book was read from. It is passed back in the request for a
+	// document and in the address of a picture, so both name one reading of one
+	// file.
+	Fingerprint *v1.Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	// Where each block element of the book begins, ascending by offset. A place
+	// in the book is saved and found by the CFI of the block it is in.
+	Anchors       []*Anchor `protobuf:"bytes,9,rep,name=anchors,proto3" json:"anchors,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetBookResponse) Reset() {
 	*x = GetBookResponse{}
-	mi := &file_numen_v1_book_proto_msgTypes[1]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -118,7 +128,7 @@ func (x *GetBookResponse) String() string {
 func (*GetBookResponse) ProtoMessage() {}
 
 func (x *GetBookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[1]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -131,7 +141,7 @@ func (x *GetBookResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetBookResponse.ProtoReflect.Descriptor instead.
 func (*GetBookResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{1}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetBookResponse) GetTitle() string {
@@ -183,9 +193,16 @@ func (x *GetBookResponse) GetPageBytes() int32 {
 	return 0
 }
 
-func (x *GetBookResponse) GetFingerprint() *Fingerprint {
+func (x *GetBookResponse) GetFingerprint() *v1.Fingerprint {
 	if x != nil {
 		return x.Fingerprint
+	}
+	return nil
+}
+
+func (x *GetBookResponse) GetAnchors() []*Anchor {
+	if x != nil {
+		return x.Anchors
 	}
 	return nil
 }
@@ -196,17 +213,17 @@ type ReadBookMarkupRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The document of the spine, as the archive names it.
 	Document string `protobuf:"bytes,2,opt,name=document,proto3" json:"document,omitempty"`
-	// Which bytes the ask was given out for. A file that is other bytes now is
-	// not answered: the book is asked for again, and the new answer is asked
-	// with what that says.
-	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	// Which bytes the request was given out for. A file that is other bytes now
+	// is refused: the window reads the book again and asks with what that
+	// returns.
+	Baseline      *v1.Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadBookMarkupRequest) Reset() {
 	*x = ReadBookMarkupRequest{}
-	mi := &file_numen_v1_book_proto_msgTypes[2]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -218,7 +235,7 @@ func (x *ReadBookMarkupRequest) String() string {
 func (*ReadBookMarkupRequest) ProtoMessage() {}
 
 func (x *ReadBookMarkupRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[2]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -231,7 +248,7 @@ func (x *ReadBookMarkupRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadBookMarkupRequest.ProtoReflect.Descriptor instead.
 func (*ReadBookMarkupRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{2}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *ReadBookMarkupRequest) GetPath() string {
@@ -248,7 +265,7 @@ func (x *ReadBookMarkupRequest) GetDocument() string {
 	return ""
 }
 
-func (x *ReadBookMarkupRequest) GetBaseline() *Fingerprint {
+func (x *ReadBookMarkupRequest) GetBaseline() *v1.Fingerprint {
 	if x != nil {
 		return x.Baseline
 	}
@@ -257,8 +274,7 @@ func (x *ReadBookMarkupRequest) GetBaseline() *Fingerprint {
 
 type ReadBookMarkupResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// The markup of the document, carrying the offsets the book's text stands
-	// at.
+	// The markup of the document, carrying the offsets of the book's text.
 	Markup        string `protobuf:"bytes,1,opt,name=markup,proto3" json:"markup,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -266,7 +282,7 @@ type ReadBookMarkupResponse struct {
 
 func (x *ReadBookMarkupResponse) Reset() {
 	*x = ReadBookMarkupResponse{}
-	mi := &file_numen_v1_book_proto_msgTypes[3]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -278,7 +294,7 @@ func (x *ReadBookMarkupResponse) String() string {
 func (*ReadBookMarkupResponse) ProtoMessage() {}
 
 func (x *ReadBookMarkupResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[3]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -291,7 +307,7 @@ func (x *ReadBookMarkupResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadBookMarkupResponse.ProtoReflect.Descriptor instead.
 func (*ReadBookMarkupResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{3}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ReadBookMarkupResponse) GetMarkup() string {
@@ -307,15 +323,16 @@ type ReadBookEntryRequest struct {
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The entry, as the archive names it.
 	Entry string `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
-	// Which bytes the ask was given out for. A file that is other bytes now is
-	Baseline      *Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	// Which bytes the request was given out for. A file that is other bytes now
+	// is refused.
+	Baseline      *v1.Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReadBookEntryRequest) Reset() {
 	*x = ReadBookEntryRequest{}
-	mi := &file_numen_v1_book_proto_msgTypes[4]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -327,7 +344,7 @@ func (x *ReadBookEntryRequest) String() string {
 func (*ReadBookEntryRequest) ProtoMessage() {}
 
 func (x *ReadBookEntryRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[4]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -340,7 +357,7 @@ func (x *ReadBookEntryRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadBookEntryRequest.ProtoReflect.Descriptor instead.
 func (*ReadBookEntryRequest) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{4}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *ReadBookEntryRequest) GetPath() string {
@@ -357,7 +374,7 @@ func (x *ReadBookEntryRequest) GetEntry() string {
 	return ""
 }
 
-func (x *ReadBookEntryRequest) GetBaseline() *Fingerprint {
+func (x *ReadBookEntryRequest) GetBaseline() *v1.Fingerprint {
 	if x != nil {
 		return x.Baseline
 	}
@@ -374,7 +391,7 @@ type ReadBookEntryResponse struct {
 
 func (x *ReadBookEntryResponse) Reset() {
 	*x = ReadBookEntryResponse{}
-	mi := &file_numen_v1_book_proto_msgTypes[5]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -386,7 +403,7 @@ func (x *ReadBookEntryResponse) String() string {
 func (*ReadBookEntryResponse) ProtoMessage() {}
 
 func (x *ReadBookEntryResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[5]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -399,7 +416,7 @@ func (x *ReadBookEntryResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReadBookEntryResponse.ProtoReflect.Descriptor instead.
 func (*ReadBookEntryResponse) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{5}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *ReadBookEntryResponse) GetBody() []byte {
@@ -409,7 +426,8 @@ func (x *ReadBookEntryResponse) GetBody() []byte {
 	return nil
 }
 
-// book's text.
+// SpineDocument is one document of the spine and where it is in the book's
+// text.
 type SpineDocument struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Path is the document's name inside the archive, which the markup of it is
@@ -425,7 +443,7 @@ type SpineDocument struct {
 
 func (x *SpineDocument) Reset() {
 	*x = SpineDocument{}
-	mi := &file_numen_v1_book_proto_msgTypes[6]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -437,7 +455,7 @@ func (x *SpineDocument) String() string {
 func (*SpineDocument) ProtoMessage() {}
 
 func (x *SpineDocument) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[6]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -450,7 +468,7 @@ func (x *SpineDocument) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SpineDocument.ProtoReflect.Descriptor instead.
 func (*SpineDocument) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{6}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *SpineDocument) GetPath() string {
@@ -488,7 +506,7 @@ type BookPart struct {
 
 func (x *BookPart) Reset() {
 	*x = BookPart{}
-	mi := &file_numen_v1_book_proto_msgTypes[7]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -500,7 +518,7 @@ func (x *BookPart) String() string {
 func (*BookPart) ProtoMessage() {}
 
 func (x *BookPart) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[7]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -513,7 +531,7 @@ func (x *BookPart) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use BookPart.ProtoReflect.Descriptor instead.
 func (*BookPart) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{7}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *BookPart) GetTitle() string {
@@ -548,7 +566,7 @@ type PrintedPage struct {
 
 func (x *PrintedPage) Reset() {
 	*x = PrintedPage{}
-	mi := &file_numen_v1_book_proto_msgTypes[8]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -560,7 +578,7 @@ func (x *PrintedPage) String() string {
 func (*PrintedPage) ProtoMessage() {}
 
 func (x *PrintedPage) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_v1_book_proto_msgTypes[8]
+	mi := &file_numen_epub_v1_book_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -573,7 +591,7 @@ func (x *PrintedPage) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PrintedPage.ProtoReflect.Descriptor instead.
 func (*PrintedPage) Descriptor() ([]byte, []int) {
-	return file_numen_v1_book_proto_rawDescGZIP(), []int{8}
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *PrintedPage) GetLabel() string {
@@ -590,25 +608,80 @@ func (x *PrintedPage) GetOffset() int32 {
 	return 0
 }
 
-var File_numen_v1_book_proto protoreflect.FileDescriptor
+// Anchor is where a block element begins in the book's text, and its EPUB
+// Canonical Fragment Identifier, such as `epubcfi(/6/4!/4/2)`.
+type Anchor struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Offset        int32                  `protobuf:"varint,1,opt,name=offset,proto3" json:"offset,omitempty"`
+	Cfi           string                 `protobuf:"bytes,2,opt,name=cfi,proto3" json:"cfi,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
 
-const file_numen_v1_book_proto_rawDesc = "" +
+func (x *Anchor) Reset() {
+	*x = Anchor{}
+	mi := &file_numen_epub_v1_book_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Anchor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Anchor) ProtoMessage() {}
+
+func (x *Anchor) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_epub_v1_book_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Anchor.ProtoReflect.Descriptor instead.
+func (*Anchor) Descriptor() ([]byte, []int) {
+	return file_numen_epub_v1_book_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *Anchor) GetOffset() int32 {
+	if x != nil {
+		return x.Offset
+	}
+	return 0
+}
+
+func (x *Anchor) GetCfi() string {
+	if x != nil {
+		return x.Cfi
+	}
+	return ""
+}
+
+var File_numen_epub_v1_book_proto protoreflect.FileDescriptor
+
+const file_numen_epub_v1_book_proto_rawDesc = "" +
 	"\n" +
-	"\x13numen/v1/book.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"$\n" +
+	"\x18numen/epub/v1/book.proto\x12\rnumen.epub.v1\x1a\x15numen/v1/shared.proto\"$\n" +
 	"\x0eGetBookRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xda\x02\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x9a\x03\n" +
 	"\x0fGetBookResponse\x12\x14\n" +
-	"\x05title\x18\x01 \x01(\tR\x05title\x125\n" +
-	"\tdocuments\x18\x02 \x03(\v2\x17.numen.v1.SpineDocumentR\tdocuments\x12(\n" +
-	"\x05parts\x18\x03 \x03(\v2\x12.numen.v1.BookPartR\x05parts\x12:\n" +
-	"\rprinted_pages\x18\x04 \x03(\v2\x15.numen.v1.PrintedPageR\fprintedPages\x12\x1d\n" +
+	"\x05title\x18\x01 \x01(\tR\x05title\x12:\n" +
+	"\tdocuments\x18\x02 \x03(\v2\x1c.numen.epub.v1.SpineDocumentR\tdocuments\x12-\n" +
+	"\x05parts\x18\x03 \x03(\v2\x17.numen.epub.v1.BookPartR\x05parts\x12?\n" +
+	"\rprinted_pages\x18\x04 \x03(\v2\x1a.numen.epub.v1.PrintedPageR\fprintedPages\x12\x1d\n" +
 	"\n" +
 	"page_count\x18\x05 \x01(\x05R\tpageCount\x12\x1d\n" +
 	"\n" +
 	"text_bytes\x18\x06 \x01(\x05R\ttextBytes\x12\x1d\n" +
 	"\n" +
 	"page_bytes\x18\a \x01(\x05R\tpageBytes\x127\n" +
-	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"\x8c\x01\n" +
+	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\x12/\n" +
+	"\aanchors\x18\t \x03(\v2\x15.numen.epub.v1.AnchorR\aanchors\"\x8c\x01\n" +
 	"\x15ReadBookMarkupRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bdocument\x18\x02 \x01(\tR\bdocument\x126\n" +
@@ -632,79 +705,83 @@ const file_numen_v1_book_proto_rawDesc = "" +
 	"\x05level\x18\x03 \x01(\x05R\x05level\";\n" +
 	"\vPrintedPage\x12\x14\n" +
 	"\x05label\x18\x01 \x01(\tR\x05label\x12\x16\n" +
-	"\x06offset\x18\x02 \x01(\x05R\x06offset2\xf4\x01\n" +
-	"\vBookService\x12>\n" +
-	"\aGetBook\x12\x18.numen.v1.GetBookRequest\x1a\x19.numen.v1.GetBookResponse\x12S\n" +
-	"\x0eReadBookMarkup\x12\x1f.numen.v1.ReadBookMarkupRequest\x1a .numen.v1.ReadBookMarkupResponse\x12P\n" +
-	"\rReadBookEntry\x12\x1e.numen.v1.ReadBookEntryRequest\x1a\x1f.numen.v1.ReadBookEntryResponseBAZ?github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1b\x06proto3"
+	"\x06offset\x18\x02 \x01(\x05R\x06offset\"2\n" +
+	"\x06Anchor\x12\x16\n" +
+	"\x06offset\x18\x01 \x01(\x05R\x06offset\x12\x10\n" +
+	"\x03cfi\x18\x02 \x01(\tR\x03cfi2\x92\x02\n" +
+	"\vBookService\x12H\n" +
+	"\aGetBook\x12\x1d.numen.epub.v1.GetBookRequest\x1a\x1e.numen.epub.v1.GetBookResponse\x12]\n" +
+	"\x0eReadBookMarkup\x12$.numen.epub.v1.ReadBookMarkupRequest\x1a%.numen.epub.v1.ReadBookMarkupResponse\x12Z\n" +
+	"\rReadBookEntry\x12#.numen.epub.v1.ReadBookEntryRequest\x1a$.numen.epub.v1.ReadBookEntryResponseBLZJgithub.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1;epubv1b\x06proto3"
 
 var (
-	file_numen_v1_book_proto_rawDescOnce sync.Once
-	file_numen_v1_book_proto_rawDescData []byte
+	file_numen_epub_v1_book_proto_rawDescOnce sync.Once
+	file_numen_epub_v1_book_proto_rawDescData []byte
 )
 
-func file_numen_v1_book_proto_rawDescGZIP() []byte {
-	file_numen_v1_book_proto_rawDescOnce.Do(func() {
-		file_numen_v1_book_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_numen_v1_book_proto_rawDesc), len(file_numen_v1_book_proto_rawDesc)))
+func file_numen_epub_v1_book_proto_rawDescGZIP() []byte {
+	file_numen_epub_v1_book_proto_rawDescOnce.Do(func() {
+		file_numen_epub_v1_book_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_numen_epub_v1_book_proto_rawDesc), len(file_numen_epub_v1_book_proto_rawDesc)))
 	})
-	return file_numen_v1_book_proto_rawDescData
+	return file_numen_epub_v1_book_proto_rawDescData
 }
 
-var file_numen_v1_book_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
-var file_numen_v1_book_proto_goTypes = []any{
-	(*GetBookRequest)(nil),         // 0: numen.v1.GetBookRequest
-	(*GetBookResponse)(nil),        // 1: numen.v1.GetBookResponse
-	(*ReadBookMarkupRequest)(nil),  // 2: numen.v1.ReadBookMarkupRequest
-	(*ReadBookMarkupResponse)(nil), // 3: numen.v1.ReadBookMarkupResponse
-	(*ReadBookEntryRequest)(nil),   // 4: numen.v1.ReadBookEntryRequest
-	(*ReadBookEntryResponse)(nil),  // 5: numen.v1.ReadBookEntryResponse
-	(*SpineDocument)(nil),          // 6: numen.v1.SpineDocument
-	(*BookPart)(nil),               // 7: numen.v1.BookPart
-	(*PrintedPage)(nil),            // 8: numen.v1.PrintedPage
-	(*Fingerprint)(nil),            // 9: numen.v1.Fingerprint
+var file_numen_epub_v1_book_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
+var file_numen_epub_v1_book_proto_goTypes = []any{
+	(*GetBookRequest)(nil),         // 0: numen.epub.v1.GetBookRequest
+	(*GetBookResponse)(nil),        // 1: numen.epub.v1.GetBookResponse
+	(*ReadBookMarkupRequest)(nil),  // 2: numen.epub.v1.ReadBookMarkupRequest
+	(*ReadBookMarkupResponse)(nil), // 3: numen.epub.v1.ReadBookMarkupResponse
+	(*ReadBookEntryRequest)(nil),   // 4: numen.epub.v1.ReadBookEntryRequest
+	(*ReadBookEntryResponse)(nil),  // 5: numen.epub.v1.ReadBookEntryResponse
+	(*SpineDocument)(nil),          // 6: numen.epub.v1.SpineDocument
+	(*BookPart)(nil),               // 7: numen.epub.v1.BookPart
+	(*PrintedPage)(nil),            // 8: numen.epub.v1.PrintedPage
+	(*Anchor)(nil),                 // 9: numen.epub.v1.Anchor
+	(*v1.Fingerprint)(nil),         // 10: numen.v1.Fingerprint
 }
-var file_numen_v1_book_proto_depIdxs = []int32{
-	6, // 0: numen.v1.GetBookResponse.documents:type_name -> numen.v1.SpineDocument
-	7, // 1: numen.v1.GetBookResponse.parts:type_name -> numen.v1.BookPart
-	8, // 2: numen.v1.GetBookResponse.printed_pages:type_name -> numen.v1.PrintedPage
-	9, // 3: numen.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	9, // 4: numen.v1.ReadBookMarkupRequest.baseline:type_name -> numen.v1.Fingerprint
-	9, // 5: numen.v1.ReadBookEntryRequest.baseline:type_name -> numen.v1.Fingerprint
-	0, // 6: numen.v1.BookService.GetBook:input_type -> numen.v1.GetBookRequest
-	2, // 7: numen.v1.BookService.ReadBookMarkup:input_type -> numen.v1.ReadBookMarkupRequest
-	4, // 8: numen.v1.BookService.ReadBookEntry:input_type -> numen.v1.ReadBookEntryRequest
-	1, // 9: numen.v1.BookService.GetBook:output_type -> numen.v1.GetBookResponse
-	3, // 10: numen.v1.BookService.ReadBookMarkup:output_type -> numen.v1.ReadBookMarkupResponse
-	5, // 11: numen.v1.BookService.ReadBookEntry:output_type -> numen.v1.ReadBookEntryResponse
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+var file_numen_epub_v1_book_proto_depIdxs = []int32{
+	6,  // 0: numen.epub.v1.GetBookResponse.documents:type_name -> numen.epub.v1.SpineDocument
+	7,  // 1: numen.epub.v1.GetBookResponse.parts:type_name -> numen.epub.v1.BookPart
+	8,  // 2: numen.epub.v1.GetBookResponse.printed_pages:type_name -> numen.epub.v1.PrintedPage
+	10, // 3: numen.epub.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	9,  // 4: numen.epub.v1.GetBookResponse.anchors:type_name -> numen.epub.v1.Anchor
+	10, // 5: numen.epub.v1.ReadBookMarkupRequest.baseline:type_name -> numen.v1.Fingerprint
+	10, // 6: numen.epub.v1.ReadBookEntryRequest.baseline:type_name -> numen.v1.Fingerprint
+	0,  // 7: numen.epub.v1.BookService.GetBook:input_type -> numen.epub.v1.GetBookRequest
+	2,  // 8: numen.epub.v1.BookService.ReadBookMarkup:input_type -> numen.epub.v1.ReadBookMarkupRequest
+	4,  // 9: numen.epub.v1.BookService.ReadBookEntry:input_type -> numen.epub.v1.ReadBookEntryRequest
+	1,  // 10: numen.epub.v1.BookService.GetBook:output_type -> numen.epub.v1.GetBookResponse
+	3,  // 11: numen.epub.v1.BookService.ReadBookMarkup:output_type -> numen.epub.v1.ReadBookMarkupResponse
+	5,  // 12: numen.epub.v1.BookService.ReadBookEntry:output_type -> numen.epub.v1.ReadBookEntryResponse
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
-func init() { file_numen_v1_book_proto_init() }
-func file_numen_v1_book_proto_init() {
-	if File_numen_v1_book_proto != nil {
+func init() { file_numen_epub_v1_book_proto_init() }
+func file_numen_epub_v1_book_proto_init() {
+	if File_numen_epub_v1_book_proto != nil {
 		return
 	}
-	file_numen_v1_shared_proto_init()
-	file_numen_v1_book_proto_msgTypes[2].OneofWrappers = []any{}
+	file_numen_epub_v1_book_proto_msgTypes[2].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_book_proto_rawDesc), len(file_numen_v1_book_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_epub_v1_book_proto_rawDesc), len(file_numen_epub_v1_book_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_numen_v1_book_proto_goTypes,
-		DependencyIndexes: file_numen_v1_book_proto_depIdxs,
-		MessageInfos:      file_numen_v1_book_proto_msgTypes,
+		GoTypes:           file_numen_epub_v1_book_proto_goTypes,
+		DependencyIndexes: file_numen_epub_v1_book_proto_depIdxs,
+		MessageInfos:      file_numen_epub_v1_book_proto_msgTypes,
 	}.Build()
-	File_numen_v1_book_proto = out.File
-	file_numen_v1_book_proto_goTypes = nil
-	file_numen_v1_book_proto_depIdxs = nil
+	File_numen_epub_v1_book_proto = out.File
+	file_numen_epub_v1_book_proto_goTypes = nil
+	file_numen_epub_v1_book_proto_depIdxs = nil
 }

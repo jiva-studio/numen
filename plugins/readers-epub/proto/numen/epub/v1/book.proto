@@ -1,18 +1,22 @@
 syntax = "proto3";
 
+// What the EPUB reader's tab asks of the plugin's backend about a book: the
 // documents it is read in, what it names inside them, and how far its text
 // runs.
 //
 // Such a book has no pages of its own. It is set in columns against the room
 // the reader has, so a place in it is an offset into its one text stream, and
 // every number here is counted in bytes of that text. The bytes of one picture
-// are at an address of their own, because a browser's own elements speak bytes
-// and not this.
-package numen.v1;
+// are on the plugin route,
+// /plugin/md.numen.readers.epub/entries/<entry>?path=<path>, because a
+// browser's own elements read bytes and not this. Every call works the vault
+// its Numen-Vault header names, which the window sets on each request it
+// forwards.
+package numen.epub.v1;
 
 import "numen/v1/shared.proto";
 
-option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+option go_package = "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1;epubv1";
 
 service BookService {
   // GetBook is what the book is: what it is called, the documents it is read
@@ -21,13 +25,14 @@ service BookService {
   // document at a time.
   rpc GetBook(GetBookRequest) returns (GetBookResponse);
 
-  // ReadBookMarkup is one document of the book, as the markup a window sets a
-  // page from. It answers while the file is still the bytes the ask names, so
-  // one answer is one reading of one file.
+  // ReadBookMarkup returns one document of the book as the markup a window
+  // lays a page out from. It refuses a file that is no longer the bytes the
+  // request names, so one response is one reading of one file.
   rpc ReadBookMarkup(ReadBookMarkupRequest) returns (ReadBookMarkupResponse);
 
-  // ReadBookEntry is the bytes of one entry of a book's archive. It answers
-  // while the file is still the bytes the ask names.
+  // ReadBookEntry is the bytes of one entry of a book's archive, while the
+  // file is still the bytes the request names. The entries route of the
+  // plugin serves a picture of the book through it.
   rpc ReadBookEntry(ReadBookEntryRequest) returns (ReadBookEntryResponse);
 }
 
@@ -51,10 +56,11 @@ message GetBookResponse {
   // none.
   repeated PrintedPage printed_pages = 4;
 
-  // own, so they are counted over its text and not over anything drawn.
+  // How many pages the book has. A book has no pages of its own, so they are
+  // counted over its text and not over anything drawn.
   int32 page_count = 5;
 
-  // How many bytes the book's text is, and how many of them stand on one page.
+  // How many bytes the book's text is, and how many of them make one page.
   // A page is a number of letters and a letter is several bytes in most of the
   // scripts a book is written in, so the size is measured in this book's own.
   //
@@ -63,9 +69,14 @@ message GetBookResponse {
   int32 text_bytes = 6;
   int32 page_bytes = 7;
 
-  // a document and in the address the bytes of a picture are answered at, so
-  // both name one reading of one file.
-  Fingerprint fingerprint = 8;
+  // The bytes the book was read from. It is passed back in the request for a
+  // document and in the address of a picture, so both name one reading of one
+  // file.
+  numen.v1.Fingerprint fingerprint = 8;
+
+  // Where each block element of the book begins, ascending by offset. A place
+  // in the book is saved and found by the CFI of the block it is in.
+  repeated Anchor anchors = 9;
 }
 
 message ReadBookMarkupRequest {
@@ -75,15 +86,14 @@ message ReadBookMarkupRequest {
   // The document of the spine, as the archive names it.
   string document = 2;
 
-  // Which bytes the ask was given out for. A file that is other bytes now is
-  // not answered: the book is asked for again, and the new answer is asked
-  // with what that says.
-  optional Fingerprint baseline = 3;
+  // Which bytes the request was given out for. A file that is other bytes now
+  // is refused: the window reads the book again and asks with what that
+  // returns.
+  optional numen.v1.Fingerprint baseline = 3;
 }
 
 message ReadBookMarkupResponse {
-  // The markup of the document, carrying the offsets the book's text stands
-  // at.
+  // The markup of the document, carrying the offsets of the book's text.
   string markup = 1;
 }
 
@@ -94,8 +104,9 @@ message ReadBookEntryRequest {
   // The entry, as the archive names it.
   string entry = 2;
 
-  // Which bytes the ask was given out for. A file that is other bytes now is
-  Fingerprint baseline = 3;
+  // Which bytes the request was given out for. A file that is other bytes now
+  // is refused.
+  numen.v1.Fingerprint baseline = 3;
 }
 
 message ReadBookEntryResponse {
@@ -103,7 +114,8 @@ message ReadBookEntryResponse {
   bytes body = 1;
 }
 
-// book's text.
+// SpineDocument is one document of the spine and where it is in the book's
+// text.
 message SpineDocument {
   // Path is the document's name inside the archive, which the markup of it is
   // asked for by.
@@ -129,4 +141,11 @@ message BookPart {
 message PrintedPage {
   string label = 1;
   int32 offset = 2;
+}
+
+// Anchor is where a block element begins in the book's text, and its EPUB
+// Canonical Fragment Identifier, such as `epubcfi(/6/4!/4/2)`.
+message Anchor {
+  int32 offset = 1;
+  string cfi = 2;
 }

@@ -18,16 +18,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-type stubDocumentServer struct {
-	numenv1connect.UnimplementedDocumentServiceHandler
-}
-
-func (stubDocumentServer) GetDocument(
-	context.Context, *connect.Request[v1.GetDocumentRequest],
-) (*connect.Response[v1.GetDocumentResponse], error) {
-	return connect.NewResponse(&v1.GetDocumentResponse{}), nil
-}
-
 type stubEmbeddingServer struct {
 	numenv1connect.UnimplementedEmbeddingServiceHandler
 }
@@ -42,7 +32,6 @@ func newLeaseHost(t *testing.T) *plugintest.LeaseHost {
 	t.Helper()
 	mux := http.NewServeMux()
 	mux.Handle(numenv1connect.NewAgentServiceHandler(&plugintest.MockAgentServer{}))
-	mux.Handle(numenv1connect.NewDocumentServiceHandler(stubDocumentServer{}))
 	mux.Handle(numenv1connect.NewEmbeddingServiceHandler(stubEmbeddingServer{}))
 	server := httptest.NewServer(mux)
 	t.Cleanup(server.Close)

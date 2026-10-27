@@ -72,7 +72,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   "version": "0.1.0",
   "protocol": 1,
   "description": "Custom document viewer plugin for Numen",
-  "capabilities": ["document"],
+  "capabilities": [],
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "contentTypes": [{ "type": "application/x-sample", "globs": ["*.sample"] }],
@@ -86,7 +86,7 @@ The manifest declares identity, activation rules, required permissions, and serv
   "backend": {
     "type": "process",
     "entrypoint": "bin/sample",
-    "serviceName": "numen.v1.DocumentService"
+    "serviceName": "numen.sample.v1.SampleService"
   },
   "frontend": {
     "entrypoint": "dist/index.js",
@@ -113,7 +113,7 @@ The manifest declares identity, activation rules, required permissions, and serv
 - **`name`**: User-facing display title.
 - **`version`**: Semantic versioning string (`X.Y.Z`, optional pre-release and build parts).
 - **`protocol`**: The plugin protocol version the plugin was written against. The host speaks protocol 1 and rejects a manifest that names a newer one. Absent means 1.
-- **`capabilities`**: Core capabilities provided (`document`, `book`, `embedding`, `tools`, `agent`, and the marker `ai.agent.provider`, which names an agent plugin that serves tasks and lists the programs it runs).
+- **`capabilities`**: Core capabilities provided (`embedding`, `tools`, `agent`, and the marker `ai.agent.provider`, which names an agent plugin that serves tasks and lists the programs it runs).
 - **`targets`**: Allowed client environments (`desktop.editor`, `desktop.flashcards`).
 - **`activationEvents`**: The events the plugin subscribes to. On one of them the host activates the plugin and, when it serves `numen.v1.PluginEventService`, hands it the event through `DeliverEvent`; a plugin built on the Go SDK serves it when it passes `server.WithEventHandler`. A plugin that rejects an event answers with `error` set to `PLUGIN_EVENT_ERROR_CODE_REFUSED` and its `reason`, and the host reports the rejection with the event and the plugin id. A plugin is handed only the events it subscribes to, and the event `onFile:<extension>` of a file a window opens whose content type one of its `readers` or its `textInput` takes:
   - `onCommand:<id>` (e.g. `onCommand:ocr.scan`)
