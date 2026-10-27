@@ -2,22 +2,16 @@ package name
 
 import "time"
 
-// SourceKind says what sort of source a file is. It is the word the index files
-// the row under, and it is decided from the file's name alone.
+// SourceKind says whether a file is a note. It is the word the index files the
+// row under, and it is decided from the file's name alone.
 type SourceKind string
 
 const (
 	// KindNote is a markdown file in a vault.
 	KindNote SourceKind = "note"
-	// KindBook is a source with text that nobody typed here: an EPUB, a PDF.
-	// What reads one is decided from its name and recorded in its recipe.
-	KindBook SourceKind = "book"
-	// KindRecording is speech: an MP3, a WAV. It carries no text of its own,
-	// and what it says is there once a model has listened to it.
-	KindRecording SourceKind = "recording"
-	// KindURL is a web address and nothing else: a `.url` file. Its text is
-	// what was fetched from that address, and it holds no body to write in.
-	KindURL SourceKind = "url"
+	// KindFile is every other regular file. Its text, if it has any, is a text
+	// version a plugin made.
+	KindFile SourceKind = "file"
 )
 
 // Fingerprint is what a walk of a vault reports before anything is read: enough to

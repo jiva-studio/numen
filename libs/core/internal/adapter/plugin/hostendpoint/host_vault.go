@@ -103,7 +103,7 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
 
 func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), Kind: string(f.Kind)}
+	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 
 func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
@@ -111,7 +111,19 @@ func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
 		return domain.Fingerprint{}
 	}
 	return domain.Fingerprint{
-		Path: f.GetPath(), Kind: domain.SourceKind(f.GetKind()), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+	}
+}
+
+// readKind is the kind of the file a fingerprint names, and none for a fingerprint naming no file.
+func readKind(f *v1.HostFingerprint) domain.SourceKind {
+	switch {
+	case f.GetIsNote():
+		return domain.KindNote
+	case f.GetPath() == "":
+		return ""
+	default:
+		return domain.KindFile
 	}
 }
 

@@ -57,11 +57,11 @@ type FileServiceClient interface {
 	// ListFiles is what one folder of the vault holds. A tree asks for a folder
 	// as it is opened, one folder to a request.
 	ListFiles(context.Context, *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error)
-	// ListFileKinds is what the vault holds at each of those paths, so a client
-	// holding a path opens what stands there in the editor made for it. The kind
-	// is read off the vault itself, so a path nothing has scanned is answered
-	// with what stands there. A path with nothing at it is absent from the
-	// answer, and a path named twice is answered once. More paths than the vault
+	// ListFileKinds returns, for each of the paths, whether a note is there and
+	// its type, so a client opens the path in the view made for it. It is read
+	// off the vault itself, so a path nothing has scanned is answered too. A path
+	// with nothing at it is absent from the answer, and a path named twice is
+	// answered once.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.
@@ -157,11 +157,11 @@ type FileServiceHandler interface {
 	// ListFiles is what one folder of the vault holds. A tree asks for a folder
 	// as it is opened, one folder to a request.
 	ListFiles(context.Context, *connect.Request[v1.ListFilesRequest]) (*connect.Response[v1.ListFilesResponse], error)
-	// ListFileKinds is what the vault holds at each of those paths, so a client
-	// holding a path opens what stands there in the editor made for it. The kind
-	// is read off the vault itself, so a path nothing has scanned is answered
-	// with what stands there. A path with nothing at it is absent from the
-	// answer, and a path named twice is answered once. More paths than the vault
+	// ListFileKinds returns, for each of the paths, whether a note is there and
+	// its type, so a client opens the path in the view made for it. It is read
+	// off the vault itself, so a path nothing has scanned is answered too. A path
+	// with nothing at it is absent from the answer, and a path named twice is
+	// answered once.
 	ListFileKinds(context.Context, *connect.Request[v1.ListFileKindsRequest]) (*connect.Response[v1.ListFileKindsResponse], error)
 	// MoveFile puts a file or a folder somewhere else in the vault. Renaming a
 	// file is a move within one folder.

@@ -156,8 +156,8 @@ type HostFingerprint struct {
 	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
 	// Nanoseconds since the epoch.
 	ModTime int64 `protobuf:"varint,3,opt,name=mod_time,json=modTime,proto3" json:"mod_time,omitempty"`
-	// What sort of source the file is: note, book, recording or url.
-	Kind          string `protobuf:"bytes,4,opt,name=kind,proto3" json:"kind,omitempty"`
+	// Whether the file is a note.
+	IsNote        bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -213,11 +213,11 @@ func (x *HostFingerprint) GetModTime() int64 {
 	return 0
 }
 
-func (x *HostFingerprint) GetKind() string {
+func (x *HostFingerprint) GetIsNote() bool {
 	if x != nil {
-		return x.Kind
+		return x.IsNote
 	}
-	return ""
+	return false
 }
 
 type ListHostVaultsRequest struct {
@@ -2592,12 +2592,12 @@ var File_numen_v1_hostvault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\"h\n" +
+	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\"s\n" +
 	"\x0fHostFingerprint\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x19\n" +
-	"\bmod_time\x18\x03 \x01(\x03R\amodTime\x12\x12\n" +
-	"\x04kind\x18\x04 \x01(\tR\x04kind\"\x17\n" +
+	"\bmod_time\x18\x03 \x01(\x03R\amodTime\x12\x17\n" +
+	"\ais_note\x18\x05 \x01(\bR\x06isNoteJ\x04\b\x04\x10\x05\"\x17\n" +
 	"\x15ListHostVaultsRequest\"G\n" +
 	"\rHostVaultInfo\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +

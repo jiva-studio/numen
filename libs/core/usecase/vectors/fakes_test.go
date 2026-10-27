@@ -20,7 +20,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -627,8 +627,8 @@ func newEmbed(readers vaultport.VaultReaders, chunks embeddingport.VectorQueries
 // newExtract is the cut of a library whose books are read by the stand-in.
 func newExtract(
 	readers vaultport.VaultReaders, sources sourceport.SourceRepository, queries sourceport.SourceQueries,
-) source.Extract {
-	extract := source.NewExtract(readers, sources, queries, bookTexts{readers: readers})
+) filetext.Index {
+	extract := filetext.NewIndex(readers, sources, queries, bookTexts{readers: readers})
 	return extract
 }
 

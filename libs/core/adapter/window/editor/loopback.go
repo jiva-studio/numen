@@ -15,17 +15,17 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
 // fileServer answers with one file of one vault, as it is read.
 type fileServer struct {
-	state    *State
-	find     *vaults.Find
-	openCopy *file.OpenCopy
-	openFile *file.OpenFile
+	state      *State
+	find       *vaults.Find
+	openCopy   *file.OpenCopy
+	openFile   *file.OpenFile
+	mediaTypes *file.GetMediaType
 }
 
 // A Loopback is a socket on the loopback address that answers with the vault's
@@ -197,7 +197,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 	defer opened.Body.Close()
 
 	w.Header().Set("Cache-Control", immutable)
-	if named := domain.MediaType(opened.Path); named != "" {
+	if named := getMediaType(h.mediaTypes, opened.Path); named != "" {
 		w.Header().Set("Content-Type", named)
 	}
 	http.ServeContent(w, r, opened.Path, opened.ModTime, opened.Body)
@@ -291,9 +291,9 @@ func instant(nanos int64) time.Time {
 
 func refuse(w http.ResponseWriter, err error) {
 	switch {
-	case errors.Is(err, file.ErrChanged), source.IsNoNote(err):
+	case errors.Is(err, file.ErrChanged), file.IsNoNote(err):
 		http.Error(w, err.Error(), http.StatusNotFound)
-	case errors.Is(err, source.ErrOutside):
+	case errors.Is(err, file.ErrOutside):
 		http.Error(w, err.Error(), http.StatusBadRequest)
 	case errors.Is(err, errNoVault):
 		http.Error(w, err.Error(), http.StatusConflict)

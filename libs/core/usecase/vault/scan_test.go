@@ -120,9 +120,9 @@ func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	if res.Notes != 14 {
 		t.Errorf("saw %d notes, want the 14 the fixture holds", res.Notes)
 	}
-	// The fixture carries a PDF of its own beside the EPUB written here.
-	if res.Assets != 2 {
-		t.Errorf("saw %d sources of another kind, want the book and the document", res.Assets)
+	// The fixture carries a document and a picture of its own beside the book written here.
+	if res.Assets != 3 {
+		t.Errorf("saw %d sources of another kind, want the book, the document and the picture", res.Assets)
 	}
 	if res.Indexed != 14 || res.Removed != 0 {
 		t.Errorf("scan of a vault with a book in it: %+v", res)
@@ -137,10 +137,9 @@ func TestAScanSeesBooksAdjacentNotes(t *testing.T) {
 	}
 }
 
-// TestAFormatNothingExtractsIsNotSeenAtAll. Processing is triggered by type, so
-// a file of a format no reader handles is neither a note nor a source of
-// another kind, however much of a vault it is.
-func TestAFormatNothingExtractsIsNotObservedAtAll(t *testing.T) {
+// TestEveryFileThatIsNotANoteIsAnAsset. The core reads no file format, so a
+// file of any format is a source of another kind.
+func TestEveryFileThatIsNotANoteIsAnAsset(t *testing.T) {
 	t.Parallel()
 	root := testsupport.CopyVault(t)
 	if err := os.WriteFile(filepath.Join(root, "assets", "scan.png"), []byte("PNG"), 0o644); err != nil {
@@ -153,10 +152,9 @@ func TestAFormatNothingExtractsIsNotObservedAtAll(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The fixture carries a document of its own, and it is a source. The image
-	// written beside it is not.
-	if res.Assets != 1 {
-		t.Errorf("counted %d sources of another kind, want the document alone", res.Assets)
+	// The fixture carries a document and a picture of its own beside the image written here.
+	if res.Assets != 3 {
+		t.Errorf("counted %d sources of another kind, want the document and both pictures", res.Assets)
 	}
 	if res.Notes != 14 {
 		t.Errorf("saw %d notes, want 14", res.Notes)

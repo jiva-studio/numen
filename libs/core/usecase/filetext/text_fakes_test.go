@@ -1,4 +1,4 @@
-package source
+package filetext
 
 import (
 	"context"
@@ -26,6 +26,7 @@ type libraryTexts struct {
 	books     map[string]placedVersion
 	requested []string
 	failure   error
+	outside   map[string]bool
 }
 
 type placedVersion struct {
@@ -34,7 +35,7 @@ type placedVersion struct {
 }
 
 func newLibraryTexts(shelves vaults) *libraryTexts {
-	return &libraryTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}}
+	return &libraryTexts{shelves: shelves, extra: map[string][]placedVersion{}, books: map[string]placedVersion{}, outside: map[string]bool{}}
 }
 
 // put gives a file a version made from its bytes as they are now. The newest put is live.
@@ -157,4 +158,18 @@ func (t libraryVaultTexts) RequestText(_ context.Context, path, _ string) error 
 	defer t.texts.mu.Unlock()
 	t.texts.requested = append(t.texts.requested, path)
 	return nil
+}
+
+// IsTextSource says every file is a text source but the ones a test set aside with leaveOut.
+func (t libraryVaultTexts) IsTextSource(_ context.Context, path string) (bool, error) {
+	t.texts.mu.Lock()
+	defer t.texts.mu.Unlock()
+	return !t.texts.outside[path], nil
+}
+
+// leaveOut makes the file one that has no text versions and no plugin takes.
+func (s *libraryTexts) leaveOut(path string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.outside[path] = true
 }

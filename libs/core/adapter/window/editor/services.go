@@ -102,13 +102,15 @@ func (s *Services) openPlaying(playing *Loopback) {
 	s.Media.playing = playing
 }
 
-// readFiles binds the use cases that read the files of the vaults the readers open, and the copies
-// played in place of files.
-func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenCopy) {
+// readFiles binds the use cases that read the files of the vaults the readers open, the copies
+// played in place of files, and the content types files are served as.
+func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenCopy, mediaTypes *file.GetMediaType) {
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openCopy = openCopy
+	s.server.mediaTypes = mediaTypes
 	s.Media.getFingerprint = file.NewGetFingerprint(readers)
 	s.Media.openCopy = openCopy
+	s.Media.mediaTypes = mediaTypes
 }
 
 // noteHandler answers what a vault's notes hold and what changes them.

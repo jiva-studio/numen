@@ -229,7 +229,7 @@ func TestAScanGoesOnPastWhatItCannotIndex(t *testing.T) {
 		first scanFile
 		want  func(vaults.ScanResult) bool
 	}{
-		{"a source of another kind", scanFile{kind: domain.KindBook, size: 1, modTime: newest}, func(r vaults.ScanResult) bool { return r.Assets == 1 }},
+		{"a source of another kind", scanFile{kind: domain.KindFile, size: 1, modTime: newest}, func(r vaults.ScanResult) bool { return r.Assets == 1 }},
 		{"a file that vanished", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: fs.ErrNotExist}, func(r vaults.ScanResult) bool { return r.Vanished == 1 }},
 		{"a file nobody can read", scanFile{kind: domain.KindNote, size: 1, modTime: newest, readErr: errors.New("denied")}, func(r vaults.ScanResult) bool { return r.Unreadable == 1 }},
 	}

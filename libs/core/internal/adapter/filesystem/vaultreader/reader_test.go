@@ -86,14 +86,14 @@ func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]d
 }
 
 // TestWalkSaysWhichKindEachSourceIs. A walk reports the kind of each source, so
-// a book is never handed to the markdown parser.
+// a file that is not a note is never handed to the markdown parser.
 func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 	root := testsupport.CopyVault(t)
 	testsupport.WriteBook(t, root, "library/A Book.epub")
 
 	kinds := walkKinds(t, root, vaultconfig.Options{})
 
-	if got := kinds["library/A Book.epub"]; got != domain.KindBook {
+	if got := kinds["library/A Book.epub"]; got != domain.KindFile {
 		t.Errorf("the book walked as %q", got)
 	}
 	if got := kinds["notes/Entropy.md"]; got != domain.KindNote {
@@ -110,27 +110,25 @@ func TestWalkReturnsWhichKindEachSourceIs(t *testing.T) {
 	}
 }
 
-// TestAFormatNothingReadsIsNotASource. Which files are sources is decided by
-// type, so a file of a format no reader handles is reported by nothing and
-// stats as absent, however large a part of the vault it is.
-func TestAFormatNothingReadsIsNotASource(t *testing.T) {
+// TestAFileOfAnyFormatIsAFile. The core reads no file format, so every regular
+// file that is not a note is walked and stated as a file.
+func TestAFileOfAnyFormatIsAFile(t *testing.T) {
 	root := testsupport.CopyVault(t)
-	testsupport.WriteBook(t, root, "library/A Book.epub")
-	scanned := "assets/scan.png"
-	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(scanned)), []byte("PNG"), 0o644); err != nil {
+	scanned := "assets/scan.sample"
+	if err := os.WriteFile(filepath.Join(root, filepath.FromSlash(scanned)), []byte("pixels"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
-	if kind, found := walkKinds(t, root, vaultconfig.Options{})[scanned]; found {
-		t.Errorf("walk reported the image as %q", kind)
+	if kind := walkKinds(t, root, vaultconfig.Options{})[scanned]; kind != domain.KindFile {
+		t.Errorf("walk reported the file as %q", kind)
 	}
 
 	src, err := vaultreader.Open(root, vaultconfig.Options{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.GetFingerprint(t.Context(), scanned); !errors.Is(err, vaultport.ErrNotANote) {
-		t.Errorf("stat of the image gave %v, want ErrNotANote", err)
+	if ref, err := src.GetFingerprint(t.Context(), scanned); err != nil || ref.Kind != domain.KindFile {
+		t.Errorf("stat of the file gave %+v, %v", ref, err)
 	}
 }
 
@@ -148,7 +146,7 @@ func TestStatDoesNotSayABookIsMissing(t *testing.T) {
 	if err != nil {
 		t.Fatalf("stat of a book the vault holds: %v", err)
 	}
-	if ref.Kind != domain.KindBook {
+	if ref.Kind != domain.KindFile {
 		t.Errorf("stat says the book is %q", ref.Kind)
 	}
 	if ref.Size <= 0 || ref.ModTime.IsZero() {
@@ -279,7 +277,7 @@ func TestAListingReturnsWhatEachEntryIs(t *testing.T) {
 
 	want := []domain.Entry{
 		{Path: "library/deeper", Name: "deeper", IsFolder: true},
-		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindBook},
+		{Path: "library/A Book.epub", Name: "A Book.epub", Kind: domain.KindFile},
 		{Path: "library/Notes.md", Name: "Notes.md", Kind: domain.KindNote},
 		{Path: "library/scan.png", Name: "scan.png"},
 	}
@@ -487,33 +485,9 @@ func TestANoteIsAMarkdownFile(t *testing.T) {
 		}
 	}
 
-	if got := walkWithOptions(t, dir, vaultconfig.Options{}); !slices.Equal(got, []string{"a.md"}) {
-		t.Errorf("the walk found %v, want [a.md]", got)
-	}
-}
-
-func TestWhichExtensionsAreBooksIsASetting(t *testing.T) {
-	dir := t.TempDir()
-	for _, name := range []string{"a.md", "b.epub", "c.pdf"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("x"), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
-
-	// The default is every format a reader takes text out of.
-	want := map[string]domain.SourceKind{
-		"a.md":   domain.KindNote,
-		"b.epub": domain.KindBook,
-		"c.pdf":  domain.KindBook,
-	}
+	want := map[string]domain.SourceKind{"a.md": domain.KindNote, "b.markdown": domain.KindFile, "c.txt": domain.KindFile}
 	if got := walkKinds(t, dir, vaultconfig.Options{}); !maps.Equal(got, want) {
-		t.Errorf("default found %v, want %v", got, want)
-	}
-
-	want = map[string]domain.SourceKind{"a.md": domain.KindNote, "c.pdf": domain.KindBook}
-	got := walkKinds(t, dir, vaultconfig.Options{BookExtensions: []string{".pdf"}})
-	if !maps.Equal(got, want) {
-		t.Errorf("configured found %v, want %v", got, want)
+		t.Errorf("the walk found %v, want %v", got, want)
 	}
 }
 

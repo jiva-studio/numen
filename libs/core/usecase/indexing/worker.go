@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -18,12 +18,12 @@ import (
 // What each pass is called in the list of what is being done. One name each, so
 // a pass that reports itself again replaces itself.
 const (
-	WalkingNotes    = "walking the notes"
-	ExtractingBooks = "extracting the books"
-	MakingVectors   = "making the vectors"
+	WalkingNotes  = "walking the notes"
+	IndexingTexts = "indexing the file texts"
+	MakingVectors = "making the vectors"
 )
 
-const taskExtractingBooks = "Extracting books"
+const taskIndexingTexts = "Indexing file texts"
 
 // QuietPeriod is how long the vault has to have been still before the notes
 // written into it are embedded.
@@ -39,8 +39,8 @@ type Events interface {
 	ReportError(err error)
 	// ReportNotes says the notes of a vault were read.
 	ReportNotes(v domain.Vault, notes int)
-	// ReportBooks says how many books were read and cut.
-	ReportBooks(v domain.Vault, res source.ExtractResult)
+	// ReportTexts says how many file texts were cut.
+	ReportTexts(v domain.Vault, res filetext.IndexResult)
 }
 
 // OpenReading is the three passes over a vault, for the embedder given.
@@ -72,9 +72,9 @@ type Config struct {
 // Worker brings the index of the vault a window shows level with it, one pass
 // at a time, and never while another is running.
 //
-// Work reaches it in three ways once the first pass is over: a book, which is
-// found and cut before anything is embedded, a note, which arrives already cut
-// and owes only its vectors, and a source a recognition wrote more of.
+// Work reaches it in three ways once the first pass is over: a file with text,
+// which is found and cut before anything is embedded, a note, which arrives
+// already cut and owes only its vectors, and a file a plugin wrote more text of.
 type Worker struct {
 	reading  OpenReading
 	embedder embeddingport.Embedder
@@ -102,7 +102,7 @@ func NewWorker(cfg Config) *Worker {
 	}
 }
 
-// WakeSources leaves one pass over the books waiting.
+// WakeSources leaves one pass over the file texts waiting.
 func (w *Worker) WakeSources() { signal(w.sources) }
 
 // WakeNotes leaves one pass over the notes' vectors waiting. Several changes at
@@ -159,7 +159,7 @@ func (s *Session) drain() map[string]domain.Vault {
 
 // Run is the first indexing of a vault, and then every indexing that arrives
 // until ctx ends. rebuild indexes every file again in the first pass over the
-// books.
+// file texts.
 func (s *Session) Run(ctx context.Context, v domain.Vault, rebuild bool, read ReadNotes) {
 	p := &pass{worker: s.worker, session: s, v: v, owes: rebuild}
 	p.run(ctx, read)
@@ -170,13 +170,13 @@ type pass struct {
 	worker  *Worker
 	session *Session
 	v       domain.Vault
-	// owes is whether the next pass over the books indexes every file again.
+	// owes is whether the next pass over the file texts indexes every file again.
 	owes bool
 }
 
 func (p *pass) run(ctx context.Context, read ReadNotes) {
-	// The books come after the notes: a vault is useful the moment its notes
-	// answer, and a library takes minutes to cut and hours to embed. An index is
+	// The file texts come after the notes: a vault is useful the moment its
+	// notes answer, and a library takes minutes to cut and hours to embed. An index is
 	// a cache, so neither has to finish.
 	if p.readNotes(ctx, read) {
 		p.indexSources(ctx)
@@ -226,11 +226,11 @@ func (p *pass) readNotes(ctx context.Context, read ReadNotes) bool {
 	return true
 }
 
-// indexSources indexes the books, again in full where the first launch asked for it.
+// indexSources indexes the file texts, again in full where the first launch asked for it.
 func (p *pass) indexSources(ctx context.Context) {
 	request := p.owes
 	p.owes = false
-	p.readBooks(ctx, request)
+	p.indexTexts(ctx, request)
 }
 
 // embedRecognised cuts and embeds what has been read of a document while the
@@ -246,40 +246,40 @@ func (p *pass) embedRecognised(ctx context.Context) {
 	p.embed(ctx)
 }
 
-// readBooks takes the text out of every book in the vault and then embeds what
-// was cut. A book that will not parse is one book, and an embedder that is not
-// configured is the ordinary case.
-func (p *pass) readBooks(ctx context.Context, rebuild bool) {
+// indexTexts cuts the text versions of every file in the vault and then embeds
+// what was cut. A file that will not read is one file, and an embedder that is
+// not configured is the ordinary case.
+func (p *pass) indexTexts(ctx context.Context, rebuild bool) {
 	events := p.worker.events
 	making, err := p.worker.reading(ctx, p.worker.embedder, p.v, rebuild)
 	if err != nil {
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, Error: err.Error()})
+		events.ReportTask(run.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: err.Error()})
 		return
 	}
-	making.OnBooksProgress = func(res source.ExtractResult) {
+	making.OnTextsProgress = func(res filetext.IndexResult) {
 		events.ReportTask(run.Task{
-			ID: ExtractingBooks, Title: taskExtractingBooks, About: res.CurrentSource,
-			// Every book the walk found leaves this pass one of four ways, and all
+			ID: IndexingTexts, Title: taskIndexingTexts, About: res.CurrentSource,
+			// Every file the walk found leaves this pass one of four ways, and all
 			// four count as done.
 			Count: int64(res.Extracted + res.Unchanged + res.Unreadable + res.Vanished),
 			Total: int64(res.Seen),
 		})
 	}
 
-	events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks})
-	res, read := making.ReadBooks(ctx, p.v)
+	events.ReportTask(run.Task{ID: IndexingTexts, Title: taskIndexingTexts})
+	res, read := making.IndexTexts(ctx, p.v)
 	switch {
 	case read == nil:
 		if res.Extracted > 0 {
-			events.ReportBooks(p.v, res)
+			events.ReportTexts(p.v, res)
 		}
-		events.FinishTask(ExtractingBooks)
+		events.FinishTask(IndexingTexts)
 	case errors.Is(read, context.Canceled):
 		// Asked to stop. What it cut is correct as far as it got.
-		events.FinishTask(ExtractingBooks)
+		events.FinishTask(IndexingTexts)
 	default:
 		// A failed pass stays in the list until whoever is shown it takes it out.
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, Error: read.Error()})
+		events.ReportTask(run.Task{ID: IndexingTexts, Title: taskIndexingTexts, Error: read.Error()})
 	}
 
 	p.embed(ctx)
@@ -290,7 +290,7 @@ func (p *pass) readBooks(ctx context.Context, rebuild bool) {
 func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	events := p.worker.events
 	failed := func(err error) {
-		events.ReportTask(run.Task{ID: ExtractingBooks, Title: taskExtractingBooks, About: path, Error: err.Error()})
+		events.ReportTask(run.Task{ID: IndexingTexts, Title: taskIndexingTexts, About: path, Error: err.Error()})
 	}
 
 	making, err := p.worker.reading(ctx, p.worker.embedder, v, false)
@@ -301,7 +301,7 @@ func (p *pass) cutSource(ctx context.Context, v domain.Vault, path string) {
 	switch err := making.CutOne(ctx, v, path); {
 	case err == nil:
 		// A cut that failed before this one is over.
-		events.FinishTask(ExtractingBooks)
+		events.FinishTask(IndexingTexts)
 	case !errors.Is(err, context.Canceled):
 		failed(err)
 	}

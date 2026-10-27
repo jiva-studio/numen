@@ -31,7 +31,7 @@ func TestTheSplitAssembledCarriesTheSizes(t *testing.T) {
 	cfg.MaxTokens = 512
 	target := container.Config{Embedding: cfg, ServiceDir: ".numen"}
 
-	trimmed, err := target.Extract(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
+	trimmed, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), domain.Vault{ID: "v", Path: t.TempDir()})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -136,7 +136,7 @@ func (wide) Embed(context.Context, []string) ([][]float32, error) { return nil, 
 
 func (wide) Close() error { return nil }
 
-// Nothing outside this package builds a source.Extract of its own, and no
+// Nothing outside this package builds a filetext.Index of its own, and no
 // package but usecase/note, which owns the cutting, builds a chunking.Sizes or a
 // chunking.Legibility. They decide what a chunk is kept under, and a second
 // assembly is a second answer for one settings file.
@@ -181,8 +181,8 @@ func TestNothingElseAssemblesASplit(t *testing.T) {
 				return true
 			}
 			switch {
-			case pkg.Name == "source" && named.Sel.Name == "Extract" &&
-				!isWithin(path, "usecase/source"):
+			case pkg.Name == "filetext" && named.Sel.Name == "Index" &&
+				!isWithin(path, "usecase/filetext"):
 				constructed = append(constructed, path)
 			case pkg.Name == "chunking" && (named.Sel.Name == "Sizes" || named.Sel.Name == "Legibility") &&
 				!isWithin(path, "usecase/note"):

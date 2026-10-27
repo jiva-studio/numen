@@ -602,18 +602,18 @@ func TestCreatingMoreTextThanANoteContains(t *testing.T) {
 func TestARefreshTellsAFileTheVaultPreservesAloneFromANoteThatVanished(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	if err := os.WriteFile(filepath.Join(c.vault.Path, "photo.png"), []byte("not a note"), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Join(c.vault.Path, ".photo.png"), []byte("not a note"), 0o644); err != nil {
 		t.Fatal(err)
 	}
 
 	refresh := vaults.NewRefresh(
 		vaultreader.Readers{}, c.db.Vaults(), c.db.Notes(), c.db.SourcesKnown(), c.db.Sources(), time.Now)
-	res, err := refresh.Execute(t.Context(), c.vault, []string{"photo.png", "Gone.md", "Entropy.md"})
+	res, err := refresh.Execute(t.Context(), c.vault, []string{".photo.png", "Gone.md", "Entropy.md"})
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if len(res.LeftAlone) != 1 || res.LeftAlone[0] != "photo.png" {
+	if len(res.LeftAlone) != 1 || res.LeftAlone[0] != ".photo.png" {
 		t.Errorf("want the file the vault leaves alone, got %v", res.LeftAlone)
 	}
 	if len(res.Removed) != 1 || res.Removed[0] != "Gone.md" {
@@ -625,7 +625,7 @@ func TestARefreshTellsAFileTheVaultPreservesAloneFromANoteThatVanished(t *testin
 	if len(res.Unreadable) != 0 {
 		t.Errorf("nothing here could not be read: %v", res.Unreadable)
 	}
-	if slices.Contains(res.GetChangedPaths(), "photo.png") {
+	if slices.Contains(res.GetChangedPaths(), ".photo.png") {
 		t.Error("a file that was never a note is reported as something to look at again")
 	}
 }

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -41,7 +41,7 @@ func (c Config) Scan(db *Index) vault.Scan {
 }
 
 // ReadWholeVault is what makes a vault answer, put together the one way: the
-// notes read, the books read, and the vectors made. Every entry point takes it
+// notes read, the file texts cut, and the vectors made. Every entry point takes it
 // from here, so a vault made searchable in a terminal and a vault made
 // searchable in a window are the same vault.
 func (c Config) ReadWholeVault(
@@ -50,7 +50,7 @@ func (c Config) ReadWholeVault(
 	if err := c.FitIndex(db).Execute(ctx, embedder); err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	books, err := c.Extract(db.Sources(), db.SourcesKnown(), v)
+	texts, err := c.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
@@ -58,7 +58,7 @@ func (c Config) ReadWholeVault(
 	if err != nil {
 		return vault.ReadWholeVault{}, err
 	}
-	return vault.NewReadWholeVault(c.Scan(db), books, embed), nil
+	return vault.NewReadWholeVault(c.Scan(db), texts, embed), nil
 }
 
 // FitIndex sets the vector index to the model of the embedding provider.
@@ -82,19 +82,19 @@ func (c Config) Embed(db *Index, embedder embeddingport.Embedder, v domain.Vault
 	return embed, nil
 }
 
-// Extract cuts a vault's sources into chunks. Every entry point takes it from
-// here, so what a chunk is kept under is one answer.
-func (c Config) Extract(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (source.Extract, error) {
+// IndexTexts cuts the text versions of a vault's files into chunks. Every entry
+// point takes it from here, so what a chunk is kept under is one answer.
+func (c Config) IndexTexts(sources sourceport.SourceRepository, queries sourceport.SourceQueries, v domain.Vault) (filetext.Index, error) {
 	if _, err := c.VaultReaders().Open(v); err != nil {
-		return source.Extract{}, err
+		return filetext.Index{}, err
 	}
-	extract := source.NewExtract(c.VaultReaders(), sources, queries, c.getTextReaders())
-	extract.ErrorHandler = c.handleError
+	index := filetext.NewIndex(c.VaultReaders(), sources, queries, c.getTextReaders())
+	index.ErrorHandler = c.handleError
 	cutter := c.CutNotes()
-	extract.Sizes = cutter.Sizes
-	extract.Legibility = cutter.Legibility
-	extract.ShouldRebuildIndex = c.ShouldRebuildIndex
-	return extract, nil
+	index.Sizes = cutter.Sizes
+	index.Legibility = cutter.Legibility
+	index.ShouldRebuildIndex = c.ShouldRebuildIndex
+	return index, nil
 }
 
 // indexClaim is the hold on a vault's vectors: a claim on one name of the

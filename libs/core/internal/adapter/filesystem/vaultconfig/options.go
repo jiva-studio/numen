@@ -14,12 +14,6 @@ type Options struct {
 	// ServiceDir is the folder the application keeps its own files in. Empty
 	// means the default.
 	ServiceDir string
-	// BookExtensions are the file extensions treated as books, with the leading
-	// dot. Empty means the default, which is EPUB and PDF.
-	BookExtensions []string
-	// RecordingExtensions are the file extensions treated as recordings, with
-	// the leading dot. Empty means the default.
-	RecordingExtensions []string
 	// Ignore is what the vault says not to look at, in the syntax of
 	// `.gitignore`. Empty means the default.
 	Ignore []string
@@ -86,19 +80,6 @@ func (o Options) GetDebounceDelay() time.Duration {
 // declares is markdown, and a vault holds them under one extension.
 var NoteExtensions = []string{domain.NoteExtension}
 
-// DefaultBookExtensions is what counts as a book: the formats a reader takes
-// text out of. A book is any source with text that a person did not type here.
-var DefaultBookExtensions = []string{".epub", ".pdf"}
-
-// DefaultRecordingExtensions is what counts as a recording: the containers a
-// model is given speech out of. A recording is a source whose words nobody has
-// written down yet.
-var DefaultRecordingExtensions = domain.RecordingExtensions()
-
-// URLExtensions is what counts as a web address. It is not a setting: the file
-// is what every system calls it.
-var URLExtensions = []string{domain.URLExtension}
-
 // DefaultIgnore is what no vault has to ask to be left out. A name beginning
 // with a dot belongs to a tool — an editor's lock, a sync client's
 // bookkeeping.
@@ -118,47 +99,18 @@ func (o Options) IsService(name string) bool {
 	return strings.EqualFold(name, o.GetServiceDir())
 }
 
-func (o Options) bookExtensions() []string {
-	if len(o.BookExtensions) == 0 {
-		return DefaultBookExtensions
+// Kind says which sort of source a file's name makes it: a note or any other file.
+func (o Options) Kind(name string) domain.SourceKind {
+	if hasExtension(name, NoteExtensions) {
+		return domain.KindNote
 	}
-	return o.BookExtensions
+	return domain.KindFile
 }
 
-// Kind says which sort of source a file's name makes it, and whether it is one
-// at all. A name that answers to more than one list is a note.
-func (o Options) Kind(name string) (domain.SourceKind, bool) {
-	switch {
-	case hasExtension(name, NoteExtensions):
-		return domain.KindNote, true
-	case hasExtension(name, o.bookExtensions()):
-		return domain.KindBook, true
-	case hasExtension(name, o.recordingExtensions()):
-		return domain.KindRecording, true
-	case hasExtension(name, URLExtensions):
-		return domain.KindURL, true
-	}
-	return "", false
-}
-
-func (o Options) recordingExtensions() []string {
-	if len(o.RecordingExtensions) == 0 {
-		return DefaultRecordingExtensions
-	}
-	return o.RecordingExtensions
-}
-
+// IsNote says whether a file of this name is a note. The application writes
+// notes into the person's folder; every other file there is somebody else's.
 func (o Options) IsNote(name string) bool {
-	kind, ok := o.Kind(name)
-	return ok && kind == domain.KindNote
-}
-
-// IsWritable says whether the application writes a file of this name into the
-// person's folder. It writes notes and it writes the file an address is kept
-// in; every other file there is somebody else's.
-func (o Options) IsWritable(name string) bool {
-	kind, ok := o.Kind(name)
-	return ok && (kind == domain.KindNote || kind == domain.KindURL)
+	return o.Kind(name) == domain.KindNote
 }
 
 func hasExtension(name string, extensions []string) bool {

@@ -154,7 +154,7 @@ func (o *Installation) resetStatus() {
 	o.State.Error.Store("")
 	o.State.WatchError.Store("")
 
-	for _, pass := range []string{walkingNotes, extractingBooks, makingVectors, wordsAlone} {
+	for _, pass := range []string{walkingNotes, indexingTexts, makingVectors, wordsAlone} {
 		o.State.finishTask(pass)
 	}
 	if o.embedderError != nil {

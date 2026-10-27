@@ -14,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -67,7 +67,7 @@ func (s *session) deps(where cli.Locations) cli.Deps {
 				db.NoteQueries(), db.Maintenance())
 			notes.ShouldRebuildIndex = rebuild
 
-			books := source.NewExtract(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			books.ShouldRebuildIndex = rebuild
 
 			// No vectors: a test reaches no model, and a vault answers by its

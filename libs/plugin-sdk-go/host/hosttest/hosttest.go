@@ -36,15 +36,13 @@ type Vault struct {
 	state      host.IndexState
 	moves      []chan struct{}
 	folder     *folder
-	kinds      sourceKinds
 }
 
 var _ host.Vault = (*Vault)(nil)
 
 // New is a vault of the name, shown by the host, whose files are held in memory.
 func New(name string) *Vault {
-	kinds := sourceKinds{}
-	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, newMemory(kinds), kinds)
+	return newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: "/vaults/" + name}, newMemory())
 }
 
 // OnDisk is a vault of the notes given, written into a folder of the test's own. The notes are
@@ -61,15 +59,13 @@ func OnDisk(tb testing.TB, name string, notes map[string]string) *Vault {
 			tb.Fatal(err)
 		}
 	}
-	kinds := sourceKinds{}
-	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, disk{root: root, kinds: kinds}, kinds)
+	v := newVault(domain.Vault{ID: domain.VaultID(name), Name: name, Path: root}, disk{root: root})
 	v.Reindex()
 	return v
 }
 
-func newVault(v domain.Vault, files store, kinds sourceKinds) *Vault {
+func newVault(v domain.Vault, files store) *Vault {
 	made := &Vault{
-		kinds:    kinds,
 		vault:    v,
 		isShown:  true,
 		files:    files,
@@ -104,14 +100,6 @@ func (v *Vault) RefuseWriting(filePath string, err error) {
 		return
 	}
 	v.unwritable[filePath] = err
-}
-
-// SetSourceKind makes every file with the extension, such as ".sample", a source of the kind, as a
-// vault's configuration does.
-func (v *Vault) SetSourceKind(extension string, kind domain.SourceKind) {
-	v.world.mu.Lock()
-	defer v.world.mu.Unlock()
-	v.kinds[strings.ToLower(extension)] = kind
 }
 
 // Refuse makes every read and write of the file fail with err, as a file the host may not open

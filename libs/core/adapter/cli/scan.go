@@ -7,7 +7,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 )
@@ -49,9 +49,9 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	making.OnNotesProgress = func(res vaults.ScanResult) {
 		fmt.Fprintf(out, "  %d indexed\r", res.Indexed)
 	}
-	making.OnBooksProgress = func(res source.ExtractResult) {
+	making.OnTextsProgress = func(res filetext.IndexResult) {
 		if res.CurrentSource != "" {
-			fmt.Fprintf(out, "  extracting %s\r", res.CurrentSource)
+			fmt.Fprintf(out, "  cutting %s\r", res.CurrentSource)
 		}
 	}
 	making.OnVectorsProgress = func(res vectors.EmbedResult) {
@@ -68,8 +68,8 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 	if err != nil {
 		return err
 	}
-	if made.Books.Seen > 0 {
-		fmt.Fprintln(out, describeSources(made.Books))
+	if made.Texts.Seen > 0 {
+		fmt.Fprintln(out, describeSources(made.Texts))
 	}
 	switch {
 	case made.Vectors.IsBusy:
@@ -84,7 +84,7 @@ func runScanCommand(ctx context.Context, out io.Writer, deps Deps, args []string
 
 // describeSources puts the extraction of the files that are not notes into words: the
 // files the plugins read text from. Nothing is said about a vault holding none.
-func describeSources(r source.ExtractResult) string {
+func describeSources(r filetext.IndexResult) string {
 	s := fmt.Sprintf("%d sources: %d read, %d unchanged, %d chunks",
 		r.Seen, r.Extracted, r.Unchanged, r.Chunks)
 	if r.Unreadable > 0 {

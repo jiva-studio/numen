@@ -68,3 +68,5 @@ func (t vaultBookTexts) GetVersionText(ctx context.Context, path string, id doma
 }
 
 func (vaultBookTexts) RequestText(context.Context, string, string) error { return nil }
+
+func (vaultBookTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }

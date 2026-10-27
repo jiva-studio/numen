@@ -6,7 +6,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/windowport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 )
 
 // Notes is what everything that acts on the notes of a vault is called where
@@ -64,12 +63,6 @@ func (c Config) Notes(
 // FocusNote builds what puts a note in front of the person, through their window.
 func (c Config) FocusNote(queries noteport.NoteQueries, view windowport.Window) *note.FocusNote {
 	return note.NewFocusNote(queries, view)
-}
-
-// FocusPassage builds what opens a document in front of the person at a
-// passage, through their window.
-func (c Config) FocusPassage(view windowport.Window) *source.FocusPassage {
-	return source.NewFocusPassage(c.VaultReaders(), view)
 }
 
 func (Config) GetNamedPaths(queries noteport.NoteQueries) *note.GetNamedPaths {

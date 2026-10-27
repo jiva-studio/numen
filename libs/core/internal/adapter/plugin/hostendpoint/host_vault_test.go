@@ -614,12 +614,15 @@ func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 	}
 }
 
-func TestAFingerprintCarriesWhatSortOfSourceTheFileIs(t *testing.T) {
-	endpoint := writeFingerprint(domain.Fingerprint{Path: "B.epub", Kind: domain.KindBook, Size: 3, ModTime: time.Unix(5, 6)})
+func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
+	for _, kind := range []domain.SourceKind{domain.KindNote, domain.KindFile} {
+		got := readFingerprint(writeFingerprint(domain.Fingerprint{Path: "B.sample", Kind: kind, Size: 3, ModTime: time.Unix(5, 6)}))
 
-	got := readFingerprint(endpoint)
-
-	if got.Kind != domain.KindBook || got.Path != "B.epub" || !got.ModTime.Equal(time.Unix(5, 6)) {
-		t.Errorf("got %+v", got)
+		if got.Kind != kind || got.Path != "B.sample" || !got.ModTime.Equal(time.Unix(5, 6)) {
+			t.Errorf("got %+v, want the kind %q", got, kind)
+		}
+	}
+	if got := readFingerprint(&v1.HostFingerprint{}); got.Kind != "" {
+		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
 	}
 }

@@ -326,7 +326,7 @@ func TestWhatIsBelowAPathIsTheFileOrEverythingTheFolderContains(t *testing.T) {
 	if !slices.Equal(getPaths(folder), want) {
 		t.Fatalf("the folder holds %v, want %v", getPaths(folder), want)
 	}
-	if folder[0].Kind != domain.KindBook || folder[0].Size != 42 || !folder[0].ModTime.IsZero() {
+	if folder[0].Kind != domain.KindFile || folder[0].Size != 42 || !folder[0].ModTime.IsZero() {
 		t.Errorf("the book is %+v", folder[0])
 	}
 	if folder[1].Kind != domain.KindNote || folder[1].Size != 40 || !folder[1].ModTime.Equal(pos) {
@@ -387,7 +387,7 @@ func searchFixture(t *testing.T) *index.DB {
 func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 	db := searchFixture(t)
 
-	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "stripes", []domain.SourceKind{domain.KindBook}, 10, false)
+	got, err := db.ChunkQueries().FindLexical(t.Context(), vaultA, "stripes", []domain.SourceKind{domain.KindFile}, 10, false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -395,7 +395,7 @@ func TestASearchByWordsAnswersWithWhereEachHitExists(t *testing.T) {
 		t.Fatalf("got %d hits, want the one small chunk", len(got))
 	}
 	for _, p := range got {
-		if p.Source != "lib/zebra.epub" || p.Kind != domain.KindBook || p.Producer != "ocr" ||
+		if p.Source != "lib/zebra.epub" || p.Kind != domain.KindFile || p.Producer != "ocr" ||
 			p.SourceHash != "h-zebra" || p.Start != 100 || p.Length != 100 || p.Location != "chapter 4" {
 			t.Errorf("a hit is %+v, want the large chunk of the book at 100 for 100 in chapter 4", p)
 		}
@@ -430,7 +430,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 		t.Errorf("a search of notes answered %v", getSources(notes))
 	}
 
-	both, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindNote, domain.KindBook}, 10, false)
+	both, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindNote, domain.KindFile}, 10, false)
 	if err != nil || len(both) != 3 {
 		t.Errorf("a search of two kinds answered %d, %v", len(both), err)
 	}
@@ -439,7 +439,7 @@ func TestASearchByWordsStaysInItsVaultAndItsKinds(t *testing.T) {
 func TestASearchByWordsKeepsNoMoreThanItIsAskedFor(t *testing.T) {
 	db := searchFixture(t)
 	queries := db.ChunkQueries()
-	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindBook}} {
+	for _, kinds := range [][]domain.SourceKind{nil, {domain.KindFile}} {
 		got, err := queries.FindLexical(t.Context(), vaultA, "zebra", kinds, 2, false)
 		if err != nil || len(got) != 2 {
 			t.Errorf("kinds %v: asked for 2, got %d, %v", kinds, len(got), err)
@@ -514,7 +514,7 @@ func TestASearchByWordsFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		if _, err := queries.FindLexical(t.Context(), vaultA, "zebra", nil, 5, false); err == nil {
 			t.Errorf("%s: a search of every kind answered", name)
 		}
-		if _, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindBook}, 5, false); err == nil {
+		if _, err := queries.FindLexical(t.Context(), vaultA, "zebra", []domain.SourceKind{domain.KindFile}, 5, false); err == nil {
 			t.Errorf("%s: a search of one kind answered", name)
 		}
 	}
@@ -546,7 +546,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 			book = p
 		}
 	}
-	if book.Kind != domain.KindBook || book.Producer != "ocr" || book.SourceHash != "h-guide" ||
+	if book.Kind != domain.KindFile || book.Producer != "ocr" || book.SourceHash != "h-guide" ||
 		book.Start != 100 || book.Length != 100 || book.Location != "chapter 9" || book.HitAt != 0 || book.ChunkID == "" {
 		t.Errorf("the section is %+v, want the chunk it opens in chapter 9", book)
 	}
@@ -560,7 +560,7 @@ func TestASectionIsFoundByItsNameAndAnswersWithTheChunkItOpens(t *testing.T) {
 	if err != nil || len(one) != 1 {
 		t.Errorf("asked for 1, got %d, %v", len(one), err)
 	}
-	oneOfKind, err := queries.GetNamedPassages(t.Context(), vaultA, "gardening", []domain.SourceKind{domain.KindBook, domain.KindNote}, 1, false)
+	oneOfKind, err := queries.GetNamedPassages(t.Context(), vaultA, "gardening", []domain.SourceKind{domain.KindFile, domain.KindNote}, 1, false)
 	if err != nil || len(oneOfKind) != 1 {
 		t.Errorf("asked for 1 of two kinds, got %d, %v", len(oneOfKind), err)
 	}
@@ -607,7 +607,7 @@ func TestASearchByNameFailsOnAClosedOrBrokenIndex(t *testing.T) {
 		if _, err := queries.GetNamedPassages(t.Context(), vaultA, "name", nil, 5, false); err == nil {
 			t.Errorf("%s: a search of every kind answered", name)
 		}
-		if _, err := queries.GetNamedPassages(t.Context(), vaultA, "name", []domain.SourceKind{domain.KindBook}, 5, false); err == nil {
+		if _, err := queries.GetNamedPassages(t.Context(), vaultA, "name", []domain.SourceKind{domain.KindFile}, 5, false); err == nil {
 			t.Errorf("%s: a search of one kind answered", name)
 		}
 	}
@@ -654,7 +654,7 @@ func TestASearchByMeaningAnswersNearestFirstWithWhereEachExists(t *testing.T) {
 		t.Errorf("the nearest are %v, want %v", getSources(got)[:4], want)
 	}
 	first := got[0]
-	if first.Kind != domain.KindBook || first.Producer != "ocr" || first.SourceHash != "h-lib/near.epub" ||
+	if first.Kind != domain.KindFile || first.Producer != "ocr" || first.SourceHash != "h-lib/near.epub" ||
 		first.Start != 100 || first.Length != 100 || first.Location != "chapter 1" {
 		t.Errorf("the nearest is %+v, want the large chunk it sits inside", first)
 	}
@@ -1212,7 +1212,7 @@ func TestRecognisedSourcesFailOnAClosedOrBrokenIndex(t *testing.T) {
 func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 	ctx := t.Context()
 	q := broken(t, func(*index.DB) {}, `ALTER TABLE vaults RENAME TO gone`)
-	kinds := []domain.SourceKind{domain.KindBook}
+	kinds := []domain.SourceKind{domain.KindFile}
 
 	checks := map[string]func() error{
 		"GetFingerprints": func() error { _, err := q.GetFingerprints(ctx, vaultA, "book"); return err },

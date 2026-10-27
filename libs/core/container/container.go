@@ -57,10 +57,6 @@ type Config struct {
 	// When non-zero, they override values defined in the settings file.
 	InterfaceScale, TextScale float64
 
-	// BookExtensions defines file extensions treated as books. When empty,
-	// defaults to all supported document formats.
-	BookExtensions []string
-
 	// Performance is the active workload and compute calibration profile.
 	Performance hardware.Performance
 
@@ -280,8 +276,7 @@ func (c Config) Trash() machineport.Trash { return trash.New() }
 // vaultOptions returns filesystem configuration for vaults.
 func (c Config) vaultOptions() vaultconfig.Options {
 	return vaultconfig.Options{
-		ServiceDir:     c.ServiceDir,
-		BookExtensions: c.BookExtensions,
+		ServiceDir: c.ServiceDir,
 	}
 }
 

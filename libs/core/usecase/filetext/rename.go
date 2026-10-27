@@ -1,4 +1,4 @@
-package source
+package filetext
 
 import (
 	"context"

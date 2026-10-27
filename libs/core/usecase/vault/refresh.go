@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
@@ -140,7 +140,7 @@ func (u Refresh) isRecent(mtime time.Time) bool {
 
 // NewRefresh is how the index is brought level with a handful of files: the
 // vault they are read out of, the row it is filed under, where a note is filed,
-// the two the rows of a book and a recording are swept through, and the clock
+// the two the rows of the other files are swept through, and the clock
 // that says which notes were modified recently.
 func NewRefresh(
 	readers vaultport.VaultReaders,
@@ -327,8 +327,8 @@ func (u Refresh) writeLedger(v domain.Vault, recorded map[string]*ledgerEntry) {
 }
 
 // dropSources takes out the rows of every source at a path the vault no longer
-// holds. A note leaves through the note repository; a book and a recording are
-// filed by kind and leave through their own, with their chunks and their vectors.
+// holds. A note leaves through the note repository; another file is filed
+// by kind and leaves through its own, with its chunks and its vectors.
 func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string) error {
 	// A path names one file, and a folder names everything under it.
 	target := make(map[domain.SourceKind][]string)
@@ -358,11 +358,11 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := source.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
+	removed, err := filetext.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
 	if err != nil {
 		return err
 	}
-	_, err = source.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	_, err = filetext.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
 	return err
 }
 

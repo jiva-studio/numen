@@ -235,18 +235,16 @@ func TestAVaultWhoseFolderIsMissingRejectsItsFilesAndItsStore(t *testing.T) {
 	}
 }
 
-func TestSetSourceKindAppliesToFilesOfTheExtension(t *testing.T) {
+func TestGetFingerprintNamesANoteByItsExtension(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.New("Physics")
 	v.File("a.sample", "one")
-	v.SetSourceKind(".SAMPLE", domain.KindBook)
+	v.File("b.MD", "two")
 
-	fingerprint, err := v.GetFingerprint(ctx, "a.sample")
-	if err != nil || fingerprint.Kind != domain.KindBook {
-		t.Errorf("fingerprint = %+v, %v, want the kind set for the extension", fingerprint, err)
+	if fingerprint, err := v.GetFingerprint(ctx, "a.sample"); err != nil || fingerprint.Kind != domain.KindFile {
+		t.Errorf("fingerprint = %+v, %v, want a file that is not a note", fingerprint, err)
 	}
-	v.File("b.other", "two")
-	if fingerprint, _ := v.GetFingerprint(ctx, "b.other"); fingerprint.Kind != domain.KindNote {
-		t.Errorf("fingerprint = %+v, want a file of an extension nothing set to be a note", fingerprint)
+	if fingerprint, _ := v.GetFingerprint(ctx, "b.MD"); fingerprint.Kind != domain.KindNote {
+		t.Errorf("fingerprint = %+v, want a note", fingerprint)
 	}
 }

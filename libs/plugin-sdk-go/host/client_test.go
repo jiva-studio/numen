@@ -3,6 +3,7 @@ package host_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
@@ -238,7 +239,18 @@ func TestAFingerprintPreservesWhatSortOfSourceTheFileIs(t *testing.T) {
 
 	_, _ = clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
 
-	if len(a.baselines) != 1 || a.baselines[0].GetKind() != "note" {
+	if len(a.baselines) != 1 || !a.baselines[0].GetIsNote() {
 		t.Errorf("the host was sent %v", a.baselines)
+	}
+}
+
+func TestGetRequestVaultReadsTheVaultHeader(t *testing.T) {
+	header := http.Header{}
+	if got := host.GetRequestVault(header); got != "" {
+		t.Errorf("vault = %q, want none", got)
+	}
+	header.Set("Numen-Vault", "v-1")
+	if got := host.GetRequestVault(header); got != "v-1" {
+		t.Errorf("vault = %q, want v-1", got)
 	}
 }

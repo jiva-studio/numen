@@ -1,4 +1,4 @@
-package source
+package filetext
 
 import (
 	"bytes"
@@ -530,17 +530,17 @@ func (documents) ReadBook(_ context.Context, raw []byte) (bookText, error) {
 	return out, nil
 }
 
-// newExtract is the cut of a library whose books have the text versions the
+// newIndex is the cut of a library whose books have the text versions the
 // stand-in reads.
-func newExtract(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Extract {
-	extract, _ := newExtractWithTexts(shelves, sources, queries)
+func newIndex(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) Index {
+	extract, _ := newIndexWithTexts(shelves, sources, queries)
 	return extract
 }
 
-// newExtractWithTexts is newExtract, and the text versions a test puts more of.
-func newExtractWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Extract, *libraryTexts) {
+// newIndexWithTexts is newIndex, and the text versions a test puts more of.
+func newIndexWithTexts(shelves vaults, sources sourceport.SourceRepository, queries sourceport.SourceQueries) (Index, *libraryTexts) {
 	texts := newLibraryTexts(shelves)
-	return NewExtract(shelves, sources, queries, texts), texts
+	return NewIndex(shelves, sources, queries, texts), texts
 }
 
 // bookText is a book read: its text, and the parts it names.

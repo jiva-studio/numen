@@ -11,9 +11,9 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 )
 
@@ -59,7 +59,7 @@ func readIntoIndex(t *testing.T, cfg Config, db *Index, v domain.Vault) {
 	if _, err := cfg.Scan(db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	extract, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -281,12 +281,12 @@ func TestDeletingAFileOnDiskKeepsItsTextVersions(t *testing.T) {
 type cutOnChange struct {
 	t       *testing.T
 	extract interface {
-		ExtractOne(ctx context.Context, v domain.Vault, path string) (source.ExtractResult, error)
+		IndexOne(ctx context.Context, v domain.Vault, path string) (filetext.IndexResult, error)
 	}
 }
 
 func (c cutOnChange) ReportVersionsChanged(v domain.Vault, path string) {
-	if _, err := c.extract.ExtractOne(c.t.Context(), v, path); err != nil {
+	if _, err := c.extract.IndexOne(c.t.Context(), v, path); err != nil {
 		c.t.Error(err)
 	}
 }
@@ -317,7 +317,7 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 	if err := repo.SaveVersion(t.Context(), subtitles); err != nil {
 		t.Fatal(err)
 	}
-	extract, err := cfg.Extract(db.Sources(), db.SourcesKnown(), v)
+	extract, err := cfg.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		t.Fatal(err)
 	}

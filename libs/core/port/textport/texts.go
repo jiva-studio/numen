@@ -29,4 +29,7 @@ type VaultTexts interface {
 	// RequestText asks every enabled plugin that runs on its own and takes the
 	// file for text of it. A file with a live version is asked for nothing.
 	RequestText(ctx context.Context, path, fileHash string) error
+	// IsTextSource reports whether the index keeps the text of the file: it has
+	// text versions, or an enabled plugin that runs on its own takes it.
+	IsTextSource(ctx context.Context, path string) (bool, error)
 }

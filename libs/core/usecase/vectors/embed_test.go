@@ -33,7 +33,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 	// once, so the answer pages as well as resumes.
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook,
+	shelf.hold(bookPath, domain.KindFile,
 		bookOf(t, "A Long Book", words(sanskrit, 4500), words(sanskrit, 4500)), 1)
 
 	small := cutBooks(t, index, shelf, first)
@@ -100,7 +100,7 @@ func TestEmbeddingCarriesOnWhereItStopped(t *testing.T) {
 func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400), words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
 	var progress []EmbedResult
@@ -153,7 +153,7 @@ func TestBothRepresentationsOfAVectorAreSavedTogether(t *testing.T) {
 func TestWithNoEmbedderTheTextIsSplitAndNothingFails(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
 	res, err := (newEmbed(vaults{first.ID: shelf}, index, index)).Execute(ctx, first)
@@ -193,7 +193,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		{
 			name: "the file is no longer a book",
 			replace: func(_ *testing.T, shelf *library) {
-				shelf.hold(bookPath, domain.KindBook, []byte("not an archive"), 2)
+				shelf.hold(bookPath, domain.KindFile, []byte("not an archive"), 2)
 			},
 			want: func(t *testing.T, res EmbedResult, owed int) {
 				if res.Vanished != owed || res.Embedded != 0 {
@@ -204,7 +204,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		{
 			name: "the file holds another text now, and the version the chunks were cut from is gone",
 			replace: func(t *testing.T, shelf *library) {
-				shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 20)), 2)
+				shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 20)), 2)
 			},
 			want: func(t *testing.T, res EmbedResult, owed int) {
 				if res.Vanished != owed || res.Embedded != 0 {
@@ -217,7 +217,7 @@ func TestAChunkWhoseSourceMovedOnIsLeftAsItIs(t *testing.T) {
 		t.Run(c.name, func(t *testing.T) {
 			ctx := t.Context()
 			index, shelf := newStore(), newLibrary()
-			shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
+			shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 			small := cutBooks(t, index, shelf, first)
 			c.replace(t, shelf)
 
@@ -242,9 +242,9 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 	ctx := t.Context()
 	index := newStore()
 	shelves := vaults{first.ID: newLibrary(), second.ID: newLibrary()}
-	shelves[first.ID].hold("library/sanskrit.epub", domain.KindBook,
+	shelves[first.ID].hold("library/sanskrit.epub", domain.KindFile,
 		bookOf(t, "Sanskrit", words(sanskrit, 400)), 1)
-	shelves[second.ID].hold("library/latin.epub", domain.KindBook,
+	shelves[second.ID].hold("library/latin.epub", domain.KindFile,
 		bookOf(t, "Latin", words(latin, 400)), 1)
 
 	extract := newExtract(shelves, index, index)
@@ -288,7 +288,7 @@ func TestEmbeddingStaysInsideItsVault(t *testing.T) {
 func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 400)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 400)), 1)
 	small := cutBooks(t, index, shelf, first)
 
 	claim := &fakeClaim{isHeld: true}
@@ -330,7 +330,7 @@ func TestEmbeddingWhileAnotherProcessClaimsVaultReportsBusy(t *testing.T) {
 func TestPipelineConcurrentBatchesWithProgress(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 1200), words(sanskrit, 1200)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 1200), words(sanskrit, 1200)), 1)
 	small := cutBooks(t, index, shelf, first)
 
 	var progressReports []EmbedResult
@@ -364,7 +364,7 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	repeatedSection := words(sanskrit, 200)
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", repeatedSection, repeatedSection, repeatedSection), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", repeatedSection, repeatedSection, repeatedSection), 1)
 	small := cutBooks(t, index, shelf, first)
 
 	model := &embedder{dims: dimensions}
@@ -410,8 +410,8 @@ func TestDuplicateChunksInBatchAreDeduplicated(t *testing.T) {
 func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold("library/old.epub", domain.KindBook, bookOf(t, "Old Book", words(sanskrit, 400)), 100)
-	shelf.hold("library/recent.epub", domain.KindBook, bookOf(t, "Recent Book", words(latin, 400)), 200)
+	shelf.hold("library/old.epub", domain.KindFile, bookOf(t, "Old Book", words(sanskrit, 400)), 100)
+	shelf.hold("library/recent.epub", domain.KindFile, bookOf(t, "Recent Book", words(latin, 400)), 200)
 
 	extract := newExtract(vaults{first.ID: shelf}, index, index)
 	if _, err := extract.Execute(ctx, first); err != nil {
@@ -445,7 +445,7 @@ func TestEmbeddingPrioritizesRecentlyModifiedSources(t *testing.T) {
 func TestEmbeddingWithConcurrentWorkers(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "Concurrent Test Book", words(sanskrit, 1000), words(latin, 1000)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "Concurrent Test Book", words(sanskrit, 1000), words(latin, 1000)), 1)
 
 	small := cutBooks(t, index, shelf, first)
 	if len(small) == 0 {

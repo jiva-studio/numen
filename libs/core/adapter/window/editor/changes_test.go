@@ -1235,7 +1235,7 @@ func TestAPassageReturnsWhichOfFourItsNoteIs(t *testing.T) {
 }
 
 // TestAPassageSaysWhatTheVaultHoldsAtItsPath. A list a person runs their eye
-// down draws a book as a book, and a note as the note it is.
+// down draws a note as the note it is, and another file as a file.
 func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 	client, _ := openVault(t, map[string]string{
 		"Engines.md":          "---\ntitle: Engines\n---\n\n# Engines\n\nA book of engines.\n",
@@ -1244,7 +1244,7 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 
 	// The text of a book is taken out of it behind the window, and the search
 	// reaches it once that has finished.
-	kinds := map[string]v1.SourceKind{}
+	kinds := map[string]bool{}
 	for range 500 {
 		answer, err := client.SearchPassages(t.Context(), connect.NewRequest(&v1.SearchPassagesRequest{
 			Query: "book", Mode: v1.SearchMode_SEARCH_MODE_WORDS,
@@ -1254,7 +1254,7 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 		}
 		clear(kinds)
 		for _, one := range answer.Msg.GetFound() {
-			kinds[one.GetPath()] = one.GetKind()
+			kinds[one.GetPath()] = one.GetNote() != nil
 		}
 		if _, target := kinds["library/A Book.epub"]; target {
 			break
@@ -1262,13 +1262,13 @@ func TestAPassageReturnsWhatTheVaultContainsAtItsPath(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	want := map[string]v1.SourceKind{
-		"Engines.md":          v1.SourceKind_SOURCE_KIND_NOTE,
-		"library/A Book.epub": v1.SourceKind_SOURCE_KIND_BOOK,
+	want := map[string]bool{
+		"Engines.md":          true,
+		"library/A Book.epub": false,
 	}
 	for path, is := range want {
 		if got, targetVal := kinds[path]; !targetVal || got != is {
-			t.Errorf("the passage out of %s came back as %v, want %v", path, got, is)
+			t.Errorf("the passage out of %s came back as a note %v, want %v", path, got, is)
 		}
 	}
 }

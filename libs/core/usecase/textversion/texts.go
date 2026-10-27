@@ -126,3 +126,7 @@ func (t vaultTexts) GetVersionText(ctx context.Context, path string, id domain.T
 func (t vaultTexts) RequestText(ctx context.Context, path, fileHash string) error {
 	return t.versions.RequestText(ctx, t.vault, path, fileHash)
 }
+
+func (t vaultTexts) IsTextSource(ctx context.Context, path string) (bool, error) {
+	return t.versions.IsTextSource(ctx, t.vault, path)
+}

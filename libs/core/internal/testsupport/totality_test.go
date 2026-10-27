@@ -19,7 +19,6 @@ import (
 // beside it.
 var walked = map[protoreflect.FullName]string{
 	"numen.v1.ArticleErrorCode":     "plugins/tools-media-importer: written by getErrorCode",
-	"numen.v1.BookFormat":           "adapter/window/editor: written by formatOf",
 	"numen.v1.CommandErrorCode":     "internal/adapter/plugin/commandbridge: read by RunCommand",
 	"numen.v1.CompletionConsent":    "adapter/window/editor: written by the consents table",
 	"numen.v1.CompletionErrorCode":  "plugin-sdk-go/ai: read by readRefusal",
@@ -40,7 +39,6 @@ var walked = map[protoreflect.FullName]string{
 	"numen.v1.Relation":             "adapter/window/editor: written by convertRelationToWire",
 	"numen.v1.Origin":               "internal/adapter/theme: written by encodeOrigin",
 	"numen.v1.TextErrorCode":        "internal/adapter/plugin/textproviderbridge: read by readError",
-	"numen.v1.SourceKind":           "adapter/window/editor: written by kindOf",
 	"numen.v1.ToolEffect":           "plugin-sdk-go/tools: written by writeEffect",
 	"numen.v1.ToolErrorCode":        "plugin-sdk-go/tools: written by CallTool",
 	"numen.v1.ToolServer":           "plugin-sdk-go/tools: written by writeServers",

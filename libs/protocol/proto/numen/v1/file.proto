@@ -17,11 +17,11 @@ service FileService {
   // as it is opened, one folder to a request.
   rpc ListFiles(ListFilesRequest) returns (ListFilesResponse);
 
-  // ListFileKinds is what the vault holds at each of those paths, so a client
-  // holding a path opens what stands there in the editor made for it. The kind
-  // is read off the vault itself, so a path nothing has scanned is answered
-  // with what stands there. A path with nothing at it is absent from the
-  // answer, and a path named twice is answered once. More paths than the vault
+  // ListFileKinds returns, for each of the paths, whether a note is there and
+  // its type, so a client opens the path in the view made for it. It is read
+  // off the vault itself, so a path nothing has scanned is answered too. A path
+  // with nothing at it is absent from the answer, and a path named twice is
+  // answered once.
   rpc ListFileKinds(ListFileKindsRequest) returns (ListFileKindsResponse);
 
   // MoveFile puts a file or a folder somewhere else in the vault. Renaming a
@@ -48,7 +48,7 @@ message ListFilesResponse {
   repeated Entry entries = 1;
 }
 
-// it.
+// Entry is one file or folder of a listing.
 message Entry {
   // Path is what the vault calls it, relative to the root, with forward
   // slashes.
@@ -61,34 +61,15 @@ message Entry {
   // nothing is made from it.
   bool is_folder = 3;
 
-  // What the vault holds here.
-  SourceKind kind = 4;
+  reserved 4;
 
+  // Whether the entry is a note. Every other file is opened by the plugin its
+  // content type names.
+  bool is_note = 6;
 
   // The `type` key of the note's frontmatter, which says what the note is. Empty for an
   // ordinary note. It says nothing about an entry that is not a note.
   string type = 5;
-}
-
-// SourceKind is what the vault holds at a path. A file the index holds no text
-// for — a picture, an archive — is unspecified.
-enum SourceKind {
-  SOURCE_KIND_UNSPECIFIED = 0;
-  SOURCE_KIND_NOTE = 1;
-  SOURCE_KIND_BOOK = 2;
-  SOURCE_KIND_RECORDING = 3;
-
-  // A file holding a web address and nothing else. Its text is what was
-  // fetched from that address.
-  SOURCE_KIND_URL = 4;
-}
-
-// the reader made for it: one is drawn as pictures a page at a time, the other
-// that is no book is unspecified.
-enum BookFormat {
-  BOOK_FORMAT_UNSPECIFIED = 0;
-  BOOK_FORMAT_PDF = 1;
-  BOOK_FORMAT_EPUB = 2;
 }
 
 message ListFileKindsRequest {
@@ -104,16 +85,14 @@ message ListFileKindsResponse {
 message FileKind {
   string path = 1;
 
-  // What the vault holds here. A file it holds no source for — a picture, an
-  // archive — is unspecified.
-  SourceKind kind = 2;
+  reserved 2, 4;
+
+  // Whether a note is at the path.
+  bool is_note = 5;
 
   // The `type` key of the note's frontmatter, which says what the note is. Empty for an
   // ordinary note. It says nothing about a path holding no note.
   string type = 3;
-
-  // Which sort of book it is. It says nothing about a path holding no book.
-  BookFormat format = 4;
 }
 
 message MoveFileRequest {

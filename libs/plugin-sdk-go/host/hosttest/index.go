@@ -1,7 +1,6 @@
 package hosttest
 
 import (
-	"path"
 	"sort"
 	"strings"
 
@@ -9,16 +8,12 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
-// sourceKinds is the kind of source a file is, by its lower-case extension without the dot. A file
-// whose extension is not listed is a note.
-type sourceKinds map[string]domain.SourceKind
-
-// getKind is what sort of source a file is, from its name alone.
-func (k sourceKinds) getKind(filePath string) domain.SourceKind {
-	if kind, isListed := k[strings.ToLower(path.Ext(filePath))]; isListed {
-		return kind
+// getKind is what sort of source a file is, from its name alone, as the core decides it.
+func getKind(filePath string) domain.SourceKind {
+	if isNote(filePath) {
+		return domain.KindNote
 	}
-	return domain.KindNote
+	return domain.KindFile
 }
 
 // isNote says whether the index holds the file as a note.

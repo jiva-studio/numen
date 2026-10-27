@@ -5,7 +5,6 @@ import (
 	"errors"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -106,20 +105,20 @@ func TestTheSettingsStandAdjacentTheRegistryWhenItIsPointedElsewhere(t *testing.
 }
 
 func TestVaultsAreOpenedForWritingWithTheOptionsOfTheInstallation(t *testing.T) {
-	cfg := Config{ServiceDir: ".mine", BookExtensions: []string{".pdf", ".epub"}}
+	cfg := Config{ServiceDir: ".mine"}
 
 	opened, ok := cfg.VaultWriters().(vaultwriter.VaultWriters)
 	if !ok {
 		t.Fatalf("vaults are opened for writing by %T", cfg.VaultWriters())
 	}
-	if opened.Options.ServiceDir != ".mine" || !slices.Equal(opened.Options.BookExtensions, cfg.BookExtensions) {
+	if opened.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", opened.Options)
 	}
 	read, ok := cfg.VaultReaders().(vaultreader.Readers)
 	if !ok {
 		t.Fatalf("vaults are opened for reading by %T", cfg.VaultReaders())
 	}
-	if read.Options.ServiceDir != ".mine" || !slices.Equal(read.Options.BookExtensions, cfg.BookExtensions) {
+	if read.Options.ServiceDir != ".mine" {
 		t.Errorf("vaults are opened with %+v", read.Options)
 	}
 }

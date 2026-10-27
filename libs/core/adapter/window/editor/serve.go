@@ -241,9 +241,9 @@ func (o *Installation) level(ctx context.Context, v domain.Vault, paths []string
 // What each pass behind the window is called in the list of what is being done.
 // One name each, so a pass that reports itself again replaces itself.
 const (
-	walkingNotes    = indexing.WalkingNotes
-	extractingBooks = indexing.ExtractingBooks
-	makingVectors   = indexing.MakingVectors
+	walkingNotes  = indexing.WalkingNotes
+	indexingTexts = indexing.IndexingTexts
+	makingVectors = indexing.MakingVectors
 	// wordsAlone is a search answered short of the half that asks by meaning.
 	wordsAlone = "answering by words alone"
 	// wearingATheme is a theme the settings name that the catalogue has not.
@@ -288,7 +288,7 @@ func createWindow(
 	state.EmitEvent = made.EmitEvent
 	state.OpenTabsStore = made.GetOpenTabsStore()
 	readers := made.GetVaultReaders()
-	services.readFiles(readers, made.OpenCopy())
+	services.readFiles(readers, made.OpenCopy(), made.GetMediaType())
 	services.Note.getOpeningNote = note.NewGetOpeningNote(made.GetNoteQueries())
 	services.Note.getTypes = note.NewGetTypes(made.GetNoteQueries())
 	services.Note.getHeadings = note.NewGetHeadings(made.GetNoteQueries())

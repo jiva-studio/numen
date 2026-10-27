@@ -1,4 +1,4 @@
-package source
+package filetext
 
 import (
 	"context"
@@ -25,20 +25,16 @@ const sourcesPerQuery = 100
 // offsets a version gives do.
 const versionReader = "text-version-1"
 
-// Extract turns the books a vault holds into chunks.
+// Index cuts the live text versions of the files a vault holds into chunks.
 //
-// It runs in two passes. The first records what the vault has, opening nothing.
-// The second reads the live text version of every source that owes its text and
-// cuts it into chunks, one write per source.
-type Extract struct {
+// It runs in two passes. The first records the files that have text or that a
+// plugin makes text of, opening nothing. The second reads the live text version
+// of every file that owes its text and cuts it into chunks, one write per file.
+type Index struct {
 	readers vaultport.VaultReaders
 	sources sourceport.SourceRepository
 	queries sourceport.SourceQueries
 	texts   textport.TextReaders
-
-	// Kinds are the sorts of source this cuts. Empty means the books and the
-	// recordings a vault holds.
-	Kinds []domain.SourceKind
 
 	// Sizes are how the text is cut. They are named in the recipe, so a source
 	// cut at other sizes owes its text again.
@@ -60,33 +56,34 @@ type Extract struct {
 	// OnProgress, if set, is called as each source is opened and as each one is
 	// written. A library takes minutes, and something has to be able to say how
 	// far it has got.
-	OnProgress func(ExtractResult)
+	OnProgress func(IndexResult)
 
 	// ErrorHandler hears of a source whose text could not be read or asked for.
 	// The source is counted unreadable and the run goes on. Nil hears nothing.
 	ErrorHandler windowport.ErrorHandler
 }
 
-// NewExtract is what a vault's sources are cut into chunks through: the vault
-// they are read out of, where a source and its chunks are written, what says
-// which sources the index already holds, and the text versions of the vault.
-// Nil texts is an installation with none, where no source has text.
-func NewExtract(
+// NewIndex is what a vault's file texts are cut into chunks through: the vault
+// the files are read out of, where a source and its chunks are written, what
+// says which sources the index already holds, and the text versions of the
+// vault. Nil texts is an installation with none, where no file has text.
+func NewIndex(
 	readers vaultport.VaultReaders,
 	sources sourceport.SourceRepository,
 	queries sourceport.SourceQueries,
 	texts textport.TextReaders,
-) Extract {
-	return Extract{readers: readers, sources: sources, queries: queries, texts: texts}
+) Index {
+	return Index{readers: readers, sources: sources, queries: queries, texts: texts}
 }
 
-// ExtractResult reports what extraction did.
+// IndexResult reports what indexing did.
 //
-// `Seen` counts the sources of the kinds this cuts and nothing else. `Recorded`
-// and `Extracted` are separate numbers because they are separate passes: a book
-// is recorded when the vault is walked and extracted when its text is read.
-type ExtractResult struct {
-	Seen          int    // sources found in the vault
+// `Seen` counts the files that have text or that a plugin makes text of, and
+// nothing else. `Recorded` and `Extracted` are separate numbers because they
+// are separate passes: a file is recorded when the vault is walked and extracted
+// when its text is read.
+type IndexResult struct {
+	Seen          int    // files with text found in the vault
 	Recorded      int    // new or changed, so owing their text
 	Unchanged     int    // skipped on size and modification time alone
 	Extracted     int    // read, chunked and written
@@ -98,10 +95,10 @@ type ExtractResult struct {
 	CurrentSource string // the source open now
 }
 
-// Execute brings the chunks of one vault's books up to date with what is on
-// disk.
-func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, error) {
-	var res ExtractResult
+// Execute brings the chunks of one vault's file texts up to date with what is
+// on disk.
+func (u Index) Execute(ctx context.Context, v domain.Vault) (IndexResult, error) {
+	var res IndexResult
 
 	on, err := u.open(v)
 	if err != nil {
@@ -116,14 +113,15 @@ func (u Extract) Execute(ctx context.Context, v domain.Vault) (ExtractResult, er
 	return res, u.cut(ctx, v, on, &res)
 }
 
-// discover records every book the vault holds. Nothing is opened: a file whose
-// size and modification time are what the index believes is left alone, and one
-// that differs is recorded with no recipe, which is what owing its text means.
-func (u Extract) discover(
+// discover records every file of the vault that has text. Nothing is opened: a
+// file whose size and modification time are what the index believes is left
+// alone, and one that differs is recorded with no recipe, which is what owing
+// its text means.
+func (u Index) discover(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	res *ExtractResult,
+	res *IndexResult,
 ) error {
 	recognized, err := u.readKnown(ctx, v)
 	if err != nil {
@@ -136,37 +134,44 @@ func (u Extract) discover(
 	return u.removeGone(ctx, v, on, recognized, found, res)
 }
 
-// readKnown reads the fingerprints the index holds, by kind and path.
-func (u Extract) readKnown(ctx context.Context, v domain.Vault) (map[domain.SourceKind]map[string]domain.Fingerprint, error) {
-	recognized := make(map[domain.SourceKind]map[string]domain.Fingerprint, len(u.kinds()))
-	for _, kind := range u.kinds() {
-		target, err := u.queries.GetFingerprints(ctx, v.ID, kind)
-		if err != nil {
-			return nil, fmt.Errorf("read index: %w", err)
-		}
-		recognized[kind] = target
+// readKnown reads the fingerprints of the files the index holds, by path.
+func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.Fingerprint, error) {
+	fingerprints, err := u.queries.GetFingerprints(ctx, v.ID, domain.KindFile)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
 	}
-	return recognized, nil
+	return fingerprints, nil
 }
 
-// walkAndRecord walks the vault, records each file the index does not already hold
-// as it is, and returns the paths it found.
-func (u Extract) walkAndRecord(
+// walkAndRecord walks the vault, records each file with text the index does not
+// already hold as it is, and returns every file path it found. A file the index
+// does not hold is recorded only where it has text versions or a plugin that
+// runs on its own takes it.
+func (u Index) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	indexed map[domain.SourceKind]map[string]domain.Fingerprint,
-	res *ExtractResult,
+	fingerprints map[string]domain.Fingerprint,
+	res *IndexResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
 	err := on.files.WalkFiles(ctx, func(ref domain.Fingerprint) error {
-		target, ours := indexed[ref.Kind]
-		if !ours {
+		if ref.Kind != domain.KindFile {
 			return nil
 		}
-		res.Seen++
 		found[ref.Path] = true
-		if previous, ok := target[ref.Path]; ok && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
+		previous, isKnown := fingerprints[ref.Path]
+		if !isKnown {
+			hasText, err := on.texts.IsTextSource(ctx, ref.Path)
+			if err != nil {
+				return fmt.Errorf("find the text of %s: %w", ref.Path, err)
+			}
+			if !hasText {
+				return nil
+			}
+		}
+		res.Seen++
+		if isKnown && !u.ShouldRebuildIndex && previous.IsUnchanged(ref) {
 			res.Unchanged++
 			return nil
 		}
@@ -183,48 +188,42 @@ func (u Extract) walkAndRecord(
 // The text of a passage is read from the file, so a source that is not there
 // answers a search with nothing. A source whose content the walk found at a
 // new path is moved there instead, with its text versions.
-func (u Extract) removeGone(
+func (u Index) removeGone(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	existing map[domain.SourceKind]map[string]domain.Fingerprint,
+	fingerprints map[string]domain.Fingerprint,
 	found map[string]bool,
-	res *ExtractResult,
+	res *IndexResult,
 ) error {
-	removed := make(map[domain.SourceKind][]string)
-	var all []string
-	for _, kind := range u.kinds() {
-		for path := range existing[kind] {
-			if !found[path] {
-				removed[kind] = append(removed[kind], path)
-				all = append(all, path)
-			}
+	var removed []string
+	for path := range fingerprints {
+		if !found[path] {
+			removed = append(removed, path)
 		}
 	}
-	if len(all) == 0 {
+	if len(removed) == 0 {
 		return nil
 	}
-	moved, err := u.moveRenamed(ctx, v, on, all, getAdded(existing, found))
+	moved, err := u.moveRenamed(ctx, v, on, removed, getAdded(fingerprints, found))
 	if err != nil {
 		return err
 	}
-	for _, kind := range u.kinds() {
-		paths := slices.DeleteFunc(removed[kind], func(path string) bool { return slices.Contains(moved, path) })
-		if len(paths) == 0 {
-			continue
-		}
-		slices.Sort(paths)
-		if err := u.sources.RemoveSources(ctx, v.ID, kind, paths); err != nil {
-			return fmt.Errorf("remove: %w", err)
-		}
-		res.Removed += len(paths)
+	paths := slices.DeleteFunc(removed, func(path string) bool { return slices.Contains(moved, path) })
+	if len(paths) == 0 {
+		return nil
 	}
+	slices.Sort(paths)
+	if err := u.sources.RemoveSources(ctx, v.ID, domain.KindFile, paths); err != nil {
+		return fmt.Errorf("remove: %w", err)
+	}
+	res.Removed += len(paths)
 	return nil
 }
 
 // moveRenamed moves the removed sources to the added paths that hold the same
 // content, and returns the paths it moved from.
-func (u Extract) moveRenamed(ctx context.Context, v domain.Vault, on openVault, removed, added []string) ([]string, error) {
+func (u Index) moveRenamed(ctx context.Context, v domain.Vault, on openVault, removed, added []string) ([]string, error) {
 	if len(added) == 0 {
 		return nil, nil
 	}
@@ -240,18 +239,12 @@ func (u Extract) moveRenamed(ctx context.Context, v domain.Vault, on openVault, 
 	return moved, nil
 }
 
-// getAdded is the paths the walk found that the index did not hold.
-func getAdded(existing map[domain.SourceKind]map[string]domain.Fingerprint, found map[string]bool) []string {
+// getAdded is the paths the walk found that the index did not hold, with text
+// or without: a renamed file whose text plugin is off still holds its versions.
+func getAdded(fingerprints map[string]domain.Fingerprint, found map[string]bool) []string {
 	var added []string
 	for path := range found {
-		isKnown := false
-		for _, paths := range existing {
-			_, isKnown = paths[path]
-			if isKnown {
-				break
-			}
-		}
-		if !isKnown {
+		if _, isKnown := fingerprints[path]; !isKnown {
 			added = append(added, path)
 		}
 	}
@@ -261,19 +254,17 @@ func getAdded(existing map[domain.SourceKind]map[string]domain.Fingerprint, foun
 // dropOutdatedText records afresh, with no recipe, every source cut from a
 // version that is no longer the file's live one: a plugin was switched off, a
 // version was deleted, or a newer one was made while nothing was indexing.
-func (u Extract) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *ExtractResult) error {
-	for _, kind := range u.kinds() {
-		cut, err := u.queries.GetRecognisedSources(ctx, v.ID, kind)
-		if err != nil {
-			return fmt.Errorf("read index: %w", err)
+func (u Index) dropOutdatedText(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
+	cut, err := u.queries.GetRecognisedSources(ctx, v.ID, domain.KindFile)
+	if err != nil {
+		return fmt.Errorf("read index: %w", err)
+	}
+	for _, one := range cut {
+		if err := ctx.Err(); err != nil {
+			return err
 		}
-		for _, one := range cut {
-			if err := ctx.Err(); err != nil {
-				return err
-			}
-			if err := u.recordIfOutdated(ctx, v, on, one, res); err != nil {
-				return err
-			}
+		if err := u.recordIfOutdated(ctx, v, on, one, res); err != nil {
+			return err
 		}
 	}
 	return nil
@@ -281,12 +272,12 @@ func (u Extract) dropOutdatedText(ctx context.Context, v domain.Vault, on openVa
 
 // recordIfOutdated records a source afresh when the version it was cut from is
 // not the live one.
-func (u Extract) recordIfOutdated(
+func (u Index) recordIfOutdated(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
 	source sourceport.SourceText,
-	res *ExtractResult,
+	res *IndexResult,
 ) error {
 	live, err := on.texts.FindLiveVersion(ctx, source.Path, source.Hash)
 	switch {
@@ -316,21 +307,18 @@ func (u Extract) recordIfOutdated(
 // was cut by another extractor or at other sizes. Each question is asked again
 // until it is empty that has not been tried, so a run that stopped part way
 // is continued by starting another.
-func (u Extract) cut(ctx context.Context, v domain.Vault, on openVault, res *ExtractResult) error {
+func (u Index) cut(ctx context.Context, v domain.Vault, on openVault, res *IndexResult) error {
 	sizes := u.sizes()
 	recognized := []string{recipe(versionReader, sizes)}
 	tried := map[string]bool{}
 
-	var questions []func(context.Context) ([]string, error)
-	for _, kind := range u.kinds() {
-		questions = append(questions,
-			func(ctx context.Context) ([]string, error) {
-				return u.queries.GetUnchunkedSources(ctx, v.ID, kind, sourcesPerQuery)
-			},
-			func(ctx context.Context) ([]string, error) {
-				return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, kind, recognized, sourcesPerQuery)
-			},
-		)
+	questions := []func(context.Context) ([]string, error){
+		func(ctx context.Context) ([]string, error) {
+			return u.queries.GetUnchunkedSources(ctx, v.ID, domain.KindFile, sourcesPerQuery)
+		},
+		func(ctx context.Context) ([]string, error) {
+			return u.queries.GetSourcesWithOtherRecipe(ctx, v.ID, domain.KindFile, recognized, sourcesPerQuery)
+		},
 	}
 	for _, ask := range questions {
 		for {
@@ -352,14 +340,14 @@ func (u Extract) cut(ctx context.Context, v domain.Vault, on openVault, res *Ext
 
 // chunkNewPaths cuts each path not yet in tried, marks it tried, and returns how
 // many it cut.
-func (u Extract) chunkNewPaths(
+func (u Index) chunkNewPaths(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
 	paths []string,
 	tried map[string]bool,
 	sizes chunking.Sizes,
-	res *ExtractResult,
+	res *IndexResult,
 ) (int, error) {
 	freshCount := 0
 	for _, path := range paths {
@@ -378,10 +366,10 @@ func (u Extract) chunkNewPaths(
 	return freshCount, nil
 }
 
-// ExtractOne brings a single source's chunks up to date with its live text
+// IndexOne brings a single file's chunks up to date with its live text
 // version. It is what the index does when the versions of a file change.
-func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (ExtractResult, error) {
-	var res ExtractResult
+func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (IndexResult, error) {
+	var res IndexResult
 	on, err := u.open(v)
 	if err != nil {
 		return res, err
@@ -399,13 +387,13 @@ func (u Extract) ExtractOne(ctx context.Context, v domain.Vault, path string) (E
 //
 // The file is stated before it is read, so a file that changes while it is being
 // read keeps the older fingerprint and is asked for again.
-func (u Extract) source(
+func (u Index) source(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
 	path string,
 	sizes chunking.Sizes,
-	res *ExtractResult,
+	res *IndexResult,
 ) error {
 	res.CurrentSource = path
 	u.progress(*res)
@@ -428,7 +416,7 @@ func (u Extract) source(
 			return err
 		}
 		// A file that will not open is one file. Stopping here records nothing,
-		// and every later run stops at the same place, leaving every book after
+		// and every later run stops at the same place, leaving every file after
 		// it unread.
 		res.Unreadable++
 		return nil
@@ -463,13 +451,13 @@ func (u Extract) source(
 
 // saveWithoutText records a source with no live version, no chunks and no
 // recipe, which is a source that owes its text, and asks for that text. Text that could not be read is told to the error handler.
-func (u Extract) saveWithoutText(
+func (u Index) saveWithoutText(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
 	source domain.Source,
 	readErr error,
-	res *ExtractResult,
+	res *IndexResult,
 ) error {
 	res.Unreadable++
 	if !errors.Is(readErr, textport.ErrNoText) {
@@ -486,7 +474,7 @@ func (u Extract) saveWithoutText(
 	return nil
 }
 
-func (u Extract) reportError(err error) {
+func (u Index) reportError(err error) {
 	if u.ErrorHandler != nil {
 		u.ErrorHandler(err)
 	}
@@ -540,7 +528,7 @@ type openVault struct {
 	texts textport.VaultTexts
 }
 
-func (u Extract) open(v domain.Vault) (openVault, error) {
+func (u Index) open(v domain.Vault) (openVault, error) {
 	files, err := u.readers.Open(v)
 	if err != nil {
 		return openVault{}, err
@@ -573,20 +561,14 @@ func (noTexts) GetVersionText(context.Context, string, domain.TextVersionID) (do
 
 func (noTexts) RequestText(context.Context, string, string) error { return nil }
 
+func (noTexts) IsTextSource(context.Context, string) (bool, error) { return false, nil }
+
 // sizes are the sizes the cut works to, which is what the recipe has to name:
 // a recipe describing anything else describes bytes that were never written.
-func (u Extract) sizes() chunking.Sizes { return u.Sizes.Resolve() }
+func (u Index) sizes() chunking.Sizes { return u.Sizes.Resolve() }
 
-func (u Extract) progress(res ExtractResult) {
+func (u Index) progress(res IndexResult) {
 	if u.OnProgress != nil {
 		u.OnProgress(res)
 	}
-}
-
-// kinds are the sorts of source this run works through.
-func (u Extract) kinds() []domain.SourceKind {
-	if len(u.Kinds) == 0 {
-		return []domain.SourceKind{domain.KindBook, domain.KindRecording, domain.KindURL}
-	}
-	return u.Kinds
 }

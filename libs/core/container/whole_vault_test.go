@@ -71,7 +71,7 @@ func TestTheSplitOfASourceIsGivenWhatItReadsWith(t *testing.T) {
 	v := testsupport.NewVault(t, map[string]string{"a.md": "# A\n"})
 	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen", ShouldRebuildIndex: true}
 
-	trimmed, err := target.Extract(db.Sources(), db.SourcesKnown(), v)
+	trimmed, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), v)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestAVaultWhoseFolderIsMissingIsNotMadeSearchable(t *testing.T) {
 	target := container.Config{Embedding: container.DefaultEmbedding(), ServiceDir: ".numen"}
 	v := missingVault(t)
 
-	if _, err := target.Extract(db.Sources(), db.SourcesKnown(), v); err == nil {
+	if _, err := target.IndexTexts(db.Sources(), db.SourcesKnown(), v); err == nil {
 		t.Error("the sources of a folder that is not there were cut")
 	}
 	if _, err := target.Embed(db, nil, v); err == nil {

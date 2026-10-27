@@ -24,7 +24,6 @@ import (
 	editorSearch "github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	editorSettings "github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/container"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
@@ -690,22 +689,6 @@ func TestANoteTypeIsSavedAsTheWordItContainsAndAnOrdinaryNoteAsNone(t *testing.T
 	}
 }
 
-func TestEverySourceKindIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.SourceKind]domain.SourceKind{
-		v1.SourceKind_SOURCE_KIND_NOTE:      domain.KindNote,
-		v1.SourceKind_SOURCE_KIND_BOOK:      domain.KindBook,
-		v1.SourceKind_SOURCE_KIND_RECORDING: domain.KindRecording,
-		v1.SourceKind_SOURCE_KIND_URL:       domain.KindURL,
-	}, convertSourceKindToWire)
-}
-
-func TestEveryBookFormatIsSavedFromOne(t *testing.T) {
-	testsupport.CheckProduced(t, map[v1.BookFormat]string{
-		v1.BookFormat_BOOK_FORMAT_EPUB: "library/a.epub",
-		v1.BookFormat_BOOK_FORMAT_PDF:  "library/a.pdf",
-	}, func(path string) v1.BookFormat { return convertBookFormatToWire(path, domain.KindBook) })
-}
-
 func TestEveryNamingIsSavedFromOne(t *testing.T) {
 	testsupport.CheckProduced(t, map[v1.NameSource]note.NameSource{
 		v1.NameSource_NAME_SOURCE_FRONTMATTER: note.ByFrontmatter,
@@ -745,18 +728,6 @@ func TestEveryVaultsErrorCodeIsSavedFromOne(t *testing.T) {
 		reason, _ := vaultsErrorCodeBy(err)
 		return reason
 	})
-}
-
-// Which extensions are books and which reader cuts each of them are two lists,
-// and a book the vault names with no reader behind it opens in the reader made
-// picture reader.
-func TestEveryBookTheVaultNamesOpensInAReader(t *testing.T) {
-	for _, extension := range vaultconfig.DefaultBookExtensions {
-		path := "library/a" + extension
-		if got := convertBookFormatToWire(path, domain.KindBook); got == v1.BookFormat_BOOK_FORMAT_UNSPECIFIED {
-			t.Errorf("%s is a book of the vault and opens in no reader", extension)
-		}
-	}
 }
 
 // newThemeClient is a window's themes as a client reaches them: through the handler
@@ -1058,6 +1029,7 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 type routedPlugins struct {
 	routed []string
 	frames map[string][]string
+	vaults []string
 }
 
 func (p *routedPlugins) ListFrameOrigins() []string {
@@ -1078,6 +1050,7 @@ func (p *routedPlugins) ServeHTTP(w http.ResponseWriter, _ *http.Request) {
 
 func (p *routedPlugins) ServeRoute(w http.ResponseWriter, r *http.Request) {
 	p.routed = append(p.routed, r.URL.RequestURI())
+	p.vaults = append(p.vaults, r.Header.Get("Numen-Vault"))
 	w.Header().Set("Content-Type", "image/jpeg")
 	_, _ = io.WriteString(w, "page bytes")
 }
@@ -1101,6 +1074,26 @@ func TestPluginRouteReachesThePluginServices(t *testing.T) {
 	}
 	if !slices.Equal(plugins.routed, []string{"/plugin/org.example.reader/pages/2?path=a.pdf"}) {
 		t.Errorf("forwarded %q", plugins.routed)
+	}
+}
+
+func TestPluginRouteNamesTheVaultTheWindowShows(t *testing.T) {
+	plugins := &routedPlugins{}
+	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
+	services := createServices(state)
+	services.PluginServices = plugins
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	resp, err := server.Client().Get(server.URL + "/plugin/org.example.reader/pages/2?path=a.sample")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+
+	if !slices.Equal(plugins.vaults, []string{"v-garden"}) {
+		t.Errorf("forwarded with the vaults %q, want v-garden", plugins.vaults)
 	}
 }
 

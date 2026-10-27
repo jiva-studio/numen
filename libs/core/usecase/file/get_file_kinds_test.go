@@ -26,7 +26,7 @@ func TestKindsAreAnsweredInTheOrderAskedAndLeaveOutWhatIsNotThere(t *testing.T) 
 	if len(listing.Entries) != 2 || listing.Entries[0].Path != "b.mp3" || listing.Entries[1].Path != "a.md" {
 		t.Fatalf("kinds are %+v, want b.mp3 then a.md", listing.Entries)
 	}
-	if listing.Entries[0].Kind != domain.KindRecording || listing.Entries[1].Kind != domain.KindNote {
+	if listing.Entries[0].Kind != domain.KindFile || listing.Entries[1].Kind != domain.KindNote {
 		t.Errorf("kinds are %v and %v", listing.Entries[0].Kind, listing.Entries[1].Kind)
 	}
 	if listing.Types["a.md"] != "form" {

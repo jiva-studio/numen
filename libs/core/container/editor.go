@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -223,6 +224,11 @@ func (e EditorAssembly) OpenFileMenu() *textversion.FileMenu {
 // OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
 func (e EditorAssembly) OpenCopy() *file.OpenCopy {
 	return file.NewOpenCopy(e.cfg.VaultReaders(), e.cfg.Copies())
+}
+
+// GetMediaType finds the content type a file of a vault is served and played as.
+func (e EditorAssembly) GetMediaType() *file.GetMediaType {
+	return file.NewGetMediaType(sharedmimeinfo.Open())
 }
 
 // UnknownVaultError is a vault named at start that the registry does not hold.

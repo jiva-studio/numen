@@ -39,7 +39,7 @@ func BenchmarkEmbedDuplicates(b *testing.B) {
 			}
 
 			shelf := newLibrary()
-			shelf.hold(bookPath, domain.KindBook, bookOf(b, "A Book", parts...), 1)
+			shelf.hold(bookPath, domain.KindFile, bookOf(b, "A Book", parts...), 1)
 
 			b.ReportAllocs()
 			b.ResetTimer()

@@ -39,6 +39,8 @@ type ScenarioAssembly interface {
 
 	// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
 	OpenCopy() *file.OpenCopy
+	// GetMediaType finds the content type a file of a vault is served and played as.
+	GetMediaType() *file.GetMediaType
 
 	// GetRefresh brings named notes up to date for a window standing on no
 	// vault. A window showing one asks what that vault was opened with.

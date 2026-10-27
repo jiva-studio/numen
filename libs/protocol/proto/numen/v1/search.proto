@@ -6,7 +6,6 @@ syntax = "proto3";
 // of text a vault holds. A client drawing them apart asks each of them.
 package numen.v1;
 
-import "numen/v1/file.proto";
 import "numen/v1/note.proto";
 import "numen/v1/shared.proto";
 
@@ -132,9 +131,7 @@ message Passage {
   // Empty for an ordinary note. It says nothing about a source that is not a note.
   string type = 8;
 
-  // What the vault holds at that path, so a client draws a book and a
-  // recording as what they are.
-  SourceKind kind = 9;
+  reserved 9;
 
   // The selector of the text version segment the hit is in, as JSON, and empty
   // for a note. It locates the hit in the file; the SDK documents its keys.

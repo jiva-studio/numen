@@ -1196,11 +1196,11 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	if entry := target["physics"]; !entry.GetIsFolder() || entry.GetPath() != "physics" {
 		t.Errorf("the folder came back as %+v", entry)
 	}
-	if kind := target["alpha.md"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_NOTE {
-		t.Errorf("a note is held as %v", kind)
+	if !target["alpha.md"].GetIsNote() {
+		t.Error("a note is not held as a note")
 	}
-	if kind := target["Notes.txt"].GetKind(); kind != v1.SourceKind_SOURCE_KIND_UNSPECIFIED {
-		t.Errorf("a file the vault holds no source for is held as %v", kind)
+	if target["Notes.txt"].GetIsNote() {
+		t.Error("a file that is not a note is held as one")
 	}
 
 	entries := getEntries(t, f, "physics")
@@ -1212,7 +1212,7 @@ func TestListingAFolderAnswersInTheOrderToDrawItIn(t *testing.T) {
 	}
 
 	shelf := getEntries(t, f, "library")
-	if len(shelf) != 1 || shelf[0].GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
+	if len(shelf) != 1 || shelf[0].GetIsNote() {
 		t.Errorf("the library is drawn as %+v", shelf)
 	}
 }
@@ -1563,17 +1563,16 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 
 	// each in the reader made for it.
 	want := map[string]struct {
-		kind   v1.SourceKind
+		isNote bool
 		is     string
-		format v1.BookFormat
 	}{
-		"Animals.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "sample", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Animal.md":    {v1.SourceKind_SOURCE_KIND_NOTE, "form", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Sanskrit.md":  {v1.SourceKind_SOURCE_KIND_NOTE, "preset", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Entropy.md":   {v1.SourceKind_SOURCE_KIND_NOTE, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
-		"Physics.epub": {v1.SourceKind_SOURCE_KIND_BOOK, "", v1.BookFormat_BOOK_FORMAT_EPUB},
-		"Scan.pdf":     {v1.SourceKind_SOURCE_KIND_BOOK, "", v1.BookFormat_BOOK_FORMAT_PDF},
-		"Notes.txt":    {v1.SourceKind_SOURCE_KIND_UNSPECIFIED, "", v1.BookFormat_BOOK_FORMAT_UNSPECIFIED},
+		"Animals.md":   {true, "sample"},
+		"Animal.md":    {true, "form"},
+		"Sanskrit.md":  {true, "preset"},
+		"Entropy.md":   {true, ""},
+		"Physics.epub": {false, ""},
+		"Scan.pdf":     {false, ""},
+		"Notes.txt":    {false, ""},
 	}
 	for path, one := range want {
 		status, reply := target[path]
@@ -1581,10 +1580,8 @@ func TestAPathReturnsWhatExistsThere(t *testing.T) {
 			t.Errorf("%s was not answered about at all", path)
 			continue
 		}
-		if status.GetKind() != one.kind || status.GetType() != one.is || status.GetFormat() != one.format {
-			t.Errorf("%s stands as %v %v %v, want %v %v %v",
-				path, status.GetKind(), status.GetType(), status.GetFormat(),
-				one.kind, one.is, one.format)
+		if status.GetIsNote() != one.isNote || status.GetType() != one.is {
+			t.Errorf("%s stands as note %v %v, want %v %v", path, status.GetIsNote(), status.GetType(), one.isNote, one.is)
 		}
 	}
 
@@ -1608,8 +1605,8 @@ func TestABookExistsThereBeforeAnythingHasReadIt(t *testing.T) {
 	}
 
 	status := getKindsByPath(t, f, "Physics.epub")["Physics.epub"]
-	if status.GetKind() != v1.SourceKind_SOURCE_KIND_BOOK {
-		t.Errorf("a book nothing has read stands as %v", status.GetKind())
+	if status == nil || status.GetIsNote() {
+		t.Errorf("a book nothing has read stands as %v", status)
 	}
 }
 

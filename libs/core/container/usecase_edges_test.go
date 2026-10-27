@@ -17,12 +17,12 @@ var useCaseEdges = map[string][]string{
 	"note":       nil,
 	"settings":   nil,
 	"run":        nil,
-	"source":     nil,
+	"filetext":   nil,
 	"vectors":    nil,
 	"file":       nil,
 	"search":     nil,
-	"vault":      {"note", "source", "vectors"},
-	"indexing":   {"run", "source", "vault", "vectors"},
+	"vault":      {"filetext", "note", "vectors"},
+	"indexing":   {"filetext", "run", "vault", "vectors"},
 	"completion": {"agent"},
 }
 
@@ -118,13 +118,13 @@ func TestUseCaseEdgeRuleRefusesUndeclaredEdges(t *testing.T) {
 	}{
 		// The declared edges.
 		{"usecase/vault", "usecase/note", false},
-		{"usecase/vault", "usecase/source", false},
+		{"usecase/vault", "usecase/filetext", false},
 		{"usecase/vault", "usecase/vectors", false},
 
 		// The same edges reversed, and the edges skipping the declaration.
 		{"usecase/note", "usecase/vault", true},
-		{"usecase/source", "usecase/vault", true},
-		{"usecase/source", "usecase/run", true},
+		{"usecase/filetext", "usecase/vault", true},
+		{"usecase/filetext", "usecase/run", true},
 		{"usecase/vectors", "usecase/vault", true},
 
 		// A use case that builds on none.

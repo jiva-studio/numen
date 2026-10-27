@@ -13,11 +13,8 @@ type (
 const (
 	// From name subpackage
 	KindNote      = name.KindNote
-	KindBook      = name.KindBook
-	KindRecording = name.KindRecording
-	KindURL       = name.KindURL
+	KindFile      = name.KindFile
 	NoteExtension = name.NoteExtension
-	URLExtension  = name.URLExtension
 )
 
 var (

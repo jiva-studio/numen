@@ -302,15 +302,15 @@ func TestAHitReachesBackAsTheChunkThatIsRead(t *testing.T) {
 func TestAPassageReturnsWhatItWasReadOutOf(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
-	source(t, db, first, "library/talk.epub", domain.KindBook, "opening words")
-	source(t, db, first, "talks/lecture.mp3", domain.KindRecording, "opening words")
+	source(t, db, first, "library/talk.epub", domain.KindFile, "opening words")
+	source(t, db, first, "talks/lecture.mp3", domain.KindFile, "opening words")
 	source(t, db, first, "Entropy.md", domain.KindNote, "opening words")
 	saveSeededVectors(t, db, first, 0x00)
 
 	queries := db.ChunkQueries()
 	want := map[string]domain.SourceKind{
-		"library/talk.epub": domain.KindBook,
-		"talks/lecture.mp3": domain.KindRecording,
+		"library/talk.epub": domain.KindFile,
+		"talks/lecture.mp3": domain.KindFile,
 		"Entropy.md":        domain.KindNote,
 	}
 
@@ -1454,7 +1454,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
 		Source: domain.Source{
 			Fingerprint: domain.Fingerprint{
-				Path: "library/chaitanya.pdf", Kind: domain.KindBook, Size: 1000, ModTime: walked,
+				Path: "library/chaitanya.pdf", Kind: domain.KindFile, Size: 1000, ModTime: walked,
 			},
 			Hash:   "hash",
 			Recipe: "pdf",

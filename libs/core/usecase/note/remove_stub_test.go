@@ -156,7 +156,7 @@ func TestOnlyNotesAreAskedWhatPointsAtThem(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
 	tr.sources.underCtx = []domain.Fingerprint{
-		{Path: "physics/figure.epub", Kind: domain.KindBook},
+		{Path: "physics/figure.epub", Kind: domain.KindFile},
 		noteAt("physics/Entropy.md"),
 	}
 	tr.links.pointing = map[string][]domain.ResolvedLink{

@@ -15,8 +15,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultconfig"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -404,7 +404,7 @@ func TestAFlagMistypedAfterTheCommandIsAnError(t *testing.T) {
 
 func TestDescribeSources(t *testing.T) {
 	t.Parallel()
-	base := source.ExtractResult{Seen: 5, Extracted: 3, Unchanged: 2, Chunks: 40}
+	base := filetext.IndexResult{Seen: 5, Extracted: 3, Unchanged: 2, Chunks: 40}
 	for name, c := range map[string]struct {
 		unreadable, vanished int
 		want                 string
@@ -467,7 +467,7 @@ func (s *scanFixture) deps(t *testing.T, target domain.Vault) cli.Deps {
 			notes := vaults.NewScan(readers, db.Vaults(),
 				db.Notes(),
 				db.NoteQueries(), db.Maintenance())
-			books := source.NewExtract(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
+			books := filetext.NewIndex(readers, db.Sources(), db.Sources(), testsupport.Texts{Readers: readers})
 			embed := vectors.NewEmbed(readers, db.Sources(), db.Sources())
 			if s.embedder != nil {
 				if err := db.FitVectors(ctx, width, s.embedder.GetModel().Recipe()); err != nil {

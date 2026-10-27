@@ -563,7 +563,7 @@ func TestAQuestionAboutBooksIsAnsweredFromBooks(t *testing.T) {
 	// This vault holds notes alone, so a question about books is answered by
 	// nothing: what is asserted is that the kind reached every half.
 	books, err := c.search(oneWay{newVector(+1)}).Execute(ctx, c.first, "Madhavendra Puri",
-		search.Parameters{Kinds: []domain.SourceKind{domain.KindBook}})
+		search.Parameters{Kinds: []domain.SourceKind{domain.KindFile}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -590,7 +590,7 @@ func TestEveryModeIsReportedWhichKindsAQuestionIsAbout(t *testing.T) {
 	c.writeSections(t, c.first, "notes/Entropy.md")
 	c.vectorise(t, c.first, newVector(+1))
 	queries := c.db.ChunkQueries()
-	books := []domain.SourceKind{domain.KindBook}
+	books := []domain.SourceKind{domain.KindFile}
 
 	words, err := queries.FindLexical(ctx, c.first.ID, "Madhavendra Puri", books, 20, false)
 	if err != nil {

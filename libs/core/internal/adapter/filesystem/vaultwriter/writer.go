@@ -216,7 +216,7 @@ func (w *VaultWriter) resolveNotePath(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !w.isReported(path) {
+	if !w.isWritableNote(path) {
 		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 	}
 	return target, nil
@@ -243,7 +243,7 @@ func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if !w.isReported(path) {
+	if !w.isWritableNote(path) {
 		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 	}
 	// The rule is asked of where the bytes land as well as of the name they were
@@ -253,7 +253,7 @@ func (w *VaultWriter) resolveNoteFile(path string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", path, vaultconfig.ErrOutside)
 	}
-	if !w.isReported(inside) {
+	if !w.isWritableNote(inside) {
 		return "", fmt.Errorf("%s: %w", inside, vaultconfig.ErrNotANote)
 	}
 	return resolved, nil
@@ -328,11 +328,11 @@ func (w *VaultWriter) isReachable(path string) bool {
 	return true
 }
 
-// isReported answers the same question about a path that a walk answers about
-// the files it reports, and by the same rules.
-func (w *VaultWriter) isReported(path string) bool {
+// isWritableNote reports whether the path names a note the writer may write: a
+// note outside what the vault ignores and outside the service folder.
+func (w *VaultWriter) isWritableNote(path string) bool {
 	clean := pathpkg.Clean(filepath.ToSlash(path))
-	if !w.opts.IsWritable(pathpkg.Base(clean)) {
+	if !w.opts.IsNote(pathpkg.Base(clean)) {
 		return false
 	}
 	if w.ignored.MatchesPath(clean) {

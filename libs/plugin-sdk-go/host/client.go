@@ -3,6 +3,7 @@ package host
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"connectrpc.com/connect"
@@ -22,6 +23,12 @@ type Client struct {
 
 // vaultHeader names the vault a call works.
 const vaultHeader = "Numen-Vault"
+
+// GetRequestVault is the vault a request a window forwards to the plugin works, as its Numen-Vault
+// header names it, and empty where the request names none.
+func GetRequestVault(header http.Header) domain.VaultID {
+	return domain.VaultID(header.Get(vaultHeader))
+}
 
 func request[T any](c *Client, msg *T) *connect.Request[T] {
 	req := connect.NewRequest(msg)
@@ -98,12 +105,24 @@ func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
 		return domain.Fingerprint{}
 	}
 	return domain.Fingerprint{
-		Path: f.GetPath(), Kind: domain.SourceKind(f.GetKind()), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
+	}
+}
+
+// readKind is the kind of the file a fingerprint names, and none for a fingerprint naming no file.
+func readKind(f *v1.HostFingerprint) domain.SourceKind {
+	switch {
+	case f.GetIsNote():
+		return domain.KindNote
+	case f.GetPath() == "":
+		return ""
+	default:
+		return domain.KindFile
 	}
 }
 
 func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), Kind: string(f.Kind)}
+	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 
 func readLink(l *v1.HostLink) domain.ResolvedLink {

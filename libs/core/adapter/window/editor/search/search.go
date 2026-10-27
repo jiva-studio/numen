@@ -136,7 +136,6 @@ func (h *Handler) SearchPassages(
 			Location: p.Location,
 			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
-			Kind:     convertSourceKindToWire(p.Kind),
 			Selector: string(p.Selector),
 		}
 		if noteRef, target := titles[p.Source]; target {
@@ -153,21 +152,6 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 		return ""
 	}
 	return string(noteType)
-}
-
-func convertSourceKindToWire(kind domain.SourceKind) v1.SourceKind {
-	switch kind {
-	case domain.KindNote:
-		return v1.SourceKind_SOURCE_KIND_NOTE
-	case domain.KindBook:
-		return v1.SourceKind_SOURCE_KIND_BOOK
-	case domain.KindRecording:
-		return v1.SourceKind_SOURCE_KIND_RECORDING
-	case domain.KindURL:
-		return v1.SourceKind_SOURCE_KIND_URL
-	default:
-		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
-	}
 }
 
 func convertNoteToWire(n domain.NoteRef) *v1.Note {

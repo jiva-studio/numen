@@ -352,6 +352,18 @@ func (u *Versions) RequestText(ctx context.Context, v domain.Vault, path, fileHa
 	return errors.Join(failures...)
 }
 
+// IsTextSource reports whether the index keeps the text of the file: it has text
+// versions, or an enabled plugin that runs on its own takes it.
+func (u *Versions) IsTextSource(ctx context.Context, v domain.Vault, path string) (bool, error) {
+	for _, plugin := range u.plugins.GetTextPlugins() {
+		if plugin.IsAutoRun && plugin.Files.IsFileAccepted(path) {
+			return true, nil
+		}
+	}
+	versions, err := u.getVersions(ctx, v, path)
+	return len(versions) > 0, err
+}
+
 func (u *Versions) getVersions(ctx context.Context, v domain.Vault, path string) ([]domain.TextVersion, error) {
 	repo, err := u.repos.Open(v)
 	if err != nil {

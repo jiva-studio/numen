@@ -16,7 +16,7 @@ import (
 // reaches the rerank is settled by its text.
 func TestAReclaimedVectorCarriesTheCoarseFormItWasBoughtWith(t *testing.T) {
 	index, shelf := newStore(), newLibrary()
-	shelf.hold(bookPath, domain.KindBook, bookOf(t, "A Book", words(sanskrit, 900)), 1)
+	shelf.hold(bookPath, domain.KindFile, bookOf(t, "A Book", words(sanskrit, 900)), 1)
 
 	embed := newEmbed(vaults{first.ID: shelf, second.ID: shelf}, index, index)
 	embed.Embedder = &faint{dims: dimensions}

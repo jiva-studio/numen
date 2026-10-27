@@ -13,7 +13,9 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -27,7 +29,7 @@ func openRecordingWindow(t *testing.T, _ any) (*Services, http.Handler) {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{talk: sound})
 	api := newBareServices()
-	api.readFiles(vaultreader.Readers{}, nil)
+	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
 	return api, api.NewHandler(http.NotFoundHandler())
 }
@@ -184,7 +186,7 @@ func TestTheSocketServesTheVaultAndNotTheDisk(t *testing.T) {
 		"note.md": "# What a note says",
 	})
 	api := newBareServices()
-	api.readFiles(vaultreader.Readers{}, nil)
+	api.readFiles(vaultreader.Readers{}, nil, file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
 	back, handler := openLoopback(t, api)
 

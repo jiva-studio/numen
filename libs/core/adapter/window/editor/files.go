@@ -14,7 +14,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
@@ -77,7 +76,7 @@ func (h *fileHandler) ListFiles(
 			Path:     one.Path,
 			Name:     one.Name,
 			IsFolder: one.IsFolder,
-			Kind:     convertSourceKindToWire(one.Kind),
+			IsNote:   one.Kind == domain.KindNote,
 			Type:     convertNoteTypeToWire(listing.Types[one.Path]),
 		})
 	}
@@ -88,7 +87,7 @@ func (h *fileHandler) ListFiles(
 // so that a client holding a path opens what stands there in the editor made
 // for it.
 //
-// The kind is read off the vault and the type off the index, or off the note
+// Whether a note is there is read off the vault and the type off the index, or off the note
 // where nothing has scanned it yet, so a file a plugin has just written opens
 // in the editor made for it. A window standing
 // on nothing holds no source, and a path with nothing at it is left out.
@@ -122,8 +121,7 @@ func (h *fileHandler) ListFileKinds(
 	for _, one := range listing.Entries {
 		out.Kinds = append(out.Kinds, &v1.FileKind{
 			Path:   one.Path,
-			Kind:   convertSourceKindToWire(one.Kind),
-			Format: convertBookFormatToWire(one.Path, one.Kind),
+			IsNote: one.Kind == domain.KindNote,
 			Type:   convertNoteTypeToWire(listing.Types[one.Path]),
 		})
 	}
@@ -193,7 +191,7 @@ func (h *fileHandler) MoveFile(
 // getListCode is the code a folder that could not be listed is answered with.
 func getListCode(err error) connect.Code {
 	switch {
-	case errors.Is(err, source.ErrOutside):
+	case errors.Is(err, file.ErrOutside):
 		return connect.CodeInvalidArgument
 	case errors.Is(err, fs.ErrNotExist):
 		return connect.CodeNotFound
@@ -209,38 +207,6 @@ func convertNoteTypeToWire(noteType domain.NoteType) string {
 		return ""
 	}
 	return string(noteType)
-}
-
-// reads the file is decided from its name.
-func convertBookFormatToWire(path string, kind domain.SourceKind) v1.BookFormat {
-	if kind != domain.KindBook {
-		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
-	}
-	switch name := strings.ToLower(path); {
-	case strings.HasSuffix(name, ".epub"):
-		return v1.BookFormat_BOOK_FORMAT_EPUB
-	case strings.HasSuffix(name, ".pdf"):
-		return v1.BookFormat_BOOK_FORMAT_PDF
-	default:
-		return v1.BookFormat_BOOK_FORMAT_UNSPECIFIED
-	}
-}
-
-// convertSourceKindToWire is what the vault holds at a path, as the schema carries it. A file
-// the vault holds no source for is unspecified.
-func convertSourceKindToWire(kind domain.SourceKind) v1.SourceKind {
-	switch kind {
-	case domain.KindNote:
-		return v1.SourceKind_SOURCE_KIND_NOTE
-	case domain.KindBook:
-		return v1.SourceKind_SOURCE_KIND_BOOK
-	case domain.KindRecording:
-		return v1.SourceKind_SOURCE_KIND_RECORDING
-	case domain.KindURL:
-		return v1.SourceKind_SOURCE_KIND_URL
-	default:
-		return v1.SourceKind_SOURCE_KIND_UNSPECIFIED
-	}
 }
 
 // RemoveFile takes a file or a folder out of the vault. It goes to the trash,

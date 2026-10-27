@@ -93,10 +93,7 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint)
 // nothing. A source is a regular file: a device, a socket or a FIFO carries
 // no bytes to read whatever it is named.
 func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (*domain.Fingerprint, error) {
-	kind, ok := s.opts.Kind(d.Name())
-	if !ok {
-		return nil, nil
-	}
+	kind := s.opts.Kind(d.Name())
 	rel := s.getRelPath(p)
 	if s.ignored.MatchesPath(rel) {
 		return nil, nil
@@ -184,7 +181,7 @@ func (s *VaultReader) getEntry(target, folder string, d fs.DirEntry) (domain.Ent
 		return domain.Entry{}, false
 	}
 	if found, err := getEntryInfo(filepath.Join(target, d.Name()), d); err == nil && found.Mode().IsRegular() {
-		entry.Kind, _ = s.opts.Kind(d.Name())
+		entry.Kind = s.opts.Kind(d.Name())
 	}
 	return entry, true
 }
@@ -397,10 +394,7 @@ func (s *VaultReader) getKind(path string) (domain.SourceKind, bool) {
 	if _, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir()); err != nil {
 		return "", false
 	}
-	kind, ok := s.opts.Kind(pathpkg.Base(path))
-	if !ok {
-		return "", false
-	}
+	kind := s.opts.Kind(pathpkg.Base(path))
 	if s.ignored.MatchesPath(path) {
 		return "", false
 	}

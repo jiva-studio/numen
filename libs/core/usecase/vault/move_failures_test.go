@@ -13,8 +13,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultwriter"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -101,7 +101,7 @@ func (f filing) moveOver(w wiring) vaults.Move {
 // recordBooks files the books the vault holds in the index.
 func (f filing) recordBooks(t *testing.T) {
 	t.Helper()
-	extract := source.NewExtract(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown(), nil)
+	extract := filetext.NewIndex(vaultreader.Readers{}, f.db.Sources(), f.db.SourcesKnown(), testsupport.Texts{Readers: vaultreader.Readers{}})
 	if _, err := extract.Execute(t.Context(), f.vault); err != nil {
 		t.Fatal(err)
 	}

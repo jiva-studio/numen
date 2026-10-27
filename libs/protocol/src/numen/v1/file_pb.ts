@@ -8,8 +8,8 @@
 // moving one, removing one, making one. What is inside a note is note.proto,
 // and the bytes a file of the person's own holds are asset.proto.
 
-import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
+import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
 import type { ErrorCode } from "./shared_pb.js";
 import { file_numen_v1_shared } from "./shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
@@ -18,7 +18,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/file.proto.
  */
 export const file_numen_v1_file: GenFile = /*@__PURE__*/
-  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5ImgKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSIgoEa2luZBgEIAEoDjIULm51bWVuLnYxLlNvdXJjZUtpbmQSDAoEdHlwZRgFIAEoCSIlChRMaXN0RmlsZUtpbmRzUmVxdWVzdBINCgVwYXRocxgBIAMoCSI6ChVMaXN0RmlsZUtpbmRzUmVzcG9uc2USIQoFa2luZHMYASADKAsyEi5udW1lbi52MS5GaWxlS2luZCJwCghGaWxlS2luZBIMCgRwYXRoGAEgASgJEiIKBGtpbmQYAiABKA4yFC5udW1lbi52MS5Tb3VyY2VLaW5kEgwKBHR5cGUYAyABKAkSJAoGZm9ybWF0GAQgASgOMhQubnVtZW4udjEuQm9va0Zvcm1hdCIrCg9Nb3ZlRmlsZVJlcXVlc3QSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCSKQAQoQTW92ZUZpbGVSZXNwb25zZRIoCgVtb3ZlZBgBIAEoCzIULm51bWVuLnYxLk1vdmVSZXN1bHRIAIgBARInCgVlcnJvchgCIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgBiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX21vdmVkQggKBl9lcnJvciJKCgpNb3ZlUmVzdWx0EgwKBGZyb20YASABKAkSCgoCdG8YAiABKAkSEAoIcmVwYWlyZWQYAyADKAkSEAoIZGFuZ2xpbmcYBCADKAkiMgoRUmVtb3ZlRmlsZVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIPCgdkZXN0cm95GAIgASgIIoEBChJSZW1vdmVGaWxlUmVzcG9uc2USDwoHdHJhc2hlZBgBIAEoCRIQCghkYW5nbGluZxgCIAMoCRInCgVlcnJvchgDIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBEhUKDWlzX3VubGV2ZWxsZWQYBCABKAhCCAoGX2Vycm9yIiMKE0NyZWF0ZUZvbGRlclJlcXVlc3QSDAoEcGF0aBgBIAEoCSJJChRDcmVhdGVGb2xkZXJSZXNwb25zZRInCgVlcnJvchgBIAEoDjITLm51bWVuLnYxLkVycm9yQ29kZUgAiAEBQggKBl9lcnJvciqFAQoKU291cmNlS2luZBIbChdTT1VSQ0VfS0lORF9VTlNQRUNJRklFRBAAEhQKEFNPVVJDRV9LSU5EX05PVEUQARIUChBTT1VSQ0VfS0lORF9CT09LEAISGQoVU09VUkNFX0tJTkRfUkVDT1JESU5HEAMSEwoPU09VUkNFX0tJTkRfVVJMEAQqVAoKQm9va0Zvcm1hdBIbChdCT09LX0ZPUk1BVF9VTlNQRUNJRklFRBAAEhMKD0JPT0tfRk9STUFUX1BERhABEhQKEEJPT0tfRk9STUFUX0VQVUIQAjKAAwoLRmlsZVNlcnZpY2USRAoJTGlzdEZpbGVzEhoubnVtZW4udjEuTGlzdEZpbGVzUmVxdWVzdBobLm51bWVuLnYxLkxpc3RGaWxlc1Jlc3BvbnNlElAKDUxpc3RGaWxlS2luZHMSHi5udW1lbi52MS5MaXN0RmlsZUtpbmRzUmVxdWVzdBofLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXNwb25zZRJBCghNb3ZlRmlsZRIZLm51bWVuLnYxLk1vdmVGaWxlUmVxdWVzdBoaLm51bWVuLnYxLk1vdmVGaWxlUmVzcG9uc2USRwoKUmVtb3ZlRmlsZRIbLm51bWVuLnYxLlJlbW92ZUZpbGVSZXF1ZXN0GhwubnVtZW4udjEuUmVtb3ZlRmlsZVJlc3BvbnNlEk0KDENyZWF0ZUZvbGRlchIdLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlcXVlc3QaHi5udW1lbi52MS5DcmVhdGVGb2xkZXJSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_shared]);
+  fileDesc("ChNudW1lbi92MS9maWxlLnByb3RvEghudW1lbi52MSIgChBMaXN0RmlsZXNSZXF1ZXN0EgwKBHBhdGgYASABKAkiNQoRTGlzdEZpbGVzUmVzcG9uc2USIAoHZW50cmllcxgBIAMoCzIPLm51bWVuLnYxLkVudHJ5IlsKBUVudHJ5EgwKBHBhdGgYASABKAkSDAoEbmFtZRgCIAEoCRIRCglpc19mb2xkZXIYAyABKAgSDwoHaXNfbm90ZRgGIAEoCBIMCgR0eXBlGAUgASgJSgQIBBAFIiUKFExpc3RGaWxlS2luZHNSZXF1ZXN0Eg0KBXBhdGhzGAEgAygJIjoKFUxpc3RGaWxlS2luZHNSZXNwb25zZRIhCgVraW5kcxgBIAMoCzISLm51bWVuLnYxLkZpbGVLaW5kIkMKCEZpbGVLaW5kEgwKBHBhdGgYASABKAkSDwoHaXNfbm90ZRgFIAEoCBIMCgR0eXBlGAMgASgJSgQIAhADSgQIBBAFIisKD01vdmVGaWxlUmVxdWVzdBIMCgRmcm9tGAEgASgJEgoKAnRvGAIgASgJIpABChBNb3ZlRmlsZVJlc3BvbnNlEigKBW1vdmVkGAEgASgLMhQubnVtZW4udjEuTW92ZVJlc3VsdEgAiAEBEicKBWVycm9yGAIgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSAGIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfbW92ZWRCCAoGX2Vycm9yIkoKCk1vdmVSZXN1bHQSDAoEZnJvbRgBIAEoCRIKCgJ0bxgCIAEoCRIQCghyZXBhaXJlZBgDIAMoCRIQCghkYW5nbGluZxgEIAMoCSIyChFSZW1vdmVGaWxlUmVxdWVzdBIMCgRwYXRoGAEgASgJEg8KB2Rlc3Ryb3kYAiABKAgigQEKElJlbW92ZUZpbGVSZXNwb25zZRIPCgd0cmFzaGVkGAEgASgJEhAKCGRhbmdsaW5nGAIgAygJEicKBWVycm9yGAMgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQESFQoNaXNfdW5sZXZlbGxlZBgEIAEoCEIICgZfZXJyb3IiIwoTQ3JlYXRlRm9sZGVyUmVxdWVzdBIMCgRwYXRoGAEgASgJIkkKFENyZWF0ZUZvbGRlclJlc3BvbnNlEicKBWVycm9yGAEgASgOMhMubnVtZW4udjEuRXJyb3JDb2RlSACIAQFCCAoGX2Vycm9yMoADCgtGaWxlU2VydmljZRJECglMaXN0RmlsZXMSGi5udW1lbi52MS5MaXN0RmlsZXNSZXF1ZXN0GhsubnVtZW4udjEuTGlzdEZpbGVzUmVzcG9uc2USUAoNTGlzdEZpbGVLaW5kcxIeLm51bWVuLnYxLkxpc3RGaWxlS2luZHNSZXF1ZXN0Gh8ubnVtZW4udjEuTGlzdEZpbGVLaW5kc1Jlc3BvbnNlEkEKCE1vdmVGaWxlEhkubnVtZW4udjEuTW92ZUZpbGVSZXF1ZXN0GhoubnVtZW4udjEuTW92ZUZpbGVSZXNwb25zZRJHCgpSZW1vdmVGaWxlEhsubnVtZW4udjEuUmVtb3ZlRmlsZVJlcXVlc3QaHC5udW1lbi52MS5SZW1vdmVGaWxlUmVzcG9uc2USTQoMQ3JlYXRlRm9sZGVyEh0ubnVtZW4udjEuQ3JlYXRlRm9sZGVyUmVxdWVzdBoeLm51bWVuLnYxLkNyZWF0ZUZvbGRlclJlc3BvbnNlQkFaP2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vbGlicy9wcm90b2NvbC9nZW4vbnVtZW4vdjE7bnVtZW52MWIGcHJvdG8z", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.ListFilesRequest
@@ -60,7 +60,7 @@ export const ListFilesResponseSchema: GenMessage<ListFilesResponse> = /*@__PURE_
   messageDesc(file_numen_v1_file, 1);
 
 /**
- * it.
+ * Entry is one file or folder of a listing.
  *
  * @generated from message numen.v1.Entry
  */
@@ -89,11 +89,12 @@ export type Entry = Message<"numen.v1.Entry"> & {
   isFolder: boolean;
 
   /**
-   * What the vault holds here.
+   * Whether the entry is a note. Every other file is opened by the plugin its
+   * content type names.
    *
-   * @generated from field: numen.v1.SourceKind kind = 4;
+   * @generated from field: bool is_note = 6;
    */
-  kind: SourceKind;
+  isNote: boolean;
 
   /**
    * The `type` key of the note's frontmatter, which says what the note is. Empty for an
@@ -159,12 +160,11 @@ export type FileKind = Message<"numen.v1.FileKind"> & {
   path: string;
 
   /**
-   * What the vault holds here. A file it holds no source for — a picture, an
-   * archive — is unspecified.
+   * Whether a note is at the path.
    *
-   * @generated from field: numen.v1.SourceKind kind = 2;
+   * @generated from field: bool is_note = 5;
    */
-  kind: SourceKind;
+  isNote: boolean;
 
   /**
    * The `type` key of the note's frontmatter, which says what the note is. Empty for an
@@ -173,13 +173,6 @@ export type FileKind = Message<"numen.v1.FileKind"> & {
    * @generated from field: string type = 3;
    */
   type: string;
-
-  /**
-   * Which sort of book it is. It says nothing about a path holding no book.
-   *
-   * @generated from field: numen.v1.BookFormat format = 4;
-   */
-  format: BookFormat;
 };
 
 /**
@@ -404,77 +397,6 @@ export const CreateFolderResponseSchema: GenMessage<CreateFolderResponse> = /*@_
   messageDesc(file_numen_v1_file, 12);
 
 /**
- * SourceKind is what the vault holds at a path. A file the index holds no text
- * for — a picture, an archive — is unspecified.
- *
- * @generated from enum numen.v1.SourceKind
- */
-export enum SourceKind {
-  /**
-   * @generated from enum value: SOURCE_KIND_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: SOURCE_KIND_NOTE = 1;
-   */
-  NOTE = 1,
-
-  /**
-   * @generated from enum value: SOURCE_KIND_BOOK = 2;
-   */
-  BOOK = 2,
-
-  /**
-   * @generated from enum value: SOURCE_KIND_RECORDING = 3;
-   */
-  RECORDING = 3,
-
-  /**
-   * A file holding a web address and nothing else. Its text is what was
-   * fetched from that address.
-   *
-   * @generated from enum value: SOURCE_KIND_URL = 4;
-   */
-  URL = 4,
-}
-
-/**
- * Describes the enum numen.v1.SourceKind.
- */
-export const SourceKindSchema: GenEnum<SourceKind> = /*@__PURE__*/
-  enumDesc(file_numen_v1_file, 0);
-
-/**
- * the reader made for it: one is drawn as pictures a page at a time, the other
- * that is no book is unspecified.
- *
- * @generated from enum numen.v1.BookFormat
- */
-export enum BookFormat {
-  /**
-   * @generated from enum value: BOOK_FORMAT_UNSPECIFIED = 0;
-   */
-  UNSPECIFIED = 0,
-
-  /**
-   * @generated from enum value: BOOK_FORMAT_PDF = 1;
-   */
-  PDF = 1,
-
-  /**
-   * @generated from enum value: BOOK_FORMAT_EPUB = 2;
-   */
-  EPUB = 2,
-}
-
-/**
- * Describes the enum numen.v1.BookFormat.
- */
-export const BookFormatSchema: GenEnum<BookFormat> = /*@__PURE__*/
-  enumDesc(file_numen_v1_file, 1);
-
-/**
  * FileService answers what the vault holds at a path, and moves it about.
  *
  * @generated from service numen.v1.FileService
@@ -492,11 +414,11 @@ export const FileService: GenService<{
     output: typeof ListFilesResponseSchema;
   },
   /**
-   * ListFileKinds is what the vault holds at each of those paths, so a client
-   * holding a path opens what stands there in the editor made for it. The kind
-   * is read off the vault itself, so a path nothing has scanned is answered
-   * with what stands there. A path with nothing at it is absent from the
-   * answer, and a path named twice is answered once. More paths than the vault
+   * ListFileKinds returns, for each of the paths, whether a note is there and
+   * its type, so a client opens the path in the view made for it. It is read
+   * off the vault itself, so a path nothing has scanned is answered too. A path
+   * with nothing at it is absent from the answer, and a path named twice is
+   * answered once.
    *
    * @generated from rpc numen.v1.FileService.ListFileKinds
    */

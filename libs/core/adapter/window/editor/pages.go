@@ -78,6 +78,7 @@ func (s *Services) NewHandler(files http.Handler, named ...string) http.Handler 
 		// A service served by an enabled plugin takes precedence in a build that answers the whole schema.
 		isAgent := strings.HasPrefix(r.URL.Path, "/numen.v1.AgentService/")
 		if !isAgent && isWhole && s.PluginServices != nil && s.PluginServices.Serves(r.URL.Path) {
+			s.setRequestVault(r)
 			s.PluginServices.ServeHTTP(w, r)
 			return
 		}
@@ -304,5 +305,22 @@ func (s *Services) servePluginRoute(w http.ResponseWriter, r *http.Request, isWh
 		http.Error(w, "plugin file not found", http.StatusNotFound)
 		return
 	}
+	s.setRequestVault(r)
 	s.PluginServices.ServeRoute(w, r)
+}
+
+// requestVaultHeader names the vault a request forwarded to a plugin works, as the host endpoint
+// reads it on the calls the plugin makes back.
+const requestVaultHeader = "Numen-Vault"
+
+// setRequestVault names the vault the window shows on a request it forwards to a plugin, where the
+// request names none, so the plugin works that vault and not whichever the host shows when it
+// calls back.
+func (s *Services) setRequestVault(r *http.Request) {
+	if r.Header.Get(requestVaultHeader) != "" {
+		return
+	}
+	if v := s.state.GetCurrentVault(); v.ID != "" {
+		r.Header.Set(requestVaultHeader, string(v.ID))
+	}
 }

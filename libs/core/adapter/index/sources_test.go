@@ -32,7 +32,7 @@ func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos 
 	}
 	if err := db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindBook, Size: 1000, ModTime: pos},
+			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindFile, Size: 1000, ModTime: pos},
 			Hash:        "hash-" + path,
 			Recipe:      "epub",
 		},
@@ -210,7 +210,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	sources := db.Sources()
 
 	if err := sources.SaveSource(ctx, first.ID, domain.Source{
-		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindBook, Size: 4321, ModTime: thisYear},
+		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
 		Hash:        "hash-scan",
 		Producer:    "ocr",
 	}); err != nil {
@@ -227,7 +227,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	if read.Size != 4321 || !read.ModTime.Equal(thisYear) || read.Hash != "hash-scan" || read.Producer != "ocr" {
 		t.Errorf("the source reads back as %+v", read)
 	}
-	books, err := sources.GetFingerprints(ctx, first.ID, domain.KindBook)
+	books, err := sources.GetFingerprints(ctx, first.ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,14 +291,14 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	if err := db.Sources().SaveSource(ctx, first.ID, domain.Source{
-		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindBook, Size: 4321, ModTime: thisYear},
+		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
 		Hash:        "hash-scan",
 		Producer:    "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindBook)
+	found, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -309,7 +309,7 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	if err := db.Close(); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindBook); err == nil {
+	if _, err := db.Sources().GetRecognisedSources(ctx, first.ID, domain.KindFile); err == nil {
 		t.Error("listing over a closed index reported nothing recognised")
 	}
 }
@@ -335,7 +335,7 @@ func TestRemovingSourcesFromAClosedIndexFails(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.Sources().RemoveSources(t.Context(), first.ID, domain.KindBook, []string{"library/a.epub"}); err == nil {
+	if err := db.Sources().RemoveSources(t.Context(), first.ID, domain.KindFile, []string{"library/a.epub"}); err == nil {
 		t.Error("removing from a closed index reported success")
 	}
 }

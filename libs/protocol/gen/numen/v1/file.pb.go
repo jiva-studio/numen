@@ -27,116 +27,6 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// SourceKind is what the vault holds at a path. A file the index holds no text
-// for — a picture, an archive — is unspecified.
-type SourceKind int32
-
-const (
-	SourceKind_SOURCE_KIND_UNSPECIFIED SourceKind = 0
-	SourceKind_SOURCE_KIND_NOTE        SourceKind = 1
-	SourceKind_SOURCE_KIND_BOOK        SourceKind = 2
-	SourceKind_SOURCE_KIND_RECORDING   SourceKind = 3
-	// A file holding a web address and nothing else. Its text is what was
-	// fetched from that address.
-	SourceKind_SOURCE_KIND_URL SourceKind = 4
-)
-
-// Enum value maps for SourceKind.
-var (
-	SourceKind_name = map[int32]string{
-		0: "SOURCE_KIND_UNSPECIFIED",
-		1: "SOURCE_KIND_NOTE",
-		2: "SOURCE_KIND_BOOK",
-		3: "SOURCE_KIND_RECORDING",
-		4: "SOURCE_KIND_URL",
-	}
-	SourceKind_value = map[string]int32{
-		"SOURCE_KIND_UNSPECIFIED": 0,
-		"SOURCE_KIND_NOTE":        1,
-		"SOURCE_KIND_BOOK":        2,
-		"SOURCE_KIND_RECORDING":   3,
-		"SOURCE_KIND_URL":         4,
-	}
-)
-
-func (x SourceKind) Enum() *SourceKind {
-	p := new(SourceKind)
-	*p = x
-	return p
-}
-
-func (x SourceKind) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (SourceKind) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_file_proto_enumTypes[0].Descriptor()
-}
-
-func (SourceKind) Type() protoreflect.EnumType {
-	return &file_numen_v1_file_proto_enumTypes[0]
-}
-
-func (x SourceKind) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use SourceKind.Descriptor instead.
-func (SourceKind) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_file_proto_rawDescGZIP(), []int{0}
-}
-
-// the reader made for it: one is drawn as pictures a page at a time, the other
-// that is no book is unspecified.
-type BookFormat int32
-
-const (
-	BookFormat_BOOK_FORMAT_UNSPECIFIED BookFormat = 0
-	BookFormat_BOOK_FORMAT_PDF         BookFormat = 1
-	BookFormat_BOOK_FORMAT_EPUB        BookFormat = 2
-)
-
-// Enum value maps for BookFormat.
-var (
-	BookFormat_name = map[int32]string{
-		0: "BOOK_FORMAT_UNSPECIFIED",
-		1: "BOOK_FORMAT_PDF",
-		2: "BOOK_FORMAT_EPUB",
-	}
-	BookFormat_value = map[string]int32{
-		"BOOK_FORMAT_UNSPECIFIED": 0,
-		"BOOK_FORMAT_PDF":         1,
-		"BOOK_FORMAT_EPUB":        2,
-	}
-)
-
-func (x BookFormat) Enum() *BookFormat {
-	p := new(BookFormat)
-	*p = x
-	return p
-}
-
-func (x BookFormat) String() string {
-	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
-}
-
-func (BookFormat) Descriptor() protoreflect.EnumDescriptor {
-	return file_numen_v1_file_proto_enumTypes[1].Descriptor()
-}
-
-func (BookFormat) Type() protoreflect.EnumType {
-	return &file_numen_v1_file_proto_enumTypes[1]
-}
-
-func (x BookFormat) Number() protoreflect.EnumNumber {
-	return protoreflect.EnumNumber(x)
-}
-
-// Deprecated: Use BookFormat.Descriptor instead.
-func (BookFormat) EnumDescriptor() ([]byte, []int) {
-	return file_numen_v1_file_proto_rawDescGZIP(), []int{1}
-}
-
 type ListFilesRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The folder to list, as a path relative to the root. Empty is the root.
@@ -228,7 +118,7 @@ func (x *ListFilesResponse) GetEntries() []*Entry {
 	return nil
 }
 
-// it.
+// Entry is one file or folder of a listing.
 type Entry struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Path is what the vault calls it, relative to the root, with forward
@@ -239,8 +129,9 @@ type Entry struct {
 	// Whether the entry holds other entries. A folder carries no source and
 	// nothing is made from it.
 	IsFolder bool `protobuf:"varint,3,opt,name=is_folder,json=isFolder,proto3" json:"is_folder,omitempty"`
-	// What the vault holds here.
-	Kind SourceKind `protobuf:"varint,4,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
+	// Whether the entry is a note. Every other file is opened by the plugin its
+	// content type names.
+	IsNote bool `protobuf:"varint,6,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about an entry that is not a note.
 	Type          string `protobuf:"bytes,5,opt,name=type,proto3" json:"type,omitempty"`
@@ -299,11 +190,11 @@ func (x *Entry) GetIsFolder() bool {
 	return false
 }
 
-func (x *Entry) GetKind() SourceKind {
+func (x *Entry) GetIsNote() bool {
 	if x != nil {
-		return x.Kind
+		return x.IsNote
 	}
-	return SourceKind_SOURCE_KIND_UNSPECIFIED
+	return false
 }
 
 func (x *Entry) GetType() string {
@@ -406,14 +297,11 @@ func (x *ListFileKindsResponse) GetKinds() []*FileKind {
 type FileKind struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
-	// What the vault holds here. A file it holds no source for — a picture, an
-	// archive — is unspecified.
-	Kind SourceKind `protobuf:"varint,2,opt,name=kind,proto3,enum=numen.v1.SourceKind" json:"kind,omitempty"`
+	// Whether a note is at the path.
+	IsNote bool `protobuf:"varint,5,opt,name=is_note,json=isNote,proto3" json:"is_note,omitempty"`
 	// The `type` key of the note's frontmatter, which says what the note is. Empty for an
 	// ordinary note. It says nothing about a path holding no note.
-	Type string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	// Which sort of book it is. It says nothing about a path holding no book.
-	Format        BookFormat `protobuf:"varint,4,opt,name=format,proto3,enum=numen.v1.BookFormat" json:"format,omitempty"`
+	Type          string `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -455,11 +343,11 @@ func (x *FileKind) GetPath() string {
 	return ""
 }
 
-func (x *FileKind) GetKind() SourceKind {
+func (x *FileKind) GetIsNote() bool {
 	if x != nil {
-		return x.Kind
+		return x.IsNote
 	}
-	return SourceKind_SOURCE_KIND_UNSPECIFIED
+	return false
 }
 
 func (x *FileKind) GetType() string {
@@ -467,13 +355,6 @@ func (x *FileKind) GetType() string {
 		return x.Type
 	}
 	return ""
-}
-
-func (x *FileKind) GetFormat() BookFormat {
-	if x != nil {
-		return x.Format
-	}
-	return BookFormat_BOOK_FORMAT_UNSPECIFIED
 }
 
 type MoveFileRequest struct {
@@ -899,22 +780,21 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x10ListFilesRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\">\n" +
 	"\x11ListFilesResponse\x12)\n" +
-	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x8a\x01\n" +
+	"\aentries\x18\x01 \x03(\v2\x0f.numen.v1.EntryR\aentries\"\x7f\n" +
 	"\x05Entry\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1b\n" +
-	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12(\n" +
-	"\x04kind\x18\x04 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12\x12\n" +
-	"\x04type\x18\x05 \x01(\tR\x04type\",\n" +
+	"\tis_folder\x18\x03 \x01(\bR\bisFolder\x12\x17\n" +
+	"\ais_note\x18\x06 \x01(\bR\x06isNote\x12\x12\n" +
+	"\x04type\x18\x05 \x01(\tR\x04typeJ\x04\b\x04\x10\x05\",\n" +
 	"\x14ListFileKindsRequest\x12\x14\n" +
 	"\x05paths\x18\x01 \x03(\tR\x05paths\"A\n" +
 	"\x15ListFileKindsResponse\x12(\n" +
-	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"\x8a\x01\n" +
+	"\x05kinds\x18\x01 \x03(\v2\x12.numen.v1.FileKindR\x05kinds\"W\n" +
 	"\bFileKind\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12(\n" +
-	"\x04kind\x18\x02 \x01(\x0e2\x14.numen.v1.SourceKindR\x04kind\x12\x12\n" +
-	"\x04type\x18\x03 \x01(\tR\x04type\x12,\n" +
-	"\x06format\x18\x04 \x01(\x0e2\x14.numen.v1.BookFormatR\x06format\"5\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x17\n" +
+	"\ais_note\x18\x05 \x01(\bR\x06isNote\x12\x12\n" +
+	"\x04type\x18\x03 \x01(\tR\x04typeJ\x04\b\x02\x10\x03J\x04\b\x04\x10\x05\"5\n" +
 	"\x0fMoveFileRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x0e\n" +
 	"\x02to\x18\x02 \x01(\tR\x02to\"\xac\x01\n" +
@@ -943,19 +823,7 @@ const file_numen_v1_file_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\"P\n" +
 	"\x14CreateFolderResponse\x12.\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x13.numen.v1.ErrorCodeH\x00R\x05error\x88\x01\x01B\b\n" +
-	"\x06_error*\x85\x01\n" +
-	"\n" +
-	"SourceKind\x12\x1b\n" +
-	"\x17SOURCE_KIND_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10SOURCE_KIND_NOTE\x10\x01\x12\x14\n" +
-	"\x10SOURCE_KIND_BOOK\x10\x02\x12\x19\n" +
-	"\x15SOURCE_KIND_RECORDING\x10\x03\x12\x13\n" +
-	"\x0fSOURCE_KIND_URL\x10\x04*T\n" +
-	"\n" +
-	"BookFormat\x12\x1b\n" +
-	"\x17BOOK_FORMAT_UNSPECIFIED\x10\x00\x12\x13\n" +
-	"\x0fBOOK_FORMAT_PDF\x10\x01\x12\x14\n" +
-	"\x10BOOK_FORMAT_EPUB\x10\x022\x80\x03\n" +
+	"\x06_error2\x80\x03\n" +
 	"\vFileService\x12D\n" +
 	"\tListFiles\x12\x1a.numen.v1.ListFilesRequest\x1a\x1b.numen.v1.ListFilesResponse\x12P\n" +
 	"\rListFileKinds\x12\x1e.numen.v1.ListFileKindsRequest\x1a\x1f.numen.v1.ListFileKindsResponse\x12A\n" +
@@ -976,51 +844,45 @@ func file_numen_v1_file_proto_rawDescGZIP() []byte {
 	return file_numen_v1_file_proto_rawDescData
 }
 
-var file_numen_v1_file_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
 var file_numen_v1_file_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
 var file_numen_v1_file_proto_goTypes = []any{
-	(SourceKind)(0),               // 0: numen.v1.SourceKind
-	(BookFormat)(0),               // 1: numen.v1.BookFormat
-	(*ListFilesRequest)(nil),      // 2: numen.v1.ListFilesRequest
-	(*ListFilesResponse)(nil),     // 3: numen.v1.ListFilesResponse
-	(*Entry)(nil),                 // 4: numen.v1.Entry
-	(*ListFileKindsRequest)(nil),  // 5: numen.v1.ListFileKindsRequest
-	(*ListFileKindsResponse)(nil), // 6: numen.v1.ListFileKindsResponse
-	(*FileKind)(nil),              // 7: numen.v1.FileKind
-	(*MoveFileRequest)(nil),       // 8: numen.v1.MoveFileRequest
-	(*MoveFileResponse)(nil),      // 9: numen.v1.MoveFileResponse
-	(*MoveResult)(nil),            // 10: numen.v1.MoveResult
-	(*RemoveFileRequest)(nil),     // 11: numen.v1.RemoveFileRequest
-	(*RemoveFileResponse)(nil),    // 12: numen.v1.RemoveFileResponse
-	(*CreateFolderRequest)(nil),   // 13: numen.v1.CreateFolderRequest
-	(*CreateFolderResponse)(nil),  // 14: numen.v1.CreateFolderResponse
-	(ErrorCode)(0),                // 15: numen.v1.ErrorCode
+	(*ListFilesRequest)(nil),      // 0: numen.v1.ListFilesRequest
+	(*ListFilesResponse)(nil),     // 1: numen.v1.ListFilesResponse
+	(*Entry)(nil),                 // 2: numen.v1.Entry
+	(*ListFileKindsRequest)(nil),  // 3: numen.v1.ListFileKindsRequest
+	(*ListFileKindsResponse)(nil), // 4: numen.v1.ListFileKindsResponse
+	(*FileKind)(nil),              // 5: numen.v1.FileKind
+	(*MoveFileRequest)(nil),       // 6: numen.v1.MoveFileRequest
+	(*MoveFileResponse)(nil),      // 7: numen.v1.MoveFileResponse
+	(*MoveResult)(nil),            // 8: numen.v1.MoveResult
+	(*RemoveFileRequest)(nil),     // 9: numen.v1.RemoveFileRequest
+	(*RemoveFileResponse)(nil),    // 10: numen.v1.RemoveFileResponse
+	(*CreateFolderRequest)(nil),   // 11: numen.v1.CreateFolderRequest
+	(*CreateFolderResponse)(nil),  // 12: numen.v1.CreateFolderResponse
+	(ErrorCode)(0),                // 13: numen.v1.ErrorCode
 }
 var file_numen_v1_file_proto_depIdxs = []int32{
-	4,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
-	0,  // 1: numen.v1.Entry.kind:type_name -> numen.v1.SourceKind
-	7,  // 2: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
-	0,  // 3: numen.v1.FileKind.kind:type_name -> numen.v1.SourceKind
-	1,  // 4: numen.v1.FileKind.format:type_name -> numen.v1.BookFormat
-	10, // 5: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
-	15, // 6: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	15, // 7: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
-	15, // 8: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
-	2,  // 9: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
-	5,  // 10: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
-	8,  // 11: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
-	11, // 12: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
-	13, // 13: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
-	3,  // 14: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
-	6,  // 15: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
-	9,  // 16: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
-	12, // 17: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
-	14, // 18: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
-	14, // [14:19] is the sub-list for method output_type
-	9,  // [9:14] is the sub-list for method input_type
-	9,  // [9:9] is the sub-list for extension type_name
-	9,  // [9:9] is the sub-list for extension extendee
-	0,  // [0:9] is the sub-list for field type_name
+	2,  // 0: numen.v1.ListFilesResponse.entries:type_name -> numen.v1.Entry
+	5,  // 1: numen.v1.ListFileKindsResponse.kinds:type_name -> numen.v1.FileKind
+	8,  // 2: numen.v1.MoveFileResponse.moved:type_name -> numen.v1.MoveResult
+	13, // 3: numen.v1.MoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	13, // 4: numen.v1.RemoveFileResponse.error:type_name -> numen.v1.ErrorCode
+	13, // 5: numen.v1.CreateFolderResponse.error:type_name -> numen.v1.ErrorCode
+	0,  // 6: numen.v1.FileService.ListFiles:input_type -> numen.v1.ListFilesRequest
+	3,  // 7: numen.v1.FileService.ListFileKinds:input_type -> numen.v1.ListFileKindsRequest
+	6,  // 8: numen.v1.FileService.MoveFile:input_type -> numen.v1.MoveFileRequest
+	9,  // 9: numen.v1.FileService.RemoveFile:input_type -> numen.v1.RemoveFileRequest
+	11, // 10: numen.v1.FileService.CreateFolder:input_type -> numen.v1.CreateFolderRequest
+	1,  // 11: numen.v1.FileService.ListFiles:output_type -> numen.v1.ListFilesResponse
+	4,  // 12: numen.v1.FileService.ListFileKinds:output_type -> numen.v1.ListFileKindsResponse
+	7,  // 13: numen.v1.FileService.MoveFile:output_type -> numen.v1.MoveFileResponse
+	10, // 14: numen.v1.FileService.RemoveFile:output_type -> numen.v1.RemoveFileResponse
+	12, // 15: numen.v1.FileService.CreateFolder:output_type -> numen.v1.CreateFolderResponse
+	11, // [11:16] is the sub-list for method output_type
+	6,  // [6:11] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_numen_v1_file_proto_init() }
@@ -1037,14 +899,13 @@ func file_numen_v1_file_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_v1_file_proto_rawDesc), len(file_numen_v1_file_proto_rawDesc)),
-			NumEnums:      2,
+			NumEnums:      0,
 			NumMessages:   13,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_numen_v1_file_proto_goTypes,
 		DependencyIndexes: file_numen_v1_file_proto_depIdxs,
-		EnumInfos:         file_numen_v1_file_proto_enumTypes,
 		MessageInfos:      file_numen_v1_file_proto_msgTypes,
 	}.Build()
 	File_numen_v1_file_proto = out.File

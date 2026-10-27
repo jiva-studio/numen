@@ -19,6 +19,7 @@ type mediaHandler struct {
 	playing        *Loopback
 	getFingerprint *file.GetFingerprint
 	openCopy       *file.OpenCopy
+	mediaTypes     *file.GetMediaType
 }
 
 // GetMediaSource returns the loopback address of the file's bytes and the media type a player is
@@ -52,7 +53,7 @@ func (h *mediaHandler) GetMediaSource(
 	}
 	return connect.NewResponse(&v1.GetMediaSourceResponse{
 		Src:       h.playing.Address(showing, ref),
-		MediaType: domain.MediaType(ref.Path),
+		MediaType: getMediaType(h.mediaTypes, ref.Path),
 	}), nil
 }
 
@@ -76,3 +77,11 @@ func (h *mediaHandler) GetPageSource(
 
 // errNoPlugin is a page asked of no plugin id.
 var errNoPlugin = errors.New("the request names no plugin")
+
+// getMediaType is the content type a file is served as, and empty where nothing names one.
+func getMediaType(types *file.GetMediaType, path string) string {
+	if types == nil {
+		return ""
+	}
+	return types.Execute(path)
+}

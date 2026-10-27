@@ -278,7 +278,7 @@ func TestEveryNamedPathIsSortedIntoItsOutcome(t *testing.T) {
 	w.files["Locked.md"] = &memFile{statErr: fs.ErrPermission}
 	w.addNote("Vanish.md", "vanish", old).readErr = fs.ErrNotExist
 	w.addNote("Denied.md", "denied", old).readErr = fs.ErrPermission
-	w.files["Book.epub"] = &memFile{fp: domain.Fingerprint{Path: "Book.epub", Kind: domain.KindBook, Size: 3, ModTime: old}}
+	w.files["Book.epub"] = &memFile{fp: domain.Fingerprint{Path: "Book.epub", Kind: domain.KindFile, Size: 3, ModTime: old}}
 	w.addNote("Edited.md", "edited", old)
 
 	res := execute(t, w.refresh(),
@@ -381,7 +381,7 @@ func TestARefreshFailsWhenASourceCannotBeRemoved(t *testing.T) {
 	w := newMemWorld()
 	w.sourcesErr = errMemory
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
-	w.item["Gone"] = []domain.Fingerprint{{Path: "Gone/b.epub", Kind: domain.KindBook}}
+	w.item["Gone"] = []domain.Fingerprint{{Path: "Gone/b.epub", Kind: domain.KindFile}}
 
 	_, err := w.refresh().Execute(t.Context(), memVault, []string{"Gone"})
 	if !errors.Is(err, errMemory) {
@@ -395,15 +395,15 @@ func TestAFolderThatWentConsumesItsBooksAndRecordingsOutOfTheIndexByKind(t *test
 	w.files["Gone"] = &memFile{statErr: fs.ErrNotExist}
 	w.item["Gone"] = []domain.Fingerprint{
 		{Path: "Gone/a.md", Kind: domain.KindNote},
-		{Path: "Gone/c.mp3", Kind: domain.KindRecording},
-		{Path: "Gone/b.epub", Kind: domain.KindBook},
+		{Path: "Gone/c.mp3", Kind: domain.KindFile},
+		{Path: "Gone/b.epub", Kind: domain.KindFile},
 	}
 
 	execute(t, w.refresh(), "Gone")
 
 	want := []sourceRemoval{
-		{kind: domain.KindBook, paths: []string{"Gone/b.epub"}},
-		{kind: domain.KindRecording, paths: []string{"Gone/c.mp3"}},
+		{kind: domain.KindFile, paths: []string{"Gone/b.epub"}},
+		{kind: domain.KindFile, paths: []string{"Gone/c.mp3"}},
 	}
 	if fmt.Sprint(w.removedSources) != fmt.Sprint(want) {
 		t.Errorf("removed %v, want %v", w.removedSources, want)
@@ -414,7 +414,7 @@ func TestOnlyAnIndexedNoteOfThatPathIsTakenForCurrent(t *testing.T) {
 	t.Parallel()
 	old := memBase.Add(-time.Hour)
 	other := domain.Fingerprint{Path: "Other.md", Kind: domain.KindNote, Size: 7, ModTime: old}
-	asBook := domain.Fingerprint{Path: "Note.md", Kind: domain.KindBook, Size: 7, ModTime: old}
+	asBook := domain.Fingerprint{Path: "Note.md", Kind: domain.KindFile, Size: 7, ModTime: old}
 	asNote := domain.Fingerprint{Path: "Note.md", Kind: domain.KindNote, Size: 7, ModTime: old}
 	for name, tc := range map[string]struct {
 		item  []domain.Fingerprint

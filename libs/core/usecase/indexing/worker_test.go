@@ -13,8 +13,8 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -44,7 +44,7 @@ func (r *recorder) ReportTask(pos run.Task)                        { r.tasks.Set
 func (r *recorder) FinishTask(id string)                           { r.tasks.Remove(id) }
 func (r *recorder) ReportError(error)                              {}
 func (r *recorder) ReportNotes(domain.Vault, int)                  {}
-func (r *recorder) ReportBooks(domain.Vault, source.ExtractResult) {}
+func (r *recorder) ReportTexts(domain.Vault, filetext.IndexResult) {}
 
 // findTask is one piece of work as the list holds it, or nothing where the list
 // does not hold it.
@@ -267,9 +267,9 @@ func TestBooksThatCouldNotBeReadStayInTheList(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	newPass(made, db, events, nil, "", v).readBooks(t.Context(), false)
+	newPass(made, db, events, nil, "", v).indexTexts(t.Context(), false)
 
-	pos := findTask(t, events, ExtractingBooks)
+	pos := findTask(t, events, IndexingTexts)
 	if pos == nil {
 		t.Fatal("the pass that could not read the books took itself out of the list")
 	}

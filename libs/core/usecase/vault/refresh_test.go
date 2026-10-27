@@ -44,7 +44,7 @@ func newRefresh(t *testing.T, notes map[string]string) (vaults.Refresh, *contain
 func passages(t *testing.T, db *container.Index, v domain.Vault, query string) []domain.Passage {
 	t.Helper()
 	found, err := db.Passages().FindLexical(
-		t.Context(), v.ID, query, []domain.SourceKind{domain.KindBook}, 10, false,
+		t.Context(), v.ID, query, []domain.SourceKind{domain.KindFile}, 10, false,
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -178,7 +178,7 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	testsupport.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindBook, Size: 1, ModTime: time.Unix(0, 1)},
+			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
 			Hash:        "a-hash",
 			Recipe:      "epub",
 		},

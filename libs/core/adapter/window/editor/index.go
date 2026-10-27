@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
 	"github.com/jiva-studio/numen/libs/core/usecase/run"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -42,8 +42,8 @@ func (e indexEvents) ReportNotes(v domain.Vault, notes int) {
 	e.state.Ready.Store(true)
 }
 
-func (e indexEvents) ReportBooks(v domain.Vault, res source.ExtractResult) {
-	fmt.Fprintf(e.out, "%s: %d books, %d chunks\n", v.Name, res.Extracted, res.Chunks)
+func (e indexEvents) ReportTexts(v domain.Vault, res filetext.IndexResult) {
+	fmt.Fprintf(e.out, "%s: %d file texts, %d chunks\n", v.Name, res.Extracted, res.Chunks)
 }
 
 // errNoProgress is a window with nothing that says how far the vectors have got.

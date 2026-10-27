@@ -9,8 +9,6 @@
 
 import type { GenEnum, GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { enumDesc, fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { SourceKind } from "./file_pb.js";
-import { file_numen_v1_file } from "./file_pb.js";
 import type { Heading, Note } from "./note_pb.js";
 import { file_numen_v1_note } from "./note_pb.js";
 import type { Span } from "./shared_pb.js";
@@ -21,7 +19,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/v1/search.proto.
  */
 export const file_numen_v1_search: GenFile = /*@__PURE__*/
-  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIosBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SDAoEdHlwZRgEIAEoCUIKCghfaGVhZGluZyJZChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui8gEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSHQoFc3BhbnMYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEhwKBHNwYW4YBiABKAsyDi5udW1lbi52MS5TcGFuEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIiCgRraW5kGAkgASgOMhQubnVtZW4udjEuU291cmNlS2luZBIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZSqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_file, file_numen_v1_note, file_numen_v1_shared]);
+  fileDesc("ChVudW1lbi92MS9zZWFyY2gucHJvdG8SCG51bWVuLnYxIjIKElNlYXJjaE5hbWVzUmVxdWVzdBINCgVxdWVyeRgBIAEoCRINCgVsaW1pdBgCIAEoBSI5ChNTZWFyY2hOYW1lc1Jlc3BvbnNlEiIKBWZvdW5kGAEgAygLMhMubnVtZW4udjEuTmFtZU1hdGNoIosBCglOYW1lTWF0Y2gSHAoEbm90ZRgBIAEoCzIOLm51bWVuLnYxLk5vdGUSJwoHaGVhZGluZxgCIAEoCzIRLm51bWVuLnYxLkhlYWRpbmdIAIgBARIdCgVzcGFucxgDIAMoCzIOLm51bWVuLnYxLlNwYW4SDAoEdHlwZRgEIAEoCUIKCghfaGVhZGluZyJZChVTZWFyY2hQYXNzYWdlc1JlcXVlc3QSDQoFcXVlcnkYASABKAkSDQoFbGltaXQYAiABKAUSIgoEbW9kZRgDIAEoDjIULm51bWVuLnYxLlNlYXJjaE1vZGUiOgoWU2VhcmNoUGFzc2FnZXNSZXNwb25zZRIgCgVmb3VuZBgBIAMoCzIRLm51bWVuLnYxLlBhc3NhZ2Ui1AEKB1Bhc3NhZ2USDAoEcGF0aBgBIAEoCRIhCgRub3RlGAIgASgLMg4ubnVtZW4udjEuTm90ZUgAiAEBEgwKBHRleHQYAyABKAkSHQoFc3BhbnMYBCADKAsyDi5udW1lbi52MS5TcGFuEhAKCGxvY2F0aW9uGAUgASgJEhwKBHNwYW4YBiABKAsyDi5udW1lbi52MS5TcGFuEgwKBGxpbmUYByABKAUSDAoEdHlwZRgIIAEoCRIQCghzZWxlY3RvchgKIAEoCUIHCgVfbm90ZUoECAkQCiqIAQoKU2VhcmNoTW9kZRIbChdTRUFSQ0hfTU9ERV9VTlNQRUNJRklFRBAAEhUKEVNFQVJDSF9NT0RFX1dPUkRTEAESFwoTU0VBUkNIX01PREVfTUVBTklORxACEhUKEVNFQVJDSF9NT0RFX05BTUVTEAMSFgoSU0VBUkNIX01PREVfSFlCUklEEAQysAEKDVNlYXJjaFNlcnZpY2USSgoLU2VhcmNoTmFtZXMSHC5udW1lbi52MS5TZWFyY2hOYW1lc1JlcXVlc3QaHS5udW1lbi52MS5TZWFyY2hOYW1lc1Jlc3BvbnNlElMKDlNlYXJjaFBhc3NhZ2VzEh8ubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXF1ZXN0GiAubnVtZW4udjEuU2VhcmNoUGFzc2FnZXNSZXNwb25zZUJBWj9naXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL2xpYnMvcHJvdG9jb2wvZ2VuL251bWVuL3YxO251bWVudjFiBnByb3RvMw", [file_numen_v1_note, file_numen_v1_shared]);
 
 /**
  * @generated from message numen.v1.SearchNamesRequest
@@ -230,14 +228,6 @@ export type Passage = Message<"numen.v1.Passage"> & {
    * @generated from field: string type = 8;
    */
   type: string;
-
-  /**
-   * What the vault holds at that path, so a client draws a book and a
-   * recording as what they are.
-   *
-   * @generated from field: numen.v1.SourceKind kind = 9;
-   */
-  kind: SourceKind;
 
   /**
    * The selector of the text version segment the hit is in, as JSON, and empty

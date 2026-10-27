@@ -11,6 +11,7 @@ import (
 	"connectrpc.com/connect"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/vaultreader"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/sharedmimeinfo"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/playbackport"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
@@ -98,7 +99,7 @@ func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceC
 	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound, plain: plainNote})
 	api := newBareServices()
 	readers := vaultreader.Readers{}
-	api.readFiles(readers, file.NewOpenCopy(readers, copies))
+	api.readFiles(readers, file.NewOpenCopy(readers, copies), file.NewGetMediaType(sharedmimeinfo.Open()))
 	api.state.setVault(vault)
 	back, err := Listen(api.server, nil)
 	if err != nil {

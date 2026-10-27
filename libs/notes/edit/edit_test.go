@@ -95,7 +95,7 @@ func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 	binary := newFiles(map[string]string{"Bin.md": "\xff\xfe"})
 	broken := newFiles(map[string]string{"Broken.md": "---\n: [\n---\nbody"})
 	book := newFiles(map[string]string{"B.epub": "x"})
-	book.kinds["B.epub"] = domain.KindBook
+	book.kinds["B.epub"] = domain.KindFile
 	cases := []struct {
 		name  string
 		files *files

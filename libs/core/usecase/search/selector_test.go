@@ -33,6 +33,8 @@ func (t versionTexts) GetVersionText(_ context.Context, _ string, id domain.Text
 
 func (versionTexts) RequestText(context.Context, string, string) error { return nil }
 
+func (versionTexts) IsTextSource(context.Context, string) (bool, error) { return true, nil }
+
 func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	ctx := t.Context()
 	c := newCorpus(t)
@@ -46,7 +48,7 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	second := len(segments[0].Text)
 	if err := c.db.Sources().SaveExtraction(ctx, c.first.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindRecording, Size: 1},
+			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindFile, Size: 1},
 			Hash:        "h", Recipe: "r", Producer: string(version.GetID()),
 		},
 		Chunks: []domain.Chunk{

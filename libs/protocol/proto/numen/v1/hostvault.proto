@@ -131,8 +131,9 @@ message HostFingerprint {
   int64 size = 2;
   // Nanoseconds since the epoch.
   int64 mod_time = 3;
-  // What sort of source the file is: note, book, recording or url.
-  string kind = 4;
+  reserved 4;
+  // Whether the file is a note.
+  bool is_note = 5;
 }
 
 message ListHostVaultsRequest {}

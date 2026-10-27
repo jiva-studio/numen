@@ -277,17 +277,16 @@ func TestADeckWhereNothingIsIsMissing(t *testing.T) {
 // bytes say.
 func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 	vs := newVaults(t)
-	vs.hosts[vs.first.ID].SetSourceKind(".url", domain.KindURL)
-	write(t, vs.first, "decks/Wrens.url", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
+	write(t, vs.first, "decks/Wrens.sample", "---\ntype: deck\n---\n\n## Wren\n\n[[Animal]]\n")
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Wrens.url")
+	got, err := cards.NewRead(vs.ports.Readers, nil).Deck(t.Context(), vs.first, "decks/Wrens.sample")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.NotANote || len(got.Body.Cards) != 0 {
 		t.Errorf("outcome = %q, cards = %+v, want it not read as a note", got.Outcome, got.Body.Cards)
 	}
-	if got.Fingerprint.Kind != domain.KindURL {
+	if got.Fingerprint.Kind != domain.KindFile {
 		t.Errorf("fingerprint = %+v, want what the vault says is there", got.Fingerprint)
 	}
 }

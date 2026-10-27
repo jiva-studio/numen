@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
-	"github.com/jiva-studio/numen/libs/core/usecase/source"
+	"github.com/jiva-studio/numen/libs/core/usecase/filetext"
 	vaults "github.com/jiva-studio/numen/libs/core/usecase/vault"
 	"github.com/jiva-studio/numen/libs/core/usecase/vectors"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -78,12 +78,12 @@ func TestEachPassReportsItsProgressToTheCaller(t *testing.T) {
 	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
+		filetext.NewIndex(readers, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 	var notes, books, made atomic.Int32
 	making.OnNotesProgress = func(vaults.ScanResult) { notes.Add(1) }
-	making.OnBooksProgress = func(source.ExtractResult) { books.Add(1) }
+	making.OnTextsProgress = func(filetext.IndexResult) { books.Add(1) }
 	making.OnVectorsProgress = func(vectors.EmbedResult) { made.Add(1) }
 
 	result, err := making.Execute(t.Context(), v)
@@ -116,7 +116,7 @@ func TestNotesThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	notes.Walks = db.Walks()
 	making := vaults.NewReadWholeVault(
 		notes,
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
+		filetext.NewIndex(readers, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: readers}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
@@ -138,14 +138,14 @@ func TestBooksThatStoppedPartwayAreReportedWithWhatWasCompleted(t *testing.T) {
 	stopErr := errors.New("the books cannot be cut")
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr}, nil),
+		filetext.NewIndex(readers, db.Sources(), uncuttable{SourceQueries: db.SourcesKnown(), err: stopErr}, testsupport.Texts{Readers: readers}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 
 	if _, err := scanner(readers, db).Execute(t.Context(), v); err != nil {
 		t.Fatal(err)
 	}
-	read, err := making.ReadBooks(t.Context(), v)
+	read, err := making.IndexTexts(t.Context(), v)
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
@@ -168,7 +168,7 @@ func TestVectorsThatStoppedAreReportedWithWhatWasCompleted(t *testing.T) {
 	embed.Embedder = failing{err: stopErr}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), db.SourcesKnown(), nil),
+		filetext.NewIndex(readers, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -196,7 +196,7 @@ func TestARunThatEndedInTheBooksIsReportedWhatTheBooksHadCompleted(t *testing.T)
 	embed.Embedder = pointing{}
 	making := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(readers, db.Sources(), uncutter, nil),
+		filetext.NewIndex(readers, db.Sources(), uncutter, testsupport.Texts{Readers: readers}),
 		embed,
 	)
 
@@ -204,7 +204,7 @@ func TestARunThatEndedInTheBooksIsReportedWhatTheBooksHadCompleted(t *testing.T)
 	if !errors.Is(err, stopErr) {
 		t.Fatalf("got %v", err)
 	}
-	if result.Books.Seen == 0 {
+	if result.Texts.Seen == 0 {
 		t.Error("the answer holds nothing of what the books pass had done")
 	}
 	if counted.opened != 0 {
@@ -221,8 +221,7 @@ func TestBooksReadWholeAreFollowedByTheVectors(t *testing.T) {
 	ctx, cancel := context.WithCancel(t.Context())
 	defer cancel()
 	uncutter := uncuttable{SourceQueries: db.SourcesKnown(), onRecipe: cancel}
-	books := source.NewExtract(readers, db.Sources(), uncutter, nil)
-	books.Kinds = []domain.SourceKind{domain.KindBook}
+	books := filetext.NewIndex(readers, db.Sources(), uncutter, testsupport.Texts{Readers: readers})
 	counted := &counting{VaultReaders: readers}
 	embed := vectors.NewEmbed(counted, db.VectorQueries(), db.Vectors())
 	embed.Embedder = pointing{}
@@ -258,7 +257,7 @@ func TestOneSourceIsSplitAgain(t *testing.T) {
 	stopErr := errors.New("the vault cannot be read")
 	cutting := vaults.NewReadWholeVault(
 		scanner(readers, db),
-		source.NewExtract(unreadable{err: stopErr}, db.Sources(), db.SourcesKnown(), nil),
+		filetext.NewIndex(unreadable{err: stopErr}, db.Sources(), db.SourcesKnown(), testsupport.Texts{Readers: unreadable{err: stopErr}}),
 		vectors.NewEmbed(readers, db.VectorQueries(), db.Vectors()),
 	)
 	err := cutting.CutOne(t.Context(), v, "library/A Book.epub")
