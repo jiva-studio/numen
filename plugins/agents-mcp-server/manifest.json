@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Exposes an external MCP (Model Context Protocol) SSE/stdio server aggregating tools from Numén plugins and host",
-  "capabilities": ["tools"],
+  "capabilities": [],
   "targets": ["desktop.editor"],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
   "lifecycle": {
