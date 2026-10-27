@@ -490,3 +490,25 @@ func TestASettingGoesInsideASection(t *testing.T) {
 		t.Errorf("the file is now:\n%s", raw)
 	}
 }
+
+func TestSaveKeepsBothOfTwoConcurrentSaves(t *testing.T) {
+	for range 50 {
+		path := write(t, arranged)
+		mode := settings.Setting{At: []string{"appearance", "mode"}, Written: "dark"}
+		results := make(chan error, 2)
+		go func() { results <- settings.Save(path, newDocument(), theme("mine:dracula")) }()
+		go func() { results <- settings.Save(path, newDocument(), mode) }()
+		for range 2 {
+			if err := <-results; err != nil {
+				t.Fatal(err)
+			}
+		}
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(raw), `"theme": "mine:dracula"`) || !strings.Contains(string(raw), `"mode": "dark"`) {
+			t.Fatalf("one save was lost:\n%s", raw)
+		}
+	}
+}
