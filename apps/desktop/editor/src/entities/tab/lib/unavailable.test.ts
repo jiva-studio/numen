@@ -4,28 +4,37 @@ import { createUnavailableKind } from './unavailable'
 
 describe('createUnavailableKind', () => {
   it('keeps the name of the missing kind and what the tab stood on', () => {
-    const kind = createUnavailableKind('reader:reader-pdf')
+    const kind = createUnavailableKind('reader:viewer')
 
-    const state = kind.open('/a.pdf', 'tab')
+    const state = kind.open('/a.bin', 'tab')
 
-    expect(kind.kind).toBe('reader:reader-pdf')
-    expect(kind.getOpenTab?.(state)).toEqual({ path: '/a.pdf' })
-    expect(kind.identity?.('/a.pdf')).toBe('/a.pdf')
+    expect(kind.kind).toBe('reader:viewer')
+    expect(kind.getOpenTab?.(state)).toEqual({ path: '/a.bin' })
+    expect(kind.identity?.('/a.bin')).toBe('/a.bin')
   })
 
-  it('says that the plugin is unavailable and names the kind and the path', () => {
-    const kind = createUnavailableKind('reader:reader-pdf')
+  it('keeps the state the plugin saved for the tab', () => {
+    const kind = createUnavailableKind('reader:viewer')
 
-    const view = mount(kind.pane, { props: { state: kind.open('/a.pdf', 'tab') } })
+    const state = kind.open('a.bin', 'tab', { page: 4 })
 
-    expect(view.text()).toContain('Plugin unavailable')
-    expect(view.text()).toContain('reader:reader-pdf')
-    expect(view.text()).toContain('/a.pdf')
+    expect(kind.getState?.(state)).toEqual({ page: 4 })
+    expect(kind.getTitle?.(state)).toBe('a.bin')
+  })
+
+  it('says that the plugin is disabled and names the kind and the path', () => {
+    const kind = createUnavailableKind('reader:viewer')
+
+    const view = mount(kind.pane, { props: { state: kind.open('/a.bin', 'tab') } })
+
+    expect(view.text()).toContain('Plugin disabled')
+    expect(view.text()).toContain('reader:viewer')
+    expect(view.text()).toContain('/a.bin')
   })
 
   it('dispatches numen:open-settings event when Open Settings button is clicked', async () => {
-    const kind = createUnavailableKind('reader:reader-pdf')
-    const view = mount(kind.pane, { props: { state: kind.open('/a.pdf', 'tab') } })
+    const kind = createUnavailableKind('reader:viewer')
+    const view = mount(kind.pane, { props: { state: kind.open('/a.bin', 'tab') } })
 
     let eventFired = false
     const listener = () => {

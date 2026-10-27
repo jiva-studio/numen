@@ -116,7 +116,7 @@ function onBack() {
 
 /* -------------------------------- Helpers --------------------------------- */
 function getRowIcon(id: string) {
-  return findRowIcon(id, props.commands, props.search)
+  return findRowIcon(id, props.commands, props.search, props.places.findFileIcon)
 }
 </script>
 

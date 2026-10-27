@@ -82,7 +82,6 @@ describe('PluginContext', () => {
     const sub1 = ctx.registerReader({
       id: 'pdf',
       component: null,
-      source: 'book',
     })
     expect(ctx.subscriptions).toHaveLength(1)
     expect(host.registerReader).toHaveBeenCalledWith(

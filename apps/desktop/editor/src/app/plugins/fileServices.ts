@@ -128,6 +128,8 @@ export interface PathCommandDeps {
   readonly getContextMenuIcon?: (id: string) => unknown
   /** The icon a plugin draws its command with, and nothing for one it draws none for. */
   readonly getPluginCommandIcon?: (id: string) => unknown
+  /** The icon of the reader that opens a file that is no note. */
+  readonly findFileIcon?: ((path: string) => Component | undefined) | undefined
 }
 
 /** The window's commands over a row of the vault, and the icons it draws them and its entries with. */
@@ -148,26 +150,23 @@ export function createPathCommandHost(
         path: entry.path,
         name: entry.name,
         isFolder: entry.isFolder,
-        kind: entry.kind,
+        isNote: entry.isNote,
         isSeveral,
       }
       const contributions = getContextMenuItems ? getContextMenuItems(target) : []
       return createPathCommands(
-        {
-          source: entry.kind,
-          isFolder: entry.isFolder,
-        },
+        { isNote: entry.isNote, isFolder: entry.isFolder },
         isSeveral,
         contributions,
       )
     },
-    runPathCommand: (id, { paths, name, source, isFolder }) => {
+    runPathCommand: (id, { paths, name, isNote, isFolder }) => {
       const path = paths[0] ?? ''
       const target: ContextMenuTarget = {
         path,
         name,
         isFolder,
-        kind: source,
+        isNote,
         isSeveral: paths.length > 1,
       }
       if (runContextMenu) {
@@ -178,7 +177,6 @@ export function createPathCommandHost(
               path,
               title: name,
               file: path,
-              source,
               others: paths.slice(1),
             })
           }
@@ -190,7 +188,6 @@ export function createPathCommandHost(
         path,
         title: name,
         file: path,
-        source,
         others: paths.slice(1),
       })
     },
@@ -198,6 +195,6 @@ export function createPathCommandHost(
       findIcon(id) ??
       ((getContextMenuIcon?.(id) ?? getPluginCommandIcon?.(id)) as Component | undefined) ??
       null,
-    getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen),
+    getEntryIcon: (entry, isOpen) => getEntryIcon(entry, isOpen, deps.findFileIcon),
   }
 }

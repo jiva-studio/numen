@@ -7,7 +7,6 @@
  */
 import type { ContextMenuTarget } from '@numen/plugin-sdk'
 import type { MenuItem } from '@numen/ui'
-import type { Source } from '@/entities/file'
 import { WORDS as words } from '@/shared/words'
 import { getNoteCommands } from './commands'
 import { createCommands } from './table'
@@ -119,9 +118,9 @@ const getNoteMenu = (contributions: readonly PathContribution[] = []): readonly 
 /** What a row standing for anything but a note offers. */
 const FILED: readonly PathItem[] = [...getNoteCommand('copy', GROUP.file), REMOVE]
 
-/** The row a menu was asked for on: what the vault holds there. */
+/** The row a menu was asked for on: whether it is a note, and whether a folder. */
 export interface MenuRow {
-  readonly source: Source
+  readonly isNote: boolean
   readonly isFolder: boolean
 }
 
@@ -147,6 +146,6 @@ export const createPathCommands = (
       }))
     return [...folderContributed, ...FILED]
   }
-  if (on.source === 'note') return getNoteMenu(contributions)
+  if (on.isNote) return getNoteMenu(contributions)
   return FILED
 }

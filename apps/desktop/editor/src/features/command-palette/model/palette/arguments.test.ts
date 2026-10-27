@@ -15,7 +15,6 @@ const front: CommandTarget = {
   path: 'physics/Ontology.md',
   title: 'Ontology',
   file: 'physics/Ontology.md',
-  source: null,
   vault: { id: 'physics', name: 'Physics' },
   isReady: true,
 }

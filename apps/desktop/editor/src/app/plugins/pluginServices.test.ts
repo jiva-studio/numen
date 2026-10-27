@@ -22,6 +22,7 @@ const createWorkspace = (overrides: Partial<WorkspaceHostDeps> = {}) => {
     tabOpeners: {
       openFile: vi.fn(() => Promise.resolve()),
       openFileAt: vi.fn(() => Promise.resolve()),
+      findFileIcon: vi.fn(() => undefined),
     },
     tabSync: { syncPathFromTab: vi.fn(() => true) },
     getTarget: () => ({ tab: 'plex:1', kind: 'plex', path: 'Here.md' }) as unknown as CommandTarget,
@@ -57,6 +58,16 @@ describe('the window a plugin is handed', () => {
       line: 3,
     })
     expect(deps.tabOpeners.openFile).toHaveBeenNthCalledWith(2, 'Two.md', '', {})
+  })
+
+  it('opens a file at the selector requested', () => {
+    const { workspace, deps } = createWorkspace()
+
+    workspace.openFile('Talk.bin', { selector: { t: [12, 14] } })
+
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('Talk.bin', '', {
+      selector: { t: [12, 14] },
+    })
   })
 
   it('moves the linked tabs, and says no tab moved where the window links none', () => {
@@ -126,6 +137,7 @@ describe('the window a plugin opens files and reads the note in focus through', 
       tabOpeners: {
         openFile: vi.fn(() => Promise.resolve()),
         openFileAt: vi.fn(() => Promise.reject(new Error('no such file'))),
+        findFileIcon: vi.fn(() => undefined),
       },
     })
 

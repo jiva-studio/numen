@@ -2,6 +2,7 @@
  * The window put together: the vault it reads, the kinds it declares, and the
  * few things one kind asks of another.
  */
+import { ref } from 'vue'
 import { formatErrorMessage } from '@numen/wire'
 import { core } from '../vault'
 import { createNoteLookup } from '../tabs/editorTabs'
@@ -17,7 +18,7 @@ import { useCrossWindowTabs } from '../tabs/useCrossWindowTabs'
 import { createNoteEditors } from '../tabs/useNoteEditors'
 import { useSettings } from './useSettings'
 import { useVaults } from './useVaults'
-import { useOpenTabs } from '../tabs/useOpenTabs'
+import { parseSavedTabs, useOpenTabs } from '../tabs/useOpenTabs'
 import { useCommands } from '../commands/useCommands'
 import { useDeclaredCommands } from '../commands/declaredCommands'
 import { useFileMenuCommands } from '../commands/fileMenuCommands'
@@ -91,6 +92,17 @@ interface AppLifecycleDeps {
   editing: ReturnType<typeof createNoteEditors>
   pluginLoader?: import('@numen/plugin-host').PluginLoader
   writeMessage: MessageWriter
+  /** Called once the tabs the window opens with are open. */
+  onLayoutStarted(): void
+}
+
+/** The tabs the core kept for the vault, and none where it cannot be asked. */
+const readSavedTabs = async () => {
+  try {
+    return await core.readOpenTabs()
+  } catch {
+    return { tabs: [], front: '' }
+  }
 }
 
 function initAppLifecycle(deps: AppLifecycleDeps) {
@@ -114,9 +126,15 @@ function initAppLifecycle(deps: AppLifecycleDeps) {
         return
       }
     }
-    await windowTabs.openPlacedTabs((kind, error) =>
-      deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
-    )
+    const saved = await readSavedTabs()
+    if (saved.tabs.length > 0) {
+      windowTabs.restoreTabs(parseSavedTabs(saved), saved.front)
+    } else {
+      await windowTabs.openPlacedTabs((kind, error) =>
+        deps.writeMessage(`The ${kind} tab did not open: ${formatErrorMessage(error)}`, 'error'),
+      )
+    }
+    deps.onLayoutStarted()
   }
 
   useAppBootstrap({
@@ -349,7 +367,8 @@ export const useWindow = () => {
     resolveAction: resolveTaskAction,
     onAction: (pluginId) => settings.configured.openSettings(pluginId),
   })
-  const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs })
+  const isWritingTabs = ref(false)
+  const openTabs = useOpenTabs({ core, windowTabs: base.windowTabs, isWriting: isWritingTabs })
 
   const closeTab = (id: string, hold?: () => void) => {
     base.tabLinks.removeClosedTab(id)
@@ -369,6 +388,9 @@ export const useWindow = () => {
     editing,
     pluginLoader: base.pluginLoader,
     writeMessage: base.writeMessage,
+    onLayoutStarted: () => {
+      isWritingTabs.value = !isSecondaryWindow()
+    },
   })
 
   const api = {

@@ -36,6 +36,7 @@ const OPTIONAL_HOOKS = [
   'isTool',
   'icon',
   'placement',
+  'getState',
 ] as const satisfies readonly (keyof TabKindRegistration & keyof AnyTabKind)[]
 
 /** The hooks of the registration the window takes unchanged. */
@@ -89,7 +90,7 @@ export function createDeclaredTabKind(
     ...pickDeclaredHooks(registration),
     kind,
     pluginId,
-    open: (targetPath, id) => registration.open(targetPath, id),
+    open: (targetPath, id, saved) => registration.open(targetPath, id, saved),
     getTitle: (state) => getTitle?.(state) ?? title ?? kind,
     pane: createDeclaredPane(pluginId, registration.component),
   }

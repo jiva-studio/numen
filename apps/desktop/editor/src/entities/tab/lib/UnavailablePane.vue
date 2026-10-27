@@ -19,7 +19,7 @@ function onOpenSettings(): void {
   <div class="tab-unavailable" role="status">
     <div class="tab-unavailable__content">
       <div class="tab-unavailable__icon" aria-hidden="true">&#9888;</div>
-      <h3 class="tab-unavailable__title">Plugin unavailable</h3>
+      <h3 class="tab-unavailable__title">Plugin disabled</h3>
       <p class="tab-unavailable__message">
         The plugin for &ldquo;{{ props.state.kind }}&rdquo; is disabled or missing.
       </p>

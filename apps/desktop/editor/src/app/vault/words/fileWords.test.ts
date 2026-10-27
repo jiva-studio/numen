@@ -6,7 +6,7 @@ import { SourceKind, type Entry, type MoveResult } from '@numen/protocol'
 import { mapEntry, mapMoveResult } from './fileWords'
 
 describe('a row of a listing', () => {
-  it('keeps its path, name and folder flag, and says its source and type in window words', () => {
+  it('keeps its path, name and folder flag, and says whether it is a note and its type in window words', () => {
     const row = {
       path: 'Samples/Animals.md',
       name: 'Animals',
@@ -19,7 +19,7 @@ describe('a row of a listing', () => {
       path: 'Samples/Animals.md',
       name: 'Animals',
       isFolder: false,
-      kind: 'note',
+      isNote: true,
       type: 'sample',
     })
   })
@@ -37,7 +37,7 @@ describe('a row of a listing', () => {
       path: 'Samples',
       name: 'Samples',
       isFolder: true,
-      kind: 'other',
+      isNote: false,
       type: 'note',
     })
   })

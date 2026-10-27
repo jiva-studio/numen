@@ -110,13 +110,13 @@ describe('the window’s commands over a row', () => {
     })
     return { host, runCommand }
   }
-  const entry = (path: string, kind: 'note' | 'recording' | 'book' = 'note', isFolder = false) =>
-    ({ path, name: path, isFolder, kind, type: 'note' }) as const
+  const entry = (path: string, isNote = true, isFolder = false) =>
+    ({ path, name: path, isFolder, isNote, type: 'note' }) as const
 
-  it('are the file commands over a recording', () => {
+  it('are the file commands over a file that is no note', () => {
     const { host } = createCommands()
 
-    const ids = host.getPathCommands({ entry: entry('Lecture.mp3', 'recording'), isSeveral: false })
+    const ids = host.getPathCommands({ entry: entry('Lecture.mp3', false), isSeveral: false })
 
     expect(ids.map((one) => [one.id, one.isDisabled])).toStrictEqual([
       ['copy', undefined],
@@ -124,13 +124,13 @@ describe('the window’s commands over a row', () => {
     ])
   })
 
-  it('offers removal over several rows and file commands over a document', () => {
+  it('offers removal over several rows and file commands over a file', () => {
     const { host } = createCommands()
 
     expect(
       host.getPathCommands({ entry: entry('a.md'), isSeveral: true }).map((one) => one.id),
     ).toStrictEqual(['remove'])
-    const pdf = host.getPathCommands({ entry: entry('Heat.pdf', 'book'), isSeveral: false })
+    const pdf = host.getPathCommands({ entry: entry('Heat.pdf', false), isSeveral: false })
     expect(pdf.map((one) => one.id)).toStrictEqual(['copy', 'remove'])
   })
 
@@ -140,17 +140,16 @@ describe('the window’s commands over a row', () => {
     host.runPathCommand('remove', {
       paths: ['Lecture.mp3', 'b.md'],
       name: 'Lecture',
-      source: 'recording',
+      isNote: false,
       isFolder: false,
     })
-    host.runPathCommand('remove', { paths: [], name: 'A', source: 'note', isFolder: false })
+    host.runPathCommand('remove', { paths: [], name: 'A', isNote: true, isFolder: false })
 
     expect(runCommand).toHaveBeenNthCalledWith(1, 'remove', {
       ...target,
       path: 'Lecture.mp3',
       title: 'Lecture',
       file: 'Lecture.mp3',
-      source: 'recording',
       others: ['b.md'],
     })
     expect(runCommand.mock.calls.at(1)?.at(1)).toMatchObject({
@@ -165,7 +164,7 @@ describe('the window’s commands over a row', () => {
 
     expect(host.getCommandIcon('rename')).toBe(findIcon('rename'))
     expect(host.getCommandIcon('nothing at all')).toBeNull()
-    expect(host.getEntryIcon(entry('physics', 'note', true), false)).toBe(Folder)
-    expect(host.getEntryIcon(entry('physics', 'note', true), true)).toBe(FolderOpen)
+    expect(host.getEntryIcon(entry('physics', true, true), false)).toBe(Folder)
+    expect(host.getEntryIcon(entry('physics', true, true), true)).toBe(FolderOpen)
   })
 })

@@ -189,7 +189,7 @@ describe('a file a plugin writes', () => {
 
 describe('a command a plugin runs over the vault', () => {
   const target = { path: 'a.md', title: 'A' }
-  const row = { paths: ['a.md'], name: 'a', source: 'note' as const, isFolder: false }
+  const row = { paths: ['a.md'], name: 'a', isNote: true, isFolder: false }
 
   it.each(['remove', 'child', 'title', 'transcribe'])('fails for %s without vault:write', (id) => {
     const { context, workspace } = createContext(['vault:read'])

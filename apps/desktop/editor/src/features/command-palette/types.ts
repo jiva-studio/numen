@@ -7,7 +7,6 @@
  */
 import type { Component } from 'vue'
 import type { PaletteKeys } from '@numen/ui'
-import type { Source } from '@/entities/file'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
@@ -69,12 +68,10 @@ export interface CommandTarget {
   readonly path: string
   readonly title: string
   /**
-   * The file a run is over, and what the vault holds there. A tab holding a
-   * book or a recording names the file it holds; a row of the tree names the
-   * file the row stands for.
+   * The file a run is over. A tab holding a file names the file it holds; a
+   * row of the tree names the file the row stands for.
    */
   readonly file: string
-  readonly source: Source | null
   /** The other files it is over, beside the one at `path`. */
   readonly others?: readonly string[]
   readonly vault: VaultRef

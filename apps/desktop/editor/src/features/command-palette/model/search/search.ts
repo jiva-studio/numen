@@ -5,7 +5,7 @@ import { computed, ref, shallowRef, type Ref, type ShallowRef } from 'vue'
 import type { PaletteGroup } from '@numen/shell'
 import type { InFlightRequest } from '@/shared/requestGuard'
 import { useDebouncedSearch, type Wait } from '@/shared/search'
-import type { NoteType, Source } from '@/entities/file'
+import type { NoteType } from '@/entities/file'
 import type { IndexCoverage } from '@/shared/notices/coverage'
 import {
   createNameItem,
@@ -251,8 +251,11 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
   const findNoteType = (item: string): NoteType | null =>
     searchGroups.value.hitsById.get(item)?.type ?? null
 
-  const findHitSource = (item: string): Source | null =>
-    searchGroups.value.hitsById.get(item)?.kind ?? null
+  /** The path of a hit in a file that is no note, and null for a note. */
+  const findHitFile = (item: string): string | null => {
+    const searchHit = searchGroups.value.hitsById.get(item)
+    return searchHit && searchHit.type === null ? searchHit.path : null
+  }
 
   const chooseItem = (item: string, action: string): SearchDestination | null => {
     return resolveDestination(searchGroups.value.hitsById.get(item), action)
@@ -266,7 +269,7 @@ export function useSearch(core: SearchDeps, words: Words, how: SearchOptions = {
     setOpen,
     chooseItem,
     findNoteType,
-    findHitSource,
+    findHitFile,
   }
 }
 

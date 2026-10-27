@@ -94,17 +94,17 @@ describe('the palette', () => {
     expect(marks()).toStrictEqual(['layers', 'file-text', 'layers', 'file-text'])
   })
 
-  it('draws a passage out of a book and one out of a recording as what each is', async () => {
+  it('draws a passage out of a file no reader opens as a plain file', async () => {
     said.names = []
     said.passages = [
-      sourceAnswer('Ants.epub', 'book'),
-      sourceAnswer('730709BG.LON.mp3', 'recording'),
+      sourceAnswer('Ants.bin', { page: 3 }),
+      sourceAnswer('Talk.bin', { t: [12, 14] }),
     ]
     const window = await mountWindowWithPalette()
 
     await runSearch(window)
 
-    expect(marks()).toStrictEqual(['book-open', 'audio-lines', 'book-open', 'audio-lines'])
+    expect(marks()).toStrictEqual(['file', 'file', 'file', 'file'])
     // Every row of the list carries a mark, and none of them keeps empty room.
     expect(marks().every(Boolean)).toBe(true)
   })

@@ -6,25 +6,15 @@ import type { Result } from '@numen/wire'
 import type { ErrorCode } from '@/shared/errors'
 
 /**
- * What the vault holds at a path. A file it holds no source for — a picture,
- * an archive — is none of the four.
- */
-export type Source = 'note' | 'book' | 'recording' | 'url' | 'other'
-
-/**
  * What a note is, as the `type` key of its frontmatter says: `note`, or a type a plugin declares.
  * It says nothing about a file that is not a note.
  */
 export type NoteType = string
 
-export type DocumentFormat = 'pdf'
-export type BookFormat = 'epub'
-
+/** Whether a file is a note, and which type of note. A file that is no note opens in the reader of its content type. */
 export interface FileKind {
-  readonly kind: Source
+  readonly isNote: boolean
   readonly type: NoteType
-  /** Which sort of book or document it is. */
-  readonly format?: DocumentFormat | BookFormat
 }
 
 export interface Entry {
@@ -33,7 +23,7 @@ export interface Entry {
   /** The last segment of the path, which is what the row shows. */
   readonly name: string
   readonly isFolder: boolean
-  readonly kind: Source
+  readonly isNote: boolean
   readonly type: NoteType
 }
 

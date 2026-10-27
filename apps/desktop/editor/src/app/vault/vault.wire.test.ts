@@ -81,34 +81,29 @@ describe('vault passage responses', () => {
     expect(found[0]?.type).toBe('note')
   })
 
-  it('carries what the vault holds at its path, whichever source that is', async () => {
+  it('carries the selector of a hit in a file that is no note', async () => {
     answerWith({
       found: [
-        { path: 'Ants.md', note: { path: 'Ants.md' }, at: [], kind: 'SOURCE_KIND_NOTE' },
-        { path: 'library/mahabharata.epub', at: [], kind: 'SOURCE_KIND_BOOK' },
-        { path: 'talks/730709BG.LON.mp3', at: [], kind: 'SOURCE_KIND_RECORDING' },
+        { path: 'Ants.md', note: { path: 'Ants.md' }, at: [] },
+        { path: 'library/a.bin', at: [], selector: '{"page":3}' },
       ],
     })
 
-    expect((await core.search('war', 'words', 8)).map((one) => one.kind)).toEqual([
-      'note',
-      'book',
-      'recording',
+    expect((await core.search('war', 'words', 8)).map((one) => one.selector)).toEqual([
+      null,
+      { page: 3 },
     ])
   })
 
-  it('holds no source where the answer names none, or one this window cannot read', async () => {
+  it('holds no selector where the hit carries none or one that is not JSON', async () => {
     answerWith({
       found: [
-        { path: 'notes.txt', at: [] },
-        { path: 'later.xyz', at: [], kind: 9 },
+        { path: 'a.bin', at: [], selector: '' },
+        { path: 'b.bin', at: [], selector: '{page' },
       ],
     })
 
-    expect((await core.search('war', 'words', 8)).map((one) => one.kind)).toEqual([
-      'other',
-      'other',
-    ])
+    expect((await core.search('war', 'words', 8)).map((one) => one.selector)).toEqual([null, null])
   })
 })
 

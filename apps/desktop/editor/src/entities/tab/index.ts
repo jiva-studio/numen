@@ -13,15 +13,5 @@ export type {
 export type { OpenTabs, Tab } from './lib/tab'
 export type { AnyTabKind, OpenTab, TabKind, WindowHandle } from './lib/kinds'
 export { useWindowTabs } from './model/windowTabs'
-export {
-  BOOK,
-  CONVERSATION,
-  createWorkspace,
-  DOCUMENT,
-  generateId,
-  NOTE,
-  RECORDING,
-  SETTINGS,
-  SETTINGS_FILE,
-  URL,
-} from './lib/workspace'
+export type { SavedTab } from './model/windowTabs'
+export { createWorkspace, generateId, NOTE, SETTINGS, SETTINGS_FILE } from './lib/workspace'

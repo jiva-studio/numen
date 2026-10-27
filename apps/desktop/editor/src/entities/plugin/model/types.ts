@@ -25,6 +25,7 @@ import type {
   WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { AnyTabKind, SourceReader } from '@/entities/tab/@x/plugin'
+import type { Component } from 'vue'
 
 export type {
   AgentProviderRegistration,
@@ -57,7 +58,11 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
-  readonly registerExtensionReader: (extension: string, readItem: SourceReader) => () => void
+  readonly registerExtensionReader: (
+    extension: string,
+    readItem: SourceReader,
+    icon?: Component,
+  ) => () => void
   /** The extensions of the files the reader of the plugin opens, as the manifest and the core choose. */
   readonly getReaderExtensions?: (pluginId: string, readerId: string) => readonly string[]
   readonly registerEditor?: (

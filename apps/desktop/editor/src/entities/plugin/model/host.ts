@@ -1,7 +1,7 @@
 /**
  * Plugin host managing dynamic registration of readers, tab kinds, and commands.
  */
-import { shallowRef } from 'vue'
+import { shallowRef, type Component } from 'vue'
 import type {
   AgentProviderRegistration,
   CommandNote,
@@ -144,19 +144,18 @@ function registerReaderEntry(
   ]
   for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
     cleanups.push(
-      deps.registerExtensionReader(ext, (path, spans) => {
-        void deps.openTab(kindId, path).then((tabId) => {
-          if (spans && spans.length > 0 && deps.getTabState) {
-            const state = deps.getTabState(tabId) as
-              | { spans?: unknown; focusSpans?: (...s: readonly unknown[]) => Promise<void> }
-              | undefined
-            if (state) {
-              state.spans = spans
-              void state.focusSpans?.(...spans)
-            }
-          }
-        })
-      }),
+      deps.registerExtensionReader(
+        ext,
+        (path, selector) => {
+          void deps.openTab(kindId, path).then((tabId) => {
+            if (!selector || !deps.getTabState) return
+            const state = deps.getTabState(tabId) as { selector?: unknown } | undefined
+            // A new object each time, so a reader watching it moves to the same place again.
+            if (state) state.selector = { ...selector }
+          })
+        },
+        registration.icon as Component | undefined,
+      ),
     )
   }
   let isDisposed = false
@@ -346,8 +345,8 @@ function matchesSingleTarget(pattern: string, actual: ContextMenuTarget): boolea
   if (pattern === 'root') return actual.path === '' || actual.path === null
   if (pattern === 'folder') return actual.isFolder
   if (pattern === 'file') return !actual.isFolder
-  if (pattern === 'note') return !actual.isFolder && actual.kind === 'note'
-  return actual.kind === pattern
+  if (pattern === 'note') return !actual.isFolder && actual.isNote
+  return false
 }
 
 function matchesContextMenuTarget(

@@ -147,10 +147,14 @@ describe('files domain', () => {
     expect(await core.createFolder('folder')).toBeNull()
 
     request.listFileKinds.mockResolvedValue({
-      kinds: [{ path: 'book.epub', kind: 2, type: 'note', format: 2 }],
+      kinds: [
+        { path: 'a.bin', kind: 2, type: '' },
+        { path: 'a.md', kind: 1, type: 'deck' },
+      ],
     })
-    const kinds = await core.fileKinds(['book.epub'])
-    expect(kinds.get('book.epub')?.format).toBe('epub')
+    const kinds = await core.fileKinds(['a.bin', 'a.md'])
+    expect(kinds.get('a.bin')).toStrictEqual({ isNote: false, type: 'note' })
+    expect(kinds.get('a.md')).toStrictEqual({ isNote: true, type: 'deck' })
   })
 })
 

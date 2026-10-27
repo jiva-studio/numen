@@ -112,7 +112,7 @@ describe('a tab of a kind', () => {
     expect(window.getTab(another)?.kind.kind).toBe('other')
   })
 
-  it('is a plugin unavailable tab for a kind the window was never told about', async () => {
+  it('is a placeholder tab for a kind the window was never told about', async () => {
     const window = notifiedCalls([kind().declared])
 
     const id = await window.openTabOfKind('nothing', 'One.md')
@@ -120,7 +120,7 @@ describe('a tab of a kind', () => {
     expect(id).toBe('nothing:One.md')
     expect(onScreen(window.layout.value)).toEqual([id])
     expect(window.getTab(id)?.kind.kind).toBe('nothing')
-    expect(window.getTab(id)?.kind.getTitle?.(window.getTab(id)?.state)).toBe('Plugin unavailable')
+    expect(window.getTab(id)?.kind.getTitle?.(window.getTab(id)?.state)).toBe('One.md')
     expect(window.getTab(id)?.kind.getOpenTab?.(window.getTab(id)?.state)).toEqual({
       path: 'One.md',
     })
@@ -439,7 +439,7 @@ describe('reconciling tabs for a path', () => {
     })
     const window = notifiedCalls([noteKind.declared, sampleKind.declared])
 
-    let fileKind: FileKind = { kind: 'note', type: 'note' }
+    let fileKind: FileKind = { isNote: true, type: 'note' }
     const openers = fileOpeners({
       fileKinds: async (paths) => new Map(paths.map((p) => [p, fileKind])),
       reconcileTab: window.reconcileTab,
@@ -451,7 +451,7 @@ describe('reconciling tabs for a path', () => {
     expect(window.tabs.value).toHaveLength(1)
     expect(window.getTab(window.tabs.value[0]!.id)?.kind.kind).toBe('note')
 
-    fileKind = { kind: 'note' as const, type: 'sample' as const }
+    fileKind = { isNote: true, type: 'sample' as const }
     await openers.openFile('Animals.md')
 
     expect(window.tabs.value).toHaveLength(1)
@@ -833,10 +833,10 @@ describe('a tab of a kind that is not registered', () => {
   it('opens on a restore without throwing and lists itself under the missing kind', async () => {
     const window = useWindowTabs()
 
-    const id = await window.createTab('reader:reader-pdf', '/a.pdf')
+    const id = await window.createTab('reader:viewer', '/a.bin')
 
-    expect(id).toBe('reader:reader-pdf:/a.pdf')
-    expect(window.tabs.value).toEqual([{ id, title: 'Plugin unavailable' }])
+    expect(id).toBe('reader:viewer:/a.bin')
+    expect(window.tabs.value).toEqual([{ id, title: 'a.bin' }])
   })
 
   it('does not stop the kind being registered and opened later', async () => {
@@ -1110,5 +1110,81 @@ describe('a file made as the kind that edits it', () => {
 
     expect(window.createFileOfKind('thing', 'dir', 'Name')).toBeUndefined()
     expect(window.createFileOfKind('nothing', 'dir', 'Name')).toBeUndefined()
+  })
+})
+
+/** A kind of a plugin that keeps a page in each tab and saves it. */
+const pagedKind = (pluginId = 'viewer.plugin'): AnyTabKind => ({
+  kind: 'paged',
+  pluginId,
+  open: (targetPath: string, _id: string, saved?: unknown) => ({
+    targetPath,
+    page: (saved as { page?: number } | undefined)?.page ?? 1,
+  }),
+  getState: (state: { page: number }) => ({ page: state.page }),
+  getOpenTab: (state: { targetPath: string }) => ({ path: state.targetPath }),
+  identity: (targetPath: string) => targetPath,
+  pane: {},
+})
+
+describe('the tabs the core kept', () => {
+  it('open again under their ids with the state their kind saved, the front one in front', () => {
+    const window = useWindowTabs()
+    window.registerKind(pagedKind())
+
+    window.restoreTabs(
+      [
+        { id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } },
+        { id: 'paged:b.bin', kind: 'paged', path: 'b.bin' },
+      ],
+      'paged:a.bin',
+    )
+
+    expect(window.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
+    expect(window.getTabStateIn('paged:b.bin', 'paged')).toMatchObject({ page: 1 })
+    expect(window.handle.front()?.id).toBe('paged:a.bin')
+  })
+
+  it('open as placeholders that keep the saved state where no plugin registers the kind', () => {
+    const window = useWindowTabs()
+
+    window.restoreTabs(
+      [{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } }],
+      '',
+    )
+
+    const one = window.getTab('paged:a.bin')
+    expect(one?.kind.getState?.(one.state)).toStrictEqual({ page: 4 })
+    expect(window.tabs.value[0]?.title).toBe('a.bin')
+  })
+})
+
+describe('the tabs of a plugin that stops', () => {
+  it('turn into placeholders that keep the state, and back once the kind is registered again', () => {
+    const window = useWindowTabs()
+    const unregister = window.registerKind(pagedKind())
+    window.restoreTabs(
+      [{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin', saved: { page: 4 } }],
+      '',
+    )
+
+    window.closeTabsOfPlugin('viewer.plugin')
+    unregister()
+    const placeholder = window.getTab('paged:a.bin')
+    expect(placeholder?.kind.pluginId).toBeUndefined()
+    expect(placeholder?.kind.getState?.(placeholder.state)).toStrictEqual({ page: 4 })
+
+    window.registerKind(pagedKind())
+    expect(window.getTabStateIn('paged:a.bin', 'paged')).toMatchObject({ page: 4 })
+  })
+
+  it('leaves the tabs of other plugins as they are', () => {
+    const window = useWindowTabs()
+    window.registerKind(pagedKind('other.plugin'))
+    window.restoreTabs([{ id: 'paged:a.bin', kind: 'paged', path: 'a.bin' }], '')
+
+    window.closeTabsOfPlugin('viewer.plugin')
+
+    expect(window.getTab('paged:a.bin')?.kind.pluginId).toBe('other.plugin')
   })
 })

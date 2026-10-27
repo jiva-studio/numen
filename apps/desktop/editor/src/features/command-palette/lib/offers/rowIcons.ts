@@ -1,11 +1,17 @@
-import { findSourceIcon } from '@/entities/file'
+import type { Component } from 'vue'
+import { File } from '@lucide/vue'
 import { getNoteIcon } from '@/entities/note'
 import { findIcon } from '@/shared/icons'
 import { CREATE_NOTE_ID } from './offers'
 import type { Commands } from '../../model/palette/palette'
 import type { SearchState } from '../../model/search/search'
 
-export function findRowIcon(id: string, commands: Commands, search: SearchState) {
+export function findRowIcon(
+  id: string,
+  commands: Commands,
+  search: SearchState,
+  findFileIcon?: (path: string) => Component | undefined,
+) {
   if (commands.open.value) {
     const picked = commands.findNoteType(id)
     return picked ? getNoteIcon(picked) : (findIcon(id) ?? commands.findCommandIcon(id))
@@ -13,6 +19,6 @@ export function findRowIcon(id: string, commands: Commands, search: SearchState)
   if (id === CREATE_NOTE_ID) return findIcon('note')
   const type = search.findNoteType(id)
   if (type) return getNoteIcon(type)
-  const kind = search.findHitSource(id)
-  return kind ? findSourceIcon(kind) : null
+  const file = search.findHitFile(id)
+  return file ? (findFileIcon?.(file) ?? File) : null
 }

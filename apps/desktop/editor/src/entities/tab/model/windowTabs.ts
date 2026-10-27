@@ -20,7 +20,7 @@ import { closeTab, openTab, openTabBeside, pane, paneById, getPanes } from '@num
 import type { Tab, Workspace } from '@numen/shell'
 import type { ActiveTab, AnyTabKind, KindTab, WindowHandle, WindowTab } from '../lib/kinds'
 import { createWorkspace, generateId } from '../lib/workspace'
-import { createUnavailableKind } from '../lib/unavailable'
+import { createUnavailableKind, isUnavailableKind, type UnavailableState } from '../lib/unavailable'
 
 /** The identity a pane made by a split is filed under. */
 const generatePaneId = () => crypto.randomUUID()
@@ -34,8 +34,16 @@ const getTabPath = (tab: WindowTab): string => {
   return target?.path || target?.file || ''
 }
 
+/** A tab kept by the core, to open again. */
+export interface SavedTab {
+  readonly id: string
+  readonly kind: string
+  readonly path: string
+  /** What the kind saved, parsed from its JSON; absent where it saved nothing. */
+  readonly saved?: unknown
+}
+
 export function useWindowTabs() {
-  const { byKind, registerKinds, registerKind, hasKind, findKind } = createTabRegistry()
   const { scopes, drop } = createTabScopes()
   const open = shallowRef<ReadonlyMap<string, WindowTab>>(new Map())
   const layout = ref<Workspace>({
@@ -52,6 +60,15 @@ export function useWindowTabs() {
     }),
   )
 
+  const { byKind, registerKinds, hasKind, findKind } = createTabRegistry()
+  const placeholders = createPlaceholders({ open, byKind, scopes, drop })
+  const registerKind = (kind: AnyTabKind): (() => void) => {
+    byKind.set(kind.kind, kind)
+    placeholders.reopenTabsOf(kind)
+    return () => {
+      if (byKind.get(kind.kind) === kind) byKind.delete(kind.kind)
+    }
+  }
   const queries = createTabQueries(open, layout)
   const openers = createTabOpeners({ open, layout, byKind, scopes, drop })
   const closers = createTabClosers({ open, layout, drop })
@@ -67,6 +84,22 @@ export function useWindowTabs() {
       if (open.value.has(id) && !placedItems.has(id)) layout.value = openTab(layout.value, id)
     }
   }
+  /**
+   * The tabs the core kept, opened again with the state each kind saved and laid out by the
+   * placement of their kind. A tab whose kind is not registered opens as a placeholder.
+   */
+  const restoreTabs = (saved: readonly SavedTab[], front: string) => {
+    const main: string[] = []
+    const aside: string[] = []
+    for (const one of saved) {
+      if (!open.value.has(one.id)) openers.openSavedTab(one)
+      const kind = byKind.get(one.kind)
+      if (kind?.placement?.pane === 'aside') aside.push(one.id)
+      else main.push(one.id)
+    }
+    layout.value = createWorkspace(main, aside)
+    if (open.value.has(front)) layout.value = openTab(layout.value, front)
+  }
   const onKeyPress = (event: KeyboardEvent): boolean =>
     dispatchTabKeyPress(layout.value, open.value, event)
 
@@ -79,6 +112,8 @@ export function useWindowTabs() {
     hasKind,
     findKind,
     openPlacedTabs,
+    restoreTabs,
+    closeTabsOfPlugin: placeholders.closeTabsOfPlugin,
     createFileOfKind: request.createFileOfKind,
     navigateTab: navigation.navigateTab,
     navigateTabsAt: navigation.navigateTabsAt,
@@ -106,17 +141,47 @@ function createTabRegistry() {
   const registerKinds = (kinds: readonly AnyTabKind[]) => {
     for (const one of kinds) byKind.set(one.kind, one)
   }
-  const registerKind = (kind: AnyTabKind): (() => void) => {
-    byKind.set(kind.kind, kind)
-    return () => {
-      if (byKind.get(kind.kind) === kind) byKind.delete(kind.kind)
-    }
-  }
   const hasKind = (kind: string): boolean => byKind.has(kind)
   /** The first kind registered that answers yes, and nothing where none does. */
   const findKind = (isWanted: (kind: AnyTabKind) => boolean): AnyTabKind | undefined =>
     [...byKind.values()].find(isWanted)
-  return { byKind, registerKinds, registerKind, hasKind, findKind }
+  return { byKind, registerKinds, hasKind, findKind }
+}
+
+/**
+ * The tabs of a plugin turned into placeholders while it is disabled, and back into tabs of their
+ * kind once the kind is registered again. The tab keeps its id, its place and the saved state.
+ */
+function createPlaceholders(ctx: Omit<TabOpenerContext, 'layout'>) {
+  /** One tab replaced by a tab of another kind opened on the same path with the same state. */
+  const replaceTab = (id: string, kind: AnyTabKind, path: string, saved: unknown) => {
+    ctx.drop(id)
+    const scope = effectScope(true)
+    const state = openInScope(scope, () => kind.open(path, id, saved))
+    ctx.scopes.set(id, scope)
+    ctx.open.value = new Map(ctx.open.value).set(id, { kind, state })
+  }
+
+  const closeTabsOfPlugin = (pluginId: string) => {
+    for (const [id, one] of ctx.open.value) {
+      if (one.kind.pluginId !== pluginId) continue
+      const saved = one.kind.getState?.(one.state)
+      const path = getTabPath(one)
+      if (one.kind.onDestroy) one.kind.onDestroy(one.state, id)
+      else one.kind.onClose?.(one.state, id)
+      replaceTab(id, createUnavailableKind(one.kind.kind), path, saved)
+    }
+  }
+
+  const reopenTabsOf = (kind: AnyTabKind) => {
+    for (const [id, one] of ctx.open.value) {
+      if (one.kind.kind !== kind.kind || !isUnavailableKind(one.kind)) continue
+      const placeholder = one.state as UnavailableState
+      replaceTab(id, kind, placeholder.targetPath, placeholder.saved)
+    }
+  }
+
+  return { closeTabsOfPlugin, reopenTabsOf }
 }
 
 /** What a window asks of the kinds it holds about a file. */
@@ -222,6 +287,15 @@ function createTabQueries(
 
 /** Operations for creating and opening tabs. */
 function createTabOpeners(ctx: TabOpenerContext) {
+  /** A tab the core kept, opened under its id with the state its kind saved. */
+  const openSavedTab = (saved: SavedTab) => {
+    const one = ctx.byKind.get(saved.kind) ?? createUnavailableKind(saved.kind)
+    const scope = effectScope(true)
+    const state = openInScope(scope, () => one.open(saved.path, saved.id, saved.saved))
+    ctx.scopes.set(saved.id, scope)
+    ctx.open.value = new Map(ctx.open.value).set(saved.id, { kind: one, state })
+  }
+
   const createTab = async (kind: string, targetPath = ''): Promise<string> => {
     const one = ctx.byKind.get(kind) ?? createUnavailableKind(kind)
     const id = one.identity ? `${kind}:${one.identity(targetPath)}` : generateId(kind)
@@ -267,7 +341,15 @@ function createTabOpeners(ctx: TabOpenerContext) {
     one.kind.onShow?.(one.state, id)
   }
 
-  return { createTab, show, openTabOfKind, openTabBesideOfKind, finishClose, onTabShown }
+  return {
+    createTab,
+    openSavedTab,
+    show,
+    openTabOfKind,
+    openTabBesideOfKind,
+    finishClose,
+    onTabShown,
+  }
 }
 
 /** Operations for releasing and closing tabs. */

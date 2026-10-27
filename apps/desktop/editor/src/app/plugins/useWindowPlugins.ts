@@ -64,18 +64,12 @@ function createNoticeAccess(queue: NoticeQueue) {
 }
 
 export function createPluginSupport(deps: PluginSupportDeps) {
-  const { windowTabs, tabLinks, tabOpeners, settingsHolder } = deps
+  const { windowTabs, tabOpeners, settingsHolder } = deps
   const { getSetting, onSettingChange } = createPluginSettingsAccessor(settingsHolder)
 
+  /** The tabs of a plugin that stops, kept as placeholders that hold their saved state. */
   const closeTabsForPlugin = (pluginId: string) => {
-    if (!pluginId) return
-    for (const tab of windowTabs.tabs.value) {
-      const windowTab = windowTabs.getTab(tab.id)
-      if (windowTab?.kind.pluginId === pluginId) {
-        tabLinks.removeClosedTab(tab.id)
-        windowTabs.requestClose(tab.id)
-      }
-    }
+    if (pluginId) windowTabs.closeTabsOfPlugin(pluginId)
   }
 
   const pluginHost = createPluginHost({

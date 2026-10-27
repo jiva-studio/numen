@@ -1,4 +1,5 @@
 import type { Component, Ref } from 'vue'
+import type { Selector } from './texts'
 import type { Span } from './types'
 
 // NoteRef is one note of the vault: where it is filed, and what it is called.
@@ -76,6 +77,8 @@ export interface OpenFileOptions {
   readonly title?: string
   readonly placement?: FilePlacement
   readonly line?: number
+  // The place the reader of the file shows, such as the selector of a search hit.
+  readonly selector?: Selector
 }
 
 // WorkspaceHost is the window a plugin's tabs are drawn in.
@@ -123,14 +126,11 @@ export interface WorkspaceHost {
   getEntryIcon(entry: VaultEntry | null, isOpen: boolean): Component
 }
 
-// FileSource is what the vault holds at a path. A file it holds no source for is other.
-export type FileSource = 'note' | 'book' | 'recording' | 'url' | 'other'
-
 export interface VaultEntry {
   readonly path: string
   readonly name: string
   readonly isFolder: boolean
-  readonly kind: FileSource
+  readonly isNote: boolean
   readonly type: NoteType
 }
 
@@ -155,7 +155,7 @@ export interface PathMenuRow {
 export interface PathCommandTarget {
   readonly paths: readonly string[]
   readonly name: string
-  readonly source: FileSource
+  readonly isNote: boolean
   readonly isFolder: boolean
 }
 

@@ -3,7 +3,7 @@
  */
 import { asFailure, asValue, findErrorCode } from '@numen/wire'
 import { files } from '@/shared/clients'
-import { mapBookFormat, mapEntry, mapMoveResult, mapNoteType, mapSourceKind } from './words'
+import { isNoteKind, mapEntry, mapMoveResult, mapNoteType } from './words'
 import type { FilePort } from '@/app/ports/files'
 import type { NotePort } from '@/app/ports/notes'
 
@@ -28,17 +28,10 @@ export const filesCore: FilesCore = {
   fileKinds: async (paths) => {
     const answer = await files.listFileKinds({ paths: [...paths] })
     return new Map(
-      answer.kinds.map((one) => {
-        const format = mapBookFormat(one.format)
-        return [
-          one.path,
-          {
-            kind: mapSourceKind(one.kind),
-            type: mapNoteType(one.type),
-            ...(format ? { format } : {}),
-          },
-        ]
-      }),
+      answer.kinds.map((one) => [
+        one.path,
+        { isNote: isNoteKind(one.kind), type: mapNoteType(one.type) },
+      ]),
     )
   },
 }

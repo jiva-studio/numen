@@ -16,9 +16,10 @@ const window = () => {
   const displayedItems: string[] = []
   const places: DestinationDeps = {
     travel: async (path) => void travelled.push(path),
-    openFileAt: async (path, run) => void openedTab.push(`${path} ${run.from} ${run.to}`),
-    openFile: (path, title, line) =>
-      void displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`),
+    openFile: (path, title, line, selector) => {
+      if (selector) return void openedTab.push(`${path} ${JSON.stringify(selector)}`)
+      displayedItems.push(`${path} ${title}${line === undefined ? '' : ` ${line}`}`)
+    },
   }
   return { places, travelled, opened: openedTab, openedFiles: displayedItems }
 }
@@ -76,24 +77,13 @@ describe('a file chosen', () => {
 })
 
 describe('a passage chosen', () => {
-  it('opens the document it remains in, at the span it names', async () => {
+  it('opens the file it was found in at the selector it names', async () => {
     const one = window()
 
-    await openDestination(
-      landing({ at: 'document', path: 'library/mahabharata.epub', start: 40_512, length: 31 }),
-      one.places,
-    )
+    await openDestination(landing({ path: 'library/a.bin', selector: { page: 3 } }), one.places)
 
-    expect(one.opened).toStrictEqual(['library/mahabharata.epub 40512 40543'])
+    expect(one.opened).toStrictEqual(['library/a.bin {"page":3}'])
     expect(one.openedFiles).toStrictEqual([])
-  })
-
-  it('opens it at its first page where it names no span', async () => {
-    const one = window()
-
-    await openDestination(landing({ at: 'document', path: 'library/mahabharata.epub' }), one.places)
-
-    expect(one.opened).toStrictEqual(['library/mahabharata.epub 0 0'])
   })
 })
 

@@ -33,9 +33,8 @@ describe('plugin lifecycle', () => {
   it('unregisters components when disposed', () => {
     const ctx = createMockPluginContext()
     const disposable = ctx.registerReader({
-      id: 'custom-pdf',
+      id: 'custom-viewer',
       component: {},
-      source: 'book',
     })
 
     expect(ctx.getRegisteredReaders()).toHaveLength(1)

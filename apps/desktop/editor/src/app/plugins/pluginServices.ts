@@ -42,7 +42,7 @@ export interface WorkspaceHostDeps extends PathCommandDeps {
     readInitialNote(): Promise<string>
   }
   readonly dragged: ShallowRef<readonly string[]>
-  readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt'>
+  readonly tabOpeners: Pick<FileOpeners, 'openFile' | 'openFileAt' | 'findFileIcon'>
   readonly tabSync?: { syncPathFromTab(tabId: string, path: string, title?: string): boolean }
   readonly ask: (text: string) => void
   /** The note the tool tab the person was last in relies on. */
@@ -71,6 +71,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
         .openFile(path, options?.title ?? '', {
           ...(options?.placement ? { where: options.placement } : {}),
           ...(options?.line === undefined ? {} : { line: options.line }),
+          ...(options?.selector ? { selector: options.selector } : {}),
         })
         .catch((error: unknown) => writeMessage(formatErrorMessage(error), 'error'))
     },
@@ -87,7 +88,7 @@ export function createWorkspaceHost(deps: WorkspaceHostDeps): WorkspaceHost {
     showError: (text) => writeMessage(text, 'error'),
     getMessageWriter: (name) => deps.getMessageWriter(name),
     getToday: () => deps.today(),
-    ...createPathCommandHost(deps),
+    ...createPathCommandHost({ ...deps, findFileIcon: tabOpeners.findFileIcon }),
   }
 }
 

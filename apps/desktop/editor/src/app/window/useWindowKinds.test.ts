@@ -155,13 +155,16 @@ describe('a note travelled to', () => {
 })
 
 describe('the destinations', () => {
-  it('open the file at the path with the one run', () => {
+  it('open the file at the selector of a search hit', () => {
     const { deps, window } = create()
-    const run = { from: 1, to: 4 }
 
-    window.destinations.openFileAt('a.md', run)
+    window.destinations.openFile('a.bin', 'a', undefined, { page: 3 })
 
-    expect(deps.tabOpeners.openFileAt).toHaveBeenCalledWith('a.md', [run])
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.bin', 'a', {
+      where: 'here',
+      line: undefined,
+      selector: { page: 3 },
+    })
   })
 
   it('open the file in the tab in front, at the line', () => {
@@ -169,7 +172,11 @@ describe('the destinations', () => {
 
     window.destinations.openFile('a.md', 'A', 7)
 
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', { where: 'here', line: 7 })
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', {
+      where: 'here',
+      line: 7,
+      selector: undefined,
+    })
   })
 })
 

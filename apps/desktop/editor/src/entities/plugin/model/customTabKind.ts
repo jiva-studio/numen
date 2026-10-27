@@ -11,7 +11,12 @@ import {
   ref,
   type Component,
 } from 'vue'
-import type { PluginContext, ReaderRegistration, TabKindRegistration } from '@numen/plugin-sdk'
+import type {
+  PluginContext,
+  ReaderRegistration,
+  Selector,
+  TabKindRegistration,
+} from '@numen/plugin-sdk'
 import { adoptPluginStyle } from '@numen/plugin-host'
 import type { AnyTabKind } from '@/entities/tab/@x/plugin'
 import {
@@ -83,6 +88,10 @@ export function createPluginPaneWrapper(
   })
 }
 
+/** Whether a saved value is a selector: a JSON object. */
+const isSelector = (value: unknown): value is Selector =>
+  typeof value === 'object' && value !== null && !Array.isArray(value)
+
 export function createReaderTabKind(
   pluginId: string,
   registration: ReaderRegistration,
@@ -94,16 +103,24 @@ export function createReaderTabKind(
   return {
     kind: kindId,
     pluginId,
-    open: (targetPath: string) => {
-      const filename = extractFilename(targetPath)
-      return reactive({
+    ...(registration.icon ? { icon: registration.icon as Component } : {}),
+    open: (targetPath: string, _id: string, saved?: unknown) => {
+      const place = isSelector(saved) ? saved : null
+      const state = reactive({
         path: targetPath,
         file: targetPath,
         pluginId,
-        title: filename,
-        spans: [] as readonly unknown[],
+        title: extractFilename(targetPath),
+        selector: place,
+        place,
+        savePlace: (next: Selector) => {
+          state.place = next
+        },
       })
+      return state
     },
+    getState: (state: unknown) =>
+      (state as { place?: Selector | null } | undefined)?.place ?? undefined,
     onShow: (state: unknown) => {
       const s = state as { measure?: () => void; focusTab?: () => void } | undefined
       s?.measure?.()
@@ -129,7 +146,6 @@ export function createReaderTabKind(
       return {
         ...(path !== undefined ? { file: path, path } : {}),
         title: s?.title ?? '',
-        source: registration.source,
       }
     },
     getOpenTab: (state: unknown) => ({ path: (state as { path?: string })?.path ?? '' }),
@@ -245,13 +261,10 @@ function resolveCustomTabTarget(state: unknown, registration: TabKindRegistratio
   const stateFile = s?.path ?? s?.at
   const defaultName = stripMarkdownExtension(extractFilename(stateFile))
   const title = resolveTargetTitle(s?.title, defaultName, registration.title || registration.kind)
-  const source =
-    (registration.source as 'note' | 'book' | 'recording' | 'url' | 'other' | undefined) ?? 'note'
 
   return {
     ...(stateFile ? { file: stateFile, path: stateFile } : {}),
     title,
-    source,
   }
 }
 

@@ -2,8 +2,6 @@
 import type { Component } from 'vue'
 import type { TabPlacement } from '@numen/plugin-sdk'
 import type { Result } from '@numen/wire'
-import type { Source } from '@/entities/file/@x/tab'
-import type { ProgressOf } from './tab'
 
 /**
  * What a command asked over one tab is over: the note the tab means, and the
@@ -13,13 +11,12 @@ export interface TabTarget {
   readonly path?: string
   readonly title?: string
   readonly file?: string
-  readonly source?: Source | null
 }
 
-/**
- * What one tab holds, as whoever answers on the person's behalf is told it: the
- */
-export type OpenTab<K extends string = string> = { readonly path: string } & ProgressOf<K>
+/** The file one tab holds, as whoever answers on the person's behalf is told it. */
+export interface OpenTab {
+  readonly path: string
+}
 
 /** A kind of tab: what it holds, what it is called, and what it lets go of. */
 export interface TabKind<TabState, K extends string = string> {
@@ -32,7 +29,12 @@ export interface TabKind<TabState, K extends string = string> {
    * It is made at once, so whatever it watches is caught by the tab's scope
    * and release with the tab.
    */
-  open(targetPath: string, id: string): TabState
+  open(targetPath: string, id: string, saved?: unknown): TabState
+  /**
+   * The JSON value kept with the tab across restarts and passed back to open
+   * as `saved`. A kind that declares none opens its tabs again on their path.
+   */
+  getState?(state: TabState): unknown
   /** What the tab is called, as what it holds now stands. */
   getTitle?(state: TabState): string
   /** The one word the tab carries beside its title, or nothing. */
@@ -58,7 +60,7 @@ export interface TabKind<TabState, K extends string = string> {
   onKeyPress?(state: TabState, event: KeyboardEvent): boolean
   /** What a command asked over one of its tabs is over. */
   getTarget?(state: TabState): TabTarget
-  getOpenTab?(state: TabState): OpenTab<K>
+  getOpenTab?(state: TabState): OpenTab
   /**
    * The tab lets go of what it held. False keeps it on screen: what it holds
    * has something to finish, and closes the tab itself once it has.

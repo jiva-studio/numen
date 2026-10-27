@@ -18,14 +18,14 @@ const createDeps = (more: Partial<PluginHostDeps> = {}): PluginHostDeps => ({
 const target = (more: Partial<ContextMenuTarget> = {}): ContextMenuTarget => ({
   path: 'Notes/One.md',
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   ...more,
 })
 
-const ROOT = target({ path: '', isFolder: true, kind: 'other' })
-const FOLDER = target({ path: 'Notes', isFolder: true, kind: 'other' })
+const ROOT = target({ path: '', isFolder: true, isNote: false })
+const FOLDER = target({ path: 'Notes', isFolder: true, isNote: false })
 const NOTE = target()
-const BOOK = target({ path: 'Books/One.pdf', kind: 'book' })
+const FILE = target({ path: 'Books/One.bin', isNote: false })
 
 describe('the menu items a target is offered', () => {
   const createHost = () => {
@@ -40,8 +40,7 @@ describe('the menu items a target is offered', () => {
     add('folder', { target: 'folder', order: 2 })
     add('file', { target: 'file', order: 3 })
     add('note', { target: 'note', order: 4 })
-    add('book', { target: 'book', order: 6 })
-    add('either', { target: ['book', 'folder'], order: 7 })
+    add('either', { target: ['note', 'folder'], order: 7 })
     return { host, handler }
   }
   const ids = (host: ReturnType<typeof createHost>['host'], one: ContextMenuTarget) =>
@@ -57,8 +56,8 @@ describe('the menu items a target is offered', () => {
     const { host } = createHost()
 
     expect(ids(host, FOLDER)).toStrictEqual(['any', 'folder', 'all', 'either'])
-    expect(ids(host, NOTE)).toStrictEqual(['any', 'file', 'note', 'all'])
-    expect(ids(host, BOOK)).toStrictEqual(['any', 'file', 'all', 'book', 'either'])
+    expect(ids(host, NOTE)).toStrictEqual(['any', 'file', 'note', 'all', 'either'])
+    expect(ids(host, FILE)).toStrictEqual(['any', 'file', 'all'])
   })
 
   it('runs the item an id names, and nothing for an id no item has', async () => {
@@ -198,40 +197,37 @@ describe('the settings of a window that keeps none', () => {
   })
 })
 
-describe('a reader opened on spans of a file', () => {
-  it('passes the spans to the state of the opened tab and skips a tab without state', async () => {
-    const readers = new Map<string, (path: string, spans?: readonly unknown[]) => void>()
-    const focusSpans = vi.fn(async () => {})
-    const states: Record<string, unknown> = { 'tab-1': { focusSpans } }
+describe('a reader opened at a selector', () => {
+  it('sets a new selector on the state of the opened tab and skips a tab without state', async () => {
+    const readers = new Map<string, (path: string, selector: unknown) => void>()
+    const states: Record<string, { selector?: unknown }> = { 'tab-1': {} }
     const openTab = vi.fn(async (_kind: string, path?: string) =>
-      path === 'Books/Gone.pdf' ? 'tab-2' : 'tab-1',
+      path === 'Books/Gone.bin' ? 'tab-2' : 'tab-1',
     )
+    const icon = { name: 'Icon' }
+    const registerExtensionReader = vi.fn((ext: string, reader: unknown, _icon?: unknown) => {
+      readers.set(ext, reader as (path: string, selector: unknown) => void)
+      return () => {}
+    })
     const host = createPluginHost(
       createDeps({
         openTab,
         getTabState: (id) => states[id],
-        getReaderExtensions: () => ['pdf'],
-        registerExtensionReader: vi.fn((ext, reader) => {
-          readers.set(ext, reader as (path: string, spans?: readonly unknown[]) => void)
-          return () => {}
-        }),
+        getReaderExtensions: () => ['bin'],
+        registerExtensionReader,
       }),
     )
-    host.createContext('sample.plugin').registerReader({
-      id: 'reader:pdf',
-      component: null,
-      source: 'book',
-    })
-    const span = { from: 1, to: 4 }
+    host.createContext('sample.plugin').registerReader({ id: 'reader:bin', component: null, icon })
+    const selector = { page: 3 }
 
-    readers.get('pdf')?.('Books/One.pdf', [span])
-    readers.get('pdf')?.('Books/Gone.pdf', [span])
-    readers.get('pdf')?.('Books/One.pdf', [])
-    await vi.waitFor(() => expect(openTab).toHaveBeenCalledTimes(3))
+    readers.get('bin')?.('Books/One.bin', selector)
+    readers.get('bin')?.('Books/Gone.bin', selector)
+    await vi.waitFor(() => expect(openTab).toHaveBeenCalledTimes(2))
     await Promise.resolve()
 
-    expect(openTab.mock.calls[0]).toStrictEqual(['reader:pdf', 'Books/One.pdf'])
-    expect(focusSpans).toHaveBeenCalledExactlyOnceWith(span)
-    expect((states['tab-1'] as { spans?: unknown }).spans).toStrictEqual([span])
+    expect(openTab.mock.calls[0]).toStrictEqual(['reader:bin', 'Books/One.bin'])
+    expect(states['tab-1']?.selector).toStrictEqual(selector)
+    expect(states['tab-1']?.selector).not.toBe(selector)
+    expect(registerExtensionReader.mock.calls[0]?.[2]).toBe(icon)
   })
 })

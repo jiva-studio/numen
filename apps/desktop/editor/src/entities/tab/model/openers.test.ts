@@ -1,8 +1,8 @@
 /**
  * The one place a file of the vault is opened from, asked without a window.
  *
- * A road holds a path and no choice, so what is asked here is that the path
- * it answers picks the tab the file opens in.
+ * A note opens in the editor of its type; any other file in the reader
+ * registered for its extension, at the selector given.
  */
 import { describe, expect, it } from 'vitest'
 import type { FileKind } from '@/entities/file/@x/tab'
@@ -25,12 +25,9 @@ const vault = (stands: Record<string, FileKind> = {}) => {
   return { core, requested: request }
 }
 
-const note = (type: FileKind['type']): FileKind => ({ kind: 'note', type })
+const note = (type: FileKind['type']): FileKind => ({ isNote: true, type })
 
-const DOCUMENT: FileKind = { kind: 'book', type: 'note', format: 'pdf' }
-const BOOK: FileKind = { kind: 'book', type: 'note', format: 'epub' }
-const TALK: FileKind = { kind: 'recording', type: 'note' }
-const OTHER: FileKind = { kind: 'other', type: 'note' }
+const OTHER: FileKind = { isNote: false, type: 'note' }
 
 /** A vault that cannot answer at all. */
 const unreachable: FileOpenerDeps = {
@@ -39,7 +36,7 @@ const unreachable: FileOpenerDeps = {
   },
 }
 
-/** The three editors, the reader and the player, each writing down what it was given. */
+/** The editors of three note types and a reader of `.bin`, each writing down what it was given. */
 const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
   for (const type of ['note', 'sample', 'form'] as const) {
@@ -49,18 +46,8 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
       activeEditors.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`)
     })
   }
-  tabOpeners.registerReader({ kind: 'book' }, (path, runs) =>
-    activeEditors.push(
-      `document ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
-    ),
-  )
-  tabOpeners.registerReader({ kind: 'book', format: 'epub' }, (path, runs) =>
-    activeEditors.push(`book ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`),
-  )
-  tabOpeners.registerReader({ kind: 'recording' }, (path, runs) =>
-    activeEditors.push(
-      `recording ${path} [${runs.map((one) => `${one.from}+${one.to}`).join(', ')}]`,
-    ),
+  tabOpeners.registerExtensionReader('bin', (path, selector) =>
+    activeEditors.push(`reader ${path} ${JSON.stringify(selector)}`),
   )
   return activeEditors
 }
@@ -96,32 +83,32 @@ describe('a path opened', () => {
     expect(activeEditors).toStrictEqual(['note Entropy.md Entropy here —'])
   })
 
-  it('opens a document in the reader, and in no editor of a note', async () => {
-    const one = vault({ 'Physics.pdf': DOCUMENT })
+  it('opens a file that is no note in the reader of its extension, at no place', async () => {
+    const one = vault({ 'Physics.bin': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('Physics.pdf', 'Physics')
+    await tabOpeners.openFile('Physics.bin', 'Physics')
 
-    expect(activeEditors).toStrictEqual(['document Physics.pdf []'])
+    expect(activeEditors).toStrictEqual(['reader Physics.bin null'])
   })
 
-  it('opens a recording in the player, and in no reader', async () => {
-    const one = vault({ 'talks/Ants.mp3': TALK })
+  it('opens a file in its reader at the selector requested', async () => {
+    const one = vault({ 'Physics.BIN': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('talks/Ants.mp3', 'Ants')
+    await tabOpeners.openFile('Physics.BIN', '', { selector: { page: 3 } })
 
-    expect(activeEditors).toStrictEqual(['recording talks/Ants.mp3 []'])
+    expect(activeEditors).toStrictEqual(['reader Physics.BIN {"page":3}'])
   })
 
-  it('opens a file the vault holds no source for in nothing at all', async () => {
+  it('opens a file no reader takes in nothing at all', async () => {
     const one = vault({ 'Cover.png': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('Cover.png', 'Cover')
+    await tabOpeners.openFile('Cover.png')
 
     expect(activeEditors).toStrictEqual([])
   })
@@ -172,13 +159,13 @@ describe('a path opened', () => {
     await expect(tabOpeners.openFile('Animals.md', 'Animals')).resolves.toBeUndefined()
   })
 
-  it('opens a source in nothing where no reader was handed over for the kind', async () => {
-    const one = vault({ 'talks/Ants.mp3': TALK })
+  it('opens a file in nothing where no reader was handed over for its extension', async () => {
+    const one = vault({ 'talks/Ants.bin': OTHER })
     const tabOpeners = fileOpeners(one.core)
 
-    await expect(tabOpeners.openFile('talks/Ants.mp3')).resolves.toBeUndefined()
+    await expect(tabOpeners.openFile('talks/Ants.bin')).resolves.toBeUndefined()
     await expect(
-      tabOpeners.openFileAt('talks/Ants.mp3', [{ from: 22, to: 28 }]),
+      tabOpeners.openFileAt('talks/Ants.bin', [{ from: 22, to: 28 }]),
     ).resolves.toBeUndefined()
   })
 
@@ -207,83 +194,37 @@ describe('a path opened', () => {
   })
 })
 
-describe('a source opened at a span of its own text', () => {
-  it('reads a document at the spans it was requested at', async () => {
-    const one = vault({ 'Physics.pdf': DOCUMENT })
+describe('a file opened at runs of its text', () => {
+  it('opens a note in its editor', async () => {
+    const one = vault({ 'Entropy.md': note('note') })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFileAt('Physics.pdf', [
-      { from: 10, to: 14 },
-      { from: 30, to: 32 },
-    ])
+    await tabOpeners.openFileAt('Entropy.md', [{ from: 1, to: 4 }])
 
-    expect(activeEditors).toStrictEqual(['document Physics.pdf [10+14, 30+32]'])
+    expect(activeEditors).toStrictEqual(['note Entropy.md — here —'])
   })
 
-  it('plays a recording at the span of the words it was requested at', async () => {
-    const one = vault({ 'talks/Ants.mp3': TALK })
+  it('opens a file that is no note in its reader at no place', async () => {
+    const one = vault({ 'Physics.bin': OTHER })
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFileAt('talks/Ants.mp3', [{ from: 22, to: 28 }])
+    await tabOpeners.openFileAt('Physics.bin', [{ from: 1, to: 4 }])
 
-    expect(activeEditors).toStrictEqual(['recording talks/Ants.mp3 [22+28]'])
-  })
-
-  it('opens a note in the editor made for what it is, and not in the reader', async () => {
-    const one = vault({ 'Animals.md': note('sample'), 'Entropy.md': note('note') })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    await tabOpeners.openFileAt('Animals.md', [{ from: 10, to: 14 }])
-    await tabOpeners.openFileAt('Entropy.md', [{ from: 10, to: 14 }])
-
-    expect(activeEditors).toStrictEqual(['sample Animals.md — here —', 'note Entropy.md — here —'])
-  })
-
-  it('opens nothing where the vault says nothing remains there', async () => {
-    const one = vault()
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    await tabOpeners.openFileAt('Gone.epub', [{ from: 10, to: 14 }])
-
-    expect(activeEditors).toStrictEqual([])
+    expect(activeEditors).toStrictEqual(['reader Physics.bin null'])
   })
 })
 
-describe('which reader a book opens in', () => {
-  it('turns a book that reflows a spread at a time', async () => {
-    const one = vault({ 'Gita.epub': BOOK })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
+describe('the icon of a file', () => {
+  it('is the icon of the reader of its extension, and nothing where none reads it', () => {
+    const tabOpeners = fileOpeners(vault().core)
+    const icon = { name: 'Icon' }
+    tabOpeners.registerExtensionReader('.bin', () => {}, icon)
 
-    await tabOpeners.openFileAt('Gita.epub', [{ from: 10, to: 14 }])
-
-    expect(activeEditors).toStrictEqual(['book Gita.epub [10+14]'])
-  })
-
-  it('reads a document of pages as the row of pages it is', async () => {
-    const one = vault({ 'Physics.pdf': DOCUMENT })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors = editors(tabOpeners)
-
-    await tabOpeners.openFile('Physics.pdf')
-
-    expect(activeEditors).toStrictEqual(['document Physics.pdf []'])
-  })
-
-  it('reads a book that reflows as pages where the window turns none', async () => {
-    // A window told about no book tab still opens the file.
-    const one = vault({ 'Gita.epub': BOOK })
-    const tabOpeners = fileOpeners(one.core)
-    const activeEditors: string[] = []
-    tabOpeners.registerReader({ kind: 'book' }, (path) => activeEditors.push(`document ${path}`))
-
-    await tabOpeners.openFile('Gita.epub')
-
-    expect(activeEditors).toStrictEqual(['document Gita.epub'])
+    expect(tabOpeners.findFileIcon('a/b.BIN')).toBe(icon)
+    expect(tabOpeners.findFileIcon('a/b.png')).toBeUndefined()
+    expect(tabOpeners.findFileIcon('a.dir/bin')).toBeUndefined()
   })
 })
 
@@ -307,7 +248,7 @@ describe('a file just made here', () => {
 })
 
 describe('reconciling open tabs when a file is opened', () => {
-  it('reconciles open tabs for a sample file', async () => {
+  it('reconciles open tabs for a deck file', async () => {
     const reconciled: { path: string; newKind: string }[] = []
     const one = vault({ 'Animals.md': note('sample') })
     const core: FileOpenerDeps = {
@@ -320,97 +261,6 @@ describe('reconciling open tabs when a file is opened', () => {
     await tabOpeners.openFile('Animals.md', 'Animals')
 
     expect(reconciled).toStrictEqual([{ path: 'Animals.md', newKind: 'sample' }])
-  })
-
-  it('reconciles open tabs for an epub book', async () => {
-    const reconciled: { path: string; newKind: string }[] = []
-    const one = vault({ 'Gita.epub': BOOK })
-    const core: FileOpenerDeps = {
-      ...one.core,
-      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    await tabOpeners.openFile('Gita.epub')
-
-    expect(reconciled).toStrictEqual([{ path: 'Gita.epub', newKind: 'book' }])
-  })
-
-  it('reconciles open tabs for a recording as a recording', async () => {
-    const reconciled: { path: string; newKind: string }[] = []
-    const one = vault({ 'talks/Ants.mp3': TALK })
-    const core: FileOpenerDeps = {
-      ...one.core,
-      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    await tabOpeners.openFile('talks/Ants.mp3')
-
-    expect(reconciled).toStrictEqual([{ path: 'talks/Ants.mp3', newKind: 'recording' }])
-  })
-
-  it('reconciles open tabs for a pdf document', async () => {
-    const reconciled: { path: string; newKind: string }[] = []
-    const one = vault({ 'Physics.pdf': DOCUMENT })
-    const core: FileOpenerDeps = {
-      ...one.core,
-      reconcileTab: (path, newKind) => reconciled.push({ path, newKind }),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    await tabOpeners.openFile('Physics.pdf')
-
-    expect(reconciled).toStrictEqual([{ path: 'Physics.pdf', newKind: 'document' }])
-  })
-})
-
-describe('emitting onFile events when opening files', () => {
-  it('emits onFile:<ext> on openFile', async () => {
-    const events: string[] = []
-    const one = vault({ 'Physics.pdf': DOCUMENT })
-    const core: FileOpenerDeps = {
-      ...one.core,
-      emitEvent: (ev) => events.push(ev),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    await tabOpeners.openFile('Physics.pdf')
-
-    expect(events).toStrictEqual(['onFile:pdf'])
-  })
-
-  it('emits onFile:<ext> on openFileAt', async () => {
-    const events: string[] = []
-    const one = vault({ 'Gita.epub': BOOK })
-    const core: FileOpenerDeps = {
-      ...one.core,
-      emitEvent: (ev) => events.push(ev),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    await tabOpeners.openFileAt('Gita.epub', [{ from: 0, to: 10 }])
-
-    expect(events).toStrictEqual(['onFile:epub'])
-  })
-
-  it('emits onFile:<ext> on openNewFile', () => {
-    const events: string[] = []
-    const core: FileOpenerDeps = {
-      ...vault().core,
-      emitEvent: (ev) => events.push(ev),
-    }
-    const tabOpeners = fileOpeners(core)
-    editors(tabOpeners)
-
-    tabOpeners.openNewFile('Notes.md', 'Notes', 'note')
-
-    expect(events).toStrictEqual(['onFile:md'])
   })
 })
 

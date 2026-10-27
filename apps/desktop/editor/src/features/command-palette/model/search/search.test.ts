@@ -79,7 +79,7 @@ const passage = (override: Partial<Passage> = {}): Passage => ({
   text: 'no engine beats a reversible one',
   isNote: true,
   type: 'note',
-  kind: 'note',
+  selector: null,
   start: 0,
   length: 0,
   line: 0,
@@ -283,7 +283,7 @@ describe('answers arriving', () => {
         length: 10,
         line: 1,
         type: 'note',
-        kind: 'note',
+        selector: null,
       },
     ])
     await flushPromises()
@@ -537,7 +537,7 @@ describe('what a row is drawn as', () => {
         path: 'library/mahabharata.epub',
         title: '',
         isNote: false,
-        kind: 'book',
+        selector: { page: 3 },
         start: 40_512,
       }),
     ])
@@ -547,7 +547,7 @@ describe('what a row is drawn as', () => {
     expect(items.map((one) => palette.findNoteType(one.id))).toEqual(['sheet', null])
   })
 
-  it('says what the vault holds where a passage was read out of', async () => {
+  it('names the file of a passage read out of a file that is no note', async () => {
     const vault = createVault()
     const palette = useSearch(vault.core, WORDS, {
       wait: now,
@@ -560,13 +560,17 @@ describe('what a row is drawn as', () => {
       .mode('words')
       ?.answer([
         passage({ path: 'notes/heat.md' }),
-        passage({ path: 'library/mahabharata.epub', isNote: false, kind: 'book', start: 40_512 }),
-        passage({ path: 'talks/730709BG.LON.mp3', isNote: false, kind: 'recording', start: 12 }),
+        passage({ path: 'library/a.bin', isNote: false, selector: { page: 3 } }),
+        passage({ path: 'talks/b.bin', isNote: false, selector: { t: [12, 14] } }),
       ])
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'text')!.items
-    expect(items.map((one) => palette.findHitSource(one.id))).toEqual(['note', 'book', 'recording'])
+    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([
+      null,
+      'library/a.bin',
+      'talks/b.bin',
+    ])
   })
 
   it('says a name remains in a note, whatever kind of note it is', async () => {
@@ -585,7 +589,7 @@ describe('what a row is drawn as', () => {
     await flushPromises()
 
     const items = getGroup(palette.groups.value, 'names')!.items
-    expect(items.map((one) => palette.findHitSource(one.id))).toEqual(['note', 'note'])
+    expect(items.map((one) => palette.findHitFile(one.id))).toEqual([null, null])
   })
 
   it('says nothing about an item it is not drawing', async () => {
@@ -595,7 +599,7 @@ describe('what a row is drawn as', () => {
       getTravel: () => 'Show in the graph',
     })
     expect(palette.findNoteType('notes/entropy.md')).toBeNull()
-    expect(palette.findHitSource('notes/entropy.md')).toBeNull()
+    expect(palette.findHitFile('notes/entropy.md')).toBeNull()
   })
 })
 

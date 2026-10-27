@@ -43,7 +43,7 @@ const createPassage = (overrides: Partial<Passage> = {}): Passage => ({
   title: 'Ontology',
   isNote: true,
   type: 'note',
-  kind: 'note',
+  selector: null,
   text: 'what is',
   start: 12,
   length: 4,
@@ -58,9 +58,9 @@ const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   line: -1,
   start: 0,
   length: 0,
-  offers: ['note', 'travel', 'document'],
+  offers: ['note', 'travel'],
   type: 'note',
-  kind: 'note',
+  selector: null,
   ...overrides,
 })
 
@@ -73,7 +73,7 @@ describe('a note found by its title', () => {
       { id: 'travel', text: SHOW },
       { id: 'note', text: WORDS.read },
     ])
-    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['travel', 'note'], kind: 'note' }))
+    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['travel', 'note'] }))
   })
 })
 
@@ -92,11 +92,7 @@ describe('a note found where no plugin puts a note in front', () => {
 
 describe('a heading found by its name', () => {
   it('is placed under its path and line, offers the note first, and is a note', () => {
-    const row = createNameItem(
-      createName({ heading: 'Being', line: 7, type: 'sample' }),
-      WORDS,
-      SHOW,
-    )
+    const row = createNameItem(createName({ heading: 'Being', line: 7, type: 'sample' }), WORDS, SHOW)
 
     expect(row.item.id).toBe('physics/Ontology.md#7')
     expect(row.item.title).toBe('Being')
@@ -105,9 +101,7 @@ describe('a heading found by its name', () => {
       { id: 'note', text: WORDS.readAt },
       { id: 'travel', text: SHOW },
     ])
-    expect(row.hit).toStrictEqual(
-      createHit({ line: 7, offers: ['note', 'travel'], type: 'sample', kind: 'note' }),
-    )
+    expect(row.hit).toStrictEqual(createHit({ line: 7, offers: ['note', 'travel'], type: 'sample' }))
   })
 })
 
@@ -126,26 +120,26 @@ describe('a passage found in a note', () => {
   })
 })
 
-describe('a passage found in a source that is not a note', () => {
-  it('offers the document, remains at no line, and is of no note type', () => {
+describe('a passage found in a file that is no note', () => {
+  it('offers opening the file at its selector, remains at no line, and is of no note type', () => {
     const row = createPassageItem(
       'meaning',
-      createPassage({ isNote: false, kind: 'book', title: '', type: 'sample' }),
+      createPassage({ isNote: false, selector: { page: 3 }, title: '', type: 'sample' }),
       WORDS,
       SHOW,
     )
 
     expect(row.item.title).toBe('physics/Ontology.md')
-    expect(row.item.actions).toStrictEqual([{ id: 'document', text: WORDS.readDocument }])
+    expect(row.item.actions).toStrictEqual([{ id: 'note', text: WORDS.readDocument }])
     expect(row.hit).toStrictEqual(
       createHit({
         title: '',
         line: -1,
         start: 12,
         length: 4,
-        offers: ['document'],
+        offers: ['note'],
         type: null,
-        kind: 'book',
+        selector: { page: 3 },
       }),
     )
   })
@@ -165,13 +159,14 @@ describe('where choosing an item takes the person', () => {
     })
   })
 
-  it('is the span of the document it was found in', () => {
-    expect(resolveDestination(createHit({ start: 12, length: 4 }), 'document')).toStrictEqual({
-      at: 'document',
+  it('is the file at the selector of the hit, for a file that is no note', () => {
+    const searchHit = createHit({ type: null, offers: ['note'], selector: { t: [12, 14] } })
+
+    expect(resolveDestination(searchHit, 'note')).toStrictEqual({
+      at: 'file',
       path: 'physics/Ontology.md',
       title: 'Ontology',
-      start: 12,
-      length: 4,
+      selector: { t: [12, 14] },
     })
   })
 

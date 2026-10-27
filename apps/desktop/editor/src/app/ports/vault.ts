@@ -54,6 +54,8 @@ export interface VaultPort {
   }>
   /** What currently open, said again whenever any of it changes. */
   writeOpenTabs(open: OpenTabs): Promise<void>
+  /** The tabs last written for the vault in the window, kept by the core across restarts. */
+  readOpenTabs(): Promise<OpenTabs>
   /**
    * The window going, for as long as the client listens. The stream opens with
    * the token this client answers under.

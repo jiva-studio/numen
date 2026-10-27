@@ -8,20 +8,10 @@ import { branch, pane, type Workspace } from '@numen/shell'
 
 /** A note edited in the window, under the path the vault files it at. */
 export const NOTE = 'note'
-/** A document read in the window, under the path the vault files it at. */
-export const DOCUMENT = 'document'
-export const BOOK = 'book'
-/** A recording played in the window, under the path the vault files it at. */
-export const RECORDING = 'recording'
-/** A url opened in the window, under the path the vault files it at. */
-export const URL = 'url'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
 /** The settings file itself, opened whole as text, one tab of it to a window. */
 export const SETTINGS_FILE = 'settings-file'
-
-/** One conversation thread, under the name the agent hears it by. */
-export const CONVERSATION = 'conversation'
 
 /**
  * The identity a tab or a conversation is given when nothing it can be found

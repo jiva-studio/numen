@@ -150,7 +150,7 @@ describe('mock plugin context', () => {
   it('cleans up all subscriptions on dispose', () => {
     const ctx = createMockPluginContext()
     ctx.registerCommand({ id: 'c1', title: 'C1', handler: () => {} })
-    ctx.registerReader({ id: 'r1', component: {}, source: 'note' })
+    ctx.registerReader({ id: 'r1', component: {} })
 
     expect(ctx.subscriptions.length).toBe(2)
     ctx.dispose()

@@ -69,7 +69,6 @@ describe('createReaderTabKind', () => {
       id: 'reader-epub',
       component: null,
       title: 'EPUB Reader',
-      source: 'book',
     })
 
     const openState = readerKind.open('books/alice.epub', 'tab') as {
@@ -104,7 +103,6 @@ describe('createReaderTabKind', () => {
       file: 'books/alice.epub',
       path: 'books/alice.epub',
       title: 'Alice in Wonderland',
-      source: 'book',
     })
   })
 })
@@ -142,7 +140,6 @@ describe('createCustomTabKind', () => {
       file: 'notes/ideas.md',
       path: 'notes/ideas.md',
       title: 'Brainstorming Session',
-      source: 'note',
     })
   })
 
@@ -285,21 +282,35 @@ describe('createCustomTabKind (failed writes)', () => {
   })
 })
 
-describe('createReaderTabKind (source resolution)', () => {
-  it('identifies source via registration source property', () => {
-    const kind = createReaderTabKind('audio-plugin', {
-      id: 'custom-audio',
-      component: null,
-      source: 'recording',
-    })
+describe('createReaderTabKind (place)', () => {
+  it('opens at the place saved before a restart and saves the place the reader shows', () => {
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
 
-    const target = kind.getTarget?.({ path: 'track.custom' })
-    expect(target).toEqual({
-      file: 'track.custom',
-      path: 'track.custom',
-      title: '',
-      source: 'recording',
-    })
+    const state = kind.open('a.bin', 'tab', { page: 4 }) as {
+      selector: unknown
+      savePlace: (place: unknown) => void
+    }
+    expect(state.selector).toEqual({ page: 4 })
+    expect(kind.getState?.(state)).toEqual({ page: 4 })
+
+    state.savePlace({ page: 9 })
+    expect(kind.getState?.(state)).toEqual({ page: 9 })
+  })
+
+  it('opens a new tab at no place and saves none', () => {
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null })
+
+    const state = kind.open('a.bin', 'tab')
+
+    expect((state as { selector: unknown }).selector).toBeNull()
+    expect(kind.getState?.(state)).toBeUndefined()
+  })
+
+  it('carries the icon the reader registers', () => {
+    const icon = { name: 'Icon' }
+    const kind = createReaderTabKind('viewer-plugin', { id: 'viewer', component: null, icon })
+
+    expect(kind.icon).toBe(icon)
   })
 })
 

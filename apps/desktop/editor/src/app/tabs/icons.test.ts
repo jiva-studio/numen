@@ -11,7 +11,6 @@ import { getNoteIcon, registerNoteIcon } from '@/entities/note'
 import { createCommands, createPathCommands } from '@/features/command-palette'
 import { createWelcomeActions } from '@/pages/welcome'
 import { WORDS as words } from '@/shared/words'
-import type { Source } from '@/entities/file'
 
 /** An item of a menu, and the items it opens. */
 type Item = { readonly id: string; readonly children?: readonly Item[] | undefined }
@@ -22,11 +21,11 @@ const flatten = (items: readonly Item[]): readonly Item[] =>
 /** The window's commands over a row: on a row of each kind, and over several rows. */
 const onARow = flatten(
   [
-    ...(['note', 'book', 'recording', 'url', 'other'] as Source[]).flatMap((source) => [
-      createPathCommands({ source, isFolder: false }, false),
-      createPathCommands({ source, isFolder: true }, false),
+    ...[true, false].flatMap((isNote) => [
+      createPathCommands({ isNote, isFolder: false }, false),
+      createPathCommands({ isNote, isFolder: true }, false),
     ]),
-    createPathCommands({ source: 'note', isFolder: false }, true),
+    createPathCommands({ isNote: true, isFolder: false }, true),
   ].flat(),
 )
 

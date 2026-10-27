@@ -2,7 +2,8 @@
  * Search hit lookup, item formatting, and navigation destination mapping.
  */
 import type { PaletteItem } from '@numen/shell'
-import type { NoteType, Source } from '@/entities/file'
+import type { Selector } from '@numen/plugin-sdk'
+import type { NoteType } from '@/entities/file'
 import type { Span } from '@/shared/span'
 import type { Words } from './search'
 
@@ -29,10 +30,10 @@ export interface Passage {
    * over the passage: a book is no note, so nothing puts it in front as one.
    */
   isNote: boolean
-  /** Which of four that note is. It says nothing about a source that is not one. */
+  /** Which type of note it is. It says nothing about a file that is no note. */
   type: NoteType
-  /** What the vault holds at that path, whatever sort of source it is. */
-  kind: Source
+  /** Where in a file that is no note the text was found, and null for a note. */
+  selector: Selector | null
   text: string
   /**
    * what the document it came out of is opened at.
@@ -45,19 +46,18 @@ export interface Passage {
 
 /**
  * Where an item chosen takes the person. A file names the file and the place
- * inside it, and nothing about which editor it opens in: a landing at a file
- * carries a line, one at a document a span of the source's own text.
+ * inside it, and nothing about which editor it opens in: a note carries a
+ * line, any other file the selector its reader moves to.
  */
 export interface SearchDestination {
-  at: 'travel' | 'file' | 'document'
+  at: 'travel' | 'file'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
-  /** The line the item relies on, for a place inside a file. */
+  /** The line the item relies on, for a place inside a note. */
   line?: number
-  /** The span of the source's own text to light, for a place in a document. */
-  start?: number
-  length?: number
+  /** The place in a file that is no note, as the search hit locates it. */
+  selector?: Selector
 }
 
 /**
@@ -67,7 +67,6 @@ export interface SearchDestination {
  */
 export const TRAVEL = 'travel'
 export const NOTE = 'note'
-export const DOCUMENT = 'document'
 
 /**
  * no line at all.
@@ -81,8 +80,8 @@ export interface SearchHit {
   length: number
   offers: readonly string[]
   type: NoteType | null
-  /** What the vault holds at its current position. */
-  kind: Source
+  /** The place in a file that is no note, and null for a note. */
+  selector: Selector | null
 }
 
 /** One item as it is drawn, beside at its current position and what it offers. */
@@ -125,7 +124,7 @@ export function createNameItem(one: NameMatch, words: Words, travel: string): Se
           length: 0,
           offers: atHeading.offers,
           type: one.type,
-          kind: 'note',
+          selector: null,
         },
       }
     : {
@@ -143,7 +142,7 @@ export function createNameItem(one: NameMatch, words: Words, travel: string): Se
           length: 0,
           offers: byName.offers,
           type: one.type,
-          kind: 'note',
+          selector: null,
         },
       }
 }
@@ -161,7 +160,7 @@ export function createPassageItem(
       title: one.title || one.path,
       detail: one.text,
       detailAt: one.at,
-      actions: one.isNote ? note.actions : [{ id: DOCUMENT, text: words.readDocument }],
+      actions: one.isNote ? note.actions : [{ id: NOTE, text: words.readDocument }],
     },
     hit: {
       path: one.path,
@@ -169,9 +168,9 @@ export function createPassageItem(
       line: one.isNote ? one.line : -1,
       start: one.start,
       length: one.length,
-      offers: one.isNote ? note.offers : [DOCUMENT],
+      offers: one.isNote ? note.offers : [NOTE],
       type: one.isNote ? one.type : null,
-      kind: one.kind,
+      selector: one.isNote ? null : one.selector,
     },
   }
 }
@@ -183,8 +182,6 @@ export function resolveDestination(
   if (!hit || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
   if (action === TRAVEL) return { at: 'travel', ...named }
-  if (action === DOCUMENT) {
-    return { at: 'document', ...named, start: hit.start, length: hit.length }
-  }
+  if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
   return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
 }

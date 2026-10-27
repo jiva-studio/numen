@@ -76,8 +76,9 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),
-    openFileAt: (path, run) => tabOpeners.openFileAt(path, [run]),
-    openFile: (path, title, line) => void tabOpeners.openFile(path, title, { where: 'here', line }),
+    openFile: (path, title, line, selector) =>
+      void tabOpeners.openFile(path, title, { where: 'here', line, selector }),
+    findFileIcon: (path) => tabOpeners.findFileIcon(path),
   }
 
   const createdItem = createFileMakers({

@@ -2,8 +2,20 @@
  * Search and lookup domain methods for the window core.
  */
 import { search } from '@/shared/clients'
-import { modes, mapNoteType, run, mapSourceKind } from './words'
+import type { Selector } from '@numen/plugin-sdk'
+import { modes, mapNoteType, run } from './words'
 import type { SearchDeps } from '@/features/command-palette'
+
+/** The selector of a hit, parsed from its JSON, and null where it has none. */
+const parseSelector = (json: string): Selector | null => {
+  if (!json) return null
+  try {
+    const value: unknown = JSON.parse(json)
+    return typeof value === 'object' && value !== null ? (value as Selector) : null
+  } catch {
+    return null
+  }
+}
 
 export const searchCore: SearchDeps = {
   names: async (query, limit) => {
@@ -24,7 +36,7 @@ export const searchCore: SearchDeps = {
       title: one.note?.title ?? '',
       isNote: one.note !== undefined,
       type: mapNoteType(one.type),
-      kind: mapSourceKind(one.kind),
+      selector: parseSelector(one.selector),
       text: one.text,
       start: one.span?.from ?? 0,
       length: (one.span?.to ?? 0) - (one.span?.from ?? 0),

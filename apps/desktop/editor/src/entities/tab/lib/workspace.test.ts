@@ -7,18 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/shell'
-import {
-  BOOK,
-  CONVERSATION,
-  DOCUMENT,
-  NOTE,
-  RECORDING,
-  SETTINGS,
-  SETTINGS_FILE,
-  URL,
-  createWorkspace,
-  generateId,
-} from './workspace'
+import { NOTE, SETTINGS, SETTINGS_FILE, createWorkspace, generateId } from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -28,7 +17,7 @@ describe('the identity a tab is filed under', () => {
   })
 
   it('is never the name of a tab of another kind', () => {
-    expect(generateId(NOTE)).not.toBe(generateId(DOCUMENT))
+    expect(generateId(NOTE)).not.toBe(generateId(SETTINGS))
   })
 
   it('says what kind of thing the tab holds', () => {
@@ -37,7 +26,7 @@ describe('the identity a tab is filed under', () => {
 })
 
 describe('the kinds a tab is filed under', () => {
-  const kinds = [NOTE, DOCUMENT, BOOK, RECORDING, URL, SETTINGS, SETTINGS_FILE, CONVERSATION]
+  const kinds = [NOTE, SETTINGS, SETTINGS_FILE]
 
   it('are each a word, so an identity names its kind', () => {
     for (const kind of kinds) expect(kind).not.toBe('')
@@ -50,7 +39,7 @@ describe('the kinds a tab is filed under', () => {
 
 describe('the name a conversation is answered under', () => {
   it('is a new one for every conversation opened', () => {
-    const names = [generateId(CONVERSATION), generateId(CONVERSATION), generateId(CONVERSATION)]
+    const names = [generateId('agent'), generateId('agent'), generateId('agent')]
 
     expect(new Set(names).size).toBe(3)
   })

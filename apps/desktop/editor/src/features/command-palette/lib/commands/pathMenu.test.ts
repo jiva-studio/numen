@@ -3,41 +3,38 @@
  */
 import { describe, expect, it } from 'vitest'
 import { groupItems } from '@numen/ui'
-import type { Source } from '@/entities/file'
 import { createPathCommands } from './pathMenu'
 
 /** What a row of that kind offers, by the identity of each item. */
-const getItemIds = (source: Source, isFolder = false): readonly string[] =>
-  createPathCommands({ source, isFolder }, false).map((one) => one.id)
+const getItemIds = (isNote: boolean, isFolder = false): readonly string[] =>
+  createPathCommands({ isNote, isFolder }, false).map((one) => one.id)
 
 /** The same, as it is drawn: each item, and the rule standing above it. */
-const getGroupedIds = (source: Source): readonly string[] =>
-  groupItems(createPathCommands({ source, isFolder: false }, false)).map(
+const getGroupedIds = (isNote: boolean): readonly string[] =>
+  groupItems(createPathCommands({ isNote, isFolder: false }, false)).map(
     (one) => `${one.isRule ? '— ' : ''}${one.id}`,
   )
 
 describe('the commands over a row standing for a file', () => {
-  it.each(['recording', 'url', 'book'] as const)(
-    'offer the file commands only on a %s',
-    (source) => {
-      expect(getItemIds(source)).toStrictEqual(getItemIds('other'))
-    },
-  )
+  it('offer the note menu only on a note', () => {
+    expect(getItemIds(true)).not.toStrictEqual(getItemIds(false))
+    expect(getItemIds(false)).toStrictEqual(['copy', 'remove'])
+  })
 
   it('offer the path and the removal, parted by a rule', () => {
-    expect(getGroupedIds('other')).toStrictEqual(['copy', '— remove'])
+    expect(getGroupedIds(false)).toStrictEqual(['copy', '— remove'])
   })
 
   it('offer only the removal over a selection of several', () => {
     expect(
-      createPathCommands({ source: 'note', isFolder: false }, true).map((one) => one.id),
+      createPathCommands({ isNote: true, isFolder: false }, true).map((one) => one.id),
     ).toStrictEqual(['remove'])
   })
 })
 
 describe('the commands over a note', () => {
   it('offers core note commands without plugin contributions', () => {
-    expect(getGroupedIds('note')).toStrictEqual(['read', '— copy', '— remove'])
+    expect(getGroupedIds(true)).toStrictEqual(['read', '— copy', '— remove'])
   })
 
   it('includes plugin contributions when provided', () => {
@@ -49,7 +46,7 @@ describe('the commands over a note', () => {
       { id: 'question', text: 'Ask about it', group: 'chat' },
     ]
     const grouped = groupItems(
-      createPathCommands({ source: 'note', isFolder: false }, false, contributions),
+      createPathCommands({ isNote: true, isFolder: false }, false, contributions),
     )
     expect(grouped.map((one) => `${one.isRule ? '— ' : ''}${one.id}`)).toStrictEqual([
       'read',

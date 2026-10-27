@@ -51,7 +51,6 @@ describe('createPluginHost', () => {
       id: 'custom-pdf',
       component: null,
       title: 'Custom PDF',
-      source: 'book',
     })
 
     expect(deps.registerKind).toHaveBeenCalled()
@@ -122,7 +121,6 @@ describe('createPluginHost', () => {
     ctx.registerReader({
       id: 'reader1',
       component: null,
-      source: 'note',
     })
     ctx.registerCommand({
       id: 'cmd1',
@@ -201,13 +199,13 @@ describe('createPluginHost', () => {
     })
 
     expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
     ).toHaveLength(1)
 
     // Plugin is deactivated / disposed
     host.disposePlugin('sample.plugin')
     expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
     ).toHaveLength(0)
 
     // Plugin is reactivated (new context created and registered)
@@ -219,7 +217,7 @@ describe('createPluginHost', () => {
       handler: async () => {},
     })
     expect(
-      host.getContextMenuItems({ path: 'test.md', isFolder: false, kind: 'note' }),
+      host.getContextMenuItems({ path: 'test.md', isFolder: false, isNote: true }),
     ).toHaveLength(1)
   })
 

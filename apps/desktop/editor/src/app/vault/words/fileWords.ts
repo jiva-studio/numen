@@ -1,38 +1,20 @@
 /**
  * File domain conversions between schema representations and window models.
  */
-import { BookFormat as BookFormats, SourceKind } from '@numen/protocol'
+import { SourceKind } from '@numen/protocol'
 import type { Entry as EntryMessage, MoveResult as MoveResultMessage } from '@numen/protocol'
-import type { BookFormat, DocumentFormat, Entry, MoveResult, Source } from '@/entities/file'
+import type { Entry, MoveResult } from '@/entities/file'
 import { mapNoteType } from './noteWords'
 
-/** A source this window has no word for is a file it holds no source for. */
-const SOURCE_KINDS: Record<SourceKind, Source> = {
-  [SourceKind.UNSPECIFIED]: 'other',
-  [SourceKind.NOTE]: 'note',
-  [SourceKind.BOOK]: 'book',
-  [SourceKind.RECORDING]: 'recording',
-  [SourceKind.URL]: 'url',
-}
-
-export const mapSourceKind = (of: SourceKind): Source => SOURCE_KINDS[of] ?? 'other'
-
-/** How a book at a path is drawn, in the words the window uses. */
-const BOOK_FORMATS: Record<BookFormats, BookFormat | DocumentFormat | undefined> = {
-  [BookFormats.UNSPECIFIED]: undefined,
-  [BookFormats.PDF]: 'pdf',
-  [BookFormats.EPUB]: 'epub',
-}
-
-export const mapBookFormat = (of: BookFormats): BookFormat | DocumentFormat | undefined =>
-  BOOK_FORMATS[of]
+/** Whether the vault holds a note at a path. */
+export const isNoteKind = (of: SourceKind): boolean => of === SourceKind.NOTE
 
 /** One row of a listing, kept as the plain value the window carries it as. */
 export const mapEntry = (one: EntryMessage): Entry => ({
   path: one.path,
   name: one.name,
   isFolder: one.isFolder,
-  kind: mapSourceKind(one.kind),
+  isNote: isNoteKind(one.kind),
   type: mapNoteType(one.type),
 })
 

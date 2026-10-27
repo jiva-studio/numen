@@ -5,6 +5,7 @@
  * the vaults this installation holds, and `folders` what each folder holds.
  */
 import type { Entry } from '@/entities/file'
+import type { OpenTabs } from '@/entities/tab'
 
 interface MockVaultState {
   isReady: boolean
@@ -29,8 +30,9 @@ interface MockVaultState {
     line: number
     at: []
     type: string
-    kind: 'note' | 'book' | 'recording' | 'other'
+    selector: Record<string, unknown> | null
   }[]
+  savedTabs: OpenTabs
   types: Record<string, string>
   embedded: number
   listable: boolean
@@ -49,6 +51,8 @@ export const mockVaultState: MockVaultState = {
   names: [],
   /** The passages the search answers with. */
   passages: [],
+  /** The open tabs the core kept from before the window started. */
+  savedTabs: { tabs: [], front: '' },
   /**
    * Which of three the note at each path is, as the vault answers it. A path
    * it says nothing about is the ordinary note the window reads it as.
@@ -76,37 +80,26 @@ export { mockVaultState as said, mockVaultList as listed }
 /** What each folder of the vault holds, as a listing answers it. */
 export const folders: Record<string, readonly Entry[]> = {
   '': [
-    { path: 'physics', name: 'physics', isFolder: true, kind: 'other', type: 'note' },
-    { path: 'Root.md', name: 'Root.md', isFolder: false, kind: 'note', type: 'note' },
-    { path: 'Cover.png', name: 'Cover.png', isFolder: false, kind: 'other', type: 'note' },
+    { path: 'physics', name: 'physics', isFolder: true, isNote: false, type: 'note' },
+    { path: 'Root.md', name: 'Root.md', isFolder: false, isNote: true, type: 'note' },
+    { path: 'Cover.png', name: 'Cover.png', isFolder: false, isNote: false, type: 'note' },
   ],
   physics: [
     {
       path: 'physics/Entropy.md',
       name: 'Entropy.md',
       isFolder: false,
-      kind: 'note',
+      isNote: true,
       type: 'note',
     },
-    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, kind: 'note', type: 'note' },
+    { path: 'physics/Kelvin.md', name: 'Kelvin.md', isFolder: false, isNote: true, type: 'note' },
   ],
 }
 
-/**
- * What the vault holds at a path. A book and a note are told apart by the name
- * the file carries, the way the vault itself tells them apart, and which of
- * three a note is is what a test mockVaultState.
- */
+/** Whether the file at a path is a note, and which type, as the vault answers it. */
 export const getFileKind = (path: string) => {
-  if (/\.epub$/u.test(path)) {
-    return { kind: 'book' as const, type: 'note' as const, format: 'epub' as const }
-  }
-  if (/\.pdf$/u.test(path)) {
-    return { kind: 'book' as const, type: 'note' as const, format: 'pdf' as const }
-  }
-  if (/\.(mp3|m4a|wav)$/u.test(path)) return { kind: 'recording' as const, type: 'note' as const }
-  if (!/\.(md|note)$/u.test(path)) return { kind: 'other' as const, type: 'note' as const }
-  return { kind: 'note' as const, type: mockVaultState.types[path] ?? ('note' as const) }
+  if (!/\.(md|note)$/u.test(path)) return { isNote: false, type: 'note' as const }
+  return { isNote: true, type: mockVaultState.types[path] ?? ('note' as const) }
 }
 
 /** A stream that stays open, so nothing the window follows ever ends. */
@@ -191,14 +184,14 @@ export const passageAnswer = (path: string, title: string, type: string = 'note'
   line: 3,
   at: [] as [],
   type,
-  kind: 'note' as 'note' | 'book' | 'recording' | 'other',
+  selector: null as Record<string, unknown> | null,
 })
 
-/** One passage read out of a source that is not a note. */
-export const sourceAnswer = (path: string, kind: 'book' | 'recording') => ({
+/** One passage read out of a file that is no note, at a place its selector names. */
+export const sourceAnswer = (path: string, selector: Record<string, unknown>) => ({
   ...passageAnswer(path, ''),
   isNote: false,
-  kind,
+  selector,
 })
 
 /** Everything answered back where it opens, which is where every test begins. */
@@ -207,6 +200,7 @@ export const forgetAnswers = () => {
   mockVaultState.opening = 'Root.md'
   mockVaultState.names = []
   mockVaultState.passages = []
+  mockVaultState.savedTabs = { tabs: [], front: '' }
   mockVaultState.types = {}
   mockVaultState.embedded = 0
   mockVaultState.listable = true

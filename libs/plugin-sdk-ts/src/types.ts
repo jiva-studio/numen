@@ -2,7 +2,7 @@ import type { AgentHost } from './agent'
 import type { BufferHost } from './buffers'
 import type { NoticeHost } from './notices'
 import type { TaskHost } from './tasks'
-import type { TextInput, VaultTexts } from './texts'
+import type { Selector, TextInput, VaultTexts } from './texts'
 import type { MountedView, ViewRegistration } from './views'
 import type { NoteType, VaultFiles, VaultNotes, WorkspaceHost } from './workspace'
 
@@ -56,15 +56,29 @@ export interface SettingDeclaration {
   step?: number
 }
 
-// ReaderRegistration registers a document viewer component. The manifest declares, under `readers`
-// with the same id, the content types it opens.
+// ReaderRegistration registers a viewer component for files. The manifest declares, under
+// `readers` with the same id, the content types it opens. The component gets a ReaderTabState as
+// its `state` prop.
 export interface ReaderRegistration {
   id: string
   component: unknown
   title?: string
-  source: 'note' | 'book' | 'recording' | 'url' | 'other'
+  // The icon its tabs carry before their title, and the files it opens carry in the tree.
+  icon?: unknown
   capabilities?: readonly string[]
   metadata?: Record<string, unknown>
+}
+
+// ReaderTabState is the `state` prop the window passes the component of a reader tab.
+export interface ReaderTabState {
+  readonly path: string
+  readonly title: string
+  // The place to show: the selector of a search hit, or the place saved before a restart. The
+  // window sets a new object each time it asks for a place; null shows the file from its start.
+  readonly selector: Selector | null
+  // Saves the place the reader shows. The window keeps it with the tab and passes it back as
+  // `selector` when the tab opens after a restart.
+  savePlace(place: Selector): void
 }
 
 // ReaderPaneProps describes the props passed to a reader component by the host pane wrapper.
@@ -81,7 +95,6 @@ export interface TabTarget {
   readonly path?: string
   readonly title?: string
   readonly file?: string
-  readonly source?: 'note' | 'book' | 'recording' | 'url' | 'other' | null
 }
 
 // TabPlacement is where a tab of a kind opens in a window that starts with nothing to restore.
@@ -94,16 +107,19 @@ export interface TabPlacement {
 
 // TabKindRegistration registers a kind of workspace tab. A registration that
 // declares open owns what its tabs hold; one that does not holds the note at
-// the path its tab opens on.
+// the path its tab opens on. A kind that declares getState has its tabs opened
+// again after a restart with the state it saved.
 export interface TabKindRegistration<State = unknown> {
   kind: string
   component: unknown
   title?: string
-  source?: 'note' | 'book' | 'recording' | 'url' | 'other' | string
   actions?: Record<string, (targetPath: string, ...args: unknown[]) => unknown>
   onClose?(state: State, id: string): boolean
-  // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope.
-  open?(targetPath: string, id: string): State
+  // What the tab `id` holds, made as it opens on `at`, inside the tab's effect scope. `saved` is
+  // what getState returned for the tab before a restart, and absent for a new tab.
+  open?(targetPath: string, id: string, saved?: unknown): State
+  // The JSON value the window keeps for the tab and passes to open after a restart.
+  getState?(state: State): unknown
   getTitle?(state: State): string
   // The identity a tab takes from what it opens on: the same `at` opened twice is one tab.
   identity?(targetPath: string): string
@@ -188,7 +204,7 @@ export interface ContextMenuTarget {
   readonly path: string
   readonly name?: string
   readonly isFolder: boolean
-  readonly kind: 'note' | 'book' | 'recording' | 'url' | 'other' | string
+  readonly isNote: boolean
   readonly isSeveral?: boolean
 }
 

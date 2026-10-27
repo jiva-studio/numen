@@ -2,16 +2,7 @@
  * The icon one entry of the files tree is drawn as.
  */
 import { describe, expect, it } from 'vitest'
-import {
-  AudioLines,
-  BookOpen,
-  File,
-  FileText,
-  Folder,
-  FolderOpen,
-  Globe,
-  Layers,
-} from '@lucide/vue'
+import { AudioLines, File, FileText, Folder, FolderOpen, Layers } from '@lucide/vue'
 import type { Entry } from '@/entities/file'
 import { registerNoteIcon } from '@/entities/note'
 import { getEntryIcon } from './entryIcon'
@@ -20,7 +11,7 @@ const entry = (overrides: Partial<Entry> = {}): Entry => ({
   path: 'a',
   name: 'a',
   isFolder: false,
-  kind: 'note',
+  isNote: true,
   type: 'note',
   ...overrides,
 })
@@ -32,15 +23,15 @@ describe('the icon of an entry', () => {
   })
 
   it('is a closed folder for a folder that is shut', () => {
-    expect(getEntryIcon(entry({ isFolder: true, kind: 'other' }), false)).toBe(Folder)
+    expect(getEntryIcon(entry({ isFolder: true, isNote: false }), false)).toBe(Folder)
   })
 
   it('is an open folder for a folder that is open', () => {
-    expect(getEntryIcon(entry({ isFolder: true, kind: 'other' }), true)).toBe(FolderOpen)
+    expect(getEntryIcon(entry({ isFolder: true, isNote: false }), true)).toBe(FolderOpen)
   })
 
   it('is a folder even where the folder is named for a note', () => {
-    expect(getEntryIcon(entry({ isFolder: true, kind: 'note' }), false)).toBe(Folder)
+    expect(getEntryIcon(entry({ isFolder: true, isNote: true }), false)).toBe(Folder)
   })
 
   it('is drawn by the type of note for a note, as a plugin registers its icon', () => {
@@ -52,13 +43,15 @@ describe('the icon of an entry', () => {
     unregister()
   })
 
-  it('is drawn by the source for a file that is not a note', () => {
-    expect(getEntryIcon(entry({ kind: 'book' }), false)).toBe(BookOpen)
-    expect(getEntryIcon(entry({ kind: 'recording' }), false)).toBe(AudioLines)
-    expect(getEntryIcon(entry({ kind: 'url' }), false)).toBe(Globe)
+  it('is the icon of the reader that opens a file that is no note', () => {
+    const findFileIcon = (path: string) => (path === 'talk.bin' ? AudioLines : undefined)
+
+    expect(getEntryIcon(entry({ path: 'talk.bin', isNote: false }), false, findFileIcon)).toBe(
+      AudioLines,
+    )
   })
 
-  it('is a plain file for a file the vault holds no source for', () => {
-    expect(getEntryIcon(entry({ kind: 'other', type: 'sample' }), false)).toBe(File)
+  it('is a plain file for a file no reader opens', () => {
+    expect(getEntryIcon(entry({ isNote: false, type: 'sample' }), false, () => undefined)).toBe(File)
   })
 })
