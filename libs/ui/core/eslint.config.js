@@ -18,7 +18,7 @@ const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers, indexOnly: true })
 
 /** The tests that read the wire's fixtures from `libs/protocol/testdata` by relative path. */
-const testdataReaders = ['src/shared/lib/text/address.test.ts']
+const testdataReaders = []
 
 /** The files that stand outside the layers. */
 const outsideLayers = [

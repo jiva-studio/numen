@@ -1,19 +1,10 @@
 import { createBaseConfig } from '../tools/lint-layers/base-eslint.mjs'
 
 /** The packages a plugin frontend names besides its own directory and third-party code. */
-const contract = ['plugin-sdk', 'ui', 'wire', 'protocol']
+const contract = ['plugin-sdk', 'ui']
 
 /** The shared fixtures of the contract that a test reads by path. */
-const fixtureReaders = [
-  'readers-epub/frontend/book/ui/spine.test.ts',
-  'views-flashcards-studio/frontend/ui/cards/lib/fill.test.ts',
-  'readers-epub/frontend/lib/markup.test.ts',
-  'views-flashcards-studio/frontend/cards/lib/presets.test.ts',
-  'views-flashcards-studio/frontend/preset/lib/sketch.test.ts',
-  'readers.epub/frontend/lib/markup.test.ts',
-  'views.flashcards.studio/frontend/cards/lib/presets.test.ts',
-  'views.flashcards.studio/frontend/preset/lib/sketch.test.ts',
-]
+const fixtureReaders = []
 
 /** The harness the stories of every plugin are drawn in, which belongs to no plugin. */
 const storyHarness = ['.storybook/**']
@@ -81,7 +72,7 @@ function pluginImportBlocks() {
   }
   blocks.push({
     files: buildConfigs,
-    rules: { 'no-restricted-imports': createRestrictions(1, 'vite\\.shared') },
+    rules: { 'no-restricted-imports': createRestrictions(1) },
   })
   return blocks
 }

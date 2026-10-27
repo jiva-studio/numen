@@ -602,15 +602,25 @@ function verifyCoreImportsNoDomainProto() {
 }
 
 /** The tab kinds, note types and commands plugins own. */
-const PLUGIN_KINDS = ["deck", "card-model", "preset", "plex", "agent", "files"];
+const PLUGIN_KINDS = [
+  "deck",
+  "card-model",
+  "preset",
+  "plex",
+  "agent",
+  "files",
+  "travel",
+  "ocr",
+  "recognise",
+  "proofread",
+  "transcribe",
+  "reads_hooks_and_skills",
+];
 
 /**
- * Files of the window where one of PLUGIN_KINDS names something of the core: `agent` as the type
- * and path of a setting, `files` and `agent` as services of the host a plugin is handed.
+ * Files of the window where one of PLUGIN_KINDS names a host service on the plugin context.
  */
 const CORE_NAME_FILES = [
-  "apps/desktop/editor/src/entities/settings/",
-  "apps/desktop/editor/src/pages/settings/",
   "apps/desktop/editor/src/entities/plugin/model/context.ts",
 ];
 
@@ -631,7 +641,7 @@ function verifyWindowNamesNoPluginKind() {
     .filter(Boolean)
     .filter((line) => !CORE_NAME_FILES.some((prefix) => line.split(":")[0].startsWith(prefix)));
   if (found.length > 0) {
-    throw new Error("The window names plugin kinds:\n" + found.join("\n"));
+    throw new Error(`The window names plugin kinds (${found.length}):\n` + found.join("\n"));
   }
 }
 
@@ -875,6 +885,14 @@ const PLUGIN_PROTO_SYMBOLS = [
   "ArticleService",
   "BookService",
   "DocumentService",
+  "RecognitionService",
+  "OcrEngineService",
+  "TranscriptionEngineService",
+  "ProofreadingService",
+  "DownloadService",
+  "CardsService",
+  "PresetsService",
+  "FlashcardsService",
   "SOURCE_KIND_BOOK",
   "SOURCE_KIND_RECORDING",
   "SOURCE_KIND_URL",
@@ -886,7 +904,14 @@ const PLUGIN_PROTO_SYMBOLS = [
   "SetVaultInUse",
   "SetVaultInUseRequest",
   "SetVaultInUseResponse",
+  "NoteType",
+  "NOTE_TYPE_CARD_MODEL",
+  "NOTE_TYPE_PRESET",
+  "NOTE_TYPE_DECK",
 ];
+
+/** The fixtures in `libs/protocol/testdata` that belong to a plugin. */
+const PLUGIN_PROTOCOL_FIXTURES = ["presets.json", "templates.json", "spine.html"];
 
 /** The fields of `agent.proto` that name a card of the flashcards plugin. */
 const PLUGIN_AGENT_FIELDS = ["mark", "face"];
@@ -901,6 +926,12 @@ function findPluginProtoSymbols() {
     for (const hit of findInCode(code, symbols)) found.push({ file, ...hit });
     if (path.basename(file) !== "agent.proto") continue;
     for (const hit of findInCode(code, fields)) found.push({ file, line: hit.line, symbol: `field ${hit.symbol}` });
+  }
+  for (const fixture of PLUGIN_PROTOCOL_FIXTURES) {
+    const rel = `libs/protocol/testdata/${fixture}`;
+    if (fs.existsSync(path.join(REPO_ROOT, rel))) {
+      found.push({ file: rel, line: 1, symbol: `plugin fixture ${fixture}` });
+    }
   }
   return found;
 }
@@ -1041,10 +1072,11 @@ function verifyUiExportsNoEditor() {
   failOnFindings("The UI library holds the editor or wikilink helpers", findUiEditor());
 }
 
-/** The ids of the application's windows. */
-const WINDOW_IDS = ["editor", "flashcards"];
+/** The ids and HTTP asset routes of the application's windows. */
+const WINDOW_IDS = ["editor", "flashcards", "desktop.editor", "desktop.flashcards", "mobile"];
+const WINDOW_ROUTE_PREFIXES = ["/assets/"];
 
-/** Every window id literal and every name of the window's service in the shipped code of a plugin. */
+/** Every window id literal, window route literal and name of the window's service in a plugin. */
 function findPluginWindowNames() {
   const service = /\b((?:New)?WindowService(?:Client)?)\b/g;
   const found = [];
@@ -1052,7 +1084,9 @@ function findPluginWindowNames() {
     const source = readSource(file);
     if (!source) continue;
     for (const { line, value } of source.literals) {
-      if (WINDOW_IDS.includes(value)) found.push({ file, line, symbol: JSON.stringify(value) });
+      if (WINDOW_IDS.includes(value) || WINDOW_ROUTE_PREFIXES.some((p) => value.startsWith(p))) {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
     }
     for (const hit of findInCode(source.code, service)) found.push({ file, ...hit });
   }
@@ -1061,26 +1095,323 @@ function findPluginWindowNames() {
 
 /** A plugin reaches the window through the SDK: it names no window and creates no `WindowService` client. */
 function verifyPluginsNameNoWindow() {
-  failOnFindings("A plugin names a window or its service", findPluginWindowNames());
+  failOnFindings("A plugin names a window, window route, or WindowService", findPluginWindowNames());
 }
 
-/** The calls of Go's `os` package that change the file system. */
+/** The calls of Go's `os` and `filepath` packages that read or write the file system in a plugin service. */
 const OS_WRITES = /\b(os\.(?:WriteFile|Create|CreateTemp|OpenFile|Mkdir|MkdirAll|MkdirTemp|Rename|Remove|RemoveAll|Symlink|Link|Chmod|Chtimes|Truncate))\(/g;
+const OS_VAULT_ACCESS = /\b(os\.(?:WriteFile|Create|OpenFile|Mkdir|MkdirAll|Rename|Remove|RemoveAll|ReadFile|Open|Stat|ReadDir)|filepath\.WalkDir)\(/g;
 
-/** Every `os` write in a shipped Go file of a plugin that names the vault's `.numen` folder. */
+/** Every direct `os` vault read/write or `NUMEN_VAULT_PATH` lookup in a shipped Go file of a plugin. */
 function findPluginDataWrites() {
   const found = [];
   for (const file of listShippedFiles(["plugins/*.go"])) {
     const { literals, code } = readSource(file);
-    if (!literals.some(({ value }) => value === ".numen" || value.startsWith(".numen/"))) continue;
-    for (const hit of findInCode(code, OS_WRITES)) found.push({ file, ...hit });
+    for (const { line, value } of literals) {
+      if (value === "NUMEN_VAULT_PATH") {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
+    }
+    const touchesDotNumen = literals.some(({ value }) => value === ".numen" || value.startsWith(".numen/"));
+    const isServiceFile = /\/backend\/service\//.test(file);
+    const pattern = isServiceFile ? OS_VAULT_ACCESS : touchesDotNumen ? OS_WRITES : null;
+    if (!pattern) continue;
+    for (const hit of findInCode(code, pattern)) found.push({ file, ...hit });
   }
   return found;
 }
 
-/** A plugin writes under `.numen/` through the host store, never with `os`. */
+/** A plugin accesses vault files and `.numen/` through the host store, never with `os`. */
 function verifyPluginsWriteDataThroughHost() {
-  failOnFindings("A plugin writes under .numen/ with os", findPluginDataWrites());
+  failOnFindings("A plugin accesses vault or .numen/ directly with os or NUMEN_VAULT_PATH", findPluginDataWrites());
+}
+
+/** Every reference a plugin makes to `libs/protocol`, `numen/v1/*.proto`, `@numen/protocol` or `@numen/wire`. */
+function findPluginProtocolAndWireLeaks() {
+  const found = [];
+  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
+  const files = (listed.stdout || "").split("\n").filter((f) => f && !/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(f));
+  for (const file of files) {
+    const abs = path.join(REPO_ROOT, file);
+    if (!fs.existsSync(abs)) continue;
+    const text = fs.readFileSync(abs, "utf8");
+    if (path.basename(file) === "go.mod") {
+      text.split("\n").forEach((line, idx) => {
+        if (!line.trim().startsWith("//") && line.includes("github.com/jiva-studio/numen/libs/protocol")) {
+          found.push({ file, line: idx + 1, symbol: line.trim() });
+        }
+      });
+    } else if (file.endsWith(".go")) {
+      const { imports } = getGoReferences(text);
+      for (const { line, value } of imports) {
+        if (value.startsWith("github.com/jiva-studio/numen/libs/protocol")) {
+          found.push({ file, line, symbol: `import "${value}"` });
+        }
+      }
+    } else if (file.endsWith(".proto")) {
+      text.split("\n").forEach((line, idx) => {
+        const m = line.match(/^\s*import\s+"(numen\/v1\/[^"]+)"/);
+        if (m) found.push({ file, line: idx + 1, symbol: `import "${m[1]}"` });
+      });
+    } else if (SCRIPT_EXTENSIONS.has(path.extname(file)) && path.basename(file) !== "eslint.config.js") {
+      const { literals } = readSource(file);
+      for (const { line, value } of literals) {
+        if (
+          value === "@numen/protocol" ||
+          value.startsWith("@numen/protocol/") ||
+          value === "@numen/wire" ||
+          value.startsWith("@numen/wire/") ||
+          value.includes("libs/protocol") ||
+          value.includes("libs/wire")
+        ) {
+          found.push({ file, line, symbol: JSON.stringify(value) });
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** A plugin depends on the SDK and `@numen/ui`, and knows nothing of `libs/protocol` or `@numen/wire`. */
+function verifyPluginsNoProtocolOrWire() {
+  failOnFindings("A plugin depends on libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire", findPluginProtocolAndWireLeaks());
+}
+
+/** Every file in `libs/wire` and every reference to `@numen/wire` across the repository. */
+function findWireLibraryReferences() {
+  const found = [];
+  if (fs.existsSync(path.join(REPO_ROOT, "libs/wire"))) {
+    found.push({ file: "libs/wire", line: 1, symbol: "directory exists (must be removed)" });
+  }
+  const grep = spawnSync("git", ["grep", "-n", "@numen/wire", "--", ":!tools/lint-layers/*"], {
+    cwd: REPO_ROOT,
+    encoding: "utf8",
+  });
+  for (const line of (grep.stdout || "").split("\n").filter(Boolean)) {
+    const [file, lineNum, ...rest] = line.split(":");
+    found.push({ file, line: Number(lineNum) || 1, symbol: rest.join(":").trim() });
+  }
+  return found;
+}
+
+/** The `@numen/wire` library does not exist; generic utilities live in `@numen/plugin-sdk` and core protocol adapters live in the host. */
+function verifyNoWireLibrary() {
+  failOnFindings("The @numen/wire library still exists or is referenced", findWireLibraryReferences());
+}
+
+/** Every exported declaration in `libs/plugin-sdk-go` or `libs/plugin-sdk-ts` that leaks protocol/notes types or window ids. */
+function findSdkProtocolLeaks() {
+  const found = [];
+  for (const file of listShippedFiles(["libs/plugin-sdk-go/*.go"])) {
+    const { code } = readSource(file);
+    const lines = code.split("\n");
+    lines.forEach((line, idx) => {
+      const isExportedFuncOrType =
+        /^func\s+(?:\([^)]*\)\s+)?[A-Z]\w*/.test(line) ||
+        /^type\s+[A-Z]\w*\s+(?!=\s)/.test(line) ||
+        /^\s+[A-Z]\w*\s+.*\b(?:numenv1|v1|numenv1connect|domain|edit|markdown)\.[A-Z]\w*/.test(line);
+      if (isExportedFuncOrType) {
+        for (const m of line.matchAll(/\b((?:numenv1|v1|numenv1connect|domain|edit|markdown)\.[A-Z]\w*)/g)) {
+          found.push({ file, line: idx + 1, symbol: m[1] });
+        }
+      }
+    });
+  }
+  for (const file of listShippedFiles(["libs/plugin-sdk-ts/src"])) {
+    const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+    for (const match of text.matchAll(/^\s*export\s[^;]*?\bfrom\s*(['"])(@numen\/protocol(?:\/[^'"]*)?)\1/gm)) {
+      const line = text.slice(0, match.index).split("\n").length;
+      found.push({ file, line, symbol: `export from ${JSON.stringify(match[2])}` });
+    }
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of source.literals) {
+      if (
+        value === "@numen/wire" ||
+        value.startsWith("@numen/wire/") ||
+        WINDOW_IDS.includes(value)
+      ) {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
+    }
+  }
+  return found;
+}
+
+/** The plugin SDK encapsulates `libs/protocol` and `libs/notes` and exposes only SDK types. */
+function verifySdkEncapsulatesProtocol() {
+  failOnFindings("The plugin SDK leaks protocol/notes types or host window IDs in its public contract", findSdkProtocolLeaks());
+}
+
+/**
+ * Every tie in `plugins/` to the surrounding monorepo that prevents moving `plugins/<name>` into its
+ * own repository: shared `plugins/vite.shared.ts`, relative path escapes out of `plugins/<name>/`,
+ * `replace => ../../` in `go.mod`, direct `libs/notes` imports, and plugin `.proto` / `buf.gen.yaml`.
+ */
+function findPluginStandaloneViolations() {
+  const found = [];
+  for (const shared of ["plugins/vite.shared.ts", "plugins/vite.styles.ts", "plugins/vitest.config.ts"]) {
+    if (fs.existsSync(path.join(REPO_ROOT, shared))) {
+      found.push({ file: shared, line: 1, symbol: "shared file outside plugin directory" });
+    }
+  }
+  const pluginsDir = path.join(MODULES_DIR, "plugins");
+  const pluginNames = fs
+    .readdirSync(pluginsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !e.name.startsWith("."))
+    .map((e) => e.name);
+  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
+  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
+    const parts = file.split("/");
+    const plugin = parts[1];
+    if (!pluginNames.includes(plugin)) continue;
+    const pluginRoot = path.join(REPO_ROOT, "plugins", plugin);
+    const abs = path.join(REPO_ROOT, file);
+    if (!fs.existsSync(abs)) continue;
+    const base = path.basename(file);
+    if (base.endsWith(".proto") || base === "buf.gen.yaml") {
+      found.push({ file, line: 1, symbol: `${base} (plugins communicate via SDK without own protobuf schema)` });
+      continue;
+    }
+    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file)) continue;
+    const text = fs.readFileSync(abs, "utf8");
+    if (base === "go.mod") {
+      text.split("\n").forEach((line, idx) => {
+        const trimmed = line.trim();
+        if (trimmed.startsWith("//")) return;
+        if (/=>\s*\.\.\//.test(trimmed)) {
+          found.push({ file, line: idx + 1, symbol: `relative replace in go.mod: ${trimmed}` });
+        }
+        if (trimmed.includes("github.com/jiva-studio/numen/libs/notes") && !/=>\s*\.\.\//.test(trimmed)) {
+          found.push({ file, line: idx + 1, symbol: `direct libs/notes requirement: ${trimmed}` });
+        }
+      });
+      continue;
+    }
+    if (file.endsWith(".go")) {
+      const { imports, literals } = getGoReferences(text);
+      for (const { line, value } of imports) {
+        if (value.startsWith("github.com/jiva-studio/numen/libs/notes")) {
+          found.push({ file, line, symbol: `import "${value}"` });
+        }
+      }
+      for (const { line, value } of literals) {
+        if (/^\.\.\//.test(value) && !isWithin(path.resolve(path.dirname(abs), value), pluginRoot)) {
+          found.push({ file, line, symbol: `relative path escapes plugins/${plugin}: ${JSON.stringify(value)}` });
+        }
+      }
+      continue;
+    }
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of source.literals) {
+      const cleanVal = value.split("?")[0];
+      if (/^\.\.\//.test(cleanVal) && !isWithin(path.resolve(path.dirname(abs), cleanVal), pluginRoot)) {
+        found.push({ file, line, symbol: `relative path escapes plugins/${plugin}: ${JSON.stringify(value)}` });
+      }
+    }
+  }
+  return found;
+}
+
+/** Every plugin directory `plugins/<name>` is self-contained and movable to a standalone repository. */
+function verifyPluginsStandaloneRepo() {
+  failOnFindings("A plugin is tied to the monorepo by relative paths, libs/notes, or its own .proto", findPluginStandaloneViolations());
+}
+
+/** Every direct `@numen/protocol` import in a frontend client application (`apps/*`). */
+function findAppDirectProtocolImports() {
+  const found = [];
+  for (const file of listShippedFiles(["apps/desktop/editor/src", "apps/desktop/flashcards/src", "apps/mobile/src"])) {
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of source.literals) {
+      if (value === "@numen/protocol" || value.startsWith("@numen/protocol/") || value.includes("libs/protocol")) {
+        found.push({ file, line, symbol: JSON.stringify(value) });
+      }
+    }
+  }
+  return found;
+}
+
+/** A frontend client application talks to the core through `@numen/plugin-sdk` and imports no `@numen/protocol`. */
+function verifyAppsNoDirectProtocol() {
+  failOnFindings("An application frontend imports @numen/protocol directly instead of using @numen/plugin-sdk", findAppDirectProtocolImports());
+}
+
+/** The tab kinds, text kinds and command/menu ids owned by specific plugins. */
+const PLUGIN_OWNED_TOKENS = [
+  { token: "note", owners: ["notes"] },
+  { token: "plex", owners: ["views-plex-graph"] },
+  { token: "document", owners: ["readers-pdf"] },
+  { token: "book", owners: ["readers-epub"] },
+  { token: "recording", owners: ["views-media-player"] },
+  { token: "deck", owners: ["views-flashcards-studio"] },
+  { token: "card-model", owners: ["views-flashcards-studio"] },
+  { token: "preset", owners: ["views-flashcards-studio"] },
+  { token: "transcript", owners: ["engines-transcription", "views-media-player"] },
+  { token: "recognition", owners: ["engines-ocr", "readers-pdf"] },
+  { token: "page-text", owners: ["readers-pdf"] },
+  { token: "transcribe", owners: ["engines-transcription"] },
+  { token: "proofread", owners: ["tools-proofreading"] },
+  { token: "recognise", owners: ["engines-ocr"] },
+  { token: "relation", owners: ["views-plex-graph"] },
+];
+
+/** Every reference in a plugin to another plugin's manifest id, tab kind, text kind or menu/command id. */
+function findCrossPluginKnowledge() {
+  const pluginsDir = path.join(MODULES_DIR, "plugins");
+  const pluginNames = fs
+    .readdirSync(pluginsDir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && !e.name.startsWith("."))
+    .map((e) => e.name);
+  const manifestIds = new Map();
+  for (const plugin of pluginNames) {
+    const mPath = path.join(pluginsDir, plugin, "manifest.json");
+    if (fs.existsSync(mPath)) {
+      const m = JSON.parse(fs.readFileSync(mPath, "utf8"));
+      if (m.id) manifestIds.set(m.id, plugin);
+    }
+  }
+  const found = [];
+  const listed = spawnSync("git", ["ls-files", "--", "plugins"], { cwd: REPO_ROOT, encoding: "utf8" });
+  for (const file of (listed.stdout || "").split("\n").filter(Boolean)) {
+    if (/\/frontend\/gen\/|\.pb\.go$|\.connect\.go$/.test(file)) continue;
+    const plugin = file.split("/")[1];
+    if (!pluginNames.includes(plugin)) continue;
+    if (path.basename(file) === "manifest.json") {
+      const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
+      text.split("\n").forEach((line, idx) => {
+        for (const { token, owners } of PLUGIN_OWNED_TOKENS) {
+          if (!owners.includes(plugin) && new RegExp(`"${token}"`).test(line)) {
+            found.push({ file, line: idx + 1, symbol: `"${token}" (owned by ${owners.join(", ")})` });
+          }
+        }
+      });
+      continue;
+    }
+    const source = readSource(file);
+    if (!source) continue;
+    for (const { line, value } of source.literals) {
+      const idOwner = manifestIds.get(value);
+      if (idOwner && idOwner !== plugin) {
+        found.push({ file, line, symbol: `${JSON.stringify(value)} (plugin ID of ${idOwner})` });
+      }
+      if (!NOT_SHIPPED.test(file)) {
+        for (const { token, owners } of PLUGIN_OWNED_TOKENS) {
+          if (!owners.includes(plugin) && value === token) {
+            found.push({ file, line, symbol: `${JSON.stringify(value)} (owned by ${owners.join(", ")})` });
+          }
+        }
+      }
+    }
+  }
+  return found;
+}
+
+/** A plugin knows no other plugin's ID, tab kind, text kind or command ID. */
+function verifyPluginsNoCrossPluginKnowledge() {
+  failOnFindings("A plugin hardcodes another plugin's ID, tab kind, text kind or command", findCrossPluginKnowledge());
 }
 
 const VERIFIERS = [
@@ -1143,6 +1474,20 @@ const VERIFIERS = [
     run: () => {
       exec("golangci-lint run --issues-exit-code 1 ./...", path.join(MODULES_DIR, "libs/plugin-sdk-go"));
     },
+  },
+  {
+    id: "sdk-encapsulates-protocol",
+    scope: "libs",
+    module: "sdk",
+    name: "Plugin SDK Encapsulates Protocol (no numenv1.* or window IDs in public SDK API)",
+    run: verifySdkEncapsulatesProtocol,
+  },
+  {
+    id: "no-wire-library",
+    scope: "libs",
+    module: "wire",
+    name: "No @numen/wire Library (libs/wire removed; utilities in @numen/plugin-sdk, protocol adapters in host)",
+    run: verifyNoWireLibrary,
   },
   {
     id: "protocol-holds-no-plugin-contract",
@@ -1241,15 +1586,36 @@ const VERIFIERS = [
     id: "plugins-name-no-window",
     scope: "plugins",
     module: "plugins",
-    name: "Plugins Name No Window (no 'editor' window id, no WindowService client)",
+    name: "Plugins Name No Window (no window ids, no window routes, no WindowService client)",
     run: verifyPluginsNameNoWindow,
   },
   {
     id: "plugins-write-data-through-host",
     scope: "plugins",
     module: "plugins",
-    name: "Plugins Write Under .numen/ Through the Host Store (no os writes)",
+    name: "Plugins Access Vault and .numen/ Only Through the Host Store (no direct os fs or NUMEN_VAULT_PATH)",
     run: verifyPluginsWriteDataThroughHost,
+  },
+  {
+    id: "plugins-no-protocol-or-wire",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Depend Only on SDK (no libs/protocol, numen/v1/*.proto, @numen/protocol or @numen/wire)",
+    run: verifyPluginsNoProtocolOrWire,
+  },
+  {
+    id: "plugins-no-cross-plugin-knowledge",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Know Nothing of Other Plugins (no cross-plugin IDs, tab kinds, text kinds or command IDs)",
+    run: verifyPluginsNoCrossPluginKnowledge,
+  },
+  {
+    id: "plugins-standalone-repo",
+    scope: "plugins",
+    module: "plugins",
+    name: "Plugins Are Standalone-Repo Ready (no ../ escapes, no vite.shared, no go.mod replace ../, no libs/notes, no plugin .proto)",
+    run: verifyPluginsStandaloneRepo,
   },
   {
     id: "apps-plugins-boundary",
@@ -1273,6 +1639,13 @@ const VERIFIERS = [
     module: "apps",
     name: "Applications Reach No Plugin (no path, alias, glob or import into plugins/)",
     run: verifyAppsReachNoPlugin,
+  },
+  {
+    id: "apps-no-direct-protocol",
+    scope: "apps",
+    module: "apps",
+    name: "Applications Talk to Core Through SDK (no direct @numen/protocol in apps/*/src)",
+    run: verifyAppsNoDirectProtocol,
   },
   {
     id: "window-names-no-plugin-kind",
