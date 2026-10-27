@@ -41,7 +41,7 @@ const editors = (tabOpeners: ReturnType<typeof fileOpeners>) => {
   const activeEditors: string[] = []
   for (const type of ['note', 'sample', 'form'] as const) {
     tabOpeners.registerEditor(type, (path, title, options) => {
-      const showing = typeof options === 'string' ? options : (options?.where ?? 'here')
+      const showing = typeof options === 'string' ? options : (options?.where ?? 'current')
       const line = typeof options === 'object' ? options?.line : undefined
       activeEditors.push(`${type} ${path} ${title || '—'} ${showing} ${line ?? '—'}`)
     })
@@ -174,7 +174,7 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('Animals.md', 'Animals', 'beside')
+    await tabOpeners.openFile('Animals.md', 'Animals', 'split')
 
     expect(activeEditors).toStrictEqual(['sample Animals.md Animals beside —'])
   })
@@ -184,8 +184,8 @@ describe('a path opened', () => {
     const tabOpeners = fileOpeners(one.core)
     const activeEditors = editors(tabOpeners)
 
-    await tabOpeners.openFile('Entropy.md', 'Entropy', { where: 'here', line: 12 })
-    await tabOpeners.openFile('Animals.md', 'Animals', { where: 'here', line: 12 })
+    await tabOpeners.openFile('Entropy.md', 'Entropy', { where: 'current', line: 12 })
+    await tabOpeners.openFile('Animals.md', 'Animals', { where: 'current', line: 12 })
 
     expect(activeEditors).toStrictEqual([
       'note Entropy.md Entropy here 12',

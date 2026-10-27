@@ -70,8 +70,8 @@ export interface VaultNotes {
   readonly creatableRelations: readonly NoteRelation[]
 }
 
-// FilePlacement is where a file opened from a tab is drawn: in the pane the person is in, or beside it.
-export type FilePlacement = 'here' | 'beside'
+// FilePlacement is where a file opened from a tab is drawn: in the current pane, or in a split beside it.
+export type FilePlacement = 'current' | 'split'
 
 // OpenFileOptions is what a file is opened with.
 export interface OpenFileOptions {

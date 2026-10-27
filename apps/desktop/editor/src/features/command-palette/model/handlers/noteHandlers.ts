@@ -65,7 +65,7 @@ export const createNoteCommand = async (
   if (invocation.kind === NOTE) {
     return on.notes.openNewFile(createdItem.path, createdItem.title, {
       type: 'note',
-      where: 'beside',
+      where: 'split',
     })
   }
   await navigateToPath(createdItem.path, on, words)

@@ -238,7 +238,7 @@ describe('pluggable command registry', () => {
 
     unregister()
     await carry(createInvocation('read', front()), one.on)
-    expect(one.actions).toContain('openFile physics/Ontology.md Ontology here')
+    expect(one.actions).toContain('openFile physics/Ontology.md Ontology current')
   })
 })
 
@@ -250,8 +250,8 @@ describe('a note put in front of the person', () => {
     await carry(createInvocation('beside', front()), one.on)
 
     expect(one.actions).toStrictEqual([
-      'openFile physics/Ontology.md Ontology here',
-      'openFile physics/Ontology.md Ontology beside',
+      'openFile physics/Ontology.md Ontology current',
+      'openFile physics/Ontology.md Ontology split',
     ])
   })
 })
@@ -286,7 +286,7 @@ describe('a note made', () => {
 
     await carry(createInvocation('child', front({ kind: 'note' }), 'Entropy'), one.on)
 
-    expect(one.actions.at(-1)).toBe('openNewFile note Entropy.md Entropy beside')
+    expect(one.actions.at(-1)).toBe('openNewFile note Entropy.md Entropy split')
   })
 
   it('takes the person nowhere where the vault would not make it', async () => {

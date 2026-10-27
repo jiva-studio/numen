@@ -47,13 +47,13 @@ describe('asking for a node on its own', () => {
   it('returns the identifier and where it is to be drawn', async () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick')
-    expect(plex.emitted('show')).toStrictEqual([['child-0', 'here']])
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'current']])
   })
 
   it('says alongside when the modifier was retained, which is read at the node', async () => {
     const plex = mountPlex()
     await plex.get('[aria-label^="Domain"]').trigger('dblclick', { altKey: true })
-    expect(plex.emitted('show')).toStrictEqual([['child-0', 'beside']])
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'split']])
   })
 
   it('is answered by the focus, which cannot be travelled to at all', async () => {
@@ -61,7 +61,7 @@ describe('asking for a node on its own', () => {
     await plex.get('[aria-label^="Hexagonal architecture"]').trigger('dblclick')
 
     const request = plex.emitted('show') as [string, string][]
-    expect(request[0]?.[1]).toBe('here')
+    expect(request[0]?.[1]).toBe('current')
     expect(plex.emitted('activate')).toBeUndefined()
   })
 
@@ -74,7 +74,7 @@ describe('asking for a node on its own', () => {
     await node.trigger('dblclick')
 
     expect(plex.emitted('activate')).toStrictEqual([['child-0'], ['child-0']])
-    expect(plex.emitted('show')).toStrictEqual([['child-0', 'here']])
+    expect(plex.emitted('show')).toStrictEqual([['child-0', 'current']])
   })
 
   it('answers Shift and a press, and leaves a press on its own to travelling', async () => {
@@ -86,8 +86,8 @@ describe('asking for a node on its own', () => {
     await node.trigger('keydown', { key: 'Enter' })
 
     expect(plex.emitted('show')).toStrictEqual([
-      ['child-0', 'here'],
-      ['child-0', 'beside'],
+      ['child-0', 'current'],
+      ['child-0', 'split'],
     ])
     expect(plex.emitted('activate')).toStrictEqual([['child-0']])
   })

@@ -10,7 +10,7 @@ describe('a note a plex tab opens', () => {
   it('goes to the tabs linked to it, and opens nowhere else', () => {
     const { host, recorded } = createHost({ linked: { 'plex:1': true } })
 
-    createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', showing: 'beside' })
+    createPlexTabDeps(host, 'plex:1').openNote('One.md', { title: 'One', showing: 'split' })
 
     expect(recorded.synced).toStrictEqual([['plex:1', 'One.md', 'One']])
     expect(recorded.opened).toStrictEqual([])
@@ -30,12 +30,12 @@ describe('a note a plex tab opens', () => {
 
     createPlexTabDeps(host, 'plex:1').openNote('One.md', {
       title: 'One',
-      showing: 'beside',
+      showing: 'split',
       line: 4,
     })
 
     expect(recorded.opened).toStrictEqual([
-      ['One.md', { title: 'One', placement: 'beside', line: 4 }],
+      ['One.md', { title: 'One', placement: 'split', line: 4 }],
     ])
   })
 

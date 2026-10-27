@@ -27,8 +27,8 @@ import { SETTINGS } from '@/entities/tab'
 
 /** What each command evaluates to. A command with no entry here does nothing. */
 const HANDLERS: Record<string, CommandHandler> = {
-  read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'here'),
-  beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'beside'),
+  read: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'current'),
+  beside: (invocation, on) => on.notes.openFile(invocation.path, invocation.title, 'split'),
   child: (invocation, on, words) => createNoteCommand(invocation, on, { relation: 'child', words }),
   parent: (invocation, on, words) =>
     createNoteCommand(invocation, on, { relation: 'parent', words }),

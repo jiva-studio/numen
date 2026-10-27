@@ -56,7 +56,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
 
   /** A note put in front of the person where a plugin shows notes, and in its editor where none does. */
   const travel = async (path: string): Promise<void> => {
-    if (!(await deps.showNote(path))) await tabOpeners.openFile(path, '', 'here')
+    if (!(await deps.showNote(path))) await tabOpeners.openFile(path, '', 'current')
   }
 
   /**
@@ -77,7 +77,7 @@ export function useWindowKinds(deps: WindowKindsDeps) {
   const destinations: DestinationDeps = {
     travel: (path) => travel(path),
     openFile: (path, title, line, selector) =>
-      void tabOpeners.openFile(path, title, { where: 'here', line, selector }),
+      void tabOpeners.openFile(path, title, { where: 'current', line, selector }),
     findFileIcon: (path) => tabOpeners.findFileIcon(path),
   }
 

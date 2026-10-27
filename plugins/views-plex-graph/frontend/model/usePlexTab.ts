@@ -147,7 +147,7 @@ function createPlexNodeActions(options: {
     if (hasJoinedAny) await view.go(here)
   }
 
-  const openNode = (node: string, how: PlexDestination = 'here') => {
+  const openNode = (node: string, how: PlexDestination = 'current') => {
     const path = map.getNodePath(node)
     if (path) deps.openNote(path, { title: getName(path), showing: how })
   }
@@ -155,7 +155,7 @@ function createPlexNodeActions(options: {
   const openHeading = (node: string, heading: string) => {
     const path = map.getNodePath(node)
     if (!path || !/^\d+$/.test(heading)) return
-    deps.openNote(path, { title: getName(path), showing: 'here', line: Number(heading) })
+    deps.openNote(path, { title: getName(path), showing: 'current', line: Number(heading) })
   }
 
   const createNote = async () => {

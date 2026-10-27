@@ -195,7 +195,7 @@ export interface Notes {
    * A file put in front of the person, in the editor made for what it is, in a
    * tab of its own or one beside it.
    */
-  openFile(path: string, title: string, showing: 'here' | 'beside'): void
+  openFile(path: string, title: string, showing: 'current' | 'split'): void
   /** A file just made here, put in front of the person as what it was made as. */
   openNewFile(
     path: string,

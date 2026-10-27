@@ -19,11 +19,11 @@ export interface DestinationDescriptor {
 }
 
 export const DESTINATIONS = {
-  here: { hasModifier: false },
-  beside: { hasModifier: true },
+  current: { hasModifier: false },
+  split: { hasModifier: true },
 } as const satisfies Record<string, DestinationDescriptor>
 
-/** Where a node asked for is to be drawn: where the reader is, or beside it. */
+/** Where a node asked for is to be drawn: in the current pane, or in a split beside it. */
 export type PlexDestination = keyof typeof DESTINATIONS
 
 export const DESTINATIONS_ALL = Object.keys(DESTINATIONS) as readonly PlexDestination[]

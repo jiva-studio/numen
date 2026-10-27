@@ -100,14 +100,14 @@ describe('the keys that choose and show', () => {
     const { press, response } = createPress()
     const event = key('Enter', { shiftKey: true })
     press.onKeyDown(event)
-    expect(response.show).toHaveBeenCalledWith('here')
+    expect(response.show).toHaveBeenCalledWith('current')
     expect(event.defaultPrevented).toBe(true)
   })
 
   it('asks for it alongside the reader with Alt retained', () => {
     const { press, response } = createPress()
     press.onKeyDown(key('Enter', { shiftKey: true, altKey: true }))
-    expect(response.show).toHaveBeenCalledWith('beside')
+    expect(response.show).toHaveBeenCalledWith('split')
   })
 
   it('chooses the node on Enter, and keeps the browser from acting', () => {

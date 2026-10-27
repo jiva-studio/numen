@@ -14,7 +14,7 @@ import type { TextRange } from '@/shared/textRange'
 export type EditorKind = NoteType
 
 /** Where a file opens: in the pane the person is in, or beside it. */
-export type FilePlacement = 'here' | 'beside'
+export type FilePlacement = 'current' | 'split'
 
 export interface OpenPlacement {
   where?: FilePlacement | undefined

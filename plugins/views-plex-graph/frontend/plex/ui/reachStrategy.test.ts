@@ -96,7 +96,7 @@ describe('asking for a node on its own', () => {
   it('answers the second click where the hand is the reader', async () => {
     const { plex } = mountPlex({ showing: byDoubleClick })
     await plex.get('[aria-label^="A node"]').trigger('dblclick')
-    expect(plex.emitted('show')).toStrictEqual([['focus', 'here']])
+    expect(plex.emitted('show')).toStrictEqual([['focus', 'current']])
   })
 
   it('answers two taps where the finger is', async () => {
@@ -108,7 +108,7 @@ describe('asking for a node on its own', () => {
     node.element.dispatchEvent(pointer('pointerup', 600, 400, { pointerType: 'touch' }))
     await plex.vm.$nextTick()
 
-    expect(plex.emitted('show')).toStrictEqual([['focus', 'here']])
+    expect(plex.emitted('show')).toStrictEqual([['focus', 'current']])
   })
 
   it('leaves two taps too far apart in time alone', async () => {

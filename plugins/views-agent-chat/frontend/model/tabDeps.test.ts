@@ -27,7 +27,7 @@ describe('what an agent tab asks of the window', () => {
 
     createAgentTabDeps(host).openFileBeside('Note.md')
 
-    expect(recorded.opened).toStrictEqual([['Note.md', { placement: 'beside' }]])
+    expect(recorded.opened).toStrictEqual([['Note.md', { placement: 'split' }]])
   })
 
   it('resolves the wikilinks of an answer through the agent', async () => {

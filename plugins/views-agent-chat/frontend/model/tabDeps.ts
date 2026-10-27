@@ -14,7 +14,7 @@ export interface AgentChatHost {
 export function createAgentTabDeps({ workspace, agent }: AgentChatHost): AgentTabDeps {
   return {
     openFileAt: (path, ...spans) => workspace.openFileAt(path, spans),
-    openFileBeside: (path) => workspace.openFile(path, { placement: 'beside' }),
+    openFileBeside: (path) => workspace.openFile(path, { placement: 'split' }),
     resolveLinks: (text) => agent.resolveLinks(text),
     unreachable: () => agent.getUnreachable(),
     writeSetting: (path, value) => agent.writeSetting(path, value),

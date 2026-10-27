@@ -67,7 +67,7 @@ export function useDeclaredCommands(deps: DeclaredCommandsDeps = {}) {
         if (!outcome.ok) return on.writeMessage(outcome.error, 'error')
         const { message, openedPath } = outcome.value
         if (message) on.writeMessage(message, 'info')
-        if (openedPath) on.notes.openFile(openedPath, '', 'here')
+        if (openedPath) on.notes.openFile(openedPath, '', 'current')
       }),
     )
     declared.value = commands

@@ -50,11 +50,11 @@ describe('the window a plugin is handed', () => {
   it('opens a file where and at the line requested, and only what is requested', () => {
     const { workspace, deps } = createWorkspace()
 
-    workspace.openFile('One.md', { title: 'One', placement: 'beside', line: 3 })
+    workspace.openFile('One.md', { title: 'One', placement: 'split', line: 3 })
     workspace.openFile('Two.md')
 
     expect(deps.tabOpeners.openFile).toHaveBeenNthCalledWith(1, 'One.md', 'One', {
-      where: 'beside',
+      where: 'split',
       line: 3,
     })
     expect(deps.tabOpeners.openFile).toHaveBeenNthCalledWith(2, 'Two.md', '', {})

@@ -689,7 +689,7 @@ export const AskingForANode: Story = {
     const hand = userEvent.setup()
 
     await hand.dblClick(focus)
-    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'here')
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'current')
     await expect(args.onActivate).not.toHaveBeenCalled()
 
     // The same gesture with the modifier held asks for it beside where the
@@ -697,12 +697,12 @@ export const AskingForANode: Story = {
     await hand.keyboard('{Alt>}')
     await hand.dblClick(focus)
     await hand.keyboard('{/Alt}')
-    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'beside')
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'split')
 
     // The keyboard route: a press with Shift, and the same modifier for where.
     focus.focus()
     await hand.keyboard('{Shift>}{Enter}{/Shift}')
-    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'here')
+    await expect(args.onShow).toHaveBeenLastCalledWith(expect.any(String), 'current')
     await expect(args.onShow).toHaveBeenCalledTimes(3)
   },
 }

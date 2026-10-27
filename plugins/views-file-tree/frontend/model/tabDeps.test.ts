@@ -36,7 +36,9 @@ describe('a file a files tab opens', () => {
     deps.openEntry(entry({ path: 'Heat.pdf', name: 'Heat.pdf', isNote: false }))
     deps.openEntry(entry({ path: 'Untitled', name: '' }))
 
-    expect(recorded.opened).toStrictEqual([['Heat.pdf', { title: 'Heat.pdf', placement: 'here' }]])
+    expect(recorded.opened).toStrictEqual([
+      ['Heat.pdf', { title: 'Heat.pdf', placement: 'current' }],
+    ])
     expect(recorded.synced).toStrictEqual([['files', 'Untitled', '']])
   })
 
@@ -45,7 +47,9 @@ describe('a file a files tab opens', () => {
 
     createFilesTabDeps(host, 'files').openEntry(entry({ path: 'Untitled', name: '' }))
 
-    expect(recorded.opened).toStrictEqual([['Untitled', { title: 'Untitled', placement: 'here' }]])
+    expect(recorded.opened).toStrictEqual([
+      ['Untitled', { title: 'Untitled', placement: 'current' }],
+    ])
   })
 })
 

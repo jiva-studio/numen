@@ -157,8 +157,8 @@ describe('a tab kind opened as the editor of a path', () => {
     const deps = createDeps({ openTabBeside })
     const { open } = registerKind(deps)
 
-    open('Samples/One.md', 'One', 'beside')
-    open('Samples/Two.md', 'Two', { where: 'beside' })
+    open('Samples/One.md', 'One', 'split')
+    open('Samples/Two.md', 'Two', { where: 'split' })
 
     expect(openTabBeside.mock.calls).toStrictEqual([
       ['sample', 'Samples/One.md'],
@@ -172,9 +172,9 @@ describe('a tab kind opened as the editor of a path', () => {
     const { open, sub } = registerKind(deps)
 
     open('Samples/One.md')
-    open('Samples/Two.md', 'Two', { where: 'here' })
+    open('Samples/Two.md', 'Two', { where: 'current' })
     open('Samples/Three.md', 'Three', null)
-    open('Samples/Four.md', 'Four', 'beside')
+    open('Samples/Four.md', 'Four', 'split')
 
     expect(vi.mocked(deps.openTab).mock.calls.map((call) => call[1])).toStrictEqual([
       'Samples/One.md',

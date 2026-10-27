@@ -142,7 +142,7 @@ describe('a note travelled to', () => {
 
     await window.destinations.travel('a.md')
 
-    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'here')
+    expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', '', 'current')
   })
 
   it('moves every tab standing on a note that left the vault', async () => {
@@ -161,7 +161,7 @@ describe('the destinations', () => {
     window.destinations.openFile('a.bin', 'a', undefined, { page: 3 })
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.bin', 'a', {
-      where: 'here',
+      where: 'current',
       line: undefined,
       selector: { page: 3 },
     })
@@ -173,7 +173,7 @@ describe('the destinations', () => {
     window.destinations.openFile('a.md', 'A', 7)
 
     expect(deps.tabOpeners.openFile).toHaveBeenCalledWith('a.md', 'A', {
-      where: 'here',
+      where: 'current',
       line: 7,
       selector: undefined,
     })

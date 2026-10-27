@@ -52,7 +52,7 @@ const tab = (
     isNesting,
     headings: ref(6),
     openNote: (path, options) => {
-      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here'])
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current'])
       if (options?.line !== undefined) entered.push([path, options.line])
     },
     // The vault answers about the notes it was asked about and no others.
@@ -630,7 +630,7 @@ describe('a heading of a node chosen', () => {
 
     one.state.openHeading(one.node('Root.md'), '12')
 
-    expect(one.opened).toStrictEqual([['Root.md', 'Root', 'here']])
+    expect(one.opened).toStrictEqual([['Root.md', 'Root', 'current']])
     expect(one.entered).toStrictEqual([['Root.md', 12]])
   })
 
@@ -639,7 +639,7 @@ describe('a heading of a node chosen', () => {
 
     one.state.openHeading(one.node('Child.md'), '7')
 
-    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
+    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'current']])
     expect(one.entered).toStrictEqual([['Child.md', 7]])
   })
 
@@ -716,7 +716,7 @@ const inVault = async (focus: string, initialNeighbours: readonly NeighbourRow[]
     isNesting: ref(true),
     headings: ref(6),
     openNote: (path, options) =>
-      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'here']),
+      openedCalls.push([path, options?.title ?? '', options?.showing ?? 'current']),
     readHeadings: async () => new Map(),
     getNoteCommands: () => [],
     getCommandIcon: () => null,
@@ -903,9 +903,9 @@ describe('a gesture the plex reports', () => {
     const one = await inVault('Root.md', [['Heat.md', 'child']])
     await one.moveFilesAndReload({ from: 'Heat.md', to: 'physics/Heat.md' })
 
-    one.state.openNode(one.node('Heat'), 'beside')
+    one.state.openNode(one.node('Heat'), 'split')
 
-    expect(one.opened).toStrictEqual([['physics/Heat.md', 'Heat', 'beside']])
+    expect(one.opened).toStrictEqual([['physics/Heat.md', 'Heat', 'split']])
   })
 
   it('runs a command on the note the menu stood on', async () => {
@@ -943,7 +943,7 @@ describe('a gesture the plex reports', () => {
 
     for (const node of ['Heat.md', 'Root.md', 'nothing']) {
       one.state.activate(node)
-      one.state.openNode(node, 'here')
+      one.state.openNode(node, 'current')
       one.state.openMenu({ node, at: { x: 1, y: 2 }, opening: 'pointer' })
       one.state.chooseMenuItem('read')
       await one.state.createNode(node, 'child')
@@ -1330,7 +1330,7 @@ describe('a node opened', () => {
 
     one.state.openNode(one.node('Child.md'))
 
-    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'here']])
+    expect(one.opened).toStrictEqual([['Child.md', 'Child', 'current']])
   })
 
   it('opens nothing for a heading whose name is not wholly a line number', () => {

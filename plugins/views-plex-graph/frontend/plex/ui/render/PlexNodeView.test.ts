@@ -110,20 +110,20 @@ describe('a node requested for on its own', () => {
   it('is requested for by a double click, to be drawn where the reader is', async () => {
     const node = mountNode()
     await node.trigger('dblclick')
-    expect(node.emitted('show')).toStrictEqual([['here']])
+    expect(node.emitted('show')).toStrictEqual([['current']])
   })
 
   it('is requested for alongside where the reader is when the modifier is retained', async () => {
     const node = mountNode()
     await node.trigger('dblclick', { altKey: true })
-    expect(node.emitted('show')).toStrictEqual([['beside']])
+    expect(node.emitted('show')).toStrictEqual([['split']])
   })
 
   it('is requested for by a press with Shift, and by Shift and the modifier', async () => {
     const node = mountNode()
     await node.trigger('keydown', { key: 'Enter', shiftKey: true })
     await node.trigger('keydown', { key: ' ', shiftKey: true, altKey: true })
-    expect(node.emitted('show')).toStrictEqual([['here'], ['beside']])
+    expect(node.emitted('show')).toStrictEqual([['current'], ['split']])
   })
 
   it('is not requested for by a press on its own, which travels there instead', async () => {
@@ -137,7 +137,7 @@ describe('a node requested for on its own', () => {
   it('is requested for on the focus too, which is the node being read', async () => {
     const node = mountNode({ relation: 'focus' })
     await node.trigger('dblclick')
-    expect(node.emitted('show')).toStrictEqual([['here']])
+    expect(node.emitted('show')).toStrictEqual([['current']])
     expect(node.emitted('activate')).toBeUndefined()
   })
 
