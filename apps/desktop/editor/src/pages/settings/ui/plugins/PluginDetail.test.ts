@@ -290,6 +290,28 @@ describe('PluginDetail', () => {
     })
   })
 
+  it('keeps the text being typed when the settings are drawn again before it is written', async () => {
+    const plugin = createPluginInfo('test.plugin', 'Super Engine', {
+      settings: [
+        { key: 'endpoint', type: 'string', title: 'Endpoint', description: '', default: '' },
+      ],
+    })
+    const { wrapper, recordedWrites } = createDetail(plugin)
+    const input = wrapper.find<HTMLInputElement>('.settings__text-input')
+    input.element.value = 'http://127.0.0.1:9/v1'
+    await input.trigger('input')
+
+    await wrapper.setProps({ plugin: { ...plugin } })
+    expect(wrapper.find<HTMLInputElement>('.settings__text-input').element.value).toBe(
+      'http://127.0.0.1:9/v1',
+    )
+
+    await wrapper.find('.settings__text-input').trigger('change')
+    expect(recordedWrites).toStrictEqual([
+      { at: ['plugins', 'test.plugin', 'endpoint'], value: '"http://127.0.0.1:9/v1"' },
+    ])
+  })
+
   it('renders clean detail view with switch when plugin has no additional settings', () => {
     const plugin = createPluginInfo('test.empty', 'Empty Plugin')
     const { wrapper } = createDetail(plugin)

@@ -28,6 +28,7 @@ import {
   readChoice,
 } from '../../lib/agents'
 import { createEnumFields } from '../../lib/enums'
+import { createTextDrafts } from '../../lib/drafts'
 import { WORDS as words } from '../../words'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -55,6 +56,7 @@ const { getEnumOptions, getEnumValue, getDetail, getOrigin } = createEnumFields(
 )
 /** Why a path setting did not take the path last chosen, by key. */
 const pathProblems = ref<Record<string, string>>({})
+const { getDraft, setDraft, writeDraft } = createTextDrafts(onSettingChange)
 
 /* -------------------------------- Handlers -------------------------------- */
 function onSettingChange(key: string, value: unknown): void {
@@ -233,10 +235,11 @@ function getStringSetting(key: string, fallback: unknown): string {
       <input
         v-else
         type="text"
-        :value="getStringSetting(setting.key, setting.default)"
+        :value="getDraft(setting.key) ?? getStringSetting(setting.key, setting.default)"
         :aria-labelledby="labelledBy"
         class="settings__text-input"
-        @change="(e) => onSettingChange(setting.key, (e.target as HTMLInputElement).value)"
+        @input="(e) => setDraft(setting.key, (e.target as HTMLInputElement).value)"
+        @change="(e) => writeDraft(setting.key, (e.target as HTMLInputElement).value)"
       />
     </SettingRow>
   </div>
