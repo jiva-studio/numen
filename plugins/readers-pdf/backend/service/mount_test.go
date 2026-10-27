@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1/pdfv1connect"
 )
 
 // The handler a host that links the plugin in serves answers the document service with the token
@@ -28,8 +28,8 @@ func TestTheLinkedHandlerAnswersTheDocumentService(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	client := numenv1connect.NewDocumentServiceClient(web.Client(), web.URL)
-	req := connect.NewRequest(&numenv1.GetDocumentRequest{Path: path})
+	client := pdfv1connect.NewDocumentServiceClient(web.Client(), web.URL)
+	req := connect.NewRequest(&pdfv1.GetDocumentRequest{Path: path})
 	req.Header().Set("Authorization", "Bearer linked-token")
 	resp, err := client.GetDocument(t.Context(), req)
 	if err != nil {
@@ -54,9 +54,9 @@ func TestTheLinkedHandlerRefusesADocumentOutsideTheVaultOfItsVariables(t *testin
 		t.Fatal(err)
 	}
 
-	req := connect.NewRequest(&numenv1.GetDocumentRequest{Path: path})
+	req := connect.NewRequest(&pdfv1.GetDocumentRequest{Path: path})
 	req.Header().Set("Authorization", "Bearer linked-token")
-	_, err = numenv1connect.NewDocumentServiceClient(web.Client(), web.URL).GetDocument(t.Context(), req)
+	_, err = pdfv1connect.NewDocumentServiceClient(web.Client(), web.URL).GetDocument(t.Context(), req)
 
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("GetDocument outside the vault = %v, want permission denied", err)

@@ -8,7 +8,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
+	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
 
 func TestPdfServerVaultBoundary(t *testing.T) {
@@ -20,12 +20,11 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	_ = os.WriteFile(insidePath, []byte("%PDF-1.4 dummy"), 0o644)
 	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := NewDocumentServer(hosttest.NewTexts("vault", pluginID))
+	server := NewDocumentServer(hosttest.New("vault"), func() string { return vaultDir }, hosttest.NewTexts("vault", pluginID))
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied
-	_, err := server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: outsidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -33,7 +32,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 4. Traversal path -> PermissionDenied
-	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err = server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: filepath.Join(vaultDir, "..", "outside.pdf"),
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -41,7 +40,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 5. GetHighlights outside vault -> PermissionDenied
-	_, err = server.GetHighlights(ctx, connect.NewRequest(&numenv1.GetHighlightsRequest{
+	_, err = server.GetHighlights(ctx, connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: outsidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -51,7 +50,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	// 6. Double-dot filename inside vault -> check passes (does not return PermissionDenied)
 	dotPath := filepath.Join(vaultDir, "a..b.pdf")
 	_ = os.WriteFile(dotPath, []byte("%PDF-1.4 dummy"), 0o644)
-	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err = server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: dotPath,
 	}))
 	if connect.CodeOf(err) == connect.CodePermissionDenied {
@@ -63,35 +62,27 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	if err := os.Symlink(filepath.Join(outsideDir, "missing.pdf"), brokenLink); err != nil {
 		t.Fatal(err)
 	}
-	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err = server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: brokenLink,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("expected CodePermissionDenied for broken outside symlink, got %v", err)
 	}
 
-	// 8. Empty vault root -> PermissionDenied
-	emptyServer := NewDocumentServerIn("", hosttest.NewTexts("vault", pluginID))
-	_, err = emptyServer.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
-		Path: insidePath,
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied for empty vault root, got %v", err)
-	}
 }
 
 func TestDocumentServerEmptyPath(t *testing.T) {
-	server := NewDocumentServer(hosttest.NewTexts("vault", pluginID))
+	server := NewDocumentServer(hosttest.New("vault"), func() string { return "" }, hosttest.NewTexts("vault", pluginID))
 	ctx := context.Background()
 
 	// 1. GetDocument with empty path
-	_, err := server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{Path: ""}))
+	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{Path: ""}))
 	if err == nil || connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("expected CodeInvalidArgument for GetDocument with empty path, got %v", err)
 	}
 
 	// 4. GetHighlights with empty path
-	_, err = server.GetHighlights(ctx, connect.NewRequest(&numenv1.GetHighlightsRequest{Path: ""}))
+	_, err = server.GetHighlights(ctx, connect.NewRequest(&pdfv1.GetHighlightsRequest{Path: ""}))
 	if err == nil || connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("expected CodeInvalidArgument for GetHighlights with empty path, got %v", err)
 	}

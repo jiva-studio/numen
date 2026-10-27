@@ -22,8 +22,18 @@ func newTextVault(t *testing.T, name string, raw []byte) (*hosttest.Texts, *Text
 	files.File(name, string(raw))
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID))
+	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue())
+	t.Cleanup(server.Close)
 	return texts, server
+}
+
+// createText starts the text of a book and waits for it to be written.
+func createText(t *testing.T, server *TextServer, req host.TextCreation) {
+	t.Helper()
+	if err := server.CreateText(t.Context(), req); err != nil {
+		t.Fatalf("CreateText: %v", err)
+	}
+	server.Wait()
 }
 
 // readLive is the live version of a file and its whole text.
@@ -54,9 +64,7 @@ func TestTheTextOfABookIsItsLiveVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "book.epub"}); err != nil {
-		t.Fatalf("CreateText: %v", err)
-	}
+	createText(t, server, host.TextCreation{Path: "book.epub"})
 
 	text := readLive(t, texts, "book.epub")
 	if text.Version.Kind != textKind || !text.Version.IsFromFile() {
@@ -90,9 +98,7 @@ func TestAFileWithNoReadableBookGetsNoVersion(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			texts, server := newTextVault(t, name, raw)
 
-			if err := server.CreateText(t.Context(), host.TextCreation{Path: name}); err != nil {
-				t.Fatalf("CreateText: %v", err)
-			}
+			createText(t, server, host.TextCreation{Path: name})
 
 			listing, err := texts.ListVersions(t.Context(), name)
 			if err != nil {
@@ -119,7 +125,7 @@ func TestLongTextIsSplitIntoPartsOnWholeCharacters(t *testing.T) {
 	text := strings.Repeat("ж", partBytes) + "end"
 	sections := []epub.Part{{Title: "One", Offset: 0}, {Title: "Inner", Offset: 0}, {Title: "Two", Offset: 2 * partBytes}}
 
-	parts := getBookParts(text, sections)
+	parts := getSegments(text, sections, nil)
 
 	var joined strings.Builder
 	var named []string
@@ -160,16 +166,52 @@ func TestTheTextOfABookIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	other := texts.With("Chemistry").(*hosttest.Texts)
 	other.File("book.epub", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(physics, texts, physics.Store())
+	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
+	t.Cleanup(server.Close)
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: "book.epub"}); err != nil {
-		t.Fatal(err)
-	}
+	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "book.epub"})
 
 	if text := readLive(t, other, "book.epub"); text.Version.Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version)
 	}
 	if inShown, _ := texts.ListVersions(t.Context(), "book.epub"); len(inShown.Versions) != 0 {
 		t.Errorf("the shown vault holds %+v, want no version", inShown.Versions)
+	}
+}
+
+func TestEachSegmentIsSelectedByTheCFIOfTheBlockItIsIn(t *testing.T) {
+	text := "First block.\nSecond block.\n"
+	anchors := []epub.Anchor{{Offset: 0, CFI: "epubcfi(/6/2!/4/2)"}, {Offset: 13, CFI: "epubcfi(/6/2!/4/4)"}}
+
+	segments := getSegments(text, []epub.Part{{Title: "Second", Offset: 13}}, anchors)
+
+	var got []string
+	for _, segment := range segments {
+		selector, err := host.ParseSelector(segment.Selector)
+		if err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, segment.Heading+"|"+segment.Text+"|"+selector.CFI)
+	}
+	want := []string{
+		"|First block.\n|epubcfi(/6/2!/4/2)",
+		"Second||epubcfi(/6/2!/4/4)",
+		"|Second block.\n|epubcfi(/6/2!/4/4)",
+	}
+	if strings.Join(got, ";") != strings.Join(want, ";") {
+		t.Errorf("segments %q, want %q", got, want)
+	}
+}
+
+func TestTheTextOfABookCarriesTheCFIOfItsBlocks(t *testing.T) {
+	raw := createPictureEpub(t)
+	texts, server := newTextVault(t, "book.epub", raw)
+
+	createText(t, server, host.TextCreation{Path: "book.epub"})
+
+	text := readLive(t, texts, "book.epub")
+	selector, err := host.ParseSelector(text.GetSelector(strings.Index(text.Text, "Goodbye")))
+	if err != nil || !strings.HasPrefix(selector.CFI, "epubcfi(/6/") {
+		t.Errorf("the selector of Goodbye is %+v (%v), want a CFI", selector, err)
 	}
 }

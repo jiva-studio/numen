@@ -12,55 +12,46 @@ import (
 	"connectrpc.com/connect"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
+	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
+	"github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1/pdfv1connect"
 )
 
 var initOnce sync.Once
 
-// DocumentServer implements numenv1connect.DocumentServiceHandler.
+// DocumentServer implements pdfv1connect.DocumentServiceHandler. Each call works the vault its
+// Numen-Vault header names.
 type DocumentServer struct {
-	numenv1connect.UnimplementedDocumentServiceHandler
+	pdfv1connect.UnimplementedDocumentServiceHandler
 
-	vaultRoot func() string
-	texts     host.Texts
+	vaults vaultRoots
+	texts  host.Texts
 }
 
-// NewDocumentServer configures the worker pool and returns a DocumentServer that holds paths to the
-// vault NUMEN_VAULT_PATH names and reads the text versions of its files from texts.
-func NewDocumentServer(texts host.Texts) *DocumentServer {
-	return newDocumentServer(func() string { return os.Getenv("NUMEN_VAULT_PATH") }, texts)
-}
-
-// NewDocumentServerIn configures the worker pool and returns a DocumentServer that holds paths to
-// the vault at vaultRoot and reads the text versions of its files from texts.
-func NewDocumentServerIn(vaultRoot string, texts host.Texts) *DocumentServer {
-	return newDocumentServer(func() string { return vaultRoot }, texts)
-}
-
-func newDocumentServer(vaultRoot func() string, texts host.Texts) *DocumentServer {
+// NewDocumentServer configures the worker pool and returns a DocumentServer that finds the vault of
+// a request through files, works the vault at defaultRoot for a request naming none, and reads the
+// text versions of the files from texts.
+func NewDocumentServer(files host.Vault, defaultRoot func() string, texts host.Texts) *DocumentServer {
 	initOnce.Do(func() {
 		pdf.SetWorkers(runtime.NumCPU())
 		pdf.SetIdleWorkers(max(2, min(runtime.NumCPU(), 4)))
 		go pdf.Warmup()
 	})
-	return &DocumentServer{vaultRoot: vaultRoot, texts: texts}
+	return &DocumentServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}, texts: texts}
 }
 
 // GetDocument returns metadata and dimensions for each page in the PDF.
 func (s *DocumentServer) GetDocument(
-	_ context.Context,
-	req *connect.Request[numenv1.GetDocumentRequest],
-) (*connect.Response[numenv1.GetDocumentResponse], error) {
+	ctx context.Context,
+	req *connect.Request[pdfv1.GetDocumentRequest],
+) (*connect.Response[pdfv1.GetDocumentResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
+	cleanPath, err := s.vaults.getFilePath(ctx, req.Header(), path)
 	if err != nil {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
+		return nil, err
 	}
 
 	file, err := os.Open(cleanPath)
@@ -76,19 +67,19 @@ func (s *DocumentServer) GetDocument(
 	defer scan.Close()
 
 	pageCount := scan.GetPageCount()
-	pages := make([]*numenv1.Page, 0, pageCount)
+	pages := make([]*pdfv1.Page, 0, pageCount)
 	for i := 0; i < pageCount; i++ {
 		w, h, err := scan.GetPageSize(i)
 		if err != nil {
 			return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("page size: %w", err))
 		}
-		pages = append(pages, &numenv1.Page{
+		pages = append(pages, &pdfv1.Page{
 			Width:  w,
 			Height: h,
 		})
 	}
 
-	return connect.NewResponse(&numenv1.GetDocumentResponse{
+	return connect.NewResponse(&pdfv1.GetDocumentResponse{
 		Pages: pages,
 	}), nil
 }
@@ -100,14 +91,14 @@ const mostSpans = 64
 // no live version, or one whose version has no places, stands nowhere.
 func (s *DocumentServer) GetHighlights(
 	ctx context.Context,
-	req *connect.Request[numenv1.GetHighlightsRequest],
-) (*connect.Response[numenv1.GetHighlightsResponse], error) {
+	req *connect.Request[pdfv1.GetHighlightsRequest],
+) (*connect.Response[pdfv1.GetHighlightsResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	if _, err := vault.ValidatePathIn(s.vaultRoot(), path); err != nil {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
+	if _, err := s.vaults.getFilePath(ctx, req.Header(), path); err != nil {
+		return nil, err
 	}
 	spans := req.Msg.GetSpans()
 	if len(spans) == 0 || len(spans) > mostSpans {
@@ -124,13 +115,17 @@ func (s *DocumentServer) GetHighlights(
 		end = max(end, run.To)
 	}
 
-	text, err := readLiveText(ctx, s.texts, path, end)
+	texts := s.texts
+	if id := host.GetRequestVault(req.Header()); id != "" {
+		texts = texts.With(id)
+	}
+	text, err := readLiveText(ctx, texts, path, end)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeUnavailable, fmt.Errorf("read the text of %s: %w", path, err))
 	}
-	out := &numenv1.GetHighlightsResponse{Runs: make([]*numenv1.DocumentRun, 0, len(runs))}
+	out := &pdfv1.GetHighlightsResponse{Runs: make([]*pdfv1.DocumentRun, 0, len(runs))}
 	for _, run := range runs {
-		out.Runs = append(out.Runs, &numenv1.DocumentRun{Places: writePlaces(getBoxes(text, run))})
+		out.Runs = append(out.Runs, &pdfv1.DocumentRun{Places: writePlaces(host.GetBoxes(text, run))})
 	}
 	return connect.NewResponse(out), nil
 }
@@ -169,40 +164,15 @@ func readLiveText(ctx context.Context, texts host.Texts, path string, end int) (
 }
 
 // writePlaces is the boxes of a run as places, one a page, in the order the pages come.
-func writePlaces(boxes []domain.HighlightBox) []*numenv1.DocumentPlace {
-	var places []*numenv1.DocumentPlace
+func writePlaces(boxes []domain.HighlightBox) []*pdfv1.DocumentPlace {
+	var places []*pdfv1.DocumentPlace
 	for _, box := range boxes {
-		rect := &numenv1.DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
+		rect := &pdfv1.DocumentRect{MinX: box.MinX, MinY: box.MinY, MaxX: box.MaxX, MaxY: box.MaxY}
 		if n := len(places); n > 0 && places[n-1].GetPage() == int32(box.Page) {
 			places[n-1].Rects = append(places[n-1].Rects, rect)
 			continue
 		}
-		places = append(places, &numenv1.DocumentPlace{Page: int32(box.Page), Rects: []*numenv1.DocumentRect{rect}})
+		places = append(places, &pdfv1.DocumentPlace{Page: int32(box.Page), Rects: []*pdfv1.DocumentRect{rect}})
 	}
 	return places
-}
-
-// getBoxes is the rectangles of the segments a run of the text overlaps, each with the run of the
-// segment it covers. A segment's selector names its page, counted from 1, and its boxes.
-func getBoxes(text domain.VersionText, run domain.ByteSpan) []domain.HighlightBox {
-	if run.Empty() {
-		return nil
-	}
-	var boxes []domain.HighlightBox
-	from := 0
-	for _, segment := range text.GetSegments() {
-		to := from + len(segment.Text)
-		if to > run.From && from < run.To {
-			if selector, err := host.ParseSelector(segment.Selector); err == nil && selector.Page > 0 {
-				for _, box := range selector.Boxes {
-					boxes = append(boxes, domain.HighlightBox{
-						Page: selector.Page - 1, ByteSpan: domain.ByteSpan{From: from, To: to},
-						Rect: domain.Rect{MinX: box[0], MinY: box[1], MaxX: box[2], MaxY: box[3]},
-					})
-				}
-			}
-		}
-		from = to
-	}
-	return boxes
 }

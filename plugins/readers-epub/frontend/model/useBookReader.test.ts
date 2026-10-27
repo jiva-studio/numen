@@ -41,6 +41,10 @@ const BOOK: Book = {
     { title: 'Сказание о сожжении леса', offset: 3_600, level: 1 },
   ],
   printedPages: [],
+  anchors: [
+    { offset: 0, cfi: 'epubcfi(/6/2!/4/2)' },
+    { offset: 3_600, cfi: 'epubcfi(/6/4!/4/4)' },
+  ],
   pages: 3,
   pageBytes: 3_000,
   fingerprint: '20480 1700000000000000000 mahabharata.epub',
@@ -179,6 +183,15 @@ describe('a book opened', () => {
     expect(markupCalls).toStrictEqual([
       'library/Mahabharata.epub text/part0001.xhtml 20480 1700000000000000000 mahabharata.epub',
     ])
+  })
+
+  it('holds the blocks the book names by their CFI', async () => {
+    const { books } = shelf()
+    const readItem = useBookReader(books, 'library/Mahabharata.epub', WORDS, writeMessage)
+
+    await settle()
+
+    expect(readItem.anchors.value).toStrictEqual(BOOK.anchors)
   })
 
   it('is called what the book calls itself', async () => {

@@ -23,6 +23,7 @@ import (
 	"io"
 	"path"
 	"sort"
+	"strconv"
 
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/archive"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub/container"
@@ -115,7 +116,7 @@ func Read(raw []byte) (*Book, error) {
 		mediaTypes: map[string]string{},
 	}
 	remaining := int64(archive.MostPerBook)
-	for _, item := range pkg.Spine {
+	for spine, item := range pkg.Spine {
 		if remaining <= 0 {
 			// gomutants:disable-next-line INVERT_LOOP_CTRL reason="left never grows, so every later document also ends the iteration"
 			break
@@ -128,7 +129,7 @@ func Read(raw []byte) (*Book, error) {
 		}
 		remaining -= int64(len(raw))
 		doc := extractor.ReadDocument(item.Path, raw)
-		doc.IsLinear, doc.Layout = item.IsLinear, item.Layout
+		doc.IsLinear, doc.Layout, doc.Spine = item.IsLinear, item.Layout, spine
 		book.Documents = append(book.Documents, doc)
 		if _, twice := book.documents[doc.Path]; !twice {
 			// A spine may read one document twice, and the first standing is the
@@ -260,4 +261,29 @@ func (b *Book) Locate(offset int) Location {
 // there is none. The items are ascending by offset.
 func findPreceding(n, offset int, offsetOf func(int) int) int {
 	return sort.Search(n, func(i int) bool { return offsetOf(i) > offset }) - 1
+}
+
+// An Anchor is where a block element of the book begins in its Text, and its EPUB Canonical
+// Fragment Identifier.
+type Anchor struct {
+	Offset int
+	CFI    string
+}
+
+// Anchors reads the spine documents again and returns where each block element in them begins,
+// ascending by offset. The first step of each CFI is the spine of the package document, which
+// stands third among its children.
+func (b *Book) Anchors() []Anchor {
+	var anchors []Anchor
+	for _, doc := range b.Documents {
+		raw, ok := archive.ReadBounded(b.files[doc.Path], archive.MostPerDocument)
+		if !ok {
+			continue
+		}
+		spine := "epubcfi(/6/" + strconv.Itoa(2*(doc.Spine+1)) + "!"
+		for _, one := range text.ReadAnchors(doc.Path, raw) {
+			anchors = append(anchors, Anchor{Offset: doc.Offset + one.Offset, CFI: spine + one.Path + ")"})
+		}
+	}
+	return anchors
 }

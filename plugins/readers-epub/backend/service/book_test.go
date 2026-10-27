@@ -4,12 +4,13 @@ import (
 	"archive/zip"
 	"bytes"
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 func createMinimalEpub(t *testing.T) []byte {
@@ -69,11 +70,11 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	_ = os.WriteFile(outsidePath, data, 0o644)
 
 	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := NewBookServer()
+	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
 	ctx := context.Background()
 
 	// 1. GetBook outside vault -> PermissionDenied
-	_, err := server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	_, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: outsidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -81,7 +82,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 2. ReadBookMarkup outside vault -> PermissionDenied
-	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&numenv1.ReadBookMarkupRequest{
+	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
 		Path:     outsidePath,
 		Document: "EPUB/chapter1.xhtml",
 	}))
@@ -90,7 +91,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 3. Inside vault -> Success
-	resp, err := server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	resp, err := server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: insidePath,
 	}))
 	if err != nil {
@@ -101,7 +102,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 4. GetBook with path traversal -> PermissionDenied
-	_, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: "../outside.epub",
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -109,7 +110,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 5. ReadBookMarkup with path traversal -> PermissionDenied
-	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&numenv1.ReadBookMarkupRequest{
+	_, err = server.ReadBookMarkup(ctx, connect.NewRequest(&epubv1.ReadBookMarkupRequest{
 		Path:     "../outside.epub",
 		Document: "EPUB/chapter1.xhtml",
 	}))
@@ -120,7 +121,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	// 6. Double dot in legitimate filename inside vault -> Success
 	dotPath := filepath.Join(vaultDir, "a..b.epub")
 	_ = os.WriteFile(dotPath, data, 0o644)
-	resp, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	resp, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: dotPath,
 	}))
 	if err != nil {
@@ -135,7 +136,7 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	if err := os.Symlink(filepath.Join(outsideDir, "missing.epub"), brokenLink); err != nil {
 		t.Fatal(err)
 	}
-	_, err = server.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	_, err = server.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: brokenLink,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -143,8 +144,8 @@ func TestBookServerVaultBoundary(t *testing.T) {
 	}
 
 	// 8. Empty vault root -> PermissionDenied
-	emptyServer := NewBookServerIn("")
-	_, err = emptyServer.GetBook(ctx, connect.NewRequest(&numenv1.GetBookRequest{
+	emptyServer := NewBookServer(hosttest.New("vault"), func() string { return "" })
+	_, err = emptyServer.GetBook(ctx, connect.NewRequest(&epubv1.GetBookRequest{
 		Path: insidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {

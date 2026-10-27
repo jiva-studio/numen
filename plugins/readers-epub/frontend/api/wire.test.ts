@@ -21,6 +21,7 @@ const nothing = {
   documents: [],
   parts: [],
   printedPages: [],
+  anchors: [],
   pageCount: 0,
   pageBytes: 0,
 }
@@ -36,6 +37,7 @@ describe('a book', () => {
       ],
       parts: [{ title: 'Book I', offset: 0, level: 1 }],
       printedPages: [{ label: 'iv', offset: 120 }],
+      anchors: [{ offset: 0, cfi: 'epubcfi(/6/2!/4/2)' }],
       pageCount: 8,
       pageBytes: 500,
       fingerprint: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
@@ -50,6 +52,7 @@ describe('a book', () => {
       ],
       parts: [{ title: 'Book I', offset: 0, level: 1 }],
       printedPages: [{ label: 'iv', offset: 120 }],
+      anchors: [{ offset: 0, cfi: 'epubcfi(/6/2!/4/2)' }],
       pages: 8,
       pageBytes: 500,
       fingerprint: '12 34 Anabasis.epub',
@@ -95,5 +98,21 @@ describe('the address an entry of the archive is drawn from', () => {
     expect(
       books.getEntryUrl('Books/Anabasis.epub', 'OEBPS/images/map 1.png', '12 34 Anabasis.epub'),
     ).toBe('/assets/Books%2FAnabasis.epub/OEBPS/images/map%201.png?size=12&mtime=34')
+  })
+})
+
+describe('an entry of a book', () => {
+  it('is served on the plugin route, with the book and the file it was read from', () => {
+    expect(
+      books.getEntryUrl('Books/Anabasis.epub', 'OEBPS/images/map one.png', '12 34 Anabasis.epub'),
+    ).toBe(
+      '/plugin/md.numen.readers.epub/entries/OEBPS/images/map%20one.png?path=Books%2FAnabasis.epub&size=12&mtime=34',
+    )
+  })
+
+  it('names no file where the book was read from none', () => {
+    expect(books.getEntryUrl('Anabasis.epub', 'cover.png', '')).toBe(
+      '/plugin/md.numen.readers.epub/entries/cover.png?path=Anabasis.epub',
+    )
   })
 })

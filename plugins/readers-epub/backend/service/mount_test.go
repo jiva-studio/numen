@@ -1,13 +1,13 @@
 package service
 
 import (
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"net/http/httptest"
 	"path/filepath"
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
+	"github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1/epubv1connect"
 )
 
 // The handler a host that links the plugin in serves answers the book service with the token it
@@ -25,8 +25,8 @@ func TestTheLinkedHandlerAnswersTheBookService(t *testing.T) {
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	client := numenv1connect.NewBookServiceClient(web.Client(), web.URL)
-	req := connect.NewRequest(&numenv1.GetBookRequest{Path: name})
+	client := epubv1connect.NewBookServiceClient(web.Client(), web.URL)
+	req := connect.NewRequest(&epubv1.GetBookRequest{Path: name})
 	req.Header().Set("Authorization", "Bearer linked-token")
 	resp, err := client.GetBook(t.Context(), req)
 	if err != nil {
@@ -47,9 +47,9 @@ func TestTheLinkedHandlerRefusesABookOutsideTheVaultOfItsVariables(t *testing.T)
 	web := httptest.NewServer(handler)
 	defer web.Close()
 
-	req := connect.NewRequest(&numenv1.GetBookRequest{Path: filepath.Join(t.TempDir(), "book.epub")})
+	req := connect.NewRequest(&epubv1.GetBookRequest{Path: filepath.Join(t.TempDir(), "book.epub")})
 	req.Header().Set("Authorization", "Bearer linked-token")
-	_, err = numenv1connect.NewBookServiceClient(web.Client(), web.URL).GetBook(t.Context(), req)
+	_, err = epubv1connect.NewBookServiceClient(web.Client(), web.URL).GetBook(t.Context(), req)
 
 	if connect.CodeOf(err) != connect.CodePermissionDenied {
 		t.Fatalf("GetBook outside the vault = %v, want permission denied", err)

@@ -24,6 +24,12 @@ export interface PrintedPage {
   readonly offset: number
 }
 
+/** Where a block element begins in the text of a book, and its EPUB CFI. */
+export interface BookAnchor {
+  readonly offset: number
+  readonly cfi: string
+}
+
 /** Book manifest and metadata. */
 export interface Book {
   readonly title: string
@@ -31,6 +37,8 @@ export interface Book {
   readonly documents: readonly SpineDocument[]
   readonly parts: readonly BookPart[]
   readonly printedPages: readonly PrintedPage[]
+  /** The blocks of the book, ascending by offset. */
+  readonly anchors: readonly BookAnchor[]
   readonly pages: number
   readonly pageBytes: number
   readonly fingerprint: string

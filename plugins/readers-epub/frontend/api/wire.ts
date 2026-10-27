@@ -1,17 +1,22 @@
 /**
- * Wire adapter for BookService.
+ * Wire adapter for the plugin's BookService and its entries route.
  */
 import { createClient } from '@connectrpc/connect'
-import { BookService, type SpineDocument as SpineDocumentMessage } from '@numen/protocol'
 import {
   formatFingerprint,
-  getAssetUrl,
   getBytesQuery,
   parseFingerprint,
   retryWhileBusy,
   transport,
 } from '@numen/wire'
+import {
+  BookService,
+  type SpineDocument as SpineDocumentMessage,
+} from '../gen/numen/epub/v1/book_pb.js'
 import type { Book, Books, SpineDocument } from '../types'
+
+/** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */
+const PLUGIN_ROUTE = '/plugin/md.numen.readers.epub'
 
 export const client = {
   books: createClient(BookService, transport),
@@ -39,6 +44,7 @@ export const books: Books = {
         label: one.label,
         offset: one.offset,
       })),
+      anchors: answer.anchors.map((one) => ({ offset: one.offset, cfi: one.cfi })),
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,
       fingerprint: formatFingerprint(answer.fingerprint) ?? '',
@@ -55,5 +61,5 @@ export const books: Books = {
     return answer.markup
   },
   getEntryUrl: (path, name, fingerprint) =>
-    `${getAssetUrl(path)}/${name.split('/').map(encodeURIComponent).join('/')}?${getBytesQuery(fingerprint)}`,
+    `${PLUGIN_ROUTE}/entries/${name.split('/').map(encodeURIComponent).join('/')}?path=${encodeURIComponent(path)}${fingerprint === '' ? '' : `&${getBytesQuery(fingerprint)}`}`,
 }

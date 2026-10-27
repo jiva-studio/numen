@@ -11,7 +11,7 @@ import { WORDS as words } from './words'
 import { books } from './api/wire'
 import { useBookReader } from './model/useBookReader'
 import { useBookTab, type BookTabState } from './model/useBookTab'
-import { createOffsetSelector, getSelectorOffset } from './lib/place'
+import { createCfiSelector, findAnchorCfi, findAnchorOffset, getSelectorCfi } from './lib/place'
 
 /* --------------------------------- Props ---------------------------------- */
 interface Props {
@@ -55,7 +55,8 @@ const readerTab = props.state as Partial<ReaderTabState> | undefined
 watch(
   () => [readerTab?.selector, tabState.isLoading.value] as const,
   ([selector, isLoading]: readonly [Selector | null | undefined, boolean]) => {
-    const offset = getSelectorOffset(selector)
+    const cfi = getSelectorCfi(selector)
+    const offset = cfi === null ? null : findAnchorOffset(tabState.anchors.value, cfi)
     if (!isLoading && offset !== null) void tabState.goToOffset(offset)
   },
   { immediate: true },
@@ -64,7 +65,8 @@ watch(
 watch(
   () => tabState.offset.value,
   (offset) => {
-    if (!tabState.isLoading.value) readerTab?.savePlace?.(createOffsetSelector(offset))
+    const cfi = findAnchorCfi(tabState.anchors.value, offset)
+    if (!tabState.isLoading.value && cfi !== null) readerTab?.savePlace?.(createCfiSelector(cfi))
   },
 )
 

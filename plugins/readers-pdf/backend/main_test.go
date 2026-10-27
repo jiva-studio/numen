@@ -11,6 +11,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/service"
+	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
 
 func TestPdfServerVaultBoundary(t *testing.T) {
@@ -22,12 +23,11 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	_ = os.WriteFile(insidePath, []byte("%PDF-1.4 dummy"), 0o644)
 	_ = os.WriteFile(outsidePath, []byte("%PDF-1.4 dummy"), 0o644)
 
-	t.Setenv("NUMEN_VAULT_PATH", vaultDir)
-	server := service.NewDocumentServer(hosttest.NewTexts("vault", "md.numen.readers.pdf"))
+	server := service.NewDocumentServer(hosttest.New("vault"), func() string { return vaultDir }, hosttest.NewTexts("vault", "md.numen.readers.pdf"))
 	ctx := context.Background()
 
 	// 1. GetDocument outside vault -> PermissionDenied
-	_, err := server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err := server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: outsidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -35,7 +35,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 4. Traversal path -> PermissionDenied
-	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
+	_, err = server.GetDocument(ctx, connect.NewRequest(&pdfv1.GetDocumentRequest{
 		Path: filepath.Join(vaultDir, "..", "outside.pdf"),
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
@@ -43,7 +43,7 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 	}
 
 	// 5. GetHighlights outside vault -> PermissionDenied
-	_, err = server.GetHighlights(ctx, connect.NewRequest(&numenv1.GetHighlightsRequest{
+	_, err = server.GetHighlights(ctx, connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: outsidePath,
 	}))
 	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {

@@ -3,6 +3,7 @@ package host_test
 import (
 	"testing"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
@@ -20,5 +21,22 @@ func TestASelectorEncodesItsDocumentedKeysAndReadsBack(t *testing.T) {
 	}
 	if empty, err := host.ParseSelector(""); err != nil || empty.Page != 0 {
 		t.Fatalf("an empty selector read %+v (%v)", empty, err)
+	}
+}
+
+func TestGetBoxesReturnsTheBoxesOfTheSegmentsARunOverlaps(t *testing.T) {
+	text := domain.NewVersionText(domain.TextVersion{}, []domain.TextSegment{
+		{Text: "alpha ", Selector: host.Selector{Page: 1, Boxes: [][4]float32{{0.1, 0.1, 0.2, 0.2}}}.Encode()},
+		{Text: "beta ", Selector: host.Selector{Page: 2, Boxes: [][4]float32{{0.3, 0.3, 0.4, 0.4}}}.Encode()},
+		{Text: "gamma", Selector: host.Selector{T: []float64{1, 2}}.Encode()},
+	})
+
+	boxes := host.GetBoxes(text, domain.ByteSpan{From: 3, To: 16})
+
+	if len(boxes) != 2 || boxes[0].Page != 0 || boxes[1].Page != 1 || boxes[1].From != 6 || boxes[1].To != 11 || boxes[1].MinX != 0.3 {
+		t.Errorf("boxes = %+v, want one on each page, none for the segment without a page", boxes)
+	}
+	if got := host.GetBoxes(text, domain.ByteSpan{From: 4, To: 4}); got != nil {
+		t.Errorf("an empty run has boxes %+v", got)
 	}
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
+	pdfv1 "github.com/jiva-studio/numen/plugins/readers-pdf/gen/numen/pdf/v1"
 )
 
 const pluginID = "md.numen.readers.pdf"
@@ -34,8 +35,18 @@ func newVaultOf(t *testing.T, name string, raw []byte) (*hosttest.Texts, *TextSe
 	files := hosttest.OnDisk(t, "vault", map[string]string{name: string(raw)})
 	texts := hosttest.NewTexts("vault", pluginID)
 	texts.File(name, raw)
-	server := NewTextServer(files, texts, texts.GetStore(pluginID))
+	server := NewTextServer(files, texts, texts.GetStore(pluginID), hosttest.NewQueue())
+	t.Cleanup(server.Close)
 	return texts, server, raw
+}
+
+// createText starts the text layer of a file and waits for it to be written.
+func createText(t *testing.T, server *TextServer, req host.TextCreation) {
+	t.Helper()
+	if err := server.CreateText(t.Context(), req); err != nil {
+		t.Fatalf("CreateText: %v", err)
+	}
+	server.Wait()
 }
 
 // readLive is the live version of a file and its whole text.
@@ -61,9 +72,7 @@ func readLive(t *testing.T, texts *hosttest.Texts, path string) domain.VersionTe
 func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 	texts, server, raw := newVault(t, "books/tiny.pdf", "tiny.pdf")
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "books/tiny.pdf"}); err != nil {
-		t.Fatalf("CreateText: %v", err)
-	}
+	createText(t, server, host.TextCreation{Path: "books/tiny.pdf"})
 
 	text := readLive(t, texts, "books/tiny.pdf")
 	if text.Version.Kind != textKind {
@@ -82,13 +91,11 @@ func TestTheTextLayerOfAFileIsItsLiveVersion(t *testing.T) {
 
 func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
-		t.Fatal(err)
-	}
+	createText(t, server, host.TextCreation{Path: "tiny.pdf"})
 	text := readLive(t, texts, "tiny.pdf")
 
 	from := strings.Index(text.Text, "Delta")
-	boxes := getBoxes(text, domain.ByteSpan{From: from, To: from + len("Delta epsilon")})
+	boxes := host.GetBoxes(text, domain.ByteSpan{From: from, To: from + len("Delta epsilon")})
 
 	if len(boxes) != 2 {
 		t.Fatalf("%d boxes, want one a word of the two: %+v", len(boxes), boxes)
@@ -105,9 +112,7 @@ func TestARunOfTheLayerIsLitOverTheWordsItCovers(t *testing.T) {
 
 func TestTheOutlineOpensTheSectionsOfTheLayer(t *testing.T) {
 	texts, server, raw := newVault(t, "outline.pdf", "outline.pdf")
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "outline.pdf"}); err != nil {
-		t.Fatal(err)
-	}
+	createText(t, server, host.TextCreation{Path: "outline.pdf"})
 	book, err := pdf.Read(raw)
 	if err != nil {
 		t.Fatal(err)
@@ -179,9 +184,7 @@ func TestAFileWithNoTextLayerGetsNoVersion(t *testing.T) {
 				texts, server, _ = newVaultOf(t, name, raw)
 			}
 
-			if err := server.CreateText(t.Context(), host.TextCreation{Path: name}); err != nil {
-				t.Fatalf("CreateText: %v", err)
-			}
+			createText(t, server, host.TextCreation{Path: name})
 
 			listing, err := texts.ListVersions(t.Context(), name)
 			if err != nil {
@@ -206,14 +209,12 @@ func TestTheReaderMakesTextOfFilesOnly(t *testing.T) {
 
 func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	if err := server.CreateText(t.Context(), host.TextCreation{Path: "tiny.pdf"}); err != nil {
-		t.Fatal(err)
-	}
-	documents := NewDocumentServerIn(getRoot(server), texts)
+	createText(t, server, host.TextCreation{Path: "tiny.pdf"})
+	documents := newDocumentServer(server, texts)
 	text := readLive(t, texts, "tiny.pdf")
 	beta, zeta := strings.Index(text.Text, "beta"), strings.Index(text.Text, "zeta")
 
-	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&numenv1.GetHighlightsRequest{
+	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: "tiny.pdf",
 		Spans: []*numenv1.Span{
 			{From: int32(zeta), To: int32(zeta + len("zeta"))},
@@ -242,9 +243,9 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 
 func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	texts, server, _ := newVault(t, "tiny.pdf", "tiny.pdf")
-	documents := NewDocumentServerIn(getRoot(server), texts)
+	documents := newDocumentServer(server, texts)
 
-	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&numenv1.GetHighlightsRequest{
+	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: "tiny.pdf", Spans: []*numenv1.Span{{From: 0, To: 5}},
 	}))
 	if err != nil {
@@ -256,9 +257,10 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	}
 }
 
-// getRoot is the folder on disk of the vault the server reads.
-func getRoot(server *TextServer) string {
-	return server.files.(*hosttest.Vault).Vault().Path
+// newDocumentServer is the document service of the vault the text server reads.
+func newDocumentServer(server *TextServer, texts host.Texts) *DocumentServer {
+	root := server.files.(*hosttest.Vault).Vault().Path
+	return NewDocumentServer(server.files, func() string { return root }, texts)
 }
 
 func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
@@ -274,11 +276,10 @@ func TestTheTextLayerIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 	other := texts.With("Chemistry").(*hosttest.Texts)
 	other.File("tiny.pdf", raw)
 	other.SetStore(pluginID, chemistry.Store())
-	server := NewTextServer(physics, texts, physics.Store())
+	server := NewTextServer(physics, texts, physics.Store(), hosttest.NewQueue())
+	t.Cleanup(server.Close)
 
-	if err := server.CreateText(t.Context(), host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"}); err != nil {
-		t.Fatal(err)
-	}
+	createText(t, server, host.TextCreation{Vault: "Chemistry", Path: "tiny.pdf"})
 
 	if text := readLive(t, other, "tiny.pdf"); text.Version.Kind != textKind {
 		t.Errorf("Chemistry's live version is %+v", text.Version)

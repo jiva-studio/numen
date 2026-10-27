@@ -1,12 +1,12 @@
 /**
- * Wire adapter for DocumentService.
+ * Wire adapter for the plugin's DocumentService.
  */
 import { createClient } from '@connectrpc/connect'
 import {
   DocumentService,
   type DocumentRun as DocumentRunMessage,
   type DocumentRect as DocumentRectMessage,
-} from '@numen/protocol'
+} from '../gen/numen/pdf/v1/document_pb.js'
 import { formatFingerprint, getBytesQuery, retryWhileBusy, transport } from '@numen/wire'
 import type { Documents, PageHighlight, Rect } from '../types'
 

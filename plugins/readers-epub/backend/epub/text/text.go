@@ -35,6 +35,10 @@ type Extractor struct {
 
 	// preformattedDepth counts the pre elements open around the text being written.
 	preformattedDepth int
+
+	// isAnchoring records where each block element begins into blockAnchors.
+	isAnchoring  bool
+	blockAnchors []Anchor
 }
 
 func NewExtractor() *Extractor {
@@ -91,6 +95,9 @@ func (x *Extractor) writeNode(n *html.Node) {
 	block := blocks[n.DataAtom]
 	if block {
 		x.breakLine()
+		if x.isAnchoring {
+			x.blockAnchors = append(x.blockAnchors, Anchor{Offset: len(x.out), Path: getNodePath(n)})
+		}
 	}
 
 	if n.DataAtom == atom.Pre {

@@ -8,7 +8,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/plugins/readers-pdf/backend/pdf"
 )
 
@@ -21,16 +21,17 @@ const pageDPI = 150
 
 // PageServer draws the pages of the PDF files in a vault as JPEG images.
 type PageServer struct {
-	vaultRoot func() string
+	vaults vaultRoots
 }
 
-// NewPageServer returns a PageServer for the vault vaultRoot names.
-func NewPageServer(vaultRoot func() string) *PageServer {
-	return &PageServer{vaultRoot: vaultRoot}
+// NewPageServer returns a PageServer that finds the vault of a request through files, and works the
+// vault at defaultRoot for a request naming none.
+func NewPageServer(files host.Vault, defaultRoot func() string) *PageServer {
+	return &PageServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}}
 }
 
 // ServeHTTP answers a request for one page: the index is the path value "page", counted from zero,
-// and the file is the query parameter "path", relative to the vault.
+// and the file is the query parameter "path", relative to the vault the Numen-Vault header names.
 func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	index, err := strconv.Atoi(r.PathValue("page"))
 	if err != nil || index < 0 {
@@ -42,9 +43,9 @@ func (s *PageServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "path required", http.StatusBadRequest)
 		return
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
+	cleanPath, err := s.vaults.getFilePath(r.Context(), r.Header, path)
 	if err != nil {
-		http.Error(w, "path outside the vault", http.StatusForbidden)
+		http.Error(w, err.Error(), getStatus(err))
 		return
 	}
 	image, err := renderPage(cleanPath, index)

@@ -5,6 +5,8 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"os"
 	"path/filepath"
 	"testing"
@@ -82,12 +84,12 @@ func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
 	return dir, name, info.Size(), info.ModTime().UnixNano()
 }
 
-func readEntry(t *testing.T, path, entry string, baseline *numenv1.Fingerprint) (*connect.Response[numenv1.ReadBookEntryResponse], error) {
+func readEntry(t *testing.T, path, entry string, baseline *numenv1.Fingerprint) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	t.Helper()
-	server := NewBookServer()
+	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
 	t.Cleanup(server.Close)
 	return server.ReadBookEntry(context.Background(),
-		connect.NewRequest(&numenv1.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline}))
+		connect.NewRequest(&epubv1.ReadBookEntryRequest{Path: path, Entry: entry, Baseline: baseline}))
 }
 
 func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {

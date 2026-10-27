@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path"
 	"strings"
 	"sync"
 
@@ -22,22 +23,42 @@ const pagesPerBatch = 16
 const textKind domain.TextKind = "page-text"
 
 // TextServer writes the text layer of the vault's PDF files into the plugin's folder as text
-// versions: every word with its page and the rectangle it covers in its selector.
+// versions: every word with its page and the rectangle it covers in its selector. Each layer is
+// written as background work in the host's queue.
 type TextServer struct {
 	files host.Vault
 	texts host.Texts
 	store host.Store
+	queue host.Queue
 
-	mu   sync.Mutex
-	last layer
+	ctx    context.Context
+	cancel context.CancelFunc
+	wg     sync.WaitGroup
+
+	mu      sync.Mutex
+	last    layer
+	running map[string]bool
 }
 
 var _ host.TextProvider = (*TextServer)(nil)
 
 // NewTextServer is the text layers of the files read through files, written into store and reported
-// to texts.
-func NewTextServer(files host.Vault, texts host.Texts, store host.Store) *TextServer {
-	return &TextServer{files: files, texts: texts, store: store}
+// to texts, each written in a turn of queue.
+func NewTextServer(files host.Vault, texts host.Texts, store host.Store, queue host.Queue) *TextServer {
+	ctx, cancel := context.WithCancel(context.Background())
+	return &TextServer{
+		files: files, texts: texts, store: store, queue: queue,
+		ctx: ctx, cancel: cancel, running: map[string]bool{},
+	}
+}
+
+// Wait waits for the text layers it started to be written.
+func (s *TextServer) Wait() { s.wg.Wait() }
+
+// Close stops the text layers it started and waits for them to end.
+func (s *TextServer) Close() {
+	s.cancel()
+	s.Wait()
 }
 
 // layer is one file's bytes and the document read from them.
@@ -75,11 +96,59 @@ func (s *TextServer) readLayer(ctx context.Context, files host.Vault, path strin
 	return read, nil
 }
 
-// CreateText reports the text layer of a file as a version made from the file. A file that is no
-// PDF, a locked one and a scan have no text layer, and get no version.
-func (s *TextServer) CreateText(ctx context.Context, req host.TextCreation) error {
+// CreateText starts writing the text layer of a file as a version made from the file, and returns.
+// The plugin reads files, so a request for text of a version is invalid. A file whose layer is being
+// written already is not started again.
+func (s *TextServer) CreateText(_ context.Context, req host.TextCreation) error {
 	if req.Source != "" {
 		return fmt.Errorf("%w: the PDF reader reads files, and %s is a version", host.ErrInvalidVersion, req.Source)
+	}
+	key := string(req.Vault) + "\x00" + req.Path
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.running[key] {
+		return nil
+	}
+	s.running[key] = true
+	s.wg.Go(func() {
+		defer s.finish(key)
+		s.writeLayer(s.ctx, req)
+	})
+	return nil
+}
+
+func (s *TextServer) finish(key string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.running, key)
+}
+
+// writeLayer writes the text layer of a file in a turn of the queue. A failure stays shown as a task
+// until the layer is written again.
+func (s *TextServer) writeLayer(ctx context.Context, req host.TextCreation) {
+	task := host.Task{
+		ID: "text:" + req.Path, Title: "Reading the text of " + path.Base(req.Path), About: req.Path,
+		IsUserStarted: req.IsUserStarted,
+	}
+	err := s.putLayer(ctx, req, task)
+	if err != nil && ctx.Err() == nil {
+		task.Error = err.Error()
+		_ = s.queue.ReportTask(context.WithoutCancel(ctx), task)
+		return
+	}
+	_ = s.queue.FinishTask(context.WithoutCancel(ctx), task.ID)
+}
+
+// putLayer reports the text layer of a file as a version made from the file. A file that is no PDF,
+// a locked one and a scan have no text layer, and get no version.
+func (s *TextServer) putLayer(ctx context.Context, req host.TextCreation, task host.Task) error {
+	turn, err := s.queue.EnqueueWork(ctx, host.Work{IsUserStarted: req.IsUserStarted})
+	if err != nil {
+		return fmt.Errorf("wait for a turn to read %s: %w", req.Path, err)
+	}
+	defer turn.Release()
+	if err := s.queue.ReportTask(ctx, task); err != nil {
+		return err
 	}
 	files, texts, store := s.files, s.texts, s.store
 	if req.Vault != "" {

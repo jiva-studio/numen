@@ -4,60 +4,61 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/vault"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/readers-epub/backend/epub"
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
+	"github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1/epubv1connect"
 )
 
 const mostListed = 1000
 
-func (s *BookServer) readBookFile(path string) ([]byte, error) {
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
+// readBookFile reads a book of the vault the request works.
+func (s *BookServer) readBookFile(ctx context.Context, header http.Header, path string) ([]byte, error) {
+	cleanPath, err := s.vaults.getFilePath(ctx, header, path)
 	if err != nil {
 		return nil, err
 	}
-	return os.ReadFile(cleanPath)
+	raw, err := os.ReadFile(cleanPath)
+	if err != nil {
+		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+	}
+	return raw, nil
 }
 
-// BookServer implements numenv1connect.BookServiceHandler.
+// BookServer implements epubv1connect.BookServiceHandler. Each call works the vault its Numen-Vault
+// header names.
 type BookServer struct {
-	numenv1connect.UnimplementedBookServiceHandler
+	epubv1connect.UnimplementedBookServiceHandler
 
-	vaultRoot func() string
+	vaults vaultRoots
 
 	// books caches the books entries are read from, and closes them when the server closes.
 	books *bookCache
 }
 
-// NewBookServer returns a BookServer that restricts paths to the vault NUMEN_VAULT_PATH names.
-func NewBookServer() *BookServer {
-	return &BookServer{vaultRoot: func() string { return os.Getenv("NUMEN_VAULT_PATH") }, books: newBookCache()}
-}
-
-// NewBookServerIn returns a BookServer that restricts paths to the vault at vaultRoot.
-func NewBookServerIn(vaultRoot string) *BookServer {
-	return &BookServer{vaultRoot: func() string { return vaultRoot }, books: newBookCache()}
+// NewBookServer returns a BookServer that finds the vault of a request through files, and works the
+// vault at defaultRoot for a request naming none.
+func NewBookServer(files host.Vault, defaultRoot func() string) *BookServer {
+	return &BookServer{vaults: vaultRoots{files: files, defaultRoot: defaultRoot}, books: newBookCache()}
 }
 
 // GetBook parses an EPUB file and returns metadata, documents, and parts.
 func (s *BookServer) GetBook(
-	_ context.Context,
-	req *connect.Request[numenv1.GetBookRequest],
-) (*connect.Response[numenv1.GetBookResponse], error) {
+	ctx context.Context,
+	req *connect.Request[epubv1.GetBookRequest],
+) (*connect.Response[epubv1.GetBookResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	raw, err := s.readBookFile(path)
+	raw, err := s.readBookFile(ctx, req.Header(), path)
 	if err != nil {
-		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
-			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
-		}
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+		return nil, err
 	}
 
 	book, err := epub.Read(raw)
@@ -65,7 +66,7 @@ func (s *BookServer) GetBook(
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("parse epub %s: %w", path, err))
 	}
 
-	resp := &numenv1.GetBookResponse{
+	resp := &epubv1.GetBookResponse{
 		Title:     book.Title,
 		PageCount: int32(book.PageCount()),
 		TextBytes: int32(len(book.Text)),
@@ -74,7 +75,7 @@ func (s *BookServer) GetBook(
 
 	docCount := min(len(book.Documents), mostListed)
 	for _, doc := range book.Documents[:docCount] {
-		resp.Documents = append(resp.Documents, &numenv1.SpineDocument{
+		resp.Documents = append(resp.Documents, &epubv1.SpineDocument{
 			Path:   doc.Path,
 			Offset: int32(doc.Offset),
 			Length: int32(doc.Length),
@@ -83,7 +84,7 @@ func (s *BookServer) GetBook(
 
 	partCount := min(len(book.Parts), mostListed)
 	for _, part := range book.Parts[:partCount] {
-		resp.Parts = append(resp.Parts, &numenv1.BookPart{
+		resp.Parts = append(resp.Parts, &epubv1.BookPart{
 			Title:  part.Title,
 			Offset: int32(part.Offset),
 			Level:  int32(part.Level),
@@ -92,10 +93,14 @@ func (s *BookServer) GetBook(
 
 	pageCount := min(len(book.Pages), mostListed)
 	for _, page := range book.Pages[:pageCount] {
-		resp.PrintedPages = append(resp.PrintedPages, &numenv1.PrintedPage{
+		resp.PrintedPages = append(resp.PrintedPages, &epubv1.PrintedPage{
 			Label:  page.Label,
 			Offset: int32(page.Offset),
 		})
+	}
+
+	for _, anchor := range book.Anchors() {
+		resp.Anchors = append(resp.Anchors, &epubv1.Anchor{Offset: int32(anchor.Offset), Cfi: anchor.CFI})
 	}
 
 	return connect.NewResponse(resp), nil
@@ -103,19 +108,16 @@ func (s *BookServer) GetBook(
 
 // ReadBookMarkup returns rendered HTML markup for an EPUB document spine.
 func (s *BookServer) ReadBookMarkup(
-	_ context.Context,
-	req *connect.Request[numenv1.ReadBookMarkupRequest],
-) (*connect.Response[numenv1.ReadBookMarkupResponse], error) {
+	ctx context.Context,
+	req *connect.Request[epubv1.ReadBookMarkupRequest],
+) (*connect.Response[epubv1.ReadBookMarkupResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
 	}
-	raw, err := s.readBookFile(path)
+	raw, err := s.readBookFile(ctx, req.Header(), path)
 	if err != nil {
-		if errors.Is(err, vault.ErrOutsideVault) || errors.Is(err, vault.ErrPathTraversal) || errors.Is(err, vault.ErrEmptyVault) {
-			return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
-		}
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read book %s: %w", path, err))
+		return nil, err
 	}
 
 	book, err := epub.Read(raw)
@@ -128,7 +130,7 @@ func (s *BookServer) ReadBookMarkup(
 		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("read document markup %s: %w", req.Msg.GetDocument(), err))
 	}
 
-	return connect.NewResponse(&numenv1.ReadBookMarkupResponse{
+	return connect.NewResponse(&epubv1.ReadBookMarkupResponse{
 		Markup: rendered.HTML(),
 	}), nil
 }
@@ -136,9 +138,9 @@ func (s *BookServer) ReadBookMarkup(
 // ReadBookEntry returns the bytes of one entry of an EPUB's archive while the
 // file is still the bytes the baseline names.
 func (s *BookServer) ReadBookEntry(
-	_ context.Context,
-	req *connect.Request[numenv1.ReadBookEntryRequest],
-) (*connect.Response[numenv1.ReadBookEntryResponse], error) {
+	ctx context.Context,
+	req *connect.Request[epubv1.ReadBookEntryRequest],
+) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	path := req.Msg.GetPath()
 	if path == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
@@ -146,9 +148,9 @@ func (s *BookServer) ReadBookEntry(
 	if req.Msg.GetEntry() == "" {
 		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("entry required"))
 	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
+	cleanPath, err := s.vaults.getFilePath(ctx, req.Header(), path)
 	if err != nil {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("read book %s: %w", path, err))
+		return nil, err
 	}
 	book, err := s.books.acquire(cleanPath)
 	if err != nil {
@@ -168,7 +170,7 @@ func (s *BookServer) ReadBookEntry(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
-	return connect.NewResponse(&numenv1.ReadBookEntryResponse{Body: body}), nil
+	return connect.NewResponse(&epubv1.ReadBookEntryResponse{Body: body}), nil
 }
 
 // isFingerprintOf is whether a file of the size and the stamp given is the bytes the

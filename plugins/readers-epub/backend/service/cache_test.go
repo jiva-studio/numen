@@ -3,6 +3,8 @@ package service
 import (
 	"bytes"
 	"context"
+	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
+	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 	"os"
 	"path/filepath"
 	"sync"
@@ -10,13 +12,12 @@ import (
 	"testing"
 
 	"connectrpc.com/connect"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 // newCountingServer is a server on the vault dir that counts the files it opens.
 func newCountingServer(t *testing.T, dir string) (*BookServer, *atomic.Int64) {
 	t.Helper()
-	server := NewBookServerIn(dir)
+	server := NewBookServer(hosttest.New("vault"), func() string { return dir })
 	t.Cleanup(server.Close)
 	var opens atomic.Int64
 	server.books.openFile = func(path string) (*os.File, error) {
@@ -26,9 +27,9 @@ func newCountingServer(t *testing.T, dir string) (*BookServer, *atomic.Int64) {
 	return server, &opens
 }
 
-func readEntryFrom(server *BookServer, name, entry string) (*connect.Response[numenv1.ReadBookEntryResponse], error) {
+func readEntryFrom(server *BookServer, name, entry string) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	return server.ReadBookEntry(context.Background(),
-		connect.NewRequest(&numenv1.ReadBookEntryRequest{Path: name, Entry: entry}))
+		connect.NewRequest(&epubv1.ReadBookEntryRequest{Path: name, Entry: entry}))
 }
 
 func TestReadBookEntryOpensTheFileOnceForManyEntries(t *testing.T) {

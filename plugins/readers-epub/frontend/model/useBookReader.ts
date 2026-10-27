@@ -11,6 +11,7 @@ import { useBookDocument } from './useBookDocument'
 import { useBookHighlights } from './useBookHighlights'
 import type {
   Book,
+  BookAnchor,
   BookHandle,
   BookPart,
   Books,
@@ -76,6 +77,7 @@ async function loadBookData(
     title: Ref<string>
     span: Ref<Span>
     documents: ShallowRef<readonly SpineDocument[]>
+    anchors: ShallowRef<readonly BookAnchor[]>
     pages: Ref<number>
     pageBytes: Ref<number>
     contents: ShallowRef<readonly ContentsEntry[]>
@@ -95,6 +97,7 @@ async function loadBookData(
     state.title.value = book.title
     state.span.value = book.span
     state.documents.value = book.documents
+    state.anchors.value = book.anchors
     state.pages.value = book.pages
     state.pageBytes.value = book.pageBytes
     state.contents.value = getContents(book, deps.words)
@@ -152,6 +155,8 @@ function createBookCloser(
 export function useBookReader(books: Books, path: string, options: BookReaderOptions) {
   const { words, writeMessage = () => {} } = options
   const state = useBookState()
+  // The blocks of the book by their CFI, which the tab saves and finds a place by.
+  const anchors = shallowRef<readonly BookAnchor[]>([])
   let isOpen = true
 
   const bookDocument = useBookDocument(books, path, {
@@ -172,7 +177,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
   const loadBook = async () => {
     await loadBookData(
       { books, path },
-      { ...state, offset: nav.offset },
+      { ...state, anchors, offset: nav.offset },
       { words, writeMessage, isOpen: () => isOpen, drawDocument: (doc) => bookDocument.draw(doc) },
     )
     state.isLoading.value = false
@@ -193,6 +198,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
   const reader = {
     path,
     ...state,
+    anchors,
     page,
     chapter,
     offset: nav.offset,
