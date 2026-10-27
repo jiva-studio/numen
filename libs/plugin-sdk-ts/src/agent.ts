@@ -57,6 +57,18 @@ export interface AgentModel {
   readonly defaultReasoning?: string | undefined
 }
 
+// TextLink is one wikilink of a text.
+export interface TextLink {
+  // The wikilink as the text holds it, brackets included.
+  readonly raw: string
+  // Where it points, as `scheme://value`.
+  readonly address: string
+  // The text it reads as: the alias where one is written.
+  readonly text: string
+  // The vault path it reaches, empty where it reaches none.
+  readonly path: string
+}
+
 // AgentPort answers the questions of a conversation: the agent of the window, or one a plugin
 // makes for questions about something of its own.
 export interface AgentPort {
@@ -68,9 +80,8 @@ export interface AgentPort {
 
 // AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
 export interface AgentHost extends AgentPort {
-  // The address of each wikilink in a text, as `scheme://value`, and the vault path it reaches:
-  // empty where it reaches none. The core reads the wikilinks out of the text.
-  resolveLinks(text: string): Promise<ReadonlyMap<string, string>>
+  // The wikilinks of a text, each raw form once. The core reads them out of the text.
+  resolveLinks(text: string): Promise<readonly TextLink[]>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string
   getSetting(path: readonly string[]): unknown

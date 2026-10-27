@@ -998,11 +998,32 @@ const UI_EDITOR = {
   names: ["Editor", "createTimeGutter", "isNoteAddress", "getWikilinks"],
 };
 
-/** Every editor directory `libs/ui/core/src` holds, and every editor or wikilink name `src/index.ts` exports. */
+/** The names of the note link format: its address helpers and any name holding `wikilink`. */
+const NOTE_LINK_NAME = /\b(isNoteAddress|getWikilinks|parseAddress|writeAddress|[A-Za-z_$]*[Ww]ikilink[A-Za-z0-9_$]*)\b/g;
+
+/** The schemes a note address is written with. */
+const NOTE_SCHEMES = ["name://", "note://"];
+
+/** Every name of the note link format and every note address literal in the shipped code of `libs/ui/core/src`. */
+function findUiNoteLinks() {
+  const found = [];
+  for (const file of listShippedFiles(["libs/ui/core/src"])) {
+    const source = readSource(file);
+    if (!source) continue;
+    for (const hit of findInCode(source.code, NOTE_LINK_NAME)) found.push({ file, ...hit });
+    for (const { line, value } of source.literals) {
+      if (NOTE_SCHEMES.some((scheme) => value.startsWith(scheme))) found.push({ file, line, symbol: JSON.stringify(value) });
+    }
+  }
+  return found;
+}
+
+/** Every editor directory `libs/ui/core/src` holds, every editor or wikilink name `src/index.ts` exports, and every note link name it defines or uses. */
 function findUiEditor() {
   const found = UI_EDITOR.dirs
     .filter((dir) => fs.existsSync(path.join(REPO_ROOT, "libs/ui/core/src", dir)))
     .map((dir) => ({ file: `libs/ui/core/src/${dir}`, line: 0, symbol: "directory" }));
+  found.push(...findUiNoteLinks());
   const file = "libs/ui/core/src/index.ts";
   const text = fs.readFileSync(path.join(REPO_ROOT, file), "utf8");
   for (const match of text.matchAll(/^export\s+(?:type\s+)?\{([^}]*)\}\s*from\s*(['"])([^'"]+)\2/gm)) {

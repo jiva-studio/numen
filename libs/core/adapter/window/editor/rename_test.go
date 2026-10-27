@@ -761,13 +761,23 @@ func TestResolveAddressesFindsTheWikilinksOfAText(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Text: "See [[Entropy]] and [[Nowhere|elsewhere]].\nAgain [[Entropy#Heat]], not `[[]]`.",
+		Text: "See [[Entropy]] and [[Nowhere|elsewhere]].\nAgain [[Entropy#Heat]] and [[Entropy]], not `[[]]`.",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if got, want := answer.Msg.GetFound(), []string{"name://Entropy", "name://Nowhere"}; !slices.Equal(got, want) {
+	type link struct{ raw, address, text string }
+	var got []link
+	for _, one := range answer.Msg.GetFound() {
+		got = append(got, link{one.GetRaw(), one.GetAddress(), one.GetText()})
+	}
+	want := []link{
+		{"[[Entropy]]", "name://Entropy", "Entropy"},
+		{"[[Nowhere|elsewhere]]", "name://Nowhere", "elsewhere"},
+		{"[[Entropy#Heat]]", "name://Entropy", "Entropy#Heat"},
+	}
+	if !slices.Equal(got, want) {
 		t.Errorf("found %q, want %q", got, want)
 	}
 	landed := getResolved(t, answer.Msg)

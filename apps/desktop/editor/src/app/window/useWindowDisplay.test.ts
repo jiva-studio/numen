@@ -41,7 +41,7 @@ function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
     },
     headings: async () => new Map(),
     fileKinds: async () => new Map(),
-    resolveLinks: async () => new Map(),
+    resolveLinks: async () => [],
     getInitialOpenPath: async () => ({ path: 'Opening.md' }),
     state: async () => resolved,
     agentUnreachable: async () => '',

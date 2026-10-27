@@ -34,6 +34,7 @@ const createPanel = (neighbourhood: DeckNeighbourhood): NotesPanelState => {
     deck: () => 'decks/Words.md',
     getDeckNeighbourhood: async () => neighbourhood,
     showNotice: () => {},
+    resolveLinks: async () => [],
   })
 }
 

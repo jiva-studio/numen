@@ -157,7 +157,11 @@ describe('the window a plugin opens files and reads the note in focus through', 
 describe('the agent a plugin is handed', () => {
   const create = () => {
     const port = { ask: vi.fn(), finish: vi.fn(() => Promise.resolve()) }
-    const core = { resolveLinks: vi.fn(() => Promise.resolve(new Map([['name://A', 'A.md']]))) }
+    const core = {
+      resolveLinks: vi.fn(() =>
+        Promise.resolve([{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }]),
+      ),
+    }
     const rest = {
       getSetting: vi.fn(() => 'zeta'),
       writeSetting: vi.fn(() => Promise.resolve()),
@@ -187,7 +191,9 @@ describe('the agent a plugin is handed', () => {
   it('resolves the wikilinks of an answer from the top of the vault', async () => {
     const { agent, core } = create()
 
-    expect([...(await agent.resolveLinks('See [[A]].'))]).toStrictEqual([['name://A', 'A.md']])
+    expect(await agent.resolveLinks('See [[A]].')).toStrictEqual([
+      { raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' },
+    ])
     expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].')
   })
 

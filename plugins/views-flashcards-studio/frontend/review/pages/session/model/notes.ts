@@ -11,6 +11,8 @@
  * walks several decks, and each is asked for as it comes round.
  */
 import { computed, ref, shallowRef } from 'vue'
+import type { TextLink } from '@numen/plugin-sdk'
+import type { LinkPiece } from '@numen/ui'
 
 import { WORDS as words } from '../lib/notesWords'
 import type { DeckNeighbourhood, Neighbour } from '../api/notes'
@@ -30,13 +32,32 @@ export interface NotesPanelDeps {
   readonly getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>
   /** Where the window says what a person has to know. */
   readonly showNotice: (message: string) => void
+  /** The wikilinks of a text, as the core reads them. */
+  readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
 }
+
+/** The links of one note's body, as the panel draws them. */
+export interface NoteLinks {
+  readonly links: readonly LinkPiece[]
+  /** The addresses that reach no note. */
+  readonly unresolved: readonly string[]
+}
+
+/** A note is keyed by what its article is keyed by. */
+export const getNoteKey = (one: Neighbour): string => one.path || one.written
+
+const getNoteLinks = (found: readonly TextLink[]): NoteLinks => ({
+  links: found.map((one) => ({ raw: one.raw, href: one.address, text: one.text })),
+  unresolved: [...new Set(found.filter((one) => one.path === '').map((one) => one.address))],
+})
 
 function useDeckNotes(
   getDeckNeighbourhood: (vault: string, deck: string) => Promise<DeckNeighbourhood>,
   showNotice: (message: string) => void,
+  resolveLinks: (text: string) => Promise<readonly TextLink[]>,
 ) {
   const notes = shallowRef<readonly Neighbour[]>([])
+  const links = shallowRef<ReadonlyMap<string, NoteLinks>>(new Map())
   const unread = ref(0)
   const isWorking = ref(false)
   let activeDeck: string | null = null
@@ -44,9 +65,22 @@ function useDeckNotes(
 
   const clearNotes = () => {
     notes.value = []
+    links.value = new Map()
     unread.value = 0
     activeDeck = null
     pendingDeck = null
+  }
+
+  const fetchLinks = async (deck: string, one: Neighbour) => {
+    let found: readonly TextLink[]
+    try {
+      found = await resolveLinks(one.body)
+    } catch {
+      // A body whose links cannot be read is drawn with its links as text.
+      return
+    }
+    if (activeDeck !== deck || !notes.value.includes(one)) return
+    links.value = new Map(links.value).set(getNoteKey(one), getNoteLinks(found))
   }
 
   const fetchNotes = async (vault: string, deck: string) => {
@@ -61,6 +95,9 @@ function useDeckNotes(
       notes.value = neighbourhood.notes
       unread.value = neighbourhood.unread
       activeDeck = deck
+      for (const one of neighbourhood.notes) {
+        if (one.body) void fetchLinks(deck, one)
+      }
     } catch {
       if (pendingDeck !== deck) return
       failed = true
@@ -73,15 +110,16 @@ function useDeckNotes(
     }
   }
 
-  return { notes, unread, isWorking, fetchNotes, clearNotes }
+  return { notes, links, unread, isWorking, fetchNotes, clearNotes }
 }
 
 export function useNotesPanel(deps: NotesPanelDeps) {
   const open = computed(() => deps.open())
   const activePath = ref('')
-  const { notes, unread, isWorking, fetchNotes, clearNotes } = useDeckNotes(
+  const { notes, links, unread, isWorking, fetchNotes, clearNotes } = useDeckNotes(
     deps.getDeckNeighbourhood,
     deps.showNotice,
+    deps.resolveLinks,
   )
 
   const openPanel = async (note = '') => {
@@ -108,6 +146,7 @@ export function useNotesPanel(deps: NotesPanelDeps) {
 
   const api = {
     notes,
+    links,
     unread,
     isWorking,
     col: activePath,

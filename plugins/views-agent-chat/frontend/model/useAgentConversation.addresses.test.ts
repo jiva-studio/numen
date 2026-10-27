@@ -101,12 +101,42 @@ describe('the notes an answer names', () => {
 })
 
 describe('a turn drawn with the notes that reach nothing', () => {
-  it('is the turn itself where every note it names was found', async () => {
-    const one = open([turn('a', 'See [[Entropy]].')], { 'name://Entropy': 'Entropy.md' })
+  it('is the turn itself where it names no note', async () => {
+    const one = open([turn('a', 'See nothing.')])
     await settle()
 
     expect(one.state.turns.value[0]).toBe(one.turns.value[0])
-    expect(one.state.turns.value[0]).not.toHaveProperty('unresolved')
+  })
+
+  it('carries the links the core read, and no address where every note was found', async () => {
+    const one = open([turn('a', 'See [[Entropy|heat]].')], { 'name://Entropy': 'Entropy.md' })
+    await settle()
+
+    expect(one.state.turns.value[0]?.links).toEqual([
+      { raw: '[[Entropy|heat]]', href: 'name://Entropy', text: 'heat' },
+    ])
+    expect(one.state.turns.value[0]?.unresolved).toEqual([])
+  })
+
+  it('is the same turn while nothing about its links changed', async () => {
+    const one = open([turn('a', 'See [[Entropy]].')])
+    await settle()
+
+    const before = one.state.turns.value[0]
+
+    one.turns.value = [...one.turns.value, turn('b', 'Plain.')]
+    await settle()
+
+    expect(one.state.turns.value[0]).toBe(before)
+  })
+
+  it('keeps the previous links while the longer text resolves', async () => {
+    const one = open([turn('a', 'See [[Entropy]].')])
+    await settle()
+
+    one.turns.value = [turn('a', 'See [[Entropy]] and more')]
+
+    expect(one.state.turns.value[0]?.links?.map((link) => link.raw)).toEqual(['[[Entropy]]'])
   })
 
   it('names the notes again once they change while the turn stays', async () => {

@@ -39,7 +39,7 @@ const createServices = () => {
   const agent = {
     ask: vi.fn(),
     finish: vi.fn(() => Promise.resolve()),
-    resolveLinks: vi.fn(() => Promise.resolve(new Map())),
+    resolveLinks: vi.fn(() => Promise.resolve([])),
     getUnreachable: vi.fn(() => ''),
     getSetting: vi.fn(),
     writeSetting: vi.fn(() => Promise.resolve()),

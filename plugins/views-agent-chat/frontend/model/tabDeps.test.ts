@@ -35,7 +35,7 @@ describe('what an agent tab asks of the window', () => {
 
     const found = await createAgentTabDeps(host).resolveLinks('[[Plan]] and [[Nowhere]]')
 
-    expect([...found]).toStrictEqual([
+    expect(found.map((one) => [one.address, one.path])).toStrictEqual([
       ['name://Plan', 'Ideas/Plan.md'],
       ['name://Nowhere', ''],
     ])

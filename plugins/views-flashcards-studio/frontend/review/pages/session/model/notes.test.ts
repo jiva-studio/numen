@@ -36,6 +36,7 @@ const panel = (more: { deck?: string; refuses?: boolean } = {}) => {
       return { notes: [createNeighbour({ written: of })], unread: 2 } satisfies DeckNeighbourhood
     },
     showNotice: (one) => notices.push(one),
+    resolveLinks: async () => [],
   })
   return { held: target, requests: request, asked: request, notices, open, deck }
 }
@@ -114,6 +115,7 @@ describe('what is read belongs to the deck', () => {
           pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
+      resolveLinks: async () => [],
     })
 
     const first = target.openPanel()
@@ -146,6 +148,7 @@ describe('what is read belongs to the deck', () => {
           pendingCallbacks.push(() => then({ notes: [createNeighbour({ path: of })], unread: 0 })),
         ),
       showNotice: () => {},
+      resolveLinks: async () => [],
     })
 
     const first = target.openPanel()
@@ -224,6 +227,7 @@ describe('the asking', () => {
           }),
         ),
       showNotice: (one) => notices.push(one),
+      resolveLinks: async () => [],
     })
     return { held: target, waiting: pendingRequests, deck, notices }
   }
@@ -282,5 +286,62 @@ describe('the panel put away', () => {
     held.closePanel()
 
     expect(open.value).toBe(false)
+  })
+})
+
+describe('the links of a note read in the panel', () => {
+  it('are the wikilinks the core read out of its body', async () => {
+    const bodies: string[] = []
+    const body = 'Made like [[Compost|compost]], unlike [[Peat]].'
+    const target = useNotesPanel({
+      open: () => true,
+      showPanel: () => {},
+      vault: () => 'one',
+      deck: () => 'decks/Words.md',
+      getDeckNeighbourhood: async () => ({ notes: [createNeighbour({ body })], unread: 0 }),
+      showNotice: () => {},
+      resolveLinks: async (text) => {
+        bodies.push(text)
+        return [
+          {
+            raw: '[[Compost|compost]]',
+            address: 'name://Compost',
+            text: 'compost',
+            path: 'Compost.md',
+          },
+          { raw: '[[Peat]]', address: 'name://Peat', text: 'Peat', path: '' },
+        ]
+      },
+    })
+
+    await target.openPanel()
+    await Promise.resolve()
+
+    expect(bodies).toEqual([body])
+    expect(target.links.value.get('notes/Leaf mould.md')).toEqual({
+      links: [
+        { raw: '[[Compost|compost]]', href: 'name://Compost', text: 'compost' },
+        { raw: '[[Peat]]', href: 'name://Peat', text: 'Peat' },
+      ],
+      unresolved: ['name://Peat'],
+    })
+  })
+
+  it('are dropped with the deck they were read for', async () => {
+    const target = useNotesPanel({
+      open: () => true,
+      showPanel: () => {},
+      vault: () => 'one',
+      deck: () => 'decks/Words.md',
+      getDeckNeighbourhood: async () => ({ notes: [createNeighbour()], unread: 0 }),
+      showNotice: () => {},
+      resolveLinks: async () => [{ raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' }],
+    })
+    await target.openPanel()
+    await Promise.resolve()
+
+    target.endSession()
+
+    expect(target.links.value.size).toBe(0)
   })
 })

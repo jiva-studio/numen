@@ -41,6 +41,7 @@ const panels = (more: { card?: ReviewCard | null; unreachable?: string } = {}) =
     unreachable: () => more.unreachable ?? '',
     vault: () => 'garden',
     showNotice: (text) => notices.push(text),
+    resolveLinks: async () => [],
   })
   return { ...target, notices, agent }
 }

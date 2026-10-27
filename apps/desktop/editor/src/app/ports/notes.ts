@@ -12,6 +12,7 @@ import type {
   RemoveResult,
   RenameResult,
 } from '@/entities/note'
+import type { TextLink } from '@numen/plugin-sdk'
 import type { ErrorCode } from '@/shared/errors'
 import type { CreateResult } from '@/entities/file'
 
@@ -23,11 +24,11 @@ export interface NotePort {
    */
   headings(paths: readonly string[]): Promise<ReadonlyMap<string, readonly NoteHeading[]>>
   /**
-   * The address of each wikilink in a text, read by the core, and the note it
-   * reaches: empty where it reaches none, or one in another vault. A name
-   * resolves by a path relative to the note it is written in, which is `from`.
+   * The wikilinks of a text, read by the core, and the note each reaches: empty
+   * where it reaches none, or one in another vault. A name resolves by a path
+   * relative to the note it is written in, which is `from`.
    */
-  resolveLinks(from: string, text: string): Promise<ReadonlyMap<string, string>>
+  resolveLinks(from: string, text: string): Promise<readonly TextLink[]>
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */

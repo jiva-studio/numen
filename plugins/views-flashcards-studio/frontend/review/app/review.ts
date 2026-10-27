@@ -147,6 +147,7 @@ export const useReview = (deps: ReviewDeps) => {
     card: () => state.card.value,
     agent: deps.agent,
     unreachable: () => deps.agent.getUnreachable(),
+    resolveLinks: (text) => deps.agent.resolveLinks(text),
     vault: () => deps.vault,
     showNotice: (text) => notices.showNotice(text, 'caution'),
   })

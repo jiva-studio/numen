@@ -3,7 +3,7 @@
 import { computed } from 'vue'
 import { Prose } from '@numen/ui'
 import { ToolCall } from '../tool-call'
-import { NO_UNRESOLVED, type PlacedTurn, type Turn } from '../../lib/turn'
+import { NO_LINKS, NO_UNRESOLVED, type PlacedTurn, type Turn } from '../../lib/turn'
 
 const props = defineProps<{
   entry: PlacedTurn
@@ -64,6 +64,7 @@ const call = computed(() => ({
         :text="entry.turn.text"
         :is-arriving="entry.state === 'arriving'"
         :unresolved="entry.turn.unresolved ?? NO_UNRESOLVED"
+        :links="entry.turn.links ?? NO_LINKS"
         @follow="(href: string, press: MouseEvent) => emit('follow', entry.turn, href, press)"
       />
     </div>

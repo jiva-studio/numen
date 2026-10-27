@@ -188,7 +188,7 @@ describe('agent model selection and settings', () => {
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
-      resolveLinks: async () => new Map(),
+      resolveLinks: async () => [],
       unreachable: () => '',
       writeSetting: async (path, value) => {
         content.push([path, value])
@@ -229,7 +229,7 @@ describe('agent model selection and settings', () => {
     const state = useAgentConversation(fake.conversation, {
       openFileAt: () => {},
       openFileBeside: () => {},
-      resolveLinks: async () => new Map(),
+      resolveLinks: async () => [],
       unreachable: () => '',
       getSetting: (path) => (path[1] === 'use' ? 'zeta' : undefined),
       getModelsAt: (categoryPath) =>

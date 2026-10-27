@@ -7,7 +7,7 @@
  */
 import { computed, ref } from 'vue'
 
-import type { AgentPort } from '@numen/plugin-sdk'
+import type { AgentPort, TextLink } from '@numen/plugin-sdk'
 import {
   createCardAgentPort,
   getDeckNeighbourhood,
@@ -29,6 +29,8 @@ export interface PanelsDeps {
   readonly vault: () => string
   /** Where the window says what a person has to know. */
   readonly showNotice: (text: string) => void
+  /** The wikilinks of a text, as the core reads them. */
+  readonly resolveLinks: (text: string) => Promise<readonly TextLink[]>
 }
 
 export const usePanels = (deps: PanelsDeps) => {
@@ -80,6 +82,7 @@ export const usePanels = (deps: PanelsDeps) => {
     deck: () => deps.card()?.deck ?? '',
     getDeckNeighbourhood,
     showNotice: deps.showNotice,
+    resolveLinks: deps.resolveLinks,
   })
 
   /**

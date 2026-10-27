@@ -5,6 +5,7 @@ import { computed, ref, shallowRef, watch, type ComputedRef, type Ref } from 'vu
 import type { AgentModelOption } from '../message-composer'
 import type { Conversation, Turn } from '../thread'
 import { areLinkTargetsEqual, parseLinkTarget, extractLinkTargets } from '../lib/links'
+import type { TextLink } from '@numen/plugin-sdk'
 import type { AgentTabDeps } from '../types'
 import type { SavedConversation } from '../lib/saved'
 
@@ -167,18 +168,23 @@ function createConversationLinkFollower(
   }
 }
 
-/** The wikilink addresses of one turn, read by the core from the turn's text. */
+/** The wikilinks of one turn, read by the core from the turn's text. */
 interface TurnLinks {
   readonly text: string
-  readonly addresses: readonly string[]
+  readonly links: readonly TextLink[]
 }
+
+const NO_TEXT_LINKS: readonly TextLink[] = []
 
 function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps) {
   const resolvedAddresses = shallowRef<ResolvedAddressMap>(new Map())
   const linksByTurn = shallowRef<ReadonlyMap<string, TurnLinks>>(new Map())
   // A turn has at most one request in flight; a text that changes meanwhile is asked about after it.
   const pendingTurns = new Set<string>()
-  const enrichedByTurn = new WeakMap<Turn, { unresolved: readonly string[]; enriched: Turn }>()
+  const enrichedByTurn = new WeakMap<
+    Turn,
+    { links: readonly TextLink[]; unresolved: readonly string[]; enriched: Turn }
+  >()
 
   const resolveTurn = (turn: Turn) => {
     if (pendingTurns.has(turn.id) || linksByTurn.value.get(turn.id)?.text === turn.text) return
@@ -186,7 +192,7 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
     if (!turn.text.includes('[[')) {
       linksByTurn.value = new Map(linksByTurn.value).set(turn.id, {
         text: turn.text,
-        addresses: [],
+        links: NO_TEXT_LINKS,
       })
       return
     }
@@ -195,11 +201,11 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
     void deps
       .resolveLinks(text)
       .then((found) => {
-        resolvedAddresses.value = new Map([...resolvedAddresses.value, ...found])
-        linksByTurn.value = new Map(linksByTurn.value).set(id, {
-          text,
-          addresses: [...found.keys()],
-        })
+        resolvedAddresses.value = new Map([
+          ...resolvedAddresses.value,
+          ...found.map((one) => [one.address, one.path] as const),
+        ])
+        linksByTurn.value = new Map(linksByTurn.value).set(id, { text, links: found })
       })
       .finally(() => {
         pendingTurns.delete(id)
@@ -207,9 +213,6 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
         if (current && current.text !== text) resolveTurn(current)
       })
   }
-
-  const getTurnAddresses = (turn: Turn): readonly string[] =>
-    linksByTurn.value.get(turn.id)?.addresses ?? []
 
   watch(
     () => {
@@ -223,15 +226,27 @@ function useConversationAddresses(conversation: Conversation, deps: AgentTabDeps
     { immediate: true },
   )
 
+  // A turn keeps the links of the text last read while a longer text is asked about,
+  // so a link already drawn stays drawn as the answer arrives.
   const enrichTurn = (turn: Turn): Turn => {
-    const unresolved = getTurnAddresses(turn).filter(
-      (address) => resolvedAddresses.value.get(address) === '',
-    )
-    if (!unresolved.length) return turn
+    const links = linksByTurn.value.get(turn.id)?.links ?? NO_TEXT_LINKS
+    if (!links.length) return turn
+    const unresolved = [
+      ...new Set(
+        links
+          .filter((one) => resolvedAddresses.value.get(one.address) === '')
+          .map((one) => one.address),
+      ),
+    ]
     const recognized = enrichedByTurn.get(turn)
-    if (recognized && isSameList(recognized.unresolved, unresolved)) return recognized.enriched
-    const enriched = { ...turn, unresolved }
-    enrichedByTurn.set(turn, { unresolved, enriched })
+    if (recognized?.links === links && isSameList(recognized.unresolved, unresolved))
+      return recognized.enriched
+    const enriched: Turn = {
+      ...turn,
+      unresolved,
+      links: links.map((one) => ({ raw: one.raw, href: one.address, text: one.text })),
+    }
+    enrichedByTurn.set(turn, { links, unresolved, enriched })
     return enriched
   }
 

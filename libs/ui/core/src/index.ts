@@ -47,6 +47,7 @@ export { interceptExternalLinks, isExternalLink } from './shared/lib/text/extern
 export { groupDigits, many, percent, plural } from './shared/lib/format/digits'
 
 export { Prose } from './shared/ui/prose'
+export type { LinkPiece } from './shared/lib/text/marks'
 
 export type { Span } from './shared/lib/text/span'
 

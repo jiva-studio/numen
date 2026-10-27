@@ -205,11 +205,11 @@ describe('notes domain', () => {
     expect(heads.get('a.md')?.[0]?.text).toBe('H1')
 
     request.resolveAddresses.mockResolvedValue({
-      found: ['name://B'],
+      found: [{ raw: '[[B]]', address: 'name://B', text: 'B' }],
       resolved: [{ written: 'name://B', path: 'b.md', isCrossed: false }],
     })
     const res = await core.resolveLinks('a.md', '[[B]]')
-    expect(res.get('name://B')).toBe('b.md')
+    expect(res[0]?.path).toBe('b.md')
   })
 })
 

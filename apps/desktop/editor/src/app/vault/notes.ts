@@ -106,6 +106,11 @@ export const notesCore: NoteOperations = {
     const paths = new Map(
       answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
     )
-    return new Map(answer.found.map((address) => [address, paths.get(address) ?? '']))
+    return answer.found.map((one) => ({
+      raw: one.raw,
+      address: one.address,
+      text: one.text,
+      path: paths.get(one.address) ?? '',
+    }))
   },
 }

@@ -294,8 +294,8 @@ func (h *noteHandler) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	inText := getWikilinkAddresses(r.Msg.GetText())
-	requested := append(slices.Clone(r.Msg.GetWritten()), inText...)
+	inText, addresses := getTextLinks(r.Msg.GetText())
+	requested := append(slices.Clone(r.Msg.GetWritten()), addresses...)
 	found, err := h.resolveLinks.Execute(ctx, showing, r.Msg.GetFrom(), requested)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
@@ -571,20 +571,40 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 	}
 }
 
-// getWikilinkAddresses is the address of each wikilink in a text, in the order
-// they are written, each once.
-func getWikilinkAddresses(text string) []string {
-	var out []string
+// getTextLinks is each wikilink of a text, in the order they are written,
+// each raw form once, and the address of each, each address once.
+func getTextLinks(text string) ([]*v1.TextLink, []string) {
+	var links []*v1.TextLink
+	var addresses []string
 	isListed := map[string]bool{}
+	isAddressed := map[string]bool{}
 	for line := range strings.SplitSeq(text, "\n") {
 		for _, link := range markdown.WikilinksIn(line) {
-			address := link.Target.String()
-			if isListed[address] {
+			raw := line[link.At:link.To]
+			if isListed[raw] {
 				continue
 			}
-			isListed[address] = true
-			out = append(out, address)
+			isListed[raw] = true
+			address := link.Target.String()
+			links = append(links, &v1.TextLink{
+				Raw:     raw,
+				Address: address,
+				Text:    getWikilinkText(link.Inside),
+			})
+			if !isAddressed[address] {
+				isAddressed[address] = true
+				addresses = append(addresses, address)
+			}
 		}
 	}
-	return out
+	return links, addresses
+}
+
+// getWikilinkText is the text a wikilink reads as: what follows its `|`, or
+// everything inside the brackets where it has none.
+func getWikilinkText(inside string) string {
+	if alias := strings.IndexByte(inside, '|'); alias >= 0 {
+		return strings.TrimSpace(inside[alias+1:])
+	}
+	return strings.TrimSpace(inside)
 }

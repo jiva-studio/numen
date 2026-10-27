@@ -2,7 +2,7 @@
  * What a thread is made of, as plain values.
  */
 
-import { groupDigits } from '@numen/ui'
+import { groupDigits, type LinkPiece } from '@numen/ui'
 
 export interface VoiceDescriptor {
   /** Drawn in a bubble of its own, or as text on the surface. */
@@ -47,6 +47,8 @@ export interface Turn {
    * is drawn as not resolving.
    */
   readonly unresolved?: readonly string[]
+  /** The pieces of the text drawn as links: its wikilinks, as the core read them. */
+  readonly links?: readonly LinkPiece[]
 }
 
 /** A turn with everything about how to draw it worked out. */
@@ -58,6 +60,9 @@ export interface PlacedTurn {
 
 /** The unresolved addresses of a turn that names none. */
 export const NO_UNRESOLVED: readonly string[] = Object.freeze([])
+
+/** The links of a turn that has none. */
+export const NO_LINKS: readonly LinkPiece[] = Object.freeze([])
 
 const placedByTurn = new WeakMap<Turn, PlacedTurn>()
 

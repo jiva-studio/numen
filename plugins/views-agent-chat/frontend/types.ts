@@ -1,13 +1,13 @@
 /**
  * Types and interfaces for agent conversation tabs.
  */
-import type { AgentModel, Span } from '@numen/plugin-sdk'
+import type { AgentModel, Span, TextLink } from '@numen/plugin-sdk'
 
 /** External dependencies required by an agent tab. */
 export interface AgentTabDeps {
   openFileAt(path: string, ...spans: readonly Span[]): void
   openFileBeside(path: string): void
-  resolveLinks(text: string): Promise<ReadonlyMap<string, string>>
+  resolveLinks(text: string): Promise<readonly TextLink[]>
   unreachable(): string
   writeSetting?(path: readonly string[], value: unknown): Promise<void>
   getSetting?(path: readonly string[]): unknown

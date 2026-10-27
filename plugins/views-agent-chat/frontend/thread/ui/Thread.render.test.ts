@@ -65,3 +65,21 @@ describe('a reply arriving in the last turn', () => {
     expect(countRenders('first')).toBe(1)
   })
 })
+
+describe('a reply naming notes', () => {
+  it('draws the links of the turn as links, and reports a press on one', async () => {
+    const turn: Turn = {
+      id: '1',
+      voice: 'response',
+      text: 'It sits under [[Thermodynamics]].',
+      links: [{ raw: '[[Thermodynamics]]', href: 'name://Thermodynamics', text: 'Thermo' }],
+    }
+    const wrapper = mount(Thread, { props: { turns: [turn] } })
+
+    const link = wrapper.find('a')
+    await link.trigger('click')
+
+    expect(link.text()).toBe('Thermo')
+    expect(wrapper.emitted('follow')?.[0]?.slice(0, 2)).toEqual([turn, 'name://Thermodynamics'])
+  })
+})

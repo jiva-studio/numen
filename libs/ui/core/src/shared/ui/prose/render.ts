@@ -7,9 +7,9 @@
  */
 import MarkdownIt, { type Token } from 'markdown-it'
 import { h, type VNode } from 'vue'
-import { wikilinks } from '@/shared/lib/text/marks'
+import { linkPieces, type LinkPieces, type LinkPiecesEnv } from '@/shared/lib/text/marks'
 
-const marks = new MarkdownIt({ html: false, linkify: true }).use(wikilinks)
+const marks = new MarkdownIt({ html: false, linkify: true }).use(linkPieces)
 
 /** The class every word is drawn in. */
 export const WORD = 'prose__word'
@@ -22,8 +22,16 @@ export type BrokenAddresses = ReadonlySet<string>
 
 const NONE: BrokenAddresses = new Set()
 
-export const render = (text: string, deadAddresses: BrokenAddresses = NONE): VNode[] =>
-  nodes(marks.parse(text, {}), deadAddresses)
+const NO_PIECES: LinkPieces = new Map()
+
+export const render = (
+  text: string,
+  deadAddresses: BrokenAddresses = NONE,
+  pieces: LinkPieces = NO_PIECES,
+): VNode[] => {
+  const env: LinkPiecesEnv = { pieces }
+  return nodes(marks.parse(text, env), deadAddresses)
+}
 
 /**
  * Tokens arrive flat, with the nesting written on them. A frame is one element

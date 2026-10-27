@@ -80,21 +80,25 @@ describe('a note requested for', () => {
 
   it('has the wikilinks of a text resolved from the note that wrote them, less the ones that cross', async () => {
     asked.resolveAddresses.mockResolvedValue({
-      found: ['name://B', 'name://C', 'name://D'],
+      found: [
+        { raw: '[[B]]', address: 'name://B', text: 'B' },
+        { raw: '[[C|see C]]', address: 'name://C', text: 'see C' },
+        { raw: '[[D]]', address: 'name://D', text: 'D' },
+      ],
       resolved: [
         { written: 'name://B', path: 'b.md', isCrossed: false },
         { written: 'name://C', path: 'c.md', isCrossed: true },
       ],
     })
-    const resolved = await core.resolveLinks('a.md', '[[B]] [[C]] [[D]]')
+    const resolved = await core.resolveLinks('a.md', '[[B]] [[C|see C]] [[D]]')
     expect(asked.resolveAddresses.mock.calls.at(-1)?.[0]).toEqual({
       from: 'a.md',
-      text: '[[B]] [[C]] [[D]]',
+      text: '[[B]] [[C|see C]] [[D]]',
     })
-    expect([...resolved]).toEqual([
-      ['name://B', 'b.md'],
-      ['name://C', ''],
-      ['name://D', ''],
+    expect(resolved).toEqual([
+      { raw: '[[B]]', address: 'name://B', text: 'B', path: 'b.md' },
+      { raw: '[[C|see C]]', address: 'name://C', text: 'see C', path: '' },
+      { raw: '[[D]]', address: 'name://D', text: 'D', path: '' },
     ])
   })
 })

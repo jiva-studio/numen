@@ -147,7 +147,7 @@ message ResolveAddressesRequest {
   repeated string written = 2;
 
   // A text whose wikilinks are answered about beside `written`. Each one is
-  // asked about by its address as `scheme://value`, the form `found` lists.
+  // asked about by its address as `scheme://value`, the form `found` carries.
   string text = 3;
 }
 
@@ -156,9 +156,21 @@ message ResolveAddressesResponse {
   // reaches nothing is absent, and so is one asked about twice.
   repeated ResolvedAddress resolved = 1;
 
-  // The addresses of the wikilinks in `text`, in the order they are written,
-  // each once, whether they reach a note or not.
-  repeated string found = 2;
+  // The wikilinks in `text`, in the order they are written, each raw form
+  // once, whether they reach a note or not.
+  repeated TextLink found = 2;
+}
+
+// TextLink is one wikilink of a text.
+message TextLink {
+  // The wikilink as the text holds it, brackets included.
+  string raw = 1;
+
+  // Where it points, as `scheme://value`.
+  string address = 2;
+
+  // The text it reads as: the alias where one is written.
+  string text = 3;
 }
 
 // ResolvedAddress is one address and the note it reaches now.

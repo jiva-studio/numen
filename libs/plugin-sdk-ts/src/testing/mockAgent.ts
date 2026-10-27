@@ -24,7 +24,7 @@ export function createMockAgentHost(steps: readonly AgentStep[] = []): MockAgent
     finish: async (conversation) => {
       finished.push(conversation)
     },
-    resolveLinks: async () => new Map(),
+    resolveLinks: async () => [],
     getUnreachable: () => unreachable,
     getSetting: () => undefined,
     writeSetting: async () => {},

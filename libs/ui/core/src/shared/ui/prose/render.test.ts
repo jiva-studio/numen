@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { h, type VNode } from 'vue'
+import { indexLinkPieces, type LinkPieces } from '@/shared/lib/text/marks'
 import { WORD, render } from './render'
 
 /** What the marks come out as, drawn. */
 const mountProse = (text: string) => mount({ render: () => h('div', render(text)) })
+
+/** The same, with the pieces the caller draws as links. */
+const mountWith = (text: string, pieces: LinkPieces) =>
+  mount({ render: () => h('div', render(text, undefined, pieces)) })
 
 describe('what is drawn at the top', () => {
   it('is nothing for no text', () => {
@@ -74,30 +79,42 @@ describe('prose', () => {
     expect(prose.text()).toContain('alert(1)')
   })
 
-  it('draws a wikilink as a link to the note it names', () => {
-    expect(mountProse('Under [[Entropy]] it sits.').find('a').attributes('href')).toBe(
-      'name://Entropy',
-    )
+  it('draws a piece the caller names as a link', () => {
+    const pieces = indexLinkPieces([{ raw: '<<Entropy>>', href: 'x://Entropy', text: 'Entropy' }])
+    const link = mountWith('Under <<Entropy>> it sits.', pieces).find('a')
+    expect(link.attributes('href')).toBe('x://Entropy')
+    expect(link.text()).toBe('Entropy')
   })
 
-  it('holds a wikilink to what every other link is retained to', () => {
-    for (const address of [
+  it('finds a piece that begins inside a word', () => {
+    const pieces = indexLinkPieces([{ raw: 'ropy', href: 'x://r', text: 'ROPY' }])
+    expect(mountWith('Entropy', pieces).text()).toBe('EntROPY')
+  })
+
+  it('leaves a piece inside code as code', () => {
+    const pieces = indexLinkPieces([{ raw: '[[A]]', href: 'x://A', text: 'A' }])
+    const prose = mountWith('`[[A]]` and [[A]]', pieces)
+    expect(prose.find('code').text()).toBe('[[A]]')
+    expect(prose.findAll('a')).toHaveLength(1)
+  })
+
+  it('draws a piece that is not named as the text it is', () => {
+    expect(mountProse('Under [[Entropy]] it sits.').find('a').exists()).toBe(false)
+  })
+
+  it('holds a piece to what every other link is retained to', () => {
+    for (const href of [
       'javascript://%0Aalert(1)',
       'JavaScript://%0Aalert(1)',
       'vbscript://alert(1)',
       'file://etc/passwd',
       'data://text/html,<script>alert(1)</script>',
     ]) {
-      const prose = mountProse(`[[${address}|Click]]`)
+      const pieces = indexLinkPieces([{ raw: '[[x]]', href, text: 'Click' }])
+      const prose = mountWith('[[x]]', pieces)
       expect(prose.find('a').exists()).toBe(false)
-      expect(prose.text()).toContain('Click')
+      expect(prose.text()).toContain('[[x]]')
     }
-  })
-
-  it('reads a colon that begins no scheme as part of a name', () => {
-    expect(mountProse('[[javascript:alert(1)|Click]]').find('a').attributes('href')).toBe(
-      'name://javascript:alert(1)',
-    )
   })
 
   it('has nothing to draw for nothing', () => {

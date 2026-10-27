@@ -44,25 +44,29 @@ describe('a link that was pressed', () => {
   })
 })
 
-describe('a wikilink in the prose', () => {
-  it('is a link, pointing at the address the brackets hold', async () => {
-    const wrapper = prose('It sits under [[Thermodynamics]].')
+describe('a piece the caller names as a link', () => {
+  const THERMO = {
+    raw: '[[Thermodynamics]]',
+    href: 'x://Thermodynamics',
+    text: 'Thermodynamics',
+  }
+  const NOWHERE = { raw: '[[Nowhere]]', href: 'x://Nowhere', text: 'Nowhere' }
+
+  it('is a link, pointing at the href it was named with', async () => {
+    const wrapper = mount(Prose, {
+      props: { text: 'It sits under [[Thermodynamics]].', links: [THERMO] },
+    })
 
     await wrapper.find('a').trigger('click')
 
     expect(wrapper.find('a').text()).toBe('Thermodynamics')
-    expect(wrapper.emitted('follow')?.[0]?.[0]).toBe('name://Thermodynamics')
+    expect(wrapper.emitted('follow')?.[0]?.[0]).toBe('x://Thermodynamics')
   })
 
-  it('is read in the sentence by its alias', () => {
-    const wrapper = prose('It argues [[Entropy as disorder|the other way]].')
-
-    expect(wrapper.find('a').text()).toBe('the other way')
-    expect(wrapper.find('a').attributes('href')).toBe('name://Entropy as disorder')
-  })
-
-  it('is not followed by the browser, which has nowhere to take a note', async () => {
-    const wrapper = prose('It sits under [[Thermodynamics]].')
+  it('is not followed by the browser', async () => {
+    const wrapper = mount(Prose, {
+      props: { text: 'It sits under [[Thermodynamics]].', links: [THERMO] },
+    })
 
     await wrapper.find('a').trigger('click')
 
@@ -70,9 +74,17 @@ describe('a wikilink in the prose', () => {
     expect(press.defaultPrevented).toBe(true)
   })
 
-  it('is drawn as reaching nothing where nothing answers to it', () => {
+  it('draws plain text when no links are given', () => {
+    expect(prose('It sits under [[Thermodynamics]].').find('a').exists()).toBe(false)
+  })
+
+  it('is drawn as reaching nothing where its href is unresolved', () => {
     const wrapper = mount(Prose, {
-      props: { text: 'Under [[Nowhere]] and [[Thermodynamics]].', unresolved: ['name://Nowhere'] },
+      props: {
+        text: 'Under [[Nowhere]] and [[Thermodynamics]].',
+        links: [NOWHERE, THERMO],
+        unresolved: ['x://Nowhere'],
+      },
     })
 
     const [nowhere, somewhere] = wrapper.findAll('a')
@@ -80,8 +92,20 @@ describe('a wikilink in the prose', () => {
     expect(somewhere?.attributes('data-reaches')).toBeUndefined()
   })
 
-  it('is an example of a link inside a code fence, and not one', () => {
-    expect(prose('```\n[[Thermodynamics]]\n```').findAll('a')).toHaveLength(0)
+  it('is not a link inside a code fence', () => {
+    const wrapper = mount(Prose, {
+      props: { text: '```\n[[Thermodynamics]]\n```', links: [THERMO] },
+    })
+    expect(wrapper.findAll('a')).toHaveLength(0)
+  })
+
+  it('is drawn once the caller names it', async () => {
+    const wrapper = prose('See [[Thermodynamics]].')
+    expect(wrapper.find('a').exists()).toBe(false)
+
+    await wrapper.setProps({ links: [THERMO] })
+
+    expect(wrapper.find('a').attributes('href')).toBe('x://Thermodynamics')
   })
 })
 
@@ -100,23 +124,38 @@ describe('prose handed the same addresses again', () => {
 
   it('is not drawn again while the unresolved addresses have the same members', async () => {
     const wrapper = mount(Prose, {
-      props: { text: 'See [[Nowhere]].', unresolved: ['name://Nowhere'] },
+      props: {
+        text: 'See [nowhere](https://example.com/nowhere).',
+        unresolved: ['https://example.com/nowhere'],
+      },
     })
     renderSpy.mockClear()
 
-    await wrapper.setProps({ unresolved: ['name://Nowhere'] })
+    await wrapper.setProps({ unresolved: ['https://example.com/nowhere'] })
 
     expect(renderSpy).not.toHaveBeenCalled()
   })
 
   it('is drawn again when the unresolved addresses change', async () => {
-    const wrapper = mount(Prose, { props: { text: 'See [[Nowhere]].', unresolved: [] } })
+    const wrapper = mount(Prose, {
+      props: { text: 'See [nowhere](https://example.com/nowhere).', unresolved: [] },
+    })
     expect(wrapper.find('a').attributes('data-reaches')).toBeUndefined()
     renderSpy.mockClear()
 
-    await wrapper.setProps({ unresolved: ['name://Nowhere'] })
+    await wrapper.setProps({ unresolved: ['https://example.com/nowhere'] })
 
     expect(renderSpy).toHaveBeenCalledTimes(1)
     expect(wrapper.find('a').attributes('data-reaches')).toBeDefined()
+  })
+
+  it('is not drawn again while the links are the same', async () => {
+    const link = { raw: '[[A]]', href: 'x://A', text: 'A' }
+    const wrapper = mount(Prose, { props: { text: 'See [[A]].', links: [link] } })
+    renderSpy.mockClear()
+
+    await wrapper.setProps({ links: [{ ...link }] })
+
+    expect(renderSpy).not.toHaveBeenCalled()
   })
 })

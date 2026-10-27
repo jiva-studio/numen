@@ -10,12 +10,14 @@ import { Prose } from '@numen/ui'
 import { NoteHead } from './note-head'
 import { WORDS as words } from '../lib/notesWords'
 import type { Neighbour } from '../api/notes'
-import type { NotesPanelState } from '../model/notes'
+import { getNoteKey, type NotesPanelState } from '../model/notes'
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ panel: NotesPanelState }>()
 
 /* --------------------------------- State ---------------------------------- */
+const NO_LINKS = Object.freeze([])
+
 const column = useTemplateRef<HTMLElement>('column')
 
 /* --------------------------------- Hooks ---------------------------------- */
@@ -40,9 +42,6 @@ watch(
 )
 
 /* -------------------------------- Helpers --------------------------------- */
-/** A note is keyed by what its article is keyed by. */
-const getNoteKey = (one: Neighbour) => one.path || one.written
-
 /**
  * Where each note was drawn, so the one a link named can be scrolled to. Read
  * only when a link is followed, so it is held outside the reactive graph.
@@ -88,7 +87,12 @@ function scrollPage(back = false) {
         <p v-if="one.error" class="reading__quiet">{{ one.error }}</p>
 
         <!-- A link in what is read leads nowhere: this window has one page. -->
-        <Prose v-if="one.body" :text="one.body" />
+        <Prose
+          v-if="one.body"
+          :text="one.body"
+          :links="props.panel.links.value.get(getNoteKey(one))?.links ?? NO_LINKS"
+          :unresolved="props.panel.links.value.get(getNoteKey(one))?.unresolved ?? NO_LINKS"
+        />
       </article>
 
       <p v-if="props.panel.unread.value" class="reading__quiet">

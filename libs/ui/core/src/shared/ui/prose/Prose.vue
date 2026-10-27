@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /* --------------------------------- Props ---------------------------------- */
 import { computed } from 'vue'
-import { isNoteAddress } from '@/shared/lib/text/address'
+import { indexLinkPieces, type LinkPiece, type LinkPieces } from '@/shared/lib/text/marks'
 import { render } from './render'
 
 const props = withDefaults(
@@ -15,8 +15,13 @@ const props = withDefaults(
      * one is drawn as not resolving.
      */
     unresolved?: readonly string[]
+    /**
+     * Pieces of the text drawn as links. A press on one is never followed by
+     * the browser: the caller named it, and the caller follows it.
+     */
+    links?: readonly LinkPiece[]
   }>(),
-  { isArriving: false, unresolved: () => [] },
+  { isArriving: false, unresolved: () => [], links: () => [] },
 )
 
 /* --------------------------------- Events --------------------------------- */
@@ -35,7 +40,12 @@ const deadAddresses = computed<ReadonlySet<string>>((previous) => {
   const members = new Set(props.unresolved)
   return previous && isSameSet(previous, members) ? previous : members
 })
-const renderedContent = computed(() => render(props.text, deadAddresses.value))
+/** The same index for as long as the links are the same. */
+const linkPieces = computed<LinkPieces>((previous) =>
+  previous && isSameLinks(previous, props.links) ? previous : indexLinkPieces(props.links),
+)
+const callerHrefs = computed(() => new Set(props.links.map((one) => one.href)))
+const renderedContent = computed(() => render(props.text, deadAddresses.value, linkPieces.value))
 const Drawn = () => renderedContent.value
 
 /* -------------------------------- Handlers -------------------------------- */
@@ -43,12 +53,25 @@ const onClick = (press: MouseEvent) => {
   const link = (press.target as HTMLElement | null)?.closest?.('a')
   const href = link?.getAttribute('href')
   if (!href) return
-  // A note is addressed and not located, so a browser has nowhere to take one.
-  if (isNoteAddress(href)) press.preventDefault()
+  if (callerHrefs.value.has(href)) press.preventDefault()
   emit('follow', href, press)
 }
 
 /* -------------------------------- Helpers --------------------------------- */
+function isSameLinks(index: LinkPieces, links: readonly LinkPiece[]) {
+  const indexed = [...index.values()].flat()
+  return (
+    indexed.length === links.length &&
+    links.every((one) =>
+      index
+        .get(one.raw.charCodeAt(0))
+        ?.some(
+          (other) => other.raw === one.raw && other.href === one.href && other.text === one.text,
+        ),
+    )
+  )
+}
+
 function isSameSet(a: ReadonlySet<string>, b: ReadonlySet<string>) {
   return a.size === b.size && [...a].every((one) => b.has(one))
 }
