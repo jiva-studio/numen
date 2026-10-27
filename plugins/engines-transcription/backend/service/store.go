@@ -35,19 +35,6 @@ type reached struct {
 	Size int64 `json:"size"`
 }
 
-// readCues is the cues kept under the key: the whole transcript, else the part a transcription has
-// written, else host.ErrNotExist.
-func (t transcripts) readCues(ctx context.Context, key string) ([]transcript.Cue, error) {
-	segments, err := host.ReadTextFile(ctx, t.store, getFileName(key))
-	if errors.Is(err, host.ErrNotExist) {
-		segments, err = host.ReadTextFile(ctx, t.store, getPartialName(key))
-	}
-	if err != nil {
-		return nil, err
-	}
-	return transcript.GetCues(segments), nil
-}
-
 // hasWhole reports whether the whole transcript is kept under the key.
 func (t transcripts) hasWhole(ctx context.Context, key string) (bool, error) {
 	_, err := t.store.Read(ctx, getFileName(key))
