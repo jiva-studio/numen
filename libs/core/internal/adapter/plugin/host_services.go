@@ -155,12 +155,6 @@ func (h *Host) HasEndpoint(pluginID string) bool {
 	return ok
 }
 
-func (h *Host) getOnEnabledChanged() func(pluginID string) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	return h.onEnabledChanged
-}
-
 // SetPluginWork sets the queue and the list of tasks the plugins use.
 func (h *Host) SetPluginWork(work pluginport.PluginWork) {
 	h.mu.Lock()
