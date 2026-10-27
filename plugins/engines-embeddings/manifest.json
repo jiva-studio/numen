@@ -32,8 +32,7 @@
   },
   "backend": {
     "type": "process",
-    "entrypoint": "bin/engines-embeddings",
-    "serviceName": "numen.v1.EmbeddingService"
+    "entrypoint": "bin/engines-embeddings"
   },
   "settings": [
     {
