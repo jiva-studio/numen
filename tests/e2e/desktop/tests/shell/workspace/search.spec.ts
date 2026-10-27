@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Search and Indexing', () => {
   test('opens palette search and queries vault notes and contents', async ({ page }) => {

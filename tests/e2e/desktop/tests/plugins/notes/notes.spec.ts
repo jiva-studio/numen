@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Notes and File Tree', () => {
   test('lists vault notes and expands directory tree', async ({ page }) => {

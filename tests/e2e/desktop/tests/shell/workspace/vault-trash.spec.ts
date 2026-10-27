@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Vault Deletion, Trash and Renaming', () => {
   test('moves note to trash via soft remove command', async ({ page }) => {

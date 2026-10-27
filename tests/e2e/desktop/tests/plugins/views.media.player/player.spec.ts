@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('External Media and URL Tabs', () => {
   test('opens import url command palette input dialog', async ({ page }) => {

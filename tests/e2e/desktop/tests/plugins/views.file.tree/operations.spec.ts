@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('File System Operations and Organization', () => {
   test('navigates and expands folders in file tree', async ({ page }) => {

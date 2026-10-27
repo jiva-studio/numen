@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { openWorkspace, waitForPassage } from '../../support/workspace.js'
 
 /** The text of every range the book reader lights, in the order the ranges were drawn. */

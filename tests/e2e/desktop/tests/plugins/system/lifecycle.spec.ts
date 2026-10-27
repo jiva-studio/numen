@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Plugin Lifecycle and Process Management', () => {
   test('activates reader-pdf plugin on demand and cleans up on close', async ({ page }) => {

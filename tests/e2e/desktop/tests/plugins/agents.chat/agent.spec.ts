@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Agent Plugin and Interface', () => {
   test('opens agent panel and views prompt conversation interface', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('EPUB Book Reader', () => {
   test('opens EPUB book and displays reflowable reader content', async ({ page }) => {

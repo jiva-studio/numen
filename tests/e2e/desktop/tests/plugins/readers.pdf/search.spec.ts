@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { openWorkspace, waitForPassage } from '../../support/workspace.js'
 
 test.describe('PDF Document Reader Search', () => {

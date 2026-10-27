@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 test.describe('Note Creation and Wikilinks', () => {

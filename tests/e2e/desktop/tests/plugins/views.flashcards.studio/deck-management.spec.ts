@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Deck Management and Scheduling Interactions', () => {
   test('opens deck schedule preset selector menu', async ({ page }) => {

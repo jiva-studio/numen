@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Keyboard Shortcuts and Navigation', () => {
   test('dismisses active palette modal on Escape key press', async ({ page }) => {

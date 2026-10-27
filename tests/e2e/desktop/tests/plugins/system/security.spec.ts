@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Plugin Security and Path Boundaries', () => {
   test('rejects path traversal and unauthorized filesystem paths', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace.js'
 
 /** The settings page of the transcription plugin, opened from the palette. The tab opens again on the plugin it last showed. */

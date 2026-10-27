@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Spaced Repetition and Preset Editor', () => {
   test('opens new spaced repetition preset editor from command palette', async ({ page }) => {

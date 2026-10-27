@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace'
 
 /** A deck or a card model made through the palette, under the name typed on its step. */

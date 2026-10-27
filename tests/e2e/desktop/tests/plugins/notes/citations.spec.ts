@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Audio Citation and Backlink Navigation', () => {
   test('follows audio passage URI link from note directly to player timestamp', async ({

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../support/test.js'
 import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
 
 /** What the mock transcriber of `-debug-mock-ml` hears in every recording. */

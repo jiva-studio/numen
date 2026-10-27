@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('App Updates, Performance Profiles and OCR Settings', () => {
   test('switches application performance profile via command palette', async ({ page }) => {

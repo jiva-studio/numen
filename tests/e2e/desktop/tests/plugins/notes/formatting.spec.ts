@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Note editor live formatting and styling', () => {
   test('renders markdown blockquote with cm-quote styling in editor', async ({ page }) => {

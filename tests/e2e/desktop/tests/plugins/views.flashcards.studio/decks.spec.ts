@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Flashcards and Deck Editor', () => {
   test('opens flashcard deck editor and displays card list with sections', async ({ page }) => {

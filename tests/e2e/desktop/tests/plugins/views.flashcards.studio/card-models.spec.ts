@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Card model Templates and Schema Editor', () => {
   test('opens card model template file and displays schema content', async ({ page }) => {

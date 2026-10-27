@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../support/test.js'
 import { openVaultFile, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
 
 /** Words of the text the mock recogniser of `-debug-mock-ml` reads on every page. */

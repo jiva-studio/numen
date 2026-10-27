@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('PDF Document Reader', () => {
   test('opens PDF document and renders viewer without saving error', async ({ page }) => {

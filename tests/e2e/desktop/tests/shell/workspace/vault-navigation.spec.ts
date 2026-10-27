@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Vault Navigation and Quick Open Palette', () => {
   test('navigates to primary entrypoint note via first command', async ({ page }) => {

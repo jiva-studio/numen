@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Window Controls and Display Preferences', () => {
   test('closes active tab cleanly via close command', async ({ page }) => {

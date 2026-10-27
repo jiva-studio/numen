@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Markdown Note Editor', () => {
   test('opens markdown note, displays content and note tab', async ({ page }) => {

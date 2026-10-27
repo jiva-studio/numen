@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../support/test.js'
 import { getPaletteField, openWorkspace, runCommand, waitForPassage } from '../support/workspace.js'
 
 /** Served by the proxy `scripts/start-server.mjs` puts in front of every plain-http fetch. */

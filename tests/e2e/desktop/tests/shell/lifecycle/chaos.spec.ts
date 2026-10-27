@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Chaos, Fault Tolerance and Stress Scenarios', () => {
   test('gracefully parses malformed yaml frontmatter without editor crash', async ({ page }) => {

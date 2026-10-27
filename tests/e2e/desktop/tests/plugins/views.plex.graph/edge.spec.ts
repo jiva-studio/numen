@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace.js'
 
 const openLinkInspector = async (page: Page) => {

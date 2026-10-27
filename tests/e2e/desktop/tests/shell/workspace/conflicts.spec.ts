@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('File Conflict and Concurrency Handling', () => {
   test('handles concurrent file edits and preserves editor integrity', async ({ page }) => {

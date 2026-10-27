@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('PDF Document Reader Advanced Controls', () => {
   test('zooms pdf document in and out via reader zoom controls', async ({ page }) => {

@@ -53,6 +53,7 @@ fs.copyFileSync(path.join(fixturesDir, 'sample.epub'), path.join(tmpVault, 'asse
 for (const name of [
   'regenerative-braking.pdf',
   'flywheel.pdf',
+  'shore.pdf',
   'pumped-storage.pdf',
   'lecture.wav',
   'talk.mp3',

@@ -1,4 +1,4 @@
-import { test, expect, type Locator } from 'playwright/test'
+import { test, expect, type Locator } from '../../support/test.js'
 import { openVaultFile, openWorkspace } from '../../support/workspace.js'
 
 /** What the player says where it cannot play a recording, in any of its forms. */

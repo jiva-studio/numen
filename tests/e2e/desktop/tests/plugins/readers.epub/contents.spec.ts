@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('EPUB Book Reader Contents and Chapter Navigation', () => {
   test('toggles reflowable book table of contents listing', async ({ page }) => {

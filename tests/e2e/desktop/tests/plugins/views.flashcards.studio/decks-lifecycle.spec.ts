@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Flashcard Decks and Card Lifecycle', () => {
   test('creates new flashcard deck file via command palette', async ({ page }) => {

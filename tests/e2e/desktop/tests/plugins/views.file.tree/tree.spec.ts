@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('File Tree Folder Expansion and Structure', () => {
   test('creates new nested folder via file tree context menu', async ({ page }) => {

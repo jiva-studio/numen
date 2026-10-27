@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Status Bar and Task Popover Interactions', () => {
   test('opens status bar background task popover on trigger click', async ({ page }) => {

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Command Palette Advanced Keyboard and Pointer Interactions', () => {
   test('navigates command palette options using keyboard arrow keys', async ({ page }) => {

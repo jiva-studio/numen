@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace'
 
 /** The words a plugin that did not start is reported in, as a notice or as a task. */

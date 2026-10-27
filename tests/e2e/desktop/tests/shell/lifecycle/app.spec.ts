@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Desktop Application Shell', () => {
   test('loads application and displays workspace with Plex graph and Agent panel', async ({

@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { openWorkspace } from '../../support/workspace.js'
 
 test.describe('Full-Text Search and Passage Navigation', () => {

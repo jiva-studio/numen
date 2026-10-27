@@ -1,4 +1,4 @@
-import { test, expect, type Page } from 'playwright/test'
+import { test, expect, type Page } from '../../support/test.js'
 import { openWorkspace, runPaletteCommand } from '../../support/workspace'
 
 /**

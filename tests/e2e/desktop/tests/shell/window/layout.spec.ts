@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Workspace Layout and Split Panes', () => {
   test('renders split panes with book reader and note editor concurrently', async ({ page }) => {

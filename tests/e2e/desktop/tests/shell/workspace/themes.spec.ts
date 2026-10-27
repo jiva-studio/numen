@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Theming and Display Scaling', () => {
   test('switches application theme mode to dark mode', async ({ page }) => {

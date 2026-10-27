@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Audio Transcription Pipeline', () => {
   test('opens audio recording and executes transcription with mock ML', async ({ page }) => {

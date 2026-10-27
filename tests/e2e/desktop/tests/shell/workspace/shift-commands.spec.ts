@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 import { getGraph, openWorkspace } from '../../support/workspace'
 
 /** The commands a keystroke holding Shift reaches, pressed with the palette nowhere in sight. */

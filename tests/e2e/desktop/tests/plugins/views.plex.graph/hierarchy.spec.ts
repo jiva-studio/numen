@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Note Hierarchy and Plex Graph', () => {
   test('creates child note from active note with parent link established', async ({ page }) => {

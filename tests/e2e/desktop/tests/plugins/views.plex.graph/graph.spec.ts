@@ -1,4 +1,4 @@
-import { test, expect } from 'playwright/test'
+import { test, expect } from '../../support/test.js'
 
 test.describe('Plex Graph Interaction', () => {
   test('interacts with knowledge graph nodes', async ({ page }) => {
