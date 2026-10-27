@@ -353,43 +353,45 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 
 // followRenames moves the sources at removed paths to the asset paths that now
 // hold the same content. A file renamed outside the core arrives as its old path
-// gone and its new path changed; the move keeps its chunks and text versions.
+// removed and its new path changed; the move keeps its chunks and text versions.
 // Only an asset of the same size as a removed source is read.
 func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res RefreshResult) error {
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	gone, err := u.getRemovedSources(ctx, v, res.Removed)
+	removed, err := u.getRemovedSources(ctx, v, res.Removed)
 	if err != nil {
 		return err
 	}
 	for _, path := range res.Assets {
-		if len(gone) == 0 {
+		if len(removed) == 0 {
 			return nil
 		}
-		ref, err := reader.GetFingerprint(ctx, path)
-		if err != nil {
-			continue
-		}
-		i := slices.IndexFunc(gone, func(old sourceport.SourceText) bool { return old.Size == ref.Size })
+		i := findSameContent(ctx, reader, path, removed)
 		if i < 0 {
 			continue
 		}
-		raw, err := reader.Read(ctx, path)
-		if err != nil {
-			continue
-		}
-		hash := domain.HashContent(raw)
-		i = slices.IndexFunc(gone, func(old sourceport.SourceText) bool { return old.Hash == hash })
-		if i < 0 {
-			continue
-		}
-		if err := u.sources.MoveSources(ctx, v.ID, gone[i].Path, path); err != nil {
+		if err := u.sources.MoveSources(ctx, v.ID, removed[i].Path, path); err != nil {
 			return err
 		}
-		gone = slices.Delete(gone, i, i+1)
+		removed = slices.Delete(removed, i, i+1)
 	}
 	return nil
+}
+
+// findSameContent is the index of the removed source whose content the file at
+// path holds, and -1 where none does or the file cannot be read.
+func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []sourceport.SourceText) int {
+	ref, err := reader.GetFingerprint(ctx, path)
+	if err != nil || !slices.ContainsFunc(removed, func(old sourceport.SourceText) bool { return old.Size == ref.Size }) {
+		return -1
+	}
+	raw, err := reader.Read(ctx, path)
+	if err != nil {
+		return -1
+	}
+	hash := domain.HashContent(raw)
+	return slices.IndexFunc(removed, func(old sourceport.SourceText) bool { return old.Hash == hash })
 }
 
 // getRemovedSources is the sources other than notes the index holds at and
