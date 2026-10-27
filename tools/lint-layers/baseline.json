@@ -148,12 +148,6 @@
     "libs/plugin-sdk-ts/src/workspace.ts: \"recording\"": 1,
     "libs/plugin-sdk-ts/src/workspace.ts: \"url\"": 1
   },
-  "plugins-name-no-window": {
-    "plugins/tools-media-importer/frontend/api/wire.ts: \"editor\"": 1,
-    "plugins/tools-media-importer/frontend/api/wire.ts: WindowService": 2,
-    "plugins/views-media-player/frontend/api/wire.ts: \"editor\"": 1,
-    "plugins/views-media-player/frontend/api/wire.ts: WindowService": 2
-  },
   "protocol-holds-no-plugin-contract": {
     "libs/protocol/proto/numen/v1/agent.proto: field face": 1,
     "libs/protocol/proto/numen/v1/agent.proto: field mark": 1,
