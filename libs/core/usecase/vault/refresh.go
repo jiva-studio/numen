@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
+	"github.com/jiva-studio/numen/libs/core/usecase/source"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/notes/markdown"
 
@@ -352,72 +353,17 @@ func (u Refresh) dropSources(ctx context.Context, v domain.Vault, paths []string
 }
 
 // followRenames moves the sources at removed paths to the asset paths that now
-// hold the same content. A file renamed outside the core arrives as its old path
-// removed and its new path changed; the move keeps its chunks and text versions.
-// Only an asset of the same size as a removed source is read.
+// hold the same content.
 func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vaultport.VaultReader, res RefreshResult) error {
 	if len(res.Removed) == 0 || len(res.Assets) == 0 {
 		return nil
 	}
-	removed, err := u.getRemovedSources(ctx, v, res.Removed)
+	removed, err := source.FindRemovedSources(ctx, u.queries, v.ID, res.Removed)
 	if err != nil {
 		return err
 	}
-	for _, path := range res.Assets {
-		if len(removed) == 0 {
-			return nil
-		}
-		i := findSameContent(ctx, reader, path, removed)
-		if i < 0 {
-			continue
-		}
-		if err := u.sources.MoveSources(ctx, v.ID, removed[i].Path, path); err != nil {
-			return err
-		}
-		removed = slices.Delete(removed, i, i+1)
-	}
-	return nil
-}
-
-// findSameContent is the index of the removed source whose content the file at
-// path holds, and -1 where none does or the file cannot be read.
-func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []sourceport.SourceText) int {
-	ref, err := reader.GetFingerprint(ctx, path)
-	if err != nil || !slices.ContainsFunc(removed, func(old sourceport.SourceText) bool { return old.Size == ref.Size }) {
-		return -1
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return -1
-	}
-	hash := domain.HashContent(raw)
-	return slices.IndexFunc(removed, func(old sourceport.SourceText) bool { return old.Hash == hash })
-}
-
-// getRemovedSources is the sources other than notes the index holds at and
-// under the removed paths, with the content hash each was read with. A source
-// never read has no hash and matches nothing.
-func (u Refresh) getRemovedSources(ctx context.Context, v domain.Vault, removed []string) ([]sourceport.SourceText, error) {
-	var out []sourceport.SourceText
-	for _, path := range removed {
-		under, err := u.queries.GetSourcesUnder(ctx, v.ID, path)
-		if err != nil {
-			return nil, err
-		}
-		for _, ref := range under {
-			if ref.Kind == domain.KindNote {
-				continue
-			}
-			text, ok, err := u.queries.GetSourceText(ctx, v.ID, ref.Path)
-			if err != nil {
-				return nil, err
-			}
-			if ok && text.Hash != "" {
-				out = append(out, text)
-			}
-		}
-	}
-	return out, nil
+	_, err = source.MoveRenamedSources(ctx, u.sources, reader, v.ID, removed, res.Assets)
+	return err
 }
 
 // isCurrent reports whether the index already holds the note as the file is.

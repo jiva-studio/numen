@@ -353,3 +353,54 @@ func TestDeletingPluginDataRemovesItsFolderAndVersions(t *testing.T) {
 		t.Fatalf("found %+v, want the talk through the other plugin's version", found)
 	}
 }
+
+func TestRenamingAFileWhileTheCoreIsStoppedMovesItsTextVersions(t *testing.T) {
+	v := newTalkVault(t)
+	path := filepath.Join(t.TempDir(), "index.db")
+	cfg := Config{IndexPath: path}
+	db, err := cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.TextVersions, err = cfg.NewTextVersions(db); err != nil {
+		t.Fatal(err)
+	}
+	version := putTranscript(t, db, v, "The heron waits by the reeds.\n")
+	readIntoIndex(t, cfg, db, v)
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	const renamed = "talks/Heron talk.mp3"
+	if err := os.Rename(filepath.Join(v.Path, talkPath), filepath.Join(v.Path, renamed)); err != nil {
+		t.Fatal(err)
+	}
+
+	db, err = cfg.OpenIndex(t.Context())
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { db.Close() })
+	if cfg.TextVersions, err = cfg.NewTextVersions(db); err != nil {
+		t.Fatal(err)
+	}
+	readIntoIndex(t, cfg, db, v)
+
+	raw, err := os.ReadFile(filepath.Join(v.Path, renamed))
+	if err != nil {
+		t.Fatal(err)
+	}
+	listing, err := cfg.TextVersions.ListVersions(t.Context(), v, renamed, domain.HashContent(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(listing.Versions) != 1 || listing.Live != version.GetID() {
+		t.Fatalf("after the rescan the talk has %+v, want its transcript live at the new path", listing)
+	}
+	found, err := cfg.NewSearch(db, nil, nil).Execute(t.Context(), v, "heron", search.Parameters{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(found) != 1 || found[0].Source != renamed {
+		t.Fatalf("found %+v, want the talk at its new path", found)
+	}
+}

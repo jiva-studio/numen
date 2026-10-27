@@ -133,7 +133,7 @@ func (u Extract) discover(
 	if err != nil {
 		return err
 	}
-	return u.removeGone(ctx, v, recognized, found, res)
+	return u.removeGone(ctx, v, on, recognized, found, res)
 }
 
 // readKnown reads the fingerprints the index holds, by kind and path.
@@ -181,31 +181,81 @@ func (u Extract) walkAndRecord(
 
 // removeGone takes out of the index what it holds and the walk did not find.
 // The text of a passage is read from the file, so a source that is not there
-// answers a search with nothing.
+// answers a search with nothing. A source whose content the walk found at a
+// new path is moved there instead, with its text versions.
 func (u Extract) removeGone(
 	ctx context.Context,
 	v domain.Vault,
+	on openVault,
 	existing map[domain.SourceKind]map[string]domain.Fingerprint,
 	found map[string]bool,
 	res *ExtractResult,
 ) error {
+	removed := make(map[domain.SourceKind][]string)
+	var all []string
 	for _, kind := range u.kinds() {
-		removed := make([]string, 0)
 		for path := range existing[kind] {
 			if !found[path] {
-				removed = append(removed, path)
+				removed[kind] = append(removed[kind], path)
+				all = append(all, path)
 			}
 		}
-		if len(removed) == 0 {
+	}
+	if len(all) == 0 {
+		return nil
+	}
+	moved, err := u.moveRenamed(ctx, v, on, all, getAdded(existing, found))
+	if err != nil {
+		return err
+	}
+	for _, kind := range u.kinds() {
+		paths := slices.DeleteFunc(removed[kind], func(path string) bool { return slices.Contains(moved, path) })
+		if len(paths) == 0 {
 			continue
 		}
-		slices.Sort(removed)
-		if err := u.sources.RemoveSources(ctx, v.ID, kind, removed); err != nil {
+		slices.Sort(paths)
+		if err := u.sources.RemoveSources(ctx, v.ID, kind, paths); err != nil {
 			return fmt.Errorf("remove: %w", err)
 		}
-		res.Removed += len(removed)
+		res.Removed += len(paths)
 	}
 	return nil
+}
+
+// moveRenamed moves the removed sources to the added paths that hold the same
+// content, and returns the paths it moved from.
+func (u Extract) moveRenamed(ctx context.Context, v domain.Vault, on openVault, removed, added []string) ([]string, error) {
+	if len(added) == 0 {
+		return nil, nil
+	}
+	slices.Sort(added)
+	sources, err := FindRemovedSources(ctx, u.queries, v.ID, removed)
+	if err != nil {
+		return nil, fmt.Errorf("read index: %w", err)
+	}
+	moved, err := MoveRenamedSources(ctx, u.sources, on.files, v.ID, sources, added)
+	if err != nil {
+		return nil, fmt.Errorf("move: %w", err)
+	}
+	return moved, nil
+}
+
+// getAdded is the paths the walk found that the index did not hold.
+func getAdded(existing map[domain.SourceKind]map[string]domain.Fingerprint, found map[string]bool) []string {
+	var added []string
+	for path := range found {
+		isKnown := false
+		for _, paths := range existing {
+			_, isKnown = paths[path]
+			if isKnown {
+				break
+			}
+		}
+		if !isKnown {
+			added = append(added, path)
+		}
+	}
+	return added
 }
 
 // dropOutdatedText records afresh, with no recipe, every source cut from a
