@@ -153,8 +153,6 @@
     "libs/protocol/proto/numen/v1/file.proto: SOURCE_KIND_BOOK": 1,
     "libs/protocol/proto/numen/v1/file.proto: SOURCE_KIND_RECORDING": 1,
     "libs/protocol/proto/numen/v1/file.proto: SOURCE_KIND_URL": 1,
-    "libs/protocol/proto/numen/v1/textversion.proto: FILE_MENU_ACTION_PROOFREAD": 1,
-    "libs/protocol/proto/numen/v1/textversion.proto: FILE_MENU_ACTION_RECOGNISE": 1,
     "libs/protocol/proto/numen/v1/workspace.proto: BookProgress": 2,
     "libs/protocol/proto/numen/v1/workspace.proto: RecordingProgress": 2
   },
