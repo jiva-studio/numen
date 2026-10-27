@@ -7,12 +7,12 @@ import (
 	"github.com/jiva-studio/numen/libs/core/usecase/search"
 )
 
-func makePlan(workers, llm int) hardware.ResolvedCompute {
+func makePlan(workers int) hardware.ResolvedCompute {
 	return hardware.ResolvedCompute{Workers: workers}
 }
 
 func TestASearchExtractsAsManySourcesAtOnceAsThePlanHasWorkers(t *testing.T) {
-	got := Config{ResolvedCompute: makePlan(5, 2)}.NewSearchOver(nil, nil, nil).GetExtractors()
+	got := Config{ResolvedCompute: makePlan(5)}.NewSearchOver(nil, nil, nil).GetExtractors()
 	if got != 5 {
 		t.Errorf("a search extracts %d sources at once, want the 5 planned", got)
 	}
