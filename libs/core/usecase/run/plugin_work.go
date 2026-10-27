@@ -18,8 +18,9 @@ var errPluginCleared = errors.New("the plugin's work was cleared")
 // PluginWork is the lock and the list of tasks the core's own work uses, as
 // the plugins use them. It is safe to use from several goroutines.
 type PluginWork struct {
-	lock  *Lock
-	tasks *Tasks
+	lock    *Lock
+	tasks   *Tasks
+	getName func(pluginID string) string
 
 	mu      sync.Mutex
 	plugins map[string]*pluginState
@@ -36,9 +37,10 @@ type pluginState struct {
 
 var _ pluginport.PluginWork = (*PluginWork)(nil)
 
-// NewPluginWork opens the lock and the list of tasks to the plugins.
-func NewPluginWork(lock *Lock, tasks *Tasks) *PluginWork {
-	return &PluginWork{lock: lock, tasks: tasks, plugins: map[string]*pluginState{}}
+// NewPluginWork opens the lock and the list of tasks to the plugins. getName
+// returns the name a plugin's tasks are listed under; nil lists them unnamed.
+func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) string) *PluginWork {
+	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}}
 }
 
 // EnqueueWork waits at the lock for the plugin's turn and returns it.
@@ -86,8 +88,8 @@ func (w *PluginWork) EnqueueWork(
 	return turn, nil
 }
 
-// ReportTask lists the task under the plugin's own id. A task with no id is
-// not listed.
+// ReportTask lists the task under the plugin's own id, with the plugin's id
+// and name on it. A task with no id is not listed.
 func (w *PluginWork) ReportTask(pluginID string, task pluginport.PluginTask) {
 	if task.ID == "" {
 		return
@@ -104,7 +106,16 @@ func (w *PluginWork) ReportTask(pluginID string, task pluginport.PluginTask) {
 		Unit:          readUnit(task.Unit),
 		Error:         task.Error,
 		IsUserStarted: task.IsUserStarted,
+		PluginID:      pluginID,
+		PluginName:    w.readName(pluginID),
 	})
+}
+
+func (w *PluginWork) readName(pluginID string) string {
+	if w.getName == nil {
+		return ""
+	}
+	return w.getName(pluginID)
 }
 
 // FinishTask takes the plugin's task out of the list.

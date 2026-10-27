@@ -52,7 +52,8 @@ func TestAPluginHeldOffExistsInTheTaskListUntilItRecovers(t *testing.T) {
 	}
 
 	list := tasks.List()
-	if len(list) != 1 || list[0].About != "Sample" || list[0].Error != failure.Reason {
+	if len(list) != 1 || list[0].About != "Sample" || list[0].Error != failure.Reason ||
+		list[0].PluginID != "md.numen.sample" || list[0].PluginName != "Sample" {
 		t.Fatalf("tasks = %+v, want one error naming Sample with %q", list, failure.Reason)
 	}
 
@@ -74,5 +75,16 @@ func TestAnInstallationWithNoPluginHostRetriesNothing(t *testing.T) {
 	var unavailable *pluginport.UnavailableError
 	if !errors.As(err, &unavailable) || unavailable.Reason != pluginport.PluginNotInstalled {
 		t.Fatalf("retry = %v, want a plugin that is not installed", err)
+	}
+}
+
+func TestGetPluginNameReadsTheManifest(t *testing.T) {
+	cfg := newFailingConfig(t)
+
+	if got := cfg.getPluginName("md.numen.sample"); got != "Sample" {
+		t.Errorf("getPluginName(md.numen.sample) = %q, want Sample", got)
+	}
+	if got := cfg.getPluginName("md.numen.absent"); got != "md.numen.absent" {
+		t.Errorf("getPluginName(md.numen.absent) = %q, want the id", got)
 	}
 }

@@ -49,7 +49,7 @@ func receiveTurn(t *testing.T, turns <-chan pluginport.PluginTurn, pluginID stri
 
 func TestPluginWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	lock := &Lock{}
-	work := NewPluginWork(lock, NewTasks())
+	work := NewPluginWork(lock, NewTasks(), nil)
 
 	release, err := lock.Acquire(t.Context(), true, nil)
 	if err != nil {
@@ -71,7 +71,7 @@ func TestPluginWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 
 func TestPluginTurnReportsContention(t *testing.T) {
 	lock := &Lock{}
-	work := NewPluginWork(lock, NewTasks())
+	work := NewPluginWork(lock, NewTasks(), nil)
 
 	turn, err := work.EnqueueWork(t.Context(), "transcriber", false, nil)
 	if err != nil {
@@ -101,7 +101,7 @@ func TestPluginTurnReportsContention(t *testing.T) {
 
 func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 	tasks := NewTasks()
-	work := NewPluginWork(&Lock{}, tasks)
+	work := NewPluginWork(&Lock{}, tasks, nil)
 
 	work.ReportTask("transcriber", pluginport.PluginTask{
 		ID: "a.mp3", Title: "Transcribing", About: "a.mp3", Done: 3, Total: 10,
@@ -115,7 +115,7 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 	}
 	want := Task{
 		ID: "plugin:transcriber:a.mp3", Title: "Transcribing", About: "a.mp3", Count: 3, Total: 10,
-		Unit: Seconds, IsUserStarted: true,
+		Unit: Seconds, IsUserStarted: true, PluginID: "transcriber",
 	}
 	if got[0] != want {
 		t.Errorf("got %+v, want %+v", got[0], want)
@@ -134,7 +134,7 @@ func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
 func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	lock := &Lock{}
 	tasks := NewTasks()
-	work := NewPluginWork(lock, tasks)
+	work := NewPluginWork(lock, tasks, nil)
 
 	work.ReportTask("transcriber", pluginport.PluginTask{ID: "a", Title: "Transcribing"})
 	work.ReportTask("transcriber", pluginport.PluginTask{ID: "b", Title: "Transcribing", Error: "failed"})
@@ -167,5 +167,30 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	got := tasks.List()
 	if len(got) != 1 || got[0].ID != "plugin:recogniser:a" {
 		t.Fatalf("got %+v, want only the recogniser's task", got)
+	}
+}
+
+func TestReportTaskSetsPluginIDAndName(t *testing.T) {
+	tasks := NewTasks()
+	names := map[string]string{"md.example.engine": "Example Engine"}
+	work := NewPluginWork(&Lock{}, tasks, func(id string) string { return names[id] })
+
+	work.ReportTask("md.example.engine", pluginport.PluginTask{ID: "one", Title: "Reading"})
+
+	got := tasks.List()
+	if len(got) != 1 || got[0].PluginID != "md.example.engine" || got[0].PluginName != "Example Engine" {
+		t.Fatalf("got %+v, want the task under md.example.engine named Example Engine", got)
+	}
+}
+
+func TestReportTaskWithNilNamesSetsEmptyName(t *testing.T) {
+	tasks := NewTasks()
+	work := NewPluginWork(&Lock{}, tasks, nil)
+
+	work.ReportTask("md.example.engine", pluginport.PluginTask{ID: "one", Title: "Reading"})
+
+	got := tasks.List()
+	if len(got) != 1 || got[0].PluginID != "md.example.engine" || got[0].PluginName != "" {
+		t.Fatalf("got %+v, want the task under md.example.engine with no name", got)
 	}
 }

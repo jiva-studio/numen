@@ -258,6 +258,8 @@ func describeTasks(list []run.Task) []*v1.Task {
 			Error:         item.Error,
 			IsUserStarted: item.IsUserStarted,
 			Unit:          convertUnit(item.Unit),
+			PluginId:      item.PluginID,
+			PluginName:    item.PluginName,
 		})
 	}
 	return out

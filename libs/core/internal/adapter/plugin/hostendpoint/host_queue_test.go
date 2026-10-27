@@ -60,7 +60,7 @@ func readState(t *testing.T, stream *connect.ServerStreamForClient[v1.EnqueueWor
 
 func TestEnqueueWorkRunsUserWorkFirst(t *testing.T) {
 	lock := &run.Lock{}
-	work := run.NewPluginWork(lock, run.NewTasks())
+	work := run.NewPluginWork(lock, run.NewTasks(), nil)
 	release, err := lock.Acquire(t.Context(), true, nil)
 	if err != nil {
 		t.Fatal(err)
@@ -79,7 +79,7 @@ func TestEnqueueWorkRunsUserWorkFirst(t *testing.T) {
 }
 
 func TestEnqueueWorkEndsStreamOfClearedPlugin(t *testing.T) {
-	work := run.NewPluginWork(&run.Lock{}, run.NewTasks())
+	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil)
 	stream := openWork(t, t.Context(), newQueueClient(t, work, "token-a"), false, v1.WorkState_WORK_STATE_RUNNING)
 
 	work.ClearPlugin("md.numen.a")
@@ -96,20 +96,20 @@ func TestEnqueueWorkEndsStreamOfClearedPlugin(t *testing.T) {
 	openWork(t, t.Context(), newQueueClient(t, work, "token-c"), false, v1.WorkState_WORK_STATE_RUNNING)
 }
 
-func TestReportTaskListsTaskUntilFinished(t *testing.T) {
+func TestReportTaskUsesCallerPluginID(t *testing.T) {
 	tasks := run.NewTasks()
-	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, tasks), "token-a")
+	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, tasks, nil), "token-a")
 
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{
 		Id: "scan.pdf", Title: "Recognising", About: "scan.pdf", Done: 2, Total: 9, Unit: v1.Unit_UNIT_BYTES,
-		IsUserStarted: true,
+		IsUserStarted: true, PluginId: "md.numen.other",
 	}}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	want := run.Task{
 		ID: "plugin:md.numen.a:scan.pdf", Title: "Recognising", About: "scan.pdf", Count: 2, Total: 9,
-		Unit: run.Bytes, IsUserStarted: true,
+		Unit: run.Bytes, IsUserStarted: true, PluginID: "md.numen.a",
 	}
 	if got := tasks.List(); len(got) != 1 || got[0] != want {
 		t.Fatalf("got %+v, want %+v", got, want)
@@ -124,7 +124,7 @@ func TestReportTaskListsTaskUntilFinished(t *testing.T) {
 }
 
 func TestQueueRejectsCallerWithoutToken(t *testing.T) {
-	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, run.NewTasks()), "token-unknown")
+	client := newQueueClient(t, run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil), "token-unknown")
 	_, err := client.ReportTask(t.Context(), connect.NewRequest(&v1.ReportTaskRequest{Task: &v1.Task{Id: "a"}}))
 	if code := readCode(t, err); code != connect.CodeUnauthenticated {
 		t.Fatalf("got %s, want unauthenticated", code)
@@ -132,7 +132,7 @@ func TestQueueRejectsCallerWithoutToken(t *testing.T) {
 }
 
 func TestEnqueueWorkAcquiresPluginForStream(t *testing.T) {
-	work := run.NewPluginWork(&run.Lock{}, run.NewTasks())
+	work := run.NewPluginWork(&run.Lock{}, run.NewTasks(), nil)
 	fakeCallers := newCallers(nil)
 	fakeCallers.releases = make(chan string, 1)
 	ctx, closeStream := context.WithCancel(t.Context())

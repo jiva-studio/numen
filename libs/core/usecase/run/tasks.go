@@ -34,6 +34,10 @@ type Task struct {
 
 	// Unit is what Count and Total are counted in.
 	Unit Unit
+
+	// PluginID is the plugin that reported the task, and PluginName its name
+	// from the manifest. Both are empty for the core's own work.
+	PluginID, PluginName string
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a

@@ -104,3 +104,15 @@ func TestAQuestionNamingAnotherWindowIsNotAnswered(t *testing.T) {
 		t.Errorf("a flush for the editor was answered %v", err)
 	}
 }
+
+func TestWatchTasksSendsThePluginOfEachTask(t *testing.T) {
+	tasks := run.NewTasks()
+	stream := openTaskStream(t, tasks)
+	receiveTasks(t, stream)
+
+	tasks.Set(run.Task{ID: "one", Title: "Reading", PluginID: "md.example.engine", PluginName: "Example Engine"})
+	list := receiveTasks(t, stream)
+	if len(list) != 1 || list[0].GetPluginId() != "md.example.engine" || list[0].GetPluginName() != "Example Engine" {
+		t.Fatalf("got %v, want the task of md.example.engine named Example Engine", list)
+	}
+}

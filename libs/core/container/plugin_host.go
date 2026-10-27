@@ -169,10 +169,12 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 	}
 	c.PluginHost.SetOnPluginFailed(func(failure pluginport.PluginFailure) {
 		tasks.Set(run.Task{
-			ID:    pluginFailureTaskPrefix + failure.PluginID,
-			Title: "Plugin stopped",
-			About: failure.Name,
-			Error: failure.Reason,
+			ID:         pluginFailureTaskPrefix + failure.PluginID,
+			Title:      "Plugin stopped",
+			About:      failure.Name,
+			Error:      failure.Reason,
+			PluginID:   failure.PluginID,
+			PluginName: failure.Name,
 		})
 	})
 	c.PluginHost.SetOnFailureCleared(func(pluginID string) {
@@ -183,8 +185,16 @@ func (c Config) ReportPluginFailures(tasks *run.Tasks) {
 // SetPluginWork opens the lock the models are held under and the list of tasks to the plugins.
 func (c Config) SetPluginWork(tasks *run.Tasks, models *run.Lock) {
 	if c.PluginHost != nil {
-		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks))
+		c.PluginHost.SetPluginWork(run.NewPluginWork(models, tasks, c.getPluginName))
 	}
+}
+
+// getPluginName is the name the plugin's manifest gives, or its id where the host knows no such plugin.
+func (c Config) getPluginName(pluginID string) string {
+	if found, isKnown := c.PluginHost.GetPlugin(pluginID); isKnown && found.Manifest.Name != "" {
+		return found.Manifest.Name
+	}
+	return pluginID
 }
 
 // SetPluginVault is the vault the plugins work through the host. Without one a plugin that calls for

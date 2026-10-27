@@ -81,6 +81,11 @@ message Task {
 
   // Unit is what done and total are counted in.
   Unit unit = 8;
+
+  // The plugin that reported the task, as the core knows the caller, and its
+  // name from the manifest. Both are empty for the core's own work.
+  string plugin_id = 9;
+  string plugin_name = 10;
 }
 
 // Unit is what a piece of work counts. Bytes are read out in the sizes a

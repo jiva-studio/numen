@@ -29,7 +29,7 @@ func newWorkingHost(t *testing.T) workingHost {
 	var procs []*os.Process
 	host.SetLauncher(startSleepLauncher(t, &started, &procs))
 	tasks := run.NewTasks()
-	work := run.NewPluginWork(&run.Lock{}, tasks)
+	work := run.NewPluginWork(&run.Lock{}, tasks, nil)
 	host.SetPluginWork(work)
 	if _, err := host.EnsureActive(t.Context(), workingPlugin); err != nil {
 		t.Fatal(err)

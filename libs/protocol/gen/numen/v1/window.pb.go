@@ -258,7 +258,11 @@ type Task struct {
 	// Set for work a person started and is waiting to be told about.
 	IsUserStarted bool `protobuf:"varint,7,opt,name=is_user_started,json=isUserStarted,proto3" json:"is_user_started,omitempty"`
 	// Unit is what done and total are counted in.
-	Unit          Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
+	Unit Unit `protobuf:"varint,8,opt,name=unit,proto3,enum=numen.v1.Unit" json:"unit,omitempty"`
+	// The plugin that reported the task, as the core knows the caller, and its
+	// name from the manifest. Both are empty for the core's own work.
+	PluginId      string `protobuf:"bytes,9,opt,name=plugin_id,json=pluginId,proto3" json:"plugin_id,omitempty"`
+	PluginName    string `protobuf:"bytes,10,opt,name=plugin_name,json=pluginName,proto3" json:"plugin_name,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -347,6 +351,20 @@ func (x *Task) GetUnit() Unit {
 		return x.Unit
 	}
 	return Unit_UNIT_UNSPECIFIED
+}
+
+func (x *Task) GetPluginId() string {
+	if x != nil {
+		return x.PluginId
+	}
+	return ""
+}
+
+func (x *Task) GetPluginName() string {
+	if x != nil {
+		return x.PluginName
+	}
+	return ""
 }
 
 type WatchQuitRequest struct {
@@ -652,7 +670,7 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x11WatchTasksRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\":\n" +
 	"\x12WatchTasksResponse\x12$\n" +
-	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\xce\x01\n" +
+	"\x05tasks\x18\x01 \x03(\v2\x0e.numen.v1.TaskR\x05tasks\"\x8c\x02\n" +
 	"\x04Task\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x14\n" +
@@ -661,7 +679,11 @@ const file_numen_v1_window_proto_rawDesc = "" +
 	"\x05total\x18\x05 \x01(\x03R\x05total\x12\x14\n" +
 	"\x05error\x18\x06 \x01(\tR\x05error\x12&\n" +
 	"\x0fis_user_started\x18\a \x01(\bR\risUserStarted\x12\"\n" +
-	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\"*\n" +
+	"\x04unit\x18\b \x01(\x0e2\x0e.numen.v1.UnitR\x04unit\x12\x1b\n" +
+	"\tplugin_id\x18\t \x01(\tR\bpluginId\x12\x1f\n" +
+	"\vplugin_name\x18\n" +
+	" \x01(\tR\n" +
+	"pluginName\"*\n" +
 	"\x10WatchQuitRequest\x12\x16\n" +
 	"\x06window\x18\x01 \x01(\tR\x06window\"?\n" +
 	"\x11WatchQuitResponse\x12\x14\n" +
