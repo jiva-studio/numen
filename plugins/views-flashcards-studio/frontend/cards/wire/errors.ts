@@ -1,63 +1,86 @@
 /**
  * What a call over the stencils, decks and presets failed on, in the words the
- * plugin's windows use. The codes of a note read and written are the shared
- * ones of `@numen/wire`; the codes of a stencil, a deck and a preset are this
- * plugin's.
+ * plugin's windows use. Every code of `numen.flashcards.v1.ErrorCode` is
+ * translated here into the plugin's own `ErrorCode`.
  */
-import type { ErrorCode as NoteProtoErrorCode } from '@numen/protocol'
-import {
-  ERRORS as NOTE_ERRORS,
-  findErrorCode as findNoteErrorCode,
-  formatErrorCodeMessage as formatNoteErrorCodeMessage,
-  getErrorWords as getNoteErrorWords,
-} from '@numen/wire'
-import type { ErrorCode as NoteErrorCode } from '@numen/wire'
 import { ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb'
 
-/** The plugin's own codes, which no other vault operation answers with. */
-type OwnErrorCode = 'notAStencil' | 'notADeck' | 'deckTooLarge' | 'notAPreset'
-
 /** The error code a call of this plugin answers with. */
-export type ErrorCode = NoteErrorCode | OwnErrorCode
+export type ErrorCode =
+  | 'missing'
+  | 'notANote'
+  | 'notText'
+  | 'tooLarge'
+  | 'bodyUnwritable'
+  | 'unreadable'
+  | 'occupied'
+  | 'unnameable'
+  | 'unreachable'
+  | 'notAStencil'
+  | 'notADeck'
+  | 'deckTooLarge'
+  | 'notAPreset'
 
-const OWN_CODE: Readonly<Partial<Record<ProtoErrorCode, OwnErrorCode>>> = {
+/** The code each schema code is, and nothing for `STALE`: the window asks the person about that one. */
+const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
+  [ProtoErrorCode.UNSPECIFIED]: 'unreadable',
+  [ProtoErrorCode.MISSING]: 'missing',
+  [ProtoErrorCode.NOT_A_NOTE]: 'notANote',
+  [ProtoErrorCode.NOT_TEXT]: 'notText',
+  [ProtoErrorCode.TOO_LARGE]: 'tooLarge',
+  [ProtoErrorCode.BODY_UNWRITABLE]: 'bodyUnwritable',
+  [ProtoErrorCode.UNREADABLE]: 'unreadable',
+  [ProtoErrorCode.OCCUPIED]: 'occupied',
+  [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
   [ProtoErrorCode.NOT_A_STENCIL]: 'notAStencil',
   [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
   [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
   [ProtoErrorCode.NOT_A_PRESET]: 'notAPreset',
+  [ProtoErrorCode.STALE]: null,
 }
 
-const OWN_WORDS: Readonly<Record<OwnErrorCode, string>> = {
+/** What each error code says. */
+export const ERRORS: Readonly<Record<ErrorCode, string>> = {
+  missing: 'note not in the vault',
+  notANote: 'not a note',
+  notText: 'not a text file',
+  tooLarge: 'note too large',
+  bodyUnwritable: 'text cannot start with frontmatter',
+  unreadable: 'frontmatter unreadable',
+  occupied: 'a file with this name exists',
+  unnameable: 'invalid note name',
+  unreachable: 'vault unreachable',
   notAStencil: 'that note is not a stencil',
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
   notAPreset: 'that note is not a preset',
 }
 
-const isOwn = (code: ErrorCode): code is OwnErrorCode => code in OWN_WORDS
+/** What a schema code without a code of its own says. */
+const SCHEMA_ONLY_WORDS: Readonly<Partial<Record<ProtoErrorCode, string>>> = {
+  [ProtoErrorCode.UNSPECIFIED]: 'note unreadable',
+  [ProtoErrorCode.STALE]: 'not saved: the note changed on disk',
+}
 
-/** The shared code a note code of this plugin is numbered as. */
-const toNoteCode = (code: ProtoErrorCode | undefined): NoteProtoErrorCode | undefined =>
-  code as number | undefined as NoteProtoErrorCode | undefined
+/** What is said for a schema code this build does not know. */
+const UNEXPECTED = 'internal error'
 
 /** What one answer failed on, and nothing where it succeeded. */
 export const findErrorCode = (from: { error?: ProtoErrorCode | undefined }): ErrorCode | null =>
-  (from.error === undefined ? undefined : OWN_CODE[from.error]) ??
-  findNoteErrorCode({ error: toNoteCode(from.error) })
+  from.error === undefined ? null : (ERROR_CODE[from.error] ?? null)
 
 /** Whether the file an answer is about had moved past what the caller read. */
 export const isStaleAnswer = (from: { error?: ProtoErrorCode | undefined }): boolean =>
   from.error === ProtoErrorCode.STALE
 
 /** What one error code says. */
-export const getErrorWords = (code: ErrorCode): string =>
-  isOwn(code) ? OWN_WORDS[code] : getNoteErrorWords(code)
-
-/** What each error code says. */
-export const ERRORS: Readonly<Record<ErrorCode, string>> = { ...NOTE_ERRORS, ...OWN_WORDS }
+export const getErrorWords = (code: ErrorCode): string => ERRORS[code]
 
 /** What one code of the schema says, and nothing where there was no error. */
 export const formatErrorCodeMessage = (code: ProtoErrorCode | undefined): string => {
-  const own = code === undefined ? undefined : OWN_CODE[code]
-  return own ? OWN_WORDS[own] : formatNoteErrorCodeMessage(toNoteCode(code))
+  if (code === undefined) return ''
+  const own = SCHEMA_ONLY_WORDS[code]
+  if (own !== undefined) return own
+  const pluginCode = ERROR_CODE[code]
+  return pluginCode ? ERRORS[pluginCode] : UNEXPECTED
 }

@@ -252,7 +252,7 @@ describe('closing a preset tab', () => {
   it('refuses once where the changes cannot be written, then closes', async () => {
     const flight = createWriteFlight()
     flight.theirs.add('retention')
-    const denied = { ok: false, error: 'denied' } as unknown as PresetWriteResult
+    const denied = { ok: false, error: 'unreadable' } as unknown as PresetWriteResult
     const { core } = createCore(denied, denied)
     const { writeMessage } = createMessages()
 
