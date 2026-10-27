@@ -2,7 +2,7 @@
 
 What a model writes down from a recording, where it is kept, and how a search lands on the second it was said. Transcription is the plugin `engines-transcription`: it keeps each transcript in its own folder of the vault's store, `.numen/md.numen.engines.transcription/`, and records it with the core as a text version of kind `transcript`, which is what the window shows and the index cuts. The core keeps the record in its index database and reads the file itself.
 
-The recording itself is never moved, copied or renamed. It plays where it lies, from the address the core's `RecordingService` gives the player.
+The recording itself is never moved, copied or renamed. It plays where it lies, from the address the core's `MediaService` gives the player.
 
 ## Asking for a transcript
 

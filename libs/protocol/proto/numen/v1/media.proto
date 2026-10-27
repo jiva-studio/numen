@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+// Where a player loads a file of the vault from.
+package numen.v1;
+
+option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;numenv1";
+
+// MediaService returns the address a player loads a file of the vault from.
+//
+// It is a service apart from the vault's notes: a window that serves the notes
+// to a network need not serve the files, and a binary mounts a service whole.
+service MediaService {
+  // GetMediaSource returns where the bytes of a file are loaded from and the
+  // media type a player is told. A file a plugin keeps a copy of to play is
+  // loaded from the copy.
+  rpc GetMediaSource(GetMediaSourceRequest) returns (GetMediaSourceResponse);
+}
+
+message GetMediaSourceRequest {
+  // The file, as the vault holds it.
+  string path = 1;
+}
+
+message GetMediaSourceResponse {
+  // An http address on the loopback interface: a player in a window drawn from
+  // the toolkit's own scheme loads no media from that scheme. Empty where this
+  // build serves no files.
+  string src = 1;
+
+  // The media type (RFC 6838) of the bytes at src.
+  string media_type = 2;
+}

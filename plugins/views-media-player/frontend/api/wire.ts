@@ -1,9 +1,9 @@
 /**
- * Wire adapter for RecordingService, TextVersionService and the plugin tasks; the transcript is
+ * Wire adapter for MediaService, TextVersionService and the plugin tasks; the transcript is
  * read and edited through the plugin SDK.
  */
 import { createClient } from '@connectrpc/connect'
-import { RecordingService, FileMenuAction, TextVersionService } from '@numen/protocol'
+import { MediaService, FileMenuAction, TextVersionService } from '@numen/protocol'
 import type { TaskHost, VaultTexts } from '@numen/plugin-sdk'
 import { retryWhileBusy, transport } from '@numen/wire'
 import type { MenuAction, MenuEntry, Recordings } from '../types'
@@ -11,7 +11,7 @@ import { createWorkWatcher } from './work'
 import { createTranscripts } from './transcripts'
 
 export const client = {
-  recordings: createClient(RecordingService, transport),
+  media: createClient(MediaService, transport),
   textVersions: createClient(TextVersionService, transport),
 }
 
@@ -66,8 +66,8 @@ const work = createWorkWatcher((onTasks) => taskHost?.watchAll(onTasks) ?? { dis
 
 export const recordings: Recordings = {
   getSource: async (path) => {
-    const answer = await retryWhileBusy(() => client.recordings.getRecording({ path }))
-    return { mediaUrl: answer.mediaUrl, mediaType: answer.mediaType }
+    const answer = await retryWhileBusy(() => client.media.getMediaSource({ path }))
+    return { mediaUrl: answer.src, mediaType: answer.mediaType }
   },
   ...createTranscripts(() => vaultTexts),
   getMenu: async (path) => {

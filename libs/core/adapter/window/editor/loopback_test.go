@@ -77,7 +77,7 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 // and what that address is answered with is what some of these ask about.
 func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fingerprint {
 	t.Helper()
-	ref, err := api.Recording.getFingerprint.Execute(t.Context(), v, path)
+	ref, err := api.Media.getFingerprint.Execute(t.Context(), v, path)
 	if err != nil {
 		return domain.Fingerprint{Path: path}
 	}

@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/fs"
 	pathpkg "path"
-	"slices"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -17,21 +16,11 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// Host finds the enabled plugins.
+// Host finds the enabled plugins and gives a file its content type by its name.
 type Host interface {
 	pluginport.PluginDiscoverer
 	pluginport.PluginResolver
-}
-
-// mediaTypes are the containers a copy is kept in, each against the type it is played as.
-var mediaTypes = map[string]string{
-	".mp4":  "video/mp4",
-	".m4a":  "audio/mp4",
-	".webm": "video/webm",
-	".mp3":  "audio/mpeg",
-	".ogg":  "audio/ogg",
-	".wav":  "audio/wav",
-	".flac": "audio/flac",
+	GetContentType(name string) domain.ContentType
 }
 
 // Copies are the copies of the enabled plugins that declare playback.
@@ -48,17 +37,11 @@ func NewCopies(host Host, stores pluginport.PluginStores) Copies {
 // getKeepers is the ids of the enabled plugins that keep copies of files of the path's type, in the
 // order of their ids.
 func (c Copies) getKeepers(path string) []string {
-	ext := strings.ToLower(pathpkg.Ext(path))
-	if ext == "" {
-		return nil
-	}
+	contentType := c.host.GetContentType(path)
 	var out []string
 	for _, info := range c.host.GetPluginInfos() {
 		found, ok := c.host.GetPlugin(info.ID)
-		if !ok || found.Manifest.Playback == nil {
-			continue
-		}
-		if slices.ContainsFunc(found.Manifest.Playback.Files, func(one string) bool { return strings.EqualFold(one, ext) }) {
+		if ok && found.Manifest.Playback != nil && found.Manifest.Playback.IsCopying(contentType) {
 			out = append(out, info.ID)
 		}
 	}
@@ -67,15 +50,15 @@ func (c Copies) getKeepers(path string) []string {
 
 func (c Copies) IsCopied(path string) bool { return len(c.getKeepers(path)) > 0 }
 
-// OpenCopy opens the first copy named `<hash><ext>`, of a container a copy is kept in, in the folder
-// of a plugin that keeps copies of the path's type.
+// OpenCopy opens the first copy named `<hash><ext>`, where the extension is of an audio or video
+// type, in the folder of a plugin that keeps copies of the path's type.
 func (c Copies) OpenCopy(ctx context.Context, v domain.Vault, path, hash string) (playbackport.Copy, error) {
 	for _, pluginID := range c.getKeepers(path) {
 		store, err := c.stores.Open(v, pluginID)
 		if err != nil {
 			return playbackport.Copy{}, err
 		}
-		found, err := openIn(ctx, store, hash)
+		found, err := c.openIn(ctx, store, hash)
 		if !errors.Is(err, playbackport.ErrNoCopy) {
 			return found, err
 		}
@@ -83,16 +66,21 @@ func (c Copies) OpenCopy(ctx context.Context, v domain.Vault, path, hash string)
 	return playbackport.Copy{}, playbackport.ErrNoCopy
 }
 
+// playedTypes are the masks of the types a copy is played as.
+var playedTypes = []domain.ContentType{"audio/*", "video/*"}
+
 // openIn opens the copy named by the hash in one plugin's folder, or returns ErrNoCopy.
-func openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
+func (c Copies) openIn(ctx context.Context, store pluginport.PluginStore, hash string) (playbackport.Copy, error) {
 	files, err := store.List(ctx)
 	if err != nil {
 		return playbackport.Copy{}, fmt.Errorf("list the files of the folder: %w", err)
 	}
 	for _, one := range files {
-		ext := pathpkg.Ext(one.Name)
-		mediaType, ok := mediaTypes[ext]
-		if !ok || strings.TrimSuffix(one.Name, ext) != hash {
+		if strings.TrimSuffix(one.Name, pathpkg.Ext(one.Name)) != hash {
+			continue
+		}
+		mediaType := c.host.GetContentType(one.Name)
+		if !isPlayed(mediaType) {
 			continue
 		}
 		body, size, err := store.Open(ctx, one.Name)
@@ -102,7 +90,16 @@ func openIn(ctx context.Context, store pluginport.PluginStore, hash string) (pla
 		if err != nil {
 			return playbackport.Copy{}, err
 		}
-		return playbackport.Copy{Body: body, Size: size, MediaType: mediaType}, nil
+		return playbackport.Copy{Body: body, Size: size, MediaType: string(mediaType)}, nil
 	}
 	return playbackport.Copy{}, playbackport.ErrNoCopy
+}
+
+func isPlayed(contentType domain.ContentType) bool {
+	for _, mask := range playedTypes {
+		if mask.Matches(contentType) {
+			return true
+		}
+	}
+	return false
 }

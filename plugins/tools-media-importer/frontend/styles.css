@@ -18,6 +18,34 @@
   word-break: break-all;
 }
 
+.link-tab__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.link-tab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.link-tab__action {
+  padding: 0.3rem 0.8rem;
+  border: 1px solid var(--numen-rule);
+  border-radius: 4px;
+  background: var(--numen-field-bg);
+  color: var(--numen-ink);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.link-tab__action:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 .link-tab__status {
   margin: 0;
   color: var(--numen-hushed);

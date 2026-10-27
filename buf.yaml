@@ -4,6 +4,7 @@ version: v2
 modules:
   - path: libs/protocol/proto
   - path: plugins/views-flashcards-studio/proto
+  - path: plugins/tools-media-importer/proto
 lint:
   use:
     - STANDARD

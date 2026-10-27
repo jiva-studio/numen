@@ -11,20 +11,19 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
-// recordingHandler answers where a file of the shown vault is played from.
-type recordingHandler struct {
+// mediaHandler serves MediaService: where a file of the shown vault is loaded from to be played.
+type mediaHandler struct {
 	state          *State
 	playing        *Loopback
 	getFingerprint *file.GetFingerprint
 	openCopy       *file.OpenCopy
 }
 
-// GetRecording answers the address the loopback socket serves the file's bytes at, and the type a
-// player is told. A file a plugin keeps a copy of is played from the copy. The duration is left to
-// the player.
-func (h *recordingHandler) GetRecording(
-	ctx context.Context, r *connect.Request[v1.GetRecordingRequest],
-) (*connect.Response[v1.GetRecordingResponse], error) {
+// GetMediaSource returns the loopback address of the file's bytes and the media type a player is
+// told. A file a plugin keeps a copy of is loaded from the copy.
+func (h *mediaHandler) GetMediaSource(
+	ctx context.Context, r *connect.Request[v1.GetMediaSourceRequest],
+) (*connect.Response[v1.GetMediaSourceResponse], error) {
 	showing, err := h.state.getCurrentVault()
 	if err != nil {
 		return nil, err
@@ -43,14 +42,14 @@ func (h *recordingHandler) GetRecording(
 		}
 		if found {
 			_ = played.Body.Close()
-			return connect.NewResponse(&v1.GetRecordingResponse{
-				MediaUrl:  h.playing.Address(showing, getCopyFingerprint(ref.Path, played.Size)),
+			return connect.NewResponse(&v1.GetMediaSourceResponse{
+				Src:       h.playing.Address(showing, getCopyFingerprint(ref.Path, played.Size)),
 				MediaType: played.MediaType,
 			}), nil
 		}
 	}
-	return connect.NewResponse(&v1.GetRecordingResponse{
-		MediaUrl:  h.playing.Address(showing, ref),
+	return connect.NewResponse(&v1.GetMediaSourceResponse{
+		Src:       h.playing.Address(showing, ref),
 		MediaType: domain.MediaType(ref.Path),
 	}), nil
 }

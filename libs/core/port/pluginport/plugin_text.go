@@ -13,15 +13,18 @@ import (
 var ErrInvalidTextInput = errors.New("invalid text input")
 
 // PluginTextInput is what a plugin makes text from: files of the content types
-// ContentTypes names, and text versions of the kinds Kinds names. IsAutoRun
-// asks the host to run the plugin on a file of its types that has no live text
-// version. MenuEntry is the plugin's entry in the menu of a file its input
-// takes; a plugin without one is not offered there.
+// ContentTypes names, text versions of the kinds Kinds names, and notes of the
+// plugin's own types NoteTypes names. IsAutoRun asks the host to run the plugin
+// on a file of its content types that has no live text version. The plugin
+// starts the text of a note of its types itself. MenuEntry is the plugin's entry
+// in the menu of a file its input takes; a plugin without one is not offered
+// there.
 //
 // A plugin that declares one serves numen.v1.TextProviderService.
 type PluginTextInput struct {
 	ContentTypes []domain.ContentType `json:"contentTypes,omitempty"`
 	Kinds        []domain.TextKind    `json:"kinds,omitempty"`
+	NoteTypes    []string             `json:"noteTypes,omitempty"`
 	IsAutoRun    bool                 `json:"autoRun,omitempty"`
 	MenuEntry    *PluginMenuEntry     `json:"menuEntry,omitempty"`
 }
@@ -34,15 +37,21 @@ type PluginMenuEntry struct {
 }
 
 // listTextInputIssues checks that a text input names something to read, every
-// content type as a type or a mask and every kind as a non-empty name.
+// content type as a type or a mask, every kind as a non-empty name and every note
+// type as one the plugin declares.
 func (m PluginManifest) listTextInputIssues() []error {
 	in := m.TextInput
 	if in == nil {
 		return nil
 	}
 	var issues []error
-	if len(in.ContentTypes) == 0 && len(in.Kinds) == 0 {
-		issues = append(issues, fmt.Errorf("%w: it names no content type and no kind", ErrInvalidTextInput))
+	if len(in.ContentTypes) == 0 && len(in.Kinds) == 0 && len(in.NoteTypes) == 0 {
+		issues = append(issues, fmt.Errorf("%w: it names no content type, no kind and no note type", ErrInvalidTextInput))
+	}
+	for _, noteType := range in.NoteTypes {
+		if _, ok := m.GetNoteType(noteType); !ok {
+			issues = append(issues, fmt.Errorf("%w: %q is no note type the plugin declares", ErrInvalidTextInput, noteType))
+		}
 	}
 	issues = append(issues, listContentTypesIssues(ErrInvalidTextInput, in.ContentTypes)...)
 	for _, kind := range in.Kinds {

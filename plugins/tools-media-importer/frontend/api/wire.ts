@@ -1,17 +1,18 @@
 /**
- * Wire adapter for ArticleService, RecordingService and the plugin's tasks.
+ * Wire adapter for the plugin's LinkService, the window's MediaService and the plugin's tasks.
  */
 import { createClient } from '@connectrpc/connect'
-import { ArticleErrorCode, ArticleService, RecordingService } from '@numen/protocol'
+import { MediaService } from '@numen/protocol'
 import type { TaskHost } from '@numen/plugin-sdk'
 import { retryWhileBusy, transport } from '@numen/wire'
-import type { Links } from '../types'
+import { LinkErrorCode, LinkService } from '../gen/numen/links/v1/link_pb.js'
+import type { Links, Outcome } from '../types'
 import { WORDS as words } from '../words'
 import { createWorkWatcher } from './work'
 
 const client = {
-  articles: createClient(ArticleService, transport),
-  recordings: createClient(RecordingService, transport),
+  links: createClient(LinkService, transport),
+  media: createClient(MediaService, transport),
 }
 
 let taskHost: TaskHost | undefined
@@ -22,42 +23,48 @@ export const setTaskHost = (host: TaskHost | undefined) => {
 }
 
 /** What a person reads for each refusal. */
-const REFUSALS: Readonly<Record<ArticleErrorCode, string>> = {
-  [ArticleErrorCode.UNSPECIFIED]: words.failed,
-  [ArticleErrorCode.NOT_AN_ADDRESS]: words.notAnAddress,
-  [ArticleErrorCode.OCCUPIED]: words.occupied,
-  [ArticleErrorCode.NOT_A_LINK]: words.notALink,
-  [ArticleErrorCode.NO_VAULT]: words.noVault,
+const REFUSALS: Readonly<Record<LinkErrorCode, string>> = {
+  [LinkErrorCode.UNSPECIFIED]: words.failed,
+  [LinkErrorCode.NOT_A_LINK]: words.notALink,
+  [LinkErrorCode.NO_VAULT]: words.noVault,
 }
 
 /** What a person reads for a refusal of the schema. */
-export const describeRefusal = (code: ArticleErrorCode): string => REFUSALS[code] ?? words.failed
+export const describeRefusal = (code: LinkErrorCode): string => REFUSALS[code] ?? words.failed
+
+/** The outcome of a call that returns nothing but a refusal. */
+const readOutcome = (answer: { readonly error: LinkErrorCode }): Outcome<null> =>
+  answer.error === LinkErrorCode.UNSPECIFIED
+    ? { ok: true, value: null }
+    : { ok: false, error: describeRefusal(answer.error) }
 
 const work = createWorkWatcher((onTasks) => taskHost?.watch(onTasks) ?? { dispose: () => {} })
 
 export const links: Links = {
   getLink: async (path) => {
-    const answer = await retryWhileBusy(() => client.articles.getLink({ path }))
-    if (answer.error !== ArticleErrorCode.UNSPECIFIED) {
+    const answer = await retryWhileBusy(() => client.links.getLink({ path }))
+    if (answer.error !== LinkErrorCode.UNSPECIFIED) {
       return { ok: false, error: describeRefusal(answer.error) }
     }
     return {
       ok: true,
-      value: { url: answer.url, isCopyable: answer.isCopyable, copySize: Number(answer.copySize) },
+      value: {
+        url: answer.url,
+        isCopyable: answer.isCopyable,
+        copySize: Number(answer.copySize),
+        isTextDeleted: answer.isTextDeleted,
+      },
     }
   },
   readArticle: async (path) =>
-    (await retryWhileBusy(() => client.articles.readArticle({ path }))).text,
+    (await retryWhileBusy(() => client.links.readArticle({ path }))).text,
   getSource: async (path) => {
-    const answer = await retryWhileBusy(() => client.recordings.getRecording({ path }))
-    return { mediaUrl: answer.mediaUrl, mediaType: answer.mediaType }
+    const answer = await retryWhileBusy(() => client.media.getMediaSource({ path }))
+    return { mediaUrl: answer.src, mediaType: answer.mediaType }
   },
-  createLink: async (folder, url) => {
-    const answer = await client.articles.createLink({ folder, url })
-    if (answer.error !== ArticleErrorCode.UNSPECIFIED) {
-      return { ok: false, error: describeRefusal(answer.error) }
-    }
-    return { ok: true, value: { path: answer.path } }
-  },
+  fetchText: async (path, isUserStarted) =>
+    readOutcome(await client.links.fetchText({ path, isUserStarted })),
+  copyVideo: async (path) => readOutcome(await client.links.copyVideo({ path })),
+  deleteCopy: async (path) => readOutcome(await client.links.deleteCopy({ path })),
   watchWork: (path, onChange) => work.watch(path, onChange),
 }

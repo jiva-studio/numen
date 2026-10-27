@@ -20,9 +20,9 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 )
 
-// newRecordingClient is the recordings of a window as a client reaches them, over a window whose
+// newMediaClient is the media of a window as a client reaches them, over a window whose
 // loopback socket is open.
-func newRecordingClient(t *testing.T) numenv1connect.RecordingServiceClient {
+func newMediaClient(t *testing.T) numenv1connect.MediaServiceClient {
 	t.Helper()
 	api, _ := openRecordingWindow(t, nil)
 	back, err := Listen(api.server, nil)
@@ -33,20 +33,20 @@ func newRecordingClient(t *testing.T) numenv1connect.RecordingServiceClient {
 	api.openPlaying(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
-	return numenv1connect.NewRecordingServiceClient(server.Client(), server.URL)
+	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)
 }
 
-func TestGetRecordingReturnsLoopbackAddress(t *testing.T) {
-	client := newRecordingClient(t)
+func TestGetMediaSourceReturnsLoopbackAddress(t *testing.T) {
+	client := newMediaClient(t)
 
-	answer, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: talk}))
+	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: talk}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetMediaType() != "audio/mpeg" {
 		t.Errorf("a recording is played as %q, want audio/mpeg", answer.Msg.GetMediaType())
 	}
-	played, err := http.Get(answer.Msg.GetMediaUrl())
+	played, err := http.Get(answer.Msg.GetSrc())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,19 +57,19 @@ func TestGetRecordingReturnsLoopbackAddress(t *testing.T) {
 	}
 }
 
-func TestGetRecordingRejectsMissingFile(t *testing.T) {
-	client := newRecordingClient(t)
+func TestGetMediaSourceRejectsMissingFile(t *testing.T) {
+	client := newMediaClient(t)
 
-	_, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: "talks/none.mp3"}))
+	_, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: "talks/none.mp3"}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("a missing file was answered %v, want not found", err)
 	}
 }
 
-// keptCopies keeps a copy of each `.url` file, under the hash of the file's content.
+// keptCopies keeps a copy of each note, under the hash of the note's content.
 type keptCopies map[string][]byte
 
-func (keptCopies) IsCopied(path string) bool { return strings.HasSuffix(path, ".url") }
+func (keptCopies) IsCopied(path string) bool { return strings.HasSuffix(path, ".md") }
 
 func (k keptCopies) OpenCopy(_ context.Context, _ domain.Vault, _, hash string) (playbackport.Copy, error) {
 	content, ok := k[hash]
@@ -84,13 +84,13 @@ type nopSeekCloser struct{ io.ReadSeeker }
 func (nopSeekCloser) Close() error { return nil }
 
 const (
-	clip      = "videos/clip.url"
-	clipLink  = "[InternetShortcut]\nURL=https://videos.example/clip\n"
+	clip      = "videos/clip.md"
+	clipLink  = "---\ntype: link\nurl: https://videos.example/clip\n---\n"
 	clipBytes = "the bytes of a copy of a video, long enough to ask for a piece of"
 )
 
-// newCopyClient is the recordings of a window whose vault holds a link a plugin keeps a copy of.
-func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.RecordingServiceClient {
+// newCopyClient is the media of a window whose vault holds a note a plugin keeps a copy of.
+func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.MediaServiceClient {
 	t.Helper()
 	vault := testsupport.NewVault(t, map[string]string{clip: clipLink, talk: sound})
 	api := newBareServices()
@@ -105,21 +105,21 @@ func newCopyClient(t *testing.T, copies keptCopies) numenv1connect.RecordingServ
 	api.openPlaying(back)
 	server := httptest.NewServer(api.NewHandler(http.NotFoundHandler()))
 	t.Cleanup(server.Close)
-	return numenv1connect.NewRecordingServiceClient(server.Client(), server.URL)
+	return numenv1connect.NewMediaServiceClient(server.Client(), server.URL)
 }
 
-func TestGetRecordingPlaysTheCopyAPluginKeepsOfTheFile(t *testing.T) {
+func TestGetMediaSourcePlaysTheCopyAPluginKeepsOfTheFile(t *testing.T) {
 	copies := keptCopies{domain.HashContent([]byte(clipLink)): []byte(clipBytes)}
 	client := newCopyClient(t, copies)
 
-	answer, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: clip}))
+	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: clip}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetMediaType() != "video/mp4" {
 		t.Errorf("the copy is played as %q, want video/mp4", answer.Msg.GetMediaType())
 	}
-	asked, err := http.NewRequest(http.MethodGet, answer.Msg.GetMediaUrl(), nil)
+	asked, err := http.NewRequest(http.MethodGet, answer.Msg.GetSrc(), nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -139,13 +139,13 @@ func TestAnAddressOfACopyMadeAgainIsRefused(t *testing.T) {
 	hash := domain.HashContent([]byte(clipLink))
 	copies := keptCopies{hash: []byte(clipBytes)}
 	client := newCopyClient(t, copies)
-	answer, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: clip}))
+	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: clip}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	copies[hash] = []byte("a shorter copy")
-	played, err := http.Get(answer.Msg.GetMediaUrl())
+	played, err := http.Get(answer.Msg.GetSrc())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -158,7 +158,7 @@ func TestAnAddressOfACopyMadeAgainIsRefused(t *testing.T) {
 func TestAFileWithNoCopyIsPlayedAsItself(t *testing.T) {
 	client := newCopyClient(t, keptCopies{})
 
-	answer, err := client.GetRecording(t.Context(), connect.NewRequest(&v1.GetRecordingRequest{Path: talk}))
+	answer, err := client.GetMediaSource(t.Context(), connect.NewRequest(&v1.GetMediaSourceRequest{Path: talk}))
 	if err != nil {
 		t.Fatal(err)
 	}

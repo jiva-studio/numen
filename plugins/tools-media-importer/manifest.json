@@ -3,41 +3,34 @@
   "name": "Media Importer",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Saves web links as notes, fetches their articles and captions, and downloads videos for offline playback",
+  "description": "Keeps web links as notes, fetches their articles and captions, and downloads videos for offline playback",
   "targets": ["desktop.editor"],
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "network:outbound"],
-  "readers": [{ "id": "link", "contentTypes": ["application/x-mswinurl"], "rank": "default" }],
+  "noteTypes": [
+    {
+      "type": "link"
+    }
+  ],
+  "services": ["numen.links.v1.LinkService"],
   "textInput": {
-    "contentTypes": ["application/x-mswinurl"],
-    "autoRun": true
+    "noteTypes": ["link"]
   },
   "playback": {
-    "files": [".url"]
+    "contentTypes": ["text/markdown"]
   },
   "commands": [
     {
       "id": "import",
-      "title": "Import link",
+      "title": "Import from URL",
       "arguments": [
-        { "name": "address", "title": "The address", "type": "string", "required": true }
-      ],
-      "hiddenInPalette": true
-    },
-    {
-      "id": "download-text",
-      "title": "Download text again",
-      "contentTypes": ["application/x-mswinurl"]
-    },
-    {
-      "id": "download-copy",
-      "title": "Download video",
-      "contentTypes": ["application/x-mswinurl"]
-    },
-    {
-      "id": "delete-copy",
-      "title": "Delete downloaded video",
-      "contentTypes": ["application/x-mswinurl"]
+        {
+          "name": "address",
+          "title": "The address",
+          "type": "string",
+          "required": true
+        }
+      ]
     }
   ],
   "lifecycle": {
@@ -48,7 +41,7 @@
   "backend": {
     "type": "process",
     "entrypoint": "bin/tools-media-importer",
-    "serviceName": "numen.v1.ArticleService"
+    "serviceName": "numen.links.v1.LinkService"
   },
   "frontend": {
     "entrypoint": "dist/index.js",

@@ -1,10 +1,11 @@
-package domain_test
+package address_test
 
 import (
+	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 
 // webSeeds are the shapes an address is written in: the two schemes that are
@@ -27,12 +28,10 @@ var webSeeds = []string{
 	"\x00\xff",
 }
 
-// authority is the host an address names, which is where a name and a password
-// would stand. An `@` further along is part of a path.
-func authority(address string) string {
-	_, rest, _ := strings.Cut(address, "://")
-	host, _, _ := strings.Cut(rest, "/")
-	return host
+// hasUserInfo reports whether an address carries a name or a password before its host.
+func hasUserInfo(raw string) bool {
+	parsed, err := url.Parse(raw)
+	return err != nil || parsed.User != nil
 }
 
 // back is fetchable and stays itself when it is read again.
@@ -44,7 +43,7 @@ func FuzzParseWebAddress(f *testing.F) {
 		f.Add(seed)
 	}
 	f.Fuzz(func(t *testing.T, raw string) {
-		address, err := domain.ParseURL(raw)
+		parsed, err := address.Parse(raw)
 		if err != nil {
 			return
 		}
@@ -52,29 +51,29 @@ func FuzzParseWebAddress(f *testing.F) {
 		// Nothing here reaches this machine, and nothing carries a name and a
 		// password into a run's arguments.
 		switch {
-		case !strings.HasPrefix(string(address), "http://") &&
-			!strings.HasPrefix(string(address), "https://"):
-			t.Fatalf("%q was read as %q", raw, string(address))
-		case strings.ContainsAny(string(address), "#\x00\n\r \t"):
-			t.Fatalf("%q was read as %q", raw, string(address))
-		case strings.Contains(authority(string(address)), "@"):
-			t.Fatalf("%q was read as %q, which carries a name", raw, string(address))
+		case !strings.HasPrefix(string(parsed), "http://") &&
+			!strings.HasPrefix(string(parsed), "https://"):
+			t.Fatalf("%q was read as %q", raw, string(parsed))
+		case strings.ContainsAny(string(parsed), "#\x00\n\r \t"):
+			t.Fatalf("%q was read as %q", raw, string(parsed))
+		case hasUserInfo(string(parsed)):
+			t.Fatalf("%q was read as %q, which carries a name", raw, string(parsed))
 		}
 
 		// The one form is the form the name of every artifact is made from, so
 		// reading it again has to reach it again.
-		again, err := domain.ParseURL(string(address))
+		again, err := address.Parse(string(parsed))
 		if err != nil {
-			t.Fatalf("%q was read as %q, which is no address", raw, string(address))
+			t.Fatalf("%q was read as %q, which is no address", raw, string(parsed))
 		}
-		if again != address {
-			t.Fatalf("%q was read as %+v, and that as %+v", raw, address, again)
+		if again != parsed {
+			t.Fatalf("%q was read as %+v, and that as %+v", raw, parsed, again)
 		}
 
 		// The space around an address is whoever wrote it down's.
-		if spaced, err := domain.ParseURL(" \t" + raw + "\n "); err != nil || spaced != address {
+		if spaced, err := address.Parse(" \t" + raw + "\n "); err != nil || spaced != parsed {
 			t.Fatalf("%q is %+v, and the same with space around it is %+v (%v)",
-				raw, address, spaced, err)
+				raw, parsed, spaced, err)
 		}
 	})
 }

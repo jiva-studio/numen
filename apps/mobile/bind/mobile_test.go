@@ -206,10 +206,9 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 	for _, item := range []string{
 		"/assets/Physics.md",
 		"/numen.v1.DocumentService/GetDocument",
-		"/numen.v1.RecordingService/GetRecording",
+		"/numen.v1.MediaService/GetMediaSource",
 		"/numen.v1.TextService/ReadLiveText",
 		"/numen.v1.TextService/CreateTextEdit",
-		"/numen.v1.ArticleService/ReadArticle",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)
 		req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader([]byte(`{"path":"Physics.md"}`)))

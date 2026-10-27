@@ -8,7 +8,6 @@ type (
 	// From name subpackage
 	SourceKind  = name.SourceKind
 	Fingerprint = name.Fingerprint
-	URL         = name.URL
 )
 
 const (
@@ -24,12 +23,10 @@ const (
 var (
 	// From name subpackage
 	ErrUnnameable      = name.ErrUnnameable
-	ErrNotAURL         = name.ErrNotAURL
 	Filename           = name.Filename
 	GetReducedFilename = name.GetReducedFilename
 	ChooseMatch        = name.ChooseMatch
 	FoldName           = name.FoldName
 	Basename           = name.Basename
 	LinkName           = name.LinkName
-	ParseURL           = name.ParseURL
 )

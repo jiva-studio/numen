@@ -37,7 +37,7 @@ type Services struct {
 	Settings  *settings.Handler
 	Agent     *wire.AgentHandler
 	Command   *command.Handler
-	Recording *recordingHandler
+	Media     *mediaHandler
 	// TextVersion answers the menu a file's text versions make.
 	TextVersion *textmenu.Handler
 	// Text serves the live text of a file and a person's edit of it to the views.
@@ -86,7 +86,7 @@ func createServices(state *State) *Services {
 		Settings:    settings.NewHandler(),
 		Agent:       newAgentHandler(state),
 		Command:     command.NewHandler(plugincommand.NewCommands(nil, nil)),
-		Recording:   &recordingHandler{state: state},
+		Media:       &mediaHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
 		Text:        texts.NewHandler(state, nil),
 		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
@@ -97,7 +97,7 @@ func createServices(state *State) *Services {
 // openPlaying names the socket a recording is played from.
 func (s *Services) openPlaying(playing *Loopback) {
 	s.Playing = playing
-	s.Recording.playing = playing
+	s.Media.playing = playing
 }
 
 // readFiles binds the use cases that read the files of the vaults the readers open, and the copies
@@ -105,8 +105,8 @@ func (s *Services) openPlaying(playing *Loopback) {
 func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.OpenCopy) {
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openCopy = openCopy
-	s.Recording.getFingerprint = file.NewGetFingerprint(readers)
-	s.Recording.openCopy = openCopy
+	s.Media.getFingerprint = file.NewGetFingerprint(readers)
+	s.Media.openCopy = openCopy
 }
 
 // noteHandler answers what a vault's notes hold and what changes them.

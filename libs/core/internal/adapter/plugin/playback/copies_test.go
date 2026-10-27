@@ -6,7 +6,9 @@ import (
 	"errors"
 	"io"
 	"io/fs"
+	"path"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -15,8 +17,8 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
-// host knows three plugins: one that keeps copies of links, one that keeps none, and one switched
-// off that would keep copies of links too.
+// host knows three plugins: one that keeps copies of notes, one that keeps none, and one switched
+// off that would keep copies of notes too.
 type host struct {
 	pluginport.PluginDiscoverer
 	pluginport.PluginResolver
@@ -30,12 +32,27 @@ func (host) GetPlugin(id string) (pluginport.DiscoveredPlugin, bool) {
 	switch id {
 	case "org.example.links":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{
-			ID: id, Playback: &pluginport.PluginPlayback{Files: []string{".url"}},
+			ID: id, Playback: &pluginport.PluginPlayback{ContentTypes: []domain.ContentType{"text/markdown"}},
 		}}, true
 	case "org.example.other":
 		return pluginport.DiscoveredPlugin{Manifest: pluginport.PluginManifest{ID: id}}, true
 	}
 	return pluginport.DiscoveredPlugin{}, false
+}
+
+// contentTypes are the types the host gives the names of the tests.
+var contentTypes = map[string]domain.ContentType{
+	".md":   "text/markdown",
+	".mp3":  "audio/mpeg",
+	".mp4":  "video/mp4",
+	".json": "application/json",
+}
+
+func (host) GetContentType(name string) domain.ContentType {
+	if found, ok := contentTypes[strings.ToLower(path.Ext(name))]; ok {
+		return found
+	}
+	return domain.UnknownContentType
 }
 
 // folders holds each plugin's folder in memory.
@@ -109,10 +126,10 @@ const hash = "4f2a"
 
 func TestOnlyATypeAnEnabledPluginDeclaresIsCopied(t *testing.T) {
 	copies := NewCopies(host{}, folders{})
-	if !copies.IsCopied("links/Tidal mills.URL") {
-		t.Error("a link is not copied, and the plugin that keeps copies of links is enabled")
+	if !copies.IsCopied("links/Tidal mills.MD") {
+		t.Error("a note is not copied, and the plugin that keeps copies of notes is enabled")
 	}
-	for _, path := range []string{"talks/lecture.mp3", "notes/plain.md", "README"} {
+	for _, path := range []string{"talks/lecture.mp3", "notes/plain.json", "README"} {
 		if copies.IsCopied(path) {
 			t.Errorf("%s is copied, and no enabled plugin keeps copies of it", path)
 		}
@@ -127,7 +144,7 @@ func TestTheCopyIsTheFileNamedByTheHashInAContainerThatPlays(t *testing.T) {
 		hash + ".mp4":          []byte("the copy"),
 		"org.example.other.md": []byte("not a copy"),
 	}}
-	found, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.url", hash)
+	found, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", hash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -147,8 +164,16 @@ func TestALinkWithNoCopyHasNone(t *testing.T) {
 		"org.example.other": {hash + ".mp4": []byte("a plugin that keeps no copies")},
 		"org.example.off":   {hash + ".mp4": []byte("a plugin switched off")},
 	}
-	_, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.url", hash)
+	_, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", hash)
 	if !errors.Is(err, playbackport.ErrNoCopy) {
 		t.Errorf("a link with no copy opened as %v", err)
+	}
+}
+
+func TestACopyOfATypeThatDoesNotPlayIsNone(t *testing.T) {
+	stores := folders{"org.example.links": {hash + ".json": []byte("{}")}}
+	_, err := NewCopies(host{}, stores).OpenCopy(t.Context(), domain.Vault{}, "links/a.md", hash)
+	if !errors.Is(err, playbackport.ErrNoCopy) {
+		t.Errorf("a file of no audio or video type opened as %v", err)
 	}
 }

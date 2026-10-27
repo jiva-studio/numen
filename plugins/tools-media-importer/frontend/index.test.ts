@@ -1,42 +1,18 @@
 import { describe, expect, it, vi } from 'vitest'
 import { createMockPluginContext } from '@numen/plugin-sdk/testing'
-import { activate, createActivate, LINK, LinkTab } from './index'
+import { activate, LINK, LinkTab } from './index'
 import { links as servedLinks } from './api/wire'
-import type { Links } from './types'
-
-const links = (made: string[]): Links => ({
-  getLink: async () => ({ ok: true, value: { url: '', isCopyable: false, copySize: 0 } }),
-  readArticle: async () => '',
-  getSource: async () => ({ mediaUrl: '', mediaType: '' }),
-  createLink: async (folder, url) => {
-    made.push(`${folder}|${url}`)
-    return { ok: true, value: { path: 'links/made.url' } }
-  },
-  watchWork: () => () => {},
-})
 
 describe('the media importer frontend', () => {
-  it('opens a link file in its tab', () => {
+  it('opens a note of type link in its tab', () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    createActivate(links([]))(ctx)
+    activate(ctx)
 
-    const readers = ctx.getRegisteredReaders()
-    expect(readers).toHaveLength(1)
-    expect(readers[0]?.id).toBe('link')
-    expect(readers[0]?.component).toBe(LinkTab)
-  })
-
-  it('makes the link of an address as the file of its kind', async () => {
-    const made: string[] = []
-    const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
-    createActivate(links(made))(ctx)
-
+    expect(ctx.getRegisteredReaders()).toHaveLength(0)
     const kind = ctx.getRegisteredTabKinds().find((one) => one.kind === LINK)
+    expect(LINK).toBe('link')
     expect(kind?.component).toBe(LinkTab)
-    const answer = await kind?.createFile?.('links', 'http://tidal-mills.numen.test/history/rance')
-    expect(answer).toEqual({ ok: true, value: { path: 'links/made.url' } })
-    expect(made).toEqual(['links|http://tidal-mills.numen.test/history/rance'])
-    expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.url', 'tab') as never)).toBe(
+    expect(kind?.getTitle?.(kind.open?.('links/Tidal mills.md', 'tab') as never)).toBe(
       'Tidal mills',
     )
   })
@@ -45,7 +21,7 @@ describe('the media importer frontend', () => {
     const ctx = createMockPluginContext({ pluginId: 'md.numen.tools.media.importer' })
     const tasks = {
       watch: vi.fn((onTasks: (list: readonly { about: string }[]) => void) => {
-        onTasks([{ about: 'links/a.url' }])
+        onTasks([{ about: 'links/a.md' }])
         return { dispose: () => {} }
       }),
       watchAll: vi.fn(),
@@ -53,7 +29,7 @@ describe('the media importer frontend', () => {
     activate(Object.assign(ctx, { tasks }))
     const changes: boolean[] = []
 
-    const stop = servedLinks.watchWork('links/a.url', (isWorking) => changes.push(isWorking))
+    const stop = servedLinks.watchWork('links/a.md', (isWorking) => changes.push(isWorking))
     stop()
 
     expect(tasks.watch).toHaveBeenCalledTimes(1)

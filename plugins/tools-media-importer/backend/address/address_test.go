@@ -1,10 +1,10 @@
-package domain_test
+package address_test
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/address"
 )
 
 func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
@@ -23,7 +23,7 @@ func TestAPagePreservesWhatReturnsWhichPageItIs(t *testing.T) {
 		{"http://example.com:8080/a", "http://example.com:8080/a"},
 		{"https://example.com/a#section", "https://example.com/a"},
 	} {
-		got, err := domain.ParseURL(one.input)
+		got, err := address.Parse(one.input)
 		if err != nil {
 			t.Errorf("%q: %v", one.input, err)
 			continue
@@ -50,7 +50,7 @@ func TestOnlyWhatCanBeFetchedIsAnAddress(t *testing.T) {
 		"https:///a",
 		"http://\x00",
 	} {
-		if _, err := domain.ParseURL(content); !errors.Is(err, domain.ErrNotAURL) {
+		if _, err := address.Parse(content); !errors.Is(err, address.ErrNotAURL) {
 			t.Errorf("%q was read as an address", content)
 		}
 	}
@@ -64,11 +64,11 @@ func TestReadingWhatWasReadReachesTheSame(t *testing.T) {
 		"https://example.com/a?b=2&a=1",
 		"https://example.com/",
 	} {
-		once, err := domain.ParseURL(content)
+		once, err := address.Parse(content)
 		if err != nil {
 			t.Fatalf("%q: %v", content, err)
 		}
-		twice, err := domain.ParseURL(string(once))
+		twice, err := address.Parse(string(once))
 		if err != nil {
 			t.Fatalf("%q: %v", string(once), err)
 		}
@@ -88,7 +88,7 @@ func TestAnAddressOnThisMachineIsNoAddressToPointAt(t *testing.T) {
 		"http://0.0.0.0:5432/",
 		"http://numen.localhost/",
 	} {
-		if _, err := domain.ParseURL(raw); !errors.Is(err, domain.ErrNotAURL) {
+		if _, err := address.Parse(raw); !errors.Is(err, address.ErrNotAURL) {
 			t.Errorf("%s is read as an address to point at", raw)
 		}
 	}

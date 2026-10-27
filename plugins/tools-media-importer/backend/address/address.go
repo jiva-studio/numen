@@ -1,4 +1,5 @@
-package name
+// Package address reads the web address a link holds.
+package address
 
 import (
 	"errors"
@@ -7,26 +8,21 @@ import (
 	"strings"
 )
 
-// A URL is where a `.url` file points, in the one form two spellings of one
-// resource share. What was fetched from it is kept under a name made from this
-// form, so two files that pasted the same address in different words hold one
-// text between them.
-//
-// What is at it — a video, a page, anything else — is not this type's to say.
-// Whoever fetches an address answers for the sites it knows.
+// A URL is a web address in the one form two spellings of one resource share.
+// What is at it is the fetcher's to say.
 type URL string
 
-// ErrNotAURL is anything a `.url` file cannot point at. Only `http` and `https`
+// ErrNotAURL is anything a link cannot point at. Only `http` and `https`
 // are fetched, and only away from this machine: neither a scheme reaching a
-// file nor a host that is this machine is an address a file may carry.
+// file nor a host that is this machine is an address a link may carry.
 var ErrNotAURL = errors.New("not a web address")
 
-// ParseURL reads what a person pasted.
+// Parse reads what a person pasted.
 //
 // The scheme and the host are lowercased, a default port and a fragment are
 // dropped, and the parameters a site adds to say where a visitor came from are
 // dropped with them; what is left is written in one order.
-func ParseURL(raw string) (URL, error) {
+func Parse(raw string) (URL, error) {
 	address, err := url.Parse(strings.TrimSpace(raw))
 	if err != nil {
 		return "", ErrNotAURL

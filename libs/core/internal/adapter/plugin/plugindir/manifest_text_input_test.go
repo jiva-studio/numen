@@ -43,15 +43,30 @@ func TestAManifestDeclaresItsFileMenuEntry(t *testing.T) {
 
 func TestATextInputThatNamesNothingOrNamesItWronglyIsRefused(t *testing.T) {
 	for name, input := range map[string]string{
-		"nothing":                        `{}`,
-		"an extension for a type":        `{"contentTypes": [".pdf"]}`,
-		"a type of no subtype":           `{"contentTypes": ["audio"]}`,
-		"a kind with no name":            `{"kinds": [" "]}`,
-		"a run on its own with no types": `{"kinds": ["article"], "autoRun": true}`,
-		"a menu entry with no title":     `{"kinds": ["article"], "menuEntry": {"title": " ", "icon": "spell-check"}}`,
+		"nothing":                         `{}`,
+		"an extension for a type":         `{"contentTypes": [".pdf"]}`,
+		"a type of no subtype":            `{"contentTypes": ["audio"]}`,
+		"a kind with no name":             `{"kinds": [" "]}`,
+		"a run on its own with no types":  `{"kinds": ["article"], "autoRun": true}`,
+		"a menu entry with no title":      `{"kinds": ["article"], "menuEntry": {"title": " ", "icon": "spell-check"}}`,
+		"a note type it does not declare": `{"noteTypes": ["link"]}`,
 	} {
 		if _, err := readTextManifest(t, input); !errors.Is(err, pluginport.ErrInvalidTextInput) {
 			t.Errorf("%s: got %v, want ErrInvalidTextInput", name, err)
 		}
+	}
+}
+
+func TestATextInputNamesTheNoteTypesThePluginDeclares(t *testing.T) {
+	m, err := pluginport.ReadManifest(strings.NewReader(`{
+		"id": "org.example.links", "name": "Links", "version": "1.0.0", "backend": {"entrypoint": "bin/links"},
+		"noteTypes": [{"type": "link"}],
+		"textInput": {"noteTypes": ["link"]}
+	}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !slices.Equal(m.TextInput.NoteTypes, []string{"link"}) {
+		t.Errorf("read %+v", m.TextInput)
 	}
 }

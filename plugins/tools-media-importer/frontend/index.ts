@@ -1,50 +1,34 @@
 /**
- * Frontend entrypoint for the Media Importer plugin: a link opens in its own tab, and the window
- * makes a link of an address through it.
+ * Frontend entrypoint for the Media Importer plugin: a note of type `link` opens in its tab.
  */
 import { definePlugin, getFileStem, type PluginContext } from '@numen/plugin-sdk'
 import LinkTab from './LinkTab.vue'
 import './styles.css'
-import { links, setTaskHost } from './api/wire'
-import type { Links } from './types'
+import { setTaskHost } from './api/wire'
 import { WORDS as words } from './words'
 
 export { LinkTab }
 
-/** The kind a link's tab is filed under, and the kind of file the window makes of an address. */
-export const LINK = 'url'
+/** The note type a link carries, and the kind its tab is filed under. */
+export const LINK = 'link'
 
-/** What a link's tab holds: the link. */
+/** What a link's tab holds: the note of the link. */
 export interface LinkTabState {
   readonly path: string
 }
 
-export function createActivate(served: Links) {
-  return (context: PluginContext): void => {
-    const getTitle = (path: string) => getFileStem(path) || words.link
-    context.registerReader({
-      id: 'link',
-      component: LinkTab,
-      title: words.link,
-      source: 'url',
-    })
-    context.registerTabKind<LinkTabState>({
-      kind: LINK,
-      component: LinkTab,
-      source: 'url',
-      open: (path) => ({ path }),
-      getTitle: (state) => getTitle(state.path),
-      identity: (path) => path,
-      getTarget: (state) => ({ path: state.path, title: getTitle(state.path) }),
-      getOpenTab: (state) => ({ path: state.path }),
-      createFile: (folder, address) => served.createLink(folder, address),
-    })
-  }
-}
-
 export const activate = (context: PluginContext): void => {
   setTaskHost(context.tasks)
-  createActivate(links)(context)
+  const getTitle = (path: string) => getFileStem(path) || words.link
+  context.registerTabKind<LinkTabState>({
+    kind: LINK,
+    component: LinkTab,
+    open: (path) => ({ path }),
+    getTitle: (state) => getTitle(state.path),
+    identity: (path) => path,
+    getTarget: (state) => ({ path: state.path, title: getTitle(state.path) }),
+    getOpenTab: (state) => ({ path: state.path }),
+  })
 }
 
 export default definePlugin({

@@ -1,10 +1,9 @@
-// Package service is the backend of the media importer plugin: it makes links, fetches the text
+// Package service is the backend of the media importer plugin: it makes link notes, fetches the text
 // their addresses publish as text versions of them, copies the videos they point at to be played
-// in their place, and serves ArticleService and the plugin's commands.
+// in their place, and serves LinkService and the plugin's commands.
 package service
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"strconv"
@@ -15,9 +14,9 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/server"
-	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/download"
 	"github.com/jiva-studio/numen/plugins/tools-media-importer/backend/link"
+	"github.com/jiva-studio/numen/plugins/tools-media-importer/gen/numen/links/v1/linksv1connect"
 )
 
 // EnvMockML names the variable that has the plugin reach video sites through the mock downloader.
@@ -107,7 +106,7 @@ func getLanguages(value string) []string {
 	return out
 }
 
-// Mount registers the text provider, ArticleService and the commands on s over the host given. A
+// Mount registers the text provider, LinkService and the commands on s over the host given. A
 // video site is reached through the mock downloader where isMock is set. The fetches end with s.
 func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	f := newFetchers(isMock)
@@ -118,7 +117,7 @@ func Mount(s *server.Server, hosted link.Host, isMock bool) error {
 	}
 	s.SetUpdateConfig(f.updateConfig)
 	s.Register(host.NewTextProviderHandler(link.NewProvider(links), s.HandlerOptions()...))
-	s.Register(numenv1connect.NewArticleServiceHandler(articleServer{links: links}, s.HandlerOptions()...))
+	s.Register(linksv1connect.NewLinkServiceHandler(linkServer{links: links}, s.HandlerOptions()...))
 	command.Mount(s, commands)
 	s.OnClose(links.Close)
 	return nil
@@ -144,12 +143,4 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 	return server.NewLinkedHandler(vars, func(s *server.Server) error {
 		return Mount(s, hosted, vars[EnvMockML] == "true")
 	})
-}
-
-// describeSize is how large something is, in the unit a person reads it in.
-func describeSize(bytes int64) string {
-	if bytes < 1<<20 {
-		return fmt.Sprintf("%d bytes", bytes)
-	}
-	return fmt.Sprintf("%d MB", bytes>>20)
 }
