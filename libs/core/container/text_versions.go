@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -10,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/derivedfile"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/filesystem/textfiles"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hosttext"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textproviderbridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
-	"github.com/jiva-studio/numen/libs/core/port/vaultport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
 )
 
@@ -59,7 +58,7 @@ func (c Config) SetPluginTexts(_ context.Context, getVault func() (domain.Vault,
 		host.SetPluginTexts(nil)
 		return
 	}
-	host.SetPluginTexts(pluginTexts{versions: c.TextVersions, readers: c.VaultReaders(), getVault: getVault})
+	host.SetPluginTexts(hosttext.NewTexts(c.TextVersions, c.VaultReaders(), getVault))
 }
 
 // indexVersions is the text versions the index database records, one vault at a time.
@@ -107,76 +106,6 @@ func (noTextPlugins) GetTextPlugins() []textport.TextPlugin { return nil }
 
 func (noTextPlugins) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
 	return nil, &pluginport.UnavailableError{PluginID: pluginID, Reason: pluginport.PluginNotInstalled}
-}
-
-// pluginTexts is the text versions of the vault the host shows, for the plugins
-// that call the host. Which version is live is decided for the file as it is now.
-type pluginTexts struct {
-	versions *textversion.Versions
-	readers  vaultport.VaultReaders
-	getVault func() (domain.Vault, bool)
-}
-
-// errNoVaultShown is a call about text versions while the host shows no vault.
-var errNoVaultShown = fmt.Errorf("%w: the host shows no vault", textport.ErrNoText)
-
-func (p pluginTexts) getShownVault() (domain.Vault, error) {
-	v, ok := p.getVault()
-	if !ok {
-		return domain.Vault{}, errNoVaultShown
-	}
-	return v, nil
-}
-
-func (p pluginTexts) PutVersion(ctx context.Context, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
-	v, err := p.getShownVault()
-	if err != nil {
-		return domain.TextVersion{}, err
-	}
-	return p.versions.PutVersion(ctx, v, pluginID, textversion.VersionPut{
-		Path: params.Path, Key: params.Key, Source: params.Source, Kind: params.Kind,
-		SourceHash: params.SourceHash, File: params.File,
-	})
-}
-
-func (p pluginTexts) RemoveVersion(ctx context.Context, pluginID, path, key string) error {
-	v, err := p.getShownVault()
-	if err != nil {
-		return err
-	}
-	return p.versions.RemoveVersion(ctx, v, pluginID, path, key)
-}
-
-func (p pluginTexts) ListVersions(ctx context.Context, path string) (pluginport.PluginTextListing, error) {
-	v, err := p.getShownVault()
-	if err != nil {
-		return pluginport.PluginTextListing{}, err
-	}
-	reader, err := p.readers.Open(v)
-	if err != nil {
-		return pluginport.PluginTextListing{}, err
-	}
-	raw, err := reader.Read(ctx, path)
-	if err != nil {
-		return pluginport.PluginTextListing{}, fmt.Errorf("%w: %w", textport.ErrNoText, err)
-	}
-	listing, err := p.versions.ListVersions(ctx, v, path, domain.HashContent(raw))
-	if err != nil {
-		return pluginport.PluginTextListing{}, err
-	}
-	return pluginport.PluginTextListing{Versions: listing.Versions, Live: listing.Live}, nil
-}
-
-func (p pluginTexts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (pluginport.PluginTextPage, error) {
-	v, err := p.getShownVault()
-	if err != nil {
-		return pluginport.PluginTextPage{}, err
-	}
-	page, err := p.versions.GetTextPage(ctx, v, path, id, cursor)
-	if err != nil {
-		return pluginport.PluginTextPage{}, err
-	}
-	return pluginport.PluginTextPage{Segments: page.Segments, NextCursor: page.NextCursor}, nil
 }
 
 // OpenPluginData is the folders plugins keep in a vault's store and the records of their text
