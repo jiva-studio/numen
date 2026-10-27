@@ -208,6 +208,7 @@ describe('a reader opened on spans of a file', () => {
       createDeps({
         openTab,
         getTabState: (id) => states[id],
+        getReaderExtensions: () => ['pdf'],
         registerExtensionReader: vi.fn((ext, reader) => {
           readers.set(ext, reader as (path: string, spans?: readonly unknown[]) => void)
           return () => {}
@@ -216,7 +217,6 @@ describe('a reader opened on spans of a file', () => {
     )
     host.createContext('sample.plugin').registerReader({
       id: 'reader:pdf',
-      fileExtensions: ['pdf'],
       component: null,
       source: 'book',
     })

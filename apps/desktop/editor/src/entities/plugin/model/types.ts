@@ -57,6 +57,8 @@ export type TabActionHandler = (targetPath: string, ...args: unknown[]) => unkno
 export interface PluginHostDeps {
   readonly registerKind: (kind: AnyTabKind) => () => void
   readonly registerExtensionReader: (extension: string, readItem: SourceReader) => () => void
+  /** The extensions of the files the reader of the plugin opens, as the manifest and the core choose. */
+  readonly getReaderExtensions?: (pluginId: string, readerId: string) => readonly string[]
   readonly registerEditor?: (
     type: string,
     open: (path: string, title?: string, options?: unknown) => void,

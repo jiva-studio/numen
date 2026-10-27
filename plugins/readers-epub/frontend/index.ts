@@ -7,7 +7,6 @@ export default definePlugin({
   activate(context: PluginContext) {
     context.registerReader({
       id: 'reader-epub',
-      fileExtensions: ['.epub'],
       component: BookTab,
       title: 'EPUB Reader',
       source: 'book',

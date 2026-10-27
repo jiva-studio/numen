@@ -12,15 +12,17 @@ interface DeclaredArgument {
   readonly isRequired: boolean
 }
 
-/** The extension a command declares to run over a file of any type. */
+/** The extension the core lists for a command over a file of any type. */
 const ANY_FILE_EXTENSION = '*'
 
-/** One command a plugin declares. A command with no `fileExtensions` runs over no file. */
+/** One command a plugin declares. A command with no `contentTypes` runs over no file. */
 export interface DeclaredCommand {
   readonly pluginId: string
   readonly id: string
   readonly title: string
-  readonly fileExtensions: readonly string[]
+  readonly contentTypes: readonly string[]
+  /** The extensions, without the dot, that give a file one of the types, as the core lists them. */
+  readonly extensions: readonly string[]
   readonly arguments: readonly DeclaredArgument[]
 }
 
@@ -42,7 +44,8 @@ const readCommand = (wire: WireCommand): DeclaredCommand => ({
   pluginId: wire.pluginId,
   id: wire.id,
   title: wire.title,
-  fileExtensions: wire.fileExtensions,
+  contentTypes: wire.contentTypes,
+  extensions: wire.extensions,
   arguments: wire.arguments.map((one) => ({
     name: one.name,
     title: one.title,
@@ -64,7 +67,7 @@ export async function runDeclaredCommand(
   const answer = await pluginCommands.runPluginCommand({
     pluginId: command.pluginId,
     command: command.id,
-    path: command.fileExtensions.length > 0 ? run.path : '',
+    path: command.contentTypes.length > 0 ? run.path : '',
     arguments: { ...run.values },
   })
   if (answer.error === CommandErrorCode.UNSPECIFIED) {
@@ -76,8 +79,8 @@ export async function runDeclaredCommand(
 /** Whether the command runs over the file at the path, by its extension. */
 export function canRunOn(command: DeclaredCommand, path: string): boolean {
   const name = path.slice(path.lastIndexOf('/') + 1)
-  if (command.fileExtensions.includes(ANY_FILE_EXTENSION)) return name !== ''
+  if (command.extensions.includes(ANY_FILE_EXTENSION)) return name !== ''
   const dot = name.lastIndexOf('.')
   if (dot < 0) return false
-  return command.fileExtensions.includes(name.slice(dot + 1).toLowerCase())
+  return command.extensions.includes(name.slice(dot + 1).toLowerCase())
 }

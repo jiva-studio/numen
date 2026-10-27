@@ -37,7 +37,6 @@ export function readMarkdownEditorPreferences(
 export function activate(context: PluginContext): void {
   context.registerReader({
     id: 'editor-markdown',
-    fileExtensions: ['.md', '.markdown', '.txt', '.note'],
     component: MarkdownNoteEditor,
     title: 'Markdown Note Editor',
     source: 'note',

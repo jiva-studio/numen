@@ -113,6 +113,7 @@ describe('every setting', () => {
               storedSecrets: ['apiKey'],
               completionConsent: CompletionConsent.ASKED,
               hasFrontend: true,
+              readers: [{ id: 'reader-sample', extensions: ['sample'] }],
               settings: [
                 {
                   key: 'autoRun',
@@ -162,6 +163,7 @@ describe('every setting', () => {
         storedSecrets: ['apiKey'],
         consent: 'asked',
         hasFrontend: true,
+        readers: [{ id: 'reader-sample', extensions: ['sample'] }],
         settings: [
           {
             key: 'autoRun',

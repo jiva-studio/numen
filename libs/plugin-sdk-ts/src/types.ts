@@ -56,10 +56,10 @@ export interface SettingDeclaration {
   step?: number
 }
 
-// ReaderRegistration registers a document viewer component for file extensions.
+// ReaderRegistration registers a document viewer component. The manifest declares, under `readers`
+// with the same id, the content types it opens.
 export interface ReaderRegistration {
   id: string
-  fileExtensions: string[]
   component: unknown
   title?: string
   source: 'note' | 'book' | 'recording' | 'url' | 'other'
@@ -281,6 +281,10 @@ export interface PluginManifest {
     styles?: string
   }
   /** What the plugin makes text from; a plugin that makes no text declares none. */
+  /** The types of file the plugin brings, each with the globs of its names, such as `*.deck`. */
+  contentTypes?: { type: string; globs: string[] }[]
+  /** The readers of the frontend, by registered id, with the content types each opens and its rank. */
+  readers?: { id: string; contentTypes: string[]; rank: 'default' | 'alternate' }[]
   textInput?: TextInput
   settings?: SettingDeclaration[]
 }

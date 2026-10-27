@@ -81,7 +81,6 @@ describe('PluginContext', () => {
 
     const sub1 = ctx.registerReader({
       id: 'pdf',
-      fileExtensions: ['.pdf'],
       component: null,
       source: 'book',
     })

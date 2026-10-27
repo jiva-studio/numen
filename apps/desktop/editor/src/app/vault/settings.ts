@@ -79,6 +79,7 @@ export const settingsCore: SettingsPort = {
         })),
         storedSecrets: p.storedSecrets,
         hasFrontend: p.hasFrontend,
+        readers: (p.readers ?? []).map((one) => ({ id: one.id, extensions: one.extensions })),
         consent: consented[p.completionConsent],
         ...(p.failure
           ? {

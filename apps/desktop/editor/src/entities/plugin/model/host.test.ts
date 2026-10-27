@@ -29,6 +29,10 @@ describe('createPluginHost', () => {
           extensionReaders.delete(ext)
         }
       }),
+      getReaderExtensions: vi.fn(
+        (_pluginId: string, readerId: string) =>
+          ({ 'custom-pdf': ['cpdf', 'cpdf2'], reader1: ['ext1'] })[readerId] ?? [],
+      ),
       openTab: vi.fn(async () => 'tab-1'),
       getSetting: vi.fn((_pluginId, key) => (key === 'fontSize' ? 14 : undefined)),
       onSettingChange: vi.fn(() => () => {}),
@@ -45,14 +49,13 @@ describe('createPluginHost', () => {
     // Register reader
     const readerSub = ctx.registerReader({
       id: 'custom-pdf',
-      fileExtensions: ['.cpdf', 'cpdf2'],
       component: null,
       title: 'Custom PDF',
       source: 'book',
     })
 
     expect(deps.registerKind).toHaveBeenCalled()
-    expect(extensionReaders.has('.cpdf')).toBe(true)
+    expect(extensionReaders.has('cpdf')).toBe(true)
     expect(extensionReaders.has('cpdf2')).toBe(true)
     expect(host.getRegisteredReaders()).toHaveLength(1)
 
@@ -105,7 +108,7 @@ describe('createPluginHost', () => {
     expect(host.hasCommand('test.run')).toBe(false)
 
     readerSub.dispose()
-    expect(extensionReaders.has('.cpdf')).toBe(false)
+    expect(extensionReaders.has('cpdf')).toBe(false)
 
     tabSub.dispose()
     expect(host.getRegisteredTabKinds()).toHaveLength(0)
@@ -118,7 +121,6 @@ describe('createPluginHost', () => {
 
     ctx.registerReader({
       id: 'reader1',
-      fileExtensions: ['.ext1'],
       component: null,
       source: 'note',
     })
@@ -128,12 +130,12 @@ describe('createPluginHost', () => {
       handler: async () => {},
     })
 
-    expect(extensionReaders.has('.ext1')).toBe(true)
+    expect(extensionReaders.has('ext1')).toBe(true)
     expect(host.hasCommand('cmd1')).toBe(true)
 
     host.disposePlugin('disposable.plugin')
 
-    expect(extensionReaders.has('.ext1')).toBe(false)
+    expect(extensionReaders.has('ext1')).toBe(false)
     expect(host.hasCommand('cmd1')).toBe(false)
     expect(host.getRegisteredReaders()).toHaveLength(0)
   })

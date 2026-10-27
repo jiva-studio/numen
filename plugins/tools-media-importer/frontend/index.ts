@@ -24,7 +24,6 @@ export function createActivate(served: Links) {
     const getTitle = (path: string) => getFileStem(path) || words.link
     context.registerReader({
       id: 'link',
-      fileExtensions: ['.url'],
       component: LinkTab,
       title: words.link,
       source: 'url',

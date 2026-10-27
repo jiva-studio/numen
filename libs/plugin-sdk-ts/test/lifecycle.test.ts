@@ -34,7 +34,6 @@ describe('plugin lifecycle', () => {
     const ctx = createMockPluginContext()
     const disposable = ctx.registerReader({
       id: 'custom-pdf',
-      fileExtensions: ['.pdf'],
       component: {},
       source: 'book',
     })

@@ -142,7 +142,7 @@ function registerReaderEntry(
   const cleanups: (() => void)[] = [
     deps.registerKind(createReaderTabKind(pluginId, registration, getContext)),
   ]
-  for (const ext of registration.fileExtensions) {
+  for (const ext of deps.getReaderExtensions?.(pluginId, registration.id) ?? []) {
     cleanups.push(
       deps.registerExtensionReader(ext, (path, spans) => {
         void deps.openTab(kindId, path).then((tabId) => {

@@ -87,6 +87,10 @@ export function createPluginSupport(deps: PluginSupportDeps) {
       }
     },
     registerExtensionReader: tabOpeners.registerExtensionReader,
+    getReaderExtensions: (pluginId, readerId) =>
+      settingsHolder.current?.rest?.plugins?.value
+        .find((plugin) => plugin.id === pluginId)
+        ?.readers?.find((reader) => reader.id === readerId)?.extensions ?? [],
     registerEditor: tabOpeners.registerEditor,
     openTab: windowTabs.openTabOfKind,
     openTabBeside: windowTabs.openTabBesideOfKind,

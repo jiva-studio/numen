@@ -67,7 +67,6 @@ describe('createReaderTabKind', () => {
   it('computes dynamic title and book target for epub reader', () => {
     const readerKind = createReaderTabKind('md.numen.readers.epub', {
       id: 'reader-epub',
-      fileExtensions: ['.epub'],
       component: null,
       title: 'EPUB Reader',
       source: 'book',
@@ -290,7 +289,6 @@ describe('createReaderTabKind (source resolution)', () => {
   it('identifies source via registration source property', () => {
     const kind = createReaderTabKind('audio-plugin', {
       id: 'custom-audio',
-      fileExtensions: ['.custom'],
       component: null,
       source: 'recording',
     })

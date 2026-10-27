@@ -15,7 +15,8 @@ const createDeck: DeclaredCommand = {
   pluginId: 'md.numen.cards',
   id: 'create-deck',
   title: 'Create a deck',
-  fileExtensions: [],
+  contentTypes: [],
+  extensions: [],
   arguments: [
     { name: 'title', title: 'Title', isRequired: true },
     { name: 'folder', title: 'Folder', isRequired: false },
@@ -26,7 +27,8 @@ const convert: DeclaredCommand = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  fileExtensions: ['pdf'],
+  contentTypes: ['application/pdf'],
+  extensions: ['pdf'],
   arguments: [],
 }
 

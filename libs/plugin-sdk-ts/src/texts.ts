@@ -99,11 +99,11 @@ export interface TextProvider {
   deleteText(vaultId: string, path: string, key: string): Promise<void>
 }
 
-// TextInput is what a manifest says a plugin makes text from: files of the types `files` names, by
-// extension with its dot, and versions in the formats `formats` names. `autoRun` asks to be run on
-// a file of its types that has no live version.
+// TextInput is what a manifest says a plugin makes text from: files of the content types
+// `contentTypes` names, such as `audio/*`, and versions in the formats `formats` names. `autoRun`
+// asks to be run on a file of its types that has no live version.
 export interface TextInput {
-  files?: string[]
+  contentTypes?: string[]
   formats?: TextFormat[]
   autoRun?: boolean
 }

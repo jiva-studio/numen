@@ -22,7 +22,7 @@ describe('the media importer frontend', () => {
 
     const readers = ctx.getRegisteredReaders()
     expect(readers).toHaveLength(1)
-    expect(readers[0]?.fileExtensions).toEqual(['.url'])
+    expect(readers[0]?.id).toBe('link')
     expect(readers[0]?.component).toBe(LinkTab)
   })
 

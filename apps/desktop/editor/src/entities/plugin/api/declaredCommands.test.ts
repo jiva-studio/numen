@@ -18,7 +18,8 @@ const convert = {
   pluginId: 'md.numen.pages',
   id: 'convert',
   title: 'Convert',
-  fileExtensions: ['pdf'],
+  contentTypes: ['application/pdf'],
+  extensions: ['pdf'],
   arguments: [],
 }
 
@@ -30,7 +31,8 @@ describe('the commands the plugins declare', () => {
           pluginId: 'md.numen.cards',
           id: 'create-deck',
           title: 'Create a deck',
-          fileExtensions: [],
+          contentTypes: [],
+          extensions: [],
           arguments: [
             { name: 'title', title: 'Title', isRequired: true },
             { name: 'folder', title: 'Folder', isRequired: false },
@@ -55,8 +57,13 @@ describe('the commands the plugins declare', () => {
     expect(canRunOn(convert, '')).toBe(false)
   })
 
-  it('run over a file of any type where they declare the extension *', () => {
-    const proofread = { ...convert, id: 'proofread', fileExtensions: ['*'] }
+  it('run over a file of any type where the core lists the extension *', () => {
+    const proofread = {
+      ...convert,
+      id: 'proofread',
+      contentTypes: ['*/*'],
+      extensions: ['*'],
+    }
     expect(canRunOn(proofread, 'talks/storage.wav')).toBe(true)
     expect(canRunOn(proofread, 'README')).toBe(true)
     expect(canRunOn(proofread, 'books/')).toBe(false)
@@ -92,7 +99,10 @@ describe('a run', () => {
       openedPath: '',
     })
 
-    await runDeclaredCommand({ ...convert, fileExtensions: [] }, { path: 'a.md', values: {} })
+    await runDeclaredCommand(
+      { ...convert, contentTypes: [], extensions: [] },
+      { path: 'a.md', values: {} },
+    )
 
     expect(request.runPluginCommand).toHaveBeenLastCalledWith(expect.objectContaining({ path: '' }))
   })

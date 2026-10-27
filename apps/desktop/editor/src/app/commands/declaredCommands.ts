@@ -17,13 +17,13 @@ export const getPaletteId = (command: DeclaredCommand): string =>
 
 /**
  * The palette's commands for the declared ones. A command over files is offered
- * over a file of one of its extensions, and one over none over anything.
+ * over a file of one of its content types, and one over none over anything.
  */
 export function createDeclaredPaletteCommands(
   declared: readonly DeclaredCommand[],
 ): readonly Command[] {
   return declared.map((one): Command => {
-    const hasFiles = one.fileExtensions.length > 0
+    const hasFiles = one.contentTypes.length > 0
     return {
       id: getPaletteId(one),
       text: one.title,

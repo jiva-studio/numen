@@ -14,7 +14,6 @@ export function activate(context: PluginContext): void {
   setTaskHost(context.tasks)
   context.registerReader({
     id: 'media-player',
-    fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
     component: RecordingTab,
     title: 'Audio Player',
     source: 'recording',

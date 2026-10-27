@@ -16,7 +16,6 @@ describe('editor-markdown plugin lifecycle', () => {
     expect(registerReader).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'editor-markdown',
-        fileExtensions: ['.md', '.markdown', '.txt', '.note'],
         title: 'Markdown Note Editor',
         source: 'note',
       }),

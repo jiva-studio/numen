@@ -13,7 +13,6 @@ describe('media-player plugin', () => {
 
     expect(registerReaderSpy).toHaveBeenCalledWith({
       id: 'media-player',
-      fileExtensions: ['.mp3', '.m4a', '.wav', '.ogg', '.aac', '.flac'],
       component: RecordingTab,
       title: 'Audio Player',
       source: 'recording',

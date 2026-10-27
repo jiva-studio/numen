@@ -122,8 +122,16 @@ export interface PluginInfo {
   readonly consent: Consent
   /** Whether the plugin declares a frontend the window loads. */
   readonly hasFrontend: boolean
+  /** The readers the plugin declares, each with the extensions of the files it opens. */
+  readonly readers?: readonly PluginReader[]
   /** Set while the host suspends the plugin. */
   readonly failure?: PluginFailure | undefined
+}
+
+/** A reader of a plugin and the extensions, lowercase and without the dot, of the files it opens. */
+export interface PluginReader {
+  readonly id: string
+  readonly extensions: readonly string[]
 }
 
 /** The agent program and the model a setting of type `agent` holds. Empty is the default. */

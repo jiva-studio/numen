@@ -14,7 +14,6 @@ export { useDocumentTab } from './model/useDocumentTab'
 export function activate(context: PluginContext): void {
   context.registerReader({
     id: 'reader-pdf',
-    fileExtensions: ['.pdf'],
     component: DocumentTab,
     title: 'PDF Reader',
     source: 'book',
