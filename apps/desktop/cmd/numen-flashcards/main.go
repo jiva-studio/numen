@@ -130,12 +130,13 @@ func run(cfg container.Config, debug debugOptions) error {
 }
 
 // makeWindowAPI is the window of the desktop.flashcards target: its plugins, the services they serve,
-// the agent the settings choose, and whether the index carries a vault.
+// the agent the settings choose, whether the index carries a vault, and where links land.
 func makeWindowAPI(cfg container.Config, notes container.Notes) *shell.API {
 	agent := cfg.GetSettingsAgent()
 	return &shell.API{
 		GetAgent:             func() agentport.Agent { return agent },
 		IsVaultIndexed:       notes.IsVaultIndexed,
+		ResolveLinks:         notes.ResolveLinks,
 		Window:               shell.NewWindow(platform.TargetFlashcards, nil),
 		GetFrontendPluginIDs: cfg.GetFrontendPluginIDs,
 		GetPluginDir:         cfg.GetPluginDir,

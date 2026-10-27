@@ -194,7 +194,15 @@ describe('the agent a plugin is handed', () => {
     expect(await agent.resolveLinks('See [[A]].')).toStrictEqual([
       { raw: '[[A]]', address: 'name://A', text: 'A', path: 'A.md' },
     ])
-    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].')
+    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].', undefined)
+  })
+
+  it('resolves the wikilinks of a text in the vault a plugin names', async () => {
+    const { agent, core } = create()
+
+    await agent.resolveLinks('See [[A]].', 'garden')
+
+    expect(core.resolveLinks).toHaveBeenCalledWith('', 'See [[A]].', 'garden')
   })
 
   it('says why the agent cannot be reached while the window says it', () => {

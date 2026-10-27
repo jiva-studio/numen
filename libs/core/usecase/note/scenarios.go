@@ -25,6 +25,7 @@ type Scenarios struct {
 
 	Links         ShowLinks
 	Neighbourhood ShowNeighbourhood
+	ResolveLinks  *ResolveLinks
 
 	GetTitles      GetTitles
 	GetTitle       *GetTitle

@@ -5,8 +5,8 @@
 import { computed, onMounted, onUnmounted, ref, shallowRef } from 'vue'
 import { createPluginLoader, getPluginStyle, type PluginLoaderDeps } from '@numen/plugin-host'
 import type { VaultRow } from '@numen/shell'
-import { formatErrorMessage } from '@numen/wire'
-import { agentService, pluginService, vaultsService } from '@/shared/clients'
+import { formatErrorMessage, type LinkClient } from '@numen/wire'
+import { agentService, noteService, pluginService, vaultsService } from '@/shared/clients'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { createShellHost } from './host'
 import { createWindowKeys } from './windowKeys'
@@ -19,6 +19,7 @@ export interface ShellDeps {
   readonly fetch?: PluginLoaderDeps['fetch']
   readonly dynamicImport?: PluginLoaderDeps['dynamicImport']
   readonly agentClient?: WindowAgentClient
+  readonly linkClient?: LinkClient
 }
 
 const listPlugins = async (): Promise<readonly string[]> =>
@@ -50,7 +51,10 @@ function useVaults(list: () => Promise<readonly VaultRow[]>, onError: (text: str
 }
 
 export function useShell(deps: ShellDeps = {}) {
-  const windowAgent = createWindowAgent(deps.agentClient ?? agentService)
+  const windowAgent = createWindowAgent(
+    deps.agentClient ?? agentService,
+    deps.linkClient ?? noteService,
+  )
   const { host, front, tab, openTab, notices, mountView } = createShellHost(windowAgent.agent)
   const loader = createPluginLoader({
     host,

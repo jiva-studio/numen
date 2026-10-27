@@ -4,7 +4,7 @@
  */
 import { shallowRef } from 'vue'
 import type { AgentHost } from '@numen/plugin-sdk'
-import { createAgentPort, type AgentClient } from '@numen/wire'
+import { createAgentPort, resolveTextLinks, type AgentClient, type LinkClient } from '@numen/wire'
 import { WORDS } from '@/shared/words'
 
 /** As much of the agent service as the window asks of it. */
@@ -16,7 +16,10 @@ export interface WindowAgentClient extends AgentClient {
 }
 
 /** The agent of the window, and how its question about reachability is dropped. */
-export function createWindowAgent(client: WindowAgentClient): {
+export function createWindowAgent(
+  client: WindowAgentClient,
+  links: LinkClient,
+): {
   readonly agent: AgentHost
   readonly dispose: () => void
 } {
@@ -35,7 +38,7 @@ export function createWindowAgent(client: WindowAgentClient): {
   const agent: AgentHost = {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolveLinks: async () => [],
+    resolveLinks: (text, vault) => resolveTextLinks(links, { text, vault }),
     getUnreachable: () => unreachable.value,
     getSetting: () => undefined,
     writeSetting: async () => {

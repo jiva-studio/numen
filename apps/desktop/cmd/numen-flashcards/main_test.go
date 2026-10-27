@@ -100,6 +100,7 @@ func TestThePageIsGivenWhatItWorksThrough(t *testing.T) {
 	for name, wired := range map[string]any{
 		"indexed": api.IsVaultIndexed,
 		"window":  api.Window,
+		"links":   api.ResolveLinks,
 	} {
 		if reflect.ValueOf(wired).IsZero() {
 			t.Errorf("the page has no %s", name)

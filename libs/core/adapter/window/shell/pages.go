@@ -22,14 +22,15 @@ var policy = csp.Sources{Images: []string{"data:"}}.Policy()
 func Pages() (http.Handler, error) { return wire.NewInterfaceServer(pages) }
 
 // NewHandler is everything this window answers: the window itself, its themes, the agent, the list of
-// vaults, its plugins and the files of their frontends, the services they serve, and the files the
-// page is made of. The agent is answered here and never forwarded to a plugin that serves
-// AgentService.
+// vaults, where the links of a text land, its plugins and the files of their frontends, the services
+// they serve, and the files the page is made of. The agent is answered here and never forwarded to a
+// plugin that serves AgentService.
 func (a *API) NewHandler(files http.Handler) http.Handler {
 	windowRoute, window := numenv1connect.NewWindowServiceHandler(a.Window)
 	pluginsRoute, plugins := numenv1connect.NewPluginServiceHandler(pluginList{getIDs: a.GetFrontendPluginIDs})
 	agentRoute, agent := numenv1connect.NewAgentServiceHandler(&wire.AgentHandler{GetAgent: a.GetAgent})
 	vaultsRoute, vaults := numenv1connect.NewVaultsServiceHandler(vaultList{list: a.ListVaults})
+	notesRoute, notes := numenv1connect.NewNoteServiceHandler(noteLinks{resolve: a.ResolveLinks, list: a.ListVaults})
 	var themesRoute string
 	var themes http.Handler
 	if a.Themes != nil {
@@ -49,6 +50,8 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 			agent.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, vaultsRoute):
 			vaults.ServeHTTP(w, r)
+		case strings.HasPrefix(r.URL.Path, notesRoute):
+			notes.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 			// The shell runs no plugin backend: the route serves only the files of a plugin folder.
 			if !wire.ServePluginFile(w, r, a.GetPluginDir) {

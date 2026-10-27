@@ -80,8 +80,9 @@ export interface AgentPort {
 
 // AgentHost is the agent a window asks, the agents and models it offers, and the one the person chose.
 export interface AgentHost extends AgentPort {
-  // The wikilinks of a text, each raw form once. The core reads them out of the text.
-  resolveLinks(text: string): Promise<readonly TextLink[]>
+  // The wikilinks of a text, each raw form once. The core reads them out of the text. vault is the
+  // id of the vault the text is written in; a window that shows one vault may be asked without it.
+  resolveLinks(text: string, vault?: string): Promise<readonly TextLink[]>
   // Why the agent cannot be reached, and empty where it can.
   getUnreachable(): string
   getSetting(path: readonly string[]): unknown

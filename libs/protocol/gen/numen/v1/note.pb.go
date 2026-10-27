@@ -565,7 +565,10 @@ type ResolveAddressesRequest struct {
 	Written []string `protobuf:"bytes,2,rep,name=written,proto3" json:"written,omitempty"`
 	// A text whose wikilinks are answered about beside `written`. Each one is
 	// asked about by its address as `scheme://value`, the form `found` carries.
-	Text          string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	Text string `protobuf:"bytes,3,opt,name=text,proto3" json:"text,omitempty"`
+	// The id of the vault the addresses are written in. Empty is the vault the
+	// window shows; a window that shows no vault needs it.
+	Vault         string `protobuf:"bytes,4,opt,name=vault,proto3" json:"vault,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -617,6 +620,13 @@ func (x *ResolveAddressesRequest) GetWritten() []string {
 func (x *ResolveAddressesRequest) GetText() string {
 	if x != nil {
 		return x.Text
+	}
+	return ""
+}
+
+func (x *ResolveAddressesRequest) GetVault() string {
+	if x != nil {
+		return x.Vault
 	}
 	return ""
 }
@@ -2201,11 +2211,12 @@ const file_numen_v1_note_proto_rawDesc = "" +
 	"\athrough\x18\x04 \x01(\tR\athrough\x12\x1b\n" +
 	"\tis_mutual\x18\x05 \x01(\bR\bisMutual\x12\x12\n" +
 	"\x04type\x18\x06 \x01(\tR\x04type\x12#\n" +
-	"\rreverse_label\x18\a \x01(\tR\freverseLabel\"[\n" +
+	"\rreverse_label\x18\a \x01(\tR\freverseLabel\"q\n" +
 	"\x17ResolveAddressesRequest\x12\x12\n" +
 	"\x04from\x18\x01 \x01(\tR\x04from\x12\x18\n" +
 	"\awritten\x18\x02 \x03(\tR\awritten\x12\x12\n" +
-	"\x04text\x18\x03 \x01(\tR\x04text\"{\n" +
+	"\x04text\x18\x03 \x01(\tR\x04text\x12\x14\n" +
+	"\x05vault\x18\x04 \x01(\tR\x05vault\"{\n" +
 	"\x18ResolveAddressesResponse\x125\n" +
 	"\bresolved\x18\x01 \x03(\v2\x19.numen.v1.ResolvedAddressR\bresolved\x12(\n" +
 	"\x05found\x18\x02 \x03(\v2\x12.numen.v1.TextLinkR\x05found\"J\n" +

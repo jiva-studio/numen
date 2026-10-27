@@ -26,9 +26,10 @@ export interface NotePort {
   /**
    * The wikilinks of a text, read by the core, and the note each reaches: empty
    * where it reaches none, or one in another vault. A name resolves by a path
-   * relative to the note it is written in, which is `from`.
+   * relative to the note it is written in, which is `from`. `vault` is the
+   * id of the vault the text is written in; empty is the one the window shows.
    */
-  resolveLinks(from: string, text: string): Promise<readonly TextLink[]>
+  resolveLinks(from: string, text: string, vault?: string): Promise<readonly TextLink[]>
   /** A change being made to a note's prose, reported while it is being made. */
   watchEdits(signal: AbortSignal): AsyncIterable<NoteEdit>
   /** The prose of a note, below its frontmatter, and the file it came out of. */

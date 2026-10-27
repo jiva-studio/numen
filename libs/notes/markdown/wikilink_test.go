@@ -55,3 +55,25 @@ func TestAWikilinkReturnsWhereItExistsAndWhatIsInsideIt(t *testing.T) {
 		t.Errorf("holds %q", found[0].Inside)
 	}
 }
+
+func TestWikilinksInTextSkipsCodeFencesAndCountsFromTheStartOfTheText(t *testing.T) {
+	text := "See [[Kite]].\n```\n[[Gnomon]]\n```\nThen `[[Sundial]]` and [[Entropy]]."
+
+	found := markdown.WikilinksInText(text)
+
+	var raws []string
+	for _, one := range found {
+		raws = append(raws, text[one.At:one.To])
+	}
+	if !slices.Equal(raws, []string{"[[Kite]]", "[[Entropy]]"}) {
+		t.Errorf("found %q", raws)
+	}
+}
+
+func TestWikilinksInTextReadsALineEndingInACarriageReturn(t *testing.T) {
+	found := markdown.WikilinksInText("[[Kite]]\r\n[[Gnomon]]")
+
+	if len(found) != 2 || found[1].At != 10 || found[1].Target.String() != "name://Gnomon" {
+		t.Errorf("found %+v", found)
+	}
+}

@@ -142,7 +142,7 @@ export function createAgentHost({ port, core, window, settings }: AgentHostDeps)
   return {
     ask: (query) => port.ask(query),
     finish: (conversation) => port.finish(conversation),
-    resolveLinks: (text) => core.resolveLinks('', text),
+    resolveLinks: (text, vault) => core.resolveLinks('', text, vault),
     getUnreachable: () => window.unreachable.value,
     getSetting: (path) => settings.rest.getSetting(path),
     writeSetting: (path, value) => settings.rest.writeSetting(path, value),

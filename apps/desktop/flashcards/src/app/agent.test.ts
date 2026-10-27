@@ -1,7 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import type { AskAgentResponse } from '@numen/protocol'
+import type { LinkClient } from '@numen/wire'
 import { createWindowAgent, type WindowAgentClient } from './agent'
 import { WORDS } from '@/shared/words'
+
+/** The note service, answering one link of the garden vault and keeping every request. */
+const linkRequests: unknown[] = []
+const links: LinkClient = {
+  resolveAddresses: async (request) => {
+    linkRequests.push(request)
+    return {
+      found: [{ raw: '[[Peat]]', address: 'name://Peat', text: 'Peat' }],
+      resolved: [{ written: 'name://Peat', path: 'Peat.md', isCrossed: false }],
+    }
+  },
+}
 
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
@@ -26,7 +39,7 @@ const createClient = (state: () => Promise<{ unreachable: string }>) => {
 describe('createWindowAgent', () => {
   it('sends the query context to the service', async () => {
     const { client, requests } = createClient(async () => ({ unreachable: '' }))
-    const { agent } = createWindowAgent(client)
+    const { agent } = createWindowAgent(client, links)
 
     for await (const step of agent.ask({
       question: 'what is this?',
@@ -42,7 +55,7 @@ describe('createWindowAgent', () => {
 
   it('reports the agent reachable until the state arrives, then its reason', async () => {
     const { client } = createClient(async () => ({ unreachable: 'no model is set up' }))
-    const { agent } = createWindowAgent(client)
+    const { agent } = createWindowAgent(client, links)
     expect(agent.getUnreachable()).toBe('')
 
     await settle()
@@ -54,7 +67,7 @@ describe('createWindowAgent', () => {
     const { client } = createClient(async () => {
       throw new Error('the connection went')
     })
-    const { agent } = createWindowAgent(client)
+    const { agent } = createWindowAgent(client, links)
 
     await settle()
 
@@ -63,10 +76,22 @@ describe('createWindowAgent', () => {
 
   it('aborts the state request on dispose', () => {
     const { client, signals } = createClient(() => new Promise<never>(() => {}))
-    const { dispose } = createWindowAgent(client)
+    const { dispose } = createWindowAgent(client, links)
 
     dispose()
 
     expect(signals[0]?.aborted).toBe(true)
+  })
+
+  it('resolves the wikilinks of a text in the vault named', async () => {
+    const { client } = createClient(async () => ({ unreachable: '' }))
+    const { agent } = createWindowAgent(client, links)
+
+    const found = await agent.resolveLinks('Unlike [[Peat]].', 'garden')
+
+    expect(found).toEqual([
+      { raw: '[[Peat]]', address: 'name://Peat', text: 'Peat', path: 'Peat.md' },
+    ])
+    expect(linkRequests.at(-1)).toEqual({ from: '', text: 'Unlike [[Peat]].', vault: 'garden' })
   })
 })

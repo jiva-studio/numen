@@ -94,6 +94,7 @@ describe('a note requested for', () => {
     expect(asked.resolveAddresses.mock.calls.at(-1)?.[0]).toEqual({
       from: 'a.md',
       text: '[[B]] [[C|see C]] [[D]]',
+      vault: '',
     })
     expect(resolved).toEqual([
       { raw: '[[B]]', address: 'name://B', text: 'B', path: 'b.md' },

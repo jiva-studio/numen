@@ -40,6 +40,9 @@ type API struct {
 	// ListVaults is every vault the installation holds, which the page offers to choose from. Nil is a
 	// window that lists none.
 	ListVaults func() ([]domain.Vault, error)
+	// ResolveLinks answers where the links of a text land in a vault of ListVaults. Nil is a window that
+	// resolves none.
+	ResolveLinks *note.ResolveLinks
 
 	indexRuns indexRuns
 

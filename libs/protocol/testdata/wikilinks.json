@@ -23,5 +23,9 @@
   {
     "text": "[[Seminar 1.2–1.3 — Lisbon, 9 July 1973]]",
     "found": ["name://Seminar 1.2–1.3 — Lisbon, 9 July 1973"]
-  }
+  },
+  { "text": "`[[Kite]]` is code, [[Gnomon]] is not.", "found": ["name://Gnomon"] },
+  { "text": "``a ` [[Kite]] `` and [[Gnomon]]", "found": ["name://Gnomon"] },
+  { "text": "An unclosed `tick before [[Kite]]", "found": ["name://Kite"] },
+  { "text": "[[Kite `x]]` y", "found": [] }
 ]

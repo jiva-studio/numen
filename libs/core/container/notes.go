@@ -51,6 +51,7 @@ func (c Config) Notes(
 
 		Links:         note.NewShowLinks(links),
 		Neighbourhood: note.NewShowNeighbourhood(links, queries),
+		ResolveLinks:  note.NewResolveLinks(links),
 
 		GetTitles:      note.NewGetTitles(queries),
 		GetTitle:       note.NewGetTitle(queries),

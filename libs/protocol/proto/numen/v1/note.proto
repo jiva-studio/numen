@@ -149,6 +149,10 @@ message ResolveAddressesRequest {
   // A text whose wikilinks are answered about beside `written`. Each one is
   // asked about by its address as `scheme://value`, the form `found` carries.
   string text = 3;
+
+  // The id of the vault the addresses are written in. Empty is the vault the
+  // window shows; a window that shows no vault needs it.
+  string vault = 4;
 }
 
 message ResolveAddressesResponse {

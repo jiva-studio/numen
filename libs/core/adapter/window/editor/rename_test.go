@@ -761,7 +761,7 @@ func TestResolveAddressesFindsTheWikilinksOfAText(t *testing.T) {
 	})
 
 	answer, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
-		Text: "See [[Entropy]] and [[Nowhere|elsewhere]].\nAgain [[Entropy#Heat]] and [[Entropy]], not `[[]]`.",
+		Text: "See [[Entropy]] and [[Nowhere|elsewhere]].\nAgain [[Entropy#Heat]] and [[Entropy]], not `[[]]` or `[[Code]]`.\n```\n[[Fenced]]\n```",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -1722,5 +1722,17 @@ func TestAFileLetGoOfOverANameAlreadyThereIsSaid(t *testing.T) {
 	}
 	if !strings.Contains(response, "Entropy.md") {
 		t.Errorf("the rejection says %q", response)
+	}
+}
+
+func TestResolveAddressesRejectsAVaultTheWindowDoesNotShow(t *testing.T) {
+	client, _ := openVault(t, map[string]string{"Entropy.md": "heat\n"})
+
+	_, err := client.ResolveAddresses(t.Context(), connect.NewRequest(&v1.ResolveAddressesRequest{
+		Vault: "elsewhere", Text: "[[Entropy]]",
+	}))
+
+	if connect.CodeOf(err) != connect.CodeInvalidArgument {
+		t.Errorf("got %v, want invalid argument", err)
 	}
 }

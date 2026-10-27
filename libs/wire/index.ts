@@ -6,6 +6,8 @@
  */
 export { createAgentPort } from './agent/agent'
 export type { AgentClient } from './agent/agent'
+export { resolveTextLinks } from './agent/links'
+export type { LinkClient, LinkRequest } from './agent/links'
 export { getNames } from './settings/enumNames'
 export { transport } from './transport'
 export { formatErrorMessage, formatErrorCodeMessage } from './errors/error'

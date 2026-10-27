@@ -4,8 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"slices"
-	"strings"
 	"time"
 
 	"connectrpc.com/connect"
@@ -15,7 +13,6 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/notes/domain"
-	"github.com/jiva-studio/numen/libs/notes/markdown"
 )
 
 // ReadNote hands the client the prose of a note.
@@ -285,8 +282,7 @@ func (h *noteHandler) GetNeighbourhood(
 }
 
 // ResolveAddresses answers where addresses written in one note land, and where
-// the wikilinks of a text land. An address that reaches nothing is left out of
-// the resolved ones.
+// the wikilinks of a text land, in the vault the window shows.
 func (h *noteHandler) ResolveAddresses(
 	ctx context.Context, r *connect.Request[v1.ResolveAddressesRequest],
 ) (*connect.Response[v1.ResolveAddressesResponse], error) {
@@ -294,31 +290,12 @@ func (h *noteHandler) ResolveAddresses(
 	if err != nil {
 		return nil, err
 	}
-	inText, addresses := getTextLinks(r.Msg.GetText())
-	requested := append(slices.Clone(r.Msg.GetWritten()), addresses...)
-	found, err := h.resolveLinks.Execute(ctx, showing, r.Msg.GetFrom(), requested)
+	if named := r.Msg.GetVault(); named != "" && named != string(showing.ID) {
+		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("vault %q is not the one this window shows", named))
+	}
+	out, err := wire.ResolveAddresses(ctx, h.resolveLinks, showing, r.Msg)
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
-	}
-
-	// In the order they were asked about, and an address asked about twice is
-	// one answer.
-	out := &v1.ResolveAddressesResponse{Found: inText}
-	observed := make(map[string]bool, len(found))
-	for _, content := range requested {
-		one, reached := found[content]
-		if !reached || observed[content] {
-			continue
-		}
-		observed[content] = true
-		vault, crossed := one.InVault(showing.ID)
-		out.Resolved = append(out.Resolved, &v1.ResolvedAddress{
-			Written:     content,
-			Path:        one.To,
-			Vault:       string(vault),
-			IsCrossed:   crossed,
-			IsAmbiguous: one.IsAmbiguous,
-		})
 	}
 	return connect.NewResponse(out), nil
 }
@@ -569,42 +546,4 @@ func newMoveResult(moved note.MoveResult) *v1.MoveResult {
 		From: moved.From, To: moved.To,
 		Repaired: moved.Repaired, Dangling: moved.Dangling,
 	}
-}
-
-// getTextLinks is each wikilink of a text, in the order they are written,
-// each raw form once, and the address of each, each address once.
-func getTextLinks(text string) ([]*v1.TextLink, []string) {
-	var links []*v1.TextLink
-	var addresses []string
-	isListed := map[string]bool{}
-	isAddressed := map[string]bool{}
-	for line := range strings.SplitSeq(text, "\n") {
-		for _, link := range markdown.WikilinksIn(line) {
-			raw := line[link.At:link.To]
-			if isListed[raw] {
-				continue
-			}
-			isListed[raw] = true
-			address := link.Target.String()
-			links = append(links, &v1.TextLink{
-				Raw:     raw,
-				Address: address,
-				Text:    getWikilinkText(link.Inside),
-			})
-			if !isAddressed[address] {
-				isAddressed[address] = true
-				addresses = append(addresses, address)
-			}
-		}
-	}
-	return links, addresses
-}
-
-// getWikilinkText is the text a wikilink reads as: what follows its `|`, or
-// everything inside the brackets where it has none.
-func getWikilinkText(inside string) string {
-	if alias := strings.IndexByte(inside, '|'); alias >= 0 {
-		return strings.TrimSpace(inside[alias+1:])
-	}
-	return strings.TrimSpace(inside)
 }

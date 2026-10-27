@@ -1,7 +1,7 @@
 /**
  * Note domain methods for the window core.
  */
-import { asFailure, asValue, findErrorCode, isStaleAnswer } from '@numen/wire'
+import { asFailure, asValue, findErrorCode, isStaleAnswer, resolveTextLinks } from '@numen/wire'
 import { notes } from '@/shared/clients'
 import {
   mapBaseline,
@@ -101,16 +101,5 @@ export const notesCore: NoteOperations = {
       ]),
     )
   },
-  resolveLinks: async (from, text) => {
-    const answer = await notes.resolveAddresses({ from, text })
-    const paths = new Map(
-      answer.resolved.filter((one) => !one.isCrossed).map((one) => [one.written, one.path]),
-    )
-    return answer.found.map((one) => ({
-      raw: one.raw,
-      address: one.address,
-      text: one.text,
-      path: paths.get(one.address) ?? '',
-    }))
-  },
+  resolveLinks: (from, text, vault) => resolveTextLinks(notes, { from, text, vault }),
 }
