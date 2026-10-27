@@ -4,20 +4,32 @@
   "version": "1.0.0",
   "protocol": 1,
   "description": "Keeps web links as notes, fetches their articles and captions, and downloads videos for offline playback",
-  "targets": ["desktop.editor"],
+  "targets": [
+    "desktop.editor"
+  ],
   "activationEvents": [],
-  "permissions": ["vault:read", "vault:write", "network:outbound"],
+  "permissions": [
+    "vault:read",
+    "vault:write",
+    "network:outbound"
+  ],
   "noteTypes": [
     {
       "type": "link"
     }
   ],
-  "services": ["numen.links.v1.LinkService"],
+  "services": [
+    "numen.links.v1.LinkService"
+  ],
   "textInput": {
-    "noteTypes": ["link"]
+    "noteTypes": [
+      "link"
+    ]
   },
   "playback": {
-    "contentTypes": ["text/markdown"]
+    "noteTypes": [
+      "link"
+    ]
   },
   "commands": [
     {
@@ -29,7 +41,33 @@
           "title": "The address",
           "type": "string",
           "required": true
+        },
+        {
+          "name": "wait",
+          "title": "Wait for the copy of the video",
+          "type": "boolean"
         }
+      ]
+    },
+    {
+      "id": "download-text",
+      "title": "Download text again",
+      "noteTypes": [
+        "link"
+      ]
+    },
+    {
+      "id": "download-copy",
+      "title": "Download video",
+      "noteTypes": [
+        "link"
+      ]
+    },
+    {
+      "id": "delete-copy",
+      "title": "Delete downloaded video",
+      "noteTypes": [
+        "link"
       ]
     }
   ],
@@ -54,7 +92,9 @@
       "title": "yt-dlp",
       "description": "Path to the yt-dlp program",
       "default": "",
-      "replaces": ["importing.yt_dlp"]
+      "replaces": [
+        "importing.yt_dlp"
+      ]
     },
     {
       "key": "ffmpeg",
@@ -62,7 +102,9 @@
       "title": "ffmpeg",
       "description": "Path to the ffmpeg program",
       "default": "",
-      "replaces": ["importing.ffmpeg"]
+      "replaces": [
+        "importing.ffmpeg"
+      ]
     },
     {
       "key": "captions",
