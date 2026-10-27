@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { PluginContext } from '@numen/plugin-sdk'
+import { NOTE_EDITOR, type PluginContext } from '@numen/plugin-sdk'
 import { activate, deactivate } from './index'
 
 describe('notes plugin lifecycle', () => {
@@ -27,6 +27,20 @@ describe('notes plugin lifecycle', () => {
         title: 'Note',
       }),
     )
+  })
+
+  it('registers the note-editor view where the host offers the notes of the vault', () => {
+    const registerView = vi.fn()
+    const context = {
+      registerReader: vi.fn(),
+      registerTabKind: vi.fn(),
+      registerView,
+      notes: { read: vi.fn(), write: vi.fn() },
+    } as unknown as PluginContext
+
+    activate(context)
+
+    expect(registerView).toHaveBeenCalledWith(expect.objectContaining({ capability: NOTE_EDITOR }))
   })
 
   it('runs deactivation hook cleanly', () => {

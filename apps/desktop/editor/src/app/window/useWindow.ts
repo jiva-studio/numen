@@ -152,6 +152,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
   const runs = runSupport()
   const pluginServices: PluginServices = {}
   const pluginNotices = createNoticeQueue()
+  const pluginNotes = createPluginNotes(core)
   const { pluginHost, pluginLoader } = createPluginSupport({
     windowTabs,
     tabLinks,
@@ -172,7 +173,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
         'error',
       )
     },
-    ...createPluginNotes(core),
+    ...pluginNotes,
   })
   return {
     log,
@@ -185,6 +186,7 @@ function initWindowCore(settingsHolder: { current?: ReturnType<typeof useSetting
     pluginLoader,
     pluginServices,
     pluginNotices,
+    pluginNotes,
   }
 }
 
@@ -280,6 +282,7 @@ function initWindowKindsAndCommands(
     tabOpeners: base.tabOpeners,
     windowTabs: base.windowTabs,
     editing,
+    pluginNotes: base.pluginNotes,
     settings,
     window,
     getTarget,

@@ -3,6 +3,7 @@
  */
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import MarkdownNoteEditor from './MarkdownNoteEditor.vue'
+import { createNoteEditorView } from './view/noteEditorView'
 import {
   createWikilinkExtension,
   type WikilinkOption,
@@ -10,12 +11,7 @@ import {
 } from './extensions/wikilinks'
 import { parseFrontmatter, type FrontmatterResult } from './frontmatter'
 
-export {
-  MarkdownNoteEditor,
-  MarkdownNoteEditor as MarkdownEditor,
-  createWikilinkExtension,
-  parseFrontmatter,
-}
+export { MarkdownNoteEditor, createWikilinkExtension, parseFrontmatter }
 export type { WikilinkOption, WikilinkOptions, FrontmatterResult }
 
 export interface MarkdownEditorPreferences {
@@ -47,6 +43,8 @@ export function activate(context: PluginContext): void {
     component: MarkdownNoteEditor,
     title: 'Note',
   })
+
+  if (context.notes) context.registerView(createNoteEditorView(context.notes))
 }
 
 export function deactivate(): void {

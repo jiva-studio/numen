@@ -60,6 +60,10 @@ export interface VaultNotes {
   join(from: string, to: string, relation: NoteRelation, label?: string): Promise<boolean>
   // Whether the links between two notes are now exactly the ones given.
   replaceLinks(first: string, second: string, links: readonly NoteLink[]): Promise<boolean>
+  // The prose of a note below its frontmatter, and why it could not be read: empty where it was.
+  read(path: string): Promise<{ readonly body: string; readonly error?: string }>
+  // Prose written into a note, keeping its frontmatter. Writes to one path are made in order.
+  write(path: string, body: string): Promise<void>
   // The relations a note can be made in.
   readonly creatableRelations: readonly NoteRelation[]
 }

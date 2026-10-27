@@ -42,3 +42,12 @@ export interface VaultSummaryContext {
   // The identity of the vault the row stands for.
   readonly vault: string
 }
+
+// NOTE_EDITOR is the capability of a view that shows one note of the vault and edits it.
+export const NOTE_EDITOR = 'note-editor'
+
+// NoteEditorContext is what a plugin or a window passes the note editor view it mounts.
+export interface NoteEditorContext {
+  // The vault path of the note.
+  readonly path: string
+}

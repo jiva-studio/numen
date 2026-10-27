@@ -98,7 +98,12 @@ export function useWindowKinds(deps: WindowKindsDeps) {
       getMessageWriter: (name) => log.getWriter(name),
       today: () => formatLocalDate(new Date()),
     }),
-    notes: createVaultNotes({ core, search: core, making: editing.making }),
+    notes: createVaultNotes({
+      core,
+      search: core,
+      making: editing.making,
+      pluginNotes: deps.pluginNotes,
+    }),
     files: createVaultFiles({ ...deps, making: editing.making }),
     agent: createAgentHost({ port: agentPort, ...deps }),
     buffers: createBufferHost({ fileFlush: editing.fileFlush }),

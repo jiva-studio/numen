@@ -81,6 +81,8 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       return true
     },
     replaceLinks: async () => true,
+    read: async () => ({ body: '' }),
+    write: async () => {},
     creatableRelations: ['parent', 'child', 'jump'],
   }
 

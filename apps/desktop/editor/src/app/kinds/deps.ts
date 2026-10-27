@@ -9,6 +9,7 @@ import type { createTabSync } from '../tabs/useTabSync'
 import type { createNoteEditors } from '../tabs/useNoteEditors'
 import type { useSettings } from '../window/useSettings'
 import type { useWindowDisplay } from '../window/useWindowDisplay'
+import type { PluginNotes } from '../plugins/pluginNotes'
 
 export interface WindowKindsDeps {
   core: NotePort & FilePort & Pick<SearchDeps, 'names'>
@@ -16,6 +17,8 @@ export interface WindowKindsDeps {
   tabOpeners: FileOpeners
   windowTabs: ReturnType<typeof useWindowTabs>
   editing: ReturnType<typeof createNoteEditors>
+  /** The reads and writes of notes the plugins make, in the order they make them. */
+  pluginNotes: PluginNotes
   settings: ReturnType<typeof useSettings>
   window: ReturnType<typeof useWindowDisplay>
   getTarget: () => CommandTarget
