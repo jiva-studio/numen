@@ -31,7 +31,7 @@ func (t *Tools) addFileRead(registry *tools.Registry) error {
 		Description: "Read raw content or a byte range of any file in the vault.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.readFile)
+	}, inVault(t, (*Tools).readFile))
 }
 
 func (t *Tools) readFile(ctx context.Context, in FileReadInput) (FileReadOutput, error) {
@@ -88,7 +88,7 @@ func (t *Tools) addFileCreate(registry *tools.Registry) error {
 		Description: "Create a new raw file in the vault with the specified content.",
 		Effect:      tools.Writes,
 		Servers:     []tools.Server{tools.Full},
-	}, t.createFile)
+	}, inVault(t, (*Tools).createFile))
 }
 
 func (t *Tools) createFile(ctx context.Context, in FileCreateInput) (FileCreateOutput, error) {

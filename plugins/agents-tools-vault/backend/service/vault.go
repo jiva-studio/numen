@@ -8,7 +8,7 @@ import (
 )
 
 type VaultInfoInput struct {
-	ID string `json:"id,omitempty" jsonschema:"optional vault ID to query; defaults to currently open vault"`
+	ID string `json:"id,omitempty" jsonschema:"optional vault ID to query; defaults to the vault the call works"`
 }
 
 type VaultInfoOutput struct {
@@ -25,7 +25,7 @@ func (t *Tools) addVaultInfo(registry *tools.Registry) error {
 		Description: "Get metadata, name, root path, and note count for the vault.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.getVaultInfo)
+	}, inVault(t, (*Tools).getVaultInfo))
 }
 
 func (t *Tools) addVaultGet(registry *tools.Registry) error {
@@ -35,13 +35,13 @@ func (t *Tools) addVaultGet(registry *tools.Registry) error {
 		Description: "Get metadata, name, root path, and note count for the vault.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.getVaultInfo)
+	}, inVault(t, (*Tools).getVaultInfo))
 }
 
 func (t *Tools) getVaultInfo(ctx context.Context, in VaultInfoInput) (VaultInfoOutput, error) {
 	v := t.vault
 	if in.ID != "" {
-		v = t.vault.With(domain.VaultID(in.ID))
+		v = t.host.With(domain.VaultID(in.ID))
 	}
 
 	info, err := v.GetVault(ctx)

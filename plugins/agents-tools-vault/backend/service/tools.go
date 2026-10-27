@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"strconv"
@@ -12,14 +13,31 @@ import (
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/tools"
 )
 
+var errNoVault = errors.New("the call names no vault")
+
 // Tools provides MCP tools for AI agents interacting with the knowledge vault.
 type Tools struct {
+	// host reaches every vault the host knows.
+	host host.Vault
+	// vault is the vault of the call being served.
 	vault host.Vault
 }
 
 // New creates a Tools instance.
 func New(vault host.Vault) *Tools {
-	return &Tools{vault: vault}
+	return &Tools{host: vault}
+}
+
+// inVault runs the tool on the vault the call names. A call that names none is refused.
+func inVault[In, Out any](t *Tools, run func(*Tools, context.Context, In) (Out, error)) func(context.Context, In) (Out, error) {
+	return func(ctx context.Context, in In) (Out, error) {
+		id := tools.GetVault(ctx)
+		if id == "" {
+			var none Out
+			return none, errNoVault
+		}
+		return run(&Tools{host: t.host, vault: t.host.With(domain.VaultID(id))}, ctx, in)
+	}
 }
 
 // Registry registers and returns all vault tools.

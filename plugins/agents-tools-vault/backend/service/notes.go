@@ -32,7 +32,7 @@ func (t *Tools) addNoteRead(registry *tools.Registry) error {
 		Description: "Read the content, body prose, title, and metadata of a note in the vault.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.readNote)
+	}, inVault(t, (*Tools).readNote))
 }
 
 func (t *Tools) resolveNotePath(ctx context.Context, p string) string {
@@ -94,7 +94,7 @@ func (t *Tools) addNoteWrite(registry *tools.Registry) error {
 		Description: "Atomically write or create a note in the vault. If fingerprint is provided, verifies optimistic concurrency.",
 		Effect:      tools.Writes,
 		Servers:     []tools.Server{tools.Full},
-	}, t.writeNote)
+	}, inVault(t, (*Tools).writeNote))
 }
 
 func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutput, error) {
@@ -182,7 +182,7 @@ func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
 		Description: "Extract the outline and headings from a note in the vault.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.getNoteHeadings)
+	}, inVault(t, (*Tools).getNoteHeadings))
 }
 
 func (t *Tools) getNoteHeadings(ctx context.Context, in NoteHeadingsInput) (NoteHeadingsOutput, error) {

@@ -30,6 +30,7 @@ func TestNoteRead(t *testing.T) {
 	}
 
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "note_read",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
@@ -64,6 +65,7 @@ func TestNoteRead(t *testing.T) {
 
 	// Test note resolution without .md
 	callReq2 := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "note_read",
 		Arguments: []byte(`{"path":"Heat"}`),
 	}
@@ -93,6 +95,7 @@ func TestNoteWrite(t *testing.T) {
 
 	// 1. Create a new note
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity attracts."}`),
 	}
@@ -113,7 +116,8 @@ func TestNoteWrite(t *testing.T) {
 
 	// 2. Atomic update with valid fingerprint
 	callReq2 := &v1.CallToolRequest{
-		Name: "note_write",
+		VaultId: testVault,
+		Name:    "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nGravity bends spacetime.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
@@ -127,7 +131,8 @@ func TestNoteWrite(t *testing.T) {
 
 	// 3. Stale update with old fingerprint fails
 	callReq3 := &v1.CallToolRequest{
-		Name: "note_write",
+		VaultId: testVault,
+		Name:    "note_write",
 		Arguments: []byte(`{"path":"Gravity.md","content":"# Gravity\nConflict.","fingerprint":"` +
 			writeOut.Fingerprint + `"}`),
 	}
@@ -149,6 +154,7 @@ func TestNoteHeadings(t *testing.T) {
 	}
 
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "note_headings",
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
@@ -179,6 +185,7 @@ func TestNoteHeadings(t *testing.T) {
 func testSearchQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{"query":"thermodynamic"}`),
 	}
@@ -230,6 +237,7 @@ func TestNoteSearch(t *testing.T) {
 func testNeighbourhoodQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{"path":"Entropy.md"}`),
 	}
@@ -271,6 +279,7 @@ func TestNoteNeighbourhood(t *testing.T) {
 func testVaultInfoQuery(t *testing.T, registry *tools.Registry, toolName string) {
 	t.Helper()
 	callReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      toolName,
 		Arguments: []byte(`{}`),
 	}
@@ -319,6 +328,7 @@ func TestFileReadAndCreate(t *testing.T) {
 
 	// 1. file_read
 	readReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "file_read",
 		Arguments: []byte(`{"path":"data.txt","start":0,"length":6}`),
 	}
@@ -342,6 +352,7 @@ func TestFileReadAndCreate(t *testing.T) {
 
 	// 2. file_create
 	createReq := &v1.CallToolRequest{
+		VaultId:   testVault,
 		Name:      "file_create",
 		Arguments: []byte(`{"path":"new_data.txt","content":"hello world"}`),
 	}
@@ -400,5 +411,42 @@ func TestListTools(t *testing.T) {
 		if !found {
 			t.Errorf("expected tool %q not found in ListTools", name)
 		}
+	}
+}
+
+// testVault is the identity of the vault setupTestVault makes, which every call names.
+const testVault = "physics-vault"
+
+// A call works the vault it names, though the host shows another, and a call that names none is
+// refused.
+func TestACallWorksTheVaultItNames(t *testing.T) {
+	shown, svc := setupTestVault()
+	garden := hosttest.New("garden-vault")
+	garden.File("Beds.md", "# Beds\nRaised beds of oak.")
+	shown.Beside(garden)
+	registry, err := svc.Registry()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+		VaultId: "garden-vault", Name: "note_read", Arguments: []byte(`{"path":"Beds.md"}`),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out service.NoteReadOutput
+	if err := json.Unmarshal(res.Msg.GetResult().GetStructured(), &out); err != nil || out.Path != "Beds.md" {
+		t.Errorf("the call read %s (%v)", res.Msg.GetResult().GetText(), err)
+	}
+
+	res, err = registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+		Name: "note_read", Arguments: []byte(`{"path":"Entropy.md"}`),
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.Msg.GetResult().GetIsRefusal() || res.Msg.GetResult().GetText() != "the call names no vault" {
+		t.Errorf("a call naming no vault answered %v", res.Msg.GetResult())
 	}
 }

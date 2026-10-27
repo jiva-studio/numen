@@ -41,7 +41,7 @@ func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 		Effect:      tools.Reads,
 		Step:        tools.Search,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.searchNotes)
+	}, inVault(t, (*Tools).searchNotes))
 }
 
 func (t *Tools) addSearchQuery(registry *tools.Registry) error {
@@ -52,7 +52,7 @@ func (t *Tools) addSearchQuery(registry *tools.Registry) error {
 		Effect:      tools.Reads,
 		Step:        tools.Search,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.searchNotes)
+	}, inVault(t, (*Tools).searchNotes))
 }
 
 func (t *Tools) searchNotes(ctx context.Context, in NoteSearchInput) (NoteSearchOutput, error) {

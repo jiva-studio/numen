@@ -35,7 +35,7 @@ func (t *Tools) addNoteNeighbourhood(registry *tools.Registry) error {
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.listLinks)
+	}, inVault(t, (*Tools).listLinks))
 }
 
 func (t *Tools) addLinkList(registry *tools.Registry) error {
@@ -45,7 +45,7 @@ func (t *Tools) addLinkList(registry *tools.Registry) error {
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
 		Effect:      tools.Reads,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
-	}, t.listLinks)
+	}, inVault(t, (*Tools).listLinks))
 }
 
 func (t *Tools) listLinks(ctx context.Context, in LinkListInput) (LinkListOutput, error) {
