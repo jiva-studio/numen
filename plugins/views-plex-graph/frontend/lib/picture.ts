@@ -9,7 +9,7 @@ import type { Neighbourhood, NoteHeading, NoteRelation, NoteType } from '../type
 import type { EdgeArrow, PlexEdge, PlexNeighbourhood, PlexNode, PlexHeading } from '../plex'
 
 /**
- * plex draws a deck and a stencil as what they are.
+ * plex draws a note of a plugin-declared type with that type's icon.
  */
 export function getNoteTypes(neighbourhood: Neighbourhood): ReadonlyMap<string, NoteType> {
   const found = new Map<string, NoteType>()

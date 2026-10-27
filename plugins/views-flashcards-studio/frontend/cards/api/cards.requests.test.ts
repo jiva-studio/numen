@@ -1,6 +1,6 @@
 /**
  * What the window sends the cards service for each thing it does with a deck or
- * a stencil, and what it makes of the answer: an error keeps its own words, a
+ * a card model, and what it makes of the answer: an error keeps its own words, a
  * file moved on is `changed`, and a missing stamp is the empty string.
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -14,11 +14,11 @@ vi.mock('./clients', () => ({
     createDeck: vi.fn(),
     readDeck: vi.fn(),
     writeDeck: vi.fn(),
-    listStencils: vi.fn(),
-    createStencil: vi.fn(),
-    renameStencilField: vi.fn(),
-    readStencil: vi.fn(),
-    writeStencil: vi.fn(),
+    listCardModels: vi.fn(),
+    createCardModel: vi.fn(),
+    renameCardModelField: vi.fn(),
+    readCardModel: vi.fn(),
+    writeCardModel: vi.fn(),
   },
 }))
 
@@ -39,13 +39,13 @@ const deckMessage = {
   problems: [],
 }
 
-const stencilMessage = {
+const cardModelMessage = {
   path: 'Word.md',
   title: 'Word',
   preamble: 'about',
   tail: 'after',
   fields: ['Front', 'Back'],
-  faces: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
+  templates: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
   problems: [],
 }
 
@@ -172,183 +172,183 @@ describe('writing a deck', () => {
   })
 })
 
-describe('the stencils of a vault', () => {
+describe('the card models of a vault', () => {
   it('are requested for up to the limit given', async () => {
-    answer('listStencils', { stencils: [], total: 0 })
+    answer('listCardModels', { cardModels: [], total: 0 })
 
-    await cards.stencils(5)
+    await cards.cardModels(5)
 
-    expect(cardsService.listStencils).toHaveBeenCalledWith({ limit: 5 })
+    expect(cardsService.listCardModels).toHaveBeenCalledWith({ limit: 5 })
   })
 
   it('are requested for up to no limit where none is given', async () => {
-    answer('listStencils', { stencils: [], total: 0 })
+    answer('listCardModels', { cardModels: [], total: 0 })
 
-    await cards.stencils()
+    await cards.cardModels()
 
-    expect(cardsService.listStencils).toHaveBeenCalledWith({ limit: 0 })
+    expect(cardsService.listCardModels).toHaveBeenCalledWith({ limit: 0 })
   })
 })
 
 describe('renaming a field', () => {
   it('sends the path, both names and the file it was read from', async () => {
-    answer('renameStencilField', { decks: [], cards: 0, notWritten: [], at: stampedAt })
+    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [], at: stampedAt })
 
-    await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, carried)
+    await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, carried)
 
-    expect(cardsService.renameStencilField).toHaveBeenCalledWith({
+    expect(cardsService.renameCardModelField).toHaveBeenCalledWith({
       path: 'Word.md',
       from: 'Front',
-      to: 'Face',
+      to: 'Template',
       baseline: seenAt,
     })
   })
 
   it('sends no file where none was read', async () => {
-    answer('renameStencilField', { decks: [], cards: 0, notWritten: [] })
+    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [] })
 
-    await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
+    await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)
 
-    const dispatched = vi.mocked(cardsService.renameStencilField).mock.calls[0]?.[0]
-    expect(dispatched).toEqual({ path: 'Word.md', from: 'Front', to: 'Face' })
+    const dispatched = vi.mocked(cardsService.renameCardModelField).mock.calls[0]?.[0]
+    expect(dispatched).toEqual({ path: 'Word.md', from: 'Front', to: 'Template' })
     expect(dispatched).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
-    answer('renameStencilField', { decks: [], cards: 0, notWritten: [] })
+    answer('renameCardModelField', { decks: [], cards: 0, notWritten: [] })
 
-    const renameResult = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
+    const renameResult = await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)
 
     expect(renameResult.ok && renameResult.value.at).toBe('')
   })
 
   it('fails in the service words', async () => {
-    answer('renameStencilField', { error: ErrorCode.MISSING })
+    answer('renameCardModelField', { error: ErrorCode.MISSING })
 
-    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)).toEqual(
+    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)).toEqual(
       asFailure('missing'),
     )
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('renameStencilField', { error: ErrorCode.STALE })
+    answer('renameCardModelField', { error: ErrorCode.STALE })
 
-    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, carried)).toEqual(
+    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, carried)).toEqual(
       asFailure('changed'),
     )
   })
 })
 
-describe('making a stencil', () => {
+describe('making a card model', () => {
   it('asks for the title in the folder with its fields', async () => {
-    answer('createStencil', { path: 'Word.md' })
+    answer('createCardModel', { path: 'Word.md' })
 
-    await cards.createStencil('Word', 'Stencils', ['Front', 'Back'])
+    await cards.createCardModel('Word', 'Card models', ['Front', 'Back'])
 
-    expect(cardsService.createStencil).toHaveBeenCalledWith({
+    expect(cardsService.createCardModel).toHaveBeenCalledWith({
       title: 'Word',
-      path: 'Stencils',
+      path: 'Card models',
       fields: ['Front', 'Back'],
     })
   })
 })
 
-describe('reading a stencil', () => {
+describe('reading a card model', () => {
   it('asks for the path', async () => {
-    answer('readStencil', { stencil: stencilMessage, at: stampedAt })
+    answer('readCardModel', { cardModel: cardModelMessage, at: stampedAt })
 
-    await cards.readStencil('Word.md')
+    await cards.readCardModel('Word.md')
 
-    expect(cardsService.readStencil).toHaveBeenCalledWith({ path: 'Word.md' })
+    expect(cardsService.readCardModel).toHaveBeenCalledWith({ path: 'Word.md' })
   })
 
   it('carries the empty string where the service stamped nothing', async () => {
-    answer('readStencil', { stencil: stencilMessage })
+    answer('readCardModel', { cardModel: cardModelMessage })
 
-    const readItem = await cards.readStencil('Word.md')
+    const readItem = await cards.readCardModel('Word.md')
 
     expect(readItem.ok && readItem.value.at).toBe('')
   })
 
-  it('fails in the service words even where a stencil came with them', async () => {
-    answer('readStencil', { error: ErrorCode.MISSING, stencil: stencilMessage })
+  it('fails in the service words even where a card model came with them', async () => {
+    answer('readCardModel', { error: ErrorCode.MISSING, cardModel: cardModelMessage })
 
-    expect(await cards.readStencil('Word.md')).toEqual(asFailure('missing'))
+    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('missing'))
   })
 
-  it('fails in the service words where no stencil came', async () => {
-    answer('readStencil', { error: ErrorCode.UNREADABLE })
+  it('fails in the service words where no card model came', async () => {
+    answer('readCardModel', { error: ErrorCode.UNREADABLE })
 
-    expect(await cards.readStencil('Word.md')).toEqual(asFailure('unreadable'))
+    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('unreadable'))
   })
 
-  it('is changed where the file moved past what was requested, though a stencil came', async () => {
-    answer('readStencil', { error: ErrorCode.STALE, stencil: stencilMessage })
+  it('is changed where the file moved past what was requested, though a card model came', async () => {
+    answer('readCardModel', { error: ErrorCode.STALE, cardModel: cardModelMessage })
 
-    expect(await cards.readStencil('Word.md')).toEqual(asFailure('changed'))
+    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('changed'))
   })
 
-  it('is no stencil where no stencil and no error came', async () => {
-    answer('readStencil', {})
+  it('is no card model where no card model and no error came', async () => {
+    answer('readCardModel', {})
 
-    expect(await cards.readStencil('Word.md')).toEqual(asFailure('notAStencil'))
+    expect(await cards.readCardModel('Word.md')).toEqual(asFailure('notACardModel'))
   })
 })
 
-describe('writing a stencil', () => {
-  const stencil = {
+describe('writing a card model', () => {
+  const cardModel = {
     fields: ['Front', 'Back'] as const,
     preamble: 'about',
     tail: 'after',
-    faces: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
+    templates: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
   }
 
-  it('sends the fields, the faces and the file it was read from', async () => {
-    answer('writeStencil', { at: stampedAt })
+  it('sends the fields, the templates and the file it was read from', async () => {
+    answer('writeCardModel', { at: stampedAt })
 
-    await cards.writeStencil('Word.md', stencil, carried)
+    await cards.writeCardModel('Word.md', cardModel, carried)
 
-    expect(cardsService.writeStencil).toHaveBeenCalledWith({
+    expect(cardsService.writeCardModel).toHaveBeenCalledWith({
       path: 'Word.md',
       fields: ['Front', 'Back'],
       preamble: 'about',
-      faces: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
+      templates: [{ name: 'Reading', preamble: 'p', front: '{{Front}}', back: '{{Back}}' }],
       tail: 'after',
       baseline: seenAt,
     })
   })
 
   it('sends no file where none was read', async () => {
-    answer('writeStencil', {})
+    answer('writeCardModel', {})
 
-    await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)
+    await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null)
 
-    expect(vi.mocked(cardsService.writeStencil).mock.calls[0]?.[0]).not.toHaveProperty('seen')
+    expect(vi.mocked(cardsService.writeCardModel).mock.calls[0]?.[0]).not.toHaveProperty('seen')
   })
 
   it('answers with the empty string where the service stamped nothing', async () => {
-    answer('writeStencil', {})
+    answer('writeCardModel', {})
 
-    await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)
+    await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null)
 
-    expect(await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)).toEqual(
-      asValue({ at: '' }),
-    )
+    expect(
+      await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null),
+    ).toEqual(asValue({ at: '' }))
   })
 
   it('fails in the service words', async () => {
-    answer('writeStencil', { error: ErrorCode.OCCUPIED })
+    answer('writeCardModel', { error: ErrorCode.OCCUPIED })
 
-    expect(await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, null)).toEqual(
-      asFailure('occupied'),
-    )
+    expect(
+      await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, null),
+    ).toEqual(asFailure('occupied'))
   })
 
   it('is changed where the file moved past what was read', async () => {
-    answer('writeStencil', { error: ErrorCode.STALE })
+    answer('writeCardModel', { error: ErrorCode.STALE })
 
-    expect(await cards.writeStencil('Word.md', { ...stencil, fields: ['Front'] }, carried)).toEqual(
-      asFailure('changed'),
-    )
+    expect(
+      await cards.writeCardModel('Word.md', { ...cardModel, fields: ['Front'] }, carried),
+    ).toEqual(asFailure('changed'))
   })
 })

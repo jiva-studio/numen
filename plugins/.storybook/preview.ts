@@ -22,10 +22,10 @@ const preview: Preview = {
   parameters: {
     layout: 'fullscreen',
     backgrounds: { disable: true },
-    // A stencil cuts the cards a deck holds, and a card is what the two of
+    // A card model cuts the cards a deck holds, and a card is what the two of
     // them come to, so the three read in that order.
     options: {
-      storySort: { order: ['*', 'Flash Cards', ['Stencil', 'Deck', 'Card']] },
+      storySort: { order: ['*', 'Flash Cards', ['Card model', 'Deck', 'Card']] },
     },
   },
   ...toolbar,

@@ -31,23 +31,23 @@ func TestADeckOverTheBoundIsNotSaved(t *testing.T) {
 	}
 }
 
-func TestAStencilOverTheBoundOfANoteIsNotSaved(t *testing.T) {
+func TestACardModelOverTheBoundOfANoteIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := w.Stencil(t.Context(), vs.first, "Animal.md",
+	_, err := w.CardModel(t.Context(), vs.first, "Animal.md",
 		"\n## Recognise\n\n"+strings.Repeat("a", note.MaxBytes), []string{"Name"}, domain.Fingerprint{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("write = %v, want too large", err)
 	}
 	if after := read(t, vs.first, "Animal.md"); after != before {
-		t.Error("the stencil was written")
+		t.Error("the card model was written")
 	}
 }
 
-// A deck whose stencils cannot be found is an error, and the file is left as it
+// A deck whose card models cannot be found is an error, and the file is left as it
 // was.
 func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
@@ -66,7 +66,7 @@ func TestADeckWhoseLinksCannotBeResolvedIsNotSaved(t *testing.T) {
 }
 
 // A write over a file that changed since it was read returns nothing: no
-// fingerprint, and no mark for a card that was never written.
+// fingerprint, and no card id for a card that was never written.
 func TestAStaleWritePassesBackNothing(t *testing.T) {
 	vs := newVaults(t)
 	w := newWriteForDeck(t, vs, "decks/Wrens.md", wrenDeck)
@@ -100,60 +100,60 @@ func TestADeckSavedAndNotLevelledPassesBackWhatItExistsAt(t *testing.T) {
 		t.Errorf("fingerprint = %+v, want current file state", got.Fingerprint)
 	}
 	if len(got.Given) != 1 {
-		t.Errorf("given = %+v, want the mark of the one card", got.Given)
+		t.Errorf("given = %+v, want the card id of the one card", got.Given)
 	}
 	if !strings.Contains(read(t, vs.first, "decks/Wrens.md"), "## Wren ^") {
 		t.Error("the deck was not written")
 	}
 }
 
-// A body opening with the frontmatter delimiter would be read as the stencil's
-func TestAStencilBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
+// A body opening with the frontmatter delimiter would be read as the card model's
+func TestACardModelBodyOpeningWithFrontmatterIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
 	before := read(t, vs.first, "Animal.md")
 
-	_, err := w.Stencil(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.Fingerprint{})
+	_, err := w.CardModel(t.Context(), vs.first, "Animal.md", "---\ntype: deck\n---\n", []string{"Name"}, domain.Fingerprint{})
 	if !errors.Is(err, note.ErrBodyUnwritable) {
 		t.Fatalf("write = %v, want the body unwritable", err)
 	}
 	if after := read(t, vs.first, "Animal.md"); after != before {
-		t.Error("the stencil was written")
+		t.Error("the card model was written")
 	}
 }
 
-// A stencil whose frontmatter is never closed has no body to replace, and the
+// A card model whose frontmatter is never closed has no body to replace, and the
 // file is left as it was.
-func TestAStencilWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
+func TestACardModelWhoseFrontmatterIsNeverClosedIsNotSaved(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Open.md", "---\ntype: stencil\nfields:\n  - Name\n\n## Recognise\n")
+	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
 
-	_, err := w.Stencil(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.Fingerprint{})
+	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Sample"}, domain.Fingerprint{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
 		t.Fatalf("write = %v, want the frontmatter unterminated", err)
 	}
 	if after := read(t, vs.first, "Open.md"); after != before {
-		t.Error("the stencil was written")
+		t.Error("the card model was written")
 	}
 }
 
 // written are the ones it declares.
-func TestAStencilWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
+func TestACardModelWhoseFrontmatterIsNeverClosedIsRefusedWithItsOwnFields(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Open.md", "---\ntype: stencil\nfields:\n  - Name\n\n## Recognise\n")
+	write(t, vs.first, "Open.md", "---\ntype: card-model\nfields:\n  - Name\n\n## Recognise\n")
 	before := read(t, vs.first, "Open.md")
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing, time.Now)
 
-	_, err := w.Stencil(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.Fingerprint{})
+	_, err := w.CardModel(t.Context(), vs.first, "Open.md", "\n## Spot it\n", []string{"Name"}, domain.Fingerprint{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
 		t.Fatalf("write = %v, want the frontmatter unterminated", err)
 	}
 	if after := read(t, vs.first, "Open.md"); after != before {
-		t.Error("the stencil was written")
+		t.Error("the card model was written")
 	}
 }

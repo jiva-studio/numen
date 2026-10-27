@@ -7,12 +7,12 @@ import {
   serializeBufferDeckToString,
   serializeBufferCardsToVaultCards,
   dropCard,
-  createStencilChoices,
+  createCardModelChoices,
   deserializeBufferDeckFromString,
   deserializeVaultDeck,
   createDeckCards,
   replaceCardValue as replaceCardValueInternal,
-  findStencilPath,
+  findCardModelPath,
   removeCard,
   areDecksEqual,
   addSection,
@@ -27,13 +27,13 @@ type AddCardOptions = Parameters<typeof addCardInternal>[2]
 const addCard = (
   deck: BufferDeck,
   title: string,
-  stencilPath: string,
+  cardModelPath: string,
   values: AddCardOptions['values'],
   section: string | null = null,
   generateCardId?: AddCardOptions['generateCardId'],
 ) =>
   addCardInternal(deck, title, {
-    stencilPath,
+    cardModelPath,
     values,
     section,
     ...(generateCardId ? { generateCardId } : {}),
@@ -59,11 +59,11 @@ const readItem = (overrides: Partial<VaultDeck> = {}): VaultDeck => ({
   preamble: 'about the animals\n',
   cards: [
     {
-      mark: 'k7m2xq9fzp',
+      cardId: 'k7m2xq9fzp',
       sectionIndex: null,
       heading: 'Llama',
-      stencilLink: 'Animal',
-      stencilPath: 'stencils/Animal.md',
+      cardModelLink: 'Animal',
+      cardModelPath: 'card-models/Animal.md',
       preamble: '',
       values: [
         { field: 'Name', text: 'Llama' },
@@ -72,11 +72,11 @@ const readItem = (overrides: Partial<VaultDeck> = {}): VaultDeck => ({
       ],
     },
     {
-      mark: '3n8vr4tqch',
+      cardId: '3n8vr4tqch',
       sectionIndex: null,
       heading: 'Alpaca',
-      stencilLink: 'Animal',
-      stencilPath: 'stencils/Animal.md',
+      cardModelLink: 'Animal',
+      cardModelPath: 'card-models/Animal.md',
       preamble: 'a note in the middle\n',
       values: [],
     },
@@ -87,7 +87,7 @@ const readItem = (overrides: Partial<VaultDeck> = {}): VaultDeck => ({
   ...overrides,
 })
 
-/** The two cards of the fixture, by the mark each carries. */
+/** The two cards of the fixture, by the card id each carries. */
 const LLAMA = 'k7m2xq9fzp'
 const ALPACA = '3n8vr4tqch'
 
@@ -95,24 +95,24 @@ const deck = (overrides: Partial<VaultDeck> = {}): BufferDeck =>
   deserializeVaultDeck(readItem(overrides), createIds())
 
 describe('a deck as the window holds it', () => {
-  it('knows every card by the mark the file carries for it', () => {
+  it('knows every card by the card id the file carries for it', () => {
     expect(deck().cards.map((card) => card.id)).toStrictEqual([LLAMA, ALPACA])
   })
 
-  it('mints an identity for a card carrying no mark, which the file cannot name', () => {
+  it('mints an identity for a card carrying no card id, which the file cannot name', () => {
     const parsed = readItem()
     const card = deck({
       cards: [
-        { ...parsed.cards[0]!, mark: '' },
-        { ...parsed.cards[1]!, mark: '' },
+        { ...parsed.cards[0]!, cardId: '' },
+        { ...parsed.cards[1]!, cardId: '' },
       ],
     })
     expect(card.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
   })
 
-  it('mints one for each of two cards carrying one mark, so both are drawn apart', () => {
+  it('mints one for each of two cards carrying one card id, so both are drawn apart', () => {
     const parsed = readItem()
-    const card = deck({ cards: [parsed.cards[0]!, { ...parsed.cards[1]!, mark: LLAMA }] })
+    const card = deck({ cards: [parsed.cards[0]!, { ...parsed.cards[1]!, cardId: LLAMA }] })
     expect(card.cards.map((card) => card.id)).toStrictEqual(['c1', 'c2'])
   })
 
@@ -168,11 +168,11 @@ describe('a deck as the window holds it', () => {
 
   it('passes the vault the cards without the identities it minted', () => {
     expect(serializeBufferCardsToVaultCards(deck())[0]).toStrictEqual({
-      mark: LLAMA,
+      cardId: LLAMA,
       sectionIndex: null,
       heading: 'Llama',
-      stencilLink: 'Animal',
-      stencilPath: 'stencils/Animal.md',
+      cardModelLink: 'Animal',
+      cardModelPath: 'card-models/Animal.md',
       preamble: '',
       values: [
         { field: 'Name', text: 'Llama' },
@@ -206,18 +206,20 @@ describe('a deck as the window holds it', () => {
 })
 
 describe('the cards as the grid draws them', () => {
-  const OFFERS = [{ path: 'stencils/Animal.md', title: 'Animal', fields: ['Height', 'Life span'] }]
+  const OFFERS = [
+    { path: 'card-models/Animal.md', title: 'Animal', fields: ['Height', 'Life span'] },
+  ]
 
-  /** One card, under the wikilink it wrote and the stencil that link reached. */
-  const createCutDeck = (stencil: string, stencilPath: string): BufferDeck =>
+  /** One card, under the wikilink it wrote and the card model that link reached. */
+  const createCutDeck = (cardModel: string, cardModelPath: string): BufferDeck =>
     deck({
       cards: [
         {
-          mark: LLAMA,
+          cardId: LLAMA,
           sectionIndex: null,
           heading: 'Llama',
-          stencilLink: stencil,
-          stencilPath,
+          cardModelLink: cardModel,
+          cardModelPath,
           preamble: '',
           values: [],
         },
@@ -228,7 +230,7 @@ describe('the cards as the grid draws them', () => {
     expect(createDeckCards(deck(), OFFERS)[0]).toStrictEqual({
       id: LLAMA,
       section: null,
-      stencil: 'Animal',
+      cardModel: 'Animal',
       filled: [
         { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45"' },
@@ -241,29 +243,29 @@ describe('the cards as the grid draws them', () => {
     expect(JSON.stringify(createDeckCards(deck(), OFFERS))).not.toContain('a note in the middle')
   })
 
-  it('draws a card the stencil its link reached, whatever stood in the brackets', () => {
-    const content = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'stencils/Animal.md']
+  it('draws a card the card model its link reached, whatever stood in the brackets', () => {
+    const content = ['cards/Animal', 'Animal|животное', 'Animal#Recognise', 'card-models/Animal.md']
     for (const one of content) {
-      expect(createDeckCards(createCutDeck(one, 'stencils/Animal.md'), OFFERS)[0]?.stencil).toBe(
-        'Animal',
-      )
+      expect(
+        createDeckCards(createCutDeck(one, 'card-models/Animal.md'), OFFERS)[0]?.cardModel,
+      ).toBe('Animal')
     }
   })
 
   it('draws a card whose link reached nothing under what the file wrote', () => {
-    expect(createDeckCards(createCutDeck('Gone', ''), OFFERS)[0]?.stencil).toBe('Gone')
+    expect(createDeckCards(createCutDeck('Gone', ''), OFFERS)[0]?.cardModel).toBe('Gone')
   })
 
   it('draws a card that wrote no brackets at all as cut by nothing', () => {
-    expect(createDeckCards(createCutDeck('', ''), OFFERS)[0]?.stencil).toBeNull()
+    expect(createDeckCards(createCutDeck('', ''), OFFERS)[0]?.cardModel).toBeNull()
   })
 })
 
-describe('the stencils a card may be cut by', () => {
-  it('are named by what each stencil is called', () => {
+describe('the card models a card may be cut by', () => {
+  it('are named by what each card model is called', () => {
     expect(
-      createStencilChoices([
-        { path: 'stencils/Animal.md', title: 'Animal', fields: ['Height'] },
+      createCardModelChoices([
+        { path: 'card-models/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'Term.md', title: 'Term', fields: ['Meaning'] },
       ]),
     ).toStrictEqual([
@@ -272,45 +274,45 @@ describe('the stencils a card may be cut by', () => {
     ])
   })
 
-  it('name one stencil where two are called one name, and the first remains', () => {
+  it('name one card model where two are called one name, and the first remains', () => {
     expect(
-      createStencilChoices([
+      createCardModelChoices([
         { path: 'a/Animal.md', title: 'Animal', fields: ['Height'] },
         { path: 'b/Animal.md', title: 'Animal', fields: ['Weight'] },
       ]),
     ).toStrictEqual([{ name: 'Animal', fields: ['Height'] }])
   })
 
-  it('leave out a stencil called nothing', () => {
-    expect(createStencilChoices([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
+  it('leave out a card model called nothing', () => {
+    expect(createCardModelChoices([{ path: 'Animal.md', title: '', fields: [] }])).toStrictEqual([])
   })
 
-  it('are filed where the list returned, and nowhere for a name no stencil carries', () => {
-    const offers = [{ path: 'stencils/Animal.md', title: 'Animal', fields: [] }]
-    expect(findStencilPath(offers, 'Animal')).toBe('stencils/Animal.md')
-    expect(findStencilPath(offers, 'Term')).toBe('')
+  it('are filed where the list returned, and nowhere for a name no card model carries', () => {
+    const offers = [{ path: 'card-models/Animal.md', title: 'Animal', fields: [] }]
+    expect(findCardModelPath(offers, 'Animal')).toBe('card-models/Animal.md')
+    expect(findCardModelPath(offers, 'Term')).toBe('')
   })
 })
 
 describe('a card added', () => {
-  it('remains last, cut by the stencil it was requested for and carrying no mark', () => {
+  it('remains last, cut by the card model it was requested for and carrying no card id', () => {
     const card = addCard(
       deck(),
       'Animal',
-      'stencils/Animal.md',
+      'card-models/Animal.md',
       [{ field: 'Name', text: '' }],
       null,
       () => 'c9',
     )
     expect(card.cards.map((card) => card.id)).toStrictEqual([LLAMA, ALPACA, 'c9'])
-    // A mark is written where the deck is made whole, on its way to the vault.
+    // A card id is written where the deck is made whole, on its way to the vault.
     expect(card.cards[2]).toStrictEqual({
       id: 'c9',
-      mark: '',
+      cardId: '',
       section: null,
       heading: '',
-      stencilLink: 'Animal',
-      stencilPath: 'stencils/Animal.md',
+      cardModelLink: 'Animal',
+      cardModelPath: 'card-models/Animal.md',
       preamble: '',
       values: [{ field: 'Name', text: '' }],
     })
@@ -326,7 +328,7 @@ describe('a card added', () => {
     const card = addCard(
       start,
       'Animal',
-      'stencils/Animal.md',
+      'card-models/Animal.md',
       [],
       start.sections[1]!.id,
       () => 'c9',
@@ -341,29 +343,43 @@ describe('a card added', () => {
         { name: 'Leaves', preamble: '' },
       ],
     })
-    const card = addCard(start, 'Animal', 'stencils/Animal.md', [], null, () => 'c9')
+    const card = addCard(start, 'Animal', 'card-models/Animal.md', [], null, () => 'c9')
     expect(card.cards.find((card) => card.id === 'c9')?.section).toBe(null)
   })
 
   it('leaves the preamble and the tail where they were', () => {
-    const card = addCard(deck(), 'Animal', 'stencils/Animal.md', [], null, () => 'c9')
+    const card = addCard(deck(), 'Animal', 'card-models/Animal.md', [], null, () => 'c9')
     expect(card.preamble).toBe('about the animals\n')
     expect(card.tail).toBe('\n')
   })
 
-  it('names its stencil by the file, where the stencil is titled another way', () => {
-    const card = addCard(deck(), 'Animal', 'stencils/creature stencil.md', [], null, () => 'c9')
-    expect(card.cards[2]?.stencilLink).toBe('creature stencil')
+  it('names its card model by the file, where the card model is titled another way', () => {
+    const card = addCard(
+      deck(),
+      'Animal',
+      'card-models/creature card model.md',
+      [],
+      null,
+      () => 'c9',
+    )
+    expect(card.cards[2]?.cardModelLink).toBe('creature card model')
   })
 
-  it('names its stencil by no title, which a link resolves by nowhere', () => {
-    const card = addCard(deck(), 'Animal', 'stencils/creature stencil.md', [], null, () => 'c9')
-    expect(card.cards[2]?.stencilLink).not.toBe('Animal')
+  it('names its card model by no title, which a link resolves by nowhere', () => {
+    const card = addCard(
+      deck(),
+      'Animal',
+      'card-models/creature card model.md',
+      [],
+      null,
+      () => 'c9',
+    )
+    expect(card.cards[2]?.cardModelLink).not.toBe('Animal')
   })
 
-  it('names it by the title where the vault filed the stencil nowhere', () => {
+  it('names it by the title where the vault filed the card model nowhere', () => {
     const card = addCard(deck(), 'Animal', '', [], null, () => 'c9')
-    expect(card.cards[2]?.stencilLink).toBe('Animal')
+    expect(card.cards[2]?.cardModelLink).toBe('Animal')
   })
 })
 
@@ -704,9 +720,9 @@ describe('cards and sections standing among three headings', () => {
         { name: 'Shoots', preamble: 'about the shoots\n' },
       ],
       cards: [
-        { ...baseCard, mark: 'ma', sectionIndex: null },
-        { ...baseCard, mark: 'mb', sectionIndex: 0 },
-        { ...baseCard, mark: 'mc', sectionIndex: 1 },
+        { ...baseCard, cardId: 'ma', sectionIndex: null },
+        { ...baseCard, cardId: 'mb', sectionIndex: 0 },
+        { ...baseCard, cardId: 'mc', sectionIndex: 1 },
       ],
     })
   }

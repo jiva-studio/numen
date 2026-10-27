@@ -21,12 +21,12 @@ import (
 )
 
 // The two vaults every test here uses. They share no word: a heading renamed in
-// one is recognisable in the other, and so is a stencil listed from the wrong
+// one is recognisable in the other, and so is a card model listed from the wrong
 // place.
 var (
 	animals = map[string]string{
 		"Animal.md": "---\n" +
-			"type: stencil\n" +
+			"type: card-model\n" +
 			"mine: keep me verbatim\n" +
 			"fields:\n" +
 			"  - Name\n" +
@@ -34,7 +34,7 @@ var (
 			"  - Life span\n" +
 			"---\n" +
 			"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-		"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Height\n---\n" +
+		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
 		"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
 			"\nCards I am learning.\n" +
@@ -50,9 +50,9 @@ var (
 		"Weather.md": "# Weather\n\nNo card in here.\n",
 	}
 	minerals = map[string]string{
-		"Mineral.md": "---\ntype: stencil\nfields:\n  - Sample\n  - Height\n---\n" +
+		"Mineral.md": "---\ntype: card-model\nfields:\n  - Sample\n  - Height\n---\n" +
 			"\n## Spot it\n\n### Front\n\n{{Sample}}\n\n### Back\n\n{{Height}}\n",
-		// A card of this vault's own stencil, and a card naming the other
+		// A card of this vault's own card model, and a card naming the other
 		// vault's by the name it is filed under there.
 		"decks/Quartz.md": "---\ntype: deck\n---\n" +
 			"\n## Quartz ^m9n8b7v6c5\n\n[[Mineral]]\n\n### Sample\n\nQuartz\n" +
@@ -189,14 +189,14 @@ func TestACardWritingItsFirstFieldTwiceIsOneFieldSavedTwice(t *testing.T) {
 	}
 }
 
-// A card's wikilink may reach a note that is not a stencil, and then no face
+// A card's wikilink may reach a note that is not a card model, and then no template
 // lays the card out and nothing says what it is asked for. That is a problem
 // against the deck, on the card it stands against.
-func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
+func TestACardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Loose.md", "---\ntype: deck\n---\n"+
 		"\n## Llama\n\n[[Animal]]\n\n### Height\n\nabout 45\"\n"+
-		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno stencil says what this is\n")
+		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno card model says what this is\n")
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -209,12 +209,12 @@ func TestACardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 
 	var filed []format.Problem
 	for _, p := range got.Body.Problems {
-		if p.Fault == format.FaultNotAStencil {
+		if p.Fault == format.FaultNotACardModel {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 {
-		t.Fatalf("problems = %+v, want the one card naming a note that is not a stencil", got.Body.Problems)
+		t.Fatalf("problems = %+v, want the one card naming a note that is not a card model", got.Body.Problems)
 	}
 	if filed[0].Card != 1 {
 		t.Errorf("problem = %+v, want it against the second card", filed[0])
@@ -270,8 +270,8 @@ func TestADeckOverTheBoundIsNotRead(t *testing.T) {
 	}
 }
 
-// A stencil is a note and is bounded as one, which is a different number.
-func TestAStencilIsBoundedAsANote(t *testing.T) {
+// A card model is a note and is bounded as one, which is a different number.
+func TestACardModelIsBoundedAsANote(t *testing.T) {
 	vs := newVaults(t)
 	if cards.MaxBytes == note.MaxBytes {
 		t.Fatal("a deck and a note are bounded the same")
@@ -280,7 +280,7 @@ func TestAStencilIsBoundedAsANote(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Stencil(t.Context(), vs.first, "Animal.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
@@ -318,7 +318,7 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 	}
 }
 
-// A deck and a stencil are made with the key that says what they are, so each is
+// A deck and a card model are made with the key that says what they are, so each is
 // what it is to everything that reads the vault before a card is written into
 // it.
 func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
@@ -336,22 +336,22 @@ func TestWhatIsMadeReturnsWhatItIs(t *testing.T) {
 		t.Errorf("no stamp: %q", got)
 	}
 
-	stencil, err := u.Stencil(t.Context(), vs.first, cards.New{
+	cardModel, err := u.CardModel(t.Context(), vs.first, cards.New{
 		Title: "Bird", Fields: []string{"Wingspan", "Call"},
 	})
 	if err != nil {
-		t.Fatalf("make a stencil: %v", err)
+		t.Fatalf("make a card model: %v", err)
 	}
-	got := read(t, vs.first, stencil.Path)
-	if !strings.Contains(got, "type: stencil\n") || !strings.Contains(got, "fields:\n  - Wingspan\n  - Call\n") {
-		t.Errorf("stencil written wrong: %q", got)
+	got := read(t, vs.first, cardModel.Path)
+	if !strings.Contains(got, "type: card-model\n") || !strings.Contains(got, "fields:\n  - Wingspan\n  - Call\n") {
+		t.Errorf("card model written wrong: %q", got)
 	}
 
-	types, err := vs.queries.GetTypes(t.Context(), vs.first.ID, []string{deck.Path, stencil.Path})
+	types, err := vs.queries.GetTypes(t.Context(), vs.first.ID, []string{deck.Path, cardModel.Path})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if types[deck.Path] != format.TypeDeck || types[stencil.Path] != format.TypeStencil {
+	if types[deck.Path] != format.TypeDeck || types[cardModel.Path] != format.TypeCardModel {
 		t.Errorf("the index does not hold them as what they are: %v", types)
 	}
 }
@@ -387,16 +387,16 @@ func TestAPresetIsMadeNamingNoneOfItsSettings(t *testing.T) {
 	}
 }
 
-// A stencil's first field is what its cards are named by, so a stencil is made
+// A card model's first field is what its cards are named by, so a card model is made
 // with one and nothing is written where there is none.
-func TestAStencilIsMadeWithAFirstField(t *testing.T) {
+func TestACardModelIsMadeWithAFirstField(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewCreate(vs.ports.Writers, vs.index(t), time.Now)
 
-	if _, err := u.Stencil(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
+	if _, err := u.CardModel(t.Context(), vs.first, cards.New{Title: "Bird"}); !errors.Is(
 		err, cards.ErrNoFields,
 	) {
-		t.Fatalf("make a stencil of no fields = %v, want it rejected", err)
+		t.Fatalf("make a card model of no fields = %v, want it rejected", err)
 	}
 	if _, err := os.Stat(filepath.Join(vs.first.Path, "Bird.md")); !errors.Is(err, os.ErrNotExist) {
 		t.Error("the file was written anyway")
@@ -409,8 +409,8 @@ func TestAStencilIsMadeWithAFirstField(t *testing.T) {
 }
 
 // The window asking which kind of card to make is drawn from the vault's own
-// stencils, and from no other vault's.
-func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
+// card models, and from no other vault's.
+func TestTheCardModelsOfOneVaultAreListed(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
 
@@ -423,7 +423,7 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 		paths = append(paths, s.Path)
 	}
 	if !slices.Equal(paths, []string{"Animal.md", "Term.md"}) {
-		t.Fatalf("stencils = %v", paths)
+		t.Fatalf("card models = %v", paths)
 	}
 	if target != 2 {
 		t.Errorf("held = %d, want the two the vault holds", target)
@@ -440,11 +440,11 @@ func TestTheStencilsOfOneVaultAreListed(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(other) != 1 || other[0].Path != "Mineral.md" {
-		t.Errorf("the other vault's stencils = %+v", other)
+		t.Errorf("the other vault's card models = %+v", other)
 	}
 }
 
-// A list that stops short opens no file for the stencils it leaves out, and the
+// A list that stops short opens no file for the card models it leaves out, and the
 // count still says how many the vault holds.
 func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 	vs := newVaults(t)
@@ -456,7 +456,7 @@ func TestAListReadsNoMoreThanItAnswersWith(t *testing.T) {
 		t.Fatalf("list: %v", err)
 	}
 	if len(got) != 1 || got[0].Path != "Animal.md" {
-		t.Fatalf("stencils = %+v, want the one asked for", got)
+		t.Fatalf("card models = %+v, want the one asked for", got)
 	}
 	if target != 2 {
 		t.Errorf("held = %d, want the two the vault holds", target)

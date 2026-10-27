@@ -17,8 +17,9 @@ export const deserializeVaultDeck = (
   readItem: VaultDeck,
   generateBufferId: IdMaker = generateId,
 ): BufferDeck => {
-  const markCounts = new Map<string, number>()
-  for (const card of readItem.cards) markCounts.set(card.mark, (markCounts.get(card.mark) ?? 0) + 1)
+  const cardIdCounts = new Map<string, number>()
+  for (const card of readItem.cards)
+    cardIdCounts.set(card.cardId, (cardIdCounts.get(card.cardId) ?? 0) + 1)
   const sections = readItem.sections.map((section) => ({
     id: generateBufferId(),
     name: section.name,
@@ -27,12 +28,12 @@ export const deserializeVaultDeck = (
   return {
     preamble: readItem.preamble,
     cards: readItem.cards.map((card) => ({
-      id: card.mark && markCounts.get(card.mark) === 1 ? card.mark : generateBufferId(),
-      mark: card.mark,
+      id: card.cardId && cardIdCounts.get(card.cardId) === 1 ? card.cardId : generateBufferId(),
+      cardId: card.cardId,
       section: sections[card.sectionIndex ?? -1]?.id ?? null,
       heading: card.heading,
-      stencilLink: card.stencilLink,
-      stencilPath: card.stencilPath,
+      cardModelLink: card.cardModelLink,
+      cardModelPath: card.cardModelPath,
       preamble: card.preamble,
       values: card.values,
     })),
@@ -55,11 +56,11 @@ export const serializeBufferDeckToString = (deck: BufferDeck): string =>
     })),
     cards: deck.cards.map((card) => ({
       id: card.id,
-      mark: card.mark,
+      cardId: card.cardId,
       section: card.section,
       heading: card.heading,
-      stencilLink: card.stencilLink,
-      stencilPath: card.stencilPath,
+      cardModelLink: card.cardModelLink,
+      cardModelPath: card.cardModelPath,
       preamble: card.preamble,
       values: card.values.map((value) => ({ field: value.field, text: value.text })),
     })),
@@ -77,12 +78,12 @@ export const serializeBufferCardsToVaultCards = (deck: BufferDeck): readonly Vau
     deck.sections.map((section, index) => [section.id, index]),
   )
   return deck.cards.map(
-    ({ mark, section, heading, stencilLink, stencilPath, preamble, values }) => ({
-      mark,
+    ({ cardId, section, heading, cardModelLink, cardModelPath, preamble, values }) => ({
+      cardId,
       sectionIndex: sectionIndices.get(section) ?? null,
       heading,
-      stencilLink,
-      stencilPath,
+      cardModelLink,
+      cardModelPath,
       preamble,
       values,
     }),

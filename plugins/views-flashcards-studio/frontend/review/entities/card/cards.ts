@@ -1,13 +1,13 @@
-/** One card face as it is put to a person, and where the four would leave it. */
+/** One review card as it is put to a person, and where the four would leave it. */
 import type { Grade } from './grades'
 
-/** One card face as it is put to a person. */
-export interface CardFace {
+/** One review card as it is put to a person. */
+export interface ReviewCard {
   readonly deck: string
   readonly section: string
   /** What the card is known by. */
-  readonly mark: string
-  readonly face: string
+  readonly cardId: string
+  readonly template: string
   /** What the card's heading shows, which is the first line of its first field. */
   readonly heading: string
   readonly front: string

@@ -11,7 +11,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   name: 'Studies',
   path: '/vaults/01A',
   isCounted: true,
-  faces: 40,
+  reviewCards: 40,
   due: 8,
   new: 2,
   decks: [],

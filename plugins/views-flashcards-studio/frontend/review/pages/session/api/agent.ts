@@ -5,13 +5,13 @@
  * the question is about.
  */
 import type { AgentPort } from '@numen/plugin-sdk'
-import type { CardFace } from '../../../entities/card'
+import type { ReviewCard } from '../../../entities/card'
 
 /** The keys the card tools read the card in front of the person under. */
 export const CARD_CONTEXT = {
   deck: 'md.numen.views.flashcards.studio/deck',
   card: 'md.numen.views.flashcards.studio/card',
-  face: 'md.numen.views.flashcards.studio/face',
+  template: 'md.numen.views.flashcards.studio/template',
 } as const
 
 /**
@@ -22,15 +22,15 @@ export const CARD_CONTEXT = {
  * question is read as instruction; `card_current` gives the agent the same name
  * as a tool's answer, which is data.
  */
-export const createCardAgentPort = (agent: AgentPort, card: CardFace): AgentPort => ({
+export const createCardAgentPort = (agent: AgentPort, card: ReviewCard): AgentPort => ({
   ask: (query) =>
     agent.ask({
       ...query,
       context: {
         ...query.context,
         [CARD_CONTEXT.deck]: card.deck,
-        [CARD_CONTEXT.card]: card.mark,
-        [CARD_CONTEXT.face]: card.face,
+        [CARD_CONTEXT.card]: card.cardId,
+        [CARD_CONTEXT.template]: card.template,
       },
     }),
   finish: (conversation) => agent.finish(conversation),

@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { ErrorCode as ProtoErrorCode } from '../../gen/numen/flashcards/v1/errors_pb'
-import { ERRORS, findErrorCode, formatErrorCodeMessage, getErrorWords, isStaleAnswer } from './errors'
+import {
+  ERRORS,
+  findErrorCode,
+  formatErrorCodeMessage,
+  getErrorWords,
+  isStaleAnswer,
+} from './errors'
 
 describe('errors', () => {
   it('translates every note code of the schema into the plugin code', () => {
@@ -10,8 +16,8 @@ describe('errors', () => {
     expect(findErrorCode({ error: ProtoErrorCode.UNSPECIFIED })).toBe('unreadable')
   })
 
-  it('translates the codes of a stencil, a deck and a preset', () => {
-    expect(findErrorCode({ error: ProtoErrorCode.NOT_A_STENCIL })).toBe('notAStencil')
+  it('translates the codes of a card model, a deck and a preset', () => {
+    expect(findErrorCode({ error: ProtoErrorCode.NOT_A_CARD_MODEL })).toBe('notACardModel')
     expect(findErrorCode({ error: ProtoErrorCode.NOT_A_DECK })).toBe('notADeck')
     expect(findErrorCode({ error: ProtoErrorCode.DECK_TOO_LARGE })).toBe('deckTooLarge')
     expect(findErrorCode({ error: ProtoErrorCode.NOT_A_PRESET })).toBe('notAPreset')

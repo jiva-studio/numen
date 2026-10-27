@@ -10,11 +10,11 @@ import { ref, watch } from 'vue'
 import DeckEditor from './DeckEditor.vue'
 import { getBlanks, HEAD, type DeckSection, type DeckCard, type DeckProblems } from '../../lib/deck'
 import { getDeclaredFields, type InsertionPoint } from '../../lib/order'
-import type { Stencil } from '../../lib/card'
+import type { CardModel } from '../../lib/card'
 
 interface Corpus {
   readonly cards: readonly DeckCard[]
-  readonly cuts: readonly Stencil[]
+  readonly cuts: readonly CardModel[]
   /** The sections the cards stand under, in the order they stand in the deck. */
   readonly sections?: readonly DeckSection[]
   /** What the vault reading this file found wrong with it, by card and field. */
@@ -35,15 +35,15 @@ const createProblems = (corpus: Corpus): DeckProblems => ({
   ),
 })
 
-const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
-const WORD: Stencil = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
-const ASKED: Stencil = { name: 'Basic', fields: ['Question', 'Answer'] }
+const ANIMAL: CardModel = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
+const WORD: CardModel = { name: 'Word', fields: ['Word', 'Meaning', 'Example'] }
+const ASKED: CardModel = { name: 'Basic', fields: ['Question', 'Answer'] }
 
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
 /**
- * Cards cut by two stencils of different sizes, which is where the tiles differ
- * most: one stencil holds four fields and one holds two, and cards leave fields
+ * Cards cut by two card models of different sizes, which is where the tiles differ
+ * most: one card model holds four fields and one holds two, and cards leave fields
  * out.
  */
 const many = (count: number): readonly DeckCard[] =>
@@ -52,7 +52,7 @@ const many = (count: number): readonly DeckCard[] =>
       ? {
           id: `beast00${index}`,
           section: null,
-          stencil: 'Animal',
+          cardModel: 'Animal',
           filled: [
             { field: 'Name', text: `Beast ${index + 1}` },
             { field: 'Height', text: 'about 45"' },
@@ -63,7 +63,7 @@ const many = (count: number): readonly DeckCard[] =>
       : {
           id: `asked00${index}`,
           section: null,
-          stencil: 'Basic',
+          cardModel: 'Basic',
           filled: [{ field: 'Question', text: `Question ${index + 1}` }],
         },
   )
@@ -75,7 +75,7 @@ const CORPORA = {
       {
         id: 'k7m2xq9fzp',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Llama' },
           { field: 'Height', text: 'about 45" *at the shoulder*' },
@@ -85,7 +85,7 @@ const CORPORA = {
       {
         id: '3n8vr4tqch',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Yak' },
           { field: 'Height', text: 'about 63"' },
@@ -96,7 +96,7 @@ const CORPORA = {
       {
         id: 'w9s5jd2b1k',
         section: null,
-        stencil: 'Word',
+        cardModel: 'Word',
         filled: [
           { field: 'Word', text: 'llano' },
           { field: 'Meaning', text: 'a plain' },
@@ -118,7 +118,7 @@ const CORPORA = {
       {
         id: 'p4h6c8vzn2',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           { field: 'Question', text: 'What is a deck for?' },
           { field: 'Answer', text: 'Cards, and the questions on them.' },
@@ -127,7 +127,7 @@ const CORPORA = {
       {
         id: 'r2t7y5k9wq',
         section: 'roots',
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           {
             field: 'Question',
@@ -139,7 +139,7 @@ const CORPORA = {
       {
         id: 'z3f1m6b4dt',
         section: 'roots',
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Earthworm' },
           { field: 'Life span', text: 'about 2 years' },
@@ -154,7 +154,7 @@ const CORPORA = {
       {
         id: 'c5n8q2wxjb',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           { field: 'Question', text: 'What is compost?' },
           {
@@ -166,7 +166,7 @@ const CORPORA = {
       {
         id: 'v7k3d9m1zr',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [{ field: 'Question', text: 'a short one' }],
       },
     ],
@@ -182,7 +182,7 @@ const CORPORA = {
       {
         id: 'j2b6t8n4vw',
         section: null,
-        stencil: 'Слово',
+        cardModel: 'Слово',
         filled: [
           { field: 'Слово', text: 'Компост' },
           { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
@@ -192,7 +192,7 @@ const CORPORA = {
       {
         id: 'h5r1w7z3qm',
         section: null,
-        stencil: UNBROKEN,
+        cardModel: UNBROKEN,
         filled: [
           { field: UNBROKEN, text: UNBROKEN },
           {
@@ -204,24 +204,24 @@ const CORPORA = {
     ],
   },
   'nothing at all': { cuts: [ANIMAL, WORD], cards: [] },
-  /* Every fault a tile can carry: a card under no stencil, a card naming a
-     stencil that was not handed in, a card writing one field twice, a card from
+  /* Every fault a tile can carry: a card under no card model, a card naming a
+     card model that was not handed in, a card writing one field twice, a card from
      somebody else carrying marks that must never be drawn as marks, and two
      cards the file names alike, which are two cards and stand as two. */
   'what is wrong': {
     cuts: [ANIMAL, WORD, ASKED],
     cards: [
-      { id: 'b8k4n2vqz6', section: null, stencil: null, filled: [] },
+      { id: 'b8k4n2vqz6', section: null, cardModel: null, filled: [] },
       {
         id: 'm3t9w5rj1x',
         section: null,
-        stencil: 'Gone',
+        cardModel: 'Gone',
         filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
       },
       {
         id: 'd6q2z8hn4v',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Llama' },
           { field: 'Name', text: 'Alpaca' },
@@ -231,7 +231,7 @@ const CORPORA = {
       {
         id: 'y1v5b9kt3n',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           { field: 'Question', text: 'A deck from somebody else' },
           {
@@ -249,7 +249,7 @@ const CORPORA = {
       {
         id: 'copied-one',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           { field: 'Question', text: 'Compost, what is it made of' },
           { field: 'Answer', text: 'Leaves and peelings' },
@@ -258,7 +258,7 @@ const CORPORA = {
       {
         id: 'copied-again',
         section: null,
-        stencil: 'Basic',
+        cardModel: 'Basic',
         filled: [
           { field: 'Question', text: 'Compost, what is it made of' },
           { field: 'Answer', text: 'Leaves and peelings, turned' },
@@ -274,7 +274,7 @@ const CORPORA = {
       },
       under: {
         d6q2z8hn4v: { Name: ['this card writes Name twice'] },
-        y1v5b9kt3n: { Answer: ['this value is not in the stencil this card is cut by'] },
+        y1v5b9kt3n: { Answer: ['this value is not in the card model this card is cut by'] },
       },
     },
   },
@@ -316,7 +316,7 @@ const meta: Meta<Knobs> = {
     components: { DeckEditor },
     setup() {
       const cards = ref<readonly DeckCard[]>(CORPORA[args.corpus].cards)
-      const cuts = ref<readonly Stencil[]>(CORPORA[args.corpus].cuts)
+      const cuts = ref<readonly CardModel[]>(CORPORA[args.corpus].cuts)
       const sections = ref<readonly DeckSection[]>(getSections(CORPORA[args.corpus]))
       const wrong = ref<DeckProblems>(createProblems(CORPORA[args.corpus]))
 
@@ -343,11 +343,11 @@ const meta: Meta<Knobs> = {
         cuts,
         sections,
         wrong,
-        onAdd: (stencil: string) => {
+        onAdd: (cardModel: string) => {
           const id = `made00000${cards.value.length}`
-          const matchingCut = cuts.value.find((each) => each.name === stencil)
+          const matchingCut = cuts.value.find((each) => each.name === cardModel)
           const filled = getBlanks(getDeclaredFields(matchingCut?.fields ?? []))
-          cards.value = [...cards.value, { id, section: lastSection(), stencil, filled }]
+          cards.value = [...cards.value, { id, section: lastSection(), cardModel, filled }]
         },
         onRemove: (id: string) => {
           cards.value = cards.value.filter((card) => card.id !== id)
@@ -389,7 +389,7 @@ const meta: Meta<Knobs> = {
       <div :style="{ height: '100vh', width: args.width }">
         <DeckEditor
           :cards="cards"
-          :stencils="cuts"
+          :cardModels="cuts"
           :sections="sections"
           :name="args.name"
           :wrong="wrong"
@@ -453,8 +453,8 @@ export default meta
 type Story = StoryObj<Knobs>
 
 /**
- * Three cards, two stencils, and one card leaving a field out. The plus asks
- * which stencil, and the card it makes relies on empty fields.
+ * Three cards, two card models, and one card leaving a field out. The plus asks
+ * which card model, and the card it makes relies on empty fields.
  */
 export const ADeck: Story = {
   play: async ({ canvasElement }) => {
@@ -468,7 +468,7 @@ export const ADeck: Story = {
     const tiles = [...canvasElement.querySelectorAll('[data-card]')]
     const createdItem = tiles[tiles.length - 1]
 
-    // Every field the stencil declares is placed under its own name, the first
+    // Every field the card model declares is placed under its own name, the first
     // included, and all of them stand empty.
     const boxes = [...(createdItem?.querySelectorAll<HTMLTextAreaElement>('textarea') ?? [])]
     expect(boxes.map((box) => box.getAttribute('data-value'))).toEqual([
@@ -551,7 +551,7 @@ export const InSections: Story = {
 }
 
 /**
- * Three hundred cards cut by two stencils of different sizes, which is where
+ * Three hundred cards cut by two card models of different sizes, which is where
  * the spread of tile heights is widest. Every tile is the size of the fullest
  * of them, and the deck itself is the only thing that scrolls.
  */
@@ -624,13 +624,13 @@ export const WhatIsWrongWithACard: Story = {
     expect(getText('b8k4n2vqz6', '[data-wrong]')).toContain('not a lone wikilink')
     expect(getText('d6q2z8hn4v', '[data-wrong]')).toContain('writes one field twice')
     expect(getText('d6q2z8hn4v', '[data-wrong-value="Name"]')).toContain('writes Name twice')
-    expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the stencil')
+    expect(getText('y1v5b9kt3n', '[data-wrong-value="Answer"]')).toContain('not in the card model')
 
     // The card nothing was said against carries no mark at all.
     expect(canvasElement.querySelector('[data-card="m3t9w5rj1x"] [data-wrong]')).toBeNull()
     expect(canvasElement.querySelectorAll('[data-wrong]')).toHaveLength(4)
 
-    // Two cards of one mark stand as two tiles, each carrying what is wrong
+    // Two cards of one card id stand as two tiles, each carrying what is wrong
     // with it and each typed into on its own.
     expect(getText('copied-one', '[data-wrong]')).toContain('carry the mark')
     expect(getText('copied-again', '[data-wrong]')).toContain('carry the mark')

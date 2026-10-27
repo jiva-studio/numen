@@ -214,7 +214,7 @@ export type Curve = Message<"numen.flashcards.v1.Curve"> & {
   suggested?: CurvePoint | undefined;
 
   /**
-   * Number of decks and total card faces assigned to this preset.
+   * Number of decks and total review cards assigned to this preset.
    *
    * @generated from field: int32 decks = 7;
    */
@@ -226,14 +226,14 @@ export type Curve = Message<"numen.flashcards.v1.Curve"> & {
   cards: number;
 
   /**
-   * Current overdue card faces across assigned decks.
+   * Current overdue review cards across assigned decks.
    *
    * @generated from field: int32 overdue = 9;
    */
   overdue: number;
 
   /**
-   * Card faces that have never been reviewed.
+   * Review cards that have never been reviewed.
    *
    * @generated from field: int32 unbegun = 10;
    */
@@ -273,14 +273,14 @@ export type Point = Message<"numen.flashcards.v1.Point"> & {
   retained: number;
 
   /**
-   * Projected overdue card faces remaining at the projection horizon.
+   * Projected overdue review cards remaining at the projection horizon.
    *
    * @generated from field: int32 owed = 4;
    */
   owed: number;
 
   /**
-   * Percentage of card faces learned by target horizon and sufficiency flag.
+   * Percentage of review cards learned by target horizon and sufficiency flag.
    *
    * @generated from field: double through = 5;
    */
@@ -313,7 +313,7 @@ export type Point = Message<"numen.flashcards.v1.Point"> & {
   backlog: number[];
 
   /**
-   * Total card faces currently classified as learned.
+   * Total review cards currently classified as learned.
    *
    * @generated from field: int32 learned = 10;
    */
@@ -327,7 +327,7 @@ export type Point = Message<"numen.flashcards.v1.Point"> & {
   learns?: number | undefined;
 
   /**
-   * Number of card faces that cannot be learned before the target date.
+   * Number of review cards that cannot be learned before the target date.
    *
    * @generated from field: int32 short = 12;
    */
@@ -869,7 +869,7 @@ export const GoalSchema: GenEnum<Goal> = /*@__PURE__*/
   enumDesc(file_numen_flashcards_v1_presets, 0);
 
 /**
- * Rule specifies the condition under which a card face is classified as learned.
+ * Rule specifies the condition under which a review card is classified as learned.
  *
  * @generated from enum numen.flashcards.v1.Rule
  */
@@ -912,14 +912,14 @@ export enum BudgetUnit {
   UNSPECIFIED = 0,
 
   /**
-   * Deducts budget only on the first review of a card face per review day.
+   * Deducts budget only on the first review of a card per review day.
    *
    * @generated from enum value: BUDGET_UNIT_CARDS = 1;
    */
   CARDS = 1,
 
   /**
-   * Deducts budget on every card face presentation.
+   * Deducts budget on every showing of a review card.
    *
    * @generated from enum value: BUDGET_UNIT_SHOWS = 2;
    */

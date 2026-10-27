@@ -13,7 +13,7 @@ preamble: it is kept as it was written, and it is no card and no section.
 
 [[Animal]]
 
-A card may say something between its stencil and its first field. This is kept
+A card may say something between its card model and its first field. This is kept
 as well, and it is no field's value.
 
 ### Name
@@ -43,7 +43,7 @@ has more than one.
 
 ### Weight
 
-130–200 kg, under a heading the stencil does not declare
+130–200 kg, under a heading the card model does not declare
 
 # The ones with two names
 
@@ -64,7 +64,7 @@ A second card of the heading the first card has. Their marks tell them apart.
 
 ## Alpaca ^m9n8b7v6c5
 
-Not a wikilink but an ordinary sentence, so this card is cut by no stencil.
+Not a wikilink but an ordinary sentence, so this card is cut by no card model.
 
 ### Height
 
@@ -86,7 +86,7 @@ Anything a llama has already spat on.
 
 ### Latin name
 
-*Lama vicugna*. The stencil this card names is in no file of this vault.
+*Lama vicugna*. The card model this card names is in no file of this vault.
 
 # Standing under nothing
 

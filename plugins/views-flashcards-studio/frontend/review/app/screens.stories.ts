@@ -12,7 +12,7 @@ import { h, type VNode } from 'vue'
 import { Decks } from '../pages/decks'
 import { Session } from '../pages/session'
 import type { Preset, Settings } from '../pages/decks'
-import type { CardFace } from '../entities/card'
+import type { ReviewCard } from '../entities/card'
 import type { BudgetKeys, DeckCardsDue, VaultCardsDue } from '../entities/vault'
 
 const dayBefore = (day: string, back: number): string => dayAfter(day, -back)
@@ -93,7 +93,7 @@ const preset = (overrides: Partial<Preset> = {}): Preset => ({
   settings: settings(),
   decks: [],
   named: 0,
-  faces: 0,
+  reviewCards: 0,
   cards: 0,
   budget: { new: 12, reviews: 140, minutes: 25 },
   closes: BY_MINUTES,
@@ -119,7 +119,7 @@ const SANSKRIT = preset({
     'Sanskrit/Vocabulary.md',
   ],
   named: 7,
-  faces: 2_174,
+  reviewCards: 2_174,
   cards: 61,
   answered: 79,
   answeredNew: 11,
@@ -140,7 +140,7 @@ const ANATOMY = preset({
     'Anatomy/Organs.md',
   ],
   named: 6,
-  faces: 1_304,
+  reviewCards: 1_304,
   cards: 22,
   budget: { new: 20, reviews: 90, minutes: 0 },
   closes: BY_CARDS,
@@ -154,7 +154,7 @@ const PRESETS: readonly Preset[] = [SANSKRIT, ANATOMY]
 
 const deck = (path: string, overrides: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: path,
-  faces: 400,
+  reviewCards: 400,
   due: 0,
   new: 0,
   learned: 0,
@@ -163,19 +163,19 @@ const deck = (path: string, overrides: Partial<DeckCardsDue> = {}): DeckCardsDue
 })
 
 const DECKS: readonly DeckCardsDue[] = [
-  deck('Sanskrit/Roots.md', { faces: 520, due: 34, new: 6, learned: 361 }),
-  deck('Sanskrit/Declensions.md', { faces: 448, due: 21, new: 0, learned: 302 }),
-  deck('Sanskrit/Sandhi.md', { faces: 272, due: 0, new: 0, learned: 249 }),
-  deck('Anatomy/Bones.md', { faces: 336, due: 14, new: 8, learned: 188 }),
-  deck('Anatomy/Muscles.md', { faces: 268, due: 0, new: 0, learned: 141, unbegun: 12 }),
-  deck('Anatomy/Nerves.md', { faces: 214, due: 19, new: 4, learned: 96 }),
-  deck('Sanskrit/Compounds.md', { faces: 186, due: 8, new: 0, learned: 121 }),
-  deck('Sanskrit/Metre.md', { faces: 96, due: 0, new: 6, learned: 41 }),
-  deck('Anatomy/Vessels.md', { faces: 158, due: 11, new: 0, learned: 83 }),
-  deck('Sanskrit/Verbs.md', { faces: 240, due: 18, new: 0, learned: 152 }),
-  deck('Sanskrit/Vocabulary.md', { faces: 412, due: 27, new: 0, learned: 268 }),
-  deck('Anatomy/Joints.md', { faces: 132, due: 9, new: 0, learned: 71 }),
-  deck('Anatomy/Organs.md', { faces: 196, due: 0, new: 5, learned: 88 }),
+  deck('Sanskrit/Roots.md', { reviewCards: 520, due: 34, new: 6, learned: 361 }),
+  deck('Sanskrit/Declensions.md', { reviewCards: 448, due: 21, new: 0, learned: 302 }),
+  deck('Sanskrit/Sandhi.md', { reviewCards: 272, due: 0, new: 0, learned: 249 }),
+  deck('Anatomy/Bones.md', { reviewCards: 336, due: 14, new: 8, learned: 188 }),
+  deck('Anatomy/Muscles.md', { reviewCards: 268, due: 0, new: 0, learned: 141, unbegun: 12 }),
+  deck('Anatomy/Nerves.md', { reviewCards: 214, due: 19, new: 4, learned: 96 }),
+  deck('Sanskrit/Compounds.md', { reviewCards: 186, due: 8, new: 0, learned: 121 }),
+  deck('Sanskrit/Metre.md', { reviewCards: 96, due: 0, new: 6, learned: 41 }),
+  deck('Anatomy/Vessels.md', { reviewCards: 158, due: 11, new: 0, learned: 83 }),
+  deck('Sanskrit/Verbs.md', { reviewCards: 240, due: 18, new: 0, learned: 152 }),
+  deck('Sanskrit/Vocabulary.md', { reviewCards: 412, due: 27, new: 0, learned: 268 }),
+  deck('Anatomy/Joints.md', { reviewCards: 132, due: 9, new: 0, learned: 71 }),
+  deck('Anatomy/Organs.md', { reviewCards: 196, due: 0, new: 5, learned: 88 }),
 ]
 
 const VAULT: VaultCardsDue = {
@@ -183,7 +183,7 @@ const VAULT: VaultCardsDue = {
   name: 'Studies',
   path: '/home/you/Studies',
   isCounted: true,
-  faces: 3_478,
+  reviewCards: 3_478,
   due: 161,
   new: 29,
   decks: DECKS,
@@ -197,12 +197,12 @@ const BY_DECK = new Map<string, Preset>(
   PRESETS.flatMap((one) => one.decks.map((path) => [path, one] as const)),
 )
 
-/** One card face, as the session puts it. */
-const CARD: CardFace = {
+/** One review card, as the session puts it. */
+const CARD: ReviewCard = {
   deck: 'Sanskrit/Roots.md',
   section: 'Verbs of going',
-  mark: 'k7m2xq9fzp',
-  face: 'Recognise',
+  cardId: 'k7m2xq9fzp',
+  template: 'Recognise',
   heading: 'gam',
   front:
     '<p><strong>gam</strong> — गम्</p>\n<p>Which class does it take, and what is its present stem?</p>',

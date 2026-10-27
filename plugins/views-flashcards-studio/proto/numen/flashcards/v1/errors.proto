@@ -4,9 +4,9 @@ package numen.flashcards.v1;
 
 option go_package = "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1;flashcardsv1";
 
-// ErrorCode is what a call over the stencils, decks and presets of a vault
+// ErrorCode is what a call over the card models, decks and presets of a vault
 // failed on. The codes of a note read and written are numbered as the shared
-// numen.v1.ErrorCode numbers them; the codes of a stencil, a deck and a preset
+// numen.v1.ErrorCode numbers them; the codes of a card model, a deck and a preset
 // are this plugin's own.
 enum ErrorCode {
   ERROR_CODE_UNSPECIFIED = 0;
@@ -36,8 +36,8 @@ enum ErrorCode {
   // A note cannot be called this. Nothing is written.
   ERROR_CODE_UNNAMEABLE = 8;
 
-  // The note at the path is not a stencil, and a stencil was asked for.
-  ERROR_CODE_NOT_A_STENCIL = 9;
+  // The note at the path is not a card model, and a card model was asked for.
+  ERROR_CODE_NOT_A_CARD_MODEL = 9;
 
   // The note at the path is not a deck, and a deck was asked for.
   ERROR_CODE_NOT_A_DECK = 10;

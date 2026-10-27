@@ -33,7 +33,7 @@ Each check has an id, a scope (`libs`, `plugins` or `apps`) and a module; `node 
    - `plugins-frontend`: ESLint over `plugins/`: no `@/**` or `@plugins/**` import.
 3. **Applications (`apps`)**:
    - `apps-reach-no-plugin`: no application reaches `plugins/` by a relative path, an alias, an `import.meta.glob`, a tsconfig path or a Go import. A path is resolved from the file and from every package root above it.
-   - `window-names-no-plugin-kind`: the editor window's sources name no plugin kind (`deck`, `stencil`, `preset`, `plex`, `agent`, `files`) as a literal, outside its tests and stories and the files listed in `CORE_NAME_FILES` (the settings entity and page and the plugin context).
+   - `window-names-no-plugin-kind`: the editor window's sources name no plugin kind (`deck`, `card-model`, `preset`, `plex`, `agent`, `files`) as a literal, outside its tests and stories and the files listed in `CORE_NAME_FILES` (the settings entity and page and the plugin context).
    - `desktop-editor-fsd`, `desktop-flashcards-fsd`: the Feature-Sliced Design layer hierarchy (`shared` → `entities` → `features` → `widgets` → `pages` → `app`), by `npm run lint` in each window.
 
 ## Baseline

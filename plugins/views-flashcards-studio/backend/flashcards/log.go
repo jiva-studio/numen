@@ -212,13 +212,13 @@ func NewRecord(now ports.Clock) Record { return Record{now: now} }
 // Answer writes down one card answered once, and returns the line as it was
 // written: it carries the identifier that taking this answer back would name.
 func (u Record) Answer(
-	ctx context.Context, run *LogWriter, on review.CardFaceID, r review.Rating, took time.Duration,
+	ctx context.Context, run *LogWriter, on review.ReviewCardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	if !r.Valid() {
 		return review.Answer{}, fmt.Errorf("%w: %d", ErrNoRating, r)
 	}
-	if on.Card == "" || on.Face == "" {
-		return review.Answer{}, errors.New("an answer says which card, and through which face")
+	if on.Card == "" || on.Template == "" {
+		return review.Answer{}, errors.New("an answer says which card, and through which review card")
 	}
 
 	if u.now == nil {
@@ -226,7 +226,7 @@ func (u Record) Answer(
 	}
 	pos := u.now()
 	id := ulid.New(pos)
-	a := review.Answer{ID: id, CardFace: on, At: pos, Rating: r, Took: took}
+	a := review.Answer{ID: id, ReviewCard: on, At: pos, Rating: r, Took: took}
 	if err := run.Append(ctx, a); err != nil {
 		return review.Answer{}, err
 	}

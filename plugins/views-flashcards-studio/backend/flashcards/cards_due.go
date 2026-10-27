@@ -14,10 +14,10 @@ import (
 
 // CardsDue contains vault card counts, due cards, and unreviewed card statistics for the current day.
 type CardsDue struct {
-	// Faces is the total count of card faces in the vault.
-	Faces int
-	// Due contains the number of review card faces scheduled for today.
-	// New contains the number of unreviewed card faces allocated by today's budget.
+	// ReviewCards is the total count of review cards in the vault.
+	ReviewCards int
+	// Due contains the number of review review cards scheduled for today.
+	// New contains the number of unreviewed review cards allocated by today's budget.
 	Due   int
 	New   int
 	Decks []DeckCardsDue
@@ -27,22 +27,22 @@ type CardsDue struct {
 
 // DeckCardsDue tracks card counts and review status for a single deck.
 type DeckCardsDue struct {
-	Deck  string
-	Faces int
-	Due   int
-	New   int
-	// Unbegun is the count of card faces in the deck that have never been reviewed.
+	Deck        string
+	ReviewCards int
+	Due         int
+	New         int
+	// Unbegun is the count of review cards in the deck that have never been reviewed.
 	Unbegun int
 	// Answered is the count of cards reviewed in the deck during the active review day.
 	Answered int
-	// Learned is the count of card faces meeting the retention criteria of the deck's preset.
+	// Learned is the count of review cards meeting the retention criteria of the deck's preset.
 	Learned int
 }
 
 // PresetCardsDue contains daily budget and review metrics for a preset.
 type PresetCardsDue struct {
 	Preset string
-	// Decks is the count of decks referencing this preset. Cards is total card faces across those decks.
+	// Decks is the count of decks referencing this preset. Cards is total review cards across those decks.
 	Decks int
 	Cards int
 	// Due and New contain review and unreviewed card counts allowed by the preset budget.
@@ -63,8 +63,8 @@ type PresetCardsDue struct {
 
 // CountCardsDue calculates daily card review metrics across decks and presets in a vault.
 type CountCardsDue struct {
-	cardFaces ListCardFaces
-	schedules Schedules
+	reviewCards ListReviewCards
+	schedules   Schedules
 	// presets resolves presets assigned to each deck.
 	presets Presets
 	day     review.Day
@@ -73,23 +73,23 @@ type CountCardsDue struct {
 
 // NewCountCardsDue constructs a CountCardsDue calculator.
 func NewCountCardsDue(
-	faces ListCardFaces, schedules Schedules, presets Presets,
+	reviewCards ListReviewCards, schedules Schedules, presets Presets,
 	day review.Day, now ports.Clock,
 ) CountCardsDue {
 	return CountCardsDue{
-		cardFaces: faces, schedules: schedules, presets: presets, day: day, now: now,
+		reviewCards: reviewCards, schedules: schedules, presets: presets, day: day, now: now,
 	}
 }
 
-// WithCardFaces returns a copy of CountCardsDue with the given ListCardFaces.
-func (u CountCardsDue) WithCardFaces(faces ListCardFaces) CountCardsDue {
-	u.cardFaces = faces
+// WithReviewCards returns a copy of CountCardsDue with the given ListReviewCards.
+func (u CountCardsDue) WithReviewCards(reviewCards ListReviewCards) CountCardsDue {
+	u.reviewCards = reviewCards
 	return u
 }
 
-// CardFaces returns the ListCardFaces CountCardsDue counts through.
-func (u CountCardsDue) CardFaces() ListCardFaces {
-	return u.cardFaces
+// ReviewCards returns the ListReviewCards CountCardsDue counts through.
+func (u CountCardsDue) ReviewCards() ListReviewCards {
+	return u.reviewCards
 }
 
 // WithDay returns a copy of CountCardsDue with the given Day.
@@ -110,11 +110,11 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 	if err != nil {
 		return CardsDue{}, err
 	}
-	holds := in.day.getAsking(in.faces, in.schedules, u.day, in.now, Scope{})
+	holds := in.day.getAsking(in.reviewCards, in.schedules, u.day, in.now, Scope{})
 
-	out := CardsDue{Faces: len(in.faces)}
+	out := CardsDue{ReviewCards: len(in.reviewCards)}
 	rows := make(deckRows)
-	rows.countFaces(in)
+	rows.countCards(in)
 	for deck, one := range in.day.spentByDeck {
 		rows.get(deck).Answered = one.Answered
 	}
@@ -129,20 +129,20 @@ func (u CountCardsDue) Execute(ctx context.Context, v domain.Vault) (CardsDue, e
 
 // dueInputs is what one vault's count is worked out from.
 type dueInputs struct {
-	faces     []CardFace
-	schedules map[review.CardFaceID]review.Schedule
-	asks      assignment
-	reads     *PresetReads
-	day       *budgets
-	now       time.Time
+	reviewCards []ReviewCard
+	schedules   map[review.ReviewCardID]review.Schedule
+	asks        assignment
+	reads       *PresetReads
+	day         *budgets
+	now         time.Time
 }
 
-// readInputs loads card faces, review logs, and presets to compute schedules and budgets.
+// readInputs loads review cards, review logs, and presets to compute schedules and budgets.
 func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInputs, error) {
 	if err := ctx.Err(); err != nil {
 		return dueInputs{}, err
 	}
-	faces, err := u.cardFaces.Execute(ctx, v)
+	reviewCards, err := u.reviewCards.Execute(ctx, v)
 	if err != nil {
 		return dueInputs{}, err
 	}
@@ -154,7 +154,7 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 		return dueInputs{}, err
 	}
 	reads := u.presets.OpenReads()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return dueInputs{}, err
 	}
@@ -165,14 +165,14 @@ func (u CountCardsDue) readInputs(ctx context.Context, v domain.Vault) (dueInput
 
 	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reads, u.day, faces, schedules, log,
+		ctx, v, reads, u.day, reviewCards, schedules, log,
 		u.schedules.scheduler, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return dueInputs{}, err
 	}
 	return dueInputs{
-		faces: faces, schedules: schedules, asks: asks,
+		reviewCards: reviewCards, schedules: schedules, asks: asks,
 		reads: reads, day: day, now: now,
 	}, nil
 }
@@ -190,11 +190,11 @@ func (r deckRows) get(deck string) *DeckCardsDue {
 	return one
 }
 
-// countFaces aggregates card counts, unbegun cards, and learned cards per deck.
-func (r deckRows) countFaces(in dueInputs) {
-	for _, one := range in.faces {
+// countCards aggregates card counts, unbegun cards, and learned cards per deck.
+func (r deckRows) countCards(in dueInputs) {
+	for _, one := range in.reviewCards {
 		row := r.get(one.Deck)
-		row.Faces++
+		row.ReviewCards++
 		if in.schedules[one.ID].IsNew() {
 			row.Unbegun++
 		}
@@ -212,12 +212,12 @@ func (r deckRows) countDueAndNew(
 	for _, one := range holds.owed {
 		out.Due++
 		r.get(one.Deck).Due++
-		due[day.cardFacePresets[one.ID]]++
+		due[day.reviewCardPresets[one.ID]]++
 	}
 	for _, one := range holds.newCards {
 		out.New++
 		r.get(one.Deck).New++
-		newCards[day.cardFacePresets[one.ID]]++
+		newCards[day.reviewCardPresets[one.ID]]++
 	}
 	return due, newCards
 }
@@ -240,11 +240,11 @@ func (u CountCardsDue) getPresets(
 	due, newCards map[string]int,
 ) ([]PresetCardsDue, error) {
 	out := day.getCardsDue(due, newCards)
-	if u.cardFaces.notes == nil {
+	if u.reviewCards.notes == nil {
 		return out, nil
 	}
 
-	decks, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
+	decks, err := u.reviewCards.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (u CountCardsDue) getPresets(
 		pointed[out[item].Preset] = true
 	}
 
-	paths, err := u.cardFaces.notes.GetPathsOfType(ctx, v.ID, format.TypePreset)
+	paths, err := u.reviewCards.notes.GetPathsOfType(ctx, v.ID, format.TypePreset)
 	if err != nil {
 		return nil, err
 	}

@@ -3,27 +3,27 @@ import {
   type Card as CardMessage,
   type Deck as DeckMessage,
   type Problem as ProblemMessage,
-  type Stencil as StencilMessage,
+  type CardModel as CardModelMessage,
 } from '../../gen/numen/flashcards/v1/cards_pb.js'
 import type {
   ProblemKind,
   DeckProblem,
-  StencilSummary,
+  CardModelSummary,
   VaultCard,
   VaultDeck,
-  VaultStencil,
+  VaultCardModel,
 } from '../types'
 
 /** What kind of problem it is, in the words the window uses. */
 const kinds: Record<ProblemKinds, ProblemKind> = {
   [ProblemKinds.UNSPECIFIED]: 'unknown',
   [ProblemKinds.FIELD_DECLARED_TWICE]: 'fieldDeclaredTwice',
-  [ProblemKinds.STENCIL_WITHOUT_FIELDS]: 'stencilWithoutFields',
-  [ProblemKinds.FACE_MISSING_A_SIDE]: 'faceMissingASide',
+  [ProblemKinds.CARD_MODEL_WITHOUT_FIELDS]: 'cardModelWithoutFields',
+  [ProblemKinds.TEMPLATE_MISSING_A_SIDE]: 'templateMissingASide',
   [ProblemKinds.PLACEHOLDER_UNDECLARED]: 'placeholderUndeclared',
-  [ProblemKinds.CARD_WITHOUT_A_STENCIL]: 'cardWithoutAStencil',
-  [ProblemKinds.STENCIL_IS_NOT_ONE]: 'stencilIsNotOne',
-  [ProblemKinds.MARK_CARRIED_TWICE]: 'markCarriedTwice',
+  [ProblemKinds.CARD_WITHOUT_A_CARD_MODEL]: 'cardWithoutACardModel',
+  [ProblemKinds.CARD_MODEL_IS_NOT_ONE]: 'cardModelIsNotOne',
+  [ProblemKinds.CARD_ID_CARRIED_TWICE]: 'cardIdCarriedTwice',
   [ProblemKinds.FIELD_WRITTEN_TWICE]: 'fieldWrittenTwice',
   [ProblemKinds.FIELD_NOT_RENAMED]: 'fieldNotRenamed',
 }
@@ -32,28 +32,28 @@ const kinds: Record<ProblemKinds, ProblemKind> = {
 export const deserializeDeckProblem = (one: ProblemMessage): DeckProblem => ({
   kind: kinds[one.kind],
   card: one.card ?? null,
-  face: one.face ?? null,
+  template: one.template ?? null,
   field: one.field,
   text: one.text,
 })
 
-/** One stencil of the list, kept as the plain value the window carries it as. */
-export const deserializeStencilSummary = (one: {
+/** One card model of the list, kept as the plain value the window carries it as. */
+export const deserializeCardModelSummary = (one: {
   path: string
   title: string
   fields: string[]
-}): StencilSummary => ({
+}): CardModelSummary => ({
   path: one.path,
   title: one.title,
   fields: one.fields,
 })
 
 export const deserializeCard = (one: CardMessage): VaultCard => ({
-  mark: one.mark,
+  cardId: one.cardId,
   sectionIndex: one.sectionIndex ?? null,
   heading: one.heading,
-  stencilLink: one.stencilLink,
-  stencilPath: one.stencilPath,
+  cardModelLink: one.cardModelLink,
+  cardModelPath: one.cardModelPath,
   preamble: one.preamble,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })
@@ -62,10 +62,10 @@ export const deserializeCard = (one: CardMessage): VaultCard => ({
  * One card in the shape the schema carries it.
  */
 export const serializeCardToWire = (one: VaultCard) => ({
-  mark: one.mark,
+  cardId: one.cardId,
   ...(one.sectionIndex === null ? {} : { sectionIndex: one.sectionIndex }),
   heading: one.heading,
-  stencilLink: one.stencilLink,
+  cardModelLink: one.cardModelLink,
   preamble: one.preamble,
   values: one.values.map((value) => ({ field: value.field, text: value.text })),
 })
@@ -81,18 +81,18 @@ export const deserializeDeck = (one: DeckMessage): VaultDeck => ({
   problems: one.problems.map(deserializeDeckProblem),
 })
 
-/** One stencil as the vault reads it. */
-export const deserializeStencil = (one: StencilMessage): VaultStencil => ({
+/** One card model as the vault reads it. */
+export const deserializeCardModel = (one: CardModelMessage): VaultCardModel => ({
   path: one.path,
   title: one.title,
   preamble: one.preamble,
   tail: one.tail,
   fields: one.fields,
-  faces: one.faces.map((face) => ({
-    name: face.name,
-    preamble: face.preamble,
-    front: face.front,
-    back: face.back,
+  templates: one.templates.map((template) => ({
+    name: template.name,
+    preamble: template.preamble,
+    front: template.front,
+    back: template.back,
   })),
   problems: one.problems.map(deserializeDeckProblem),
 })

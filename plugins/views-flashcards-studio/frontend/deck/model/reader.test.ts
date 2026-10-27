@@ -9,11 +9,11 @@ import { createDeckReader, type ShownStore } from './reader'
 
 const card = (id: string, name: string): BufferCard => ({
   id,
-  mark: '',
+  cardId: '',
   section: null,
   heading: name,
-  stencilLink: 'Animal',
-  stencilPath: 'Animal.md',
+  cardModelLink: 'Animal',
+  cardModelPath: 'Animal.md',
   preamble: '',
   values: [{ field: 'Name', text: name }],
 })
@@ -28,7 +28,7 @@ const createDeck = (...cards: BufferCard[]): BufferDeck => ({
 const problem = (overrides: Partial<DeckProblem>): DeckProblem => ({
   kind: 'unknown',
   card: null,
-  face: null,
+  template: null,
   field: '',
   text: 'Odd',
   ...overrides,
@@ -96,11 +96,11 @@ describe('the marks on a deck', () => {
     expect(reader.getMarks('a').whole).toStrictEqual([])
   })
 
-  it('stand against the file where the problem counts a face, since no face is drawn', () => {
-    const { bodies, reader } = open(() => [problem({ face: 0, text: 'Bad face' })])
+  it('stand against the file where the problem counts a template, since no template is drawn', () => {
+    const { bodies, reader } = open(() => [problem({ template: 0, text: 'Bad template' })])
     bodies.set('a', serializeBufferDeckToString(createDeck(card('c1', 'Llama'))))
 
-    expect(reader.getMarks('a').whole).toStrictEqual(['Bad face'])
+    expect(reader.getMarks('a').whole).toStrictEqual(['Bad template'])
     expect(reader.getMarks('a').at.size).toBe(0)
   })
 

@@ -27,7 +27,7 @@ test.describe('Flashcard Decks and Card Lifecycle', () => {
     await expect(page.locator('.deck').first()).toBeVisible({ timeout: 10_000 })
   })
 
-  test('appends new card to deck via stencil template selector', async ({ page }) => {
+  test('appends new card to deck via card model template selector', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -53,7 +53,7 @@ test.describe('Flashcard Decks and Card Lifecycle', () => {
     await expect(addCardBtn).toBeVisible({ timeout: 5_000 })
     await addCardBtn.click()
 
-    // 3. Stencil options appear
+    // 3. Card model options appear
     const cutOption = page.locator('[data-cut]').first()
     await expect(cutOption).toBeVisible({ timeout: 5_000 })
     await cutOption.click()

@@ -22,7 +22,7 @@ import (
 func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -55,7 +55,7 @@ func TestSchedulesAreTheSameWithNothingCached(t *testing.T) {
 func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	for _, item := range []time.Time{
 		time.Now().AddDate(0, 0, -2),
 		time.Now().AddDate(0, 0, -1),
@@ -93,9 +93,9 @@ func TestAScheduleCacheIsFreshAcrossAReorderedListing(t *testing.T) {
 func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	// Both faces of one card, so the order turns on the face and not the card.
-	recognise := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	name := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Name it"}
+	// Both review cards of one card, so the order turns on the review card and not the card.
+	recognise := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	name := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Name it"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), name, review.Good, 0); err != nil {
@@ -117,11 +117,11 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if len(was.Faces) != 2 {
-		t.Fatalf("the cache holds %d faces, want the two answered", len(was.Faces))
+	if len(was.ReviewCards) != 2 {
+		t.Fatalf("the cache holds %d review cards, want the two answered", len(was.ReviewCards))
 	}
-	if was.Faces[0].Face != "Name it" || was.Faces[1].Face != "Recognise" {
-		t.Errorf("the cache holds %s then %s", was.Faces[0].Face, was.Faces[1].Face)
+	if was.ReviewCards[0].Template != "Name it" || was.ReviewCards[1].Template != "Recognise" {
+		t.Errorf("the cache holds %s then %s", was.ReviewCards[0].Template, was.ReviewCards[1].Template)
 	}
 }
 
@@ -130,7 +130,7 @@ func TestTheCacheIsSavedInOneOrder(t *testing.T) {
 func TestACacheNothingCanReadIsWorkedOutAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -170,10 +170,10 @@ func newTargetedNotes(high, low float64) map[string]string {
 	}
 }
 
-// The two card faces of the targeted vault, answered alike.
+// The two review cards of the targeted vault, answered alike.
 var (
-	underHigh = review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"}
-	underLow  = review.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"}
+	underHigh = review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"}
+	underLow  = review.ReviewCardID{Card: "zpqrstvwxy", Template: "Say it"}
 )
 
 // answerBothAlike takes both cards through the same answers at the same
@@ -314,7 +314,7 @@ func TestACardMovedToAnotherDeckIsScheduledByItsPreset(t *testing.T) {
 func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, saturday).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -327,7 +327,7 @@ func TestAVaultOfNoPresetsIsScheduledAsItWas(t *testing.T) {
 	// The same answers, worked out by the one scheduler and nothing else.
 	direct := flashcards.NewSchedules(
 		s.logs, review.NewFSRS(), today,
-		flashcards.NewListCardFaces(s.env.Ports.Readers, nil, nil),
+		flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil),
 		flashcards.NewPresets(nil, nil, nil, nil, nil, today, time.Now),
 	)
 	want, err := direct.Execute(t.Context(), s.vault)
@@ -363,7 +363,7 @@ func TestAnAnsweredCardAndAProjectedOneLandOnOneDay(t *testing.T) {
 			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := review.CardFaceID{Card: mark(0), Face: "Say it"}
+	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
 	read, err := s.presets.Read(t.Context(), s.vault, "Even.md")
 	if err != nil {
 		t.Fatal(err)
@@ -439,7 +439,7 @@ func TestACardFallingOnADayAtNoneOfTheLoadExistsOver(t *testing.T) {
 			review.DayName(fell.Weekday()))),
 		"decks/Even.md": deckNaming([]string{"Even"}, 1, 0),
 	})
-	on := review.CardFaceID{Card: mark(0), Face: "Say it"}
+	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
 
 	for range 2 {
 		if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -587,15 +587,15 @@ func TestTheCacheAnswersWhatAReplayAnswers(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(replayed) == 0 {
-		t.Fatal("the answers left no card face anywhere")
+		t.Fatal("the answers left no review card anywhere")
 	}
 	if len(replayed) != len(remembered) {
-		t.Fatalf("the replay left %d card faces and the cache %d",
+		t.Fatalf("the replay left %d review cards and the cache %d",
 			len(replayed), len(remembered))
 	}
-	for face, was := range replayed {
-		if now := remembered[face]; !now.Due.Equal(was.Due) || now.Reps != was.Reps {
-			t.Errorf("%+v is at %+v, and the replay left it at %+v", face, now, was)
+	for reviewCard, was := range replayed {
+		if now := remembered[reviewCard]; !now.Due.Equal(was.Due) || now.Reps != was.Reps {
+			t.Errorf("%+v is at %+v, and the replay left it at %+v", reviewCard, now, was)
 		}
 	}
 }
@@ -690,13 +690,13 @@ func (b countingBy) IsSpaced(s review.Schedule) bool { return b.inner.IsSpaced(s
 // asks of the store, the cache and the scheduler counted.
 type loaded struct {
 	vaulted
-	on        *loadCounts
-	schedules flashcards.Schedules
-	logs      ports.LogStores
-	owed      flashcards.CountCardsDue
-	sat       flashcards.Session
-	review    flashcards.CountReviews
-	faces     int
+	on          *loadCounts
+	schedules   flashcards.Schedules
+	logs        ports.LogStores
+	owed        flashcards.CountCardsDue
+	sat         flashcards.Session
+	review      flashcards.CountReviews
+	reviewCards int
 }
 
 // load builds a vault of cards cards, answered on days days, perDay answers to
@@ -720,7 +720,7 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 		s.standings,
 		s.presets,
 	)
-	schedules.Cache = countingKept{inner: s.env.Ports.Schedules("faces"), on: on}
+	schedules.Cache = countingKept{inner: s.env.Ports.Schedules("reviewCards"), on: on}
 	loadAnswers(tb, s, now(), cards, days, perDay)
 	reviewUseCase := flashcards.NewCountReviews(logs, schedules, today, now)
 	reviewUseCase.Cache = countingKept{inner: s.env.Ports.Schedules("days"), on: on}
@@ -734,11 +734,11 @@ func loadAt(tb testing.TB, now ports.Clock, cards, days, perDay int) loaded {
 			today, now,
 		),
 		sat: flashcards.NewSession(
-			s.marking, s.standings, schedules,
+			s.assigning, s.standings, schedules,
 			s.presets, today, now,
 		),
-		review: reviewUseCase,
-		faces:  cards,
+		review:      reviewUseCase,
+		reviewCards: cards,
 	}
 }
 
@@ -758,7 +758,7 @@ func (l loaded) countLoads(tb testing.TB, run func() error) loadCounts {
 	return *l.on
 }
 
-// deckOf is a vault of one stencil of one face and cards cards, spread over
+// deckOf is a vault of one card model of one review card and cards cards, spread over
 // twenty decks the way a person's own vault spreads them.
 func loadDeck(cards int) map[string]string {
 	const decks = 20
@@ -771,7 +771,7 @@ func loadDeck(cards int) map[string]string {
 	for entry := range cards {
 		fmt.Fprintf(constructed[entry%decks],
 			"\n## Card %d ^%s\n\n[[Term]]\n\n### Word\n\nword %d\n\n### Meaning\n\nmeaning %d\n",
-			entry, loadMark(entry), entry, entry)
+			entry, createCardID(entry), entry, entry)
 	}
 	for elem, one := range constructed {
 		out[fmt.Sprintf("decks/Deck%02d.md", elem)] = one.String()
@@ -779,8 +779,8 @@ func loadDeck(cards int) map[string]string {
 	return out
 }
 
-// marked is one card's mark, in the alphabet the application writes them in.
-func loadMark(n int) string {
+// createCardID returns one card's id, in the alphabet the application writes them in.
+func createCardID(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
 	for item := range out {
@@ -814,11 +814,11 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 		var lines []byte
 		for one := range perDay {
 			raw, err := review.Write(review.Answer{
-				ID:       fmt.Sprintf("%06d%010d", day, one),
-				CardFace: review.CardFaceID{Card: loadMark(card % cards), Face: "Say it"},
-				At:       when.Add(time.Duration(one) * time.Minute),
-				Rating:   review.Rating(one%4 + 1),
-				Took:     4 * time.Second,
+				ID:         fmt.Sprintf("%06d%010d", day, one),
+				ReviewCard: review.ReviewCardID{Card: createCardID(card % cards), Template: "Say it"},
+				At:         when.Add(time.Duration(one) * time.Minute),
+				Rating:     review.Rating(one%4 + 1),
+				Took:       4 * time.Second,
 			})
 			if err != nil {
 				tb.Fatal(err)
@@ -832,7 +832,7 @@ func loadAnswers(tb testing.TB, s vaulted, now time.Time, cards, days, perDay in
 	}
 }
 
-// The requests a window makes of a vault, over fifty thousand card faces
+// The requests a window makes of a vault, over fifty thousand review cards
 // answered a hundred and fifty times a day for six months.
 //
 // The first three are warm: the caches are filled before the clock starts,
@@ -954,7 +954,7 @@ func TestCountingAVaultReadsItsDecksOnce(t *testing.T) {
 	})
 
 	reads := map[string]int{}
-	standings := flashcards.NewListCardFaces(
+	standings := flashcards.NewListReviewCards(
 		counting{VaultReaders: s.env.Ports.Readers, reads: reads},
 		s.notes, s.links,
 	)

@@ -14,7 +14,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// makeDueByDay is a table of the days of review, loaded with as many card faces
+// makeDueByDay is a table of the days of review, loaded with as many review cards
 // on each of these many days past an instant.
 func makeDueByDay(d review.Day, pos time.Time, on map[int]int) *review.DueByDay {
 	out := review.NewDueByDay(d)
@@ -54,7 +54,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	}
 	// And the day it landed on is counted against that day.
 	if got := on.CountOn(pos.AddDate(0, 0, 9)); got != 1 {
-		t.Errorf("the day the card landed on carries %d card faces, want 1", got)
+		t.Errorf("the day the card landed on carries %d review cards, want 1", got)
 	}
 
 	// The day the scheduler named weighs as much as the Monday beside it, and
@@ -66,7 +66,7 @@ func TestACardGoesOnTheHeaviestDayOfItsWindow(t *testing.T) {
 	}
 }
 
-// A table of the days of review says how many card faces fall on the day
+// A table of the days of review says how many review cards fall on the day
 // holding an instant.
 func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
@@ -74,15 +74,15 @@ func TestHowLoadedADayOfReviewIs(t *testing.T) {
 	on := makeDueByDay(day, pos, map[int]int{0: 2, 1: 1})
 
 	if got := on.CountOn(pos.Add(6 * time.Hour)); got != 2 {
-		t.Errorf("the day holding the two card faces carries %d, want 2", got)
+		t.Errorf("the day holding the two review cards carries %d, want 2", got)
 	}
 	// A day of review runs to the hour it opens at, so an instant before that
 	// hour belongs to the day before it.
 	if got := on.CountOn(pos.AddDate(0, 0, 1).Add(-8 * time.Hour)); got != 2 {
-		t.Errorf("the small hours carry %d card faces, want the 2 of the day before", got)
+		t.Errorf("the small hours carry %d review cards, want the 2 of the day before", got)
 	}
 	if got := on.CountOn(pos.AddDate(0, 0, 2)); got != 0 {
-		t.Errorf("a day nothing falls on carries %d card faces", got)
+		t.Errorf("a day nothing falls on carries %d review cards", got)
 	}
 }
 
@@ -99,11 +99,11 @@ func TestTheSessionAndTheReplayLandOnOneMomentAcrossAClockChange(t *testing.T) {
 	delta := review.NewFSRS()
 	p := review.Defaults()
 
-	face := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	reviewCard := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	status := review.OrderAnswers([]review.Answer{
-		makeAnswer("01A", face.Card, face.Face, "2026-10-10T08:00:00Z", review.Good),
-		makeAnswer("01B", face.Card, face.Face, "2026-10-13T08:00:00Z", review.Good),
-	}).Replay(day, review.ScheduleBy(delta))[face]
+		makeAnswer("01A", reviewCard.Card, reviewCard.Template, "2026-10-10T08:00:00Z", review.Good),
+		makeAnswer("01B", reviewCard.Card, reviewCard.Template, "2026-10-13T08:00:00Z", review.Good),
+	}).Replay(day, review.ScheduleBy(delta))[reviewCard]
 
 	// The answer is given ten days before the night the clock goes back, so the
 	// day the scheduler names falls the far side of it and the window the card

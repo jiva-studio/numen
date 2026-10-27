@@ -16,7 +16,7 @@ import (
 )
 
 // deck is the awkward one every write is tested against: a key nobody owns, a
-// card of a stencil and a card of none, and fields written in an order of the
+// card of a card model and a card of none, and fields written in an order of the
 // person's own.
 const deck = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
@@ -107,7 +107,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 	}
 }
 
-// The marks the two cards of the deck above carry.
+// The card ids the two cards of the deck above carry.
 const (
 	llama   = "k7m2xq9fzp"
 	compost = "zpqrstvwxy"
@@ -137,7 +137,7 @@ func TestSetValueChangesOneValueAndNothingElse(t *testing.T) {
 }
 
 // A card carries its fields in the order the person wrote them, and a write
-// does not tidy them into the order the stencil declares.
+// does not tidy them into the order the card model declares.
 func TestSetValueKeepsTheOrderTheFieldsWereSavedIn(t *testing.T) {
 	raw := setValue(t, deck, llama, "Life span", "about 25 years")
 
@@ -208,7 +208,7 @@ func TestRemoveValueOfTheLastFieldPreservesNoBlankLine(t *testing.T) {
 }
 
 // A field the card writes nothing under fails, and nothing is written.
-// The stencil may well declare it: what is not there is what the person wrote.
+// The card model may well declare it: what is not there is what the person wrote.
 func TestRemoveValueOfAFieldTheCardDoesNotWrite(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
@@ -261,7 +261,7 @@ func TestADeckThatCannotBeReadIsNotOpened(t *testing.T) {
 	}
 }
 
-// A card is addressed by its mark, and two cards of one heading are told apart
+// A card is addressed by its card id, and two cards of one heading are told apart
 // by nothing else. Writing the second reaches the second.
 func TestSetValueReachesTheCardOfThatMarkAlone(t *testing.T) {
 	raw := "---\ntype: deck\n---\n" +
@@ -334,17 +334,17 @@ func TestASectionTheDeckDoesNotHold(t *testing.T) {
 }
 
 // Every field is written under a heading of its own, the first included, and
-// the heading line carries the card's mark.
+// the heading line carries the card's id.
 func TestAddCard(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading:     "Alpaca",
-		Mark:        "m9n8b7v6c5",
-		StencilLink: "Animal",
-		Preamble:    "From the same trip.",
+		Heading:       "Alpaca",
+		CardID:        "m9n8b7v6c5",
+		CardModelLink: "Animal",
+		Preamble:      "From the same trip.",
 		Values: []format.Value{
 			{Field: "Name", Text: "Alpaca"},
 			{Field: "Height", Text: "about 35\""},
@@ -364,7 +364,7 @@ func TestAddCard(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
-	if card.Heading != "Alpaca" || card.StencilLink != "Animal" ||
+	if card.Heading != "Alpaca" || card.CardModelLink != "Animal" ||
 		card.Preamble != "From the same trip." {
 		t.Errorf("card = %+v", card)
 	}
@@ -373,14 +373,14 @@ func TestAddCard(t *testing.T) {
 	}
 }
 
-// A heading is a projection and a mark is given where the deck is written, so
+// A heading is a projection and a card id is given where the deck is written, so
 // a card handed over with neither is written with neither.
 func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddCard(format.Card{StencilLink: "Animal"}); err != nil {
+	if err := f.AddCard(format.Card{CardModelLink: "Animal"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 	if want := deck + "\n##\n\n[[Animal]]\n"; string(f.Bytes()) != want {
@@ -388,9 +388,9 @@ func TestAddCardWithNoHeadingAndNoMark(t *testing.T) {
 	}
 }
 
-// A field renamed in a stencil is renamed in the cards that stencil cuts, and
+// A field renamed in a card model is renamed in the cards that card model cuts, and
 // the value under the heading is left as it was.
-func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
+func TestRenameFieldReachesTheCardsOfThatCardModelAlone(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
@@ -406,7 +406,7 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 		t.Fatalf("rename: %v", err)
 	}
 	if renamed != 1 {
-		t.Errorf("renamed = %d, want the one card cut by that stencil", renamed)
+		t.Errorf("renamed = %d, want the one card cut by that card model", renamed)
 	}
 
 	deck := f.Deck(domain.Fingerprint{})
@@ -417,15 +417,15 @@ func TestRenameFieldReachesTheCardsOfThatStencilAlone(t *testing.T) {
 	if got, _ := llama.Value("Shoulder height"); got != "about 45\"" {
 		t.Errorf("the value moved with the heading: %q", got)
 	}
-	// The card of another stencil keeps the field of that name.
+	// The card of another card model keeps the field of that name.
 	other := deck.Cards[1]
 	if got, ok := other.Value("Height"); !ok || got != "no such thing" {
-		t.Errorf("a card of another stencil was renamed: %v", fieldsOf(other))
+		t.Errorf("a card of another card model was renamed: %v", fieldsOf(other))
 	}
 }
 
-const stencil = "---\n" +
-	"type: stencil\n" +
+const cardModel = "---\n" +
+	"type: card-model\n" +
 	"mine: keep me verbatim\n" +
 	"fields:\n" +
 	"  - Name\n" +
@@ -456,7 +456,7 @@ const stencil = "---\n" +
 // A field is added, renamed and taken away in the frontmatter, and the keys
 // around it come out of every one of those as the bytes they went in as.
 func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
-	f, err := format.OpenStencil([]byte(stencil))
+	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
@@ -467,7 +467,7 @@ func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
 		t.Fatalf("rename: %v", err)
 	}
 
-	want := strings.Replace(stencil,
+	want := strings.Replace(cardModel,
 		"fields:\n  - Name\n  - Height\n  - Life span\n",
 		"fields:\n  - Name\n  - Shoulder height\n  - Life span\n  - Weight\n", 1)
 	want = strings.ReplaceAll(want, "{{Height}}", "{{Shoulder height}}")
@@ -478,77 +478,77 @@ func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
 		t.Errorf("fields = %v", got)
 	}
 
-	// A field's name is written where the stencil declares it and in the braces
-	// of every face that places it, so the stencil that comes out declares what
-	// its faces place.
+	// A field's name is written where the card model declares it and in the braces
+	// of every template that places it, so the card model that comes out declares what
+	// its templates place.
 	n := markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes())
-	read := format.ReadStencil(n)
+	read := format.ReadCardModel(n)
 	if !slices.Equal(read.Fields, []string{"Name", "Shoulder height", "Life span", "Weight"}) {
 		t.Errorf("read fields = %v", read.Fields)
 	}
 	for _, p := range read.Problems {
 		if p.Fault == format.FaultPlaceholder {
-			t.Errorf("a face places a name the stencil does not declare: %+v", p)
+			t.Errorf("a template places a name the card model does not declare: %+v", p)
 		}
 	}
 }
 
-// A stencil declaring no such field is not written to.
+// A card model declaring no such field is not written to.
 func TestRenamingAFieldNobodyDeclares(t *testing.T) {
-	f, err := format.OpenStencil([]byte(stencil))
+	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.RenameField("Girth", "Waist"); !errors.Is(err, format.ErrNoSuchField) {
 		t.Fatalf("rename = %v, want it rejected", err)
 	}
-	if got := string(f.Bytes()); got != stencil {
+	if got := string(f.Bytes()); got != cardModel {
 		t.Errorf("the file was written: %q", got)
 	}
 }
 
-// A field's name is a name of its own, so a stencil already declaring the name
-// asked for is not written: the file would declare it twice, every face would
+// A field's name is a name of its own, so a card model already declaring the name
+// asked for is not written: the file would declare it twice, every template would
 // place the same field, and the values under the old heading would be shown by
 // nothing.
-func TestRenamingAFieldOntoAFieldTheStencilDeclares(t *testing.T) {
-	f, err := format.OpenStencil([]byte(stencil))
+func TestRenamingAFieldOntoAFieldTheCardModelDeclares(t *testing.T) {
+	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.RenameField("Height", "Life span"); !errors.Is(err, format.ErrFieldTaken) {
 		t.Fatalf("rename = %v, want it rejected", err)
 	}
-	if got := string(f.Bytes()); got != stencil {
+	if got := string(f.Bytes()); got != cardModel {
 		t.Errorf("the file was written: %q", got)
 	}
 }
 
-// A face is written with the sides it has. A face missing one is a face that
-// lays out nothing, and it is still that face once it has been written.
-func TestAFaceIsSavedWithTheSidesItHas(t *testing.T) {
-	f, err := format.OpenStencil([]byte(stencil))
+// A template is written with the sides it has. A template missing one is a template that
+// lays out nothing, and it is still that template once it has been written.
+func TestATemplateIsSavedWithTheSidesItHas(t *testing.T) {
+	f, err := format.OpenCardModel([]byte(cardModel))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.AddFace(format.FaceTemplate{Name: "Half a face", Front: "Where does {{Name}} live?"}); err != nil {
+	if err := f.AddTemplate(format.CardTemplate{Name: "Half a template", Front: "Where does {{Name}} live?"}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
 
-	want := stencil + "\n## Half a face\n\n### Front\n\nWhere does {{Name}} live?\n"
+	want := cardModel + "\n## Half a template\n\n### Front\n\nWhere does {{Name}} live?\n"
 	if got := string(f.Bytes()); got != want {
-		t.Errorf("face written wrong\n want %q\n  got %q", want, got)
+		t.Errorf("template written wrong\n want %q\n  got %q", want, got)
 	}
 
-	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
+	read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
 	var missing int
 	for _, p := range read.Problems {
-		if p.Fault == format.FaultFaceSide {
+		if p.Fault == format.FaultTemplateSide {
 			missing++
 		}
 	}
 	if missing != 1 {
-		t.Errorf("problems = %+v, want the face that lays out nothing reported", read.Problems)
+		t.Errorf("problems = %+v, want the template that lays out nothing reported", read.Problems)
 	}
 }
 
@@ -569,12 +569,12 @@ func TestACardIsSplitByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.StencilLink != "Animal|the beast" {
-		t.Errorf("the link was rewritten: %q", got.StencilLink)
+	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.CardModelLink != "Animal|the beast" {
+		t.Errorf("the link was rewritten: %q", got.CardModelLink)
 	}
 }
 
-// A machine must not choose between two cards of one mark: which of the two a
+// A machine must not choose between two cards of one card id: which of the two a
 // person meant is a thing only they know, and a write that guesses puts what
 // they typed into the other one.
 func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
@@ -598,15 +598,15 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 
 // A heading is one line. A heading composed with a break in it carries the
 // lines under it into the file, where the next read takes a second `##` for a
-// second card and gives it a mark.
+// second card and gives it a card id.
 func TestAHeadingAndASectionsNameAreSplitAtTheFirstBreak(t *testing.T) {
 	f, err := format.OpenDeck([]byte("---\ntype: deck\n---\n"))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading:     "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
-		StencilLink: "Animal",
+		Heading:       "Question\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]\n\n### Q\n\nsmuggled",
+		CardModelLink: "Animal",
 	}); err != nil {
 		t.Fatalf("add: %v", err)
 	}
@@ -634,8 +634,8 @@ func TestAFieldsNameIsSplitAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("open: %v", err)
 	}
 	if err := f.AddCard(format.Card{
-		Heading:     "Question",
-		StencilLink: "Animal",
+		Heading:       "Question",
+		CardModelLink: "Animal",
 		Values: []format.Value{{
 			Field: "Answer\n\n## Injected ^k7m2xq9fzp\n\n[[Term]]",
 			Text:  "smuggled",
@@ -671,7 +671,7 @@ func TestRemovingTheLastSectionPreservesNoBlankLine(t *testing.T) {
 	}
 }
 
-// The mark is created where the deck is made whole, so that is what knows it
+// The card id is created where the deck is made whole, so that is what knows it
 // and what says which card was given which.
 func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n" +
@@ -684,10 +684,10 @@ func TestWholeReturnsWhichCardsItGave(t *testing.T) {
 		return out
 	}
 
-	_, provided := format.Whole(body, map[string]format.Stencil{
+	_, provided := format.Whole(body, map[string]format.CardModel{
 		"Animal": {Fields: []string{"Name"}},
 	}, createID)
-	want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}, {Card: 2, Mark: "zpqrstvwxy"}}
+	want := []format.CardID{{Card: 0, CardID: "m9n8b7v6c5"}, {Card: 2, CardID: "zpqrstvwxy"}}
 	if !slices.Equal(provided, want) {
 		t.Errorf("given = %+v, want %+v", provided, want)
 	}
@@ -701,7 +701,7 @@ func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 		Preamble: "Cards I am learning.",
 		Sections: []format.Section{{Name: "Empty"}, {Name: "The ones with fur"}, {Name: "Last"}},
 		Cards: []format.Card{{
-			Heading: "Llama", Mark: "k7m2xq9fzp", StencilLink: "Animal", Section: 1,
+			Heading: "Llama", CardID: "k7m2xq9fzp", CardModelLink: "Animal", Section: 1,
 			Values: []format.Value{{Field: "Name", Text: "Llama"}},
 		}},
 	})
@@ -720,7 +720,7 @@ func TestDeckBodyWritesTheSectionsNoCardExistsBelow(t *testing.T) {
 func TestDeckBodyRefusesACardBelowASectionTheDeckDoesNotHold(t *testing.T) {
 	_, err := format.DeckBody(format.Deck{
 		Sections: []format.Section{{Name: "One"}, {Name: "Two"}},
-		Cards:    []format.Card{{Heading: "Llama", StencilLink: "Animal", Section: 99}},
+		Cards:    []format.Card{{Heading: "Llama", CardModelLink: "Animal", Section: 99}},
 	})
 	if !errors.Is(err, format.ErrNoSuchSection) {
 		t.Errorf("body = %v, want ErrNoSuchSection", err)
@@ -741,7 +741,7 @@ var rough = strings.ReplaceAll(
 		"# The ones without\n",
 	"\n", "\r\n")
 
-// The marks of the two cards no change below names.
+// The card ids of the two cards no change below names.
 const (
 	alpaca = "3n8vr4tqch"
 	vicuna = "9wq2ktr5bd"
@@ -762,17 +762,17 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 		"a field taken off": func(f *format.DeckFile) error {
 			return f.RemoveValue(llama, "Height")
 		},
-		"a stencil written": func(f *format.DeckFile) error {
-			return f.SetStencil(llama, "Beast")
+		"a card model written": func(f *format.DeckFile) error {
+			return f.SetCardModel(llama, "Beast")
 		},
 		"a card removed": func(f *format.DeckFile) error {
 			return f.RemoveCard(llama)
 		},
 		"a card added": func(f *format.DeckFile) error {
-			return f.AddCard(format.Card{Heading: "Camel", StencilLink: "Animal"})
+			return f.AddCard(format.Card{Heading: "Camel", CardModelLink: "Animal"})
 		},
 		"a card added under a section": func(f *format.DeckFile) error {
-			return f.AddCardUnder(0, format.Card{Heading: "Camel", StencilLink: "Animal"})
+			return f.AddCardUnder(0, format.Card{Heading: "Camel", CardModelLink: "Animal"})
 		},
 		"a section added": func(f *format.DeckFile) error {
 			return f.AddSection(format.Section{Name: "The ones without"})
@@ -790,11 +790,11 @@ func TestChangingOneCardPreservesEveryOtherTheBytesItWas(t *testing.T) {
 				t.Fatalf("change: %v", err)
 			}
 			content := file.Body()
-			for _, mark := range []cardid.ID{alpaca, vicuna} {
-				was := cardRun(t, rough, mark)
+			for _, cardID := range []cardid.ID{alpaca, vicuna} {
+				was := cardRun(t, rough, cardID)
 				if !strings.Contains(content, was) {
 					t.Errorf("the card of %s was rewritten\n was %q\n now %q",
-						mark, was, cardRun(t, content, mark))
+						cardID, was, cardRun(t, content, cardID))
 				}
 			}
 		})
@@ -808,7 +808,7 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
 	from := strings.Index(body, "## "+getCardHeading(t, body, card))
 	if from < 0 {
-		t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
+		t.Fatalf("the body holds no card of the card id %s:\n%s", card, body)
 	}
 	rest := body[from:]
 	if pos := strings.Index(rest[1:], "\n## "); pos >= 0 {
@@ -817,7 +817,7 @@ func cardRun(t *testing.T, body string, card cardid.ID) string {
 	return rest
 }
 
-// getCardHeading is the heading line of the card of a mark, without its hashes.
+// getCardHeading is the heading line of the card of a card id, without its hashes.
 func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 	t.Helper()
 	for _, line := range strings.Split(markdown.Normalise(body), "\n") {
@@ -825,16 +825,16 @@ func getCardHeading(t *testing.T, body string, card cardid.ID) string {
 			return strings.TrimPrefix(line, "## ")
 		}
 	}
-	t.Fatalf("the body holds no card of the mark %s:\n%s", card, body)
+	t.Fatalf("the body holds no card of the card id %s:\n%s", card, body)
 	return ""
 }
 
 // A card of a deck that never held one is given the wikilink under its heading,
 // and the values it already holds stay where they stand.
-func TestSetStencilOnACardThatNamedNone(t *testing.T) {
+func TestSetCardModelOnACardThatNamedNone(t *testing.T) {
 	file := format.OpenDeckBody("## Llama ^k7m2xq9fzp\n\nsomebody's prose\n\n### Name\n\nLlama\n")
-	if err := file.SetStencil(llama, "Animal"); err != nil {
-		t.Fatalf("set the stencil: %v", err)
+	if err := file.SetCardModel(llama, "Animal"); err != nil {
+		t.Fatalf("set the card model: %v", err)
 	}
 	want := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\nsomebody's prose\n\n### Name\n\nLlama\n"
 	if got := file.Body(); got != want {
@@ -872,20 +872,20 @@ func TestAddCardBelowASectionTheDeckDoesNotHold(t *testing.T) {
 func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 	raw := "---\ntype: deck\n\n# Fur\n\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n" +
 		"## Bare\n\n[[Animal]]\n\n### Name\n\nBare\n"
-	stencils := map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}}
+	cardModels := map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}}
 	createID := func() cardid.ID { return "m9n8b7v6c5" }
 
 	for name, change := range map[string]func(*format.DeckFile) error{
 		"whole": func(f *format.DeckFile) error {
-			provided, err := f.Whole(stencils, createID)
+			provided, err := f.Whole(cardModels, createID)
 			if provided != nil {
-				t.Errorf("marks given = %+v, want none", provided)
+				t.Errorf("card ids given = %+v, want none", provided)
 			}
 			return err
 		},
 		"set a value": func(f *format.DeckFile) error { return f.SetValue(llama, "Name", "Lama") },
-		"set a stencil": func(f *format.DeckFile) error {
-			return f.SetStencil(llama, "Beast")
+		"set a card model": func(f *format.DeckFile) error {
+			return f.SetCardModel(llama, "Beast")
 		},
 		"remove a value": func(f *format.DeckFile) error { return f.RemoveValue(llama, "Name") },
 		"remove a card":  func(f *format.DeckFile) error { return f.RemoveCard(llama) },
@@ -921,16 +921,16 @@ func TestAChangeToADeckWithUnclosedFrontmatterIsRefused(t *testing.T) {
 	}
 }
 
-// Making a deck whole through its file writes the marks into the file and says
+// Making a deck whole through its file writes the card ids into the file and says
 // which cards were given one.
 func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 	f := format.OpenDeckBody("## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n")
-	provided, err := f.Whole(map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}},
+	provided, err := f.Whole(map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}},
 		func() cardid.ID { return "m9n8b7v6c5" })
 	if err != nil {
 		t.Fatalf("whole: %v", err)
 	}
-	if want := []format.CardMark{{Card: 0, Mark: "m9n8b7v6c5"}}; !slices.Equal(provided, want) {
+	if want := []format.CardID{{Card: 0, CardID: "m9n8b7v6c5"}}; !slices.Equal(provided, want) {
 		t.Errorf("given = %+v, want %+v", provided, want)
 	}
 	if want := "## Llama ^m9n8b7v6c5\n\n[[Animal]]\n\n### Name\n\nLlama\n"; f.Body() != want {
@@ -940,11 +940,11 @@ func TestDeckFileWholeWritesTheMarksItProduces(t *testing.T) {
 
 // A card that cannot be found fails before anything is written, whichever
 // change was asked for.
-func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
+func TestSetCardModelAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
 	body := "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n"
 	f := format.OpenDeckBody(body)
-	if err := f.SetStencil("wxyz01234t", "Animal"); !errors.Is(err, format.ErrNoSuchCard) {
-		t.Errorf("set stencil = %v, want ErrNoSuchCard", err)
+	if err := f.SetCardModel("wxyz01234t", "Animal"); !errors.Is(err, format.ErrNoSuchCard) {
+		t.Errorf("set card model = %v, want ErrNoSuchCard", err)
 	}
 	if err := f.RemoveCard("wxyz01234t"); !errors.Is(err, format.ErrNoSuchCard) {
 		t.Errorf("remove card = %v, want ErrNoSuchCard", err)
@@ -954,10 +954,10 @@ func TestSetStencilAndRemoveCardOfACardTheDeckDoesNotHold(t *testing.T) {
 	}
 }
 
-// The marks of the cards the tests below write by hand.
+// The card ids of the cards the tests below write by hand.
 const (
-	markA = "aaaaaaaaaa"
-	markB = "bbbbbbbbbb"
+	cardIDA = "aaaaaaaaaa"
+	cardIDB = "bbbbbbbbbb"
 )
 
 // Taking the only card of a deck away leaves an empty deck, and taking the last
@@ -970,7 +970,7 @@ func TestRemovingTheLastCardAtTheTopOfTheBody(t *testing.T) {
 	} {
 		t.Run(name, func(t *testing.T) {
 			f := format.OpenDeckBody(one.raw)
-			if err := f.RemoveCard(markA); err != nil {
+			if err := f.RemoveCard(cardIDA); err != nil {
 				t.Fatalf("remove: %v", err)
 			}
 			if got := f.Body(); got != one.want {
@@ -1015,22 +1015,22 @@ func TestRemoveSectionOfACrlfDeck(t *testing.T) {
 	}
 }
 
-// A card that already names a stencil has the name replaced at its current position.
-func TestSetStencilOnACardThatNamedOne(t *testing.T) {
+// A card that already names a card model has the name replaced at its current position.
+func TestSetCardModelOnACardThatNamedOne(t *testing.T) {
 	f, err := format.OpenDeck([]byte(deck))
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	if err := f.SetStencil(llama, "Beast"); err != nil {
-		t.Fatalf("set the stencil: %v", err)
+	if err := f.SetCardModel(llama, "Beast"); err != nil {
+		t.Fatalf("set the card model: %v", err)
 	}
 	want := strings.Replace(deck, "[[Animal]]", "[[Beast]]", 1)
 	if got := string(f.Bytes()); got != want {
-		t.Errorf("stencil set wrong\n want %q\n  got %q", want, got)
+		t.Errorf("card model set wrong\n want %q\n  got %q", want, got)
 	}
 }
 
-// A card with no mark is not the card of the empty mark.
+// A card with no card id is not the card of the empty card id.
 func TestAnEmptyMarkAddressesNoCard(t *testing.T) {
 	raw := "## Bare\n\n### Name\n\nx\n\n## Llama ^aaaaaaaaaa\n\n### Name\n\ny\n"
 	f := format.OpenDeckBody(raw)
@@ -1038,7 +1038,7 @@ func TestAnEmptyMarkAddressesNoCard(t *testing.T) {
 		t.Errorf("err = %v, want ErrNoSuchCard", err)
 	}
 	if f.Body() != raw {
-		t.Error("a card without a mark was written to")
+		t.Error("a card without a card id was written to")
 	}
 }
 
@@ -1077,7 +1077,7 @@ func TestRenamingTheLastSectionWhoseHeadingEndsTheFile(t *testing.T) {
 // section after it, or at the end of the deck where none follows.
 func TestAddCardBelowASectionWritesAtItsEnd(t *testing.T) {
 	raw := "# One\n\n## Llama ^aaaaaaaaaa\n\n# Two\n"
-	card := format.Card{Heading: "Camel", Mark: markB}
+	card := format.Card{Heading: "Camel", CardID: cardIDB}
 
 	first := format.OpenDeckBody(raw)
 	if err := first.AddCardUnder(0, card); err != nil {
@@ -1120,7 +1120,7 @@ func TestDeckBodyEndsOnTheTailOfTheDeck(t *testing.T) {
 		"empty":       {format.Deck{}, ""},
 		"cards alone": {
 			format.Deck{
-				Cards: []format.Card{{Heading: "Llama", Mark: markA, Section: format.NoSection}},
+				Cards: []format.Card{{Heading: "Llama", CardID: cardIDA, Section: format.NoSection}},
 				Tail:  "\n\nafter",
 			},
 			"## Llama ^aaaaaaaaaa\n\nafter",
@@ -1142,9 +1142,9 @@ func TestDeckBodyEndsOnTheTailOfTheDeck(t *testing.T) {
 	}
 }
 
-// Only the cards cut by the stencil are renamed, whichever order they stand in,
-// and a card whose link lands on another stencil keeps its field.
-func TestRenameFieldSkipsTheCardsOfOtherStencils(t *testing.T) {
+// Only the cards cut by the card model are renamed, whichever order they stand in,
+// and a card whose link lands on another card model keeps its field.
+func TestRenameFieldSkipsTheCardsOfOtherCardModels(t *testing.T) {
 	raw := "## Compost ^zpqrstvwxy\n\n[[Term]]\n\n### Name\n\nx\n\n" +
 		"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n"
 	f := format.OpenDeckBody(raw)
@@ -1328,11 +1328,11 @@ func TestWriteIdentifier(t *testing.T) {
 	})
 }
 
-// proseStencil is the awkward one the round trip is tested against: a key
-// nobody owns, prose above the first face and prose under a face's heading.
-const proseStencil = "---\n" +
+// proseCardModel is the awkward one the round trip is tested against: a key
+// nobody owns, prose above the first template and prose under a template's heading.
+const proseCardModel = "---\n" +
 	"id: 01J8F3K2M9QRSTVWXYZ012\n" +
-	"type: stencil\n" +
+	"type: card-model\n" +
 	"mine: keep me verbatim\n" +
 	"fields:\n" +
 	"  - Name\n" +
@@ -1352,26 +1352,26 @@ const proseStencil = "---\n" +
 	"\n" +
 	"{{Height}}\n"
 
-// A stencil read and written straight back comes out as the body it went in
+// A card model read and written straight back comes out as the body it went in
 // as. Anything less is a diff the person did not ask for, on every save,
 // forever.
-func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
+func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 	for name, raw := range map[string]string{
-		"the stencil": proseStencil,
-		"crlf":        strings.ReplaceAll(proseStencil, "\n", "\r\n"),
+		"the card model": proseCardModel,
+		"crlf":           strings.ReplaceAll(proseCardModel, "\n", "\r\n"),
 		"no frontmatter": "Above them all.\n\n## Recognise\n\nThe one to start with.\n\n" +
 			"### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-		"no trailing break": "---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
-		"no trailing break under a face's heading": "---\ntype: stencil\n---\n" +
+		"no trailing break": "---\ntype: card-model\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}",
+		"no trailing break under a template's heading": "---\ntype: card-model\n---\n" +
 			"## Recognise",
-		"no faces": "---\ntype: stencil\n---\n",
-		"bom":      "\xef\xbb\xbf---\ntype: stencil\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: stencil\n---\n" +
+		"no templates": "---\ntype: card-model\n---\n",
+		"bom":          "\xef\xbb\xbf---\ntype: card-model\n---\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
+		"comments and order": "---\n# a note to myself\nzebra: 1\n\ntype: card-model\n---\n" +
 			"## Recognise\n\n### Front\n\none\n\n\ntwo\n\n### Back\n\n{{Height}}\n",
-		"a heading of another name": "---\ntype: stencil\n---\n" +
+		"a heading of another name": "---\ntype: card-model\n---\n" +
 			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Notes\n\nThe one to start with.\n\n" +
 			"### Back\n\n{{Height}}\n\n### Afterwards\n\nAnd this.\n",
-		"a side written twice": "---\ntype: stencil\n---\n" +
+		"a side written twice": "---\ntype: card-model\n---\n" +
 			"## Recognise\n\n### Front\n\n{{Name}}\n\n### Front\n\nthe second one\n\n### Back\n\n{{Height}}\n",
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -1379,13 +1379,13 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-			body, err := format.StencilBody(read.Preamble, read.Faces, read.Tail)
+			read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+			body, err := format.CardModelBody(read.Preamble, read.Templates, read.Tail)
 			if err != nil {
-				t.Fatalf("stencil body: %v", err)
+				t.Fatalf("card model body: %v", err)
 			}
 			if want := markdown.Normalise(doc.Body()); body != want {
-				t.Errorf("the round trip changed the stencil\n want %q\n  got %q", want, body)
+				t.Errorf("the round trip changed the card model\n want %q\n  got %q", want, body)
 			}
 		})
 	}
@@ -1394,7 +1394,7 @@ func TestReadingAStencilAndWritingItBackChangesNothing(t *testing.T) {
 // vault is where the fixtures a person can open in the application stand.
 const vault = "../../../../tests/vault/cards"
 
-// Every deck and stencil of the fixture vault, read and written straight back,
+// Every deck and card model of the fixture vault, read and written straight back,
 // comes out as the body it went in as. These are the files a person is shown,
 // awkward on purpose, and a save that touched nothing is a save that changed
 // nothing.
@@ -1420,11 +1420,11 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			switch n.Type {
 			case format.TypeDeck:
 				body, err = format.DeckBody(format.ReadDeck(n))
-			case format.TypeStencil:
-				read := format.ReadStencil(n)
-				body, err = format.StencilBody(read.Preamble, read.Faces, read.Tail)
+			case format.TypeCardModel:
+				read := format.ReadCardModel(n)
+				body, err = format.CardModelBody(read.Preamble, read.Templates, read.Tail)
 			default:
-				t.Fatalf("type = %q, want a deck or a stencil", n.Type)
+				t.Fatalf("type = %q, want a deck or a card model", n.Type)
 			}
 			if err != nil {
 				t.Fatalf("body: %v", err)
@@ -1436,22 +1436,22 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 	}
 }
 
-// A write that reaches one face reaches nothing else: the prose above the first
-// face and the prose under every other face's heading come out as the bytes
+// A write that reaches one template reaches nothing else: the prose above the first
+// template and the prose under every other template's heading come out as the bytes
 // they went in as.
-func TestWritingOneFacePreservesTheRestOfTheStencilAlone(t *testing.T) {
-	raw := "---\ntype: stencil\n---\n" +
+func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
+	raw := "---\ntype: card-model\n---\n" +
 		"How I show these.\n\n" +
 		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
-	read := format.ReadStencil(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
-	target := append([]format.FaceTemplate(nil), read.Faces...)
+	read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+	target := append([]format.CardTemplate(nil), read.Templates...)
 	target[0].Back = "**{{Height}}**"
 
-	body, err := format.StencilBody(read.Preamble, target, read.Tail)
+	body, err := format.CardModelBody(read.Preamble, target, read.Tail)
 	if err != nil {
-		t.Fatalf("stencil body: %v", err)
+		t.Fatalf("card model body: %v", err)
 	}
 
 	doc, err := markdown.Open([]byte(raw))
@@ -1461,42 +1461,42 @@ func TestWritingOneFacePreservesTheRestOfTheStencilAlone(t *testing.T) {
 	want := strings.Replace(markdown.Normalise(doc.Body()), "{{Height}}\n\n## Name it",
 		"**{{Height}}**\n\n## Name it", 1)
 	if body != want {
-		t.Errorf("the write reached further than the face\n want %q\n  got %q", want, body)
+		t.Errorf("the write reached further than the template\n want %q\n  got %q", want, body)
 	}
 }
 
-// A stencil shows a card once through each face it carries, and a face is not
-// addressed by its name here. Two faces of one name are two faces, and what
+// A card model shows a card once through each template it carries, and a template is not
+// addressed by its name here. Two templates of one name are two templates, and what
 // each holds is in the file.
-func TestAStencilKeepsEveryFaceItIsGiven(t *testing.T) {
-	body, err := format.StencilBody("", []format.FaceTemplate{
+func TestACardModelKeepsEveryTemplateItIsGiven(t *testing.T) {
+	body, err := format.CardModelBody("", []format.CardTemplate{
 		{Name: "Recognise", Front: "{{Name}}", Back: "{{Height}}"},
 		{Name: "Recognise", Front: "{{Height}}", Back: "{{Name}}"},
 	}, "")
 	if err != nil {
-		t.Fatalf("stencil body: %v", err)
+		t.Fatalf("card model body: %v", err)
 	}
 
-	read := format.ReadStencil(domain.Note{Body: body})
-	if len(read.Faces) != 2 {
-		t.Fatalf("faces = %+v, want both of them", read.Faces)
+	read := format.ReadCardModel(domain.Note{Body: body})
+	if len(read.Templates) != 2 {
+		t.Fatalf("templates = %+v, want both of them", read.Templates)
 	}
-	if read.Faces[0].Front != "{{Name}}" || read.Faces[0].Back != "{{Height}}" {
-		t.Errorf("the first face = %+v", read.Faces[0])
+	if read.Templates[0].Front != "{{Name}}" || read.Templates[0].Back != "{{Height}}" {
+		t.Errorf("the first template = %+v", read.Templates[0])
 	}
-	if read.Faces[1].Front != "{{Height}}" || read.Faces[1].Back != "{{Name}}" {
-		t.Errorf("the second face = %+v", read.Faces[1])
+	if read.Templates[1].Front != "{{Height}}" || read.Templates[1].Back != "{{Name}}" {
+		t.Errorf("the second template = %+v", read.Templates[1])
 	}
 }
 
-func wholeAnimals() map[string]format.Stencil {
-	return map[string]format.Stencil{"Animal": {Fields: []string{"Name"}}}
+func wholeAnimals() map[string]format.CardModel {
+	return map[string]format.CardModel{"Animal": {Fields: []string{"Name"}}}
 }
 
 func createWholeID() cardid.ID { return "zpqrstvwxy" }
 
 // A heading that has fallen out of step with the card's first field is written
-// again from the first line of that field, with the mark the card carries.
+// again from the first line of that field, with the card id the card carries.
 func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 	body := "\n## Old ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\nthe woolly one\n"
 
@@ -1507,13 +1507,13 @@ func TestWholeWritesTheHeadingFromTheFirstField(t *testing.T) {
 		t.Errorf("body\n want %q\n  got %q", want, got)
 	}
 	if len(provided) != 0 {
-		t.Errorf("given = %+v, want no mark given", provided)
+		t.Errorf("given = %+v, want no card id given", provided)
 	}
 }
 
-// A card of a stencil nobody holds keeps the heading it has, and is given its
-// mark all the same.
-func TestWholeKeepsTheHeadingOfACardWhoseStencilIsUnknown(t *testing.T) {
+// A card of a card model nobody holds keeps the heading it has, and is given its
+// card id all the same.
+func TestWholeKeepsTheHeadingOfACardWhoseCardModelIsUnknown(t *testing.T) {
 	body := "\n## Old\n\n[[Plant]]\n\n### Name\n\nFern\n"
 
 	got, _ := format.Whole(body, wholeAnimals(), createWholeID)

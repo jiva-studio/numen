@@ -269,12 +269,12 @@ describe('what each note of a neighbourhood is', () => {
   it('is what the vault says of the focus and of every note around it', () => {
     const neighbourhood: Neighbourhood = {
       focus: { path: 'Words.md', title: 'Words' },
-      focusType: 'deck',
+      focusType: 'sample',
       related: [
         {
-          path: 'Faces.md',
-          title: 'Faces',
-          type: 'stencil',
+          path: 'Forms.md',
+          title: 'Forms',
+          type: 'form',
           relation: 'child',
           label: '',
           through: '',
@@ -284,15 +284,15 @@ describe('what each note of a neighbourhood is', () => {
     }
 
     expect([...getNoteTypes(neighbourhood)]).toStrictEqual([
-      ['Words.md', 'deck'],
-      ['Faces.md', 'stencil'],
+      ['Words.md', 'sample'],
+      ['Forms.md', 'form'],
     ])
   })
 
   it('is empty for a focus with no path', () => {
     const neighbourhood: Neighbourhood = {
       focus: { path: '', title: '' },
-      focusType: 'deck',
+      focusType: 'sample',
       related: [],
     }
 
@@ -361,7 +361,7 @@ describe('two neighbourhoods drawing one picture', () => {
   })
 
   it('are not two answers saying the focus is something different', () => {
-    expect(areNeighbourhoodsEqual(target(), { ...target(), focusType: 'deck' })).toBe(false)
+    expect(areNeighbourhoodsEqual(target(), { ...target(), focusType: 'sample' })).toBe(false)
   })
 
   it('are not two answers with a different number of notes around', () => {
@@ -373,7 +373,7 @@ describe('two neighbourhoods drawing one picture', () => {
   it.each<[string, Partial<Neighbour>]>([
     ['path', { path: 'Across.md' }],
     ['title', { title: 'Across' }],
-    ['type', { type: 'deck' }],
+    ['type', { type: 'sample' }],
     ['relation', { relation: 'child' }],
     ['label', { label: 'far from' }],
     ['through', { through: 'Here.md' }],

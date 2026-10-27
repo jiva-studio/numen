@@ -1,8 +1,8 @@
 /**
- * UI representation mappings and comparisons for decks and stencils.
+ * UI representation mappings and comparisons for decks and card models.
  */
-import type { DeckCard, DeckSection, Stencil } from '../../ui/cards'
-import type { StencilSummary, VaultCard } from '../../cards'
+import type { DeckCard, DeckSection, CardModel } from '../../ui/cards'
+import type { CardModelSummary, VaultCard } from '../../cards'
 import type { BufferDeck } from '../types'
 import {
   serializeBufferCardsToVaultCards,
@@ -13,33 +13,35 @@ export const createDeckSections = (deck: BufferDeck): readonly DeckSection[] =>
   deck.sections.map(({ id, name }) => ({ id, name }))
 
 /**
- * The cards as the grid draws them, each under the stencil its wikilink resolves to.
+ * The cards as the grid draws them, each under the card model its wikilink resolves to.
  */
 export const createDeckCards = (
   deck: BufferDeck,
-  offers: readonly StencilSummary[],
+  offers: readonly CardModelSummary[],
 ): readonly DeckCard[] => {
   const titles = new Map(offers.map((offer) => [offer.path, offer.title]))
   return deck.cards.map((card) => ({
     id: card.id,
     section: card.section,
-    stencil: (titles.get(card.stencilPath) ?? card.stencilLink) || null,
+    cardModel: (titles.get(card.cardModelPath) ?? card.cardModelLink) || null,
     filled: card.values.map((value) => ({ field: value.field, text: value.text })),
   }))
 }
 
 /**
- * The stencils a card may be cut by, under the word a card names one by.
+ * The card models a card may be cut by, under the word a card names one by.
  */
-export const createStencilChoices = (offers: readonly StencilSummary[]): readonly Stencil[] => {
+export const createCardModelChoices = (
+  offers: readonly CardModelSummary[],
+): readonly CardModel[] => {
   const seenTitles = new Set<string>()
-  const stencils: Stencil[] = []
+  const cardModels: CardModel[] = []
   for (const offer of offers) {
     if (!offer.title || seenTitles.has(offer.title)) continue
     seenTitles.add(offer.title)
-    stencils.push({ name: offer.title, fields: offer.fields })
+    cardModels.push({ name: offer.title, fields: offer.fields })
   }
-  return stencils
+  return cardModels
 }
 
 /** The cards as somebody wrote them, without the heading a write reads back. */
@@ -95,9 +97,9 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
   const cards = readItem.cards.map((card, index) => {
     const withSection = { ...card, section: getSectionId(card.section) }
     const was = screen.cards[index]
-    if (!alongside || !was || was.mark !== '' || card.mark === '') return withSection
+    if (!alongside || !was || was.cardId !== '' || card.cardId === '') return withSection
     const same =
-      was.stencilLink === card.stencilLink &&
+      was.cardModelLink === card.cardModelLink &&
       was.preamble === card.preamble &&
       seat(screen, was.section) === seat(readItem, card.section) &&
       JSON.stringify(was.values) === JSON.stringify(card.values)
@@ -108,12 +110,12 @@ export const applyScreenIds = (screen: BufferDeck, readItem: BufferDeck): Buffer
 }
 
 /**
- * Whether two listings name the same stencils, in the same order and with the
+ * Whether two listings name the same card models, in the same order and with the
  * same fields.
  */
 export const areOffersEqual = (
-  one: readonly StencilSummary[],
-  other: readonly StencilSummary[],
+  one: readonly CardModelSummary[],
+  other: readonly CardModelSummary[],
 ): boolean =>
   one.length === other.length &&
   one.every((offer, index) => {
@@ -128,6 +130,6 @@ export const areOffersEqual = (
     )
   })
 
-/** Where the stencil of that title is filed, and nowhere where none is. */
-export const findStencilPath = (offers: readonly StencilSummary[], name: string): string =>
+/** Where the card model of that title is filed, and nowhere where none is. */
+export const findCardModelPath = (offers: readonly CardModelSummary[], name: string): string =>
   offers.find((offer) => offer.title === name)?.path ?? ''

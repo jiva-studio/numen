@@ -61,7 +61,7 @@ type ShowNeighbourhood struct {
 }
 
 // NewShowNeighbourhood is what the reading beside a review is made of: what the
-// deck is joined to, what says which of those notes are decks and stencils of
+// deck is joined to, what says which of those notes are decks and card models of
 // its own, and what the prose of each is read out of.
 //
 // The prose is read only where a deck names something.
@@ -187,9 +187,9 @@ func getNeighbourTitle(
 	// taken below.
 	//exhaustive:ignore
 	switch kinds[one.Path] {
-	case format.TypeStencil:
-		// Every card names the stencil it is cut by, so a deck points at
-		// its stencils. A stencil is how a card is laid out and not what
+	case format.TypeCardModel:
+		// Every card names the card model it is cut by, so a deck points at
+		// its card models. A card model is how a card is laid out and not what
 		// it was written from.
 		return Neighbour{}, false
 	case format.TypePreset:
@@ -227,15 +227,15 @@ func (u ShowNeighbourhood) readBodies(ctx context.Context, v domain.Vault, neigh
 	return nil
 }
 
-// MarkCards gives a mark to every card of a vault that carries none.
+// AssignCardIDs gives a card id to every card of a vault that carries none.
 //
-// A card typed by hand carries no mark until the application writes its file,
-// and a card with no mark has nothing an answer can be recorded against. A deck
-// holding one is written, which mints a mark for every card in it.
+// A card typed by hand carries no card id until the application writes its file,
+// and a card with no card id has nothing an answer can be recorded against. A deck
+// holding one is written, which mints a card id for every card in it.
 //
 // This is the one thing flashcards writes into a vault, and it is done when a
 // and not for the counting of what is owed.
-type MarkCards struct {
+type AssignCardIDs struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
 	notes   ports.NoteQueries
@@ -243,73 +243,73 @@ type MarkCards struct {
 	// index brings what a write touched up to date. A build holding none leaves
 	// the index to the next scan.
 	index func(ctx context.Context, v domain.Vault, paths []string) error
-	// now is when this is happening. A mark written here carries it.
+	// now is when this is happening. A card id written here carries it.
 	now ports.Clock
 }
 
-// NewMarkCards is what a vault's cards are given marks through: the vault the
+// NewAssignCardIDs is what a vault's cards are given card ids through: the vault the
 // decks are read out of and written back to, what says which of its notes are
-// decks, where the wikilink a card names its stencil by lands, what brings a
+// decks, where the wikilink a card names its card model by lands, what brings a
 // written deck level in the index, and what time it is.
-func NewMarkCards(
+func NewAssignCardIDs(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
 	notes ports.NoteQueries,
 	links ports.LinkQueries,
 	index func(ctx context.Context, v domain.Vault, paths []string) error,
 	now ports.Clock,
-) MarkCards {
-	return MarkCards{
+) AssignCardIDs {
+	return AssignCardIDs{
 		readers: readers, writers: writers, notes: notes, links: links,
 		index: index, now: now,
 	}
 }
 
-// WithIndex returns a copy of MarkCards with the given index function.
-func (u MarkCards) WithIndex(index func(ctx context.Context, v domain.Vault, paths []string) error) MarkCards {
+// WithIndex returns a copy of AssignCardIDs with the given index function.
+func (u AssignCardIDs) WithIndex(index func(ctx context.Context, v domain.Vault, paths []string) error) AssignCardIDs {
 	u.index = index
 	return u
 }
 
-// MarkCardsResult is what the marking came to: the decks it could not write.
-type MarkCardsResult struct {
-	// Unwritten are the paths of the decks holding a card with no mark that
+// AssignCardIDsResult is what the assigning of card ids came to: the decks it could not write.
+type AssignCardIDsResult struct {
+	// Unwritten are the paths of the decks holding a card with no card id that
 	// could not be given one. Their cards are left out of this session.
 	Unwritten []string
 }
 
-// Execute writes every deck of the vault that holds a card with no mark.
+// Execute writes every deck of the vault that holds a card with no card id.
 //
 // A deck that could not be written is left as it is and is not an error: the
 // editor may be saving it, and the vault's write lock lives in one process. Its
 // cards are left out of this session and marked at the next, and it is named in
-func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult, error) {
+func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardIDsResult, error) {
 	if u.notes == nil {
-		return MarkCardsResult{}, nil
+		return AssignCardIDsResult{}, nil
 	}
 	paths, err := u.notes.GetPathsOfType(ctx, v.ID, format.TypeDeck)
 	if err != nil {
-		return MarkCardsResult{}, err
+		return AssignCardIDsResult{}, err
 	}
 
 	read := cards.NewRead(u.readers, u.links)
 	write := cards.NewWrite(u.readers, u.writers, u.links, u.index, u.now)
-	var out MarkCardsResult
+	var out AssignCardIDsResult
 	for _, path := range paths {
 		deck, err := read.Deck(ctx, v, path)
-		if err != nil || deck.Outcome != note.Ok || !hasUnmarkedCard(deck.Body) {
+		if err != nil || deck.Outcome != note.Ok || !hasCardWithoutID(deck.Body) {
 			continue
 		}
 
 		// The body goes back exactly as it was read. What the write is for is
-		// the deck being made whole on the way past, which is where a mark is
+		// the deck being made whole on the way past, which is where a card id is
 		// minted.
 		body, err := format.DeckBody(deck.Body)
 		if err != nil {
 			out.Unwritten = append(out.Unwritten, path)
 			continue
 		}
-		// A deck the index could not be brought level with carries its marks all
+		// A deck the index could not be brought level with carries its card ids all
 		// the same, and its cards stand in this session.
 		if _, err := write.Deck(ctx, v, path, body, deck.Fingerprint); err != nil &&
 			!errors.Is(err, note.ErrUnlevelled) {
@@ -319,10 +319,10 @@ func (u MarkCards) Execute(ctx context.Context, v domain.Vault) (MarkCardsResult
 	return out, nil
 }
 
-// hasUnmarkedCard reports whether any card of a deck carries no mark.
-func hasUnmarkedCard(d format.Deck) bool {
+// hasCardWithoutID reports whether any card of a deck carries no card id.
+func hasCardWithoutID(d format.Deck) bool {
 	for _, c := range d.Cards {
-		if c.Mark == "" {
+		if c.CardID == "" {
 			return true
 		}
 	}

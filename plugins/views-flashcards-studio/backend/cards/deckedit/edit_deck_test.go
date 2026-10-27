@@ -23,7 +23,7 @@ const mammals = "decks/Mammals.md"
 
 var animals = map[string]string{
 	"Animal.md": "---\n" +
-		"type: stencil\n" +
+		"type: card-model\n" +
 		"mine: keep me verbatim\n" +
 		"fields:\n" +
 		"  - Name\n" +
@@ -31,7 +31,7 @@ var animals = map[string]string{
 		"  - Life span\n" +
 		"---\n" +
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n",
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Height\n---\n" +
+	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Height\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Height}}\n",
 	"decks/Mammals.md": "---\nid: 01J8F3K2M9QRSTVWXYZ012\ntype: deck\nmine: keep me verbatim\n---\n" +
 		"\nCards I am learning.\n" +
@@ -133,12 +133,12 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(run.Cards) != 1 || string(run.Cards[0].Mark) != "zpqrstvwxy" || run.Total != 2 {
+	if len(run.Cards) != 1 || string(run.Cards[0].CardID) != "zpqrstvwxy" || run.Total != 2 {
 		t.Errorf("a run of one from the second read as %+v", run)
 	}
 
 	one, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{
-		Path: mammals, Mark: "k7m2xq9fzp", From: 1, Fields: []string{"Name"},
+		Path: mammals, CardID: "k7m2xq9fzp", From: 1, Fields: []string{"Name"},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -148,9 +148,9 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 	}
 
 	if _, err := e.page.Execute(t.Context(), e.vs.first, deckedit.Query{
-		Path: mammals, Mark: "nothing",
+		Path: mammals, CardID: "nothing",
 	}); !errors.Is(err, format.ErrNoSuchCard) {
-		t.Errorf("a mark no card carries read as %v", err)
+		t.Errorf("a card id no card carries read as %v", err)
 	}
 }
 
@@ -177,12 +177,12 @@ func TestAddingACardWritesItAtTheEndAndNamesItsMark(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if added.Cards != 3 || added.Mark == "" {
+	if added.Cards != 3 || added.CardID == "" {
 		t.Fatalf("the deck became %+v", added)
 	}
 	body := read(t, e.vs.first, mammals)
-	if !strings.Contains(body, "Okapi") || !strings.Contains(body, added.Mark) {
-		t.Errorf("the card is not in the deck under its mark:\n%s", body)
+	if !strings.Contains(body, "Okapi") || !strings.Contains(body, added.CardID) {
+		t.Errorf("the card is not in the deck under its card id:\n%s", body)
 	}
 	if added.Fingerprint.Size != int64(len(body)) {
 		t.Errorf("returned fingerprint has size %d, want %d", added.Fingerprint.Size, len(body))

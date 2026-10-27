@@ -1,6 +1,6 @@
 /** The grid a deck is drawn as: its cards laid out as tiles under the sections they stand in. */
 
-import type { Stencil } from './card'
+import type { CardModel } from './card'
 import { getDeclaredFields, type InsertionPoint } from './order'
 import {
   getCardFieldValues,
@@ -35,14 +35,14 @@ export interface Tile {
   readonly id: string
   /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
-  readonly stencil: string | null
-  /** Its values, in the order its stencil asks for them. */
+  readonly cardModel: string | null
+  /** Its values, in the order its card model asks for them. */
   readonly filled: readonly PlacedFieldValue[]
   /** at its current position among the tiles, counting from one, which is what it is announced as. */
   readonly at: number
   /** How many stand in the grid with it, the plus among them. */
   readonly of: number
-  /** The stencil it names is among the ones handed in. */
+  /** The card model it names is among the ones handed in. */
   readonly isKnown: boolean
   /** It is on its way somewhere else in the order. */
   readonly isDragged: boolean
@@ -85,8 +85,8 @@ export interface Grid {
 
 /**
  * The tiles of a deck, in the order the cards were handed in, each laid out
- * under the stencil it names and standing in the run of the section it is
- * under. A card naming a stencil that was not handed in keeps every value it
+ * under the card model it names and standing in the run of the section it is
+ * under. A card naming a card model that was not handed in keeps every value it
  * has, and a card naming a section that was not handed in stands before the
  * first section, where every card handed in is drawn and counted.
  */
@@ -97,11 +97,11 @@ interface PlacementContext {
 
 function createTile(
   card: DeckCard,
-  stencils: readonly Stencil[],
+  cardModels: readonly CardModel[],
   placement: PlacementContext,
 ): Tile {
-  const matchingStencil = stencils.find((each) => each.name === card.stencil)
-  const fields = getDeclaredFields(matchingStencil?.fields ?? [])
+  const matchingCardModel = cardModels.find((each) => each.name === card.cardModel)
+  const fields = getDeclaredFields(matchingCardModel?.fields ?? [])
 
   /** How many values the card writes under each field, as they are counted off. */
   const underItem = new Map<string, number>()
@@ -111,12 +111,12 @@ function createTile(
     return index
   }
 
-  // A value the stencil does not name is the person's and stays in the file,
-  // and nothing here draws it or says a word about it. A card whose stencil
-  // was not handed in draws no value at all, and says which stencil it is
-  // waiting for. A card naming no stencil waits for nothing, so everything it
+  // A value the card model does not name is the person's and stays in the file,
+  // and nothing here draws it or says a word about it. A card whose card model
+  // was not handed in draws no value at all, and says which card model it is
+  // waiting for. A card naming no card model waits for nothing, so everything it
   // wrote stands as it was written.
-  const named = card.stencil !== null
+  const named = card.cardModel !== null
   const counted = getCardFieldValues(card.filled, fields)
     .filter((each) => each.isDeclared || !named)
     .map((each, place) => {
@@ -127,14 +127,14 @@ function createTile(
   return {
     id: card.id,
     section: placement.sectioned.has(card.section) ? card.section : null,
-    stencil: card.stencil,
+    cardModel: card.cardModel,
     filled: counted.map((each) => ({
       ...each,
       isLast: each.index === (underItem.get(each.field) ?? 0),
     })),
     at: 0,
     of: 0,
-    isKnown: matchingStencil !== undefined,
+    isKnown: matchingCardModel !== undefined,
     isDragged: card.id === placement.dragCard,
   }
 }
@@ -143,21 +143,21 @@ function createTile(
 export interface DeckGridSource {
   readonly cards: readonly DeckCard[]
   readonly sections: readonly DeckSection[]
-  readonly stencils: readonly Stencil[]
+  readonly cardModels: readonly CardModel[]
 }
 
 /**
  * The tiles of a deck, in the order the cards were handed in, each laid out
- * under the stencil it names and standing in the run of the section it is
- * under. A card naming a stencil that was not handed in keeps every value it
+ * under the card model it names and standing in the run of the section it is
+ * under. A card naming a card model that was not handed in keeps every value it
  * has, and a card naming a section that was not handed in stands before the
  * first section, where every card handed in is drawn and counted.
  */
 export function getGrid(deck: DeckGridSource, dragCard: string | null = null): Grid {
-  const { cards, sections, stencils } = deck
+  const { cards, sections, cardModels } = deck
   const sectioned = new Set<string | null>(sections.map((section) => section.id))
   const placement: PlacementContext = { sectioned, dragCard }
-  const tiles = cards.map((card) => createTile(card, stencils, placement))
+  const tiles = cards.map((card) => createTile(card, cardModels, placement))
 
   const tilesUnder = (section: string | null): readonly Tile[] =>
     tiles.filter((tile) => tile.section === section)

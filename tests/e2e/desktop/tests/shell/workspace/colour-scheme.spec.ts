@@ -57,7 +57,7 @@ const getColour = (locator: Locator) => locator.evaluate((node) => getComputedSt
 
 /**
  * The colour of the text of three plugin views: the body and the heading of a book in the EPUB
- * reader, which is drawn in a shadow root, a face of a stencil in the flashcards studio, and a
+ * reader, which is drawn in a shadow root, a template of a card model in the flashcards studio, and a
  * reply in the agent chat.
  */
 const getProseColours = async (page: Page) => {
@@ -68,9 +68,9 @@ const getProseColours = async (page: Page) => {
     heading: await getColour(book.getByRole('heading', { name: 'Chapter 1' }).first()),
   }
 
-  const stencil = await openVaultFile(page, 'cards', 'Animal.md')
-  const face = stencil.getByRole('group', { name: 'Preview: Recognise Front' })
-  const studio = await getColour(face.getByText('Name', { exact: true }))
+  const cardModel = await openVaultFile(page, 'cards', 'Animal.md')
+  const template = cardModel.getByRole('group', { name: 'Preview: Recognise Front' })
+  const studio = await getColour(template.getByText('Name', { exact: true }))
 
   await page.getByRole('tab', { name: /^Agent/ }).click()
   await page.getByRole('textbox', { name: 'Ask about the vault' }).first().fill('Say something')

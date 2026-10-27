@@ -23,7 +23,7 @@ const FSRSName = "fsrs-5"
 //
 // The parameters are the library's and the arithmetic over them is here, so a
 // scheduler carries no state between answers and one may be asked about many
-// card faces at once.
+// review cards at once.
 type FSRS struct {
 	p    fsrs.Parameters
 	name string
@@ -85,7 +85,7 @@ func writeNumber(sum hash.Hash, name string, value float64) {
 	fmt.Fprintf(sum, "%s=%s\n", name, strconv.FormatFloat(value, 'x', -1, 64))
 }
 
-// IsSpaced reports whether this scheduler has put a card face into review: it
+// IsSpaced reports whether this scheduler has put a review card into review: it
 // has been answered well enough to come round in days.
 func (FSRS) IsSpaced(s Schedule) bool {
 	return !s.IsNew() && fsrs.State(s.Phase) == fsrs.Review
@@ -104,9 +104,9 @@ func (f FSRS) Next(s Schedule, now time.Time, r Rating) Schedule {
 	}
 }
 
-// Endings is where the two endings leave a card face.
+// Endings is where the two endings leave a review card.
 //
-// A card face this scheduler has put into review is settled at every rating by
+// A review card this scheduler has put into review is settled at every rating by
 // one reckoning of how likely it was to come back, so both endings are worked
 // out from that one reckoning.
 func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
@@ -124,20 +124,20 @@ func (f FSRS) Endings(s Schedule, now time.Time) (good, again Schedule) {
 	}
 }
 
-// atAnswer is a card face at the instant it is answered: the phase the answer
+// atAnswer is a review card at the instant it is answered: the phase the answer
 // finds it in, how many whole days it stood away, and where the answer leaves
 // what no rating decides.
 type atAnswer struct {
 	phase fsrs.State
-	// away is how many whole days the card face stood away, and is none for one
+	// away is how many whole days the review card stood away, and is none for one
 	away float64
-	// last is where the card face stood before the answer, and out is where the
+	// last is where the review card stood before the answer, and out is where the
 	// answer leaves it but for what the rating decides.
 	last Schedule
 	out  Schedule
 }
 
-// readAtAnswer reads a card face at the instant it is answered. One nobody has
+// readAtAnswer reads a review card at the instant it is answered. One nobody has
 // answered opens at the phase the scheduler begins a card in, at no stability
 // and no difficulty.
 func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
@@ -145,7 +145,7 @@ func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	if !s.IsNew() {
 		one.last, one.phase = s, fsrs.State(s.Phase)
 	}
-	// A card face in review carries a positive stability, read as a divisor
+	// A review card in review carries a positive stability, read as a divisor
 	// and as the base of a power in getRecall and getStabilityOnRecall; zero
 	// or negative is floored to 0.1, the lowest this scheduler itself opens
 	// one at.
@@ -162,7 +162,7 @@ func (f FSRS) readAtAnswer(s Schedule, pos time.Time) atAnswer {
 	return one
 }
 
-// getNextFromNew is where an answer leaves a card face nobody had answered.
+// getNextFromNew is where an answer leaves a review card nobody had answered.
 // Three of the four put it into memory over minutes, and the fourth sends it
 // away in days.
 func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedule {
@@ -184,7 +184,7 @@ func (f FSRS) getNextFromNew(one atAnswer, pos time.Time, r fsrs.Rating) Schedul
 	return out
 }
 
-// getNextFromLearning is where an answer leaves a card face the scheduler is
+// getNextFromLearning is where an answer leaves a review card the scheduler is
 // still putting into memory. The two lower ratings leave it where it was and
 // ask again in minutes; the two higher send it away in days and put it into
 // review.
@@ -208,7 +208,7 @@ func (f FSRS) getNextFromLearning(one atAnswer, pos time.Time, r fsrs.Rating) Sc
 	return out
 }
 
-// getNextFromReview is where an answer leaves a card face the scheduler has put
+// getNextFromReview is where an answer leaves a review card the scheduler has put
 // into review, worked out from how likely it was to come back. The ending it
 // did not come back on is a lapse and is asked again in minutes.
 //
@@ -244,44 +244,44 @@ func (f FSRS) getNextFromReview(one atAnswer, pos time.Time, back float64, r fsr
 	return out
 }
 
-// getRecall is how likely a card face was to come back at the instant it was
+// getRecall is how likely a review card was to come back at the instant it was
 // answered, on the scheduler's own forgetting curve.
 func (f FSRS) getRecall(one atAnswer) float64 {
 	return math.Pow(1+f.p.Factor*one.away/one.last.Stability, f.p.Decay)
 }
 
-// getInterval is how many days an answer sends a card face standing at this
+// getInterval is how many days an answer sends a review card standing at this
 // stability away for, at the share of the cards this scheduler asks to bring
 // back.
 //
 // The parameters carry no fuzz, so the interval is the number this arithmetic
-// gives, and a card face answered the same way is sent away for the same day at
+// gives, and a review card answered the same way is sent away for the same day at
 // every launch.
 func (f FSRS) getInterval(stability float64) float64 {
 	out := stability / f.p.Factor * (math.Pow(f.p.RequestRetention, 1/f.p.Decay) - 1)
 	return math.Max(math.Min(math.Round(out), f.p.MaximumInterval), 1)
 }
 
-// first is the difficulty a card face is opened at by the answer that begins it.
+// first is the difficulty a review card is opened at by the answer that begins it.
 func (f FSRS) first(r fsrs.Rating) float64 {
 	return clampDifficulty(f.p.W[4] - math.Exp(f.p.W[5]*float64(r-1)) + 1)
 }
 
 // getNextDifficulty is where an answer leaves a difficulty, pulled back towards the
-// difficulty an easy answer opens a card face at.
+// difficulty an easy answer opens a review card at.
 func (f FSRS) getNextDifficulty(d float64, r fsrs.Rating) float64 {
 	delta := -f.p.W[6] * float64(r-3)
 	next := d + (10.0-d)*delta/9.0
 	return clampDifficulty(f.p.W[7]*f.first(fsrs.Easy) + (1-f.p.W[7])*next)
 }
 
-// getLearningStability is where an answer leaves the stability of a card face
+// getLearningStability is where an answer leaves the stability of a review card
 // the scheduler is still putting into memory.
 func (f FSRS) getLearningStability(s float64, r fsrs.Rating) float64 {
 	return s * math.Exp(f.p.W[17]*(float64(r-3)+f.p.W[18]))
 }
 
-// getStabilityOnRecall is where an answer the card face came back on leaves its
+// getStabilityOnRecall is where an answer the review card came back on leaves its
 // stability. The two ratings either side of a good answer carry a weight of
 // their own.
 func (f FSRS) getStabilityOnRecall(d, s, back float64, r fsrs.Rating) float64 {
@@ -300,7 +300,7 @@ func (f FSRS) getStabilityOnRecall(d, s, back float64, r fsrs.Rating) float64 {
 		easy)
 }
 
-// getStabilityOnLapse is where an answer the card face did not come back on
+// getStabilityOnLapse is where an answer the review card did not come back on
 // leaves its stability.
 func (f FSRS) getStabilityOnLapse(d, s, back float64) float64 {
 	return f.p.W[11] *

@@ -16,13 +16,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// One vault of two stencils and two decks. The animal stencil has two faces, so
-// each of its cards is two card faces; the term stencil has one.
+// One vault of two card models and two decks. The animal card model has two review cards, so
+// each of its cards is two review cards; the term card model has one.
 var vault = map[string]string{
-	"Animal.md": "---\ntype: stencil\nfields:\n  - Name\n  - Height\n---\n" +
+	"Animal.md": "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n" +
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n" +
 		"\n## Name it\n\n### Front\n\nWhat is {{Height}} at the shoulder?\n\n### Back\n\n{{Name}}\n",
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 	"decks/Mammals.md": "---\ntype: deck\n---\n" +
 		"\n# The ones with fur\n" +
@@ -37,9 +37,9 @@ var vault = map[string]string{
 type vaulted struct {
 	vault     domain.Vault
 	env       vaulttest.Env
-	standings flashcards.ListCardFaces
+	standings flashcards.ListReviewCards
 	presets   flashcards.Presets
-	marking   flashcards.MarkCards
+	assigning flashcards.AssignCardIDs
 	schedules flashcards.Schedules
 	counted   flashcards.CountReviews
 	logs      ports.LogStores
@@ -58,7 +58,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 	}
 
 	logs := env.Ports.Logs
-	standings := flashcards.NewListCardFaces(env.Ports.Readers, env.Queries, env.Queries)
+	standings := flashcards.NewListReviewCards(env.Ports.Readers, env.Queries, env.Queries)
 	presets := flashcards.NewPresets(
 		env.Ports.Readers, env.Ports.Writers,
 		env.Queries, env.Queries, scanned, review.Day{}, time.Now)
@@ -76,7 +76,7 @@ func openVault(t testing.TB, notes map[string]string) vaulted {
 		env:       env,
 		standings: standings,
 		presets:   presets,
-		marking: flashcards.NewMarkCards(
+		assigning: flashcards.NewAssignCardIDs(
 			env.Ports.Readers, env.Ports.Writers,
 			env.Queries, env.Queries, scanned, time.Now),
 		schedules: schedules,
@@ -133,7 +133,7 @@ func newSitting(run *flashcards.LogWriter, now func() time.Time) sitting {
 }
 
 func (s sitting) Answer(
-	ctx context.Context, on review.CardFaceID, r review.Rating, took time.Duration,
+	ctx context.Context, on review.ReviewCardID, r review.Rating, took time.Duration,
 ) (review.Answer, error) {
 	return s.record.Answer(ctx, s.run, on, r, took)
 }
@@ -177,7 +177,7 @@ func (s vaulted) newCountCardsDueAt(day review.Day, now func() time.Time) flashc
 // is scheduled by the defaults.
 func (s vaulted) session(day review.Day) flashcards.Session {
 	return flashcards.NewSession(
-		s.marking, s.standings, s.schedules,
+		s.assigning, s.standings, s.schedules,
 		flashcards.NewPresets(nil, nil, nil, nil, nil, day, time.Now), day, time.Now,
 	)
 }
@@ -185,9 +185,9 @@ func (s vaulted) session(day review.Day) flashcards.Session {
 // today is the day a session is counted in, on this machine.
 var today = review.Day{Starts: review.DayStartTime}
 
-// A card appears once for each face of the stencil that cuts it, because each
-// face asks a different thing.
-func TestACardExistsOnceForEachFaceOfItsStencil(t *testing.T) {
+// A card appears once for each review card of the card model that cuts it, because each
+// review card asks a different thing.
+func TestACardExistsOnceForEachCardOfItsCardModel(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -196,27 +196,27 @@ func TestACardExistsOnceForEachFaceOfItsStencil(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(status) != 5 {
-		t.Fatalf("two cards of two faces and one of one face is five, got %d", len(status))
+		t.Fatalf("two cards of two review cards and one of one review card is five, got %d", len(status))
 	}
 
-	faces := map[string]int{}
+	reviewCards := map[string]int{}
 	for _, one := range status {
-		faces[one.ID.Face]++
+		reviewCards[one.ID.Template]++
 		front, back := one.Lay()
 		if one.ID.Card == "" || front == "" || back == "" {
 			t.Errorf("nothing laid out for %+v", one.ID)
 		}
 	}
-	for face, want := range map[string]int{"Recognise": 2, "Name it": 2, "Say it": 1} {
-		if faces[face] != want {
-			t.Errorf("the face %q stands %d times, want %d", face, faces[face], want)
+	for reviewCard, want := range map[string]int{"Recognise": 2, "Name it": 2, "Say it": 1} {
+		if reviewCards[reviewCard] != want {
+			t.Errorf("the review card %q stands %d times, want %d", reviewCard, reviewCards[reviewCard], want)
 		}
 	}
 }
 
-// The face is laid out with this card's values, so what a person is shown is
+// The review card is laid out with this card's values, so what a person is shown is
 // their own writing.
-func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
+func TestACardIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 
@@ -225,7 +225,7 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range status {
-		if one.ID.Card != "k7m2xq9fzp" || one.ID.Face != "Name it" {
+		if one.ID.Card != "k7m2xq9fzp" || one.ID.Template != "Name it" {
 			continue
 		}
 		front, back := one.Lay()
@@ -240,7 +240,7 @@ func TestAFaceIsLaidOutWithTheCardsOwnValues(t *testing.T) {
 	t.Error("card not found in vault")
 }
 
-// handwritten is a deck of one card that carries no mark, which is what a deck
+// handwritten is a deck of one card that carries no card id, which is what a deck
 // typed by hand is until the application writes it.
 var handwritten = map[string]string{
 	"Term.md": vault["Term.md"],
@@ -248,7 +248,7 @@ var handwritten = map[string]string{
 		"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 }
 
-// A card with no mark has nothing an answer could be recorded against, so
+// A card with no card id has nothing an answer could be recorded against, so
 // nothing stands for it. Reading what a vault holds writes nothing.
 func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 	t.Parallel()
@@ -268,7 +268,7 @@ func TestACardWithNoMarkExistsForNothing(t *testing.T) {
 }
 
 // mixed is a deck a person wrote and edited: prose of their own, a section, one
-// card that already carries a mark and one that does not.
+// card that already carries a card id and one that does not.
 var mixed = map[string]string{
 	"Term.md": vault["Term.md"],
 	"decks/Mine.md": "---\ntype: deck\n---\n" +
@@ -280,21 +280,21 @@ var mixed = map[string]string{
 		"\n### Слово\n\nLoam\n\n### Значение\n\nSand, silt and clay in the right measure\n",
 }
 
-// Marking changes the marks and nothing else. The deck is the person's own
-// writing, and a mark minted over one a card already carries would orphan every
+// assigning card ids changes the card ids and nothing else. The deck is the person's own
+// writing, and a card id minted over one a card already carries would orphan every
 // answer that card has ever been given.
 func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, mixed)
 	before := read(t, s.vault, "decks/Mine.md")
 
-	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.assigning.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	after := read(t, s.vault, "decks/Mine.md")
 
 	if !strings.Contains(after, "## Leaf mould ^k7m2xq9fzp") {
-		t.Error("the mark the card already carried is not the mark it carries now")
+		t.Error("the card id the card already carried is not the card id it carries now")
 	}
 	for _, fragment := range []string{
 		"What I keep meaning to learn, and never do.",
@@ -312,19 +312,19 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(status) != 2 {
-		t.Fatalf("two cards of a one-faced stencil stand twice, got %d", len(status))
+		t.Fatalf("two cards of a one-template card model stand twice, got %d", len(status))
 	}
 
 	if after == before {
-		t.Error("the deck held a card with no mark and was not written")
+		t.Error("the deck held a card with no card id and was not written")
 	}
 
-	// And a deck whose cards all carry marks is not written again. The bytes of
+	// And a deck whose cards all carry card ids is not written again. The bytes of
 	// a faithful rewrite are the same bytes, so what says it was left alone is
 	// the file's own time: a write nobody needed wakes every watcher on the
 	// vault and sends the deck through the index again.
 	was := getModTime(t, s.vault, "decks/Mine.md")
-	again, err := s.marking.Execute(t.Context(), s.vault)
+	again, err := s.assigning.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,10 +332,10 @@ func TestMarkingChangesTheMarksAndNothingElse(t *testing.T) {
 		t.Errorf("could not write %v", again.Unwritten)
 	}
 	if now := getModTime(t, s.vault, "decks/Mine.md"); !now.Equal(was) {
-		t.Errorf("a deck with nothing to mark was written at %v, having stood at %v", now, was)
+		t.Errorf("a deck with nothing to card id was written at %v, having stood at %v", now, was)
 	}
 	if now := read(t, s.vault, "decks/Mine.md"); now != after {
-		t.Errorf("a deck with nothing to mark was changed\n was %q\n now %q", after, now)
+		t.Errorf("a deck with nothing to card id was changed\n was %q\n now %q", after, now)
 	}
 }
 
@@ -349,13 +349,13 @@ func getModTime(t *testing.T, v domain.Vault, path string) time.Time {
 	return pos.ModTime()
 }
 
-// A person starting a session on a vault has its cards given marks, and what stands
+// A person starting a session on a vault has its cards given card ids, and what stands
 // then is what they are asked.
 func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
-	if _, err := s.marking.Execute(t.Context(), s.vault); err != nil {
+	if _, err := s.assigning.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	status, err := s.standings.Execute(t.Context(), s.vault)
@@ -363,10 +363,10 @@ func TestSessionDownToAVaultMarksItsCards(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(status) != 1 {
-		t.Fatalf("one card of a one-faced stencil appears once, got %d", len(status))
+		t.Fatalf("one card of a one-template card model appears once, got %d", len(status))
 	}
 	if status[0].ID.Card == "" {
-		t.Error("the card came back with no mark to record an answer against")
+		t.Error("the card came back with no card id to record an answer against")
 	}
 }
 
@@ -385,9 +385,9 @@ func TestCountingAVaultWritesNothingToIt(t *testing.T) {
 	}
 }
 
-// A card whose wikilink reaches a note that is not a stencil is a card no face
+// A card whose wikilink reaches a note that is not a card model is a card no review card
 // shows. It is left out, and the rest of the vault is reviewed.
-func TestACardWithNoStencilIsLeftOut(t *testing.T) {
+func TestACardWithNoCardModelIsLeftOut(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
 		"Term.md":    vault["Term.md"],
@@ -403,18 +403,18 @@ func TestACardWithNoStencilIsLeftOut(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(status) != 1 || status[0].ID.Card != "3f4g5h6j7k" {
-		t.Errorf("stands = %+v, want the one card whose stencil is one", status)
+		t.Errorf("stands = %+v, want the one card whose card model is one", status)
 	}
 }
 
-// A face missing a front or a back lays out nothing, so nothing is asked through
-// it. The stencil's other faces are asked as usual.
-func TestAFaceMissingASideIsNotAsked(t *testing.T) {
+// A review card missing a front or a back lays out nothing, so nothing is asked through
+// it. The card model's other review cards are asked as usual.
+func TestACardMissingASideIsNotAsked(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{
-		"Half.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+		"Half.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n" +
-			"\n## Half a face\n\n### Front\n\n{{Meaning}}\n",
+			"\n## Half a review card\n\n### Front\n\n{{Meaning}}\n",
 		"decks/Half.md": "---\ntype: deck\n---\n" +
 			"\n## Leaf mould ^3f4g5h6j7k\n\n[[Half]]\n\n### Word\n\nLeaf mould\n" +
 			"\n### Meaning\n\nLeaves\n",
@@ -425,8 +425,8 @@ func TestAFaceMissingASideIsNotAsked(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(status) != 1 || status[0].ID.Face != "Say it" {
-		t.Errorf("stands = %+v, want the one face with both its sides", status)
+	if len(status) != 1 || status[0].ID.Template != "Say it" {
+		t.Errorf("stands = %+v, want the one review card with both its sides", status)
 	}
 }
 
@@ -462,8 +462,8 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owing.Faces != 5 || owing.New != 5 || owing.Due != 0 {
-		t.Errorf("owing = %+v, want five card faces and five of them new", owing)
+	if owing.ReviewCards != 5 || owing.New != 5 || owing.Due != 0 {
+		t.Errorf("owing = %+v, want five review cards and five of them new", owing)
 	}
 	if len(owing.Decks) != 2 {
 		t.Errorf("counted %d decks, want 2", len(owing.Decks))
@@ -476,7 +476,7 @@ func TestAVaultNobodyAnsweredOwesEverythingAsNew(t *testing.T) {
 func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -485,8 +485,8 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if owing.Faces != 5 || owing.New != 4 || owing.Due != 0 {
-		t.Errorf("owing = %+v, want the answered face counted as neither new nor due", owing)
+	if owing.ReviewCards != 5 || owing.New != 4 || owing.Due != 0 {
+		t.Errorf("owing = %+v, want the answered review card counted as neither new nor due", owing)
 	}
 	for _, deck := range owing.Decks {
 		if deck.Deck == "decks/Mammals.md" && (deck.New != 3 || deck.Due != 0) {
@@ -510,7 +510,7 @@ func TestACardInsertDaysAwayIsNotOwedToday(t *testing.T) {
 func TestACardReachesBackOnTheDayItsScheduleFallsOn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -551,7 +551,7 @@ func TestAnAnswerIsSavedDownAndReadBack(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 4*time.Second); err != nil {
 		t.Fatal(err)
@@ -579,7 +579,7 @@ func TestAnAnswerTakenBackPreservesTheCardUnanswered(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	when := time.Now()
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	record := s.run(t, when)
 	provided, err := record.Answer(t.Context(), on, review.Good, time.Second)
@@ -606,7 +606,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 	record := s.run(t, time.Now())
 
 	if _, err := record.Answer(
-		t.Context(), review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}, review.Rating(9), 0,
+		t.Context(), review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}, review.Rating(9), 0,
 	); err == nil {
 		t.Error("a rating of nine was written down")
 	}
@@ -620,8 +620,8 @@ func TestASessionAsksWhatIsOwedBeforeWhatIsNew(t *testing.T) {
 	long := time.Now().Add(-30 * 24 * time.Hour)
 	recent := time.Now().Add(-3 * 24 * time.Hour)
 
-	waited := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	lately := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	waited := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	lately := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
 	if _, err := s.run(t, long).Answer(t.Context(), waited, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -674,7 +674,7 @@ func TestASessionOverOneDeckAsksThatDeckAlone(t *testing.T) {
 func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	when := time.Now().Add(-72 * time.Hour)
 
 	record := s.run(t, when)
@@ -700,11 +700,11 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 	replayed := review.OrderAnswers(target.Answers).Replay(today, review.ScheduleBy(review.NewFSRS()))
 
 	if len(cached) != len(replayed) {
-		t.Fatalf("the cache holds %d card faces and the answers say %d", len(cached), len(replayed))
+		t.Fatalf("the cache holds %d review cards and the answers say %d", len(cached), len(replayed))
 	}
-	for face, want := range replayed {
-		if got := cached[face]; got != want {
-			t.Errorf("the cache says %+v for %+v, the answers say %+v", got, face, want)
+	for reviewCard, want := range replayed {
+		if got := cached[reviewCard]; got != want {
+			t.Errorf("the cache says %+v for %+v, the answers say %+v", got, reviewCard, want)
 		}
 	}
 }
@@ -714,8 +714,8 @@ func TestACacheReadBackReturnsWhatTheAnswersSay(t *testing.T) {
 func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	invented := review.CardFaceID{Card: "nobodyhasit", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	invented := review.ReviewCardID{Card: "nobodyhasit", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -725,8 +725,8 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 	}
 	rewrite(t, s, func(was *plantedCache) {
 		was.V++
-		was.Faces = append(was.Faces, plantedFace{
-			Card: invented.Card, Face: invented.Face,
+		was.ReviewCards = append(was.ReviewCards, plantedCard{
+			Card: invented.Card, Template: invented.Template,
 			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 7,
 		})
 	})
@@ -748,7 +748,7 @@ func TestACacheOfAShapeThisBuildDoesNotKnowIsThrownAway(t *testing.T) {
 func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	when := time.Now().Add(-24 * time.Hour)
 
 	if _, err := s.run(t, when).Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -782,7 +782,7 @@ func TestARunTheCacheHasNotObservedIsCountedIn(t *testing.T) {
 func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	record := s.run(t, time.Now())
 
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -815,7 +815,7 @@ func TestAnAnswerAppendedToARunAlreadyCountedIsCountedIn(t *testing.T) {
 func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	record := s.run(t, time.Now())
 
 	provided, err := record.Answer(t.Context(), on, review.Good, 0)
@@ -843,8 +843,8 @@ func TestAnAnswerTakenBackInTheSameRunIsNotCounted(t *testing.T) {
 func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	invented := review.CardFaceID{Card: "nobodyhasit", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	invented := review.ReviewCardID{Card: "nobodyhasit", Template: "Recognise"}
 
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
@@ -852,19 +852,19 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 
 	// A cache another scheduler left, current in every other way and saying
 	// what no reading of the answers could: the card answered seven times, and
-	// a card face the vault has never held.
+	// a review card the vault has never held.
 	other := flashcards.NewSchedules(s.logs, named{Scheduler: review.NewFSRS(), name: "another-one"}, today, s.standings, s.presets)
 	other.Cache = s.schedules.Cache
 	if _, err := other.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	rewrite(t, s, func(was *plantedCache) {
-		was.Faces = append(was.Faces, plantedFace{
-			Card: invented.Card, Face: invented.Face,
+		was.ReviewCards = append(was.ReviewCards, plantedCard{
+			Card: invented.Card, Template: invented.Template,
 			Due: formatTime(time.Now()), Last: formatTime(time.Now()), Reps: 1,
 		})
-		for item := range was.Faces {
-			was.Faces[item].Reps = 7
+		for item := range was.ReviewCards {
+			was.ReviewCards[item].Reps = 7
 		}
 	})
 
@@ -876,17 +876,17 @@ func TestACacheFilledByAnotherSchedulerIsThrownAway(t *testing.T) {
 		t.Errorf("the answers were not read again: %+v", got[on])
 	}
 	if _, target := got[invented]; target {
-		t.Error("a card face only the other scheduler's cache names came back")
+		t.Error("a review card only the other scheduler's cache names came back")
 	}
 }
 
 // plantedCache is the cache file as a test writes one, which is the shape the
 // scheduler reads and no more of it than a test needs.
 type plantedCache struct {
-	V     int           `json:"v"`
-	By    string        `json:"by"`
-	Files []plantedFile `json:"files"`
-	Faces []plantedFace `json:"faces"`
+	V           int           `json:"v"`
+	By          string        `json:"by"`
+	Files       []plantedFile `json:"files"`
+	ReviewCards []plantedCard `json:"templates"`
 }
 
 type plantedFile struct {
@@ -894,12 +894,12 @@ type plantedFile struct {
 	Size int    `json:"size"`
 }
 
-type plantedFace struct {
-	Card string `json:"card"`
-	Face string `json:"face"`
-	Due  string `json:"due"`
-	Last string `json:"last"`
-	Reps int    `json:"reps"`
+type plantedCard struct {
+	Card     string `json:"card"`
+	Template string `json:"template"`
+	Due      string `json:"due"`
+	Last     string `json:"last"`
+	Reps     int    `json:"reps"`
 }
 
 func formatTime(pos time.Time) string { return pos.UTC().Format(review.TimestampLayout) }

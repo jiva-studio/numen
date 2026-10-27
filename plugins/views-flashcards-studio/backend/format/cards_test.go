@@ -30,22 +30,22 @@ func TestACardContainsNoValueBelowAFieldItDoesNotHave(t *testing.T) {
 }
 
 func TestADeckContainingNoCardOfAMarkReturnsSo(t *testing.T) {
-	deck := format.Deck{Cards: []format.Card{{Mark: "aaaaaaaaaa", Heading: "ant"}}}
+	deck := format.Deck{Cards: []format.Card{{CardID: "aaaaaaaaaa", Heading: "ant"}}}
 
 	got, err := deck.Card("bbbbbbbbbb")
 
 	if !errors.Is(err, format.ErrNoSuchCard) {
 		t.Fatalf("Card(bbbbbbbbbb) error = %v, want ErrNoSuchCard", err)
 	}
-	if got.Heading != "" || got.Mark != "" {
+	if got.Heading != "" || got.CardID != "" {
 		t.Errorf("Card(bbbbbbbbbb) = %+v, want no card", got)
 	}
 }
 
 func TestADeckContainingTwoCardsOfAMarkReturnsSo(t *testing.T) {
 	deck := format.Deck{Cards: []format.Card{
-		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "ant"},
-		{Mark: cardid.ID("aaaaaaaaaa"), Heading: "bee"},
+		{CardID: cardid.ID("aaaaaaaaaa"), Heading: "ant"},
+		{CardID: cardid.ID("aaaaaaaaaa"), Heading: "bee"},
 	}}
 
 	if _, err := deck.Card("aaaaaaaaaa"); !errors.Is(err, format.ErrTwoCards) {
@@ -96,7 +96,7 @@ type atom struct {
 // of: prose the cut may fall anywhere in, and the runs it may not — a wikilink,
 // an embed, a run of emphasis, and the shapes that stand one inside another.
 //
-// The prose carries no bracket, no star, no underscore and no exclamation mark,
+// The prose carries no bracket, no star, no underscore and no exclamation card id,
 // so a piece the cut may fall inside can neither open a run of its own nor
 // close one an earlier piece opened. That is what lets the test say where every
 // unbroken run is without working it out the way the code under test does.
@@ -111,15 +111,15 @@ func drawAtoms(t *rapid.T) []atom {
 		return open + target.Draw(t, "target") + "]]"
 	})
 	run := rapid.Custom(func(t *rapid.T) string {
-		mark := emphasis.Draw(t, "emphasis")
-		return mark + inner.Draw(t, "held") + mark
+		cardID := emphasis.Draw(t, "emphasis")
+		return cardID + inner.Draw(t, "held") + cardID
 	})
 	// A link inside a run of emphasis is the link's, and the run around it is
 	// one run; a link's brackets hold whatever a person wrote, an embed
 	// included, and the link closes at its own last pair.
 	nested := rapid.Custom(func(t *rapid.T) string {
-		mark := emphasis.Draw(t, "emphasis")
-		return mark + inner.Draw(t, "before") + link.Draw(t, "link") + mark
+		cardID := emphasis.Draw(t, "emphasis")
+		return cardID + inner.Draw(t, "before") + link.Draw(t, "link") + cardID
 	})
 	targetVal := rapid.Custom(func(t *rapid.T) string {
 		return "[[" + target.Draw(t, "target") + " ![[" +

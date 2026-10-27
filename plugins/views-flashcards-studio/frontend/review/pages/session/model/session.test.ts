@@ -4,13 +4,13 @@ import { useReviewSession } from './session'
 import type { SessionClient, SessionStart } from './session'
 
 /** One card as the application hands it over. */
-const createCard = (mark: string) => ({
+const createCard = (cardId: string) => ({
   deck: 'decks/Words.md',
   section: '',
-  mark,
-  face: 'Say it',
-  heading: mark,
-  front: `<p>${mark}</p>`,
+  cardId,
+  template: 'Say it',
+  heading: cardId,
+  front: `<p>${cardId}</p>`,
   back: '<p>and back</p>',
   isNew: true,
   intervals: undefined,
@@ -110,7 +110,7 @@ describe('a session', () => {
 
     expect(report).toEqual({ unwritten: [], skipped: 0 })
     expect(one.cardList.value).toHaveLength(3)
-    expect(one.card.value?.mark).toBe('one')
+    expect(one.card.value?.cardId).toBe('one')
     expect(one.isAnswerShown.value).toBe(false)
     expect(one.left.value).toBe(3)
     expect(one.over.value).toBe(false)
@@ -157,7 +157,7 @@ describe('a session', () => {
 
     expect(errors).toHaveLength(1)
     expect(one.cardIndex.value).toBe(0)
-    expect(one.card.value?.mark).toBe('one')
+    expect(one.card.value?.cardId).toBe('one')
     expect(one.isAnswerShown.value).toBe(true)
     expect(one.answers.value).toEqual([])
     expect(asks.filter((ask) => ask.what === 'answer')).toHaveLength(1)
@@ -177,11 +177,11 @@ describe('a session', () => {
     await one.start('01VAULT', '')
     one.show()
     await one.answer('good')
-    expect(one.card.value?.mark).toBe('two')
+    expect(one.card.value?.cardId).toBe('two')
 
     await one.takeBack()
 
-    expect(one.card.value?.mark).toBe('one')
+    expect(one.card.value?.cardId).toBe('one')
     expect(one.isAnswerShown.value).toBe(true)
     expect(one.answers.value).toEqual([])
     expect(one.completedCount.value).toBe(0)
@@ -301,7 +301,7 @@ describe('the next card', () => {
     one.show()
     await one.answer('good')
 
-    expect(one.card.value?.mark).toBe('two')
+    expect(one.card.value?.cardId).toBe('two')
     expect(one.isAnswerShown.value).toBe(false)
   })
 })
@@ -330,7 +330,7 @@ describe('an answer taken back', () => {
 
     await one.takeBack()
 
-    expect(one.card.value?.mark).toBe('two')
+    expect(one.card.value?.cardId).toBe('two')
     expect(one.answers.value).toEqual(['011'])
   })
 
@@ -365,7 +365,7 @@ describe('an answer taken back', () => {
     settle()
     await first
     expect(one.writing.value).toBe(false)
-    expect(one.card.value?.mark).toBe('one')
+    expect(one.card.value?.cardId).toBe('one')
   })
 
   it('leaves the session free to answer again once it fails', async () => {
@@ -394,7 +394,7 @@ describe('an answer taken back', () => {
 
     refuses = false
     await one.takeBack()
-    expect(one.card.value?.mark).toBe('one')
+    expect(one.card.value?.cardId).toBe('one')
   })
 })
 
@@ -408,8 +408,8 @@ describe('the cards a session opens on', () => {
             {
               deck: 'decks/Words.md',
               section: 'Garden',
-              mark: '3f4g5h6j7k',
-              face: 'Say it',
+              cardId: '3f4g5h6j7k',
+              template: 'Say it',
               heading: 'Leaf mould',
               front: '<p>Leaf mould</p>',
               back: '<p>Compost made of fallen leaves alone</p>',
@@ -432,8 +432,8 @@ describe('the cards a session opens on', () => {
       {
         deck: 'decks/Words.md',
         section: 'Garden',
-        mark: '3f4g5h6j7k',
-        face: 'Say it',
+        cardId: '3f4g5h6j7k',
+        template: 'Say it',
         heading: 'Leaf mould',
         front: '<p>Leaf mould</p>',
         back: '<p>Compost made of fallen leaves alone</p>',

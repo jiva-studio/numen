@@ -92,10 +92,10 @@ type VaultCardsDue struct {
 	Id   string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Name string `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// Total card faces, currently due faces, and unreviewed faces.
-	Faces int32 `protobuf:"varint,4,opt,name=faces,proto3" json:"faces,omitempty"`
-	Due   int32 `protobuf:"varint,5,opt,name=due,proto3" json:"due,omitempty"`
-	New   int32 `protobuf:"varint,6,opt,name=new,proto3" json:"new,omitempty"`
+	// Total review cards, review cards due now, and review cards never reviewed.
+	ReviewCards int32 `protobuf:"varint,4,opt,name=review_cards,json=reviewCards,proto3" json:"review_cards,omitempty"`
+	Due         int32 `protobuf:"varint,5,opt,name=due,proto3" json:"due,omitempty"`
+	New         int32 `protobuf:"varint,6,opt,name=new,proto3" json:"new,omitempty"`
 	// Scheduling counts per deck file.
 	Decks []*DeckCardsDue `protobuf:"bytes,7,rep,name=decks,proto3" json:"decks,omitempty"`
 	// Scheduling counts evaluated per preset.
@@ -159,9 +159,9 @@ func (x *VaultCardsDue) GetPath() string {
 	return ""
 }
 
-func (x *VaultCardsDue) GetFaces() int32 {
+func (x *VaultCardsDue) GetReviewCards() int32 {
 	if x != nil {
-		return x.Faces
+		return x.ReviewCards
 	}
 	return 0
 }
@@ -209,16 +209,16 @@ func (x *VaultCardsDue) GetIsIndexing() bool {
 }
 
 type DeckCardsDue struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	Deck  string                 `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
-	Faces int32                  `protobuf:"varint,2,opt,name=faces,proto3" json:"faces,omitempty"`
-	Due   int32                  `protobuf:"varint,3,opt,name=due,proto3" json:"due,omitempty"`
-	New   int32                  `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
+	state       protoimpl.MessageState `protogen:"open.v1"`
+	Deck        string                 `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
+	ReviewCards int32                  `protobuf:"varint,2,opt,name=review_cards,json=reviewCards,proto3" json:"review_cards,omitempty"`
+	Due         int32                  `protobuf:"varint,3,opt,name=due,proto3" json:"due,omitempty"`
+	New         int32                  `protobuf:"varint,4,opt,name=new,proto3" json:"new,omitempty"`
 	// Number of cards answered during the current review day.
 	Answered int32 `protobuf:"varint,5,opt,name=answered,proto3" json:"answered,omitempty"`
-	// Number of card faces meeting the preset learned criteria.
+	// Number of review cards meeting the preset learned criteria.
 	Learned int32 `protobuf:"varint,6,opt,name=learned,proto3" json:"learned,omitempty"`
-	// Number of card faces that have never been reviewed.
+	// Number of review cards that have never been reviewed.
 	Unbegun       int32 `protobuf:"varint,7,opt,name=unbegun,proto3" json:"unbegun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -261,9 +261,9 @@ func (x *DeckCardsDue) GetDeck() string {
 	return ""
 }
 
-func (x *DeckCardsDue) GetFaces() int32 {
+func (x *DeckCardsDue) GetReviewCards() int32 {
 	if x != nil {
-		return x.Faces
+		return x.ReviewCards
 	}
 	return 0
 }
@@ -312,9 +312,9 @@ type PresetCardsDue struct {
 	Title string `protobuf:"bytes,2,opt,name=title,proto3" json:"title,omitempty"`
 	// Number of decks configured with this preset.
 	Decks int32 `protobuf:"varint,3,opt,name=decks,proto3" json:"decks,omitempty"`
-	// Total card faces across assigned decks.
+	// Total review cards across assigned decks.
 	Cards int32 `protobuf:"varint,4,opt,name=cards,proto3" json:"cards,omitempty"`
-	// Due and new card faces available within the preset budget.
+	// Due and new review cards available within the preset budget.
 	OwedDue int32 `protobuf:"varint,5,opt,name=owed_due,json=owedDue,proto3" json:"owed_due,omitempty"`
 	OwedNew int32 `protobuf:"varint,6,opt,name=owed_new,json=owedNew,proto3" json:"owed_new,omitempty"`
 	// Answer counts and elapsed review time for the current review day.
@@ -562,15 +562,15 @@ func (x *Intervals) GetEasy() int64 {
 	return 0
 }
 
-// SessionCard represents a rendered card face presented during a review session.
+// SessionCard represents a rendered review card presented during a review session.
 type SessionCard struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// Deck file path and section header name.
 	Deck    string `protobuf:"bytes,1,opt,name=deck,proto3" json:"deck,omitempty"`
 	Section string `protobuf:"bytes,2,opt,name=section,proto3" json:"section,omitempty"`
-	// Card identifier and face template name.
-	Mark string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
-	Face string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
+	// Card id and template name.
+	CardId   string `protobuf:"bytes,3,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	Template string `protobuf:"bytes,4,opt,name=template,proto3" json:"template,omitempty"`
 	// First line of the card primary field.
 	Heading string `protobuf:"bytes,5,opt,name=heading,proto3" json:"heading,omitempty"`
 	// Rendered HTML content for card front and back.
@@ -629,16 +629,16 @@ func (x *SessionCard) GetSection() string {
 	return ""
 }
 
-func (x *SessionCard) GetMark() string {
+func (x *SessionCard) GetCardId() string {
 	if x != nil {
-		return x.Mark
+		return x.CardId
 	}
 	return ""
 }
 
-func (x *SessionCard) GetFace() string {
+func (x *SessionCard) GetTemplate() string {
 	if x != nil {
-		return x.Face
+		return x.Template
 	}
 	return ""
 }
@@ -921,10 +921,10 @@ type AnswerCardRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Vault string                 `protobuf:"bytes,1,opt,name=vault,proto3" json:"vault,omitempty"`
 	Run   string                 `protobuf:"bytes,2,opt,name=run,proto3" json:"run,omitempty"`
-	// Card identifier and face name.
-	Mark   string `protobuf:"bytes,3,opt,name=mark,proto3" json:"mark,omitempty"`
-	Face   string `protobuf:"bytes,4,opt,name=face,proto3" json:"face,omitempty"`
-	Rating Rating `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.flashcards.v1.Rating" json:"rating,omitempty"`
+	// Card id and template name.
+	CardId   string `protobuf:"bytes,3,opt,name=card_id,json=cardId,proto3" json:"card_id,omitempty"`
+	Template string `protobuf:"bytes,4,opt,name=template,proto3" json:"template,omitempty"`
+	Rating   Rating `protobuf:"varint,5,opt,name=rating,proto3,enum=numen.flashcards.v1.Rating" json:"rating,omitempty"`
 	// Time spent viewing the card in milliseconds.
 	TookMs        int64 `protobuf:"varint,6,opt,name=took_ms,json=tookMs,proto3" json:"took_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -975,16 +975,16 @@ func (x *AnswerCardRequest) GetRun() string {
 	return ""
 }
 
-func (x *AnswerCardRequest) GetMark() string {
+func (x *AnswerCardRequest) GetCardId() string {
 	if x != nil {
-		return x.Mark
+		return x.CardId
 	}
 	return ""
 }
 
-func (x *AnswerCardRequest) GetFace() string {
+func (x *AnswerCardRequest) GetTemplate() string {
 	if x != nil {
-		return x.Face
+		return x.Template
 	}
 	return ""
 }
@@ -1788,12 +1788,12 @@ var File_numen_flashcards_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"$numen/flashcards/v1/flashcards.proto\x12\x13numen.flashcards.v1\x1a!numen/flashcards/v1/presets.proto\x1a numen/flashcards/v1/errors.proto\x1a\x15numen/v1/shared.proto\"\xb2\x02\n" +
+	"$numen/flashcards/v1/flashcards.proto\x12\x13numen.flashcards.v1\x1a!numen/flashcards/v1/presets.proto\x1a numen/flashcards/v1/errors.proto\x1a\x15numen/v1/shared.proto\"\xbf\x02\n" +
 	"\rVaultCardsDue\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +
-	"\x04path\x18\x03 \x01(\tR\x04path\x12\x14\n" +
-	"\x05faces\x18\x04 \x01(\x05R\x05faces\x12\x10\n" +
+	"\x04path\x18\x03 \x01(\tR\x04path\x12!\n" +
+	"\freview_cards\x18\x04 \x01(\x05R\vreviewCards\x12\x10\n" +
 	"\x03due\x18\x05 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x06 \x01(\x05R\x03new\x127\n" +
 	"\x05decks\x18\a \x03(\v2!.numen.flashcards.v1.DeckCardsDueR\x05decks\x12=\n" +
@@ -1801,10 +1801,10 @@ const file_numen_flashcards_v1_flashcards_proto_rawDesc = "" +
 	"\x06unread\x18\t \x01(\tR\x06unread\x12\x1f\n" +
 	"\vis_indexing\x18\n" +
 	" \x01(\bR\n" +
-	"isIndexing\"\xac\x01\n" +
+	"isIndexing\"\xb9\x01\n" +
 	"\fDeckCardsDue\x12\x12\n" +
-	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x14\n" +
-	"\x05faces\x18\x02 \x01(\x05R\x05faces\x12\x10\n" +
+	"\x04deck\x18\x01 \x01(\tR\x04deck\x12!\n" +
+	"\freview_cards\x18\x02 \x01(\x05R\vreviewCards\x12\x10\n" +
 	"\x03due\x18\x03 \x01(\x05R\x03due\x12\x10\n" +
 	"\x03new\x18\x04 \x01(\x05R\x03new\x12\x1a\n" +
 	"\banswered\x18\x05 \x01(\x05R\banswered\x12\x18\n" +
@@ -1835,12 +1835,12 @@ const file_numen_flashcards_v1_flashcards_proto_rawDesc = "" +
 	"\x05again\x18\x01 \x01(\x03R\x05again\x12\x12\n" +
 	"\x04hard\x18\x02 \x01(\x03R\x04hard\x12\x12\n" +
 	"\x04good\x18\x03 \x01(\x03R\x04good\x12\x12\n" +
-	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\x8e\x02\n" +
+	"\x04easy\x18\x04 \x01(\x03R\x04easy\"\x9b\x02\n" +
 	"\vSessionCard\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x18\n" +
-	"\asection\x18\x02 \x01(\tR\asection\x12\x12\n" +
-	"\x04mark\x18\x03 \x01(\tR\x04mark\x12\x12\n" +
-	"\x04face\x18\x04 \x01(\tR\x04face\x12\x18\n" +
+	"\asection\x18\x02 \x01(\tR\asection\x12\x17\n" +
+	"\acard_id\x18\x03 \x01(\tR\x06cardId\x12\x1a\n" +
+	"\btemplate\x18\x04 \x01(\tR\btemplate\x12\x18\n" +
 	"\aheading\x18\x05 \x01(\tR\aheading\x12\x14\n" +
 	"\x05front\x18\x06 \x01(\tR\x05front\x12\x12\n" +
 	"\x04back\x18\a \x01(\tR\x04back\x12\x15\n" +
@@ -1862,12 +1862,12 @@ const file_numen_flashcards_v1_flashcards_proto_rawDesc = "" +
 	"\x03run\x18\x01 \x01(\tR\x03run\x126\n" +
 	"\x05cards\x18\x02 \x03(\v2 .numen.flashcards.v1.SessionCardR\x05cards\x12\x1c\n" +
 	"\tunwritten\x18\x03 \x03(\tR\tunwritten\x12\x18\n" +
-	"\askipped\x18\x04 \x01(\x05R\askipped\"\xb1\x01\n" +
+	"\askipped\x18\x04 \x01(\x05R\askipped\"\xbe\x01\n" +
 	"\x11AnswerCardRequest\x12\x14\n" +
 	"\x05vault\x18\x01 \x01(\tR\x05vault\x12\x10\n" +
-	"\x03run\x18\x02 \x01(\tR\x03run\x12\x12\n" +
-	"\x04mark\x18\x03 \x01(\tR\x04mark\x12\x12\n" +
-	"\x04face\x18\x04 \x01(\tR\x04face\x123\n" +
+	"\x03run\x18\x02 \x01(\tR\x03run\x12\x17\n" +
+	"\acard_id\x18\x03 \x01(\tR\x06cardId\x12\x1a\n" +
+	"\btemplate\x18\x04 \x01(\tR\btemplate\x123\n" +
 	"\x06rating\x18\x05 \x01(\x0e2\x1b.numen.flashcards.v1.RatingR\x06rating\x12\x17\n" +
 	"\atook_ms\x18\x06 \x01(\x03R\x06tookMs\",\n" +
 	"\x12AnswerCardResponse\x12\x16\n" +

@@ -2,12 +2,12 @@
 //
 // Source: numen/flashcards/v1/cards.proto
 
-// What a client may ask about the stencils and the decks a vault holds.
+// What a client may ask about the card models and the decks a vault holds.
 //
-// A stencil declares the fields a card has and the faces it is shown by; a
+// A card model declares the fields a card has and the templates it is shown by; a
 // deck holds the cards. Both are notes, so both are addressed by the path they
 //
-// Nothing here is laid out. A face travels as the markdown it was written as,
+// Nothing here is laid out. A template travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
 // the client's.
 package flashcardsv1connect
@@ -41,21 +41,21 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// CardsServiceListStencilsProcedure is the fully-qualified name of the CardsService's ListStencils
-	// RPC.
-	CardsServiceListStencilsProcedure = "/numen.flashcards.v1.CardsService/ListStencils"
-	// CardsServiceCreateStencilProcedure is the fully-qualified name of the CardsService's
-	// CreateStencil RPC.
-	CardsServiceCreateStencilProcedure = "/numen.flashcards.v1.CardsService/CreateStencil"
-	// CardsServiceReadStencilProcedure is the fully-qualified name of the CardsService's ReadStencil
-	// RPC.
-	CardsServiceReadStencilProcedure = "/numen.flashcards.v1.CardsService/ReadStencil"
-	// CardsServiceWriteStencilProcedure is the fully-qualified name of the CardsService's WriteStencil
-	// RPC.
-	CardsServiceWriteStencilProcedure = "/numen.flashcards.v1.CardsService/WriteStencil"
-	// CardsServiceRenameStencilFieldProcedure is the fully-qualified name of the CardsService's
-	// RenameStencilField RPC.
-	CardsServiceRenameStencilFieldProcedure = "/numen.flashcards.v1.CardsService/RenameStencilField"
+	// CardsServiceListCardModelsProcedure is the fully-qualified name of the CardsService's
+	// ListCardModels RPC.
+	CardsServiceListCardModelsProcedure = "/numen.flashcards.v1.CardsService/ListCardModels"
+	// CardsServiceCreateCardModelProcedure is the fully-qualified name of the CardsService's
+	// CreateCardModel RPC.
+	CardsServiceCreateCardModelProcedure = "/numen.flashcards.v1.CardsService/CreateCardModel"
+	// CardsServiceReadCardModelProcedure is the fully-qualified name of the CardsService's
+	// ReadCardModel RPC.
+	CardsServiceReadCardModelProcedure = "/numen.flashcards.v1.CardsService/ReadCardModel"
+	// CardsServiceWriteCardModelProcedure is the fully-qualified name of the CardsService's
+	// WriteCardModel RPC.
+	CardsServiceWriteCardModelProcedure = "/numen.flashcards.v1.CardsService/WriteCardModel"
+	// CardsServiceRenameCardModelFieldProcedure is the fully-qualified name of the CardsService's
+	// RenameCardModelField RPC.
+	CardsServiceRenameCardModelFieldProcedure = "/numen.flashcards.v1.CardsService/RenameCardModelField"
 	// CardsServiceCreateDeckProcedure is the fully-qualified name of the CardsService's CreateDeck RPC.
 	CardsServiceCreateDeckProcedure = "/numen.flashcards.v1.CardsService/CreateDeck"
 	// CardsServiceReadDeckProcedure is the fully-qualified name of the CardsService's ReadDeck RPC.
@@ -66,42 +66,42 @@ const (
 
 // CardsServiceClient is a client for the numen.flashcards.v1.CardsService service.
 type CardsServiceClient interface {
-	// ListStencils is what a person choosing what kind of card to write next is
-	// shown: every stencil in the vault, by what it is called and what it asks
-	// for. The faces are read one stencil at a time.
+	// ListCardModels is what a person choosing what kind of card to write next is
+	// shown: every card model in the vault, by what it is called and what it asks
+	// for. The templates are read one card model at a time.
 	//
-	// A stencil that could not be read is absent from the answer.
-	ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error)
-	// CreateStencil puts a stencil in the vault, declaring the fields it is given
-	// and showing no face. The file says it is a stencil from the moment it
+	// A card model that could not be read is absent from the answer.
+	ListCardModels(context.Context, *connect.Request[v1.ListCardModelsRequest]) (*connect.Response[v1.ListCardModelsResponse], error)
+	// CreateCardModel puts a card model in the vault, declaring the fields it is given
+	// and showing no template. The file says it is a card model from the moment it
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
-	// The first field is what a card's heading is read from, so a stencil is
+	// The first field is what a card's heading is read from, so a card model is
 	// made with at least one.
-	CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error)
-	// ReadStencil is the fields and the faces of one stencil.
-	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
-	// WriteStencil puts fields and faces into a stencil. A path the vault holds
+	CreateCardModel(context.Context, *connect.Request[v1.CreateCardModelRequest]) (*connect.Response[v1.CreateCardModelResponse], error)
+	// ReadCardModel is the fields and the templates of one card model.
+	ReadCardModel(context.Context, *connect.Request[v1.ReadCardModelRequest]) (*connect.Response[v1.ReadCardModelResponse], error)
+	// WriteCardModel puts fields and templates into a card model. A path the vault holds
 	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
-	// and a stencil that no longer holds what the caller read is left alone and
+	// and a card model that no longer holds what the caller read is left alone and
 	//
-	// The preamble, the tail and each face's own preamble are written back as they
+	// The preamble, the tail and each template's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
 	// bytes they went in as.
-	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
-	// RenameStencilField gives one of a stencil's fields a different name,
-	// everywhere it is written: where the stencil declares it, in the braces of
-	// every face that places it, and as a heading in every card of every deck
-	// that stencil cuts. What is placed under each heading is left as it was.
+	WriteCardModel(context.Context, *connect.Request[v1.WriteCardModelRequest]) (*connect.Response[v1.WriteCardModelResponse], error)
+	// RenameCardModelField gives one of a card model's fields a different name,
+	// everywhere it is written: where the card model declares it, in the braces of
+	// every template that places it, and as a heading in every card of every deck
+	// that card model cuts. What is placed under each heading is left as it was.
 	//
-	// Every field a stencil declares is placed under its own heading in every card,
+	// Every field a card model declares is placed under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
-	// stencil cuts. A deck the rename could not be written to keeps the old
+	// card model cuts. A deck the rename could not be written to keeps the old
 	// heading and comes back under `not_written`.
 	//
-	// A stencil that no longer holds what the caller read is left alone and
-	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
+	// A card model that no longer holds what the caller read is left alone and
+	RenameCardModelField(context.Context, *connect.Request[v1.RenameCardModelFieldRequest]) (*connect.Response[v1.RenameCardModelFieldResponse], error)
 	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
@@ -133,34 +133,34 @@ func NewCardsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 	baseURL = strings.TrimRight(baseURL, "/")
 	cardsServiceMethods := v1.File_numen_flashcards_v1_cards_proto.Services().ByName("CardsService").Methods()
 	return &cardsServiceClient{
-		listStencils: connect.NewClient[v1.ListStencilsRequest, v1.ListStencilsResponse](
+		listCardModels: connect.NewClient[v1.ListCardModelsRequest, v1.ListCardModelsResponse](
 			httpClient,
-			baseURL+CardsServiceListStencilsProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("ListStencils")),
+			baseURL+CardsServiceListCardModelsProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("ListCardModels")),
 			connect.WithClientOptions(opts...),
 		),
-		createStencil: connect.NewClient[v1.CreateStencilRequest, v1.CreateStencilResponse](
+		createCardModel: connect.NewClient[v1.CreateCardModelRequest, v1.CreateCardModelResponse](
 			httpClient,
-			baseURL+CardsServiceCreateStencilProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("CreateStencil")),
+			baseURL+CardsServiceCreateCardModelProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("CreateCardModel")),
 			connect.WithClientOptions(opts...),
 		),
-		readStencil: connect.NewClient[v1.ReadStencilRequest, v1.ReadStencilResponse](
+		readCardModel: connect.NewClient[v1.ReadCardModelRequest, v1.ReadCardModelResponse](
 			httpClient,
-			baseURL+CardsServiceReadStencilProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("ReadStencil")),
+			baseURL+CardsServiceReadCardModelProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("ReadCardModel")),
 			connect.WithClientOptions(opts...),
 		),
-		writeStencil: connect.NewClient[v1.WriteStencilRequest, v1.WriteStencilResponse](
+		writeCardModel: connect.NewClient[v1.WriteCardModelRequest, v1.WriteCardModelResponse](
 			httpClient,
-			baseURL+CardsServiceWriteStencilProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("WriteStencil")),
+			baseURL+CardsServiceWriteCardModelProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("WriteCardModel")),
 			connect.WithClientOptions(opts...),
 		),
-		renameStencilField: connect.NewClient[v1.RenameStencilFieldRequest, v1.RenameStencilFieldResponse](
+		renameCardModelField: connect.NewClient[v1.RenameCardModelFieldRequest, v1.RenameCardModelFieldResponse](
 			httpClient,
-			baseURL+CardsServiceRenameStencilFieldProcedure,
-			connect.WithSchema(cardsServiceMethods.ByName("RenameStencilField")),
+			baseURL+CardsServiceRenameCardModelFieldProcedure,
+			connect.WithSchema(cardsServiceMethods.ByName("RenameCardModelField")),
 			connect.WithClientOptions(opts...),
 		),
 		createDeck: connect.NewClient[v1.CreateDeckRequest, v1.CreateDeckResponse](
@@ -186,39 +186,39 @@ func NewCardsServiceClient(httpClient connect.HTTPClient, baseURL string, opts .
 
 // cardsServiceClient implements CardsServiceClient.
 type cardsServiceClient struct {
-	listStencils       *connect.Client[v1.ListStencilsRequest, v1.ListStencilsResponse]
-	createStencil      *connect.Client[v1.CreateStencilRequest, v1.CreateStencilResponse]
-	readStencil        *connect.Client[v1.ReadStencilRequest, v1.ReadStencilResponse]
-	writeStencil       *connect.Client[v1.WriteStencilRequest, v1.WriteStencilResponse]
-	renameStencilField *connect.Client[v1.RenameStencilFieldRequest, v1.RenameStencilFieldResponse]
-	createDeck         *connect.Client[v1.CreateDeckRequest, v1.CreateDeckResponse]
-	readDeck           *connect.Client[v1.ReadDeckRequest, v1.ReadDeckResponse]
-	writeDeck          *connect.Client[v1.WriteDeckRequest, v1.WriteDeckResponse]
+	listCardModels       *connect.Client[v1.ListCardModelsRequest, v1.ListCardModelsResponse]
+	createCardModel      *connect.Client[v1.CreateCardModelRequest, v1.CreateCardModelResponse]
+	readCardModel        *connect.Client[v1.ReadCardModelRequest, v1.ReadCardModelResponse]
+	writeCardModel       *connect.Client[v1.WriteCardModelRequest, v1.WriteCardModelResponse]
+	renameCardModelField *connect.Client[v1.RenameCardModelFieldRequest, v1.RenameCardModelFieldResponse]
+	createDeck           *connect.Client[v1.CreateDeckRequest, v1.CreateDeckResponse]
+	readDeck             *connect.Client[v1.ReadDeckRequest, v1.ReadDeckResponse]
+	writeDeck            *connect.Client[v1.WriteDeckRequest, v1.WriteDeckResponse]
 }
 
-// ListStencils calls numen.flashcards.v1.CardsService.ListStencils.
-func (c *cardsServiceClient) ListStencils(ctx context.Context, req *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error) {
-	return c.listStencils.CallUnary(ctx, req)
+// ListCardModels calls numen.flashcards.v1.CardsService.ListCardModels.
+func (c *cardsServiceClient) ListCardModels(ctx context.Context, req *connect.Request[v1.ListCardModelsRequest]) (*connect.Response[v1.ListCardModelsResponse], error) {
+	return c.listCardModels.CallUnary(ctx, req)
 }
 
-// CreateStencil calls numen.flashcards.v1.CardsService.CreateStencil.
-func (c *cardsServiceClient) CreateStencil(ctx context.Context, req *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error) {
-	return c.createStencil.CallUnary(ctx, req)
+// CreateCardModel calls numen.flashcards.v1.CardsService.CreateCardModel.
+func (c *cardsServiceClient) CreateCardModel(ctx context.Context, req *connect.Request[v1.CreateCardModelRequest]) (*connect.Response[v1.CreateCardModelResponse], error) {
+	return c.createCardModel.CallUnary(ctx, req)
 }
 
-// ReadStencil calls numen.flashcards.v1.CardsService.ReadStencil.
-func (c *cardsServiceClient) ReadStencil(ctx context.Context, req *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error) {
-	return c.readStencil.CallUnary(ctx, req)
+// ReadCardModel calls numen.flashcards.v1.CardsService.ReadCardModel.
+func (c *cardsServiceClient) ReadCardModel(ctx context.Context, req *connect.Request[v1.ReadCardModelRequest]) (*connect.Response[v1.ReadCardModelResponse], error) {
+	return c.readCardModel.CallUnary(ctx, req)
 }
 
-// WriteStencil calls numen.flashcards.v1.CardsService.WriteStencil.
-func (c *cardsServiceClient) WriteStencil(ctx context.Context, req *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error) {
-	return c.writeStencil.CallUnary(ctx, req)
+// WriteCardModel calls numen.flashcards.v1.CardsService.WriteCardModel.
+func (c *cardsServiceClient) WriteCardModel(ctx context.Context, req *connect.Request[v1.WriteCardModelRequest]) (*connect.Response[v1.WriteCardModelResponse], error) {
+	return c.writeCardModel.CallUnary(ctx, req)
 }
 
-// RenameStencilField calls numen.flashcards.v1.CardsService.RenameStencilField.
-func (c *cardsServiceClient) RenameStencilField(ctx context.Context, req *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	return c.renameStencilField.CallUnary(ctx, req)
+// RenameCardModelField calls numen.flashcards.v1.CardsService.RenameCardModelField.
+func (c *cardsServiceClient) RenameCardModelField(ctx context.Context, req *connect.Request[v1.RenameCardModelFieldRequest]) (*connect.Response[v1.RenameCardModelFieldResponse], error) {
+	return c.renameCardModelField.CallUnary(ctx, req)
 }
 
 // CreateDeck calls numen.flashcards.v1.CardsService.CreateDeck.
@@ -238,42 +238,42 @@ func (c *cardsServiceClient) WriteDeck(ctx context.Context, req *connect.Request
 
 // CardsServiceHandler is an implementation of the numen.flashcards.v1.CardsService service.
 type CardsServiceHandler interface {
-	// ListStencils is what a person choosing what kind of card to write next is
-	// shown: every stencil in the vault, by what it is called and what it asks
-	// for. The faces are read one stencil at a time.
+	// ListCardModels is what a person choosing what kind of card to write next is
+	// shown: every card model in the vault, by what it is called and what it asks
+	// for. The templates are read one card model at a time.
 	//
-	// A stencil that could not be read is absent from the answer.
-	ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error)
-	// CreateStencil puts a stencil in the vault, declaring the fields it is given
-	// and showing no face. The file says it is a stencil from the moment it
+	// A card model that could not be read is absent from the answer.
+	ListCardModels(context.Context, *connect.Request[v1.ListCardModelsRequest]) (*connect.Response[v1.ListCardModelsResponse], error)
+	// CreateCardModel puts a card model in the vault, declaring the fields it is given
+	// and showing no template. The file says it is a card model from the moment it
 	// exists, so it is one to everything that reads the vault before a card is
 	// cut by it.
 	//
-	// The first field is what a card's heading is read from, so a stencil is
+	// The first field is what a card's heading is read from, so a card model is
 	// made with at least one.
-	CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error)
-	// ReadStencil is the fields and the faces of one stencil.
-	ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error)
-	// WriteStencil puts fields and faces into a stencil. A path the vault holds
+	CreateCardModel(context.Context, *connect.Request[v1.CreateCardModelRequest]) (*connect.Response[v1.CreateCardModelResponse], error)
+	// ReadCardModel is the fields and the templates of one card model.
+	ReadCardModel(context.Context, *connect.Request[v1.ReadCardModelRequest]) (*connect.Response[v1.ReadCardModelResponse], error)
+	// WriteCardModel puts fields and templates into a card model. A path the vault holds
 	// the vault. Every frontmatter key but `fields` stays as the person wrote it,
-	// and a stencil that no longer holds what the caller read is left alone and
+	// and a card model that no longer holds what the caller read is left alone and
 	//
-	// The preamble, the tail and each face's own preamble are written back as they
+	// The preamble, the tail and each template's own preamble are written back as they
 	// arrive, so the parts of the file a client did not touch come out as the
 	// bytes they went in as.
-	WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error)
-	// RenameStencilField gives one of a stencil's fields a different name,
-	// everywhere it is written: where the stencil declares it, in the braces of
-	// every face that places it, and as a heading in every card of every deck
-	// that stencil cuts. What is placed under each heading is left as it was.
+	WriteCardModel(context.Context, *connect.Request[v1.WriteCardModelRequest]) (*connect.Response[v1.WriteCardModelResponse], error)
+	// RenameCardModelField gives one of a card model's fields a different name,
+	// everywhere it is written: where the card model declares it, in the braces of
+	// every template that places it, and as a heading in every card of every deck
+	// that card model cuts. What is placed under each heading is left as it was.
 	//
-	// Every field a stencil declares is placed under its own heading in every card,
+	// Every field a card model declares is placed under its own heading in every card,
 	// the first included, so renaming any of them reaches every deck that
-	// stencil cuts. A deck the rename could not be written to keeps the old
+	// card model cuts. A deck the rename could not be written to keeps the old
 	// heading and comes back under `not_written`.
 	//
-	// A stencil that no longer holds what the caller read is left alone and
-	RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error)
+	// A card model that no longer holds what the caller read is left alone and
+	RenameCardModelField(context.Context, *connect.Request[v1.RenameCardModelFieldRequest]) (*connect.Response[v1.RenameCardModelFieldResponse], error)
 	// CreateDeck puts a deck of no cards in the vault. The file says it is a deck
 	// from the moment it exists, so it is one to everything that reads the vault
 	// before a card is written into it.
@@ -301,34 +301,34 @@ type CardsServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	cardsServiceMethods := v1.File_numen_flashcards_v1_cards_proto.Services().ByName("CardsService").Methods()
-	cardsServiceListStencilsHandler := connect.NewUnaryHandler(
-		CardsServiceListStencilsProcedure,
-		svc.ListStencils,
-		connect.WithSchema(cardsServiceMethods.ByName("ListStencils")),
+	cardsServiceListCardModelsHandler := connect.NewUnaryHandler(
+		CardsServiceListCardModelsProcedure,
+		svc.ListCardModels,
+		connect.WithSchema(cardsServiceMethods.ByName("ListCardModels")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceCreateStencilHandler := connect.NewUnaryHandler(
-		CardsServiceCreateStencilProcedure,
-		svc.CreateStencil,
-		connect.WithSchema(cardsServiceMethods.ByName("CreateStencil")),
+	cardsServiceCreateCardModelHandler := connect.NewUnaryHandler(
+		CardsServiceCreateCardModelProcedure,
+		svc.CreateCardModel,
+		connect.WithSchema(cardsServiceMethods.ByName("CreateCardModel")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceReadStencilHandler := connect.NewUnaryHandler(
-		CardsServiceReadStencilProcedure,
-		svc.ReadStencil,
-		connect.WithSchema(cardsServiceMethods.ByName("ReadStencil")),
+	cardsServiceReadCardModelHandler := connect.NewUnaryHandler(
+		CardsServiceReadCardModelProcedure,
+		svc.ReadCardModel,
+		connect.WithSchema(cardsServiceMethods.ByName("ReadCardModel")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceWriteStencilHandler := connect.NewUnaryHandler(
-		CardsServiceWriteStencilProcedure,
-		svc.WriteStencil,
-		connect.WithSchema(cardsServiceMethods.ByName("WriteStencil")),
+	cardsServiceWriteCardModelHandler := connect.NewUnaryHandler(
+		CardsServiceWriteCardModelProcedure,
+		svc.WriteCardModel,
+		connect.WithSchema(cardsServiceMethods.ByName("WriteCardModel")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cardsServiceRenameStencilFieldHandler := connect.NewUnaryHandler(
-		CardsServiceRenameStencilFieldProcedure,
-		svc.RenameStencilField,
-		connect.WithSchema(cardsServiceMethods.ByName("RenameStencilField")),
+	cardsServiceRenameCardModelFieldHandler := connect.NewUnaryHandler(
+		CardsServiceRenameCardModelFieldProcedure,
+		svc.RenameCardModelField,
+		connect.WithSchema(cardsServiceMethods.ByName("RenameCardModelField")),
 		connect.WithHandlerOptions(opts...),
 	)
 	cardsServiceCreateDeckHandler := connect.NewUnaryHandler(
@@ -351,16 +351,16 @@ func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOpti
 	)
 	return "/numen.flashcards.v1.CardsService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case CardsServiceListStencilsProcedure:
-			cardsServiceListStencilsHandler.ServeHTTP(w, r)
-		case CardsServiceCreateStencilProcedure:
-			cardsServiceCreateStencilHandler.ServeHTTP(w, r)
-		case CardsServiceReadStencilProcedure:
-			cardsServiceReadStencilHandler.ServeHTTP(w, r)
-		case CardsServiceWriteStencilProcedure:
-			cardsServiceWriteStencilHandler.ServeHTTP(w, r)
-		case CardsServiceRenameStencilFieldProcedure:
-			cardsServiceRenameStencilFieldHandler.ServeHTTP(w, r)
+		case CardsServiceListCardModelsProcedure:
+			cardsServiceListCardModelsHandler.ServeHTTP(w, r)
+		case CardsServiceCreateCardModelProcedure:
+			cardsServiceCreateCardModelHandler.ServeHTTP(w, r)
+		case CardsServiceReadCardModelProcedure:
+			cardsServiceReadCardModelHandler.ServeHTTP(w, r)
+		case CardsServiceWriteCardModelProcedure:
+			cardsServiceWriteCardModelHandler.ServeHTTP(w, r)
+		case CardsServiceRenameCardModelFieldProcedure:
+			cardsServiceRenameCardModelFieldHandler.ServeHTTP(w, r)
 		case CardsServiceCreateDeckProcedure:
 			cardsServiceCreateDeckHandler.ServeHTTP(w, r)
 		case CardsServiceReadDeckProcedure:
@@ -376,24 +376,24 @@ func NewCardsServiceHandler(svc CardsServiceHandler, opts ...connect.HandlerOpti
 // UnimplementedCardsServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedCardsServiceHandler struct{}
 
-func (UnimplementedCardsServiceHandler) ListStencils(context.Context, *connect.Request[v1.ListStencilsRequest]) (*connect.Response[v1.ListStencilsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.ListStencils is not implemented"))
+func (UnimplementedCardsServiceHandler) ListCardModels(context.Context, *connect.Request[v1.ListCardModelsRequest]) (*connect.Response[v1.ListCardModelsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.ListCardModels is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) CreateStencil(context.Context, *connect.Request[v1.CreateStencilRequest]) (*connect.Response[v1.CreateStencilResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.CreateStencil is not implemented"))
+func (UnimplementedCardsServiceHandler) CreateCardModel(context.Context, *connect.Request[v1.CreateCardModelRequest]) (*connect.Response[v1.CreateCardModelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.CreateCardModel is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) ReadStencil(context.Context, *connect.Request[v1.ReadStencilRequest]) (*connect.Response[v1.ReadStencilResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.ReadStencil is not implemented"))
+func (UnimplementedCardsServiceHandler) ReadCardModel(context.Context, *connect.Request[v1.ReadCardModelRequest]) (*connect.Response[v1.ReadCardModelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.ReadCardModel is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) WriteStencil(context.Context, *connect.Request[v1.WriteStencilRequest]) (*connect.Response[v1.WriteStencilResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.WriteStencil is not implemented"))
+func (UnimplementedCardsServiceHandler) WriteCardModel(context.Context, *connect.Request[v1.WriteCardModelRequest]) (*connect.Response[v1.WriteCardModelResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.WriteCardModel is not implemented"))
 }
 
-func (UnimplementedCardsServiceHandler) RenameStencilField(context.Context, *connect.Request[v1.RenameStencilFieldRequest]) (*connect.Response[v1.RenameStencilFieldResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.RenameStencilField is not implemented"))
+func (UnimplementedCardsServiceHandler) RenameCardModelField(context.Context, *connect.Request[v1.RenameCardModelFieldRequest]) (*connect.Response[v1.RenameCardModelFieldResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.flashcards.v1.CardsService.RenameCardModelField is not implemented"))
 }
 
 func (UnimplementedCardsServiceHandler) CreateDeck(context.Context, *connect.Request[v1.CreateDeckRequest]) (*connect.Response[v1.CreateDeckResponse], error) {

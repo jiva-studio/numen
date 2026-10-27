@@ -35,18 +35,18 @@ type Curve struct {
 	Stops StopReason
 	// Decks is the count of decks scheduled by this preset.
 	Decks int
-	// Cards is the total count of card faces in those decks.
+	// Cards is the total count of review cards in those decks.
 	Cards int
-	// Overdue is the count of card faces past due.
-	// Unbegun is the count of card faces with no review history.
+	// Overdue is the count of review cards past due.
+	// Unbegun is the count of review cards with no review history.
 	Overdue int
 	Unbegun int
 }
 
 // Point is what a preset evaluates to at one place of the grid.
 //
-// Reviews is counted in card faces and Minutes in the showings they take, so a
-// face the day comes back to costs its minutes and is the one card.
+// Reviews is counted in review cards and Minutes in the showings they take, so a
+// review card the day comes back to costs its minutes and is the one card.
 //
 // What the two are the height of is the goal's own question. Under a goal of
 // minutes they are the first day of the run the preset admits: the next session
@@ -62,7 +62,7 @@ type Point struct {
 	// Retained is the share of the material that comes back on the last day
 	// projected, which is what the load beside it buys.
 	Retained float64
-	// Owed is the card faces standing owed on the last day the projection ran:
+	// Owed is the review cards standing owed on the last day the projection ran:
 	// Ahead days off under a goal of minutes or of retention, and the day the
 	// place names under a goal of a date.
 	Owed int
@@ -70,7 +70,7 @@ type Point struct {
 	// IsEnough reports whether all learnable cards are learned.
 	Share    float64
 	IsEnough bool
-	// Short is how many card faces cannot be learned by this day whatever the
+	// Short is how many review cards cannot be learned by this day whatever the
 	// pace, which is the rule wanting more days than the day leaves them.
 	Short int
 	// Closed is every budget that closed the day here, in the words the preset
@@ -80,13 +80,13 @@ type Point struct {
 	// is overdue. A curve standing over nothing overdue clears in none, and a
 	// place whose pace never gets there is NeverClears.
 	Clears int
-	// Learned is how many card faces stand learned today at this place, and
+	// Learned is how many review cards stand learned today at this place, and
 	// Learns how many days of review it takes before all of them do. A place
 	// whose horizon ends with one still to learn is NeverLearns, and one with no
 	// such day to name is LearnsUnasked.
 	Learned int
 	Learns  int
-	// Backlog is how many card faces stand overdue at the end of each day
+	// Backlog is how many review cards stand overdue at the end of each day
 	// projected at this place, one entry a day over the whole horizon. It runs
 	// over days and not over the goal's range.
 	Backlog []int
@@ -110,7 +110,7 @@ type curveBuilder struct {
 	run          Simulation
 	now          time.Time
 	preset       Preset
-	schedules    map[CardFaceID]Schedule
+	schedules    map[ReviewCardID]Schedule
 	unbegunCount int
 	scheduler    func(retention float64) Scheduler
 	places       func(count int, each func(index int) error) error
@@ -118,7 +118,7 @@ type curveBuilder struct {
 
 // Curve evaluates a preset over the goal range using simulation.
 func (s Simulation) Curve(
-	ctx context.Context, now time.Time, p Preset, schedules map[CardFaceID]Schedule,
+	ctx context.Context, now time.Time, p Preset, schedules map[ReviewCardID]Schedule,
 	unbegunCount int, scheduler func(retention float64) Scheduler,
 	places func(count int, each func(index int) error) error,
 ) (Curve, error) {
@@ -276,7 +276,7 @@ func createDatePoint(ran Projection, day int) Point {
 		Backlog:  ran.Backlog,
 	}
 	if session {
-		one.Reviews, one.Closed = float64(ran.Faced[opening]), ran.Closed[opening]
+		one.Reviews, one.Closed = float64(ran.Reviewed[opening]), ran.Closed[opening]
 	}
 	return one
 }
@@ -363,7 +363,7 @@ func (d curveBuilder) date(ctx context.Context) (Curve, error) {
 // getDaysToLearnWithoutForgetting calculates days needed to learn all cards assuming full recall.
 func getDaysToLearnWithoutForgetting(
 	ctx context.Context, run Simulation, now time.Time, p Preset,
-	pos map[CardFaceID]Schedule, unbegunCount int,
+	pos map[ReviewCardID]Schedule, unbegunCount int,
 ) (int, error) {
 	run.Recalls = GetFullRecall
 	// The day the material is learned is all this run is read for.
@@ -419,7 +419,7 @@ func session(p Projection) Point {
 	if !isAdmitted {
 		return out
 	}
-	out.Reviews, out.Minutes = float64(p.Faced[day]), p.Spent[day].Minutes()
+	out.Reviews, out.Minutes = float64(p.Reviewed[day]), p.Spent[day].Minutes()
 	return out
 }
 

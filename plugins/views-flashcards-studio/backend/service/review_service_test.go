@@ -31,7 +31,7 @@ func answerCard(t *testing.T, api *API, vault string, session *flashcardsv1.Star
 	card := session.GetCards()[0]
 	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: vault, Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(),
+		CardId: card.GetCardId(), Template: card.GetTemplate(),
 		Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if err != nil {
@@ -138,7 +138,7 @@ func TestAnsweringAVaultNobodyContainsIsRefused(t *testing.T) {
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: "nothing", Run: "nothing",
-		Mark: "k7m2xq9fzp", Face: "Recognise", Rating: flashcardsv1.Rating_RATING_GOOD,
+		CardId: "k7m2xq9fzp", Template: "Recognise", Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Errorf("failed with %v", connect.CodeOf(err))
@@ -220,15 +220,15 @@ func TestSomethingMovingReachesThePage(t *testing.T) {
 }
 
 // A deck edited in place keeps its size and its stamp, and the window keeps no
-// face of it past a report that something moved.
-func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
+// review card of it past a report that something moved.
+func TestAReportedChangeForgetsTheCardsAlreadyParsed(t *testing.T) {
 	api, target, installation := newAPIOn(t, deck)
 	v := target[0]
-	faces := api.scenarios().flash.CardsDue.CardFaces()
+	reviewCards := api.scenarios().flash.CardsDue.ReviewCards()
 
-	before, err := faces.Execute(t.Context(), v)
+	before, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || len(before) != 1 {
-		t.Fatalf("the vault stands as %d card faces and %v", len(before), err)
+		t.Fatalf("the vault stands as %d review cards and %v", len(before), err)
 	}
 
 	pos := filepath.Join(v.Path, "decks", "Words.md")
@@ -244,9 +244,9 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	stale, err := faces.Execute(t.Context(), v)
+	stale, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || !isFront(stale[0], "Leaf mould") {
-		t.Fatalf("the faces were parsed again without a report: %+v %v", stale, err)
+		t.Fatalf("the review cards were parsed again without a report: %+v %v", stale, err)
 	}
 
 	stream, err := newFlashcardsClient(t, api).WatchReloads(t.Context(), connect.NewRequest(&flashcardsv1.WatchReloadsRequest{}))
@@ -261,13 +261,13 @@ func TestAReportedChangeForgetsTheFacesAlreadyParsed(t *testing.T) {
 	if !stream.Receive() || !stream.Msg().GetReload() {
 		t.Fatalf("did not receive refresh signal: %v", stream.Err())
 	}
-	fresh, err := faces.Execute(t.Context(), v)
+	fresh, err := reviewCards.Execute(t.Context(), v)
 	if err != nil || !isFront(fresh[0], "Mould leaf") {
-		t.Errorf("the faces stand as they were after a report: %+v %v", fresh, err)
+		t.Errorf("the review cards stand as they were after a report: %+v %v", fresh, err)
 	}
 }
 
-func isFront(f flashcards.CardFace, word string) bool {
+func isFront(f flashcards.ReviewCard, word string) bool {
 	front, _ := f.Lay()
 	return strings.Contains(front, word)
 }
@@ -428,7 +428,7 @@ func TestAnAnswerTheRunCannotWriteIsRefused(t *testing.T) {
 
 	out, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(), Rating: flashcardsv1.Rating_RATING_GOOD,
+		CardId: card.GetCardId(), Template: card.GetTemplate(), Rating: flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeInternal || out != nil {
 		t.Errorf("answering came back with %+v and %v, want an internal error", out, err)

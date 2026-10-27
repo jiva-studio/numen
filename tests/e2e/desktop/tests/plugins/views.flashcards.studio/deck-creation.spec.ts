@@ -1,7 +1,7 @@
 import { test, expect, type Page } from 'playwright/test'
 import { openWorkspace } from '../../support/workspace'
 
-/** A deck or a stencil made through the palette, under the name typed on its step. */
+/** A deck or a card model made through the palette, under the name typed on its step. */
 const make = async (page: Page, command: string, name: string): Promise<void> => {
   await page.keyboard.press('Control+p')
   const field = page.locator('input[data-palette="field"]').first()
@@ -13,7 +13,7 @@ const make = async (page: Page, command: string, name: string): Promise<void> =>
   await page.keyboard.press('Enter')
 }
 
-test.describe('a deck or a stencil made through the palette', () => {
+test.describe('a deck or a card model made through the palette', () => {
   test('a deck opens in the editor of its cards, at the path the vault filed it under', async ({
     page,
   }) => {
@@ -36,14 +36,14 @@ test.describe('a deck or a stencil made through the palette', () => {
     await expect(page.getByRole('tab', { name: /Lakes/ })).toHaveCount(1)
   })
 
-  test('a stencil opens in the editor of its fields and faces, and no deck opens', async ({
+  test('a card model opens in the editor of its fields and templates, and no deck opens', async ({
     page,
   }) => {
     await openWorkspace(page)
-    await make(page, 'New stencil', 'Mountain')
+    await make(page, 'New card model', 'Mountain')
 
     await expect(page.getByRole('tab', { name: /Mountain/ }).first()).toBeVisible()
-    await expect(page.locator('.stencil-tab').first()).toBeVisible()
+    await expect(page.locator('.card-model-tab').first()).toBeVisible()
     await expect(page.locator('.deck')).toHaveCount(0)
   })
 })
@@ -51,7 +51,7 @@ test.describe('a deck or a stencil made through the palette', () => {
 test.describe('a file open in an editor of cards, removed from the tree', () => {
   for (const [what, path, editor] of [
     ['deck', 'cards/empty-deck.md', '.deck'],
-    ['stencil', 'cards/fieldless-stencil.md', '.stencil-tab'],
+    ['card-model', 'cards/fieldless-card-model.md', '.card-model-tab'],
   ] as const) {
     test(`lets go of the tab holding a ${what}`, async ({ page }) => {
       await openWorkspace(page)

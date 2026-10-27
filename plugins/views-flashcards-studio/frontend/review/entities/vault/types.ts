@@ -7,11 +7,11 @@ import type { StopReason } from '../../../gen/numen/flashcards/v1/presets_pb.js'
 /** One deck's share of what a vault owes. */
 export interface DeckCardsDue {
   readonly deck: string
-  readonly faces: number
+  readonly reviewCards: number
   readonly due: number
   readonly new: number
   /**
-   * How many of its card faces stand learned now, under the rule the preset
+   * How many of its review cards stand learned now, under the rule the preset
    * scheduling it counts by.
    */
   readonly learned: number
@@ -29,7 +29,7 @@ export interface PresetCardsDue {
   readonly title: string
   /** How many decks point at it, which is none for a preset nothing points at. */
   readonly decks: number
-  /** How many card faces stand in those decks. A deck holding none still points here. */
+  /** How many review cards stand in those decks. A deck holding none still points here. */
   readonly cards: number
   /**
    * It is what a session over this preset asks, and is printed currently.
@@ -80,7 +80,7 @@ export interface VaultCardsDue {
    * until it has, and nothing under it is read as a vault owing nothing.
    */
   readonly isCounted: boolean
-  readonly faces: number
+  readonly reviewCards: number
   readonly due: number
   readonly new: number
   readonly decks: readonly DeckCardsDue[]

@@ -15,7 +15,7 @@ import (
 //
 // They are what a window written before the key existed sends, and what a
 // preset written before it holds. A key nobody wrote leaves the default in
-// force: it never leaves a threshold every card face passes.
+// force: it never leaves a threshold every review card passes.
 func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 	old := &flashcardsv1.Settings{
 		Goal:        flashcardsv1.Goal_GOAL_RETENTION,
@@ -34,15 +34,15 @@ func TestSettingsThatNameNoRuleCountByTheDefault(t *testing.T) {
 
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.UTC)
 	last := now.AddDate(0, 0, -1)
-	// A card face first seen yesterday and put off by sixteen days, which is
+	// A review card first seen yesterday and put off by sixteen days, which is
 	// under the default interval of twenty-one.
 	targetSchedule := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
 	if p.IsLearned(targetSchedule, now) {
-		t.Error("a card face sixteen days off is learned under settings naming no rule")
+		t.Error("a review card sixteen days off is learned under settings naming no rule")
 	}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
 	if !p.IsLearned(far, now) {
-		t.Error("a card face twenty-one days off is not learned at the default interval")
+		t.Error("a review card twenty-one days off is not learned at the default interval")
 	}
 }
 

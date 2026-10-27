@@ -13,14 +13,14 @@ import (
 // heading of another.
 const HeadingRunes = 120
 
-// caret is what a mark is written behind, at the end of a card's heading.
+// caret is what a card id is written behind, at the end of a card's heading.
 const caret = "^"
 
 // ReadHeading reads a card's heading — the text after the hashes — into what it
-// shows and the mark it carries.
+// shows and the card id it carries.
 //
-// A mark is separated from the text by one space, stands last, and is a mark
-// only at the length and in the alphabet marks are written in. Anything else at
+// A card id is separated from the text by one space, stands last, and is a card id
+// only at the length and in the alphabet card ids are written in. Anything else at
 // the end of a heading is heading text, and comes back as part of the text.
 func ReadHeading(heading string) (text string, carried cardid.ID) {
 	pos := strings.LastIndex(heading, " ")
@@ -38,7 +38,7 @@ func ReadHeading(heading string) (text string, carried cardid.ID) {
 	return heading[:pos], cardid.ID(content)
 }
 
-// WriteHeading is the heading a card of this text and this mark is placed under.
+// WriteHeading is the heading a card of this text and this card id is placed under.
 func WriteHeading(text string, carried cardid.ID) string {
 	switch {
 	case carried == "":
@@ -166,7 +166,7 @@ func oneLine(name string) string {
 	return strings.TrimSpace(line)
 }
 
-// headingLine is the line a card, a face, a field or a side is placed under. A
+// headingLine is the line a card, a template, a field or a side is placed under. A
 // heading carrying no text is the hashes and nothing after them.
 func headingLine(level int, name string) string {
 	hashes := strings.Repeat("#", level)

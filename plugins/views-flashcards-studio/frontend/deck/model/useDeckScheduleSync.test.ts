@@ -1,5 +1,5 @@
 /**
- * Stencil listing and the schedule kept in step with the files a window holds.
+ * Card model listing and the schedule kept in step with the files a window holds.
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
@@ -12,19 +12,19 @@ const OFFER = { path: 'Animal.md', title: 'Animal', fields: ['Name'] }
 
 const open = () => {
   const state = { isDown: false }
-  const stencils = vi.fn<Cards['stencils']>(async () => {
+  const cardModels = vi.fn<Cards['cardModels']>(async () => {
     if (state.isDown) throw new Error('down')
-    return { stencils: [OFFER], held: 1 }
+    return { cardModels: [OFFER], held: 1 }
   })
   const cards: Cards = {
-    stencils,
+    cardModels,
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
-    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
     writeDeck: async () => asFailure({ code: 'missing' as const, bound: 0 }),
-    readStencil: async () => asFailure('missing' as const),
-    writeStencil: async () => asValue({ at: '' }),
+    readCardModel: async () => asFailure('missing' as const),
+    writeCardModel: async () => asValue({ at: '' }),
   }
   const presets: Presets = {
     read: async () => asValue({ preset: null, at: '', bounds: NO_BOUNDS }),
@@ -53,53 +53,53 @@ const open = () => {
     read: async () => asValue({ body: '', at: '' }),
     write: async () => asValue({ body: '', at: '' }),
   })
-  return { state, stencils, store, sync: useDeckScheduleSync(cards, presets, store) }
+  return { state, cardModels, store, sync: useDeckScheduleSync(cards, presets, store) }
 }
 
-describe('the stencils a window offers', () => {
+describe('the card models a window offers', () => {
   it('are none before a listing answers', () => {
     const { sync } = open()
 
     expect(sync.offers.value).toStrictEqual([])
-    expect(sync.stencils.value).toStrictEqual([])
+    expect(sync.cardModels.value).toStrictEqual([])
   })
 
   it('are what the last listing answered', async () => {
     const { sync } = open()
 
-    await sync.listStencils()
+    await sync.listCardModels()
 
-    expect(sync.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name'] }])
+    expect(sync.cardModels.value).toStrictEqual([{ name: 'Animal', fields: ['Name'] }])
   })
 
   it('are not requested for again before a listing failed', () => {
-    const { sync, stencils } = open()
+    const { sync, cardModels } = open()
 
-    sync.listStencilsAgain()
+    sync.listCardModelsAgain()
 
-    expect(stencils).not.toHaveBeenCalled()
+    expect(cardModels).not.toHaveBeenCalled()
   })
 
   it('are requested for again once a listing failed', async () => {
-    const { sync, stencils, state } = open()
+    const { sync, cardModels, state } = open()
     state.isDown = true
-    await sync.listStencils()
+    await sync.listCardModels()
 
-    sync.listStencilsAgain()
+    sync.listCardModelsAgain()
 
-    expect(stencils).toHaveBeenCalledTimes(2)
+    expect(cardModels).toHaveBeenCalledTimes(2)
   })
 
   it('are not requested for again once a listing answered after the failure', async () => {
-    const { sync, stencils, state } = open()
+    const { sync, cardModels, state } = open()
     state.isDown = true
-    await sync.listStencils()
+    await sync.listCardModels()
     state.isDown = false
-    await sync.listStencils()
+    await sync.listCardModels()
 
-    sync.listStencilsAgain()
+    sync.listCardModelsAgain()
 
-    expect(stencils).toHaveBeenCalledTimes(2)
+    expect(cardModels).toHaveBeenCalledTimes(2)
   })
 })
 
@@ -127,20 +127,20 @@ describe('the files changing under the window', () => {
   })
 
   it('ask for nothing while the window holds no deck', () => {
-    const { sync, stencils } = open()
+    const { sync, cardModels } = open()
 
     sync.applyPathChanges(['Animals.md'])
 
-    expect(stencils).not.toHaveBeenCalled()
+    expect(cardModels).not.toHaveBeenCalled()
   })
 
-  it('ask for the stencils once a deck is open', () => {
-    const { sync, stencils, store } = open()
+  it('ask for the card models once a deck is open', () => {
+    const { sync, cardModels, store } = open()
     store.open('a', 'Animals.md')
 
     sync.applyPathChanges(['Animals.md'])
 
-    expect(stencils).toHaveBeenCalledTimes(1)
+    expect(cardModels).toHaveBeenCalledTimes(1)
   })
 
   it('read the preset of each deck that is open', async () => {

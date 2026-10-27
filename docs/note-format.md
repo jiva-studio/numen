@@ -6,7 +6,7 @@ Scope is the **note file only**. The layout of the vault around it — one servi
 
 ## What a note is
 
-A UTF-8 file named `.md`, in any folder of the vault the user likes. A stencil, a deck and a preset are notes and carry the same extension.
+A UTF-8 file named `.md`, in any folder of the vault the user likes. A card model, a deck and a preset are notes and carry the same extension.
 
 Two places are never notes: the service folder — `.numen` by default — and any directory whose name begins with a dot, which holds tool state. Both are skipped whole. The application neither imposes nor rearranges layout.
 
@@ -41,8 +41,8 @@ The frontmatter is shared, not owned:
 | `title` | The name a note is shown by. Written when a note that already has a non-empty one is renamed, and when a title no filename can carry whole is given to one that has none. | — |
 | `id` | The identity of the note, a ULID. Written when the application creates a note or changes what is in it, never backfilled and never written by a person typing in it. A note that was moved carries the identifier it carried before. | — |
 | `links` | Links that carry a role, and optionally a type, a label and a note. | [Links](links.md) |
-| `type` | Which of four this note is: `note`, `deck`, `stencil` or `preset`. A note carrying none is a `note`. | — |
-| `fields` | The fields a card cut by this stencil has, in the order they are asked for. Read on a stencil and nowhere else. | — |
+| `type` | Which of four this note is: `note`, `deck`, `card-model` or `preset`. A note carrying none is a `note`. | — |
+| `fields` | The fields a card cut by this card model has, in the order they are asked for. Read on a card model and nowhere else. | — |
 | `goal`, `by_date`, `minutes_a_day`, `new_a_day`, `reviews_a_day`, `retention` | What a day of the decks pointing at this preset holds, and which of those closes it. Read on a preset and nowhere else. | — |
 | `learned`, `interval` | What this preset counts as a card learned, and what a day named under `by_date` is tested by. Read on a preset and nowhere else. | — |
 | `counts`, `backlog` | What a day's budget is spent on, and in what order. Read on a preset and nowhere else. | — |
@@ -63,12 +63,12 @@ The complete permitted set. Everything must survive a third-party markdown edito
 | --- | --- | --- |
 | YAML frontmatter | top of file | allowed; the keys the application owns are the closed set above |
 | `[[wikilink]]` | body | a link with the role `ref`, resolved by name ([Links](links.md)) |
-| `{{Field}}` | the body of a stencil | where a card's value goes on a face ([Cards](cards.md)) |
-| `^` and a card's mark | the end of a card's heading in a deck | what that card is, wherever it goes ([Cards](cards.md)) |
+| `{{Field}}` | the body of a card model | where a card's value goes on a template ([Cards](cards.md)) |
+| `^` and a card's id | the end of a card's heading in a deck | what that card is, wherever it goes ([Cards](cards.md)) |
 
-The first two are every note's. The last two belong to a note of `type: stencil` or `type: deck`, and no other kind of note may carry them.
+The first two are every note's. The last two belong to a note of `type: card-model` or `type: deck`, and no other kind of note may carry them.
 
-Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as a stencil and a deck did, and the table above is what is kept current.
+Nothing else is permitted: no custom fences, no HTML comments carrying data, no sidecar files, no private extension. A kind of note that wants an addition of its own asks for it in a record, as a card model and a deck did, and the table above is what is kept current.
 
 ## Handling of existing files
 

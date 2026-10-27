@@ -26,8 +26,8 @@ import ocrLight from '../assets/window-ocr-light.webp'
 import ocrDark from '../assets/window-ocr-dark.webp'
 import deckLight from '../assets/window-deck-light.webp'
 import deckDark from '../assets/window-deck-dark.webp'
-import stencilLight from '../assets/window-stencil-light.webp'
-import stencilDark from '../assets/window-stencil-dark.webp'
+import cardModelLight from '../assets/window-card-model-light.webp'
+import cardModelDark from '../assets/window-card-model-dark.webp'
 import cardsDueLight from '../assets/window-cards-due-light.webp'
 import cardsDueDark from '../assets/window-cards-due-dark.webp'
 import reviewLight from '../assets/window-review-light.webp'
@@ -165,13 +165,13 @@ const SHOTS = [
     dark: deckDark,
   },
   {
-    id: 'stencil',
-    name: 'A stencil',
+    id: 'card-model',
+    name: 'A card model',
     caption: 'Name the fields once; every card of that kind is cut the same way.',
-    alt: 'The numen window: a stencil naming four fields, and the faces that '
+    alt: 'The numen window: a card model naming four fields, and the templates that '
       + 'show them, each drawn beside its preview.',
-    light: stencilLight,
-    dark: stencilDark,
+    light: cardModelLight,
+    dark: cardModelDark,
   },
   {
     id: 'cards-due',
@@ -617,7 +617,7 @@ const description =
           <h2>Remember what you looked up</h2>
           <p class="band__lede">
             Cards live in the same folder as the notes, in markdown you can read. A
-            stencil says what a card of some kind holds; the deck fills it in.
+            card model says what a card of some kind holds; the deck fills it in.
           </p>
 
           <div class="features">
@@ -625,7 +625,7 @@ const description =
               <h3>Fields, not two blank sides</h3>
               <p>
                 Name the fields once. Every card of that kind is cut the same way, and
-                one stencil can ask about them from several directions.
+                one card model can ask about them from several directions.
               </p>
             </div>
             <div class="feature">
@@ -646,8 +646,8 @@ const description =
 
           <Carousel
             name="cards"
-            label="A deck, the stencil that cuts it, and the preset that schedules it"
-            shots={['deck', 'stencil', 'preset'].map(shotOf)}
+            label="A deck, the card model that cuts it, and the preset that schedules it"
+            shots={['deck', 'card-model', 'preset'].map(shotOf)}
             band
           />
         </div>

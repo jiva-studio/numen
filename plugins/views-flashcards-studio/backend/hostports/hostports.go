@@ -108,10 +108,10 @@ func (n Notes) GetPathsOfType(ctx context.Context, id domain.VaultID, noteType d
 	return n.Vault.With(id).GetPathsOfType(ctx, noteType)
 }
 
-// GetStencils lists the notes of the stencil type with their titles, by path.
-func (n Notes) GetStencils(ctx context.Context, id domain.VaultID) ([]ports.Stencil, error) {
+// GetCardModels lists the notes of the card model type with their titles, by path.
+func (n Notes) GetCardModels(ctx context.Context, id domain.VaultID) ([]ports.CardModel, error) {
 	vault := n.Vault.With(id)
-	paths, err := vault.GetPathsOfType(ctx, format.TypeStencil)
+	paths, err := vault.GetPathsOfType(ctx, format.TypeCardModel)
 	if err != nil {
 		return nil, err
 	}
@@ -119,9 +119,9 @@ func (n Notes) GetStencils(ctx context.Context, id domain.VaultID) ([]ports.Sten
 	if err != nil {
 		return nil, err
 	}
-	out := make([]ports.Stencil, 0, len(paths))
+	out := make([]ports.CardModel, 0, len(paths))
 	for _, path := range paths {
-		out = append(out, ports.Stencil{Path: path, Title: titled[path].Title})
+		out = append(out, ports.CardModel{Path: path, Title: titled[path].Title})
 	}
 	return out, nil
 }

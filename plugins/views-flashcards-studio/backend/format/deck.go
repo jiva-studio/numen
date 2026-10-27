@@ -44,16 +44,16 @@ func isDeckHeadingLevel(level int) bool { return level == SectionLevel || level 
 
 // cardSpan is where one card and each of its values stand in the body.
 type cardSpan struct {
-	name string
-	mark cardid.ID
+	name   string
+	cardID cardid.ID
 	// head is the byte the heading line begins at and from is the byte after
 	// it, which is the run the first field's value occupies. end is where the
 	// card stops: the next card, the next section, or the end of the file.
 	head int
 	from int
 	end  int
-	// linkFrom and linkTo are the run the wikilink naming the stencil occupies,
-	// without the break it ends on. A card naming no stencil holds an empty run
+	// linkFrom and linkTo are the run the wikilink naming the card model occupies,
+	// without the break it ends on. A card naming no card model holds an empty run
 	// at the byte one would be written at.
 	linkFrom int
 	linkTo   int
@@ -119,14 +119,14 @@ func (b *deckBuilder) readCardFields(body []byte, secs []section, pos int, card 
 func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end int) {
 	pos := len(b.deck.Cards)
 	heading, carried := ReadHeading(s.name)
-	card := Card{Heading: heading, Mark: carried, Section: b.currentSection}
+	card := Card{Heading: heading, CardID: carried, Section: b.currentSection}
 	span := cardSpan{
-		name: s.name, mark: carried, head: s.head, from: s.from, end: end,
+		name: s.name, cardID: carried, head: s.head, from: s.from, end: end,
 		linkFrom: s.from, linkTo: s.from,
 	}
 
-	target, leadFrom := readStencilLink(body, s.from, s.to)
-	card.StencilLink = target
+	target, leadFrom := readCardModelLink(body, s.from, s.to)
+	card.CardModelLink = target
 	b.read = getTrimmedEnd(body, s.head, s.from)
 	if target != "" {
 		b.read = getTrimmedEnd(body, s.from, leadFrom)
@@ -138,8 +138,8 @@ func (b *deckBuilder) addCard(body []byte, s section, secsAfter []section, end i
 		b.read = leadEnd
 	}
 	if target == "" {
-		b.deck.Problems = append(b.deck.Problems, newCardProblem(pos, FaultNoStencil,
-			"the first paragraph of this card is not a lone wikilink, so it names no stencil"))
+		b.deck.Problems = append(b.deck.Problems, newCardProblem(pos, FaultNoCardModel,
+			"the first paragraph of this card is not a lone wikilink, so it names no card model"))
 	}
 
 	b.readCardFields(body, secsAfter, pos, &card, &span)
@@ -176,40 +176,40 @@ func readDeck(ref domain.Fingerprint, body []byte) (Deck, []cardSpan) {
 		}
 	}
 
-	b.deck.Problems = append(b.deck.Problems, findDuplicateMarks(b.deck.Cards)...)
+	b.deck.Problems = append(b.deck.Problems, findDuplicateCardIDs(b.deck.Cards)...)
 	if len(b.deck.Cards) > 0 || len(b.deck.Sections) > 0 {
 		b.deck.Tail = markdown.Normalise(string(body[b.read:]))
 	}
 	return b.deck, b.spans
 }
 
-// findDuplicateMarks is one problem against each card of a mark another card in this deck
+// findDuplicateCardIDs is one problem against each card of a card id another card in this deck
 // carries. Both are read and both are shown marked: nothing a person wrote goes
 // missing from the screen, and which of the two is meant is a thing only they
-// know. Neither is given another mark, because choosing would be choosing which
+// know. Neither is given another card id, because choosing would be choosing which
 // of the two keeps its history.
-func findDuplicateMarks(cs []Card) []Problem {
+func findDuplicateCardIDs(cs []Card) []Problem {
 	carried := map[cardid.ID]int{}
 	for _, c := range cs {
-		if c.Mark != "" {
-			carried[c.Mark]++
+		if c.CardID != "" {
+			carried[c.CardID]++
 		}
 	}
 	var out []Problem
 	for item, c := range cs {
-		if c.Mark != "" && carried[c.Mark] > 1 {
-			out = append(out, newCardProblem(item, FaultTwoMarks,
-				"another card in this deck carries the mark "+string(c.Mark)))
+		if c.CardID != "" && carried[c.CardID] > 1 {
+			out = append(out, newCardProblem(item, FaultDuplicateCardID,
+				"another card in this deck carries the card id "+string(c.CardID)))
 		}
 	}
 	return out
 }
 
-// readStencilLink reads the lone wikilink paragraph directly beneath a card's heading.
+// readCardModelLink reads the lone wikilink paragraph directly beneath a card's heading.
 // It returns what the link says and the byte the lead begins at; a card whose
-// first paragraph is something else names no readStencilLink, and the whole of what is
+// first paragraph is something else names no readCardModelLink, and the whole of what is
 // under the heading is lead.
-func readStencilLink(body []byte, from, to int) (target string, leadFrom int) {
+func readCardModelLink(body []byte, from, to int) (target string, leadFrom int) {
 	pos := from
 	for pos < to {
 		end, next := to, to
@@ -221,7 +221,7 @@ func readStencilLink(body []byte, from, to int) (target string, leadFrom int) {
 			pos = next
 			continue
 		}
-		// A paragraph that is one wikilink and nothing else names the stencil.
+		// A paragraph that is one wikilink and nothing else names the card model.
 		found := markdown.WikilinksIn(line)
 		if len(found) == 1 && found[0].At == 0 && found[0].To == len(line) &&
 			paragraphEnds(body, next, to) {

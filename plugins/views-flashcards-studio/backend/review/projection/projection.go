@@ -16,7 +16,7 @@ type Projection struct {
 	// Days is how many days were projected.
 	Days int
 	// ReviewsADay and MinutesADay are the daily load, over the days the preset
-	// admitted: the card faces a day asks, and how long its showings take.
+	// admitted: the review cards a day asks, and how long its showings take.
 	ReviewsADay float64
 	MinutesADay float64
 	// Retained is the share of the material that comes back, on the days the run
@@ -24,51 +24,51 @@ type Projection struct {
 	Retained RetentionByDay
 	// Answered is how many answers were given over the days projected.
 	Answered int
-	// Faces is the material: every card face the preset schedules. Seen is how
+	// ReviewCards is the material: every review card the preset schedules. Seen is how
 	// many of them have been answered at least once by the last day.
-	Faces int
-	Seen  int
-	// Owed is the card faces answered before and standing owed on the last day,
+	ReviewCards int
+	Seen        int
+	// Owed is the review cards answered before and standing owed on the last day,
 	// which is the backlog the budget did not carry.
 	Owed int
 	// Clears is how many days of review it takes before nothing is overdue: no
-	// card face is left whose day has come and gone. A day that begins with
+	// review card is left whose day has come and gone. A day that begins with
 	// nothing overdue clears in none, and a pace that never gets there is
 	// NeverClears.
 	Clears int
-	// Learned is how many card faces the preset counts as learned as the run
+	// Learned is how many review cards the preset counts as learned as the run
 	// opens, under the rule the preset names.
 	Learned int
-	// Learns is how many days of review it takes before every card face the
+	// Learns is how many days of review it takes before every review card the
 	// preset schedules is learned. A run opening with all of them learned learns
 	// in none, and a horizon ending with one of them still to learn is
 	// NeverLearns.
 	//
 	// It is answered where that day is a day. An interval is passed once and
-	// stays passed, so the day the last card face passes it is one. A chance of
+	// stays passed, so the day the last review card passes it is one. A chance of
 	// recall falls as a card fades and rises when it is answered, so a material
 	// aiming at a date is answered by its date. Both are LearnsUnasked.
 	Learns int
-	// Short is how many card faces cannot be learned by the day the preset aims
+	// Short is how many review cards cannot be learned by the day the preset aims
 	// at, whatever the pace: the rule wants more days than the date leaves them.
 	// A preset aiming at no day has none.
 	Short int
-	// Load is how many showings each day projected carried, Faced is how many
-	// card faces those showings were of, and Spent is how long they took.
+	// Load is how many showings each day projected carried, Reviewed is how many
+	// review cards those showings were of, and Spent is how long they took.
 	//
-	// A day asks a card face again while its answer leaves it falling due before
-	// the day closes. A budget kept in cards is spent on Faced and one kept in
+	// A day asks a review card again while its answer leaves it falling due before
+	// the day closes. A budget kept in cards is spent on Reviewed and one kept in
 	// showings on Load, and the minutes go on every showing either way.
-	Load  []int
-	Faced []int
-	Spent []time.Duration
+	Load     []int
+	Reviewed []int
+	Spent    []time.Duration
 	// Admitted is whether the preset admitted each day projected. A day it did
 	// not is no session at all, and the summaries over the run pass over it.
 	Admitted []bool
 	// Closed is every budget that stopped each day projected asking for more,
 	// one entry a day.
 	Closed []BudgetNames
-	// Backlog is how many card faces stood overdue at the end of each day
+	// Backlog is how many review cards stood overdue at the end of each day
 	// projected: their day had passed and that day did not get to them. It is
 	// the pile a person watches shrink, and it begins where Overdue stands now.
 	Backlog []int
@@ -133,13 +133,13 @@ func (p Projection) minutesADay(limitDay int) float64 {
 	return all.Minutes() / float64(days)
 }
 
-// isAllLearned reports whether every card face that can be learned by this day of
+// isAllLearned reports whether every review card that can be learned by this day of
 // the run stands learned on it. Short is how many cannot be, whatever the pace.
 func (p Projection) isAllLearned(day int) bool {
-	if p.Faces == 0 {
+	if p.ReviewCards == 0 {
 		return true
 	}
-	return p.Through[day] >= float64(p.Faces-p.Short)/float64(p.Faces)
+	return p.Through[day] >= float64(p.ReviewCards-p.Short)/float64(p.ReviewCards)
 }
 
 // Session is the first day of this run the preset admits: the next session a
@@ -158,12 +158,12 @@ func (p Projection) Session() (int, bool) {
 	return 0, false
 }
 
-// CountOverdue is how many card faces standing at these schedules have had their day
+// CountOverdue is how many review cards standing at these schedules have had their day
 // and were not answered on it.
 //
 // A card falling due later in the day holding at is not overdue: its day is
 // has had no day.
-func CountOverdue(d Day, schedules map[CardFaceID]Schedule, now time.Time) int {
+func CountOverdue(d Day, schedules map[ReviewCardID]Schedule, now time.Time) int {
 	startTime := d.GetStart(now)
 	out := 0
 	for _, s := range schedules {
@@ -175,7 +175,7 @@ func CountOverdue(d Day, schedules map[CardFaceID]Schedule, now time.Time) int {
 }
 
 // mergeByDue puts what a day before did not reach and what falls due in this one
-// into one run, the card face owed longest first.
+// into one run, the review card owed longest first.
 //
 // Both are in that order already, so a day sees the whole of what it owes for
 // the cost of what it owes.
@@ -197,9 +197,9 @@ func mergeByDue(into, carried, fell []int, cards []Schedule) []int {
 // learnedCount is how much of the material stands learned and how much of it
 // comes back, at the close of a day.
 //
-// Under a rule of an interval what stands learned is a fact about a card face's
+// Under a rule of an interval what stands learned is a fact about a review card's
 // schedule: the count is carried from day to day and asked again only of a card
-// face the day answered. Under a rule of a chance of recall it is a fact about
+// review card the day answered. Under a rule of a chance of recall it is a fact about
 // the instant, and is read off the same number as the share that comes back.
 type learnedCount struct {
 	preset    Preset
@@ -209,7 +209,7 @@ type learnedCount struct {
 	count     int
 }
 
-// newLearnedCount opens the count over the card faces a run begins with, at the
+// newLearnedCount opens the count over the review cards a run begins with, at the
 // instant it opens on.
 func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	rule, _, retention := p.GetLearnedRule()
@@ -229,7 +229,7 @@ func newLearnedCount(p Preset, cards []Schedule, pos time.Time) *learnedCount {
 	return out
 }
 
-// countAnswer carries one card face the day has answered.
+// countAnswer carries one review card the day has answered.
 func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
@@ -246,7 +246,7 @@ func (r *learnedCount) countAnswer(card int, c Schedule, pos time.Time) {
 	r.count--
 }
 
-// countBegun carries one card face the day has begun.
+// countBegun carries one review card the day has begun.
 func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	if !r.isCarried {
 		return
@@ -258,25 +258,25 @@ func (r *learnedCount) countBegun(c Schedule, pos time.Time) {
 	}
 }
 
-// finish is how many card faces stand learned at this instant, and what share
+// finish is how many review cards stand learned at this instant, and what share
 // of the material comes back at it where the day is one the run answers for. A
-// card face nobody has begun comes back to nobody, and counts in the material.
+// review card nobody has begun comes back to nobody, and counts in the material.
 //
-// A carried count is a fact about a card face's schedule, so the walk over the
+// A carried count is a fact about a review card's schedule, so the walk over the
 // whole material is made on the days the share is wanted. A count read off the
 // chance of recall is the same walk, and the share falls out of it.
 func (r *learnedCount) countLearned(
-	cards []Schedule, pos time.Time, faces int, wanted bool,
+	cards []Schedule, pos time.Time, reviewCards int, wanted bool,
 ) (int, float64) {
 	if r.isCarried {
-		if !wanted || faces == 0 {
+		if !wanted || reviewCards == 0 {
 			return r.count, 0
 		}
 		back := 0.0
 		for _, c := range cards {
 			back += Recall(pos.Sub(c.Last), c.Stability)
 		}
-		return r.count, back / float64(faces)
+		return r.count, back / float64(reviewCards)
 	}
 	stands, back := 0, 0.0
 	for _, c := range cards {
@@ -286,14 +286,14 @@ func (r *learnedCount) countLearned(
 			stands++
 		}
 	}
-	if faces == 0 {
+	if reviewCards == 0 {
 		return stands, 0
 	}
-	return stands, back / float64(faces)
+	return stands, back / float64(reviewCards)
 }
 
-// compareByDue puts the card face owed longest first. Two schedules alike in all of
-// this are one card face as far as any of these numbers go.
+// compareByDue puts the review card owed longest first. Two schedules alike in all of
+// this are one review card as far as any of these numbers go.
 func compareByDue(a, b Schedule) int {
 	if !a.Due.Equal(b.Due) {
 		return a.Due.Compare(b.Due)
@@ -309,9 +309,9 @@ func compareByDue(a, b Schedule) int {
 
 // getLearnedShare is the share of the material learned. A preset scheduling
 // nothing is through all of it.
-func getLearnedShare(learned, faces int) float64 {
-	if faces == 0 {
+func getLearnedShare(learned, reviewCards int) float64 {
+	if reviewCards == 0 {
 		return 1
 	}
-	return float64(learned) / float64(faces)
+	return float64(learned) / float64(reviewCards)
 }

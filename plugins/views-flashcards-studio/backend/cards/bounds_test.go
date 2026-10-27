@@ -15,17 +15,17 @@ func TestRenamingAFieldIsRefusedWhereTheVaultContainsMoreDecksThanTheBound(t *te
 	before := read(t, vs.first, "Animal.md")
 
 	_, err := newBoundedRenameField(t, vs, 1).Execute(t.Context(), vs.first, cards.Rename{
-		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
+		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
 	})
 	if err == nil || !strings.Contains(err.Error(), "there are 2 of them") || !strings.Contains(err.Error(), "more than the 1") {
 		t.Fatalf("a vault past the bound was renamed in: %v", err)
 	}
 	if read(t, vs.first, "Animal.md") != before {
-		t.Error("the stencil was written")
+		t.Error("the card model was written")
 	}
 
 	if _, err := newBoundedRenameField(t, vs, 2).Execute(t.Context(), vs.first, cards.Rename{
-		Stencil: "Animal.md", From: "Height", To: "Shoulder height",
+		CardModel: "Animal.md", From: "Height", To: "Shoulder height",
 	}); err != nil {
 		t.Errorf("a vault at the bound failed: %v", err)
 	}
@@ -39,34 +39,34 @@ func newBoundedRenameField(t *testing.T, vs vaulted, maxDecks int) cards.RenameF
 	)
 }
 
-func TestAStencilIsMadeWithItsFacesLaidDown(t *testing.T) {
+func TestACardModelIsMadeWithItsTemplatesLaidDown(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
 
-	made, err := u.Stencil(t.Context(), v, cards.New{
+	made, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name", "Call"},
-		Faces: []format.FaceTemplate{{Name: "Recognise", Front: "{{Name}}", Back: "{{Call}}"}},
+		Templates: []format.CardTemplate{{Name: "Recognise", Front: "{{Name}}", Back: "{{Call}}"}},
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
 	body := read(t, v, made.Path)
 	if !strings.Contains(body, "## Recognise") || !strings.Contains(body, "{{Call}}") {
-		t.Errorf("the faces are not in the stencil:\n%s", body)
+		t.Errorf("the templates are not in the card model:\n%s", body)
 	}
 }
 
-func TestAStencilWithFacesLargerThanANoteIsRefused(t *testing.T) {
+func TestACardModelWithTemplatesLargerThanANoteIsRefused(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
 
-	_, err := u.Stencil(t.Context(), v, cards.New{
+	_, err := u.CardModel(t.Context(), v, cards.New{
 		Title: "Bird", Fields: []string{"Name"},
-		Faces: []format.FaceTemplate{{Name: "Big", Front: strings.Repeat("x", 1<<20), Back: "{{Name}}"}},
+		Templates: []format.CardTemplate{{Name: "Big", Front: strings.Repeat("x", 1<<20), Back: "{{Name}}"}},
 	})
 	if err == nil || !strings.Contains(err.Error(), "more than this writes at once") {
-		t.Errorf("an oversized stencil was made: %v", err)
+		t.Errorf("an oversized card model was made: %v", err)
 	}
 }

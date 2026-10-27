@@ -21,11 +21,11 @@ func parseTime(s string) time.Time {
 // An answer written down and read back is the answer that was given.
 func TestAnAnswerReachesBackAsItWasSaved(t *testing.T) {
 	provided := review.Answer{
-		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
-		At:       parseTime("2026-08-29T09:12:33.412Z"),
-		Rating:   review.Good,
-		Took:     4210 * time.Millisecond,
+		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
+		ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		Rating:     review.Good,
+		Took:       4210 * time.Millisecond,
 	}
 
 	raw, err := review.Write(provided)
@@ -69,10 +69,10 @@ func TestAnAnswerTakenBackNamesTheOneItConsumesBack(t *testing.T) {
 // follows the last newline is left out, and everything before it is read.
 func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 	whole, err := review.Write(review.Answer{
-		ID:       "01K3ZQ7X2M9QRSTVWXYZ012345",
-		CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"},
-		At:       parseTime("2026-08-29T09:12:33.412Z"),
-		Rating:   review.Good,
+		ID:         "01K3ZQ7X2M9QRSTVWXYZ012345",
+		ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"},
+		At:         parseTime("2026-08-29T09:12:33.412Z"),
+		Rating:     review.Good,
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -90,14 +90,14 @@ func TestALineThatDidNotLandWholeIsLeftOut(t *testing.T) {
 
 // A line nobody can act on is left out and counted, and the rest of the file is
 func TestALineNobodyCanActOnIsCounted(t *testing.T) {
-	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","face":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
+	good := `{"v":1,"id":"01K3ZQ7X2M9QRSTVWXYZ012345","card":"k7m2xq9fzp","template":"Recognise","at":"2026-08-29T09:12:33.412Z","rating":3}`
 	for name, line := range map[string]string{
 		"not json at all":         `this is not a line`,
-		"a version to come":       `{"v":2,"id":"01K","card":"k7m2xq9fzp","face":"F","at":"2026-08-29T09:12:33.412Z","rating":3}`,
-		"no identifier":           `{"v":1,"card":"k7m2xq9fzp","face":"F","at":"2026-08-29T09:12:33.412Z","rating":3}`,
-		"a rating out of range":   `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F","at":"2026-08-29T09:12:33.412Z","rating":9}`,
-		"no face":                 `{"v":1,"id":"01K","card":"k7m2xq9fzp","at":"2026-08-29T09:12:33.412Z","rating":3}`,
-		"an instant nobody wrote": `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F","at":"the other day","rating":3}`,
+		"a version to come":       `{"v":2,"id":"01K","card":"k7m2xq9fzp","template":"F","at":"2026-08-29T09:12:33.412Z","rating":3}`,
+		"no identifier":           `{"v":1,"card":"k7m2xq9fzp","template":"F","at":"2026-08-29T09:12:33.412Z","rating":3}`,
+		"a rating out of range":   `{"v":1,"id":"01K","card":"k7m2xq9fzp","template":"F","at":"2026-08-29T09:12:33.412Z","rating":9}`,
+		"no template":             `{"v":1,"id":"01K","card":"k7m2xq9fzp","at":"2026-08-29T09:12:33.412Z","rating":3}`,
+		"an instant nobody wrote": `{"v":1,"id":"01K","card":"k7m2xq9fzp","template":"F","at":"the other day","rating":3}`,
 	} {
 		t.Run(name, func(t *testing.T) {
 			back, skipped := review.Read([]byte(line + "\n" + good + "\n"))
@@ -114,7 +114,7 @@ func TestALineNobodyCanActOnIsCounted(t *testing.T) {
 // The file is text in a person's own folder and travels between machines, so an
 // instant carrying an offset is read as the instant it is.
 func TestAnInstantIsReadWithWhateverOffsetItCarries(t *testing.T) {
-	line := `{"v":1,"id":"01K","card":"k7m2xq9fzp","face":"F",` +
+	line := `{"v":1,"id":"01K","card":"k7m2xq9fzp","template":"F",` +
 		`"at":"2026-08-29T11:12:33.412+02:00","rating":3}`
 
 	back, skipped := review.Read([]byte(line + "\n"))
@@ -186,15 +186,15 @@ func TestOnlyTheFourAreRatings(t *testing.T) {
 func makeJumbledHistory() []review.Answer {
 	pos := time.Date(2026, 8, 29, 9, 0, 0, 0, time.UTC)
 	one := review.Answer{
-		ID: "b", CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
+		ID: "b", ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"},
 		At: pos.Add(time.Minute), Rating: review.Good, Took: 4 * time.Second,
 	}
 	two := review.Answer{
-		ID: "a", CardFace: review.CardFaceID{Card: "k7m2xq9fzp", Face: "Say it"},
+		ID: "a", ReviewCard: review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Say it"},
 		At: pos, Rating: review.Again, Took: 9 * time.Second,
 	}
 	three := review.Answer{
-		ID: "c", CardFace: review.CardFaceID{Card: "zpqrstvwxy", Face: "Say it"},
+		ID: "c", ReviewCard: review.ReviewCardID{Card: "zpqrstvwxy", Template: "Say it"},
 		At: pos.Add(2 * time.Minute), Rating: review.Hard, Took: 6 * time.Second,
 	}
 	back := review.Answer{
@@ -209,9 +209,9 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 	answers := makeJumbledHistory()
 	day := review.Day{Starts: review.DayStartTime, In: time.UTC}
 	named := day.GetName(answers[0].At)
-	underMap := map[review.CardFaceID]string{
-		{Card: "k7m2xq9fzp", Face: "Say it"}: "Sanskrit.md",
-		{Card: "zpqrstvwxy", Face: "Say it"}: "Sanskrit.md",
+	underMap := map[review.ReviewCardID]string{
+		{Card: "k7m2xq9fzp", Template: "Say it"}: "Sanskrit.md",
+		{Card: "zpqrstvwxy", Template: "Say it"}: "Sanskrit.md",
 	}
 
 	provided := review.OrderAnswers(answers)
@@ -224,9 +224,9 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 			t.Errorf("%s spent %+v, want %+v", path, got, want)
 		}
 	}
-	for face, want := range review.GetFaced(day, named, answers) {
-		if got := provided.GetFaced(day, named)[face]; got != want {
-			t.Errorf("%+v was faced %v, want %v", face, got, want)
+	for reviewCard, want := range review.GetReviewed(day, named, answers) {
+		if got := provided.GetReviewed(day, named)[reviewCard]; got != want {
+			t.Errorf("%+v was reviewed %v, want %v", reviewCard, got, want)
 		}
 	}
 }
@@ -236,13 +236,13 @@ func TestGivingAHistoryOnceAnswersWhatGivingItFourTimesAnswered(t *testing.T) {
 // line missing what a line must carry, a blank line, an instant written with an
 // offset, JSON that is not a line at all, and bytes that are no log at all.
 var logSeeds = []string{
-	`{"v":1,"id":"a","card":"0123456789","face":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
+	`{"v":1,"id":"a","card":"0123456789","template":"Word","at":"2026-01-01T00:00:00.000Z","rating":3,"ms":1200}` + "\n",
 	`{"v":1,"id":"b","at":"2026-01-01T00:00:01.000Z","undo":"a"}` + "\n",
-	`{"v":1,"id":"a","card":"c","face":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
-	`{"v":2,"id":"a","card":"c","face":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
+	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n" + `{"v":1,"id":"b","car`,
+	`{"v":2,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
 	`{"v":1,"id":"a","card":"c","at":"2026-01-01T00:00:00.000Z","rating":3}` + "\n",
-	`{"v":1,"id":"a","card":"c","face":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
-	`{"v":1,"id":"a","card":"c","face":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
+	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T00:00:00.000Z","rating":9}` + "\n",
+	`{"v":1,"id":"a","card":"c","template":"f","at":"2026-01-01T03:00:00.000+03:00","rating":3}` + "\n",
 	"\n\n\n",
 	"[]\n",
 	"\x00\xff\xfe\n",
@@ -272,7 +272,7 @@ func FuzzReadLog(f *testing.F) {
 			if a.IsUndo() {
 				continue
 			}
-			if a.CardFace.Card == "" || a.CardFace.Face == "" || !a.Rating.Valid() {
+			if a.ReviewCard.Card == "" || a.ReviewCard.Template == "" || !a.Rating.Valid() {
 				t.Fatalf("%q was read as %+v, which answers nothing", raw, a)
 			}
 		}
@@ -310,7 +310,7 @@ func FuzzWriteAnswer(f *testing.F) {
 	f.Add("", "c", "f", int64(-62135596800000), uint8(1), int64(-1), "")
 	f.Add("«»\x00", "карточка", "文字", int64(253402300799000), uint8(4), int64(1), "")
 
-	f.Fuzz(func(t *testing.T, id, card, face string, ms int64, rating uint8, took int64, undoes string) {
+	f.Fuzz(func(t *testing.T, id, card, reviewCard string, ms int64, rating uint8, took int64, undoes string) {
 		// A stamp is written as four digits of year and read back as RFC 3339,
 		// so an instant outside the years a stamp can spell is not one a log
 		// carries.
@@ -321,9 +321,9 @@ func FuzzWriteAnswer(f *testing.F) {
 		// JSON is text, and a string that is not UTF-8 is written as the
 		// replacement character and comes back as something else. A mark is
 		// Crockford base32 and an identifier is minted here, so nothing this
-		// application writes carries one; a face's name comes off a stencil's
+		// application writes carries one; a template's name comes off a card model's
 		// heading and could.
-		for _, response := range []string{id, card, face, undoes} {
+		for _, response := range []string{id, card, reviewCard, undoes} {
 			if !utf8.ValidString(response) {
 				return
 			}
@@ -331,7 +331,7 @@ func FuzzWriteAnswer(f *testing.F) {
 
 		want := review.Answer{ID: id, At: pos, Undoes: undoes}
 		if undoes == "" {
-			want.CardFace = review.CardFaceID{Card: card, Face: face}
+			want.ReviewCard = review.ReviewCardID{Card: card, Template: reviewCard}
 			want.Rating = review.Rating(rating)
 			want.Took = time.Duration(took) * time.Millisecond
 		}
@@ -348,8 +348,8 @@ func FuzzWriteAnswer(f *testing.F) {
 		// A line the reader refuses is one it could not have written: it carries
 		// no identifier, or it answers with a rating that is not one of the four.
 		shouldFail := want.ID == "" ||
-			(!want.IsUndo() && (want.CardFace.Card == "" ||
-				want.CardFace.Face == "" || !want.Rating.Valid()))
+			(!want.IsUndo() && (want.ReviewCard.Card == "" ||
+				want.ReviewCard.Template == "" || !want.Rating.Valid()))
 		if shouldFail {
 			if len(answers) != 0 || skipped != 1 {
 				t.Fatalf("%+v was read back as %d answers and %d skipped",
@@ -362,7 +362,7 @@ func FuzzWriteAnswer(f *testing.F) {
 				want, raw, len(answers), skipped)
 		}
 		if got := answers[0]; !got.At.Equal(want.At) ||
-			got.ID != want.ID || got.CardFace != want.CardFace ||
+			got.ID != want.ID || got.ReviewCard != want.ReviewCard ||
 			got.Rating != want.Rating || got.Took != want.Took ||
 			got.Undoes != want.Undoes {
 			t.Fatalf("%+v was written as %q and came back as %+v", want, raw, got)

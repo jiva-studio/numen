@@ -7,16 +7,16 @@ import (
 	fsrs "github.com/open-spaced-repetition/go-fsrs/v3"
 )
 
-// LeastStability is the least a projected card face is taken to stand at, in
+// LeastStability is the least a projected review card is taken to stand at, in
 // days, which is a minute.
 const LeastStability = 1.0 / (24 * 60)
 
-// Schedule is where the answers so far have left one card face.
+// Schedule is where the answers so far have left one review card.
 //
 // Nothing in it is written into a vault. It is worked out from the answers
 // every time it is wanted, and thrown away at no cost but the working out.
 type Schedule struct {
-	// Due is when the card face comes round again.
+	// Due is when the review card comes round again.
 	Due time.Time
 	// Last is when it was answered, and is the zero time until it has been.
 	Last time.Time
@@ -33,11 +33,11 @@ type Schedule struct {
 	Phase uint8
 }
 
-// IsNew reports whether this card face has never been answered, which is what
+// IsNew reports whether this review card has never been answered, which is what
 // a person means by a new card.
 func (s Schedule) IsNew() bool { return s.Last.IsZero() }
 
-// Scheduler works out where an answer leaves a card face.
+// Scheduler works out where an answer leaves a review card.
 //
 // It is a port and not a function so that the one thing this application must
 // be able to change — how cards are spaced — is changed by putting another
@@ -58,11 +58,11 @@ type Scheduler interface {
 	// scheduler settles them from one reckoning of the card.
 	Endings(s Schedule, now time.Time) (good, again Schedule)
 
-	// Spaced reports whether a card face standing at this schedule comes round
+	// Spaced reports whether a review card standing at this schedule comes round
 	// in days. One the scheduler is still putting into memory comes round in
 	// minutes.
 	//
-	// Retention is measured over the answers given to spaced card faces and no
+	// Retention is measured over the answers given to spaced review cards and no
 	// others: what a card comes back as after ten minutes says nothing about
 	// memory.
 	IsSpaced(s Schedule) bool
@@ -85,7 +85,7 @@ func Recall(away time.Duration, stability float64) float64 {
 }
 
 // RecallChance is what a projection assumes about coming back: how likely a
-// card face standing here is to be recalled when it is asked at this instant.
+// review card standing here is to be recalled when it is asked at this instant.
 //
 // A projection follows one card down the middle of what it may do, weighing the
 // ending where it came back against the ending where it did not, and this is
@@ -94,10 +94,10 @@ func Recall(away time.Duration, stability float64) float64 {
 type RecallChance func(Schedule, time.Time) float64
 
 // GetModelledRecall is the chance the scheduler's own forgetting curve gives a card
-// face. A run told no other chance reads this one.
+// review card. A run told no other chance reads this one.
 func GetModelledRecall(c Schedule, now time.Time) float64 {
 	return Recall(now.Sub(c.Last), c.Stability)
 }
 
-// GetFullRecall is a run in which every card face asked comes back.
+// GetFullRecall is a run in which every review card asked comes back.
 func GetFullRecall(Schedule, time.Time) float64 { return 1 }

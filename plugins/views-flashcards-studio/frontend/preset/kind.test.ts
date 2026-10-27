@@ -147,7 +147,7 @@ const openPresetTab = async (
     today: () => NOW,
   })
   const state = await kind.kind.open?.('Steady.md', 'preset:Steady.md')
-  if (!state) throw new Error('card face missing')
+  if (!state) throw new Error('review card missing')
   // The read and the curve behind it are two answers, and both are awaited.
   await Promise.resolve()
   await Promise.resolve()

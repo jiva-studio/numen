@@ -3,7 +3,7 @@ import type { DeckProblem } from '../types'
 /** Where each problem is drawn. */
 export interface Marks {
   /**
-   * What is wrong with each card and each face, under the identity this window
+   * What is wrong with each card and each template, under the identity this window
    * gave it.
    */
   readonly at: ReadonlyMap<string, readonly string[]>
@@ -14,20 +14,20 @@ export interface Marks {
   readonly bySection: ReadonlyMap<string, ReadonlyMap<string, readonly string[]>>
   /** What is wrong with each field, under the name the file spells it. */
   readonly fields: ReadonlyMap<string, readonly string[]>
-  /** What is wrong that stands against no card, no face and no field. */
+  /** What is wrong that stands against no card, no template and no field. */
   readonly whole: readonly string[]
 }
 
 /**
  * Each problem against the thing it relies on. A problem carries where it
- * stands, so a card under no stencil and two cards of one mark each land on the
+ * stands, so a card under no card model and two cards of one card id each land on the
  * tile they were read from, and a problem naming a field lands on that field of
  * that card. One standing past the end of what was read is against the file.
  */
 export const createMarks = (
   problems: readonly DeckProblem[],
   cards: readonly string[],
-  faces: readonly string[],
+  templates: readonly string[],
 ): Marks => {
   const marksAt = new Map<string, string[]>()
   const underMap = new Map<string, Map<string, string[]>>()
@@ -55,9 +55,9 @@ export const createMarks = (
       addProblemMark(cardMarks, problem.field, problem.text)
       continue
     }
-    const face = faces[problem.face ?? -1]
-    if (face !== undefined) {
-      addProblemMark(marksAt, face, problem.text)
+    const template = templates[problem.template ?? -1]
+    if (template !== undefined) {
+      addProblemMark(marksAt, template, problem.text)
       continue
     }
     if (problem.field !== '') {

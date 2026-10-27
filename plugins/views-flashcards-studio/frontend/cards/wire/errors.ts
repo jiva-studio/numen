@@ -1,5 +1,5 @@
 /**
- * What a call over the stencils, decks and presets failed on, in the words the
+ * What a call over the card models, decks and presets failed on, in the words the
  * plugin's windows use. Every code of `numen.flashcards.v1.ErrorCode` is
  * translated here into the plugin's own `ErrorCode`.
  */
@@ -16,7 +16,7 @@ export type ErrorCode =
   | 'occupied'
   | 'unnameable'
   | 'unreachable'
-  | 'notAStencil'
+  | 'notACardModel'
   | 'notADeck'
   | 'deckTooLarge'
   | 'notAPreset'
@@ -32,7 +32,7 @@ const ERROR_CODE: Readonly<Record<ProtoErrorCode, ErrorCode | null>> = {
   [ProtoErrorCode.UNREADABLE]: 'unreadable',
   [ProtoErrorCode.OCCUPIED]: 'occupied',
   [ProtoErrorCode.UNNAMEABLE]: 'unnameable',
-  [ProtoErrorCode.NOT_A_STENCIL]: 'notAStencil',
+  [ProtoErrorCode.NOT_A_CARD_MODEL]: 'notACardModel',
   [ProtoErrorCode.NOT_A_DECK]: 'notADeck',
   [ProtoErrorCode.DECK_TOO_LARGE]: 'deckTooLarge',
   [ProtoErrorCode.NOT_A_PRESET]: 'notAPreset',
@@ -50,7 +50,7 @@ export const ERRORS: Readonly<Record<ErrorCode, string>> = {
   occupied: 'a file with this name exists',
   unnameable: 'invalid note name',
   unreachable: 'vault unreachable',
-  notAStencil: 'that note is not a stencil',
+  notACardModel: 'that note is not a card model',
   notADeck: 'that note is not a deck',
   deckTooLarge: 'that deck is longer than this reads',
   notAPreset: 'that note is not a preset',

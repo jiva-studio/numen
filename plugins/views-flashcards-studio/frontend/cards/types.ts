@@ -2,11 +2,11 @@ import type { Result } from '@numen/wire'
 import type { ErrorCode } from './wire/errors'
 import type { Surrounds } from './lib/surrounds'
 
-/** Where a deck, a stencil or a preset was filed, or why none was made. */
+/** Where a deck, a card model or a preset was filed, or why none was made. */
 export type CreateResult = Result<{ readonly path: string }, ErrorCode>
 
-/** One stencil as the list of them names it. */
-export interface StencilSummary {
+/** One card model as the list of them names it. */
+export interface CardModelSummary {
   readonly path: string
   readonly title: string
   /** The names of the fields, in the order a person is asked for them. */
@@ -14,17 +14,17 @@ export interface StencilSummary {
 }
 
 /**
- * What kind of problem a stencil or a deck has. The list is closed: a mark is drawn
- * by what is wrong with the card or the face it stands against.
+ * What kind of problem a card model or a deck has. The list is closed: a mark is drawn
+ * by what is wrong with the card or the template it stands against.
  */
 export type ProblemKind =
   | 'fieldDeclaredTwice'
-  | 'stencilWithoutFields'
-  | 'faceMissingASide'
+  | 'cardModelWithoutFields'
+  | 'templateMissingASide'
   | 'placeholderUndeclared'
-  | 'cardWithoutAStencil'
-  | 'stencilIsNotOne'
-  | 'markCarriedTwice'
+  | 'cardWithoutACardModel'
+  | 'cardModelIsNotOne'
+  | 'cardIdCarriedTwice'
   | 'fieldWrittenTwice'
   | 'fieldNotRenamed'
   | 'unknown'
@@ -36,8 +36,8 @@ export interface DeckProblem {
   readonly kind: ProblemKind
   /** The card it stands against, counted from the first, or nothing. */
   readonly card: number | null
-  /** The face it stands against, counted from the first, or nothing. */
-  readonly face: number | null
+  /** The template it stands against, counted from the first, or nothing. */
+  readonly template: number | null
   /** The field name, as the file spells it. Empty for a problem against no field. */
   readonly field: string
   /** What is wrong, in the words to show. */
@@ -55,23 +55,23 @@ export interface VaultCard {
   /**
    * What the card is, without the caret its heading writes it behind.
    */
-  readonly mark: string
+  readonly cardId: string
   /**
    * Where the section it is placed under stands among the deck's, counting from the first.
    */
   readonly sectionIndex: number | null
   /**
-   * The line its heading says, with the mark taken off.
+   * The line its heading says, with the card id taken off.
    */
   readonly heading: string
   /**
-   * The stencil it is cut by, as the wikilink beneath its heading names it.
+   * The card model it is cut by, as the wikilink beneath its heading names it.
    */
-  readonly stencilLink: string
+  readonly cardModelLink: string
   /**
    * Where that link lands in the vault. Empty for a card naming none.
    */
-  readonly stencilPath: string
+  readonly cardModelPath: string
   /** The prose between that wikilink and the first field. */
   readonly preamble: string
   readonly values: readonly Value[]
@@ -97,26 +97,26 @@ export interface VaultDeck extends Surrounds {
   readonly problems: readonly DeckProblem[]
 }
 
-/** One way a stencil shows a card. */
-export interface VaultFace {
+/** One way a card model shows a card. */
+export interface VaultTemplate {
   readonly name: string
-  /** The prose between the face's heading and its first side. */
+  /** The prose between the template's heading and its first side. */
   readonly preamble: string
   readonly front: string
   readonly back: string
 }
 
-/** A stencil as the vault reads it. */
-export interface VaultStencil extends Surrounds {
+/** A card model as the vault reads it. */
+export interface VaultCardModel extends Surrounds {
   readonly path: string
   readonly title: string
   readonly fields: readonly string[]
-  readonly faces: readonly VaultFace[]
+  readonly templates: readonly VaultTemplate[]
   readonly problems: readonly DeckProblem[]
 }
 
 /**
- * Why a deck or a stencil was not read or not written. Changed is a file that
+ * Why a deck or a card model was not read or not written. Changed is a file that
  * moved past the caller, which stops a write.
  */
 export type CardsFailure = ErrorCode | 'changed'
@@ -141,14 +141,14 @@ export type DeckReadResult = Result<
 /** What writing a deck came back with. */
 export type DeckWriteResult = Result<{ readonly at: string }, DeckFailure>
 
-/** What reading a stencil came back with. */
-export type StencilReadResult = Result<
-  { readonly stencil: VaultStencil; readonly at: string },
+/** What reading a card model came back with. */
+export type CardModelReadResult = Result<
+  { readonly cardModel: VaultCardModel; readonly at: string },
   CardsFailure
 >
 
-/** What writing a stencil came back with. */
-export type StencilWriteResult = Result<{ readonly at: string }, CardsFailure>
+/** What writing a card model came back with. */
+export type CardModelWriteResult = Result<{ readonly at: string }, CardsFailure>
 
 /** One deck a rename did not reach, which keeps the heading it had. */
 export interface UnwrittenDeck {
@@ -193,35 +193,35 @@ export interface DeckService {
 }
 
 /**
- * Stencil metadata and schema operations.
+ * Card model metadata and schema operations.
  */
-export interface StencilService {
-  /** Every stencil in the vault, by what it is called and what it asks for. */
-  stencils(limit?: number): Promise<{ stencils: readonly StencilSummary[]; held: number }>
+export interface CardModelService {
+  /** Every card model in the vault, by what it is called and what it asks for. */
+  cardModels(limit?: number): Promise<{ cardModels: readonly CardModelSummary[]; held: number }>
   /**
-   * A stencil declaring those fields and showing no face, the same way.
+   * A card model declaring those fields and showing no template, the same way.
    */
-  createStencil(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
+  createCardModel(title: string, folder: string, fields: readonly string[]): Promise<CreateResult>
   /**
-   * A field of a stencil under another name, wherever that name is written.
+   * A field of a card model under another name, wherever that name is written.
    */
   renameField(
     path: string,
     field: { from: string; to: string },
     observed: string | null,
   ): Promise<FieldRenameResult>
-  readStencil(path: string): Promise<StencilReadResult>
-  /** Fields and faces into a stencil, making the file where there is none. */
-  writeStencil(
+  readCardModel(path: string): Promise<CardModelReadResult>
+  /** Fields and templates into a card model, making the file where there is none. */
+  writeCardModel(
     path: string,
-    stencil: {
+    cardModel: {
       fields: readonly string[]
       preamble: string
-      faces: readonly VaultFace[]
+      templates: readonly VaultTemplate[]
       tail: string
     },
     observed: string | null,
-  ): Promise<StencilWriteResult>
+  ): Promise<CardModelWriteResult>
 }
 
-export interface Cards extends DeckService, StencilService {}
+export interface Cards extends DeckService, CardModelService {}

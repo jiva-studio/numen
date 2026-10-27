@@ -8,10 +8,10 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
   id,
   name: id,
   path: `/vaults/${id}`,
-  faces: 3,
+  reviewCards: 3,
   due: 1,
   new: 2,
-  decks: [{ deck: 'decks/Words.md', faces: 3, due: 1, new: 2, learned: 1, unbegun: 2 }],
+  decks: [{ deck: 'decks/Words.md', reviewCards: 3, due: 1, new: 2, learned: 1, unbegun: 2 }],
   presets: [
     {
       preset: 'Sanskrit.md',
@@ -41,7 +41,14 @@ const vault = (id: string, fields: Partial<VaultCounts> = {}): VaultCounts => ({
 /** The vaults as they stand before any of them is counted. */
 const createVaultList = (...all: readonly VaultCounts[]): DueCounts => ({
   day: '2026-09-05',
-  vaults: all.map((one) => ({ ...vault(one.name), ...one, faces: 0, due: 0, new: 0, decks: [] })),
+  vaults: all.map((one) => ({
+    ...vault(one.name),
+    ...one,
+    reviewCards: 0,
+    due: 0,
+    new: 0,
+    decks: [],
+  })),
 })
 
 /** One vault's count, as it arrives on its own. */
@@ -188,7 +195,7 @@ describe('counting what every vault owes', () => {
 
     void one.count()
     front.sendCount(createVaultList(vault('01A')))
-    front.sendCount(count(vault('01A', { isIndexing: true, faces: 0, due: 0, new: 0 })))
+    front.sendCount(count(vault('01A', { isIndexing: true, reviewCards: 0, due: 0, new: 0 })))
     front.endCounts()
     await flushPromises()
 

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-/** One of the icons a stencil and a deck are drawn with. */
+/** One of the icons a card model and a deck are drawn with. */
 import { ICONS, type Icon } from './icons'
 
 defineProps<{ name: Icon }>()

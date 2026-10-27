@@ -3,7 +3,7 @@ import { openWorkspace } from '../../support/workspace'
 
 /**
  * A path opens in the editor its file is for, whichever road it was reached by: a deck in the
- * editor of its cards, a stencil in the editor of its fields and faces, a note in the editor of its
+ * editor of its cards, a card model in the editor of its fields and templates, a note in the editor of its
  * prose, a book in a reader.
  */
 
@@ -48,14 +48,14 @@ for (const [road, open] of Object.entries(ROADS)) {
       await open(page, 'cards', 'cards/Animals.md')
 
       await expect(page.locator('.deck').first()).toBeVisible()
-      await expect(page.locator('.stencil-tab')).toHaveCount(0)
+      await expect(page.locator('.card-model-tab')).toHaveCount(0)
     })
 
-    test('opens a stencil in the editor of its fields and faces', async ({ page }) => {
+    test('opens a card model in the editor of its fields and templates', async ({ page }) => {
       await openWorkspace(page)
       await open(page, 'cards', 'cards/Animal.md')
 
-      await expect(page.locator('.stencil-tab').first()).toBeVisible()
+      await expect(page.locator('.card-model-tab').first()).toBeVisible()
       await expect(page.locator('.deck')).toHaveCount(0)
     })
 
@@ -65,7 +65,7 @@ for (const [road, open] of Object.entries(ROADS)) {
 
       await expect(page.locator('.note').first()).toBeVisible()
       await expect(page.locator('.deck')).toHaveCount(0)
-      await expect(page.locator('.stencil-tab')).toHaveCount(0)
+      await expect(page.locator('.card-model-tab')).toHaveCount(0)
     })
   })
 }

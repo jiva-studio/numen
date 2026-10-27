@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 /**
- * A card face is written once and drawn in two windows: here, and in the
- * editor's stencil pane. Both draw it through `CardProse`, so the markup a face
+ * A review card is written once and drawn in two windows: here, and in the
+ * editor's card model pane. Both draw it through `CardProse`, so the markup a review card
  * evaluates to is the same in both, and this is what holds them to it.
  */
 import { CardProse } from '../../../../ui/cards'
@@ -10,8 +10,8 @@ import { describe, expect, it } from 'vitest'
 
 import Card from './Card.vue'
 
-/** What each of the faces below has to survive being drawn. */
-const FACES = [
+/** What each of the review cards below has to survive being drawn. */
+const REVIEW_CARDS = [
   '<p>plain prose</p>',
   '<p>a <strong>strong</strong> word and an <em>emphasised</em> one</p>',
   '<ul><li>one</li><li>two</li></ul>',
@@ -24,7 +24,7 @@ const FACES = [
   '',
 ]
 
-/** The prose of a face as the review window draws it. */
+/** The prose of a review card as the review window draws it. */
 const inTheReviewWindow = (text: string): string => {
   const renderedElement = mount(Card, { props: { front: text, back: '', isShown: false } })
   const response = renderedElement.find('.prose').element.innerHTML
@@ -32,7 +32,7 @@ const inTheReviewWindow = (text: string): string => {
   return response
 }
 
-/** The prose of the same face as the editor's pane draws it. */
+/** The prose of the same review card as the editor's pane draws it. */
 const inTheEditor = (text: string): string => {
   const renderedElement = mount(CardProse, { props: { text } })
   const response = renderedElement.find('.prose').element.innerHTML
@@ -40,14 +40,14 @@ const inTheEditor = (text: string): string => {
   return response
 }
 
-describe('one face, two windows', () => {
+describe('one review card, two windows', () => {
   it('evaluates to the same markup in both', () => {
-    for (const face of FACES) {
-      expect(inTheReviewWindow(face)).toBe(inTheEditor(face))
+    for (const reviewCard of REVIEW_CARDS) {
+      expect(inTheReviewWindow(reviewCard)).toBe(inTheEditor(reviewCard))
     }
   })
 
-  // The control: the faces above are not all empty, so the comparison above is
+  // The control: the review cards above are not all empty, so the comparison above is
   // comparing something.
   it('draws what it was given', () => {
     expect(inTheReviewWindow('<p>plain prose</p>')).toContain('plain prose')

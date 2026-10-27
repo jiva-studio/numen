@@ -1,10 +1,10 @@
 /** Where a card lands, and which runs draw a drop target of their own. */
 import { describe, expect, it } from 'vitest'
-import type { Stencil } from './card'
+import type { CardModel } from './card'
 import { createRunEnd, HEAD, type DeckCard, type DeckSection } from './deck'
 import { getGrid, isMoved } from './grid'
 
-const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name'] }]
+const CUTS: readonly CardModel[] = [{ name: 'Animal', fields: ['Name'] }]
 const SECTIONS: readonly DeckSection[] = [
   { id: 'roots', name: 'Roots' },
   { id: 'leaves', name: 'Leaves' },
@@ -12,7 +12,7 @@ const SECTIONS: readonly DeckSection[] = [
 const card = (id: string, section: string | null): DeckCard => ({
   id,
   section,
-  stencil: 'Animal',
+  cardModel: 'Animal',
   filled: [],
 })
 
@@ -20,7 +20,7 @@ const grid = (
   cards: readonly DeckCard[],
   sections: readonly DeckSection[] = [],
   dragCard: string | null = null,
-) => getGrid({ cards, sections, stencils: CUTS }, dragCard)
+) => getGrid({ cards, sections, cardModels: CUTS }, dragCard)
 
 describe('getGrid, the drop target a run draws', () => {
   it('draws no drop target for the cards before the first section where there is no section', () => {

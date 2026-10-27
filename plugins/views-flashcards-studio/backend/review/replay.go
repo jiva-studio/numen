@@ -5,22 +5,22 @@ import (
 	"strings"
 )
 
-// SchedulingPolicy is what one card face is worked out under: the scheduler
+// SchedulingPolicy is what one review card is worked out under: the scheduler
 // that spaces it, and the preset that says which day it lands on.
 type SchedulingPolicy struct {
 	By     Scheduler
 	Preset Preset
 }
 
-// Assignment is how one card face is scheduled. A card face is scheduled by the
+// Assignment is how one review card is scheduled. A review card is scheduled by the
 // preset its deck points at, and two presets asking for different shares of the
 // cards send the same card away for different lengths of time.
-type Assignment func(CardFaceID) SchedulingPolicy
+type Assignment func(ReviewCardID) SchedulingPolicy
 
-// ScheduleBy is one scheduler for every card face, on the preset a deck naming
+// ScheduleBy is one scheduler for every review card, on the preset a deck naming
 // none is scheduled by.
 func ScheduleBy(s Scheduler) Assignment {
-	return func(CardFaceID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
+	return func(ReviewCardID) SchedulingPolicy { return SchedulingPolicy{By: s, Preset: Defaults()} }
 }
 
 // History is a vault's answers in the order they were given: nothing a
@@ -34,32 +34,32 @@ type History []Answer
 // OrderAnswers puts a vault's answers in the order they were given.
 func OrderAnswers(answers []Answer) History { return getActiveAnswers(answers) }
 
-// Replay works out where this history leaves every card face, each under the
+// Replay works out where this history leaves every review card, each under the
 // scheduler its own preset asks for and on the day its own preset puts it.
 //
 // The days the answers have already filled are what the next card is placed
 // against.
-func (h History) Replay(d Day, assignment Assignment) map[CardFaceID]Schedule {
-	out := make(map[CardFaceID]Schedule)
+func (h History) Replay(d Day, assignment Assignment) map[ReviewCardID]Schedule {
+	out := make(map[ReviewCardID]Schedule)
 	on := NewDueByDay(d)
 	for _, a := range h {
-		one := assignment(a.CardFace)
-		next := one.By.Next(out[a.CardFace], a.At, a.Rating)
+		one := assignment(a.ReviewCard)
+		next := one.By.Next(out[a.ReviewCard], a.At, a.Rating)
 		next.Due = one.Preset.AssignDueDay(on, a.At, next.Due)
-		out[a.CardFace] = next
+		out[a.ReviewCard] = next
 	}
 	return out
 }
 
 // RecallTally is how much of what came round in days came back, over one day:
-// the answers given to spaced card faces, and how many of those came back at
+// the answers given to spaced review cards, and how many of those came back at
 // all.
 //
-// A card face the scheduler is still putting into memory is in neither. What is
+// A review card the scheduler is still putting into memory is in neither. What is
 // asked of one is whether it comes back after ten minutes, which says nothing
 // about memory.
 type RecallTally struct {
-	// Asked is the answers given to spaced card faces, and Recalled the ones
+	// Asked is the answers given to spaced review cards, and Recalled the ones
 	// among them that were not Again.
 	Asked    int
 	Recalled int
@@ -67,7 +67,7 @@ type RecallTally struct {
 
 // GetRetained is what came back on each day, by the name of the day.
 //
-// It is worked out with the replay: whether a card face was spaced is a thing
+// It is worked out with the replay: whether a review card was spaced is a thing
 // only the answers before it can say.
 func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally {
 	out := make(map[string]RecallTally)
@@ -87,23 +87,23 @@ func (h History) GetRetained(scheduler Scheduler, d Day) map[string]RecallTally 
 }
 
 // walkAnswers walks the answers in the order they were given, telling each one
-// to the caller with the schedule the card face stood at before it.
+// to the caller with the schedule the review card stood at before it.
 func walkAnswers(
 	delta Scheduler, answers []Answer, each func(before Schedule, a Answer),
-) map[CardFaceID]Schedule {
+) map[ReviewCardID]Schedule {
 	return OrderAnswers(answers).walkAnswers(delta, each)
 }
 
 func (h History) walkAnswers(
 	delta Scheduler, each func(before Schedule, a Answer),
-) map[CardFaceID]Schedule {
-	out := make(map[CardFaceID]Schedule)
+) map[ReviewCardID]Schedule {
+	out := make(map[ReviewCardID]Schedule)
 	for _, a := range h {
-		before := out[a.CardFace]
+		before := out[a.ReviewCard]
 		if each != nil {
 			each(before, a)
 		}
-		out[a.CardFace] = delta.Next(before, a.At, a.Rating)
+		out[a.ReviewCard] = delta.Next(before, a.At, a.Rating)
 	}
 	return out
 }
@@ -112,7 +112,7 @@ func (h History) walkAnswers(
 //
 // An answer some line takes back is left out, and one identifier is one answer
 // however many lines carry it. The files arrive in whatever order they were
-// synchronised, and what a card face has been through is the order of the
+// synchronised, and what a review card has been through is the order of the
 // answers themselves.
 func getActiveAnswers(answers []Answer) []Answer {
 	undoTargets := make(map[string]bool)

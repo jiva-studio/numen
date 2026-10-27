@@ -20,7 +20,7 @@ service FlashcardsService {
   // Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
   rpc StartSession(StartSessionRequest) returns (StartSessionResponse);
 
-  // AnswerCard records an answer rating and review latency for a card face.
+  // AnswerCard records an answer rating and review latency for a review card.
   rpc AnswerCard(AnswerCardRequest) returns (AnswerCardResponse);
 
   // TakeBackAnswer appends an undo entry for a previously recorded answer.
@@ -59,8 +59,8 @@ message VaultCardsDue {
   string name = 2;
   string path = 3;
 
-  // Total card faces, currently due faces, and unreviewed faces.
-  int32 faces = 4;
+  // Total review cards, review cards due now, and review cards never reviewed.
+  int32 review_cards = 4;
   int32 due = 5;
   int32 new = 6;
 
@@ -79,17 +79,17 @@ message VaultCardsDue {
 
 message DeckCardsDue {
   string deck = 1;
-  int32 faces = 2;
+  int32 review_cards = 2;
   int32 due = 3;
   int32 new = 4;
 
   // Number of cards answered during the current review day.
   int32 answered = 5;
 
-  // Number of card faces meeting the preset learned criteria.
+  // Number of review cards meeting the preset learned criteria.
   int32 learned = 6;
 
-  // Number of card faces that have never been reviewed.
+  // Number of review cards that have never been reviewed.
   int32 unbegun = 7;
 }
 
@@ -104,10 +104,10 @@ message PresetCardsDue {
   // Number of decks configured with this preset.
   int32 decks = 3;
 
-  // Total card faces across assigned decks.
+  // Total review cards across assigned decks.
   int32 cards = 4;
 
-  // Due and new card faces available within the preset budget.
+  // Due and new review cards available within the preset budget.
   int32 owed_due = 5;
   int32 owed_new = 6;
 
@@ -140,15 +140,15 @@ message Intervals {
   int64 easy = 4;
 }
 
-// SessionCard represents a rendered card face presented during a review session.
+// SessionCard represents a rendered review card presented during a review session.
 message SessionCard {
   // Deck file path and section header name.
   string deck = 1;
   string section = 2;
 
-  // Card identifier and face template name.
-  string mark = 3;
-  string face = 4;
+  // Card id and template name.
+  string card_id = 3;
+  string template = 4;
 
   // First line of the card primary field.
   string heading = 5;
@@ -202,9 +202,9 @@ message StartSessionResponse {
 message AnswerCardRequest {
   string vault = 1;
   string run = 2;
-  // Card identifier and face name.
-  string mark = 3;
-  string face = 4;
+  // Card id and template name.
+  string card_id = 3;
+  string template = 4;
   Rating rating = 5;
   // Time spent viewing the card in milliseconds.
   int64 took_ms = 6;

@@ -40,17 +40,17 @@ func (r Rating) String() string {
 	return "unknown"
 }
 
-// CardFaceID is the key a schedule is filed under: one card, and one face of
-// the stencil that cuts it. The card is the mark it is known by, and the face is
-// the name it carries in its stencil.
+// ReviewCardID is the key a schedule is filed under: one card, and one review card of
+// the card model that cuts it. The card is the card id it is known by, and the review card is
+// the name it carries in its card model.
 //
-// A card is shown once through each of its stencil's faces, and each of them
-// asks a different thing, so each has a path of its own. The mark travels with
-// the card between decks and between vaults; the face's name does not travel at
-// all, and renaming a face starts its schedule again.
-type CardFaceID struct {
-	Card string
-	Face string
+// A card is shown once through each of its card model's templates, and each of them
+// asks a different thing, so each has a path of its own. The card id travels with
+// the card between decks and between vaults; the template's name does not travel at
+// all, and renaming a review card starts its schedule again.
+type ReviewCardID struct {
+	Card     string
+	Template string
 }
 
 // Answer is one card answered once, or one answer taken back.
@@ -59,10 +59,10 @@ type CardFaceID struct {
 // and so that two answers given in the same millisecond stay two.
 type Answer struct {
 	ID string
-	// CardFace is which card was shown, through which face. It is empty on an
+	// ReviewCard is which card was shown, through which review card. It is empty on an
 	// answer that takes another back.
-	CardFace CardFaceID
-	At       time.Time
+	ReviewCard ReviewCardID
+	At         time.Time
 	// Rating is how well the card came back. It is zero on an answer that takes
 	// another back.
 	Rating Rating
@@ -95,14 +95,14 @@ func ParseTimestamp(s string) (time.Time, error) { return time.Parse(time.RFC333
 
 // line is one line of a log, currently in the file.
 type line struct {
-	V      int    `json:"v"`
-	ID     string `json:"id"`
-	Card   string `json:"card,omitempty"`
-	Face   string `json:"face,omitempty"`
-	At     string `json:"at"`
-	Rating uint8  `json:"rating,omitempty"`
-	Ms     int64  `json:"ms,omitempty"`
-	Undo   string `json:"undo,omitempty"`
+	V        int    `json:"v"`
+	ID       string `json:"id"`
+	Card     string `json:"card,omitempty"`
+	Template string `json:"template,omitempty"`
+	At       string `json:"at"`
+	Rating   uint8  `json:"rating,omitempty"`
+	Ms       int64  `json:"ms,omitempty"`
+	Undo     string `json:"undo,omitempty"`
 }
 
 // Write turns an answer into the bytes it stands as in a file, newline and all.
@@ -114,7 +114,7 @@ func Write(a Answer) ([]byte, error) {
 	if a.IsUndo() {
 		l.Undo = a.Undoes
 	} else {
-		l.Card, l.Face = a.CardFace.Card, a.CardFace.Face
+		l.Card, l.Template = a.ReviewCard.Card, a.ReviewCard.Template
 		l.Rating = uint8(a.Rating)
 		l.Ms = a.Took.Milliseconds()
 	}
@@ -178,14 +178,14 @@ func answer(raw []byte) (Answer, bool) {
 	if l.Undo != "" {
 		return Answer{ID: l.ID, At: pos, Undoes: l.Undo}, true
 	}
-	if l.Card == "" || l.Face == "" || !Rating(l.Rating).Valid() {
+	if l.Card == "" || l.Template == "" || !Rating(l.Rating).Valid() {
 		return Answer{}, false
 	}
 	return Answer{
-		ID:       l.ID,
-		CardFace: CardFaceID{Card: l.Card, Face: l.Face},
-		At:       pos,
-		Rating:   Rating(l.Rating),
-		Took:     time.Duration(l.Ms) * time.Millisecond,
+		ID:         l.ID,
+		ReviewCard: ReviewCardID{Card: l.Card, Template: l.Template},
+		At:         pos,
+		Rating:     Rating(l.Rating),
+		Took:       time.Duration(l.Ms) * time.Millisecond,
 	}, true
 }

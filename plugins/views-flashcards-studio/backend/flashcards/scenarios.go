@@ -14,12 +14,12 @@ type Day = review.Day
 
 // owes, what to ask next, and what an answer is written to.
 type Scenarios struct {
-	CardFaces ListCardFaces
-	Marks     MarkCards
-	Schedules Schedules
-	CardsDue  CountCardsDue
-	Session   Session
-	Log       Log
+	ReviewCards   ListReviewCards
+	AssignCardIDs AssignCardIDs
+	Schedules     Schedules
+	CardsDue      CountCardsDue
+	Session       Session
+	Log           Log
 	// Record writes down an answer in a run, and a taking back of one.
 	Record Record
 	// Counted is how much of a vault was answered on each day it was reviewed.
@@ -58,18 +58,18 @@ func New(cfg Config) Scenarios { return NewScenarios(cfg) }
 
 // NewScenarios builds the scenarios that run a vault's cards against this installation.
 func NewScenarios(cfg Config) Scenarios {
-	faces := NewListCardFaces(cfg.Readers, cfg.Notes, cfg.Links)
-	faces.Cores = cfg.Cores
-	// A deck or stencil this window writes is forgotten before the index is
+	reviewCards := NewListReviewCards(cfg.Readers, cfg.Notes, cfg.Links)
+	reviewCards.Cores = cfg.Cores
+	// A deck or card model this window writes is forgotten before the index is
 	// brought level with it.
 	leveled := func(ctx context.Context, v domain.Vault, paths []string) error {
-		faces.Invalidate(v.ID, paths...)
+		reviewCards.Invalidate(v.ID, paths...)
 		if cfg.Index == nil {
 			return nil
 		}
 		return cfg.Index(ctx, v, paths)
 	}
-	marking := NewMarkCards(
+	assigning := NewAssignCardIDs(
 		cfg.Readers, cfg.Writers, cfg.Notes, cfg.Links, leveled, cfg.Now,
 	)
 	var starts time.Duration
@@ -86,14 +86,14 @@ func NewScenarios(cfg Config) Scenarios {
 	presets.Problems = cfg.Problems
 
 	// Each card is worked out at the share of the cards its own preset asks
-	// for, which is what says which preset a card face is placed under.
+	// for, which is what says which preset a review card is placed under.
 	var defaultScheduler review.Scheduler = review.NewFSRS()
 	var createScheduler func(retention float64) review.Scheduler
 	if cfg.Scheduler != nil {
 		defaultScheduler = cfg.Scheduler.CreateScheduler(review.Defaults().Retention)
 		createScheduler = cfg.Scheduler.CreateScheduler
 	}
-	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, faces, presets)
+	schedules := NewSchedules(cfg.Logs, defaultScheduler, day, reviewCards, presets)
 	schedules.Cache = cfg.Schedules
 	if createScheduler != nil {
 		schedules.At = createScheduler
@@ -102,18 +102,18 @@ func NewScenarios(cfg Config) Scenarios {
 	counted := NewCountReviews(cfg.Logs, schedules, day, cfg.Now)
 	counted.Cache = cfg.DayCounts
 
-	curves := NewProjectCurve(faces, schedules, presets, day, cfg.Now)
+	curves := NewProjectCurve(reviewCards, schedules, presets, day, cfg.Now)
 	curves.Cores = cfg.Cores
 	if createScheduler != nil {
 		curves.By = createScheduler
 	}
 
 	return Scenarios{
-		CardFaces:     faces,
-		Marks:         marking,
+		ReviewCards:   reviewCards,
+		AssignCardIDs: assigning,
 		Schedules:     schedules,
-		CardsDue:      NewCountCardsDue(faces, schedules, presets, day, cfg.Now),
-		Session:       NewSession(marking, faces, schedules, presets, day, cfg.Now),
+		CardsDue:      NewCountCardsDue(reviewCards, schedules, presets, day, cfg.Now),
+		Session:       NewSession(assigning, reviewCards, schedules, presets, day, cfg.Now),
 		Log:           Log{Stores: cfg.Logs},
 		Record:        NewRecord(cfg.Now),
 		Counted:       counted,

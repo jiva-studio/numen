@@ -29,7 +29,7 @@ describe('renderCardHtml', () => {
     )
   })
 
-  it('takes out the breaks a face opens and closes with', () => {
+  it('takes out the breaks a template opens and closes with', () => {
     expect(renderCardHtml('\n<p>one</p>\n')).toBe('<p>one</p>')
   })
 

@@ -138,7 +138,7 @@ func (a Allowance) IsPaused() bool { return a.Stops != StoppedNothing }
 //
 // Now is any instant of the review day, spent is what that day has already gone
 // through under the preset, unbegunCards is the material it has still to begin,
-// and daysToLearn is how many days of review a card face begun now needs before
+// and daysToLearn is how many days of review a review card begun now needs before
 // the preset counts it learned, which a date paces the day against.
 func (p Preset) GetAllowance(
 	d Day, now time.Time, used Spent, unbegunCards, daysToLearn int,

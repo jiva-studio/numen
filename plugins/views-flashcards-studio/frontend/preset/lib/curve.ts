@@ -61,7 +61,7 @@ export type GoalIdleReason = 'unpointed' | 'noCards' | 'beginsNothing' | ''
  * nothing between them. A preset holding cards is never told it holds none.
  *
  * The third is a preset that schedules and has nothing it can schedule: every
- * card face here is one nobody has begun, and no place of the range begins one.
+ * review card here is one nobody has begun, and no place of the range begins one.
  * It is a fact about the material, and not a reason the preset is stopped.
  */
 export const getIdleReason = (curve: Curve): GoalIdleReason => {

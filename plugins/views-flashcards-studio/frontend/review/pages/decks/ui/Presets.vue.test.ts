@@ -27,7 +27,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   settings: settings(),
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 40,
+  reviewCards: 40,
   cards: 22,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
@@ -245,7 +245,15 @@ describe('what the goals come to today', () => {
   // a file being set up, and the editor's preset tab is where it is read.
   it('leaves out a preset no deck points at', () => {
     const one = mountPresets([
-      preset({ decks: [], named: 0, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
+      preset({
+        decks: [],
+        named: 0,
+        reviewCards: 0,
+        settings: null,
+        cards: 0,
+        answered: 0,
+        took: 0,
+      }),
     ])
 
     expect(one.find('.presets').exists()).toBe(false)
@@ -254,7 +262,15 @@ describe('what the goals come to today', () => {
 
   it('leaves out a preset whose decks hold no card between them', () => {
     const one = mountPresets([
-      preset({ decks: [], named: 2, faces: 0, settings: null, cards: 0, answered: 0, took: 0 }),
+      preset({
+        decks: [],
+        named: 2,
+        reviewCards: 0,
+        settings: null,
+        cards: 0,
+        answered: 0,
+        took: 0,
+      }),
     ])
 
     expect(one.find('.presets').exists()).toBe(false)
@@ -267,7 +283,7 @@ describe('what the goals come to today', () => {
     const one = mountPresets([
       preset({ path: 'A.md', name: 'Sanskrit' }),
       preset({ path: 'B.md', name: 'Stopped', paused: 'no cards per day' }),
-      preset({ path: 'C.md', named: 0, faces: 0, settings: null }),
+      preset({ path: 'C.md', named: 0, reviewCards: 0, settings: null }),
     ])
     const presetElements = one.findAll('.presets__preset')
 

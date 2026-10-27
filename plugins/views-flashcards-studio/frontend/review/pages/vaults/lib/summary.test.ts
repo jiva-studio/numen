@@ -12,7 +12,7 @@ const vault = (overrides: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   name: 'Roots',
   path: '/vaults/Roots',
   isCounted: true,
-  faces: 0,
+  reviewCards: 0,
   due: 2,
   new: 3,
   decks: [],

@@ -183,7 +183,7 @@ const getPresetFromDecks = (
 /** What is waiting under a preset today, and what its decks owe where the count answered nothing. */
 const getDayOwed = (one: PresetTally, day: PresetCardsDue | undefined) => ({
   named: day?.decks ?? one.decks.length,
-  faces: day?.cards ?? 0,
+  reviewCards: day?.cards ?? 0,
   // What a session over it asks is the count's own figure, and a build that
   // answered none falls back to what its decks owe between them.
   cards: day?.owed ?? one.due + one.fresh,
@@ -205,7 +205,7 @@ const getPresetFromCount = (one: PresetCardsDue, why: string, today: string): Pr
   settings: null,
   decks: [],
   named: one.decks,
-  faces: one.cards,
+  reviewCards: one.cards,
   // The count answered for this preset with its own figures, and the day is
   // drawn from them.
   cards: one.owed,

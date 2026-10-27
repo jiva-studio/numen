@@ -73,7 +73,7 @@ func (r faultyReader) Read(ctx context.Context, path string) ([]byte, error) {
 type unanswered struct {
 	ports.LinkQueries
 	t *testing.T
-	// isQuiet marks a question asked of it as a failure of the test.
+	// isQuiet card ids a question asked of it as a failure of the test.
 	isQuiet bool
 }
 
@@ -110,14 +110,14 @@ func TestAVaultThatWillNotOpenIsAnError(t *testing.T) {
 	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read a deck = %v, want the vault's error", err)
 	}
-	if _, err := u.Stencil(t.Context(), vs.first, "Animal.md"); !errors.Is(err, errOutOfReach) {
-		t.Errorf("read a stencil = %v, want the vault's error", err)
+	if _, err := u.CardModel(t.Context(), vs.first, "Animal.md"); !errors.Is(err, errOutOfReach) {
+		t.Errorf("read a card model = %v, want the vault's error", err)
 	}
 }
 
-// A deck is read against its stencils, so a stencil the vault cannot look at
+// A deck is read against its card models, so a card model the vault cannot look at
 // is an error of the deck's read.
-func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
+func TestADeckWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	reader := cards.NewRead(vs.ports.Readers, vs.queries)
 	birds, err := reader.Deck(t.Context(), vs.first, "decks/Birds.md")
@@ -127,10 +127,10 @@ func TestADeckWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 
 	u := cards.NewRead(faulty{inner: vs.ports.Readers, stat: map[string]error{"Animal.md": errOutOfReach}}, vs.queries)
 	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
-		t.Errorf("read the deck = %v, want the stencil's error", err)
+		t.Errorf("read the deck = %v, want the card model's error", err)
 	}
-	if _, err := u.GetCardStencils(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
-		t.Errorf("get the card stencils = %v, want the stencil's error", err)
+	if _, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
+		t.Errorf("get the card card models = %v, want the card model's error", err)
 	}
 }
 
@@ -148,13 +148,13 @@ func TestADeckWhoseLinksCannotBeResolvedIsAnError(t *testing.T) {
 	if _, err := u.Deck(t.Context(), vs.first, "decks/Birds.md"); !errors.Is(err, errOutOfReach) {
 		t.Errorf("read the deck = %v, want the index's error", err)
 	}
-	if _, err := u.GetCardStencils(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
-		t.Errorf("get the card stencils = %v, want the index's error", err)
+	if _, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Birds.md", birds.Body); !errors.Is(err, errOutOfReach) {
+		t.Errorf("get the card card models = %v, want the index's error", err)
 	}
 }
 
-// A deck whose cards name no stencil asks the index nothing.
-func TestADeckNamingNoStencilAsksNoLinkQuestion(t *testing.T) {
+// A deck whose cards name no card model asks the index nothing.
+func TestADeckNamingNoCardModelAsksNoLinkQuestion(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Bare.md", "---\ntype: deck\n---\n\n## Wren\n\n### Name\n\nWren\n")
 
@@ -168,12 +168,12 @@ func TestADeckNamingNoStencilAsksNoLinkQuestion(t *testing.T) {
 	}
 }
 
-// A deck whose one card names a note that is not a stencil is reported, and that
-// card is cut by a stencil of nothing.
-func TestTheOneCardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
+// A deck whose one card names a note that is not a card model is reported, and that
+// card is cut by a card model of nothing.
+func TestTheOneCardNamingANoteThatIsNotACardModelIsReported(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Rain.md", "---\ntype: deck\n---\n"+
-		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno stencil says what this is\n")
+		"\n## Rain\n\n[[Weather]]\n\n### Height\n\nno card model says what this is\n")
 	if err := vs.index(t)(t.Context(), vs.first, nil); err != nil {
 		t.Fatal(err)
 	}
@@ -185,26 +185,26 @@ func TestTheOneCardNamingANoteThatIsNotAStencilIsReported(t *testing.T) {
 	}
 	var filed []format.Problem
 	for _, p := range got.Body.Problems {
-		if p.Fault == format.FaultNotAStencil {
+		if p.Fault == format.FaultNotACardModel {
 			filed = append(filed, p)
 		}
 	}
 	if len(filed) != 1 || filed[0].Card != 0 {
-		t.Errorf("problems = %+v, want the one card naming a note that is not a stencil", got.Body.Problems)
+		t.Errorf("problems = %+v, want the one card naming a note that is not a card model", got.Body.Problems)
 	}
 
-	delta, err := u.GetCardStencils(t.Context(), vs.first, "decks/Rain.md", got.Body)
+	delta, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Rain.md", got.Body)
 	if err != nil {
-		t.Fatalf("get the card stencils: %v", err)
+		t.Fatalf("get the card card models: %v", err)
 	}
-	if target, ok := delta["Weather"]; !ok || !reflect.DeepEqual(target, format.Stencil{}) {
-		t.Errorf("the card is cut by %+v, want a stencil of nothing", target)
+	if target, ok := delta["Weather"]; !ok || !reflect.DeepEqual(target, format.CardModel{}) {
+		t.Errorf("the card is cut by %+v, want a card model of nothing", target)
 	}
 }
 
-// A stencil too large to read is a stencil that did not read, and the card
-// naming it is not reported as naming a note that is not a stencil.
-func TestACardNamingAStencilTooLargeToReadIsNotCalledANote(t *testing.T) {
+// A card model too large to read is a card model that did not read, and the card
+// naming it is not reported as naming a note that is not a card model.
+func TestACardNamingACardModelTooLargeToReadIsNotCalledANote(t *testing.T) {
 	vs := newVaults(t)
 	if err := os.Truncate(filepath.Join(vs.first.Path, "Animal.md"), note.MaxBytes+1); err != nil {
 		t.Fatal(err)
@@ -216,15 +216,15 @@ func TestACardNamingAStencilTooLargeToReadIsNotCalledANote(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 	for _, p := range got.Body.Problems {
-		if p.Fault == format.FaultNotAStencil {
-			t.Errorf("problem = %+v, want none naming the stencil a note", p)
+		if p.Fault == format.FaultNotACardModel {
+			t.Errorf("problem = %+v, want none naming the card model a note", p)
 		}
 	}
 }
 
-// Each stencil is opened once, however many of the names the cards write land
+// Each card model is opened once, however many of the names the cards write land
 // on it.
-func TestAStencilNamedTwoWaysIsOpenedOnce(t *testing.T) {
+func TestACardModelNamedTwoWaysIsOpenedOnce(t *testing.T) {
 	vs := newVaults(t)
 	write(t, vs.first, "decks/Pair.md", "---\ntype: deck\n---\n"+
 		"\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"+
@@ -236,27 +236,27 @@ func TestAStencilNamedTwoWaysIsOpenedOnce(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if len(got.Stencils) != 2 {
-		t.Fatalf("stencils = %v, want both names landing", got.Stencils)
+	if len(got.CardModels) != 2 {
+		t.Fatalf("card models = %v, want both names landing", got.CardModels)
 	}
 	if counted.reads != 2 {
-		t.Errorf("%d files were opened, want the deck and the one stencil", counted.reads)
+		t.Errorf("%d files were opened, want the deck and the one card model", counted.reads)
 	}
 }
 
-// A stencil exactly at a note's bound is read.
-func TestAStencilAtTheBoundIsRead(t *testing.T) {
+// A card model exactly at a note's bound is read.
+func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	vs := newVaults(t)
 	raw := animals["Animal.md"] + "\n"
 	raw += strings.Repeat("x", note.MaxBytes-len(raw)-1) + "\n"
 	write(t, vs.first, "Animal.md", raw)
 
-	got, err := cards.NewRead(vs.ports.Readers, nil).Stencil(t.Context(), vs.first, "Animal.md")
+	got, err := cards.NewRead(vs.ports.Readers, nil).CardModel(t.Context(), vs.first, "Animal.md")
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
 	if got.Outcome != note.Ok || got.Fingerprint.Size != note.MaxBytes {
-		t.Errorf("outcome = %q, size = %d, want a stencil of %d bytes read", got.Outcome, got.Fingerprint.Size, note.MaxBytes)
+		t.Errorf("outcome = %q, size = %d, want a card model of %d bytes read", got.Outcome, got.Fingerprint.Size, note.MaxBytes)
 	}
 }
 

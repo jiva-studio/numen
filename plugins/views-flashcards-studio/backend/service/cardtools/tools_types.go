@@ -19,8 +19,8 @@ import (
 // otherwise be a folder of notes, so a deck with no ceiling on it is a way to put a vault in a
 // context window by accident.
 const (
-	maxStencils = 50
-	maxCards    = 50
+	maxCardModels = 50
+	maxCards      = 50
 	// maxBytes is how much one call may put in a deck.
 	maxBytes = edit.MaxBytes
 )
@@ -33,27 +33,27 @@ func instant(nanos int64) time.Time {
 	return time.Unix(0, nanos)
 }
 
-// Stencil is a stencil as the list of them names it.
-type Stencil struct {
-	Path string `json:"path" jsonschema:"the stencil's path relative to the vault folder"`
+// CardModel is a card model as the list of them names it.
+type CardModel struct {
+	Path string `json:"path" jsonschema:"the card model's path relative to the vault folder"`
 	// Name is what a card's wikilink writes. A link is resolved by path and by filename, so the name
-	// that reaches this stencil is its filename without the extension.
+	// that reaches this card model is its filename without the extension.
 	Name   string   `json:"name" jsonschema:"the name to write in a card's wikilink, which is the filename without its extension"`
-	Title  string   `json:"title" jsonschema:"what the stencil is called, which is what a person sees"`
-	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this stencil is asked for, in order; absent for a stencil that could not be read"`
+	Title  string   `json:"title" jsonschema:"what the card model is called, which is what a person sees"`
+	Fields []string `json:"fields,omitempty" jsonschema:"what a card cut by this card model is asked for, in order; absent for a card model that could not be read"`
 }
 
 // Card is one card as a deck answers with it.
 type Card struct {
-	Mark    string       `json:"mark" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
-	Section int          `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
-	Stencil string       `json:"stencil,omitempty" jsonschema:"the stencil this card is cut by, as the wikilink beneath its heading names it"`
-	Values  []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
+	CardID    string       `json:"cardId" jsonschema:"what the card is for as long as it exists, and how every tool here addresses it; empty for a card typed in by hand, which is given one the next time the deck is written"`
+	Section   int          `json:"section" jsonschema:"where the section this card stands under stands in the deck's sections, counted from the first; -1 for a card standing before the first section"`
+	CardModel string       `json:"cardModel,omitempty" jsonschema:"the card model this card is cut by, as the wikilink beneath its heading names it"`
+	Values    []FieldValue `json:"values,omitempty" jsonschema:"what the card holds, in the order it stands in the file"`
 }
 
 // FieldValue is what somebody wrote under one of a card's fields.
 type FieldValue struct {
-	Field string `json:"field" jsonschema:"the field's name, spelled as the stencil declares it"`
+	Field string `json:"field" jsonschema:"the field's name, spelled as the card model declares it"`
 	Text  string `json:"text" jsonschema:"the HTML under that heading"`
 }
 
@@ -65,14 +65,14 @@ type Fault struct {
 
 // CurrentCard is the card in front of the person, as an agent is told about it. The deck is the file
 type CurrentCard struct {
-	Deck string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
-	Card string `json:"card,omitempty" jsonschema:"the card's mark, as card_read gives it"`
-	Face string `json:"face,omitempty" jsonschema:"the face it is being shown through, spelled as the stencil writes it"`
+	Deck     string `json:"deck" jsonschema:"the deck the card stands in, by the path the vault files it under; empty when no card is in front of them"`
+	Card     string `json:"card,omitempty" jsonschema:"the card's id, as card_read gives it"`
+	Template string `json:"template,omitempty" jsonschema:"the template it is being shown through, spelled as the card model writes it"`
 }
 
-// Face is one way a stencil shows a card.
-type Face struct {
-	Name  string `json:"name" jsonschema:"what the face is called"`
+// CardTemplate is one way a card model shows a card.
+type CardTemplate struct {
+	Name  string `json:"name" jsonschema:"what the template is called"`
 	Front string `json:"front" jsonschema:"what is shown before the answer, as HTML with {{Field}} where a value goes"`
 	Back  string `json:"back" jsonschema:"what is shown after it"`
 }
@@ -82,7 +82,7 @@ type WriteOutcome struct {
 	Path        string `json:"path"`
 	Fingerprint string `json:"fingerprint" jsonschema:"hand this to the next write of this deck without reading it back"`
 	Cards       int    `json:"cards" jsonschema:"how many cards the deck now holds"`
-	Mark        string `json:"mark,omitempty" jsonschema:"the mark the card just written is addressed by, for as long as it exists"`
+	CardID      string `json:"cardId,omitempty" jsonschema:"the card id the card just written is addressed by, for as long as it exists"`
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
@@ -90,7 +90,7 @@ func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
 }
 
 func newCard(card format.Card) Card {
-	out := Card{Mark: string(card.Mark), Section: card.Section, Stencil: card.StencilLink}
+	out := Card{CardID: string(card.CardID), Section: card.Section, CardModel: card.CardModelLink}
 	for _, v := range card.Values {
 		out.Values = append(out.Values, FieldValue{Field: v.Field, Text: v.Text})
 	}
@@ -105,18 +105,18 @@ func values(vs []FieldValue) []format.Value {
 	return out
 }
 
-func newFaceTemplates(fs []Face) []format.FaceTemplate {
-	out := make([]format.FaceTemplate, 0, len(fs))
+func newCardTemplates(fs []CardTemplate) []format.CardTemplate {
+	out := make([]format.CardTemplate, 0, len(fs))
 	for _, f := range fs {
-		out = append(out, format.FaceTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
+		out = append(out, format.CardTemplate{Name: f.Name, Front: f.Front, Back: f.Back})
 	}
 	return out
 }
 
-func newFaces(templates []format.FaceTemplate) []Face {
-	out := make([]Face, 0, len(templates))
+func newTemplates(templates []format.CardTemplate) []CardTemplate {
+	out := make([]CardTemplate, 0, len(templates))
 	for _, t := range templates {
-		out = append(out, Face{Name: t.Name, Front: t.Front, Back: t.Back})
+		out = append(out, CardTemplate{Name: t.Name, Front: t.Front, Back: t.Back})
 	}
 	return out
 }
@@ -144,7 +144,7 @@ func countBytes(vs []FieldValue) int {
 	return size
 }
 
-// fingerprintOf is what a deck or a stencil was when it was read, as an agent hands it back.
+// fingerprintOf is what a deck or a card model was when it was read, as an agent hands it back.
 func fingerprintOf(ref domain.Fingerprint) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
 }
@@ -152,7 +152,7 @@ func fingerprintOf(ref domain.Fingerprint) string {
 // parseFingerprint is the fingerprint a caller presents. A tool that changes what somebody may have
 func parseFingerprint(s string) (domain.Fingerprint, error) {
 	if s == "" {
-		return domain.Fingerprint{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_stencil_read for a stencil")
+		return domain.Fingerprint{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {
@@ -207,8 +207,8 @@ func describeCode(reason flashcardsv1.ErrorCode) string {
 		return "a file is already where this note would go"
 	case flashcardsv1.ErrorCode_ERROR_CODE_UNNAMEABLE:
 		return "a note cannot be called this"
-	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL:
-		return "this note is not a stencil"
+	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL:
+		return "this note is not a card model"
 	case flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK:
 		return "this note is not a deck"
 	case flashcardsv1.ErrorCode_ERROR_CODE_DECK_TOO_LARGE:

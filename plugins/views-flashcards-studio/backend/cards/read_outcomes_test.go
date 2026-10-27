@@ -46,9 +46,9 @@ func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	}
 }
 
-// A deck whose cards name no stencil has no stencil to hand back, and that is
+// A deck whose cards name no card model has no card model to hand back, and that is
 // no map at all.
-func TestADeckNamingNoStencilIsSplitByNone(t *testing.T) {
+func TestADeckNamingNoCardModelIsSplitByNone(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewRead(vs.ports.Readers, nil)
 	deck, err := u.Deck(t.Context(), vs.first, "decks/Birds.md")
@@ -56,11 +56,11 @@ func TestADeckNamingNoStencilIsSplitByNone(t *testing.T) {
 		t.Fatalf("read: %v", err)
 	}
 
-	got, err := u.GetCardStencils(t.Context(), vs.first, "decks/Birds.md", deck.Body)
+	got, err := u.GetCardCardModels(t.Context(), vs.first, "decks/Birds.md", deck.Body)
 	if err != nil {
-		t.Fatalf("stencils: %v", err)
+		t.Fatalf("card models: %v", err)
 	}
 	if got != nil {
-		t.Errorf("stencils = %v, want none", got)
+		t.Errorf("card models = %v, want none", got)
 	}
 }

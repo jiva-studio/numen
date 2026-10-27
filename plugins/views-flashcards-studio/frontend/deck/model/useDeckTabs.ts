@@ -51,9 +51,9 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     store,
     vaultAnswers,
     createDeck: cards.createDeck,
-    listStencils: wiring.listStencils,
+    listCardModels: wiring.listCardModels,
     listPresets: wiring.scheduled.listing.listPresets,
-    listStencilsAgain: wiring.listStencilsAgain,
+    listCardModelsAgain: wiring.listCardModelsAgain,
     listPresetsAgain: wiring.scheduled.listing.listPresetsAgain,
     refreshDeckPreset: wiring.scheduled.refreshDeckPreset,
     createDeckTabState,
@@ -73,7 +73,7 @@ export function useDeckTabs(cards: Cards, presets: Presets, options: DeckTabsOpt
     kind,
     createDeckTabState,
     applyPathChanges,
-    listStencils: wiring.listStencils,
+    listCardModels: wiring.listCardModels,
     getTitle: vaultAnswers.getTitle,
     store,
   }
@@ -141,7 +141,7 @@ interface DeckTabStateFactoryDeps {
 function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
   const { store, read, vaultAnswers, wiring, closeTab } = deps
   const { getDeck, getMarks } = read
-  const { offers, stencils, scheduled } = wiring
+  const { offers, cardModels, scheduled } = wiring
   const { listing, scheduleDeck, getDeckPreset } = scheduled
   const { choices } = listing
 
@@ -171,7 +171,7 @@ function createDeckTabFactory(deps: DeckTabStateFactoryDeps) {
       deck,
       deckCards: computed(() => createDeckCards(deck.value, offers.value)),
       sections: computed(() => createDeckSections(deck.value)),
-      stencils,
+      cardModels,
       marks: computed(() => getMarks(id)),
       errorMessage: computed(() =>
         vaultAnswers.getErrorMessage(store.getPath(id), store.getOpenNote(id).error !== null),

@@ -16,7 +16,7 @@ export const STOPPED = {
   nothing: 'nothing due today',
   /** The budget was spent, and elsewhere for a deck that says this. */
   full: 'daily limit reached',
-  /** Every card face here is unbegun, and the preset begins none a day. */
+  /** Every review card here is unbegun, and the preset begins none a day. */
   noneToBegin: 'no new cards',
 } as const
 

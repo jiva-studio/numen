@@ -21,9 +21,9 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-// ErrorCode is what a call over the stencils, decks and presets of a vault
+// ErrorCode is what a call over the card models, decks and presets of a vault
 // failed on. The codes of a note read and written are numbered as the shared
-// numen.v1.ErrorCode numbers them; the codes of a stencil, a deck and a preset
+// numen.v1.ErrorCode numbers them; the codes of a card model, a deck and a preset
 // are this plugin's own.
 type ErrorCode int32
 
@@ -46,8 +46,8 @@ const (
 	ErrorCode_ERROR_CODE_OCCUPIED ErrorCode = 7
 	// A note cannot be called this. Nothing is written.
 	ErrorCode_ERROR_CODE_UNNAMEABLE ErrorCode = 8
-	// The note at the path is not a stencil, and a stencil was asked for.
-	ErrorCode_ERROR_CODE_NOT_A_STENCIL ErrorCode = 9
+	// The note at the path is not a card model, and a card model was asked for.
+	ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL ErrorCode = 9
 	// The note at the path is not a deck, and a deck was asked for.
 	ErrorCode_ERROR_CODE_NOT_A_DECK ErrorCode = 10
 	// The file is past the size a deck is read at, which stands above the size a
@@ -72,27 +72,27 @@ var (
 		6:  "ERROR_CODE_UNREADABLE",
 		7:  "ERROR_CODE_OCCUPIED",
 		8:  "ERROR_CODE_UNNAMEABLE",
-		9:  "ERROR_CODE_NOT_A_STENCIL",
+		9:  "ERROR_CODE_NOT_A_CARD_MODEL",
 		10: "ERROR_CODE_NOT_A_DECK",
 		11: "ERROR_CODE_DECK_TOO_LARGE",
 		12: "ERROR_CODE_NOT_A_PRESET",
 		13: "ERROR_CODE_STALE",
 	}
 	ErrorCode_value = map[string]int32{
-		"ERROR_CODE_UNSPECIFIED":     0,
-		"ERROR_CODE_MISSING":         1,
-		"ERROR_CODE_NOT_A_NOTE":      2,
-		"ERROR_CODE_NOT_TEXT":        3,
-		"ERROR_CODE_TOO_LARGE":       4,
-		"ERROR_CODE_BODY_UNWRITABLE": 5,
-		"ERROR_CODE_UNREADABLE":      6,
-		"ERROR_CODE_OCCUPIED":        7,
-		"ERROR_CODE_UNNAMEABLE":      8,
-		"ERROR_CODE_NOT_A_STENCIL":   9,
-		"ERROR_CODE_NOT_A_DECK":      10,
-		"ERROR_CODE_DECK_TOO_LARGE":  11,
-		"ERROR_CODE_NOT_A_PRESET":    12,
-		"ERROR_CODE_STALE":           13,
+		"ERROR_CODE_UNSPECIFIED":      0,
+		"ERROR_CODE_MISSING":          1,
+		"ERROR_CODE_NOT_A_NOTE":       2,
+		"ERROR_CODE_NOT_TEXT":         3,
+		"ERROR_CODE_TOO_LARGE":        4,
+		"ERROR_CODE_BODY_UNWRITABLE":  5,
+		"ERROR_CODE_UNREADABLE":       6,
+		"ERROR_CODE_OCCUPIED":         7,
+		"ERROR_CODE_UNNAMEABLE":       8,
+		"ERROR_CODE_NOT_A_CARD_MODEL": 9,
+		"ERROR_CODE_NOT_A_DECK":       10,
+		"ERROR_CODE_DECK_TOO_LARGE":   11,
+		"ERROR_CODE_NOT_A_PRESET":     12,
+		"ERROR_CODE_STALE":            13,
 	}
 )
 
@@ -127,7 +127,7 @@ var File_numen_flashcards_v1_errors_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_errors_proto_rawDesc = "" +
 	"\n" +
-	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1*\x87\x03\n" +
+	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1*\x8a\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -137,8 +137,8 @@ const file_numen_flashcards_v1_errors_proto_rawDesc = "" +
 	"\x1aERROR_CODE_BODY_UNWRITABLE\x10\x05\x12\x19\n" +
 	"\x15ERROR_CODE_UNREADABLE\x10\x06\x12\x17\n" +
 	"\x13ERROR_CODE_OCCUPIED\x10\a\x12\x19\n" +
-	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x1c\n" +
-	"\x18ERROR_CODE_NOT_A_STENCIL\x10\t\x12\x19\n" +
+	"\x15ERROR_CODE_UNNAMEABLE\x10\b\x12\x1f\n" +
+	"\x1bERROR_CODE_NOT_A_CARD_MODEL\x10\t\x12\x19\n" +
 	"\x15ERROR_CODE_NOT_A_DECK\x10\n" +
 	"\x12\x1d\n" +
 	"\x19ERROR_CODE_DECK_TOO_LARGE\x10\v\x12\x1b\n" +

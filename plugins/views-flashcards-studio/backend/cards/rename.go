@@ -13,13 +13,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// Rename is which field of which stencil is being renamed, and to what.
+// Rename is which field of which card model is being renamed, and to what.
 type Rename struct {
-	// Stencil is where the stencil is filed.
-	Stencil string
-	From    string
-	To      string
-	// Fingerprint is the stencil as the caller read it. A stencil that has
+	// CardModel is where the card model is filed.
+	CardModel string
+	From      string
+	To        string
+	// Fingerprint is the card model as the caller read it. A card model that has
 	// changed since is left alone, and no deck is written.
 	Fingerprint domain.Fingerprint
 }
@@ -33,7 +33,7 @@ type UnwrittenDeck struct {
 // RenameResult says what a rename reached and what it did not.
 type RenameResult struct {
 	// caller presents at its next write.
-	Stencil domain.Fingerprint
+	CardModel domain.Fingerprint
 	// Decks is every deck a heading was rewritten in, and Cards is how many
 	// headings that was.
 	Decks []string
@@ -42,24 +42,24 @@ type RenameResult struct {
 	NotWritten []UnwrittenDeck
 }
 
-// RenameField gives one of a stencil's fields a different name.
+// RenameField gives one of a card model's fields a different name.
 //
-// A field's name is written where the stencil declares it, in the braces of
-// every face that places it, and as a heading in every card of every deck that
-// stencil cuts. So the rename reaches them all. The stencil is written once,
+// A field's name is written where the card model declares it, in the braces of
+// every template that places it, and as a heading in every card of every deck that
+// card model cuts. So the rename reaches them all. The card model is written once,
 // both of its names in the one write; then every deck of the vault is read, the
-// heading is rewritten in the cards of that stencil, and what is placed under it is
+// heading is rewritten in the cards of that card model, and what is placed under it is
 // untouched.
 //
-// Every field a stencil declares is written this way, the first included.
+// Every field a card model declares is written this way, the first included.
 type RenameField struct {
 	maxDecks int
 
 	readers ports.VaultReaders
 	writers ports.VaultWriters
 	notes   TypeQueries
-	// links answers where the wikilink a card names its stencil by lands, which
-	// is what says the card is cut by this stencil.
+	// links answers where the wikilink a card names its card model by lands, which
+	// is what says the card is cut by this card model.
 	links ports.LinkQueries
 	index note.Levels
 	// now is when this is happening. An identifier written here carries it.
@@ -72,12 +72,12 @@ type RenameField struct {
 // it.
 type TypeQueries interface {
 	// GetPathsOfType is every note of one type the vault holds, by path. A caller after
-	// the decks or the stencils of a vault asks for them, and opens no file to
+	// the decks or the card models of a vault asks for them, and opens no file to
 	// find out what each note is.
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
 }
 
-// NewRenameField renames a stencil's field across its decks, refusing a vault of more than maxDecks decks.
+// NewRenameField renames a card model's field across its decks, refusing a vault of more than maxDecks decks.
 func NewRenameField(
 	readers ports.VaultReaders,
 	writers ports.VaultWriters,
@@ -109,7 +109,7 @@ func (u RenameField) WithNotes(notes TypeQueries) RenameField {
 // where it carries none.
 func (u RenameField) createIdentifier() string { return ulid.New(u.now()) }
 
-// Execute renames the field, in the stencil first and then in the vault.
+// Execute renames the field, in the card model first and then in the vault.
 //
 // could not be written to keeps the old heading and comes back as a problem
 // against that deck, and the decks after it are written all the same.
@@ -118,14 +118,14 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return RenameResult{}, err
 	}
 	if in.From == in.To {
-		return RenameResult{Stencil: in.Fingerprint}, nil
+		return RenameResult{CardModel: in.Fingerprint}, nil
 	}
 
 	out, err := u.rename(ctx, v, in)
 	if err != nil || u.index == nil {
 		return out, err
 	}
-	content := append([]string{in.Stencil}, out.Decks...)
+	content := append([]string{in.CardModel}, out.Decks...)
 	return out, note.WrapUnlevelled(u.index(ctx, v, content), content...)
 }
 
@@ -153,7 +153,7 @@ func (u RenameField) checkDeckCount(ctx context.Context, v domain.Vault) error {
 }
 
 // rename is the whole of the writing, under this vault's write lock from before
-// the stencil is read until after the last deck is replaced.
+// the card model is read until after the last deck is replaced.
 func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (RenameResult, error) {
 	release, err := u.writers.Lock(ctx, v)
 	if err != nil {
@@ -171,7 +171,7 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	}
 
 	var out RenameResult
-	out.Stencil, err = u.writeStencilField(ctx, reader, writer, in)
+	out.CardModel, err = u.writeCardModelField(ctx, reader, writer, in)
 	if err != nil {
 		return RenameResult{}, err
 	}
@@ -180,8 +180,8 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	if err != nil {
 		return out, err
 	}
-	// The name the cards write is the name the stencil is linked by.
-	named := domain.Basename(in.Stencil)
+	// The name the cards write is the name the card model is linked by.
+	named := domain.Basename(in.CardModel)
 	one := deckWriter{
 		reader: reader, writer: writer, links: u.links, vault: v,
 		read: NewRead(u.readers, u.links), writeIdentifier: u.writeIdentifier,
@@ -206,34 +206,34 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 	return out, nil
 }
 
-// writeStencilField writes the new name where the stencil declares the field.
-func (u RenameField) writeStencilField(
+// writeCardModelField writes the new name where the card model declares the field.
+func (u RenameField) writeCardModelField(
 	ctx context.Context, reader ports.VaultReader, writer ports.VaultWriter, in Rename,
 ) (domain.Fingerprint, error) {
 	expectedFp := in.Fingerprint
 	if expectedFp.IsZero() {
-		on, err := reader.GetFingerprint(ctx, in.Stencil)
+		on, err := reader.GetFingerprint(ctx, in.CardModel)
 		if err != nil {
-			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.Stencil, err)
+			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.CardModel, err)
 		}
 		expectedFp = on
 	}
 
-	raw, err := reader.Read(ctx, in.Stencil)
+	raw, err := reader.Read(ctx, in.CardModel)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", in.CardModel, err)
 	}
-	f, err := format.OpenStencil(raw)
+	f, err := format.OpenCardModel(raw)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
 	if err := f.RenameField(in.From, in.To); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.Stencil, err)
+		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
-	return writer.Write(ctx, in.Stencil, f.Bytes(), expectedFp)
+	return writer.Write(ctx, in.CardModel, f.Bytes(), expectedFp)
 }
 
 // writeIdentifier writes an identifier into a file that carries none, which is
@@ -259,20 +259,20 @@ type deckWriter struct {
 	writer ports.VaultWriter
 	links  ports.LinkQueries
 	vault  domain.Vault
-	// read is what opens the stencils this deck's cards are cut by, which is
+	// read is what opens the card models this deck's cards are cut by, which is
 	// what says which of a card's fields is first.
 	read            Read
 	writeIdentifier func(func(string) (bool, error)) error
 }
 
-// rename rewrites the heading in every card of this deck the stencil cuts, and
+// rename rewrites the heading in every card of this deck the card model cuts, and
 // reports how many it rewrote. A deck holding none of them is not written.
 //
-// A card is cut by the stencil its own wikilink lands on, which is what reading
-// the deck against its stencils holds to.
+// A card is cut by the card model its own wikilink lands on, which is what reading
+// the deck against its card models holds to.
 //
 // whole: it is given an identifier where it carried none, and every card
-// of it is given its mark and its heading.
+// of it is given its card id and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
 	on, err := d.reader.GetFingerprint(ctx, path)
 	if err != nil {
@@ -290,18 +290,18 @@ func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, er
 	if err != nil {
 		return 0, err
 	}
-	pos, err := getStencilPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
+	pos, err := getCardModelPaths(ctx, d.links, d.vault.ID, path, f.Deck(on))
 	if err != nil {
 		return 0, err
 	}
-	cards, err := f.RenameField(pos, in.Stencil, in.From, in.To)
+	cards, err := f.RenameField(pos, in.CardModel, in.From, in.To)
 	if err != nil {
 		return 0, err
 	}
 	if cards == 0 {
 		return 0, nil
 	}
-	delta, _, err := d.read.readStencils(ctx, d.vault, pos)
+	delta, _, err := d.read.readCardModels(ctx, d.vault, pos)
 	if err != nil {
 		return 0, err
 	}

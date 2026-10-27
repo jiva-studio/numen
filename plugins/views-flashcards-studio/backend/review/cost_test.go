@@ -12,24 +12,24 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// makeAnswers is a history of as many card faces, each answered as many times,
+// makeAnswers is a history of as many review cards, each answered as many times,
 // at the time the caller gives for each answer.
 //
-// The first two answers to a card face are of one still being learned and every
+// The first two answers to a review card are of one still being learned and every
 // answer after them is of one that comes round in days, so a history of card
-// faces answered three times each holds twice as many of the first kind as of
+// review cards answered three times each holds twice as many of the first kind as of
 // the second.
 func makeAnswers(
-	pos time.Time, faces, each int, took func(face, step int) time.Duration,
+	pos time.Time, reviewCards, each int, took func(reviewCard, step int) time.Duration,
 ) []review.Answer {
 	var out []review.Answer
-	for face := range faces {
-		on := review.CardFaceID{Card: fmt.Sprintf("card%06d", face), Face: "Recognise"}
+	for reviewCard := range reviewCards {
+		on := review.ReviewCardID{Card: fmt.Sprintf("card%06d", reviewCard), Template: "Recognise"}
 		for step := range each {
 			out = append(out, review.Answer{
-				ID: fmt.Sprintf("%06d", len(out)), CardFace: on,
+				ID: fmt.Sprintf("%06d", len(out)), ReviewCard: on,
 				At:     pos.Add(time.Duration(len(out)) * time.Hour),
-				Rating: review.Good, Took: took(face, step),
+				Rating: review.Good, Took: took(reviewCard, step),
 			})
 		}
 	}
@@ -43,12 +43,12 @@ func TestWhatAnAnswerCostsIsTheMiddleOfTheAnswers(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	// Twelve card faces answered three times each: three seconds while a card
-	// face is being learned and nine once it comes round in days. One of them
+	// Twelve review cards answered three times each: three seconds while a card
+	// review card is being learned and nine once it comes round in days. One of them
 	// stood on the screen for an hour every time.
-	answers := makeAnswers(pos, 12, 3, func(face, step int) time.Duration {
+	answers := makeAnswers(pos, 12, 3, func(reviewCard, step int) time.Duration {
 		switch {
-		case face == 0:
+		case reviewCard == 0:
 			return time.Hour
 		case step < 2:
 			return 3 * time.Second
@@ -75,7 +75,7 @@ func TestAHistoryTooShortToSayExistsAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	// One card face answered once, for fifty-five seconds.
+	// One review card answered once, for fifty-five seconds.
 	answers := makeAnswers(pos, 1, 1, func(int, int) time.Duration { return 55 * time.Second })
 
 	cost := getCost(delta, answers)
@@ -93,7 +93,7 @@ func TestACostOfOneKindPreservesTheOtherAtTheDefault(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	// Twelve card faces answered twice each, which is a vault holding no answer
+	// Twelve review cards answered twice each, which is a vault holding no answer
 	// to a card that comes round in days.
 	answers := makeAnswers(pos, 12, 2, func(int, int) time.Duration { return 30 * time.Second })
 
@@ -151,10 +151,10 @@ func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 	delta := review.NewFSRS()
 	pos := time.Now().Add(-400 * 24 * time.Hour)
 
-	// Twenty-four card faces answered three times each, at nine seconds an
-	// answer. Half the card faces were answered with no time recorded at all.
-	answers := makeAnswers(pos, 24, 3, func(face, _ int) time.Duration {
-		if face%2 == 0 {
+	// Twenty-four review cards answered three times each, at nine seconds an
+	// answer. Half the review cards were answered with no time recorded at all.
+	answers := makeAnswers(pos, 24, 3, func(reviewCard, _ int) time.Duration {
+		if reviewCard%2 == 0 {
 			return 0
 		}
 		return 9 * time.Second
@@ -169,9 +169,9 @@ func TestAnAnswerCarryingNoTimeReturnsNothingAboutItsKind(t *testing.T) {
 // getCost is the cost of the answers taken as one group.
 func getCost(delta review.Scheduler, answers []review.Answer) review.AnswerCost {
 	const group = "all"
-	underMap := make(map[review.CardFaceID]string)
+	underMap := make(map[review.ReviewCardID]string)
 	for _, a := range answers {
-		underMap[a.CardFace] = group
+		underMap[a.ReviewCard] = group
 	}
 	costs := review.GetCostUnder(delta, answers, underMap)
 	if cost, ok := costs[group]; ok {

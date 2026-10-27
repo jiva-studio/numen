@@ -29,7 +29,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   settings: settings(),
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 20,
+  reviewCards: 20,
   cards: 16,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
@@ -47,12 +47,12 @@ const vault: VaultCardsDue = {
   name: 'Studies',
   path: '/vaults/01A',
   isCounted: true,
-  faces: 40,
+  reviewCards: 40,
   due: 12,
   new: 4,
   decks: [
-    { deck: 'decks/Words.md', faces: 20, due: 8, new: 2, learned: 5, unbegun: 2 },
-    { deck: 'decks/Roots.md', faces: 20, due: 4, new: 2, learned: 10, unbegun: 2 },
+    { deck: 'decks/Words.md', reviewCards: 20, due: 8, new: 2, learned: 5, unbegun: 2 },
+    { deck: 'decks/Roots.md', reviewCards: 20, due: 4, new: 2, learned: 10, unbegun: 2 },
   ],
   presets: [
     {
@@ -119,7 +119,7 @@ describe('the decks of a vault', () => {
 describe('a deck with nothing waiting', () => {
   /** A vault whose one deck holds these cards and owes this much of them. */
   const createVault = (
-    faces: number,
+    reviewCards: number,
     due: number,
     freshCount: number,
     unbegun = 0,
@@ -127,7 +127,7 @@ describe('a deck with nothing waiting', () => {
     ...vault,
     due,
     new: freshCount,
-    decks: [{ deck: 'decks/Words.md', faces, due, new: freshCount, learned: 0, unbegun }],
+    decks: [{ deck: 'decks/Words.md', reviewCards, due, new: freshCount, learned: 0, unbegun }],
   })
 
   // Something was answered under the preset today and nothing of this deck is
@@ -158,7 +158,7 @@ describe('a deck with nothing waiting', () => {
     expect(one.findAll('.decks__met')).toHaveLength(0)
   })
 
-  // Every card face here is one nobody has begun and the preset begins none a
+  // Every review card here is one nobody has begun and the preset begins none a
   // day, so no next day picks any of them up. The preset is not stopped.
   it('says nothing here can be begun where the preset begins none a day', () => {
     const one = mountDecks(
@@ -237,9 +237,9 @@ describe('the tile and the decks under it', () => {
       due: 10,
       new: 0,
       decks: [
-        { deck: 'decks/Words.md', faces: 20, due: 10, new: 0, learned: 0, unbegun: 0 },
-        { deck: 'decks/Roots.md', faces: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
-        { deck: 'decks/Stems.md', faces: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
+        { deck: 'decks/Words.md', reviewCards: 20, due: 10, new: 0, learned: 0, unbegun: 0 },
+        { deck: 'decks/Roots.md', reviewCards: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
+        { deck: 'decks/Stems.md', reviewCards: 20, due: 0, new: 0, learned: 0, unbegun: 0 },
       ],
     }
     const one = mountDecks(
@@ -247,7 +247,7 @@ describe('the tile and the decks under it', () => {
         preset({
           decks: ['decks/Words.md', 'decks/Roots.md', 'decks/Stems.md'],
           named: 3,
-          faces: 60,
+          reviewCards: 60,
           answered: 0,
           took: 0,
         }),

@@ -1,15 +1,15 @@
 /**
- * The decks and the stencils a vault holds, as the window asks for them and as
+ * The decks and the card models a vault holds, as the window asks for them and as
  * they come back.
  */
 import { asFailure, asValue, parseFingerprint, formatFingerprint } from '@numen/wire'
 import { findErrorCode, isStaleAnswer } from '../wire/errors'
 import { cardsService } from './clients'
-import type { Cards, DeckService, StencilService } from '../types'
+import type { Cards, DeckService, CardModelService } from '../types'
 import {
   deserializeDeck,
-  deserializeStencil,
-  deserializeStencilSummary,
+  deserializeCardModel,
+  deserializeCardModelSummary,
   serializeCardToWire,
 } from './serialize'
 
@@ -48,19 +48,19 @@ export const deckService: DeckService = {
   },
 }
 
-/** Stencil metadata and schema service. */
-export const stencilService: StencilService = {
-  stencils: async (limit) => {
-    const answer = await cardsService.listStencils({ limit: limit ?? 0 })
-    return { stencils: answer.stencils.map(deserializeStencilSummary), held: answer.total }
+/** Card model metadata and schema service. */
+export const cardModelService: CardModelService = {
+  cardModels: async (limit) => {
+    const answer = await cardsService.listCardModels({ limit: limit ?? 0 })
+    return { cardModels: answer.cardModels.map(deserializeCardModelSummary), held: answer.total }
   },
-  createStencil: async (title, folder, fields) => {
-    const answer = await cardsService.createStencil({ title, path: folder, fields: [...fields] })
+  createCardModel: async (title, folder, fields) => {
+    const answer = await cardsService.createCardModel({ title, path: folder, fields: [...fields] })
     const error = findErrorCode(answer)
     return error ? asFailure(error) : asValue({ path: answer.path })
   },
   renameField: async (path, { from, to }, observed) => {
-    const answer = await cardsService.renameStencilField({
+    const answer = await cardsService.renameCardModelField({
       path,
       from,
       to,
@@ -78,27 +78,27 @@ export const stencilService: StencilService = {
       at: formatFingerprint(answer.at) ?? '',
     })
   },
-  readStencil: async (path) => {
-    const answer = await cardsService.readStencil({ path })
+  readCardModel: async (path) => {
+    const answer = await cardsService.readCardModel({ path })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
-    if (code || !answer.stencil) return asFailure(code ?? 'notAStencil')
+    if (code || !answer.cardModel) return asFailure(code ?? 'notACardModel')
     return asValue({
-      stencil: deserializeStencil(answer.stencil),
+      cardModel: deserializeCardModel(answer.cardModel),
       at: formatFingerprint(answer.at) ?? '',
     })
   },
-  writeStencil: async (path, stencil, observed) => {
-    const answer = await cardsService.writeStencil({
+  writeCardModel: async (path, cardModel, observed) => {
+    const answer = await cardsService.writeCardModel({
       path,
-      fields: [...stencil.fields],
-      preamble: stencil.preamble,
-      faces: stencil.faces.map((face) => ({
-        name: face.name,
-        preamble: face.preamble,
-        front: face.front,
-        back: face.back,
+      fields: [...cardModel.fields],
+      preamble: cardModel.preamble,
+      templates: cardModel.templates.map((template) => ({
+        name: template.name,
+        preamble: template.preamble,
+        front: template.front,
+        back: template.back,
       })),
-      tail: stencil.tail,
+      tail: cardModel.tail,
       ...(observed === null ? {} : { baseline: parseFingerprint(observed) }),
     })
     const code = isStaleAnswer(answer) ? 'changed' : findErrorCode(answer)
@@ -107,8 +107,8 @@ export const stencilService: StencilService = {
   },
 }
 
-/** The stencils and the decks of that vault, in the shape the window asks about them. */
+/** The card models and the decks of that vault, in the shape the window asks about them. */
 export const cards: Cards = {
   ...deckService,
-  ...stencilService,
+  ...cardModelService,
 }

@@ -13,7 +13,7 @@ const (
 	EvenTo   = 90
 )
 
-// DueByDay is how loaded each day of review is: how many card faces fall on
+// DueByDay is how loaded each day of review is: how many review cards fall on
 // each.
 //
 // It is one table over every preset, and the answers replayed and the
@@ -27,14 +27,14 @@ type DueByDay struct {
 // them.
 func NewDueByDay(d Day) *DueByDay { return &DueByDay{day: d, on: make(map[int]int)} }
 
-// Add counts one card face against the day its schedule falls in.
+// Add counts one review card against the day its schedule falls in.
 func (s *DueByDay) Add(due time.Time) {
 	if s != nil {
 		s.on[s.GetDayNumber(due)]++
 	}
 }
 
-// CountOn is how many card faces fall on the day of review holding this instant.
+// CountOn is how many review cards fall on the day of review holding this instant.
 func (s *DueByDay) CountOn(target time.Time) int {
 	if s == nil {
 		return 0
@@ -67,7 +67,7 @@ func weekday(number int) time.Weekday {
 // It is pressure and not a promise: no day is forbidden to carry more than its
 // share, and a preset keeping no even load leaves the card where it fell.
 //
-// A preset aiming at a day moves no card face. The days beyond the front of a
+// A preset aiming at a day moves no review card. The days beyond the front of a
 // projection carry nothing, so the lightest day of a window is its last, and a
 // card put there is a card asked for later.
 //

@@ -88,7 +88,7 @@ func (b *Backend) Mount(s *server.Server) error {
 	return nil
 }
 
-// Cards answers CardsService: the decks and stencils a vault is arranged into.
+// Cards answers CardsService: the decks and card models a vault is arranged into.
 func (b *Backend) Cards() flashcardsv1connect.CardsServiceHandler { return &cardsHandler{Backend: b} }
 
 // Presets answers PresetsService: the presets decks are scheduled by.

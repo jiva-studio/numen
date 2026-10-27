@@ -3,7 +3,7 @@
  * One card of a deck, as a tile: a strip it is dragged by and removed from, and
  * under it the card's values, each in a box that is always open to typing.
  *
- * Every field of the stencil is placed under its own name and holds as many lines
+ * Every field of the card model is placed under its own name and holds as many lines
  * as a person writes. What is wrong with the card is said under its strip, and
  * what is wrong with one value is said under that value.
  */
@@ -18,7 +18,7 @@ import { createSealedMap, type StepDirection } from '../../../lib/order'
 
 const props = withDefaults(
   defineProps<{
-    /** The card, laid out against the stencil that cuts it. */
+    /** The card, laid out against the card model that cuts it. */
     tile: Tile
     /** What is wrong with this card, said under its heading. */
     wrong?: readonly string[]
@@ -49,7 +49,7 @@ const uid = useId()
 const called = computed(() => `${props.words.cardStem} ${props.tile.at}`)
 
 /** What the strip says cut the card, and where nothing cut it, that nothing did. */
-const stencilTitle = computed(() => props.tile.stencil ?? props.words.unknown(null))
+const cardModelTitle = computed(() => props.tile.cardModel ?? props.words.unknown(null))
 
 const boxId = (value: PlacedFieldValue): string => `${uid}-${encodeURIComponent(value.key)}`
 
@@ -74,7 +74,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
       @dragend="emit('release')"
       @step="(direction, press) => emit('step', direction, press)"
     >
-      <!-- A deck holds cards cut by more than one stencil, so the strip says
+      <!-- A deck holds cards cut by more than one cardModel, so the strip says
            which cut this one, and where nothing did, that nothing did. A name
            is exposed by nothing standing on a paragraph, so the text takes a
            role that carries one. -->
@@ -84,7 +84,7 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
         :aria-label="words.cut"
         data-cut-of
       >
-        {{ stencilTitle }}
+        {{ cardModelTitle }}
       </p>
 
       <template #actions>
@@ -93,12 +93,12 @@ const getProblems = (value: PlacedFieldValue): readonly string[] =>
     </CardHeader>
 
     <div class="card__body flex flex-col">
-      <!-- A card is waiting for a stencil only where it names one. -->
+      <!-- A card is waiting for a cardModel only where it names one. -->
       <ErrorMessage
-        v-if="!tile.isKnown && tile.stencil !== null"
+        v-if="!tile.isKnown && tile.cardModel !== null"
         class="card__objections"
         role="alert"
-        :said="words.unknown(tile.stencil)"
+        :said="words.unknown(tile.cardModel)"
       />
 
       <ErrorMessage

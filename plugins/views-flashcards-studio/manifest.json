@@ -3,7 +3,7 @@
   "name": "Flashcards Studio",
   "version": "1.0.0",
   "protocol": 1,
-  "description": "Flashcard deck editor, card stencil designer, SRS presets and card review",
+  "description": "Flashcard deck editor, card card model designer, SRS presets and card review",
   "capabilities": ["tools"],
   "targets": ["desktop.editor", "desktop.flashcards"],
   "activationEvents": [],
@@ -23,11 +23,11 @@
       "type": "deck",
       "chunks": false,
       "headings": [1, 2],
-      "markedHeadings": [2],
-      "markPattern": "[0-9a-hjkmnp-tv-z]{10}"
+      "idHeadingLevels": [2],
+      "idPattern": "[0-9a-hjkmnp-tv-z]{10}"
     },
     {
-      "type": "stencil",
+      "type": "card-model",
       "chunks": false,
       "headings": []
     },
@@ -44,8 +44,8 @@
       ]
     },
     {
-      "id": "create-stencil",
-      "title": "New stencil",
+      "id": "create-card-model",
+      "title": "New card model",
       "arguments": [
         { "name": "title", "title": "What is it called", "type": "string", "required": true }
       ]

@@ -7,26 +7,26 @@ import type { DeckProblem } from '../types'
 
 /** One problem as the vault reports one, against nothing in particular. */
 const problem = (overrides: Partial<DeckProblem> = {}): DeckProblem => ({
-  kind: 'cardWithoutAStencil',
+  kind: 'cardWithoutACardModel',
   card: null,
-  face: null,
+  template: null,
   field: '',
-  text: 'a card under no stencil',
+  text: 'a card under no card model',
   ...overrides,
 })
 
 describe('where a problem is drawn', () => {
   it('is the card it was read against, counted from the first', () => {
     const marks = createMarks([problem({ card: 1 })], ['c1', 'c2'], [])
-    expect(marks.at.get('c2')).toStrictEqual(['a card under no stencil'])
+    expect(marks.at.get('c2')).toStrictEqual(['a card under no card model'])
     expect(marks.at.has('c1')).toBe(false)
   })
 
-  it('is the identity the card was drawn under, so two of one mark are told apart', () => {
+  it('is the identity the card was drawn under, so two of one card id are told apart', () => {
     const marks = createMarks(
       [
-        problem({ kind: 'markCarriedTwice', card: 1, text: 'a mark carried twice' }),
-        problem({ kind: 'markCarriedTwice', card: 2, text: 'a mark carried twice' }),
+        problem({ kind: 'cardIdCarriedTwice', card: 1, text: 'a mark carried twice' }),
+        problem({ kind: 'cardIdCarriedTwice', card: 2, text: 'a mark carried twice' }),
       ],
       ['c1', 'c2', 'c3'],
       [],
@@ -43,9 +43,9 @@ describe('where a problem is drawn', () => {
     expect(marks.at.get('c1')).toStrictEqual(['first', 'second'])
   })
 
-  it('is the face it was read against', () => {
+  it('is the template it was read against', () => {
     const marks = createMarks(
-      [problem({ kind: 'faceMissingASide', face: 0, text: 'no back' })],
+      [problem({ kind: 'templateMissingASide', template: 0, text: 'no back' })],
       [],
       ['f1', 'f2'],
     )
@@ -62,7 +62,7 @@ describe('where a problem is drawn', () => {
     expect(marks.at.has('c2')).toBe(false)
   })
 
-  it('is the field at its current position against no card and no face', () => {
+  it('is the field at its current position against no card and no template', () => {
     const marks = createMarks(
       [problem({ kind: 'fieldDeclaredTwice', field: 'Height', text: 'declared twice' })],
       [],
@@ -79,7 +79,7 @@ describe('where a problem is drawn', () => {
 
   it('is the file where the card it names was not read', () => {
     expect(createMarks([problem({ card: 5 })], ['c1'], []).whole).toStrictEqual([
-      'a card under no stencil',
+      'a card under no card model',
     ])
   })
 })
@@ -100,7 +100,7 @@ describe('where two problems of one card stand', () => {
   })
 })
 
-/** The marks of problems read against two cards and a face. */
+/** The marks of problems read against two cards and a template. */
 const createTestMarks = (...problems: DeckProblem[]) => createMarks(problems, ['c1', 'c2'], ['f1'])
 
 describe('whether two evaluations are wrong in the same way', () => {
@@ -112,7 +112,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     const all = () => [
       problem({ text: 'file' }),
       problem({ card: 0, text: 'card' }),
-      problem({ face: 0, text: 'face' }),
+      problem({ template: 0, text: 'template' }),
       problem({ card: 1, field: 'Front', text: 'value' }),
       problem({ field: 'Back', text: 'field' }),
     ]
@@ -144,7 +144,7 @@ describe('whether two evaluations are wrong in the same way', () => {
     expect(areMarksEqual(one, other)).toBe(false)
   })
 
-  it('is not so where only a card or a face is told something else', () => {
+  it('is not so where only a card or a template is told something else', () => {
     expect(
       areMarksEqual(
         createTestMarks(problem({ card: 0, text: 'a' })),

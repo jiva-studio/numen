@@ -17,11 +17,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service"
 )
 
-// A stencil says what a card has and a deck holds the cards. What the window
+// A card model says what a card has and a deck holds the cards. What the window
 // asks about either is what these say.
 
 // cutting is a vault with the notes given in it, and a client asking about its
-// decks and its stencils the way the window does.
+// decks and its card models the way the window does.
 type cutting struct {
 	client flashcardsv1connect.CardsServiceClient
 	root   string
@@ -58,11 +58,11 @@ func onDisk(t *testing.T, root, path string) string {
 	return string(raw)
 }
 
-const animal = "---\ntype: stencil\nfields:\n  - Name\n  - Height\n---\n\n" +
+const animal = "---\ntype: card-model\nfields:\n  - Name\n  - Height\n---\n\n" +
 	"## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n"
 
 // cardRun is the cards of a deck as somebody wrote them, the middle one under
-// no wikilink, so it names no stencil and the problem stands against that one.
+// no wikilink, so it names no card model and the problem stands against that one.
 const cardRun = "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 	"## Alpaca ^3n8vr4tqch\n\nsomebody's prose\n\n### Name\n\nAlpaca\n\n### Height\n\nabout 36\"\n\n" +
 	"## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
@@ -70,8 +70,8 @@ const cardRun = "## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### 
 const threeCards = "---\ntype: deck\n---\n\n" + cardRun
 
 // dividedRun is a deck a person divided, every card of it whole: each stands
-// under the section it was written in, each carries a mark, and each names the
-// stencil its heading is read through.
+// under the section it was written in, each carries a card id, and each names the
+// card model its heading is read through.
 const dividedRun = "# Camelids\n\nwhat a person wrote about their own deck\n\n" +
 	"## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Name\n\nLlama\n\n### Height\n\nabout 45\"\n\n" +
 	"# Others\n\n## Vicuña ^9wq2xr4t8h\n\n[[Animal]]\n\n### Name\n\nVicuña\n\n### Height\n\nabout 34\"\n"
@@ -116,7 +116,7 @@ func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 	if len(problems) != 1 {
 		t.Fatalf("the deck came back with %d problems: %+v", len(problems), problems)
 	}
-	if fault := problems[0].GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_STENCIL {
+	if fault := problems[0].GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_WITHOUT_A_CARD_MODEL {
 		t.Errorf("the card with no wikilink under it is reported as %v", fault)
 	}
 	pos := problems[0].GetCard()
@@ -129,7 +129,7 @@ func TestAProblemExistsAgainstTheCardItIsAbout(t *testing.T) {
 }
 
 // TestACardComesBackWithTheMarkItIsAddressedBy. A card has no name, so a client
-// that cannot read a card's mark cannot say which card it means.
+// that cannot read a card's id cannot say which card it means.
 func TestACardReachesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
@@ -140,11 +140,11 @@ func TestACardReachesBackWithTheMarkItIsAddressedBy(t *testing.T) {
 	if len(target) != 3 {
 		t.Fatalf("the deck came back with %d cards", len(target))
 	}
-	marks := []string{"k7m2xq9fzp", "3n8vr4tqch", "9wq2xr4t8h"}
+	cardIDs := []string{"k7m2xq9fzp", "3n8vr4tqch", "9wq2xr4t8h"}
 	for item, card := range target {
-		if card.GetMark() != marks[item] {
-			t.Errorf("card %d carries the mark %q, and the file writes %q",
-				item, card.GetMark(), marks[item])
+		if card.GetCardId() != cardIDs[item] {
+			t.Errorf("card %d carries the card id %q, and the file writes %q",
+				item, card.GetCardId(), cardIDs[item])
 		}
 	}
 }
@@ -194,10 +194,10 @@ func TestTwoCardsOfOneMarkStandAgainstBoth(t *testing.T) {
 
 	problems := deck(t, f, "Animals.md").GetDeck().GetProblems()
 	if len(problems) != 2 {
-		t.Fatalf("two cards of one mark came back as %d problems: %+v", len(problems), problems)
+		t.Fatalf("two cards of one card id came back as %d problems: %+v", len(problems), problems)
 	}
 	for item, problem := range problems {
-		if fault := problem.GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_MARK_CARRIED_TWICE {
+		if fault := problem.GetKind(); fault != flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_ID_CARRIED_TWICE {
 			t.Errorf("the problem against card %d is %v", item, fault)
 		}
 		if problem.Card == nil || problem.GetCard() != int32(item) {
@@ -272,7 +272,7 @@ func TestADeckSavedBackKeepsTheCardsItHeld(t *testing.T) {
 
 // TestAHeadingOfTwoLinesWritesNoSecondCard. A heading is one line, so what a
 // client sends as one is cut where the lines under it begin. A second `##` in
-// there is a card the next read adopts and gives a mark to, and nobody wrote
+// there is a card the next read adopts and gives a card id to, and nobody wrote
 // it.
 func TestAHeadingOfTwoLinesWritesNoSecondCard(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal, "Animals.md": dividedDeck})
@@ -334,11 +334,11 @@ func TestACardBelowASectionTheDeckDoesNotHoldIsRefused(t *testing.T) {
 	}
 }
 
-// TestACardWithNoStencilKeepsTheHeadingItStandsUnder. Nothing can say which of
+// TestACardWithNoCardModelKeepsTheHeadingItStandsUnder. Nothing can say which of
 // that card's fields is first, so nothing can write its heading again: it is
 // left exactly currently, and a person who changed nothing sees the file
 // they wrote.
-func TestACardWithNoStencilKeepsTheHeadingItExistsBelow(t *testing.T) {
+func TestACardWithNoCardModelKeepsTheHeadingItExistsBelow(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md":  animal,
 		"Animals.md": threeCards,
@@ -367,29 +367,29 @@ func TestACardWithNoStencilKeepsTheHeadingItExistsBelow(t *testing.T) {
 	}
 }
 
-// TestAListOfStencilsCutShortSaysHowManyTheVaultHolds. A list that stops at a
+// TestAListOfCardModelsCutShortSaysHowManyTheVaultHolds. A list that stops at a
 // ceiling and says nothing about it reads as all there is.
-func TestAListOfStencilsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
+func TestAListOfCardModelsSplitShortReturnsHowManyTheVaultContains(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"Animal.md": animal,
-		"Term.md":   "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n\n## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
-		"Place.md":  "---\ntype: stencil\nfields:\n  - Place\n  - Country\n---\n\n## Recall\n\n### Front\n\n{{Place}}\n\n### Back\n\n{{Country}}\n",
+		"Term.md":   "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n\n## Recall\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
+		"Place.md":  "---\ntype: card-model\nfields:\n  - Place\n  - Country\n---\n\n## Recall\n\n### Front\n\n{{Place}}\n\n### Back\n\n{{Country}}\n",
 		"Loose.md":  "# An ordinary note\n",
 	})
 
-	answer, err := f.client.ListStencils(t.Context(),
-		connect.NewRequest(&flashcardsv1.ListStencilsRequest{Limit: 2}))
+	answer, err := f.client.ListCardModels(t.Context(),
+		connect.NewRequest(&flashcardsv1.ListCardModelsRequest{Limit: 2}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if target := answer.Msg.GetStencils(); len(target) != 2 {
+	if target := answer.Msg.GetCardModels(); len(target) != 2 {
 		t.Fatalf("a list asked for two came back with %d", len(target))
 	}
 	if total := answer.Msg.GetTotal(); total != 3 {
-		t.Errorf("the vault holds three stencils and the answer says %d", total)
+		t.Errorf("the vault holds three card models and the answer says %d", total)
 	}
-	if fields := answer.Msg.GetStencils()[0].GetFields(); len(fields) != 2 || fields[0] != "Name" {
-		t.Errorf("the first stencil asks for %v", fields)
+	if fields := answer.Msg.GetCardModels()[0].GetFields(); len(fields) != 2 || fields[0] != "Name" {
+		t.Errorf("the first card model asks for %v", fields)
 	}
 }
 
@@ -424,49 +424,49 @@ func TestADeckMadeIsADeckToRead(t *testing.T) {
 	}
 }
 
-// TestAStencilMadeDeclaresTheFieldsItWasGiven. A stencil is made with the
+// TestACardModelMadeDeclaresTheFieldsItWasGiven. A card model is made with the
 // fields a card cut by it is asked for, the first of which names the card.
-func TestAStencilMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
+func TestACardModelMadeDeclaresTheFieldsItWasGiven(t *testing.T) {
 	f := newCutting(t, nil)
 
-	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&flashcardsv1.CreateStencilRequest{
+	answer, err := f.client.CreateCardModel(t.Context(), connect.NewRequest(&flashcardsv1.CreateCardModelRequest{
 		Title: "Bird", Path: "cards", Fields: []string{"Species", "Wingspan"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("making a stencil answered %v", code)
+		t.Fatalf("making a card model answered %v", code)
 	}
 	if path := answer.Msg.GetPath(); path != "cards/Bird.md" {
-		t.Fatalf("the stencil was filed at %q", path)
+		t.Fatalf("the card model was filed at %q", path)
 	}
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	read, err := f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: "cards/Bird.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if code := read.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("the stencil just made failed with %v", code)
+		t.Fatalf("the card model just made failed with %v", code)
 	}
-	if fields := read.Msg.GetStencil().GetFields(); len(fields) != 2 || fields[0] != "Species" {
-		t.Errorf("the stencil asks for %v", fields)
+	if fields := read.Msg.GetCardModel().GetFields(); len(fields) != 2 || fields[0] != "Species" {
+		t.Errorf("the card model asks for %v", fields)
 	}
 }
 
-// TestRenamingAFieldReachesTheDecksThatStencilCuts. A field's name is written
-// where the stencil declares it and as a heading in every card that stencil
+// TestRenamingAFieldReachesTheDecksThatCardModelCuts. A field's name is written
+// where the card model declares it and as a heading in every card that card model
 // cuts, so the rename reaches them all and says which decks it wrote.
-func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
+func TestRenamingAFieldReachesTheDecksThatCardModelSplits(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameCardModelField(t.Context(), connect.NewRequest(&flashcardsv1.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height",
 	}))
 	if err != nil {
@@ -479,31 +479,31 @@ func TestRenamingAFieldReachesTheDecksThatStencilSplits(t *testing.T) {
 		t.Fatalf("the rename says it wrote %v", decks)
 	}
 	if cards := answer.Msg.GetCards(); cards != 1 {
-		t.Errorf("cards = %d, want the one card that stencil cuts", cards)
+		t.Errorf("cards = %d, want the one card that card model cuts", cards)
 	}
 	if len(answer.Msg.GetNotWritten()) != 0 {
 		t.Errorf("not written = %+v", answer.Msg.GetNotWritten())
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); !strings.Contains(target, "  - Shoulder height\n") {
-		t.Errorf("the stencil was not renamed: %q", target)
+		t.Errorf("the card model was not renamed: %q", target)
 	}
 	if targetVal := onDisk(t, f.root, "Animals.md"); !strings.Contains(targetVal, "### Shoulder height\n") {
 		t.Errorf("the card was not renamed: %q", targetVal)
 	}
 }
 
-// `fields` and in the braces of every face that places it, and both are the one
-// file, so one write carries both and the stencil declares what its faces place.
-func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
+// `fields` and in the braces of every template that places it, and both are the one
+// file, so one write carries both and the card model declares what its templates place.
+func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	read, err := f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameCardModelField(t.Context(), connect.NewRequest(&flashcardsv1.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
@@ -513,18 +513,18 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 		t.Fatalf("the rename answered %+v", answer.Msg)
 	}
 
-	after, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	after, err := f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	faces := after.Msg.GetStencil().GetFaces()
-	if len(faces) != 1 || faces[0].GetBack() != "{{Shoulder height}}" {
-		t.Errorf("the face places %+v", faces)
+	templates := after.Msg.GetCardModel().GetTemplates()
+	if len(templates) != 1 || templates[0].GetBack() != "{{Shoulder height}}" {
+		t.Errorf("the template places %+v", templates)
 	}
-	if problems := after.Msg.GetStencil().GetProblems(); len(problems) != 0 {
-		t.Errorf("the stencil declares something its faces do not place: %+v", problems)
+	if problems := after.Msg.GetCardModel().GetProblems(); len(problems) != 0 {
+		t.Errorf("the card model declares something its templates do not place: %+v", problems)
 	}
 	// One write, so the fingerprint that came back is the file on disk and the
 	// next write of it lands.
@@ -533,23 +533,23 @@ func TestRenamingAFieldWritesTheFacesOfThatStencil(t *testing.T) {
 	}
 }
 
-// TestRenamingAFieldLeavesAloneAStencilThatChangedSinceItWasRead. Somebody
-// editing their own stencil outranks a client that read it, thought about it
+// TestRenamingAFieldLeavesAloneACardModelThatChangedSinceItWasRead. Somebody
+// editing their own card model outranks a client that read it, thought about it
 // and arrived late.
-func TestRenamingAFieldPreservesAloneAStencilThatChangedSinceItWasRead(t *testing.T) {
+func TestRenamingAFieldPreservesAloneACardModelThatChangedSinceItWasRead(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
 			"## Llama\n\n[[cards/Animal]]\n\n### Height\n\nabout 45\"\n",
 	})
 
-	read, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	read, err := f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: "cards/Animal.md",
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
-	// The person writes their own stencil while the client is thinking about
+	// The person writes their own card model while the client is thinking about
 	// what it read.
 	theirs := animal + "\n## Name it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 	if err := os.WriteFile(
@@ -559,42 +559,42 @@ func TestRenamingAFieldPreservesAloneAStencilThatChangedSinceItWasRead(t *testin
 	}
 	deckBefore := onDisk(t, f.root, "Animals.md")
 
-	answer, err := f.client.RenameStencilField(t.Context(), connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
+	answer, err := f.client.RenameCardModelField(t.Context(), connect.NewRequest(&flashcardsv1.RenameCardModelFieldRequest{
 		Path: "cards/Animal.md", From: "Height", To: "Shoulder height", Baseline: read.Msg.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
-		t.Errorf("a rename over a stencil the person had edited answered %+v", answer.Msg)
+		t.Errorf("a rename over a card model the person had edited answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
-		t.Errorf("the stencil on disk is now %q", target)
+		t.Errorf("the card model on disk is now %q", target)
 	}
-	// The stencil leads, so a rename it rejected reaches no deck.
+	// The card model leads, so a rename it rejected reaches no deck.
 	if targetVal := onDisk(t, f.root, "Animals.md"); targetVal != deckBefore {
 		t.Errorf("a deck was written\n was %q\n now %q", deckBefore, targetVal)
 	}
 }
 
-// TestADeckIsRefusedWhereTheNoteIsAStencil. Two files must agree for a card to
+// TestADeckIsRefusedWhereTheNoteIsACardModel. Two files must agree for a card to
 // be drawn, and a client handed the wrong one is told which it got.
-func TestADeckIsRefusedWhereTheNoteIsAStencil(t *testing.T) {
+func TestADeckIsRefusedWhereTheNoteIsACardModel(t *testing.T) {
 	f := newCutting(t, map[string]string{"Animal.md": animal})
 
 	read := deck(t, f, "Animal.md")
 	if code := read.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_DECK {
-		t.Errorf("a stencil asked for as a deck answered %v", code)
+		t.Errorf("a card model asked for as a deck answered %v", code)
 	}
 	if read.GetDeck() != nil {
 		t.Error("a rejected deck came back with cards on it")
 	}
 }
 
-// TestACardNamesItsStencilTheWayALinkNamesANote. The wikilink under a card's
+// TestACardNamesItsCardModelTheWayALinkNamesANote. The wikilink under a card's
 // heading is an ordinary link, so a path from the root and a name carrying an
-// alias reach the same stencil, and the answer says where that stencil is filed.
-func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
+// alias reach the same card model, and the answer says where that card model is filed.
+func TestACardNamesItsCardModelTheWayALinkNamesANote(t *testing.T) {
 	f := newCutting(t, map[string]string{
 		"cards/Animal.md": animal,
 		"Animals.md": "---\ntype: deck\n---\n\n" +
@@ -610,19 +610,19 @@ func TestACardNamesItsStencilTheWayALinkNamesANote(t *testing.T) {
 	filed := map[string]string{"Llama": "cards/Animal.md", "Alpaca": "cards/Animal.md", "Vicuña": ""}
 	for _, card := range target {
 		name := getFieldValue(card, "Name")
-		if pos := card.GetStencilPath(); pos != filed[name] {
-			t.Errorf("the stencil of %s is filed at %q, want %q", name, pos, filed[name])
+		if pos := card.GetCardModelPath(); pos != filed[name] {
+			t.Errorf("the card model of %s is filed at %q, want %q", name, pos, filed[name])
 		}
 	}
-	if content := target[0].GetStencilLink(); content != "cards/Animal" {
+	if content := target[0].GetCardModelLink(); content != "cards/Animal" {
 		t.Errorf("the wikilink of the first card came back as %q", content)
 	}
 }
 
-// stencil is what the window reads a stencil as.
-func stencil(t *testing.T, f *cutting, path string) *flashcardsv1.ReadStencilResponse {
+// card model is what the window reads a card model as.
+func cardModel(t *testing.T, f *cutting, path string) *flashcardsv1.ReadCardModelResponse {
 	t.Helper()
-	answer, err := f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	answer, err := f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: path,
 	}))
 	if err != nil {
@@ -631,37 +631,37 @@ func stencil(t *testing.T, f *cutting, path string) *flashcardsv1.ReadStencilRes
 	return answer.Msg
 }
 
-// TestAStencilIsWrittenWithItsFacesAndItsFields. The faces are the body and the
+// TestACardModelIsWrittenWithItsTemplatesAndItsFields. The templates are the body and the
 // fields are one key of the frontmatter, and both are the one file, so what
 // comes back is the file holding both.
-func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
+func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read := stencil(t, f, "cards/Animal.md")
-	faces := read.GetStencil().GetFaces()
-	faces[0].Back = "{{Height}} at the shoulder"
+	read := cardModel(t, f, "cards/Animal.md")
+	templates := read.GetCardModel().GetTemplates()
+	templates[0].Back = "{{Height}} at the shoulder"
 
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
-		Path:     "cards/Animal.md",
-		Fields:   read.GetStencil().GetFields(),
-		Faces:    faces,
-		Preamble: read.GetStencil().GetPreamble(),
-		Tail:     read.GetStencil().GetTail(),
-		Baseline: read.GetAt(),
+	answer, err := f.client.WriteCardModel(t.Context(), connect.NewRequest(&flashcardsv1.WriteCardModelRequest{
+		Path:      "cards/Animal.md",
+		Fields:    read.GetCardModel().GetFields(),
+		Templates: templates,
+		Preamble:  read.GetCardModel().GetPreamble(),
+		Tail:      read.GetCardModel().GetTail(),
+		Baseline:  read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("writing a stencil answered %+v", answer.Msg)
+		t.Fatalf("writing a card model answered %+v", answer.Msg)
 	}
 
 	target := onDisk(t, f.root, "cards/Animal.md")
 	if !strings.Contains(target, "{{Height}} at the shoulder") {
-		t.Errorf("the face is not the one written: %q", target)
+		t.Errorf("the template is not the one written: %q", target)
 	}
 	if !strings.Contains(target, "fields:\n  - Name\n  - Height\n") {
-		t.Errorf("the stencil declares something else: %q", target)
+		t.Errorf("the card model declares something else: %q", target)
 	}
 	// The fingerprint that comes back is the file on disk, so the write that
 	// follows this one lands.
@@ -670,44 +670,44 @@ func TestAStencilIsSavedWithItsFacesAndItsFields(t *testing.T) {
 	}
 }
 
-// TestAStencilIsWrittenWithTheFieldsItNowDeclares. A person adding a field
-// writes the stencil's frontmatter and its faces in the one act.
-func TestAStencilIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
+// TestACardModelIsWrittenWithTheFieldsItNowDeclares. A person adding a field
+// writes the card model's frontmatter and its templates in the one act.
+func TestACardModelIsSavedWithTheFieldsItNowDeclares(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read := stencil(t, f, "cards/Animal.md")
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
-		Path:     "cards/Animal.md",
-		Fields:   []string{"Name", "Height", "Life span"},
-		Faces:    read.GetStencil().GetFaces(),
-		Preamble: read.GetStencil().GetPreamble(),
-		Tail:     read.GetStencil().GetTail(),
-		Baseline: read.GetAt(),
+	read := cardModel(t, f, "cards/Animal.md")
+	answer, err := f.client.WriteCardModel(t.Context(), connect.NewRequest(&flashcardsv1.WriteCardModelRequest{
+		Path:      "cards/Animal.md",
+		Fields:    []string{"Name", "Height", "Life span"},
+		Templates: read.GetCardModel().GetTemplates(),
+		Preamble:  read.GetCardModel().GetPreamble(),
+		Tail:      read.GetCardModel().GetTail(),
+		Baseline:  read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_UNSPECIFIED {
-		t.Fatalf("writing a stencil answered %+v", answer.Msg)
+		t.Fatalf("writing a card model answered %+v", answer.Msg)
 	}
 
-	after := stencil(t, f, "cards/Animal.md")
-	if fields := after.GetStencil().GetFields(); len(fields) != 3 || fields[2] != "Life span" {
-		t.Errorf("the stencil asks for %v", fields)
+	after := cardModel(t, f, "cards/Animal.md")
+	if fields := after.GetCardModel().GetFields(); len(fields) != 3 || fields[2] != "Life span" {
+		t.Errorf("the card model asks for %v", fields)
 	}
 	if answer.Msg.GetAt().GetSize() != int64(len(onDisk(t, f.root, "cards/Animal.md"))) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())
 	}
 }
 
-// TestWritingAStencilThatChangedSinceItWasReadWritesNothing. Changed says
-// nothing was written, so the faces are not on disk either and what the person
+// TestWritingACardModelThatChangedSinceItWasReadWritesNothing. Changed says
+// nothing was written, so the templates are not on disk either and what the person
 // wrote is the file.
-func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
+func TestWritingACardModelThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	read := stencil(t, f, "cards/Animal.md")
-	// The person writes their own stencil while the client is thinking about
+	read := cardModel(t, f, "cards/Animal.md")
+	// The person writes their own card model while the client is thinking about
 	// what it read.
 	theirs := animal + "\n## Name it\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 	if err := os.WriteFile(
@@ -716,33 +716,33 @@ func TestWritingAStencilThatChangedSinceItWasReadWritesNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	faces := read.GetStencil().GetFaces()
-	faces[0].Front = "{{Species}}"
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
-		Path:     "cards/Animal.md",
-		Fields:   []string{"Species", "Height"},
-		Faces:    faces,
-		Preamble: read.GetStencil().GetPreamble(),
-		Tail:     read.GetStencil().GetTail(),
-		Baseline: read.GetAt(),
+	templates := read.GetCardModel().GetTemplates()
+	templates[0].Front = "{{Species}}"
+	answer, err := f.client.WriteCardModel(t.Context(), connect.NewRequest(&flashcardsv1.WriteCardModelRequest{
+		Path:      "cards/Animal.md",
+		Fields:    []string{"Species", "Height"},
+		Templates: templates,
+		Preamble:  read.GetCardModel().GetPreamble(),
+		Tail:      read.GetCardModel().GetTail(),
+		Baseline:  read.GetAt(),
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if answer.Msg.GetError() != flashcardsv1.ErrorCode_ERROR_CODE_STALE {
-		t.Fatalf("a write over a stencil the person had edited answered %+v", answer.Msg)
+		t.Fatalf("a write over a card model the person had edited answered %+v", answer.Msg)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != theirs {
-		t.Errorf("the stencil on disk is now %q", target)
+		t.Errorf("the card model on disk is now %q", target)
 	}
 }
 
-// TestWritingAStencilWhereTheVaultHoldsNoNoteIsRefused. A write puts fields and
-// faces into a stencil that is there, and a stencil is put in the vault by name.
-func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
+// TestWritingACardModelWhereTheVaultHoldsNoNoteIsRefused. A write puts fields and
+// templates into a card model that is there, and a card model is put in the vault by name.
+func TestWritingACardModelWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.WriteStencil(t.Context(), connect.NewRequest(&flashcardsv1.WriteStencilRequest{
+	answer, err := f.client.WriteCardModel(t.Context(), connect.NewRequest(&flashcardsv1.WriteCardModelRequest{
 		Path:   "cards/Nowhere.md",
 		Fields: []string{"Name"},
 	}))
@@ -750,32 +750,32 @@ func TestWritingAStencilWhereTheVaultContainsNoNoteIsRefused(t *testing.T) {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_MISSING {
-		t.Errorf("writing a stencil where the vault holds no note answered %v", code)
+		t.Errorf("writing a card model where the vault holds no note answered %v", code)
 	}
 	if _, err := os.Stat(filepath.Join(f.root, "cards", "Nowhere.md")); err == nil {
 		t.Error("a file was made where the write failed")
 	}
 }
 
-// TestAStencilMadeOnANameAlreadyTakenIsRefused. Nothing is written over: the
-func TestAStencilMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
+// TestACardModelMadeOnANameAlreadyTakenIsRefused. Nothing is written over: the
+func TestACardModelMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	answer, err := f.client.CreateStencil(t.Context(), connect.NewRequest(&flashcardsv1.CreateStencilRequest{
+	answer, err := f.client.CreateCardModel(t.Context(), connect.NewRequest(&flashcardsv1.CreateCardModelRequest{
 		Title: "Animal", Path: "cards", Fields: []string{"Species"},
 	}))
 	if err != nil {
 		t.Fatal(err)
 	}
 	if code := answer.Msg.GetError(); code != flashcardsv1.ErrorCode_ERROR_CODE_OCCUPIED {
-		t.Errorf("making a stencil on a name already taken answered %v", code)
+		t.Errorf("making a card model on a name already taken answered %v", code)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
-		t.Errorf("the stencil that was there is now %q", target)
+		t.Errorf("the card model that was there is now %q", target)
 	}
 }
 
-// TestADeckMadeOnANameAlreadyTakenIsRefused. What holds for a stencil holds for
+// TestADeckMadeOnANameAlreadyTakenIsRefused. What holds for a card model holds for
 // a deck.
 func TestADeckMadeOnANameAlreadyTakenIsRefused(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
@@ -807,11 +807,11 @@ func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 		t.Errorf("reading a deck outside the vault answered %v (%v)", got, err)
 	}
 
-	_, err = f.client.ReadStencil(t.Context(), connect.NewRequest(&flashcardsv1.ReadStencilRequest{
+	_, err = f.client.ReadCardModel(t.Context(), connect.NewRequest(&flashcardsv1.ReadCardModelRequest{
 		Path: "../../etc/passwd",
 	}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
-		t.Errorf("reading a stencil outside the vault answered %v (%v)", got, err)
+		t.Errorf("reading a card model outside the vault answered %v (%v)", got, err)
 	}
 
 	_, err = f.client.CreateDeck(t.Context(), connect.NewRequest(&flashcardsv1.CreateDeckRequest{
@@ -822,21 +822,21 @@ func TestAPathThatPreservesTheVaultIsTheClientsToCorrect(t *testing.T) {
 	}
 }
 
-// TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect. A field a
-// stencil already declares is a name the client is holding wrongly, and it is
+// TestARenameOntoANameTheCardModelDeclaresIsTheClientsToCorrect. A field a
+// card model already declares is a name the client is holding wrongly, and it is
 // told so.
-func TestARenameOntoANameTheStencilDeclaresIsTheClientsToCorrect(t *testing.T) {
+func TestARenameOntoANameTheCardModelDeclaresIsTheClientsToCorrect(t *testing.T) {
 	f := newCutting(t, map[string]string{"cards/Animal.md": animal})
 
-	_, err := f.client.RenameStencilField(t.Context(),
-		connect.NewRequest(&flashcardsv1.RenameStencilFieldRequest{
+	_, err := f.client.RenameCardModelField(t.Context(),
+		connect.NewRequest(&flashcardsv1.RenameCardModelFieldRequest{
 			Path: "cards/Animal.md", From: "Height", To: "Name",
 		}))
 	if got := connect.CodeOf(err); got != connect.CodeInvalidArgument {
 		t.Errorf("renaming a field onto a declared name answered %v (%v)", got, err)
 	}
 	if target := onDisk(t, f.root, "cards/Animal.md"); target != animal {
-		t.Errorf("the stencil is now %q", target)
+		t.Errorf("the card model is now %q", target)
 	}
 }
 

@@ -165,7 +165,7 @@ func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: target}))
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithReviewCards(api.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
 
 	returned := make(chan error, 1)
 	client := newBreakingClient(t, api, breaking{
@@ -184,7 +184,7 @@ func TestTheFrontDoorFoundMissingWhileCountingEnds(t *testing.T) {
 	}
 }
 
-// gated is vaults whose card faces come back when their own gate is closed.
+// gated is vaults whose review cards come back when their own gate is closed.
 type gated struct {
 	until   map[domain.VaultID]<-chan struct{}
 	entered chan domain.VaultID
@@ -206,7 +206,7 @@ func TestTheFrontDoorWaitsAfterEachCountBeforeSayingTheListAgain(t *testing.T) {
 	front(t, api)
 
 	first, second := make(chan struct{}), make(chan struct{})
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(gated{
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithReviewCards(api.scenarios().flash.CardsDue.ReviewCards().WithReaders(gated{
 		until:   map[domain.VaultID]<-chan struct{}{target[0].ID: first, target[1].ID: second},
 		entered: make(chan domain.VaultID, 16),
 	}))
@@ -256,7 +256,7 @@ func TestFourVaultsAreCountedAtOnce(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithReviewCards(api.scenarios().flash.CardsDue.ReviewCards().WithReaders(
 		gated{until: gates, entered: entered}))
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
@@ -310,7 +310,7 @@ func TestTheFrontDoorEndsOnlyWhenTheCountsRunningHaveEnded(t *testing.T) {
 		gates[v.ID] = until
 	}
 	entered := make(chan domain.VaultID, 64)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithReviewCards(api.scenarios().flash.CardsDue.ReviewCards().WithReaders(
 		gated{until: gates, entered: entered}))
 	openAll := sync.OnceFunc(func() { close(until) })
 	t.Cleanup(openAll)
@@ -405,7 +405,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 
 	target := make(chan struct{})
 	defer close(target)
-	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithCardFaces(api.scenarios().flash.CardsDue.CardFaces().WithReaders(waiting{until: target}))
+	api.scenarios().flash.CardsDue = api.scenarios().flash.CardsDue.WithReviewCards(api.scenarios().flash.CardsDue.ReviewCards().WithReaders(waiting{until: target}))
 
 	stream, err := newFlashcardsClient(t, api).WatchCardsDue(
 		t.Context(), connect.NewRequest(&flashcardsv1.WatchCardsDueRequest{}))
@@ -435,7 +435,7 @@ func TestTheCountsSayAgainWhileAVaultIsBeingCounted(t *testing.T) {
 	}
 }
 
-// waiting is a vault whose card faces never come back, which is what counting a
+// waiting is a vault whose review cards never come back, which is what counting a
 // vault of many thousands looks like from the stream's side.
 type waiting struct{ until <-chan struct{} }
 

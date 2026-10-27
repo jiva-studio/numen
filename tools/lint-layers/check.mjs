@@ -606,7 +606,7 @@ function verifyCoreImportsNoDomainProto() {
 }
 
 /** The tab kinds, note types and commands plugins own. */
-const PLUGIN_KINDS = ["deck", "stencil", "preset", "plex", "agent", "files"];
+const PLUGIN_KINDS = ["deck", "card-model", "preset", "plex", "agent", "files"];
 
 /**
  * Files of the window where one of PLUGIN_KINDS names something of the core: `agent` as the type
@@ -1316,7 +1316,7 @@ const VERIFIERS = [
     id: "window-names-no-plugin-kind",
     scope: "apps",
     module: "desktop",
-    name: "Desktop Window Names No Plugin Kind (deck, stencil, preset, plex, agent, files)",
+    name: "Desktop Window Names No Plugin Kind (deck, card model, preset, plex, agent, files)",
     run: verifyWindowNamesNoPluginKind,
   },
   {

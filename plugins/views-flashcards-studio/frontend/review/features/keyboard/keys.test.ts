@@ -20,7 +20,7 @@ const createTarget = (tag: string, isEditable = false): Partial<KeyboardEvent> =
 })
 
 describe('the keys a session is done with', () => {
-  it('turns the card over with the space bar, and only while it is face up', () => {
+  it('turns the card over with the space bar, and only while it is review card up', () => {
     expect(getSessionKeyIntent(createPress(' '), { isShown: false })).toEqual({ does: 'show' })
     expect(getSessionKeyIntent(createPress(' '), { isShown: true })).toBeNull()
   })

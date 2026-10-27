@@ -30,10 +30,10 @@ type Preset struct {
 	// Retention is the share of cards recalled when they come round again.
 	Retention float64
 
-	// Rule is what counts as a card face the person has learned, written under
+	// Rule is what counts as a review card the person has learned, written under
 	// Interval under RuleInterval, Retention under RuleRetention.
 	Rule LearnedRule
-	// Interval is how long a card face is sent away for before it is learned, in
+	// Interval is how long a review card is sent away for before it is learned, in
 	// days, and is read under RuleInterval.
 	Interval int
 
@@ -73,7 +73,7 @@ func (p Preset) GetShare(day time.Weekday) float64 {
 	return float64(per) / FullLoad
 }
 
-// ShouldBalanceLoad reports whether this preset moves a card face off the day the scheduler
+// ShouldBalanceLoad reports whether this preset moves a review card off the day the scheduler
 // chose.
 //
 // A preset aiming at a day does not. The pace is what spreads a date's material
@@ -115,10 +115,10 @@ func IsKnownGoal(g Goal) bool {
 type LearnedRule string
 
 const (
-	// RuleInterval learns a card face once it is sent away for the preset's
+	// RuleInterval learns a review card once it is sent away for the preset's
 	// interval or longer.
 	RuleInterval LearnedRule = "interval"
-	// RuleRetention learns a card face once the chance of recalling it today is
+	// RuleRetention learns a review card once the chance of recalling it today is
 	// at or above the preset's retention.
 	RuleRetention LearnedRule = "retention"
 )
@@ -132,7 +132,7 @@ func IsKnownRule(r LearnedRule) bool {
 	return false
 }
 
-// IsLearned reports whether a card face standing at this schedule is one the
+// IsLearned reports whether a review card standing at this schedule is one the
 // person has learned at this instant, under the rule this preset names.
 //
 // It is the one place the rule is read.
@@ -147,7 +147,7 @@ func (p Preset) IsLearned(s Schedule, target time.Time) bool {
 	return s.Due.Sub(s.Last) >= time.Duration(interval)*24*time.Hour
 }
 
-// getLearnedRule is the rule a card face is counted learned by here, and the
+// getLearnedRule is the rule a review card is counted learned by here, and the
 // two values a rule reads.
 //
 // A preset naming no rule counts by the default rule, and a value the rule
@@ -169,7 +169,7 @@ func (p Preset) GetLearnedRule() (LearnedRule, int, float64) {
 
 // BudgetUnit is what a day's budget is counted in.
 //
-// Under BudgetUnitCards a card face is charged the first time it is answered in
+// Under BudgetUnitCards a review card is charged the first time it is answered in
 // a review day and comes round again in it for nothing. Under BudgetUnitShows
 // every showing is charged.
 type BudgetUnit string
@@ -179,8 +179,8 @@ const (
 	BudgetUnitShows BudgetUnit = "shows"
 )
 
-// IsCharged reports whether a showing of a card face spends a slot of a day's
-// count, where shown is whether the day has asked that face already.
+// IsCharged reports whether a showing of a review card spends a slot of a day's
+// count, where shown is whether the day has asked that review card already.
 //
 // It is the one place the counting is read.
 func (u BudgetUnit) IsCharged(isShown bool) bool { return u == BudgetUnitShows || !isShown }
@@ -322,12 +322,12 @@ func (p Preset) IsPaused(d Day, now time.Time) bool {
 // holds none of it.
 //
 // Where no day leaves that much time, the pace is everything left. It is the
-// pace that gets there every card face that can, and how many cannot is
+// pace that gets there every review card that can, and how many cannot is
 // NeverClears is a pace that leaves something overdue on every day projected.
 const NeverClears = -1
 
 // NeverLearns is a day further off than what was looked at: a projection whose
-// horizon ends with one card face still to learn.
+// horizon ends with one review card still to learn.
 const NeverLearns = -1
 
 // LearnsUnasked is a projection with no day on which the whole material stands

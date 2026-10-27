@@ -187,9 +187,9 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 	})
 }
 
-// A budget counting cards charges a card face the first time the day answers
+// A budget counting cards charges a review card the first time the day answers
 // it and every further showing of it that day is free, so what a day of any
-// number of showings costs is the faces it showed. A budget counting showings
+// number of showings costs is the review cards it showed. A budget counting showings
 // charges every one of them.
 //
 // A budget counts cards, and may be told to count showings.
@@ -201,16 +201,16 @@ func TestWhatADayOfShowingsCosts(t *testing.T) {
 		}).Draw(t, "counts")
 		shows := rapid.SliceOfN(rapid.IntRange(0, 5), 0, 40).Draw(t, "shows")
 
-		faced := make(map[int]bool, len(shows))
+		reviewed := make(map[int]bool, len(shows))
 		var charged int
-		for _, face := range shows {
-			if counts.IsCharged(faced[face]) {
+		for _, reviewCard := range shows {
+			if counts.IsCharged(reviewed[reviewCard]) {
 				charged++
 			}
-			faced[face] = true
+			reviewed[reviewCard] = true
 		}
 
-		want := len(faced)
+		want := len(reviewed)
 		if counts == review.BudgetUnitShows {
 			want = len(shows)
 		}

@@ -28,7 +28,7 @@ export const SHOTS = [
   { name: 'transcript', story: 'recording-tab--no-transcript', drawn: 5_000 },
   { name: 'ocr', story: 'application-window--recognising' },
   { name: 'deck', story: 'flashcards-deck--deck' },
-  { name: 'stencil', story: 'flashcards-stencil--stencil' },
+  { name: 'card-model', story: 'flashcards-card-model--card-model' },
   { name: 'preset', story: 'window-preset--a-preset' },
   { name: 'cards-due', story: 'flash-cards-window--cards-due', size: NARROW },
   { name: 'review', story: 'flash-cards-window--reviewing', size: NARROW },

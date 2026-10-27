@@ -7,19 +7,19 @@ import { getFileStem } from '@numen/plugin-sdk'
 import type { BufferCard, BufferDeck } from '../types'
 
 export interface AddCardOptions {
-  stencilPath: string
+  cardModelPath: string
   values: readonly Value[]
   section?: string | null
   generateCardId?: IdMaker
 }
 
 /**
- * A card made at the end of a section, cut by the stencil filed at a path, with
+ * A card made at the end of a section, cut by the card model filed at a path, with
  * a value standing empty for each field. Under no section it is made at the end
  * of the cards standing before the first of them.
  */
 export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions): BufferDeck => {
-  const { stencilPath, values, section = null, generateCardId = generateId } = options
+  const { cardModelPath, values, section = null, generateCardId = generateId } = options
   const ranks = new Map<string | null, number>(deck.sections.map((each, index) => [each.id, index]))
   const rank = (id: string | null): number => ranks.get(id) ?? -1
   const mine = rank(section)
@@ -35,11 +35,11 @@ export const addCard = (deck: BufferDeck, title: string, options: AddCardOptions
       ...deck.cards.slice(0, targetIndex),
       {
         id: generateCardId(),
-        mark: '',
+        cardId: '',
         section: ranks.has(section) ? section : null,
         heading: '',
-        stencilLink: stencilPath ? getFileStem(stencilPath) : title,
-        stencilPath,
+        cardModelLink: cardModelPath ? getFileStem(cardModelPath) : title,
+        cardModelPath,
         preamble: '',
         values,
       },

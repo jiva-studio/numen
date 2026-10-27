@@ -1,7 +1,7 @@
 /**
- * The braces a face is written with, read and filled as plain values.
+ * The braces a template is written with, read and filled as plain values.
  *
- * A face is text with `{{Field}}` standing where a value goes. A card is named
+ * A template is text with `{{Field}}` standing where a value goes. A card is named
  * by its first field, which is named in the braces like any other. Everything
  * here is the same text on any machine on any day.
  */
@@ -11,7 +11,7 @@ import type { FieldValue } from './card'
 /** The braces, and what a person may write between them. */
 const SLOT = /\{\{([^{}]*)\}\}/g
 
-/** One slot at its current position in a face. */
+/** One slot at its current position in a template. */
 export interface Slot {
   /** The name between the braces, which is a field's name written exactly. */
   readonly field: string
@@ -20,7 +20,7 @@ export interface Slot {
   readonly to: number
 }
 
-/** Every slot a face names, in the order it stands. */
+/** Every slot a template names, in the order it stands. */
 export function getSlots(template: string): readonly Slot[] {
   const found: Slot[] = []
   for (const match of template.matchAll(SLOT)) {
@@ -41,7 +41,7 @@ const escapeHtml = (text: string): string =>
   text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 
 /**
- * A face as its preview shows it. A slot the fields do not name keeps its
+ * A template as its preview shows it. A slot the fields do not name keeps its
  * braces and is marked at its current position, so what is wrong is read in its place.
  */
 export function renderPreview(
@@ -56,7 +56,7 @@ export function renderPreview(
 }
 
 /**
- * The slots a face names that the fields do not, each said once, in the order
+ * The slots a template names that the fields do not, each said once, in the order
  * they stand.
  */
 export function getUndeclaredSlots(template: string, fields: readonly string[]): readonly string[] {
@@ -68,14 +68,14 @@ export function getUndeclaredSlots(template: string, fields: readonly string[]):
   return [...observed]
 }
 
-/** A field put into a face: the text it evaluates to, and where the caret lands. */
+/** A field put into a template: the text it evaluates to, and where the caret lands. */
 export interface InsertResult {
   readonly text: string
   readonly caret: number
 }
 
 /**
- * A field written into a face at the caret, the caret landing past the closing
+ * A field written into a template at the caret, the caret landing past the closing
  * brace. A caret outside the text is taken to the end nearest it.
  */
 export function insert(template: string, pos: number, field: string): InsertResult {
@@ -87,7 +87,7 @@ export function insert(template: string, pos: number, field: string): InsertResu
   }
 }
 
-/** A face whose every slot naming one field names another. */
+/** A template whose every slot naming one field names another. */
 export function renameField(template: string, from: string, to: string): string {
   return template.replace(SLOT, (whole, inside: string) =>
     inside === from ? braceField(to) : whole,

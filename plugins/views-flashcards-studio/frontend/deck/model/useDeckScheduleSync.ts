@@ -1,36 +1,36 @@
 /**
- * Stencil listing and schedule coordination for deck tabs.
+ * Card model listing and schedule coordination for deck tabs.
  */
 import { computed, shallowRef } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'
 import type { openNotes } from '../../buffer'
-import type { Cards, StencilSummary, Presets } from '../../cards'
+import type { Cards, CardModelSummary, Presets } from '../../cards'
 import { useDeckSchedule } from './useDeckSchedule'
-import { areOffersEqual, createStencilChoices } from '../lib/deck'
+import { areOffersEqual, createCardModelChoices } from '../lib/deck'
 
 export function useDeckScheduleSync(
   cards: Cards,
   presets: Presets,
   store: ReturnType<typeof openNotes>,
 ) {
-  const offers = shallowRef<readonly StencilSummary[]>([])
+  const offers = shallowRef<readonly CardModelSummary[]>([])
   let listedOk = true
 
-  const stencils = computed(() => createStencilChoices(offers.value))
+  const cardModels = computed(() => createCardModelChoices(offers.value))
 
-  const listStencils = async (): Promise<void> => {
+  const listCardModels = async (): Promise<void> => {
     try {
-      const items = (await cards.stencils()).stencils
+      const items = (await cards.cardModels()).cardModels
       listedOk = true
       if (!areOffersEqual(offers.value, items)) offers.value = items
     } catch {
-      // Listing stencils failed.
+      // Listing card models failed.
       listedOk = false
     }
   }
 
-  const listStencilsAgain = (): void => {
-    if (!listedOk) void listStencils()
+  const listCardModelsAgain = (): void => {
+    if (!listedOk) void listCardModels()
   }
 
   const scheduled = useDeckSchedule(presets, store)
@@ -44,16 +44,16 @@ export function useDeckScheduleSync(
       scheduled.moveFile(rename.from, rename.to)
     }
     if (store.getOpenIds().length === 0) return
-    void listStencils()
+    void listCardModels()
     void scheduled.listing.listPresets()
     for (const one of store.getOpenIds()) void scheduled.refreshDeckPreset(store.getPath(one))
   }
 
   return {
     offers,
-    stencils,
-    listStencils,
-    listStencilsAgain,
+    cardModels,
+    listCardModels,
+    listCardModelsAgain,
     scheduled,
     applyPathChanges,
   }

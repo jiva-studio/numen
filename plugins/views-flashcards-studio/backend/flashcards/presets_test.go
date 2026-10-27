@@ -596,7 +596,7 @@ func TestTheRuleNotNamedKeepsItsValue(t *testing.T) {
 // cards are counted against the default threshold.
 //
 // The file names no rule and no interval, which is every preset a person wrote
-// before there was one to name. A card face put off by less than the default
+// before there was one to name. A review card put off by less than the default
 // interval is not learned, and the counts a window draws say so.
 func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 	t.Parallel()
@@ -618,20 +618,20 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 		t.Errorf("a file naming no rule was read as %q at %d days", p.Rule, p.Interval)
 	}
 
-	// Two card faces first seen yesterday, one put off by sixteen days and one
+	// Two review cards first seen yesterday, one put off by sixteen days and one
 	// by twenty-one.
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.Local)
 	last := now.AddDate(0, 0, -1)
-	pos := map[review.CardFaceID]review.Schedule{
-		{Card: "near", Face: "Recognise"}: {
+	pos := map[review.ReviewCardID]review.Schedule{
+		{Card: "near", Template: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16,
 		},
-		{Card: "far", Face: "Recognise"}: {
+		{Card: "far", Template: "Recognise"}: {
 			Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21,
 		},
 	}
-	if p.IsLearned(pos[review.CardFaceID{Card: "near", Face: "Recognise"}], now) {
-		t.Error("a card face sixteen days off is learned at an interval of twenty-one")
+	if p.IsLearned(pos[review.ReviewCardID{Card: "near", Template: "Recognise"}], now) {
+		t.Error("a review card sixteen days off is learned at an interval of twenty-one")
 	}
 
 	// And the counts the window draws off the projection say the same.
@@ -643,7 +643,7 @@ func TestAPresetSavedBeforeTheRuleCountsByTheDefault(t *testing.T) {
 		t.Fatal(err)
 	}
 	if ran.Learned != 1 {
-		t.Errorf("%d of the two card faces stand learned, want the one sent away for 21 days",
+		t.Errorf("%d of the two review cards stand learned, want the one sent away for 21 days",
 			ran.Learned)
 	}
 	if ran.Through[0] >= 1 {

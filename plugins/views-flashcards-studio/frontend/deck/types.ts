@@ -4,7 +4,7 @@
 import type { ComputedRef } from 'vue'
 import type { OpenNote } from '../buffer'
 import type { Marks, Surrounds, Value } from '../cards'
-import type { DeckCard, DeckSection, Stencil } from '../ui/cards'
+import type { DeckCard, DeckSection, CardModel } from '../ui/cards'
 import type { Choice, DeckPreset } from './model/useDeckSchedule'
 
 export type { Choice, DeckPreset }
@@ -14,30 +14,30 @@ export type { Choice, DeckPreset }
  * addressed by.
  */
 export interface BufferCard {
-  /** The identity the window addresses it by: its mark, or one minted for it. */
+  /** The identity the window addresses it by: its card id, or one minted for it. */
   readonly id: string
   /**
    * What the card is, for as long as it exists, without the caret its heading
    * writes it behind. Empty for a card the application has not written yet.
    */
-  readonly mark: string
+  readonly cardId: string
   /**
    * The section it is placed under, by the identity this window knows that section
    * at. Nothing for a card standing before the first.
    */
   readonly section: string | null
   /**
-   * The line its heading says, with the mark taken off.
+   * The line its heading says, with the card id taken off.
    */
   readonly heading: string
   /**
-   * The stencil it is cut by, as the wikilink beneath its heading names it.
+   * The card model it is cut by, as the wikilink beneath its heading names it.
    */
-  readonly stencilLink: string
+  readonly cardModelLink: string
   /**
-   * Where that stencil is filed, as the wikilink resolved in the vault.
+   * Where that card model is filed, as the wikilink resolved in the vault.
    */
-  readonly stencilPath: string
+  readonly cardModelPath: string
   /** The prose between that wikilink and the first field. */
   readonly preamble: string
   readonly values: readonly Value[]
@@ -69,7 +69,7 @@ export interface DeckDataState {
   readonly deck: ComputedRef<BufferDeck>
   readonly deckCards: ComputedRef<readonly DeckCard[]>
   readonly sections: ComputedRef<readonly DeckSection[]>
-  readonly stencils: ComputedRef<readonly Stencil[]>
+  readonly cardModels: ComputedRef<readonly CardModel[]>
   readonly marks: ComputedRef<Marks>
   readonly errorMessage: ComputedRef<string>
 }
@@ -84,7 +84,7 @@ export interface DeckScheduleState {
 /** Actions and mutations available on a deck tab. */
 export interface DeckActions {
   addCard(
-    stencil: string,
+    cardModel: string,
     values: readonly { field: string; text: string }[],
     section: string | null,
   ): void

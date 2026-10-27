@@ -10,21 +10,21 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// stencilsOf is an index that names the stencils of a vault from a list, or fails.
-type stencilsOf struct {
+// cardModelsOf is an index that names the card models of a vault from a list, or fails.
+type cardModelsOf struct {
 	err error
 }
 
-func (s stencilsOf) GetStencils(context.Context, domain.VaultID) ([]ports.Stencil, error) {
+func (s cardModelsOf) GetCardModels(context.Context, domain.VaultID) ([]ports.CardModel, error) {
 	return nil, s.err
 }
 
-// An index that cannot name the stencils is an error of the listing, and no list
+// An index that cannot name the card models is an error of the listing, and no list
 // is handed over beside it.
-func TestAListingWhoseIndexCannotNameTheStencilsIsAnError(t *testing.T) {
+func TestAListingWhoseIndexCannotNameTheCardModelsIsAnError(t *testing.T) {
 	vs := newVaults(t)
 
-	got, count, err := cards.NewList(vs.ports.Readers, stencilsOf{err: errOutOfReach}).
+	got, count, err := cards.NewList(vs.ports.Readers, cardModelsOf{err: errOutOfReach}).
 		Execute(t.Context(), vs.first, 0)
 	if !errors.Is(err, errOutOfReach) {
 		t.Fatalf("list = %v, want the index's error", err)
@@ -34,9 +34,9 @@ func TestAListingWhoseIndexCannotNameTheStencilsIsAnError(t *testing.T) {
 	}
 }
 
-// A stencil the vault cannot look at is an error of the listing, and no list is
+// A card model the vault cannot look at is an error of the listing, and no list is
 // handed over beside it.
-func TestAListingWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
+func TestAListingWhoseCardModelCannotBeLookedAtIsAnError(t *testing.T) {
 	vs := newVaults(t)
 	readers := faulty{inner: vs.ports.Readers, stat: map[string]error{"Animal.md": errOutOfReach}}
 
@@ -49,9 +49,9 @@ func TestAListingWhoseStencilCannotBeLookedAtIsAnError(t *testing.T) {
 	}
 }
 
-// A limit above the number of stencils lists all of them, and a limit below it
+// A limit above the number of card models lists all of them, and a limit below it
 // lists that many while the count still says how many the vault holds.
-func TestAListingLimitedAboveOrBelowTheStencilsReturnsHowManyThereAre(t *testing.T) {
+func TestAListingLimitedAboveOrBelowTheCardModelsReturnsHowManyThereAre(t *testing.T) {
 	vs := newVaults(t)
 	u := cards.NewList(vs.ports.Readers, vs.queries)
 

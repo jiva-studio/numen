@@ -91,8 +91,8 @@ about 20 years
 	}
 
 	llama := deck.Cards[0]
-	if llama.StencilLink != "Animal" {
-		t.Errorf("stencil = %q", llama.StencilLink)
+	if llama.CardModelLink != "Animal" {
+		t.Errorf("card model = %q", llama.CardModelLink)
 	}
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Height", "Life span"}) {
 		t.Errorf("fields = %v", got)
@@ -104,12 +104,12 @@ about 20 years
 	if got, _ := deck.Cards[1].Value("Значение"); got != "перегной из листьев и травы" {
 		t.Errorf("Значение = %q", got)
 	}
-	if deck.Cards[1].StencilLink != "Термин" {
-		t.Errorf("stencil = %q", deck.Cards[1].StencilLink)
+	if deck.Cards[1].CardModelLink != "Термин" {
+		t.Errorf("card model = %q", deck.Cards[1].CardModelLink)
 	}
 }
 
-// Two first fields that begin alike are two cards of one heading. Their marks
+// Two first fields that begin alike are two cards of one heading. Their card ids
 // tell them apart, and nothing else needed them to differ.
 func TestTwoCardsOfOneHeading(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
@@ -141,14 +141,14 @@ about 46"
 	}
 	got, err := deck.Card("zpqrstvwxy")
 	if err != nil {
-		t.Fatalf("the second card is not addressed by its mark: %v", err)
+		t.Fatalf("the second card is not addressed by its card id: %v", err)
 	}
 	if target, _ := got.Value("Height"); target != `about 46"` {
-		t.Errorf("the mark reached the wrong card: %q", target)
+		t.Errorf("the card id reached the wrong card: %q", target)
 	}
 }
 
-// A card copied by hand carries the mark it was copied from. Both are read and
+// A card copied by hand carries the card id it was copied from. Both are read and
 // both are shown marked: nothing a person wrote goes missing from the screen,
 // and which of the two is meant is a thing only they know.
 func TestTwoCardsOfOneMark(t *testing.T) {
@@ -183,7 +183,7 @@ about 30"
 
 	var against []int
 	for _, p := range deck.Problems {
-		if p.Fault == format.FaultTwoMarks {
+		if p.Fault == format.FaultDuplicateCardID {
 			against = append(against, p.Card)
 		}
 	}
@@ -263,9 +263,9 @@ about 46"
 	}
 }
 
-// A card whose first paragraph is not a lone wikilink names no stencil. Its
+// A card whose first paragraph is not a lone wikilink names no card model. Its
 // values are read either way.
-func TestACardNamesNoStencil(t *testing.T) {
+func TestACardNamesNoCardModel(t *testing.T) {
 	for name, head := range map[string]string{
 		"prose":                      "A llama is an animal.",
 		"a link in prose":            "[[Animal]] is what it is.",
@@ -278,10 +278,10 @@ func TestACardNamesNoStencil(t *testing.T) {
 			deck := format.ReadDeck(note(t, "---\ntype: deck\n---\n\n## Llama\n\n"+head+"\n\n### Height\n\nabout 45\"\n"))
 
 			card := deck.Cards[0]
-			if card.StencilLink != "" {
-				t.Errorf("stencil = %q, want none", card.StencilLink)
+			if card.CardModelLink != "" {
+				t.Errorf("card model = %q, want none", card.CardModelLink)
 			}
-			if got := getProblem(t, deck.Problems, format.FaultNoStencil).Card; got != 0 {
+			if got := getProblem(t, deck.Problems, format.FaultNoCardModel).Card; got != 0 {
 				t.Errorf("card = %d", got)
 			}
 			if got, ok := card.Value("Height"); !ok || got != `about 45"` {
@@ -294,7 +294,7 @@ func TestACardNamesNoStencil(t *testing.T) {
 	}
 }
 
-func TestALoneWikilinkIsTheStencilAndTheRestIsLead(t *testing.T) {
+func TestALoneWikilinkIsTheCardModelAndTheRestIsLead(t *testing.T) {
 	deck := format.ReadDeck(note(t, `---
 type: deck
 ---
@@ -311,8 +311,8 @@ about 45"
 `))
 
 	card := deck.Cards[0]
-	if card.StencilLink != "Animal" {
-		t.Errorf("stencil = %q", card.StencilLink)
+	if card.CardModelLink != "Animal" {
+		t.Errorf("card model = %q", card.CardModelLink)
 	}
 	if card.Preamble != "Written on the seed packet." {
 		t.Errorf("lead = %q", card.Preamble)
@@ -573,8 +573,8 @@ func TestADeckOfCRLFReadsAsOneKindOfBreak(t *testing.T) {
 	raw := "---\r\ntype: deck\r\n---\r\n\r\n## Llama\r\n\r\n[[Animal]]\r\n\r\n### Height\r\n\r\nabout 45\"\r\nat the shoulder\r\n"
 	deck := format.ReadDeck(note(t, raw))
 
-	if deck.Cards[0].StencilLink != "Animal" {
-		t.Errorf("stencil = %q", deck.Cards[0].StencilLink)
+	if deck.Cards[0].CardModelLink != "Animal" {
+		t.Errorf("card model = %q", deck.Cards[0].CardModelLink)
 	}
 	if got, _ := deck.Cards[0].Value("Height"); got != "about 45\"\nat the shoulder" {
 		t.Errorf("Height = %q, want no carriage returns", got)

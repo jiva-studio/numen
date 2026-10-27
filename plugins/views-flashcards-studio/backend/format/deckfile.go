@@ -11,21 +11,21 @@ import (
 )
 
 // ErrNoSuchCard is what changing a card says when the deck holds no card of
-// that mark. A card is known by its mark, so a card rewritten from end to end
+// that card id. A card is known by its card id, so a card rewritten from end to end
 // is still that card.
-var ErrNoSuchCard = errors.New("card face not found in deck")
+var ErrNoSuchCard = errors.New("card not found in deck")
 
 // ErrTwoCards is what changing a card says when two cards of the deck carry
-// the mark it was addressed by. Both are read and both are shown, and which of
+// the card id it was addressed by. Both are read and both are shown, and which of
 // the two is meant is a thing only the person who wrote them knows.
-var ErrTwoCards = errors.New("two cards of this deck carry that mark")
+var ErrTwoCards = errors.New("two cards of this deck carry that card id")
 
 // ErrNoSuchSection is what changing a section says when the deck holds no
 // section standing there.
 var ErrNoSuchSection = errors.New("section not found in deck")
 
 // ErrNoSuchValue is what removing a value says when the card writes nothing
-// under that field. The stencil may well declare it: what is not there is what
+// under that field. The card model may well declare it: what is not there is what
 // the person wrote.
 var ErrNoSuchValue = errors.New("this card writes no value under that field")
 
@@ -78,23 +78,23 @@ func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
 	return deck
 }
 
-// Whole makes every card of the file whole and reports the marks it gave, which
+// Whole makes every card of the file whole and reports the card ids it gave, which
 // is what Whole does to a body. The file keeps its own line endings.
 func (f *DeckFile) Whole(
-	stencils map[string]Stencil, createID func() cardid.ID,
-) ([]CardMark, error) {
-	body, provided := Whole(markdown.Normalise(f.doc.Body()), stencils, createID)
+	cardModels map[string]CardModel, createID func() cardid.ID,
+) ([]CardID, error) {
+	body, provided := Whole(markdown.Normalise(f.doc.Body()), cardModels, createID)
 	if err := f.doc.SetBody(body); err != nil {
 		return nil, err
 	}
 	return provided, nil
 }
 
-// SetValue writes what the card of a mark holds under one field. A field the
+// SetValue writes what the card of a card id holds under one field. A field the
 // card does not carry yet is added at the end of it, which leaves the fields it
 // does carry in the order the person wrote them.
 //
-// A mark two cards of the deck carry addresses neither: choosing between them
+// A card id two cards of the deck carry addresses neither: choosing between them
 // is ErrTwoCards.
 //
 // Writing the first field is what rewrites the heading, and that is done where
@@ -152,7 +152,7 @@ func (f *DeckFile) RemoveValue(card cardid.ID, field string) error {
 
 // that named none is given the paragraph under its heading, and the values it
 // already holds stay where they stand.
-func (f *DeckFile) SetStencil(card cardid.ID, name string) error {
+func (f *DeckFile) SetCardModel(card cardid.ID, name string) error {
 	body := []byte(f.doc.Body())
 	span, err := f.getCardSpan(body, card)
 	if err != nil {
@@ -165,7 +165,7 @@ func (f *DeckFile) SetStencil(card cardid.ID, name string) error {
 	return f.doc.SpliceBody(span.from, span.from, "\n"+link+"\n")
 }
 
-// RemoveCard takes a card out of the deck: its heading, the stencil it named
+// RemoveCard takes a card out of the deck: its heading, the card model it named
 // and every value under it. What stood above and below is left where it was.
 func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	body := []byte(f.doc.Body())
@@ -188,15 +188,15 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 	return f.doc.SpliceBody(head, to, content)
 }
 
-// getCardSpan is where the card of a mark stands. A deck holding none of that
-// mark is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing
+// getCardSpan is where the card of a card id stands. A deck holding none of that
+// card id is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing
 // between them is choosing which of the two the person meant.
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
 	_, spans := readDeck(domain.Fingerprint{}, body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
 	pos := -1
 	for i, span := range spans {
-		if span.mark == "" || span.mark != card {
+		if span.cardID == "" || span.cardID != card {
 			continue
 		}
 		if pos >= 0 {
@@ -289,12 +289,12 @@ func (f *DeckFile) AddCardUnder(sectionIndex int, card Card) error {
 }
 
 // cardBlock is the markdown one card is written as: its heading, the wikilink
-// naming the stencil it is cut by, the lead beneath it, and each value under a
+// naming the card model it is cut by, the lead beneath it, and each value under a
 // heading of its field's name.
 func cardBlock(card Card) string {
-	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.Mark))}
-	if card.StencilLink != "" {
-		blocks = append(blocks, "[["+card.StencilLink+"]]")
+	blocks := []string{headingLine(CardLevel, WriteHeading(oneLine(card.Heading), card.CardID))}
+	if card.CardModelLink != "" {
+		blocks = append(blocks, "[["+card.CardModelLink+"]]")
 	}
 	if lead := trimBlankLines(markdown.Normalise(card.Preamble)); lead != "" {
 		blocks = append(blocks, lead)
@@ -377,19 +377,19 @@ func DeckBody(d Deck) (string, error) {
 	return strings.TrimRight(body, "\n") + d.Tail, nil
 }
 
-// RenameField rewrites one field's heading in every card cut by the stencil
-// filed at stencil, and reports how many it rewrote. The value under each
+// RenameField rewrites one field's heading in every card cut by the card model
+// filed at card model, and reports how many it rewrote. The value under each
 // heading is left as it was.
 //
 // Cutting is where each wikilink this deck writes lands, keyed by what stands
 // in the brackets.
-func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to string) (int, error) {
+func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
 	deck, spans := readDeck(domain.Fingerprint{}, body)
 
 	var heads []valueSpan
 	for i, span := range spans {
-		if !usesStencil(deck.Cards[i], cutting, stencil) {
+		if !usesCardModel(deck.Cards[i], cutting, cardModel) {
 			continue
 		}
 		for _, v := range span.values {
@@ -412,10 +412,10 @@ func (f *DeckFile) RenameField(cutting map[string]string, stencil, from, to stri
 	return len(heads), nil
 }
 
-// usesStencil reports whether a card is cut by the stencil filed at stencil. The name
+// usesCardModel reports whether a card is cut by the card model filed at card model. The name
 // under the heading is an ordinary wikilink, so what cuts the card is the note
 // that name lands on.
-func usesStencil(card Card, linkTargets map[string]string, stencil string) bool {
-	pos, lands := linkTargets[card.StencilLink]
-	return lands && pos == stencil
+func usesCardModel(card Card, linkTargets map[string]string, cardModel string) bool {
+	pos, lands := linkTargets[card.CardModelLink]
+	return lands && pos == cardModel
 }

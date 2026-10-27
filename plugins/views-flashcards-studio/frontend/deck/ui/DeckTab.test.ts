@@ -39,11 +39,11 @@ afterEach(() => {
 
 const CARDS: readonly VaultCard[] = [
   {
-    mark: 'k7m2xq9fzp',
+    cardId: 'k7m2xq9fzp',
     sectionIndex: 0,
     heading: 'Llama',
-    stencilLink: 'Animal',
-    stencilPath: 'Animal.md',
+    cardModelLink: 'Animal',
+    cardModelPath: 'Animal.md',
     preamble: '',
     values: [
       { field: 'Name', text: 'Llama' },
@@ -51,11 +51,11 @@ const CARDS: readonly VaultCard[] = [
     ],
   },
   {
-    mark: '3n8vr4tqch',
+    cardId: '3n8vr4tqch',
     sectionIndex: 0,
     heading: '',
-    stencilLink: 'Animal',
-    stencilPath: 'Animal.md',
+    cardModelLink: 'Animal',
+    cardModelPath: 'Animal.md',
     preamble: '',
     values: [],
   },
@@ -77,12 +77,12 @@ const mountDeck = async (
   } = {},
 ) => {
   const core: Cards = {
-    stencils: async () => ({
-      stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
+    cardModels: async () => ({
+      cardModels: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
       held: 1,
     }),
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
-    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async (path) =>
       asValue({
@@ -98,8 +98,8 @@ const mountDeck = async (
         at: 'read',
       }),
     writeDeck: async () => asValue({ at: 'written' }),
-    readStencil: async () => asFailure('missing' as const),
-    writeStencil: async () => asValue({ at: '' }),
+    readCardModel: async () => asFailure('missing' as const),
+    writeCardModel: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -174,12 +174,12 @@ const mountDeck = async (
 const getTile = (window: Awaited<ReturnType<typeof mountDeck>>['window'], card: string) =>
   window.find(`[data-card="${card}"]`)
 
-const stencilless: DeckProblem = {
-  kind: 'cardWithoutAStencil',
+const withoutCardModel: DeckProblem = {
+  kind: 'cardWithoutACardModel',
   card: 1,
-  face: null,
+  template: null,
   field: '',
-  text: 'a card under no stencil',
+  text: 'a card under no card model',
 }
 
 describe('a deck drawn', () => {
@@ -189,7 +189,7 @@ describe('a deck drawn', () => {
     expect(window.findAll('[data-card]')).toHaveLength(2)
   })
 
-  it('offers every stencil the vault holds once the plus is pressed', async () => {
+  it('offers every card model the vault holds once the plus is pressed', async () => {
     const { window } = await mountDeck()
 
     expect(window.find('[data-cut="Animal"]').exists()).toBe(false)
@@ -198,7 +198,7 @@ describe('a deck drawn', () => {
     expect(window.find('[data-cut="Animal"]').exists()).toBe(true)
   })
 
-  it('writes a card cut by the stencil that was chosen', async () => {
+  it('writes a card cut by the card model that was chosen', async () => {
     const { window, tab } = await mountDeck()
 
     // The plus of the last section, so the card it makes stands last of all.
@@ -206,7 +206,7 @@ describe('a deck drawn', () => {
     await window.find('[data-cut="Animal"]').trigger('click')
 
     expect(tab.deck.value.cards.length).toBe(3)
-    expect(tab.deck.value.cards.at(-1)?.stencilLink).toBe('Animal')
+    expect(tab.deck.value.cards.at(-1)?.cardModelLink).toBe('Animal')
     expect(tab.deck.value.cards.at(-1)?.values).toStrictEqual([
       { field: 'Name', text: '' },
       { field: 'Height', text: '' },
@@ -232,14 +232,14 @@ describe('a deck drawn', () => {
 
 describe('a mark on a tile', () => {
   it('is drawn inside the tile of the card it was read against', async () => {
-    const { window, tab } = await mountDeck([stencilless])
+    const { window, tab } = await mountDeck([withoutCardModel])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
-    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
+    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no card model')
   })
 
   it('is drawn on no other tile', async () => {
-    const { window, tab } = await mountDeck([stencilless])
+    const { window, tab } = await mountDeck([withoutCardModel])
     const first = tab.deck.value.cards[0]?.id ?? ''
 
     expect(getTile(window, first).find('[data-wrong]').exists()).toBe(false)
@@ -252,7 +252,7 @@ describe('a mark on a tile', () => {
   })
 
   it('goes when the card it stood on is taken out of the deck', async () => {
-    const { window, tab } = await mountDeck([stencilless])
+    const { window, tab } = await mountDeck([withoutCardModel])
     const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removeCard(second)
@@ -262,21 +262,21 @@ describe('a mark on a tile', () => {
   })
 
   it('remains with the card and not with its place, so removing another leaves it', async () => {
-    const { window, tab } = await mountDeck([stencilless])
+    const { window, tab } = await mountDeck([withoutCardModel])
     const first = tab.deck.value.cards[0]?.id ?? ''
     const second = tab.deck.value.cards[1]?.id ?? ''
 
     tab.removeCard(first)
     await settle()
 
-    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no stencil')
+    expect(getTile(window, second).find('[data-wrong]').text()).toBe('a card under no card model')
   })
 })
 
 describe('what is wrong with the file itself', () => {
   it('is drawn above the grid, standing on no tile', async () => {
     const { window } = await mountDeck([
-      { kind: 'unknown', card: null, face: null, field: '', text: 'the whole file' },
+      { kind: 'unknown', card: null, template: null, field: '', text: 'the whole file' },
     ])
 
     expect(window.find(`[aria-label="${words.problems}"]`).text()).toBe('the whole file')
@@ -284,7 +284,7 @@ describe('what is wrong with the file itself', () => {
   })
 
   it('is drawn nowhere where every problem relies on a card', async () => {
-    const { window } = await mountDeck([stencilless])
+    const { window } = await mountDeck([withoutCardModel])
 
     expect(window.find(`[aria-label="${words.problems}"]`).exists()).toBe(false)
   })

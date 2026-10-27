@@ -75,6 +75,6 @@ test('the review mounts the conversation of the agent chat plugin in its agent p
   expect(requests[0]?.['context']).toEqual({
     'md.numen.views.flashcards.studio/deck': expect.stringMatching(/\.md$/),
     'md.numen.views.flashcards.studio/card': expect.any(String),
-    'md.numen.views.flashcards.studio/face': expect.any(String),
+    'md.numen.views.flashcards.studio/template': expect.any(String),
   })
 })

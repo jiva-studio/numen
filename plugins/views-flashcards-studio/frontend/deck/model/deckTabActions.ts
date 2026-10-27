@@ -1,13 +1,13 @@
 /**
  * Tab-level card and section mutations for flashcard deck tabs.
  */
-import type { StencilSummary, Value } from '../../cards'
+import type { CardModelSummary, Value } from '../../cards'
 import {
   addCard,
   addSection,
   dropCard,
   replaceCardValue,
-  findStencilPath,
+  findCardModelPath,
   removeCard,
   removeSection,
   renameSection,
@@ -17,17 +17,17 @@ import {
 export interface DeckTabActionDeps {
   getDeck: (id: string) => BufferDeck
   updateDeck: (id: string, deck: BufferDeck) => void
-  getOffers: () => readonly StencilSummary[]
+  getOffers: () => readonly CardModelSummary[]
 }
 
 export function createDeckTabActions(id: string, deps: DeckTabActionDeps) {
   const { getDeck, updateDeck, getOffers } = deps
   return {
-    addCard: (stencil: string, values: readonly Value[], section: string | null = null) =>
+    addCard: (cardModel: string, values: readonly Value[], section: string | null = null) =>
       updateDeck(
         id,
-        addCard(getDeck(id), stencil, {
-          stencilPath: findStencilPath(getOffers(), stencil),
+        addCard(getDeck(id), cardModel, {
+          cardModelPath: findCardModelPath(getOffers(), cardModel),
           values,
           section,
         }),

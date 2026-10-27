@@ -15,14 +15,14 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// The two frontmatter keys a deck and a stencil are made with: what the note
+// The two frontmatter keys a deck and a card model are made with: what the note
 // is, and what a card cut by it is asked for.
 const (
 	typeKey   = "type"
 	fieldsKey = "fields"
 )
 
-// Create makes a deck, a stencil or a preset.
+// Create makes a deck, a card model or a preset.
 //
 // One key says what a note is, and the file carries it from the moment it
 // exists: a deck made here is a deck to everything that reads the vault, before
@@ -36,7 +36,7 @@ type Create struct {
 	now ports.Clock
 }
 
-// NewCreate is what a deck, a stencil or a preset is made through: the vault it
+// NewCreate is what a deck, a card model or a preset is made through: the vault it
 // is written into, what brings the new file level in the index, and what time
 // it is.
 func NewCreate(writers ports.VaultWriters, index note.Levels, now ports.Clock) Create {
@@ -56,11 +56,11 @@ type New struct {
 	// Path is the folder it goes in, relative to the root. Empty is the root
 	// itself: the application does not arrange anyone's folders.
 	Path string
-	// Fields is what a stencil declares, in the order a person is asked for
+	// Fields is what a card model declares, in the order a person is asked for
 	// them. A deck declares none.
 	Fields []string
-	// Faces are the ways a card cut by a stencil is shown, laid down as its body.
-	Faces []format.FaceTemplate
+	// Templates are the ways a card cut by a card model is shown, laid down as its body.
+	Templates []format.CardTemplate
 }
 
 // CreateNoteResult is the file that now exists.
@@ -76,28 +76,28 @@ func (u Create) Deck(ctx context.Context, v domain.Vault, in New) (CreateNoteRes
 	return u.make(ctx, v, format.TypeDeck, in)
 }
 
-// ErrNoFields is what making a stencil says when it was given no field. The
-// first field is what a card cut by the stencil is named by.
-var ErrNoFields = errors.New("a stencil declares at least one field")
+// ErrNoFields is what making a card model says when it was given no field. The
+// first field is what a card cut by the card model is named by.
+var ErrNoFields = errors.New("a card model declares at least one field")
 
-// Stencil makes a stencil declaring the fields it was given, with its faces laid
+// CardModel makes a card model declaring the fields it was given, with its templates laid
 // down as its body.
-func (u Create) Stencil(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
+func (u Create) CardModel(ctx context.Context, v domain.Vault, in New) (CreateNoteResult, error) {
 	if len(in.Fields) == 0 {
 		return CreateNoteResult{}, fmt.Errorf("%w: %q was given none", ErrNoFields, in.Title)
 	}
-	if len(in.Faces) > 0 {
-		body, err := format.StencilBody("", in.Faces, "")
+	if len(in.Templates) > 0 {
+		body, err := format.CardModelBody("", in.Templates, "")
 		if err != nil {
 			return CreateNoteResult{}, err
 		}
 		if len(body) > note.MaxBytes {
 			return CreateNoteResult{}, fmt.Errorf(
-				"a stencil of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
+				"a card model of %d bytes is more than this writes at once, which is %d", len(body), note.MaxBytes)
 		}
 		in.Body = body
 	}
-	return u.make(ctx, v, format.TypeStencil, in)
+	return u.make(ctx, v, format.TypeCardModel, in)
 }
 
 // Preset makes a preset naming none of its settings. A key the file does not

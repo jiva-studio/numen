@@ -117,7 +117,7 @@ export interface Point {
   readonly retained: number
   readonly owed: number
   readonly through: number
-  /** Whether the pace this place sets learns every card face it can. */
+  /** Whether the pace this place sets learns every review card it can. */
   readonly canLearnEveryCard: boolean
   readonly closed: readonly BudgetName[]
   readonly clears: number

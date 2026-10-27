@@ -37,15 +37,15 @@ type AnswerCost struct {
 var DefaultCost = AnswerCost{New: 20 * time.Second, Review: 8 * time.Second}
 
 // GetCostUnder is how long an answer takes under each preset, by the path the
-// card faces are grouped under.
+// review cards are grouped under.
 //
-// A preset is costed from the answers to its own card faces: a preset of long
+// A preset is costed from the answers to its own review cards: a preset of long
 // cards and one of short cards turn the same minutes into different counts. A
-// card face nothing groups is left out, and a kind of answer a preset holds too
-func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[CardFaceID]string) map[string]AnswerCost {
+// review card nothing groups is left out, and a kind of answer a preset holds too
+func GetCostUnder(scheduler Scheduler, answers []Answer, presetMap map[ReviewCardID]string) map[string]AnswerCost {
 	target := make(map[string]*answerTimes)
 	walkAnswers(scheduler, answers, func(before Schedule, a Answer) {
-		path, groups := presetMap[a.CardFace]
+		path, groups := presetMap[a.ReviewCard]
 		if !groups {
 			return
 		}

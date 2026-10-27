@@ -1,5 +1,5 @@
 /**
- * The few icons a stencil and a deck are drawn with, declared once.
+ * The few icons a card model and a deck are drawn with, declared once.
  *
  * Each is drawn on twelve units and takes the ink of whatever holds it.
  */

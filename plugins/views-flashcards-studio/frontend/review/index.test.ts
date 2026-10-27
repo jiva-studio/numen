@@ -15,7 +15,7 @@ vi.mock('./shared/clients', () => ({
         id: 'roots',
         name: 'Roots',
         path: '/vaults/Roots',
-        faces: 4,
+        reviewCards: 4,
         due: 3,
         new: 4,
         decks: [],

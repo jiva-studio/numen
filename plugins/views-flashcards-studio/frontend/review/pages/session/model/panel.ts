@@ -2,7 +2,7 @@ import { computed, shallowRef } from 'vue'
 import type { AgentPort, ConversationContext } from '@numen/plugin-sdk'
 
 import { WORDS as words } from '../lib/agentWords'
-import type { CardFace } from '../../../entities/card'
+import type { ReviewCard } from '../../../entities/card'
 
 /** What the panel asks of the window it is drawn in. */
 export interface AgentPanelDeps {
@@ -11,9 +11,9 @@ export interface AgentPanelDeps {
    * card travels beside every question of that conversation and never inside
    * one, so the agent reads its name as a tool's answer.
    */
-  readonly agent: (card: CardFace) => AgentPort
+  readonly agent: (card: ReviewCard) => AgentPort
   /** The card in front of the person, and nothing between cards. */
-  readonly card: () => CardFace | null
+  readonly card: () => ReviewCard | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
   readonly open: () => boolean
@@ -35,7 +35,7 @@ export function useAgentPanel(deps: AgentPanelDeps) {
   const open = computed(() => deps.open())
 
   /** The card asked about, and the context of its conversation, made when a card is first asked about. */
-  const current = shallowRef<{ card: CardFace; context: ConversationContext } | null>(null)
+  const current = shallowRef<{ card: ReviewCard; context: ConversationContext } | null>(null)
 
   /** The card the open conversation is about, and nothing while none is. */
   const about = computed(() => current.value?.card ?? null)
@@ -47,12 +47,13 @@ export function useAgentPanel(deps: AgentPanelDeps) {
    * The conversation about one card, made once and ended with the card.
    *
    * What is sent is what the person wrote and nothing else. Which card they are on is the agent's
-   * to ask for: the deck, the mark and the face are named by a vault that may have been synced from
+   * to ask for: the deck, the card id and the template are named by a vault that may have been synced from
    * anywhere, and a name written into the question is read as instruction.
    */
-  const startConversation = (targetCard: CardFace) => {
+  const startConversation = (targetCard: ReviewCard) => {
     const currentCard = current.value?.card
-    if (currentCard?.mark === targetCard.mark && currentCard.face === targetCard.face) return
+    if (currentCard?.cardId === targetCard.cardId && currentCard.template === targetCard.template)
+      return
     endConversation()
     current.value = {
       card: targetCard,

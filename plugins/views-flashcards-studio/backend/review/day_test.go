@@ -217,11 +217,11 @@ func TestADayIsNamedForTheDayAPersonWouldSayItWas(t *testing.T) {
 // line that stands twice is counted once, and nothing depends on the order the
 // answers were read in.
 func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	one := review.Answer{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"), Rating: review.Good}
-	two := review.Answer{ID: "01B", CardFace: on, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Again}
-	night := review.Answer{ID: "01C", CardFace: on, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good}
-	other := review.Answer{ID: "01D", CardFace: on, At: moment(t, "2026-08-31T09:00:00"), Rating: review.Good}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	one := review.Answer{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: review.Good}
+	two := review.Answer{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Again}
+	night := review.Answer{ID: "01C", ReviewCard: on, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good}
+	other := review.Answer{ID: "01D", ReviewCard: on, At: moment(t, "2026-08-31T09:00:00"), Rating: review.Good}
 	back := review.Answer{ID: "01E", At: moment(t, "2026-08-31T09:01:00"), Undoes: other.ID}
 
 	got := review.GetDayTallies(counting, []review.Answer{one, two, night, other, back, one})
@@ -240,10 +240,10 @@ func TestWhatWasAnsweredOnADayIsCounted(t *testing.T) {
 // A day says how each of the four was answered on it, because fifty cards a
 // person could not recall is a different day from fifty they could.
 func TestADayReturnsHowEachOfTheFourWasAnswered(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	response := func(id string, r review.Rating) review.Answer {
 		return review.Answer{
-			ID: id, CardFace: on, At: moment(t, "2026-08-29T09:00:00"), Rating: r,
+			ID: id, ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"), Rating: r,
 		}
 	}
 
@@ -270,17 +270,17 @@ func makeTallies(days map[string]int) map[string]review.Tally {
 	return out
 }
 
-// What a day came to is counted under the preset each card face is grouped
+// What a day came to is counted under the preset each review card is grouped
 // under: the answers given, and the time they took.
 func TestWhatADayCameToBelowEachPreset(t *testing.T) {
-	root := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	mantra := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
-	ungrouped := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Say it"}
-	underMap := map[review.CardFaceID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
+	root := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	mantra := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	ungrouped := review.ReviewCardID{Card: "3f4g5h6j7k", Template: "Say it"}
+	underMap := map[review.ReviewCardID]string{root: "Sanskrit.md", mantra: "Sanskrit.md"}
 
-	response := func(id string, face review.CardFaceID, pos string, took time.Duration) review.Answer {
+	response := func(id string, reviewCard review.ReviewCardID, pos string, took time.Duration) review.Answer {
 		return review.Answer{
-			ID: id, CardFace: face, At: moment(t, pos), Rating: review.Good, Took: took,
+			ID: id, ReviewCard: reviewCard, At: moment(t, pos), Rating: review.Good, Took: took,
 		}
 	}
 	answers := []review.Answer{
@@ -288,7 +288,7 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 		response("01B", mantra, "2026-08-29T21:00:00", 9*time.Second),
 		// The night belongs to the evening it began in.
 		response("01C", root, "2026-08-30T02:00:00", 5*time.Second),
-		// A card face nothing groups, an answer taken back, and another day.
+		// A review card nothing groups, an answer taken back, and another day.
 		response("01D", ungrouped, "2026-08-29T09:30:00", 8*time.Second),
 		response("01E", root, "2026-08-29T10:00:00", 7*time.Second),
 		{ID: "01F", At: moment(t, "2026-08-29T10:01:00"), Undoes: "01E"},
@@ -297,14 +297,14 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 
 	got := review.GetSpentUnder(counting, "2026-08-29", answers, underMap, nil)
 
-	// Each card face is new the first time it is answered, and counts once for
+	// Each review card is new the first time it is answered, and counts once for
 	// the day however many answers it took.
 	want := review.Spent{Answered: 2, New: 2, Took: 20 * time.Second}
 	if got["Sanskrit.md"] != want {
 		t.Errorf("the day came to %+v, want %+v", got["Sanskrit.md"], want)
 	}
 	if len(got) != 1 {
-		t.Errorf("a card face nothing groups was counted: %+v", got)
+		t.Errorf("a review card nothing groups was counted: %+v", got)
 	}
 }
 
@@ -312,17 +312,17 @@ func TestWhatADayCameToBelowEachPreset(t *testing.T) {
 // preset counting in shows counts each time it was put to the person. The time
 // spent is the same time either way.
 func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	underMap := map[review.CardFaceID]string{on: "Steady.md"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
 
 	answers := make([]review.Answer, 0, 9)
 	for i := range 9 {
 		answers = append(answers, review.Answer{
-			ID:       fmt.Sprintf("01%d", i),
-			CardFace: on,
-			At:       moment(t, "2026-08-29T09:00:00").Add(time.Duration(i) * time.Minute),
-			Rating:   review.Again,
-			Took:     4 * time.Second,
+			ID:         fmt.Sprintf("01%d", i),
+			ReviewCard: on,
+			At:         moment(t, "2026-08-29T09:00:00").Add(time.Duration(i) * time.Minute),
+			Rating:     review.Again,
+			Took:       4 * time.Second,
 		})
 	}
 
@@ -341,18 +341,18 @@ func TestACardAnsweredAgainInTheDayIsCountedBothWays(t *testing.T) {
 	}
 }
 
-// A card face is new on the day of its earliest answer.
+// A review card is new on the day of its earliest answer.
 //
 // The files arrive in whatever order they were synchronised, and a run from
 // another machine sorting last by name can carry the answer that came first.
-func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	underMap := map[review.CardFaceID]string{on: "Steady.md"}
+func TestTheFirstAnswerOfAReviewCardIsTheEarliestOne(t *testing.T) {
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.ReviewCardID]string{on: "Steady.md"}
 
 	answers := []review.Answer{
-		{ID: "01A", CardFace: on, At: moment(t, "2026-08-31T09:00:00"),
+		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-31T09:00:00"),
 			Rating: review.Good, Took: 5 * time.Second},
-		{ID: "01Z", CardFace: on, At: moment(t, "2026-08-24T09:00:00"),
+		{ID: "01Z", ReviewCard: on, At: moment(t, "2026-08-24T09:00:00"),
 			Rating: review.Good, Took: 7 * time.Second},
 	}
 
@@ -367,11 +367,11 @@ func TestTheFirstAnswerOfACardFaceIsTheEarliestOne(t *testing.T) {
 // One answer counts an hour of it at most, whatever the card stood on the
 // screen for.
 func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	underMap := map[review.CardFaceID]string{on: ""}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	underMap := map[review.ReviewCardID]string{on: ""}
 
 	got := review.GetSpentUnder(counting, "2026-08-29", []review.Answer{
-		{ID: "01A", CardFace: on, At: moment(t, "2026-08-29T09:00:00"),
+		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-29T09:00:00"),
 			Rating: review.Good, Took: time.Hour},
 	}, underMap, nil)
 
@@ -381,20 +381,20 @@ func TestALongAnswerIsCountedAtItsBound(t *testing.T) {
 	}
 }
 
-// The card faces a day has answered are the day's however late it ran. A card
+// The review cards a day has answered are the day's however late it ran. A card
 // answered at one in the morning was answered that evening, and a budget
 // counting in cards has already charged it.
-func TestTheFacesADayAnsweredAreCountedByTheDayTheyFallIn(t *testing.T) {
-	evening := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	night := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
-	morning := review.CardFaceID{Card: "3f4g5h6j7k", Face: "Recognise"}
-	back := review.CardFaceID{Card: "m9n8b7v6c5", Face: "Recognise"}
+func TestTheCardsADayAnsweredAreCountedByTheDayTheyFallIn(t *testing.T) {
+	evening := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	night := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
+	morning := review.ReviewCardID{Card: "3f4g5h6j7k", Template: "Recognise"}
+	back := review.ReviewCardID{Card: "m9n8b7v6c5", Template: "Recognise"}
 
-	got := review.GetFaced(counting, "2026-08-29", []review.Answer{
-		{ID: "01A", CardFace: evening, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Good},
-		{ID: "01B", CardFace: night, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good},
-		{ID: "01C", CardFace: morning, At: moment(t, "2026-08-30T09:00:00"), Rating: review.Good},
-		{ID: "01D", CardFace: back, At: moment(t, "2026-08-29T22:00:00"), Rating: review.Good},
+	got := review.GetReviewed(counting, "2026-08-29", []review.Answer{
+		{ID: "01A", ReviewCard: evening, At: moment(t, "2026-08-29T21:00:00"), Rating: review.Good},
+		{ID: "01B", ReviewCard: night, At: moment(t, "2026-08-30T02:00:00"), Rating: review.Good},
+		{ID: "01C", ReviewCard: morning, At: moment(t, "2026-08-30T09:00:00"), Rating: review.Good},
+		{ID: "01D", ReviewCard: back, At: moment(t, "2026-08-29T22:00:00"), Rating: review.Good},
 		{ID: "01E", At: moment(t, "2026-08-29T22:01:00"), Undoes: "01D"},
 	})
 
@@ -473,14 +473,14 @@ func TestNothingAnsweredIsNoStreak(t *testing.T) {
 // those: a card still being learned is asked whether it comes back after ten
 // minutes, which says nothing about how well anything is remembered.
 func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	var history []review.Answer
-	response := func(id string, face review.CardFaceID, pos string, r review.Rating) {
+	response := func(id string, reviewCard review.ReviewCardID, pos string, r review.Rating) {
 		history = append(history, review.Answer{
-			ID: id, CardFace: face, At: moment(t, pos), Rating: r,
+			ID: id, ReviewCard: reviewCard, At: moment(t, pos), Rating: r,
 		})
 	}
 
@@ -505,12 +505,12 @@ func TestWhatCameBackIsCountedOverWhatWasLearned(t *testing.T) {
 // A card a person had learned and could not recall is asked and not recalled,
 // which is what the number is for.
 func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{
-		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
-		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
+		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
+		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 	}).GetRetained(delta, counting)
 
 	if want := (review.RecallTally{Asked: 1, Recalled: 0}); got["2026-08-08"] != want {
@@ -520,12 +520,12 @@ func TestACardForgottenIsAskedAndNotRecalled(t *testing.T) {
 
 // An answer taken back is not in it, as it is in nothing else.
 func TestAnAnswerTakenBackIsNotCountedAsRecall(t *testing.T) {
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	delta := review.NewFSRS()
 
 	got := review.OrderAnswers([]review.Answer{
-		{ID: "01A", CardFace: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
-		{ID: "01B", CardFace: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
+		{ID: "01A", ReviewCard: on, At: moment(t, "2026-08-01T09:00:00"), Rating: review.Easy},
+		{ID: "01B", ReviewCard: on, At: moment(t, "2026-08-08T09:00:00"), Rating: review.Again},
 		{ID: "01C", At: moment(t, "2026-08-08T09:00:30"), Undoes: "01B"},
 	}).GetRetained(delta, counting)
 

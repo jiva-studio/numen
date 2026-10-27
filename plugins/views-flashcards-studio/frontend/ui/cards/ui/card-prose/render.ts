@@ -1,7 +1,7 @@
 /**
  * What a card is written with, drawn.
  *
- * A face is HTML, so what a person wrote is drawn as the markup it is, and a
+ * A template is HTML, so what a person wrote is drawn as the markup it is, and a
  * deck may come from another person, so that markup is measured against what a
  * card may be drawn with first.
  *

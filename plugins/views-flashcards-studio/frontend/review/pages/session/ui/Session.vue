@@ -14,11 +14,11 @@ import type { PanelPlace } from '../model/carousel'
 import { grades } from '../../../entities/card'
 import { getDeckName } from '../../../entities/vault'
 import { ASK_KEY, READ_KEY } from '../../../features/keyboard'
-import type { CardFace, Grade } from '../../../entities/card'
+import type { ReviewCard, Grade } from '../../../entities/card'
 
 /* --------------------------------- Props ---------------------------------- */
 defineProps<{
-  card: CardFace
+  card: ReviewCard
   /** Whether the answer is showing. */
   isShown: boolean
   /** How many cards are left to ask, this one among them. */
@@ -50,7 +50,7 @@ const chord = (letter: string) => keyChord(letter, navigator.userAgent)
     <header class="session__where">
       <span class="session__deck">{{ getDeckName(card.deck) }}</span>
       <span v-if="card.section">{{ card.section }}</span>
-      <span>{{ card.face }}</span>
+      <span>{{ card.template }}</span>
       <span v-if="card.isNew" class="session__new">new</span>
       <span class="session__left">{{ left }} left</span>
 

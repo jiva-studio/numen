@@ -24,7 +24,7 @@ func TestWhatAVaultWasAnsweredOnReachesBackInOrder(t *testing.T) {
 	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
-			Mark: card.GetMark(), Face: card.GetFace(),
+			CardId: card.GetCardId(), Template: card.GetTemplate(),
 			Rating: flashcardsv1.Rating_RATING_GOOD,
 		})); err != nil {
 			t.Fatal(err)
@@ -79,7 +79,7 @@ func TestWhatIsComingIsCountedByTheDayItFallsOn(t *testing.T) {
 	card := session.GetCards()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(),
+		CardId: card.GetCardId(), Template: card.GetTemplate(),
 		Rating: flashcardsv1.Rating_RATING_EASY,
 	})); err != nil {
 		t.Fatal(err)
@@ -165,7 +165,7 @@ func TestAStretchNothingFallsInReachesBackEmpty(t *testing.T) {
 	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
-			Mark: card.GetMark(), Face: card.GetFace(),
+			CardId: card.GetCardId(), Template: card.GetTemplate(),
 			Rating: flashcardsv1.Rating_RATING_GOOD,
 		})); err != nil {
 			t.Fatal(err)

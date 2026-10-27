@@ -76,7 +76,7 @@ var handwritten = map[string]string{
 }
 
 // typedByHand is that deck as a person left it: pointed at the preset, and
-// holding a card they typed and gave no mark.
+// holding a card they typed and gave no card id.
 const typedByHand = "---\ntype: deck\nlinks:\n" +
 	"  - to: Sanskrit\n    role: ref\n    type: preset\n---\n" +
 	"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
@@ -84,7 +84,7 @@ const typedByHand = "---\ntype: deck\nlinks:\n" +
 	"\n## Yaffle\n\n[[Term]]\n\n### Word\n\nYaffle\n" +
 	"\n### Meaning\n\nA green woodpecker\n"
 
-// Starting a session gives a mark to the card that carries none, and the deck it
+// Starting a session gives a card id to the card that carries none, and the deck it
 // writes is level in the index by the time the session is handed over. Nothing
 // else is running over the vault, and nothing rescans it.
 func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
@@ -108,7 +108,7 @@ func TestAMarkGivenOnSessionDownLevelsTheDeck(t *testing.T) {
 		t.Fatal(err)
 	}
 	if !strings.Contains(string(content), "## Yaffle ^") {
-		t.Fatalf("the card was given no mark: %q", content)
+		t.Fatalf("the card was given no card id: %q", content)
 	}
 
 	after := getDeckPreset(t, api, v, "decks/Words.md")
@@ -242,11 +242,11 @@ func TestNamingADeckAndAPresetTogetherIsRefused(t *testing.T) {
 // Why a preset schedules nothing is the core's verdict, and every preset the
 // nothing else in the answer would tell a window that it is stopped.
 func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
-	// The marks are the ones the application writes, so the cards stand without
+	// The card ids are the ones the application writes, so the cards stand without
 	// the vault being sat down to.
-	marked := func(pos string, mark string) string {
+	assigned := func(pos string, cardID string) string {
 		return "---\ntype: deck\nlinks:\n  - to: " + pos + "\n    role: ref\n    type: preset\n" +
-			"---\n\n## Card ^" + mark + "\n\n[[Term]]\n\n### Word\n\nw\n\n### Meaning\n\nm\n"
+			"---\n\n## Card ^" + cardID + "\n\n[[Term]]\n\n### Word\n\nw\n\n### Meaning\n\nm\n"
 	}
 	stoppedPresetFiles := map[string]string{
 		"Term.md": deck["Term.md"],
@@ -256,8 +256,8 @@ func TestEachPresetOnTheFrontDoorReturnsWhyItSchedulesNothing(t *testing.T) {
 			"minutes_a_day: 0\n---\n\n# Quiet\n",
 		"Lonely.md": "---\ntype: preset\ngoal: retention\n" +
 			"new_a_day: 0\nreviews_a_day: 0\n---\n\n# Lonely\n",
-		"decks/Birds.md":  marked("Steady", "3f4g5h6j7k"),
-		"decks/Rivers.md": marked("Quiet", "zpqrstvwxy"),
+		"decks/Birds.md":  assigned("Steady", "3f4g5h6j7k"),
+		"decks/Rivers.md": assigned("Quiet", "zpqrstvwxy"),
 	}
 	api, _ := newAPI(t, stoppedPresetFiles)
 

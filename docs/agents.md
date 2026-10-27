@@ -77,25 +77,25 @@ Three plugins register the tools an agent reaches, each over the subject it owns
 | `window_focus_tab` | put a tab in front, named by its id, its path or its title                            | both    |
 | `edit_preview`     | propose a change to a note as a diff in the editor, leaving the file as it is         | both    |
 
-`views-flashcards-studio`, the decks and stencils of the vault:
+`views-flashcards-studio`, the decks and card models of the vault:
 
 | Tool                                                             | What it does                                                                              | Servers |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------------------- | ------- |
 | `card_current`                                                   | the card in front of the person in the window they run their cards in                     | both    |
-| `card_stencil_list`                                              | the stencils of the vault, at most 50, and the fields each declares                       | both    |
-| `card_stencil_read`                                              | the fields and faces of one stencil                                                       | both    |
-| `card_read`                                                      | the cards of one deck in the order they stand, at most 50 a call, or one card by its mark | both    |
+| `card_model_list`                                              | the card models of the vault, at most 50, and the fields each declares                       | both    |
+| `card_model_read`                                              | the fields and templates of one card model                                                       | both    |
+| `card_read`                                                      | the cards of one deck in the order they stand, at most 50 a call, or one card by its id | both    |
 | `card_deck_create`                                               | a deck holding no cards                                                                   | full    |
-| `card_stencil_create`                                            | a stencil: the fields a card is asked for, and its faces                                  | full    |
-| `card_stencil_edit`                                              | change a stencil's fields and faces in place                                              | full    |
-| `card_field_rename`                                              | give one of a stencil's fields another name, everywhere it is written                     | full    |
+| `card_model_create`                                            | a card model: the fields a card is asked for, and its templates                                  | full    |
+| `card_model_edit`                                              | change a card model's fields and templates in place                                              | full    |
+| `card_field_rename`                                              | give one of a card model's fields another name, everywhere it is written                     | full    |
 | `card_add`                                                       | write one card at the end of a deck or of one of its sections                             | full    |
 | `card_edit`                                                      | write values into one card, leaving the fields the call does not name                     | full    |
 | `card_value_remove`                                              | take one field off one card                                                               | full    |
 | `card_remove`                                                    | take one card out of a deck                                                               | full    |
 | `card_section_add`, `card_section_rename`, `card_section_remove` | write, rename and remove the sections a deck is divided into                              | full    |
 
-A card is named by its mark and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable. Every write to a deck takes the fingerprint `card_read` gave, and lands only on the deck that fingerprint names.
+A card is named by its card id and never by the place it stands in, so a deck reordered under an agent leaves what it holds addressable. Every write to a deck takes the fingerprint `card_read` gave, and lands only on the deck that fingerprint names.
 
 `file_read` is how a file that is not a note is read — a transcript somebody typed, an export, whatever they put in the folder — and how a file too long to answer with is read a range at a time.
 

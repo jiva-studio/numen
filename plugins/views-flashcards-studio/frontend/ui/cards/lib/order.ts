@@ -1,6 +1,6 @@
 /**
- * What every view of a stencil or a deck works in: the order entries stand in,
- * the names they may be given, and the halves a face is written in. No DOM, no
+ * What every view of a card model or a deck works in: the order entries stand in,
+ * the names they may be given, and the halves a template is written in. No DOM, no
  * measurement, no clock.
  */
 
@@ -29,7 +29,7 @@ export function orderNames(
 
 /**
  * A dragged field may land where it was let go. The first field names every
- * card the stencil cuts, so it stays first: it does not move, and nothing lands
+ * card the card model cuts, so it stays first: it does not move, and nothing lands
  * above it. A field let go at its current position moves nothing either.
  */
 export function canDropField(
@@ -134,13 +134,13 @@ export function getFreeName(names: readonly string[], stem: string): string {
 
 /**
  * A name is compared as written and the first of two stands, so a name a
- * stencil declares twice is one field.
+ * card model declares twice is one field.
  */
 export const getDeclaredFields = (fields: readonly string[]): readonly string[] => [
   ...new Set(fields),
 ]
 
-/** Which half of a face is drawn. */
+/** Which half of a template is drawn. */
 export type Half = 'front' | 'back'
 
 /** Both halves, in the order they are drawn. */

@@ -26,8 +26,8 @@ func (u GetCardPage) Execute(ctx context.Context, v domain.Vault, in Query) (Pag
 	for _, s := range contents.Body.Sections {
 		res.Sections = append(res.Sections, s.Name)
 	}
-	if in.Mark != "" {
-		pos, err := findCard(contents.Body.Cards, in.Mark)
+	if in.CardID != "" {
+		pos, err := findCard(contents.Body.Cards, in.CardID)
 		if err != nil {
 			return Page{}, err
 		}

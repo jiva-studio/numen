@@ -41,32 +41,32 @@ func (w *countedWriter) Write(
 	return w.VaultWriter.Write(ctx, path, content, fingerprint)
 }
 
-// The faces are the body and the fields are one key of the frontmatter, and
+// The templates are the body and the fields are one key of the frontmatter, and
 // both are the one file, so one write carries both. Two writes leave the file
 // in a shape nobody asked for whenever the second of them does not land.
-func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
+func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	vs := newVaults(t)
 	writers := &counted{VaultWriters: vs.ports.Writers}
 	u := cards.NewWrite(
 		vs.ports.Readers, writers, vs.queries, indexNothing, time.Now)
 
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
-	pos, err := u.Stencil(
+	pos, err := u.CardModel(
 		t.Context(), vs.first, "Animal.md", body,
 		[]string{"Name", "Wingspan"}, domain.Fingerprint{})
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if writers.writes != 1 {
-		t.Errorf("the stencil was written %d times", writers.writes)
+		t.Errorf("the card model was written %d times", writers.writes)
 	}
 
 	target := read(t, vs.first, "Animal.md")
 	if !strings.Contains(target, "fields:\n  - Name\n  - Wingspan\n") {
-		t.Errorf("the stencil declares something else: %q", target)
+		t.Errorf("the card model declares something else: %q", target)
 	}
 	if !strings.Contains(target, "{{Wingspan}}") {
-		t.Errorf("the faces are not the ones written: %q", target)
+		t.Errorf("the templates are not the ones written: %q", target)
 	}
 	if !strings.Contains(target, "mine: keep me verbatim") {
 		t.Errorf("a key nobody owns was rewritten: %q", target)
@@ -78,18 +78,18 @@ func TestAStencilsFacesAndItsFieldsAreOneWrite(t *testing.T) {
 	}
 }
 
-// A stencil already declaring exactly these fields, in this order, is not
+// A card model already declaring exactly these fields, in this order, is not
 // written a second time, so what the person wrote around them stands.
-func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testing.T) {
+func TestACardModelAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testing.T) {
 	vs := newVaults(t)
-	write(t, vs.first, "Kept.md", "---\ntype: stencil\nfields:\n"+
+	write(t, vs.first, "Kept.md", "---\ntype: card-model\nfields:\n"+
 		"  # the one the card is named by\n  - Name\n  - Height\n---\n"+
 		"\n## Recognise\n\n### Front\n\n{{Name}}\n")
 
 	u := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		time.Now)
-	if _, err := u.Stencil(
+	if _, err := u.CardModel(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
 		[]string{"Name", "Height"}, domain.Fingerprint{},
@@ -102,12 +102,12 @@ func TestAStencilAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testing
 		t.Errorf("the fields were written over: %q", target)
 	}
 	if !strings.Contains(target, "{{Height}}") {
-		t.Errorf("the faces are not the ones written: %q", target)
+		t.Errorf("the templates are not the ones written: %q", target)
 	}
 }
 
 // newWriteForDeck puts a deck in the vault and brings the index up to date, so
-// that the wikilink under each card's heading reaches the stencil it names.
+// that the wikilink under each card's heading reaches the card model it names.
 func newWriteForDeck(t *testing.T, vs vaulted, path, body string) cards.Write {
 	t.Helper()
 	write(t, vs.first, path, "---\ntype: deck\n---\n"+body)
@@ -149,7 +149,7 @@ func TestWritingADeckLargerThanANote(t *testing.T) {
 	}
 }
 
-// A card typed into a deck by hand carries no mark until the application next
+// A card typed into a deck by hand carries no card id until the application next
 // writes that file, which is when it is given one.
 func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 	vs := newVaults(t)
@@ -166,15 +166,15 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		t.Fatalf("cards = %+v", deck.Cards)
 	}
 	for _, card := range deck.Cards {
-		if !cardid.IsValid(card.Mark) {
-			t.Errorf("%q carries %q, which is no mark", card.Heading, card.Mark)
+		if !cardid.IsValid(card.CardID) {
+			t.Errorf("%q carries %q, which is no card id", card.Heading, card.CardID)
 		}
 	}
-	if deck.Cards[0].Mark == deck.Cards[1].Mark {
-		t.Errorf("both cards carry %q", deck.Cards[0].Mark)
+	if deck.Cards[0].CardID == deck.Cards[1].CardID {
+		t.Errorf("both cards carry %q", deck.Cards[0].CardID)
 	}
 
-	// A mark is what the card is for as long as it exists, so the next write
+	// A card id is what the card is for as long as it exists, so the next write
 	// leaves it at its current position.
 	after := read(t, vs.first, "decks/Hand.md")
 	if _, err := w.Deck(
@@ -183,11 +183,11 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		t.Fatalf("write again: %v", err)
 	}
 	if got := read(t, vs.first, "decks/Hand.md"); got != after {
-		t.Errorf("the second write moved a mark\n was %q\n now %q", after, got)
+		t.Errorf("the second write moved a card id\n was %q\n now %q", after, got)
 	}
 }
 
-// A mark is written into a file of carriage returns without disturbing them.
+// A card id is written into a file of carriage returns without disturbing them.
 func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Llama\n\n[[Animal]]\n\n### Name\n\nLlama\n"
@@ -208,8 +208,8 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	if strings.Contains(strings.ReplaceAll(got, "\r\n", ""), "\n") {
 		t.Errorf("a bare break was written into a file of carriage returns: %q", got)
 	}
-	if !cardid.IsValid(readDeck(t, vs, "decks/Crlf.md").Cards[0].Mark) {
-		t.Errorf("no mark was written: %q", got)
+	if !cardid.IsValid(readDeck(t, vs, "decks/Crlf.md").Cards[0].CardID) {
+		t.Errorf("no card id was written: %q", got)
 	}
 }
 
@@ -227,12 +227,12 @@ func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 	}
 
 	deck := readDeck(t, vs, "decks/Stale.md")
-	if deck.Cards[0].Heading != "Llama" || deck.Cards[0].Mark != "k7m2xq9fzp" {
+	if deck.Cards[0].Heading != "Llama" || deck.Cards[0].CardID != "k7m2xq9fzp" {
 		t.Errorf("card = %+v, want the heading written again from the field", deck.Cards[0])
 	}
 	// An empty first field gives a heading of nothing, and the card is placed under
-	// its mark alone.
-	if deck.Cards[1].Heading != "" || deck.Cards[1].Mark != "zpqrstvwxy" {
+	// its card id alone.
+	if deck.Cards[1].Heading != "" || deck.Cards[1].CardID != "zpqrstvwxy" {
 		t.Errorf("card = %+v, want a heading of nothing", deck.Cards[1])
 	}
 	if got := read(t, vs.first, "decks/Stale.md"); !strings.Contains(got, "## ^zpqrstvwxy\n") {
@@ -247,7 +247,7 @@ func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 // nothing.
 func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	vs := newVaults(t)
-	// The stencil declares Name first, and this card was written when the field
+	// The card model declares Name first, and this card was written when the field
 	// standing first was called something else.
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Was called something else\n\nLlama\n"
 	w := newWriteForDeck(t, vs, "decks/Behind.md", body)
@@ -262,7 +262,7 @@ func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	}
 }
 
-// The mark is minted where the deck is made whole, so the write is what knows
+// The card id is minted where the deck is made whole, so the write is what knows
 // it, and a caller that has just added a card is told what to address it by.
 func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
 	vs := newVaults(t)
@@ -277,14 +277,14 @@ func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
 	if len(wrote.Given) != 1 || wrote.Given[0].Card != 1 {
 		t.Fatalf("given = %+v, want the one card that carried none", wrote.Given)
 	}
-	if got := readDeck(t, vs, "decks/Given.md").Cards[1].Mark; got != wrote.Given[0].Mark {
-		t.Errorf("the mark reported is %q and the card carries %q", wrote.Given[0].Mark, got)
+	if got := readDeck(t, vs, "decks/Given.md").Cards[1].CardID; got != wrote.Given[0].CardID {
+		t.Errorf("the card id reported is %q and the card carries %q", wrote.Given[0].CardID, got)
 	}
 }
 
-// Nothing can say which field is first where the stencil cannot be read, so the
-// heading is left exactly currently. The card is given its mark all the same.
-func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
+// Nothing can say which field is first where the card model cannot be read, so the
+// heading is left exactly currently. The card is given its card id all the same.
+func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
 	vs := newVaults(t)
 	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"
 	w := newWriteForDeck(t, vs, "decks/Loose.md", body)
@@ -297,8 +297,8 @@ func TestACardWhoseStencilCannotBeReadIsNotReprojected(t *testing.T) {
 	if deck.Cards[0].Heading != "Whatever a person typed" {
 		t.Errorf("heading = %q, want it left as it stands", deck.Cards[0].Heading)
 	}
-	if !cardid.IsValid(deck.Cards[0].Mark) {
-		t.Errorf("mark = %q", deck.Cards[0].Mark)
+	if !cardid.IsValid(deck.Cards[0].CardID) {
+		t.Errorf("card id = %q", deck.Cards[0].CardID)
 	}
 }
 

@@ -25,12 +25,12 @@ export interface VaultCounts {
   id: string
   name: string
   path: string
-  faces: number
+  reviewCards: number
   due: number
   new: number
   decks: readonly {
     deck: string
-    faces: number
+    reviewCards: number
     due: number
     new: number
     learned: number
@@ -82,7 +82,7 @@ const createUncountedVault = (one: VaultCounts): VaultCardsDue => ({
   name: one.name,
   path: one.path,
   isCounted: false,
-  faces: 0,
+  reviewCards: 0,
   due: 0,
   new: 0,
   decks: [],
@@ -96,12 +96,12 @@ const createCountedVault = (one: VaultCounts): VaultCardsDue => ({
   name: one.name,
   path: one.path,
   isCounted: true,
-  faces: one.faces,
+  reviewCards: one.reviewCards,
   due: one.due,
   new: one.new,
   decks: one.decks.map((deck) => ({
     deck: deck.deck,
-    faces: deck.faces,
+    reviewCards: deck.reviewCards,
     due: deck.due,
     new: deck.new,
     learned: deck.learned,

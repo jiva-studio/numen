@@ -17,7 +17,7 @@ import { getRenamedPath } from '@numen/plugin-sdk'
 
 /** The icons the window draws a declared command and a note of a declared type with. */
 const SHARE_ICON = defineComponent({ name: 'ShareIcon', render: () => null })
-const DECK_ICON = defineComponent({ name: 'DeckIcon', render: () => null })
+const SAMPLE_ICON = defineComponent({ name: 'SampleIcon', render: () => null })
 
 /** A plex tab with the window it is drawn in written down. */
 const tab = (
@@ -62,7 +62,7 @@ const tab = (
     },
     getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note' }],
     getCommandIcon: (id) => (id === 'plugin:share' ? SHARE_ICON : null),
-    getNoteIcon: (type) => (type === 'deck' ? DECK_ICON : null),
+    getNoteIcon: (type) => (type === 'sample' ? SAMPLE_ICON : null),
     runCommand: (id, path, title) => ran.push([id, path, title]),
     openingPath: ref('Opening.md'),
     readOpeningPath: async () => 'Opening.md',
@@ -560,8 +560,8 @@ describe('the headings a node nests', () => {
     expect(one.headingsAsked).toStrictEqual([])
   })
 
-  it('are none for a deck, whose cards stand on no line of prose', async () => {
-    const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': 'deck' })
+  it('are none for a note of a plugin type, whose headings are its own', async () => {
+    const one = tab('Root.md', ['Animals.md'], true, { 'Animals.md': 'sample' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.headingsAsked.length = 0
 
@@ -571,8 +571,8 @@ describe('the headings a node nests', () => {
     expect(one.headingsAsked).toStrictEqual([['Root.md']])
   })
 
-  it('are none for a stencil, whose faces stand on no line of prose', async () => {
-    const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': 'stencil' })
+  it('are none for a note of another plugin type', async () => {
+    const one = tab('Root.md', ['Animal.md'], true, { 'Animal.md': 'form' })
     one.divides.value = new Map([['Animal.md', [heading('Front', 4)]]])
     one.headingsAsked.length = 0
 
@@ -584,7 +584,7 @@ describe('the headings a node nests', () => {
 
   it('are the headings of an ordinary note alongside them', async () => {
     const one = tab('Root.md', ['Animals.md', 'Child.md'], true, {
-      'Animals.md': 'deck',
+      'Animals.md': 'sample',
     })
     one.divides.value = new Map([['Child.md', [heading('Heat', 4)]]])
 
@@ -595,8 +595,8 @@ describe('the headings a node nests', () => {
     ])
   })
 
-  it('are none for a deck in focus, which is where the plex is standing', async () => {
-    const one = tab('Animals.md', [], true, { 'Animals.md': 'deck' })
+  it('are none for a note of a plugin type in focus, which is where the plex is standing', async () => {
+    const one = tab('Animals.md', [], true, { 'Animals.md': 'sample' })
     one.divides.value = new Map([['Animals.md', [heading('Vicuña', 4)]]])
     one.headingsAsked.length = 0
 
@@ -1022,20 +1022,20 @@ describe('a plex that travelled', () => {
 
 describe('what a node remains for', () => {
   it('is what the vault says of the note the node draws', () => {
-    const one = tab('Root.md', ['Deck.md', 'Stencil.md'], true, {
-      'Deck.md': 'deck',
-      'Stencil.md': 'stencil',
+    const one = tab('Root.md', ['Sample.md', 'Form.md'], true, {
+      'Sample.md': 'sample',
+      'Form.md': 'form',
     })
 
-    expect(one.state.getType(one.node('Deck.md'))).toBe('deck')
-    expect(one.state.getType(one.node('Stencil.md'))).toBe('stencil')
+    expect(one.state.getType(one.node('Sample.md'))).toBe('sample')
+    expect(one.state.getType(one.node('Form.md'))).toBe('form')
     expect(one.state.getType(one.node('Root.md'))).toBe('note')
   })
 
   it('is drawn with the icon the window gives its type, and an ordinary note with none', () => {
-    const one = tab('Root.md', ['Deck.md'], true, { 'Deck.md': 'deck' })
+    const one = tab('Root.md', ['Sample.md'], true, { 'Sample.md': 'sample' })
 
-    expect(one.state.getNodeIcon(one.node('Deck.md'))).toBe(DECK_ICON)
+    expect(one.state.getNodeIcon(one.node('Sample.md'))).toBe(SAMPLE_ICON)
     expect(one.state.getNodeIcon(one.node('Root.md'))).toBeNull()
   })
 })
@@ -1320,7 +1320,7 @@ describe('what a note is called where the picture names it nowhere', () => {
 
 describe('what a node the picture never drew remains for', () => {
   it('is a note', () => {
-    expect(tab('Root.md', [], true, { 'Root.md': 'deck' }).state.getType('nowhere')).toBe('note')
+    expect(tab('Root.md', [], true, { 'Root.md': 'sample' }).state.getType('nowhere')).toBe('note')
   })
 })
 

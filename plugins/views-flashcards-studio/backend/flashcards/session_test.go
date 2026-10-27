@@ -18,7 +18,7 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	// The share of the cards each deck's preset asks to come back, by the deck.
 	shares := map[string]float64{"decks/Roots.md": 0.99, "decks/Terms.md": 0.9}
 	s := openVault(t, map[string]string{
-		"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+		"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"Tight.md": "---\ntype: preset\ngoal: retention\nretention: 0.99\n---\n\n# Tight\n",
 		"decks/Roots.md": "---\ntype: deck\nlinks:\n" +
@@ -33,14 +33,14 @@ func TestTheWindowsBelowTheFourAreTheCardsOwnSchedulers(t *testing.T) {
 	pos := time.Date(2026, 9, 5, 10, 0, 0, 0, time.UTC)
 	record := s.run(t, pos.AddDate(0, 0, -200))
 	for _, card := range []string{"k7m2xq9fzp", "3f4g5h6j7k"} {
-		on := review.CardFaceID{Card: card, Face: "Say it"}
+		on := review.ReviewCardID{Card: card, Template: "Say it"}
 		if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
 			t.Fatal(err)
 		}
 	}
 
 	session := flashcards.NewSession(
-		s.marking, s.standings, s.schedules,
+		s.assigning, s.standings, s.schedules,
 		s.presets, today, func() time.Time { return pos },
 	)
 	target, err := session.Execute(t.Context(), s.vault, flashcards.Scope{})
@@ -87,12 +87,12 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 				"new_a_day: 0\nreviews_a_day: 9999\neven_load: %t\n", one.isEven)),
 			"decks/On.md": deckOf("On", 60, 0),
 		})
-		// Every card face put into review long ago, so each comes back in days
+		// Every review card put into review long ago, so each comes back in days
 		// and the placement has a window to move it in.
 		for _, days := range []int{40, 25} {
 			run := s.run(t, saturday.AddDate(0, 0, -days))
 			for i := range 60 {
-				answer(t, run, mark(i), 4*time.Second)
+				answer(t, run, cardID(i), 4*time.Second)
 			}
 		}
 
@@ -140,23 +140,23 @@ func TestTheWindowsBelowTheFourNameTheDayTheCardReachesBackOn(t *testing.T) {
 	}
 }
 
-// faces is the card faces a session asks, in the order it asks them.
-func faces(sat flashcards.SessionResult) []review.CardFaceID {
-	out := make([]review.CardFaceID, 0, len(sat.Queue))
+// review cards is the review cards a session asks, in the order it asks them.
+func reviewCards(sat flashcards.SessionResult) []review.ReviewCardID {
+	out := make([]review.ReviewCardID, 0, len(sat.Queue))
 	for _, one := range sat.Queue {
 		out = append(out, one.ID)
 	}
 	return out
 }
 
-// getCardFace is a card face of the one stencil these vaults are cut by.
-func getCardFace(pos int) review.CardFaceID {
-	return review.CardFaceID{Card: mark(pos), Face: "Say it"}
+// getReviewCard is a review card of the one card model these vaults are cut by.
+func getReviewCard(pos int) review.ReviewCardID {
+	return review.ReviewCardID{Card: cardID(pos), Template: "Say it"}
 }
 
 // The debt is paid oldest first, whatever order the cards stand in their deck.
 //
-// A day that cannot pay all of it answers the card faces waiting longest and
+// A day that cannot pay all of it answers the review cards waiting longest and
 // leaves the rest of the pile standing.
 func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	t.Parallel()
@@ -168,24 +168,24 @@ func TestTheDebtIsPaidOldestFirst(t *testing.T) {
 	// The cards stand in their deck in the reverse of the order they came round
 	// in: the last of them was answered longest ago.
 	for i := range 5 {
-		answer(t, s.run(t, saturday.AddDate(0, 0, -10+i)), mark(4-i), 6*time.Second)
+		answer(t, s.run(t, saturday.AddDate(0, 0, -10+i)), cardID(4-i), 6*time.Second)
 	}
 
-	got := faces(s.openSessionByPreset(t, today, saturday, "Two.md"))
-	want := []review.CardFaceID{getCardFace(4), getCardFace(3)}
+	got := reviewCards(s.openSessionByPreset(t, today, saturday, "Two.md"))
+	want := []review.ReviewCardID{getReviewCard(4), getReviewCard(3)}
 	if !slices.Equal(got, want) {
 		t.Errorf("a day of two reviews asked %v, want %v", got, want)
 	}
 	for _, one := range []int{2, 1, 0} {
-		if slices.Contains(got, getCardFace(one)) {
-			t.Errorf("%s was asked, and the day had room for the two older", mark(one))
+		if slices.Contains(got, getReviewCard(one)) {
+			t.Errorf("%s was asked, and the day had room for the two older", cardID(one))
 		}
 	}
 }
 
 // A session over several presets is one session however many times it is asked
 // for: the same request over the same vault is the same cards in the same
-// order, card face by card face.
+// order, review card by review card.
 func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, map[string]string{
@@ -204,17 +204,17 @@ func TestASessionOverSeveralPresetsIsTheSameSessionTwice(t *testing.T) {
 		record := s.run(t, saturday.AddDate(0, 0, days))
 		for _, from := range []int{0, 100, 200, 300} {
 			for i := range 2 {
-				answer(t, record, mark(from+i), 6*time.Second)
+				answer(t, record, cardID(from+i), 6*time.Second)
 			}
 		}
 	}
 
-	first := faces(s.sessionAt(t, today, saturday))
+	first := reviewCards(s.sessionAt(t, today, saturday))
 	if len(first) == 0 {
 		t.Fatal("the session asked nothing")
 	}
 	for range 5 {
-		if again := faces(s.sessionAt(t, today, saturday)); !slices.Equal(first, again) {
+		if again := reviewCards(s.sessionAt(t, today, saturday)); !slices.Equal(first, again) {
 			t.Fatalf("the session asked %v, and the same request asked %v", first, again)
 		}
 	}
@@ -227,7 +227,7 @@ func (s vaulted) openSession(
 ) (flashcards.SessionResult, error) {
 	t.Helper()
 	return flashcards.NewSession(
-		s.marking, s.standings, s.schedules,
+		s.assigning, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
 	).Execute(t.Context(), s.vault, pos)
 }
@@ -317,7 +317,7 @@ func TestASecondSessionOverAPresetConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 
 	morning := s.run(t, saturday)
 	for i := range 3 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
 	if got := unseen(s.openSessionByPreset(t, today, saturday.Add(2*time.Hour), "Five.md")); got != 2 {
@@ -395,7 +395,7 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 
 	morning := s.run(t, saturday)
 	for i := range 2 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
 	_, err := s.openSession(t, today, saturday.Add(2*time.Hour), flashcards.Scope{Preset: "Two.md", IsNamed: true})
@@ -407,9 +407,9 @@ func TestASessionOverAPresetWhoseDayIsSpentIsRefused(t *testing.T) {
 	}
 }
 
-// term is the one stencil the budgeted vaults are cut by: one face, so a card
-// is a card face.
-const term = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+// term is the one card model the budgeted vaults are cut by: one review card, so a card
+// is a review card.
+const term = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
 // preset is a preset note carrying these frontmatter lines. Lines naming no
@@ -444,10 +444,10 @@ func deckNaming(pos []string, cards int, from int) string {
 	}
 	out += "---\n"
 	for i := range cards {
-		mark := fmt.Sprintf("card%06d", from+i)
+		id := fmt.Sprintf("card%06d", from+i)
 		out += fmt.Sprintf(
 			"\n## Card %d ^%s\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n",
-			from+i, mark, from+i, from+i)
+			from+i, id, from+i, from+i)
 	}
 	return out
 }
@@ -455,7 +455,7 @@ func deckNaming(pos []string, cards int, from int) string {
 func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcards.SessionResult {
 	t.Helper()
 	sat, err := flashcards.NewSession(
-		s.marking, s.standings, s.schedules,
+		s.assigning, s.standings, s.schedules,
 		s.presets, day, func() time.Time { return now },
 	).Execute(t.Context(), s.vault, flashcards.Scope{})
 	if err != nil {
@@ -464,7 +464,7 @@ func (s vaulted) sessionAt(t *testing.T, day review.Day, now time.Time) flashcar
 	return sat
 }
 
-// byDeck is how many card faces of each deck a session holds.
+// byDeck is how many review cards of each deck a session holds.
 func byDeck(sat flashcards.SessionResult) map[string]int {
 	out := make(map[string]int)
 	for _, one := range sat.Queue {
@@ -483,8 +483,8 @@ func unseen(sat flashcards.SessionResult) int {
 	return out
 }
 
-// mark is the card of this place in a deck, as deckOf writes it.
-func mark(pos int) string { return fmt.Sprintf("card%06d", pos) }
+// cardID is the card id of this place in a deck, as deckOf writes it.
+func cardID(pos int) string { return fmt.Sprintf("card%06d", pos) }
 
 // Each preset turns its own minutes into a count from its own answer times, so
 // two presets of the same day hold as many cards as their cards cost.
@@ -498,19 +498,19 @@ func TestEachPresetIsCostedFromItsOwnAnswers(t *testing.T) {
 		"decks/Quick.md": deckOf("Quick", 20, 100),
 	})
 
-	// What each preset's cards have cost. Twelve card faces of each answered
+	// What each preset's cards have cost. Twelve review cards of each answered
 	// three times over two months is a history long enough to say what both
 	// kinds of answer take.
 	for _, days := range []int{90, 80, 75} {
 		before := s.run(t, saturday.AddDate(0, 0, -days))
 		for i := range 12 {
-			answer(t, before, mark(i), 20*time.Second)
-			answer(t, before, mark(100+i), 4*time.Second)
+			answer(t, before, cardID(i), 20*time.Second)
+			answer(t, before, cardID(100+i), 4*time.Second)
 		}
 	}
 
 	got := byDeck(s.sessionAt(t, today, saturday))
-	// Twelve card faces of each stand owed. The minute buys three of the slow
+	// Twelve review cards of each stand owed. The minute buys three of the slow
 	// ones, and all twelve of the quick ones with room for three unbegun.
 	if got["decks/Slow.md"] != 3 {
 		t.Errorf("the slow cards were asked %d in a minute, want 3", got["decks/Slow.md"])
@@ -591,7 +591,7 @@ func TestASecondSessionConsumesUpWhereTheFirstLeftOff(t *testing.T) {
 
 	morning := s.run(t, saturday)
 	for i := range 3 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 
 	if got := unseen(s.sessionAt(t, today, saturday.Add(2*time.Hour))); got != 2 {
@@ -616,13 +616,13 @@ func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
 
 		// Both cards were answered long enough ago to be owed today.
 		before := s.run(t, saturday.AddDate(0, 0, -30))
-		answer(t, before, mark(0), 6*time.Second)
-		answer(t, before, mark(1), 6*time.Second)
+		answer(t, before, cardID(0), 6*time.Second)
+		answer(t, before, cardID(1), 6*time.Second)
 
 		// The first card is put to the person nine times in one session.
 		morning := s.run(t, saturday)
 		for range 9 {
-			answerAgain(t, morning, mark(0), 4*time.Second)
+			answerAgain(t, morning, cardID(0), 4*time.Second)
 		}
 
 		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/Two.md"]
@@ -633,10 +633,10 @@ func TestACardAnsweredAgainSpendsOneCardOrEveryShow(t *testing.T) {
 	}
 }
 
-// A card face answered in an earlier session today is free when it comes round
+// A review card answered in an earlier session today is free when it comes round
 // in a later one under `counts: cards`, and is charged again under
 // `counts: shows`.
-func TestAFaceTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
+func TestACardTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 	t.Parallel()
 	for _, one := range []struct {
 		counts string
@@ -650,10 +650,10 @@ func TestAFaceTheDayHasChargedIsFreeInALaterSession(t *testing.T) {
 		})
 
 		before := s.run(t, saturday.AddDate(0, 0, -30))
-		answer(t, before, mark(0), 6*time.Second)
-		answer(t, before, mark(1), 6*time.Second)
+		answer(t, before, cardID(0), 6*time.Second)
+		answer(t, before, cardID(1), 6*time.Second)
 
-		answerAgain(t, s.run(t, saturday), mark(0), 4*time.Second)
+		answerAgain(t, s.run(t, saturday), cardID(0), 4*time.Second)
 
 		got := byDeck(s.sessionAt(t, today, saturday.Add(2*time.Hour)))["decks/One.md"]
 		if got != one.cards {
@@ -679,7 +679,7 @@ func TestADaysCardsAreCountedInCardsAndNotShows(t *testing.T) {
 	morning := s.run(t, saturday)
 	for i := range 3 {
 		for range 3 {
-			answerAgain(t, morning, mark(i), 4*time.Second)
+			answerAgain(t, morning, cardID(i), 4*time.Second)
 		}
 	}
 
@@ -837,7 +837,7 @@ func TestAPresetSteeredByItsMinutesKeepsAskingOnNoReviews(t *testing.T) {
 	// today.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 6 {
-		answer(t, before, mark(i), 6*time.Second)
+		answer(t, before, cardID(i), 6*time.Second)
 	}
 
 	sat := s.sessionAt(t, today, saturday)
@@ -902,7 +902,7 @@ func TestWhatIsOwedIsWhatTheSessionAsks(t *testing.T) {
 	}
 }
 
-// countQueue is how many card faces a session holds, over every deck.
+// countQueue is how many review cards a session holds, over every deck.
 func countQueue(sat flashcards.SessionResult) int { return len(sat.Queue) }
 
 // The decks naming no preset are one scope, so a second deck of them is a
@@ -992,8 +992,8 @@ func TestTheNewCardsOfADayAreNotHeldToItsReviews(t *testing.T) {
 	// Two cards answered long enough ago to be owed today, which the preset
 	// keeps no reviews for.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
-	answer(t, before, mark(0), 6*time.Second)
-	answer(t, before, mark(1), 6*time.Second)
+	answer(t, before, cardID(0), 6*time.Second)
+	answer(t, before, cardID(1), 6*time.Second)
 
 	sat := s.sessionAt(t, today, saturday)
 	if got := unseen(sat); got != 2 {
@@ -1037,7 +1037,7 @@ func TestADeckRepointedInTheMiddleOfADayCarriesTheDaySpent(t *testing.T) {
 
 	morning := s.run(t, saturday)
 	for i := range 2 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 	if got := unseen(s.sessionAt(t, today, saturday.Add(time.Hour))); got != 0 {
 		t.Fatalf("the preset of two was spent and the day was asked %d new cards", got)
@@ -1062,7 +1062,7 @@ func TestALimitEditedInTheMiddleOfADayContainsAtOnce(t *testing.T) {
 
 	morning := s.run(t, saturday)
 	for i := range 3 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 	evening := saturday.Add(time.Hour)
 	if got := unseen(s.sessionAt(t, today, evening)); got != 2 {
@@ -1092,14 +1092,14 @@ func TestCountsEditedInTheMiddleOfADayCountsTheDayAgain(t *testing.T) {
 	})
 
 	before := s.run(t, saturday.AddDate(0, 0, -30))
-	answer(t, before, mark(0), 6*time.Second)
-	answer(t, before, mark(1), 6*time.Second)
+	answer(t, before, cardID(0), 6*time.Second)
+	answer(t, before, cardID(1), 6*time.Second)
 
 	// One card put to the person three times, which is one card and three
 	// showings.
 	morning := s.run(t, saturday)
 	for range 3 {
-		answerAgain(t, morning, mark(0), 4*time.Second)
+		answerAgain(t, morning, cardID(0), 4*time.Second)
 	}
 
 	evening := saturday.Add(2 * time.Hour)
@@ -1127,7 +1127,7 @@ func TestAPresetPausedInTheMiddleOfADayStopsTheCardsItBegan(t *testing.T) {
 	// Two cards the person could not recall, which come round again in the day.
 	morning := s.run(t, saturday)
 	for i := range 2 {
-		answerAgain(t, morning, mark(i), 6*time.Second)
+		answerAgain(t, morning, cardID(i), 6*time.Second)
 	}
 	evening := saturday.Add(time.Hour)
 	if got := countQueue(s.sessionAt(t, today, evening)); got == 0 {
@@ -1196,7 +1196,7 @@ func TestTheBudgetIsWholeAgainWhenTheDayTurnsOver(t *testing.T) {
 	evening := time.Date(2026, 9, 4, 22, 0, 0, 0, time.Local)
 	run := s.run(t, evening)
 	for i := range 5 {
-		answer(t, run, mark(i), 6*time.Second)
+		answer(t, run, cardID(i), 6*time.Second)
 	}
 
 	for _, one := range []struct {
@@ -1239,7 +1239,7 @@ func TestADayCarryingNoneOfTheLoadIsAskedNothing(t *testing.T) {
 	}
 }
 
-// A card face is new on the day it was first answered at all, which is read off
+// A review card is new on the day it was first answered at all, which is read off
 // the times the answers carry and not the order the runs arrived in.
 func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 	t.Parallel()
@@ -1253,8 +1253,8 @@ func TestADayIsCountedByTheTimesOfItsAnswersAndNotItsRuns(t *testing.T) {
 	// Today's answer to the card, in a run named for yesterday, and yesterday's
 	// in a run named for today: the files sort the other way about from the
 	// answers in them.
-	answer(t, s.runNamed(t, yesterday, saturday.Add(-2*time.Hour)), mark(0), 6*time.Second)
-	answer(t, s.runNamed(t, saturday, yesterday), mark(0), 6*time.Second)
+	answer(t, s.runNamed(t, yesterday, saturday.Add(-2*time.Hour)), cardID(0), 6*time.Second)
+	answer(t, s.runNamed(t, saturday, yesterday), cardID(0), 6*time.Second)
 
 	// The card was first answered yesterday, so today's answer to it is a
 	// review and the day's one new card is still to be taken.
@@ -1279,7 +1279,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	for day := range 3 {
 		run := s.run(t, saturday.AddDate(0, 0, day-6))
 		for i := range 3 {
-			answer(t, run, mark(i), 6*time.Second)
+			answer(t, run, cardID(i), 6*time.Second)
 		}
 	}
 	// The working out under the old target, remembered where the next one will
@@ -1299,7 +1299,7 @@ func TestARetentionEditedInTheMiddleOfADayChangesWhatIsOwed(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	on := review.CardFaceID{Card: mark(0), Face: "Say it"}
+	on := review.ReviewCardID{Card: cardID(0), Template: "Say it"}
 	if now[on].Due.Equal(was[on].Due) {
 		t.Errorf("the target moved and the card still comes round at %v", now[on].Due)
 	}
@@ -1455,9 +1455,9 @@ func TestTheSessionAndTheCurveAgreeOnTheDay(t *testing.T) {
 			}
 
 			pointReviews := curve.Points[curve.Now.Index].Reviews
-			faces := s.countDayFaces(t, today, getNextAdmittedDay(read.Settings, today, saturday))
-			if pointReviews != float64(faces) {
-				t.Errorf("the curve draws %v and the day hands over %d", pointReviews, faces)
+			reviewCards := s.countDayCards(t, today, getNextAdmittedDay(read.Settings, today, saturday))
+			if pointReviews != float64(reviewCards) {
+				t.Errorf("the curve draws %v and the day hands over %d", pointReviews, reviewCards)
 			}
 		})
 	}
@@ -1476,19 +1476,19 @@ func getNextAdmittedDay(p review.Preset, day review.Day, now time.Time) time.Tim
 	return now
 }
 
-// answersAt is as many card faces answered this way, this many days before the
+// answersAt is as many review cards answered this way, this many days before the
 // day the vault is sat.
 func answersAt(cards, days int, r review.Rating) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
 		t.Helper()
 		before := s.run(t, saturday.AddDate(0, 0, days))
 		for i := range cards {
-			answerWith(t, before, mark(i), r, 6*time.Second)
+			answerWith(t, before, cardID(i), r, 6*time.Second)
 		}
 	}
 }
 
-// newSpentToday is a day a person is already partway through: card faces owed
+// newSpentToday is a day a person is already partway through: review cards owed
 // from a month back, some of them answered twice since the day opened.
 func newSpentToday(cards int) func(*testing.T, vaulted) {
 	return func(t *testing.T, s vaulted) {
@@ -1496,8 +1496,8 @@ func newSpentToday(cards int) func(*testing.T, vaulted) {
 		answersAt(cards, -30, review.Good)(t, s)
 		this := s.run(t, saturday.Add(-time.Hour))
 		for i := range 4 {
-			answerAgain(t, this, mark(i), 5*time.Second)
-			answer(t, this, mark(i), 5*time.Second)
+			answerAgain(t, this, cardID(i), 5*time.Second)
+			answer(t, this, cardID(i), 5*time.Second)
 		}
 	}
 }
@@ -1511,11 +1511,11 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 		"On.md":       preset(front),
 		"decks/On.md": deckOf("On", 40, 0),
 	})
-	// Twenty card faces answered long enough ago to be owed today, and twenty
+	// Twenty review cards answered long enough ago to be owed today, and twenty
 	// nobody has begun.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 20 {
-		answer(t, before, mark(i), 6*time.Second)
+		answer(t, before, cardID(i), 6*time.Second)
 	}
 	return s
 }
@@ -1525,7 +1525,7 @@ func newBacklogVault(t *testing.T, front string) vaulted {
 // against the one pot a goal of minutes keeps.
 func TestTheBacklogShareReturnsWhatTheDayIsSpentOn(t *testing.T) {
 	t.Parallel()
-	// Four minutes a day over twenty card faces owed and twenty unbegun, which
+	// Four minutes a day over twenty review cards owed and twenty unbegun, which
 	// is more of each than the day can carry.
 	const day = "goal: minutes_a_day\nminutes_a_day: 4\n"
 
@@ -1575,10 +1575,10 @@ func TestASideThatRunsShortPreservesTheDayToTheOther(t *testing.T) {
 			"new_a_day: 20\nreviews_a_day: 20\nminutes_a_day: 0\n"),
 		"decks/On.md": deckOf("On", 40, 0),
 	})
-	// Two card faces owed, and thirty-eight nobody has begun.
+	// Two review cards owed, and thirty-eight nobody has begun.
 	before := s.run(t, saturday.AddDate(0, 0, -30))
 	for i := range 2 {
-		answer(t, before, mark(i), 6*time.Second)
+		answer(t, before, cardID(i), 6*time.Second)
 	}
 
 	sat := s.sessionAt(t, today, saturday)
@@ -1652,7 +1652,7 @@ func TestTheBacklogShareMovesOnlyADaySpentFromOnePot(t *testing.T) {
 // What a day's budget is spent on decides what a count charges, and leaves the
 // minutes alone.
 //
-// A card face the day has already answered comes round again for no count where
+// A review card the day has already answered comes round again for no count where
 // the preset counts cards, and the minutes go on it as they go on every answer.
 // A day of a minute spent four times over is a day nobody asked for.
 func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
@@ -1664,11 +1664,11 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 				"new_a_day: 0\nreviews_a_day: 0\ncounts: " + counts + "\n"),
 			"decks/On.md": deckOf("On", 40, 0),
 		})
-		// Every card face answered long enough ago to be owed today, at six
+		// Every review card answered long enough ago to be owed today, at six
 		// seconds an answer, so a minute holds ten of them.
 		before := s.run(t, saturday.AddDate(0, 0, -30))
 		for i := range 40 {
-			answer(t, before, mark(i), 6*time.Second)
+			answer(t, before, cardID(i), 6*time.Second)
 		}
 
 		elapsed := time.Duration(0)
@@ -1686,26 +1686,26 @@ func TestTheMinutesCloseTheDayWhicheverWayThePresetCounts(t *testing.T) {
 			}
 		}
 		if elapsed > 90*time.Second {
-			t.Errorf("counting %s, a day of one minute asked %d card faces and ran %v",
+			t.Errorf("counting %s, a day of one minute asked %d review cards and ran %v",
 				counts, request, elapsed)
 		}
 	}
 }
 
-// countDayFaces is how many card faces one whole day of review hands over,
+// countDayCards is how many review cards one whole day of review hands over,
 // driven the way a person drives it: a session at a time until the day has
 // nothing left to ask, answering everything each of them holds.
 //
-// A card the day comes back to is the one card, so a face is counted once
+// A card the day comes back to is the one card, so a review card is counted once
 // however many sessions show it. Each answer takes what a projection costs its
 // kind at, so driving the day does not move the day's own arithmetic under it.
-func (s vaulted) countDayFaces(t *testing.T, day review.Day, now time.Time) int {
+func (s vaulted) countDayCards(t *testing.T, day review.Day, now time.Time) int {
 	t.Helper()
-	faces := make(map[review.CardFaceID]bool)
+	reviewCards := make(map[review.ReviewCardID]bool)
 	for range 100 {
 		sat := s.sessionAt(t, day, now)
 		if len(sat.Queue) == 0 {
-			return len(faces)
+			return len(reviewCards)
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
@@ -1713,7 +1713,7 @@ func (s vaulted) countDayFaces(t *testing.T, day review.Day, now time.Time) int 
 			if one.Schedule.IsNew() {
 				took = review.DefaultCost.New
 			}
-			faces[one.ID] = true
+			reviewCards[one.ID] = true
 			answer(t, record, one.ID.Card, took)
 		}
 	}
@@ -1761,7 +1761,7 @@ func (s vaulted) minutes(t *testing.T, day review.Day, now time.Time) time.Durat
 	var out time.Duration
 	for range 200 {
 		sat, err := flashcards.NewSession(
-			s.marking, s.standings, s.schedules,
+			s.assigning, s.standings, s.schedules,
 			s.presets, day, func() time.Time { return now },
 		).Execute(t.Context(), s.vault, flashcards.Scope{})
 		if err != nil || len(sat.Queue) == 0 {
@@ -1806,7 +1806,7 @@ func TestSessionDeckByDeckStaysBelowTheOneCeiling(t *testing.T) {
 		cardScope := flashcards.Scope{Deck: fmt.Sprintf("decks/D%d.md", d)}
 		for range 200 {
 			sat, err := flashcards.NewSession(
-				s.marking, s.standings, s.schedules,
+				s.assigning, s.standings, s.schedules,
 				s.presets, today, func() time.Time { return now },
 			).Execute(t.Context(), s.vault, cardScope)
 			if err != nil || len(sat.Queue) == 0 {
@@ -1857,7 +1857,7 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 	now := time.Date(2026, 3, 2, 12, 0, 0, 0, time.Local)
 	runSession := func(scope flashcards.Scope) flashcards.SessionResult {
 		sat, err := flashcards.NewSession(
-			s.marking, s.standings, s.schedules,
+			s.assigning, s.standings, s.schedules,
 			s.presets, today, func() time.Time { return now },
 		).Execute(t.Context(), s.vault, scope)
 		if err != nil {
@@ -1871,12 +1871,12 @@ func TestOneDeckIsHandedNoMoreThanTheDayContains(t *testing.T) {
 		whole += target
 	}
 	if whole != 30 {
-		t.Errorf("the whole vault hands over %d card faces, and the day holds 30", whole)
+		t.Errorf("the whole vault hands over %d review cards, and the day holds 30", whole)
 	}
 	for d := range 3 {
 		deck := fmt.Sprintf("decks/D%d.md", d)
 		if got := len(runSession(flashcards.Scope{Deck: deck}).Queue); got > 30 {
-			t.Errorf("%s alone hands over %d card faces, and the day holds 30", deck, got)
+			t.Errorf("%s alone hands over %d review cards, and the day holds 30", deck, got)
 		}
 	}
 }
@@ -1914,7 +1914,7 @@ func (s vaulted) rows(t *testing.T, now time.Time) map[string]int {
 	return target
 }
 
-// pressDeck is how many card faces pressing one deck hands over.
+// pressDeck is how many review cards pressing one deck hands over.
 func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
 	sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
@@ -1925,18 +1925,18 @@ func (s vaulted) pressDeck(t *testing.T, now time.Time, deck string) int {
 }
 
 // reviewDeckSession answers everything one deck hands over, session again until it hands
-// over nothing, and says how many card faces went through. A card the day comes
+// over nothing, and says how many review cards went through. A card the day comes
 // back to is the one card.
 func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int {
 	t.Helper()
-	faces := make(map[review.CardFaceID]bool)
+	reviewCards := make(map[review.ReviewCardID]bool)
 	for range 100 {
 		sat, err := s.openSession(t, today, now, flashcards.Scope{Deck: deck})
 		if err != nil {
 			t.Fatal(err)
 		}
 		if len(sat.Queue) == 0 {
-			return len(faces)
+			return len(reviewCards)
 		}
 		record := s.run(t, now)
 		for _, one := range sat.Queue {
@@ -1944,7 +1944,7 @@ func (s vaulted) reviewDeckSession(t *testing.T, now time.Time, deck string) int
 			if one.Schedule.IsNew() {
 				took = review.DefaultCost.New
 			}
-			faces[one.ID] = true
+			reviewCards[one.ID] = true
 			answer(t, record, one.ID.Card, took)
 		}
 	}

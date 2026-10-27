@@ -46,7 +46,7 @@ describe('Divider', () => {
   })
 
   it('leaves what it holds a button of its own, under its own name', () => {
-    const divider = mountDivider('Add a face')
+    const divider = mountDivider('Add a template')
     const button = divider.get('button')
     expect(button.attributes('role')).toBeUndefined()
     expect(button.attributes('aria-hidden')).toBeUndefined()

@@ -8,7 +8,7 @@ import {
 } from '@numen/plugin-sdk/testing'
 import { VAULT_SUMMARY, type WorkspaceHost } from '@numen/plugin-sdk'
 import { effectScope } from 'vue'
-import plugin, { activate, DECK, PRESET, REVIEW, STENCIL } from './index'
+import plugin, { activate, DECK, PRESET, REVIEW, CARD_MODEL } from './index'
 import { cards, presets } from './cards'
 
 const createContext = () => {
@@ -102,18 +102,18 @@ describe('flashcards-studio plugin', () => {
     ctx.dispose()
   })
 
-  it('registers the deck, stencil and preset tab kinds upon activation', () => {
+  it('registers the deck, card model and preset tab kinds upon activation', () => {
     const { ctx } = createContext()
     activate(ctx)
 
     const kinds = ctx.getRegisteredTabKinds()
-    expect(kinds.map((one) => one.kind)).toStrictEqual([DECK, STENCIL, PRESET])
+    expect(kinds.map((one) => one.kind)).toStrictEqual([DECK, CARD_MODEL, PRESET])
     expect(kinds.every((one) => typeof one.open === 'function')).toBe(true)
     expect(kinds.every((one) => one.component !== undefined && one.icon !== undefined)).toBe(true)
   })
 
   it('names the kinds the window files its tabs under', () => {
-    expect([DECK, STENCIL, PRESET]).toStrictEqual(['deck', 'stencil', 'preset'])
+    expect([DECK, CARD_MODEL, PRESET]).toStrictEqual(['deck', 'card-model', 'preset'])
   })
 
   it('removes the three kinds when the plugin is disabled', () => {
@@ -126,11 +126,11 @@ describe('flashcards-studio plugin', () => {
     expect(ctx.getRegisteredTabKinds()).toHaveLength(0)
   })
 
-  it('writes the messages of the stencils and the presets under a name of their own', () => {
+  it('writes the messages of the card models and the presets under a name of their own', () => {
     const { ctx, writers } = createContext()
     activate(ctx)
 
-    expect(writers).toStrictEqual(['stencil', 'preset'])
+    expect(writers).toStrictEqual(['card-model', 'preset'])
   })
 
   it('makes each kind able to make the file it edits', () => {
@@ -146,9 +146,9 @@ describe('flashcards-studio plugin', () => {
     const { ctx } = createContext()
     activate(ctx)
 
-    const [deck, stencil, preset] = ctx.getRegisteredTabKinds()
+    const [deck, cardModel, preset] = ctx.getRegisteredTabKinds()
     expect(typeof deck?.isAsking).toBe('function')
-    expect(typeof stencil?.isAsking).toBe('function')
+    expect(typeof cardModel?.isAsking).toBe('function')
     expect(preset?.isAsking).toBeUndefined()
     expect(ctx.getRegisteredTabKinds().every((one) => typeof one.flushPending === 'function')).toBe(
       true,
@@ -204,9 +204,9 @@ describe('flashcards-studio plugin', () => {
     const createDeck = vi
       .spyOn(cards, 'createDeck')
       .mockResolvedValue({ ok: true, value: { path: 'Decks/New deck.md' } } as never)
-    const createStencil = vi
-      .spyOn(cards, 'createStencil')
-      .mockResolvedValue({ ok: true, value: { path: 'Stencils/New stencil.md' } } as never)
+    const createCardModel = vi
+      .spyOn(cards, 'createCardModel')
+      .mockResolvedValue({ ok: true, value: { path: 'Card models/New card model.md' } } as never)
     const createPreset = vi
       .spyOn(presets, 'createPreset')
       .mockResolvedValue({ ok: true, value: { path: 'Presets/New preset.md' } } as never)
@@ -216,7 +216,7 @@ describe('flashcards-studio plugin', () => {
     activate(ctx)
 
     const menus = ctx.getRegisteredContextMenus()
-    expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newStencil', 'newPreset'])
+    expect(menus.map((m) => m.id)).toEqual(['newDeck', 'newCardModel', 'newPreset'])
     expect(menus.every((m) => m.parentId === 'new')).toBe(true)
 
     await menus[0]?.handler({ path: 'Decks', isFolder: true, kind: 'other', isSeveral: false })
@@ -228,7 +228,7 @@ describe('flashcards-studio plugin', () => {
       kind: 'note',
       isSeveral: false,
     })
-    expect(createStencil).toHaveBeenCalledWith('New stencil', 'Decks', [])
+    expect(createCardModel).toHaveBeenCalledWith('New card model', 'Decks', [])
 
     await menus[2]?.handler({ path: '', isFolder: false, kind: 'other', isSeveral: false })
     expect(createPreset).toHaveBeenCalledWith('New preset', '')

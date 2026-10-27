@@ -62,7 +62,7 @@ func TestADeckThatCannotBeReadPreservesTheOthersActive(t *testing.T) {
 		t.Error("one deck gone left the vault standing for nothing")
 	}
 	if len(remaining) >= len(whole) {
-		t.Errorf("the gone deck still stands: %d faces of %d", len(remaining), len(whole))
+		t.Errorf("the gone deck still stands: %d review cards of %d", len(remaining), len(whole))
 	}
 	for _, one := range remaining {
 		if one.Deck == "decks/Words.md" {
@@ -110,32 +110,32 @@ func (r deckReadCounter) Read(ctx context.Context, path string) ([]byte, error) 
 	return r.VaultReader.Read(ctx, path)
 }
 
-func openTallied(t *testing.T, notes map[string]string) (vaulted, flashcards.ListCardFaces, *readTally) {
+func openTallied(t *testing.T, notes map[string]string) (vaulted, flashcards.ListReviewCards, *readTally) {
 	t.Helper()
 	s := openVault(t, notes)
 	reads := &readTally{inner: s.env.Ports.Readers}
-	faces := flashcards.NewListCardFaces(reads, s.notes, s.links)
-	faces.Cores = 4
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	reviewCards := flashcards.NewListReviewCards(reads, s.notes, s.links)
+	reviewCards.Cores = 4
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	reads.take()
-	return s, faces, reads
+	return s, reviewCards, reads
 }
 
-func ids(faces []flashcards.CardFace) []string {
-	out := make([]string, 0, len(faces))
-	for _, f := range faces {
-		out = append(out, f.Deck+"|"+f.ID.Card+"|"+f.ID.Face)
+func ids(reviewCards []flashcards.ReviewCard) []string {
+	out := make([]string, 0, len(reviewCards))
+	for _, f := range reviewCards {
+		out = append(out, f.Deck+"|"+f.ID.Card+"|"+f.ID.Template)
 	}
 	return out
 }
 
 func TestASecondRequestDoesNotReadADeckThatHasNotChanged(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
-	again, err := faces.Execute(t.Context(), s.vault)
+	again, err := reviewCards.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -143,22 +143,22 @@ func TestASecondRequestDoesNotReadADeckThatHasNotChanged(t *testing.T) {
 		t.Errorf("an unchanged vault was read again: %v", got)
 	}
 	if len(again) != 5 {
-		t.Errorf("the second request stands for %d card faces, want 5", len(again))
+		t.Errorf("the second request stands for %d review cards, want 5", len(again))
 	}
 	for _, one := range again {
 		front, _ := one.Lay()
 		if front == "" {
-			t.Errorf("a cached face lays out nothing: %+v", one.ID)
+			t.Errorf("a cached review card lays out nothing: %+v", one.ID)
 		}
 	}
 }
 
 func TestADeckWhoseSizeChangedIsReadAgain(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
 	write(t, s, "decks/Words.md", vault["decks/Words.md"]+"\n")
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	got := reads.take()
@@ -172,14 +172,14 @@ func TestADeckWhoseSizeChangedIsReadAgain(t *testing.T) {
 
 func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
 	pos := filepath.Join(s.vault.Path, "decks", "Words.md")
 	later := time.Now().Add(time.Hour)
 	if err := os.Chtimes(pos, later, later); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	if got := reads.take(); got["decks/Words.md"] != 1 {
@@ -189,7 +189,7 @@ func TestADeckWhoseModificationTimeChangedIsReadAgain(t *testing.T) {
 
 func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 	pos := filepath.Join(s.vault.Path, "decks", "Words.md")
 	info, err := os.Stat(pos)
 	if err != nil {
@@ -197,7 +197,7 @@ func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 	}
 
 	remove(t, s, "decks/Words.md")
-	remaining, err := faces.Execute(t.Context(), s.vault)
+	remaining, err := reviewCards.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -213,7 +213,7 @@ func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 	if err := os.Chtimes(pos, info.ModTime(), info.ModTime()); err != nil {
 		t.Fatal(err)
 	}
-	back, err := faces.Execute(t.Context(), s.vault)
+	back, err := reviewCards.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -221,47 +221,47 @@ func TestADeckThatIsDeletedPreservesNoEntryPrior(t *testing.T) {
 		t.Errorf("a deck that came back was read %d times: %v", got["decks/Words.md"], got)
 	}
 	if len(back) != 5 {
-		t.Errorf("the vault stands for %d card faces, want 5", len(back))
+		t.Errorf("the vault stands for %d review cards, want 5", len(back))
 	}
 }
 
-func TestAChangedStencilIsReadAgainWithEveryDeckSplitByIt(t *testing.T) {
+func TestAChangedCardModelIsReadAgainWithEveryDeckSplitByIt(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
 	write(t, s, "Animal.md", vault["Animal.md"]+"\n")
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	got := reads.take()
 	if got["decks/Mammals.md"] != 1 {
-		t.Errorf("the deck cut by the changed stencil was read %d times: %v", got["decks/Mammals.md"], got)
+		t.Errorf("the deck cut by the changed card model was read %d times: %v", got["decks/Mammals.md"], got)
 	}
 	if got["decks/Words.md"] != 0 {
-		t.Errorf("a deck cut by another stencil was read: %v", got)
+		t.Errorf("a deck cut by another card model was read: %v", got)
 	}
 }
 
-func TestInvalidatingAStencilForgetsEveryDeckSplitByIt(t *testing.T) {
+func TestInvalidatingACardModelForgetsEveryDeckSplitByIt(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
-	faces.Invalidate(s.vault.ID, "Animal.md")
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	reviewCards.Invalidate(s.vault.ID, "Animal.md")
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	got := reads.take()
 	if got["decks/Mammals.md"] != 1 || got["decks/Words.md"] != 0 {
-		t.Errorf("reads after forgetting a stencil: %v", got)
+		t.Errorf("reads after forgetting a card model: %v", got)
 	}
 }
 
 func TestInvalidatingADeckForgetsIt(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
-	faces.Invalidate(s.vault.ID, "decks/Words.md")
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	reviewCards.Invalidate(s.vault.ID, "decks/Words.md")
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	got := reads.take()
@@ -272,10 +272,10 @@ func TestInvalidatingADeckForgetsIt(t *testing.T) {
 
 func TestInvalidatingAllForgetsEveryDeck(t *testing.T) {
 	t.Parallel()
-	s, faces, reads := openTallied(t, vault)
+	s, reviewCards, reads := openTallied(t, vault)
 
-	faces.InvalidateAll()
-	if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+	reviewCards.InvalidateAll()
+	if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
 	got := reads.take()
@@ -292,32 +292,32 @@ func TestAMarkSavedThroughTheAppIsActiveInTheNextRequest(t *testing.T) {
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nCompost\n",
 	}
 	s := openVault(t, notes)
-	faces := flashcards.NewListCardFaces(s.env.Ports.Readers, s.notes, s.links)
-	marking := s.marking.WithIndex(func(ctx context.Context, v domain.Vault, paths []string) error {
-		faces.Invalidate(v.ID, paths...)
+	reviewCards := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+	assigning := s.assigning.WithIndex(func(ctx context.Context, v domain.Vault, paths []string) error {
+		reviewCards.Invalidate(v.ID, paths...)
 		return s.scan(ctx, v, paths)
 	})
 
-	before, err := faces.Execute(t.Context(), s.vault)
+	before, err := reviewCards.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(before) != 0 {
-		t.Fatalf("a card with no mark stands: %v", ids(before))
+		t.Fatalf("a card with no card id stands: %v", ids(before))
 	}
-	if _, err := marking.Execute(t.Context(), s.vault); err != nil {
+	if _, err := assigning.Execute(t.Context(), s.vault); err != nil {
 		t.Fatal(err)
 	}
-	after, err := faces.Execute(t.Context(), s.vault)
+	after, err := reviewCards.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(after) != 1 {
-		t.Errorf("the marked card stands as %d card faces, want 1", len(after))
+		t.Errorf("the marked card stands as %d review cards, want 1", len(after))
 	}
 }
 
-func TestTheFacesComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
+func TestTheCardsComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{"Term.md": vault["Term.md"]}
 	var paths []string
@@ -328,16 +328,16 @@ func TestTheFacesComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 	}
 	s := openVault(t, notes)
 
-	one := flashcards.NewListCardFaces(s.env.Ports.Readers, s.notes, s.links)
-	want := ids(one.GetFaces(t.Context(), s.vault, paths))
+	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
+	want := ids(one.GetReviewCards(t.Context(), s.vault, paths))
 	if len(want) != len(paths) {
-		t.Fatalf("%d decks stand as %d card faces", len(paths), len(want))
+		t.Fatalf("%d decks stand as %d review cards", len(paths), len(want))
 	}
 
 	for range 10 {
-		many := flashcards.NewListCardFaces(s.env.Ports.Readers, s.notes, s.links)
+		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
 		many.Cores = 64
-		if got := ids(many.GetFaces(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
+		if got := ids(many.GetReviewCards(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
 			t.Fatalf("the order moved:\n got %v\nwant %v", got, want)
 		}
 	}
@@ -345,7 +345,7 @@ func TestTheFacesComeBackInTheOrderOfThePathsWhateverParsesFirst(t *testing.T) {
 
 func TestRequestsAndInvalidationsMakeNoRaceBetweenThem(t *testing.T) {
 	t.Parallel()
-	s, faces, _ := openTallied(t, vault)
+	s, reviewCards, _ := openTallied(t, vault)
 
 	var running sync.WaitGroup
 	for range 8 {
@@ -353,9 +353,9 @@ func TestRequestsAndInvalidationsMakeNoRaceBetweenThem(t *testing.T) {
 		go func() {
 			defer running.Done()
 			for range 20 {
-				got, err := faces.Execute(t.Context(), s.vault)
+				got, err := reviewCards.Execute(t.Context(), s.vault)
 				if err != nil || len(got) != 5 {
-					t.Errorf("a request came back with %d card faces and %v", len(got), err)
+					t.Errorf("a request came back with %d review cards and %v", len(got), err)
 					return
 				}
 			}
@@ -363,15 +363,15 @@ func TestRequestsAndInvalidationsMakeNoRaceBetweenThem(t *testing.T) {
 		go func() {
 			defer running.Done()
 			for range 20 {
-				faces.Invalidate(s.vault.ID, "Term.md")
-				faces.InvalidateAll()
+				reviewCards.Invalidate(s.vault.ID, "Term.md")
+				reviewCards.InvalidateAll()
 			}
 		}()
 	}
 	running.Wait()
 }
 
-func TestAPoolOfOneAndAPoolOfManyGiveTheSameFacesEveryTime(t *testing.T) {
+func TestAPoolOfOneAndAPoolOfManyGiveTheSameCardsEveryTime(t *testing.T) {
 	t.Parallel()
 	notes := map[string]string{"Term.md": vault["Term.md"]}
 	var paths []string
@@ -381,43 +381,43 @@ func TestAPoolOfOneAndAPoolOfManyGiveTheSameFacesEveryTime(t *testing.T) {
 		notes[path] = fmt.Sprintf("---\ntype: deck\n---\n\n## Card ^q%02dwxyzpqr\n\n[[Term]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n", i, i, i)
 	}
 	s := openVault(t, notes)
-	one := flashcards.NewListCardFaces(s.env.Ports.Readers, s.notes, s.links)
+	one := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
 	one.Cores = 1
-	want := ids(one.GetFaces(t.Context(), s.vault, paths))
+	want := ids(one.GetReviewCards(t.Context(), s.vault, paths))
 
 	for _, cores := range []int{2, 3, 16, 64} {
-		many := flashcards.NewListCardFaces(s.env.Ports.Readers, s.notes, s.links)
+		many := flashcards.NewListReviewCards(s.env.Ports.Readers, s.notes, s.links)
 		many.Cores = cores
 		for range 3 {
-			if got := ids(many.GetFaces(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
+			if got := ids(many.GetReviewCards(t.Context(), s.vault, paths)); !reflect.DeepEqual(got, want) {
 				t.Fatalf("a pool of %d gave another order:\n got %v\nwant %v", cores, got, want)
 			}
 		}
 	}
 }
 
-func TestADeckPastTheFaceBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
+func TestADeckPastTheCardBoundIsParsedAgainWhileTheOthersStay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
 	reads := &readTally{inner: s.env.Ports.Readers}
-	faces := flashcards.NewListCardFaces(reads, s.notes, s.links)
-	// Mammals stands as four faces and Words as one.
-	faces.MaxFaces = 3
+	reviewCards := flashcards.NewListReviewCards(reads, s.notes, s.links)
+	// Mammals stands as four review cards and Words as one.
+	reviewCards.MaxCards = 3
 	for range 2 {
-		if _, err := faces.Execute(t.Context(), s.vault); err != nil {
+		if _, err := reviewCards.Execute(t.Context(), s.vault); err != nil {
 			t.Fatal(err)
 		}
 	}
 	got := reads.take()
 	if got["decks/Mammals.md"] != 2 || got["decks/Words.md"] != 1 {
-		t.Errorf("reads under a bound of three faces: %v", got)
+		t.Errorf("reads under a bound of three review cards: %v", got)
 	}
 }
 
 // A vault of three decks: two scheduled by a preset that gives Saturday half
 // the load, and one naming no preset at all.
 var scheduled = map[string]string{
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 	"Sanskrit.md": "---\ntype: preset\ngoal: minutes_a_day\nminutes_a_day: 20\n" +
 		"new_a_day: 8\nreviews_a_day: 45\nload: {sat: 50}\n---\n\n# Sanskrit\n",
@@ -639,7 +639,7 @@ func (r replaying) Next(
 }
 
 // answer writes down one card answered well, and returns the line it stands
-// as. Every card of this vault is shown through the one face.
+// as. Every card of this vault is shown through the one review card.
 func answer(t *testing.T, record sitting, card string, took time.Duration) string {
 	t.Helper()
 	return answerWith(t, record, card, review.Good, took)
@@ -658,7 +658,7 @@ func answerWith(
 ) string {
 	t.Helper()
 	provided, err := record.Answer(
-		t.Context(), review.CardFaceID{Card: card, Face: "Say it"}, rating, took)
+		t.Context(), review.ReviewCardID{Card: card, Template: "Say it"}, rating, took)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -733,7 +733,7 @@ func TestACountIsDroppedOnceTheWindowHasMissing(t *testing.T) {
 	went()
 
 	u := flashcards.NewCountCardsDue(
-		flashcards.ListCardFaces{}, flashcards.Schedules{}, flashcards.Presets{},
+		flashcards.ListReviewCards{}, flashcards.Schedules{}, flashcards.Presets{},
 		review.Day{}, time.Now,
 	)
 	_, err := u.Execute(removed, domain.Vault{ID: "01ARZ3NDEKTSV4RRFFQ69G5FAV"})
@@ -761,7 +761,7 @@ var learnedVault = map[string]string{
 // How much of a deck stands learned is counted under the rule the preset that
 // deck names counts by, and two decks on one preset are counted under the one
 // rule.
-func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
+func TestADecksLearnedCardsAreCountedByItsOwnPresetsRule(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
@@ -779,17 +779,17 @@ func TestADecksLearnedFacesAreCountedByItsOwnPresetsRule(t *testing.T) {
 	want := map[string]flashcards.DeckCardsDue{
 		// The rule is a chance of recall, and a card answered a minute ago is
 		// as likely to come back as a card gets.
-		"decks/One.md": {Deck: "decks/One.md", Faces: 3, Learned: 1},
-		"decks/Two.md": {Deck: "decks/Two.md", Faces: 2, Learned: 1},
+		"decks/One.md": {Deck: "decks/One.md", ReviewCards: 3, Learned: 1},
+		"decks/Two.md": {Deck: "decks/Two.md", ReviewCards: 2, Learned: 1},
 		// The defaults count by an interval of three weeks, which a card
 		// answered once is nowhere near.
-		"decks/Three.md": {Deck: "decks/Three.md", Faces: 2, Learned: 0},
+		"decks/Three.md": {Deck: "decks/Three.md", ReviewCards: 2, Learned: 0},
 	}
 	for _, one := range owing.Decks {
-		if one.Learned != want[one.Deck].Learned || one.Faces != want[one.Deck].Faces {
+		if one.Learned != want[one.Deck].Learned || one.ReviewCards != want[one.Deck].ReviewCards {
 			t.Errorf("%s has %d learned of %d, want %d of %d",
-				one.Deck, one.Learned, one.Faces,
-				want[one.Deck].Learned, want[one.Deck].Faces)
+				one.Deck, one.Learned, one.ReviewCards,
+				want[one.Deck].Learned, want[one.Deck].ReviewCards)
 		}
 	}
 	if len(owing.Decks) != len(want) {
@@ -815,7 +815,7 @@ func TestADeckNobodyHasAnsweredExistsAtNothingLearned(t *testing.T) {
 	}
 }
 
-// A deck holding no cards is counted for nothing: it has no card face to stand
+// A deck holding no cards is counted for nothing: it has no review card to stand
 // learned.
 func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 	t.Parallel()
@@ -839,9 +839,9 @@ func TestADeckOfNoCardsIsCountedForNothing(t *testing.T) {
 	}
 }
 
-// How many of a deck's card faces nobody has begun is counted off the same
-// pass, so a deck every face of which is unbegun says so on its own row.
-func TestADecksUnbegunFacesAreCounted(t *testing.T) {
+// How many of a deck's review cards nobody has begun is counted off the same
+// pass, so a deck every review card of which is unbegun says so on its own row.
+func TestADecksUnbegunCardsAreCounted(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, learnedVault)
 
@@ -851,9 +851,9 @@ func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, one := range before.Decks {
-		if one.Unbegun != one.Faces {
+		if one.Unbegun != one.ReviewCards {
 			t.Errorf("%s has %d unbegun of %d, want all",
-				one.Deck, one.Unbegun, one.Faces)
+				one.Deck, one.Unbegun, one.ReviewCards)
 		}
 	}
 
@@ -878,8 +878,8 @@ func TestADecksUnbegunFacesAreCounted(t *testing.T) {
 func TestWhatWasAnsweredIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
 	yesterday := time.Now().AddDate(0, 0, -1)
 	past := s.run(t, yesterday)
@@ -932,7 +932,7 @@ func TestAVaultNobodyAnsweredHasNoDays(t *testing.T) {
 func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	first := s.run(t, time.Now().AddDate(0, 0, -1))
 	if _, err := first.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -968,8 +968,8 @@ func TestARunThatHasNotChangedIsNotCountedAgain(t *testing.T) {
 func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
-	other := review.CardFaceID{Card: "zpqrstvwxy", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
+	other := review.ReviewCardID{Card: "zpqrstvwxy", Template: "Recognise"}
 
 	record := s.run(t, time.Now())
 	if _, err := record.Answer(t.Context(), on, review.Good, 0); err != nil {
@@ -1001,7 +1001,7 @@ func TestARunThatGrewIsCountedAfresh(t *testing.T) {
 func TestARunCopiedBelowAnotherNameIsCountedOnce(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1066,7 +1066,7 @@ func spaces(n int) []byte {
 func TestWhatIsStillToComeIsCountedByDay(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered easily, so it is days away and not minutes.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
@@ -1154,7 +1154,7 @@ func writeCache(t *testing.T, s vaulted, version int, days map[string]review.Tal
 func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1178,7 +1178,7 @@ func TestACacheOfAnotherShapeIsCountedAfresh(t *testing.T) {
 func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1199,7 +1199,7 @@ func TestACacheOfThisShapeIsBelieved(t *testing.T) {
 func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Good, 0); err != nil {
 		t.Fatal(err)
 	}
@@ -1222,12 +1222,12 @@ func TestAVaultIsCountedWithNothingCached(t *testing.T) {
 func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Easy, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	scheds := flashcards.NewSchedules(s.logs, nil, today, flashcards.ListCardFaces{}, flashcards.Presets{})
+	scheds := flashcards.NewSchedules(s.logs, nil, today, flashcards.ListReviewCards{}, flashcards.Presets{})
 	blind := flashcards.NewCountReviews(s.logs, scheds, today, time.Now)
 
 	got, err := blind.Execute(t.Context(), s.vault)
@@ -1246,7 +1246,7 @@ func TestWithNoSchedulerNothingIsStillToCome(t *testing.T) {
 func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 
 	// Answered again, so it comes back in minutes and is owed today.
 	if _, err := s.run(t, time.Now()).Answer(t.Context(), on, review.Again, 0); err != nil {
@@ -1268,7 +1268,7 @@ func TestACardOwedTodayIsNotStillToCome(t *testing.T) {
 func TestGetReviewDaysKeepsTheDaysInsideTheStretch(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, vault)
-	on := review.CardFaceID{Card: "k7m2xq9fzp", Face: "Recognise"}
+	on := review.ReviewCardID{Card: "k7m2xq9fzp", Template: "Recognise"}
 	now := time.Now()
 	yesterday, twoDaysAgo := now.AddDate(0, 0, -1), now.AddDate(0, 0, -2)
 	for _, item := range []time.Time{twoDaysAgo, yesterday, now} {
@@ -1323,32 +1323,32 @@ func TestADeckThatCouldNotBeSavedIsNamed(t *testing.T) {
 	// The deck cannot be replaced. What a person meets is the editor holding
 	s.env.Host.RefuseWriting("decks/Own.md", fs.ErrPermission)
 
-	marked, err := s.marking.Execute(t.Context(), s.vault)
+	assigned, err := s.assigning.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a deck that could not be written was trouble: %v", err)
 	}
-	if !slices.Contains(marked.Unwritten, "decks/Own.md") {
-		t.Errorf("the deck that could not be written is %v", marked.Unwritten)
+	if !slices.Contains(assigned.Unwritten, "decks/Own.md") {
+		t.Errorf("the deck that could not be written is %v", assigned.Unwritten)
 	}
 }
 
 // A deck the index could not be brought level with was written all the same.
-// Its cards carry the marks that were minted, so they stand in this session and
+// Its cards carry the card ids that were minted, so they stand in this session and
 // nothing has to mint them a second time.
 func TestADeckSavedWithNoLevellingIsNotNamed(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
-	marking := s.marking.WithIndex(busy)
+	assigning := s.assigning.WithIndex(busy)
 
-	marked, err := marking.Execute(t.Context(), s.vault)
+	assigned, err := assigning.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatalf("a levelling that failed was trouble: %v", err)
 	}
-	if len(marked.Unwritten) != 0 {
-		t.Fatalf("the deck was written and is named as unwritten: %v", marked.Unwritten)
+	if len(assigned.Unwritten) != 0 {
+		t.Fatalf("the deck was written and is named as unwritten: %v", assigned.Unwritten)
 	}
 	if target := read(t, s.vault, "decks/Own.md"); !strings.Contains(target, "## Leaf mould ^") {
-		t.Errorf("the deck carries no mark: %q", target)
+		t.Errorf("the deck carries no card id: %q", target)
 	}
 
 	status, err := s.standings.Execute(t.Context(), s.vault)
@@ -1365,12 +1365,12 @@ func TestAVaultWhoseDecksAreSavedNamesNone(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, handwritten)
 
-	marked, err := s.marking.Execute(t.Context(), s.vault)
+	assigned, err := s.assigning.Execute(t.Context(), s.vault)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(marked.Unwritten) != 0 {
-		t.Errorf("named %v, want none", marked.Unwritten)
+	if len(assigned.Unwritten) != 0 {
+		t.Errorf("named %v, want none", assigned.Unwritten)
 	}
 }
 
@@ -1459,15 +1459,15 @@ func TestALinkSavedInsideACardArrivesWithItsText(t *testing.T) {
 	}
 }
 
-// Every card names the stencil it is cut by, so a deck points at its stencils.
-// A stencil is how a card is laid out and not what it was written from.
-func TestTheStencilACardIsSplitByIsNotSomethingToRead(t *testing.T) {
+// Every card names the card model it is cut by, so a deck points at its card models.
+// A card model is how a card is laid out and not what it was written from.
+func TestTheCardModelACardIsSplitByIsNotSomethingToRead(t *testing.T) {
 	t.Parallel()
 	j := readNeighbourhood(t, map[string]string{
-		"stencils/Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+		"card-models/Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 			"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 		"decks/Birds.md": "---\ntype: deck\n---\n" +
-			"\n## Swift ^k7m2xq9fzp\n\n[[stencils/Word]]\n\n### Word\n\nSwift\n" +
+			"\n## Swift ^k7m2xq9fzp\n\n[[card-models/Word]]\n\n### Word\n\nSwift\n" +
 			"\n### Meaning\n\nA bird that sleeps flying. See [[Migration]].\n",
 		"Migration.md": "# Migration\n\nBirds go south when the days shorten.\n",
 	}, "decks/Birds.md")

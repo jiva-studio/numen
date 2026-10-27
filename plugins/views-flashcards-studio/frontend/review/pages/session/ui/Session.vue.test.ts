@@ -6,14 +6,14 @@ import { describe, expect, it } from 'vitest'
 import Session from './Session.vue'
 import type { PanelPlace } from '../model/carousel'
 import { grades } from '../../../entities/card'
-import type { CardFace } from '../../../entities/card'
+import type { ReviewCard } from '../../../entities/card'
 
 /** A card as the application hands it over. */
-const card: CardFace = {
+const card: ReviewCard = {
   deck: 'decks/Words.md',
   section: '',
-  mark: '3f4g5h6j7k',
-  face: 'Say it',
+  cardId: '3f4g5h6j7k',
+  template: 'Say it',
   heading: 'Leaf mould',
   front: '<p>Leaf mould</p>',
   back: '<p>Compost made of fallen leaves alone. <a href="notes/Leaf mould.md">more</a></p>',

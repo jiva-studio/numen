@@ -55,25 +55,25 @@ func TestATitleIsSavedOnlyWhereTheFilenameCannotCarryIt(t *testing.T) {
 		t.Errorf("a title the filename carries was written as a key: %q", got)
 	}
 
-	marked, err := u.Deck(t.Context(), v, cards.New{Title: "Birds: a guide"})
+	assigned, err := u.Deck(t.Context(), v, cards.New{Title: "Birds: a guide"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if marked.Path != "Birds- a guide.md" {
-		t.Errorf("path = %q", marked.Path)
+	if assigned.Path != "Birds- a guide.md" {
+		t.Errorf("path = %q", assigned.Path)
 	}
-	if got := read(t, v, marked.Path); !strings.Contains(got, "title:") || !strings.Contains(got, "Birds: a guide") {
+	if got := read(t, v, assigned.Path); !strings.Contains(got, "title:") || !strings.Contains(got, "Birds: a guide") {
 		t.Errorf("the title the filename cannot carry was not written: %q", got)
 	}
 }
 
-// A stencil of one field declares it.
-func TestAStencilOfOneFieldDeclaresIt(t *testing.T) {
+// A card model of one field declares it.
+func TestACardModelOfOneFieldDeclaresIt(t *testing.T) {
 	env := vaulttest.New(t, nil)
 	v := env.Vault
 	u := cards.NewCreate(env.Ports.Writers, nil, time.Now)
 
-	made, err := u.Stencil(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
+	made, err := u.CardModel(t.Context(), v, cards.New{Title: "Word", Fields: []string{"Meaning"}})
 	if err != nil {
 		t.Fatal(err)
 	}

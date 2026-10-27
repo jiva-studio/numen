@@ -6,13 +6,13 @@ import { describe, expect, it } from 'vitest'
 import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { createCardAgentPort } from './agent'
-import type { CardFace } from '../../../entities/card'
+import type { ReviewCard } from '../../../entities/card'
 
-const card: CardFace = {
+const card: ReviewCard = {
   deck: 'decks/Words.md',
   section: '',
-  mark: '3f4g5h6j7k',
-  face: 'Say it',
+  cardId: '3f4g5h6j7k',
+  template: 'Say it',
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
@@ -21,7 +21,7 @@ const card: CardFace = {
 }
 
 describe('createCardAgentPort', () => {
-  it('sends the deck, the card and the face in the query context', async () => {
+  it('sends the deck, the card and the review card in the query context', async () => {
     const agent = createMockAgentHost([{ kind: 'said', text: 'Because of the leaves.' }])
     const signal = new AbortController().signal
     const steps = []
@@ -43,7 +43,7 @@ describe('createCardAgentPort', () => {
         context: {
           'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
           'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
-          'md.numen.views.flashcards.studio/face': 'Say it',
+          'md.numen.views.flashcards.studio/template': 'Say it',
         },
       },
     ])

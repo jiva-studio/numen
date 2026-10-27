@@ -18,7 +18,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   },
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 30,
+  reviewCards: 30,
   cards: 12,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
@@ -43,7 +43,7 @@ describe('which presets get a tile', () => {
   })
 
   it('gives none to a preset whose decks hold no cards', () => {
-    expect(getTiles([preset({ faces: 0 })], today)).toHaveLength(0)
+    expect(getTiles([preset({ reviewCards: 0 })], today)).toHaveLength(0)
   })
 })
 

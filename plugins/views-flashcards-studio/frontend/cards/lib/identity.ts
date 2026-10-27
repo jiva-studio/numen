@@ -1,5 +1,5 @@
 /**
- * The identity a deck tab and a stencil tab address a card, a section or a face
+ * The identity a deck tab and a card model tab address a card, a section or a template
  * by, which no file carries.
  */
 

@@ -27,7 +27,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   settings,
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 20,
+  reviewCards: 20,
   cards: 16,
   budget: { new: 10, reviews: 45, minutes: 20 },
   closes,
@@ -42,7 +42,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
 
 const deck = (fields: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: 'decks/Words.md',
-  faces: 20,
+  reviewCards: 20,
   due: 8,
   new: 2,
   learned: 5,
@@ -55,7 +55,7 @@ const vault = (fields: Partial<VaultCardsDue> = {}): VaultCardsDue => ({
   name: 'Studies',
   path: '/vaults/01A',
   isCounted: true,
-  faces: 20,
+  reviewCards: 20,
   due: 8,
   new: 2,
   decks: [deck()],
@@ -96,10 +96,15 @@ describe('how much of a deck remains learned', () => {
     }
   })
 
-  it('says nothing of a deck holding no card face', () => {
+  it('says nothing of a deck holding no review card', () => {
     const one = mountDecks(
-      vault({ faces: 0, due: 0, new: 0, decks: [deck({ faces: 0, due: 0, new: 0, learned: 0 })] }),
-      [preset({ faces: 0, cards: 0 })],
+      vault({
+        reviewCards: 0,
+        due: 0,
+        new: 0,
+        decks: [deck({ reviewCards: 0, due: 0, new: 0, learned: 0 })],
+      }),
+      [preset({ reviewCards: 0, cards: 0 })],
     )
 
     expect(one.findAll('.decks__learned')).toHaveLength(0)
@@ -141,13 +146,13 @@ describe('how much of a deck remains learned', () => {
 
 describe('a deck as a share of itself', () => {
   it('is what remains learned over what the deck holds', () => {
-    expect(getLearnedShare(deck({ faces: 20, learned: 5 }))).toBe(0.25)
-    expect(getLearnedShare(deck({ faces: 4, learned: 4 }))).toBe(1)
-    expect(getLearnedShare(deck({ faces: 4, learned: 0 }))).toBe(0)
+    expect(getLearnedShare(deck({ reviewCards: 20, learned: 5 }))).toBe(0.25)
+    expect(getLearnedShare(deck({ reviewCards: 4, learned: 4 }))).toBe(1)
+    expect(getLearnedShare(deck({ reviewCards: 4, learned: 0 }))).toBe(0)
   })
 
-  it('is nothing at all for a deck holding no card face', () => {
-    expect(getLearnedShare(deck({ faces: 0, learned: 0 }))).toBeNull()
+  it('is nothing at all for a deck holding no review card', () => {
+    expect(getLearnedShare(deck({ reviewCards: 0, learned: 0 }))).toBeNull()
   })
 })
 

@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// EditCard writes values into the card of a mark, and cuts it by stencil from then on when that is not empty.
+// EditCard writes values into the card of a card id, and cuts it by card model from then on when that is not empty.
 type EditCard struct {
 	read  Read
 	write Write
@@ -17,15 +17,15 @@ type EditCard struct {
 func NewEditCard(read Read, write Write) EditCard { return EditCard{read: read, write: write} }
 
 func (u EditCard) Execute(
-	ctx context.Context, v domain.Vault, version DeckVersion, mark, stencil string, values []format.Value,
+	ctx context.Context, v domain.Vault, version DeckVersion, cardID, cardModel string, values []format.Value,
 ) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(contents DeckContents, file *format.DeckFile) error {
-		card := cardid.ID(mark)
-		if _, err := findCard(contents.Body.Cards, mark); err != nil {
+		card := cardid.ID(cardID)
+		if _, err := findCard(contents.Body.Cards, cardID); err != nil {
 			return err
 		}
-		if stencil != "" {
-			if err := file.SetStencil(card, stencil); err != nil {
+		if cardModel != "" {
+			if err := file.SetCardModel(card, cardModel); err != nil {
 				return err
 			}
 		}

@@ -70,14 +70,14 @@ func TestAnAnsweredCardIsObserved(t *testing.T) {
 }
 
 // A scheduler carries nothing from one answer to the next, so one of them
-// answers for many card faces at once and each answer is the answer it would
+// answers for many review cards at once and each answer is the answer it would
 // have given on its own.
 //
 // Run under the race detector this is what holds the scheduler to carrying no
 // state: one that wrote anything into itself while working an interval out
 // could not be shared, and a projection of a preset shares one across every
 // place of a curve.
-func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
+func TestASchedulerAnswersForManyReviewCardsAtOnce(t *testing.T) {
 	delta := review.NewFSRS()
 	when := parseTime("2026-08-29T09:00:00Z")
 
@@ -121,11 +121,11 @@ func TestASchedulerAnswersForManyCardFacesAtOnce(t *testing.T) {
 	for round := range rounds {
 		for i := range cards {
 			if pos[round][i] != alone[i] {
-				t.Errorf("card face %d answered %v at once and %v alone",
+				t.Errorf("review card %d answered %v at once and %v alone",
 					i, pos[round][i], alone[i])
 			}
 			if ends[round][i] != good[i] || fell[round][i] != again[i] {
-				t.Errorf("card face %d ends %v and %v at once, %v and %v alone",
+				t.Errorf("review card %d ends %v and %v at once, %v and %v alone",
 					i, ends[round][i], fell[round][i], good[i], again[i])
 			}
 		}
@@ -178,7 +178,7 @@ func TestASchedulerReturnsWhichItIs(t *testing.T) {
 // libraryNow is the instant the schedules below are answered at.
 var libraryNow = time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
 
-// libraryGaps are how long a card face stood away before it was answered: an
+// libraryGaps are how long a review card stood away before it was answered: an
 // answer given at once, one given in the minutes a card is put into memory
 // over, and one given days, months and years later.
 var libraryGaps = []time.Duration{
@@ -207,7 +207,7 @@ var libraryRetentions = []float64{0, 0.7, 0.85, 0.87, 0.9, 0.97, 0.99}
 //
 // Every field of a schedule is compared bit for bit and not within a tolerance:
 // a schedule differing in the last place is a different schedule, and a card
-// face sent away for a different day.
+// review card sent away for a different day.
 //
 // Test coverage includes sequences generated across review phases from new
 // cards, and synthetic boundary schedules covering clamping limits.
@@ -237,14 +237,14 @@ func makeSchedulers(retention float64) (review.FSRS, *fsrs.FSRS) {
 	return review.NewFSRSAt(retention), fsrs.NewFSRS(p)
 }
 
-// libraryAgrees asks both about one card face, at every rating and at both
+// libraryAgrees asks both about one review card, at every rating and at both
 // endings, and holds the two answers to being the same schedule.
 //
-// What the library is asked about is the card face as it stood away. A card
-// face answered no later than the answer it already carries stood no time away,
-// and that is the card face the library is asked about — the same arithmetic on
+// What the library is asked about is the review card as it stood away. A card
+// review card answered no later than the answer it already carries stood no time away,
+// and that is the review card the library is asked about — the same arithmetic on
 // the days that actually went by, and what the scheduler makes of such a card
-// face is written down in the test below.
+// review card is written down in the test below.
 func libraryAgrees(
 	t *testing.T, retention float64, delta review.FSRS, engine *fsrs.FSRS,
 	s review.Schedule,
@@ -269,7 +269,7 @@ func libraryAgrees(
 		again, asSchedule(engine.Next(asCard(status), libraryNow, fsrs.Again).Card))
 }
 
-// clampLastAnswer is a card face at the days it stood away. One answered no
+// clampLastAnswer is a review card at the days it stood away. One answered no
 // later than the answer it already carries stood none of them.
 func clampLastAnswer(s review.Schedule) review.Schedule {
 	if !s.IsNew() && libraryNow.Before(s.Last) {
@@ -278,25 +278,25 @@ func clampLastAnswer(s review.Schedule) review.Schedule {
 	return s
 }
 
-// A card face answered no later than the answer it already carries stood no
+// A review card answered no later than the answer it already carries stood no
 // time away, however far ahead of the instant it is asked about that answer is.
 //
-// The days a card face stood away do not go below none, so every such card face
+// The days a review card stood away do not go below none, so every such review card
 // is answered the same, and answered as the library answers one whose last
 // answer falls at that instant.
-func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
+func TestAReviewCardAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) {
 	delta, engine := makeSchedulers(0)
 
-	// A card face the scheduler has put into review, carrying an answer given
+	// A review card the scheduler has put into review, carrying an answer given
 	// after the instant it is asked about.
 	ahead := delta.Next(delta.Next(review.Schedule{},
 		libraryNow.AddDate(0, 0, -30), review.Good),
 		libraryNow.AddDate(0, 0, 1), review.Good)
 	if fsrs.State(ahead.Phase) != fsrs.Review {
-		t.Fatalf("card face phase = %d, want %d", ahead.Phase, fsrs.Review)
+		t.Fatalf("review card phase = %d, want %d", ahead.Phase, fsrs.Review)
 	}
 
-	// The same card face as one that stood no time away.
+	// The same review card as one that stood no time away.
 	status := ahead
 	status.Last = libraryNow
 
@@ -305,19 +305,19 @@ func TestACardFaceAnsweredNoLaterThanItsLastAnswerStoodNoTimeAway(t *testing.T) 
 		for _, dur := range []time.Duration{
 			time.Second, time.Hour, 24 * time.Hour, 400 * 24 * time.Hour,
 		} {
-			face := ahead
-			face.Last = libraryNow.Add(dur)
-			got := delta.Next(face, libraryNow, review.Rating(r))
-			sameSchedule(t, fmt.Sprintf("%s of a card face answered %s ahead", r, dur), got, want)
+			reviewCard := ahead
+			reviewCard.Last = libraryNow.Add(dur)
+			got := delta.Next(reviewCard, libraryNow, review.Rating(r))
+			sameSchedule(t, fmt.Sprintf("%s of a review card answered %s ahead", r, dur), got, want)
 		}
 	}
 }
 
-// libraryWalked is every card face a walk of seven answers reaches, each answer
-// given a gap of its own after the answer already on the card face.
+// libraryWalked is every review card a walk of seven answers reaches, each answer
+// given a gap of its own after the answer already on the review card.
 //
 // The walk opens far enough back that its last answer still falls before the
-// instant these card faces are asked about, so every gap the library is handed
+// instant these review cards are asked about, so every gap the library is handed
 // runs forwards.
 func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	type step struct {
@@ -341,7 +341,7 @@ func libraryWalked(engine *fsrs.FSRS) []review.Schedule {
 	return out
 }
 
-// libraryWalkOpens is how long before the instant a card face is asked about a
+// libraryWalkOpens is how long before the instant a review card is asked about a
 // walk of seven answers opens. Every gap taken together is more than seven of
 // them, so no answer of the walk falls after that instant.
 var libraryWalkOpens = func() time.Duration {
@@ -352,7 +352,7 @@ var libraryWalkOpens = func() time.Duration {
 	return all
 }()
 
-// libraryMade is a grid of card faces standing where a walk does not reach: at
+// libraryMade is a grid of review cards standing where a walk does not reach: at
 // the stability a run of lapses wears a card down to and at the stability of a
 // card nothing shifts, at each end of the difficulty scale, and answered after
 // gaps from none to years.
@@ -361,7 +361,7 @@ func libraryMade() []review.Schedule {
 		0, 1e-6, review.LeastStability, 0.01, 0.1, 1, 2.5, 7, 20, 100, 1000, 36500, 1e6,
 	}
 	difficulties := []float64{0, 1, 1.5, 3.2, 5, 7.7, 10}
-	// A card face answered before the answer it already carries stands a
+	// A review card answered before the answer it already carries stands a
 	// negative number of days away, which a projection reaches: the material it
 	// opens on carries answers whose interval runs past the day it opens.
 	gaps := []time.Duration{
@@ -448,8 +448,8 @@ func asSchedule(c fsrs.Card) review.Schedule {
 	}
 }
 
-// describe is one card face, as much of it as names which card face it was.
+// describe is one review card, as much of it as names which review card it was.
 func describe(s review.Schedule) string {
-	return fmt.Sprintf("a card face in phase %d at stability %v difficulty %v answered %v",
+	return fmt.Sprintf("a review card in phase %d at stability %v difficulty %v answered %v",
 		s.Phase, s.Stability, s.Difficulty, s.Last)
 }

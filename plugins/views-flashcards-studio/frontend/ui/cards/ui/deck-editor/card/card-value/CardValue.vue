@@ -14,7 +14,7 @@ const props = withDefaults(
   defineProps<{
     /** The card the value belongs to, by its identifier. */
     card: string
-    /** The value, laid out against the stencil that cuts the card. */
+    /** The value, laid out against the card model that cuts the card. */
     value: PlacedFieldValue
     /** What the box is named by, which its label points at. */
     boxId: string
@@ -51,7 +51,7 @@ const onWrite = (text: string): void =>
       @write="onWrite"
     />
 
-    <!-- No stencil names a slot for this value, so what was written is read
+    <!-- No cardModel names a slot for this value, so what was written is read
          where it would be typed. -->
     <p v-else class="card__wrote" role="group" :aria-label="value.field" :data-wrote="value.field">
       {{ value.text }}
@@ -82,7 +82,7 @@ const onWrite = (text: string): void =>
   padding-inline: var(--box-pad-inline);
 }
 
-/* A value no stencil names is read where it would be typed, and keeps the
+/* A value no cardModel names is read where it would be typed, and keeps the
    breaks it was written with. */
 .card__wrote {
   padding-block: var(--box-air, 0.5rem);

@@ -52,8 +52,8 @@ const wire = vi.hoisted(() => {
     daysAsked: [] as { vault: string; from: string; to: string }[],
     presetsAsked: [] as unknown[],
     notesAsked: [] as unknown[],
-    answered: [] as { mark: string }[],
-    responses: [] as { mark: string }[],
+    answered: [] as { cardId: string }[],
+    responses: [] as { cardId: string }[],
     takenBack: [] as unknown[],
     scrolled: [] as boolean[],
     opened: { unwritten: [] as string[], skipped: 0 },
@@ -67,10 +67,10 @@ const VAULT = {
   id: 'roots',
   name: 'Roots',
   path: '/vaults/Roots',
-  faces: 2,
+  reviewCards: 2,
   due: 2,
   new: 0,
-  decks: [{ deck: 'decks/Suffixes.md', faces: 2, due: 2, new: 0, learned: 0, unbegun: 0 }],
+  decks: [{ deck: 'decks/Suffixes.md', reviewCards: 2, due: 2, new: 0, learned: 0, unbegun: 0 }],
   presets: [],
   unread: '',
   isIndexing: false,
@@ -142,8 +142,8 @@ vi.mock('../shared/clients', async (original) => ({
           {
             deck: 'decks/Suffixes.md',
             section: 'Suffixes',
-            mark: 'mark-1',
-            face: 'front',
+            cardId: 'mark-1',
+            template: 'front',
             heading: '-ness',
             front: '-ness',
             back: 'the state of being',
@@ -154,7 +154,7 @@ vi.mock('../shared/clients', async (original) => ({
         ...wire.opened,
       }
     },
-    answerCard: async (request: { mark: string }) => {
+    answerCard: async (request: { cardId: string }) => {
       wire.responses.push(request)
       return { answer: 'answer-1' }
     },
@@ -293,7 +293,7 @@ describe('a person who sat down and came back to the decks', () => {
     await settle()
 
     expect(review.on.value).toBe('session')
-    expect(review.session.state.card.value?.mark).toBe('mark-1')
+    expect(review.session.state.card.value?.cardId).toBe('mark-1')
     expect(review.decks.reviewDays.streak.value).toBe(4)
     expect(review.session.agentPanel.about.value).not.toBeNull()
     expect(review.session.notesPanel.notes.value).toHaveLength(1)
@@ -498,11 +498,11 @@ describe('the keys of the review', () => {
     expect((await press(review, ' ')).isKept).toBe(false)
 
     await press(review, '3')
-    expect(wire.responses).toMatchObject([{ mark: 'mark-1' }])
+    expect(wire.responses).toMatchObject([{ cardId: 'mark-1' }])
 
     await press(review, 'u')
     expect(wire.takenBack).toHaveLength(1)
-    expect(review.session.state.card.value?.mark).toBe('mark-1')
+    expect(review.session.state.card.value?.cardId).toBe('mark-1')
   })
 
   it('scroll nothing, and break nothing, while no reading is drawn', async () => {

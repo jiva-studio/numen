@@ -9,11 +9,11 @@ import { deserializeDeck, serializeCardToWire } from './serialize'
 
 /** A card as the window carries it, standing under the section given. */
 const createCard = (sectionIndex: number | null): VaultCard => ({
-  mark: 'a1',
+  cardId: 'a1',
   sectionIndex,
   heading: 'Entropy',
-  stencilLink: 'Word',
-  stencilPath: 'Word.md',
+  cardModelLink: 'Word',
+  cardModelPath: 'Word.md',
   preamble: 'a note',
   values: [{ field: 'Front', text: 'Entropy' }],
 })

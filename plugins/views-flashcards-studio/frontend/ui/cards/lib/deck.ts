@@ -1,6 +1,6 @@
 /**
  * What a deck is, as plain values: cards standing what a person typed in the
- * slots a stencil names, under the sections they stand in. What any of it means
+ * slots a card model names, under the sections they stand in. What any of it means
  * is the caller's. No DOM, no measurement, no clock.
  */
 
@@ -39,13 +39,13 @@ export interface DeckCard {
   /** The section it is placed under, and nothing for a card before the first. */
   readonly section: string | null
   /** What the card is cut by, as a word to show, and nothing where nothing cuts it. */
-  readonly stencil: string | null
+  readonly cardModel: string | null
   readonly filled: readonly FieldValue[]
 }
 
 /**
  * One section of a deck: a name, under an identity the caller minted for it. A
- * section carries no mark and its name need not be unique, so nothing the file
+ * section carries no card id and its name need not be unique, so nothing the file
  * holds tells one from another.
  */
 export interface DeckSection {
@@ -62,10 +62,10 @@ export interface CardWords {
   /** What is said of a card holding no value at all. */
   readonly nothing: string
   /**
-   * What is said of a card cut by a stencil that was not handed in, and of a
-   * card that names none, which the strip says in place of a stencil's name.
+   * What is said of a card cut by a card model that was not handed in, and of a
+   * card that names none, which the strip says in place of a card model's name.
    */
-  readonly unknown: (stencil: string | null) => string
+  readonly unknown: (cardModel: string | null) => string
   /** What a list of things wrong is called to a reader. */
   readonly wrong: string
 }
@@ -91,11 +91,12 @@ export const DECK_WORDS: DeckWords = {
   addSection: 'Add a section',
   remove: 'Remove',
   drag: 'Reorder',
-  cut: 'Stencil',
+  cut: 'Card model',
   cardStem: 'Card',
   sectionStem: 'Section',
   nothing: 'Nothing in it',
-  unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
+  unknown: (cardModel) =>
+    cardModel === null ? 'Cut by no card model' : `No card model called ${cardModel}`,
   sectionObjection: 'A section needs a name',
   wrong: 'What is wrong',
 }
@@ -120,16 +121,16 @@ export const NO_DECK_PROBLEMS: DeckProblems = Object.freeze({
   under: createSealedMap<string, Problems>(),
 })
 
-/** One value of a card, laid out under the stencil that cuts it. */
+/** One value of a card, laid out under the card model that cuts it. */
 export interface CardFieldValue extends FieldValue {
-  /** The stencil names this slot. */
+  /** The card model names this slot. */
   readonly isDeclared: boolean
 }
 
 /**
- * A card's values in the order the stencil asks for them, empty where the card
+ * A card's values in the order the card model asks for them, empty where the card
  * leaves a slot out, and a slot the card writes twice standing twice. A slot
- * the stencil names twice is one slot and appears once. The values the stencil
+ * the card model names twice is one slot and appears once. The values the card model
  * is empty for come after the rest, marked as named by nothing, and what
  * is drawn of them is the caller's.
  */
@@ -148,6 +149,6 @@ export function getCardFieldValues(
   return [...status, ...stray]
 }
 
-/** The empty values a stencil's slots make, for a card nobody has typed into. */
+/** The empty values a card model's slots make, for a card nobody has typed into. */
 export const getBlanks = (fields: readonly string[]): readonly FieldValue[] =>
   fields.map((field) => ({ field, text: '' }))

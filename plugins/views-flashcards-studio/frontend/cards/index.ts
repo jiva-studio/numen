@@ -1,4 +1,4 @@
-/** The decks and stencils a vault holds, and the schedule a deck is reviewed on. */
+/** The decks and card models a vault holds, and the schedule a deck is reviewed on. */
 export { cards } from './api/cards'
 export type {
   Cards,
@@ -6,13 +6,13 @@ export type {
   CardsFailure,
   FieldRenameResult,
   RenamedField,
-  StencilSummary,
+  CardModelSummary,
   Value,
   VaultCard,
   VaultDeck,
-  VaultFace,
+  VaultTemplate,
   VaultSection,
-  VaultStencil,
+  VaultCardModel,
 } from './api/cards'
 export { getFailureCode } from './lib/failures'
 export { generateId } from './lib/identity'

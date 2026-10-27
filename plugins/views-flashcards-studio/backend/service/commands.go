@@ -13,14 +13,14 @@ import (
 
 // The commands the manifest declares, and the argument each takes.
 const (
-	commandCreateDeck    = "create-deck"
-	commandCreateStencil = "create-stencil"
-	commandCreatePreset  = "create-preset"
-	argumentTitle        = "title"
+	commandCreateDeck      = "create-deck"
+	commandCreateCardModel = "create-card-model"
+	commandCreatePreset    = "create-preset"
+	argumentTitle          = "title"
 )
 
-// firstStencilField is the field a stencil made by its command declares, which the person renames.
-const firstStencilField = "Field 1"
+// firstCardModelField is the field a card model made by its command declares, which the person renames.
+const firstCardModelField = "Field 1"
 
 // Commands runs the commands the manifest declares.
 func (b *Backend) Commands() (*command.Registry, error) {
@@ -29,9 +29,9 @@ func (b *Backend) Commands() (*command.Registry, error) {
 		commandCreateDeck: func(ctx context.Context, v domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			return b.scenarios().cards.Create.Deck(ctx, v, in)
 		},
-		commandCreateStencil: func(ctx context.Context, v domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
-			in.Fields = []string{firstStencilField}
-			return b.scenarios().cards.Create.Stencil(ctx, v, in)
+		commandCreateCardModel: func(ctx context.Context, v domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
+			in.Fields = []string{firstCardModelField}
+			return b.scenarios().cards.Create.CardModel(ctx, v, in)
 		},
 		commandCreatePreset: func(ctx context.Context, v domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 			return b.scenarios().cards.Create.Preset(ctx, v, in)

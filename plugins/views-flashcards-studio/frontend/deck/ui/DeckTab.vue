@@ -19,7 +19,8 @@ import { WORDS as words } from '../../cards'
 const props = defineProps<{ state: DeckTabState }>()
 
 /* --------------------------------- State ---------------------------------- */
-const { choices, deckCards, marks, errorMessage, note, scheduled, sections, stencils } = props.state
+const { choices, deckCards, marks, errorMessage, note, scheduled, sections, cardModels } =
+  props.state
 
 /** Validation errors against cards as reported by deck marks. */
 const validationErrors = computed(() => ({ at: marks.value.at, ['under']: marks.value.bySection }))
@@ -29,8 +30,8 @@ function onChooseSchedule(path: string) {
   props.state.setSchedule(path)
 }
 
-function onAddCard(stencil: string, section: string | null) {
-  props.state.addCard(stencil, empty(stencil), section)
+function onAddCard(cardModel: string, section: string | null) {
+  props.state.addCard(cardModel, empty(cardModel), section)
 }
 
 function onRemoveCard(id: string) {
@@ -66,9 +67,11 @@ function onTake() {
 }
 
 /* -------------------------------- Helpers --------------------------------- */
-/** The untyped values a card cut by that stencil is made with. */
-function empty(stencil: string) {
-  return cardBlanks(cardFields(stencils.value.find((one) => one.name === stencil)?.fields ?? []))
+/** The untyped values a card cut by that card model is made with. */
+function empty(cardModel: string) {
+  return cardBlanks(
+    cardFields(cardModels.value.find((one) => one.name === cardModel)?.fields ?? []),
+  )
 }
 </script>
 
@@ -92,7 +95,7 @@ function empty(stencil: string) {
       class="deck-tab__grid"
       :cards="deckCards"
       :sections="sections"
-      :stencils="stencils"
+      :card-models="cardModels"
       :name="words.deck"
       :wrong="validationErrors"
       @add="onAddCard"

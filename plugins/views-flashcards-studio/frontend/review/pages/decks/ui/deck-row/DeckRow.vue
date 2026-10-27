@@ -57,7 +57,7 @@ const stoppedLabel = computed(() => {
 
 /**
  * How much of the deck stands learned, and empty where the share cannot be
- * said: a deck holding no card face is a share of nothing, and a deck whose
+ * said: a deck holding no review card is a share of nothing, and a deck whose
  * preset was not read has no rule to be counted by.
  */
 const share = computed(() => {
@@ -89,7 +89,7 @@ const share = computed(() => {
          says neither. -->
     <span v-if="paused" class="decks__stopped">{{ paused }}</span>
     <DueCount v-else-if="deck.due + deck.new > 0" :due="deck.due + deck.new" />
-    <template v-else-if="deck.faces > 0">
+    <template v-else-if="deck.reviewCards > 0">
       <span v-if="isDone" class="decks__met">Done today</span>
       <span v-else class="decks__stopped">{{ stoppedLabel }}</span>
     </template>

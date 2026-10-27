@@ -17,10 +17,10 @@ const { counted, started, waits } = vi.hoisted(() => ({
         id: 'physics',
         name: 'Physics',
         path: '/vaults/Physics',
-        faces: 2,
+        reviewCards: 2,
         due: 0,
         new: 0,
-        decks: [{ deck: 'decks/Heat.md', faces: 2, due: 0, new: 0, learned: 0, unbegun: 0 }],
+        decks: [{ deck: 'decks/Heat.md', reviewCards: 2, due: 0, new: 0, learned: 0, unbegun: 0 }],
         presets: [],
         unread: '',
         isIndexing: false,
@@ -29,12 +29,12 @@ const { counted, started, waits } = vi.hoisted(() => ({
         id: 'words',
         name: 'Words',
         path: '/vaults/Words',
-        faces: 4,
+        reviewCards: 4,
         due: 2,
         new: 0,
         decks: [
-          { deck: 'decks/Words.md', faces: 2, due: 2, new: 0, learned: 0, unbegun: 0 },
-          { deck: 'decks/Roots.md', faces: 2, due: 0, new: 0, learned: 0, unbegun: 0 },
+          { deck: 'decks/Words.md', reviewCards: 2, due: 2, new: 0, learned: 0, unbegun: 0 },
+          { deck: 'decks/Roots.md', reviewCards: 2, due: 0, new: 0, learned: 0, unbegun: 0 },
         ],
         presets: [],
         unread: '',
@@ -44,7 +44,7 @@ const { counted, started, waits } = vi.hoisted(() => ({
         id: 'gone',
         name: 'Gone',
         path: '/vaults/Gone',
-        faces: 0,
+        reviewCards: 0,
         due: 0,
         new: 0,
         decks: [],
@@ -156,7 +156,7 @@ describe('the review of a vault whose count is not in', () => {
 
 // The letter drawn on a row and the row itself are one act, so a row that
 // cannot be pressed is a letter that does nothing. A session opened over a deck
-// owing nothing is an empty session, and it mints marks in the vault to hold it.
+// owing nothing is an empty session, and it mints card ids in the vault to hold it.
 describe('a letter pressed on the decks', () => {
   it('opens review for target deck', async () => {
     const { state } = await mountReview('words')

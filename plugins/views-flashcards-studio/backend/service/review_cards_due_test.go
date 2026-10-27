@@ -47,7 +47,7 @@ func TestTheVaultsStandBeforeAnyOfThemIsCounted(t *testing.T) {
 		if one.GetId() != string(target[item].ID) || one.GetName() == "" || one.GetPath() == "" {
 			t.Errorf("the vault stands as %+v", one)
 		}
-		if one.GetFaces() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||
+		if one.GetReviewCards() != 0 || one.GetDue() != 0 || one.GetNew() != 0 ||
 			len(one.GetDecks()) != 0 || len(one.GetPresets()) != 0 || one.GetUnread() != "" {
 			t.Errorf("%s arrived counted: %+v", one.GetName(), one)
 		}
@@ -80,7 +80,7 @@ func TestEachVaultsCountArrivesOnItsOwn(t *testing.T) {
 			t.Errorf("the vaults were listed again: %+v", response.GetVaults())
 		}
 		one := response.GetCounted()
-		if one.GetFaces() != 1 || one.GetNew() != 1 {
+		if one.GetReviewCards() != 1 || one.GetNew() != 1 {
 			t.Errorf("%s comes to %+v", one.GetName(), one)
 		}
 		counts[one.GetId()]++
@@ -130,12 +130,12 @@ func TestTheDayTheCountsStandInIsTheReviewDay(t *testing.T) {
 // learned while it is likely to be recalled, and one naming no preset, which
 // counts by the defaults and their three weeks.
 var learnedDecks = map[string]string{
-	"Word.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+	"Word.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 	"Recall.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
 		"learned: retention\n---\n\n# Recall\n",
-	"decks/Near.md": newStencilDeck("Word", "Recall", 2, 5000),
-	"decks/Far.md":  newStencilDeck("Word", "", 2, 5100),
+	"decks/Near.md": newCardModelDeck("Word", "Recall", 2, 5000),
+	"decks/Far.md":  newCardModelDeck("Word", "", 2, 5100),
 }
 
 // The count carries how much of each deck stands learned, so the deck screen
@@ -156,7 +156,7 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 		reply[one.GetDeck()] = true
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: session.GetRun(),
-			Mark: one.GetMark(), Face: one.GetFace(),
+			CardId: one.GetCardId(), Template: one.GetTemplate(),
 			Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 5000,
 		})); err != nil {
 			t.Fatal(err)
@@ -166,8 +166,8 @@ func TestTheCountCarriesHowMuchOfADeckExistsLearned(t *testing.T) {
 
 	want := map[string]int32{"decks/Near.md": 1, "decks/Far.md": 0}
 	for _, one := range getVaultCount(t, api, v).GetDecks() {
-		if one.GetFaces() != 2 {
-			t.Errorf("%s has %d faces, want 2", one.GetDeck(), one.GetFaces())
+		if one.GetReviewCards() != 2 {
+			t.Errorf("%s has %d review cards, want 2", one.GetDeck(), one.GetReviewCards())
 		}
 		if one.GetLearned() != want[one.GetDeck()] {
 			t.Errorf("%s has %d learned, want %d",
@@ -271,7 +271,7 @@ func BenchmarkFrontDoor(b *testing.B) {
 	})
 }
 
-// benchDeck is one stencil of one face and cards cards, spread over twenty
+// benchDeck is one card model of one review card and cards cards, spread over twenty
 // decks the way a person's own vault spreads them.
 func benchDeck(cards int) map[string]string {
 	const decks = 20
@@ -292,7 +292,7 @@ func benchDeck(cards int) map[string]string {
 	return out
 }
 
-// benchMark is one card's mark, in the alphabet the application writes them in.
+// benchMark is one card's id, in the alphabet the application writes them in.
 func benchMark(n int) string {
 	const alphabet = "0123456789abcdefghjkmnpqrstvwxyz"
 	out := make([]byte, 10)
@@ -319,11 +319,11 @@ func benchAnswers(b *testing.B, api *API, v domain.Vault, cards, days, perDay in
 		}
 		for one := range perDay {
 			if err := run.Append(ctx, review.Answer{
-				ID:       fmt.Sprintf("%s%06d%010d", v.ID, day, one),
-				CardFace: review.CardFaceID{Card: benchMark(card % cards), Face: "Say it"},
-				At:       when.Add(time.Duration(one) * time.Minute),
-				Rating:   review.Rating(one%4 + 1),
-				Took:     4 * time.Second,
+				ID:         fmt.Sprintf("%s%06d%010d", v.ID, day, one),
+				ReviewCard: review.ReviewCardID{Card: benchMark(card % cards), Template: "Say it"},
+				At:         when.Add(time.Duration(one) * time.Minute),
+				Rating:     review.Rating(one%4 + 1),
+				Took:       4 * time.Second,
 			}); err != nil {
 				b.Fatal(err)
 			}

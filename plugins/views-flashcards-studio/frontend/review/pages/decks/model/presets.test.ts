@@ -48,7 +48,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   settings: settings(),
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 30,
+  reviewCards: 30,
   cards: 30,
   budget: budget(),
   closes: byMinutes,
@@ -88,12 +88,12 @@ const vault = (
   name: 'Vault',
   path: '/vaults/01A',
   isCounted: true,
-  faces: 0,
+  reviewCards: 0,
   due: 0,
   new: 0,
   decks: decks.map((one) => ({
     deck: one.deck,
-    faces: 0,
+    reviewCards: 0,
     due: one.due,
     new: one.new,
     learned: 0,
@@ -301,7 +301,7 @@ describe('what starting a session on a preset would ask', () => {
 describe('whether starting a session on a deck is offered', () => {
   const deck = (due: number, fresh = 0) => ({
     deck: 'decks/Words.md',
-    faces: 20,
+    reviewCards: 20,
     due,
     new: fresh,
     learned: 0,
@@ -584,7 +584,7 @@ describe('which preset schedules each deck', () => {
     )
 
     expect(one.presets.value).toHaveLength(1)
-    expect(one.presets.value[0]).toMatchObject({ path: 'Empty.md', named: 1, faces: 0 })
+    expect(one.presets.value[0]).toMatchObject({ path: 'Empty.md', named: 1, reviewCards: 0 })
   })
 
   it('names a preset the count could not name after its file', async () => {
@@ -796,7 +796,7 @@ const createFailingPresets = (
 }
 
 describe('what a preset read from its decks carries of the count', () => {
-  it('takes how many decks name it, its faces and its answers from the count', async () => {
+  it('takes how many decks name it, its review cards and its answers from the count', async () => {
     const one = useVaultPresets({
       presets: createPresets({
         'decks/Words.md': { path: 'Sanskrit.md', title: 'Sanskrit', settings: settings() },
@@ -822,7 +822,7 @@ describe('what a preset read from its decks carries of the count', () => {
 
     expect(one.presets.value[0]).toMatchObject({
       named: 3,
-      faces: 55,
+      reviewCards: 55,
       closes: byCounts,
       answeredNew: 4,
       answeredReviews: 9,
@@ -847,7 +847,7 @@ describe('what a preset read from its decks carries of the count', () => {
 
     expect(one.presets.value[0]).toMatchObject({
       named: 2,
-      faces: 0,
+      reviewCards: 0,
       closes: CLOSES_NOTHING,
       answeredNew: 0,
       answeredReviews: 0,

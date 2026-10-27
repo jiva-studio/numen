@@ -8,26 +8,26 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// A card face is shown on two surfaces and each lays it out for itself: this
+// A review card is shown on two surfaces and each lays it out for itself: this
 // package for the window a card is reviewed in, and modules/libs/ui/core for the
 // file, and neither owns it.
-const corpus = "../../../../libs/protocol/testdata/faces.json"
+const corpus = "../../../../libs/protocol/testdata/templates.json"
 
 // table is the corpus as it is written down: what it says of itself, and the
-// faces.
+// templates.
 type table struct {
 	Invariant string   `json:"invariant"`
 	Count     int      `json:"count"`
 	Changed   int      `json:"changed"`
-	Faces     []laying `json:"faces"`
+	Templates []laying `json:"templates"`
 }
 
-// laying is one face of the table: what it is called, the construct it pins,
+// laying is one template of the table: what it is called, the construct it pins,
 // and what a surface must lay it out as.
 type laying struct {
 	Name      string   `json:"name"`
 	Construct string   `json:"construct"`
-	Face      string   `json:"face"`
+	Template  string   `json:"template"`
 	Fields    []string `json:"fields"`
 	Values    []filled `json:"values"`
 	Laid      string   `json:"laid"`
@@ -38,49 +38,49 @@ type filled struct {
 	Text  string `json:"text"`
 }
 
-// A card face means the same thing on every surface it is shown on. Laying it
+// A review card means the same thing on every surface it is shown on. Laying it
 // out is the step each surface takes for itself; drawing what comes out is one
 // implementation both of them reach, so what is compared here is the text the
 // slots have been filled in, and text that agrees is drawn alike.
-func TestACardFaceMeansTheSameOnEverySurfaceItIsShownOn(t *testing.T) {
+func TestAReviewCardMeansTheSameOnEverySurfaceItIsShownOn(t *testing.T) {
 	read := corpusOf(t)
 
 	laid, changed := 0, 0
-	for _, one := range read.Faces {
+	for _, one := range read.Templates {
 		card := format.Card{Heading: "Llama"}
 		for _, value := range one.Values {
 			card.Values = append(card.Values, format.Value{Field: value.Field, Text: value.Text})
 		}
 
-		face := format.FaceTemplate{Name: one.Name, Front: one.Face, Back: one.Face}
-		front, back := format.Lay(face, card)
+		template := format.CardTemplate{Name: one.Name, Front: one.Template, Back: one.Template}
+		front, back := format.Lay(template, card)
 		laid++
-		if one.Laid != one.Face {
+		if one.Laid != one.Template {
 			changed++
 		}
 
 		if front != one.Laid {
-			t.Errorf("%s — %s\nthe face  %q\nlays out  %q\nthe table %q",
-				one.Name, one.Construct, one.Face, front, one.Laid)
+			t.Errorf("%s — %s\nthe template  %q\nlays out  %q\nthe table %q",
+				one.Name, one.Construct, one.Template, front, one.Laid)
 		}
 		if back != front {
-			t.Errorf("%s — %s: the two sides of one face lay out as %q and %q",
+			t.Errorf("%s — %s: the two sides of one template lay out as %q and %q",
 				one.Name, one.Construct, front, back)
 		}
 	}
 
 	if laid != read.Count {
-		t.Fatalf("the table declares %d faces and %d were laid out", read.Count, laid)
+		t.Fatalf("the table declares %d templates and %d were laid out", read.Count, laid)
 	}
 	if changed != read.Changed {
-		t.Fatalf("the table declares %d faces the slots change and %d of them differ from the face",
+		t.Fatalf("the table declares %d templates the slots change and %d of them differ from the template",
 			read.Changed, changed)
 	}
 }
 
 // corpusOf reads the table and refuses one that would pass without asking
-// anything: a file that is empty, that declares no faces, that says nothing of
-// what it is for, or that names one face twice.
+// anything: a file that is empty, that declares no templates, that says nothing of
+// what it is for, or that names one template twice.
 func corpusOf(t *testing.T) table {
 	t.Helper()
 
@@ -95,25 +95,25 @@ func corpusOf(t *testing.T) table {
 	if read.Invariant == "" {
 		t.Fatal("the table names no invariant")
 	}
-	if len(read.Faces) == 0 || read.Count == 0 || read.Changed == 0 {
-		t.Fatalf("the table holds %d faces and declares %d, %d of which the slots change",
-			len(read.Faces), read.Count, read.Changed)
+	if len(read.Templates) == 0 || read.Count == 0 || read.Changed == 0 {
+		t.Fatalf("the table holds %d templates and declares %d, %d of which the slots change",
+			len(read.Templates), read.Count, read.Changed)
 	}
 	observed := map[string]bool{}
-	for _, one := range read.Faces {
+	for _, one := range read.Templates {
 		if one.Name == "" || one.Construct == "" {
-			t.Fatalf("a face of the table is called %q and pins %q", one.Name, one.Construct)
+			t.Fatalf("a template of the table is called %q and pins %q", one.Name, one.Construct)
 		}
 		if observed[one.Name] {
-			t.Fatalf("two faces of the table are called %q", one.Name)
+			t.Fatalf("two templates of the table are called %q", one.Name)
 		}
 		observed[one.Name] = true
 	}
 	return read
 }
 
-func TestLayFillsAFaceWithACard(t *testing.T) {
-	face := format.FaceTemplate{
+func TestLayFillsATemplateWithACard(t *testing.T) {
+	template := format.CardTemplate{
 		Name:  "Recognise",
 		Front: `<img src="llama.jpg" alt="a llama">`,
 		Back:  "<b>{{Name}}</b> is {{Height}} and lives {{Life span}}.",
@@ -127,7 +127,7 @@ func TestLayFillsAFaceWithACard(t *testing.T) {
 		},
 	}
 
-	front, back := format.Lay(face, card)
+	front, back := format.Lay(template, card)
 	if front != `<img src="llama.jpg" alt="a llama">` {
 		t.Errorf("front = %q, want the markup around a placeholder untouched", front)
 	}
@@ -146,15 +146,15 @@ func TestTheFirstFieldLaysOutWhatTheCardContains(t *testing.T) {
 			{Field: "Height", Text: `45"`},
 		},
 	}
-	face := format.FaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}
+	template := format.CardTemplate{Front: "{{Name}}", Back: "{{Height}}"}
 
-	front, _ := format.Lay(face, card)
+	front, _ := format.Lay(template, card)
 	if front != "Llama, and everything the heading had no room for" {
 		t.Errorf("front = %q, want the field and not the heading", front)
 	}
 
 	// Which field stands first changes nothing about how one is laid out.
-	front, back := format.Lay(face, card)
+	front, back := format.Lay(template, card)
 	if front != "Llama, and everything the heading had no room for" || back != `45"` {
 		t.Errorf("front = %q, back = %q", front, back)
 	}
@@ -166,19 +166,19 @@ func TestACardWithNoFirstFieldLaysNothingOutForIt(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
 	front, _ := format.Lay(
-		format.FaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
+		format.CardTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
 	if front != "" {
 		t.Errorf("front = %q, want nothing", front)
 	}
 }
 
-// A field the card leaves out lays out as nothing, and so does one the stencil
+// A field the card leaves out lays out as nothing, and so does one the card model
 // never declared.
 func TestAPlaceholderWithNothingPriorItLaysOutAsNothing(t *testing.T) {
-	face := format.FaceTemplate{Front: "{{Name}}", Back: "[{{Height}}][{{Weight}}]"}
+	template := format.CardTemplate{Front: "{{Name}}", Back: "[{{Height}}][{{Weight}}]"}
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
-	front, back := format.Lay(face, card)
+	front, back := format.Lay(template, card)
 	if front != "" {
 		t.Errorf("front = %q, want nothing", front)
 	}
@@ -199,7 +199,7 @@ func TestAPlaceholderIsANameSavedExactly(t *testing.T) {
 		},
 	}
 
-	_, back := format.Lay(format.FaceTemplate{
+	_, back := format.Lay(format.CardTemplate{
 		Front: "{{Слово}}", Back: "{{Life span}} {{Жизнь}} {{ Height }} {{Слово}}",
 	}, card)
 	if want := "20 двадцать  "; back != want {
@@ -213,7 +213,7 @@ func TestBracesAreNotEscaped(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
 	_, back := format.Lay(
-		format.FaceTemplate{Front: "{{Name}}", Back: `\{{Height}} and {{{Height}}}`}, card)
+		format.CardTemplate{Front: "{{Name}}", Back: `\{{Height}} and {{{Height}}}`}, card)
 	if want := `\45" and {45"}`; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
@@ -226,18 +226,18 @@ func TestAValueOfSeveralLinesLaysOutWhole(t *testing.T) {
 	}}
 
 	_, back := format.Lay(
-		format.FaceTemplate{Front: "{{Name}}", Back: "<blockquote>{{Height}}</blockquote>"}, card)
+		format.CardTemplate{Front: "{{Name}}", Back: "<blockquote>{{Height}}</blockquote>"}, card)
 	if want := "<blockquote><h4>At the shoulder</h4>\n\nabout 45\"</blockquote>"; back != want {
 		t.Errorf("back = %q, want %q", back, want)
 	}
 }
 
-// A stencil declaring no field cuts nothing: every placeholder on it stands for
+// A card model declaring no field cuts nothing: every placeholder on it stands for
 // a field nobody declared.
-func TestAStencilOfNoFieldsLaysNothingOut(t *testing.T) {
+func TestACardModelOfNoFieldsLaysNothingOut(t *testing.T) {
 	card := format.Card{Heading: "Llama", Values: []format.Value{{Field: "Height", Text: `45"`}}}
 
-	front, back := format.Lay(format.FaceTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
+	front, back := format.Lay(format.CardTemplate{Front: "{{Name}}", Back: "{{Height}}"}, card)
 	if front != "" {
 		t.Errorf("front = %q, want nothing", front)
 	}
@@ -246,10 +246,10 @@ func TestAStencilOfNoFieldsLaysNothingOut(t *testing.T) {
 	}
 }
 
-// A face holding a front and no back lays out nothing at all.
-func TestAFaceWithNoBackLaysNothingOut(t *testing.T) {
+// A template holding a front and no back lays out nothing at all.
+func TestATemplateWithNoBackLaysNothingOut(t *testing.T) {
 	card := format.Card{Values: []format.Value{{Field: "Name", Text: "Llama"}}}
-	front, back := format.Lay(format.FaceTemplate{Name: "Recognise", Front: "{{Name}}"}, card)
+	front, back := format.Lay(format.CardTemplate{Name: "Recognise", Front: "{{Name}}"}, card)
 	if front != "" || back != "" {
 		t.Errorf("laid out %q and %q, want nothing", front, back)
 	}

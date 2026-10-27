@@ -1,5 +1,5 @@
 ---
-type: stencil
+type: card-model
 title: Animal
 fields:
   - Name
@@ -32,7 +32,7 @@ Which animal is {{Height}} at the shoulder and weighs {{Weight}}?
 
 {{Name}}
 
-## Half a face
+## Half a template
 
 ### Front
 

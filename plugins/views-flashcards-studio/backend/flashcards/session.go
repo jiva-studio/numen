@@ -25,9 +25,9 @@ type Scope struct {
 	IsNamed bool
 }
 
-// QueuedCardFace is a card face queued for review with its schedule and intervals.
-type QueuedCardFace struct {
-	CardFace
+// QueuedReviewCard is a review card queued for review with its schedule and intervals.
+type QueuedReviewCard struct {
+	ReviewCard
 	Schedule review.Schedule
 	// Ahead maps each rating to its resulting interval from now.
 	Ahead map[review.Rating]time.Duration
@@ -36,8 +36,8 @@ type QueuedCardFace struct {
 // SessionResult contains the queued cards and any unwritten decks or skipped log entries.
 type SessionResult struct {
 	// Queue is the list of cards to review in order.
-	Queue []QueuedCardFace
-	// Unwritten lists deck paths containing unmarked cards that could not be saved.
+	Queue []QueuedReviewCard
+	// Unwritten lists deck paths containing cards without an id that could not be saved.
 	Unwritten []string
 	// Skipped is the count of unparseable review log lines.
 	Skipped int
@@ -45,21 +45,21 @@ type SessionResult struct {
 
 // Session builds and orders the cards for a review session.
 type Session struct {
-	marks     MarkCards
-	cardFaces ListCardFaces
-	schedules Schedules
-	presets   Presets
-	day       review.Day
-	now       ports.Clock
+	cardIDs     AssignCardIDs
+	reviewCards ListReviewCards
+	schedules   Schedules
+	presets     Presets
+	day         review.Day
+	now         ports.Clock
 }
 
 // NewSession constructs a Session from its dependencies.
 func NewSession(
-	marks MarkCards, faces ListCardFaces, schedules Schedules, presets Presets,
+	cardIDs AssignCardIDs, reviewCards ListReviewCards, schedules Schedules, presets Presets,
 	day review.Day, now ports.Clock,
 ) Session {
 	return Session{
-		marks: marks, cardFaces: faces, schedules: schedules, presets: presets,
+		cardIDs: cardIDs, reviewCards: reviewCards, schedules: schedules, presets: presets,
 		day: day, now: now,
 	}
 }
@@ -83,11 +83,11 @@ func (u Session) Execute(
 	if scope.IsNamed && scope.Deck != "" {
 		return SessionResult{}, ErrBothNamed
 	}
-	marked, err := u.marks.Execute(ctx, v)
+	assigned, err := u.cardIDs.Execute(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	faces, err := u.cardFaces.Execute(ctx, v)
+	reviewCards, err := u.reviewCards.Execute(ctx, v)
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -97,7 +97,7 @@ func (u Session) Execute(
 		return SessionResult{}, err
 	}
 	reads := u.presets.OpenReads()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return SessionResult{}, err
 	}
@@ -105,13 +105,13 @@ func (u Session) Execute(
 
 	now := u.now()
 	day, err := getBudgets(
-		ctx, v, reads, u.day, faces, schedules, target,
+		ctx, v, reads, u.day, reviewCards, schedules, target,
 		u.schedules.scheduler, u.schedules.getScheduler, now,
 	)
 	if err != nil {
 		return SessionResult{}, err
 	}
-	holds := day.getAsking(faces, schedules, u.day, now, scope)
+	holds := day.getAsking(reviewCards, schedules, u.day, now, scope)
 	if scope.IsNamed && len(holds.owed)+len(holds.newCards) == 0 {
 		return SessionResult{}, day.getStopError(scope.Preset)
 	}
@@ -121,18 +121,18 @@ func (u Session) Execute(
 		dueTable.Add(s.Due)
 	}
 
-	out := SessionResult{Unwritten: marked.Unwritten, Skipped: target.Skipped}
-	out.Queue = make([]QueuedCardFace, 0, len(holds.owed)+len(holds.newCards))
+	out := SessionResult{Unwritten: assigned.Unwritten, Skipped: target.Skipped}
+	out.Queue = make([]QueuedReviewCard, 0, len(holds.owed)+len(holds.newCards))
 	for _, one := range holds.owed {
 		s := schedules[one.ID]
-		out.Queue = append(out.Queue, QueuedCardFace{
-			CardFace: one, Schedule: s, Ahead: getIntervals(asks.policy, dueTable, one.ID, s, now),
+		out.Queue = append(out.Queue, QueuedReviewCard{
+			ReviewCard: one, Schedule: s, Ahead: getIntervals(asks.policy, dueTable, one.ID, s, now),
 		})
 	}
 	for _, one := range holds.newCards {
-		out.Queue = append(out.Queue, QueuedCardFace{
-			CardFace: one,
-			Ahead:    getIntervals(asks.policy, dueTable, one.ID, review.Schedule{}, now),
+		out.Queue = append(out.Queue, QueuedReviewCard{
+			ReviewCard: one,
+			Ahead:      getIntervals(asks.policy, dueTable, one.ID, review.Schedule{}, now),
 		})
 	}
 	return out, nil
@@ -140,13 +140,13 @@ func (u Session) Execute(
 
 // getIntervals returns the duration until the next review for each rating.
 func getIntervals(
-	assign review.Assignment, dueTable *review.DueByDay, face review.CardFaceID,
+	assign review.Assignment, dueTable *review.DueByDay, reviewCard review.ReviewCardID,
 	s review.Schedule, now time.Time,
 ) map[review.Rating]time.Duration {
 	if assign == nil {
 		return nil
 	}
-	one := assign(face)
+	one := assign(reviewCard)
 	if one.By == nil {
 		return nil
 	}

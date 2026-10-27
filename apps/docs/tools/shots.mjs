@@ -44,7 +44,7 @@ export const SHOTS = [
   },
   { name: 'recognise', story: 'application-window--recognising', width: 1180, height: 740 },
   { name: 'deck', story: 'flashcards-deck--deck', width: 1180, height: 740 },
-  { name: 'stencil', story: 'flashcards-stencil--stencil', width: 1180, height: 740 },
+  { name: 'card-model', story: 'flashcards-card-model--card-model', width: 1180, height: 740 },
   { name: 'preset', story: 'window-preset--a-preset', width: 1180, height: 740 },
   // The window a person runs their cards in, which is not a wide window.
   { name: 'decks', story: 'flash-cards-window--cards-due', width: 760, height: 540 },

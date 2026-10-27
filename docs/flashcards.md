@@ -14,17 +14,17 @@ Choosing a vault ends the counting where it stands, and so does closing the wind
 
 ## What is asked
 
-A card is shown once through each face its stencil declares ([cards](cards.md)), and each face asks a different thing. **What is scheduled is a card face** — one card, and one face of the stencil that cuts it — and not a card. A stencil of two faces gives each of its cards two paths, and one may be due while the other is a week away.
+A card is shown once through each template its card model declares ([cards](cards.md)), and each template asks a different thing. **What is scheduled is a review card** — one card, and one template of the card model that cuts it — and not a card. A card model of two templates gives each of its cards two paths, and one may be due while the other is a week away.
 
-A card is asked under the mark it carries, so it is the same card after it is moved to another section, another deck or another vault. A face is asked under its name, which is its heading in the stencil, and renaming a face starts that face's schedule again.
+A card is asked under the card id it carries, so it is the same card after it is moved to another section, another deck or another vault. A template is asked under its name, which is its heading in the card model, and renaming a template starts that template's schedule again.
 
 ### What is not asked
 
-- A card whose wikilink names no stencil, or names a note that is not one. Nothing can lay it out. It is a problem against the deck, and the editor is where it is settled.
-- A face missing a front or a back, which lays out nothing.
+- A card whose wikilink names no card model, or names a note that is not one. Nothing can lay it out. It is a problem against the deck, and the editor is where it is settled.
+- A template missing a front or a back, which lays out nothing.
 - A deck that could not be read at all — over its bound, or frontmatter that does not parse. One unreadable file is not a reason to withhold the rest of a person's cards.
 
-A card whose first field is empty is asked like any other. Its heading is empty, and what it is shown through is the face, not the heading.
+A card whose first field is empty is asked like any other. Its heading is empty, and what it is shown through is the template, not the heading.
 
 ## What is due
 
@@ -61,7 +61,7 @@ A person hits the wrong key. Taking an answer back is a line of its own, naming 
 
 ## Asking about a card
 
-A person is on a card and wants to know more about it. Taking the card to the left brings in a panel where that card can be asked about; control and `a` do the same, and press them again — or escape — to send the panel away. The panel is there on either side of the card, before the answer is showing and after. The agent answers from this vault — the card, the stencil that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. It reads everything and writes cards alone, so an answer that turns out to be wrong is corrected where a person found it.
+A person is on a card and wants to know more about it. Taking the card to the left brings in a panel where that card can be asked about; control and `a` do the same, and press them again — or escape — to send the panel away. The panel is there on either side of the card, before the answer is showing and after. The agent answers from this vault — the card, the card model that cuts it, and the notes and sources the card points at — and names where each part of its answer came from. It reads everything and writes cards alone, so an answer that turns out to be wrong is corrected where a person found it.
 
 A conversation belongs to one card and ends with it. What the panel can reach, and what it cannot, is in [Agents](agents.md).
 
@@ -71,7 +71,7 @@ Taking the card the other way brings in what the deck is joined to; control and 
 
 What is in it is the vault's own graph: the notes the deck points at, which is every note its cards name, and the notes that point at the deck. They are read one under another, each under its title, and space scrolls them. A link written in a card opens the reading on the note it names.
 
-The links belong to the deck and not to one card, so the same notes stand behind every card of a deck. A name that resolves to nothing is shown as it is written and says so; a name several notes answer to is read as the nearest and says that too. An attachment, a book and a note in another vault are left out: there is nothing here to open them with. So is the stencil a card is cut by — every card names one, and it is how a card is laid out rather than what it was written from.
+The links belong to the deck and not to one card, so the same notes stand behind every card of a deck. A name that resolves to nothing is shown as it is written and says so; a name several notes answer to is read as the nearest and says that too. An attachment, a book and a note in another vault are left out: there is nothing here to open them with. So is the card model a card is cut by — every card names one, and it is how a card is laid out rather than what it was written from.
 
 A deck joined to a great many notes has the text of the first thirty read and the rest named, with a line saying how many.
 
@@ -85,9 +85,9 @@ One session writes one file and nothing ever appends to it again. The whole hist
 
 The answers are the vault's and travel with it. What is worked out from them — when each card comes round — is kept with the application, and deleting it costs a person the working out and nothing else.
 
-## Marks
+## Card ids
 
-A card typed by hand carries no mark until the application writes its file ([cards](cards.md)), and a card with no mark has nothing an answer could be recorded against.
+A card typed by hand carries no card id until the application writes its file ([cards](cards.md)), and a card with no card id has nothing an answer could be recorded against.
 
 **A vault is marked when a review session begins**, and never during count calculation. Decks containing unmarked cards are written once to assign unique card identifiers, and are reloaded before review begins. Due cards are counted from what is already marked, so opening the window writes to nothing: the vault they choose is the vault that is written to.
 
@@ -98,6 +98,6 @@ So a person who never opens the editor can still run their cards, and one write 
 | Problem                          | Against             | What it is                                                                                                                                                             |
 | -------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | a line that cannot be read       | the vault's answers | a run that stopped partway leaves a line no newline closed, and a line of a version this build does not know is one it will not act on. Both are counted and left out. |
-| a deck that could not be written | the deck            | a card in it carries no mark, and the file could not be given one. Its cards are left out of this session and asked for again at the next.                             |
+| a deck that could not be written | the deck            | a card in it carries no card id, and the file could not be given one. Its cards are left out of this session and asked for again at the next.                             |
 
-Everything else a review meets is already a problem against a deck or a stencil, and [cards](cards.md) is where it is listed.
+Everything else a review meets is already a problem against a deck or a card model, and [cards](cards.md) is where it is listed.

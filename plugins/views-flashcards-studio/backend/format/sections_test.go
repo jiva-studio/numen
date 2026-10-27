@@ -26,22 +26,22 @@ func TestAHashRunWithNoSpaceIsNotAHeading(t *testing.T) {
 
 // A wikilink standing on the first line under its card's heading is replaced
 // in place, and the heading above it stays.
-func TestSetStencilReplacesALinkOnTheLineBelowTheHeading(t *testing.T) {
+func TestSetCardModelReplacesALinkOnTheLineBelowTheHeading(t *testing.T) {
 	raw := "# Furry\n\n## Llama ^k7m2xq9fzp\n[[Animal]]\n\n### Name\n\nLlama\n"
 	f := OpenDeckBody(raw)
-	if err := f.SetStencil("k7m2xq9fzp", "Beast"); err != nil {
-		t.Fatalf("set the stencil: %v", err)
+	if err := f.SetCardModel("k7m2xq9fzp", "Beast"); err != nil {
+		t.Fatalf("set the card model: %v", err)
 	}
 	if want := strings.Replace(raw, "[[Animal]]", "[[Beast]]", 1); f.Body() != want {
 		t.Errorf("body = %q, want %q", f.Body(), want)
 	}
 }
 
-// A problem about a card names the card and no face.
+// A problem about a card names the card and no template.
 func TestOnCardFilesAProblemAgainstOneCard(t *testing.T) {
-	got := OnCard(3, FaultTwoMarks, "detail")
+	got := OnCard(3, FaultDuplicateCardID, "detail")
 	want := Problem{
-		Fault: FaultTwoMarks, Card: 3, Face: NoPosition, Detail: "detail",
+		Fault: FaultDuplicateCardID, Card: 3, Template: NoPosition, Detail: "detail",
 	}
 	if got != want {
 		t.Errorf("problem = %+v, want %+v", got, want)

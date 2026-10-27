@@ -4,14 +4,14 @@ import type { AgentPort } from '@numen/plugin-sdk'
 
 import { useAgentPanel } from './panel'
 import { WORDS as words } from '../lib/agentWords'
-import type { CardFace } from '../../../entities/card'
+import type { ReviewCard } from '../../../entities/card'
 
 /** A card as the session hands one over. */
-const card = (more: Partial<CardFace> = {}): CardFace => ({
+const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   deck: 'decks/Words.md',
   section: '',
-  mark: '3f4g5h6j7k',
-  face: 'Say it',
+  cardId: '3f4g5h6j7k',
+  template: 'Say it',
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
@@ -32,16 +32,16 @@ const createAgent = (): AgentPort => ({
  */
 const panel = (
   more: {
-    card?: CardFace | null
+    card?: ReviewCard | null
     unreachable?: string
     showing?: 'reading' | 'here' | 'asking'
   } = {},
 ) => {
-  const on = ref<CardFace | null>(more.card === undefined ? card() : more.card)
+  const on = ref<ReviewCard | null>(more.card === undefined ? card() : more.card)
   const showing = ref<'reading' | 'here' | 'asking'>(more.showing ?? 'here')
   const notices: string[] = []
   /** The cards a port was made for, one to a conversation. */
-  const about: CardFace[] = []
+  const about: ReviewCard[] = []
   const ports: AgentPort[] = []
   const target = useAgentPanel({
     agent: (one) => {
@@ -74,7 +74,7 @@ describe('the panel coming in', () => {
     const { held } = panel()
     held.openPanel()
     expect(held.open.value).toBe(true)
-    expect(held.about.value?.mark).toBe('3f4g5h6j7k')
+    expect(held.about.value?.cardId).toBe('3f4g5h6j7k')
   })
 
   // A gesture that does nothing is a gesture a person repeats.
@@ -163,11 +163,11 @@ describe('the context of the conversation about a card', () => {
     const first = held.context.value
 
     held.endConversation()
-    on.value = card({ mark: 'zpqrstvwxy' })
+    on.value = card({ cardId: 'zpqrstvwxy' })
     held.openPanel()
 
     expect(held.context.value).not.toBe(first)
-    expect(about.map((one) => one.mark)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
+    expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 })
 
@@ -184,27 +184,27 @@ describe('the panel requested for again', () => {
     expect(held.context.value).toBe(context)
   })
 
-  // A card is its mark and its face together: the same note asked the other way
+  // A review card is its card id and its template together: the same note asked the other way
   // round is another card.
-  it('makes a conversation of its own for another card with the same face', () => {
+  it('makes a conversation of its own for another card with the same review card', () => {
     const { held, about, on } = panel()
     held.openPanel()
     const first = held.context.value
 
-    on.value = card({ mark: 'zpqrstvwxy' })
+    on.value = card({ cardId: 'zpqrstvwxy' })
     held.openPanel()
 
     expect(held.context.value).not.toBe(first)
-    expect(about.map((one) => one.mark)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
+    expect(about.map((one) => one.cardId)).toEqual(['3f4g5h6j7k', 'zpqrstvwxy'])
   })
 
-  it('makes a conversation of its own for the other face of the same card', () => {
+  it('makes a conversation of its own for the other review card of the same card', () => {
     const { held, about, on } = panel()
     held.openPanel()
 
-    on.value = card({ face: 'Name it' })
+    on.value = card({ template: 'Name it' })
     held.openPanel()
 
-    expect(about.map((one) => one.face)).toEqual(['Say it', 'Name it'])
+    expect(about.map((one) => one.template)).toEqual(['Say it', 'Name it'])
   })
 })

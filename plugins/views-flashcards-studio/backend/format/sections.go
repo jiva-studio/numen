@@ -24,9 +24,9 @@ type section struct {
 // is an example of one, and a heading of any other level is text under the
 // section it falls in.
 //
-// The levels are given because a deck and a stencil spend different ones: a
-// first-level heading opens a section of a deck, and the same line on a face is
-// text the face lays out.
+// The levels are given because a deck and a card model spend different ones: a
+// first-level heading opens a section of a deck, and the same line on a template is
+// text the template lays out.
 func sections(body []byte, first, last int) []section {
 	var out []section
 	var f markdown.Fence

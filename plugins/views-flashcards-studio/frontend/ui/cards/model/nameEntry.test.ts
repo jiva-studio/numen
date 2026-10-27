@@ -20,11 +20,11 @@ const overFields = (fields: readonly string[]) => {
   return { naming, renamed: renamedPairs }
 }
 
-const overFaces = (faces: ReadonlyMap<string, string>) => {
+const overTemplates = (templates: ReadonlyMap<string, string>) => {
   const renamedPairs: (readonly [string, string])[] = []
   const naming = useNameEntry<HeadingObjection>({
-    getName: (id) => faces.get(id) ?? '',
-    getTakenNames: (id) => [...faces].filter(([each]) => each !== id).map(([, name]) => name),
+    getName: (id) => templates.get(id) ?? '',
+    getTakenNames: (id) => [...templates].filter(([each]) => each !== id).map(([, name]) => name),
     checkName: checkHeadingName,
     rename: (id, name) => {
       renamedPairs.push([id, name])
@@ -115,16 +115,16 @@ describe('useNameEntry', () => {
     expect(renamed).toEqual([])
   })
 
-  it('takes a brace in a face’s name, which remains in a heading', () => {
-    const { naming, renamed } = overFaces(new Map([['one', 'One']]))
+  it('takes a brace in a template’s name, which remains in a heading', () => {
+    const { naming, renamed } = overTemplates(new Map([['one', 'One']]))
     naming.setDraft('one', 'What {{Name}} is')
     expect(naming.getObjection('one')).toBeNull()
     naming.commit('one')
     expect(renamed).toEqual([['one', 'What {{Name}} is']])
   })
 
-  it('measures a face’s name against the names the other faces carry', () => {
-    const { naming, renamed } = overFaces(
+  it('measures a template’s name against the names the other templates carry', () => {
+    const { naming, renamed } = overTemplates(
       new Map([
         ['one', 'One'],
         ['two', 'Two'],

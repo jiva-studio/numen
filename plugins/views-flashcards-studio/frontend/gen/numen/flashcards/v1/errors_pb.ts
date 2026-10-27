@@ -9,12 +9,12 @@ import { enumDesc, fileDesc } from "@bufbuild/protobuf/codegenv2";
  * Describes the file numen/flashcards/v1/errors.proto.
  */
 export const file_numen_flashcards_v1_errors: GenFile = /*@__PURE__*/
-  fileDesc("CiBudW1lbi9mbGFzaGNhcmRzL3YxL2Vycm9ycy5wcm90bxITbnVtZW4uZmxhc2hjYXJkcy52MSqHAwoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIcChhFUlJPUl9DT0RFX05PVF9BX1NURU5DSUwQCRIZChVFUlJPUl9DT0RFX05PVF9BX0RFQ0sQChIdChlFUlJPUl9DT0RFX0RFQ0tfVE9PX0xBUkdFEAsSGwoXRVJST1JfQ09ERV9OT1RfQV9QUkVTRVQQDBIUChBFUlJPUl9DT0RFX1NUQUxFEA1CY1phZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3ZpZXdzLWZsYXNoY2FyZHMtc3R1ZGlvL2dlbi9udW1lbi9mbGFzaGNhcmRzL3YxO2ZsYXNoY2FyZHN2MWIGcHJvdG8z");
+  fileDesc("CiBudW1lbi9mbGFzaGNhcmRzL3YxL2Vycm9ycy5wcm90bxITbnVtZW4uZmxhc2hjYXJkcy52MSqKAwoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEhcKE0VSUk9SX0NPREVfT0NDVVBJRUQQBxIZChVFUlJPUl9DT0RFX1VOTkFNRUFCTEUQCBIfChtFUlJPUl9DT0RFX05PVF9BX0NBUkRfTU9ERUwQCRIZChVFUlJPUl9DT0RFX05PVF9BX0RFQ0sQChIdChlFUlJPUl9DT0RFX0RFQ0tfVE9PX0xBUkdFEAsSGwoXRVJST1JfQ09ERV9OT1RfQV9QUkVTRVQQDBIUChBFUlJPUl9DT0RFX1NUQUxFEA1CY1phZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3ZpZXdzLWZsYXNoY2FyZHMtc3R1ZGlvL2dlbi9udW1lbi9mbGFzaGNhcmRzL3YxO2ZsYXNoY2FyZHN2MWIGcHJvdG8z");
 
 /**
- * ErrorCode is what a call over the stencils, decks and presets of a vault
+ * ErrorCode is what a call over the card models, decks and presets of a vault
  * failed on. The codes of a note read and written are numbered as the shared
- * numen.v1.ErrorCode numbers them; the codes of a stencil, a deck and a preset
+ * numen.v1.ErrorCode numbers them; the codes of a card model, a deck and a preset
  * are this plugin's own.
  *
  * @generated from enum numen.flashcards.v1.ErrorCode
@@ -83,11 +83,11 @@ export enum ErrorCode {
   UNNAMEABLE = 8,
 
   /**
-   * The note at the path is not a stencil, and a stencil was asked for.
+   * The note at the path is not a card model, and a card model was asked for.
    *
-   * @generated from enum value: ERROR_CODE_NOT_A_STENCIL = 9;
+   * @generated from enum value: ERROR_CODE_NOT_A_CARD_MODEL = 9;
    */
-  NOT_A_STENCIL = 9,
+  NOT_A_CARD_MODEL = 9,
 
   /**
    * The note at the path is not a deck, and a deck was asked for.

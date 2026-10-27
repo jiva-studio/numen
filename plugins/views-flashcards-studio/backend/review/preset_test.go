@@ -68,7 +68,7 @@ func TestZeroIsAPauseBelowTheGoalThatNamesIt(t *testing.T) {
 	}
 }
 
-// A card face is learned on one side of its rule's threshold and not on the
+// A review card is learned on one side of its rule's threshold and not on the
 // other, and the rule the preset does not name takes no part.
 func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 	now := time.Date(2026, 3, 2, 9, 41, 0, 0, time.UTC)
@@ -98,12 +98,12 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		}
 	}
 	if p.IsLearned(review.Schedule{}, now) {
-		t.Error("unanswered card face marked as learned")
+		t.Error("unanswered review card marked as learned")
 	}
 
 	p.Rule = review.RuleRetention
 
-	// The same two card faces, under the other rule: what is asked now is the
+	// The same two review cards, under the other rule: what is asked now is the
 	// chance of recalling them today, and the intervals take no part.
 	if p.IsLearned(schedule(200, 21, 10), now) {
 		t.Error("a card 200 days past an answer at a stability of 10 is recalled nine times in ten")
@@ -112,19 +112,19 @@ func TestEachRuleOnEitherSideOfItsThreshold(t *testing.T) {
 		t.Error("a card answered today is not recalled nine times in ten")
 	}
 	if p.IsLearned(review.Schedule{}, now) {
-		t.Error("unanswered card face marked as learned")
+		t.Error("unanswered review card marked as learned")
 	}
 }
 
 // A preset naming no rule counts by the default rule at its default value.
 //
 // A key nobody wrote leaves the default in force. It never leaves a threshold
-// every card face passes: a preset that says nothing about what counts as
+// every review card passes: a preset that says nothing about what counts as
 // learned counts nothing learned that three weeks away would not.
 func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	now := time.Date(2026, 8, 31, 9, 0, 0, 0, time.UTC)
 	last := now.AddDate(0, 0, -1)
-	// A card face first seen yesterday and put off by sixteen days, and one put
+	// A review card first seen yesterday and put off by sixteen days, and one put
 	// off by twenty-one.
 	targetSchedule := review.Schedule{Last: last, Due: last.AddDate(0, 0, 16), Reps: 1, Stability: 16}
 	far := review.Schedule{Last: last, Due: last.AddDate(0, 0, 21), Reps: 1, Stability: 21}
@@ -133,16 +133,16 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	// no rule at all.
 	var response review.Preset
 	if response.IsLearned(targetSchedule, now) {
-		t.Error("a card face sixteen days off is learned under a preset naming no rule")
+		t.Error("a review card sixteen days off is learned under a preset naming no rule")
 	}
 	if !response.IsLearned(far, now) {
-		t.Error("a card face twenty-one days off is not learned at the default interval")
+		t.Error("a review card twenty-one days off is not learned at the default interval")
 	}
 
 	// A rule named with no value under it reads the default value too.
 	named := review.Preset{Rule: review.RuleInterval}
 	if named.IsLearned(targetSchedule, now) {
-		t.Error("a card face sixteen days off is learned under an interval nobody wrote")
+		t.Error("a review card sixteen days off is learned under an interval nobody wrote")
 	}
 
 	// And the other rule, whose value nobody wrote, holds cards to the default
@@ -152,10 +152,10 @@ func TestAPresetNamingNoRuleCountsByTheDefault(t *testing.T) {
 	}
 	chance := review.Preset{Rule: review.RuleRetention}
 	if chance.IsLearned(faded, now) {
-		t.Error("a card face two hundred days past its answer is recalled nine times in ten")
+		t.Error("a review card two hundred days past its answer is recalled nine times in ten")
 	}
 	if !chance.IsLearned(targetSchedule, now) {
-		t.Error("a card face answered yesterday is not recalled nine times in ten")
+		t.Error("a review card answered yesterday is not recalled nine times in ten")
 	}
 }
 
@@ -542,7 +542,7 @@ func TestTheBacklogShareIsReadFromTheFile(t *testing.T) {
 }
 
 // What counts as learned is read from the file, and a preset saying nothing
-// learns a card face by the interval it is sent away for.
+// learns a review card by the interval it is sent away for.
 func TestWhatCountsAsLearnedIsReadFromTheFile(t *testing.T) {
 	for content, want := range map[string]review.LearnedRule{
 		"":                     review.RuleInterval,
@@ -670,7 +670,7 @@ func TestRetentionGoesAsFarAsTheCorpusReturns(t *testing.T) {
 // lastAnswer is the instant the schedules below were last answered at.
 var lastAnswer = time.Date(2026, 3, 2, 9, 0, 0, 0, time.UTC)
 
-// whereItStands generates where the answers so far have left one card face: how
+// whereItStands generates where the answers so far have left one review card: how
 // long it is sent away for, and how long the scheduler expects it to stay
 // and carries a day it is wanted on like any other: what says nobody has
 // answered it is that it was never answered, and not that nothing is set on it.
@@ -703,7 +703,7 @@ func ruleNamed(t *rapid.T) review.Preset {
 }
 
 // preset says and whenever it is asked.
-func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
+func TestAReviewCardNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 	t.Parallel()
 	rapid.Check(t, func(t *rapid.T) {
 		p := ruleNamed(t)
@@ -711,7 +711,7 @@ func TestACardFaceNobodyHasAnsweredIsLearnedByNeitherRule(t *testing.T) {
 		s.Last = time.Time{}
 		pos := lastAnswer.Add(time.Duration(rapid.IntRange(-1000, 1000).Draw(t, "days")) * 24 * time.Hour)
 		if p.IsLearned(s, pos) {
-			t.Fatalf("a card face unanswered counts learned under %+v "+
+			t.Fatalf("a review card unanswered counts learned under %+v "+
 				"at %v, standing at %+v", p, pos, s)
 		}
 	})
@@ -746,7 +746,7 @@ func TestAValueTheRuleCannotHoldCountsByTheDefault(t *testing.T) {
 	})
 }
 
-// Under a rule of an interval a card face is learned once it is sent away for
+// Under a rule of an interval a review card is learned once it is sent away for
 // the preset's interval or longer, so the further away it is sent the more
 // presets count it learned: a card learned under one interval is learned under
 // every shorter one.
@@ -765,13 +765,13 @@ func TestALongerIntervalIsLearnedByEveryShorterOne(t *testing.T) {
 			return review.Preset{Rule: review.RuleInterval, Interval: days}
 		}
 		if delta(long).IsLearned(s, pos) && !delta(short).IsLearned(s, pos) {
-			t.Fatalf("a card face sent away %v counts learned at an interval of "+
+			t.Fatalf("a review card sent away %v counts learned at an interval of "+
 				"%d days and not at one of %d", s.Due.Sub(s.Last), long, short)
 		}
 	})
 }
 
-// Under a rule of retention, learned is where the card face stands now and not
+// Under a rule of retention, learned is where the review card stands now and not
 // a milestone it passed: the chance of recalling it only falls as the days go
 // by, so a card counted learned on a later day was counted learned on every
 // earlier one, and a lapse that collapses its stability takes it out of that
@@ -795,14 +795,14 @@ func TestRecallIsAStateAndNotAMilestone(t *testing.T) {
 			return lastAnswer.Add(time.Duration(days) * 24 * time.Hour)
 		}
 		if p.IsLearned(s, day(late)) && !p.IsLearned(s, day(soon)) {
-			t.Fatalf("a card face at a stability of %v counts learned %d days "+
+			t.Fatalf("a review card at a stability of %v counts learned %d days "+
 				"out and not %d days out", s.Stability, late, soon)
 		}
 
 		lapsed := s
 		lapsed.Stability = 0
 		if p.IsLearned(lapsed, day(soon)) {
-			t.Fatalf("a card face nothing is known about counts learned at %v", p.Retention)
+			t.Fatalf("a review card nothing is known about counts learned at %v", p.Retention)
 		}
 	})
 }

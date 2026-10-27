@@ -69,7 +69,7 @@ type FlashcardsServiceClient interface {
 	// StartSession initializes a review session and returns ordered cards to review.
 	// Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
-	// AnswerCard records an answer rating and review latency for a card face.
+	// AnswerCard records an answer rating and review latency for a review card.
 	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
 	// TakeBackAnswer appends an undo entry for a previously recorded answer.
 	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)
@@ -206,7 +206,7 @@ type FlashcardsServiceHandler interface {
 	// StartSession initializes a review session and returns ordered cards to review.
 	// Accepts a deck path, a preset note path, or targets all decks in the vault when neither is specified.
 	StartSession(context.Context, *connect.Request[v1.StartSessionRequest]) (*connect.Response[v1.StartSessionResponse], error)
-	// AnswerCard records an answer rating and review latency for a card face.
+	// AnswerCard records an answer rating and review latency for a review card.
 	AnswerCard(context.Context, *connect.Request[v1.AnswerCardRequest]) (*connect.Response[v1.AnswerCardResponse], error)
 	// TakeBackAnswer appends an undo entry for a previously recorded answer.
 	TakeBackAnswer(context.Context, *connect.Request[v1.TakeBackAnswerRequest]) (*connect.Response[v1.TakeBackAnswerResponse], error)

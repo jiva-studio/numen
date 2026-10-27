@@ -11,17 +11,17 @@ import Card from './Card.vue'
 import { DECK_CONTEXT } from '../../../model/context'
 import type { DeckCard } from '../../../lib/deck'
 import { getGrid, type Tile } from '../../../lib/grid'
-import type { Stencil } from '../../../lib/card'
+import type { CardModel } from '../../../lib/card'
 
 interface Corpus {
   readonly card: DeckCard
-  readonly cut: Stencil | null
+  readonly cut: CardModel | null
   /** What the vault reading the file found wrong with this card. */
   readonly wrong?: readonly string[]
   readonly wrongUnder?: Readonly<Record<string, readonly string[]>>
 }
 
-const ANIMAL: Stencil = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
+const ANIMAL: CardModel = { name: 'Animal', fields: ['Name', 'Height', 'Weight', 'Life span'] }
 
 const UNBROKEN = 'supercalifragilisticexpialidociousandthensomemoreofitwithnothingtobreakatanywhere'
 
@@ -31,7 +31,7 @@ const CORPORA = {
     card: {
       id: 'k7m2xq9fzp',
       section: null,
-      stencil: 'Animal',
+      cardModel: 'Animal',
       filled: [
         { field: 'Name', text: 'Llama' },
         { field: 'Height', text: 'about 45" *at the shoulder*' },
@@ -44,7 +44,7 @@ const CORPORA = {
     card: {
       id: 'c5n8q2wxjb',
       section: null,
-      stencil: 'Basic',
+      cardModel: 'Basic',
       filled: [
         { field: 'Question', text: 'What is compost?' },
         {
@@ -61,7 +61,7 @@ const CORPORA = {
     card: {
       id: 'r2t7y5k9wq',
       section: null,
-      stencil: 'Basic',
+      cardModel: 'Basic',
       filled: [
         {
           field: 'Question',
@@ -77,7 +77,7 @@ const CORPORA = {
     card: {
       id: 'j2b6t8n4vw',
       section: null,
-      stencil: 'Слово',
+      cardModel: 'Слово',
       filled: [
         { field: 'Слово', text: 'Компост' },
         { field: 'Перевод', text: 'compost, перепревшие листья и трава' },
@@ -88,16 +88,16 @@ const CORPORA = {
   /* A card whose every value is the empty string. */
   'no text at all': {
     cut: ANIMAL,
-    card: { id: 'b8k4n2vqz6', section: null, stencil: 'Animal', filled: [] },
+    card: { id: 'b8k4n2vqz6', section: null, cardModel: 'Animal', filled: [] },
   },
-  /* A card naming a stencil the vault does not hold: nothing says what its
+  /* A card naming a card model the vault does not hold: nothing says what its
      boxes are, so it draws none and keeps what it holds in the file. */
-  'no stencil': {
+  'no card model': {
     cut: null,
     card: {
       id: 'm3t9w5rj1x',
       section: null,
-      stencil: 'Gone',
+      cardModel: 'Gone',
       filled: [{ field: 'Whatever it had', text: 'still here, still readable' }],
     },
   },
@@ -108,13 +108,13 @@ const CORPORA = {
     card: {
       id: 'w4h7p2ctm9',
       section: null,
-      stencil: null,
+      cardModel: null,
       filled: [
         { field: 'Question', text: 'What did I mean to put here?' },
         { field: 'Answer', text: 'A note about compost,\nand no card at all.' },
       ],
     },
-    wrong: ['the first paragraph of this card is not a lone wikilink, so it names no stencil'],
+    wrong: ['the first paragraph of this card is not a lone wikilink, so it names no card model'],
   },
   /* A card writing one field twice. Both values are kept where a person can see
      them and take one out. */
@@ -123,7 +123,7 @@ const CORPORA = {
     card: {
       id: 'd6q2z8hn4v',
       section: null,
-      stencil: 'Animal',
+      cardModel: 'Animal',
       filled: [
         { field: 'Name', text: 'Llama' },
         { field: 'Name', text: 'Alpaca' },
@@ -139,7 +139,7 @@ const CORPORA = {
     card: {
       id: 'y1v5b9kt3n',
       section: null,
-      stencil: 'Basic',
+      cardModel: 'Basic',
       filled: [
         { field: 'Question', text: 'A card from somebody else' },
         {
@@ -156,10 +156,10 @@ const CORPORA = {
 
 type Corpora = keyof typeof CORPORA
 
-/** The one card of a corpus, laid out against the stencil that cuts it. */
+/** The one card of a corpus, laid out against the card model that cuts it. */
 const createTile = (corpus: Corpus): Tile => {
   const cardGrid = getGrid(
-    { cards: [corpus.card], sections: [], stencils: corpus.cut ? [corpus.cut] : [] },
+    { cards: [corpus.card], sections: [], cardModels: corpus.cut ? [corpus.cut] : [] },
     null,
   ).runs[0]?.tiles[0]
   if (!cardGrid) throw new Error('a corpus holding no card')
@@ -257,7 +257,7 @@ const found = (canvas: HTMLElement, selector: string): HTMLElement => {
 }
 
 /**
- * A card cut by a stencil of four fields, holding two of them.
+ * A card cut by a card model of four fields, holding two of them.
  *
  * A value is the room under the rule that names it: the name relies on the
  * line, the box begins where the line ends, and nothing is drawn around it.
@@ -373,15 +373,15 @@ export const AwkwardText: Story = { args: { corpus: 'awkward text' } }
 /** A card whose every value is the empty string. */
 export const NoTextAtAll: Story = { args: { corpus: 'no text at all' } }
 
-/** A card naming a stencil the vault does not hold. */
-export const NoStencil: Story = {
-  args: { corpus: 'no stencil' },
+/** A card naming a card model the vault does not hold. */
+export const NoCardModel: Story = {
+  args: { corpus: 'no card model' },
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="m3t9w5rj1x"]')
 
     // Nothing says what its boxes are, so it draws none and says what it asked
     // for.
-    expect(tile.textContent).toContain('No stencil called Gone')
+    expect(tile.textContent).toContain('No card model called Gone')
     expect(tile.querySelectorAll('textarea')).toHaveLength(0)
 
     // the body keeps, in from the tile's own stroke.
@@ -404,7 +404,7 @@ export const NoStencil: Story = {
  * A card whose first paragraph is not a lone wikilink.
  *
  * That nothing cut it is a plain fact and stands quietly on the strip, where
- * the name of a stencil relies on every other card. What the vault holds
+ * the name of a card model relies on every other card. What the vault holds
  * against the card is said once, and what the card holds is read where it
  * would be typed.
  */
@@ -413,9 +413,9 @@ export const CutByNothing: Story = {
   play: async ({ canvasElement }) => {
     const tile = found(canvasElement, '[data-card="w4h7p2ctm9"]')
 
-    // The strip carries it, in the voice it names a stencil in.
+    // The strip carries it, in the voice it names a card model in.
     const cutElement = found(canvasElement, '[data-cut-of]')
-    expect(cutElement.textContent?.trim()).toBe('Cut by no stencil')
+    expect(cutElement.textContent?.trim()).toBe('Cut by no card model')
     const label = found(canvasElement, '.card__field')
     expect(getComputedStyle(cutElement).color).toBe(getComputedStyle(label).color)
 

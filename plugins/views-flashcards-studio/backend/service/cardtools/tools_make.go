@@ -32,39 +32,39 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 	})
 }
 
-type stencilCreateInput struct {
-	Title  string   `json:"title" jsonschema:"what the stencil is called"`
-	Fields []string `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
-	Faces  []Face   `json:"faces" jsonschema:"the ways a card cut by this stencil is shown"`
-	Folder string   `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
+type cardModelCreateInput struct {
+	Title     string         `json:"title" jsonschema:"what the card model is called"`
+	Fields    []string       `json:"fields" jsonschema:"the names of the fields, in the order a person is asked for them; a card's heading is read from the first"`
+	Templates []CardTemplate `json:"templates" jsonschema:"the ways a card cut by this card model is shown"`
+	Folder    string         `json:"folder,omitempty" jsonschema:"where to file it, relative to the vault folder; the root by default"`
 }
 
-func (t *Tools) addCardStencilCreate(registry *tools.Registry) error {
+func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
-		Name:  "card_stencil_create",
-		Title: "Create a stencil",
-		Description: "Make a stencil: the fields a card is asked for, in the order to ask " +
-			"for them, and the faces one is shown through. A face is HTML with " +
+		Name:  "card_model_create",
+		Title: "Create a card model",
+		Description: "Make a card model: the fields a card is asked for, in the order to ask " +
+			"for them, and the templates one is shown through. A template is HTML with " +
 			"`{{Field}}` standing where a value goes, and every name in braces must be " +
 			"one of the fields. A card's heading is read from the first field, so there " +
 			"is at least one; it holds as many lines as a person writes, and the " +
-			"heading is its first line. The stencil is filed under its title, and the " +
-			"name a card's wikilink writes is that filename, which `card_stencil_list` " +
+			"heading is its first line. The card model is filed under its title, and the " +
+			"name a card's wikilink writes is that filename, which `card_model_list` " +
 			"gives under `name`.",
 		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
-	}, func(ctx context.Context, in stencilCreateInput) (cards.CreateNoteResult, error) {
+	}, func(ctx context.Context, in cardModelCreateInput) (cards.CreateNoteResult, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
 			return cards.CreateNoteResult{}, err
 		}
-		return t.cards.Create.Stencil(ctx, v, cards.New{
-			Title: in.Title, Path: in.Folder, Fields: in.Fields, Faces: newFaceTemplates(in.Faces),
+		return t.cards.Create.CardModel(ctx, v, cards.New{
+			Title: in.Title, Path: in.Folder, Fields: in.Fields, Templates: newCardTemplates(in.Templates),
 		})
 	})
 }
 
 type fieldRenameInput struct {
-	Path string `json:"path" jsonschema:"the stencil that declares the field"`
+	Path string `json:"path" jsonschema:"the card model that declares the field"`
 	From string `json:"from" jsonschema:"the field's name now"`
 	To   string `json:"to" jsonschema:"what it is called from now on"`
 }
@@ -79,12 +79,12 @@ func (t *Tools) addCardFieldRename(registry *tools.Registry) error {
 	return tools.Add(registry, tools.Spec{
 		Name:  "card_field_rename",
 		Title: "Rename a field",
-		Description: "Give one of a stencil's fields a different name, everywhere it is " +
-			"written. A field's name stands in the stencil that declares it and as a " +
-			"heading in every card of every deck that stencil cuts, so renaming it in " +
+		Description: "Give one of a card model's fields a different name, everywhere it is " +
+			"written. A field's name stands in the card model that declares it and as a " +
+			"heading in every card of every deck that card model cuts, so renaming it in " +
 			"one place alone leaves values under a heading nothing declares. This " +
 			"rewrites them all and leaves what stands under each heading as it was. " +
-			"Every field a stencil declares stands under its own heading in every card, " +
+			"Every field a card model declares stands under its own heading in every card, " +
 			"the first included, so renaming any of them reaches the decks. A " +
 			"deck it could not be written to comes back under `notWritten` and keeps the " +
 			"old heading. Every deck of the vault is read for this, so a vault holding " +
@@ -99,7 +99,7 @@ func (t *Tools) renameCardField(ctx context.Context, in fieldRenameInput) (field
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}
-	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{Stencil: in.Path, From: in.From, To: in.To})
+	renamed, err := t.cards.BoundedRenameField.Execute(ctx, v, cards.Rename{CardModel: in.Path, From: in.From, To: in.To})
 	if err != nil {
 		return fieldRenameOutput{}, err
 	}

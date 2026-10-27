@@ -117,8 +117,8 @@ func goldenDays(days int) []int {
 // writeProjection puts one projection down, every scalar and every series of
 // it.
 func writeProjection(out *strings.Builder, p projection.Projection) {
-	fmt.Fprintf(out, "days %d faces %d seen %d owed %d clears %d learned %d learns %d short %d\n",
-		p.Days, p.Faces, p.Seen, p.Owed, p.Clears, p.Learned, p.Learns, p.Short)
+	fmt.Fprintf(out, "days %d cards %d seen %d owed %d clears %d learned %d learns %d short %d\n",
+		p.Days, p.ReviewCards, p.Seen, p.Owed, p.Clears, p.Learned, p.Learns, p.Short)
 	fmt.Fprintf(out, "answered %d reviews %.6f minutes %.6f admits %d\n",
 		p.Answered, p.ReviewsADay, p.MinutesADay, p.CountAdmitted())
 	fmt.Fprintf(out, "load %s\n", numbers(p.Load))
@@ -196,7 +196,7 @@ func formatShares(one []float64) string {
 // goldenMaterial is one vault a projection is drawn over.
 type goldenMaterial struct {
 	name       string
-	schedules  map[review.CardFaceID]review.Schedule
+	schedules  map[review.ReviewCardID]review.Schedule
 	unreviewed int
 }
 
@@ -222,9 +222,9 @@ func goldenMaterials(delta review.Scheduler) []goldenMaterial {
 // which is a state a vault does not hold: a due day is worked out forward from
 // the instant of an answer. It stands here as a stress case, and the figures
 // written down under "a large debt" are not a picture of anybody's vault.
-func goldenAt(delta review.Scheduler, faces, overdue int) map[review.CardFaceID]review.Schedule {
-	out := make(map[review.CardFaceID]review.Schedule, faces)
-	for i := range faces {
+func goldenAt(delta review.Scheduler, reviewCards, overdue int) map[review.ReviewCardID]review.Schedule {
+	out := make(map[review.ReviewCardID]review.Schedule, reviewCards)
+	for i := range reviewCards {
 		c := review.Schedule{}
 		when := goldenNow.AddDate(0, 0, -90+i%17)
 		for step := range 1 + i%6 {
@@ -239,11 +239,11 @@ func goldenAt(delta review.Scheduler, faces, overdue int) map[review.CardFaceID]
 			when = c.Due
 		}
 		if i < overdue {
-			// A card face whose day has come and gone, by more days the further
+			// A review card whose day has come and gone, by more days the further
 			// down the material it stands.
 			c.Due = goldenNow.AddDate(0, 0, -1-i%30)
 		}
-		out[review.CardFaceID{Card: fmt.Sprintf("card%06d", i), Face: "Recognise"}] = c
+		out[review.ReviewCardID{Card: fmt.Sprintf("card%06d", i), Template: "Recognise"}] = c
 	}
 	return out
 }

@@ -9,7 +9,7 @@ import { nextTick } from 'vue'
 import { createMockAgentHost } from '@numen/plugin-sdk/testing'
 
 import { usePanels } from './usePanels'
-import type { CardFace } from '../entities/card'
+import type { ReviewCard } from '../entities/card'
 
 vi.mock('../shared/clients', async (original) => ({
   ...(await original<typeof import('../shared/clients')>()),
@@ -19,11 +19,11 @@ vi.mock('../shared/clients', async (original) => ({
 }))
 
 /** A card as the session hands one over. */
-const card = (more: Partial<CardFace> = {}): CardFace => ({
+const card = (more: Partial<ReviewCard> = {}): ReviewCard => ({
   deck: 'decks/Words.md',
   section: '',
-  mark: '3f4g5h6j7k',
-  face: 'Say it',
+  cardId: '3f4g5h6j7k',
+  template: 'Say it',
   heading: 'Leaf mould',
   front: 'Leaf mould',
   back: 'Compost made of fallen leaves alone',
@@ -32,7 +32,7 @@ const card = (more: Partial<CardFace> = {}): CardFace => ({
   ...more,
 })
 
-const panels = (more: { card?: CardFace | null; unreachable?: string } = {}) => {
+const panels = (more: { card?: ReviewCard | null; unreachable?: string } = {}) => {
   const notices: string[] = []
   const agent = createMockAgentHost()
   const target = usePanels({
@@ -134,7 +134,7 @@ describe('the window', () => {
 
     moveTo('after')
     expect(showing.value).toBe('asking')
-    expect(agentPanel.about.value?.mark).toBe('3f4g5h6j7k')
+    expect(agentPanel.about.value?.cardId).toBe('3f4g5h6j7k')
 
     moveTo('here')
     expect(showing.value).toBe('here')
@@ -176,7 +176,7 @@ describe('a question about the card', () => {
     expect(agent.getQueries()[0]?.context).toEqual({
       'md.numen.views.flashcards.studio/deck': 'decks/Words.md',
       'md.numen.views.flashcards.studio/card': '3f4g5h6j7k',
-      'md.numen.views.flashcards.studio/face': 'Say it',
+      'md.numen.views.flashcards.studio/template': 'Say it',
     })
   })
 })

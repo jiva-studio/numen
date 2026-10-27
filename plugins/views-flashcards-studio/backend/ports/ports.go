@@ -69,8 +69,8 @@ type NoteQueries interface {
 	GetTypes(ctx context.Context, vaultID domain.VaultID, paths []string) (map[string]domain.NoteType, error)
 	// GetPathsOfType lists the notes of a type, by path.
 	GetPathsOfType(ctx context.Context, vaultID domain.VaultID, noteType domain.NoteType) ([]string, error)
-	// GetStencils lists the stencils of the vault, by path.
-	GetStencils(ctx context.Context, vaultID domain.VaultID) ([]Stencil, error)
+	// GetCardModels lists the card models of the vault, by path.
+	GetCardModels(ctx context.Context, vaultID domain.VaultID) ([]CardModel, error)
 	// GetNamedPaths lists the notes filed under a name.
 	GetNamedPaths(ctx context.Context, vaultID domain.VaultID, name string) ([]string, error)
 	// Has says whether the index carries the vault.
@@ -127,9 +127,9 @@ type ScheduleAlgorithm interface {
 	CreateScheduler(retention float64) review.Scheduler
 }
 
-// Stencil is one stencil as a caller choosing between them sees it: where the file is, and what it is
+// CardModel is one card model as a caller choosing between them sees it: where the file is, and what it is
 // called.
-type Stencil struct {
+type CardModel struct {
 	Path  string
 	Title string
 }

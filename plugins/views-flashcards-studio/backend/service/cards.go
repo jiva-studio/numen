@@ -15,56 +15,56 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/service/cardwire"
 )
 
-// cardsHandler answers about the decks and stencils a vault is arranged into.
+// cardsHandler answers about the decks and card models a vault is arranged into.
 type cardsHandler struct {
 	*Backend
 }
 
-// ListStencils is every stencil the vault holds, by what it is called and what
+// ListCardModels is every card model the vault holds, by what it is called and what
 // it asks for. A vault holding more than one answer carries is answered with as
 // many as it carries, and told how many it holds.
-func (h *cardsHandler) ListStencils(
-	ctx context.Context, r *connect.Request[flashcardsv1.ListStencilsRequest],
-) (*connect.Response[flashcardsv1.ListStencilsResponse], error) {
+func (h *cardsHandler) ListCardModels(
+	ctx context.Context, r *connect.Request[flashcardsv1.ListCardModelsRequest],
+) (*connect.Response[flashcardsv1.ListCardModelsResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	target, count, err := h.scenarios().cards.List.Execute(ctx, showing, getStencilLimit(r.Msg.GetLimit()))
+	target, count, err := h.scenarios().cards.List.Execute(ctx, showing, getCardModelLimit(r.Msg.GetLimit()))
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInternal, err)
 	}
 
-	out := &flashcardsv1.ListStencilsResponse{Total: int32(count)}
-	out.Stencils = make([]*flashcardsv1.StencilSummary, 0, len(target))
-	for _, stencil := range target {
-		out.Stencils = append(out.Stencils, cardwire.NewWireSummary(stencil))
+	out := &flashcardsv1.ListCardModelsResponse{Total: int32(count)}
+	out.CardModels = make([]*flashcardsv1.CardModelSummary, 0, len(target))
+	for _, cardModel := range target {
+		out.CardModels = append(out.CardModels, cardwire.NewWireSummary(cardModel))
 	}
 	return connect.NewResponse(out), nil
 }
 
-// getStencilLimit is how many stencils one answer carries. Nothing asked for takes the
+// getCardModelLimit is how many card models one answer carries. Nothing asked for takes the
 // ceiling, and so does more than the ceiling.
-func getStencilLimit(limit int32) int {
-	if limit <= 0 || limit > cardwire.MaxStencils {
-		return cardwire.MaxStencils
+func getCardModelLimit(limit int32) int {
+	if limit <= 0 || limit > cardwire.MaxCardModels {
+		return cardwire.MaxCardModels
 	}
 	return int(limit)
 }
 
-// CreateStencil puts a stencil declaring these fields in the vault, showing no
-// face.
-func (h *cardsHandler) CreateStencil(
-	ctx context.Context, r *connect.Request[flashcardsv1.CreateStencilRequest],
-) (*connect.Response[flashcardsv1.CreateStencilResponse], error) {
+// CreateCardModel puts a card model declaring these fields in the vault, showing no
+// template.
+func (h *cardsHandler) CreateCardModel(
+	ctx context.Context, r *connect.Request[flashcardsv1.CreateCardModelRequest],
+) (*connect.Response[flashcardsv1.CreateCardModelResponse], error) {
 	made, code, unlevelled, err := h.createCardNote(ctx, func(showing domain.Vault, in cards.New) (cards.CreateNoteResult, error) {
 		in.Fields = r.Msg.GetFields()
-		return h.scenarios().cards.Create.Stencil(ctx, showing, in)
+		return h.scenarios().cards.Create.CardModel(ctx, showing, in)
 	}, r.Msg.GetTitle(), r.Msg.GetPath())
 	if err != nil {
 		return nil, err
 	}
-	return connect.NewResponse(&flashcardsv1.CreateStencilResponse{
+	return connect.NewResponse(&flashcardsv1.CreateCardModelResponse{
 		Path: made.Path, Error: code, IsUnlevelled: unlevelled,
 	}), nil
 }
@@ -84,7 +84,7 @@ func (h *cardsHandler) CreateDeck(
 	}), nil
 }
 
-// createCardNote is what making a deck and making a stencil have in common: the vault
+// createCardNote is what making a deck and making a card model have in common: the vault
 // being shown, the window's hold on writing, and the error codes a file that
 // could not be made comes back as.
 func (b *Backend) createCardNote(
@@ -110,27 +110,27 @@ func (b *Backend) createCardNote(
 	return cards.CreateNoteResult{}, &reason, false, nil
 }
 
-// RenameStencilField gives one of a stencil's fields a different name, in the
-// stencil and in every card of every deck that stencil cuts. A stencil still
+// RenameCardModelField gives one of a card model's fields a different name, in the
+// card model and in every card of every deck that card model cuts. A card model still
 // holding what the client read is written; one holding something else is left
-// alone and the client is told the stencil changed.
-func (h *cardsHandler) RenameStencilField(
-	ctx context.Context, r *connect.Request[flashcardsv1.RenameStencilFieldRequest],
-) (*connect.Response[flashcardsv1.RenameStencilFieldResponse], error) {
+// alone and the client is told the card model changed.
+func (h *cardsHandler) RenameCardModelField(
+	ctx context.Context, r *connect.Request[flashcardsv1.RenameCardModelFieldRequest],
+) (*connect.Response[flashcardsv1.RenameCardModelFieldResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
 	renamed, err := h.scenarios().cards.RenameField.Execute(ctx, showing, cards.Rename{
-		Stencil: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
+		CardModel: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
 		Fingerprint: readFingerprint(r.Msg.GetBaseline()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		out := cardwire.NewRenameResponse(renamed, writeFingerprint(renamed.Stencil))
+		out := cardwire.NewRenameResponse(renamed, writeFingerprint(renamed.CardModel))
 		out.IsUnlevelled = isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
-	// The name a rename is given is the client's: one the stencil does not
+	// The name a rename is given is the client's: one the card model does not
 	// declare, and one it already declares, are both a name to correct.
 	if errors.Is(err, format.ErrNoSuchField) || errors.Is(err, format.ErrFieldTaken) {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
@@ -139,31 +139,31 @@ func (h *cardsHandler) RenameStencilField(
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&flashcardsv1.RenameStencilFieldResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.RenameCardModelFieldResponse{Error: &reason}), nil
 }
 
-// ReadStencil is the fields and the faces of one stencil.
-func (h *cardsHandler) ReadStencil(
-	ctx context.Context, r *connect.Request[flashcardsv1.ReadStencilRequest],
-) (*connect.Response[flashcardsv1.ReadStencilResponse], error) {
+// ReadCardModel is the fields and the templates of one card model.
+func (h *cardsHandler) ReadCardModel(
+	ctx context.Context, r *connect.Request[flashcardsv1.ReadCardModelRequest],
+) (*connect.Response[flashcardsv1.ReadCardModelResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	found, err := h.scenarios().cards.Read.Stencil(ctx, showing, r.Msg.GetPath())
+	found, err := h.scenarios().cards.Read.CardModel(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getCode(err), err)
 	}
 
-	out := &flashcardsv1.ReadStencilResponse{}
-	if code, ok := errorCodeOfStencil(found.Outcome, found.Type); ok {
+	out := &flashcardsv1.ReadCardModelResponse{}
+	if code, ok := errorCodeOfCardModel(found.Outcome, found.Type); ok {
 		out.Error = &code
 		return connect.NewResponse(out), nil
 	}
 	title := h.getTitle(ctx, showing, found.Path)
-	out.Stencil = cardwire.NewWireStencil(found.Path, title, found.Body)
+	out.CardModel = cardwire.NewWireCardModel(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
-	// when it writes the stencil back.
+	// when it writes the card model back.
 	out.At = writeFingerprint(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -192,7 +192,7 @@ func (h *cardsHandler) ReadDeck(
 		return connect.NewResponse(out), nil
 	}
 	title := h.getTitle(ctx, showing, found.Path)
-	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.Stencils)
+	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.CardModels)
 	out.At = writeFingerprint(found.Fingerprint)
 	return connect.NewResponse(out), nil
 }
@@ -234,29 +234,29 @@ func (h *cardsHandler) WriteDeck(
 	return connect.NewResponse(&flashcardsv1.WriteDeckResponse{Error: &reason}), nil
 }
 
-// WriteStencil puts fields and faces into a stencil. A stencil still holding
+// WriteCardModel puts fields and templates into a card model. A card model still holding
 // what the client read is written over; one holding something else is left
-// alone and the client is told the stencil changed.
-func (h *cardsHandler) WriteStencil(
-	ctx context.Context, r *connect.Request[flashcardsv1.WriteStencilRequest],
-) (*connect.Response[flashcardsv1.WriteStencilResponse], error) {
+// alone and the client is told the card model changed.
+func (h *cardsHandler) WriteCardModel(
+	ctx context.Context, r *connect.Request[flashcardsv1.WriteCardModelRequest],
+) (*connect.Response[flashcardsv1.WriteCardModelResponse], error) {
 	showing, err := h.getCurrentVault(ctx)
 	if err != nil {
 		return nil, err
 	}
-	body, err := format.StencilBody(
-		r.Msg.GetPreamble(), cardwire.NewFaces(r.Msg.GetFaces()), r.Msg.GetTail())
+	body, err := format.CardModelBody(
+		r.Msg.GetPreamble(), cardwire.NewTemplates(r.Msg.GetTemplates()), r.Msg.GetTail())
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().cards.Write.Stencil(
+	pos, err := h.scenarios().cards.Write.CardModel(
 		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), readFingerprint(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
 	// handed the fingerprint it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
-		return connect.NewResponse(&flashcardsv1.WriteStencilResponse{
+		return connect.NewResponse(&flashcardsv1.WriteCardModelResponse{
 			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
@@ -264,7 +264,7 @@ func (h *cardsHandler) WriteStencil(
 	if !ok {
 		return nil, connect.NewError(getCode(err), err)
 	}
-	return connect.NewResponse(&flashcardsv1.WriteStencilResponse{Error: &reason}), nil
+	return connect.NewResponse(&flashcardsv1.WriteCardModelResponse{Error: &reason}), nil
 }
 
 // errorCodeOfDeck is why a deck was not read. What holds for a note holds here,
@@ -279,10 +279,10 @@ func errorCodeOfDeck(o note.ReadOutcome, is domain.NoteType) (flashcardsv1.Error
 	return convertOutcomeToErrorCode(o)
 }
 
-// errorCodeOfStencil is why a stencil was not read.
-func errorCodeOfStencil(o note.ReadOutcome, is domain.NoteType) (flashcardsv1.ErrorCode, bool) {
-	if o == note.Ok && is != format.TypeStencil {
-		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_STENCIL, true
+// errorCodeOfCardModel is why a card model was not read.
+func errorCodeOfCardModel(o note.ReadOutcome, is domain.NoteType) (flashcardsv1.ErrorCode, bool) {
+	if o == note.Ok && is != format.TypeCardModel {
+		return flashcardsv1.ErrorCode_ERROR_CODE_NOT_A_CARD_MODEL, true
 	}
 	return convertOutcomeToErrorCode(o)
 }

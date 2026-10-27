@@ -14,11 +14,11 @@ export {
   applyReadHeadings,
   applyScreenIds,
   createDeckCards,
-  findStencilPath,
+  findCardModelPath,
   areDecksEqual,
   areOffersEqual,
   createDeckSections,
-  createStencilChoices,
+  createCardModelChoices,
 } from './view'
 export { addCard, dropCard, replaceCardValue, removeCard } from './cards'
 export { addSection, removeSection, renameSection } from './sections'

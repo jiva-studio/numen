@@ -79,7 +79,7 @@ describe('canDropField', () => {
     expect(canDropField([], 'Height', null)).toBe(false)
   })
 
-  it('does not move the one field a stencil names', () => {
+  it('does not move the one field a card model names', () => {
     expect(canDropField(['Only'], 'Only', null)).toBe(false)
   })
 })

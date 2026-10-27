@@ -61,7 +61,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
     ).toBeVisible()
   })
 
-  test('adds new blank card to deck via stencil selector', async ({ page }) => {
+  test('adds new blank card to deck via card model selector', async ({ page }) => {
     await page.goto('/')
 
     await expect(page.locator('text=Ready')).toBeVisible()
@@ -86,7 +86,7 @@ test.describe('Deck Management and Scheduling Interactions', () => {
     await expect(addCardBtn).toBeVisible({ timeout: 5_000 })
     await addCardBtn.click()
 
-    // Choose first stencil
+    // Choose first card model
     const cutOption = page.locator('[data-cut]').first()
     await expect(cutOption).toBeVisible({ timeout: 5_000 })
     await cutOption.click()

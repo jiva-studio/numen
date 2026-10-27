@@ -862,7 +862,7 @@ This is a name a person pays per card answered and per run file read. A history 
 
 ## What a window asks of one vault
 
-Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkVault` in `usecase/flashcards`. The vault is generated: fifty thousand card faces over twenty decks, answered a hundred and fifty times a day for six months — 27 000 answers in 180 run files.
+Recorded 2026-09-01 and re-measured 2026-09-06 on the same AMD Ryzen 7 6800U, from `BenchmarkVault` in `usecase/flashcards`. The vault is generated: fifty thousand review cards over twenty decks, answered a hundred and fifty times a day for six months — 27 000 answers in 180 run files.
 
 Each row is one request through its use case. The first three are warm, which is a person's second question of an evening: the schedule cache and the day counts are filled before the clock starts. The fourth is the history screen on a build that keeps no counting, which is what the first question of a launch pays.
 
@@ -891,15 +891,15 @@ What was counted, per warm request:
 
 A session and the history screen each recomputed the entire log and recorded the total, regardless of cache state; both now query the cache first. The history screen read the log twice — once for previous days and once for upcoming days — and now reads it once and forwards the data.
 
-**A loaded log is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each card face, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `SpentUnder` and `Faced` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
+**A loaded log is put in order once.** De-duplicating the log and sorting it by when is what every question of a history begins with, and four of them were each doing it: where the answers leave each review card, how much came back, what a day spent, and how long an answer takes. A reading now carries that order, worked out at the first asking. Two of the four read it. The other two are `SpentUnder` and `GetReviewed` in `usecase/flashcards/budget.go` and `usecase/flashcards/curve.go`, and `Costed` and `CostedUnder` in `flashcards/review/cost.go`, which still put the answers in order for themselves; each is a one-line change to the reading's order, and 27 000 answers sorted is what each of them costs.
 
-**Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and stencil files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
+**Nothing is shared between two requests.** Opening the window and then one preset tab walks the whole vault twice and reads the whole log twice: what a vault holds is read from its deck and card model files at every request, and so are its answers. That is most of what the table above measures and none of what it changed.
 
 By profile, during initial overview on this vault: **57 % of the request is `ListCardFaces.Execute`** — every deck read and parsed, most of it in the markdown parser — and 7 % is reading the log. Working out the day's budgets is 8 %, of which the cost of an answer is 4 %. What a memo for the life of a window would take off a second request is those first two.
 
 ## The curve of one preset
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkPresetCurve` in `usecase/flashcards`. The vault is the one above — fifty thousand card faces over twenty decks, 27 000 answers in 180 run files — with its decks pointing at two presets: one deck points at the first and the other nineteen at the second. Each row is the curve of one of those presets, drawn under a goal of minutes, with the schedule cache filled before the clock starts: opening the window and then a preset tab.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkPresetCurve` in `usecase/flashcards`. The vault is the one above — fifty thousand review cards over twenty decks, 27 000 answers in 180 run files — with its decks pointing at two presets: one deck points at the first and the other nineteen at the second. Each row is the curve of one of those presets, drawn under a goal of minutes, with the schedule cache filled before the clock starts: opening the window and then a preset tab.
 
 | | Before | After |
 | --- | --- | --- |
@@ -910,17 +910,17 @@ Both columns are the median of two runs of three. The memory column is the one t
 
 **A curve reads the decks pointing at its preset.** The index answers what points at one note, so a preset of one deck opens one deck file and the other nineteen are never read. The second row is the same request where there is nothing to leave out — nineteen decks of twenty — and it stands here as what the first is read against.
 
-**What the projection costs operates on the card faces the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and it is what the section below takes off.
+**What the projection costs operates on the review cards the preset holds.** Twenty-five places of the grid, each of them a run of the scheduler, and a second run at each place for the day the material is learned. It is the whole of the second row and most of the first, and it is what the section below takes off.
 
-**A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault is set to, and a curve holds the card faces of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
+**A curve does not ask the schedule cache.** That cache is filed under the assignment a whole vault is set to, and a curve holds the review cards of one preset, so the answers are replayed for the faces it is drawn over. Reading the log is on this path in any case: what an answer costs and what the day has already spent are read from the answers themselves, cache or no cache.
 
 **The curve of the defaults reads every deck.** Nothing points at a preset that exists in no note, so which decks name none is a question only the deck files answer, and that one curve incurs the cost of the initial overview.
 
 ## What a curve costs as the preset grows
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`. Twenty decks with every one of them pointing at one preset, so the curve is drawn over the whole vault; the log grows with the vault at about half an answer a card face, in 180 run files. The schedule cache is filled before the clock starts.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`. Twenty decks with every one of them pointing at one preset, so the curve is drawn over the whole vault; the log grows with the vault at about half an answer a review card, in 180 run files. The schedule cache is filled before the clock starts.
 
-| card faces | Before | After |
+| review cards | Before | After |
 | --- | --- | --- |
 | 500 | 0.42 s · 158 MB | 0.31 s · 145 MB |
 | 5 000 | 3.90 s · 1.43 GB | 2.67 s · 1.29 GB |
@@ -929,30 +929,30 @@ Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in
 
 Both columns are the median of two runs of three on an idle machine, where the two runs of a row landed within 7 % of each other on the clock and within 0.01 % on the memory. The memory column is the one these are read on: on a vault where a change cannot help, a row's time moves by a quarter between runs while its memory moves by tenths of a per cent. The last row is 105.1 million allocations before and 92.2 million after.
 
-**A curve is fifty-one runs of the scheduler.** One at each of twenty-five places of the grid, one more at each place for the day the material is learned, and one at the top of the range to find how far the range reaches. Each of them walks ninety days, and each of those days used to go over every card face of the preset four times: to find what was due, to count what stood learned, to count what the day deferred, and to count what comes back. At fifty thousand card faces that is nine hundred million card reviews per request.
+**A curve is fifty-one runs of the scheduler.** One at each of twenty-five places of the grid, one more at each place for the day the material is learned, and one at the top of the range to find how far the range reaches. Each of them walks ninety days, and each of those days used to go over every review card of the preset four times: to find what was due, to count what stood learned, to count what the day deferred, and to count what comes back. At fifty thousand review cards that is nine hundred million card reviews per request.
 
-**Three of the four are gone.** A card face is filed under the day of review its schedule falls in, so a day takes what fell in it: what the day before did not reach and what falls due in this one, put into one run in the order the debt fell, and the material behind them is never looked at. What the day left standing is then what fell due in it less what it reached, which is a subtraction. What stands learned under a rule of an interval is a fact about a card face's schedule, so the count is carried from day to day and asked again only of the card faces the day answered; under a rule of a chance of recall it is a fact about the instant, and is read off the same number as the share that comes back.
+**Three of the four are gone.** A review card is filed under the day of review its schedule falls in, so a day takes what fell in it: what the day before did not reach and what falls due in this one, put into one run in the order the debt fell, and the material behind them is never looked at. What the day left standing is then what fell due in it less what it reached, which is a subtraction. What stands learned under a rule of an interval is a fact about a review card's schedule, so the count is carried from day to day and asked again only of the review cards the day answered; under a rule of a chance of recall it is a fact about the instant, and is read off the same number as the share that comes back.
 
-**The fourth stands, and is 32 % of the request** at twenty thousand card faces by profile. The share of the material that comes back is a fact about every card face at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises and not merely an optimization in computing it, and it is the section below.
+**The fourth stands, and is 32 % of the request** at twenty thousand review cards by profile. The share of the material that comes back is a fact about every review card at every instant, so it is the one thing a day still counts over the whole preset. A curve reads one day of that series out of each run and the run fills ninety; filling only the days a caller asks for is a change to what a projection promises and not merely an optimization in computing it, and it is the section below.
 
-**Both endings of an answer come from one reckoning of the card.** A projection weighs the ending where the card came back against the ending where it did not, and asked the scheduler for each of them separately. A card face the scheduler has put into review is settled at every rating in one working out, so the two are asked for together and the second costs nothing. A card face it is still putting into memory is settled a rating at a time and is asked a rating at a time: asking for all four there costs more than it saves, and measured 5.40 GB against 4.86 GB at twenty thousand card faces.
+**Both endings of an answer come from one reckoning of the card.** A projection weighs the ending where the card came back against the ending where it did not, and asked the scheduler for each of them separately. A review card the scheduler has put into review is settled at every rating in one working out, so the two are asked for together and the second costs nothing. A review card it is still putting into memory is settled a rating at a time and is asked a rating at a time: asking for all four there costs more than it saves, and measured 5.40 GB against 4.86 GB at twenty thousand review cards.
 
 **What is left is the scheduler's own arithmetic.** `Simulation.Run` is 97 % of the request, and half of that is the answers themselves. Nine tenths of what a request allocates is allocated inside that call by the scheduling library, which builds a table of every rating for every card it is asked about.
 
-**What does not change over the twenty-five places was left unchanged.** The order the card faces are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and an externally supplied input is a redundant second path to the answer.
+**What does not change over the twenty-five places was left unchanged.** The order the review cards are in, how loaded each day already is, how many have had their day and were not answered on it, and how many stand learned as the run opens are worked out once a run and could be worked out once a curve. They are 2.7 % of the request together, and an externally supplied input is a redundant second path to the answer.
 
 ## What a projection is asked to answer for
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| card faces | Before | After |
+| review cards | Before | After |
 | --- | --- | --- |
 | 500 | 0.29 s · 145 MB | 0.23 s · 145 MB |
 | 5 000 | 2.59 s · 1.29 GB | 2.30 s · 1.29 GB |
 | 20 000 | 9.5 s · 4.86 GB | 6.6 s · 4.86 GB |
 | 50 000 | 24.4 s · 11.68 GB | 15.5 s · 11.68 GB |
 
-Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on**, which is the other way round from every row above: what is taken off is arithmetic over a slice that is already there, so it allocates nothing, and the memory of every row moved by under a hundredth of a per cent — 92.17 million allocations at fifty thousand card faces either way.
+Both columns are the median of two runs of three on an idle machine. **The clock is the column these are read on**, which is the other way round from every row above: what is taken off is arithmetic over a slice that is already there, so it allocates nothing, and the memory of every row moved by under a hundredth of a per cent — 92.17 million allocations at fifty thousand review cards either way.
 
 The two runs of a row landed within 8 % of each other on the clock, and the last two rows within 1 %. Those two are what this table rests on; the 5 000 row's two runs after the change are a fifth apart, and it is the row that says least.
 
@@ -962,15 +962,15 @@ The two runs of a row landed within 8 % of each other on the clock, and the last
 
 **What the requested days total is unchanged.** The projections written down over four materials and eight settings — every scalar and every series, day by day — are byte-identical, their runs asking for every day of themselves.
 
-**Where a card face counts as learned by a chance of recall, the walk stands.** That count is a fact about the instant and is read off the same numbers as the share, so such a day goes over the whole material whether the share was asked for or not. The saving is a preset counting by an interval, where the count is carried from day to day and the walk is made only on a day that was named.
+**Where a review card counts as learned by a chance of recall, the walk stands.** That count is a fact about the instant and is read off the same numbers as the share, so such a day goes over the whole material whether the share was asked for or not. The saving is a preset counting by an interval, where the count is carried from day to day and the walk is made only on a day that was named.
 
-**What is left is the scheduler's own arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 96 % of the request and the reckoning that closes a day is 0.2 % of it. That is the pass that was 32 %.
+**What is left is the scheduler's own arithmetic.** By profile at twenty thousand review cards, `Simulation.Run` is 96 % of the request and the reckoning that closes a day is 0.2 % of it. That is the pass that was 32 %.
 
 ## What the scheduler is asked to work out
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| card faces | Before | After |
+| review cards | Before | After |
 | --- | --- | --- |
 | 500 | 0.27 s · 145 MB | 0.12 s · 19.6 MB |
 | 5 000 | 2.17 s · 1.29 GB | 1.01 s · 150 MB |
@@ -981,25 +981,25 @@ Both columns are the median of two runs of three on an idle machine. **The alloc
 
 **The Before column is this machine on this day.** Its 50 000 row reads 17.6 s where the section above wrote 15.5 s, on the same build and the same allocation to a hundredth of a per cent. It is what the After beside it is read against and not a figure to carry anywhere else.
 
-**A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now stands beside the port, on the library's own weights: at fifty thousand card faces a request allocated 92.2 million times and now allocates 3.3 million.
+**A card is worked out, not tabulated.** The scheduling library settles a card by building a scheduler, a map, and an entry for each of the four ratings, and formats a string for a fuzz seed on every call — these parameters carry no fuzz and nothing reads the seed. A projection asks about two ratings. The arithmetic now stands beside the port, on the library's own weights: at fifty thousand review cards a request allocated 92.2 million times and now allocates 3.3 million.
 
 **87 % was the estimate and 87 % is the measurement.** A profile before the change put 87 % of every byte a request allocates inside the library. The four rows totaled 86.5, 88.3, 87.8 and 87.0 per cent.
 
 **Good is worked out from hard.** The interval a good answer names is held a day past the one a hard answer names, so the two endings a projection weighs cost the hard ending's stability as well. Easy is worked out only where an easy answer is asked for.
 
-**A day count does not go below none.** The days a card face stood away are the whole days gone by. A card face asked about at an instant no later than the answer it already holds stood none of them, and the forgetting curve is read at none.
+**A day count does not go below none.** The days a review card stood away are the whole days gone by. A review card asked about at an instant no later than the answer it already holds stood none of them, and the forgetting curve is read at none.
 
-That is the one place the arithmetic here parts from the library, which counts those days into a whole number carrying no sign and reads such a card face as one nobody could recall. What that count totals depends on machine architecture, so the same card face may evaluate differently across architectures.
+That is the one place the arithmetic here parts from the library, which counts those days into a whole number carrying no sign and reads such a review card as one nobody could recall. What that count totals depends on machine architecture, so the same review card may evaluate differently across architectures.
 
-**No schedule a vault can hold moves with it.** A due day is always worked out forward from the instant of an answer, so a card face is never asked about before its own last answer: over a curve of five thousand card faces the days away were read 602 102 times and not once fell below none, and the same vault with twenty answers timestamped a week ahead by a wrong clock reads the same 0. The state needs a due day standing behind the answer that produced it, which is what the written-down projections build by hand — 96 of their 10 523 readings, 36 of them where the phase makes it count.
+**No schedule a vault can hold moves with it.** A due day is always worked out forward from the instant of an answer, so a review card is never asked about before its own last answer: over a curve of five thousand review cards the days away were read 602 102 times and not once fell below none, and the same vault with twenty answers timestamped a week ahead by a wrong clock reads the same 0. The state needs a due day standing behind the answer that produced it, which is what the written-down projections build by hand — 96 of their 10 523 readings, 36 of them where the phase makes it count.
 
-**What is left is arithmetic.** By profile at twenty thousand card faces, `Simulation.Run` is 77 % of the request, the answers themselves are 49 %, and the scheduler is 30 %. `math.Pow` and `math.Exp` together are 22 %, and choosing the day a card lands on is 15 %. Reading the vault, which was 4 %, is now 7 % of a shorter request.
+**What is left is arithmetic.** By profile at twenty thousand review cards, `Simulation.Run` is 77 % of the request, the answers themselves are 49 %, and the scheduler is 30 %. `math.Pow` and `math.Exp` together are 22 %, and choosing the day a card lands on is 15 %. Reading the vault, which was 4 %, is now 7 % of a shorter request.
 
 ## Every place of a curve at once
 
 Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, which has eight cores and sixteen threads, from `BenchmarkCurveCards` in `usecase/flashcards`, over the vault of the section above and with the same schedule cache filled before the clock starts.
 
-| card faces | Before | After |
+| review cards | Before | After |
 | --- | --- | --- |
 | 500 | 0.12 s · 19.6 MB | 0.08 s · 19.7 MB |
 | 5 000 | 1.01 s · 150 MB | 0.29 s · 150 MB |
@@ -1010,17 +1010,17 @@ Both columns are the median of two runs of three on an idle machine. **The clock
 
 **The 500 row says least.** Its two runs after the change are a sixth apart, and what it is here for is that the smallest preset did not get slower, which was the thing worth checking. The factor beside it is not a figure to quote.
 
-**Three and a half times, on eight cores.** The estimate before the measurement was 2.8, from the 77 % of a request that the runs are and eight cores to carry it. The measurement is 3.4 at twenty thousand card faces and 3.5 at fifty thousand, so the threads past the eight cores are worth something to arithmetic that waits for no memory.
+**Three and a half times, on eight cores.** The estimate before the measurement was 2.8, from the 77 % of a request that the runs are and eight cores to carry it. The measurement is 3.4 at twenty thousand review cards and 3.5 at fifty thousand, so the threads past the eight cores are worth something to arithmetic that waits for no memory.
 
 **Twenty-five places over sixteen threads is two waves, and the second is smaller.** A curve is twenty-five places and each is two runs of the scheduler, allocated one thread at a time. That unevenness, and the reading of the vault that no place shares, are most of what limits scaling between 3.5× and 8×.
 
-**A place holds the preset's cards while it runs.** Peak memory at fifty thousand card faces is 164 MB with one place running at a time and 307 MB with all of them, sampled from the kernel's own high-water mark over the whole benchmark. A run holds about four and a half megabytes of cards at that size, and a request now holds as many of those as the machine has threads.
+**A place holds the preset's cards while it runs.** Peak memory at fifty thousand review cards is 164 MB with one place running at a time and 307 MB with all of them, sampled from the kernel's own high-water mark over the whole benchmark. A run holds about four and a half megabytes of cards at that size, and a request now holds as many of those as the machine has threads.
 
-**What a person waits for.** A preset tab over fifty thousand card faces answers in between two and a half and three seconds: four runs of three on this machine spread from 2.47 s to 2.99 s, and allocated the same 1.52 GB to within 0.02 % every time. The work is the same work and the spread is the clock, so three seconds is the figure to hold this to. It was 8.8 s before this change, 17.6 s before the one above it, and 40.4 s at the top of the section three above. Twenty thousand card faces is a second, and five thousand is under a third of one.
+**What a person waits for.** A preset tab over fifty thousand review cards answers in between two and a half and three seconds: four runs of three on this machine spread from 2.47 s to 2.99 s, and allocated the same 1.52 GB to within 0.02 % every time. The work is the same work and the spread is the clock, so three seconds is the figure to hold this to. It was 8.8 s before this change, 17.6 s before the one above it, and 40.4 s at the top of the section three above. Twenty thousand review cards is a second, and five thousand is under a third of one.
 
 ## What a window asks of every vault
 
-Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/window/flashcards`. The installation is generated: four vaults, each of five thousand card faces over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
+Recorded 2026-09-01 on the same AMD Ryzen 7 6800U, from `BenchmarkFrontDoor` in `adapter/window/flashcards`. The installation is generated: four vaults, each of five thousand review cards over twenty decks, answered a hundred times a day for sixty days — 6 000 answers in 60 run files a vault. The schedule caches are filled before the clock starts, which is a person's second opening of a day.
 
 | | Measured 2026-09-01 | Measured 2026-09-06 |
 | --- | --- | --- |
@@ -1038,7 +1038,7 @@ The first row is the legacy initial load, run here as it stood: the four vaults 
 
 **Four counts at once cost the slowest, not the sum.** The four vaults here are the same size, so the last count lands in about a quarter of what counting them in turn took, less what they spend competing for the same cores. An installation of one vault waits exactly as long as it did.
 
-Nothing here says what a vault of fifty thousand card faces does to the row beside it: these four are alike on purpose, and the claim being measured is the shape and not the spread.
+Nothing here says what a vault of fifty thousand review cards does to the row beside it: these four are alike on purpose, and the claim being measured is the shape and not the spread.
 
 ## What a window costs before a person can type
 

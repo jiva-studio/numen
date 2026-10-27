@@ -6,7 +6,7 @@ import type { DeckCardsDue } from '../../../entities/vault'
 
 const deck = (fields: Partial<DeckCardsDue> = {}): DeckCardsDue => ({
   deck: 'decks/Words.md',
-  faces: 20,
+  reviewCards: 20,
   due: 0,
   new: 0,
   learned: 0,
@@ -20,7 +20,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
   settings: null,
   decks: ['decks/Words.md'],
   named: 1,
-  faces: 20,
+  reviewCards: 20,
   cards: 0,
   budget: { new: 0, reviews: 45, minutes: 20 },
   closes: { new: '', reviews: '', minutes: 'minutes_a_day' },
@@ -34,7 +34,7 @@ const preset = (fields: Partial<Preset> = {}): Preset => ({
 })
 
 describe('whether a deck holds nothing that can ever be requested for', () => {
-  it('holds nothing where every face is unbegun and its preset begins none a day', () => {
+  it('holds nothing where every review card is unbegun and its preset begins none a day', () => {
     expect(hasNothingToBegin(deck(), preset())).toBe(true)
   })
 
@@ -44,8 +44,8 @@ describe('whether a deck holds nothing that can ever be requested for', () => {
     ).toBe(false)
   })
 
-  it('is no such deck where it holds no faces at all', () => {
-    expect(hasNothingToBegin(deck({ faces: 0, unbegun: 0 }), preset())).toBe(false)
+  it('is no such deck where it holds no review cards at all', () => {
+    expect(hasNothingToBegin(deck({ reviewCards: 0, unbegun: 0 }), preset())).toBe(false)
   })
 
   it('is no such deck where nothing says which preset schedules it', () => {

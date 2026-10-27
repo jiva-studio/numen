@@ -51,4 +51,4 @@ export const getTiles = (presets: readonly Preset[], today: string): Tile[] =>
  * decks hold cards. A preset that schedules nothing today is still one of
  * these, and says why.
  */
-const isScheduling = (one: Preset): boolean => one.named > 0 && one.faces > 0
+const isScheduling = (one: Preset): boolean => one.named > 0 && one.reviewCards > 0

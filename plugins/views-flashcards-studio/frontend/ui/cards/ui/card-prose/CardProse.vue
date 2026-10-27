@@ -2,7 +2,7 @@
 /**
  * What a card is written with, read as it is meant to be read.
  *
- * A face is HTML and is drawn as the markup it is, measured first against what
+ * A template is HTML and is drawn as the markup it is, measured first against what
  * a card may be drawn with. Typesetting is the typography plugin's.
  */
 import { computed } from 'vue'

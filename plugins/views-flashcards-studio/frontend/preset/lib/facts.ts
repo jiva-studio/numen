@@ -12,7 +12,7 @@ export interface BuyInput {
   horizon: number
   /** Null is nothing overdue, and -1 a pile the days projected do not clear. */
   clears: number | null
-  /** How many card faces no pace reaches by the day, out of how many there are. */
+  /** How many review cards no pace reaches by the day, out of how many there are. */
   short: number
   cards: number
 }

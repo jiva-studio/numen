@@ -81,7 +81,7 @@ func (Goal) EnumDescriptor() ([]byte, []int) {
 	return file_numen_flashcards_v1_presets_proto_rawDescGZIP(), []int{0}
 }
 
-// Rule specifies the condition under which a card face is classified as learned.
+// Rule specifies the condition under which a review card is classified as learned.
 type Rule int32
 
 const (
@@ -138,9 +138,9 @@ type BudgetUnit int32
 
 const (
 	BudgetUnit_BUDGET_UNIT_UNSPECIFIED BudgetUnit = 0
-	// Deducts budget only on the first review of a card face per review day.
+	// Deducts budget only on the first review of a card per review day.
 	BudgetUnit_BUDGET_UNIT_CARDS BudgetUnit = 1
-	// Deducts budget on every card face presentation.
+	// Deducts budget on every showing of a review card.
 	BudgetUnit_BUDGET_UNIT_SHOWS BudgetUnit = 2
 )
 
@@ -572,12 +572,12 @@ type Curve struct {
 	// Current setting position and recommended position on the curve.
 	Now       *CurvePoint `protobuf:"bytes,5,opt,name=now,proto3" json:"now,omitempty"`
 	Suggested *CurvePoint `protobuf:"bytes,6,opt,name=suggested,proto3" json:"suggested,omitempty"`
-	// Number of decks and total card faces assigned to this preset.
+	// Number of decks and total review cards assigned to this preset.
 	Decks int32 `protobuf:"varint,7,opt,name=decks,proto3" json:"decks,omitempty"`
 	Cards int32 `protobuf:"varint,8,opt,name=cards,proto3" json:"cards,omitempty"`
-	// Current overdue card faces across assigned decks.
+	// Current overdue review cards across assigned decks.
 	Overdue int32 `protobuf:"varint,9,opt,name=overdue,proto3" json:"overdue,omitempty"`
-	// Card faces that have never been reviewed.
+	// Review cards that have never been reviewed.
 	Unbegun       int32 `protobuf:"varint,10,opt,name=unbegun,proto3" json:"unbegun,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -691,9 +691,9 @@ type Point struct {
 	Minutes float64 `protobuf:"fixed64,2,opt,name=minutes,proto3" json:"minutes,omitempty"`
 	// Projected retention rate.
 	Retained float64 `protobuf:"fixed64,3,opt,name=retained,proto3" json:"retained,omitempty"`
-	// Projected overdue card faces remaining at the projection horizon.
+	// Projected overdue review cards remaining at the projection horizon.
 	Owed int32 `protobuf:"varint,4,opt,name=owed,proto3" json:"owed,omitempty"`
-	// Percentage of card faces learned by target horizon and sufficiency flag.
+	// Percentage of review cards learned by target horizon and sufficiency flag.
 	Through  float64 `protobuf:"fixed64,5,opt,name=through,proto3" json:"through,omitempty"`
 	IsEnough bool    `protobuf:"varint,6,opt,name=is_enough,json=isEnough,proto3" json:"is_enough,omitempty"`
 	// Budget constraints reached at this sample point.
@@ -702,11 +702,11 @@ type Point struct {
 	Clears int32 `protobuf:"varint,8,opt,name=clears,proto3" json:"clears,omitempty"`
 	// Overdue count projection per day across the horizon.
 	Backlog []int32 `protobuf:"varint,9,rep,packed,name=backlog,proto3" json:"backlog,omitempty"`
-	// Total card faces currently classified as learned.
+	// Total review cards currently classified as learned.
 	Learned int32 `protobuf:"varint,10,opt,name=learned,proto3" json:"learned,omitempty"`
 	// Number of days required to learn all cards (-1 if unachievable).
 	Learns *int32 `protobuf:"varint,11,opt,name=learns,proto3,oneof" json:"learns,omitempty"`
-	// Number of card faces that cannot be learned before the target date.
+	// Number of review cards that cannot be learned before the target date.
 	Short         int32 `protobuf:"varint,12,opt,name=short,proto3" json:"short,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache

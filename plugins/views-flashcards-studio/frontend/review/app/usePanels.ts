@@ -15,14 +15,14 @@ import {
   useNotesPanel,
 } from '../pages/session'
 import type { PanelPlace } from '../pages/session'
-import type { CardFace } from '../entities/card'
+import type { ReviewCard } from '../entities/card'
 
 /** What the panels ask of the window they stand in. */
 export interface PanelsDeps {
   /** The agent of the window, which every question about a card goes to. */
   readonly agent: AgentPort
   /** The card in front of the person, and nothing between cards. */
-  readonly card: () => CardFace | null
+  readonly card: () => ReviewCard | null
   /** Why nothing can be asked here, empty while something can. */
   readonly unreachable: () => string
   /** The vault the session is on. */

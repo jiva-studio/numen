@@ -33,8 +33,8 @@ var OutsideGrid = projection.OutsideGrid
 // It reads the vault's answers once and projects them forward at every place of
 // the goal's range. Nothing here writes.
 type ProjectCurve struct {
-	cardFaces ListCardFaces
-	schedules Schedules
+	reviewCards ListReviewCards
+	schedules   Schedules
 	// presets says which preset each deck is scheduled by. A build holding no
 	// links projects every deck of the vault.
 	presets Presets
@@ -52,11 +52,11 @@ type ProjectCurve struct {
 // each deck is scheduled by, where one day of review gives way to the next, and
 // what time it is.
 func NewProjectCurve(
-	faces ListCardFaces, schedules Schedules, presets Presets,
+	reviewCards ListReviewCards, schedules Schedules, presets Presets,
 	day review.Day, now ports.Clock,
 ) ProjectCurve {
 	return ProjectCurve{
-		cardFaces: faces, schedules: schedules, presets: presets, day: day, now: now,
+		reviewCards: reviewCards, schedules: schedules, presets: presets, day: day, now: now,
 	}
 }
 
@@ -98,21 +98,21 @@ func (u ProjectCurve) Execute(
 	if err != nil {
 		return Curve{}, err
 	}
-	faces := u.cardFaces.GetFaces(ctx, v, scheduled)
+	reviewCards := u.reviewCards.GetReviewCards(ctx, v, scheduled)
 	target, err := Log{Stores: u.schedules.logs}.Read(ctx, v)
 	if err != nil {
 		return Curve{}, err
 	}
-	// A deck is asked once which preset schedules it, however many card faces
+	// A deck is asked once which preset schedules it, however many review cards
 	// it holds, and a preset note is opened once however many decks name it.
 	reads := u.presets.OpenReads()
-	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, faces)
+	asks, err := u.schedules.getAssignmentFrom(ctx, v, reads, reviewCards)
 	if err != nil {
 		return Curve{}, err
 	}
 	schedules := u.schedules.getSchedules(target, asks)
 
-	mine, err := u.readScheduledFaces(ctx, v, reads, path, faces, schedules)
+	mine, err := u.readScheduledCards(ctx, v, reads, path, reviewCards, schedules)
 	if err != nil {
 		return Curve{}, err
 	}
@@ -150,34 +150,34 @@ func (u ProjectCurve) Execute(
 	return out, nil
 }
 
-// scheduledFaces is the card faces a preset schedules.
-type scheduledFaces struct {
+// scheduledCards is the review cards a preset schedules.
+type scheduledCards struct {
 	// decks says for each deck asked whether the preset schedules it.
 	decks map[string]bool
-	// schedules is the schedule of each face that has been answered.
-	schedules map[review.CardFaceID]review.Schedule
-	// presetMap is the faces the preset is costed from.
-	presetMap map[review.CardFaceID]string
-	// unseen is how many of the faces have not been answered.
+	// schedules is the schedule of each review card that has been answered.
+	schedules map[review.ReviewCardID]review.Schedule
+	// presetMap is the review cards the preset is costed from.
+	presetMap map[review.ReviewCardID]string
+	// unseen is how many of the review cards have not been answered.
 	unreviewed int
 }
 
-// readScheduledFaces picks out of faces the ones the preset at path schedules.
-func (u ProjectCurve) readScheduledFaces(
+// readScheduledCards picks out of review cards the ones the preset at path schedules.
+func (u ProjectCurve) readScheduledCards(
 	ctx context.Context, v domain.Vault, reads *PresetReads, path string,
-	faces []CardFace, schedules map[review.CardFaceID]review.Schedule,
-) (scheduledFaces, error) {
-	out := scheduledFaces{
+	reviewCards []ReviewCard, schedules map[review.ReviewCardID]review.Schedule,
+) (scheduledCards, error) {
+	out := scheduledCards{
 		decks:     make(map[string]bool),
-		schedules: make(map[review.CardFaceID]review.Schedule),
-		presetMap: make(map[review.CardFaceID]string),
+		schedules: make(map[review.ReviewCardID]review.Schedule),
+		presetMap: make(map[review.ReviewCardID]string),
 	}
-	for _, one := range faces {
+	for _, one := range reviewCards {
 		mine, request := out.decks[one.Deck]
 		if !request {
 			target, err := reads.GetForDeck(ctx, v, one.Deck)
 			if err != nil {
-				return scheduledFaces{}, err
+				return scheduledCards{}, err
 			}
 			mine = target.Path == path
 			out.decks[one.Deck] = mine
@@ -208,7 +208,7 @@ func (u ProjectCurve) readScheduledFaces(
 // only the decks answer: every one of them is read, and the curve of the
 // defaults pays for the whole vault.
 func (u ProjectCurve) getScheduledDecks(ctx context.Context, v domain.Vault, path string) ([]string, error) {
-	decks, err := u.cardFaces.GetDeckPaths(ctx, v)
+	decks, err := u.reviewCards.GetDeckPaths(ctx, v)
 	if err != nil || path == "" || u.presets.links == nil {
 		return decks, err
 	}

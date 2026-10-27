@@ -1,40 +1,43 @@
 /**
  * What the deck editor draws from the cards it was handed, and what it emits.
  *
- * The negatives are here: no tile says what stencil cuts it, the head holds
+ * The negatives are here: no tile says what card model cuts it, the head holds
  * nothing but the two things a tile is reached for, the plus offers nothing
  * until it is pressed, a card let go at its current position moves nothing, and a card
- * whose stencil was not handed in keeps every value it has.
+ * whose card model was not handed in keeps every value it has.
  */
 import { mount } from '@vue/test-utils'
 import { afterEach, describe, expect, it } from 'vitest'
 import { nextTick } from 'vue'
 import DeckEditor from './DeckEditor.vue'
 import { createRunEnd, HEAD, type DeckSection, type DeckCard } from '../../lib/deck'
-import type { Stencil } from '../../lib/card'
+import type { CardModel } from '../../lib/card'
 
-const CUTS: readonly Stencil[] = [
+const CUTS: readonly CardModel[] = [
   { name: 'Animal', fields: ['Name', 'Height', 'Life span'] },
   { name: 'Word', fields: ['Word', 'Meaning'] },
 ]
 
-/* Every field a stencil declares is placed under its own heading, the first
+/* Every field a card model declares is placed under its own heading, the first
    included, and a card is addressed by the identity the caller drew it under. */
 const CARDS: readonly DeckCard[] = [
   {
     id: 'llama',
     section: null,
-    stencil: 'Animal',
+    cardModel: 'Animal',
     filled: [
       { field: 'Name', text: 'Llama' },
       { field: 'Height', text: 'about 45"' },
     ],
   },
-  { id: 'yak', section: null, stencil: 'Animal', filled: [] },
+  { id: 'yak', section: null, cardModel: 'Animal', filled: [] },
 ]
 
 const mountDeck = (props: Record<string, unknown> = {}) =>
-  mount(DeckEditor, { attachTo: document.body, props: { cards: CARDS, stencils: CUTS, ...props } })
+  mount(DeckEditor, {
+    attachTo: document.body,
+    props: { cards: CARDS, cardModels: CUTS, ...props },
+  })
 
 type Grid = ReturnType<typeof mountDeck>
 
@@ -119,7 +122,7 @@ describe('DeckEditor', () => {
     expect(card.get('[data-plus]').attributes('aria-posinset')).toBe('1')
   })
 
-  it('draws every field of the stencil in a box, the first among them', () => {
+  it('draws every field of the card model in a box, the first among them', () => {
     expect(getFields(mountDeck(), 'llama')).toEqual(['Name', 'Height', 'Life span'])
   })
 
@@ -174,7 +177,7 @@ describe('DeckEditor', () => {
       {
         id: 'x',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [{ field: 'Height', text: 'a\nb\nc' }],
       },
     ]
@@ -184,17 +187,17 @@ describe('DeckEditor', () => {
   })
 
   it('says on each tile what cut the card it draws', () => {
-    // Two stencils, named nothing that any field is named, so what is looked
-    // for here can only be the stencil's own name.
-    const stencils: readonly Stencil[] = [
+    // Two card models, named nothing that any field is named, so what is looked
+    // for here can only be the card model's own name.
+    const cardModels: readonly CardModel[] = [
       { name: 'Beast', fields: ['Name', 'Height'] },
       { name: 'Vocabulary', fields: ['Word', 'Meaning'] },
     ]
     const mixed: readonly DeckCard[] = [
-      { id: 'llama', section: null, stencil: 'Beast', filled: [] },
-      { id: 'llano', section: null, stencil: 'Vocabulary', filled: [] },
+      { id: 'llama', section: null, cardModel: 'Beast', filled: [] },
+      { id: 'llano', section: null, cardModel: 'Vocabulary', filled: [] },
     ]
-    const card = mountDeck({ cards: mixed, stencils })
+    const card = mountDeck({ cards: mixed, cardModels })
 
     expect(card.findAll('[data-card]')).toHaveLength(2)
     expect(getTile(card, 'llama').get('[data-cut-of]').text()).toBe('Beast')
@@ -318,11 +321,11 @@ describe('DeckEditor', () => {
     expect(card.emitted('remove')).toEqual([['yak']])
   })
 
-  it('offers no stencil until the plus is pressed', () => {
+  it('offers no card model until the plus is pressed', () => {
     expect(mountDeck().findAll('[data-cut]')).toHaveLength(0)
   })
 
-  it('asks which stencil once the plus is pressed', async () => {
+  it('asks which card model once the plus is pressed', async () => {
     const card = mountDeck()
     await card.get('[data-plus] button').trigger('click')
     expect(card.findAll('[data-cut]').map((each) => each.attributes('data-cut'))).toEqual([
@@ -337,14 +340,14 @@ describe('DeckEditor', () => {
     expect(card.emitted('add')).toBeUndefined()
   })
 
-  it('asks for a card cut by the stencil chosen, before the first section', async () => {
+  it('asks for a card cut by the card model chosen, before the first section', async () => {
     const card = mountDeck()
     await card.get('[data-plus] button').trigger('click')
     await card.get('[data-cut="Animal"]').trigger('click')
     expect(card.emitted('add')).toEqual([['Animal', null]])
   })
 
-  it('stops asking once a stencil is chosen', async () => {
+  it('stops asking once a card model is chosen', async () => {
     const card = mountDeck()
     await card.get('[data-plus] button').trigger('click')
     await card.get('[data-cut="Word"]').trigger('click')
@@ -407,21 +410,21 @@ describe('DeckEditor', () => {
     expect(card.emitted('move')).toBeUndefined()
   })
 
-  it('draws no value of a card whose stencil was not handed in, and says which it wants', () => {
+  it('draws no value of a card whose card model was not handed in, and says which it wants', () => {
     const orphan: readonly DeckCard[] = [
-      { id: 'gone', section: null, stencil: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
+      { id: 'gone', section: null, cardModel: 'Missing', filled: [{ field: 'A', text: 'kept' }] },
     ]
     const card = mountDeck({ cards: orphan })
     const tile = getTile(card, 'gone')
 
-    // The stencil is named, so the person knows what the card is waiting for.
-    expect(tile.get('.card__objections').text()).toBe('No stencil called Missing')
+    // The card model is named, so the person knows what the card is waiting for.
+    expect(tile.get('.card__objections').text()).toBe('No card model called Missing')
     // Nothing names the values, so nothing draws them. They stay in the file.
     expect(tile.findAll('.card__value')).toHaveLength(0)
     expect(tile.find('textarea').exists()).toBe(false)
   })
 
-  it('says nothing about a card whose stencil was handed in', () => {
+  it('says nothing about a card whose card model was handed in', () => {
     expect(mountDeck().find('.card__objections').exists()).toBe(false)
   })
 
@@ -430,7 +433,7 @@ describe('DeckEditor', () => {
       {
         id: 'llama',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Height', text: 'about 45"' },
           { field: 'Height', text: 'about 6 feet' },
@@ -449,7 +452,7 @@ describe('DeckEditor', () => {
       {
         id: 'twice',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Llama' },
           { field: 'Name', text: 'Alpaca' },
@@ -473,9 +476,9 @@ describe('DeckEditor', () => {
     box.focus()
     expect(document.activeElement).toBe(box)
 
-    await card.setProps({ stencils: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
+    await card.setProps({ cardModels: [{ name: 'Animal', fields: ['Name', 'Life span'] }] })
 
-    // The stencil no longer names the field, so its box goes and its value
+    // The card model no longer names the field, so its box goes and its value
     // stays in the file. The caret goes with the box and lands in no other.
     expect(getFields(card, 'llama')).toEqual(['Name', 'Life span'])
     expect(getTile(card, 'llama').find('[data-value="Height"]').exists()).toBe(false)
@@ -488,8 +491,8 @@ describe('DeckEditor', () => {
       { id: 'leaves', name: 'Leaves' },
     ]
     const UNDER: readonly DeckCard[] = [
-      { id: 'loose', section: null, stencil: 'Animal', filled: [] },
-      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'loose', section: null, cardModel: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
     ]
 
     const mountSectioned = (props: Record<string, unknown> = {}) =>
@@ -611,8 +614,8 @@ describe('DeckEditor', () => {
 
     describe('the cards before the first section', () => {
       const INSIDE: readonly DeckCard[] = [
-        { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
-        { id: 'yak', section: 'leaves', stencil: 'Animal', filled: [] },
+        { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
+        { id: 'yak', section: 'leaves', cardModel: 'Animal', filled: [] },
       ]
 
       it('take a drop target of their own where no card remains there', () => {
@@ -652,8 +655,8 @@ describe('DeckEditor', () => {
 
       it('hold a card standing under a section the deck was not handed', () => {
         const missing: readonly DeckCard[] = [
-          { id: 'lost', section: 'gone', stencil: 'Animal', filled: [] },
-          { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+          { id: 'lost', section: 'gone', cardModel: 'Animal', filled: [] },
+          { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
         ]
         const card = mountSectioned({ cards: missing })
 

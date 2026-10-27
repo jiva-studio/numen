@@ -27,7 +27,7 @@ type DeckContents struct {
 	// answers with.
 	Outcome note.ReadOutcome
 	// Type is what the note at the path says it is, so a caller that asked for
-	// a deck and was handed a stencil is told so.
+	// a deck and was handed a card model is told so.
 	Type domain.NoteType
 	// Body is what the file says. It holds no cards for any outcome but Ok, and
 	// a deck over the bound carries the problem that says why.
@@ -35,35 +35,35 @@ type DeckContents struct {
 	// Raw is the prose of the file currently, which is what a caller changing
 	// one card splices. It is empty for any outcome but Ok.
 	Raw string
-	// Stencils is where the wikilink under each card's heading lands, keyed by
-	Stencils map[string]string
+	// CardModels is where the wikilink under each card's heading lands, keyed by
+	CardModels map[string]string
 	// Fingerprint is what the file was when it was asked about, which is before
 	// its bytes were read.
 	Fingerprint domain.Fingerprint
 }
 
-// StencilContents is one stencil as a read hands it over.
-type StencilContents struct {
+// CardModelContents is one card model as a read hands it over.
+type CardModelContents struct {
 	Path    string
 	Title   string
 	Outcome note.ReadOutcome
 	Type    domain.NoteType
-	// Body is what the file says: the fields a card is asked for and the faces
+	// Body is what the file says: the fields a card is asked for and the templates
 	// it is shown through. It says nothing for any outcome but Ok.
-	Body        format.Stencil
+	Body        format.CardModel
 	Fingerprint domain.Fingerprint
 }
 
-// Read hands over a deck or a stencil, read out of the vault.
+// Read hands over a deck or a card model, read out of the vault.
 type Read struct {
 	readers ports.VaultReaders
-	// links answers where the wikilink a card names its stencil by lands. A
-	// stencil holds no cards, so reading one asks nothing of it.
+	// links answers where the wikilink a card names its card model by lands. A
+	// card model holds no cards, so reading one asks nothing of it.
 	links ports.LinkQueries
 }
 
-// NewRead is what a deck or a stencil is read through: the vault its file is
-// read out of, and where the wikilink each card names its stencil by lands.
+// NewRead is what a deck or a card model is read through: the vault its file is
+// read out of, and where the wikilink each card names its card model by lands.
 func NewRead(readers ports.VaultReaders, links ports.LinkQueries) Read {
 	return Read{readers: readers, links: links}
 }
@@ -85,17 +85,17 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	switch outcome {
 	case note.Ok:
 		out.Body, out.Raw = format.ReadDeck(n), n.Body
-		out.Stencils, err = getStencilPaths(ctx, u.links, v.ID, path, out.Body)
+		out.CardModels, err = getCardModelPaths(ctx, u.links, v.ID, path, out.Body)
 		if err != nil {
 			return DeckContents{}, err
 		}
-		// A card is laid out by the stencil its wikilink lands on, so a name
-		// reaching a note that is not one is a card no face shows.
-		_, ordinary, err := u.readStencils(ctx, v, out.Stencils)
+		// A card is laid out by the card model its wikilink lands on, so a name
+		// reaching a note that is not one is a card no template shows.
+		_, ordinary, err := u.readCardModels(ctx, v, out.CardModels)
 		if err != nil {
 			return DeckContents{}, err
 		}
-		out.Body.Problems = append(out.Body.Problems, getNonStencilProblems(out.Body, ordinary)...)
+		out.Body.Problems = append(out.Body.Problems, getNonCardModelProblems(out.Body, ordinary)...)
 	case note.TooLarge:
 		out.Body = format.Deck{Ref: ref, Problems: []format.Problem{format.OnFile(
 			format.FaultTooLarge,
@@ -105,25 +105,25 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	return out, nil
 }
 
-// GetCardStencils is the stencil each card of a deck is cut by, keyed by what
-// that is not a stencil, carries a stencil of nothing.
+// GetCardCardModels is the card model each card of a deck is cut by, keyed by what
+// that is not a card model, carries a card model of nothing.
 //
 // The two files are read against each other here, which is what says which of a
 // card's fields is first.
-func (u Read) GetCardStencils(
+func (u Read) GetCardCardModels(
 	ctx context.Context, v domain.Vault, path string, d format.Deck,
-) (map[string]format.Stencil, error) {
-	pos, err := getStencilPaths(ctx, u.links, v.ID, path, d)
+) (map[string]format.CardModel, error) {
+	pos, err := getCardModelPaths(ctx, u.links, v.ID, path, d)
 	if err != nil {
 		return nil, err
 	}
-	delta, _, err := u.readStencils(ctx, v, pos)
+	delta, _, err := u.readCardModels(ctx, v, pos)
 	return delta, err
 }
 
 // the brackets. The link is written in the deck, so it resolves against the
 // deck's own folder the way every name in that file does.
-func getStencilPaths(
+func getCardModelPaths(
 	ctx context.Context, links ports.LinkQueries, vaultID domain.VaultID, path string, d format.Deck,
 ) (map[string]string, error) {
 	if links == nil {
@@ -131,8 +131,8 @@ func getStencilPaths(
 	}
 	content := make([]string, 0, len(d.Cards))
 	for _, card := range d.Cards {
-		if card.StencilLink != "" {
-			content = append(content, card.StencilLink)
+		if card.CardModelLink != "" {
+			content = append(content, card.CardModelLink)
 		}
 	}
 	if len(content) == 0 {
@@ -149,64 +149,64 @@ func getStencilPaths(
 	return pos, nil
 }
 
-// readStencils reads the stencil the cards of a deck are cut by, keyed by what stands
+// readCardModels reads the card model the cards of a deck are cut by, keyed by what stands
 // in the brackets. Each file is opened once however many cards name it.
 //
-// A name landing on a note that is not a stencil is left out of the stencils
-func (u Read) readStencils(
+// A name landing on a note that is not a card model is left out of the card models
+func (u Read) readCardModels(
 	ctx context.Context, v domain.Vault, pos map[string]string,
-) (stencils map[string]format.Stencil, ordinary map[string]bool, err error) {
+) (cardModels map[string]format.CardModel, ordinary map[string]bool, err error) {
 	if len(pos) == 0 {
 		return nil, nil, nil
 	}
-	read := make(map[string]format.Stencil, len(pos))
+	read := make(map[string]format.CardModel, len(pos))
 	isLoose := make(map[string]bool, len(pos))
-	stencils = make(map[string]format.Stencil, len(pos))
+	cardModels = make(map[string]format.CardModel, len(pos))
 	ordinary = make(map[string]bool, len(pos))
 	for content, path := range pos {
 		target, observed := read[path]
 		if !observed {
-			found, err := u.Stencil(ctx, v, path)
+			found, err := u.CardModel(ctx, v, path)
 			if err != nil {
 				return nil, nil, err
 			}
-			if found.Type == format.TypeStencil {
+			if found.Type == format.TypeCardModel {
 				target = found.Body
 			}
 			read[path] = target
-			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeStencil
+			isLoose[path] = found.Outcome == note.Ok && found.Type != format.TypeCardModel
 		}
-		stencils[content] = target
+		cardModels[content] = target
 		ordinary[content] = isLoose[path]
 	}
-	return stencils, ordinary, nil
+	return cardModels, ordinary, nil
 }
 
-// getNonStencilProblems returns one problem per card whose wikilink reaches a note that is not
-// a stencil. The values are read, and no face lays the card out.
-func getNonStencilProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
+// getNonCardModelProblems returns one problem per card whose wikilink reaches a note that is not
+// a card model. The values are read, and no template lays the card out.
+func getNonCardModelProblems(d format.Deck, ordinary map[string]bool) []format.Problem {
 	var out []format.Problem
 	for item, card := range d.Cards {
-		if !ordinary[card.StencilLink] {
+		if !ordinary[card.CardModelLink] {
 			continue
 		}
-		out = append(out, format.OnCard(item, format.FaultNotAStencil,
-			card.StencilLink+" is a note and not a stencil, so this card is shown by no face"))
+		out = append(out, format.OnCard(item, format.FaultNotACardModel,
+			card.CardModelLink+" is a note and not a card model, so this card is shown by no template"))
 	}
 	return out
 }
 
-// Stencil reads the stencil at path. A stencil is a note and is bounded as one.
-func (u Read) Stencil(ctx context.Context, v domain.Vault, path string) (StencilContents, error) {
-	out := StencilContents{Path: path}
+// CardModel reads the card model at path. A card model is a note and is bounded as one.
+func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardModelContents, error) {
+	out := CardModelContents{Path: path}
 	n, ref, outcome, err := u.readNote(ctx, v, path, note.MaxBytes)
 	if err != nil {
-		return StencilContents{}, err
+		return CardModelContents{}, err
 	}
 	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
 	out.Title = n.Title
 	if outcome == note.Ok {
-		out.Body = format.ReadStencil(n)
+		out.Body = format.ReadCardModel(n)
 	}
 	return out, nil
 }

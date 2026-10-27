@@ -6,8 +6,8 @@ import "github.com/jiva-studio/numen/libs/notes/domain"
 const (
 	// TypeDeck is a note whose body is cards.
 	TypeDeck domain.NoteType = "deck"
-	// TypeStencil is a note declaring the fields a card has and the faces it is shown by.
-	TypeStencil domain.NoteType = "stencil"
+	// TypeCardModel is a note declaring the fields a card has and the templates it is shown by.
+	TypeCardModel domain.NoteType = "card-model"
 	// TypePreset is a note saying how the decks pointing at it are scheduled.
 	TypePreset domain.NoteType = "preset"
 )

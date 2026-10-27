@@ -39,7 +39,7 @@ func newStudiedNotes(cards int) map[string]string {
 }
 
 // newAnsweredVault is that vault with a history behind it: a dozen of its card
-// faces answered three times each in the months before the day the curves are
+// review cards answered three times each in the months before the day the curves are
 // drawn on, and the rest of them unbegun.
 //
 // A curve is computed from past review costs in this vault.
@@ -53,7 +53,7 @@ func newAnsweredVault(t *testing.T, cards int) vaulted {
 			if i%7 == 0 {
 				took = 50 * time.Second
 			}
-			answer(t, record, mark(i), took)
+			answer(t, record, cardID(i), took)
 		}
 	}
 	return s
@@ -200,7 +200,7 @@ func TestTheCurveOfADateRunsPastTheDayNamed(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		// A card face sent away for three weeks, so the days near the left of
+		// A review card sent away for three weeks, so the days near the left of
 		// the range cannot learn one and the days to the right can.
 		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
@@ -258,7 +258,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalDate, By: noon.AddDate(0, 0, 20).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 8, ReviewsADay: 45,
-		// A card face sent away for three weeks, so a day of the range pays for
+		// A review card sent away for three weeks, so a day of the range pays for
 		// the reviews that get it there and not for the one that begins it.
 		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
@@ -282,7 +282,7 @@ func TestTheMinutesOfADateFallAsTheDaysGrow(t *testing.T) {
 	// And the range holds both regimes, so the fall is said of a pace that
 	// thins and not of one that never changed.
 	if got.Points[0].Short == 0 || got.Points[len(got.Points)-1].Short != 0 {
-		t.Errorf("the range leaves %d card faces short at one end and %d at the other",
+		t.Errorf("the range leaves %d review cards short at one end and %d at the other",
 			got.Points[0].Short, got.Points[len(got.Points)-1].Short)
 	}
 	if got.Points[0].Minutes <= got.Points[len(got.Points)-1].Minutes {
@@ -300,7 +300,7 @@ func TestADateIsMetAtWhateverItCosts(t *testing.T) {
 	p := review.Preset{
 		Goal: review.GoalDate, By: noon.AddDate(0, 0, 25).Truncate(24 * time.Hour),
 		MinutesADay: 20, NewADay: 1, ReviewsADay: 45,
-		// A card face sent away for three weeks, which twenty-five days leave
+		// A review card sent away for three weeks, which twenty-five days leave
 		// room for and the days near the left of the range do not.
 		Rule: review.RuleInterval, Interval: 21, Retention: 0.9,
 	}
@@ -400,7 +400,7 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Thirty cards of a one-faced stencil against one, so the day the load
+	// Thirty cards of a one-template card model against one, so the day the load
 	// wants is not the same day.
 	if mine.Points[0].Reviews <= rest.Points[0].Reviews {
 		t.Errorf("the preset's deck answers %v a day and the deck naming none answers %v",
@@ -408,9 +408,9 @@ func TestACurveIsOverTheDecksPointingAtThePreset(t *testing.T) {
 	}
 }
 
-// A curve carries how many card faces stand under the preset, so a preset whose
+// A curve carries how many review cards stand under the preset, so a preset whose
 // decks hold nothing is told apart from one nothing points at.
-func TestACurveCarriesTheCardFacesBelowThePreset(t *testing.T) {
+func TestACurveCarriesTheReviewCardsBelowThePreset(t *testing.T) {
 	t.Parallel()
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 
@@ -504,7 +504,7 @@ func TestANearDateStillPreservesRoomToGiveYourselfLonger(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Thirty unreviewed card faces result in at least a 30-day range.
+	// Thirty unreviewed review cards result in at least a 30-day range.
 	if last := got.Grid[len(got.Grid)-1]; last < 30 {
 		t.Errorf("a date two days off is a range of %v days, and the material is 30 cards", last)
 	}
@@ -603,7 +603,7 @@ func TestADayAtNoneOfTheLoadAwayFromTodayPreservesTheCurve(t *testing.T) {
 	}
 }
 
-// The count of card faces that cannot be learned in time is reported on the curve.
+// The count of review cards that cannot be learned in time is reported on the curve.
 func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 	t.Parallel()
 	s := openVault(t, newStudiedNotes(30))
@@ -621,11 +621,11 @@ func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 		t.Fatal("the preset schedules nothing, and there is nothing to fall short")
 	}
 	if first := got.Points[0]; first.Short != got.Cards {
-		t.Errorf("%s leaves %d of the %d card faces short, and a day is no time to learn any",
+		t.Errorf("%s leaves %d of the %d review cards short, and a day is no time to learn any",
 			got.Days[0], first.Short, got.Cards)
 	}
 	if last := got.Points[len(got.Points)-1]; last.Short != 0 {
-		t.Errorf("%s leaves %d card faces short, and it is %v days off",
+		t.Errorf("%s leaves %d review cards short, and it is %v days off",
 			got.Days[len(got.Days)-1], last.Short, got.Grid[len(got.Grid)-1])
 	}
 	for i := 1; i < len(got.Points); i++ {
@@ -635,9 +635,9 @@ func TestACurveOfADateReturnsWhatNoPaceReaches(t *testing.T) {
 		}
 	}
 	// A day nothing can be learned by is met by the pace all the same: every
-	// card face that can be learned by it is, and there are none.
+	// review card that can be learned by it is, and there are none.
 	if !got.Points[0].IsEnough {
-		t.Error("a day no card face can be learned by is not met by the pace that reaches every one that can")
+		t.Error("a day no review card can be learned by is not met by the pace that reaches every one that can")
 	}
 }
 
@@ -672,7 +672,7 @@ func TestWhatExistsLearnedTodayMovesWithTheRuleAlone(t *testing.T) {
 	for back := 240; back >= 180; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
 		for i := range 30 {
-			answer(t, record, mark(i), 6*time.Second)
+			answer(t, record, cardID(i), 6*time.Second)
 		}
 	}
 
@@ -736,7 +736,7 @@ func TestTheDayTheMaterialIsLearnedIsGeneratedBelowMinutesAndRetention(t *testin
 	for back := 60; back >= 15; back -= 15 {
 		record := s.run(t, noon.AddDate(0, 0, -back))
 		for i := range 20 {
-			answer(t, record, mark(i), 6*time.Second)
+			answer(t, record, cardID(i), 6*time.Second)
 		}
 	}
 
@@ -948,7 +948,7 @@ func TestTheDaySuggestedForADateGetsThroughTheMaterial(t *testing.T) {
 // A preset aiming at a day and naming none schedules nothing.
 //
 // The budget its goal names is the day, and a goal that cannot read its own
-// budget is the pause a budget of zero is. Every overdue card face was handed
+// budget is the pause a budget of zero is. Every overdue review card was handed
 // over instead, with no count and no minutes to close the day.
 func TestADateNamingNoDaySchedulesNothing(t *testing.T) {
 	t.Parallel()
@@ -1002,10 +1002,10 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	// The session and curve are evaluated for one day.
 	write(t, s, "Sanskrit.md", "---\ntype: preset\ngoal: minutes_a_day\n"+
 		"minutes_a_day: 3\nnew_a_day: 0\nreviews_a_day: 0\n---\n\n# Sanskrit\n")
-	// Every card face owed today, at six seconds an answer.
+	// Every review card owed today, at six seconds an answer.
 	before := s.run(t, noon.AddDate(0, 0, -30))
 	for i := range 30 {
-		answer(t, before, mark(i), 6*time.Second)
+		answer(t, before, cardID(i), 6*time.Second)
 	}
 	p := review.Preset{
 		Goal: review.GoalMinutes, MinutesADay: 3, NewADay: 0, ReviewsADay: 0,
@@ -1018,7 +1018,7 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	// Ten of them answered this morning, which is a minute of the three.
 	morning := s.run(t, noon)
 	for i := range 10 {
-		answer(t, morning, mark(i), 6*time.Second)
+		answer(t, morning, cardID(i), 6*time.Second)
 	}
 	after, err := s.curves(noon).Execute(t.Context(), s.vault, "Sanskrit.md", p)
 	if err != nil {
@@ -1031,7 +1031,7 @@ func TestACurveDrawsWhatIsLeftOfTheDay(t *testing.T) {
 	}
 	sat := s.openSessionByPreset(t, today, noon, "Sanskrit.md")
 	if got := float64(len(sat.Queue)); got != after.Points[after.Now.Index].Reviews {
-		t.Errorf("the session offers %v card faces and the curve draws %v",
+		t.Errorf("the session offers %v review cards and the curve draws %v",
 			got, after.Points[after.Now.Index].Reviews)
 	}
 }
@@ -1047,7 +1047,7 @@ func TestTheMarkExistsOnTheSettingThePresetContains(t *testing.T) {
 	s := newAnsweredVault(t, 30)
 	before := s.run(t, noon.AddDate(0, 0, -30))
 	for i := range 30 {
-		answer(t, before, mark(i), 6*time.Second)
+		answer(t, before, cardID(i), 6*time.Second)
 	}
 
 	for _, minutes := range []int{1, 3, 15, 20, 200} {
@@ -1178,7 +1178,7 @@ func TestACurveIsRefusedTheSettingsASaveIsRefused(t *testing.T) {
 func TestABuildWithNoIndexDrawsNoCurve(t *testing.T) {
 	t.Parallel()
 	s := newAnsweredVault(t, 4)
-	noIndex := flashcards.NewListCardFaces(s.env.Ports.Readers, nil, nil)
+	noIndex := flashcards.NewListReviewCards(s.env.Ports.Readers, nil, nil)
 	u := flashcards.NewProjectCurve(noIndex, s.schedules, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{
@@ -1295,9 +1295,9 @@ func curveWhole(cards int) map[string]string {
 
 // The curve of a preset holding the whole vault, at four sizes of it.
 //
-// What the projection costs relies on the card faces the preset holds, and
+// What the projection costs relies on the review cards the preset holds, and
 // these four rows are what says how it grows with them. The log grows with the
-// vault too, at the same half an answer a card face the row above is built on.
+// vault too, at the same half an answer a review card the row above is built on.
 //
 // The schedule cache is filled before the clock starts, which is what opening
 // the window and then a preset tab costs.
@@ -1327,7 +1327,7 @@ func BenchmarkCurveCards(b *testing.B) {
 	}
 }
 
-// The curve of one preset, over fifty thousand card faces in twenty decks
+// The curve of one preset, over fifty thousand review cards in twenty decks
 // answered a hundred and fifty times a day for six months.
 //
 // One preset holds a deck of the vault and the other holds the rest of it, so
@@ -1387,7 +1387,7 @@ func (r closingReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return r.VaultReader.Read(ctx, path)
 }
 
-// A deck that could not be read contributes no card face, and a request that
+// A deck that could not be read contributes no review card, and a request that
 // was cancelled read none of them. A curve over no cards is not the answer to
 // what the preset holds.
 func TestACurveRefusesARequestThatIsMissing(t *testing.T) {
@@ -1395,8 +1395,8 @@ func TestACurveRefusesARequestThatIsMissing(t *testing.T) {
 	s := newAnsweredVault(t, 30)
 	ctx, cancel := context.WithCancel(t.Context())
 
-	customFaces := flashcards.NewListCardFaces(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
-	curves := flashcards.NewProjectCurve(customFaces, s.schedules, s.presets, today, func() time.Time { return noon })
+	customCards := flashcards.NewListReviewCards(closing{inner: s.env.Ports.Readers, cancel: cancel}, s.notes, s.links)
+	curves := flashcards.NewProjectCurve(customCards, s.schedules, s.presets, today, func() time.Time { return noon })
 
 	p := review.Preset{Goal: review.GoalMinutes, MinutesADay: 20, NewADay: 8, ReviewsADay: 45}
 	got, err := curves.Execute(ctx, s.vault, "Sanskrit.md", p)
@@ -1441,7 +1441,7 @@ func newPointingDeck(links string, from, cards int) string {
 	for i := from; i < from+cards; i++ {
 		out += fmt.Sprintf(
 			"\n## Word %d ^%s\n\n[[Term]]\n\n### Word\n\nWord %d\n\n### Meaning\n\nMeaning %d\n",
-			i, mark(i), i, i)
+			i, cardID(i), i, i)
 	}
 	return out
 }
@@ -1458,15 +1458,15 @@ func recordHistoryAnswers(t *testing.T, s vaulted) {
 	for _, days := range []int{150, 120, 90} {
 		record := s.run(t, noon.AddDate(0, 0, -days))
 		for card := 0; card < 40; card += 8 {
-			answer(t, record, mark(card), 4*time.Second)
-			answer(t, record, mark(card+1), 50*time.Second)
+			answer(t, record, cardID(card), 4*time.Second)
+			answer(t, record, cardID(card+1), 50*time.Second)
 		}
 	}
 }
 
 // The decks a curve is worked out over are the decks pointing at the preset,
 // and how many of them there are is counted the same way.
-func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces int) {
+func countScheduled(t *testing.T, s vaulted, path string) (decks []string, reviewCards int) {
 	t.Helper()
 	target, err := s.standings.GetDeckPaths(t.Context(), s.vault)
 	if err != nil {
@@ -1481,13 +1481,13 @@ func countScheduled(t *testing.T, s vaulted, path string) (decks []string, faces
 			decks = append(decks, deck)
 		}
 	}
-	return decks, len(s.standings.GetFaces(t.Context(), s.vault, decks))
+	return decks, len(s.standings.GetReviewCards(t.Context(), s.vault, decks))
 }
 
 // A curve reads the decks pointing at its preset and leaves the rest of the
 // vault unread, and what it evaluates to is what reading the whole vault evaluates to:
 // the same range, the same value at every place of it, the same marks, and the
-// same decks and card faces behind them.
+// same decks and review cards behind them.
 //
 // The vault it is asked of holds decks of other presets and decks of none, and
 // the one it is read against holds only the decks the preset schedules. Both
@@ -1524,7 +1524,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 		t.Run(shape.name, func(t *testing.T) {
 			whole := openVault(t, newPointedNotes())
 			recordHistoryAnswers(t, whole)
-			decks, faces := countScheduled(t, whole, shape.path)
+			decks, reviewCards := countScheduled(t, whole, shape.path)
 
 			// The same vault with every deck the preset does not schedule taken
 			// out of it, where there is nothing to narrow.
@@ -1551,10 +1551,10 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 					}
 
 					for _, one := range []projection.Curve{got, want} {
-						if one.Decks != len(decks) || one.Cards != faces {
-							t.Errorf("the curve carries %d decks and %d card faces, and %d decks "+
-								"point at %s with %d card faces in them",
-								one.Decks, one.Cards, len(decks), shape.path, faces)
+						if one.Decks != len(decks) || one.Cards != reviewCards {
+							t.Errorf("the curve carries %d decks and %d review cards, and %d decks "+
+								"point at %s with %d review cards in them",
+								one.Decks, one.Cards, len(decks), shape.path, reviewCards)
 						}
 					}
 					if !reflect.DeepEqual(got, want) {
@@ -1569,7 +1569,7 @@ func TestACurveIsGeneratedFromTheDecksPointingAtThePreset(t *testing.T) {
 
 // curveOf is a curve in one line of a failure.
 func curveOf(c projection.Curve) string {
-	return fmt.Sprintf("%d decks, %d card faces, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
+	return fmt.Sprintf("%d decks, %d review cards, %d overdue, %d unbegun\ngrid %v\nnow %+v"+
 		"\nsuggested %+v\nat %+v", c.Decks, c.Cards, c.Overdue, c.Unbegun, c.Grid,
 		c.Now, c.Suggested, c.Points)
 }

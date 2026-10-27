@@ -17,21 +17,21 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-// bothWays is a stencil of two faces, so one card of it is two card faces.
-const bothWays = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+// bothWays is a card model of two review cards, so one card of it is two review cards.
+const bothWays = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n" +
 	"\n## Read it\n\n### Front\n\n{{Meaning}}\n\n### Back\n\n{{Word}}\n"
 
-// oneWay is a stencil of one face.
-const oneWay = "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+// oneWay is a card model of one review card.
+const oneWay = "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 	"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n"
 
-// newStencilDeck is a deck of as many cards cut by one stencil, pointing at the
+// newCardModelDeck is a deck of as many cards cut by one card model, pointing at the
 // preset named. A deck naming none is written with an empty name.
 //
-// Each deck is written from a mark of its own: a mark names a card, and two
-// decks writing one mark are writing one card.
-func newStencilDeck(stencil, pos string, cards, from int) string {
+// Each deck is written from a card id of its own: a card id names a card, and two
+// decks writing one card id are writing one card.
+func newCardModelDeck(cardModel, pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if pos != "" {
 		out += "links:\n  - to: " + pos + "\n    role: ref\n    type: preset\n"
@@ -39,16 +39,16 @@ func newStencilDeck(stencil, pos string, cards, from int) string {
 	out += "---\n"
 	for i := from; i < from+cards; i++ {
 		out += fmt.Sprintf(
-			"\n## Card %d ^face%06d\n\n[[%s]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n",
-			i, i, stencil, i, i)
+			"\n## Card %d ^card%06d\n\n[[%s]]\n\n### Word\n\nw%d\n\n### Meaning\n\nm%d\n",
+			i, i, cardModel, i, i)
 	}
 	return out
 }
 
 // lived is a vault at the size a person's is: two presets and the defaults, four
-// decks between them, and card faces in the hundreds.
+// decks between them, and review cards in the hundreds.
 //
-// Verbs is cut by the two-faced stencil, so its cards are twice its faces.
+// Verbs is cut by the two-template card model, so it holds twice as many review cards as cards.
 var lived = map[string]string{
 	"Both.md": bothWays,
 	"One.md":  oneWay,
@@ -56,14 +56,14 @@ var lived = map[string]string{
 		"new_a_day: 15\nreviews_a_day: 120\nretention: 0.9\ncounts: cards\n---\n\n# Sanskrit\n",
 	"Grammar.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
 		"new_a_day: 10\nreviews_a_day: 40\nminutes_a_day: 15\ncounts: cards\n---\n\n# Grammar\n",
-	"decks/Verbs.md": newStencilDeck("Both", "Sanskrit", 150, 0),
-	"decks/Nouns.md": newStencilDeck("One", "Sanskrit", 120, 1000),
-	"decks/Roots.md": newStencilDeck("One", "Grammar", 150, 2000),
-	"decks/Loose.md": newStencilDeck("One", "", 60, 3000),
+	"decks/Verbs.md": newCardModelDeck("Both", "Sanskrit", 150, 0),
+	"decks/Nouns.md": newCardModelDeck("One", "Sanskrit", 120, 1000),
+	"decks/Roots.md": newCardModelDeck("One", "Grammar", 150, 2000),
+	"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
 }
 
-// The card faces of the lived vault, by the deck they stand in.
-var facesIn = map[string]int{
+// The review cards of the lived vault, by the deck they stand in.
+var reviewCardsIn = map[string]int{
 	"decks/Verbs.md": 300,
 	"decks/Nouns.md": 120,
 	"decks/Roots.md": 150,
@@ -120,7 +120,7 @@ func runDays(t *testing.T, api *API, v domain.Vault, days int) {
 			}
 			_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 				Vault: string(v.ID), Run: session.GetRun(),
-				Mark: one.GetMark(), Face: one.GetFace(),
+				CardId: one.GetCardId(), Template: one.GetTemplate(),
 				Rating: rating, TookMs: took.Milliseconds(),
 			}))
 			if err != nil {
@@ -145,7 +145,7 @@ func getVaultCount(t *testing.T, api *API, v domain.Vault) *flashcardsv1.VaultCa
 	return nil
 }
 
-// countOfferedCards returns how many card faces the deck screen puts in front of a person under
+// countOfferedCards returns how many review cards the deck screen puts in front of a person under
 // one preset: the cards of every deck that preset schedules, owed and new.
 func countOfferedCards(due *flashcardsv1.VaultCardsDue, decks []string) int {
 	out := 0
@@ -193,7 +193,7 @@ func getCurve(t *testing.T, api *API, v domain.Vault, path string, p review.Pres
 // day the window relies on.
 func curves(api *API) flashcards.ProjectCurve {
 	c := flashcards.NewProjectCurve(
-		api.scenarios().flash.Schedules.CardFaces(),
+		api.scenarios().flash.Schedules.ReviewCards(),
 		api.scenarios().flash.Schedules,
 		api.scenarios().flash.Presets,
 		api.scenarios().day,
@@ -264,7 +264,7 @@ func TestTheCurveAndTheDeckScreenOfferTheSameDay(t *testing.T) {
 	}
 }
 
-// A curve carries the decks and the card faces the preset schedules, which is
+// A curve carries the decks and the review cards the preset schedules, which is
 // what tells a preset with nothing under it from one whose day is simply spent.
 func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	api, target := newAPI(t, lived)
@@ -272,9 +272,9 @@ func TestTheCurveCarriesWhatThePresetSchedules(t *testing.T) {
 	setNow(api, firstMorning)
 
 	curveResp := getCurve(t, api, v, "Sanskrit.md", readPresetConfig(t, api, v, "Sanskrit.md"))
-	want := facesIn["decks/Verbs.md"] + facesIn["decks/Nouns.md"]
+	want := reviewCardsIn["decks/Verbs.md"] + reviewCardsIn["decks/Nouns.md"]
 	if int(curveResp.GetDecks()) != len(underSanskrit) || int(curveResp.GetCards()) != want {
-		t.Errorf("curve deck count = %d, face count = %d, want %d and %d",
+		t.Errorf("curve deck count = %d, review card count = %d, want %d and %d",
 			curveResp.GetDecks(), curveResp.GetCards(), len(underSanskrit), want)
 	}
 }
@@ -292,14 +292,14 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 	setNow(api, firstMorning.AddDate(0, 0, 14))
 
 	response := getVaultCount(t, api, v)
-	if int(response.GetFaces()) != 630 {
-		t.Errorf("the vault holds %d card faces, want 630", response.GetFaces())
+	if int(response.GetReviewCards()) != 630 {
+		t.Errorf("the vault holds %d review cards, want 630", response.GetReviewCards())
 	}
 	due, newCards := 0, 0
 	for _, one := range response.GetDecks() {
-		if got := int(one.GetFaces()); got != facesIn[one.GetDeck()] {
-			t.Errorf("%s holds %d card faces, want %d",
-				one.GetDeck(), got, facesIn[one.GetDeck()])
+		if got := int(one.GetReviewCards()); got != reviewCardsIn[one.GetDeck()] {
+			t.Errorf("%s holds %d review cards, want %d",
+				one.GetDeck(), got, reviewCardsIn[one.GetDeck()])
 		}
 		due += int(one.GetDue())
 		newCards += int(one.GetNew())
@@ -313,11 +313,11 @@ func TestEachDecksShareOfTheDayAddsUpToTheVaults(t *testing.T) {
 		want := int(one.GetDue()) + int(one.GetNew())
 		got := len(sat.Msg.GetCards())
 		if sole[one.GetDeck()] && got != want {
-			t.Errorf("%s offers %d card faces and its session asks %d",
+			t.Errorf("%s offers %d review cards and its session asks %d",
 				one.GetDeck(), want, got)
 		}
 		if got < want {
-			t.Errorf("%s offers %d card faces and its session asks %d",
+			t.Errorf("%s offers %d review cards and its session asks %d",
 				one.GetDeck(), want, got)
 		}
 		for _, card := range sat.Msg.GetCards() {
@@ -356,12 +356,12 @@ func TestADeckReturnsHowMuchOfItWasAnsweredToday(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(sat.Msg.GetCards()) < 3 {
-		t.Fatalf("the deck offered %d card faces to answer", len(sat.Msg.GetCards()))
+		t.Fatalf("the deck offered %d review cards to answer", len(sat.Msg.GetCards()))
 	}
 	for _, card := range sat.Msg.GetCards()[:3] {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(v.ID), Run: sat.Msg.GetRun(),
-			Mark: card.GetMark(), Face: card.GetFace(),
+			CardId: card.GetCardId(), Template: card.GetTemplate(),
 			Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 6000,
 		})); err != nil {
 			t.Fatal(err)
@@ -401,20 +401,20 @@ func TestCardsDueSummaryContainsEachVaultOnce(t *testing.T) {
 
 	// The counts are each vault's own, and the deck rows of one add up to it.
 	for _, row := range rows {
-		faces := 0
+		reviewCards := 0
 		for _, one := range row.GetDecks() {
-			faces += int(one.GetFaces())
+			reviewCards += int(one.GetReviewCards())
 		}
-		if faces != int(row.GetFaces()) {
-			t.Errorf("the decks of %s hold %d card faces and the vault holds %d",
-				row.GetName(), faces, row.GetFaces())
+		if reviewCards != int(row.GetReviewCards()) {
+			t.Errorf("the decks of %s hold %d review cards and the vault holds %d",
+				row.GetName(), reviewCards, row.GetReviewCards())
 		}
 	}
-	if got := getVaultCount(t, api, target[0]).GetFaces(); got != 630 {
-		t.Errorf("the lived vault counts %d card faces, want 630", got)
+	if got := getVaultCount(t, api, target[0]).GetReviewCards(); got != 630 {
+		t.Errorf("the lived vault counts %d review cards, want 630", got)
 	}
-	if got := getVaultCount(t, api, target[1]).GetFaces(); got != 1 {
-		t.Errorf("the vault of one card counts %d card faces", got)
+	if got := getVaultCount(t, api, target[1]).GetReviewCards(); got != 1 {
+		t.Errorf("the vault of one card counts %d review cards", got)
 	}
 }
 

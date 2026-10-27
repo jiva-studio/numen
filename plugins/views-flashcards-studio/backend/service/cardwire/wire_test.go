@@ -24,33 +24,33 @@ func requireEqual(t *testing.T, got, want proto.Message) {
 	}
 }
 
-func TestAStencilGoesOutWithItsFacesAndProblems(t *testing.T) {
-	got := NewWireStencil("stencils/basic.md", "Basic", format.Stencil{
+func TestACardModelGoesOutWithItsTemplatesAndProblems(t *testing.T) {
+	got := NewWireCardModel("card-models/basic.md", "Basic", format.CardModel{
 		Fields:   []string{"Front", "Back"},
 		Preamble: "above",
 		Tail:     "below",
-		Faces: []format.FaceTemplate{
+		Templates: []format.CardTemplate{
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Face: 1, Field: "Front", Detail: "d"}},
+		Problems: []format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Template: 1, Field: "Front", Detail: "d"}},
 	})
-	requireEqual(t, got, &flashcardsv1.Stencil{
-		Path: "stencils/basic.md", Title: "Basic", Fields: []string{"Front", "Back"},
+	requireEqual(t, got, &flashcardsv1.CardModel{
+		Path: "card-models/basic.md", Title: "Basic", Fields: []string{"Front", "Back"},
 		Preamble: "above", Tail: "below",
-		Faces: []*flashcardsv1.Face{
+		Templates: []*flashcardsv1.CardTemplate{
 			{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 			{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 		},
-		Problems: []*flashcardsv1.Problem{{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Face: ptr(1), Field: "Front", Text: "d"}},
+		Problems: []*flashcardsv1.Problem{{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_MODEL_WITHOUT_FIELDS, Template: ptr(1), Field: "Front", Text: "d"}},
 	})
 }
 
-func TestAStencilWithoutProblemsCarriesNone(t *testing.T) {
-	if got := NewWireStencil("p", "t", format.Stencil{}); got.Problems != nil || got.Faces == nil {
-		t.Errorf("got problems %v, faces %v", got.Problems, got.Faces)
+func TestACardModelWithoutProblemsCarriesNone(t *testing.T) {
+	if got := NewWireCardModel("p", "t", format.CardModel{}); got.Problems != nil || got.Templates == nil {
+		t.Errorf("got problems %v, templates %v", got.Problems, got.Templates)
 	}
-	one := newWireProblems([]format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Face: format.NoPosition}})
+	one := newWireProblems([]format.Problem{{Fault: format.FaultNoFields, Card: format.NoPosition, Template: format.NoPosition}})
 	if len(one) != 1 {
 		t.Errorf("a single problem went out as %d", len(one))
 	}
@@ -59,9 +59,9 @@ func TestAStencilWithoutProblemsCarriesNone(t *testing.T) {
 	}
 }
 
-func TestAStencilSummaryGoesOutWhole(t *testing.T) {
-	got := NewWireSummary(cards.StencilSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
-	requireEqual(t, got, &flashcardsv1.StencilSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
+func TestACardModelSummaryGoesOutWhole(t *testing.T) {
+	got := NewWireSummary(cards.CardModelSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
+	requireEqual(t, got, &flashcardsv1.CardModelSummary{Path: "p", Title: "t", Fields: []string{"a", "b"}})
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
@@ -70,15 +70,15 @@ func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
 		Decks: []string{"a.md"},
 		Cards: 7,
 		NotWritten: []cards.UnwrittenDeck{
-			{Path: "x.md", Problem: format.Problem{Fault: format.FaultTwoFields, Card: format.NoPosition, Face: format.NoPosition}},
-			{Path: "y.md", Problem: format.Problem{Fault: format.FaultNoFields, Card: 2, Face: format.NoPosition}},
+			{Path: "x.md", Problem: format.Problem{Fault: format.FaultTwoFields, Card: format.NoPosition, Template: format.NoPosition}},
+			{Path: "y.md", Problem: format.Problem{Fault: format.FaultNoFields, Card: 2, Template: format.NoPosition}},
 		},
 	}, pos)
-	requireEqual(t, got, &flashcardsv1.RenameStencilFieldResponse{
+	requireEqual(t, got, &flashcardsv1.RenameCardModelFieldResponse{
 		Decks: []string{"a.md"}, Cards: 7, At: pos,
 		NotWritten: []*flashcardsv1.UnwrittenDeck{
 			{Path: "x.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_FIELD_DECLARED_TWICE}},
-			{Path: "y.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_STENCIL_WITHOUT_FIELDS, Card: ptr(2)}},
+			{Path: "y.md", Problem: &flashcardsv1.Problem{Kind: flashcardsv1.ProblemKind_PROBLEM_KIND_CARD_MODEL_WITHOUT_FIELDS, Card: ptr(2)}},
 		},
 	})
 }
@@ -88,18 +88,18 @@ func TestADeckGoesOutWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []format.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []format.Card{
-			{Heading: "h1", Mark: cardid.ID("m1"), Section: format.NoSection, StencilLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardID: cardid.ID("m1"), Section: format.NoSection, CardModelLink: "basic", Preamble: "c1",
 				Values: []format.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
-			{Heading: "h2", Section: 1, StencilLink: "other"},
+			{Heading: "h2", Section: 1, CardModelLink: "other"},
 		},
-	}, map[string]string{"basic": "stencils/basic.md"})
+	}, map[string]string{"basic": "card-models/basic.md"})
 	requireEqual(t, got, &flashcardsv1.Deck{
 		Path: "decks/a.md", Title: "A", Preamble: "above", Tail: "below",
 		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []*flashcardsv1.Card{
-			{Heading: "h1", Mark: "m1", StencilLink: "basic", StencilPath: "stencils/basic.md", Preamble: "c1",
+			{Heading: "h1", CardId: "m1", CardModelLink: "basic", CardModelPath: "card-models/basic.md", Preamble: "c1",
 				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
-			{Heading: "h2", SectionIndex: ptr(1), StencilLink: "other", Values: []*flashcardsv1.Value{}},
+			{Heading: "h2", SectionIndex: ptr(1), CardModelLink: "other", Values: []*flashcardsv1.Value{}},
 		},
 	})
 }
@@ -116,7 +116,7 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []*flashcardsv1.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []*flashcardsv1.Card{
-			{Heading: "h1", Mark: "m1", SectionIndex: ptr(1), StencilLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardId: "m1", SectionIndex: ptr(1), CardModelLink: "basic", Preamble: "c1",
 				Values: []*flashcardsv1.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2"},
 		},
@@ -125,7 +125,7 @@ func TestADeckReachesInWithItsSectionsCardsAndValues(t *testing.T) {
 		Preamble: "above", Tail: "below",
 		Sections: []format.Section{{Name: "S1", Preamble: "sp1"}, {Name: "S2", Preamble: "sp2"}},
 		Cards: []format.Card{
-			{Heading: "h1", Mark: cardid.ID("m1"), Section: 1, StencilLink: "basic", Preamble: "c1",
+			{Heading: "h1", CardID: cardid.ID("m1"), Section: 1, CardModelLink: "basic", Preamble: "c1",
 				Values: []format.Value{{Field: "Front", Text: "q"}, {Field: "Back", Text: "a"}}},
 			{Heading: "h2", Section: format.NoSection},
 		},
@@ -146,23 +146,23 @@ func TestADeckReachesInWithoutCardsOrSections(t *testing.T) {
 	}
 }
 
-func TestFacesComeIn(t *testing.T) {
-	got := NewFaces([]*flashcardsv1.Face{
+func TestTemplatesComeIn(t *testing.T) {
+	got := NewTemplates([]*flashcardsv1.CardTemplate{
 		{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 		{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 	})
-	want := []format.FaceTemplate{
+	want := []format.CardTemplate{
 		{Name: "One", Preamble: "p1", Front: "f1", Back: "b1"},
 		{Name: "Two", Preamble: "p2", Front: "f2", Back: "b2"},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %+v", got)
 	}
-	if NewFaces(nil) != nil {
-		t.Error("no faces came in as a list")
+	if NewTemplates(nil) != nil {
+		t.Error("no templates came in as a list")
 	}
-	if len(NewFaces([]*flashcardsv1.Face{{Name: "x"}})) != 1 {
-		t.Error("a single face did not come in")
+	if len(NewTemplates([]*flashcardsv1.CardTemplate{{Name: "x"}})) != 1 {
+		t.Error("a single template did not come in")
 	}
 }
 

@@ -31,15 +31,15 @@ const SCHEDULING = { stops: StopReason.NOTHING, stopsOn: StopReason.NOTHING } sa
 /** A moment for whatever the tab asked the vault for to come back. */
 const settle = () => new Promise((isDone) => setTimeout(isDone, 0))
 
-// The two cards name one stencil two ways: by a path from the root, and by a
+// The two cards name one card model two ways: by a path from the root, and by a
 // name carrying an alias. Both reach the file the vault says they reach.
 const CARDS: readonly VaultCard[] = [
   {
-    mark: 'k7m2xq9fzp',
+    cardId: 'k7m2xq9fzp',
     sectionIndex: null,
     heading: 'Llama',
-    stencilLink: 'cards/Animal',
-    stencilPath: 'Animal.md',
+    cardModelLink: 'cards/Animal',
+    cardModelPath: 'Animal.md',
     preamble: '',
     values: [
       { field: 'Name', text: 'Llama' },
@@ -47,11 +47,11 @@ const CARDS: readonly VaultCard[] = [
     ],
   },
   {
-    mark: '3n8vr4tqch',
+    cardId: '3n8vr4tqch',
     sectionIndex: null,
     heading: 'Alpaca',
-    stencilLink: 'Animal|животное',
-    stencilPath: 'Animal.md',
+    cardModelLink: 'Animal|животное',
+    cardModelPath: 'Animal.md',
     preamble: '',
     values: [{ field: 'Name', text: 'Alpaca' }],
   },
@@ -77,7 +77,7 @@ const vault = (
     isUnreachable?: boolean
     /** What a write of the deck fails for. */
     wrote?: ErrorCode
-    /** How many listings of the stencils go unanswered before one answers. */
+    /** How many listings of the card models go unanswered before one answers. */
     unlisted?: number
     /** The presets the vault holds, where a test wants other ones. */
     presets?: readonly PresetChoice[]
@@ -101,16 +101,16 @@ const vault = (
   let items = 0
 
   const core: Cards = {
-    stencils: async () => {
+    cardModels: async () => {
       items += 1
       if (items <= (answers.unlisted ?? 0)) throw new Error('out of reach')
       return {
-        stencils: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
+        cardModels: [{ path: 'Animal.md', title: 'Animal', fields: ['Name', 'Height'] }],
         held: 1,
       }
     },
     createDeck: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
-    createStencil: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
+    createCardModel: async (title) => ({ ok: true, value: { path: `${title}.md` } }),
     renameField: async () => asValue({ decks: [], cards: 0, notWritten: [], at: '' }),
     readDeck: async (path) => {
       reads += 1
@@ -140,8 +140,8 @@ const vault = (
       cards = deck.cards
       return asValue({ at: 'written' })
     },
-    readStencil: async () => asFailure('missing' as const),
-    writeStencil: async () => asValue({ at: '' }),
+    readCardModel: async () => asFailure('missing' as const),
+    writeCardModel: async () => asValue({ at: '' }),
   }
 
   /** Which preset the deck names, as the vault answers it. */
@@ -231,7 +231,7 @@ describe('a deck opened', () => {
     expect(tab.deck.value.cards.map(getCardName)).toStrictEqual(['Llama', 'Alpaca'])
   })
 
-  it('knows each card by the mark the file carries for it', async () => {
+  it('knows each card by the card id the file carries for it', async () => {
     const { tab } = await open()
 
     expect(tab.deck.value.cards.map((card) => card.id)).toStrictEqual(['k7m2xq9fzp', '3n8vr4tqch'])
@@ -253,16 +253,16 @@ describe('a deck opened', () => {
     )
   })
 
-  it('offers every stencil the vault holds as a cut', async () => {
+  it('offers every card model the vault holds as a cut', async () => {
     const { tab } = await open()
 
-    expect(tab.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
+    expect(tab.cardModels.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 
-  it('draws each card under the stencil its wikilink reached', async () => {
+  it('draws each card under the card model its wikilink reached', async () => {
     const { tab } = await open()
 
-    expect(tab.deckCards.value.map((card) => card.stencil)).toStrictEqual(['Animal', 'Animal'])
+    expect(tab.deckCards.value.map((card) => card.cardModel)).toStrictEqual(['Animal', 'Animal'])
   })
 
   it('is one tab per file, so the same deck requested for twice is the tab it has', async () => {
@@ -289,20 +289,20 @@ describe('a card written in a deck', () => {
     expect(tab.deck.value.cards.map(getCardName)).toStrictEqual(['Llama', 'Alpaca', 'Vicuña'])
   })
 
-  it('is placed under where the vault files the stencil it was cut by', async () => {
+  it('is placed under where the vault files the card model it was cut by', async () => {
     const { tab } = await open()
 
     tab.addCard('Animal', [], null)
 
-    expect(tab.deck.value.cards.at(-1)?.stencilPath).toBe('Animal.md')
+    expect(tab.deck.value.cards.at(-1)?.cardModelPath).toBe('Animal.md')
   })
 
-  it('carries no mark, which is written where the deck is made whole', async () => {
+  it('carries no card id, which is written where the deck is made whole', async () => {
     const { tab } = await open()
 
     tab.addCard('Animal', [], null)
 
-    expect(tab.deck.value.cards.at(-1)?.mark).toBe('')
+    expect(tab.deck.value.cards.at(-1)?.cardId).toBe('')
   })
 
   it('leaves the tab unsaved, and marks it', async () => {
@@ -324,13 +324,13 @@ describe('a card written in a deck', () => {
     expect(observedRanks).toStrictEqual(['read 1'])
   })
 
-  it('reaches the vault carrying the mark and the heading the file gave it', async () => {
+  it('reaches the vault carrying the card id and the heading the file gave it', async () => {
     const { decks, tab, wrote } = await open()
 
     tab.writeCardField('k7m2xq9fzp', 'Height', 1, 'about 46"')
     await decks.store.flush()
 
-    expect(wrote()[0]?.cards[0]?.mark).toBe('k7m2xq9fzp')
+    expect(wrote()[0]?.cards[0]?.cardId).toBe('k7m2xq9fzp')
     expect(wrote()[0]?.cards[0]?.heading).toBe('Llama')
   })
 
@@ -406,24 +406,24 @@ describe('a deck the vault rejected', () => {
 })
 
 describe('what is wrong with a deck', () => {
-  const stencilless: DeckProblem = {
-    kind: 'cardWithoutAStencil',
+  const withoutCardModel: DeckProblem = {
+    kind: 'cardWithoutACardModel',
     card: 1,
-    face: null,
+    template: null,
     field: '',
-    text: 'a card under no stencil',
+    text: 'a card under no card model',
   }
 
   it('remains against the card it was read against', async () => {
-    const { tab } = await open({ problems: [stencilless] })
+    const { tab } = await open({ problems: [withoutCardModel] })
 
     const marks = tab.marks.value
     const second = tab.deck.value.cards[1]?.id ?? ''
-    expect(marks.at.get(second)).toStrictEqual(['a card under no stencil'])
+    expect(marks.at.get(second)).toStrictEqual(['a card under no card model'])
   })
 
   it('remains against no other card', async () => {
-    const { tab } = await open({ problems: [stencilless] })
+    const { tab } = await open({ problems: [withoutCardModel] })
 
     const first = tab.deck.value.cards[0]?.id ?? ''
     expect(tab.marks.value.at.has(first)).toBe(false)
@@ -438,18 +438,18 @@ describe('what is wrong with a deck', () => {
 })
 
 describe('a value written over', () => {
-  // One stencil named three ways: by a path, by a name carrying an alias, and
+  // One card model named three ways: by a path, by a name carrying an alias, and
   // by the identifier of the note.
   const WRITTEN = ['cards/Animal', 'Animal|животное', 'note://01J3ZQ8W0T7K9V2M4N6P8R0S1T']
 
-  /** A deck of one card, under the wikilink it wrote for its stencil. */
-  const createOneCard = (stencil: string, stencilPath = 'Animal.md'): readonly VaultCard[] => [
+  /** A deck of one card, under the wikilink it wrote for its card model. */
+  const createOneCard = (cardModel: string, cardModelPath = 'Animal.md'): readonly VaultCard[] => [
     {
-      mark: 'k7m2xq9fzp',
+      cardId: 'k7m2xq9fzp',
       sectionIndex: null,
       heading: 'Llama',
-      stencilLink: stencil,
-      stencilPath,
+      cardModelLink: cardModel,
+      cardModelPath,
       preamble: '',
       values: [{ field: 'Name', text: 'Llama' }],
     },
@@ -458,11 +458,11 @@ describe('a value written over', () => {
   /** A card writing one field twice, which the grid draws two boxes. */
   const twice: readonly VaultCard[] = [
     {
-      mark: 'k7m2xq9fzp',
+      cardId: 'k7m2xq9fzp',
       sectionIndex: null,
       heading: 'Llama',
-      stencilLink: 'Animal',
-      stencilPath: 'Animal.md',
+      cardModelLink: 'Animal',
+      cardModelPath: 'Animal.md',
       preamble: '',
       values: [
         { field: 'Name', text: 'Llama' },
@@ -481,7 +481,7 @@ describe('a value written over', () => {
     }
   })
 
-  it('is written after the rest where the field is another one the stencil declares', async () => {
+  it('is written after the rest where the field is another one the card model declares', async () => {
     const { tab } = await open({ cards: createOneCard('cards/Animal') })
 
     tab.writeCardField('k7m2xq9fzp', 'Height', 1, 'about 45"')
@@ -503,7 +503,7 @@ describe('a value written over', () => {
     ])
   })
 
-  it('is written for a card whose link reached no stencil', async () => {
+  it('is written for a card whose link reached no card model', async () => {
     const { tab } = await open({ cards: createOneCard('Gone', '') })
 
     tab.writeCardField('k7m2xq9fzp', 'Name', 1, 'Vicuña')
@@ -559,7 +559,7 @@ describe('a section of a deck the window holds', () => {
 })
 
 describe('the vault changing under the window', () => {
-  it('asks for no stencil while the window holds no deck', async () => {
+  it('asks for no card model while the window holds no deck', async () => {
     const one = vault()
     const { decks } = useDeckTabs(one.core, one.presets)
 
@@ -584,22 +584,22 @@ describe('a deck read again under the window', () => {
   const getTabSnapshot = (tab: DeckTabState) => ({
     deck: tab.deck.value,
     deckCards: tab.deckCards.value,
-    stencils: tab.stencils.value,
+    cardModels: tab.cardModels.value,
     marks: tab.marks.value,
   })
 
   // The file is read wrong in a way that stands against one card, so a mark
   // that went is a mark this can see going.
-  const stencilless: DeckProblem = {
-    kind: 'cardWithoutAStencil',
+  const withoutCardModel: DeckProblem = {
+    kind: 'cardWithoutACardModel',
     card: 1,
-    face: null,
+    template: null,
     field: '',
-    text: 'a card under no stencil',
+    text: 'a card under no card model',
   }
 
   it('leaves what the grid is drawing standing, where the file reads the same', async () => {
-    const one = await open({ problems: [stencilless] })
+    const one = await open({ problems: [withoutCardModel] })
     const was = getTabSnapshot(one.tab)
 
     one.decks.applyPathChanges(['Animals.md'])
@@ -610,19 +610,19 @@ describe('a deck read again under the window', () => {
     expect(getTabSnapshot(one.tab)).toStrictEqual(was)
     expect(one.tab.deck.value).toBe(was.deck)
     expect(one.tab.deckCards.value).toBe(was.deckCards)
-    expect(one.tab.stencils.value).toBe(was.stencils)
+    expect(one.tab.cardModels.value).toBe(was.cardModels)
     expect(one.tab.marks.value).toBe(was.marks)
   })
 
   it('leaves each mark standing on the card the grid is drawing', async () => {
-    const one = await open({ problems: [stencilless] })
+    const one = await open({ problems: [withoutCardModel] })
     // The card the grid is drawing, under the identity it was drawn with.
     const second = one.tab.deck.value.cards[1]?.id ?? ''
 
     one.decks.applyPathChanges(['Animals.md'])
     await settle()
 
-    expect(one.tab.marks.value.at.get(second)).toStrictEqual(['a card under no stencil'])
+    expect(one.tab.marks.value.at.get(second)).toStrictEqual(['a card under no card model'])
   })
 
   /* A card the file could not name was drawn under an identity the window
@@ -634,16 +634,16 @@ describe('a deck read again under the window', () => {
     const createdItem = one.tab.deck.value.cards.at(-1)?.id ?? ''
     await one.decks.store.flushPending(one.tab.id)
 
-    // The deck was made whole where it was written: the card carries the mark
+    // The deck was made whole where it was written: the card carries the card id
     // the core minted and the heading it read from the first field.
     one.setCards([
       ...CARDS,
       {
-        mark: 'w9s5jd2b1k',
+        cardId: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencilLink: 'Animal',
-        stencilPath: 'Animal.md',
+        cardModelLink: 'Animal',
+        cardModelPath: 'Animal.md',
         preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
@@ -652,7 +652,7 @@ describe('a deck read again under the window', () => {
     await settle()
 
     expect(one.tab.deck.value.cards.at(-1)?.id).toBe(createdItem)
-    expect(one.tab.deck.value.cards.at(-1)?.mark).toBe('w9s5jd2b1k')
+    expect(one.tab.deck.value.cards.at(-1)?.cardId).toBe('w9s5jd2b1k')
     expect(one.tab.deckCards.value.at(-1)?.id).toBe(createdItem)
   })
 
@@ -665,11 +665,11 @@ describe('a deck read again under the window', () => {
     one.setCards([
       ...CARDS,
       {
-        mark: 'w9s5jd2b1k',
+        cardId: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencilLink: 'Animal',
-        stencilPath: 'Animal.md',
+        cardModelLink: 'Animal',
+        cardModelPath: 'Animal.md',
         preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
@@ -709,11 +709,11 @@ describe('a deck read again under the window', () => {
     one.setCards([
       ...CARDS,
       {
-        mark: 'w9s5jd2b1k',
+        cardId: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencilLink: 'Animal',
-        stencilPath: 'Animal.md',
+        cardModelLink: 'Animal',
+        cardModelPath: 'Animal.md',
         preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
@@ -739,11 +739,11 @@ describe('a deck read again under the window', () => {
     one.setCards([
       ...CARDS,
       {
-        mark: 'w9s5jd2b1k',
+        cardId: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vic',
-        stencilLink: 'Animal',
-        stencilPath: 'Animal.md',
+        cardModelLink: 'Animal',
+        cardModelPath: 'Animal.md',
         preamble: '',
         values: [{ field: 'Name', text: 'Vic' }],
       },
@@ -760,11 +760,11 @@ describe('a deck read again under the window', () => {
 
     one.setCards([
       {
-        mark: 'w9s5jd2b1k',
+        cardId: 'w9s5jd2b1k',
         sectionIndex: null,
         heading: 'Vicuña',
-        stencilLink: 'Animal',
-        stencilPath: 'Animal.md',
+        cardModelLink: 'Animal',
+        cardModelPath: 'Animal.md',
         preamble: '',
         values: [{ field: 'Name', text: 'Vicuña' }],
       },
@@ -798,11 +798,11 @@ describe('a deck renamed under the window', () => {
     const one = await open({
       problems: [
         {
-          kind: 'cardWithoutAStencil',
+          kind: 'cardWithoutACardModel',
           card: 1,
-          face: null,
+          template: null,
           field: '',
-          text: 'a card under no stencil',
+          text: 'a card under no card model',
         },
       ],
     })
@@ -851,15 +851,15 @@ describe('a deck the vault could not be reached for', () => {
   })
 })
 
-describe('the stencils a listing did not answer with', () => {
+describe('the card models a listing did not answer with', () => {
   it('are requested for again when the deck arrives back on screen', async () => {
     const one = await open({ unlisted: 1 })
-    expect(one.tab.stencils.value).toStrictEqual([])
+    expect(one.tab.cardModels.value).toStrictEqual([])
 
     one.decks.kind.onShow?.(one.tab, one.id)
     await settle()
 
-    expect(one.tab.stencils.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
+    expect(one.tab.cardModels.value).toStrictEqual([{ name: 'Animal', fields: ['Name', 'Height'] }])
   })
 })
 
@@ -1062,7 +1062,7 @@ describe('a deck tab closed', () => {
   })
 
   it('forgets the deck it drew, so the file is read again under new identities', async () => {
-    const unmarked = CARDS.map((one) => ({ ...one, mark: '' }))
+    const unmarked = CARDS.map((one) => ({ ...one, cardId: '' }))
     const one = await open({ cards: unmarked })
     const before = one.tab.deck.value.cards.map((card) => card.id)
     one.tab.close(one.id)
@@ -1079,7 +1079,7 @@ describe('a deck tab closed', () => {
 
   it('forgets the marks it drew', async () => {
     const one = await open({
-      problems: [{ kind: 'unknown', card: 0, face: null, field: '', text: 'Odd' }],
+      problems: [{ kind: 'unknown', card: 0, template: null, field: '', text: 'Odd' }],
     })
     const before = one.tab.marks.value
     one.tab.close(one.id)

@@ -1,5 +1,5 @@
 /**
- * The vault's decks and stencils, read by the client the schema generates.
+ * The vault's decks and card models, read by the client the schema generates.
  *
  * What is proved here is the crossing: a field the answer leaves at its default
  * arrives as the default, a section a card is placed under arrives as a number or
@@ -33,23 +33,23 @@ const readItem = '12 34 Deck.md'
 
 const { cards } = await import('./cards')
 
-describe('the stencils of a vault', () => {
+describe('the card models of a vault', () => {
   it('come back with how many the vault holds', async () => {
     replyWith({
-      stencils: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
+      cardModels: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
       total: 3,
     })
 
-    expect(await cards.stencils(1)).toEqual({
-      stencils: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
+    expect(await cards.cardModels(1)).toEqual({
+      cardModels: [{ path: 'Word.md', title: 'Word', fields: ['Front', 'Back'] }],
       held: 3,
     })
   })
 
   it('are requested for without a ceiling where none was named', async () => {
-    replyWith({ stencils: [], total: 0 })
+    replyWith({ cardModels: [], total: 0 })
 
-    await cards.stencils()
+    await cards.cardModels()
 
     expect(request[0]).toEqual({})
   })
@@ -73,11 +73,11 @@ describe('making a deck', () => {
   })
 })
 
-describe('making a stencil', () => {
+describe('making a card model', () => {
   it('carries the fields it is cut with', async () => {
     replyWith({ path: 'Word.md' })
 
-    expect(await cards.createStencil('Word', '', ['Front', 'Back'])).toEqual({
+    expect(await cards.createCardModel('Word', '', ['Front', 'Back'])).toEqual({
       ok: true,
       value: { path: 'Word.md' },
     })
@@ -94,15 +94,15 @@ describe('reading a deck', () => {
         preamble: 'about this deck',
         cards: [
           {
-            mark: 'a1',
+            cardId: 'a1',
             sectionIndex: 0,
             heading: 'Entropy',
-            stencilLink: 'Word',
-            stencilPath: 'Word.md',
+            cardModelLink: 'Word',
+            cardModelPath: 'Word.md',
             preamble: 'a note',
             values: [{ field: 'Front', text: '<p>Entropy</p>' }],
           },
-          { mark: 'a2', heading: 'Order', stencilLink: 'Word', stencilPath: 'Word.md' },
+          { cardId: 'a2', heading: 'Order', cardModelLink: 'Word', cardModelPath: 'Word.md' },
         ],
         sections: [{ name: 'Physics', preamble: '' }],
         tail: 'after',
@@ -139,16 +139,16 @@ describe('reading a deck', () => {
         sections: [],
         tail: '',
         problems: [
-          { kind: 'PROBLEM_KIND_MARK_CARRIED_TWICE', card: 2, field: '', text: 'a1' },
-          { kind: 'PROBLEM_KIND_CARD_WITHOUT_A_STENCIL', field: 'Front', text: '' },
+          { kind: 'PROBLEM_KIND_CARD_ID_CARRIED_TWICE', card: 2, field: '', text: 'a1' },
+          { kind: 'PROBLEM_KIND_CARD_WITHOUT_A_CARD_MODEL', field: 'Front', text: '' },
         ],
       },
     })
 
     const readItem = await cards.readDeck('Deck.md')
     expect(readItem.ok ? readItem.value.deck.problems : null).toEqual([
-      { kind: 'markCarriedTwice', card: 2, face: null, field: '', text: 'a1' },
-      { kind: 'cardWithoutAStencil', card: null, face: null, field: 'Front', text: '' },
+      { kind: 'cardIdCarriedTwice', card: 2, template: null, field: '', text: 'a1' },
+      { kind: 'cardWithoutACardModel', card: null, template: null, field: 'Front', text: '' },
     ])
   })
 })
@@ -164,11 +164,11 @@ describe('writing a deck', () => {
         tail: 'after',
         cards: [
           {
-            mark: 'a1',
+            cardId: 'a1',
             sectionIndex: null,
             heading: 'Entropy',
-            stencilLink: 'Word',
-            stencilPath: 'Word.md',
+            cardModelLink: 'Word',
+            cardModelPath: 'Word.md',
             preamble: '',
             values: [],
           },
@@ -179,7 +179,7 @@ describe('writing a deck', () => {
     )
 
     expect(request[0]?.baseline).toEqual({ path: 'Deck.md', size: '12', mtime: '34' })
-    expect(request[0]?.cards).toEqual([{ mark: 'a1', heading: 'Entropy', stencilLink: 'Word' }])
+    expect(request[0]?.cards).toEqual([{ cardId: 'a1', heading: 'Entropy', cardModelLink: 'Word' }])
   })
 
   it('names no file where the window read none', async () => {
@@ -203,43 +203,43 @@ describe('writing a deck', () => {
   })
 })
 
-describe('a stencil', () => {
-  it('arrives back with every face it shows a card through', async () => {
+describe('a card model', () => {
+  it('arrives back with every template it shows a card through', async () => {
     replyWith({
-      stencil: {
+      cardModel: {
         path: 'Word.md',
         title: 'Word',
         fields: ['Front', 'Back'],
         preamble: '',
-        faces: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
+        templates: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
         tail: '',
         problems: [],
       },
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    const answer = await cards.readStencil('Word.md')
-    expect(answer.ok ? answer.value.stencil.faces : null).toEqual([
+    const answer = await cards.readCardModel('Word.md')
+    expect(answer.ok ? answer.value.cardModel.templates : null).toEqual([
       { name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' },
     ])
   })
 
-  it('is no stencil where the answer carries none', async () => {
-    replyWith({ error: 'ERROR_CODE_NOT_A_STENCIL' })
+  it('is no card model where the answer carries none', async () => {
+    replyWith({ error: 'ERROR_CODE_NOT_A_CARD_MODEL' })
 
-    expect(await cards.readStencil('Notes.md')).toEqual(asFailure('notAStencil'))
+    expect(await cards.readCardModel('Notes.md')).toEqual(asFailure('notACardModel'))
   })
 
-  it('is written with its fields and its faces', async () => {
+  it('is written with its fields and its templates', async () => {
     replyWith({ at: { path: 'Word.md', size: '12', mtime: '34' } })
 
-    const answer = await cards.writeStencil(
+    const answer = await cards.writeCardModel(
       'Word.md',
       {
         fields: ['Front', 'Back'],
         preamble: 'about',
         tail: '',
-        faces: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
+        templates: [{ name: 'Reading', preamble: '', front: '{{Front}}', back: '{{Back}}' }],
       },
       readItem,
     )
@@ -260,7 +260,7 @@ describe('renaming a field', () => {
       at: { path: 'Word.md', size: '12', mtime: '34' },
     })
 
-    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, readItem)).toEqual(
+    expect(await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, readItem)).toEqual(
       asValue({
         decks: ['Words.md', 'Roots.md'],
         cards: 12,
@@ -273,7 +273,7 @@ describe('renaming a field', () => {
   it('leaves a deck it could not read carrying nothing to say', async () => {
     replyWith({ decks: [], cards: 0, notWritten: [{ path: 'Old.md' }] })
 
-    const answer = await cards.renameField('Word.md', { from: 'Front', to: 'Face' }, null)
+    const answer = await cards.renameField('Word.md', { from: 'Front', to: 'Template' }, null)
     expect(answer.ok ? answer.value.notWritten : null).toEqual([{ path: 'Old.md', text: '' }])
   })
 })

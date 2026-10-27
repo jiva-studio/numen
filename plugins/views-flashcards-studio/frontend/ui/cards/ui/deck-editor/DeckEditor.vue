@@ -4,7 +4,7 @@
  * they are in, and a plus standing last.
  *
  * The grid lays the cards out, drags one from place to place, and asks which
- * stencil a new one is cut by. What a card holds is the card's own. What a card
+ * card model a new one is cut by. What a card holds is the card's own. What a card
  * stands for is the caller's.
  */
 import { computed, provide, shallowRef } from 'vue'
@@ -25,15 +25,15 @@ import {
 } from '../../lib/deck'
 import { getGrid, isMoved, type Run } from '../../lib/grid'
 import { getFreeName, type InsertionPoint, type StepDirection } from '../../lib/order'
-import type { Stencil } from '../../lib/card'
+import type { CardModel } from '../../lib/card'
 
 // --- Props & Emits ---
 const props = withDefaults(
   defineProps<{
     /** The cards, in the order they are drawn. */
     cards: readonly DeckCard[]
-    /** The stencils a card may be cut by. */
-    stencils: readonly Stencil[]
+    /** The card models a card may be cut by. */
+    cardModels: readonly CardModel[]
     /** The sections, in the order they stand in the deck. */
     sections?: readonly DeckSection[]
     /** What the grid is announced as. */
@@ -47,7 +47,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  (event: 'add', stencil: string, section: string | null): void
+  (event: 'add', cardModel: string, section: string | null): void
   (event: 'remove', card: string): void
   (event: 'move', card: string, target: InsertionPoint): void
   (event: 'write', card: string, field: string, index: number, text: string): void
@@ -58,7 +58,7 @@ const emit = defineEmits<{
 
 // --- State ---
 /**
- * The run whose plus is showing which stencils a new card may be cut by.
+ * The run whose plus is showing which card models a new card may be cut by.
  */
 const activePickerRunId = shallowRef<string | null>(null)
 
@@ -124,9 +124,9 @@ function onAsk(runId: string): void {
   activePickerRunId.value = runId
 }
 
-function onAddCard(stencil: Stencil, run: Run): void {
+function onAddCard(cardModel: CardModel, run: Run): void {
   activePickerRunId.value = null
-  emit('add', stencil.name, run.section?.id ?? null)
+  emit('add', cardModel.name, run.section?.id ?? null)
 }
 
 function onAddSection(): void {
@@ -152,7 +152,7 @@ function onAddSection(): void {
       v-for="run in grid.runs"
       :key="run.id"
       :run="run"
-      :stencils="stencils"
+      :card-models="cardModels"
       :of="grid.of"
       :wrong="wrong"
       :at="dropTarget"
@@ -167,7 +167,7 @@ function onAddSection(): void {
       @release="onRelease"
       @step="onStep"
       @ask="onAsk(run.id)"
-      @add="(stencil) => onAddCard(stencil, run)"
+      @add="(cardModel) => onAddCard(cardModel, run)"
     />
 
     <Divider>

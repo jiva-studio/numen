@@ -24,7 +24,7 @@ func newCommands(t *testing.T) (*command.Registry, string) {
 
 func TestTheCreateCommandsMakeTheFileAndOpenIt(t *testing.T) {
 	for id, kind := range map[string]string{
-		"create-deck": "type: deck", "create-stencil": "type: stencil", "create-preset": "type: preset",
+		"create-deck": "type: deck", "create-card-model": "type: card-model", "create-preset": "type: preset",
 	} {
 		t.Run(id, func(t *testing.T) {
 			commands, root := newCommands(t)
@@ -43,17 +43,17 @@ func TestTheCreateCommandsMakeTheFileAndOpenIt(t *testing.T) {
 	}
 }
 
-func TestAStencilMadeByItsCommandDeclaresAField(t *testing.T) {
+func TestACardModelMadeByItsCommandDeclaresAField(t *testing.T) {
 	commands, root := newCommands(t)
 
 	if _, err := commands.RunCommand(t.Context(), command.Request{
-		Command: "create-stencil", Arguments: command.Arguments{"title": "Mountain"},
+		Command: "create-card-model", Arguments: command.Arguments{"title": "Mountain"},
 	}); err != nil {
 		t.Fatal(err)
 	}
 
 	if made := onDisk(t, root, "Mountain.md"); !strings.Contains(made, "Field 1") {
-		t.Errorf("the stencil holds %q", made)
+		t.Errorf("the card model holds %q", made)
 	}
 }
 

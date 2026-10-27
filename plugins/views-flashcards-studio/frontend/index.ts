@@ -2,7 +2,7 @@ import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
 import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
-import { useStencilTabs } from './stencil/kind'
+import { useCardModelTabs } from './card-model/kind'
 import { usePresetTab } from './preset/kind'
 import { WORDS as presetWords } from './preset/words'
 import {
@@ -14,16 +14,16 @@ import {
 } from './review'
 
 export { DECK } from './deck/kind'
-export { STENCIL } from './stencil/kind'
+export { CARD_MODEL } from './card-model/kind'
 export { PRESET } from './preset/kind'
 export { default as DeckTab } from './deck/ui/DeckTab.vue'
-export { default as StencilTab } from './stencil/ui/StencilTab.vue'
+export { default as CardModelTab } from './card-model/ui/CardModelTab.vue'
 export { default as PresetTab } from './preset/ui/PresetTab.vue'
 export { useDeckTabs } from './deck/model/useDeckTabs'
-export { useStencilTabs } from './stencil/kind'
+export { useCardModelTabs } from './card-model/kind'
 export { usePresetTab } from './preset/kind'
 export type { DeckTabState } from './deck/types'
-export type { StencilTabState } from './stencil/types'
+export type { CardModelTabState } from './card-model/types'
 export type { PresetTabState } from './preset/types'
 
 export { REVIEW } from './review'
@@ -56,10 +56,10 @@ export function activate(context: PluginContext): void {
   }
   const closeTab = (id: string): void => context.closeTab?.(id)
   const decks = useDeckTabs(cards, presets, { buffers, closeTab })
-  const stencils = useStencilTabs(cards, {
+  const cardModels = useCardModelTabs(cards, {
     buffers,
     closeTab,
-    writeMessage: workspace.getMessageWriter('stencil'),
+    writeMessage: workspace.getMessageWriter('card-model'),
   })
   const schedules = usePresetTab({
     core: presets,
@@ -69,7 +69,7 @@ export function activate(context: PluginContext): void {
     today: () => workspace.getToday(),
   })
   context.registerTabKind(decks.kind)
-  context.registerTabKind(stencils.kind)
+  context.registerTabKind(cardModels.kind)
   context.registerTabKind(schedules.kind)
   context.registerCommand({
     id: 'preset',
@@ -99,13 +99,13 @@ export function activate(context: PluginContext): void {
       },
     })
     context.registerContextMenu({
-      id: 'newStencil',
-      text: 'New stencil',
+      id: 'newCardModel',
+      text: 'New card model',
       icon: LayoutTemplate,
       parentId: 'new',
       target: 'all',
       handler: async (target) => {
-        await cards.createStencil('New stencil', getFolder(target.path, target.isFolder), [])
+        await cards.createCardModel('New card model', getFolder(target.path, target.isFolder), [])
       },
     })
     context.registerContextMenu({

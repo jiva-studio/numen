@@ -11,14 +11,14 @@ export const canStart = (deck: DeckCardsDue, presets: ReadonlyMap<string, Preset
   deck.due + deck.new > 0 && !presets.get(deck.deck)?.paused
 
 /**
- * Whether a deck holds nothing that can ever be asked for: every card face in
+ * Whether a deck holds nothing that can ever be asked for: every review card in
  * it is one nobody has begun, and the preset scheduling it begins none a day.
  *
  * It is a fact about the material, and not a reason the preset is stopped. The
  * preset schedules; there is nothing here for it to schedule.
  */
 export const hasNothingToBegin = (deck: DeckCardsDue, preset: Preset | undefined): boolean =>
-  deck.faces > 0 && deck.unbegun === deck.faces && preset?.budget.new === 0
+  deck.reviewCards > 0 && deck.unbegun === deck.reviewCards && preset?.budget.new === 0
 
 /**
  * How far through its day a preset stands: what has been answered against the
@@ -49,8 +49,8 @@ const share = (count: number, budget: number): number => (budget > 0 ? count / b
 export const isSpent = (one: Preset): boolean => getSpentShare(one) >= 1
 
 /**
- * How much of a deck stands learned, as a share of its card faces, and null for
+ * How much of a deck stands learned, as a share of its review cards, and null for
  * a deck holding none: a share of nothing is no share.
  */
 export const getLearnedShare = (deck: DeckCardsDue): number | null =>
-  deck.faces > 0 ? deck.learned / deck.faces : null
+  deck.reviewCards > 0 ? deck.learned / deck.reviewCards : null

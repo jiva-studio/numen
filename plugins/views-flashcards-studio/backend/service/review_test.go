@@ -27,21 +27,21 @@ import (
 	"github.com/jiva-studio/numen/libs/protocol/schematest"
 )
 
-// deck is one vault of one stencil and one deck, whose single card stands
-// through one face.
+// deck is one vault of one card model and one deck, whose single card stands
+// through one review card.
 var deck = map[string]string{
-	"Term.md": "---\ntype: stencil\nfields:\n  - Word\n  - Meaning\n---\n" +
+	"Term.md": "---\ntype: card-model\nfields:\n  - Word\n  - Meaning\n---\n" +
 		"\n## Say it\n\n### Front\n\n{{Word}}\n\n### Back\n\n{{Meaning}}\n",
 	"decks/Words.md": "---\ntype: deck\n---\n" +
 		"\n## Leaf mould ^3f4g5h6j7k\n\n[[Term]]\n\n### Word\n\nLeaf mould\n" +
 		"\n### Meaning\n\nCompost made of fallen leaves alone\n",
 }
 
-// other is a second vault sharing nothing with the first: another stencil,
-// another face, another mark, another word. A claim about one vault not
+// other is a second vault sharing nothing with the first: another card model,
+// another review card, another card id, another word. A claim about one vault not
 // reaching another is worth nothing when both hold the same cards.
 var other = map[string]string{
-	"Bird.md": "---\ntype: stencil\nfields:\n  - Call\n  - Who\n---\n" +
+	"Bird.md": "---\ntype: card-model\nfields:\n  - Call\n  - Who\n---\n" +
 		"\n## Whose call\n\n### Front\n\n{{Call}}\n\n### Back\n\n{{Who}}\n",
 	"decks/Calls.md": "---\ntype: deck\n---\n" +
 		"\n## Yaffle ^zpqrstvwxy\n\n[[Bird]]\n\n### Call\n\nA laugh across the field\n" +
@@ -161,11 +161,11 @@ func TestARunIsAnsweredOnlyOnTheVaultItWasOpenedOn(t *testing.T) {
 	card := session.GetCards()[0]
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
-		Vault:  string(two.ID),
-		Run:    session.GetRun(),
-		Mark:   card.GetMark(),
-		Face:   card.GetFace(),
-		Rating: flashcardsv1.Rating_RATING_GOOD,
+		Vault:    string(two.ID),
+		Run:      session.GetRun(),
+		CardId:   card.GetCardId(),
+		Template: card.GetTemplate(),
+		Rating:   flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if err == nil {
 		t.Fatal("an answer named against another vault's run was written")
@@ -208,11 +208,11 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 
 	card := now.GetCards()[0]
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
-		Vault:  string(v.ID),
-		Run:    was.GetRun(),
-		Mark:   card.GetMark(),
-		Face:   card.GetFace(),
-		Rating: flashcardsv1.Rating_RATING_GOOD,
+		Vault:    string(v.ID),
+		Run:      was.GetRun(),
+		CardId:   card.GetCardId(),
+		Template: card.GetTemplate(),
+		Rating:   flashcardsv1.Rating_RATING_GOOD,
 	}))
 	if connect.CodeOf(err) != connect.CodeNotFound {
 		t.Fatalf("the session was over and the answer failed with %v", connect.CodeOf(err))
@@ -223,7 +223,7 @@ func TestARunIsClosedByTheNextSessionOnItsVault(t *testing.T) {
 }
 
 // A vault is answered on its own. What a person did in one is not what another
-// owes, and the two vaults here share no mark, no face and no word, so nothing
+// owes, and the two vaults here share no card id, no review card and no word, so nothing
 // could pass between them by looking alike.
 func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 	api, target, installation := newAPIOn(t, deck, other)
@@ -235,7 +235,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 	for _, card := range session.GetCards() {
 		if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 			Vault: string(one.ID), Run: session.GetRun(),
-			Mark: card.GetMark(), Face: card.GetFace(),
+			CardId: card.GetCardId(), Template: card.GetTemplate(),
 			Rating: flashcardsv1.Rating_RATING_EASY,
 		})); err != nil {
 			t.Fatal(err)
@@ -244,7 +244,7 @@ func TestAnAnswerInOneVaultPreservesTheOtherOwingWhatItDid(t *testing.T) {
 
 	after := front(t, api)
 	if now := findVaultCount(t, after, string(two.ID)); now.GetNew() != was.GetNew() ||
-		now.GetDue() != was.GetDue() || now.GetFaces() != was.GetFaces() {
+		now.GetDue() != was.GetDue() || now.GetReviewCards() != was.GetReviewCards() {
 		t.Errorf("the other vault came to %+v, having come to %+v", now, was)
 	}
 	if now := findVaultCount(t, after, string(one.ID)); now.GetNew() != 0 || now.GetDue() != 0 {
@@ -278,12 +278,12 @@ func TestAnAnswerIsSavedAndCanBeTakenBack(t *testing.T) {
 	card := session.GetCards()[0]
 
 	provided, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
-		Vault:  string(v.ID),
-		Run:    session.GetRun(),
-		Mark:   card.GetMark(),
-		Face:   card.GetFace(),
-		Rating: flashcardsv1.Rating_RATING_GOOD,
-		TookMs: 1200,
+		Vault:    string(v.ID),
+		Run:      session.GetRun(),
+		CardId:   card.GetCardId(),
+		Template: card.GetTemplate(),
+		Rating:   flashcardsv1.Rating_RATING_GOOD,
+		TookMs:   1200,
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -314,7 +314,7 @@ func TestAnAnswerOutsideTheFourIsRefused(t *testing.T) {
 
 	_, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(),
+		CardId: card.GetCardId(), Template: card.GetTemplate(),
 		Rating: flashcardsv1.Rating_RATING_UNSPECIFIED,
 	}))
 	if connect.CodeOf(err) != connect.CodeInvalidArgument {
@@ -424,12 +424,12 @@ func TestTheFourRatingsAreCarriedAcross(t *testing.T) {
 	}
 }
 
-// A deck that could not be given marks is named to the person, so they know
+// A deck that could not be given card ids is named to the person, so they know
 // which of their cards are not in front of them.
 func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 	api, target, installation := newAPIOn(t, map[string]string{
 		"Term.md": deck["Term.md"],
-		// The card carries no mark, so the deck is written to give it one.
+		// The card carries no card id, so the deck is written to give it one.
 		"decks/Own.md": "---\ntype: deck\n---\n" +
 			"\n## Leaf mould\n\n[[Term]]\n\n### Word\n\nLeaf mould\n\n### Meaning\n\nLeaves\n",
 	})
@@ -444,7 +444,7 @@ func TestASessionReturnsWhichDecksItCouldNotMark(t *testing.T) {
 		t.Errorf("the session says %v could not be marked", session.GetUnwritten())
 	}
 	if len(session.GetCards()) != 0 {
-		t.Errorf("a card with no mark was asked: %+v", session.GetCards())
+		t.Errorf("a card with no card id was asked: %+v", session.GetCards())
 	}
 }
 
@@ -457,8 +457,8 @@ func TestEveryVaultIsCountedOnTheFrontDoor(t *testing.T) {
 		t.Fatalf("counted %d of %d vaults", len(out.GetVaults()), len(target))
 	}
 	for _, one := range out.GetVaults() {
-		if one.GetFaces() != 1 || one.GetNew() != 1 {
-			t.Errorf("got %s = %+v, want Faces=1, New=1", one.GetName(), one)
+		if one.GetReviewCards() != 1 || one.GetNew() != 1 {
+			t.Errorf("got %s = %+v, want Review cards=1, New=1", one.GetName(), one)
 		}
 	}
 }
@@ -510,7 +510,7 @@ func TestTheFrontDoorReturnsWhatTodayCameToBelowEachPreset(t *testing.T) {
 	card := session.GetCards()[0]
 	if _, err := api.AnswerCard(t.Context(), connect.NewRequest(&flashcardsv1.AnswerCardRequest{
 		Vault: string(v.ID), Run: session.GetRun(),
-		Mark: card.GetMark(), Face: card.GetFace(),
+		CardId: card.GetCardId(), Template: card.GetTemplate(),
 		Rating: flashcardsv1.Rating_RATING_GOOD, TookMs: 6000,
 	})); err != nil {
 		t.Fatal(err)
@@ -607,8 +607,8 @@ func TestTheFrontDoorReturnsWhatEachPresetOfAVaultContains(t *testing.T) {
 }
 
 // newDeck is a deck of as many cards, pointing at the preset named.
-// Each deck is written from a mark of its own, because a mark is what names a
-// card and two decks writing one mark are writing one card.
+// Each deck is written from a card id of its own, because a card id is what names a
+// card and two decks writing one card id are writing one card.
 func newDeck(pos string, cards, from int) string {
 	out := "---\ntype: deck\n"
 	if pos != "" {
@@ -856,11 +856,11 @@ var spread = map[string]string{
 		"new_a_day: 2\nreviews_a_day: 1\nretention: 0.9\ncounts: cards\n---\n\n# Timed\n",
 	"Counted.md": "---\ntype: preset\ngoal: retention\nretention: 0.9\n" +
 		"new_a_day: 8\nreviews_a_day: 30\nminutes_a_day: 15\ncounts: cards\n---\n\n# Counted\n",
-	"decks/Verbs.md": newStencilDeck("Both", "Timed", 100, 0),
-	"decks/Nouns.md": newStencilDeck("One", "Timed", 80, 1000),
-	"decks/Roots.md": newStencilDeck("One", "Counted", 100, 2000),
-	"decks/Loose.md": newStencilDeck("One", "", 60, 3000),
-	"decks/Odds.md":  newStencilDeck("One", "", 60, 4000),
+	"decks/Verbs.md": newCardModelDeck("Both", "Timed", 100, 0),
+	"decks/Nouns.md": newCardModelDeck("One", "Timed", 80, 1000),
+	"decks/Roots.md": newCardModelDeck("One", "Counted", 100, 2000),
+	"decks/Loose.md": newCardModelDeck("One", "", 60, 3000),
+	"decks/Odds.md":  newCardModelDeck("One", "", 60, 4000),
 }
 
 // The tile over a preset and the session it opens are one number.
@@ -1004,7 +1004,7 @@ func TestTheCurveCarriesTheBacklogDayByDay(t *testing.T) {
 			overdue, unbegun)
 	}
 	if overdue+unbegun > cards {
-		t.Errorf("%d overdue and %d unbegun of %d card faces", overdue, unbegun, cards)
+		t.Errorf("%d overdue and %d unbegun of %d review cards", overdue, unbegun, cards)
 	}
 
 	for i, one := range curveResp.GetAt() {

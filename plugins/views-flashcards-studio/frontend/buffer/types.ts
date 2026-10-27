@@ -1,5 +1,5 @@
 /**
- * Domain types for flashcard deck and stencil open buffers.
+ * Domain types for flashcard deck and card model open buffers.
  */
 import type { Result } from '@numen/wire'
 

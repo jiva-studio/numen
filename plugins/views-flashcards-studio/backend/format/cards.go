@@ -1,5 +1,5 @@
-// Package format reads the two notes a flashcard is made of. A stencil declares
-// the fields a card has and the faces it is shown by; a deck holds the cards.
+// Package format reads the two notes a flashcard is made of. A card model declares
+// the fields a card has and the templates it is shown by; a deck holds the cards.
 // It is pure: no filesystem, no clock, no database.
 //
 // A card is HTML. The file it is written in is cut at three heading levels, so
@@ -27,26 +27,26 @@ const (
 	FieldLevel = 3
 )
 
-// Stencil is a note declaring what a card has and the face templates it is
+// CardModel is a note declaring what a card has and the card templates it is
 // shown through.
-type Stencil struct {
+type CardModel struct {
 	Ref    domain.Fingerprint
 	Fields []string
-	// Preamble is every byte above the first face, down to the one its heading
+	// Preamble is every byte above the first template, down to the one its heading
 	// opens on, and Tail is what the file ends with once the last side has been
-	// read. Both are kept as they were written and neither is any face's.
-	Preamble string
-	Tail     string
-	Faces    []FaceTemplate
+	// read. Both are kept as they were written and neither is any template's.
+	Preamble  string
+	Tail      string
+	Templates []CardTemplate
 	// Problems are what was wrong with the file and could not be repaired.
 	// They are shown to the person, and never guessed at.
 	Problems []Problem
 }
 
-// FaceTemplate is one way a card is shown, as its stencil declares it: what
+// CardTemplate is one way a card is shown, as its card model declares it: what
 // stands before the answer and what stands after it, each with `{{Field}}` where
-// a value goes. A face with only one of the two lays out nothing.
-type FaceTemplate struct {
+// a value goes. A template with only one of the two lays out nothing.
+type CardTemplate struct {
 	Name     string
 	Preamble string
 	Front    string
@@ -69,7 +69,7 @@ type Deck struct {
 }
 
 // Section is a run of a deck a person has given a name. It is a name and
-// nothing else: no fields, no stencil, no schedule, no mark.
+// nothing else: no fields, no card model, no schedule, no card id.
 type Section struct {
 	Name string
 	// Nothing lays it out and nothing reads it: it is a person writing about
@@ -80,22 +80,22 @@ type Section struct {
 // NoSection is what a card standing before the first section carries.
 const NoSection = -1
 
-// Card is one filled-in set of a stencil's fields.
+// Card is one filled-in set of a card model's fields.
 type Card struct {
-	// Heading is what the card's heading shows, with the mark taken off. It is
+	// Heading is what the card's heading shows, with the card id taken off. It is
 	// the first line of the card's first field, read back, and it holds nothing
 	// of its own.
 	Heading string
-	// Mark is what the card is, for as long as it exists, and it is empty until
+	// Card id is what the card is, for as long as it exists, and it is empty until
 	// the application next writes the deck. It is the ten characters alone: the
 	// caret in front of them is how a heading writes one.
-	Mark cardid.ID
-	// StencilLink is the target of the lone wikilink under the heading, as it is
-	// written and without its brackets: a name where one picks the stencil, and
+	CardID cardid.ID
+	// CardModelLink is the target of the lone wikilink under the heading, as it is
+	// written and without its brackets: a name where one picks the card model, and
 	// `note://<identifier>` where none does. A card whose first paragraph is not
-	// one names no stencil.
-	StencilLink string
-	Preamble    string
+	// one names no card model.
+	CardModelLink string
+	Preamble      string
 	// own, counted from the first. A card standing before the first section
 	// carries NoSection.
 	Section int
@@ -108,9 +108,9 @@ type Value struct {
 	Text  string
 }
 
-// First is the field a card's heading holds the value of. A stencil declaring
+// First is the field a card's heading holds the value of. A card model declaring
 // none cuts nothing, and answers with no name.
-func (s Stencil) First() string {
+func (s CardModel) First() string {
 	if len(s.Fields) == 0 {
 		return ""
 	}
@@ -129,7 +129,7 @@ func (c Card) Value(field string) (string, bool) {
 	return "", false
 }
 
-// Card is the card of a mark. A deck holding none of that mark is
+// Card is the card of a card id. A deck holding none of that card id is
 // ErrNoSuchCard, and a deck holding two is ErrTwoCards: both are read and both
 // are shown, and a machine choosing between them would be choosing which of
 // the two a person meant.
@@ -137,7 +137,7 @@ func (d Deck) Card(carried cardid.ID) (Card, error) {
 	found := Card{}
 	target := false
 	for _, c := range d.Cards {
-		if c.Mark != carried {
+		if c.CardID != carried {
 			continue
 		}
 		if target {

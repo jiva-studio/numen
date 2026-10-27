@@ -22,9 +22,9 @@ export interface DeckTabsInside {
   }
   readonly vaultAnswers: { getTitle(path: string): string }
   readonly createDeck: Cards['createDeck']
-  listStencils(): Promise<void>
+  listCardModels(): Promise<void>
   listPresets(): Promise<void>
-  listStencilsAgain(): void
+  listCardModelsAgain(): void
   listPresetsAgain(): void
   refreshDeckPreset(path: string): Promise<void>
   createDeckTabState(id: string): DeckTabState
@@ -34,9 +34,9 @@ export function createDeckKind({
   store,
   vaultAnswers,
   createDeck,
-  listStencils,
+  listCardModels,
   listPresets,
-  listStencilsAgain,
+  listCardModelsAgain,
   listPresetsAgain,
   refreshDeckPreset,
   createDeckTabState,
@@ -47,7 +47,7 @@ export function createDeckKind({
     icon: Layers,
     open: (path, id) => {
       store.open(id, path)
-      void listStencils()
+      void listCardModels()
       void listPresets()
       void refreshDeckPreset(path)
       return createDeckTabState(id)
@@ -60,7 +60,7 @@ export function createDeckKind({
     getTitle: (one) => vaultAnswers.getTitle(store.getPath(one.id)),
     getMark: (one) => getMarkOf(one.note.value.state),
     onShow: () => {
-      listStencilsAgain()
+      listCardModelsAgain()
       listPresetsAgain()
     },
     getTarget: (one) => ({

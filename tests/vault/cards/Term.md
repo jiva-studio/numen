@@ -1,5 +1,5 @@
 ---
-type: stencil
+type: card-model
 title: Term
 fields:
   - Слово
@@ -11,7 +11,7 @@ id: 01M5MY5B93FBW5B5G38T6TCATE
 
 # Term
 
-A stencil with fields and no faces at all. Its cards are read, and there is
+A card model with fields and no templates at all. Its cards are read, and there is
 nothing to lay them out with.
 
-## Face 1
+## Template 1

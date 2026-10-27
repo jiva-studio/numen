@@ -22,9 +22,9 @@ const createInside = (open: readonly string[] = []) => {
     },
     vaultAnswers: { getTitle: (path: string) => `title of ${path}` },
     createDeck: vi.fn(async (title: string) => asValue({ path: `${title}.md` })),
-    listStencils: vi.fn(async () => {}),
+    listCardModels: vi.fn(async () => {}),
     listPresets: vi.fn(async () => {}),
-    listStencilsAgain: vi.fn(),
+    listCardModelsAgain: vi.fn(),
     listPresetsAgain: vi.fn(),
     refreshDeckPreset: vi.fn(async () => {}),
     createDeckTabState: vi.fn(() => state),
@@ -39,7 +39,7 @@ describe('a deck tab opened', () => {
     expect(kind.open?.('decks/Animals.md', 'deck:decks/Animals.md')).toBe(state)
 
     expect(inside.store.open).toHaveBeenCalledWith('deck:decks/Animals.md', 'decks/Animals.md')
-    expect(inside.listStencils).toHaveBeenCalledTimes(1)
+    expect(inside.listCardModels).toHaveBeenCalledTimes(1)
     expect(inside.listPresets).toHaveBeenCalledTimes(1)
     expect(inside.refreshDeckPreset).toHaveBeenCalledWith('decks/Animals.md')
     expect(inside.createDeckTabState).toHaveBeenCalledWith('deck:decks/Animals.md')
@@ -60,12 +60,12 @@ describe('what a deck tab is known by', () => {
 })
 
 describe('a deck tab coming on screen', () => {
-  it('asks again for the stencils and the presets', () => {
+  it('asks again for the card models and the presets', () => {
     const { inside, state, kind } = createInside()
 
     kind.onShow?.(state, 'tab-1')
 
-    expect(inside.listStencilsAgain).toHaveBeenCalledTimes(1)
+    expect(inside.listCardModelsAgain).toHaveBeenCalledTimes(1)
     expect(inside.listPresetsAgain).toHaveBeenCalledTimes(1)
   })
 })

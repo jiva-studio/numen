@@ -2,12 +2,12 @@
 // @generated from file numen/flashcards/v1/cards.proto (package numen.flashcards.v1, syntax proto3)
 /* eslint-disable */
 
-// What a client may ask about the stencils and the decks a vault holds.
+// What a client may ask about the card models and the decks a vault holds.
 //
-// A stencil declares the fields a card has and the faces it is shown by; a
+// A card model declares the fields a card has and the templates it is shown by; a
 // deck holds the cards. Both are notes, so both are addressed by the path they
 //
-// Nothing here is laid out. A face travels as the markdown it was written as,
+// Nothing here is laid out. A template travels as the markdown it was written as,
 // with its `{{Field}}` where they stand, and putting a card's values into it is
 // the client's.
 
@@ -23,15 +23,15 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/flashcards/v1/cards.proto.
  */
 export const file_numen_flashcards_v1_cards: GenFile = /*@__PURE__*/
-  fileDesc("Ch9udW1lbi9mbGFzaGNhcmRzL3YxL2NhcmRzLnByb3RvEhNudW1lbi5mbGFzaGNhcmRzLnYxIrABCgdTdGVuY2lsEgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZmllbGRzGAMgAygJEigKBWZhY2VzGAQgAygLMhkubnVtZW4uZmxhc2hjYXJkcy52MS5GYWNlEi4KCHByb2JsZW1zGAUgAygLMhwubnVtZW4uZmxhc2hjYXJkcy52MS5Qcm9ibGVtEhAKCHByZWFtYmxlGAYgASgJEgwKBHRhaWwYByABKAkiPQoOU3RlbmNpbFN1bW1hcnkSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkiQwoERmFjZRIMCgRuYW1lGAEgASgJEg0KBWZyb250GAIgASgJEgwKBGJhY2sYAyABKAkSEAoIcHJlYW1ibGUYBCABKAkizQEKBERlY2sSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIQCghwcmVhbWJsZRgDIAEoCRIoCgVjYXJkcxgEIAMoCzIZLm51bWVuLmZsYXNoY2FyZHMudjEuQ2FyZBIuCghzZWN0aW9ucxgFIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuU2VjdGlvbhIuCghwcm9ibGVtcxgGIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuUHJvYmxlbRIMCgR0YWlsGAcgASgJIikKB1NlY3Rpb24SDAoEbmFtZRgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCSKOAQoHUHJvYmxlbRIuCgRraW5kGAEgASgOMiAubnVtZW4uZmxhc2hjYXJkcy52MS5Qcm9ibGVtS2luZBIRCgRjYXJkGAIgASgFSACIAQESEQoEZmFjZRgDIAEoBUgBiAEBEg0KBWZpZWxkGAQgASgJEgwKBHRleHQYBSABKAlCBwoFX2NhcmRCBwoFX2ZhY2UivQEKBENhcmQSDAoEbWFyaxgBIAEoCRIaCg1zZWN0aW9uX2luZGV4GAIgASgFSACIAQESDwoHaGVhZGluZxgDIAEoCRIUCgxzdGVuY2lsX2xpbmsYBCABKAkSEAoIcHJlYW1ibGUYBSABKAkSKgoGdmFsdWVzGAYgAygLMhoubnVtZW4uZmxhc2hjYXJkcy52MS5WYWx1ZRIUCgxzdGVuY2lsX3BhdGgYByABKAlCEAoOX3NlY3Rpb25faW5kZXgiJAoFVmFsdWUSDQoFZmllbGQYASABKAkSDAoEdGV4dBgCIAEoCSIkChNMaXN0U3RlbmNpbHNSZXF1ZXN0Eg0KBWxpbWl0GAEgASgFIlwKFExpc3RTdGVuY2lsc1Jlc3BvbnNlEjUKCHN0ZW5jaWxzGAEgAygLMiMubnVtZW4uZmxhc2hjYXJkcy52MS5TdGVuY2lsU3VtbWFyeRINCgV0b3RhbBgCIAEoBSJDChRDcmVhdGVTdGVuY2lsUmVxdWVzdBINCgV0aXRsZRgBIAEoCRIMCgRwYXRoGAIgASgJEg4KBmZpZWxkcxgDIAMoCSJ6ChVDcmVhdGVTdGVuY2lsUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIyCgVlcnJvchgCIAEoDjIeLm51bWVuLmZsYXNoY2FyZHMudjEuRXJyb3JDb2RlSACIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3IiIgoSUmVhZFN0ZW5jaWxSZXF1ZXN0EgwKBHBhdGgYASABKAkiwgEKE1JlYWRTdGVuY2lsUmVzcG9uc2USMgoHc3RlbmNpbBgBIAEoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuU3RlbmNpbEgAiAEBEjIKBWVycm9yGAIgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCCgoIX3N0ZW5jaWxCCAoGX2Vycm9yQgUKA19hdCK4AQoTV3JpdGVTdGVuY2lsUmVxdWVzdBIMCgRwYXRoGAEgASgJEg4KBmZpZWxkcxgCIAMoCRIoCgVmYWNlcxgDIAMoCzIZLm51bWVuLmZsYXNoY2FyZHMudjEuRmFjZRIsCghiYXNlbGluZRgEIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQESEAoIcHJlYW1ibGUYBSABKAkSDAoEdGFpbBgGIAEoCUILCglfYmFzZWxpbmUimgEKFFdyaXRlU3RlbmNpbFJlc3BvbnNlEjIKBWVycm9yGAEgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3JCBQoDX2F0In4KGVJlbmFtZVN0ZW5jaWxGaWVsZFJlcXVlc3QSDAoEcGF0aBgBIAEoCRIMCgRmcm9tGAIgASgJEgoKAnRvGAMgASgJEiwKCGJhc2VsaW5lGAQgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUi9wEKGlJlbmFtZVN0ZW5jaWxGaWVsZFJlc3BvbnNlEg0KBWRlY2tzGAEgAygJEg0KBWNhcmRzGAIgASgFEjcKC25vdF93cml0dGVuGAMgAygLMiIubnVtZW4uZmxhc2hjYXJkcy52MS5VbndyaXR0ZW5EZWNrEjIKBWVycm9yGAQgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAIgBARImCgJhdBgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESFQoNaXNfdW5sZXZlbGxlZBgGIAEoCEIICgZfZXJyb3JCBQoDX2F0IkwKDVVud3JpdHRlbkRlY2sSDAoEcGF0aBgBIAEoCRItCgdwcm9ibGVtGAIgASgLMhwubnVtZW4uZmxhc2hjYXJkcy52MS5Qcm9ibGVtIjAKEUNyZWF0ZURlY2tSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkidwoSQ3JlYXRlRGVja1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSMgoFZXJyb3IYAiABKA4yHi5udW1lbi5mbGFzaGNhcmRzLnYxLkVycm9yQ29kZUgAiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX2Vycm9yIh8KD1JlYWREZWNrUmVxdWVzdBIMCgRwYXRoGAEgASgJIsUBChBSZWFkRGVja1Jlc3BvbnNlEiwKBGRlY2sYASABKAsyGS5udW1lbi5mbGFzaGNhcmRzLnYxLkRlY2tIAIgBARIyCgVlcnJvchgCIAEoDjIeLm51bWVuLmZsYXNoY2FyZHMudjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEg0KBWJvdW5kGAQgASgDQgcKBV9kZWNrQggKBl9lcnJvckIFCgNfYXQi1QEKEFdyaXRlRGVja1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCRIoCgVjYXJkcxgDIAMoCzIZLm51bWVuLmZsYXNoY2FyZHMudjEuQ2FyZBIuCghzZWN0aW9ucxgEIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuU2VjdGlvbhIsCghiYXNlbGluZRgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQESDAoEdGFpbBgGIAEoCUILCglfYmFzZWxpbmUipgEKEVdyaXRlRGVja1Jlc3BvbnNlEjIKBWVycm9yGAEgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESDQoFYm91bmQYAyABKAMSFQoNaXNfdW5sZXZlbGxlZBgEIAEoCEIICgZfZXJyb3JCBQoDX2F0KocDCgtQcm9ibGVtS2luZBIcChhQUk9CTEVNX0tJTkRfVU5TUEVDSUZJRUQQABIlCiFQUk9CTEVNX0tJTkRfRklFTERfREVDTEFSRURfVFdJQ0UQARInCiNQUk9CTEVNX0tJTkRfU1RFTkNJTF9XSVRIT1VUX0ZJRUxEUxACEiQKIFBST0JMRU1fS0lORF9GQUNFX01JU1NJTkdfQV9TSURFEAMSJwojUFJPQkxFTV9LSU5EX1BMQUNFSE9MREVSX1VOREVDTEFSRUQQBBInCiNQUk9CTEVNX0tJTkRfQ0FSRF9XSVRIT1VUX0FfU1RFTkNJTBAFEiMKH1BST0JMRU1fS0lORF9TVEVOQ0lMX0lTX05PVF9PTkUQBhIkCiBQUk9CTEVNX0tJTkRfRklFTERfV1JJVFRFTl9UV0lDRRAHEiIKHlBST0JMRU1fS0lORF9GSUVMRF9OT1RfUkVOQU1FRBAIEiMKH1BST0JMRU1fS0lORF9NQVJLX0NBUlJJRURfVFdJQ0UQCTKtBgoMQ2FyZHNTZXJ2aWNlEmMKDExpc3RTdGVuY2lscxIoLm51bWVuLmZsYXNoY2FyZHMudjEuTGlzdFN0ZW5jaWxzUmVxdWVzdBopLm51bWVuLmZsYXNoY2FyZHMudjEuTGlzdFN0ZW5jaWxzUmVzcG9uc2USZgoNQ3JlYXRlU3RlbmNpbBIpLm51bWVuLmZsYXNoY2FyZHMudjEuQ3JlYXRlU3RlbmNpbFJlcXVlc3QaKi5udW1lbi5mbGFzaGNhcmRzLnYxLkNyZWF0ZVN0ZW5jaWxSZXNwb25zZRJgCgtSZWFkU3RlbmNpbBInLm51bWVuLmZsYXNoY2FyZHMudjEuUmVhZFN0ZW5jaWxSZXF1ZXN0GigubnVtZW4uZmxhc2hjYXJkcy52MS5SZWFkU3RlbmNpbFJlc3BvbnNlEmMKDFdyaXRlU3RlbmNpbBIoLm51bWVuLmZsYXNoY2FyZHMudjEuV3JpdGVTdGVuY2lsUmVxdWVzdBopLm51bWVuLmZsYXNoY2FyZHMudjEuV3JpdGVTdGVuY2lsUmVzcG9uc2USdQoSUmVuYW1lU3RlbmNpbEZpZWxkEi4ubnVtZW4uZmxhc2hjYXJkcy52MS5SZW5hbWVTdGVuY2lsRmllbGRSZXF1ZXN0Gi8ubnVtZW4uZmxhc2hjYXJkcy52MS5SZW5hbWVTdGVuY2lsRmllbGRSZXNwb25zZRJdCgpDcmVhdGVEZWNrEiYubnVtZW4uZmxhc2hjYXJkcy52MS5DcmVhdGVEZWNrUmVxdWVzdBonLm51bWVuLmZsYXNoY2FyZHMudjEuQ3JlYXRlRGVja1Jlc3BvbnNlElcKCFJlYWREZWNrEiQubnVtZW4uZmxhc2hjYXJkcy52MS5SZWFkRGVja1JlcXVlc3QaJS5udW1lbi5mbGFzaGNhcmRzLnYxLlJlYWREZWNrUmVzcG9uc2USWgoJV3JpdGVEZWNrEiUubnVtZW4uZmxhc2hjYXJkcy52MS5Xcml0ZURlY2tSZXF1ZXN0GiYubnVtZW4uZmxhc2hjYXJkcy52MS5Xcml0ZURlY2tSZXNwb25zZUJjWmFnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvdmlld3MtZmxhc2hjYXJkcy1zdHVkaW8vZ2VuL251bWVuL2ZsYXNoY2FyZHMvdjE7Zmxhc2hjYXJkc3YxYgZwcm90bzM", [file_numen_flashcards_v1_errors, file_numen_v1_shared]);
+  fileDesc("Ch9udW1lbi9mbGFzaGNhcmRzL3YxL2NhcmRzLnByb3RvEhNudW1lbi5mbGFzaGNhcmRzLnYxIr4BCglDYXJkTW9kZWwSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIOCgZmaWVsZHMYAyADKAkSNAoJdGVtcGxhdGVzGAQgAygLMiEubnVtZW4uZmxhc2hjYXJkcy52MS5DYXJkVGVtcGxhdGUSLgoIcHJvYmxlbXMYBSADKAsyHC5udW1lbi5mbGFzaGNhcmRzLnYxLlByb2JsZW0SEAoIcHJlYW1ibGUYBiABKAkSDAoEdGFpbBgHIAEoCSI/ChBDYXJkTW9kZWxTdW1tYXJ5EgwKBHBhdGgYASABKAkSDQoFdGl0bGUYAiABKAkSDgoGZmllbGRzGAMgAygJIksKDENhcmRUZW1wbGF0ZRIMCgRuYW1lGAEgASgJEg0KBWZyb250GAIgASgJEgwKBGJhY2sYAyABKAkSEAoIcHJlYW1ibGUYBCABKAkizQEKBERlY2sSDAoEcGF0aBgBIAEoCRINCgV0aXRsZRgCIAEoCRIQCghwcmVhbWJsZRgDIAEoCRIoCgVjYXJkcxgEIAMoCzIZLm51bWVuLmZsYXNoY2FyZHMudjEuQ2FyZBIuCghzZWN0aW9ucxgFIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuU2VjdGlvbhIuCghwcm9ibGVtcxgGIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuUHJvYmxlbRIMCgR0YWlsGAcgASgJIikKB1NlY3Rpb24SDAoEbmFtZRgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCSKWAQoHUHJvYmxlbRIuCgRraW5kGAEgASgOMiAubnVtZW4uZmxhc2hjYXJkcy52MS5Qcm9ibGVtS2luZBIRCgRjYXJkGAIgASgFSACIAQESFQoIdGVtcGxhdGUYAyABKAVIAYgBARINCgVmaWVsZBgEIAEoCRIMCgR0ZXh0GAUgASgJQgcKBV9jYXJkQgsKCV90ZW1wbGF0ZSLGAQoEQ2FyZBIPCgdjYXJkX2lkGAEgASgJEhoKDXNlY3Rpb25faW5kZXgYAiABKAVIAIgBARIPCgdoZWFkaW5nGAMgASgJEhcKD2NhcmRfbW9kZWxfbGluaxgEIAEoCRIQCghwcmVhbWJsZRgFIAEoCRIqCgZ2YWx1ZXMYBiADKAsyGi5udW1lbi5mbGFzaGNhcmRzLnYxLlZhbHVlEhcKD2NhcmRfbW9kZWxfcGF0aBgHIAEoCUIQCg5fc2VjdGlvbl9pbmRleCIkCgVWYWx1ZRINCgVmaWVsZBgBIAEoCRIMCgR0ZXh0GAIgASgJIiYKFUxpc3RDYXJkTW9kZWxzUmVxdWVzdBINCgVsaW1pdBgBIAEoBSJjChZMaXN0Q2FyZE1vZGVsc1Jlc3BvbnNlEjoKC2NhcmRfbW9kZWxzGAEgAygLMiUubnVtZW4uZmxhc2hjYXJkcy52MS5DYXJkTW9kZWxTdW1tYXJ5Eg0KBXRvdGFsGAIgASgFIkUKFkNyZWF0ZUNhcmRNb2RlbFJlcXVlc3QSDQoFdGl0bGUYASABKAkSDAoEcGF0aBgCIAEoCRIOCgZmaWVsZHMYAyADKAkifAoXQ3JlYXRlQ2FyZE1vZGVsUmVzcG9uc2USDAoEcGF0aBgBIAEoCRIyCgVlcnJvchgCIAEoDjIeLm51bWVuLmZsYXNoY2FyZHMudjEuRXJyb3JDb2RlSACIAQESFQoNaXNfdW5sZXZlbGxlZBgDIAEoCEIICgZfZXJyb3IiJAoUUmVhZENhcmRNb2RlbFJlcXVlc3QSDAoEcGF0aBgBIAEoCSLMAQoVUmVhZENhcmRNb2RlbFJlc3BvbnNlEjcKCmNhcmRfbW9kZWwYASABKAsyHi5udW1lbi5mbGFzaGNhcmRzLnYxLkNhcmRNb2RlbEgAiAEBEjIKBWVycm9yGAIgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAYgBARImCgJhdBgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAKIAQFCDQoLX2NhcmRfbW9kZWxCCAoGX2Vycm9yQgUKA19hdCLGAQoVV3JpdGVDYXJkTW9kZWxSZXF1ZXN0EgwKBHBhdGgYASABKAkSDgoGZmllbGRzGAIgAygJEjQKCXRlbXBsYXRlcxgDIAMoCzIhLm51bWVuLmZsYXNoY2FyZHMudjEuQ2FyZFRlbXBsYXRlEiwKCGJhc2VsaW5lGAQgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBARIQCghwcmVhbWJsZRgFIAEoCRIMCgR0YWlsGAYgASgJQgsKCV9iYXNlbGluZSKcAQoWV3JpdGVDYXJkTW9kZWxSZXNwb25zZRIyCgVlcnJvchgBIAEoDjIeLm51bWVuLmZsYXNoY2FyZHMudjEuRXJyb3JDb2RlSACIAQESJgoCYXQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgBiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX2Vycm9yQgUKA19hdCKAAQobUmVuYW1lQ2FyZE1vZGVsRmllbGRSZXF1ZXN0EgwKBHBhdGgYASABKAkSDAoEZnJvbRgCIAEoCRIKCgJ0bxgDIAEoCRIsCghiYXNlbGluZRgEIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQFCCwoJX2Jhc2VsaW5lIvkBChxSZW5hbWVDYXJkTW9kZWxGaWVsZFJlc3BvbnNlEg0KBWRlY2tzGAEgAygJEg0KBWNhcmRzGAIgASgFEjcKC25vdF93cml0dGVuGAMgAygLMiIubnVtZW4uZmxhc2hjYXJkcy52MS5VbndyaXR0ZW5EZWNrEjIKBWVycm9yGAQgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAIgBARImCgJhdBgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESFQoNaXNfdW5sZXZlbGxlZBgGIAEoCEIICgZfZXJyb3JCBQoDX2F0IkwKDVVud3JpdHRlbkRlY2sSDAoEcGF0aBgBIAEoCRItCgdwcm9ibGVtGAIgASgLMhwubnVtZW4uZmxhc2hjYXJkcy52MS5Qcm9ibGVtIjAKEUNyZWF0ZURlY2tSZXF1ZXN0Eg0KBXRpdGxlGAEgASgJEgwKBHBhdGgYAiABKAkidwoSQ3JlYXRlRGVja1Jlc3BvbnNlEgwKBHBhdGgYASABKAkSMgoFZXJyb3IYAiABKA4yHi5udW1lbi5mbGFzaGNhcmRzLnYxLkVycm9yQ29kZUgAiAEBEhUKDWlzX3VubGV2ZWxsZWQYAyABKAhCCAoGX2Vycm9yIh8KD1JlYWREZWNrUmVxdWVzdBIMCgRwYXRoGAEgASgJIsUBChBSZWFkRGVja1Jlc3BvbnNlEiwKBGRlY2sYASABKAsyGS5udW1lbi5mbGFzaGNhcmRzLnYxLkRlY2tIAIgBARIyCgVlcnJvchgCIAEoDjIeLm51bWVuLmZsYXNoY2FyZHMudjEuRXJyb3JDb2RlSAGIAQESJgoCYXQYAyABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludEgCiAEBEg0KBWJvdW5kGAQgASgDQgcKBV9kZWNrQggKBl9lcnJvckIFCgNfYXQi1QEKEFdyaXRlRGVja1JlcXVlc3QSDAoEcGF0aBgBIAEoCRIQCghwcmVhbWJsZRgCIAEoCRIoCgVjYXJkcxgDIAMoCzIZLm51bWVuLmZsYXNoY2FyZHMudjEuQ2FyZBIuCghzZWN0aW9ucxgEIAMoCzIcLm51bWVuLmZsYXNoY2FyZHMudjEuU2VjdGlvbhIsCghiYXNlbGluZRgFIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SACIAQESDAoEdGFpbBgGIAEoCUILCglfYmFzZWxpbmUipgEKEVdyaXRlRGVja1Jlc3BvbnNlEjIKBWVycm9yGAEgASgOMh4ubnVtZW4uZmxhc2hjYXJkcy52MS5FcnJvckNvZGVIAIgBARImCgJhdBgCIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50SAGIAQESDQoFYm91bmQYAyABKAMSFQoNaXNfdW5sZXZlbGxlZBgEIAEoCEIICgZfZXJyb3JCBQoDX2F0KpcDCgtQcm9ibGVtS2luZBIcChhQUk9CTEVNX0tJTkRfVU5TUEVDSUZJRUQQABIlCiFQUk9CTEVNX0tJTkRfRklFTERfREVDTEFSRURfVFdJQ0UQARIqCiZQUk9CTEVNX0tJTkRfQ0FSRF9NT0RFTF9XSVRIT1VUX0ZJRUxEUxACEigKJFBST0JMRU1fS0lORF9URU1QTEFURV9NSVNTSU5HX0FfU0lERRADEicKI1BST0JMRU1fS0lORF9QTEFDRUhPTERFUl9VTkRFQ0xBUkVEEAQSKgomUFJPQkxFTV9LSU5EX0NBUkRfV0lUSE9VVF9BX0NBUkRfTU9ERUwQBRImCiJQUk9CTEVNX0tJTkRfQ0FSRF9NT0RFTF9JU19OT1RfT05FEAYSJAogUFJPQkxFTV9LSU5EX0ZJRUxEX1dSSVRURU5fVFdJQ0UQBxIiCh5QUk9CTEVNX0tJTkRfRklFTERfTk9UX1JFTkFNRUQQCBImCiJQUk9CTEVNX0tJTkRfQ0FSRF9JRF9DQVJSSUVEX1RXSUNFEAkyywYKDENhcmRzU2VydmljZRJpCg5MaXN0Q2FyZE1vZGVscxIqLm51bWVuLmZsYXNoY2FyZHMudjEuTGlzdENhcmRNb2RlbHNSZXF1ZXN0GisubnVtZW4uZmxhc2hjYXJkcy52MS5MaXN0Q2FyZE1vZGVsc1Jlc3BvbnNlEmwKD0NyZWF0ZUNhcmRNb2RlbBIrLm51bWVuLmZsYXNoY2FyZHMudjEuQ3JlYXRlQ2FyZE1vZGVsUmVxdWVzdBosLm51bWVuLmZsYXNoY2FyZHMudjEuQ3JlYXRlQ2FyZE1vZGVsUmVzcG9uc2USZgoNUmVhZENhcmRNb2RlbBIpLm51bWVuLmZsYXNoY2FyZHMudjEuUmVhZENhcmRNb2RlbFJlcXVlc3QaKi5udW1lbi5mbGFzaGNhcmRzLnYxLlJlYWRDYXJkTW9kZWxSZXNwb25zZRJpCg5Xcml0ZUNhcmRNb2RlbBIqLm51bWVuLmZsYXNoY2FyZHMudjEuV3JpdGVDYXJkTW9kZWxSZXF1ZXN0GisubnVtZW4uZmxhc2hjYXJkcy52MS5Xcml0ZUNhcmRNb2RlbFJlc3BvbnNlEnsKFFJlbmFtZUNhcmRNb2RlbEZpZWxkEjAubnVtZW4uZmxhc2hjYXJkcy52MS5SZW5hbWVDYXJkTW9kZWxGaWVsZFJlcXVlc3QaMS5udW1lbi5mbGFzaGNhcmRzLnYxLlJlbmFtZUNhcmRNb2RlbEZpZWxkUmVzcG9uc2USXQoKQ3JlYXRlRGVjaxImLm51bWVuLmZsYXNoY2FyZHMudjEuQ3JlYXRlRGVja1JlcXVlc3QaJy5udW1lbi5mbGFzaGNhcmRzLnYxLkNyZWF0ZURlY2tSZXNwb25zZRJXCghSZWFkRGVjaxIkLm51bWVuLmZsYXNoY2FyZHMudjEuUmVhZERlY2tSZXF1ZXN0GiUubnVtZW4uZmxhc2hjYXJkcy52MS5SZWFkRGVja1Jlc3BvbnNlEloKCVdyaXRlRGVjaxIlLm51bWVuLmZsYXNoY2FyZHMudjEuV3JpdGVEZWNrUmVxdWVzdBomLm51bWVuLmZsYXNoY2FyZHMudjEuV3JpdGVEZWNrUmVzcG9uc2VCY1phZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3ZpZXdzLWZsYXNoY2FyZHMtc3R1ZGlvL2dlbi9udW1lbi9mbGFzaGNhcmRzL3YxO2ZsYXNoY2FyZHN2MWIGcHJvdG8z", [file_numen_flashcards_v1_errors, file_numen_v1_shared]);
 
 /**
- * Stencil is what a card is cut by: the fields it is asked for, and the faces
+ * CardModel is what a card is cut by: the fields it is asked for, and the templates
  * it is shown through.
  *
- * @generated from message numen.flashcards.v1.Stencil
+ * @generated from message numen.flashcards.v1.CardModel
  */
-export type Stencil = Message<"numen.flashcards.v1.Stencil"> & {
+export type CardModel = Message<"numen.flashcards.v1.CardModel"> & {
   /**
    * Path is what the vault calls the note, and how it is asked for again.
    *
@@ -53,24 +53,24 @@ export type Stencil = Message<"numen.flashcards.v1.Stencil"> & {
   fields: string[];
 
   /**
-   * The faces, in the order they stand in the note. One card is shown once
+   * The templates, in the order they stand in the note. One card is shown once
    * through each.
    *
-   * @generated from field: repeated numen.flashcards.v1.Face faces = 4;
+   * @generated from field: repeated numen.flashcards.v1.CardTemplate templates = 4;
    */
-  faces: Face[];
+  templates: CardTemplate[];
 
   /**
    * What was wrong with the note and was not guessed at, in the order it was
-   * found. The stencil is read either way.
+   * found. The card model is read either way.
    *
    * @generated from field: repeated numen.flashcards.v1.Problem problems = 5;
    */
   problems: Problem[];
 
   /**
-   * The prose below the frontmatter and above the first face, with line endings
-   * as LF. A stencil carrying no face is all preamble.
+   * The prose below the frontmatter and above the first template, with line endings
+   * as LF. A card model carrying no template is all preamble.
    *
    * @generated from field: string preamble = 6;
    */
@@ -78,7 +78,7 @@ export type Stencil = Message<"numen.flashcards.v1.Stencil"> & {
 
   /**
    * What the file ends with once the last side has been read, with line endings
-   * as LF. It is no face's, and it is written back as it arrives.
+   * as LF. It is no template's, and it is written back as it arrives.
    *
    * @generated from field: string tail = 7;
    */
@@ -86,19 +86,19 @@ export type Stencil = Message<"numen.flashcards.v1.Stencil"> & {
 };
 
 /**
- * Describes the message numen.flashcards.v1.Stencil.
- * Use `create(StencilSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.CardModel.
+ * Use `create(CardModelSchema)` to create a new message.
  */
-export const StencilSchema: GenMessage<Stencil> = /*@__PURE__*/
+export const CardModelSchema: GenMessage<CardModel> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 0);
 
 /**
- * StencilSummary is one stencil as the list of them names it: where it is
+ * CardModelSummary is one card model as the list of them names it: where it is
  * filed, what it is called, and what it asks a person for.
  *
- * @generated from message numen.flashcards.v1.StencilSummary
+ * @generated from message numen.flashcards.v1.CardModelSummary
  */
-export type StencilSummary = Message<"numen.flashcards.v1.StencilSummary"> & {
+export type CardModelSummary = Message<"numen.flashcards.v1.CardModelSummary"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -118,20 +118,20 @@ export type StencilSummary = Message<"numen.flashcards.v1.StencilSummary"> & {
 };
 
 /**
- * Describes the message numen.flashcards.v1.StencilSummary.
- * Use `create(StencilSummarySchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.CardModelSummary.
+ * Use `create(CardModelSummarySchema)` to create a new message.
  */
-export const StencilSummarySchema: GenMessage<StencilSummary> = /*@__PURE__*/
+export const CardModelSummarySchema: GenMessage<CardModelSummary> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 1);
 
 /**
- * Face is one way a stencil shows a card.
+ * CardTemplate is one way a card model shows a card.
  *
- * @generated from message numen.flashcards.v1.Face
+ * @generated from message numen.flashcards.v1.CardTemplate
  */
-export type Face = Message<"numen.flashcards.v1.Face"> & {
+export type CardTemplate = Message<"numen.flashcards.v1.CardTemplate"> & {
   /**
-   * What the face is called.
+   * What the template is called.
    *
    * @generated from field: string name = 1;
    */
@@ -151,7 +151,7 @@ export type Face = Message<"numen.flashcards.v1.Face"> & {
   back: string;
 
   /**
-   * The prose between the face's heading and its first side, with line endings
+   * The prose between the template's heading and its first side, with line endings
    * as LF. It is written back as it arrives.
    *
    * @generated from field: string preamble = 4;
@@ -160,10 +160,10 @@ export type Face = Message<"numen.flashcards.v1.Face"> & {
 };
 
 /**
- * Describes the message numen.flashcards.v1.Face.
- * Use `create(FaceSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.CardTemplate.
+ * Use `create(CardTemplateSchema)` to create a new message.
  */
-export const FaceSchema: GenMessage<Face> = /*@__PURE__*/
+export const CardTemplateSchema: GenMessage<CardTemplate> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 2);
 
 /**
@@ -233,7 +233,7 @@ export const DeckSchema: GenMessage<Deck> = /*@__PURE__*/
 
 /**
  * Section is a run of a deck a person has given a name. It is a name and
- * nothing else: no fields, no stencil, no schedule, no mark.
+ * nothing else: no fields, no card model, no schedule, no card id.
  *
  * @generated from message numen.flashcards.v1.Section
  */
@@ -265,7 +265,7 @@ export const SectionSchema: GenMessage<Section> = /*@__PURE__*/
 /**
  * Problem is something in a file that could not be acted on and was not guessed
  * at. The file is read either way, and each one carries at its current position so that
- * the interface marks the card or the face it is against.
+ * the interface marks the card or the template it is against.
  *
  * @generated from message numen.flashcards.v1.Problem
  */
@@ -278,19 +278,19 @@ export type Problem = Message<"numen.flashcards.v1.Problem"> & {
   /**
    * The card it stands against, counted from the first card the deck answers
    * with. Absent for a problem against no card, and for every problem of a
-   * stencil.
+   * card model.
    *
    * @generated from field: optional int32 card = 2;
    */
   card?: number | undefined;
 
   /**
-   * The face it stands against, counted from the first face the stencil answers
-   * with. Absent for a problem against no face.
+   * The template it stands against, counted from the first template the card model answers
+   * with. Absent for a problem against no template.
    *
-   * @generated from field: optional int32 face = 3;
+   * @generated from field: optional int32 template = 3;
    */
-  face?: number | undefined;
+  template?: number | undefined;
 
   /**
    * The field's name, as the file spells it. Empty for a problem against no
@@ -316,7 +316,7 @@ export const ProblemSchema: GenMessage<Problem> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 5);
 
 /**
- * Card is one filled-in set of a stencil's fields.
+ * Card is one filled-in set of a card model's fields.
  *
  * @generated from message numen.flashcards.v1.Card
  */
@@ -326,9 +326,9 @@ export type Card = Message<"numen.flashcards.v1.Card"> & {
    * the ten characters alone, without the caret a heading writes them behind,
    * and it is empty for a card the application has not written yet.
    *
-   * @generated from field: string mark = 1;
+   * @generated from field: string card_id = 1;
    */
-  mark: string;
+  cardId: string;
 
   /**
    * from the first. Absent for a card standing before the first section.
@@ -340,29 +340,29 @@ export type Card = Message<"numen.flashcards.v1.Card"> & {
   sectionIndex?: number | undefined;
 
   /**
-   * The line the card's heading says, with the mark taken off. It is not what
+   * The line the card's heading says, with the card id taken off. It is not what
    * the card is called: it holds nothing of its own, and a write throws it away
    * and reads it again from the first field.
    *
    * It travels for the one card that cannot be read again — a card whose
-   * stencil is missing or unreadable, where nothing can say which of its fields
+   * card model is missing or unreadable, where nothing can say which of its fields
    * is first. That heading is left exactly currently, so a write returns
    * what it was given. A write carrying nothing here leaves such a card headed
-   * by its mark alone.
+   * by its card id alone.
    *
    * @generated from field: string heading = 3;
    */
   heading: string;
 
   /**
-   * The stencil this card is cut by, as the wikilink beneath its heading names
-   * it, without the brackets. A name where one picks the stencil, and
+   * The card model this card is cut by, as the wikilink beneath its heading names
+   * it, without the brackets. A name where one picks the card model, and
    * `note://<identifier>` where none does. Empty for a card written under no
    * wikilink.
    *
-   * @generated from field: string stencil_link = 4;
+   * @generated from field: string card_model_link = 4;
    */
-  stencilLink: string;
+  cardModelLink: string;
 
   /**
    * The prose between that wikilink and the first field, with line endings as
@@ -373,7 +373,7 @@ export type Card = Message<"numen.flashcards.v1.Card"> & {
   preamble: string;
 
   /**
-   * The values, in the order they stand under the card. A field the stencil
+   * The values, in the order they stand under the card. A field the card model
    * declares and the card leaves out is absent here.
    *
    * @generated from field: repeated numen.flashcards.v1.Value values = 6;
@@ -381,13 +381,13 @@ export type Card = Message<"numen.flashcards.v1.Card"> & {
   values: Value[];
 
   /**
-   * Where the stencil that wikilink names is filed, resolved the way any link
+   * Where the card model that wikilink names is filed, resolved the way any link
    * is. Empty for a card naming none and for a name that reaches no note, and a
    * write carries nothing here.
    *
-   * @generated from field: string stencil_path = 7;
+   * @generated from field: string card_model_path = 7;
    */
-  stencilPath: string;
+  cardModelPath: string;
 };
 
 /**
@@ -426,11 +426,11 @@ export const ValueSchema: GenMessage<Value> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 7);
 
 /**
- * @generated from message numen.flashcards.v1.ListStencilsRequest
+ * @generated from message numen.flashcards.v1.ListCardModelsRequest
  */
-export type ListStencilsRequest = Message<"numen.flashcards.v1.ListStencilsRequest"> & {
+export type ListCardModelsRequest = Message<"numen.flashcards.v1.ListCardModelsRequest"> & {
   /**
-   * How many stencils to answer with. Zero takes the number the vault chooses,
+   * How many card models to answer with. Zero takes the number the vault chooses,
    * and a number above the ceiling the vault sets takes that ceiling.
    *
    * @generated from field: int32 limit = 1;
@@ -439,25 +439,25 @@ export type ListStencilsRequest = Message<"numen.flashcards.v1.ListStencilsReque
 };
 
 /**
- * Describes the message numen.flashcards.v1.ListStencilsRequest.
- * Use `create(ListStencilsRequestSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.ListCardModelsRequest.
+ * Use `create(ListCardModelsRequestSchema)` to create a new message.
  */
-export const ListStencilsRequestSchema: GenMessage<ListStencilsRequest> = /*@__PURE__*/
+export const ListCardModelsRequestSchema: GenMessage<ListCardModelsRequest> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 8);
 
 /**
- * @generated from message numen.flashcards.v1.ListStencilsResponse
+ * @generated from message numen.flashcards.v1.ListCardModelsResponse
  */
-export type ListStencilsResponse = Message<"numen.flashcards.v1.ListStencilsResponse"> & {
+export type ListCardModelsResponse = Message<"numen.flashcards.v1.ListCardModelsResponse"> & {
   /**
-   * The stencils, by path, with case ignored.
+   * The card models, by path, with case ignored.
    *
-   * @generated from field: repeated numen.flashcards.v1.StencilSummary stencils = 1;
+   * @generated from field: repeated numen.flashcards.v1.CardModelSummary card_models = 1;
    */
-  stencils: StencilSummary[];
+  cardModels: CardModelSummary[];
 
   /**
-   * How many stencils the vault holds. It stands above the length of the list
+   * How many card models the vault holds. It stands above the length of the list
    * when the ceiling was reached, and the interface says so.
    *
    * @generated from field: int32 total = 2;
@@ -466,18 +466,18 @@ export type ListStencilsResponse = Message<"numen.flashcards.v1.ListStencilsResp
 };
 
 /**
- * Describes the message numen.flashcards.v1.ListStencilsResponse.
- * Use `create(ListStencilsResponseSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.ListCardModelsResponse.
+ * Use `create(ListCardModelsResponseSchema)` to create a new message.
  */
-export const ListStencilsResponseSchema: GenMessage<ListStencilsResponse> = /*@__PURE__*/
+export const ListCardModelsResponseSchema: GenMessage<ListCardModelsResponse> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 9);
 
 /**
- * @generated from message numen.flashcards.v1.CreateStencilRequest
+ * @generated from message numen.flashcards.v1.CreateCardModelRequest
  */
-export type CreateStencilRequest = Message<"numen.flashcards.v1.CreateStencilRequest"> & {
+export type CreateCardModelRequest = Message<"numen.flashcards.v1.CreateCardModelRequest"> & {
   /**
-   * What the stencil is called. The file is named after it, and that name is
+   * What the card model is called. The file is named after it, and that name is
    * what a card's wikilink writes.
    *
    * @generated from field: string title = 1;
@@ -493,7 +493,7 @@ export type CreateStencilRequest = Message<"numen.flashcards.v1.CreateStencilReq
 
   /**
    * The names of the fields, in the order a person is asked for them. A card's
-   * heading is read from the first, and a stencil is made with at least one.
+   * heading is read from the first, and a card model is made with at least one.
    *
    * @generated from field: repeated string fields = 3;
    */
@@ -501,18 +501,18 @@ export type CreateStencilRequest = Message<"numen.flashcards.v1.CreateStencilReq
 };
 
 /**
- * Describes the message numen.flashcards.v1.CreateStencilRequest.
- * Use `create(CreateStencilRequestSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.CreateCardModelRequest.
+ * Use `create(CreateCardModelRequestSchema)` to create a new message.
  */
-export const CreateStencilRequestSchema: GenMessage<CreateStencilRequest> = /*@__PURE__*/
+export const CreateCardModelRequestSchema: GenMessage<CreateCardModelRequest> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 10);
 
 /**
- * @generated from message numen.flashcards.v1.CreateStencilResponse
+ * @generated from message numen.flashcards.v1.CreateCardModelResponse
  */
-export type CreateStencilResponse = Message<"numen.flashcards.v1.CreateStencilResponse"> & {
+export type CreateCardModelResponse = Message<"numen.flashcards.v1.CreateCardModelResponse"> & {
   /**
-   * Where the stencil is filed. Empty when nothing was made.
+   * Where the card model is filed. Empty when nothing was made.
    *
    * @generated from field: string path = 1;
    */
@@ -526,8 +526,8 @@ export type CreateStencilResponse = Message<"numen.flashcards.v1.CreateStencilRe
   error?: ErrorCode | undefined;
 
   /**
-   * Set when the stencil is on disk and the index would not come level with it.
-   * The stencil was made and `path` stands; search does not answer about it
+   * Set when the card model is on disk and the index would not come level with it.
+   * The card model was made and `path` stands; search does not answer about it
    * until a walk goes past.
    *
    * @generated from field: bool is_unlevelled = 3;
@@ -536,16 +536,16 @@ export type CreateStencilResponse = Message<"numen.flashcards.v1.CreateStencilRe
 };
 
 /**
- * Describes the message numen.flashcards.v1.CreateStencilResponse.
- * Use `create(CreateStencilResponseSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.CreateCardModelResponse.
+ * Use `create(CreateCardModelResponseSchema)` to create a new message.
  */
-export const CreateStencilResponseSchema: GenMessage<CreateStencilResponse> = /*@__PURE__*/
+export const CreateCardModelResponseSchema: GenMessage<CreateCardModelResponse> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 11);
 
 /**
- * @generated from message numen.flashcards.v1.ReadStencilRequest
+ * @generated from message numen.flashcards.v1.ReadCardModelRequest
  */
-export type ReadStencilRequest = Message<"numen.flashcards.v1.ReadStencilRequest"> & {
+export type ReadCardModelRequest = Message<"numen.flashcards.v1.ReadCardModelRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -553,30 +553,30 @@ export type ReadStencilRequest = Message<"numen.flashcards.v1.ReadStencilRequest
 };
 
 /**
- * Describes the message numen.flashcards.v1.ReadStencilRequest.
- * Use `create(ReadStencilRequestSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.ReadCardModelRequest.
+ * Use `create(ReadCardModelRequestSchema)` to create a new message.
  */
-export const ReadStencilRequestSchema: GenMessage<ReadStencilRequest> = /*@__PURE__*/
+export const ReadCardModelRequestSchema: GenMessage<ReadCardModelRequest> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 12);
 
 /**
- * @generated from message numen.flashcards.v1.ReadStencilResponse
+ * @generated from message numen.flashcards.v1.ReadCardModelResponse
  */
-export type ReadStencilResponse = Message<"numen.flashcards.v1.ReadStencilResponse"> & {
+export type ReadCardModelResponse = Message<"numen.flashcards.v1.ReadCardModelResponse"> & {
   /**
-   * @generated from field: optional numen.flashcards.v1.Stencil stencil = 1;
+   * @generated from field: optional numen.flashcards.v1.CardModel card_model = 1;
    */
-  stencil?: Stencil | undefined;
+  cardModel?: CardModel | undefined;
 
   /**
-   * Set when the stencil was not read, and why.
+   * Set when the card model was not read, and why.
    *
    * @generated from field: optional numen.flashcards.v1.ErrorCode error = 2;
    */
   error?: ErrorCode | undefined;
 
   /**
-   * The file this stencil came out of, for the caller to present at its next
+   * The file this card model came out of, for the caller to present at its next
    *
    * @generated from field: optional numen.v1.Fingerprint at = 3;
    */
@@ -584,16 +584,16 @@ export type ReadStencilResponse = Message<"numen.flashcards.v1.ReadStencilRespon
 };
 
 /**
- * Describes the message numen.flashcards.v1.ReadStencilResponse.
- * Use `create(ReadStencilResponseSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.ReadCardModelResponse.
+ * Use `create(ReadCardModelResponseSchema)` to create a new message.
  */
-export const ReadStencilResponseSchema: GenMessage<ReadStencilResponse> = /*@__PURE__*/
+export const ReadCardModelResponseSchema: GenMessage<ReadCardModelResponse> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 13);
 
 /**
- * @generated from message numen.flashcards.v1.WriteStencilRequest
+ * @generated from message numen.flashcards.v1.WriteCardModelRequest
  */
-export type WriteStencilRequest = Message<"numen.flashcards.v1.WriteStencilRequest"> & {
+export type WriteCardModelRequest = Message<"numen.flashcards.v1.WriteCardModelRequest"> & {
   /**
    * @generated from field: string path = 1;
    */
@@ -607,22 +607,22 @@ export type WriteStencilRequest = Message<"numen.flashcards.v1.WriteStencilReque
   fields: string[];
 
   /**
-   * The faces, in the order they are to stand in the note.
+   * The templates, in the order they are to stand in the note.
    *
-   * @generated from field: repeated numen.flashcards.v1.Face faces = 3;
+   * @generated from field: repeated numen.flashcards.v1.CardTemplate templates = 3;
    */
-  faces: Face[];
+  templates: CardTemplate[];
 
   /**
    * The file this caller last read. Absent for a write that lands on whatever
-   * the stencil now holds.
+   * the card model now holds.
    *
    * @generated from field: optional numen.v1.Fingerprint baseline = 4;
    */
   baseline?: Fingerprint | undefined;
 
   /**
-   * The prose to stand below the frontmatter and above the first face, with
+   * The prose to stand below the frontmatter and above the first template, with
    * line endings as LF.
    *
    * @generated from field: string preamble = 5;
@@ -638,16 +638,16 @@ export type WriteStencilRequest = Message<"numen.flashcards.v1.WriteStencilReque
 };
 
 /**
- * Describes the message numen.flashcards.v1.WriteStencilRequest.
- * Use `create(WriteStencilRequestSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.WriteCardModelRequest.
+ * Use `create(WriteCardModelRequestSchema)` to create a new message.
  */
-export const WriteStencilRequestSchema: GenMessage<WriteStencilRequest> = /*@__PURE__*/
+export const WriteCardModelRequestSchema: GenMessage<WriteCardModelRequest> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 14);
 
 /**
- * @generated from message numen.flashcards.v1.WriteStencilResponse
+ * @generated from message numen.flashcards.v1.WriteCardModelResponse
  */
-export type WriteStencilResponse = Message<"numen.flashcards.v1.WriteStencilResponse"> & {
+export type WriteCardModelResponse = Message<"numen.flashcards.v1.WriteCardModelResponse"> & {
   /**
    * Set when nothing was written, and why. A file that is no longer the one
    * this caller read is ERROR_CODE_STALE, and the person chooses what happens to
@@ -666,7 +666,7 @@ export type WriteStencilResponse = Message<"numen.flashcards.v1.WriteStencilResp
   at?: Fingerprint | undefined;
 
   /**
-   * Set when the stencil is on disk and the index would not come level with it.
+   * Set when the card model is on disk and the index would not come level with it.
    * The write happened and `at` stands; search answers about this file as it
    * read it last, until a walk goes past.
    *
@@ -676,18 +676,18 @@ export type WriteStencilResponse = Message<"numen.flashcards.v1.WriteStencilResp
 };
 
 /**
- * Describes the message numen.flashcards.v1.WriteStencilResponse.
- * Use `create(WriteStencilResponseSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.WriteCardModelResponse.
+ * Use `create(WriteCardModelResponseSchema)` to create a new message.
  */
-export const WriteStencilResponseSchema: GenMessage<WriteStencilResponse> = /*@__PURE__*/
+export const WriteCardModelResponseSchema: GenMessage<WriteCardModelResponse> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 15);
 
 /**
- * @generated from message numen.flashcards.v1.RenameStencilFieldRequest
+ * @generated from message numen.flashcards.v1.RenameCardModelFieldRequest
  */
-export type RenameStencilFieldRequest = Message<"numen.flashcards.v1.RenameStencilFieldRequest"> & {
+export type RenameCardModelFieldRequest = Message<"numen.flashcards.v1.RenameCardModelFieldRequest"> & {
   /**
-   * The stencil that declares the field.
+   * The card model that declares the field.
    *
    * @generated from field: string path = 1;
    */
@@ -706,8 +706,8 @@ export type RenameStencilFieldRequest = Message<"numen.flashcards.v1.RenameStenc
   to: string;
 
   /**
-   * The stencil this caller last read. Absent for a rename that lands on
-   * whatever the stencil now holds.
+   * The card model this caller last read. Absent for a rename that lands on
+   * whatever the card model now holds.
    *
    * @generated from field: optional numen.v1.Fingerprint baseline = 4;
    */
@@ -715,16 +715,16 @@ export type RenameStencilFieldRequest = Message<"numen.flashcards.v1.RenameStenc
 };
 
 /**
- * Describes the message numen.flashcards.v1.RenameStencilFieldRequest.
- * Use `create(RenameStencilFieldRequestSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.RenameCardModelFieldRequest.
+ * Use `create(RenameCardModelFieldRequestSchema)` to create a new message.
  */
-export const RenameStencilFieldRequestSchema: GenMessage<RenameStencilFieldRequest> = /*@__PURE__*/
+export const RenameCardModelFieldRequestSchema: GenMessage<RenameCardModelFieldRequest> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 16);
 
 /**
- * @generated from message numen.flashcards.v1.RenameStencilFieldResponse
+ * @generated from message numen.flashcards.v1.RenameCardModelFieldResponse
  */
-export type RenameStencilFieldResponse = Message<"numen.flashcards.v1.RenameStencilFieldResponse"> & {
+export type RenameCardModelFieldResponse = Message<"numen.flashcards.v1.RenameCardModelFieldResponse"> & {
   /**
    * The decks a heading was rewritten in, by path.
    *
@@ -756,7 +756,7 @@ export type RenameStencilFieldResponse = Message<"numen.flashcards.v1.RenameSten
   error?: ErrorCode | undefined;
 
   /**
-   * The stencil the rename produced, for the caller to present at its next
+   * The card model the rename produced, for the caller to present at its next
    * write. Absent when nothing was renamed.
    *
    * @generated from field: optional numen.v1.Fingerprint at = 5;
@@ -774,10 +774,10 @@ export type RenameStencilFieldResponse = Message<"numen.flashcards.v1.RenameSten
 };
 
 /**
- * Describes the message numen.flashcards.v1.RenameStencilFieldResponse.
- * Use `create(RenameStencilFieldResponseSchema)` to create a new message.
+ * Describes the message numen.flashcards.v1.RenameCardModelFieldResponse.
+ * Use `create(RenameCardModelFieldResponseSchema)` to create a new message.
  */
-export const RenameStencilFieldResponseSchema: GenMessage<RenameStencilFieldResponse> = /*@__PURE__*/
+export const RenameCardModelFieldResponseSchema: GenMessage<RenameCardModelFieldResponse> = /*@__PURE__*/
   messageDesc(file_numen_flashcards_v1_cards, 17);
 
 /**
@@ -1030,7 +1030,7 @@ export const WriteDeckResponseSchema: GenMessage<WriteDeckResponse> = /*@__PURE_
 
 /**
  * ProblemKind is what kind of problem it is. The list is closed: an interface
- * marks a card and a face by what is wrong with them, so a kind nobody decided
+ * marks a card and a template by what is wrong with them, so a kind nobody decided
  * on is drawn nowhere.
  *
  * @generated from enum numen.flashcards.v1.ProblemKind
@@ -1049,22 +1049,22 @@ export enum ProblemKind {
   FIELD_DECLARED_TWICE = 1,
 
   /**
-   * `fields` is absent or empty, so a card cut by this stencil has no field to
+   * `fields` is absent or empty, so a card cut by this card model has no field to
    * fill in.
    *
-   * @generated from enum value: PROBLEM_KIND_STENCIL_WITHOUT_FIELDS = 2;
+   * @generated from enum value: PROBLEM_KIND_CARD_MODEL_WITHOUT_FIELDS = 2;
    */
-  STENCIL_WITHOUT_FIELDS = 2,
+  CARD_MODEL_WITHOUT_FIELDS = 2,
 
   /**
-   * A face carries no front or no back. It lays out nothing.
+   * A template carries no front or no back. It lays out nothing.
    *
-   * @generated from enum value: PROBLEM_KIND_FACE_MISSING_A_SIDE = 3;
+   * @generated from enum value: PROBLEM_KIND_TEMPLATE_MISSING_A_SIDE = 3;
    */
-  FACE_MISSING_A_SIDE = 3,
+  TEMPLATE_MISSING_A_SIDE = 3,
 
   /**
-   * A `{{Field}}` names a field outside `fields`. The rest of the face is read
+   * A `{{Field}}` names a field outside `fields`. The rest of the template is read
    * as usual.
    *
    * @generated from enum value: PROBLEM_KIND_PLACEHOLDER_UNDECLARED = 4;
@@ -1075,17 +1075,17 @@ export enum ProblemKind {
    * The first paragraph under a card's heading is not a lone wikilink. The
    * values are read.
    *
-   * @generated from enum value: PROBLEM_KIND_CARD_WITHOUT_A_STENCIL = 5;
+   * @generated from enum value: PROBLEM_KIND_CARD_WITHOUT_A_CARD_MODEL = 5;
    */
-  CARD_WITHOUT_A_STENCIL = 5,
+  CARD_WITHOUT_A_CARD_MODEL = 5,
 
   /**
-   * A card's wikilink reaches a note that is not a stencil. The values are
+   * A card's wikilink reaches a note that is not a card model. The values are
    * read.
    *
-   * @generated from enum value: PROBLEM_KIND_STENCIL_IS_NOT_ONE = 6;
+   * @generated from enum value: PROBLEM_KIND_CARD_MODEL_IS_NOT_ONE = 6;
    */
-  STENCIL_IS_NOT_ONE = 6,
+  CARD_MODEL_IS_NOT_ONE = 6,
 
   /**
    * One card writes a field's heading twice. The first stands, and the second
@@ -1096,20 +1096,20 @@ export enum ProblemKind {
   FIELD_WRITTEN_TWICE = 7,
 
   /**
-   * A field renamed in a stencil did not reach this deck, so a card holds a
-   * heading the stencil no longer declares.
+   * A field renamed in a card model did not reach this deck, so a card holds a
+   * heading the card model no longer declares.
    *
    * @generated from enum value: PROBLEM_KIND_FIELD_NOT_RENAMED = 8;
    */
   FIELD_NOT_RENAMED = 8,
 
   /**
-   * Two cards of one deck carry the same mark. Both are read and both are
+   * Two cards of one deck carry the same card id. Both are read and both are
    * shown marked, and neither is given another.
    *
-   * @generated from enum value: PROBLEM_KIND_MARK_CARRIED_TWICE = 9;
+   * @generated from enum value: PROBLEM_KIND_CARD_ID_CARRIED_TWICE = 9;
    */
-  MARK_CARRIED_TWICE = 9,
+  CARD_ID_CARRIED_TWICE = 9,
 }
 
 /**
@@ -1119,87 +1119,87 @@ export const ProblemKindSchema: GenEnum<ProblemKind> = /*@__PURE__*/
   enumDesc(file_numen_flashcards_v1_cards, 0);
 
 /**
- * CardsService answers about the stencils and the decks of the one vault a
+ * CardsService answers about the card models and the decks of the one vault a
  * client is looking at.
  *
  * @generated from service numen.flashcards.v1.CardsService
  */
 export const CardsService: GenService<{
   /**
-   * ListStencils is what a person choosing what kind of card to write next is
-   * shown: every stencil in the vault, by what it is called and what it asks
-   * for. The faces are read one stencil at a time.
+   * ListCardModels is what a person choosing what kind of card to write next is
+   * shown: every card model in the vault, by what it is called and what it asks
+   * for. The templates are read one card model at a time.
    *
-   * A stencil that could not be read is absent from the answer.
+   * A card model that could not be read is absent from the answer.
    *
-   * @generated from rpc numen.flashcards.v1.CardsService.ListStencils
+   * @generated from rpc numen.flashcards.v1.CardsService.ListCardModels
    */
-  listStencils: {
+  listCardModels: {
     methodKind: "unary";
-    input: typeof ListStencilsRequestSchema;
-    output: typeof ListStencilsResponseSchema;
+    input: typeof ListCardModelsRequestSchema;
+    output: typeof ListCardModelsResponseSchema;
   },
   /**
-   * CreateStencil puts a stencil in the vault, declaring the fields it is given
-   * and showing no face. The file says it is a stencil from the moment it
+   * CreateCardModel puts a card model in the vault, declaring the fields it is given
+   * and showing no template. The file says it is a card model from the moment it
    * exists, so it is one to everything that reads the vault before a card is
    * cut by it.
    *
-   * The first field is what a card's heading is read from, so a stencil is
+   * The first field is what a card's heading is read from, so a card model is
    * made with at least one.
    *
-   * @generated from rpc numen.flashcards.v1.CardsService.CreateStencil
+   * @generated from rpc numen.flashcards.v1.CardsService.CreateCardModel
    */
-  createStencil: {
+  createCardModel: {
     methodKind: "unary";
-    input: typeof CreateStencilRequestSchema;
-    output: typeof CreateStencilResponseSchema;
+    input: typeof CreateCardModelRequestSchema;
+    output: typeof CreateCardModelResponseSchema;
   },
   /**
-   * ReadStencil is the fields and the faces of one stencil.
+   * ReadCardModel is the fields and the templates of one card model.
    *
-   * @generated from rpc numen.flashcards.v1.CardsService.ReadStencil
+   * @generated from rpc numen.flashcards.v1.CardsService.ReadCardModel
    */
-  readStencil: {
+  readCardModel: {
     methodKind: "unary";
-    input: typeof ReadStencilRequestSchema;
-    output: typeof ReadStencilResponseSchema;
+    input: typeof ReadCardModelRequestSchema;
+    output: typeof ReadCardModelResponseSchema;
   },
   /**
-   * WriteStencil puts fields and faces into a stencil. A path the vault holds
+   * WriteCardModel puts fields and templates into a card model. A path the vault holds
    * the vault. Every frontmatter key but `fields` stays as the person wrote it,
-   * and a stencil that no longer holds what the caller read is left alone and
+   * and a card model that no longer holds what the caller read is left alone and
    *
-   * The preamble, the tail and each face's own preamble are written back as they
+   * The preamble, the tail and each template's own preamble are written back as they
    * arrive, so the parts of the file a client did not touch come out as the
    * bytes they went in as.
    *
-   * @generated from rpc numen.flashcards.v1.CardsService.WriteStencil
+   * @generated from rpc numen.flashcards.v1.CardsService.WriteCardModel
    */
-  writeStencil: {
+  writeCardModel: {
     methodKind: "unary";
-    input: typeof WriteStencilRequestSchema;
-    output: typeof WriteStencilResponseSchema;
+    input: typeof WriteCardModelRequestSchema;
+    output: typeof WriteCardModelResponseSchema;
   },
   /**
-   * RenameStencilField gives one of a stencil's fields a different name,
-   * everywhere it is written: where the stencil declares it, in the braces of
-   * every face that places it, and as a heading in every card of every deck
-   * that stencil cuts. What is placed under each heading is left as it was.
+   * RenameCardModelField gives one of a card model's fields a different name,
+   * everywhere it is written: where the card model declares it, in the braces of
+   * every template that places it, and as a heading in every card of every deck
+   * that card model cuts. What is placed under each heading is left as it was.
    *
-   * Every field a stencil declares is placed under its own heading in every card,
+   * Every field a card model declares is placed under its own heading in every card,
    * the first included, so renaming any of them reaches every deck that
-   * stencil cuts. A deck the rename could not be written to keeps the old
+   * card model cuts. A deck the rename could not be written to keeps the old
    * heading and comes back under `not_written`.
    *
-   * A stencil that no longer holds what the caller read is left alone and
+   * A card model that no longer holds what the caller read is left alone and
    *
-   * @generated from rpc numen.flashcards.v1.CardsService.RenameStencilField
+   * @generated from rpc numen.flashcards.v1.CardsService.RenameCardModelField
    */
-  renameStencilField: {
+  renameCardModelField: {
     methodKind: "unary";
-    input: typeof RenameStencilFieldRequestSchema;
-    output: typeof RenameStencilFieldResponseSchema;
+    input: typeof RenameCardModelFieldRequestSchema;
+    output: typeof RenameCardModelFieldResponseSchema;
   },
   /**
    * CreateDeck puts a deck of no cards in the vault. The file says it is a deck

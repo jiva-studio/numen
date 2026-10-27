@@ -1,5 +1,5 @@
 /**
- * Open deck and stencil buffer store for flashcards studio.
+ * Open deck and card model buffer store for flashcards studio.
  */
 import { shallowReactive } from 'vue'
 import type { PathRename } from '@numen/plugin-sdk'

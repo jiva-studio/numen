@@ -13,17 +13,17 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/ports"
 )
 
-// Write puts a deck or a stencil back where it came from.
+// Write puts a deck or a card model back where it came from.
 //
-// A deck and a stencil are notes, so this is a note's write with a deck's bound
+// A deck and a card model are notes, so this is a note's write with a deck's bound
 // on it: the body is replaced whole, and a file that has changed since the
 // caller read it is left alone with ports.ErrStale. The frontmatter is the
-// person's, apart from the key a stencil declares its fields in and the
+// person's, apart from the key a card model declares its fields in and the
 // identifier an edit stamps on a note carrying none.
 type Write struct {
 	readers ports.VaultReaders
 	writers ports.VaultWriters
-	// links answers where the wikilink a card names its stencil by lands, which
+	// links answers where the wikilink a card names its card model by lands, which
 	// is what says which of the card's fields is first.
 	links ports.LinkQueries
 	index note.Levels
@@ -31,8 +31,8 @@ type Write struct {
 	now ports.Clock
 }
 
-// NewWrite is what a deck or a stencil goes back through: the vault it is read
-// and written through, where the wikilink each card names its stencil by lands,
+// NewWrite is what a deck or a card model goes back through: the vault it is read
+// and written through, where the wikilink each card names its card model by lands,
 // what brings the file level in the index, and what time it is.
 func NewWrite(
 	readers ports.VaultReaders,
@@ -50,16 +50,16 @@ func (u Write) WithIndex(index note.Levels) Write {
 	return u
 }
 
-// which is what the caller presents at its next write, and the mark every card
+// which is what the caller presents at its next write, and the card id every card
 // that carried none was given.
 type WriteResult struct {
 	Fingerprint domain.Fingerprint
-	Given       []format.CardMark
+	Given       []format.CardID
 }
 
 // Deck puts body in the deck at path.
 //
-// The deck is made whole on the way past: every card carrying no mark is given
+// The deck is made whole on the way past: every card carrying no card id is given
 // one, and every stale heading is put back in step. Every caller therefore gets
 // the same file, and none of them has to know the rules.
 func (u Write) Deck(
@@ -80,14 +80,14 @@ func (u Write) Deck(
 	return WriteResult{Fingerprint: pos, Given: provided}, err
 }
 
-// createWholeBody returns the body with every card made whole, and the marks that
-// took. The stencils are read against the body being written, so a card whose
-// wikilink the caller has just changed is cut by the stencil it now names.
+// createWholeBody returns the body with every card made whole, and the card ids that
+// took. The card models are read against the body being written, so a card whose
+// wikilink the caller has just changed is cut by the card model it now names.
 func (u Write) createWholeBody(
 	ctx context.Context, v domain.Vault, path, body string,
-) (string, []format.CardMark, error) {
+) (string, []format.CardID, error) {
 	read := NewRead(u.readers, u.links)
-	delta, err := read.GetCardStencils(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
+	delta, err := read.GetCardCardModels(ctx, v, path, format.ReadDeck(domain.Note{Body: body}))
 	if err != nil {
 		return "", nil, err
 	}
@@ -95,15 +95,15 @@ func (u Write) createWholeBody(
 	return whole, provided, nil
 }
 
-// Stencil puts the faces and the fields into the stencil at path. A stencil is
+// CardModel puts the templates and the fields into the card model at path. A card model is
 // a note and is bounded as one.
 //
-// The faces are the body and the fields are one key of the frontmatter, and
+// The templates are the body and the fields are one key of the frontmatter, and
 // both are the one file, so one write carries both.
 //
 // The read, the change and the write are made under this vault's write lock,
 // from before the read until after the file is replaced.
-func (u Write) Stencil(
+func (u Write) CardModel(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
 	fingerprint domain.Fingerprint,
 ) (domain.Fingerprint, error) {
@@ -120,7 +120,7 @@ func (u Write) Stencil(
 		if err := doc.SetBody(body); err != nil {
 			return err
 		}
-		// A stencil already declaring these, in this order, keeps the bytes the
+		// A card model already declaring these, in this order, keeps the bytes the
 		// person wrote them as.
 		if declared, _ := doc.List(fieldsKey); !slices.Equal(declared, fields) {
 			return doc.SetList(fieldsKey, fields)

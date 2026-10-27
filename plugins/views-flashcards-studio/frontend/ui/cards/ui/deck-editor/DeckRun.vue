@@ -5,13 +5,13 @@
  */
 import { SectionHeading } from './section-heading'
 import { Card } from './card'
-import { CutChoice } from './stencil-choice'
+import { CutChoice } from './card-model-choice'
 import { Icon } from '../icon'
 import { Button } from '@numen/ui'
 import { DECK_WORDS, createRunEnd } from '../../lib/deck'
 import type { Run } from '../../lib/grid'
 import { createSealedMap, type InsertionPoint, type StepDirection } from '../../lib/order'
-import type { Stencil } from '../../lib/card'
+import type { CardModel } from '../../lib/card'
 import type { DeckRunProps } from './DeckRun.types'
 
 /* --------------------------------- Props ---------------------------------- */
@@ -30,7 +30,7 @@ const emit = defineEmits<{
   (event: 'step', card: string, direction: StepDirection, press: KeyboardEvent): void
   /** The plus was pressed. */
   (event: 'ask'): void
-  (event: 'add', stencil: Stencil): void
+  (event: 'add', cardModel: CardModel): void
 }>()
 
 /* ---------------------------------- State --------------------------------- */
@@ -131,9 +131,9 @@ const getRunEnd = (run: Run): InsertionPoint => createRunEnd(run.id)
 
       <CutChoice
         v-else
-        :stencils="stencils"
+        :card-models="cardModels"
         :words="words"
-        @choose="(stencil) => emit('add', stencil)"
+        @choose="(cardModel) => emit('add', cardModel)"
       />
     </article>
   </div>

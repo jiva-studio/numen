@@ -8,23 +8,24 @@ import Card from './Card.vue'
 import { DECK_CONTEXT } from '../../../model/context'
 import { type DeckSection, type CardWords, type DeckCard } from '../../../lib/deck'
 import { getGrid, type Tile } from '../../../lib/grid'
-import type { Stencil } from '../../../lib/card'
+import type { CardModel } from '../../../lib/card'
 
-const CUTS: readonly Stencil[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
+const CUTS: readonly CardModel[] = [{ name: 'Animal', fields: ['Name', 'Height'] }]
 
 const CARDS: readonly DeckCard[] = [
-  { id: 'llama', section: null, stencil: 'Animal', filled: [] },
-  { id: 'yak', section: null, stencil: 'Animal', filled: [] },
+  { id: 'llama', section: null, cardModel: 'Animal', filled: [] },
+  { id: 'yak', section: null, cardModel: 'Animal', filled: [] },
 ]
 
 /** The words one card is drawn with, which say nothing of adding cards. */
 const WORDS: CardWords = {
   remove: 'Remove',
   drag: 'Reorder',
-  cut: 'Stencil',
+  cut: 'Card model',
   cardStem: 'Card',
   nothing: 'Nothing in it',
-  unknown: (stencil) => (stencil === null ? 'Cut by no stencil' : `No stencil called ${stencil}`),
+  unknown: (cardModel) =>
+    cardModel === null ? 'Cut by no card model' : `No card model called ${cardModel}`,
   wrong: 'What is wrong',
 }
 
@@ -33,7 +34,7 @@ const createTile = (
   cards: readonly DeckCard[] = CARDS,
   sections: readonly DeckSection[] = [],
 ): Tile => {
-  const cardGrid = getGrid({ cards, sections, stencils: CUTS }, null)
+  const cardGrid = getGrid({ cards, sections, cardModels: CUTS }, null)
     .runs.flatMap((run) => run.tiles)
     .find((tile) => tile.id === id)
   if (!cardGrid) throw new Error(`no tile for ${id}`)
@@ -64,7 +65,7 @@ describe('Card', () => {
 
   it('is drawn with words that say nothing of adding a card', () => {
     const card = mountCard(createTile('llama'), { words: WORDS })
-    expect(card.get('[data-cut-of]').attributes('aria-label')).toBe('Stencil')
+    expect(card.get('[data-cut-of]').attributes('aria-label')).toBe('Card model')
   })
 
   it('announces a card by the place it remains in the deck, and by no name of its own', () => {
@@ -75,7 +76,7 @@ describe('Card', () => {
 
   it('says which section it is placed under, and nothing where it is placed under none', () => {
     const underCards: readonly DeckCard[] = [
-      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
     ]
     const tile = createTile('llama', underCards, [{ id: 'roots', name: 'Roots' }])
     expect(mountCard(tile).get('[data-card]').attributes('data-section')).toBe('roots')
@@ -95,38 +96,38 @@ describe('Card', () => {
     expect(write.mock.calls).toEqual([['llama', { field: 'Name', index: 1 }, 'Llama\nand alpaca']])
   })
 
-  it('says on the strip which stencil cut the card, and where none did, that none did', () => {
+  it('says on the strip which card model cut the card, and where none did, that none did', () => {
     const bareCards: readonly DeckCard[] = [
-      { id: 'bare', section: null, stencil: null, filled: [] },
+      { id: 'bare', section: null, cardModel: null, filled: [] },
     ]
     expect(mountCard(createTile('llama')).get('[data-cut-of]').text()).toBe('Animal')
     expect(
       mountCard(createTile('bare', bareCards), { words: WORDS }).get('[data-cut-of]').text(),
-    ).toBe('Cut by no stencil')
+    ).toBe('Cut by no card model')
   })
 
-  it('holds nothing against a card that names no stencil, having returned so on its strip', () => {
+  it('holds nothing against a card that names no card model, having returned so on its strip', () => {
     const bareCards: readonly DeckCard[] = [
-      { id: 'bare', section: null, stencil: null, filled: [] },
+      { id: 'bare', section: null, cardModel: null, filled: [] },
     ]
     const card = mountCard(createTile('bare', bareCards), { words: WORDS })
     expect(card.findAll('.card__objections')).toHaveLength(0)
   })
 
-  it('says which stencil a card naming one is waiting for', () => {
+  it('says which card model a card naming one is waiting for', () => {
     const removed: readonly DeckCard[] = [
-      { id: 'gone', section: null, stencil: 'Gone', filled: [] },
+      { id: 'gone', section: null, cardModel: 'Gone', filled: [] },
     ]
     const card = mountCard(createTile('gone', removed), { words: WORDS })
-    expect(card.get('.card__objections').text()).toContain('No stencil called Gone')
+    expect(card.get('.card__objections').text()).toContain('No card model called Gone')
   })
 
-  it('reads a value of a card no stencil cuts, and types into none of them', () => {
+  it('reads a value of a card no card model cuts, and types into none of them', () => {
     const bareCards: readonly DeckCard[] = [
       {
         id: 'bare',
         section: null,
-        stencil: null,
+        cardModel: null,
         filled: [{ field: 'Question', text: 'what did I mean' }],
       },
     ]
@@ -143,7 +144,7 @@ describe('Card', () => {
       {
         id: 'twice',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Alpaca' },
           { field: 'Name', text: 'Vicuña' },

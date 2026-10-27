@@ -47,7 +47,7 @@ enum Goal {
   GOAL_BY_DATE = 3;
 }
 
-// Rule specifies the condition under which a card face is classified as learned.
+// Rule specifies the condition under which a review card is classified as learned.
 enum Rule {
   RULE_UNSPECIFIED = 0;
 
@@ -62,10 +62,10 @@ enum Rule {
 enum BudgetUnit {
   BUDGET_UNIT_UNSPECIFIED = 0;
 
-  // Deducts budget only on the first review of a card face per review day.
+  // Deducts budget only on the first review of a card per review day.
   BUDGET_UNIT_CARDS = 1;
 
-  // Deducts budget on every card face presentation.
+  // Deducts budget on every showing of a review card.
   BUDGET_UNIT_SHOWS = 2;
 }
 
@@ -192,14 +192,14 @@ message Curve {
   CurvePoint now = 5;
   CurvePoint suggested = 6;
 
-  // Number of decks and total card faces assigned to this preset.
+  // Number of decks and total review cards assigned to this preset.
   int32 decks = 7;
   int32 cards = 8;
 
-  // Current overdue card faces across assigned decks.
+  // Current overdue review cards across assigned decks.
   int32 overdue = 9;
 
-  // Card faces that have never been reviewed.
+  // Review cards that have never been reviewed.
   int32 unbegun = 10;
 }
 
@@ -212,10 +212,10 @@ message Point {
   // Projected retention rate.
   double retained = 3;
 
-  // Projected overdue card faces remaining at the projection horizon.
+  // Projected overdue review cards remaining at the projection horizon.
   int32 owed = 4;
 
-  // Percentage of card faces learned by target horizon and sufficiency flag.
+  // Percentage of review cards learned by target horizon and sufficiency flag.
   double through = 5;
   bool is_enough = 6;
 
@@ -228,13 +228,13 @@ message Point {
   // Overdue count projection per day across the horizon.
   repeated int32 backlog = 9;
 
-  // Total card faces currently classified as learned.
+  // Total review cards currently classified as learned.
   int32 learned = 10;
 
   // Number of days required to learn all cards (-1 if unachievable).
   optional int32 learns = 11;
 
-  // Number of card faces that cannot be learned before the target date.
+  // Number of review cards that cannot be learned before the target date.
   int32 short = 12;
 }
 

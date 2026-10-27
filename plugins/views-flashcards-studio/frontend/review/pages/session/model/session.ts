@@ -10,7 +10,7 @@ import { computed, ref, shallowRef } from 'vue'
 import type { Ref } from 'vue'
 
 import { RATING_BY_GRADE } from '../../../entities/card'
-import type { CardFace, Grade, Intervals } from '../../../entities/card'
+import type { ReviewCard, Grade, Intervals } from '../../../entities/card'
 
 /** What a session asks of the application, and no more of it than that. */
 export interface SessionClient {
@@ -22,8 +22,8 @@ export interface SessionClient {
   answerCard(params: {
     vault: string
     run: string
-    mark: string
-    face: string
+    cardId: string
+    template: string
     rating: number
     tookMs: bigint
   }): Promise<{ answer: string }>
@@ -36,8 +36,8 @@ export interface SessionStart {
   cards: readonly {
     deck: string
     section: string
-    mark: string
-    face: string
+    cardId: string
+    template: string
     heading: string
     front: string
     back: string
@@ -50,7 +50,7 @@ export interface SessionStart {
 
 /** What a session could not act on, for the window to say once as it opens. */
 export interface Report {
-  /** The decks holding a card that could not be given a mark. */
+  /** The decks holding a card that could not be given a card id. */
   readonly unwritten: readonly string[]
   /** How many lines of the vault's answers could not be read. */
   readonly skipped: number
@@ -65,12 +65,12 @@ export interface SessionDeps {
 }
 
 function useSessionCards() {
-  const request = shallowRef<readonly CardFace[]>([])
+  const request = shallowRef<readonly ReviewCard[]>([])
   const cardIndex = ref(0)
   const isAnswerShown = ref(false)
   const answers = ref<string[]>([])
 
-  const card = computed<CardFace | null>(() => request.value[cardIndex.value] ?? null)
+  const card = computed<ReviewCard | null>(() => request.value[cardIndex.value] ?? null)
   const remaining = computed(() => request.value.length - cardIndex.value)
   const isOver = computed(() => card.value === null)
   const isDone = computed(() => answers.value.length)
@@ -102,7 +102,7 @@ async function openSession(deps: {
   id: string
   deck: string
   preset?: string
-}): Promise<{ run: string; cards: readonly CardFace[]; report: Report } | null> {
+}): Promise<{ run: string; cards: readonly ReviewCard[]; report: Report } | null> {
   try {
     const startedSession = await deps.cards.startSession(
       deps.preset === undefined
@@ -111,7 +111,7 @@ async function openSession(deps: {
     )
     return {
       run: startedSession.run,
-      cards: startedSession.cards.map(createCardFace),
+      cards: startedSession.cards.map(createReviewCard),
       report: { unwritten: startedSession.unwritten, skipped: startedSession.skipped },
     }
   } catch (why) {
@@ -125,7 +125,7 @@ async function submitAnswer(deps: {
   reportError: (why: unknown) => void
   vault: string
   run: string
-  card: CardFace
+  card: ReviewCard
   how: Grade
   elapsedMs: number
 }): Promise<string | null> {
@@ -133,8 +133,8 @@ async function submitAnswer(deps: {
     const response = await deps.cards.answerCard({
       vault: deps.vault,
       run: deps.run,
-      mark: deps.card.mark,
-      face: deps.card.face,
+      cardId: deps.card.cardId,
+      template: deps.card.template,
       rating: RATING_BY_GRADE[deps.how],
       tookMs: BigInt(deps.elapsedMs),
     })
@@ -325,11 +325,11 @@ export function useReviewSession(deps: SessionDeps) {
 }
 
 /** One card as the window holds it: the seconds come across as numbers. */
-const createCardFace = (one: SessionStart['cards'][number]): CardFace => ({
+const createReviewCard = (one: SessionStart['cards'][number]): ReviewCard => ({
   deck: one.deck,
   section: one.section,
-  mark: one.mark,
-  face: one.face,
+  cardId: one.cardId,
+  template: one.template,
   heading: one.heading,
   front: one.front,
   back: one.back,

@@ -109,8 +109,8 @@ func (d Day) GetEndOfDate(named time.Time) time.Time {
 	return d.getStartTime(y, m, day+1)
 }
 
-// IsOwed reports whether a card is to be answered on this face in the day
-// holding now. A card face that has never been answered is owed the first time
+// IsOwed reports whether a card is to be answered on this review card in the day
+// holding now. A review card that has never been answered is owed the first time
 // it is asked about.
 func (d Day) IsOwed(s Schedule, now time.Time) bool {
 	return s.IsNew() || s.Due.Before(d.GetEnd(now))
@@ -212,7 +212,7 @@ func GetDayTallies(d Day, answers []Answer) map[string]Tally {
 // answer given to it is time spent.
 //
 // New and Reviews divide the cards the way a budget does: a card is new on the
-// day its face is first answered at all, and a review on every day after.
+// day its review card is first answered at all, and a review on every day after.
 type Spent struct {
 	Answered int
 	New      int
@@ -221,45 +221,45 @@ type Spent struct {
 }
 
 // GetSpentUnder is what the day named came to under each preset, by the path
-// the card faces are grouped under.
+// the review cards are grouped under.
 //
-// A card face nothing groups is left out, and so is an answer taken back. Each
+// A review card nothing groups is left out, and so is an answer taken back. Each
 // answer counts for what Answer.Counted makes of it.
 //
 // Counts says how each preset counts, by the same path, and a path it does not
-// name counts in cards: a card face counts once for the day however many times
+// name counts in cards: a review card counts once for the day however many times
 // it is answered in it. Every one of those answers counts its time either way.
 func GetSpentUnder(
 	d Day, day string, answers []Answer,
-	presetMap map[CardFaceID]string, counts map[string]BudgetUnit,
+	presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
 	return OrderAnswers(answers).GetSpentUnder(d, day, presetMap, counts)
 }
 
 // GetSpentUnder is the same over a history already in order.
 func (h History) GetSpentUnder(
-	d Day, day string, presetMap map[CardFaceID]string, counts map[string]BudgetUnit,
+	d Day, day string, presetMap map[ReviewCardID]string, counts map[string]BudgetUnit,
 ) map[string]Spent {
-	// Which card faces have been answered before the answer in hand, over the
+	// Which review cards have been answered before the answer in hand, over the
 	// whole history and not this day alone.
-	before := make(map[CardFaceID]bool, len(h))
-	// Which card faces the day has already counted, so a card that comes round
+	before := make(map[ReviewCardID]bool, len(h))
+	// Which review cards the day has already counted, so a card that comes round
 	// again in it is still the one card.
-	counted := make(map[CardFaceID]bool)
+	counted := make(map[ReviewCardID]bool)
 	out := make(map[string]Spent)
 	for _, a := range h {
-		first := !before[a.CardFace]
-		before[a.CardFace] = true
+		first := !before[a.ReviewCard]
+		before[a.ReviewCard] = true
 		if d.GetName(a.At) != day {
 			continue
 		}
-		path, target := presetMap[a.CardFace]
+		path, target := presetMap[a.ReviewCard]
 		if !target {
 			continue
 		}
 		one := out[path]
-		if counts[path].IsCharged(counted[a.CardFace]) {
-			counted[a.CardFace] = true
+		if counts[path].IsCharged(counted[a.ReviewCard]) {
+			counted[a.ReviewCard] = true
 			one.Answered++
 			if first {
 				one.New++
@@ -275,18 +275,18 @@ func (h History) GetSpentUnder(
 	return out
 }
 
-// GetFaced is the card faces answered in the day named. An answer taken back is
-// not one, and a card face answered again in the day is the one face.
-func GetFaced(d Day, day string, answers []Answer) map[CardFaceID]bool {
-	return OrderAnswers(answers).GetFaced(d, day)
+// GetReviewed is the review cards answered in the day named. An answer taken back is
+// not one, and a review card answered again in the day is the one review card.
+func GetReviewed(d Day, day string, answers []Answer) map[ReviewCardID]bool {
+	return OrderAnswers(answers).GetReviewed(d, day)
 }
 
-// GetFaced is the same over a history already in order.
-func (h History) GetFaced(d Day, day string) map[CardFaceID]bool {
-	out := make(map[CardFaceID]bool)
+// GetReviewed is the same over a history already in order.
+func (h History) GetReviewed(d Day, day string) map[ReviewCardID]bool {
+	out := make(map[ReviewCardID]bool)
 	for _, a := range h {
 		if d.GetName(a.At) == day {
-			out[a.CardFace] = true
+			out[a.ReviewCard] = true
 		}
 	}
 	return out

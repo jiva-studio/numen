@@ -209,18 +209,18 @@ func (a *reviewHandler) countVault(ctx context.Context, v domain.Vault) *flashca
 		one.Unread = err.Error()
 		return one
 	}
-	one.Faces = int32(owing.Faces)
+	one.ReviewCards = int32(owing.ReviewCards)
 	one.Due = int32(owing.Due)
 	one.New = int32(owing.New)
 	for _, deck := range owing.Decks {
 		one.Decks = append(one.Decks, &flashcardsv1.DeckCardsDue{
-			Deck:     deck.Deck,
-			Faces:    int32(deck.Faces),
-			Due:      int32(deck.Due),
-			New:      int32(deck.New),
-			Answered: int32(deck.Answered),
-			Learned:  int32(deck.Learned),
-			Unbegun:  int32(deck.Unbegun),
+			Deck:        deck.Deck,
+			ReviewCards: int32(deck.ReviewCards),
+			Due:         int32(deck.Due),
+			New:         int32(deck.New),
+			Answered:    int32(deck.Answered),
+			Learned:     int32(deck.Learned),
+			Unbegun:     int32(deck.Unbegun),
 		})
 	}
 	for _, preset := range owing.Presets {
@@ -292,13 +292,13 @@ func (a *reviewHandler) StartSession(
 	return connect.NewResponse(out), nil
 }
 
-func newWireSessionCard(one flashcards.QueuedCardFace) *flashcardsv1.SessionCard {
+func newWireSessionCard(one flashcards.QueuedReviewCard) *flashcardsv1.SessionCard {
 	front, back := one.Lay()
 	return &flashcardsv1.SessionCard{
 		Deck:      one.Deck,
 		Section:   one.Section,
-		Mark:      one.ID.Card,
-		Face:      one.ID.Face,
+		CardId:    one.ID.Card,
+		Template:  one.ID.Template,
 		Heading:   one.Heading,
 		Front:     front,
 		Back:      back,
@@ -334,7 +334,7 @@ func (a *reviewHandler) AnswerCard(
 		return nil, connect.NewError(connect.CodeNotFound, err)
 	}
 
-	on := review.CardFaceID{Card: r.Msg.GetMark(), Face: r.Msg.GetFace()}
+	on := review.ReviewCardID{Card: r.Msg.GetCardId(), Template: r.Msg.GetTemplate()}
 	provided, err := a.scenarios().flash.Record.Answer(ctx, run, on, parseRating(r.Msg.GetRating()),
 		time.Duration(r.Msg.GetTookMs())*time.Millisecond)
 	if err != nil {
@@ -541,7 +541,7 @@ func (a *reviewHandler) WatchReloads(
 			if !open {
 				return nil
 			}
-			a.scenarios().flash.CardFaces.InvalidateAll()
+			a.scenarios().flash.ReviewCards.InvalidateAll()
 			if err := out.Send(&flashcardsv1.WatchReloadsResponse{Reload: true}); err != nil {
 				return err
 			}

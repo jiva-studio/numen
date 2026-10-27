@@ -14,11 +14,11 @@ import {
 } from './fill'
 
 /**
- * A card face is shown on two surfaces and each lays it out for itself: this
- * library for the preview beside the stencil being written, and the core's
+ * A review card is shown on two surfaces and each lays it out for itself: this
+ * library for the preview beside the card model being written, and the core's
  * flashcards/format for the window a card is reviewed in. The table both are
  */
-import corpus from '../../../../../../libs/protocol/testdata/faces.json'
+import corpus from '../../../../../../libs/protocol/testdata/templates.json'
 
 const VALUES = [
   { field: 'Height', text: 'about 45"' },
@@ -26,22 +26,22 @@ const VALUES = [
 ]
 
 /**
- * A card face means the same thing on every surface it is shown on.
+ * A review card means the same thing on every surface it is shown on.
  *
- * Laying a face out is the step each surface takes for itself; drawing what
+ * Laying a template out is the step each surface takes for itself; drawing what
  * comes out is one implementation both of them reach, so what is compared is
  * the text the slots have been filled in, and text that agrees is drawn alike.
  *
- * Every slot of the table names a field the stencil declares. A slot naming
+ * Every slot of the table names a field the card model declares. A slot naming
  * none is where the two surfaces part on purpose — the review window lays it
- * out as nothing and the preview marks it at its current position, because the stencil
+ * out as nothing and the preview marks it at its current position, because the card model
  */
-describe('a card face', () => {
+describe('a review card', () => {
   it('means the same on every surface it is shown on', () => {
     if (corpus.invariant === '') throw new Error('the table names no invariant')
-    if (corpus.faces.length === 0 || corpus.count === 0 || corpus.changed === 0) {
+    if (corpus.templates.length === 0 || corpus.count === 0 || corpus.changed === 0) {
       throw new Error(
-        `the table holds ${corpus.faces.length} faces and declares ${corpus.count}, ` +
+        `the table holds ${corpus.templates.length} templates and declares ${corpus.count}, ` +
           `${corpus.changed} of which the slots change`,
       )
     }
@@ -49,18 +49,20 @@ describe('a card face', () => {
     const named = new Set<string>()
     let arrangedCount = 0
     let changed = 0
-    for (const { name, construct, face, fields, values, laid: want } of corpus.faces) {
+    for (const { name, construct, template, fields, values, laid: want } of corpus.templates) {
       if (name === '' || construct === '') {
-        throw new Error(`a face of the table is called "${name}" and pins "${construct}"`)
+        throw new Error(`a template of the table is called "${name}" and pins "${construct}"`)
       }
-      if (named.has(name)) throw new Error(`two faces of the table are called "${name}"`)
+      if (named.has(name)) throw new Error(`two templates of the table are called "${name}"`)
       named.add(name)
 
       arrangedCount += 1
-      if (want !== face) changed += 1
+      if (want !== template) changed += 1
 
       const response = { name, construct, laid: want }
-      expect({ name, construct, laid: renderPreview(face, values, fields) }).toStrictEqual(response)
+      expect({ name, construct, laid: renderPreview(template, values, fields) }).toStrictEqual(
+        response,
+      )
     }
 
     expect(arrangedCount).toBe(corpus.count)

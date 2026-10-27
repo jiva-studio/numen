@@ -39,8 +39,8 @@ export interface Preset {
   readonly decks: readonly string[]
   /** How many decks name it, whatever they hold. */
   readonly named: number
-  /** How many card faces stand in those decks. */
-  readonly faces: number
+  /** How many review cards stand in those decks. */
+  readonly reviewCards: number
   /**
    * What starting a session on it would ask, as the count gives it: the cards its
    */

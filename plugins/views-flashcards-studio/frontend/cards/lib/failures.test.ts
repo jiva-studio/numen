@@ -1,5 +1,5 @@
 /**
- * What an error of a deck or a stencil is recorded under.
+ * What an error of a deck or a card model is recorded under.
  */
 import { describe, expect, it } from 'vitest'
 import { getFailureCode } from './failures'

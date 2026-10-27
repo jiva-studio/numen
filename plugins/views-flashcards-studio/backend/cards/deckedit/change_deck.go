@@ -9,10 +9,10 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/note"
 )
 
-// deckChange is what a change wrote: the deck as it became and the marks given to cards that carried none.
+// deckChange is what a change wrote: the deck as it became and the card ids given to cards that carried none.
 type deckChange struct {
-	result EditResult
-	marks  []format.CardMark
+	result  EditResult
+	cardIDs []format.CardID
 }
 
 // changeDeck splices one change into a deck. Every byte the change does not name is written as it arrived.
@@ -33,7 +33,7 @@ func changeDeck(
 		return deckChange{}, err
 	}
 	return deckChange{
-		result: EditResult{Fingerprint: wrote.Fingerprint, Cards: len(file.Deck(domain.Fingerprint{}).Cards)},
-		marks:  wrote.Given,
+		result:  EditResult{Fingerprint: wrote.Fingerprint, Cards: len(file.Deck(domain.Fingerprint{}).Cards)},
+		cardIDs: wrote.Given,
 	}, nil
 }

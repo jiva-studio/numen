@@ -8,7 +8,7 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/format"
 )
 
-// RemoveCard takes the card of a mark out of a deck.
+// RemoveCard takes the card of a card id out of a deck.
 type RemoveCard struct {
 	read  Read
 	write Write
@@ -16,9 +16,9 @@ type RemoveCard struct {
 
 func NewRemoveCard(read Read, write Write) RemoveCard { return RemoveCard{read: read, write: write} }
 
-func (u RemoveCard) Execute(ctx context.Context, v domain.Vault, version DeckVersion, mark string) (EditResult, error) {
+func (u RemoveCard) Execute(ctx context.Context, v domain.Vault, version DeckVersion, cardID string) (EditResult, error) {
 	changed, err := changeDeck(ctx, u.read, u.write, v, version, func(_ DeckContents, file *format.DeckFile) error {
-		return file.RemoveCard(cardid.ID(mark))
+		return file.RemoveCard(cardid.ID(cardID))
 	})
 	return changed.result, err
 }

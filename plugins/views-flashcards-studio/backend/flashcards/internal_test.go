@@ -18,13 +18,13 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
 
-func deckOf(n int) deckFaces { return deckFaces{faces: make([]CardFace, n)} }
+func deckOf(n int) deckCards { return deckCards{reviewCards: make([]ReviewCard, n)} }
 
 func keyOf(path string) deckKey { return deckKey{vault: "v", path: path} }
 
-func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheFacesPassTheBound(t *testing.T) {
+func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheCardsPassTheBound(t *testing.T) {
 	t.Parallel()
-	c := newFaceCache()
+	c := newCardCache()
 	c.put(0, keyOf("a"), deckOf(2), 6)
 	c.put(0, keyOf("b"), deckOf(2), 6)
 	c.put(0, keyOf("c"), deckOf(2), 6)
@@ -35,30 +35,30 @@ func TestTheLeastRecentlyUsedDeckIsForgottenAloneWhenTheFacesPassTheBound(t *tes
 	if c.hasDeck(keyOf("b")) {
 		t.Error("the least recently used deck is still held")
 	}
-	for _, face := range []string{"a", "c", "d"} {
-		if !c.hasDeck(keyOf(face)) {
-			t.Errorf("deck %s was forgotten with it", face)
+	for _, reviewCard := range []string{"a", "c", "d"} {
+		if !c.hasDeck(keyOf(reviewCard)) {
+			t.Errorf("deck %s was forgotten with it", reviewCard)
 		}
 	}
 	if c.getSize() != 6 {
-		t.Errorf("%d faces held, want 6", c.getSize())
+		t.Errorf("%d review cards held, want 6", c.getSize())
 	}
 }
 
-func TestTheFacesHeldNeverPassTheBound(t *testing.T) {
+func TestTheCardsHeldNeverPassTheBound(t *testing.T) {
 	t.Parallel()
-	c := newFaceCache()
+	c := newCardCache()
 	for i := range 50 {
 		c.put(0, keyOf(string(rune('a'+i%26))+string(rune('a'+i/26))), deckOf(1+i%4), 10)
 		if c.getSize() > 10 {
-			t.Fatalf("%d faces held past a bound of 10", c.getSize())
+			t.Fatalf("%d review cards held past a bound of 10", c.getSize())
 		}
 	}
 }
 
-func TestADeckContainingMoreFacesThanTheBoundIsNotStored(t *testing.T) {
+func TestADeckContainingMoreCardsThanTheBoundIsNotStored(t *testing.T) {
 	t.Parallel()
-	c := newFaceCache()
+	c := newCardCache()
 	c.put(0, keyOf("small"), deckOf(1), 3)
 	c.put(0, keyOf("big"), deckOf(4), 3)
 
@@ -67,18 +67,18 @@ func TestADeckContainingMoreFacesThanTheBoundIsNotStored(t *testing.T) {
 	}
 }
 
-func TestReplacingADeckCountsItsFacesOnce(t *testing.T) {
+func TestReplacingADeckCountsItsCardsOnce(t *testing.T) {
 	t.Parallel()
-	c := newFaceCache()
+	c := newCardCache()
 	c.put(0, keyOf("a"), deckOf(3), 10)
 	c.put(0, keyOf("a"), deckOf(2), 10)
 
 	if c.getSize() != 2 {
-		t.Errorf("%d faces held, want 2", c.getSize())
+		t.Errorf("%d review cards held, want 2", c.getSize())
 	}
 	c.invalidate(domain.VaultID("v"), []string{"a"})
 	if c.getSize() != 0 {
-		t.Errorf("%d faces held after forgetting the only deck", c.getSize())
+		t.Errorf("%d review cards held after forgetting the only deck", c.getSize())
 	}
 }
 
@@ -206,19 +206,19 @@ func newDeckLoads(t *rapid.T) []deckLoad {
 	return out
 }
 
-// getTakenFaces is what a day of this budget hands over, with the decks reached
-// in this order: the card faces the session takes, by name.
+// getTakenCards is what a day of this budget hands over, with the decks reached
+// in this order: the review cards the session takes, by name.
 //
 // The order stands for the order the vault was walked in. Each deck's own cards
 // keep the order they stand in, which is the deck's and not the walk's. A
 // budget of no minutes is a day that does not close on them.
-func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review.CardFaceID]bool {
+func getTakenCards(load []deckLoad, order []int, keeps review.Budget) map[review.ReviewCardID]bool {
 	limits := review.Limits{New: review.ClosedNew, Reviews: review.ClosedReviews}
 	if keeps.Minutes > 0 {
 		limits.Minutes = review.ClosedMinutes
 	}
 	day := &budgets{
-		cardFacePresets: make(map[review.CardFaceID]string),
+		reviewCardPresets: make(map[review.ReviewCardID]string),
 		allowances: map[string]*allowance{"Preset.md": {
 			admits: review.Allowance{
 				Keeps: keeps, New: keeps.New, Reviews: keeps.Reviews,
@@ -230,32 +230,32 @@ func getTakenFaces(load []deckLoad, order []int, keeps review.Budget) map[review
 			counts: review.BudgetUnitCards,
 		}},
 		decks:         make(map[string]string),
-		reviewedFaces: make(map[review.CardFaceID]bool),
+		reviewedCards: make(map[review.ReviewCardID]bool),
 		spentByDeck:   make(map[string]review.Spent),
 	}
 
-	var owed, newCards []CardFace
+	var owed, newCards []ReviewCard
 	for _, item := range order {
 		one := load[item]
 		day.decks[one.path] = "Preset.md"
 		for card := range one.owed {
-			face := CardFace{Deck: one.path, ID: review.CardFaceID{
+			reviewCard := ReviewCard{Deck: one.path, ID: review.ReviewCardID{
 				Card: fmt.Sprintf("%s/owed/%d", one.path, card),
 			}}
-			day.cardFacePresets[face.ID] = "Preset.md"
-			owed = append(owed, face)
+			day.reviewCardPresets[reviewCard.ID] = "Preset.md"
+			owed = append(owed, reviewCard)
 		}
 		for card := range one.unbegun {
-			face := CardFace{Deck: one.path, ID: review.CardFaceID{
+			reviewCard := ReviewCard{Deck: one.path, ID: review.ReviewCardID{
 				Card: fmt.Sprintf("%s/fresh/%d", one.path, card),
 			}}
-			day.cardFacePresets[face.ID] = "Preset.md"
-			newCards = append(newCards, face)
+			day.reviewCardPresets[reviewCard.ID] = "Preset.md"
+			newCards = append(newCards, reviewCard)
 		}
 	}
 
 	took := day.spend(owed, newCards)
-	out := make(map[review.CardFaceID]bool)
+	out := make(map[review.ReviewCardID]bool)
 	for entry, one := range owed {
 		if took.owed[entry] {
 			out[one.ID] = true
@@ -277,9 +277,9 @@ func countHandedOver(load []deckLoad, keeps review.Budget) map[string]int {
 		places[item] = item
 	}
 	out := make(map[string]int, len(load))
-	for face := range getTakenFaces(load, places, keeps) {
+	for reviewCard := range getTakenCards(load, places, keeps) {
 		for _, one := range load {
-			if strings.HasPrefix(face.Card, one.path+"/") {
+			if strings.HasPrefix(reviewCard.Card, one.path+"/") {
 				out[one.path]++
 			}
 		}
@@ -330,8 +330,8 @@ func TestTheWalkOfAVaultDoesNotChangeWhatADayPassesOver(t *testing.T) {
 			places[item] = item
 		}
 
-		was := getTakenFaces(load, places, keeps)
-		now := getTakenFaces(load, rapid.Permutation(places).Draw(t, "walk"), keeps)
+		was := getTakenCards(load, places, keeps)
+		now := getTakenCards(load, rapid.Permutation(places).Draw(t, "walk"), keeps)
 		if !maps.Equal(was, now) {
 			t.Fatalf("a day of %d new and %d reviews over %v hands over %v "+
 				"walked in order and %v walked otherwise",

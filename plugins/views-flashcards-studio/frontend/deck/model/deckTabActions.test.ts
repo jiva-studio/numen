@@ -7,11 +7,11 @@ import { createDeckTabActions } from './deckTabActions'
 
 const card = (id: string): BufferCard => ({
   id,
-  mark: '',
+  cardId: '',
   section: null,
   heading: id,
-  stencilLink: 'Animal',
-  stencilPath: 'Animal.md',
+  cardModelLink: 'Animal',
+  cardModelPath: 'Animal.md',
   preamble: '',
   values: [],
 })

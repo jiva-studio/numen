@@ -9,12 +9,12 @@ import {
   type DeckCard,
 } from './deck'
 import { getGrid } from './grid'
-import type { Stencil } from './card'
+import type { CardModel } from './card'
 
 describe('getCardFieldValues', () => {
   const FIELDS = ['Height', 'Weight']
 
-  it('lays the values in the order the stencil asks for them', () => {
+  it('lays the values in the order the card model asks for them', () => {
     const filled = [
       { field: 'Weight', text: 'heavy' },
       { field: 'Height', text: 'tall' },
@@ -30,7 +30,7 @@ describe('getCardFieldValues', () => {
     })
   })
 
-  it('keeps a value the stencil does not name, after the rest', () => {
+  it('keeps a value the card model does not name, after the rest', () => {
     const filled = [{ field: 'Colour', text: 'brown' }]
     expect(getCardFieldValues(filled, FIELDS)).toHaveLength(3)
     expect(getCardFieldValues(filled, FIELDS)[2]).toEqual({
@@ -52,11 +52,11 @@ describe('getCardFieldValues', () => {
     ])
   })
 
-  it('lays out nothing for a stencil naming nothing and a card holding nothing', () => {
+  it('lays out nothing for a card model naming nothing and a card holding nothing', () => {
     expect(getCardFieldValues([], [])).toEqual([])
   })
 
-  it('lays a name the stencil declares twice out once, where it first remains', () => {
+  it('lays a name the card model declares twice out once, where it first remains', () => {
     const filled = [{ field: 'Height', text: 'tall' }]
     expect(getCardFieldValues(filled, ['Height', 'Weight', 'Height'])).toEqual([
       { field: 'Height', text: 'tall', isDeclared: true },
@@ -66,7 +66,7 @@ describe('getCardFieldValues', () => {
 })
 
 describe('getBlanks', () => {
-  it('remains every field of a stencil empty', () => {
+  it('remains every field of a card model empty', () => {
     expect(getBlanks(['A', 'B'])).toEqual([
       { field: 'A', text: '' },
       { field: 'B', text: '' },
@@ -75,7 +75,7 @@ describe('getBlanks', () => {
 })
 
 describe('grid', () => {
-  const CUTS: readonly Stencil[] = [
+  const CUTS: readonly CardModel[] = [
     { name: 'Animal', fields: ['Name', 'Height', 'Weight'] },
     { name: 'Word', fields: ['Word', 'Meaning'] },
   ]
@@ -83,20 +83,20 @@ describe('grid', () => {
     {
       id: 'llama',
       section: null,
-      stencil: 'Animal',
+      cardModel: 'Animal',
       filled: [
         { field: 'Name', text: 'Llama' },
         { field: 'Height', text: '45"' },
       ],
     },
-    { id: 'yak', section: null, stencil: 'Animal', filled: [] },
+    { id: 'yak', section: null, cardModel: 'Animal', filled: [] },
   ]
 
   const grid = (
     cards: readonly DeckCard[],
     sections: readonly DeckSection[] = [],
     dragCard: string | null = null,
-  ) => getGrid({ cards, sections, stencils: CUTS }, dragCard)
+  ) => getGrid({ cards, sections, cardModels: CUTS }, dragCard)
 
   /** Every tile of the grid, over all its runs, in the order they stand. */
   const getTiles = (deck: ReturnType<typeof getGrid>) => deck.runs.flatMap((run) => run.tiles)
@@ -115,7 +115,7 @@ describe('grid', () => {
     expect(displayedGrid.of).toBe(1)
   })
 
-  it('lays every field the stencil asks for out under its own name, the first included', () => {
+  it('lays every field the card model asks for out under its own name, the first included', () => {
     const tile = getTiles(grid(CARDS))[0]
     expect(tile?.filled.map((each) => each.field)).toEqual(['Name', 'Height', 'Weight'])
     expect(tile?.isKnown).toBe(true)
@@ -143,7 +143,7 @@ describe('grid', () => {
       {
         id: 'x',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Alpaca' },
           { field: 'Name', text: 'Vicuña' },
@@ -159,7 +159,7 @@ describe('grid', () => {
       {
         id: 'x',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Alpaca' },
           { field: 'Name', text: 'Vicuña' },
@@ -181,27 +181,27 @@ describe('grid', () => {
   })
 
   it('draws a card cut by nothing as cut by nothing', () => {
-    const unstenciledCards: readonly DeckCard[] = [
-      { id: 'x', section: null, stencil: null, filled: [] },
+    const withoutCardModelCards: readonly DeckCard[] = [
+      { id: 'x', section: null, cardModel: null, filled: [] },
     ]
-    const tile = getTiles(grid(unstenciledCards))[0]
-    expect(tile?.stencil).toBeNull()
+    const tile = getTiles(grid(withoutCardModelCards))[0]
+    expect(tile?.cardModel).toBeNull()
     expect(tile?.isKnown).toBe(false)
   })
 
   it('remains every value of a card cut by nothing, marked as named by nothing', () => {
-    const unstenciledCards: readonly DeckCard[] = [
+    const withoutCardModelCards: readonly DeckCard[] = [
       {
         id: 'x',
         section: null,
-        stencil: null,
+        cardModel: null,
         filled: [
           { field: 'Question', text: 'what' },
           { field: 'Answer', text: 'this' },
         ],
       },
     ]
-    const filled = getTiles(grid(unstenciledCards))[0]?.filled ?? []
+    const filled = getTiles(grid(withoutCardModelCards))[0]?.filled ?? []
     expect(filled.map((each) => each.field)).toEqual(['Question', 'Answer'])
     expect(filled.map((each) => each.text)).toEqual(['what', 'this'])
     expect(filled.every((each) => !each.isDeclared)).toBe(true)
@@ -216,7 +216,7 @@ describe('grid', () => {
       {
         id: 'x',
         section: null,
-        stencil: 'Animal',
+        cardModel: 'Animal',
         filled: [
           { field: 'Name', text: 'Alpaca' },
           { field: 'Name', text: 'Vicuña' },
@@ -227,25 +227,25 @@ describe('grid', () => {
     expect(filled.map((each) => each.at)).toEqual([1, 2, 3, 4])
   })
 
-  it('draws no value where the card’s stencil was not handed in', () => {
+  it('draws no value where the card’s card model was not handed in', () => {
     const orphan: readonly DeckCard[] = [
-      { id: 'x', section: null, stencil: 'Gone', filled: [{ field: 'A', text: 'a' }] },
+      { id: 'x', section: null, cardModel: 'Gone', filled: [{ field: 'A', text: 'a' }] },
     ]
     const tile = getTiles(grid(orphan))[0]
     expect(tile?.isKnown).toBe(false)
     // Nothing names these values, so nothing lays them out. They stay in the
-    // file, and the tile says which stencil it is waiting for.
+    // file, and the tile says which card model it is waiting for.
     expect(tile?.filled).toEqual([])
-    expect(tile?.stencil).toBe('Gone')
+    expect(tile?.cardModel).toBe('Gone')
   })
 
-  it('says nothing of what a card is cut by: the fields tell the stencils apart', () => {
+  it('says nothing of what a card is cut by: the fields tell the card models apart', () => {
     const mixed: readonly DeckCard[] = [
       ...CARDS,
-      { id: 'llano', section: null, stencil: 'Word', filled: [] },
+      { id: 'llano', section: null, cardModel: 'Word', filled: [] },
     ]
     const displayedGrid = grid(mixed)
-    expect(getTiles(displayedGrid).map((tile) => tile.stencil)).toEqual([
+    expect(getTiles(displayedGrid).map((tile) => tile.cardModel)).toEqual([
       'Animal',
       'Animal',
       'Word',
@@ -263,9 +263,9 @@ describe('grid', () => {
       { id: 'leaves', name: 'Leaves' },
     ]
     const SECTIONED: readonly DeckCard[] = [
-      { id: 'loose', section: null, stencil: 'Animal', filled: [] },
-      { id: 'llama', section: 'roots', stencil: 'Animal', filled: [] },
-      { id: 'yak', section: 'roots', stencil: 'Animal', filled: [] },
+      { id: 'loose', section: null, cardModel: 'Animal', filled: [] },
+      { id: 'llama', section: 'roots', cardModel: 'Animal', filled: [] },
+      { id: 'yak', section: 'roots', cardModel: 'Animal', filled: [] },
     ]
 
     it('remains the cards before the first section in a run under no section', () => {
@@ -324,12 +324,12 @@ describe('grid', () => {
 })
 
 describe('DECK_WORDS', () => {
-  it('names the stencil a card is waiting for', () => {
-    expect(DECK_WORDS.unknown('Gone')).toBe('No stencil called Gone')
+  it('names the card model a card is waiting for', () => {
+    expect(DECK_WORDS.unknown('Gone')).toBe('No card model called Gone')
   })
 
   it('says of a card cut by nothing that nothing cut it', () => {
-    expect(DECK_WORDS.unknown(null)).toBe('Cut by no stencil')
+    expect(DECK_WORDS.unknown(null)).toBe('Cut by no card model')
   })
 })
 

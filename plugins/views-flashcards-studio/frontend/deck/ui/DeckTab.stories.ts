@@ -1,5 +1,5 @@
 /**
- * The deck tab: the cards of a deck under the sections they stand in, the stencils that cut them and
+ * The deck tab: the cards of a deck under the sections they stand in, the card models that cut them and
  * the schedule it keeps.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
@@ -25,9 +25,9 @@ const ROOT_CUT = { name: 'Root', fields: ['Root', 'Class', 'Present', 'Meaning']
 const card = (
   id: string,
   section: string,
-  stencilLink: string,
+  cardModelLink: string,
   values: readonly { field: string; text: string }[],
-) => ({ id, section, stencil: stencilLink, filled: values })
+) => ({ id, section, cardModel: cardModelLink, filled: values })
 
 const CARDS = [
   card('gam', 'going', 'Root', [
@@ -92,7 +92,7 @@ const DECK_STATE: DeckTabState = {
   deck: computed(() => ({ preamble: '', cards: [], sections: [], tail: '' })),
   deckCards: computed(() => CARDS),
   sections: computed(() => SECTIONS),
-  stencils: computed(() => [ROOT_CUT, WORD]),
+  cardModels: computed(() => [ROOT_CUT, WORD]),
   marks: computed(() => NO_MARKS),
   errorMessage: computed(() => ''),
   scheduled: computed(() => ({ path: 'Sanskrit.md', name: 'Sanskrit', errorMessage: '' })),

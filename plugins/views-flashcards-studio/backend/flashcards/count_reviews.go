@@ -37,11 +37,11 @@ type ReviewCounts struct {
 	// Days is how many answers were given on each day, by the name of the day:
 	// the year, the month and the day it began on.
 	Days map[string]review.Tally
-	// Due is how many card faces fall on each day still to come, by the same
+	// Due is how many review cards fall on each day still to come, by the same
 	// names. A card owed today or owed and late is not in it: what is behind is
 	Due map[string]int
 	// Retained is how much of what came round in days came back on each day. A
-	// card face the scheduler is still putting into memory is not in it.
+	// review card the scheduler is still putting into memory is not in it.
 	Retained map[string]review.RecallTally
 	// Streak is how many days up to now were reviewed without a gap.
 	Streak int
@@ -65,7 +65,7 @@ type CountReviews struct {
 	// Cache is where the counting is remembered. A build holding none counts the
 	// whole log at every launch.
 	Cache ports.ScheduleStore
-	// schedules is where the answers have left every card face, which is what
+	// schedules is where the answers have left every review card, which is what
 	// says how much falls on each day still to come.
 	schedules Schedules
 	day       review.Day
@@ -73,7 +73,7 @@ type CountReviews struct {
 }
 
 // NewCountReviews is what a vault's days are counted through: where its answers
-// are kept, where those answers have left each card face, where one day of
+// are kept, where those answers have left each review card, where one day of
 // review gives way to the next, and what time it is.
 func NewCountReviews(
 	logs ports.LogStores, schedules Schedules, day review.Day, now ports.Clock,
