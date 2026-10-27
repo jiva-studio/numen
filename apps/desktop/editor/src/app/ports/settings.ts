@@ -42,4 +42,8 @@ export interface SettingsPort {
     pluginId: string,
     key: string,
   ): Promise<{ readonly path: string; readonly isChosen: boolean; readonly problem: string }>
+  /** How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. */
+  getPluginData(pluginId: string): Promise<number>
+  /** The folder of a plugin in the shown vault deleted, with the text versions the plugin made there. */
+  deletePluginData(pluginId: string): Promise<void>
 }

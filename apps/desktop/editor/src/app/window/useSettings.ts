@@ -191,6 +191,15 @@ function createSettingsTabConfig(deps: SettingsTabConfigDeps) {
         return formatErrorMessage(caughtError)
       }
     },
+    getPluginData: (pluginId: string) => core.getPluginData(pluginId),
+    deletePluginData: async (pluginId: string): Promise<string> => {
+      try {
+        await core.deletePluginData(pluginId)
+        return ''
+      } catch (caughtError) {
+        return formatErrorMessage(caughtError)
+      }
+    },
     plugins: rest.plugins,
     file: rest.path,
     openFile: () => file.openSettingsFile(),

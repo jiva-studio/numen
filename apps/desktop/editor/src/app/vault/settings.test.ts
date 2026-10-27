@@ -13,6 +13,8 @@ const request = vi.hoisted(() => ({
   writePluginSecret: vi.fn(),
   deletePluginSecret: vi.fn(),
   retryPlugin: vi.fn(),
+  getPluginData: vi.fn(),
+  deletePluginData: vi.fn(),
 }))
 
 vi.mock('@/shared/clients', () => ({ settingsService: request }))
@@ -313,5 +315,22 @@ describe('a plugin the host suspends', () => {
     request.retryPlugin.mockResolvedValue({ failure: '' })
 
     expect(await core.retryPlugin('sample.plugin')).toBe('')
+  })
+})
+
+describe('the data of a plugin', () => {
+  it('is counted in files of its folder', async () => {
+    request.getPluginData.mockResolvedValue({ fileCount: 3, byteCount: 120n })
+
+    expect(await core.getPluginData('sample.plugin')).toBe(3)
+    expect(request.getPluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
+  })
+
+  it('is deleted by the id of its plugin', async () => {
+    request.deletePluginData.mockResolvedValue({})
+
+    await core.deletePluginData('sample.plugin')
+
+    expect(request.deletePluginData).toHaveBeenLastCalledWith({ pluginId: 'sample.plugin' })
   })
 })

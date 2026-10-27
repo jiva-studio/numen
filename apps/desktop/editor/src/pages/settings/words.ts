@@ -1,3 +1,6 @@
+/** A count of files, in the singular for one. */
+const countFiles = (files: number): string => (files === 1 ? '1 file' : `${files} files`)
+
 /** UI copy of the settings tab: group headings, setting titles and descriptions. */
 // Stryker disable StringLiteral: interface copy
 export const WORDS = {
@@ -134,4 +137,12 @@ export const WORDS = {
   pathNone: 'None',
   pathChoose: 'Choose…',
   pathClear: 'Clear',
+  /** The folder a plugin keeps in the shown vault, and its deletion. */
+  pluginData: 'Plugin data',
+  pluginDataDetail: (files: number) => `${countFiles(files)} in the plugin's folder of this vault.`,
+  pluginDataDelete: 'Delete data',
+  pluginDataAsking: (name: string, files: number) =>
+    `Delete ${countFiles(files)} of ${name}? Its texts leave search. This cannot be undone.`,
+  pluginDataConfirm: 'Delete',
+  pluginDataKeep: 'Keep',
 }

@@ -3,7 +3,7 @@
  * Dedicated settings view for a single selected plugin: status, enabled switch,
  * failure recovery, secrets, AI consent, and declarative settings fields.
  */
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Button, Switch } from '@numen/ui'
 import SettingRow from '../setting-row/SettingRow.vue'
 import { SecretField } from '../secret-field'
@@ -39,12 +39,17 @@ const shownSecrets = computed(() =>
 )
 const hasConsent = computed(() => props.plugin.consent !== 'none')
 const hasDeclarativeSettings = computed(() => props.plugin.settings.length > 0)
+/** How many files the plugin keeps in the shown vault; zero hides the delete action. */
+const fileCount = ref(0)
+const isAskingDelete = ref(false)
+const deleteProblem = ref('')
 const hasBody = computed(
   () =>
     failure.value !== undefined ||
     hasConsent.value ||
     shownSecrets.value.length > 0 ||
-    hasDeclarativeSettings.value,
+    hasDeclarativeSettings.value ||
+    fileCount.value > 0,
 )
 const pluginState = computed<PluginState>(() => getPluginState(props.plugin, isEnabled.value))
 
@@ -74,6 +79,39 @@ function onSecretSave(name: string, key: string): void {
 function onSecretDelete(name: string): void {
   installation.value.deleteSecret(props.plugin.id, name)
 }
+
+function onDeleteData(): void {
+  isAskingDelete.value = true
+}
+
+function onKeepData(): void {
+  isAskingDelete.value = false
+}
+
+async function onConfirmDeleteData(): Promise<void> {
+  isAskingDelete.value = false
+  deleteProblem.value = (await installation.value.deletePluginData?.(props.plugin.id)) ?? ''
+  await readFileCount()
+}
+
+/* -------------------------------- Helpers --------------------------------- */
+async function readFileCount(): Promise<void> {
+  try {
+    fileCount.value = (await installation.value.getPluginData?.(props.plugin.id)) ?? 0
+  } catch {
+    fileCount.value = 0
+  }
+}
+
+watch(
+  () => props.plugin.id,
+  () => {
+    isAskingDelete.value = false
+    deleteProblem.value = ''
+    void readFileCount()
+  },
+  { immediate: true },
+)
 </script>
 
 <template>
@@ -153,6 +191,33 @@ function onSecretDelete(name: string): void {
 
     <!-- Declarative settings -->
     <PluginFields v-if="hasDeclarativeSettings" :state="props.state" :plugin="props.plugin" />
+
+    <!-- Data the plugin keeps in the shown vault -->
+    <SettingRow
+      v-if="fileCount > 0"
+      :at="`data-${props.plugin.id}`"
+      :name="words.pluginData"
+      :detail="words.pluginDataDetail(fileCount)"
+    >
+      <Button variant="outline" size="small" @click="onDeleteData">
+        {{ words.pluginDataDelete }}
+      </Button>
+    </SettingRow>
+    <div
+      v-if="isAskingDelete"
+      class="plugin-detail__asking"
+      role="alert"
+      :aria-label="words.pluginDataDelete"
+    >
+      <span>{{ words.pluginDataAsking(props.plugin.name, fileCount) }}</span>
+      <span class="plugin-detail__asking-answers">
+        <Button size="small" @click="onConfirmDeleteData">{{ words.pluginDataConfirm }}</Button>
+        <Button variant="outline" size="small" @click="onKeepData">
+          {{ words.pluginDataKeep }}
+        </Button>
+      </span>
+    </div>
+    <p v-if="deleteProblem" class="plugin-detail__problem" role="alert">{{ deleteProblem }}</p>
   </div>
 </template>
 
@@ -307,5 +372,29 @@ function onSecretDelete(name: string): void {
   grid-area: actions;
   display: flex;
   gap: var(--settings-near, 0.375rem);
+}
+
+.plugin-detail__asking {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--settings-near, 0.375rem);
+  margin-block-start: var(--settings-near, 0.375rem);
+  padding: 0.5rem 0.75rem;
+  border: var(--numen-stroke, 1px) solid var(--numen-alarm, #d14);
+  border-radius: var(--numen-radius-small, 4px);
+  color: var(--numen-ink);
+}
+
+.plugin-detail__asking-answers {
+  display: flex;
+  gap: var(--settings-near, 0.375rem);
+}
+
+.plugin-detail__problem {
+  margin: var(--settings-near, 0.375rem) 0 0;
+  color: var(--numen-alarm, #d14);
+  font-size: var(--numen-text-1);
 }
 </style>

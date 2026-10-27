@@ -71,6 +71,8 @@ function fake(overrides: Partial<Core> = {}): Core & { asked: string[] } {
     deletePluginSecret: vi.fn(() => Promise.resolve()),
     retryPlugin: vi.fn(() => Promise.resolve('')),
     choosePluginPath: vi.fn(() => Promise.resolve({ path: '', isChosen: false, problem: '' })),
+    getPluginData: vi.fn(() => Promise.resolve(0)),
+    deletePluginData: vi.fn(() => Promise.resolve()),
     getSettingsFile: async () => ({ written: '{}', path: '/numen.json' }),
     saveSettingsFile: async () => ({ isChanged: false }),
     watchQuit: async function* () {},

@@ -159,4 +159,11 @@ export const settingsCore: SettingsPort = {
     const answer = await settingsService.retryPlugin({ pluginId })
     return answer.failure
   },
+  getPluginData: async (pluginId) => {
+    const answer = await settingsService.getPluginData({ pluginId })
+    return answer.fileCount
+  },
+  deletePluginData: async (pluginId) => {
+    await settingsService.deletePluginData({ pluginId })
+  },
 }

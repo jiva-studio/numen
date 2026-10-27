@@ -481,3 +481,68 @@ describe('PluginDetail with settings that follow one another', () => {
     })
   })
 })
+
+describe('the data of a plugin', () => {
+  const TRANSCRIBER = createPluginInfo('test.transcriber', 'Transcriber')
+
+  /** A plugin page over a folder of `files` files, which a delete empties or refuses with `problem`. */
+  const createDataDetail = async (files: number, problem = '') => {
+    let count = files
+    const getPluginData = vi.fn(async () => count)
+    const deletePluginData = vi.fn(async () => {
+      if (problem === '') count = 0
+      return problem
+    })
+    const installation = createInstallation({ getPluginData, deletePluginData })
+    const wrapper = mount(PluginDetail, { props: { state: { installation }, plugin: TRANSCRIBER } })
+    await flushPromises()
+    return { wrapper, getPluginData, deletePluginData }
+  }
+
+  const findButton = (wrapper: ReturnType<typeof mount>, text: string) =>
+    wrapper.findAll('button').find((one) => one.text() === text)
+
+  it('offers no delete where the folder holds no files', async () => {
+    const { wrapper, getPluginData } = await createDataDetail(0)
+
+    expect(getPluginData).toHaveBeenCalledWith('test.transcriber')
+    expect(findButton(wrapper, words.pluginDataDelete)).toBeUndefined()
+  })
+
+  it('deletes the data only after the person confirms', async () => {
+    const { wrapper, deletePluginData } = await createDataDetail(3)
+    expect(wrapper.text()).toContain(words.pluginDataDetail(3))
+
+    await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
+    expect(deletePluginData).not.toHaveBeenCalled()
+    expect(wrapper.find('.plugin-detail__asking').text()).toContain(
+      words.pluginDataAsking('Transcriber', 3),
+    )
+
+    await findButton(wrapper, words.pluginDataConfirm)!.trigger('click')
+    await flushPromises()
+    expect(deletePluginData).toHaveBeenCalledExactlyOnceWith('test.transcriber')
+    expect(findButton(wrapper, words.pluginDataDelete)).toBeUndefined()
+  })
+
+  it('keeps the data when the person keeps it', async () => {
+    const { wrapper, deletePluginData } = await createDataDetail(2)
+
+    await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
+    await findButton(wrapper, words.pluginDataKeep)!.trigger('click')
+
+    expect(deletePluginData).not.toHaveBeenCalled()
+    expect(wrapper.find('.plugin-detail__asking').exists()).toBe(false)
+  })
+
+  it('shows why the data was not deleted', async () => {
+    const { wrapper } = await createDataDetail(2, 'the vault is read-only')
+
+    await findButton(wrapper, words.pluginDataDelete)!.trigger('click')
+    await findButton(wrapper, words.pluginDataConfirm)!.trigger('click')
+    await flushPromises()
+
+    expect(wrapper.find('.plugin-detail__problem').text()).toBe('the vault is read-only')
+    expect(findButton(wrapper, words.pluginDataDelete)).toBeDefined()
+  })
+})

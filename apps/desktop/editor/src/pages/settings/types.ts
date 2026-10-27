@@ -47,6 +47,16 @@ export interface Installation {
    * and empty where it was written or none was chosen.
    */
   choosePath(pluginId: string, key: string): Promise<string>
+  /**
+   * How many files the folder of a plugin holds in the shown vault, `.numen/<plugin id>/`. A window
+   * that cannot delete plugin data has neither call.
+   */
+  getPluginData?(pluginId: string): Promise<number>
+  /**
+   * That folder deleted, with the text versions the plugin made there. The answer is why it was not
+   * deleted, and empty where it was.
+   */
+  deletePluginData?(pluginId: string): Promise<string>
   readonly plugins?: Readonly<Ref<readonly PluginInfo[]>>
   /** The file the settings stand in, absolute on this machine. */
   readonly file: Readonly<Ref<string>>
