@@ -115,6 +115,7 @@ describe('useLink', () => {
       isCopyable: true,
       copySize: 0,
       isTextDeleted: false,
+      embedPage: '',
     })
     link.text = 'The tide comes in.'
     const tab = useLink(links, 'links/clip.md')

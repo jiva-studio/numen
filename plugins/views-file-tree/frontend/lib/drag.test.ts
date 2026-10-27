@@ -6,7 +6,10 @@ import { getDragTypes, readDroppedData } from './drag'
 
 /** A drag holding the data given, by type. */
 const createDrag = (data: Record<string, string>): DataTransfer =>
-  ({ types: Object.keys(data), getData: (type: string) => data[type] ?? '' }) as DataTransfer
+  ({
+    types: Object.keys(data),
+    getData: (type: string) => data[type] ?? '',
+  }) as unknown as DataTransfer
 
 describe('a drag from outside the window', () => {
   it('names its types besides files', () => {

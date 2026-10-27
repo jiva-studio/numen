@@ -5,13 +5,13 @@
  */
 import { computed, ref, shallowRef } from 'vue'
 import { splitParagraphs } from '../lib/text'
-import type { Links, LinkSource, Outcome } from '../types'
+import type { LinkFacts, Links, LinkSource, Outcome } from '../types'
 
 export function useLink(links: Links, path: string) {
   const url = ref('')
   const text = ref('')
   const source = shallowRef<LinkSource | null>(null)
-  const embedSource = ref('') | (null > null)
+  const embedSource = ref('')
   const isCopyable = ref(false)
   const isTextDeleted = ref(false)
   const isWorking = ref(false)
@@ -29,13 +29,9 @@ export function useLink(links: Links, path: string) {
         error.value = facts.error
         return
       }
-      const hasCopy = facts.value.copySize > 0
-      const [article, played, framed] = await Promise.all([
+      const [article, [played, framed]] = await Promise.all([
         links.readArticle(path),
-        hasCopy ? links.getSource(path) : Promise.resolve(null),
-        !hasCopy && facts.value.embedPage
-          ? links.getPageSource(facts.value.embedPage)
-          : Promise.resolve(''),
+        readPlayback(links, path, facts.value),
       ])
       if (mine !== turn) return
       url.value = facts.value.url
@@ -89,6 +85,17 @@ export function useLink(links: Links, path: string) {
     },
     close: stop,
   }
+}
+
+/** Where the copy is played from, or else where the page that frames the player is loaded from. */
+const readPlayback = async (
+  links: Links,
+  path: string,
+  facts: LinkFacts,
+): Promise<readonly [LinkSource | null, string]> => {
+  if (facts.copySize > 0) return [await links.getSource(path), '']
+  if (facts.embedPage) return [null, await links.getPageSource(facts.embedPage)]
+  return [null, '']
 }
 
 const describeFailure = (failure: unknown): string =>
