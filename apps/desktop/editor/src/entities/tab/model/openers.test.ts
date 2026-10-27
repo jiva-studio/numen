@@ -248,7 +248,7 @@ describe('a file just made here', () => {
 })
 
 describe('reconciling open tabs when a file is opened', () => {
-  it('reconciles open tabs for a deck file', async () => {
+  it('reconciles open tabs for a sample file', async () => {
     const reconciled: { path: string; newKind: string }[] = []
     const one = vault({ 'Animals.md': note('sample') })
     const core: FileOpenerDeps = {
