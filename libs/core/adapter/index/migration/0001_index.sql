@@ -65,7 +65,7 @@ CREATE INDEX sources_by_producer ON sources (vault_id, kind) WHERE producer IS N
 -- `identifier` is the ULID written in the file, when there is one. Most notes
 -- have none, and a copied file carries a copy of it.
 --
--- `type` is the note type the file's front matter names; plugins declare the
+-- `type` is the note type the file's front matter names. Plugins declare the
 -- types they own. A note whose front matter names none is a plain note.
 CREATE TABLE notes (
     source_id         INTEGER PRIMARY KEY,
