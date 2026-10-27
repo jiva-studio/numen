@@ -16,7 +16,6 @@
 package flashcardsv1
 
 import (
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -1065,7 +1064,7 @@ type ReadCardModelResponse struct {
 	// Set when the card model was not read, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file this card model came out of, for the caller to present at its next
-	At            *v1.FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At            *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1114,7 +1113,7 @@ func (x *ReadCardModelResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ReadCardModelResponse) GetAt() *v1.FileStat {
+func (x *ReadCardModelResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1130,7 +1129,7 @@ type WriteCardModelRequest struct {
 	Templates []*CardTemplate `protobuf:"bytes,3,rep,name=templates,proto3" json:"templates,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the card model now holds.
-	Baseline *v1.FileStat `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline *FileStat `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	// The prose to stand below the frontmatter and above the first template, with
 	// line endings as LF.
 	Preamble string `protobuf:"bytes,5,opt,name=preamble,proto3" json:"preamble,omitempty"`
@@ -1191,7 +1190,7 @@ func (x *WriteCardModelRequest) GetTemplates() []*CardTemplate {
 	return nil
 }
 
-func (x *WriteCardModelRequest) GetBaseline() *v1.FileStat {
+func (x *WriteCardModelRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -1220,7 +1219,7 @@ type WriteCardModelResponse struct {
 	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *v1.FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the card model is on disk and the index would not come level with it.
 	// The write happened and `at` stands; search answers about this file as it
 	// read it last, until a walk goes past.
@@ -1266,7 +1265,7 @@ func (x *WriteCardModelResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *WriteCardModelResponse) GetAt() *v1.FileStat {
+func (x *WriteCardModelResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1289,7 +1288,7 @@ type RenameCardModelFieldRequest struct {
 	To   string `protobuf:"bytes,3,opt,name=to,proto3" json:"to,omitempty"`
 	// The card model this caller last read. Absent for a rename that lands on
 	// whatever the card model now holds.
-	Baseline      *v1.FileStat `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline      *FileStat `protobuf:"bytes,4,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1345,7 +1344,7 @@ func (x *RenameCardModelFieldRequest) GetTo() string {
 	return ""
 }
 
-func (x *RenameCardModelFieldRequest) GetBaseline() *v1.FileStat {
+func (x *RenameCardModelFieldRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -1366,7 +1365,7 @@ type RenameCardModelFieldResponse struct {
 	Error *ErrorCode `protobuf:"varint,4,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The card model the rename produced, for the caller to present at its next
 	// write. Absent when nothing was renamed.
-	At *v1.FileStat `protobuf:"bytes,5,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,5,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Set when the rename reached the vault and the index would not come level
 	// with it. Search answers about these files as it read them last, until a
 	// walk goes past.
@@ -1433,7 +1432,7 @@ func (x *RenameCardModelFieldResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *RenameCardModelFieldResponse) GetAt() *v1.FileStat {
+func (x *RenameCardModelFieldResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1671,7 +1670,7 @@ type ReadDeckResponse struct {
 	// Set when the deck was not read, and why.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file this deck came out of, for the caller to present at its next
-	At *v1.FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// The size a deck is read up to, in bytes. Set with
 	// ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
 	// a number of its own.
@@ -1724,7 +1723,7 @@ func (x *ReadDeckResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ReadDeckResponse) GetAt() *v1.FileStat {
+func (x *ReadDeckResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1751,7 +1750,7 @@ type WriteDeckRequest struct {
 	Sections []*Section `protobuf:"bytes,4,rep,name=sections,proto3" json:"sections,omitempty"`
 	// The file this caller last read. Absent for a write that lands on whatever
 	// the deck now holds.
-	Baseline *v1.FileStat `protobuf:"bytes,5,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline *FileStat `protobuf:"bytes,5,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	// What the file is to end with, below the last value, with line endings as
 	// LF.
 	Tail          string `protobuf:"bytes,6,opt,name=tail,proto3" json:"tail,omitempty"`
@@ -1817,7 +1816,7 @@ func (x *WriteDeckRequest) GetSections() []*Section {
 	return nil
 }
 
-func (x *WriteDeckRequest) GetBaseline() *v1.FileStat {
+func (x *WriteDeckRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -1839,7 +1838,7 @@ type WriteDeckResponse struct {
 	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// The file the write produced, for the caller to present at its next write.
 	// Absent when nothing was written.
-	At *v1.FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// The size a deck is written up to, in bytes. Set with
 	// ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
 	// a number of its own.
@@ -1889,7 +1888,7 @@ func (x *WriteDeckResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *WriteDeckResponse) GetAt() *v1.FileStat {
+func (x *WriteDeckResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1914,7 +1913,7 @@ var File_numen_flashcards_v1_cards_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_cards_proto_rawDesc = "" +
 	"\n" +
-	"\x1fnumen/flashcards/v1/cards.proto\x12\x13numen.flashcards.v1\x1a numen/flashcards/v1/errors.proto\x1a\x15numen/v1/shared.proto\"\xf8\x01\n" +
+	"\x1fnumen/flashcards/v1/cards.proto\x12\x13numen.flashcards.v1\x1a numen/flashcards/v1/errors.proto\"\xf8\x01\n" +
 	"\tCardModel\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
 	"\x05title\x18\x02 \x01(\tR\x05title\x12\x16\n" +
@@ -1979,42 +1978,42 @@ const file_numen_flashcards_v1_cards_proto_rawDesc = "" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"*\n" +
 	"\x14ReadCardModelRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xdf\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xea\x01\n" +
 	"\x15ReadCardModelResponse\x12B\n" +
 	"\n" +
 	"card_model\x18\x01 \x01(\v2\x1e.numen.flashcards.v1.CardModelH\x00R\tcardModel\x88\x01\x01\x129\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x02R\x02at\x88\x01\x01B\r\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x02R\x02at\x88\x01\x01B\r\n" +
 	"\v_card_modelB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\xf6\x01\n" +
+	"\x03_at\"\x81\x02\n" +
 	"\x15WriteCardModelRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06fields\x18\x02 \x03(\tR\x06fields\x12?\n" +
-	"\ttemplates\x18\x03 \x03(\v2!.numen.flashcards.v1.CardTemplateR\ttemplates\x123\n" +
-	"\bbaseline\x18\x04 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01\x12\x1a\n" +
+	"\ttemplates\x18\x03 \x03(\v2!.numen.flashcards.v1.CardTemplateR\ttemplates\x12>\n" +
+	"\bbaseline\x18\x04 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x00R\bbaseline\x88\x01\x01\x12\x1a\n" +
 	"\bpreamble\x18\x05 \x01(\tR\bpreamble\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\v\n" +
-	"\t_baseline\"\xb2\x01\n" +
+	"\t_baseline\"\xbd\x01\n" +
 	"\x16WriteCardModelResponse\x129\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\x97\x01\n" +
+	"\x03_at\"\xa2\x01\n" +
 	"\x1bRenameCardModelFieldRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04from\x18\x02 \x01(\tR\x04from\x12\x0e\n" +
-	"\x02to\x18\x03 \x01(\tR\x02to\x123\n" +
-	"\bbaseline\x18\x04 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\xa9\x02\n" +
+	"\x02to\x18\x03 \x01(\tR\x02to\x12>\n" +
+	"\bbaseline\x18\x04 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xb4\x02\n" +
 	"\x1cRenameCardModelFieldResponse\x12\x14\n" +
 	"\x05decks\x18\x01 \x03(\tR\x05decks\x12\x14\n" +
 	"\x05cards\x18\x02 \x01(\x05R\x05cards\x12C\n" +
 	"\vnot_written\x18\x03 \x03(\v2\".numen.flashcards.v1.UnwrittenDeckR\n" +
 	"notWritten\x129\n" +
-	"\x05error\x18\x04 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x05 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\x05error\x18\x04 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x05 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x06 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"[\n" +
@@ -2030,26 +2029,26 @@ const file_numen_flashcards_v1_cards_proto_rawDesc = "" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_error\"%\n" +
 	"\x0fReadDeckRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xda\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xe5\x01\n" +
 	"\x10ReadDeckResponse\x122\n" +
 	"\x04deck\x18\x01 \x01(\v2\x19.numen.flashcards.v1.DeckH\x00R\x04deck\x88\x01\x01\x129\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x02R\x02at\x88\x01\x01\x12\x14\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x02R\x02at\x88\x01\x01\x12\x14\n" +
 	"\x05bound\x18\x04 \x01(\x03R\x05boundB\a\n" +
 	"\x05_deckB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\x83\x02\n" +
+	"\x03_at\"\x8e\x02\n" +
 	"\x10WriteDeckRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
 	"\bpreamble\x18\x02 \x01(\tR\bpreamble\x12/\n" +
 	"\x05cards\x18\x03 \x03(\v2\x19.numen.flashcards.v1.CardR\x05cards\x128\n" +
-	"\bsections\x18\x04 \x03(\v2\x1c.numen.flashcards.v1.SectionR\bsections\x123\n" +
-	"\bbaseline\x18\x05 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01\x12\x12\n" +
+	"\bsections\x18\x04 \x03(\v2\x1c.numen.flashcards.v1.SectionR\bsections\x12>\n" +
+	"\bbaseline\x18\x05 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x00R\bbaseline\x88\x01\x01\x12\x12\n" +
 	"\x04tail\x18\x06 \x01(\tR\x04tailB\v\n" +
-	"\t_baseline\"\xc3\x01\n" +
+	"\t_baseline\"\xce\x01\n" +
 	"\x11WriteDeckResponse\x129\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12\x14\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x01R\x02at\x88\x01\x01\x12\x14\n" +
 	"\x05bound\x18\x03 \x01(\x03R\x05bound\x12#\n" +
 	"\ris_unlevelled\x18\x04 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
@@ -2118,7 +2117,7 @@ var file_numen_flashcards_v1_cards_proto_goTypes = []any{
 	(*WriteDeckRequest)(nil),             // 24: numen.flashcards.v1.WriteDeckRequest
 	(*WriteDeckResponse)(nil),            // 25: numen.flashcards.v1.WriteDeckResponse
 	(ErrorCode)(0),                       // 26: numen.flashcards.v1.ErrorCode
-	(*v1.FileStat)(nil),                  // 27: numen.v1.FileStat
+	(*FileStat)(nil),                     // 27: numen.flashcards.v1.FileStat
 }
 var file_numen_flashcards_v1_cards_proto_depIdxs = []int32{
 	3,  // 0: numen.flashcards.v1.CardModel.templates:type_name -> numen.flashcards.v1.CardTemplate
@@ -2132,25 +2131,25 @@ var file_numen_flashcards_v1_cards_proto_depIdxs = []int32{
 	26, // 8: numen.flashcards.v1.CreateCardModelResponse.error:type_name -> numen.flashcards.v1.ErrorCode
 	1,  // 9: numen.flashcards.v1.ReadCardModelResponse.card_model:type_name -> numen.flashcards.v1.CardModel
 	26, // 10: numen.flashcards.v1.ReadCardModelResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	27, // 11: numen.flashcards.v1.ReadCardModelResponse.at:type_name -> numen.v1.FileStat
+	27, // 11: numen.flashcards.v1.ReadCardModelResponse.at:type_name -> numen.flashcards.v1.FileStat
 	3,  // 12: numen.flashcards.v1.WriteCardModelRequest.templates:type_name -> numen.flashcards.v1.CardTemplate
-	27, // 13: numen.flashcards.v1.WriteCardModelRequest.baseline:type_name -> numen.v1.FileStat
+	27, // 13: numen.flashcards.v1.WriteCardModelRequest.baseline:type_name -> numen.flashcards.v1.FileStat
 	26, // 14: numen.flashcards.v1.WriteCardModelResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	27, // 15: numen.flashcards.v1.WriteCardModelResponse.at:type_name -> numen.v1.FileStat
-	27, // 16: numen.flashcards.v1.RenameCardModelFieldRequest.baseline:type_name -> numen.v1.FileStat
+	27, // 15: numen.flashcards.v1.WriteCardModelResponse.at:type_name -> numen.flashcards.v1.FileStat
+	27, // 16: numen.flashcards.v1.RenameCardModelFieldRequest.baseline:type_name -> numen.flashcards.v1.FileStat
 	19, // 17: numen.flashcards.v1.RenameCardModelFieldResponse.not_written:type_name -> numen.flashcards.v1.UnwrittenDeck
 	26, // 18: numen.flashcards.v1.RenameCardModelFieldResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	27, // 19: numen.flashcards.v1.RenameCardModelFieldResponse.at:type_name -> numen.v1.FileStat
+	27, // 19: numen.flashcards.v1.RenameCardModelFieldResponse.at:type_name -> numen.flashcards.v1.FileStat
 	6,  // 20: numen.flashcards.v1.UnwrittenDeck.problem:type_name -> numen.flashcards.v1.Problem
 	26, // 21: numen.flashcards.v1.CreateDeckResponse.error:type_name -> numen.flashcards.v1.ErrorCode
 	4,  // 22: numen.flashcards.v1.ReadDeckResponse.deck:type_name -> numen.flashcards.v1.Deck
 	26, // 23: numen.flashcards.v1.ReadDeckResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	27, // 24: numen.flashcards.v1.ReadDeckResponse.at:type_name -> numen.v1.FileStat
+	27, // 24: numen.flashcards.v1.ReadDeckResponse.at:type_name -> numen.flashcards.v1.FileStat
 	7,  // 25: numen.flashcards.v1.WriteDeckRequest.cards:type_name -> numen.flashcards.v1.Card
 	5,  // 26: numen.flashcards.v1.WriteDeckRequest.sections:type_name -> numen.flashcards.v1.Section
-	27, // 27: numen.flashcards.v1.WriteDeckRequest.baseline:type_name -> numen.v1.FileStat
+	27, // 27: numen.flashcards.v1.WriteDeckRequest.baseline:type_name -> numen.flashcards.v1.FileStat
 	26, // 28: numen.flashcards.v1.WriteDeckResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	27, // 29: numen.flashcards.v1.WriteDeckResponse.at:type_name -> numen.v1.FileStat
+	27, // 29: numen.flashcards.v1.WriteDeckResponse.at:type_name -> numen.flashcards.v1.FileStat
 	9,  // 30: numen.flashcards.v1.CardsService.ListCardModels:input_type -> numen.flashcards.v1.ListCardModelsRequest
 	11, // 31: numen.flashcards.v1.CardsService.CreateCardModel:input_type -> numen.flashcards.v1.CreateCardModelRequest
 	13, // 32: numen.flashcards.v1.CardsService.ReadCardModel:input_type -> numen.flashcards.v1.ReadCardModelRequest

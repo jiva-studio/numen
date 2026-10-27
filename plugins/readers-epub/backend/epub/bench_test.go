@@ -17,7 +17,7 @@ func getLargestBook(b *testing.B) string {
 	b.Helper()
 	root := os.Getenv(corpusEnv)
 	if root == "" {
-		root = relativeCorpus
+		b.Skipf("the corpus is not configured (set %s to say where it is)", corpusEnv)
 	}
 	if _, err := os.Stat(root); err != nil {
 		b.Skipf("the corpus is not here: %v (set %s to say where it is)", err, corpusEnv)

@@ -12,15 +12,70 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FileStat, Range } from "@numen/protocol/numen/v1/shared_pb.js";
-import { file_numen_v1_shared } from "@numen/protocol/numen/v1/shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/pdf/v1/document.proto.
  */
 export const file_numen_pdf_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSIiChJHZXREb2N1bWVudFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChNHZXREb2N1bWVudFJlc3BvbnNlEiEKBXBhZ2VzGAEgAygLMhIubnVtZW4ucGRmLnYxLlBhZ2USIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IiUKBFBhZ2USDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIkUKFEdldEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHwoGcmFuZ2VzGAIgAygLMg8ubnVtZW4udjEuUmFuZ2UiQAoVR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlEicKBHJ1bnMYASADKAsyGS5udW1lbi5wZGYudjEuRG9jdW1lbnRSdW4iOgoLRG9jdW1lbnRSdW4SKwoGcGxhY2VzGAEgAygLMhsubnVtZW4ucGRmLnYxLkRvY3VtZW50UGxhY2UiSAoNRG9jdW1lbnRQbGFjZRIMCgRwYWdlGAEgASgFEikKBXJlY3RzGAIgAygLMhoubnVtZW4ucGRmLnYxLkRvY3VtZW50UmVjdCJKCgxEb2N1bWVudFJlY3QSDQoFbWluX3gYASABKAISDQoFbWluX3kYAiABKAISDQoFbWF4X3gYAyABKAISDQoFbWF4X3kYBCABKAIyvwEKD0RvY3VtZW50U2VydmljZRJSCgtHZXREb2N1bWVudBIgLm51bWVuLnBkZi52MS5HZXREb2N1bWVudFJlcXVlc3QaIS5udW1lbi5wZGYudjEuR2V0RG9jdW1lbnRSZXNwb25zZRJYCg1HZXRIaWdobGlnaHRzEiIubnVtZW4ucGRmLnYxLkdldEhpZ2hsaWdodHNSZXF1ZXN0GiMubnVtZW4ucGRmLnYxLkdldEhpZ2hsaWdodHNSZXNwb25zZUJJWkdnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvcmVhZGVycy1wZGYvZ2VuL251bWVuL3BkZi92MTtwZGZ2MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSI1CghGaWxlU3RhdBIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSDQoFbXRpbWUYAyABKAMiIwoFUmFuZ2USDQoFc3RhcnQYASABKAUSCwoDZW5kGAIgASgFIiIKEkdldERvY3VtZW50UmVxdWVzdBIMCgRwYXRoGAEgASgJIl4KE0dldERvY3VtZW50UmVzcG9uc2USIQoFcGFnZXMYASADKAsyEi5udW1lbi5wZGYudjEuUGFnZRIkCgRzdGF0GAIgASgLMhYubnVtZW4ucGRmLnYxLkZpbGVTdGF0IiUKBFBhZ2USDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIkkKFEdldEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSIwoGcmFuZ2VzGAIgAygLMhMubnVtZW4ucGRmLnYxLlJhbmdlIkAKFUdldEhpZ2hsaWdodHNSZXNwb25zZRInCgRydW5zGAEgAygLMhkubnVtZW4ucGRmLnYxLkRvY3VtZW50UnVuIjoKC0RvY3VtZW50UnVuEisKBnBsYWNlcxgBIAMoCzIbLm51bWVuLnBkZi52MS5Eb2N1bWVudFBsYWNlIkgKDURvY3VtZW50UGxhY2USDAoEcGFnZRgBIAEoBRIpCgVyZWN0cxgCIAMoCzIaLm51bWVuLnBkZi52MS5Eb2N1bWVudFJlY3QiSgoMRG9jdW1lbnRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMr8BCg9Eb2N1bWVudFNlcnZpY2USUgoLR2V0RG9jdW1lbnQSIC5udW1lbi5wZGYudjEuR2V0RG9jdW1lbnRSZXF1ZXN0GiEubnVtZW4ucGRmLnYxLkdldERvY3VtZW50UmVzcG9uc2USWAoNR2V0SGlnaGxpZ2h0cxIiLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBojLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3JlYWRlcnMtcGRmL2dlbi9udW1lbi9wZGYvdjE7cGRmdjFiBnByb3RvMw");
+
+/**
+ * FileStat is which file this is: where it is filed, how big it is, and when
+ * it last changed.
+ *
+ * @generated from message numen.pdf.v1.FileStat
+ */
+export type FileStat = Message<"numen.pdf.v1.FileStat"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * When the file last changed, in nanoseconds since the epoch.
+   *
+   * @generated from field: int64 mtime = 3;
+   */
+  mtime: bigint;
+};
+
+/**
+ * Describes the message numen.pdf.v1.FileStat.
+ * Use `create(FileStatSchema)` to create a new message.
+ */
+export const FileStatSchema: GenMessage<FileStat> = /*@__PURE__*/
+  messageDesc(file_numen_pdf_v1_document, 0);
+
+/**
+ * Range is a run of text, by where it begins and where it ends. What it counts
+ * in is the field carrying it.
+ *
+ * @generated from message numen.pdf.v1.Range
+ */
+export type Range = Message<"numen.pdf.v1.Range"> & {
+  /**
+   * @generated from field: int32 start = 1;
+   */
+  start: number;
+
+  /**
+   * @generated from field: int32 end = 2;
+   */
+  end: number;
+};
+
+/**
+ * Describes the message numen.pdf.v1.Range.
+ * Use `create(RangeSchema)` to create a new message.
+ */
+export const RangeSchema: GenMessage<Range> = /*@__PURE__*/
+  messageDesc(file_numen_pdf_v1_document, 1);
 
 /**
  * @generated from message numen.pdf.v1.GetDocumentRequest
@@ -39,7 +94,7 @@ export type GetDocumentRequest = Message<"numen.pdf.v1.GetDocumentRequest"> & {
  * Use `create(GetDocumentRequestSchema)` to create a new message.
  */
 export const GetDocumentRequestSchema: GenMessage<GetDocumentRequest> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 0);
+  messageDesc(file_numen_pdf_v1_document, 2);
 
 /**
  * @generated from message numen.pdf.v1.GetDocumentResponse
@@ -56,7 +111,7 @@ export type GetDocumentResponse = Message<"numen.pdf.v1.GetDocumentResponse"> & 
    * The bytes the layout was read from. A page image is asked for with it, so
    * one address names one drawing of one file.
    *
-   * @generated from field: numen.v1.FileStat stat = 2;
+   * @generated from field: numen.pdf.v1.FileStat stat = 2;
    */
   stat?: FileStat | undefined;
 };
@@ -66,7 +121,7 @@ export type GetDocumentResponse = Message<"numen.pdf.v1.GetDocumentResponse"> & 
  * Use `create(GetDocumentResponseSchema)` to create a new message.
  */
 export const GetDocumentResponseSchema: GenMessage<GetDocumentResponse> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 1);
+  messageDesc(file_numen_pdf_v1_document, 3);
 
 /**
  * Page is one page of the document, in the document's own units. A client
@@ -91,7 +146,7 @@ export type Page = Message<"numen.pdf.v1.Page"> & {
  * Use `create(PageSchema)` to create a new message.
  */
 export const PageSchema: GenMessage<Page> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 2);
+  messageDesc(file_numen_pdf_v1_document, 4);
 
 /**
  * @generated from message numen.pdf.v1.GetHighlightsRequest
@@ -107,7 +162,7 @@ export type GetHighlightsRequest = Message<"numen.pdf.v1.GetHighlightsRequest"> 
   /**
    * The runs of the live text version to return places of, in bytes of its text.
    *
-   * @generated from field: repeated numen.v1.Range ranges = 2;
+   * @generated from field: repeated numen.pdf.v1.Range ranges = 2;
    */
   ranges: Range[];
 };
@@ -117,7 +172,7 @@ export type GetHighlightsRequest = Message<"numen.pdf.v1.GetHighlightsRequest"> 
  * Use `create(GetHighlightsRequestSchema)` to create a new message.
  */
 export const GetHighlightsRequestSchema: GenMessage<GetHighlightsRequest> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 3);
+  messageDesc(file_numen_pdf_v1_document, 5);
 
 /**
  * @generated from message numen.pdf.v1.GetHighlightsResponse
@@ -136,7 +191,7 @@ export type GetHighlightsResponse = Message<"numen.pdf.v1.GetHighlightsResponse"
  * Use `create(GetHighlightsResponseSchema)` to create a new message.
  */
 export const GetHighlightsResponseSchema: GenMessage<GetHighlightsResponse> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 4);
+  messageDesc(file_numen_pdf_v1_document, 6);
 
 /**
  * DocumentRun is where one run of the text stands: the rectangles it covers,
@@ -156,7 +211,7 @@ export type DocumentRun = Message<"numen.pdf.v1.DocumentRun"> & {
  * Use `create(DocumentRunSchema)` to create a new message.
  */
 export const DocumentRunSchema: GenMessage<DocumentRun> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 5);
+  messageDesc(file_numen_pdf_v1_document, 7);
 
 /**
  * DocumentPlace is rectangles on one page of a document. Pages count from zero.
@@ -180,7 +235,7 @@ export type DocumentPlace = Message<"numen.pdf.v1.DocumentPlace"> & {
  * Use `create(DocumentPlaceSchema)` to create a new message.
  */
 export const DocumentPlaceSchema: GenMessage<DocumentPlace> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 6);
+  messageDesc(file_numen_pdf_v1_document, 8);
 
 /**
  * DocumentRect is a rectangle on a page, in fractions of the page.
@@ -214,7 +269,7 @@ export type DocumentRect = Message<"numen.pdf.v1.DocumentRect"> & {
  * Use `create(DocumentRectSchema)` to create a new message.
  */
 export const DocumentRectSchema: GenMessage<DocumentRect> = /*@__PURE__*/
-  messageDesc(file_numen_pdf_v1_document, 7);
+  messageDesc(file_numen_pdf_v1_document, 9);
 
 /**
  * DocumentService returns the layout of a PDF file and the places of its text.

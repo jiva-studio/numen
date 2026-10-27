@@ -2,7 +2,6 @@ package host
 
 import (
 	notesdomain "github.com/jiva-studio/numen/libs/notes/domain"
-	numenv1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 )
 
 type VaultInfo = notesdomain.Vault
@@ -26,10 +25,6 @@ type VersionText = notesdomain.VersionText
 type ByteRange = notesdomain.ByteRange
 type Rect = notesdomain.Rect
 type HighlightBox = notesdomain.HighlightBox
-
-type WireFileStat = numenv1.FileStat
-type WireRange = numenv1.Range
-type WireBounds = numenv1.Bounds
 
 const (
 	KindFile      = notesdomain.KindFile

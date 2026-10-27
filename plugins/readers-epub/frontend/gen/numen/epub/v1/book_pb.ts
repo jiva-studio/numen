@@ -17,15 +17,45 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { FileStat } from "@numen/protocol/numen/v1/shared_pb.js";
-import { file_numen_v1_shared } from "@numen/protocol/numen/v1/shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/epub/v1/book.proto.
  */
 export const file_numen_epub_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiHgoOR2V0Qm9va1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKKAgoPR2V0Qm9va1Jlc3BvbnNlEg0KBXRpdGxlGAEgASgJEi8KCWRvY3VtZW50cxgCIAMoCzIcLm51bWVuLmVwdWIudjEuU3BpbmVEb2N1bWVudBImCgVwYXJ0cxgDIAMoCzIXLm51bWVuLmVwdWIudjEuQm9va1BhcnQSMQoNcHJpbnRlZF9wYWdlcxgEIAMoCzIaLm51bWVuLmVwdWIudjEuUHJpbnRlZFBhZ2USEgoKcGFnZV9jb3VudBgFIAEoBRISCgp0ZXh0X2J5dGVzGAYgASgFEhIKCnBhZ2VfYnl0ZXMYByABKAUSIAoEc3RhdBgIIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Ii0KDUdldENmaVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUiHQoOR2V0Q2ZpUmVzcG9uc2USCwoDY2ZpGAEgASgJIi4KEUZpbmRPZmZzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDY2ZpGAIgASgJIiQKEkZpbmRPZmZzZXRSZXNwb25zZRIOCgZvZmZzZXQYASABKAUibwoVUmVhZEJvb2tNYXJrdXBSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIZG9jdW1lbnQYAiABKAkSKQoIYmFzZWxpbmUYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgAiAEBQgsKCV9iYXNlbGluZSIoChZSZWFkQm9va01hcmt1cFJlc3BvbnNlEg4KBm1hcmt1cBgBIAEoCSJZChRSZWFkQm9va0VudHJ5UmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBWVudHJ5GAIgASgJEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiJQoVUmVhZEJvb2tFbnRyeVJlc3BvbnNlEgwKBGJvZHkYASABKAwiPQoNU3BpbmVEb2N1bWVudBIMCgRwYXRoGAEgASgJEg4KBm9mZnNldBgCIAEoBRIOCgZsZW5ndGgYAyABKAUiOAoIQm9va1BhcnQSDQoFdGl0bGUYASABKAkSDgoGb2Zmc2V0GAIgASgFEg0KBWxldmVsGAMgASgFIiwKC1ByaW50ZWRQYWdlEg0KBWxhYmVsGAEgASgJEg4KBm9mZnNldBgCIAEoBTKsAwoLQm9va1NlcnZpY2USSAoHR2V0Qm9vaxIdLm51bWVuLmVwdWIudjEuR2V0Qm9va1JlcXVlc3QaHi5udW1lbi5lcHViLnYxLkdldEJvb2tSZXNwb25zZRJdCg5SZWFkQm9va01hcmt1cBIkLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXF1ZXN0GiUubnVtZW4uZXB1Yi52MS5SZWFkQm9va01hcmt1cFJlc3BvbnNlEloKDVJlYWRCb29rRW50cnkSIy5udW1lbi5lcHViLnYxLlJlYWRCb29rRW50cnlSZXF1ZXN0GiQubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVzcG9uc2USRQoGR2V0Q2ZpEhwubnVtZW4uZXB1Yi52MS5HZXRDZmlSZXF1ZXN0Gh0ubnVtZW4uZXB1Yi52MS5HZXRDZmlSZXNwb25zZRJRCgpGaW5kT2Zmc2V0EiAubnVtZW4uZXB1Yi52MS5GaW5kT2Zmc2V0UmVxdWVzdBohLm51bWVuLmVwdWIudjEuRmluZE9mZnNldFJlc3BvbnNlQkxaSmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vcGx1Z2lucy9yZWFkZXJzLWVwdWIvZ2VuL251bWVuL2VwdWIvdjE7ZXB1YnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiNQoIRmlsZVN0YXQSDAoEcGF0aBgBIAEoCRIMCgRzaXplGAIgASgDEg0KBW10aW1lGAMgASgDIh4KDkdldEJvb2tSZXF1ZXN0EgwKBHBhdGgYASABKAkijwIKD0dldEJvb2tSZXNwb25zZRINCgV0aXRsZRgBIAEoCRIvCglkb2N1bWVudHMYAiADKAsyHC5udW1lbi5lcHViLnYxLlNwaW5lRG9jdW1lbnQSJgoFcGFydHMYAyADKAsyFy5udW1lbi5lcHViLnYxLkJvb2tQYXJ0EjEKDXByaW50ZWRfcGFnZXMYBCADKAsyGi5udW1lbi5lcHViLnYxLlByaW50ZWRQYWdlEhIKCnBhZ2VfY291bnQYBSABKAUSEgoKdGV4dF9ieXRlcxgGIAEoBRISCgpwYWdlX2J5dGVzGAcgASgFEiUKBHN0YXQYCCABKAsyFy5udW1lbi5lcHViLnYxLkZpbGVTdGF0Ii0KDUdldENmaVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUiHQoOR2V0Q2ZpUmVzcG9uc2USCwoDY2ZpGAEgASgJIi4KEUZpbmRPZmZzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDY2ZpGAIgASgJIiQKEkZpbmRPZmZzZXRSZXNwb25zZRIOCgZvZmZzZXQYASABKAUidAoVUmVhZEJvb2tNYXJrdXBSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIZG9jdW1lbnQYAiABKAkSLgoIYmFzZWxpbmUYAyABKAsyFy5udW1lbi5lcHViLnYxLkZpbGVTdGF0SACIAQFCCwoJX2Jhc2VsaW5lIigKFlJlYWRCb29rTWFya3VwUmVzcG9uc2USDgoGbWFya3VwGAEgASgJIl4KFFJlYWRCb29rRW50cnlSZXF1ZXN0EgwKBHBhdGgYASABKAkSDQoFZW50cnkYAiABKAkSKQoIYmFzZWxpbmUYAyABKAsyFy5udW1lbi5lcHViLnYxLkZpbGVTdGF0IiUKFVJlYWRCb29rRW50cnlSZXNwb25zZRIMCgRib2R5GAEgASgMIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyrAMKC0Jvb2tTZXJ2aWNlEkgKB0dldEJvb2sSHS5udW1lbi5lcHViLnYxLkdldEJvb2tSZXF1ZXN0Gh4ubnVtZW4uZXB1Yi52MS5HZXRCb29rUmVzcG9uc2USXQoOUmVhZEJvb2tNYXJrdXASJC5udW1lbi5lcHViLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBolLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXNwb25zZRJaCg1SZWFkQm9va0VudHJ5EiMubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVxdWVzdBokLm51bWVuLmVwdWIudjEuUmVhZEJvb2tFbnRyeVJlc3BvbnNlEkUKBkdldENmaRIcLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVxdWVzdBodLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVzcG9uc2USUQoKRmluZE9mZnNldBIgLm51bWVuLmVwdWIudjEuRmluZE9mZnNldFJlcXVlc3QaIS5udW1lbi5lcHViLnYxLkZpbmRPZmZzZXRSZXNwb25zZUJMWkpnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvcmVhZGVycy1lcHViL2dlbi9udW1lbi9lcHViL3YxO2VwdWJ2MWIGcHJvdG8z");
+
+/**
+ * FileStat is which file this is: where it is filed, how big it is, and when
+ * it last changed.
+ *
+ * @generated from message numen.epub.v1.FileStat
+ */
+export type FileStat = Message<"numen.epub.v1.FileStat"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * When the file last changed, in nanoseconds since the epoch.
+   *
+   * @generated from field: int64 mtime = 3;
+   */
+  mtime: bigint;
+};
+
+/**
+ * Describes the message numen.epub.v1.FileStat.
+ * Use `create(FileStatSchema)` to create a new message.
+ */
+export const FileStatSchema: GenMessage<FileStat> = /*@__PURE__*/
+  messageDesc(file_numen_epub_v1_book, 0);
 
 /**
  * @generated from message numen.epub.v1.GetBookRequest
@@ -44,7 +74,7 @@ export type GetBookRequest = Message<"numen.epub.v1.GetBookRequest"> & {
  * Use `create(GetBookRequestSchema)` to create a new message.
  */
 export const GetBookRequestSchema: GenMessage<GetBookRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 0);
+  messageDesc(file_numen_epub_v1_book, 1);
 
 /**
  * @generated from message numen.epub.v1.GetBookResponse
@@ -110,7 +140,7 @@ export type GetBookResponse = Message<"numen.epub.v1.GetBookResponse"> & {
    * document and in the address of a picture, so both name one reading of one
    * file.
    *
-   * @generated from field: numen.v1.FileStat stat = 8;
+   * @generated from field: numen.epub.v1.FileStat stat = 8;
    */
   stat?: FileStat | undefined;
 };
@@ -120,7 +150,7 @@ export type GetBookResponse = Message<"numen.epub.v1.GetBookResponse"> & {
  * Use `create(GetBookResponseSchema)` to create a new message.
  */
 export const GetBookResponseSchema: GenMessage<GetBookResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 1);
+  messageDesc(file_numen_epub_v1_book, 2);
 
 /**
  * @generated from message numen.epub.v1.GetCfiRequest
@@ -146,7 +176,7 @@ export type GetCfiRequest = Message<"numen.epub.v1.GetCfiRequest"> & {
  * Use `create(GetCfiRequestSchema)` to create a new message.
  */
 export const GetCfiRequestSchema: GenMessage<GetCfiRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 2);
+  messageDesc(file_numen_epub_v1_book, 3);
 
 /**
  * @generated from message numen.epub.v1.GetCfiResponse
@@ -166,7 +196,7 @@ export type GetCfiResponse = Message<"numen.epub.v1.GetCfiResponse"> & {
  * Use `create(GetCfiResponseSchema)` to create a new message.
  */
 export const GetCfiResponseSchema: GenMessage<GetCfiResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 3);
+  messageDesc(file_numen_epub_v1_book, 4);
 
 /**
  * @generated from message numen.epub.v1.FindOffsetRequest
@@ -192,7 +222,7 @@ export type FindOffsetRequest = Message<"numen.epub.v1.FindOffsetRequest"> & {
  * Use `create(FindOffsetRequestSchema)` to create a new message.
  */
 export const FindOffsetRequestSchema: GenMessage<FindOffsetRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 4);
+  messageDesc(file_numen_epub_v1_book, 5);
 
 /**
  * @generated from message numen.epub.v1.FindOffsetResponse
@@ -211,7 +241,7 @@ export type FindOffsetResponse = Message<"numen.epub.v1.FindOffsetResponse"> & {
  * Use `create(FindOffsetResponseSchema)` to create a new message.
  */
 export const FindOffsetResponseSchema: GenMessage<FindOffsetResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 5);
+  messageDesc(file_numen_epub_v1_book, 6);
 
 /**
  * @generated from message numen.epub.v1.ReadBookMarkupRequest
@@ -236,7 +266,7 @@ export type ReadBookMarkupRequest = Message<"numen.epub.v1.ReadBookMarkupRequest
    * is refused: the window reads the book again and asks with what that
    * returns.
    *
-   * @generated from field: optional numen.v1.FileStat baseline = 3;
+   * @generated from field: optional numen.epub.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
 };
@@ -246,7 +276,7 @@ export type ReadBookMarkupRequest = Message<"numen.epub.v1.ReadBookMarkupRequest
  * Use `create(ReadBookMarkupRequestSchema)` to create a new message.
  */
 export const ReadBookMarkupRequestSchema: GenMessage<ReadBookMarkupRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 6);
+  messageDesc(file_numen_epub_v1_book, 7);
 
 /**
  * @generated from message numen.epub.v1.ReadBookMarkupResponse
@@ -265,7 +295,7 @@ export type ReadBookMarkupResponse = Message<"numen.epub.v1.ReadBookMarkupRespon
  * Use `create(ReadBookMarkupResponseSchema)` to create a new message.
  */
 export const ReadBookMarkupResponseSchema: GenMessage<ReadBookMarkupResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 7);
+  messageDesc(file_numen_epub_v1_book, 8);
 
 /**
  * @generated from message numen.epub.v1.ReadBookEntryRequest
@@ -289,7 +319,7 @@ export type ReadBookEntryRequest = Message<"numen.epub.v1.ReadBookEntryRequest">
    * Which bytes the request was given out for. A file that is other bytes now
    * is refused.
    *
-   * @generated from field: numen.v1.FileStat baseline = 3;
+   * @generated from field: numen.epub.v1.FileStat baseline = 3;
    */
   baseline?: FileStat | undefined;
 };
@@ -299,7 +329,7 @@ export type ReadBookEntryRequest = Message<"numen.epub.v1.ReadBookEntryRequest">
  * Use `create(ReadBookEntryRequestSchema)` to create a new message.
  */
 export const ReadBookEntryRequestSchema: GenMessage<ReadBookEntryRequest> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 8);
+  messageDesc(file_numen_epub_v1_book, 9);
 
 /**
  * @generated from message numen.epub.v1.ReadBookEntryResponse
@@ -318,7 +348,7 @@ export type ReadBookEntryResponse = Message<"numen.epub.v1.ReadBookEntryResponse
  * Use `create(ReadBookEntryResponseSchema)` to create a new message.
  */
 export const ReadBookEntryResponseSchema: GenMessage<ReadBookEntryResponse> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 9);
+  messageDesc(file_numen_epub_v1_book, 10);
 
 /**
  * SpineDocument is one document of the spine and where it is in the book's
@@ -354,7 +384,7 @@ export type SpineDocument = Message<"numen.epub.v1.SpineDocument"> & {
  * Use `create(SpineDocumentSchema)` to create a new message.
  */
 export const SpineDocumentSchema: GenMessage<SpineDocument> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 10);
+  messageDesc(file_numen_epub_v1_book, 11);
 
 /**
  * BookPart is a named division of the book, at the offset its text begins.
@@ -386,7 +416,7 @@ export type BookPart = Message<"numen.epub.v1.BookPart"> & {
  * Use `create(BookPartSchema)` to create a new message.
  */
 export const BookPartSchema: GenMessage<BookPart> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 11);
+  messageDesc(file_numen_epub_v1_book, 12);
 
 /**
  * PrintedPage is one page of the printed book, at the offset it starts.
@@ -410,7 +440,7 @@ export type PrintedPage = Message<"numen.epub.v1.PrintedPage"> & {
  * Use `create(PrintedPageSchema)` to create a new message.
  */
 export const PrintedPageSchema: GenMessage<PrintedPage> = /*@__PURE__*/
-  messageDesc(file_numen_epub_v1_book, 12);
+  messageDesc(file_numen_epub_v1_book, 13);
 
 /**
  * @generated from service numen.epub.v1.BookService

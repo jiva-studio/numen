@@ -15,7 +15,6 @@
 package pdfv1
 
 import (
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -30,6 +29,123 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// FileStat is which file this is: where it is filed, how big it is, and when
+// it last changed.
+type FileStat struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	// When the file last changed, in nanoseconds since the epoch.
+	Mtime         int64 `protobuf:"varint,3,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileStat) Reset() {
+	*x = FileStat{}
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileStat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileStat) ProtoMessage() {}
+
+func (x *FileStat) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileStat.ProtoReflect.Descriptor instead.
+func (*FileStat) Descriptor() ([]byte, []int) {
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FileStat) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *FileStat) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileStat) GetMtime() int64 {
+	if x != nil {
+		return x.Mtime
+	}
+	return 0
+}
+
+// Range is a run of text, by where it begins and where it ends. What it counts
+// in is the field carrying it.
+type Range struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Start         int32                  `protobuf:"varint,1,opt,name=start,proto3" json:"start,omitempty"`
+	End           int32                  `protobuf:"varint,2,opt,name=end,proto3" json:"end,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Range) Reset() {
+	*x = Range{}
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Range) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Range) ProtoMessage() {}
+
+func (x *Range) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Range.ProtoReflect.Descriptor instead.
+func (*Range) Descriptor() ([]byte, []int) {
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Range) GetStart() int32 {
+	if x != nil {
+		return x.Start
+	}
+	return 0
+}
+
+func (x *Range) GetEnd() int32 {
+	if x != nil {
+		return x.End
+	}
+	return 0
+}
+
 type GetDocumentRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// The file, as the vault holds it.
@@ -40,7 +156,7 @@ type GetDocumentRequest struct {
 
 func (x *GetDocumentRequest) Reset() {
 	*x = GetDocumentRequest{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[0]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -52,7 +168,7 @@ func (x *GetDocumentRequest) String() string {
 func (*GetDocumentRequest) ProtoMessage() {}
 
 func (x *GetDocumentRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[0]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -65,7 +181,7 @@ func (x *GetDocumentRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDocumentRequest.ProtoReflect.Descriptor instead.
 func (*GetDocumentRequest) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{0}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *GetDocumentRequest) GetPath() string {
@@ -81,14 +197,14 @@ type GetDocumentResponse struct {
 	Pages []*Page `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	// The bytes the layout was read from. A page image is asked for with it, so
 	// one address names one drawing of one file.
-	Stat          *v1.FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
+	Stat          *FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetDocumentResponse) Reset() {
 	*x = GetDocumentResponse{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[1]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -100,7 +216,7 @@ func (x *GetDocumentResponse) String() string {
 func (*GetDocumentResponse) ProtoMessage() {}
 
 func (x *GetDocumentResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[1]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -113,7 +229,7 @@ func (x *GetDocumentResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetDocumentResponse.ProtoReflect.Descriptor instead.
 func (*GetDocumentResponse) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{1}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *GetDocumentResponse) GetPages() []*Page {
@@ -123,7 +239,7 @@ func (x *GetDocumentResponse) GetPages() []*Page {
 	return nil
 }
 
-func (x *GetDocumentResponse) GetStat() *v1.FileStat {
+func (x *GetDocumentResponse) GetStat() *FileStat {
 	if x != nil {
 		return x.Stat
 	}
@@ -142,7 +258,7 @@ type Page struct {
 
 func (x *Page) Reset() {
 	*x = Page{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[2]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -154,7 +270,7 @@ func (x *Page) String() string {
 func (*Page) ProtoMessage() {}
 
 func (x *Page) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[2]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -167,7 +283,7 @@ func (x *Page) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Page.ProtoReflect.Descriptor instead.
 func (*Page) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{2}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Page) GetWidth() float64 {
@@ -189,14 +305,14 @@ type GetHighlightsRequest struct {
 	// The file, as the vault holds it.
 	Path string `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	// The runs of the live text version to return places of, in bytes of its text.
-	Ranges        []*v1.Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
+	Ranges        []*Range `protobuf:"bytes,2,rep,name=ranges,proto3" json:"ranges,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *GetHighlightsRequest) Reset() {
 	*x = GetHighlightsRequest{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[3]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -208,7 +324,7 @@ func (x *GetHighlightsRequest) String() string {
 func (*GetHighlightsRequest) ProtoMessage() {}
 
 func (x *GetHighlightsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[3]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -221,7 +337,7 @@ func (x *GetHighlightsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHighlightsRequest.ProtoReflect.Descriptor instead.
 func (*GetHighlightsRequest) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{3}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *GetHighlightsRequest) GetPath() string {
@@ -231,7 +347,7 @@ func (x *GetHighlightsRequest) GetPath() string {
 	return ""
 }
 
-func (x *GetHighlightsRequest) GetRanges() []*v1.Range {
+func (x *GetHighlightsRequest) GetRanges() []*Range {
 	if x != nil {
 		return x.Ranges
 	}
@@ -248,7 +364,7 @@ type GetHighlightsResponse struct {
 
 func (x *GetHighlightsResponse) Reset() {
 	*x = GetHighlightsResponse{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[4]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -260,7 +376,7 @@ func (x *GetHighlightsResponse) String() string {
 func (*GetHighlightsResponse) ProtoMessage() {}
 
 func (x *GetHighlightsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[4]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -273,7 +389,7 @@ func (x *GetHighlightsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetHighlightsResponse.ProtoReflect.Descriptor instead.
 func (*GetHighlightsResponse) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{4}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *GetHighlightsResponse) GetRuns() []*DocumentRun {
@@ -294,7 +410,7 @@ type DocumentRun struct {
 
 func (x *DocumentRun) Reset() {
 	*x = DocumentRun{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[5]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -306,7 +422,7 @@ func (x *DocumentRun) String() string {
 func (*DocumentRun) ProtoMessage() {}
 
 func (x *DocumentRun) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[5]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -319,7 +435,7 @@ func (x *DocumentRun) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DocumentRun.ProtoReflect.Descriptor instead.
 func (*DocumentRun) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{5}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *DocumentRun) GetPlaces() []*DocumentPlace {
@@ -340,7 +456,7 @@ type DocumentPlace struct {
 
 func (x *DocumentPlace) Reset() {
 	*x = DocumentPlace{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[6]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -352,7 +468,7 @@ func (x *DocumentPlace) String() string {
 func (*DocumentPlace) ProtoMessage() {}
 
 func (x *DocumentPlace) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[6]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -365,7 +481,7 @@ func (x *DocumentPlace) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DocumentPlace.ProtoReflect.Descriptor instead.
 func (*DocumentPlace) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{6}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *DocumentPlace) GetPage() int32 {
@@ -395,7 +511,7 @@ type DocumentRect struct {
 
 func (x *DocumentRect) Reset() {
 	*x = DocumentRect{}
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[7]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -407,7 +523,7 @@ func (x *DocumentRect) String() string {
 func (*DocumentRect) ProtoMessage() {}
 
 func (x *DocumentRect) ProtoReflect() protoreflect.Message {
-	mi := &file_numen_pdf_v1_document_proto_msgTypes[7]
+	mi := &file_numen_pdf_v1_document_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -420,7 +536,7 @@ func (x *DocumentRect) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DocumentRect.ProtoReflect.Descriptor instead.
 func (*DocumentRect) Descriptor() ([]byte, []int) {
-	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{7}
+	return file_numen_pdf_v1_document_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *DocumentRect) GetMinX() float32 {
@@ -455,18 +571,25 @@ var File_numen_pdf_v1_document_proto protoreflect.FileDescriptor
 
 const file_numen_pdf_v1_document_proto_rawDesc = "" +
 	"\n" +
-	"\x1bnumen/pdf/v1/document.proto\x12\fnumen.pdf.v1\x1a\x15numen/v1/shared.proto\"(\n" +
+	"\x1bnumen/pdf/v1/document.proto\x12\fnumen.pdf.v1\"H\n" +
+	"\bFileStat\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
+	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"/\n" +
+	"\x05Range\x12\x14\n" +
+	"\x05start\x18\x01 \x01(\x05R\x05start\x12\x10\n" +
+	"\x03end\x18\x02 \x01(\x05R\x03end\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"g\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"k\n" +
 	"\x13GetDocumentResponse\x12(\n" +
-	"\x05pages\x18\x01 \x03(\v2\x12.numen.pdf.v1.PageR\x05pages\x12&\n" +
-	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\"4\n" +
+	"\x05pages\x18\x01 \x03(\v2\x12.numen.pdf.v1.PageR\x05pages\x12*\n" +
+	"\x04stat\x18\x02 \x01(\v2\x16.numen.pdf.v1.FileStatR\x04stat\"4\n" +
 	"\x04Page\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\x01R\x06height\"S\n" +
+	"\x06height\x18\x02 \x01(\x01R\x06height\"W\n" +
 	"\x14GetHighlightsRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12'\n" +
-	"\x06ranges\x18\x02 \x03(\v2\x0f.numen.v1.RangeR\x06ranges\"F\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12+\n" +
+	"\x06ranges\x18\x02 \x03(\v2\x13.numen.pdf.v1.RangeR\x06ranges\"F\n" +
 	"\x15GetHighlightsResponse\x12-\n" +
 	"\x04runs\x18\x01 \x03(\v2\x19.numen.pdf.v1.DocumentRunR\x04runs\"B\n" +
 	"\vDocumentRun\x123\n" +
@@ -495,30 +618,30 @@ func file_numen_pdf_v1_document_proto_rawDescGZIP() []byte {
 	return file_numen_pdf_v1_document_proto_rawDescData
 }
 
-var file_numen_pdf_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_numen_pdf_v1_document_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_numen_pdf_v1_document_proto_goTypes = []any{
-	(*GetDocumentRequest)(nil),    // 0: numen.pdf.v1.GetDocumentRequest
-	(*GetDocumentResponse)(nil),   // 1: numen.pdf.v1.GetDocumentResponse
-	(*Page)(nil),                  // 2: numen.pdf.v1.Page
-	(*GetHighlightsRequest)(nil),  // 3: numen.pdf.v1.GetHighlightsRequest
-	(*GetHighlightsResponse)(nil), // 4: numen.pdf.v1.GetHighlightsResponse
-	(*DocumentRun)(nil),           // 5: numen.pdf.v1.DocumentRun
-	(*DocumentPlace)(nil),         // 6: numen.pdf.v1.DocumentPlace
-	(*DocumentRect)(nil),          // 7: numen.pdf.v1.DocumentRect
-	(*v1.FileStat)(nil),           // 8: numen.v1.FileStat
-	(*v1.Range)(nil),              // 9: numen.v1.Range
+	(*FileStat)(nil),              // 0: numen.pdf.v1.FileStat
+	(*Range)(nil),                 // 1: numen.pdf.v1.Range
+	(*GetDocumentRequest)(nil),    // 2: numen.pdf.v1.GetDocumentRequest
+	(*GetDocumentResponse)(nil),   // 3: numen.pdf.v1.GetDocumentResponse
+	(*Page)(nil),                  // 4: numen.pdf.v1.Page
+	(*GetHighlightsRequest)(nil),  // 5: numen.pdf.v1.GetHighlightsRequest
+	(*GetHighlightsResponse)(nil), // 6: numen.pdf.v1.GetHighlightsResponse
+	(*DocumentRun)(nil),           // 7: numen.pdf.v1.DocumentRun
+	(*DocumentPlace)(nil),         // 8: numen.pdf.v1.DocumentPlace
+	(*DocumentRect)(nil),          // 9: numen.pdf.v1.DocumentRect
 }
 var file_numen_pdf_v1_document_proto_depIdxs = []int32{
-	2, // 0: numen.pdf.v1.GetDocumentResponse.pages:type_name -> numen.pdf.v1.Page
-	8, // 1: numen.pdf.v1.GetDocumentResponse.stat:type_name -> numen.v1.FileStat
-	9, // 2: numen.pdf.v1.GetHighlightsRequest.ranges:type_name -> numen.v1.Range
-	5, // 3: numen.pdf.v1.GetHighlightsResponse.runs:type_name -> numen.pdf.v1.DocumentRun
-	6, // 4: numen.pdf.v1.DocumentRun.places:type_name -> numen.pdf.v1.DocumentPlace
-	7, // 5: numen.pdf.v1.DocumentPlace.rects:type_name -> numen.pdf.v1.DocumentRect
-	0, // 6: numen.pdf.v1.DocumentService.GetDocument:input_type -> numen.pdf.v1.GetDocumentRequest
-	3, // 7: numen.pdf.v1.DocumentService.GetHighlights:input_type -> numen.pdf.v1.GetHighlightsRequest
-	1, // 8: numen.pdf.v1.DocumentService.GetDocument:output_type -> numen.pdf.v1.GetDocumentResponse
-	4, // 9: numen.pdf.v1.DocumentService.GetHighlights:output_type -> numen.pdf.v1.GetHighlightsResponse
+	4, // 0: numen.pdf.v1.GetDocumentResponse.pages:type_name -> numen.pdf.v1.Page
+	0, // 1: numen.pdf.v1.GetDocumentResponse.stat:type_name -> numen.pdf.v1.FileStat
+	1, // 2: numen.pdf.v1.GetHighlightsRequest.ranges:type_name -> numen.pdf.v1.Range
+	7, // 3: numen.pdf.v1.GetHighlightsResponse.runs:type_name -> numen.pdf.v1.DocumentRun
+	8, // 4: numen.pdf.v1.DocumentRun.places:type_name -> numen.pdf.v1.DocumentPlace
+	9, // 5: numen.pdf.v1.DocumentPlace.rects:type_name -> numen.pdf.v1.DocumentRect
+	2, // 6: numen.pdf.v1.DocumentService.GetDocument:input_type -> numen.pdf.v1.GetDocumentRequest
+	5, // 7: numen.pdf.v1.DocumentService.GetHighlights:input_type -> numen.pdf.v1.GetHighlightsRequest
+	3, // 8: numen.pdf.v1.DocumentService.GetDocument:output_type -> numen.pdf.v1.GetDocumentResponse
+	6, // 9: numen.pdf.v1.DocumentService.GetHighlights:output_type -> numen.pdf.v1.GetHighlightsResponse
 	8, // [8:10] is the sub-list for method output_type
 	6, // [6:8] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
@@ -537,7 +660,7 @@ func file_numen_pdf_v1_document_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_pdf_v1_document_proto_rawDesc), len(file_numen_pdf_v1_document_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

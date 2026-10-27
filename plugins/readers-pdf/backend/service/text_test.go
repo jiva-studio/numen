@@ -215,7 +215,7 @@ func TestTheDocumentServiceLightsRunsOfTheLiveVersion(t *testing.T) {
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
 		Path: "tiny.pdf",
-		Ranges: []*host.WireRange{
+		Ranges: []*pdfv1.Range{
 			{Start: int32(zeta), End: int32(zeta + len("zeta"))},
 			{Start: int32(beta), End: int32(zeta + len("zeta"))},
 		},
@@ -245,7 +245,7 @@ func TestADocumentWithNoLiveVersionIsLitNowhere(t *testing.T) {
 	documents := newDocumentServer(server, texts)
 
 	res, err := documents.GetHighlights(t.Context(), connect.NewRequest(&pdfv1.GetHighlightsRequest{
-		Path: "tiny.pdf", Ranges: []*host.WireRange{{Start: 0, End: 5}},
+		Path: "tiny.pdf", Ranges: []*pdfv1.Range{{Start: 0, End: 5}},
 	}))
 	if err != nil {
 		t.Fatalf("GetHighlights: %v", err)

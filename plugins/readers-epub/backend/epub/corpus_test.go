@@ -15,8 +15,6 @@ import (
 // the test stands aside when it is not there.
 const corpusEnv = "NUMEN_EPUB_CORPUS"
 
-const relativeCorpus = "../../../../../../../resources/mahabharata"
-
 // What the corpus holds, measured. These numbers are the test: a change that
 // moves a book from one tier to another has changed what a reader is shown, and
 // has to be looked at.
@@ -227,7 +225,7 @@ func corpus(t *testing.T) []string {
 	t.Helper()
 	root := os.Getenv(corpusEnv)
 	if root == "" {
-		root = relativeCorpus
+		t.Skipf("the corpus is not configured (set %s to say where it is)", corpusEnv)
 	}
 	if _, err := os.Stat(root); err != nil {
 		t.Skipf("the corpus is not here: %v (set %s to say where it is)", err, corpusEnv)

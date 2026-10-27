@@ -14,8 +14,6 @@ import (
 
 	flashcardsv1 "github.com/jiva-studio/numen/plugins/views-flashcards-studio/gen/numen/flashcards/v1"
 
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/flashcards"
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/review"
 )
@@ -35,8 +33,8 @@ func GetSettingsBounds() *flashcardsv1.SettingsBounds {
 }
 
 // getBounds is one pair of bounds as the schema carries it.
-func getBounds(b review.Bounds) *host.WireBounds {
-	return &host.WireBounds{Min: b.Min, Max: b.Max}
+func getBounds(b review.Bounds) *flashcardsv1.Bounds {
+	return &flashcardsv1.Bounds{Min: b.Min, Max: b.Max}
 }
 
 // ConvertPresetToWire is one preset as the schema carries it.

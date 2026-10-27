@@ -174,7 +174,7 @@ func (s *BookServer) ReadBookEntry(
 
 // isStatOf is whether a file of the size and the stamp given is the bytes the
 // file stat names. A stamp of zero names no time.
-func isStatOf(named *host.WireFileStat, size, mtime int64) bool {
+func isStatOf(named *epubv1.FileStat, size, mtime int64) bool {
 	if named.GetSize() != size {
 		return false
 	}

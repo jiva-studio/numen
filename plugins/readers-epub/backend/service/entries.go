@@ -7,7 +7,6 @@ import (
 	"strconv"
 
 	"connectrpc.com/connect"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 	epubv1 "github.com/jiva-studio/numen/plugins/readers-epub/gen/numen/epub/v1"
 )
 
@@ -51,13 +50,13 @@ const vaultHeader = "Numen-Vault"
 
 // parseBytesQuery reads the size and the modification time of a file from the query, and is nil
 // where the query names no size.
-func parseBytesQuery(query url.Values) *host.WireFileStat {
+func parseBytesQuery(query url.Values) *epubv1.FileStat {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
 		return nil
 	}
 	stamp, _ := strconv.ParseInt(query.Get("mtime"), 10, 64)
-	return &host.WireFileStat{Size: size, Mtime: stamp}
+	return &epubv1.FileStat{Size: size, Mtime: stamp}
 }
 
 // getHTTPStatus is the HTTP status of a Connect error.

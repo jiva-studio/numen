@@ -10,7 +10,6 @@
 package flashcardsv1
 
 import (
-	_ "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -1788,7 +1787,7 @@ var File_numen_flashcards_v1_flashcards_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_flashcards_proto_rawDesc = "" +
 	"\n" +
-	"$numen/flashcards/v1/flashcards.proto\x12\x13numen.flashcards.v1\x1a!numen/flashcards/v1/presets.proto\x1a numen/flashcards/v1/errors.proto\x1a\x15numen/v1/shared.proto\"\xbf\x02\n" +
+	"$numen/flashcards/v1/flashcards.proto\x12\x13numen.flashcards.v1\x1a!numen/flashcards/v1/presets.proto\x1a numen/flashcards/v1/errors.proto\"\xbf\x02\n" +
 	"\rVaultCardsDue\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x12\n" +

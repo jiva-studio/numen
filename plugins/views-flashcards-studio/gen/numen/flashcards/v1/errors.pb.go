@@ -123,11 +123,134 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_flashcards_v1_errors_proto_rawDescGZIP(), []int{0}
 }
 
+// FileStat is which file this is: where it is filed, how big it is, and when
+// it last changed.
+type FileStat struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
+	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
+	// When the file last changed, in nanoseconds since the epoch.
+	Mtime         int64 `protobuf:"varint,3,opt,name=mtime,proto3" json:"mtime,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FileStat) Reset() {
+	*x = FileStat{}
+	mi := &file_numen_flashcards_v1_errors_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FileStat) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FileStat) ProtoMessage() {}
+
+func (x *FileStat) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_flashcards_v1_errors_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FileStat.ProtoReflect.Descriptor instead.
+func (*FileStat) Descriptor() ([]byte, []int) {
+	return file_numen_flashcards_v1_errors_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *FileStat) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+func (x *FileStat) GetSize() int64 {
+	if x != nil {
+		return x.Size
+	}
+	return 0
+}
+
+func (x *FileStat) GetMtime() int64 {
+	if x != nil {
+		return x.Mtime
+	}
+	return 0
+}
+
+// Bounds is the range a number may take: from min to max, both inclusive.
+type Bounds struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Min           float64                `protobuf:"fixed64,1,opt,name=min,proto3" json:"min,omitempty"`
+	Max           float64                `protobuf:"fixed64,2,opt,name=max,proto3" json:"max,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *Bounds) Reset() {
+	*x = Bounds{}
+	mi := &file_numen_flashcards_v1_errors_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Bounds) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Bounds) ProtoMessage() {}
+
+func (x *Bounds) ProtoReflect() protoreflect.Message {
+	mi := &file_numen_flashcards_v1_errors_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Bounds.ProtoReflect.Descriptor instead.
+func (*Bounds) Descriptor() ([]byte, []int) {
+	return file_numen_flashcards_v1_errors_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *Bounds) GetMin() float64 {
+	if x != nil {
+		return x.Min
+	}
+	return 0
+}
+
+func (x *Bounds) GetMax() float64 {
+	if x != nil {
+		return x.Max
+	}
+	return 0
+}
+
 var File_numen_flashcards_v1_errors_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_errors_proto_rawDesc = "" +
 	"\n" +
-	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1*\x92\x03\n" +
+	" numen/flashcards/v1/errors.proto\x12\x13numen.flashcards.v1\"H\n" +
+	"\bFileStat\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
+	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\",\n" +
+	"\x06Bounds\x12\x10\n" +
+	"\x03min\x18\x01 \x01(\x01R\x03min\x12\x10\n" +
+	"\x03max\x18\x02 \x01(\x01R\x03max*\x92\x03\n" +
 	"\tErrorCode\x12\x1a\n" +
 	"\x16ERROR_CODE_UNSPECIFIED\x10\x00\x12\x16\n" +
 	"\x12ERROR_CODE_MISSING\x10\x01\x12\x19\n" +
@@ -158,8 +281,11 @@ func file_numen_flashcards_v1_errors_proto_rawDescGZIP() []byte {
 }
 
 var file_numen_flashcards_v1_errors_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_numen_flashcards_v1_errors_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_numen_flashcards_v1_errors_proto_goTypes = []any{
-	(ErrorCode)(0), // 0: numen.flashcards.v1.ErrorCode
+	(ErrorCode)(0),   // 0: numen.flashcards.v1.ErrorCode
+	(*FileStat)(nil), // 1: numen.flashcards.v1.FileStat
+	(*Bounds)(nil),   // 2: numen.flashcards.v1.Bounds
 }
 var file_numen_flashcards_v1_errors_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for method output_type
@@ -180,13 +306,14 @@ func file_numen_flashcards_v1_errors_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_numen_flashcards_v1_errors_proto_rawDesc), len(file_numen_flashcards_v1_errors_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   0,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
 		GoTypes:           file_numen_flashcards_v1_errors_proto_goTypes,
 		DependencyIndexes: file_numen_flashcards_v1_errors_proto_depIdxs,
 		EnumInfos:         file_numen_flashcards_v1_errors_proto_enumTypes,
+		MessageInfos:      file_numen_flashcards_v1_errors_proto_msgTypes,
 	}.Build()
 	File_numen_flashcards_v1_errors_proto = out.File
 	file_numen_flashcards_v1_errors_proto_goTypes = nil

@@ -22,4 +22,5 @@ package-lock.json  linguist-generated=true -diff
 *.gz  binary
 
 # fixture vault bytes are the test: never normalised
-modules/tests/** -text
+tests/** -text
+plugins/**/testdata/** -text

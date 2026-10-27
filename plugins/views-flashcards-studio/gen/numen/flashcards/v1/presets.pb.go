@@ -10,7 +10,6 @@
 package flashcardsv1
 
 import (
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -942,7 +941,7 @@ type GetDeckPresetResponse struct {
 	// Error code if reading failed.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// File file stat for optimistic concurrency.
-	At *v1.FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Permitted bounds for preset settings.
 	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -993,7 +992,7 @@ func (x *GetDeckPresetResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *GetDeckPresetResponse) GetAt() *v1.FileStat {
+func (x *GetDeckPresetResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1264,7 +1263,7 @@ type ScheduleDeckRequest struct {
 	// Preset note path. Empty resets deck to default scheduling.
 	Preset string `protobuf:"bytes,2,opt,name=preset,proto3" json:"preset,omitempty"`
 	// Baseline file stat for optimistic concurrency.
-	Baseline      *v1.FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1313,7 +1312,7 @@ func (x *ScheduleDeckRequest) GetPreset() string {
 	return ""
 }
 
-func (x *ScheduleDeckRequest) GetBaseline() *v1.FileStat {
+func (x *ScheduleDeckRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -1325,7 +1324,7 @@ type ScheduleDeckResponse struct {
 	// Error code if assignment failed.
 	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Resulting file file stat for subsequent writes.
-	At *v1.FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// True if written to disk but not yet indexed.
 	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1369,7 +1368,7 @@ func (x *ScheduleDeckResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ScheduleDeckResponse) GetAt() *v1.FileStat {
+func (x *ScheduleDeckResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1434,7 +1433,7 @@ type ReadPresetResponse struct {
 	// Error code if reading failed.
 	Error *ErrorCode `protobuf:"varint,2,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// File file stat for optimistic concurrency.
-	At *v1.FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,3,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// Permitted bounds for preset settings.
 	Bounds        *SettingsBounds `protobuf:"bytes,4,opt,name=bounds,proto3" json:"bounds,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1485,7 +1484,7 @@ func (x *ReadPresetResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *ReadPresetResponse) GetAt() *v1.FileStat {
+func (x *ReadPresetResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1502,14 +1501,14 @@ func (x *ReadPresetResponse) GetBounds() *SettingsBounds {
 // SettingsBounds defines allowable ranges for preset parameters.
 type SettingsBounds struct {
 	state       protoimpl.MessageState `protogen:"open.v1"`
-	MinutesADay *v1.Bounds             `protobuf:"bytes,1,opt,name=minutes_a_day,json=minutesADay,proto3" json:"minutes_a_day,omitempty"`
-	NewADay     *v1.Bounds             `protobuf:"bytes,2,opt,name=new_a_day,json=newADay,proto3" json:"new_a_day,omitempty"`
-	ReviewsADay *v1.Bounds             `protobuf:"bytes,3,opt,name=reviews_a_day,json=reviewsADay,proto3" json:"reviews_a_day,omitempty"`
-	Retention   *v1.Bounds             `protobuf:"bytes,4,opt,name=retention,proto3" json:"retention,omitempty"`
-	Backlog     *v1.Bounds             `protobuf:"bytes,5,opt,name=backlog,proto3" json:"backlog,omitempty"`
-	Interval    *v1.Bounds             `protobuf:"bytes,6,opt,name=interval,proto3" json:"interval,omitempty"`
+	MinutesADay *Bounds                `protobuf:"bytes,1,opt,name=minutes_a_day,json=minutesADay,proto3" json:"minutes_a_day,omitempty"`
+	NewADay     *Bounds                `protobuf:"bytes,2,opt,name=new_a_day,json=newADay,proto3" json:"new_a_day,omitempty"`
+	ReviewsADay *Bounds                `protobuf:"bytes,3,opt,name=reviews_a_day,json=reviewsADay,proto3" json:"reviews_a_day,omitempty"`
+	Retention   *Bounds                `protobuf:"bytes,4,opt,name=retention,proto3" json:"retention,omitempty"`
+	Backlog     *Bounds                `protobuf:"bytes,5,opt,name=backlog,proto3" json:"backlog,omitempty"`
+	Interval    *Bounds                `protobuf:"bytes,6,opt,name=interval,proto3" json:"interval,omitempty"`
 	// Allowable load percentage range for weekdays.
-	Load          *v1.Bounds `protobuf:"bytes,7,opt,name=load,proto3" json:"load,omitempty"`
+	Load          *Bounds `protobuf:"bytes,7,opt,name=load,proto3" json:"load,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1544,49 +1543,49 @@ func (*SettingsBounds) Descriptor() ([]byte, []int) {
 	return file_numen_flashcards_v1_presets_proto_rawDescGZIP(), []int{16}
 }
 
-func (x *SettingsBounds) GetMinutesADay() *v1.Bounds {
+func (x *SettingsBounds) GetMinutesADay() *Bounds {
 	if x != nil {
 		return x.MinutesADay
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetNewADay() *v1.Bounds {
+func (x *SettingsBounds) GetNewADay() *Bounds {
 	if x != nil {
 		return x.NewADay
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetReviewsADay() *v1.Bounds {
+func (x *SettingsBounds) GetReviewsADay() *Bounds {
 	if x != nil {
 		return x.ReviewsADay
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetRetention() *v1.Bounds {
+func (x *SettingsBounds) GetRetention() *Bounds {
 	if x != nil {
 		return x.Retention
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetBacklog() *v1.Bounds {
+func (x *SettingsBounds) GetBacklog() *Bounds {
 	if x != nil {
 		return x.Backlog
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetInterval() *v1.Bounds {
+func (x *SettingsBounds) GetInterval() *Bounds {
 	if x != nil {
 		return x.Interval
 	}
 	return nil
 }
 
-func (x *SettingsBounds) GetLoad() *v1.Bounds {
+func (x *SettingsBounds) GetLoad() *Bounds {
 	if x != nil {
 		return x.Load
 	}
@@ -1599,7 +1598,7 @@ type WritePresetRequest struct {
 	// Preset settings to update.
 	Settings *Settings `protobuf:"bytes,2,opt,name=settings,proto3" json:"settings,omitempty"`
 	// Baseline file stat for optimistic concurrency.
-	Baseline      *v1.FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline      *FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1648,7 +1647,7 @@ func (x *WritePresetRequest) GetSettings() *Settings {
 	return nil
 }
 
-func (x *WritePresetRequest) GetBaseline() *v1.FileStat {
+func (x *WritePresetRequest) GetBaseline() *FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -1660,7 +1659,7 @@ type WritePresetResponse struct {
 	// Error code if write failed.
 	Error *ErrorCode `protobuf:"varint,1,opt,name=error,proto3,enum=numen.flashcards.v1.ErrorCode,oneof" json:"error,omitempty"`
 	// Resulting file file stat for subsequent writes.
-	At *v1.FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
+	At *FileStat `protobuf:"bytes,2,opt,name=at,proto3,oneof" json:"at,omitempty"`
 	// True if written to disk but not yet indexed.
 	IsUnlevelled  bool `protobuf:"varint,3,opt,name=is_unlevelled,json=isUnlevelled,proto3" json:"is_unlevelled,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1704,7 +1703,7 @@ func (x *WritePresetResponse) GetError() ErrorCode {
 	return ErrorCode_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *WritePresetResponse) GetAt() *v1.FileStat {
+func (x *WritePresetResponse) GetAt() *FileStat {
 	if x != nil {
 		return x.At
 	}
@@ -1820,7 +1819,7 @@ var File_numen_flashcards_v1_presets_proto protoreflect.FileDescriptor
 
 const file_numen_flashcards_v1_presets_proto_rawDesc = "" +
 	"\n" +
-	"!numen/flashcards/v1/presets.proto\x12\x13numen.flashcards.v1\x1a numen/flashcards/v1/errors.proto\x1a\x15numen/v1/shared.proto\"\x92\x04\n" +
+	"!numen/flashcards/v1/presets.proto\x12\x13numen.flashcards.v1\x1a numen/flashcards/v1/errors.proto\"\x92\x04\n" +
 	"\bSettings\x12-\n" +
 	"\x04goal\x18\x01 \x01(\x0e2\x19.numen.flashcards.v1.GoalR\x04goal\x12\x17\n" +
 	"\aby_date\x18\x02 \x01(\tR\x06byDate\x12\"\n" +
@@ -1878,11 +1877,11 @@ const file_numen_flashcards_v1_presets_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x01R\x05value\x12\x10\n" +
 	"\x03day\x18\x03 \x01(\tR\x03day\"*\n" +
 	"\x14GetDeckPresetRequest\x12\x12\n" +
-	"\x04deck\x18\x01 \x01(\tR\x04deck\"\x8e\x02\n" +
+	"\x04deck\x18\x01 \x01(\tR\x04deck\"\x99\x02\n" +
 	"\x15GetDeckPresetResponse\x128\n" +
 	"\x06preset\x18\x01 \x01(\v2\x1b.numen.flashcards.v1.PresetH\x00R\x06preset\x88\x01\x01\x129\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x02R\x02at\x88\x01\x01\x12;\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x02R\x02at\x88\x01\x01\x12;\n" +
 	"\x06bounds\x18\x04 \x01(\v2#.numen.flashcards.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\b\n" +
 	"\x06_errorB\x05\n" +
@@ -1900,44 +1899,44 @@ const file_numen_flashcards_v1_presets_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x129\n" +
 	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
-	"\x06_error\"\x83\x01\n" +
+	"\x06_error\"\x8e\x01\n" +
 	"\x13ScheduleDeckRequest\x12\x12\n" +
 	"\x04deck\x18\x01 \x01(\tR\x04deck\x12\x16\n" +
-	"\x06preset\x18\x02 \x01(\tR\x06preset\x123\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\xb0\x01\n" +
+	"\x06preset\x18\x02 \x01(\tR\x06preset\x12>\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xbb\x01\n" +
 	"\x14ScheduleDeckResponse\x129\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"'\n" +
 	"\x11ReadPresetRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x8b\x02\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x96\x02\n" +
 	"\x12ReadPresetResponse\x128\n" +
 	"\x06preset\x18\x01 \x01(\v2\x1b.numen.flashcards.v1.PresetH\x00R\x06preset\x88\x01\x01\x129\n" +
-	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x02R\x02at\x88\x01\x01\x12;\n" +
+	"\x05error\x18\x02 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x01R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x02R\x02at\x88\x01\x01\x12;\n" +
 	"\x06bounds\x18\x04 \x01(\v2#.numen.flashcards.v1.SettingsBoundsR\x06boundsB\t\n" +
 	"\a_presetB\b\n" +
 	"\x06_errorB\x05\n" +
-	"\x03_at\"\xda\x02\n" +
-	"\x0eSettingsBounds\x124\n" +
-	"\rminutes_a_day\x18\x01 \x01(\v2\x10.numen.v1.BoundsR\vminutesADay\x12,\n" +
-	"\tnew_a_day\x18\x02 \x01(\v2\x10.numen.v1.BoundsR\anewADay\x124\n" +
-	"\rreviews_a_day\x18\x03 \x01(\v2\x10.numen.v1.BoundsR\vreviewsADay\x12.\n" +
-	"\tretention\x18\x04 \x01(\v2\x10.numen.v1.BoundsR\tretention\x12*\n" +
-	"\abacklog\x18\x05 \x01(\v2\x10.numen.v1.BoundsR\abacklog\x12,\n" +
-	"\binterval\x18\x06 \x01(\v2\x10.numen.v1.BoundsR\binterval\x12$\n" +
-	"\x04load\x18\a \x01(\v2\x10.numen.v1.BoundsR\x04load\"\xa5\x01\n" +
+	"\x03_at\"\xa7\x03\n" +
+	"\x0eSettingsBounds\x12?\n" +
+	"\rminutes_a_day\x18\x01 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\vminutesADay\x127\n" +
+	"\tnew_a_day\x18\x02 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\anewADay\x12?\n" +
+	"\rreviews_a_day\x18\x03 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\vreviewsADay\x129\n" +
+	"\tretention\x18\x04 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\tretention\x125\n" +
+	"\abacklog\x18\x05 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\abacklog\x127\n" +
+	"\binterval\x18\x06 \x01(\v2\x1b.numen.flashcards.v1.BoundsR\binterval\x12/\n" +
+	"\x04load\x18\a \x01(\v2\x1b.numen.flashcards.v1.BoundsR\x04load\"\xb0\x01\n" +
 	"\x12WritePresetRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x129\n" +
-	"\bsettings\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.SettingsR\bsettings\x123\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
-	"\t_baseline\"\xaf\x01\n" +
+	"\bsettings\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.SettingsR\bsettings\x12>\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\t_baseline\"\xba\x01\n" +
 	"\x13WritePresetResponse\x129\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x12'\n" +
-	"\x02at\x18\x02 \x01(\v2\x12.numen.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1e.numen.flashcards.v1.ErrorCodeH\x00R\x05error\x88\x01\x01\x122\n" +
+	"\x02at\x18\x02 \x01(\v2\x1d.numen.flashcards.v1.FileStatH\x01R\x02at\x88\x01\x01\x12#\n" +
 	"\ris_unlevelled\x18\x03 \x01(\bR\fisUnlevelledB\b\n" +
 	"\x06_errorB\x05\n" +
 	"\x03_at\"d\n" +
@@ -2032,8 +2031,8 @@ var file_numen_flashcards_v1_presets_proto_goTypes = []any{
 	(*ComputeCurveResponse)(nil),  // 25: numen.flashcards.v1.ComputeCurveResponse
 	nil,                           // 26: numen.flashcards.v1.Settings.LoadEntry
 	(ErrorCode)(0),                // 27: numen.flashcards.v1.ErrorCode
-	(*v1.FileStat)(nil),           // 28: numen.v1.FileStat
-	(*v1.Bounds)(nil),             // 29: numen.v1.Bounds
+	(*FileStat)(nil),              // 28: numen.flashcards.v1.FileStat
+	(*Bounds)(nil),                // 29: numen.flashcards.v1.Bounds
 }
 var file_numen_flashcards_v1_presets_proto_depIdxs = []int32{
 	0,  // 0: numen.flashcards.v1.Settings.goal:type_name -> numen.flashcards.v1.Goal
@@ -2050,28 +2049,28 @@ var file_numen_flashcards_v1_presets_proto_depIdxs = []int32{
 	4,  // 11: numen.flashcards.v1.Point.closed:type_name -> numen.flashcards.v1.BudgetName
 	6,  // 12: numen.flashcards.v1.GetDeckPresetResponse.preset:type_name -> numen.flashcards.v1.Preset
 	27, // 13: numen.flashcards.v1.GetDeckPresetResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	28, // 14: numen.flashcards.v1.GetDeckPresetResponse.at:type_name -> numen.v1.FileStat
+	28, // 14: numen.flashcards.v1.GetDeckPresetResponse.at:type_name -> numen.flashcards.v1.FileStat
 	21, // 15: numen.flashcards.v1.GetDeckPresetResponse.bounds:type_name -> numen.flashcards.v1.SettingsBounds
 	14, // 16: numen.flashcards.v1.ListPresetsResponse.presets:type_name -> numen.flashcards.v1.PresetSummary
 	27, // 17: numen.flashcards.v1.CreatePresetResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	28, // 18: numen.flashcards.v1.ScheduleDeckRequest.baseline:type_name -> numen.v1.FileStat
+	28, // 18: numen.flashcards.v1.ScheduleDeckRequest.baseline:type_name -> numen.flashcards.v1.FileStat
 	27, // 19: numen.flashcards.v1.ScheduleDeckResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	28, // 20: numen.flashcards.v1.ScheduleDeckResponse.at:type_name -> numen.v1.FileStat
+	28, // 20: numen.flashcards.v1.ScheduleDeckResponse.at:type_name -> numen.flashcards.v1.FileStat
 	6,  // 21: numen.flashcards.v1.ReadPresetResponse.preset:type_name -> numen.flashcards.v1.Preset
 	27, // 22: numen.flashcards.v1.ReadPresetResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	28, // 23: numen.flashcards.v1.ReadPresetResponse.at:type_name -> numen.v1.FileStat
+	28, // 23: numen.flashcards.v1.ReadPresetResponse.at:type_name -> numen.flashcards.v1.FileStat
 	21, // 24: numen.flashcards.v1.ReadPresetResponse.bounds:type_name -> numen.flashcards.v1.SettingsBounds
-	29, // 25: numen.flashcards.v1.SettingsBounds.minutes_a_day:type_name -> numen.v1.Bounds
-	29, // 26: numen.flashcards.v1.SettingsBounds.new_a_day:type_name -> numen.v1.Bounds
-	29, // 27: numen.flashcards.v1.SettingsBounds.reviews_a_day:type_name -> numen.v1.Bounds
-	29, // 28: numen.flashcards.v1.SettingsBounds.retention:type_name -> numen.v1.Bounds
-	29, // 29: numen.flashcards.v1.SettingsBounds.backlog:type_name -> numen.v1.Bounds
-	29, // 30: numen.flashcards.v1.SettingsBounds.interval:type_name -> numen.v1.Bounds
-	29, // 31: numen.flashcards.v1.SettingsBounds.load:type_name -> numen.v1.Bounds
+	29, // 25: numen.flashcards.v1.SettingsBounds.minutes_a_day:type_name -> numen.flashcards.v1.Bounds
+	29, // 26: numen.flashcards.v1.SettingsBounds.new_a_day:type_name -> numen.flashcards.v1.Bounds
+	29, // 27: numen.flashcards.v1.SettingsBounds.reviews_a_day:type_name -> numen.flashcards.v1.Bounds
+	29, // 28: numen.flashcards.v1.SettingsBounds.retention:type_name -> numen.flashcards.v1.Bounds
+	29, // 29: numen.flashcards.v1.SettingsBounds.backlog:type_name -> numen.flashcards.v1.Bounds
+	29, // 30: numen.flashcards.v1.SettingsBounds.interval:type_name -> numen.flashcards.v1.Bounds
+	29, // 31: numen.flashcards.v1.SettingsBounds.load:type_name -> numen.flashcards.v1.Bounds
 	5,  // 32: numen.flashcards.v1.WritePresetRequest.settings:type_name -> numen.flashcards.v1.Settings
-	28, // 33: numen.flashcards.v1.WritePresetRequest.baseline:type_name -> numen.v1.FileStat
+	28, // 33: numen.flashcards.v1.WritePresetRequest.baseline:type_name -> numen.flashcards.v1.FileStat
 	27, // 34: numen.flashcards.v1.WritePresetResponse.error:type_name -> numen.flashcards.v1.ErrorCode
-	28, // 35: numen.flashcards.v1.WritePresetResponse.at:type_name -> numen.v1.FileStat
+	28, // 35: numen.flashcards.v1.WritePresetResponse.at:type_name -> numen.flashcards.v1.FileStat
 	5,  // 36: numen.flashcards.v1.ComputeCurveRequest.settings:type_name -> numen.flashcards.v1.Settings
 	7,  // 37: numen.flashcards.v1.ComputeCurveResponse.curve:type_name -> numen.flashcards.v1.Curve
 	10, // 38: numen.flashcards.v1.PresetsService.GetDeckPreset:input_type -> numen.flashcards.v1.GetDeckPresetRequest

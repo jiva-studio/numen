@@ -6,19 +6,20 @@
  * sheet the theme actually lays down.
  */
 import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+import { createRequire } from 'node:module'
 import { afterEach, describe, expect, it } from 'vitest'
 import { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { theme } from './theme'
 
+const require = createRequire(import.meta.url)
+
 /** The names the tokens declare, which is everything a stylesheet may read. */
 const TOKENS = new Set(
   [
-    ...readFileSync(
-      join(import.meta.dirname, '../../../../../libs/ui/core/src/shared/tokens/tokens.css'),
-      'utf8',
-    ).matchAll(/(--numen-[\w-]+)\s*:/g),
+    ...readFileSync(require.resolve('@numen/ui/styles.css'), 'utf8').matchAll(
+      /(--numen-[\w-]+)\s*:/g,
+    ),
   ].map((found) => found[1] as string),
 )
 

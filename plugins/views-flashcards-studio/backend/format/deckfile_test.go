@@ -1392,7 +1392,7 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 }
 
 // vault is where the fixtures a person can open in the application stand.
-const vault = "../../../../tests/vault/cards"
+const vault = "testdata/cards"
 
 // Every deck and card model of the fixture vault, read and written straight back,
 // comes out as the body it went in as. These are the files a person is shown,

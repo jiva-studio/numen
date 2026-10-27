@@ -2,14 +2,71 @@
 // @generated from file numen/flashcards/v1/errors.proto (package numen.flashcards.v1, syntax proto3)
 /* eslint-disable */
 
-import type { GenEnum, GenFile } from "@bufbuild/protobuf/codegenv2";
-import { enumDesc, fileDesc } from "@bufbuild/protobuf/codegenv2";
+import type { GenEnum, GenFile, GenMessage } from "@bufbuild/protobuf/codegenv2";
+import { enumDesc, fileDesc, messageDesc } from "@bufbuild/protobuf/codegenv2";
+import type { Message } from "@bufbuild/protobuf";
 
 /**
  * Describes the file numen/flashcards/v1/errors.proto.
  */
 export const file_numen_flashcards_v1_errors: GenFile = /*@__PURE__*/
-  fileDesc("CiBudW1lbi9mbGFzaGNhcmRzL3YxL2Vycm9ycy5wcm90bxITbnVtZW4uZmxhc2hjYXJkcy52MSqSAwoJRXJyb3JDb2RlEhoKFkVSUk9SX0NPREVfVU5TUEVDSUZJRUQQABIWChJFUlJPUl9DT0RFX01JU1NJTkcQARIZChVFUlJPUl9DT0RFX05PVF9BX05PVEUQAhIXChNFUlJPUl9DT0RFX05PVF9URVhUEAMSGAoURVJST1JfQ09ERV9UT09fTEFSR0UQBBIeChpFUlJPUl9DT0RFX0JPRFlfVU5XUklUQUJMRRAFEhkKFUVSUk9SX0NPREVfVU5SRUFEQUJMRRAGEh0KGUVSUk9SX0NPREVfQUxSRUFEWV9FWElTVFMQBxIbChdFUlJPUl9DT0RFX0lOVkFMSURfTkFNRRAIEh8KG0VSUk9SX0NPREVfTk9UX0FfQ0FSRF9NT0RFTBAJEhkKFUVSUk9SX0NPREVfTk9UX0FfREVDSxAKEh0KGUVSUk9SX0NPREVfREVDS19UT09fTEFSR0UQCxIbChdFUlJPUl9DT0RFX05PVF9BX1BSRVNFVBAMEhQKEEVSUk9SX0NPREVfU1RBTEUQDUJjWmFnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvdmlld3MtZmxhc2hjYXJkcy1zdHVkaW8vZ2VuL251bWVuL2ZsYXNoY2FyZHMvdjE7Zmxhc2hjYXJkc3YxYgZwcm90bzM");
+  fileDesc("CiBudW1lbi9mbGFzaGNhcmRzL3YxL2Vycm9ycy5wcm90bxITbnVtZW4uZmxhc2hjYXJkcy52MSI1CghGaWxlU3RhdBIMCgRwYXRoGAEgASgJEgwKBHNpemUYAiABKAMSDQoFbXRpbWUYAyABKAMiIgoGQm91bmRzEgsKA21pbhgBIAEoARILCgNtYXgYAiABKAEqkgMKCUVycm9yQ29kZRIaChZFUlJPUl9DT0RFX1VOU1BFQ0lGSUVEEAASFgoSRVJST1JfQ09ERV9NSVNTSU5HEAESGQoVRVJST1JfQ09ERV9OT1RfQV9OT1RFEAISFwoTRVJST1JfQ09ERV9OT1RfVEVYVBADEhgKFEVSUk9SX0NPREVfVE9PX0xBUkdFEAQSHgoaRVJST1JfQ09ERV9CT0RZX1VOV1JJVEFCTEUQBRIZChVFUlJPUl9DT0RFX1VOUkVBREFCTEUQBhIdChlFUlJPUl9DT0RFX0FMUkVBRFlfRVhJU1RTEAcSGwoXRVJST1JfQ09ERV9JTlZBTElEX05BTUUQCBIfChtFUlJPUl9DT0RFX05PVF9BX0NBUkRfTU9ERUwQCRIZChVFUlJPUl9DT0RFX05PVF9BX0RFQ0sQChIdChlFUlJPUl9DT0RFX0RFQ0tfVE9PX0xBUkdFEAsSGwoXRVJST1JfQ09ERV9OT1RfQV9QUkVTRVQQDBIUChBFUlJPUl9DT0RFX1NUQUxFEA1CY1phZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3ZpZXdzLWZsYXNoY2FyZHMtc3R1ZGlvL2dlbi9udW1lbi9mbGFzaGNhcmRzL3YxO2ZsYXNoY2FyZHN2MWIGcHJvdG8z");
+
+/**
+ * FileStat is which file this is: where it is filed, how big it is, and when
+ * it last changed.
+ *
+ * @generated from message numen.flashcards.v1.FileStat
+ */
+export type FileStat = Message<"numen.flashcards.v1.FileStat"> & {
+  /**
+   * @generated from field: string path = 1;
+   */
+  path: string;
+
+  /**
+   * @generated from field: int64 size = 2;
+   */
+  size: bigint;
+
+  /**
+   * When the file last changed, in nanoseconds since the epoch.
+   *
+   * @generated from field: int64 mtime = 3;
+   */
+  mtime: bigint;
+};
+
+/**
+ * Describes the message numen.flashcards.v1.FileStat.
+ * Use `create(FileStatSchema)` to create a new message.
+ */
+export const FileStatSchema: GenMessage<FileStat> = /*@__PURE__*/
+  messageDesc(file_numen_flashcards_v1_errors, 0);
+
+/**
+ * Bounds is the range a number may take: from min to max, both inclusive.
+ *
+ * @generated from message numen.flashcards.v1.Bounds
+ */
+export type Bounds = Message<"numen.flashcards.v1.Bounds"> & {
+  /**
+   * @generated from field: double min = 1;
+   */
+  min: number;
+
+  /**
+   * @generated from field: double max = 2;
+   */
+  max: number;
+};
+
+/**
+ * Describes the message numen.flashcards.v1.Bounds.
+ * Use `create(BoundsSchema)` to create a new message.
+ */
+export const BoundsSchema: GenMessage<Bounds> = /*@__PURE__*/
+  messageDesc(file_numen_flashcards_v1_errors, 1);
 
 /**
  * ErrorCode is what a call over the card models, decks and presets of a vault
