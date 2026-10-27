@@ -27,12 +27,12 @@ type PluginWork struct {
 	next    uint64
 }
 
-// pluginState is what one plugin holds: the ids of its tasks, its turns and
+// pluginState is what one plugin holds: the ids of its tasks, its leases and
 // the cancellations of its waits.
 type pluginState struct {
-	tasks map[string]bool
-	turns map[*pluginTurn]bool
-	waits map[uint64]context.CancelFunc
+	tasks  map[string]bool
+	leases map[*lease]bool
+	waits  map[uint64]context.CancelFunc
 }
 
 var _ pluginport.PluginWork = (*PluginWork)(nil)
@@ -43,10 +43,10 @@ func NewPluginWork(lock *Lock, tasks *Tasks, getName func(pluginID string) strin
 	return &PluginWork{lock: lock, tasks: tasks, getName: getName, plugins: map[string]*pluginState{}}
 }
 
-// EnqueueWork waits at the lock for the plugin's turn and returns it.
+// EnqueueWork waits at the lock for a lease for the plugin and returns it.
 func (w *PluginWork) EnqueueWork(
 	ctx context.Context, pluginID string, isUserStarted bool, onWaiting func(),
-) (pluginport.PluginTurn, error) {
+) (pluginport.Lease, error) {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -76,16 +76,16 @@ func (w *PluginWork) EnqueueWork(
 		release()
 		return nil, errPluginCleared
 	}
-	turn := &pluginTurn{lock: w.lock, release: release, end: make(chan struct{})}
-	turn.forget = func() {
+	one := &lease{lock: w.lock, release: release, end: make(chan struct{})}
+	one.forget = func() {
 		w.mu.Lock()
 		defer w.mu.Unlock()
 		if state, isKnown := w.plugins[pluginID]; isKnown {
-			delete(state.turns, turn)
+			delete(state.leases, one)
 		}
 	}
-	state.turns[turn] = true
-	return turn, nil
+	state.leases[one] = true
+	return one, nil
 }
 
 // ReportTask lists the task under the plugin's own id, with the plugin's id
@@ -141,7 +141,7 @@ func (w *PluginWork) ClearPlugin(pluginID string) {
 	for _, cancel := range state.waits {
 		cancel()
 	}
-	for turn := range state.turns {
+	for turn := range state.leases {
 		turn.Release()
 	}
 	for taskID := range state.tasks {
@@ -155,9 +155,9 @@ func (w *PluginWork) getStateLocked(pluginID string) *pluginState {
 	state, isKnown := w.plugins[pluginID]
 	if !isKnown {
 		state = &pluginState{
-			tasks: map[string]bool{},
-			turns: map[*pluginTurn]bool{},
-			waits: map[uint64]context.CancelFunc{},
+			tasks:  map[string]bool{},
+			leases: map[*lease]bool{},
+			waits:  map[uint64]context.CancelFunc{},
 		}
 		w.plugins[pluginID] = state
 	}
@@ -183,8 +183,8 @@ func readUnit(unit pluginport.TaskUnit) Unit {
 	return Things
 }
 
-// pluginTurn is a plugin's hold on the lock.
-type pluginTurn struct {
+// lease is a plugin's hold on the lock.
+type lease struct {
 	lock    *Lock
 	release func()
 	forget  func()
@@ -192,7 +192,7 @@ type pluginTurn struct {
 	end     chan struct{}
 }
 
-func (t *pluginTurn) Release() {
+func (t *lease) Release() {
 	t.once.Do(func() {
 		t.forget()
 		t.release()
@@ -200,6 +200,6 @@ func (t *pluginTurn) Release() {
 	})
 }
 
-func (t *pluginTurn) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
+func (t *lease) WatchWaiting() <-chan struct{} { return t.lock.WatchWaiting() }
 
-func (t *pluginTurn) WatchEnd() <-chan struct{} { return t.end }
+func (t *lease) WatchEnd() <-chan struct{} { return t.end }

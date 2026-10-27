@@ -8,7 +8,7 @@ type PluginWork interface {
 	// EnqueueWork waits for the plugin's turn in the queue and returns it.
 	// onWaiting is called where other work holds the queue. A context that
 	// ends while waiting takes no turn.
-	EnqueueWork(ctx context.Context, pluginID string, isUserStarted bool, onWaiting func()) (PluginTurn, error)
+	EnqueueWork(ctx context.Context, pluginID string, isUserStarted bool, onWaiting func()) (Lease, error)
 	// ReportTask puts one of the plugin's tasks in the list, or replaces it.
 	ReportTask(pluginID string, task PluginTask)
 	// FinishTask takes one of the plugin's tasks out of the list.
@@ -18,14 +18,14 @@ type PluginWork interface {
 	ClearPlugin(pluginID string)
 }
 
-// PluginTurn is a plugin's hold on the queue.
-type PluginTurn interface {
-	// Release ends the turn and lets the next work in the queue run. A turn
+// Lease is a plugin's hold on the queue.
+type Lease interface {
+	// Release ends the lease and lets the next work in the queue run. A lease
 	// released twice is released once.
 	Release()
 	// WatchWaiting returns a channel closed once other work waits for the queue.
 	WatchWaiting() <-chan struct{}
-	// WatchEnd returns a channel closed once the turn is over.
+	// WatchEnd returns a channel closed once the lease is over.
 	WatchEnd() <-chan struct{}
 }
 

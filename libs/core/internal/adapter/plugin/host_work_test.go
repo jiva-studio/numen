@@ -19,7 +19,7 @@ type workingHost struct {
 	host    *Host
 	process *os.Process
 	tasks   *run.Tasks
-	turn    pluginport.PluginTurn
+	lease   pluginport.Lease
 }
 
 func newWorkingHost(t *testing.T) workingHost {
@@ -44,13 +44,13 @@ func newWorkingHost(t *testing.T) workingHost {
 	if got := len(tasks.List()); got != 1 {
 		t.Fatalf("got %d tasks, want the plugin's one", got)
 	}
-	return workingHost{host: host, process: procs[0], tasks: tasks, turn: turn}
+	return workingHost{host: host, process: procs[0], tasks: tasks, lease: turn}
 }
 
 func (w workingHost) checkCleared(t *testing.T) {
 	t.Helper()
 	select {
-	case <-w.turn.WatchEnd():
+	case <-w.lease.WatchEnd():
 	case <-time.After(5 * time.Second):
 		t.Fatal("the stopped plugin still holds the lock")
 	}

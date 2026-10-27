@@ -13,9 +13,9 @@ import (
 // it waits, with the channel its turn arrives on.
 func enqueueBehind(
 	t *testing.T, ctx context.Context, work *PluginWork, pluginID string, isUserStarted bool,
-) (<-chan pluginport.PluginTurn, <-chan error) {
+) (<-chan pluginport.Lease, <-chan error) {
 	t.Helper()
-	turns := make(chan pluginport.PluginTurn, 1)
+	turns := make(chan pluginport.Lease, 1)
 	errs := make(chan error, 1)
 	queued := make(chan struct{})
 	go func() {
@@ -36,7 +36,7 @@ func enqueueBehind(
 	return turns, errs
 }
 
-func receiveTurn(t *testing.T, turns <-chan pluginport.PluginTurn, pluginID string) pluginport.PluginTurn {
+func receiveLease(t *testing.T, turns <-chan pluginport.Lease, pluginID string) pluginport.Lease {
 	t.Helper()
 	select {
 	case turn := <-turns:
@@ -59,17 +59,17 @@ func TestPluginWorkRunsAPersonsRequestBeforeBackgroundWork(t *testing.T) {
 	requested, _ := enqueueBehind(t, t.Context(), work, "transcriber", true)
 
 	release()
-	first := receiveTurn(t, requested, "transcriber")
+	first := receiveLease(t, requested, "transcriber")
 	select {
 	case <-background:
 		t.Fatal("background work ran beside the person's request")
 	default:
 	}
 	first.Release()
-	receiveTurn(t, background, "indexer").Release()
+	receiveLease(t, background, "indexer").Release()
 }
 
-func TestPluginTurnReportsContention(t *testing.T) {
+func TestLeaseReportsContention(t *testing.T) {
 	lock := &Lock{}
 	work := NewPluginWork(lock, NewTasks(), nil)
 
@@ -96,7 +96,7 @@ func TestPluginTurnReportsContention(t *testing.T) {
 	default:
 		t.Fatal("a released turn is not over")
 	}
-	receiveTurn(t, next, "recogniser").Release()
+	receiveLease(t, next, "recogniser").Release()
 }
 
 func TestPluginWorkListsAPluginsTaskAndRemovesIt(t *testing.T) {
@@ -162,7 +162,7 @@ func TestPluginWorkClearsTheTasksAndTurnsOfAPluginThatStopped(t *testing.T) {
 	default:
 		t.Fatal("the stopped plugin's turn is not over")
 	}
-	receiveTurn(t, other, "recogniser").Release()
+	receiveLease(t, other, "recogniser").Release()
 
 	got := tasks.List()
 	if len(got) != 1 || got[0].ID != "plugin:recogniser:a" {
