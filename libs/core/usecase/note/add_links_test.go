@@ -48,11 +48,11 @@ func TestABadLinkCostsOnlyItselfAndTheRestAreSavedPerNote(t *testing.T) {
 func TestLinksOfOneNoteNamingTwoFingerprintsAreRefusedTogetherWithTheLater(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
-	first := domain.Fingerprint{Size: 1}
+	first := domain.FileStat{Size: 1}
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
-		{From: "Heat.md", Fingerprint: first, Link: toName("Entropy", domain.RoleRef)},
-		{From: "Heat.md", Fingerprint: domain.Fingerprint{Size: 2}, Link: toName("Work", domain.RoleRef)},
+		{From: "Heat.md", FileStat: first, Link: toName("Entropy", domain.RoleRef)},
+		{From: "Heat.md", FileStat: domain.FileStat{Size: 2}, Link: toName("Work", domain.RoleRef)},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -68,8 +68,8 @@ func TestAnUnreadableFingerprintIsReportedAfterTheLinksOwnError(t *testing.T) {
 	unreadable := errors.New("not a fingerprint")
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
-		{From: "Heat.md", Link: toName("Entropy", "nonsense"), FingerprintError: unreadable},
-		{From: "Heat.md", Link: toName("Entropy", domain.RoleRef), FingerprintError: unreadable},
+		{From: "Heat.md", Link: toName("Entropy", "nonsense"), FileStatError: unreadable},
+		{From: "Heat.md", Link: toName("Entropy", domain.RoleRef), FileStatError: unreadable},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -90,8 +90,8 @@ func TestAWriteTheNoteChangedBelowIsRefusedForEveryLinkOfIt(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": "# Heat\n"})
 
 	added, err := note.NewAddLinks(c.newEditLinks()).Execute(t.Context(), c.vault, []note.LinkAddition{
-		{From: "Heat.md", Fingerprint: domain.Fingerprint{Size: 1}, Link: toName("Entropy", domain.RoleRef)},
-		{From: "Heat.md", Fingerprint: domain.Fingerprint{Size: 1}, Link: toName("Work", domain.RoleRef)},
+		{From: "Heat.md", FileStat: domain.FileStat{Size: 1}, Link: toName("Entropy", domain.RoleRef)},
+		{From: "Heat.md", FileStat: domain.FileStat{Size: 1}, Link: toName("Work", domain.RoleRef)},
 	})
 	if err != nil {
 		t.Fatal(err)

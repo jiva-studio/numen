@@ -182,14 +182,14 @@ func (u ListReviewCards) getCached(
 	if !target {
 		return nil, false
 	}
-	deck, err := reader.GetFingerprint(ctx, path)
+	deck, err := reader.StatFile(ctx, path)
 	if err != nil {
 		u.cache.drop(key)
 		return nil, false
 	}
-	cardModels := make(map[string]domain.Fingerprint, len(e.cardModels))
+	cardModels := make(map[string]domain.FileStat, len(e.cardModels))
 	for cardModel := range e.cardModels {
-		pos, err := reader.GetFingerprint(ctx, cardModel)
+		pos, err := reader.StatFile(ctx, cardModel)
 		if err != nil {
 			u.cache.drop(key)
 			return nil, false
@@ -215,7 +215,7 @@ func (u ListReviewCards) parseDeck(
 	reviewCards, used, isWhole := u.getDeckCards(ctx, v, deck, cardModels)
 	if isWhole {
 		u.cache.put(epoch, deckKey{vault: v.ID, path: path}, deckCards{
-			deck: deck.Fingerprint, cardModels: used, reviewCards: slices.Clone(reviewCards),
+			deck: deck.FileStat, cardModels: used, reviewCards: slices.Clone(reviewCards),
 		}, u.getCardLimit())
 	}
 	return reviewCards
@@ -232,9 +232,9 @@ type cardModelMemo struct {
 // cardModelRead is a card model as the request read it. A note that is not a card model
 // carries a card model of nothing and is not whole.
 type cardModelRead struct {
-	cardModel   format.CardModel
-	fingerprint domain.Fingerprint
-	isWhole     bool
+	cardModel format.CardModel
+	stat      domain.FileStat
+	isWhole   bool
 }
 
 func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) cardModelRead {
@@ -248,7 +248,7 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 	out := cardModelRead{}
 	one, err := m.read.CardModel(ctx, v, path)
 	if err == nil && one.Outcome == note.Ok && one.Type == format.TypeCardModel {
-		out = cardModelRead{cardModel: one.Body, fingerprint: one.Fingerprint, isWhole: true}
+		out = cardModelRead{cardModel: one.Body, stat: one.FileStat, isWhole: true}
 	}
 	m.cardModels[path] = out
 	return out
@@ -259,8 +259,8 @@ func (m *cardModelMemo) get(ctx context.Context, v domain.Vault, path string) ca
 // card models the review cards stand on, and whether every card model a card named was read.
 func (u ListReviewCards) getDeckCards(
 	ctx context.Context, v domain.Vault, deck cards.DeckContents, cardModels *cardModelMemo,
-) (out []ReviewCard, used map[string]domain.Fingerprint, isWhole bool) {
-	used = make(map[string]domain.Fingerprint)
+) (out []ReviewCard, used map[string]domain.FileStat, isWhole bool) {
+	used = make(map[string]domain.FileStat)
 	isWhole = true
 	for _, card := range deck.Body.Cards {
 		if card.CardID == "" {
@@ -275,7 +275,7 @@ func (u ListReviewCards) getDeckCards(
 			isWhole = false
 			continue
 		}
-		used[path] = one.fingerprint
+		used[path] = one.stat
 
 		for _, reviewCard := range one.cardModel.Templates {
 			// A review card missing a side lays out nothing, which is a problem
@@ -326,14 +326,14 @@ type deckKey struct {
 // deckCards is the review cards one deck held when it was parsed, and the files
 // they were laid out from. It is read-only once stored.
 type deckCards struct {
-	deck        domain.Fingerprint
-	cardModels  map[string]domain.Fingerprint
+	deck        domain.FileStat
+	cardModels  map[string]domain.FileStat
 	reviewCards []ReviewCard
 }
 
 // isCurrent says whether the deck and every card model it was cut by are the files
 // the review cards were parsed from.
-func (e deckCards) isCurrent(deck domain.Fingerprint, cardModels map[string]domain.Fingerprint) bool {
+func (e deckCards) isCurrent(deck domain.FileStat, cardModels map[string]domain.FileStat) bool {
 	if !e.deck.IsUnchanged(deck) || len(e.cardModels) != len(cardModels) {
 		return false
 	}
@@ -469,7 +469,7 @@ func (c *reviewCardCache) invalidate(vault domain.VaultID, paths []string) {
 	}
 }
 
-func usesAny(cardModels map[string]domain.Fingerprint, paths []string) bool {
+func usesAny(cardModels map[string]domain.FileStat, paths []string) bool {
 	for _, path := range paths {
 		if _, target := cardModels[path]; target {
 			return true

@@ -52,11 +52,11 @@ func (r brokenReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return r.VaultReader.Read(ctx, path)
 }
 
-func (r brokenReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (r brokenReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	if r.on.stat != nil {
-		return domain.Fingerprint{}, r.on.stat
+		return domain.FileStat{}, r.on.stat
 	}
-	return r.VaultReader.GetFingerprint(ctx, path)
+	return r.VaultReader.StatFile(ctx, path)
 }
 
 // brokenWriters is a vault on disk whose writers answer with the errors they
@@ -173,7 +173,7 @@ func TestAnEditAsksWhatTheFileIsOnlyWhereSomethingIsHeldAgainstIt(t *testing.T) 
 				watchedReaders{inner: vaultreader.Readers{}, stat: func(string) { request++ }},
 				vaultwriter.VaultWriters{}, c.index, time.Now)
 			if tc.existing {
-				edit.Fingerprint = current.Fingerprint
+				edit.FileStat = current.FileStat
 			}
 			edit.ShouldOverwrite = tc.overwrite
 			if tc.baseline {
@@ -240,11 +240,11 @@ func TestAnEditOfANoteThatCannotBeLookedAtIsRefused(t *testing.T) {
 func TestAnEditOfANoteTheVaultDoesNotHoldMakesNothing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
-	elsewhere := c.openNote(t, "Entropy.md").Fingerprint
+	elsewhere := c.openNote(t, "Entropy.md").FileStat
 
-	for _, target := range []domain.Fingerprint{{}, elsewhere} {
+	for _, target := range []domain.FileStat{{}, elsewhere} {
 		edit := c.editWith(vaultreader.Readers{}, vaultwriter.VaultWriters{})
-		edit.Fingerprint = target
+		edit.FileStat = target
 
 		_, err := edit.Apply(t.Context(), c.vault, "Heat.md", titleHeat)
 

@@ -65,7 +65,7 @@ func TestACardModelSummaryGoesOutWhole(t *testing.T) {
 }
 
 func TestARenameGoesOutWithEveryDeckItCouldNotWrite(t *testing.T) {
-	pos := &v1.Fingerprint{}
+	pos := &v1.FileStat{}
 	got := NewRenameResponse(cards.RenameResult{
 		Decks: []string{"a.md"},
 		Cards: 7,

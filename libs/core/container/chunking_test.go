@@ -79,9 +79,9 @@ func TestANoteIsSplitAtTheSettingsSizes(t *testing.T) {
 
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 100))
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
-		Title:       "Cut",
-		Body:        body,
+		FileStat: domain.FileStat{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
+		Title:    "Cut",
+		Body:     body,
 	}
 	if err := db.Notes().Save(t.Context(), v.ID, target.CutNotes().Execute([]domain.Note{n})); err != nil {
 		t.Fatal(err)

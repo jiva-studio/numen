@@ -20,7 +20,7 @@ describe('useDocumentHighlights', () => {
 
   it('sets and looks up page highlights', async () => {
     const documents: Documents = {
-      getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
+      getDocumentLayout: async () => ({ pages: [], stat: '' }),
       getPageUrl: () => '',
       getHighlights: async () => [pageHighlights],
     }
@@ -47,7 +47,7 @@ describe('useDocumentHighlights', () => {
   })
 
   const createDocumentsOf = (getHighlights: Documents['getHighlights']): Documents => ({
-    getDocumentLayout: async () => ({ pages: [], fingerprint: '' }),
+    getDocumentLayout: async () => ({ pages: [], stat: '' }),
     getPageUrl: () => '',
     getHighlights,
   })

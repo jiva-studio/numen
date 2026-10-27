@@ -41,7 +41,7 @@ type VaultReader interface {
 	// WalkFiles reports every source the vault holds, in unspecified order, each
 	// saying which kind it is. The service folder is not reported, and neither
 	// is a file of no kind the application reads.
-	WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error
+	WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error
 	// List reports the entries of one folder, without descending: the files of
 	// every kind and the folders under it. The empty path is the vault root.
 	//
@@ -60,13 +60,13 @@ type VaultReader interface {
 	//
 	// The same errors as Read. Whoever opens it closes it.
 	Open(ctx context.Context, path string) (io.ReadSeekCloser, error)
-	// GetFingerprint answers what a walk reports about one path: its kind, its size and
+	// StatFile answers what a walk reports about one path: its kind, its size and
 	// when it changed. It reads no bytes, so it is what a caller asks about a
 	// file it does not want to open.
 	//
 	// fs.ErrNotExist when there is nothing at the path. ErrNotANote when a
 	// file is there that the vault leaves alone.
-	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 }
 
 // VaultReaders opens a reader for a given vault. Which vault a use case works

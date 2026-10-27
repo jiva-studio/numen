@@ -102,21 +102,21 @@ func answer(ctx context.Context, err error) (v1.HostVaultErrorCode, error) {
 
 const noVault = v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NO_VAULT
 
-func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
+func writeFileStat(f domain.FileStat) *v1.HostFileStat {
+	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 
-func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
+func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	if f == nil {
-		return domain.Fingerprint{}
+		return domain.FileStat{}
 	}
-	return domain.Fingerprint{
+	return domain.FileStat{
 		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
 	}
 }
 
-// readKind is the kind of the file a fingerprint names, and none for a fingerprint naming no file.
-func readKind(f *v1.HostFingerprint) domain.SourceKind {
+// readKind is the kind of the file a file stat names, and none for a file stat naming no file.
+func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
 		return domain.KindNote
@@ -245,22 +245,22 @@ func (e *vaultEndpoint) WatchMoves(
 	}
 }
 
-func (e *vaultEndpoint) GetFileFingerprint(
-	ctx context.Context, req *connect.Request[v1.GetFileFingerprintRequest],
-) (*connect.Response[v1.GetFileFingerprintResponse], error) {
+func (e *vaultEndpoint) StatFile(
+	ctx context.Context, req *connect.Request[v1.StatFileRequest],
+) (*connect.Response[v1.StatFileResponse], error) {
 	_, vault, err := e.begin(req.Header(), pluginport.PermissionVaultRead)
 	if err != nil {
 		return nil, err
 	}
 	if vault == nil {
-		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: noVault}), nil
+		return connect.NewResponse(&v1.StatFileResponse{Error: noVault}), nil
 	}
-	pos, err := vault.GetFingerprint(ctx, req.Msg.GetPath())
+	pos, err := vault.StatFile(ctx, req.Msg.GetPath())
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
-		return connect.NewResponse(&v1.GetFileFingerprintResponse{Error: code}), err
+		return connect.NewResponse(&v1.StatFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.GetFileFingerprintResponse{Fingerprint: writeFingerprint(pos)}), nil
+	return connect.NewResponse(&v1.StatFileResponse{Stat: writeFileStat(pos)}), nil
 }
 
 func (e *vaultEndpoint) ReadFile(
@@ -278,7 +278,7 @@ func (e *vaultEndpoint) ReadFile(
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.ReadFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Fingerprint: writeFingerprint(pos)}), nil
+	return connect.NewResponse(&v1.ReadFileResponse{Content: content, Stat: writeFileStat(pos)}), nil
 }
 
 func (e *vaultEndpoint) WriteFile(
@@ -291,12 +291,12 @@ func (e *vaultEndpoint) WriteFile(
 	if vault == nil {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: noVault}), nil
 	}
-	pos, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFingerprint(req.Msg.GetBaseline()))
+	pos, err := vault.Write(ctx, req.Msg.GetPath(), req.Msg.GetContent(), readFileStat(req.Msg.GetBaseline()))
 	code, err := answer(ctx, err)
 	if err != nil || code != 0 {
 		return connect.NewResponse(&v1.WriteFileResponse{Error: code}), err
 	}
-	return connect.NewResponse(&v1.WriteFileResponse{Fingerprint: writeFingerprint(pos)}), nil
+	return connect.NewResponse(&v1.WriteFileResponse{Stat: writeFileStat(pos)}), nil
 }
 
 func (e *vaultEndpoint) CreateFile(

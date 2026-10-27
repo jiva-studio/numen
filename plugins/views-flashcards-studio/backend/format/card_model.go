@@ -139,7 +139,7 @@ func ReadCardModel(n domain.Note) CardModel {
 		declared: declared,
 		read:     0,
 		cardModel: CardModel{
-			Ref:       n.Fingerprint,
+			Ref:       n.FileStat,
 			Fields:    declaredFields,
 			Problems:  problems,
 			Preamble:  "",

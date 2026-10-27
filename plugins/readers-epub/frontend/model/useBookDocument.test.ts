@@ -21,14 +21,14 @@ const create = (open = { value: true }) => {
     findOffset: vi.fn(),
     readMarkup: (_path, document) =>
       new Promise<string>((resolve, reject) => pending.set(document, { resolve, reject })),
-    getEntryUrl: (path, name, fingerprint) => {
-      urls.push(`${path}|${name}|${fingerprint}`)
+    getEntryUrl: (path, name, stat) => {
+      urls.push(`${path}|${name}|${stat}`)
       return `/served/${name}`
     },
   }
   const writeMessage: MessageWriter = (text, kind) => content.push([text, kind])
   const target = useBookDocument(books, 'library/b.epub', {
-    fingerprint: ref('print-1'),
+    stat: ref('print-1'),
     writeMessage,
     isOpen: () => open.value,
   })

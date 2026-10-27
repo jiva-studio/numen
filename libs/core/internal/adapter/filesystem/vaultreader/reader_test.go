@@ -31,7 +31,7 @@ func walkPaths(t *testing.T, root string) []string {
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.FileStat) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -76,7 +76,7 @@ func walkKinds(t *testing.T, root string, opts vaultconfig.Options) map[string]d
 		t.Fatal(err)
 	}
 	got := map[string]domain.SourceKind{}
-	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.FileStat) error {
 		got[r.Path] = r.Kind
 		return nil
 	}); err != nil {
@@ -127,7 +127,7 @@ func TestAFileOfAnyFormatIsAFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if ref, err := src.GetFingerprint(t.Context(), scanned); err != nil || ref.Kind != domain.KindFile {
+	if ref, err := src.StatFile(t.Context(), scanned); err != nil || ref.Kind != domain.KindFile {
 		t.Errorf("stat of the file gave %+v, %v", ref, err)
 	}
 }
@@ -142,7 +142,7 @@ func TestStatDoesNotSayABookIsMissing(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ref, err := src.GetFingerprint(t.Context(), "library/A Book.epub")
+	ref, err := src.StatFile(t.Context(), "library/A Book.epub")
 	if err != nil {
 		t.Fatalf("stat of a book the vault holds: %v", err)
 	}
@@ -172,7 +172,7 @@ func TestABookInAHiddenFolderIsNotASourceEither(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := src.GetFingerprint(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, vaultport.ErrNotANote) {
+	if _, err := src.StatFile(t.Context(), ".obsidian/A Book.epub"); !errors.Is(err, vaultport.ErrNotANote) {
 		t.Errorf("stat gave %v, want ErrNotANote", err)
 	}
 }
@@ -205,7 +205,7 @@ func TestWalkReportsSizeAndTime(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.FileStat) error {
 		if r.Size <= 0 {
 			t.Errorf("%s has size %d", r.Path, r.Size)
 		}
@@ -546,7 +546,7 @@ func walkWithOptions(t *testing.T, root string, opts vaultconfig.Options) []stri
 		t.Fatal(err)
 	}
 	var got []string
-	if err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
+	if err := src.WalkFiles(t.Context(), func(r domain.FileStat) error {
 		got = append(got, r.Path)
 		return nil
 	}); err != nil {
@@ -579,7 +579,7 @@ func TestAPathThatPreservesTheVaultIsRefused(t *testing.T) {
 		if _, err := reader.Read(t.Context(), path); !errors.Is(err, vaultconfig.ErrOutside) {
 			t.Errorf("read %q: want ErrOutside, got %v", path, err)
 		}
-		if _, err := reader.GetFingerprint(t.Context(), path); err == nil {
+		if _, err := reader.StatFile(t.Context(), path); err == nil {
 			t.Errorf("stat %q: want an error", path)
 		}
 	}
@@ -603,7 +603,7 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 	}
 
 	for _, path := range []string{".git/config", "photo.png", "library/A Book.epub"} {
-		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.Fingerprint{}); !errors.Is(err, vaultconfig.ErrNotANote) {
+		if _, err := writer.Write(t.Context(), path, []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrNotANote) {
 			t.Errorf("write %s: want ErrNotANote, got %v", path, err)
 		}
 		if retained, _ := os.ReadFile(filepath.Join(root, filepath.FromSlash(path))); string(retained) != "theirs" {
@@ -611,7 +611,7 @@ func TestOnlyANoteIsSavedTo(t *testing.T) {
 		}
 	}
 
-	if _, err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.Fingerprint{}); err != nil {
+	if _, err := writer.Write(t.Context(), "notes/keep.md", []byte("mine"), domain.FileStat{}); err != nil {
 		t.Errorf("a note is still writable: %v", err)
 	}
 }
@@ -632,7 +632,7 @@ func TestAWriteDoesNotFollowALinkOutOfTheVault(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.Fingerprint{}); !errors.Is(err, vaultconfig.ErrOutside) {
+	if _, err := writer.Write(t.Context(), "linked/secret.md", []byte("mine"), domain.FileStat{}); !errors.Is(err, vaultconfig.ErrOutside) {
 		t.Errorf("want ErrOutside, got %v", err)
 	}
 	if retained, _ := os.ReadFile(filepath.Join(outside, "secret.md")); string(retained) != "not yours" {

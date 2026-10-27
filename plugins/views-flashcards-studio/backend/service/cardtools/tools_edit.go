@@ -22,11 +22,11 @@ func checkCardSize(vs []FieldValue) error {
 	return nil
 }
 
-// writeDeck presents the fingerprint the caller read to one edit of the deck at path.
+// writeDeck presents the file stat the caller read to one edit of the deck at path.
 func (t *Tools) writeDeck(
-	ctx context.Context, path, fingerprint string, edit func(v domain.Vault, version deckedit.DeckVersion) (deckedit.EditResult, error),
+	ctx context.Context, path, stat string, edit func(v domain.Vault, version deckedit.DeckVersion) (deckedit.EditResult, error),
 ) (WriteOutcome, error) {
-	read, err := parseFingerprint(fingerprint)
+	read, err := parseFingerprint(stat)
 	if err != nil {
 		return WriteOutcome{}, err
 	}
@@ -34,7 +34,7 @@ func (t *Tools) writeDeck(
 	if err != nil {
 		return WriteOutcome{}, err
 	}
-	edited, err := edit(v, deckedit.DeckVersion{Path: path, Fingerprint: read})
+	edited, err := edit(v, deckedit.DeckVersion{Path: path, FileStat: read})
 	if err != nil {
 		return WriteOutcome{}, err
 	}

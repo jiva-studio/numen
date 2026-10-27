@@ -16,24 +16,24 @@ type Queries struct{ db *sql.DB }
 
 func NewQueries(db *sql.DB) *Queries { return &Queries{db: db} }
 
-func (q *Queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return map[string]domain.Fingerprint{}, nil
+		return map[string]domain.FileStat{}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	out := map[string]domain.Fingerprint{}
+	out := map[string]domain.FileStat{}
 	for rows.Next() {
-		var ref domain.Fingerprint
+		var ref domain.FileStat
 		var mtime int64
 		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err

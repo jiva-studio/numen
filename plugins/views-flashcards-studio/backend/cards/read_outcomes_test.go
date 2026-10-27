@@ -41,8 +41,8 @@ func TestADeckMissingBetweenBeingLookedAtAndReadReturnsWhatItWas(t *testing.T) {
 	if got.Outcome != note.Missing {
 		t.Errorf("outcome = %q, want missing", got.Outcome)
 	}
-	if got.Fingerprint.Path != "decks/Birds.md" || got.Fingerprint.Size == 0 {
-		t.Errorf("fingerprint = %+v, want the file as it was looked at", got.Fingerprint)
+	if got.FileStat.Path != "decks/Birds.md" || got.FileStat.Size == 0 {
+		t.Errorf("fingerprint = %+v, want the file as it was looked at", got.FileStat)
 	}
 }
 

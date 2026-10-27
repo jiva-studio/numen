@@ -4,8 +4,8 @@ import { computed, watch } from 'vue'
 
 import { openNotes, type Notes } from './notes'
 
-/** A file's fingerprint, which follows what the file holds. */
-const getFingerprint = (body: string): string => `at:${body}`
+/** A file's file stat, which follows what the file holds. */
+const statFile = (body: string): string => `at:${body}`
 
 /** A core that answers reads and writes from what a test puts in it. */
 function fake(overrides: Partial<Notes> = {}) {
@@ -14,7 +14,7 @@ function fake(overrides: Partial<Notes> = {}) {
   const core: Notes = {
     read: async (path) =>
       files.has(path)
-        ? asValue({ body: files.get(path) ?? '', at: getFingerprint(files.get(path) ?? '') })
+        ? asValue({ body: files.get(path) ?? '', at: statFile(files.get(path) ?? '') })
         : asFailure('missing'),
     write: async (path, body, seen) => {
       wrote.push({ path, body })
@@ -25,12 +25,12 @@ function fake(overrides: Partial<Notes> = {}) {
         seen &&
         existing !== undefined &&
         existing !== seen.prose &&
-        getFingerprint(existing) !== seen.fingerprint
+        statFile(existing) !== seen.stat
       ) {
         return asFailure('changed' as const)
       }
       files.set(path, body)
-      return asValue({ body: '', at: getFingerprint(body) })
+      return asValue({ body: '', at: statFile(body) })
     },
     ...overrides,
   }
@@ -807,7 +807,7 @@ describe('closing a note', () => {
       read: async () =>
         asValue({
           body: 'What I made of it.',
-          at: getFingerprint('What I made of it.'),
+          at: statFile('What I made of it.'),
         }),
     })
     const notes = openNotes(core, { limits: quick })
@@ -833,7 +833,7 @@ describe('closing a note', () => {
         calls += 1
         if (calls === 1) await gate
         base.files.set(path, body)
-        return asValue({ body: '', at: getFingerprint(body) })
+        return asValue({ body: '', at: statFile(body) })
       },
     }
     const notes = openNotes(core, { limits: quick })
@@ -881,7 +881,7 @@ describe('a note that could not be written, closed, and opened again', () => {
       write: async (path, body) => {
         if (down.on) throw new Error('no transport')
         base.files.set(path, body)
-        return asValue({ body: '', at: getFingerprint(body) })
+        return asValue({ body: '', at: statFile(body) })
       },
     }
     return { core, down }

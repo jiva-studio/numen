@@ -33,7 +33,7 @@ type scanVault struct {
 	openErr error
 	walkErr error
 
-	indexedVal     map[string]domain.Fingerprint
+	indexedVal     map[string]domain.FileStat
 	knownErr       error
 	registerErr    error
 	saveErr        error
@@ -51,12 +51,12 @@ type scanVault struct {
 
 func (m *scanVault) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (m *scanVault) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (m *scanVault) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	if m.walkErr != nil {
 		return m.walkErr
 	}
 	for path, f := range m.files {
-		if err := fn(domain.Fingerprint{Path: path, Kind: f.kind, Size: f.size, ModTime: f.modTime}); err != nil {
+		if err := fn(domain.FileStat{Path: path, Kind: f.kind, Size: f.size, ModTime: f.modTime}); err != nil {
 			return err
 		}
 	}
@@ -73,8 +73,8 @@ func (m *scanVault) Read(_ context.Context, path string) ([]byte, error) {
 
 func (m *scanVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
-func (m *scanVault) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
-	return domain.Fingerprint{}, nil
+func (m *scanVault) StatFile(context.Context, string) (domain.FileStat, error) {
+	return domain.FileStat{}, nil
 }
 
 func (m *scanVault) Register(context.Context, domain.VaultID) error {
@@ -84,7 +84,7 @@ func (m *scanVault) Register(context.Context, domain.VaultID) error {
 
 func (m *scanVault) Unregister(context.Context, domain.VaultID) error { return nil }
 
-func (m *scanVault) GetFingerprints(context.Context, domain.VaultID) (map[string]domain.Fingerprint, error) {
+func (m *scanVault) GetFileStats(context.Context, domain.VaultID) (map[string]domain.FileStat, error) {
 	return m.indexedVal, m.knownErr
 }
 
@@ -95,7 +95,7 @@ func (m *scanVault) Save(_ context.Context, _ domain.VaultID, notes []domain.Not
 	}
 	paths := make([]string, len(notes))
 	for i, n := range notes {
-		paths[i] = n.Note.Fingerprint.Path
+		paths[i] = n.Note.FileStat.Path
 	}
 	m.saved = append(m.saved, paths)
 	return nil
@@ -260,7 +260,7 @@ func TestARebuildReadsWhatTheIndexRemembers(t *testing.T) {
 	t.Parallel()
 	m := &scanVault{
 		files:      map[string]scanFile{"a.md": noteFile(epoch)},
-		indexedVal: map[string]domain.Fingerprint{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
+		indexedVal: map[string]domain.FileStat{"a.md": {Path: "a.md", Size: 10, ModTime: epoch}},
 	}
 
 	scan := m.scan()
@@ -298,7 +298,7 @@ func TestTheIndexIsMeasuredAfterTheSmallestChange(t *testing.T) {
 		t.Parallel()
 		m := &scanVault{
 			files:      map[string]scanFile{},
-			indexedVal: map[string]domain.Fingerprint{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
+			indexedVal: map[string]domain.FileStat{"gone.md": {Path: "gone.md", Size: 10, ModTime: epoch}},
 		}
 		res, err := m.scan().Execute(t.Context(), domain.Vault{ID: "v", Name: "v"})
 		if err != nil {

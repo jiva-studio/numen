@@ -18,9 +18,9 @@ export const formatFingerprint = (at?: {
 }): string | undefined => at && `${at.size} ${at.mtime} ${at.path}`
 
 /** The two numbers first: a path holds spaces, and everything after them is it. */
-export const parseFingerprint = (fingerprint: string) => {
+export const parseFingerprint = (stat: string) => {
   // Stryker disable next-line StringLiteral: BigInt evaluates empty string and '0' both to 0n.
-  const [size = '0', mtime = '0', ...rest] = fingerprint.split(' ')
+  const [size = '0', mtime = '0', ...rest] = stat.split(' ')
   return { path: rest.join(' '), size: BigInt(size), mtime: BigInt(mtime) }
 }
 
@@ -66,8 +66,8 @@ export const getAssetUrl = (path: string): string => `/assets/${encodeURICompone
  * which file it is.
  */
 export const getBytesQuery = (file: string): string => {
-  const fingerprint = parseFingerprint(file)
-  return `size=${fingerprint.size}&mtime=${fingerprint.mtime}`
+  const stat = parseFingerprint(file)
+  return `size=${stat.size}&mtime=${stat.mtime}`
 }
 
 /** How often a document that is busy is waited out before it errors. */

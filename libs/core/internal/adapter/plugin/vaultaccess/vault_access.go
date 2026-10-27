@@ -121,36 +121,36 @@ func (a Vault) openWriter() (vaultport.VaultWriter, error) {
 	return a.Writers.Open(v)
 }
 
-func (a Vault) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (a Vault) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	reader, err := a.openReader()
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
-	return reader.GetFingerprint(ctx, path)
+	return reader.StatFile(ctx, path)
 }
 
-func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error) {
+func (a Vault) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
 	reader, err := a.openReader()
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
-	pos, err := reader.GetFingerprint(ctx, path)
+	pos, err := reader.StatFile(ctx, path)
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	content, err := reader.Read(ctx, path)
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	return content, pos, nil
 }
 
 func (a Vault) Write(
-	ctx context.Context, path string, content []byte, baseline domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	ctx context.Context, path string, content []byte, baseline domain.FileStat,
+) (domain.FileStat, error) {
 	writer, err := a.openWriter()
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	pos, err := writer.Write(ctx, path, content, baseline)
 	if err == nil {

@@ -620,9 +620,9 @@ func (o staleWriters) Open(v domain.Vault) (vaultport.VaultWriter, error) {
 type staleWriter struct{ vaultport.VaultWriter }
 
 func (staleWriter) Write(
-	context.Context, string, []byte, domain.Fingerprint,
-) (domain.Fingerprint, error) {
-	return domain.Fingerprint{}, vaultport.ErrStale
+	context.Context, string, []byte, domain.FileStat,
+) (domain.FileStat, error) {
+	return domain.FileStat{}, vaultport.ErrStale
 }
 
 // TestRenamingANoteWrittenElsewhereIsAQuestion. A note holding prose nobody

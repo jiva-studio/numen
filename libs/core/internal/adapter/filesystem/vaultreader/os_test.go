@@ -49,7 +49,7 @@ func BenchmarkWalk(b *testing.B) {
 	b.ResetTimer()
 	for b.Loop() {
 		var count int
-		err := reader.WalkFiles(ctx, func(_ domain.Fingerprint) error {
+		err := reader.WalkFiles(ctx, func(_ domain.FileStat) error {
 			count++
 			return nil
 		})

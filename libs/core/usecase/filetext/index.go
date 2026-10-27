@@ -134,13 +134,13 @@ func (u Index) discover(
 	return u.removeGone(ctx, v, on, recognized, found, res)
 }
 
-// readKnown reads the fingerprints of the files the index holds, by path.
-func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.Fingerprint, error) {
-	fingerprints, err := u.queries.GetFingerprints(ctx, v.ID, domain.KindFile)
+// readKnown reads the file stats of the files the index holds, by path.
+func (u Index) readKnown(ctx context.Context, v domain.Vault) (map[string]domain.FileStat, error) {
+	stats, err := u.queries.GetFileStats(ctx, v.ID, domain.KindFile)
 	if err != nil {
 		return nil, fmt.Errorf("read index: %w", err)
 	}
-	return fingerprints, nil
+	return stats, nil
 }
 
 // walkAndRecord walks the vault, records each file with text the index does not
@@ -151,16 +151,16 @@ func (u Index) walkAndRecord(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	fingerprints map[string]domain.Fingerprint,
+	stats map[string]domain.FileStat,
 	res *IndexResult,
 ) (map[string]bool, error) {
 	found := make(map[string]bool)
-	err := on.files.WalkFiles(ctx, func(ref domain.Fingerprint) error {
+	err := on.files.WalkFiles(ctx, func(ref domain.FileStat) error {
 		if ref.Kind != domain.KindFile {
 			return nil
 		}
 		found[ref.Path] = true
-		previous, isKnown := fingerprints[ref.Path]
+		previous, isKnown := stats[ref.Path]
 		if !isKnown {
 			hasText, err := on.texts.IsTextSource(ctx, ref.Path)
 			if err != nil {
@@ -175,7 +175,7 @@ func (u Index) walkAndRecord(
 			res.Unchanged++
 			return nil
 		}
-		if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
+		if err := u.sources.SaveSource(ctx, v.ID, domain.Source{FileStat: ref}); err != nil {
 			return fmt.Errorf("record %s: %w", ref.Path, err)
 		}
 		res.Recorded++
@@ -192,12 +192,12 @@ func (u Index) removeGone(
 	ctx context.Context,
 	v domain.Vault,
 	on openVault,
-	fingerprints map[string]domain.Fingerprint,
+	stats map[string]domain.FileStat,
 	found map[string]bool,
 	res *IndexResult,
 ) error {
 	var removed []string
-	for path := range fingerprints {
+	for path := range stats {
 		if !found[path] {
 			removed = append(removed, path)
 		}
@@ -205,7 +205,7 @@ func (u Index) removeGone(
 	if len(removed) == 0 {
 		return nil
 	}
-	moved, err := u.moveRenamed(ctx, v, on, removed, getAdded(fingerprints, found))
+	moved, err := u.moveRenamed(ctx, v, on, removed, getAdded(stats, found))
 	if err != nil {
 		return err
 	}
@@ -241,10 +241,10 @@ func (u Index) moveRenamed(ctx context.Context, v domain.Vault, on openVault, re
 
 // getAdded is the paths the walk found that the index did not hold, with text
 // or without: a renamed file whose text plugin is off still holds its versions.
-func getAdded(fingerprints map[string]domain.Fingerprint, found map[string]bool) []string {
+func getAdded(stats map[string]domain.FileStat, found map[string]bool) []string {
 	var added []string
 	for path := range found {
-		if _, isKnown := fingerprints[path]; !isKnown {
+		if _, isKnown := stats[path]; !isKnown {
 			added = append(added, path)
 		}
 	}
@@ -286,14 +286,14 @@ func (u Index) recordIfOutdated(
 	case err != nil && !errors.Is(err, textport.ErrNoText):
 		return fmt.Errorf("find the live version of %s: %w", source.Path, err)
 	}
-	ref, err := on.files.GetFingerprint(ctx, source.Path)
+	ref, err := on.files.StatFile(ctx, source.Path)
 	if vaultport.IsNoNote(err) {
 		return nil
 	}
 	if err != nil {
 		return fmt.Errorf("stat %s: %w", source.Path, err)
 	}
-	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{Fingerprint: ref}); err != nil {
+	if err := u.sources.SaveSource(ctx, v.ID, domain.Source{FileStat: ref}); err != nil {
 		return fmt.Errorf("record %s: %w", source.Path, err)
 	}
 	res.Outdated++
@@ -386,7 +386,7 @@ func (u Index) IndexOne(ctx context.Context, v domain.Vault, path string) (Index
 // chunks, stops it.
 //
 // The file is stated before it is read, so a file that changes while it is being
-// read keeps the older fingerprint and is asked for again.
+// read keeps the older file stat and is asked for again.
 func (u Index) source(
 	ctx context.Context,
 	v domain.Vault,
@@ -398,7 +398,7 @@ func (u Index) source(
 	res.CurrentSource = path
 	u.progress(*res)
 
-	ref, err := on.files.GetFingerprint(ctx, path)
+	ref, err := on.files.StatFile(ctx, path)
 	if vaultport.IsNoNote(err) {
 		res.Vanished++
 		return nil
@@ -427,16 +427,16 @@ func (u Index) source(
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		return u.saveWithoutText(ctx, v, on, domain.Source{Fingerprint: ref, Hash: hash}, err, res)
+		return u.saveWithoutText(ctx, v, on, domain.Source{FileStat: ref, Hash: hash}, err, res)
 	}
 
 	chunks := chunksOf(doc, sizes, u.Legibility)
 	extraction := domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: ref,
-			Hash:        hash,
-			Recipe:      recipe(versionReader, sizes),
-			Producer:    string(doc.Version.GetID()),
+			FileStat: ref,
+			Hash:     hash,
+			Recipe:   recipe(versionReader, sizes),
+			Producer: string(doc.Version.GetID()),
 		},
 		Chunks: chunks,
 	}
@@ -464,11 +464,11 @@ func (u Index) saveWithoutText(
 		u.reportError(readErr)
 	}
 	if err := u.sources.SaveExtraction(ctx, v.ID, domain.SourceChunks{Source: source}); err != nil {
-		return fmt.Errorf("write the chunks of %s: %w", source.Fingerprint.Path, err)
+		return fmt.Errorf("write the chunks of %s: %w", source.FileStat.Path, err)
 	}
 	if errors.Is(readErr, textport.ErrNoText) {
-		if err := on.texts.RequestText(ctx, source.Fingerprint.Path, source.Hash); err != nil {
-			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.Fingerprint.Path, err))
+		if err := on.texts.RequestText(ctx, source.FileStat.Path, source.Hash); err != nil {
+			u.reportError(fmt.Errorf("ask for the text of %s: %w", source.FileStat.Path, err))
 		}
 	}
 	return nil

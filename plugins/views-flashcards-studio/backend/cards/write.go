@@ -53,8 +53,8 @@ func (u Write) WithIndex(index note.Levels) Write {
 // which is what the caller presents at its next write, and the card id every card
 // that carried none was given.
 type WriteResult struct {
-	Fingerprint domain.Fingerprint
-	Given       []format.CardID
+	FileStat domain.FileStat
+	Given    []format.CardID
 }
 
 // Deck puts body in the deck at path.
@@ -63,7 +63,7 @@ type WriteResult struct {
 // one, and every stale heading is put back in step. Every caller therefore gets
 // the same file, and none of them has to know the rules.
 func (u Write) Deck(
-	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
+	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
 ) (WriteResult, error) {
 	if err := note.CheckSize(path, len(body), MaxBytes); err != nil {
 		return WriteResult{}, err
@@ -72,12 +72,12 @@ func (u Write) Deck(
 	if err != nil {
 		return WriteResult{}, err
 	}
-	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, fingerprint)
+	pos, err := u.createNoteWriter().Execute(ctx, v, path, whole, stat)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return WriteResult{}, err
 	}
 	// levelling that failed, and the caller can tell the two apart.
-	return WriteResult{Fingerprint: pos, Given: provided}, err
+	return WriteResult{FileStat: pos, Given: provided}, err
 }
 
 // createWholeBody returns the body with every card made whole, and the card ids that
@@ -105,17 +105,17 @@ func (u Write) createWholeBody(
 // from before the read until after the file is replaced.
 func (u Write) CardModel(
 	ctx context.Context, v domain.Vault, path, body string, fields []string,
-	fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	stat domain.FileStat,
+) (domain.FileStat, error) {
 	if err := note.CheckSize(path, len(body), note.MaxBytes); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if markdown.IsFrontmatterStart(body) {
-		return domain.Fingerprint{}, note.ErrBodyUnwritable
+		return domain.FileStat{}, note.ErrBodyUnwritable
 	}
 
 	e := note.NewEdit(u.readers, u.writers, u.index, u.now)
-	e.Fingerprint, e.Bound = fingerprint, note.MaxBytes
+	e.FileStat, e.Bound = stat, note.MaxBytes
 	return e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		if err := doc.SetBody(body); err != nil {
 			return err

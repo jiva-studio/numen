@@ -238,7 +238,7 @@ message ReadNoteResponse {
   // Set when the note was not read, and why.
   optional ErrorCode error = 2;
 
-  optional Fingerprint at = 3;
+  optional FileStat at = 3;
 }
 
 // ReadBaseline is what a caller last saw of a note: the prose a read gave it, and
@@ -250,7 +250,7 @@ message ReadBaseline {
   string prose = 1;
 
   // The file the prose came out of.
-  Fingerprint at = 2;
+  FileStat at = 2;
 }
 
 message WriteNoteRequest {
@@ -270,7 +270,7 @@ message WriteNoteResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional Fingerprint at = 2;
+  optional FileStat at = 2;
 
   // Set when the prose is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this note as it

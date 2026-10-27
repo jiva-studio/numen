@@ -173,7 +173,7 @@ func readPresetConfig(t *testing.T, api *API, v domain.Vault, path string) revie
 // does when a person lets go of the control.
 func writePreset(t *testing.T, api *API, v domain.Vault, path string, p review.Preset) {
 	t.Helper()
-	if _, err := api.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.Fingerprint{}); err != nil {
+	if _, err := api.scenarios().flash.Presets.Save(t.Context(), v, path, p, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 }

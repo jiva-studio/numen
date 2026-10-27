@@ -40,7 +40,7 @@ function createDocumentReaderNavigation(
 
 export function useDocumentReader(documents: Documents, path: string) {
   const pages = shallowRef<readonly Page[]>([])
-  const fingerprint = ref<string>()
+  const stat = ref<string>()
   const error = ref('')
   const isLoading = ref(true)
   let open = true
@@ -49,7 +49,7 @@ export function useDocumentReader(documents: Documents, path: string) {
   const viewport = useDocumentViewport(documents, path, {
     pages,
     pageNumber: navigation.pageNumber,
-    fingerprint,
+    stat,
     isOpen: () => open,
   })
 
@@ -58,7 +58,7 @@ export function useDocumentReader(documents: Documents, path: string) {
       const layout = await documents.getDocumentLayout(path)
       if (!open) return
       pages.value = layout.pages
-      fingerprint.value = layout.fingerprint
+      stat.value = layout.stat
     } catch (caughtError) {
       if (!open) return
       error.value = formatErrorMessage(caughtError)

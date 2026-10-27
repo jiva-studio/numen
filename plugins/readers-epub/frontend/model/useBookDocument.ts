@@ -10,13 +10,13 @@ import type { Books, SpineDocument } from '../types'
 export type MessageWriter = (text: string, tone?: 'info' | 'error') => void
 
 export interface BookDocumentOptions {
-  fingerprint: Ref<string>
+  stat: Ref<string>
   writeMessage: MessageWriter
   isOpen: () => boolean
 }
 
 export function useBookDocument(books: Books, path: string, options: BookDocumentOptions) {
-  const { fingerprint, writeMessage, isOpen } = options
+  const { stat, writeMessage, isOpen } = options
   const markup = ref('')
   const drawnDocument = shallowRef<SpineDocument | undefined>(undefined)
 
@@ -31,11 +31,11 @@ export function useBookDocument(books: Books, path: string, options: BookDocumen
     // Stryker disable next-line UpdateOperator: only the inequality of the tickets matters; the direction of the count does not
     const request = ++wanted
     try {
-      const markupContent = await books.readMarkup(path, document.path, fingerprint.value)
+      const markupContent = await books.readMarkup(path, document.path, stat.value)
       if (!isOpen() || request !== wanted) return
       drawnDocument.value = document
       markup.value = resolveImageUrls(markupContent, (name) =>
-        books.getEntryUrl(path, name, fingerprint.value),
+        books.getEntryUrl(path, name, stat.value),
       )
     } catch (error) {
       if (!isOpen() || request !== wanted) return

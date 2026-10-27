@@ -61,7 +61,7 @@ func (s *VaultReader) Root() string { return s.root }
 // What the vault's ignore rules name is skipped, and so is the service folder.
 // The service folder is named separately because its name is a setting, and a
 // name without a leading dot must still be skipped.
-func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	return filepath.WalkDir(s.root, func(p string, d fs.DirEntry, err error) error {
 		if errors.Is(err, fs.ErrNotExist) {
 			// The vault is edited while it is walked. A file or folder that has
@@ -81,18 +81,18 @@ func (s *VaultReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint)
 			}
 			return nil
 		}
-		fingerprint, err := s.getWalkedFingerprint(p, d)
-		if err != nil || fingerprint == nil {
+		stat, err := s.getWalkedFileStat(p, d)
+		if err != nil || stat == nil {
 			return err
 		}
-		return fn(*fingerprint)
+		return fn(*stat)
 	})
 }
 
-// getWalkedFingerprint is what a walk reports of a file, or nil where it reports
+// getWalkedFileStat is what a walk reports of a file, or nil where it reports
 // nothing. A source is a regular file: a device, a socket or a FIFO carries
 // no bytes to read whatever it is named.
-func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (*domain.Fingerprint, error) {
+func (s *VaultReader) getWalkedFileStat(p string, d fs.DirEntry) (*domain.FileStat, error) {
 	kind := s.opts.Kind(d.Name())
 	rel := s.getRelPath(p)
 	if s.ignored.MatchesPath(rel) {
@@ -108,7 +108,7 @@ func (s *VaultReader) getWalkedFingerprint(p string, d fs.DirEntry) (*domain.Fin
 	if !found.Mode().IsRegular() {
 		return nil, nil
 	}
-	return &domain.Fingerprint{
+	return &domain.FileStat{
 		Path:    rel,
 		Kind:    kind,
 		Size:    found.Size(),
@@ -323,30 +323,30 @@ func checkReadable(path string, info fs.FileInfo) error {
 	return fmt.Errorf("%s: %w", path, vaultconfig.ErrNotANote)
 }
 
-// GetFingerprint answers the same question about one path that Walk answers about all of
+// StatFile answers the same question about one path that Walk answers about all of
 // them, and by the same rules: a path the vault ignores holds no note. Where
 // something is there all the same, the answer names it as a file the vault
 // leaves alone.
-func (s *VaultReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (s *VaultReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	if ctx.Err() != nil {
-		return domain.Fingerprint{}, ctx.Err()
+		return domain.FileStat{}, ctx.Err()
 	}
 	kind, targetVal := s.getKind(path)
 	if !targetVal {
-		return domain.Fingerprint{}, s.getNotANoteError(path)
+		return domain.FileStat{}, s.getNotANoteError(path)
 	}
 	target, err := vaultconfig.GetContainedPath(s.root, path, s.opts.GetServiceDir())
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	info, err := os.Stat(target)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if !info.Mode().IsRegular() {
-		return domain.Fingerprint{}, s.getNotANoteError(path)
+		return domain.FileStat{}, s.getNotANoteError(path)
 	}
-	return domain.Fingerprint{
+	return domain.FileStat{
 		Path:    path,
 		Kind:    kind,
 		Size:    info.Size(),

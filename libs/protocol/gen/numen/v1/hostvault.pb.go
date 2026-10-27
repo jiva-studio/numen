@@ -32,7 +32,7 @@ const (
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_MISSING HostVaultErrorCode = 2
 	// The path is outside the vault or names no file.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OUTSIDE HostVaultErrorCode = 3
-	// The file changed since the fingerprint given.
+	// The file changed since the file stat given.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE HostVaultErrorCode = 4
 	// A file is already there.
 	HostVaultErrorCode_HOST_VAULT_ERROR_CODE_OCCUPIED HostVaultErrorCode = 5
@@ -148,9 +148,9 @@ func (HostIndexState) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{1}
 }
 
-// HostFingerprint is what a file was at a moment: at its current position, how large it
+// HostFileStat is what a file was at a moment: at its current position, how large it
 // was and when it last changed.
-type HostFingerprint struct {
+type HostFileStat struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
@@ -162,20 +162,20 @@ type HostFingerprint struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *HostFingerprint) Reset() {
-	*x = HostFingerprint{}
+func (x *HostFileStat) Reset() {
+	*x = HostFileStat{}
 	mi := &file_numen_v1_hostvault_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *HostFingerprint) String() string {
+func (x *HostFileStat) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*HostFingerprint) ProtoMessage() {}
+func (*HostFileStat) ProtoMessage() {}
 
-func (x *HostFingerprint) ProtoReflect() protoreflect.Message {
+func (x *HostFileStat) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostvault_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -187,33 +187,33 @@ func (x *HostFingerprint) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use HostFingerprint.ProtoReflect.Descriptor instead.
-func (*HostFingerprint) Descriptor() ([]byte, []int) {
+// Deprecated: Use HostFileStat.ProtoReflect.Descriptor instead.
+func (*HostFileStat) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HostFingerprint) GetPath() string {
+func (x *HostFileStat) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *HostFingerprint) GetSize() int64 {
+func (x *HostFileStat) GetSize() int64 {
 	if x != nil {
 		return x.Size
 	}
 	return 0
 }
 
-func (x *HostFingerprint) GetModTime() int64 {
+func (x *HostFileStat) GetModTime() int64 {
 	if x != nil {
 		return x.ModTime
 	}
 	return 0
 }
 
-func (x *HostFingerprint) GetIsNote() bool {
+func (x *HostFileStat) GetIsNote() bool {
 	if x != nil {
 		return x.IsNote
 	}
@@ -641,27 +641,27 @@ func (x *GetHostVaultResponse) GetName() string {
 	return ""
 }
 
-type GetFileFingerprintRequest struct {
+type StatFileRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Path          string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetFileFingerprintRequest) Reset() {
-	*x = GetFileFingerprintRequest{}
+func (x *StatFileRequest) Reset() {
+	*x = StatFileRequest{}
 	mi := &file_numen_v1_hostvault_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetFileFingerprintRequest) String() string {
+func (x *StatFileRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetFileFingerprintRequest) ProtoMessage() {}
+func (*StatFileRequest) ProtoMessage() {}
 
-func (x *GetFileFingerprintRequest) ProtoReflect() protoreflect.Message {
+func (x *StatFileRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostvault_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -673,40 +673,40 @@ func (x *GetFileFingerprintRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetFileFingerprintRequest.ProtoReflect.Descriptor instead.
-func (*GetFileFingerprintRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use StatFileRequest.ProtoReflect.Descriptor instead.
+func (*StatFileRequest) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{10}
 }
 
-func (x *GetFileFingerprintRequest) GetPath() string {
+func (x *StatFileRequest) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-type GetFileFingerprintResponse struct {
+type StatFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
-	Fingerprint   *HostFingerprint       `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Stat          *HostFileStat          `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *GetFileFingerprintResponse) Reset() {
-	*x = GetFileFingerprintResponse{}
+func (x *StatFileResponse) Reset() {
+	*x = StatFileResponse{}
 	mi := &file_numen_v1_hostvault_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *GetFileFingerprintResponse) String() string {
+func (x *StatFileResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*GetFileFingerprintResponse) ProtoMessage() {}
+func (*StatFileResponse) ProtoMessage() {}
 
-func (x *GetFileFingerprintResponse) ProtoReflect() protoreflect.Message {
+func (x *StatFileResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_hostvault_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -718,21 +718,21 @@ func (x *GetFileFingerprintResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use GetFileFingerprintResponse.ProtoReflect.Descriptor instead.
-func (*GetFileFingerprintResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use StatFileResponse.ProtoReflect.Descriptor instead.
+func (*StatFileResponse) Descriptor() ([]byte, []int) {
 	return file_numen_v1_hostvault_proto_rawDescGZIP(), []int{11}
 }
 
-func (x *GetFileFingerprintResponse) GetError() HostVaultErrorCode {
+func (x *StatFileResponse) GetError() HostVaultErrorCode {
 	if x != nil {
 		return x.Error
 	}
 	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *GetFileFingerprintResponse) GetFingerprint() *HostFingerprint {
+func (x *StatFileResponse) GetStat() *HostFileStat {
 	if x != nil {
-		return x.Fingerprint
+		return x.Stat
 	}
 	return nil
 }
@@ -785,7 +785,7 @@ type ReadFileResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Error         HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	Content       []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
-	Fingerprint   *HostFingerprint       `protobuf:"bytes,3,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Stat          *HostFileStat          `protobuf:"bytes,3,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -834,9 +834,9 @@ func (x *ReadFileResponse) GetContent() []byte {
 	return nil
 }
 
-func (x *ReadFileResponse) GetFingerprint() *HostFingerprint {
+func (x *ReadFileResponse) GetStat() *HostFileStat {
 	if x != nil {
-		return x.Fingerprint
+		return x.Stat
 	}
 	return nil
 }
@@ -846,7 +846,7 @@ type WriteFileRequest struct {
 	Path    string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Content []byte                 `protobuf:"bytes,2,opt,name=content,proto3" json:"content,omitempty"`
 	// What the file was when the caller read it.
-	Baseline      *HostFingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Baseline      *HostFileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -895,7 +895,7 @@ func (x *WriteFileRequest) GetContent() []byte {
 	return nil
 }
 
-func (x *WriteFileRequest) GetBaseline() *HostFingerprint {
+func (x *WriteFileRequest) GetBaseline() *HostFileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -906,7 +906,7 @@ type WriteFileResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Error HostVaultErrorCode     `protobuf:"varint,1,opt,name=error,proto3,enum=numen.v1.HostVaultErrorCode" json:"error,omitempty"`
 	// What the file is now.
-	Fingerprint   *HostFingerprint `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Stat          *HostFileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -948,9 +948,9 @@ func (x *WriteFileResponse) GetError() HostVaultErrorCode {
 	return HostVaultErrorCode_HOST_VAULT_ERROR_CODE_UNSPECIFIED
 }
 
-func (x *WriteFileResponse) GetFingerprint() *HostFingerprint {
+func (x *WriteFileResponse) GetStat() *HostFileStat {
 	if x != nil {
-		return x.Fingerprint
+		return x.Stat
 	}
 	return nil
 }
@@ -2592,8 +2592,8 @@ var File_numen_v1_hostvault_proto protoreflect.FileDescriptor
 
 const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\n" +
-	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\"s\n" +
-	"\x0fHostFingerprint\x12\x12\n" +
+	"\x18numen/v1/hostvault.proto\x12\bnumen.v1\"p\n" +
+	"\fHostFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x19\n" +
 	"\bmod_time\x18\x03 \x01(\x03R\amodTime\x12\x17\n" +
@@ -2618,25 +2618,25 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x12\n" +
 	"\x04path\x18\x02 \x01(\tR\x04path\x12\x0e\n" +
 	"\x02id\x18\x03 \x01(\tR\x02id\x12\x12\n" +
-	"\x04name\x18\x04 \x01(\tR\x04name\"/\n" +
-	"\x19GetFileFingerprintRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x8d\x01\n" +
-	"\x1aGetFileFingerprintResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12;\n" +
-	"\vfingerprint\x18\x02 \x01(\v2\x19.numen.v1.HostFingerprintR\vfingerprint\"%\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\"%\n" +
+	"\x0fStatFileRequest\x12\x12\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"r\n" +
+	"\x10StatFileResponse\x122\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12*\n" +
+	"\x04stat\x18\x02 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\"%\n" +
 	"\x0fReadFileRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\x9d\x01\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\x8c\x01\n" +
 	"\x10ReadFileResponse\x122\n" +
 	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\x12;\n" +
-	"\vfingerprint\x18\x03 \x01(\v2\x19.numen.v1.HostFingerprintR\vfingerprint\"w\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\x12*\n" +
+	"\x04stat\x18\x03 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\"t\n" +
 	"\x10WriteFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
-	"\acontent\x18\x02 \x01(\fR\acontent\x125\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x19.numen.v1.HostFingerprintR\bbaseline\"\x84\x01\n" +
+	"\acontent\x18\x02 \x01(\fR\acontent\x122\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x16.numen.v1.HostFileStatR\bbaseline\"s\n" +
 	"\x11WriteFileResponse\x122\n" +
-	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12;\n" +
-	"\vfingerprint\x18\x02 \x01(\v2\x19.numen.v1.HostFingerprintR\vfingerprint\"A\n" +
+	"\x05error\x18\x01 \x01(\x0e2\x1c.numen.v1.HostVaultErrorCodeR\x05error\x12*\n" +
+	"\x04stat\x18\x02 \x01(\v2\x16.numen.v1.HostFileStatR\x04stat\"A\n" +
 	"\x11CreateFileRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x18\n" +
 	"\acontent\x18\x02 \x01(\fR\acontent\"H\n" +
@@ -2744,12 +2744,12 @@ const file_numen_v1_hostvault_proto_rawDesc = "" +
 	"\x1cHOST_INDEX_STATE_UNSPECIFIED\x10\x00\x12\x1c\n" +
 	"\x18HOST_INDEX_STATE_INDEXED\x10\x01\x12\x1d\n" +
 	"\x19HOST_INDEX_STATE_INDEXING\x10\x02\x12\x1b\n" +
-	"\x17HOST_INDEX_STATE_FAILED\x10\x032\xc5\r\n" +
+	"\x17HOST_INDEX_STATE_FAILED\x10\x032\xa7\r\n" +
 	"\x10HostVaultService\x12M\n" +
 	"\fGetHostVault\x12\x1d.numen.v1.GetHostVaultRequest\x1a\x1e.numen.v1.GetHostVaultResponse\x12S\n" +
 	"\x0eListHostVaults\x12\x1f.numen.v1.ListHostVaultsRequest\x1a .numen.v1.ListHostVaultsResponse\x12_\n" +
-	"\x12EnsureVaultIndexed\x12#.numen.v1.EnsureVaultIndexedRequest\x1a$.numen.v1.EnsureVaultIndexedResponse\x12_\n" +
-	"\x12GetFileFingerprint\x12#.numen.v1.GetFileFingerprintRequest\x1a$.numen.v1.GetFileFingerprintResponse\x12A\n" +
+	"\x12EnsureVaultIndexed\x12#.numen.v1.EnsureVaultIndexedRequest\x1a$.numen.v1.EnsureVaultIndexedResponse\x12A\n" +
+	"\bStatFile\x12\x19.numen.v1.StatFileRequest\x1a\x1a.numen.v1.StatFileResponse\x12A\n" +
 	"\bReadFile\x12\x19.numen.v1.ReadFileRequest\x1a\x1a.numen.v1.ReadFileResponse\x12D\n" +
 	"\tWriteFile\x12\x1a.numen.v1.WriteFileRequest\x1a\x1b.numen.v1.WriteFileResponse\x12G\n" +
 	"\n" +
@@ -2790,7 +2790,7 @@ var file_numen_v1_hostvault_proto_msgTypes = make([]protoimpl.MessageInfo, 51)
 var file_numen_v1_hostvault_proto_goTypes = []any{
 	(HostVaultErrorCode)(0),            // 0: numen.v1.HostVaultErrorCode
 	(HostIndexState)(0),                // 1: numen.v1.HostIndexState
-	(*HostFingerprint)(nil),            // 2: numen.v1.HostFingerprint
+	(*HostFileStat)(nil),               // 2: numen.v1.HostFileStat
 	(*ListHostVaultsRequest)(nil),      // 3: numen.v1.ListHostVaultsRequest
 	(*HostVaultInfo)(nil),              // 4: numen.v1.HostVaultInfo
 	(*ListHostVaultsResponse)(nil),     // 5: numen.v1.ListHostVaultsResponse
@@ -2800,8 +2800,8 @@ var file_numen_v1_hostvault_proto_goTypes = []any{
 	(*WatchMovesResponse)(nil),         // 9: numen.v1.WatchMovesResponse
 	(*GetHostVaultRequest)(nil),        // 10: numen.v1.GetHostVaultRequest
 	(*GetHostVaultResponse)(nil),       // 11: numen.v1.GetHostVaultResponse
-	(*GetFileFingerprintRequest)(nil),  // 12: numen.v1.GetFileFingerprintRequest
-	(*GetFileFingerprintResponse)(nil), // 13: numen.v1.GetFileFingerprintResponse
+	(*StatFileRequest)(nil),            // 12: numen.v1.StatFileRequest
+	(*StatFileResponse)(nil),           // 13: numen.v1.StatFileResponse
 	(*ReadFileRequest)(nil),            // 14: numen.v1.ReadFileRequest
 	(*ReadFileResponse)(nil),           // 15: numen.v1.ReadFileResponse
 	(*WriteFileRequest)(nil),           // 16: numen.v1.WriteFileRequest
@@ -2848,13 +2848,13 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	0,  // 2: numen.v1.EnsureVaultIndexedResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	1,  // 3: numen.v1.EnsureVaultIndexedResponse.state:type_name -> numen.v1.HostIndexState
 	0,  // 4: numen.v1.GetHostVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	0,  // 5: numen.v1.GetFileFingerprintResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	2,  // 6: numen.v1.GetFileFingerprintResponse.fingerprint:type_name -> numen.v1.HostFingerprint
+	0,  // 5: numen.v1.StatFileResponse.error:type_name -> numen.v1.HostVaultErrorCode
+	2,  // 6: numen.v1.StatFileResponse.stat:type_name -> numen.v1.HostFileStat
 	0,  // 7: numen.v1.ReadFileResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	2,  // 8: numen.v1.ReadFileResponse.fingerprint:type_name -> numen.v1.HostFingerprint
-	2,  // 9: numen.v1.WriteFileRequest.baseline:type_name -> numen.v1.HostFingerprint
+	2,  // 8: numen.v1.ReadFileResponse.stat:type_name -> numen.v1.HostFileStat
+	2,  // 9: numen.v1.WriteFileRequest.baseline:type_name -> numen.v1.HostFileStat
 	0,  // 10: numen.v1.WriteFileResponse.error:type_name -> numen.v1.HostVaultErrorCode
-	2,  // 11: numen.v1.WriteFileResponse.fingerprint:type_name -> numen.v1.HostFingerprint
+	2,  // 11: numen.v1.WriteFileResponse.stat:type_name -> numen.v1.HostFileStat
 	0,  // 12: numen.v1.CreateFileResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	0,  // 13: numen.v1.LockVaultResponse.error:type_name -> numen.v1.HostVaultErrorCode
 	0,  // 14: numen.v1.ScanFilesResponse.error:type_name -> numen.v1.HostVaultErrorCode
@@ -2878,7 +2878,7 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	10, // 32: numen.v1.HostVaultService.GetHostVault:input_type -> numen.v1.GetHostVaultRequest
 	3,  // 33: numen.v1.HostVaultService.ListHostVaults:input_type -> numen.v1.ListHostVaultsRequest
 	6,  // 34: numen.v1.HostVaultService.EnsureVaultIndexed:input_type -> numen.v1.EnsureVaultIndexedRequest
-	12, // 35: numen.v1.HostVaultService.GetFileFingerprint:input_type -> numen.v1.GetFileFingerprintRequest
+	12, // 35: numen.v1.HostVaultService.StatFile:input_type -> numen.v1.StatFileRequest
 	14, // 36: numen.v1.HostVaultService.ReadFile:input_type -> numen.v1.ReadFileRequest
 	16, // 37: numen.v1.HostVaultService.WriteFile:input_type -> numen.v1.WriteFileRequest
 	18, // 38: numen.v1.HostVaultService.CreateFile:input_type -> numen.v1.CreateFileRequest
@@ -2900,7 +2900,7 @@ var file_numen_v1_hostvault_proto_depIdxs = []int32{
 	11, // 54: numen.v1.HostVaultService.GetHostVault:output_type -> numen.v1.GetHostVaultResponse
 	5,  // 55: numen.v1.HostVaultService.ListHostVaults:output_type -> numen.v1.ListHostVaultsResponse
 	7,  // 56: numen.v1.HostVaultService.EnsureVaultIndexed:output_type -> numen.v1.EnsureVaultIndexedResponse
-	13, // 57: numen.v1.HostVaultService.GetFileFingerprint:output_type -> numen.v1.GetFileFingerprintResponse
+	13, // 57: numen.v1.HostVaultService.StatFile:output_type -> numen.v1.StatFileResponse
 	15, // 58: numen.v1.HostVaultService.ReadFile:output_type -> numen.v1.ReadFileResponse
 	17, // 59: numen.v1.HostVaultService.WriteFile:output_type -> numen.v1.WriteFileResponse
 	19, // 60: numen.v1.HostVaultService.CreateFile:output_type -> numen.v1.CreateFileResponse

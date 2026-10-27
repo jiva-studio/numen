@@ -28,12 +28,12 @@ func changeDeck(
 	if err := change(contents, file); err != nil {
 		return deckChange{}, err
 	}
-	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.Fingerprint)
+	wrote, err := write.Deck(ctx, v, pos.Path, file.Body(), pos.FileStat)
 	if err != nil && !errors.Is(err, note.ErrUnlevelled) {
 		return deckChange{}, err
 	}
 	return deckChange{
-		result:  EditResult{Fingerprint: wrote.Fingerprint, Cards: len(file.Deck(domain.Fingerprint{}).Cards)},
+		result:  EditResult{FileStat: wrote.FileStat, Cards: len(file.Deck(domain.FileStat{}).Cards)},
 		cardIDs: wrote.Given,
 	}, nil
 }

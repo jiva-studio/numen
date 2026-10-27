@@ -118,7 +118,7 @@ function createDeckNoteStore(
           sections: serializeBufferSectionsToVaultSections(deck),
           tail: deck.tail,
         },
-        observed?.fingerprint ?? null,
+        observed?.stat ?? null,
       )
       vaultAnswers.recordWrite(path, {
         error: answer.ok ? null : getFailureCode(answer.error.code),

@@ -447,7 +447,7 @@ func TestADeckIsInsertOnAPresetAndTakenOffAgain(t *testing.T) {
 		t.Errorf("the settings are %+v", read.Msg.GetPreset().GetSettings())
 	}
 
-	// The fingerprint the write answered with is what the next write presents.
+	// The file stat the write answered with is what the next write presents.
 	off, err := f.client.ScheduleDeck(t.Context(), connect.NewRequest(&flashcardsv1.ScheduleDeckRequest{
 		Deck: "decks/Terms.md", Baseline: placed.Msg.GetAt(),
 	}))

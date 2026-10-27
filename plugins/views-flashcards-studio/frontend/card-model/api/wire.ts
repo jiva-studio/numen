@@ -151,7 +151,7 @@ export function createCardModelWire(cards: Cards, say: MessageWriter = () => {})
         templates: createVaultTemplates(cardModel),
         tail: cardModel.tail,
       },
-      baseline?.fingerprint ?? null,
+      baseline?.stat ?? null,
     )
     const currentAnswer = fileAnswers.get(path) ?? NOTHING
     fileAnswers.set(path, {

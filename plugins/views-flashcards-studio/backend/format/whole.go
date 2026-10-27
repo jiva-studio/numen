@@ -33,7 +33,7 @@ func Whole(
 	body string, cardModels map[string]CardModel, createID func() cardid.ID,
 ) (string, []CardID) {
 	raw := []byte(body)
-	deck, spans := readDeck(domain.Fingerprint{}, raw)
+	deck, spans := readDeck(domain.FileStat{}, raw)
 
 	var provided []CardID
 	// Backwards, because a splice moves every byte after it.

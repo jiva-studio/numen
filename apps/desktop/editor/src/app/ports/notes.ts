@@ -44,7 +44,7 @@ export interface NotePort {
   write(
     path: string,
     body: string,
-    observed: { prose: string; fingerprint: string } | null,
+    observed: { prose: string; stat: string } | null,
   ): Promise<WriteResult>
   /** A note made, named after the title it is given and joined as it is written. */
   create(note: NewNote): Promise<CreateResult>

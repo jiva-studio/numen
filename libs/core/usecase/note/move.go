@@ -309,7 +309,7 @@ func (u Move) repair(
 	if err != nil {
 		return linkUntouched, err
 	}
-	if _, err := writer.Write(ctx, in, doc.Bytes(), domain.Fingerprint{}); err != nil {
+	if _, err := writer.Write(ctx, in, doc.Bytes(), domain.FileStat{}); err != nil {
 		return linkUntouched, err
 	}
 	return linkRepaired, nil

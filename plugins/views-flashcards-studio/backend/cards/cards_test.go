@@ -135,7 +135,7 @@ func TestADeckReadAndSavedBackIsTheFileItWas(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		time.Now)
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.Fingerprint); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Mammals.md", prose(t, before), got.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if after := read(t, vs.first, "decks/Mammals.md"); after != before {
@@ -302,14 +302,14 @@ func TestADeckThatChangedSinceItWasReadIsNotSavedOver(t *testing.T) {
 		t.Fatal(err)
 	}
 	if _, err := w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.Fingerprint); err != nil {
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nabout 5\"\n", first.FileStat); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	content := read(t, vs.first, "decks/Birds.md")
 
-	// The same fingerprint again is a caller holding what the file no longer is.
+	// The same file stat again is a caller holding what the file no longer is.
 	_, err = w.Deck(t.Context(), vs.first, "decks/Birds.md",
-		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.Fingerprint)
+		"## Wren\n\n[[Animal]]\n\n### Height\n\nsomething else\n", first.FileStat)
 	if !errors.Is(err, ports.ErrStale) {
 		t.Fatalf("write = %v, want it rejected", err)
 	}
@@ -514,10 +514,10 @@ type refusingWriter struct {
 }
 
 func (w refusingWriter) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	ctx context.Context, path string, content []byte, stat domain.FileStat,
+) (domain.FileStat, error) {
 	if path == w.path {
-		return domain.Fingerprint{}, errRefused
+		return domain.FileStat{}, errRefused
 	}
-	return w.VaultWriter.Write(ctx, path, content, fingerprint)
+	return w.VaultWriter.Write(ctx, path, content, stat)
 }

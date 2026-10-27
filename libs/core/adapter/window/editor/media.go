@@ -15,11 +15,11 @@ import (
 
 // mediaHandler serves MediaService: where a file of the shown vault is loaded from to be played.
 type mediaHandler struct {
-	state          *State
-	playing        *Loopback
-	getFingerprint *file.GetFingerprint
-	openCopy       *file.OpenCopy
-	mediaTypes     *file.GetMediaType
+	state      *State
+	playing    *Loopback
+	statFile   *file.StatFile
+	openCopy   *file.OpenCopy
+	mediaTypes *file.GetMediaType
 }
 
 // GetMediaSource returns the loopback address of the file's bytes and the media type a player is
@@ -31,10 +31,10 @@ func (h *mediaHandler) GetMediaSource(
 	if err != nil {
 		return nil, err
 	}
-	if h.getFingerprint == nil {
+	if h.statFile == nil {
 		return nil, connect.NewError(connect.CodeUnavailable, errComingUp)
 	}
-	ref, err := h.getFingerprint.Execute(ctx, showing, r.Msg.GetPath())
+	ref, err := h.statFile.Execute(ctx, showing, r.Msg.GetPath())
 	if err != nil {
 		return nil, connect.NewError(getListCode(err), err)
 	}
@@ -46,7 +46,7 @@ func (h *mediaHandler) GetMediaSource(
 		if found {
 			_ = played.Body.Close()
 			return connect.NewResponse(&v1.GetMediaSourceResponse{
-				Src:       h.playing.Address(showing, getCopyFingerprint(ref.Path, played.Size)),
+				Src:       h.playing.Address(showing, getCopyFileStat(ref.Path, played.Size)),
 				MediaType: played.MediaType,
 			}), nil
 		}
@@ -57,10 +57,10 @@ func (h *mediaHandler) GetMediaSource(
 	}), nil
 }
 
-// getCopyFingerprint is what an address of a copy names: the file it is played in place of, and the
+// getCopyFileStat is what an address of a copy names: the file it is played in place of, and the
 // size of the copy.
-func getCopyFingerprint(path string, size int64) domain.Fingerprint {
-	return domain.Fingerprint{Path: path, Size: size}
+func getCopyFileStat(path string, size int64) domain.FileStat {
+	return domain.FileStat{Path: path, Size: size}
 }
 
 // GetPageSource returns the loopback address of a page a plugin serves below its route.

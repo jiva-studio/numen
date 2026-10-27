@@ -35,10 +35,10 @@ type countedWriter struct {
 }
 
 func (w *countedWriter) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	ctx context.Context, path string, content []byte, stat domain.FileStat,
+) (domain.FileStat, error) {
 	w.on.writes++
-	return w.VaultWriter.Write(ctx, path, content, fingerprint)
+	return w.VaultWriter.Write(ctx, path, content, stat)
 }
 
 // The templates are the body and the fields are one key of the frontmatter, and
@@ -53,7 +53,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	body := "\n## Recognise\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Wingspan}}\n"
 	pos, err := u.CardModel(
 		t.Context(), vs.first, "Animal.md", body,
-		[]string{"Name", "Wingspan"}, domain.Fingerprint{})
+		[]string{"Name", "Wingspan"}, domain.FileStat{})
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -71,7 +71,7 @@ func TestACardModelsTemplatesAndItsFieldsAreOneWrite(t *testing.T) {
 	if !strings.Contains(target, "mine: keep me verbatim") {
 		t.Errorf("a key nobody owns was rewritten: %q", target)
 	}
-	// The fingerprint that comes back is the file on disk, so the next write of
+	// The file stat that comes back is the file on disk, so the next write of
 	// it lands.
 	if pos.Size != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", pos)
@@ -92,7 +92,7 @@ func TestACardModelAlreadyDeclaringTheseFieldsKeepsWhatExistsAroundThem(t *testi
 	if _, err := u.CardModel(
 		t.Context(), vs.first, "Kept.md",
 		"\n## Recognise\n\n### Front\n\n{{Height}}\n",
-		[]string{"Name", "Height"}, domain.Fingerprint{},
+		[]string{"Name", "Height"}, domain.FileStat{},
 	); err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -141,7 +141,7 @@ func TestWritingADeckLargerThanANote(t *testing.T) {
 	}
 	w := newWriteForDeck(t, vs, "decks/Long.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Long.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 	if deck := readDeck(t, vs, "decks/Long.md"); len(deck.Cards) != 1 {
@@ -157,7 +157,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	w := newWriteForDeck(t, vs, "decks/Hand.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Hand.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -178,7 +178,7 @@ func TestWritingADeckMintsAMarkForEveryCardCarryingNone(t *testing.T) {
 	// leaves it at its current position.
 	after := read(t, vs.first, "decks/Hand.md")
 	if _, err := w.Deck(
-		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.Fingerprint{},
+		t.Context(), vs.first, "decks/Hand.md", prose(t, after), domain.FileStat{},
 	); err != nil {
 		t.Fatalf("write again: %v", err)
 	}
@@ -200,7 +200,7 @@ func TestAMarkIsSavedInTheFilesOwnLineEnding(t *testing.T) {
 	w := cards.NewWrite(
 		vs.ports.Readers, vs.ports.Writers, vs.queries, indexNothing,
 		time.Now)
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Crlf.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -222,7 +222,7 @@ func TestWritingADeckInsertsAStaleHeadingBackInStep(t *testing.T) {
 		"\n### Height\n\nthe first field is a box to fill\n"
 	w := newWriteForDeck(t, vs, "decks/Stale.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Stale.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -252,7 +252,7 @@ func TestACardWritingNothingBelowTheFirstFieldKeepsItsHeading(t *testing.T) {
 	body := "\n## Llama ^k7m2xq9fzp\n\n[[Animal]]\n\n### Was called something else\n\nLlama\n"
 	w := newWriteForDeck(t, vs, "decks/Behind.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Behind.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -270,7 +270,7 @@ func TestAWriteReturnsWhichMarksItGave(t *testing.T) {
 		"\n## Alpaca\n\n[[Animal]]\n\n### Name\n\nAlpaca\n"
 	w := newWriteForDeck(t, vs, "decks/Given.md", body)
 
-	wrote, err := w.Deck(t.Context(), vs.first, "decks/Given.md", body, domain.Fingerprint{})
+	wrote, err := w.Deck(t.Context(), vs.first, "decks/Given.md", body, domain.FileStat{})
 	if err != nil {
 		t.Fatalf("write: %v", err)
 	}
@@ -289,7 +289,7 @@ func TestACardWhoseCardModelCannotBeReadIsNotReprojected(t *testing.T) {
 	body := "\n## Whatever a person typed\n\n[[Nowhere]]\n\n### Name\n\nLlama\n"
 	w := newWriteForDeck(t, vs, "decks/Loose.md", body)
 
-	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := w.Deck(t.Context(), vs.first, "decks/Loose.md", body, domain.FileStat{}); err != nil {
 		t.Fatalf("write: %v", err)
 	}
 
@@ -322,7 +322,7 @@ func TestWritingADeckNobodyTouchedChangesNothing(t *testing.T) {
 				vs.ports.Readers, vs.ports.Writers,
 				vs.queries, indexNothing, time.Now)
 			if _, err := w.Deck(
-				t.Context(), vs.first, "decks/Whole.md", body, domain.Fingerprint{},
+				t.Context(), vs.first, "decks/Whole.md", body, domain.FileStat{},
 			); err != nil {
 				t.Fatalf("write: %v", err)
 			}

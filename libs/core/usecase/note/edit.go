@@ -52,7 +52,7 @@ type Edit struct {
 	index   Levels
 	now     machineport.Clock
 
-	Fingerprint domain.Fingerprint
+	FileStat domain.FileStat
 	// ShouldOverwrite is a caller writing what is in front of the person: the note
 	// not there is made, and no identifier is stamped.
 	ShouldOverwrite bool
@@ -76,7 +76,7 @@ func NewEdit(
 }
 
 // Apply makes one change to the note at path and puts it back.
-func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.Fingerprint, error) {
+func (e Edit) Apply(ctx context.Context, v domain.Vault, path string, change func(*markdown.Document) error) (domain.FileStat, error) {
 	return e.shared().Apply(ctx, v, path, change)
 }
 
@@ -86,7 +86,7 @@ func (e Edit) shared() edit.Edit {
 		Open:            e.openFiles,
 		Index:           e.index,
 		Now:             e.now,
-		Fingerprint:     e.Fingerprint,
+		FileStat:        e.FileStat,
 		ShouldOverwrite: e.ShouldOverwrite,
 		Bound:           e.Bound,
 		Baseline:        e.Baseline,
@@ -113,8 +113,8 @@ type vaultFiles struct {
 	vault   domain.Vault
 }
 
-func (f vaultFiles) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	return f.reader.GetFingerprint(ctx, path)
+func (f vaultFiles) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	return f.reader.StatFile(ctx, path)
 }
 
 func (f vaultFiles) Read(ctx context.Context, path string) ([]byte, error) {
@@ -122,9 +122,9 @@ func (f vaultFiles) Read(ctx context.Context, path string) ([]byte, error) {
 }
 
 func (f vaultFiles) Write(
-	ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
-	return f.writer.Write(ctx, path, content, fingerprint)
+	ctx context.Context, path string, content []byte, stat domain.FileStat,
+) (domain.FileStat, error) {
+	return f.writer.Write(ctx, path, content, stat)
 }
 
 func (f vaultFiles) Lock(ctx context.Context) (func(), error) {

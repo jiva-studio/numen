@@ -102,43 +102,43 @@ func (m *memoryVault) GetVault() (domain.Vault, bool) {
 	return *m.vault, true
 }
 
-func (m *memoryVault) fingerprint(path string) (domain.Fingerprint, error) {
+func (m *memoryVault) stat(path string) (domain.FileStat, error) {
 	body, there := m.files[path]
 	if !there {
-		return domain.Fingerprint{}, fs.ErrNotExist
+		return domain.FileStat{}, fs.ErrNotExist
 	}
-	return domain.Fingerprint{Path: path, Size: int64(len(body)), ModTime: time.Unix(0, 100+m.stamp)}, nil
+	return domain.FileStat{Path: path, Size: int64(len(body)), ModTime: time.Unix(0, 100+m.stamp)}, nil
 }
 
-func (m *memoryVault) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
+func (m *memoryVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.fingerprint(path)
+	return m.stat(path)
 }
 
-func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.Fingerprint, error) {
+func (m *memoryVault) Read(_ context.Context, path string) ([]byte, domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	pos, err := m.fingerprint(path)
+	pos, err := m.stat(path)
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	return []byte(m.files[path]), pos, nil
 }
 
-func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {
+func (m *memoryVault) Write(_ context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	now, err := m.fingerprint(path)
+	now, err := m.stat(path)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if !now.ModTime.Equal(baseline.ModTime) {
-		return domain.Fingerprint{}, vaultport.ErrStale
+		return domain.FileStat{}, vaultport.ErrStale
 	}
 	m.stamp++
 	m.files[path] = string(content)
-	return m.fingerprint(path)
+	return m.stat(path)
 }
 
 func (m *memoryVault) Create(_ context.Context, path string, content []byte) error {
@@ -315,8 +315,8 @@ func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if string(res.Msg.GetContent()) != "body" || res.Msg.GetFingerprint().GetPath() != "samples/A.md" ||
-		res.Msg.GetFingerprint().GetSize() != 4 {
+	if string(res.Msg.GetContent()) != "body" || res.Msg.GetStat().GetPath() != "samples/A.md" ||
+		res.Msg.GetStat().GetSize() != 4 {
 		t.Errorf("the file came back as %v", res.Msg)
 	}
 	missing, err := client.ReadFile(t.Context(), connect.NewRequest(&v1.ReadFileRequest{Path: "nothing.md"}))
@@ -327,19 +327,19 @@ func TestAFileIsReadWithWhatItWasWhenAskedAbout(t *testing.T) {
 
 func TestAFileIsSavedOnlyOverWhatWasRead(t *testing.T) {
 	client, vault := newVaultFixture(t)
-	read, err := client.GetFileFingerprint(t.Context(), connect.NewRequest(&v1.GetFileFingerprintRequest{Path: "samples/A.md"}))
+	read, err := client.StatFile(t.Context(), connect.NewRequest(&v1.StatFileRequest{Path: "samples/A.md"}))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	first, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "samples/A.md", Content: []byte("new"), Baseline: read.Msg.GetFingerprint(),
+		Path: "samples/A.md", Content: []byte("new"), Baseline: read.Msg.GetStat(),
 	}))
-	if err != nil || first.Msg.GetError() != 0 || first.Msg.GetFingerprint().GetSize() != 3 {
+	if err != nil || first.Msg.GetError() != 0 || first.Msg.GetStat().GetSize() != 3 {
 		t.Fatalf("the write was answered %v (%v)", first.Msg, err)
 	}
 	second, err := client.WriteFile(t.Context(), connect.NewRequest(&v1.WriteFileRequest{
-		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetFingerprint(),
+		Path: "samples/A.md", Content: []byte("again"), Baseline: read.Msg.GetStat(),
 	}))
 
 	if err != nil || second.Msg.GetError() != v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE {
@@ -616,13 +616,13 @@ func TestTheNotesFiledBelowANameAreListed(t *testing.T) {
 
 func TestAFingerprintCarriesWhetherTheFileIsANote(t *testing.T) {
 	for _, kind := range []domain.SourceKind{domain.KindNote, domain.KindFile} {
-		got := readFingerprint(writeFingerprint(domain.Fingerprint{Path: "B.sample", Kind: kind, Size: 3, ModTime: time.Unix(5, 6)}))
+		got := readFileStat(writeFileStat(domain.FileStat{Path: "B.sample", Kind: kind, Size: 3, ModTime: time.Unix(5, 6)}))
 
 		if got.Kind != kind || got.Path != "B.sample" || !got.ModTime.Equal(time.Unix(5, 6)) {
 			t.Errorf("got %+v, want the kind %q", got, kind)
 		}
 	}
-	if got := readFingerprint(&v1.HostFingerprint{}); got.Kind != "" {
+	if got := readFileStat(&v1.HostFileStat{}); got.Kind != "" {
 		t.Errorf("got %+v, want a fingerprint naming no file to have no kind", got)
 	}
 }

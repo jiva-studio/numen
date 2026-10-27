@@ -86,7 +86,7 @@ type WriteOutcome struct {
 }
 
 func newWriteOutcome(path string, edited deckedit.EditResult) WriteOutcome {
-	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.Fingerprint), Cards: edited.Cards}
+	return WriteOutcome{Path: path, Fingerprint: fingerprintOf(edited.FileStat), Cards: edited.Cards}
 }
 
 func newCard(card format.Card) Card {
@@ -145,27 +145,27 @@ func countBytes(vs []FieldValue) int {
 }
 
 // fingerprintOf is what a deck or a card model was when it was read, as an agent hands it back.
-func fingerprintOf(ref domain.Fingerprint) string {
+func fingerprintOf(ref domain.FileStat) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(stamp(ref.ModTime), 10)
 }
 
-// parseFingerprint is the fingerprint a caller presents. A tool that changes what somebody may have
-func parseFingerprint(s string) (domain.Fingerprint, error) {
+// parseFingerprint is the file stat a caller presents. A tool that changes what somebody may have
+func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
-		return domain.Fingerprint{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")
+		return domain.FileStat{}, errors.New("present the fingerprint the read gave you: card_read for a deck, card_model_read for a card model")
 	}
 	size, mtime, found := strings.Cut(s, "-")
 	if !found {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
+		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
-	ref := domain.Fingerprint{}
+	ref := domain.FileStat{}
 	var err error
 	if ref.Size, err = strconv.ParseInt(size, 10, 64); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
+		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
 	nanos, err := strconv.ParseInt(mtime, 10, 64)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
+		return domain.FileStat{}, fmt.Errorf("%q is not a fingerprint a read gave out", s)
 	}
 	ref.ModTime = instant(nanos)
 	return ref, nil

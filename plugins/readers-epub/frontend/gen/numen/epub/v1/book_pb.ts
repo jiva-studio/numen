@@ -17,7 +17,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Fingerprint } from "@numen/protocol/numen/v1/shared_pb.js";
+import type { FileStat } from "@numen/protocol/numen/v1/shared_pb.js";
 import { file_numen_v1_shared } from "@numen/protocol/numen/v1/shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -25,7 +25,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/epub/v1/book.proto.
  */
 export const file_numen_epub_v1_book: GenFile = /*@__PURE__*/
-  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiHgoOR2V0Qm9va1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKUAgoPR2V0Qm9va1Jlc3BvbnNlEg0KBXRpdGxlGAEgASgJEi8KCWRvY3VtZW50cxgCIAMoCzIcLm51bWVuLmVwdWIudjEuU3BpbmVEb2N1bWVudBImCgVwYXJ0cxgDIAMoCzIXLm51bWVuLmVwdWIudjEuQm9va1BhcnQSMQoNcHJpbnRlZF9wYWdlcxgEIAMoCzIaLm51bWVuLmVwdWIudjEuUHJpbnRlZFBhZ2USEgoKcGFnZV9jb3VudBgFIAEoBRISCgp0ZXh0X2J5dGVzGAYgASgFEhIKCnBhZ2VfYnl0ZXMYByABKAUSKgoLZmluZ2VycHJpbnQYCCABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCItCg1HZXRDZmlSZXF1ZXN0EgwKBHBhdGgYASABKAkSDgoGb2Zmc2V0GAIgASgFIh0KDkdldENmaVJlc3BvbnNlEgsKA2NmaRgBIAEoCSIuChFGaW5kT2Zmc2V0UmVxdWVzdBIMCgRwYXRoGAEgASgJEgsKA2NmaRgCIAEoCSIkChJGaW5kT2Zmc2V0UmVzcG9uc2USDgoGb2Zmc2V0GAEgASgFInIKFVJlYWRCb29rTWFya3VwUmVxdWVzdBIMCgRwYXRoGAEgASgJEhAKCGRvY3VtZW50GAIgASgJEiwKCGJhc2VsaW5lGAMgASgLMhUubnVtZW4udjEuRmluZ2VycHJpbnRIAIgBAUILCglfYmFzZWxpbmUiKAoWUmVhZEJvb2tNYXJrdXBSZXNwb25zZRIOCgZtYXJrdXAYASABKAkiXAoUUmVhZEJvb2tFbnRyeVJlcXVlc3QSDAoEcGF0aBgBIAEoCRINCgVlbnRyeRgCIAEoCRInCghiYXNlbGluZRgDIAEoCzIVLm51bWVuLnYxLkZpbmdlcnByaW50IiUKFVJlYWRCb29rRW50cnlSZXNwb25zZRIMCgRib2R5GAEgASgMIj0KDVNwaW5lRG9jdW1lbnQSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUSDgoGbGVuZ3RoGAMgASgFIjgKCEJvb2tQYXJ0Eg0KBXRpdGxlGAEgASgJEg4KBm9mZnNldBgCIAEoBRINCgVsZXZlbBgDIAEoBSIsCgtQcmludGVkUGFnZRINCgVsYWJlbBgBIAEoCRIOCgZvZmZzZXQYAiABKAUyrAMKC0Jvb2tTZXJ2aWNlEkgKB0dldEJvb2sSHS5udW1lbi5lcHViLnYxLkdldEJvb2tSZXF1ZXN0Gh4ubnVtZW4uZXB1Yi52MS5HZXRCb29rUmVzcG9uc2USXQoOUmVhZEJvb2tNYXJrdXASJC5udW1lbi5lcHViLnYxLlJlYWRCb29rTWFya3VwUmVxdWVzdBolLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXNwb25zZRJaCg1SZWFkQm9va0VudHJ5EiMubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVxdWVzdBokLm51bWVuLmVwdWIudjEuUmVhZEJvb2tFbnRyeVJlc3BvbnNlEkUKBkdldENmaRIcLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVxdWVzdBodLm51bWVuLmVwdWIudjEuR2V0Q2ZpUmVzcG9uc2USUQoKRmluZE9mZnNldBIgLm51bWVuLmVwdWIudjEuRmluZE9mZnNldFJlcXVlc3QaIS5udW1lbi5lcHViLnYxLkZpbmRPZmZzZXRSZXNwb25zZUJMWkpnaXRodWIuY29tL2ppdmEtc3R1ZGlvL251bWVuL3BsdWdpbnMvcmVhZGVycy1lcHViL2dlbi9udW1lbi9lcHViL3YxO2VwdWJ2MWIGcHJvdG8z", [file_numen_v1_shared]);
+  fileDesc("ChhudW1lbi9lcHViL3YxL2Jvb2sucHJvdG8SDW51bWVuLmVwdWIudjEiHgoOR2V0Qm9va1JlcXVlc3QSDAoEcGF0aBgBIAEoCSKKAgoPR2V0Qm9va1Jlc3BvbnNlEg0KBXRpdGxlGAEgASgJEi8KCWRvY3VtZW50cxgCIAMoCzIcLm51bWVuLmVwdWIudjEuU3BpbmVEb2N1bWVudBImCgVwYXJ0cxgDIAMoCzIXLm51bWVuLmVwdWIudjEuQm9va1BhcnQSMQoNcHJpbnRlZF9wYWdlcxgEIAMoCzIaLm51bWVuLmVwdWIudjEuUHJpbnRlZFBhZ2USEgoKcGFnZV9jb3VudBgFIAEoBRISCgp0ZXh0X2J5dGVzGAYgASgFEhIKCnBhZ2VfYnl0ZXMYByABKAUSIAoEc3RhdBgIIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0Ii0KDUdldENmaVJlcXVlc3QSDAoEcGF0aBgBIAEoCRIOCgZvZmZzZXQYAiABKAUiHQoOR2V0Q2ZpUmVzcG9uc2USCwoDY2ZpGAEgASgJIi4KEUZpbmRPZmZzZXRSZXF1ZXN0EgwKBHBhdGgYASABKAkSCwoDY2ZpGAIgASgJIiQKEkZpbmRPZmZzZXRSZXNwb25zZRIOCgZvZmZzZXQYASABKAUibwoVUmVhZEJvb2tNYXJrdXBSZXF1ZXN0EgwKBHBhdGgYASABKAkSEAoIZG9jdW1lbnQYAiABKAkSKQoIYmFzZWxpbmUYAyABKAsyEi5udW1lbi52MS5GaWxlU3RhdEgAiAEBQgsKCV9iYXNlbGluZSIoChZSZWFkQm9va01hcmt1cFJlc3BvbnNlEg4KBm1hcmt1cBgBIAEoCSJZChRSZWFkQm9va0VudHJ5UmVxdWVzdBIMCgRwYXRoGAEgASgJEg0KBWVudHJ5GAIgASgJEiQKCGJhc2VsaW5lGAMgASgLMhIubnVtZW4udjEuRmlsZVN0YXQiJQoVUmVhZEJvb2tFbnRyeVJlc3BvbnNlEgwKBGJvZHkYASABKAwiPQoNU3BpbmVEb2N1bWVudBIMCgRwYXRoGAEgASgJEg4KBm9mZnNldBgCIAEoBRIOCgZsZW5ndGgYAyABKAUiOAoIQm9va1BhcnQSDQoFdGl0bGUYASABKAkSDgoGb2Zmc2V0GAIgASgFEg0KBWxldmVsGAMgASgFIiwKC1ByaW50ZWRQYWdlEg0KBWxhYmVsGAEgASgJEg4KBm9mZnNldBgCIAEoBTKsAwoLQm9va1NlcnZpY2USSAoHR2V0Qm9vaxIdLm51bWVuLmVwdWIudjEuR2V0Qm9va1JlcXVlc3QaHi5udW1lbi5lcHViLnYxLkdldEJvb2tSZXNwb25zZRJdCg5SZWFkQm9va01hcmt1cBIkLm51bWVuLmVwdWIudjEuUmVhZEJvb2tNYXJrdXBSZXF1ZXN0GiUubnVtZW4uZXB1Yi52MS5SZWFkQm9va01hcmt1cFJlc3BvbnNlEloKDVJlYWRCb29rRW50cnkSIy5udW1lbi5lcHViLnYxLlJlYWRCb29rRW50cnlSZXF1ZXN0GiQubnVtZW4uZXB1Yi52MS5SZWFkQm9va0VudHJ5UmVzcG9uc2USRQoGR2V0Q2ZpEhwubnVtZW4uZXB1Yi52MS5HZXRDZmlSZXF1ZXN0Gh0ubnVtZW4uZXB1Yi52MS5HZXRDZmlSZXNwb25zZRJRCgpGaW5kT2Zmc2V0EiAubnVtZW4uZXB1Yi52MS5GaW5kT2Zmc2V0UmVxdWVzdBohLm51bWVuLmVwdWIudjEuRmluZE9mZnNldFJlc3BvbnNlQkxaSmdpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vcGx1Z2lucy9yZWFkZXJzLWVwdWIvZ2VuL251bWVuL2VwdWIvdjE7ZXB1YnYxYgZwcm90bzM", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.epub.v1.GetBookRequest
@@ -110,9 +110,9 @@ export type GetBookResponse = Message<"numen.epub.v1.GetBookResponse"> & {
    * document and in the address of a picture, so both name one reading of one
    * file.
    *
-   * @generated from field: numen.v1.Fingerprint fingerprint = 8;
+   * @generated from field: numen.v1.FileStat stat = 8;
    */
-  fingerprint?: Fingerprint | undefined;
+  stat?: FileStat | undefined;
 };
 
 /**
@@ -236,9 +236,9 @@ export type ReadBookMarkupRequest = Message<"numen.epub.v1.ReadBookMarkupRequest
    * is refused: the window reads the book again and asks with what that
    * returns.
    *
-   * @generated from field: optional numen.v1.Fingerprint baseline = 3;
+   * @generated from field: optional numen.v1.FileStat baseline = 3;
    */
-  baseline?: Fingerprint | undefined;
+  baseline?: FileStat | undefined;
 };
 
 /**
@@ -289,9 +289,9 @@ export type ReadBookEntryRequest = Message<"numen.epub.v1.ReadBookEntryRequest">
    * Which bytes the request was given out for. A file that is other bytes now
    * is refused.
    *
-   * @generated from field: numen.v1.Fingerprint baseline = 3;
+   * @generated from field: numen.v1.FileStat baseline = 3;
    */
-  baseline?: Fingerprint | undefined;
+  baseline?: FileStat | undefined;
 };
 
 /**

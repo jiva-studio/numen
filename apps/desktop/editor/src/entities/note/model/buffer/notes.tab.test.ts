@@ -35,7 +35,7 @@ const tab = (overrides: Partial<Tab> = {}): Tab => ({
 
 const kinds = (effects: readonly Effect[]) => effects.map((effect) => effect.kind)
 
-/** A tab whose write was told the file carries another fingerprint. */
+/** A tab whose write was told the file carries another file stat. */
 const createStaleTab = (overrides: Partial<Tab> = {}): Tab =>
   transitionTab(tab({ editorText: 'mine', pendingWrite: 'mine', since: 10, ...overrides }), {
     kind: 'written',
@@ -315,7 +315,7 @@ describe('the interval fires', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'two',
-        baseline: { prose: 'one', fingerprint: 'a1' },
+        baseline: { prose: 'one', stat: 'a1' },
       },
     ])
   })
@@ -410,7 +410,7 @@ describe('a write answers ok', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'three',
-        baseline: { prose: 'two', fingerprint: 'a2' },
+        baseline: { prose: 'two', stat: 'a2' },
       },
     ])
   })
@@ -419,7 +419,7 @@ describe('a write answers ok', () => {
 describe('the fingerprint the file was read at', () => {
   it('is what the next write presents, taken from the write that answered', () => {
     // Two saves with no read between. The file is what this tab's own write left
-    // behind, and the fingerprint that write answered with is what it carries.
+    // behind, and the file stat that write answered with is what it carries.
     const first = transitionTab(transitionTab(tab(), { kind: 'edited', body: 'two', at: 0 }).tab, {
       kind: 'timerFired',
     })
@@ -428,7 +428,7 @@ describe('the fingerprint the file was read at', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'two',
-        baseline: { prose: 'one', fingerprint: 'a1' },
+        baseline: { prose: 'one', stat: 'a1' },
       },
     ])
 
@@ -444,7 +444,7 @@ describe('the fingerprint the file was read at', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'three',
-        baseline: { prose: 'two', fingerprint: 'a2' },
+        baseline: { prose: 'two', stat: 'a2' },
       },
     ])
   })
@@ -648,7 +648,7 @@ describe('a save is requested for', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'two',
-        baseline: { prose: 'one', fingerprint: 'a1' },
+        baseline: { prose: 'one', stat: 'a1' },
       },
     ])
     expect(getState(next.tab)).toBe('saving')
@@ -707,7 +707,7 @@ describe('a file about to be renamed or removed', () => {
         kind: 'write',
         path: 'Note.md',
         body: 'two',
-        baseline: { prose: 'one', fingerprint: 'a1' },
+        baseline: { prose: 'one', stat: 'a1' },
       },
     ])
     expect(getState(next.tab)).toBe('saving')
@@ -861,7 +861,7 @@ describe('a close is requested for', () => {
       kind: 'write',
       path: 'Note.md',
       body: 'two',
-      baseline: { prose: 'one', fingerprint: 'a1' },
+      baseline: { prose: 'one', stat: 'a1' },
     })
     expect(getState(next.tab)).toBe('saving')
   })

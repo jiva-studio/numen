@@ -42,9 +42,9 @@ const (
 	// HostVaultServiceEnsureVaultIndexedProcedure is the fully-qualified name of the HostVaultService's
 	// EnsureVaultIndexed RPC.
 	HostVaultServiceEnsureVaultIndexedProcedure = "/numen.v1.HostVaultService/EnsureVaultIndexed"
-	// HostVaultServiceGetFileFingerprintProcedure is the fully-qualified name of the HostVaultService's
-	// GetFileFingerprint RPC.
-	HostVaultServiceGetFileFingerprintProcedure = "/numen.v1.HostVaultService/GetFileFingerprint"
+	// HostVaultServiceStatFileProcedure is the fully-qualified name of the HostVaultService's StatFile
+	// RPC.
+	HostVaultServiceStatFileProcedure = "/numen.v1.HostVaultService/StatFile"
 	// HostVaultServiceReadFileProcedure is the fully-qualified name of the HostVaultService's ReadFile
 	// RPC.
 	HostVaultServiceReadFileProcedure = "/numen.v1.HostVaultService/ReadFile"
@@ -112,12 +112,12 @@ type HostVaultServiceClient interface {
 	// and says where that stands. The work goes on after the call returns, and the
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
-	// GetFileFingerprint says what a file is now. A file that is not there is
+	// StatFile says what a file is now. A file that is not there is
 	// answered with the error code MISSING.
-	GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error)
-	// ReadFile reads a whole file, with the fingerprint it had when it was read.
+	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
+	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
-	// WriteFile replaces a file that has not changed since the fingerprint given.
+	// WriteFile replaces a file that has not changed since the file stat given.
 	// A file that moved past it is answered with the error code STALE and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
@@ -193,10 +193,10 @@ func NewHostVaultServiceClient(httpClient connect.HTTPClient, baseURL string, op
 			connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
 			connect.WithClientOptions(opts...),
 		),
-		getFileFingerprint: connect.NewClient[v1.GetFileFingerprintRequest, v1.GetFileFingerprintResponse](
+		statFile: connect.NewClient[v1.StatFileRequest, v1.StatFileResponse](
 			httpClient,
-			baseURL+HostVaultServiceGetFileFingerprintProcedure,
-			connect.WithSchema(hostVaultServiceMethods.ByName("GetFileFingerprint")),
+			baseURL+HostVaultServiceStatFileProcedure,
+			connect.WithSchema(hostVaultServiceMethods.ByName("StatFile")),
 			connect.WithClientOptions(opts...),
 		),
 		readFile: connect.NewClient[v1.ReadFileRequest, v1.ReadFileResponse](
@@ -315,7 +315,7 @@ type hostVaultServiceClient struct {
 	getHostVault       *connect.Client[v1.GetHostVaultRequest, v1.GetHostVaultResponse]
 	listHostVaults     *connect.Client[v1.ListHostVaultsRequest, v1.ListHostVaultsResponse]
 	ensureVaultIndexed *connect.Client[v1.EnsureVaultIndexedRequest, v1.EnsureVaultIndexedResponse]
-	getFileFingerprint *connect.Client[v1.GetFileFingerprintRequest, v1.GetFileFingerprintResponse]
+	statFile           *connect.Client[v1.StatFileRequest, v1.StatFileResponse]
 	readFile           *connect.Client[v1.ReadFileRequest, v1.ReadFileResponse]
 	writeFile          *connect.Client[v1.WriteFileRequest, v1.WriteFileResponse]
 	createFile         *connect.Client[v1.CreateFileRequest, v1.CreateFileResponse]
@@ -351,9 +351,9 @@ func (c *hostVaultServiceClient) EnsureVaultIndexed(ctx context.Context, req *co
 	return c.ensureVaultIndexed.CallUnary(ctx, req)
 }
 
-// GetFileFingerprint calls numen.v1.HostVaultService.GetFileFingerprint.
-func (c *hostVaultServiceClient) GetFileFingerprint(ctx context.Context, req *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
-	return c.getFileFingerprint.CallUnary(ctx, req)
+// StatFile calls numen.v1.HostVaultService.StatFile.
+func (c *hostVaultServiceClient) StatFile(ctx context.Context, req *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error) {
+	return c.statFile.CallUnary(ctx, req)
 }
 
 // ReadFile calls numen.v1.HostVaultService.ReadFile.
@@ -457,12 +457,12 @@ type HostVaultServiceHandler interface {
 	// and says where that stands. The work goes on after the call returns, and the
 	// caller asks again once WatchMoves tells it something moved.
 	EnsureVaultIndexed(context.Context, *connect.Request[v1.EnsureVaultIndexedRequest]) (*connect.Response[v1.EnsureVaultIndexedResponse], error)
-	// GetFileFingerprint says what a file is now. A file that is not there is
+	// StatFile says what a file is now. A file that is not there is
 	// answered with the error code MISSING.
-	GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error)
-	// ReadFile reads a whole file, with the fingerprint it had when it was read.
+	StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error)
+	// ReadFile reads a whole file, with the file stat it had when it was read.
 	ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error)
-	// WriteFile replaces a file that has not changed since the fingerprint given.
+	// WriteFile replaces a file that has not changed since the file stat given.
 	// A file that moved past it is answered with the error code STALE and
 	// nothing is written.
 	WriteFile(context.Context, *connect.Request[v1.WriteFileRequest]) (*connect.Response[v1.WriteFileResponse], error)
@@ -534,10 +534,10 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 		connect.WithSchema(hostVaultServiceMethods.ByName("EnsureVaultIndexed")),
 		connect.WithHandlerOptions(opts...),
 	)
-	hostVaultServiceGetFileFingerprintHandler := connect.NewUnaryHandler(
-		HostVaultServiceGetFileFingerprintProcedure,
-		svc.GetFileFingerprint,
-		connect.WithSchema(hostVaultServiceMethods.ByName("GetFileFingerprint")),
+	hostVaultServiceStatFileHandler := connect.NewUnaryHandler(
+		HostVaultServiceStatFileProcedure,
+		svc.StatFile,
+		connect.WithSchema(hostVaultServiceMethods.ByName("StatFile")),
 		connect.WithHandlerOptions(opts...),
 	)
 	hostVaultServiceReadFileHandler := connect.NewUnaryHandler(
@@ -656,8 +656,8 @@ func NewHostVaultServiceHandler(svc HostVaultServiceHandler, opts ...connect.Han
 			hostVaultServiceListHostVaultsHandler.ServeHTTP(w, r)
 		case HostVaultServiceEnsureVaultIndexedProcedure:
 			hostVaultServiceEnsureVaultIndexedHandler.ServeHTTP(w, r)
-		case HostVaultServiceGetFileFingerprintProcedure:
-			hostVaultServiceGetFileFingerprintHandler.ServeHTTP(w, r)
+		case HostVaultServiceStatFileProcedure:
+			hostVaultServiceStatFileHandler.ServeHTTP(w, r)
 		case HostVaultServiceReadFileProcedure:
 			hostVaultServiceReadFileHandler.ServeHTTP(w, r)
 		case HostVaultServiceWriteFileProcedure:
@@ -715,8 +715,8 @@ func (UnimplementedHostVaultServiceHandler) EnsureVaultIndexed(context.Context, 
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.EnsureVaultIndexed is not implemented"))
 }
 
-func (UnimplementedHostVaultServiceHandler) GetFileFingerprint(context.Context, *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.GetFileFingerprint is not implemented"))
+func (UnimplementedHostVaultServiceHandler) StatFile(context.Context, *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("numen.v1.HostVaultService.StatFile is not implemented"))
 }
 
 func (UnimplementedHostVaultServiceHandler) ReadFile(context.Context, *connect.Request[v1.ReadFileRequest]) (*connect.Response[v1.ReadFileResponse], error) {

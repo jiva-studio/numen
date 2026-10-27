@@ -17,13 +17,13 @@ import (
 // told to.
 type statedReader struct {
 	vaultport.VaultReader
-	ref     domain.Fingerprint
+	ref     domain.FileStat
 	statErr error
 	raw     []byte
 	readErr error
 }
 
-func (r statedReader) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
+func (r statedReader) StatFile(context.Context, string) (domain.FileStat, error) {
 	return r.ref, r.statErr
 }
 
@@ -47,7 +47,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	body := []byte("# Entropy\n")
 
 	atCeiling, err := readStated(t, statedReader{
-		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling},
+		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling},
 		raw: body,
 	})
 	if err != nil {
@@ -58,7 +58,7 @@ func TestTheCeilingIsOneMebibyteInclusive(t *testing.T) {
 	}
 
 	finished, err := readStated(t, statedReader{
-		ref: domain.Fingerprint{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
+		ref: domain.FileStat{Path: "Entropy.md", Kind: domain.KindNote, Size: ceiling + 1},
 		raw: body,
 	})
 	if err != nil {

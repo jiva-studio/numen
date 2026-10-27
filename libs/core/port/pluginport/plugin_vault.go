@@ -68,9 +68,9 @@ type PluginIndexState struct {
 
 // PluginVaultReader provides read access to files, notes, links, and index problems of a vault.
 type PluginVaultReader interface {
-	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the file and what it was when it was asked about, before its bytes were read.
-	Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error)
+	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	GetNotes(ctx context.Context, paths []string) (map[string]domain.NoteRef, error)
 	GetTypes(ctx context.Context, paths []string) (map[string]domain.NoteType, error)
 	GetNamedPaths(ctx context.Context, name string) ([]string, error)
@@ -84,7 +84,7 @@ type PluginVaultReader interface {
 // PluginVaultWriter provides mutating operations on files in a vault.
 type PluginVaultWriter interface {
 	// Write replaces the file if it is still what the baseline says, and returns what it is now.
-	Write(ctx context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error)
+	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers until the release is called.
 	Lock(ctx context.Context) (release func(), err error)

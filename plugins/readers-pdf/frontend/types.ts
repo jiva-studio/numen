@@ -25,10 +25,10 @@ export interface PageHighlight {
   readonly rects: readonly Rect[]
 }
 
-/** Document layout manifest: page dimensions and disk fingerprint. */
+/** Document layout manifest: page dimensions and disk file stat. */
 export interface DocumentLayout {
   readonly pages: readonly Page[]
-  readonly fingerprint: string
+  readonly stat: string
 }
 
 /** Port for document service interactions. */
@@ -36,7 +36,7 @@ export interface Documents {
   /** Retrieves document layout and dimensions. */
   getDocumentLayout(path: string): Promise<DocumentLayout>
   /** Returns the image URL for a rendered page at the given pixel width. */
-  getPageUrl(path: string, pageNumber: number, width: number, fingerprint?: string): string
+  getPageUrl(path: string, pageNumber: number, width: number, stat?: string): string
   /** Retrieves highlights for given text spans. */
   getHighlights(
     path: string,

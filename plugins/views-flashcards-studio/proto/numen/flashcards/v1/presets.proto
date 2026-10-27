@@ -262,8 +262,8 @@ message GetDeckPresetResponse {
   // Error code if reading failed.
   optional ErrorCode error = 2;
 
-  // File fingerprint for optimistic concurrency.
-  optional numen.v1.Fingerprint at = 3;
+  // File file stat for optimistic concurrency.
+  optional numen.v1.FileStat at = 3;
 
   // Permitted bounds for preset settings.
   SettingsBounds bounds = 4;
@@ -307,16 +307,16 @@ message ScheduleDeckRequest {
   // Preset note path. Empty resets deck to default scheduling.
   string preset = 2;
 
-  // Baseline fingerprint for optimistic concurrency.
-  optional numen.v1.Fingerprint baseline = 3;
+  // Baseline file stat for optimistic concurrency.
+  optional numen.v1.FileStat baseline = 3;
 }
 
 message ScheduleDeckResponse {
   // Error code if assignment failed.
   optional ErrorCode error = 1;
 
-  // Resulting file fingerprint for subsequent writes.
-  optional numen.v1.Fingerprint at = 2;
+  // Resulting file file stat for subsequent writes.
+  optional numen.v1.FileStat at = 2;
 
   // True if written to disk but not yet indexed.
   bool is_unlevelled = 3;
@@ -333,8 +333,8 @@ message ReadPresetResponse {
   // Error code if reading failed.
   optional ErrorCode error = 2;
 
-  // File fingerprint for optimistic concurrency.
-  optional numen.v1.Fingerprint at = 3;
+  // File file stat for optimistic concurrency.
+  optional numen.v1.FileStat at = 3;
 
   // Permitted bounds for preset settings.
   SettingsBounds bounds = 4;
@@ -359,16 +359,16 @@ message WritePresetRequest {
   // Preset settings to update.
   Settings settings = 2;
 
-  // Baseline fingerprint for optimistic concurrency.
-  optional numen.v1.Fingerprint baseline = 3;
+  // Baseline file stat for optimistic concurrency.
+  optional numen.v1.FileStat baseline = 3;
 }
 
 message WritePresetResponse {
   // Error code if write failed.
   optional ErrorCode error = 1;
 
-  // Resulting file fingerprint for subsequent writes.
-  optional numen.v1.Fingerprint at = 2;
+  // Resulting file file stat for subsequent writes.
+  optional numen.v1.FileStat at = 2;
 
   // True if written to disk but not yet indexed.
   bool is_unlevelled = 3;

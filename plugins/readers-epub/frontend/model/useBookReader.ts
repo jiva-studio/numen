@@ -79,7 +79,7 @@ async function loadBookData(
     pages: Ref<number>
     pageBytes: Ref<number>
     contents: ShallowRef<readonly ContentsEntry[]>
-    fingerprint: Ref<string>
+    stat: Ref<string>
     offset: Ref<number>
   },
   deps: {
@@ -98,7 +98,7 @@ async function loadBookData(
     state.pages.value = book.pages
     state.pageBytes.value = book.pageBytes
     state.contents.value = getContents(book, deps.words)
-    state.fingerprint.value = book.fingerprint
+    state.stat.value = book.stat
     state.offset.value = book.span.from
     const doc = getDocumentAtOffset(book.documents, book.span.from)
     if (doc) await deps.drawDocument(doc)
@@ -115,11 +115,11 @@ function useBookState() {
   const contents = shallowRef<readonly ContentsEntry[]>([])
   const pages = ref(0)
   const pageBytes = ref(0)
-  // Stryker disable next-line StringLiteral: the fingerprint is assigned before the first document is drawn
-  const fingerprint = ref('')
+  // Stryker disable next-line StringLiteral: the file stat is assigned before the first document is drawn
+  const stat = ref('')
   const isLoading = ref(true)
 
-  return { title, span, documents, contents, pages, pageBytes, fingerprint, isLoading }
+  return { title, span, documents, contents, pages, pageBytes, stat, isLoading }
 }
 
 function useBookProgress(
@@ -155,7 +155,7 @@ export function useBookReader(books: Books, path: string, options: BookReaderOpt
   let isOpen = true
 
   const bookDocument = useBookDocument(books, path, {
-    fingerprint: state.fingerprint,
+    stat: state.stat,
     writeMessage,
     isOpen: () => isOpen,
   })

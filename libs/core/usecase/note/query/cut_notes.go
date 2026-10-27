@@ -56,7 +56,7 @@ func (u CutNotes) cut(n domain.Note, headings []domain.Heading, profile domain.N
 		return nil
 	}
 
-	pos := max(int(n.Fingerprint.Size)-len(n.Body), 0)
+	pos := max(int(n.FileStat.Size)-len(n.Body), 0)
 	sizes := u.Sizes
 	sizes.Large = chunking.Whole
 	body := n.Body

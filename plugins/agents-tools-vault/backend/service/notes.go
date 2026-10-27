@@ -47,7 +47,7 @@ func (t *Tools) resolveNotePath(ctx context.Context, p string) string {
 	if err == nil && len(named) > 0 {
 		return named[0]
 	}
-	if _, err := t.vault.GetFingerprint(ctx, p+".md"); err == nil {
+	if _, err := t.vault.StatFile(ctx, p+".md"); err == nil {
 		return p + ".md"
 	}
 	return p
@@ -125,37 +125,37 @@ func (t *Tools) writeNote(ctx context.Context, in NoteWriteInput) (NoteWriteOutp
 	}, nil
 }
 
-func (t *Tools) saveNoteContent(ctx context.Context, path, content, fpStr string) (domain.Fingerprint, error) {
+func (t *Tools) saveNoteContent(ctx context.Context, path, content, fpStr string) (domain.FileStat, error) {
 	if fpStr != "" {
-		return t.writeWithFingerprint(ctx, path, content, fpStr)
+		return t.writeWithFileStat(ctx, path, content, fpStr)
 	}
 	return t.writeOrCreate(ctx, path, content)
 }
 
-func (t *Tools) writeWithFingerprint(ctx context.Context, path, content, fpStr string) (domain.Fingerprint, error) {
+func (t *Tools) writeWithFileStat(ctx context.Context, path, content, fpStr string) (domain.FileStat, error) {
 	baseline, err := parseFingerprint(fpStr)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	newFp, err := t.vault.Write(ctx, path, []byte(content), baseline)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
 	}
 	return newFp, nil
 }
 
-func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain.Fingerprint, error) {
-	writtenFp, err := t.vault.Write(ctx, path, []byte(content), domain.Fingerprint{})
+func (t *Tools) writeOrCreate(ctx context.Context, path, content string) (domain.FileStat, error) {
+	writtenFp, err := t.vault.Write(ctx, path, []byte(content), domain.FileStat{})
 	if err == nil {
 		return writtenFp, nil
 	}
 	if !errors.Is(err, host.ErrNotExist) {
-		return domain.Fingerprint{}, fmt.Errorf("write note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("write note %s: %w", path, err)
 	}
 	if err := t.vault.Create(ctx, path, []byte(content)); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("create note %s: %w", path, err)
+		return domain.FileStat{}, fmt.Errorf("create note %s: %w", path, err)
 	}
-	newFp, _ := t.vault.GetFingerprint(ctx, path)
+	newFp, _ := t.vault.StatFile(ctx, path)
 	return newFp, nil
 }
 

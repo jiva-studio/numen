@@ -18,7 +18,7 @@ import (
 // every byte around it as it was.
 //
 // What is replaced is named by the text standing there, not by at its current position,
-// and the caller presents the fingerprint of the note it read.
+// and the caller presents the file stat of the note it read.
 type Replace struct {
 	readers vaultport.VaultReaders
 	writers vaultport.VaultWriters
@@ -45,8 +45,8 @@ func NewReplace(
 
 // ReplaceResult is what a replacement did.
 type ReplaceResult struct {
-	// Fingerprint is of the file this write produced.
-	Fingerprint domain.Fingerprint
+	// FileStat is of the file this write produced.
+	FileStat domain.FileStat
 	// Span is where the span stood, as byte offsets into the prose a read hands
 	// out.
 	Span markdown.Span
@@ -89,10 +89,10 @@ func (e AmbiguousSpan) Error() string {
 // original that is gone, which is the write having landed already.
 var ErrAlreadyWritten = fmt.Errorf("this replacement is already in the note")
 
-// Fingerprint is what the caller believes is on disk. A note that has changed
+// FileStat is what the caller believes is on disk. A note that has changed
 // since it was read is left alone and port.ErrStale comes back.
 func (u Replace) Execute(
-	ctx context.Context, v domain.Vault, path, current, becomes string, fingerprint domain.Fingerprint,
+	ctx context.Context, v domain.Vault, path, current, becomes string, stat domain.FileStat,
 ) (ReplaceResult, error) {
 	if current == "" {
 		return ReplaceResult{}, fmt.Errorf("name the text to replace")
@@ -103,7 +103,7 @@ func (u Replace) Execute(
 	defer func() { ends() }()
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	e.Bound = MaxBytes
 	pos, err := e.Apply(ctx, v, path, func(doc *markdown.Document) error {
 		body := markdown.Normalise(doc.Body())
@@ -142,7 +142,7 @@ func (u Replace) Execute(
 	if err != nil {
 		return ReplaceResult{}, err
 	}
-	isDone.Fingerprint = pos
+	isDone.FileStat = pos
 	return isDone, nil
 }
 

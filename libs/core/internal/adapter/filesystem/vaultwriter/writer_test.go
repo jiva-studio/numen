@@ -232,7 +232,7 @@ func TestWritingThroughALinkPreservesTheLink(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.Fingerprint{}); err != nil {
+	if _, err := writer.Write(t.Context(), "Entropy.md", []byte("# Entropy\n\nMine.\n"), domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -273,7 +273,7 @@ func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	switch _, err := reader.GetFingerprint(t.Context(), "export.iso"); {
+	switch _, err := reader.StatFile(t.Context(), "export.iso"); {
 	case !errors.Is(err, vaultport.ErrNotANote):
 		t.Errorf("want ErrNotANote, got %v", err)
 	case errors.Is(err, fs.ErrNotExist):
@@ -281,7 +281,7 @@ func TestAskingAboutAFileTheVaultPreservesAloneOpensNothing(t *testing.T) {
 	}
 
 	// Nothing at a path is the other answer, and it is not this one.
-	switch _, err := reader.GetFingerprint(t.Context(), "Entropy.md"); {
+	switch _, err := reader.StatFile(t.Context(), "Entropy.md"); {
 	case !errors.Is(err, fs.ErrNotExist):
 		t.Errorf("want fs.ErrNotExist, got %v", err)
 	case errors.Is(err, vaultport.ErrNotANote):
@@ -352,7 +352,7 @@ func TestWritingThroughALinkOutOfBoundsIsRefused(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.Fingerprint{})
+			_, err = w.Write(t.Context(), "Note.md", []byte("# Mine\n"), domain.FileStat{})
 			switch {
 			case err == nil:
 				t.Errorf("writing through the link was allowed")
@@ -470,7 +470,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 	}
 
 	rejected := map[string]error{
-		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.Fingerprint{})),
+		"write":  errorOf(w.Write(ctx, "link/ocr/note.md", []byte("# Mine\n"), domain.FileStat{})),
 		"create": w.Create(ctx, "link/ocr/note.md", []byte("# Mine\n")),
 		"bring":  w.Import(ctx, "link/ocr/brought.txt", strings.NewReader("brought\n")),
 		"folder": w.MakeFolder(ctx, "link/sneak"),
@@ -496,7 +496,7 @@ func TestWritingThroughALinkIntoTheServiceFolderIsRefused(t *testing.T) {
 }
 
 // errorOf is a write's error, where only that is being asked about.
-func errorOf(_ domain.Fingerprint, err error) error { return err }
+func errorOf(_ domain.FileStat, err error) error { return err }
 
 // A vault may be reached through a link: a home folder on another disk, a
 // synced folder, a temporary folder on a machine that keeps them elsewhere.
@@ -517,7 +517,7 @@ func TestAVaultReachedThroughALinkIsSavedLikeAnyOther(t *testing.T) {
 	}
 	ctx := t.Context()
 
-	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.Fingerprint{}); err != nil {
+	if _, err := w.Write(ctx, "Note.md", []byte("# Note\n"), domain.FileStat{}); err != nil {
 		t.Fatalf("the note could not be written: %v", err)
 	}
 	if err := w.Move(ctx, "Note.md", "Renamed.md"); err != nil {
@@ -551,7 +551,7 @@ func TestANoteWithALongNameIsSaved(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	target := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
+	target := domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}
 	if _, err := w.Write(ctx, name, []byte("# Note\n\nedited\n"), target); err != nil {
 		t.Fatalf("the note could not be saved: %v", err)
 	}

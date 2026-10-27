@@ -4,8 +4,8 @@ package domain
 // application owns a closed set of keys and preserves everything else verbatim,
 // so the parser is not allowed to normalise or drop what it does not recognise.
 type Note struct {
-	Fingerprint Fingerprint
-	Title       string
+	FileStat FileStat
+	Title    string
 
 	// Type is what the note is. A note carrying no `type` is a note,
 	// which is nearly every file in a vault.

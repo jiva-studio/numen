@@ -82,7 +82,7 @@ message GetBookResponse {
   // The bytes the book was read from. It is passed back in the request for a
   // document and in the address of a picture, so both name one reading of one
   // file.
-  numen.v1.Fingerprint fingerprint = 8;
+  numen.v1.FileStat stat = 8;
 }
 
 message GetCfiRequest {
@@ -122,7 +122,7 @@ message ReadBookMarkupRequest {
   // Which bytes the request was given out for. A file that is other bytes now
   // is refused: the window reads the book again and asks with what that
   // returns.
-  optional numen.v1.Fingerprint baseline = 3;
+  optional numen.v1.FileStat baseline = 3;
 }
 
 message ReadBookMarkupResponse {
@@ -139,7 +139,7 @@ message ReadBookEntryRequest {
 
   // Which bytes the request was given out for. A file that is other bytes now
   // is refused.
-  numen.v1.Fingerprint baseline = 3;
+  numen.v1.FileStat baseline = 3;
 }
 
 message ReadBookEntryResponse {

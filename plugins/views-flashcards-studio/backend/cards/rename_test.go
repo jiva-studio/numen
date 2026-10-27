@@ -372,12 +372,12 @@ func TestRenamingAFieldToItsOwnNameWritesNothing(t *testing.T) {
 	u := newRenameField(t, vs).WithWriters(shut{t: t, isWatched: true, hold: errOutOfReach, open: errOutOfReach})
 
 	got, err := u.Execute(t.Context(), vs.first, cards.Rename{
-		CardModel: "Animal.md", From: "Height", To: "Height", Fingerprint: cardModel.Fingerprint,
+		CardModel: "Animal.md", From: "Height", To: "Height", FileStat: cardModel.FileStat,
 	})
 	if err != nil {
 		t.Fatalf("rename: %v", err)
 	}
-	if got.CardModel != cardModel.Fingerprint || len(got.Decks) != 0 {
+	if got.CardModel != cardModel.FileStat || len(got.Decks) != 0 {
 		t.Errorf("result = %+v, want the card model as the caller read it and no deck", got)
 	}
 }

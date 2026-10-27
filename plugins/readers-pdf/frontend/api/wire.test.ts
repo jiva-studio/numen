@@ -22,7 +22,7 @@ describe('the layout of a document', () => {
         { width: 612, height: 792 },
         { width: 595, height: 842 },
       ],
-      fingerprint: { path: 'Book.pdf', size: 12n, mtime: 34n },
+      stat: { path: 'Book.pdf', size: 12n, mtime: 34n },
     })
 
     expect(await documents.getDocumentLayout('Book.pdf')).toEqual({
@@ -30,7 +30,7 @@ describe('the layout of a document', () => {
         { width: 612, height: 792 },
         { width: 595, height: 842 },
       ],
-      fingerprint: '12 34 Book.pdf',
+      stat: '12 34 Book.pdf',
     })
     expect(request.getDocument).toHaveBeenCalledWith({ path: 'Book.pdf' })
   })
@@ -38,7 +38,7 @@ describe('the layout of a document', () => {
   it('names no file where the answer carries none', async () => {
     request.getDocument.mockResolvedValue({ pages: [] })
 
-    expect(await documents.getDocumentLayout('Book.pdf')).toEqual({ pages: [], fingerprint: '' })
+    expect(await documents.getDocumentLayout('Book.pdf')).toEqual({ pages: [], stat: '' })
   })
 })
 

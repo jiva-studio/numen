@@ -29,7 +29,7 @@ func (g *groupedWrites) Save(_ context.Context, _ domain.VaultID, notes []domain
 	}
 	paths := make([]string, len(notes))
 	for i, n := range notes {
-		paths[i] = n.Note.Fingerprint.Path
+		paths[i] = n.Note.FileStat.Path
 	}
 	g.groups = append(g.groups, paths)
 	return nil

@@ -32,12 +32,12 @@ type OpenedFile struct {
 
 // Execute opens the file while its size and modification time are the ones named, and refuses it
 // with ErrChanged otherwise. A zero modification time names a file nothing was said about.
-func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, named domain.Fingerprint) (OpenedFile, error) {
+func (u *OpenFile) Execute(ctx context.Context, v domain.Vault, path string, named domain.FileStat) (OpenedFile, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
 		return OpenedFile{}, err
 	}
-	found, err := reader.GetFingerprint(ctx, path)
+	found, err := reader.StatFile(ctx, path)
 	if err != nil {
 		return OpenedFile{}, err
 	}

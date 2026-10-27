@@ -218,7 +218,7 @@ func TestAnOwnedKeyReadsBackAsItWasSaved(t *testing.T) {
 		}
 
 		// And the reader of a whole note reads what the writer wrote.
-		n := markdown.Parse(domain.Fingerprint{Path: "notes/Old.md"}, doc.Bytes())
+		n := markdown.Parse(domain.FileStat{Path: "notes/Old.md"}, doc.Bytes())
 		if n.Title != strings.TrimSpace(title) {
 			t.Fatalf("a note written as %q is read as %q", title, n.Title)
 		}

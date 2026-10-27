@@ -59,9 +59,9 @@ enum ErrorCode {
   ERROR_CODE_STALE = 13;
 }
 
-// Fingerprint is which file this is: where it is filed, how big it is, and when
+// FileStat is which file this is: where it is filed, how big it is, and when
 // it last changed.
-message Fingerprint {
+message FileStat {
   string path = 1;
   int64 size = 2;
 

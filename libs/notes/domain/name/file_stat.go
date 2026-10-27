@@ -14,13 +14,13 @@ const (
 	KindFile SourceKind = "file"
 )
 
-// Fingerprint is what a walk of a vault reports before anything is read: enough to
+// FileStat is what a walk of a vault reports before anything is read: enough to
 // decide whether the file has to be read at all, and what would read it.
-type Fingerprint struct {
+type FileStat struct {
 	// Path is relative to the vault root, always with forward slashes, so that
 	// an index built on one platform describes the same source on another.
 	Path string
-	// Kind is what the file is. A walk and a stat both say it; a fingerprint the
+	// Kind is what the file is. A walk and a stat both say it; a file stat the
 	// index returns leaves it empty, because the kind is what was asked for.
 	Kind SourceKind
 	Size int64
@@ -36,12 +36,12 @@ type Fingerprint struct {
 //
 // The time is compared with Equal, because a time.Time also carries a zone and
 // a monotonic reading, and neither of those says which instant it is.
-func (f Fingerprint) IsUnchanged(other Fingerprint) bool {
+func (f FileStat) IsUnchanged(other FileStat) bool {
 	return f.Size == other.Size && f.ModTime.Equal(other.ModTime)
 }
 
-// IsZero reports whether this is no fingerprint at all, which is what a caller
+// IsZero reports whether this is no file stat at all, which is what a caller
 // presents when it says nothing about the file it expected to write over.
-func (f Fingerprint) IsZero() bool {
+func (f FileStat) IsZero() bool {
 	return f.Path == "" && f.Kind == "" && f.Size == 0 && f.ModTime.IsZero()
 }

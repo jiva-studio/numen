@@ -32,9 +32,9 @@ func saveThroughPort(t *testing.T, db *DB, vault domain.Vault, path string, pos 
 	}
 	if err := db.Sources().SaveExtraction(t.Context(), vault.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindFile, Size: 1000, ModTime: pos},
-			Hash:        "hash-" + path,
-			Recipe:      "epub",
+			FileStat: domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1000, ModTime: pos},
+			Hash:     "hash-" + path,
+			Recipe:   "epub",
 		},
 		Chunks: []domain.Chunk{{Start: 0, Length: 50 * len(texts), Text: strings.Join(texts, " "), Small: small}},
 	}); err != nil {
@@ -210,9 +210,9 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	sources := db.Sources()
 
 	if err := sources.SaveSource(ctx, first.ID, domain.Source{
-		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
-		Hash:        "hash-scan",
-		Producer:    "ocr",
+		FileStat: domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
+		Hash:     "hash-scan",
+		Producer: "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -227,7 +227,7 @@ func TestASourceSavedThroughThePortReadsBackAsGiven(t *testing.T) {
 	if read.Size != 4321 || !read.ModTime.Equal(thisYear) || read.Hash != "hash-scan" || read.Producer != "ocr" {
 		t.Errorf("the source reads back as %+v", read)
 	}
-	books, err := sources.GetFingerprints(ctx, first.ID, domain.KindFile)
+	books, err := sources.GetFileStats(ctx, first.ID, domain.KindFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -291,9 +291,9 @@ func TestRecognisedSourcesAreListedWithTheirProducer(t *testing.T) {
 	ctx := t.Context()
 	db := openDB(t)
 	if err := db.Sources().SaveSource(ctx, first.ID, domain.Source{
-		Fingerprint: domain.Fingerprint{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
-		Hash:        "hash-scan",
-		Producer:    "ocr",
+		FileStat: domain.FileStat{Path: "library/scan.pdf", Kind: domain.KindFile, Size: 4321, ModTime: thisYear},
+		Hash:     "hash-scan",
+		Producer: "ocr",
 	}); err != nil {
 		t.Fatal(err)
 	}

@@ -215,7 +215,7 @@ func TestAWriteOverProseTheClientNeverReadIsAnsweredChanged(t *testing.T) {
 	}
 }
 
-// The fingerprint a write answers with is what the client presents at its next
+// The file stat a write answers with is what the client presents at its next
 // write, and it is what lets a session hold more than one save.
 func TestAWriteAnswersWithTheFileItProduced(t *testing.T) {
 	api := openEditor(t, map[string]string{"Entropy.md": "# Entropy\n"})
@@ -278,8 +278,8 @@ type beatenReader struct {
 	after func(path string)
 }
 
-func (b beatenReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	ref, err := b.VaultReader.GetFingerprint(ctx, path)
+func (b beatenReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	ref, err := b.VaultReader.StatFile(ctx, path)
 	b.after(path)
 	return ref, err
 }

@@ -48,11 +48,11 @@ type faultyReader struct {
 	on faulty
 }
 
-func (r faultyReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
+func (r faultyReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
 	if err := r.on.stat[path]; err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
-	return r.VaultReader.GetFingerprint(ctx, path)
+	return r.VaultReader.StatFile(ctx, path)
 }
 
 func (r faultyReader) Read(ctx context.Context, path string) ([]byte, error) {
@@ -255,8 +255,8 @@ func TestACardModelAtTheBoundIsRead(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if got.Outcome != note.Ok || got.Fingerprint.Size != note.MaxBytes {
-		t.Errorf("outcome = %q, size = %d, want a card model of %d bytes read", got.Outcome, got.Fingerprint.Size, note.MaxBytes)
+	if got.Outcome != note.Ok || got.FileStat.Size != note.MaxBytes {
+		t.Errorf("outcome = %q, size = %d, want a card model of %d bytes read", got.Outcome, got.FileStat.Size, note.MaxBytes)
 	}
 }
 
@@ -286,8 +286,8 @@ func TestAFileOfAnotherKindIsNotADeck(t *testing.T) {
 	if got.Outcome != note.NotANote || len(got.Body.Cards) != 0 {
 		t.Errorf("outcome = %q, cards = %+v, want it not read as a note", got.Outcome, got.Body.Cards)
 	}
-	if got.Fingerprint.Kind != domain.KindFile {
-		t.Errorf("fingerprint = %+v, want what the vault says is there", got.Fingerprint)
+	if got.FileStat.Kind != domain.KindFile {
+		t.Errorf("fingerprint = %+v, want what the vault says is there", got.FileStat)
 	}
 }
 
@@ -323,8 +323,8 @@ func TestADeckThatIsNotTextIsSaidToBeNotText(t *testing.T) {
 	if got.Outcome != note.NotText || got.Raw != "" {
 		t.Errorf("outcome = %q, raw = %q, want not text", got.Outcome, got.Raw)
 	}
-	if got.Fingerprint.Path != "decks/Scan.md" || got.Fingerprint.Size == 0 {
-		t.Errorf("fingerprint = %+v, want the file as it was asked about", got.Fingerprint)
+	if got.FileStat.Path != "decks/Scan.md" || got.FileStat.Size == 0 {
+		t.Errorf("fingerprint = %+v, want the file as it was asked about", got.FileStat)
 	}
 }
 
@@ -340,8 +340,8 @@ func TestADeckWhoseFrontmatterCannotBeReadIsUnreadable(t *testing.T) {
 	if got.Outcome != note.Unreadable || got.Raw != "" {
 		t.Errorf("outcome = %q, raw = %q, want unreadable", got.Outcome, got.Raw)
 	}
-	if got.Fingerprint.Path != "decks/Broken.md" || got.Fingerprint.Size == 0 {
-		t.Errorf("fingerprint = %+v, want the file as it was asked about", got.Fingerprint)
+	if got.FileStat.Path != "decks/Broken.md" || got.FileStat.Size == 0 {
+		t.Errorf("fingerprint = %+v, want the file as it was asked about", got.FileStat)
 	}
 }
 
@@ -356,8 +356,8 @@ func TestADeckOverTheBoundReturnsItsSize(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read: %v", err)
 	}
-	if got.Fingerprint.Size != cards.MaxBytes+1 {
-		t.Errorf("fingerprint = %+v, want the deck's size", got.Fingerprint)
+	if got.FileStat.Size != cards.MaxBytes+1 {
+		t.Errorf("fingerprint = %+v, want the deck's size", got.FileStat)
 	}
 	if len(got.Body.Problems) != 1 || !strings.Contains(got.Body.Problems[0].Detail, strconv.Itoa(cards.MaxBytes+1)) {
 		t.Errorf("problems = %+v, want the size said", got.Body.Problems)

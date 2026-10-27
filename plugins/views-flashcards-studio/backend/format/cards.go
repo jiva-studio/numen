@@ -30,7 +30,7 @@ const (
 // CardModel is a note declaring what a card has and the card templates it is
 // shown through.
 type CardModel struct {
-	Ref    domain.Fingerprint
+	Ref    domain.FileStat
 	Fields []string
 	// Preamble is every byte above the first template, down to the one its heading
 	// opens on, and Tail is what the file ends with once the last side has been
@@ -55,7 +55,7 @@ type CardTemplate struct {
 
 // Deck is a note whose body is cards.
 type Deck struct {
-	Ref domain.Fingerprint
+	Ref domain.FileStat
 	// Preamble is every byte above the first section or card, down to the one
 	// its heading opens on, and Tail is what the file ends with once the last
 	// value has been read. Both are kept as they were written and neither is

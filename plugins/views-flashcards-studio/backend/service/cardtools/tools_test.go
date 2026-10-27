@@ -931,7 +931,7 @@ func readCardModel(t *testing.T, s *session, path string) readCardModelResult {
 }
 
 // A card model is read as its declared fields and card templates, and edited in
-// place while preserving its existing structure and checking the fingerprint.
+// place while preserving its existing structure and checking the file stat.
 func TestACardModelIsReadAndEditedInPlace(t *testing.T) {
 	session, v := newSession(t, vault())
 

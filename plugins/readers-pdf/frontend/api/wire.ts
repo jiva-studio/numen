@@ -34,11 +34,11 @@ export const documents: Documents = {
     const answer = await retryWhileBusy(() => client.documents.getDocument({ path }))
     return {
       pages: answer.pages.map((one) => ({ width: one.width, height: one.height })),
-      fingerprint: formatFingerprint(answer.fingerprint) ?? '',
+      stat: formatFingerprint(answer.stat) ?? '',
     }
   },
-  getPageUrl: (...[path, pageNumber, width, fingerprint = '']: [string, number, number, string?]) =>
-    `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}&${getBytesQuery(fingerprint)}`,
+  getPageUrl: (...[path, pageNumber, width, stat = '']: [string, number, number, string?]) =>
+    `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}&${getBytesQuery(stat)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() =>
       client.documents.getHighlights({ path, spans: [...spans] }),

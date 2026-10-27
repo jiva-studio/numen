@@ -6,8 +6,8 @@ import (
 
 type (
 	// From name subpackage
-	SourceKind  = name.SourceKind
-	Fingerprint = name.Fingerprint
+	SourceKind = name.SourceKind
+	FileStat   = name.FileStat
 )
 
 const (

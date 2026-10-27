@@ -11,10 +11,10 @@ func saveTypedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	t.Helper()
 
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
-		Title:       title,
-		Type:        kind,
-		Body:        title,
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
+		Title:    title,
+		Type:     kind,
+		Body:     title,
 	}
 	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)

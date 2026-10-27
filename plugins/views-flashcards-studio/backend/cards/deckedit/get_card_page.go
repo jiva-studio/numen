@@ -19,9 +19,9 @@ func (u GetCardPage) Execute(ctx context.Context, v domain.Vault, in Query) (Pag
 		return Page{}, err
 	}
 	res := Page{
-		Total:       len(contents.Body.Cards),
-		Problems:    contents.Body.Problems,
-		Fingerprint: contents.Fingerprint,
+		Total:    len(contents.Body.Cards),
+		Problems: contents.Body.Problems,
+		FileStat: contents.FileStat,
 	}
 	for _, s := range contents.Body.Sections {
 		res.Sections = append(res.Sections, s.Name)

@@ -22,7 +22,7 @@ type Scan struct {
 	readers     vaultport.VaultReaders
 	vaults      vaultport.VaultRepository
 	notes       noteport.NoteRepository
-	indexedVal  FingerprintQueries
+	indexedVal  FileStatQueries
 	maintenance indexport.IndexMaintenance
 
 	// Cut is how the notes found are cut into the chunks the index keeps.
@@ -57,7 +57,7 @@ func NewScan(
 	readers vaultport.VaultReaders,
 	vaults vaultport.VaultRepository,
 	notes noteport.NoteRepository,
-	queries FingerprintQueries,
+	queries FileStatQueries,
 	maintenance indexport.IndexMaintenance,
 ) Scan {
 	return Scan{
@@ -81,13 +81,13 @@ type ScanResult struct {
 	Unreadable int // walked, present, and the read failed
 }
 
-// FingerprintQueries is the one question a scan asks of the index, so that a
+// FileStatQueries is the one question a scan asks of the index, so that a
 // scan is handed what says which files have changed and nothing that answers
 // about a note.
-type FingerprintQueries interface {
-	// GetFingerprints is what the index believes about each file, keyed by path,
+type FileStatQueries interface {
+	// GetFileStats is what the index believes about each file, keyed by path,
 	// so a scan can decide what to reparse without reading anything.
-	GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
+	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
 }
 
 // Execute walks the vault once.
@@ -118,7 +118,7 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 		return ScanResult{}, fmt.Errorf("register vault: %w", err)
 	}
 
-	recognized, err := u.indexedVal.GetFingerprints(ctx, v.ID)
+	recognized, err := u.indexedVal.GetFileStats(ctx, v.ID)
 	if err != nil {
 		return ScanResult{}, fmt.Errorf("read index: %w", err)
 	}
@@ -154,15 +154,15 @@ func (u Scan) Execute(ctx context.Context, v domain.Vault) (ScanResult, error) {
 // walkVault is every file of the vault, the most recently modified first. The walk
 // is collected before anything is read so that the order can be chosen: notes
 // touched recently are what the person is looking for while the scan runs.
-func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.Fingerprint, error) {
-	var found []domain.Fingerprint
-	if err := reader.WalkFiles(ctx, func(ref domain.Fingerprint) error {
+func walkVault(ctx context.Context, reader vaultport.VaultReader) ([]domain.FileStat, error) {
+	var found []domain.FileStat
+	if err := reader.WalkFiles(ctx, func(ref domain.FileStat) error {
 		found = append(found, ref)
 		return nil
 	}); err != nil {
 		return nil, err
 	}
-	slices.SortFunc(found, func(a, b domain.Fingerprint) int { return b.ModTime.Compare(a.ModTime) })
+	slices.SortFunc(found, func(a, b domain.FileStat) int { return b.ModTime.Compare(a.ModTime) })
 	return found, nil
 }
 
@@ -173,7 +173,7 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 		if err := u.notes.Save(ctx, v.ID, u.Cut.Execute(notes)); err != nil {
 			// The failure is somewhere in a group, so say which one.
 			return fmt.Errorf("index %d notes of %s, %s to %s: %w",
-				len(notes), v.Name, notes[0].Fingerprint.Path, notes[len(notes)-1].Fingerprint.Path, err)
+				len(notes), v.Name, notes[0].FileStat.Path, notes[len(notes)-1].FileStat.Path, err)
 		}
 		res.Indexed += len(notes)
 		if u.OnProgress != nil {
@@ -183,13 +183,13 @@ func (u Scan) newGroup(v domain.Vault, res *ScanResult) grouping {
 	}}
 }
 
-// indexChanged reads and groups every note whose fingerprint differs from the
+// indexChanged reads and groups every note whose file stat differs from the
 // index's, and is the paths of the notes the walk found.
 func (u Scan) indexChanged(
 	ctx context.Context,
 	reader vaultport.VaultReader,
-	found []domain.Fingerprint,
-	indexed map[string]domain.Fingerprint,
+	found []domain.FileStat,
+	indexed map[string]domain.FileStat,
 	group *grouping,
 	res *ScanResult,
 ) (map[string]bool, error) {
@@ -245,7 +245,7 @@ func readNoteBytes(ctx context.Context, reader vaultport.VaultReader, path strin
 
 // removeGone takes out of the index the notes the walk did not find.
 func (u Scan) removeGone(
-	ctx context.Context, v domain.Vault, indexed map[string]domain.Fingerprint, visited map[string]bool, res *ScanResult,
+	ctx context.Context, v domain.Vault, indexed map[string]domain.FileStat, visited map[string]bool, res *ScanResult,
 ) error {
 	var removed []string
 	for path := range indexed {

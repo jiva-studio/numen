@@ -130,6 +130,6 @@ func (u ReadWholeVault) isNote(ctx context.Context, v domain.Vault, path string)
 		return false, err
 	}
 	// A path that cannot be stated is left to the cut, which says what stands there.
-	ref, statErr := reader.GetFingerprint(ctx, path)
+	ref, statErr := reader.StatFile(ctx, path)
 	return statErr == nil && ref.Kind == domain.KindNote, nil
 }

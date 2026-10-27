@@ -19,9 +19,9 @@ type Rename struct {
 	CardModel string
 	From      string
 	To        string
-	// Fingerprint is the card model as the caller read it. A card model that has
+	// FileStat is the card model as the caller read it. A card model that has
 	// changed since is left alone, and no deck is written.
-	Fingerprint domain.Fingerprint
+	FileStat domain.FileStat
 }
 
 // UnwrittenDeck is one deck a rename did not reach. It keeps the old heading.
@@ -33,7 +33,7 @@ type UnwrittenDeck struct {
 // RenameResult says what a rename reached and what it did not.
 type RenameResult struct {
 	// caller presents at its next write.
-	CardModel domain.Fingerprint
+	CardModel domain.FileStat
 	// Decks is every deck a heading was rewritten in, and Cards is how many
 	// headings that was.
 	Decks []string
@@ -118,7 +118,7 @@ func (u RenameField) Execute(ctx context.Context, v domain.Vault, in Rename) (Re
 		return RenameResult{}, err
 	}
 	if in.From == in.To {
-		return RenameResult{CardModel: in.Fingerprint}, nil
+		return RenameResult{CardModel: in.FileStat}, nil
 	}
 
 	out, err := u.rename(ctx, v, in)
@@ -209,29 +209,29 @@ func (u RenameField) rename(ctx context.Context, v domain.Vault, in Rename) (Ren
 // writeCardModelField writes the new name where the card model declares the field.
 func (u RenameField) writeCardModelField(
 	ctx context.Context, reader ports.VaultReader, writer ports.VaultWriter, in Rename,
-) (domain.Fingerprint, error) {
-	expectedFp := in.Fingerprint
+) (domain.FileStat, error) {
+	expectedFp := in.FileStat
 	if expectedFp.IsZero() {
-		on, err := reader.GetFingerprint(ctx, in.CardModel)
+		on, err := reader.StatFile(ctx, in.CardModel)
 		if err != nil {
-			return domain.Fingerprint{}, fmt.Errorf("look at %s: %w", in.CardModel, err)
+			return domain.FileStat{}, fmt.Errorf("look at %s: %w", in.CardModel, err)
 		}
 		expectedFp = on
 	}
 
 	raw, err := reader.Read(ctx, in.CardModel)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("read %s: %w", in.CardModel, err)
+		return domain.FileStat{}, fmt.Errorf("read %s: %w", in.CardModel, err)
 	}
 	f, err := format.OpenCardModel(raw)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
+		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
 	if err := f.RenameField(in.From, in.To); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
+		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
 	if err := u.writeIdentifier(f.WriteIdentifier); err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("%s: %w", in.CardModel, err)
+		return domain.FileStat{}, fmt.Errorf("%s: %w", in.CardModel, err)
 	}
 	return writer.Write(ctx, in.CardModel, f.Bytes(), expectedFp)
 }
@@ -274,7 +274,7 @@ type deckWriter struct {
 // whole: it is given an identifier where it carried none, and every card
 // of it is given its card id and its heading.
 func (d deckWriter) rename(ctx context.Context, path string, in Rename) (int, error) {
-	on, err := d.reader.GetFingerprint(ctx, path)
+	on, err := d.reader.StatFile(ctx, path)
 	if err != nil {
 		return 0, err
 	}

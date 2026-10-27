@@ -460,7 +460,7 @@ func TestLinkingWritesTheIdentifierTheNoteDidNotHave(t *testing.T) {
 		"Heat.md":    "# Heat\n",
 	})
 
-	if _, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
+	if _, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.FileStat{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 		Label:  "follows from",
@@ -495,7 +495,7 @@ func TestPointingANoteAtAPlaceBelowATypeReplacesTheEntryItHad(t *testing.T) {
 	})
 
 	pos, err := c.newEditLinks().PointAt(t.Context(), c.vault, "Roots.md", "preset",
-		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.Fingerprint{})
+		domain.Address{Scheme: domain.SchemeName, Value: "Slow"}, domain.RoleRef, domain.FileStat{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -541,7 +541,7 @@ func TestRemovingALinkPreservesTheOtherNoteAlone(t *testing.T) {
 
 	if _, err := c.newEditLinks().Remove(t.Context(), c.vault, "Heat.md",
 		domain.Address{Scheme: domain.SchemeName, Value: "Entropy"}, "",
-		domain.Fingerprint{}); err != nil {
+		domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -567,13 +567,13 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	stale, err := reader.GetFingerprint(t.Context(), "Entropy.md")
+	stale, err := reader.StatFile(t.Context(), "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Somebody else gets there first.
-	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.Fingerprint{}); err != nil {
+	if _, err := writing.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTheirs.\n", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -586,7 +586,7 @@ func TestAWriteRefusesToLandOnAnEditItDidNotSee(t *testing.T) {
 	}
 }
 
-// A caller that wrote a note and writes it again presents the fingerprint its
+// A caller that wrote a note and writes it again presents the file stat its
 // own write answered with. Holding the one it read would leave every session
 // with one write in it.
 func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
@@ -599,7 +599,7 @@ func TestAWriteFollowsAWriteWithNoReadBetween(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	read, err := reader.GetFingerprint(t.Context(), "Entropy.md")
+	read, err := reader.StatFile(t.Context(), "Entropy.md")
 	if err != nil {
 		t.Fatal(err)
 	}

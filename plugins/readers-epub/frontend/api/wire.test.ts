@@ -41,7 +41,7 @@ describe('a book', () => {
       printedPages: [{ label: 'iv', offset: 120 }],
       pageCount: 8,
       pageBytes: 500,
-      fingerprint: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
+      stat: { path: 'Anabasis.epub', size: 12n, mtime: 34n },
     })
 
     expect(await books.getBook('Anabasis.epub')).toEqual({
@@ -55,7 +55,7 @@ describe('a book', () => {
       printedPages: [{ label: 'iv', offset: 120 }],
       pages: 8,
       pageBytes: 500,
-      fingerprint: '12 34 Anabasis.epub',
+      stat: '12 34 Anabasis.epub',
     })
     expect(request.getBook).toHaveBeenCalledWith({ path: 'Anabasis.epub' })
   })
@@ -63,7 +63,7 @@ describe('a book', () => {
   it('names no file where the answer carries none', async () => {
     request.getBook.mockResolvedValue(nothing)
 
-    expect((await books.getBook('Anabasis.epub')).fingerprint).toBe('')
+    expect((await books.getBook('Anabasis.epub')).stat).toBe('')
   })
 })
 

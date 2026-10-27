@@ -61,17 +61,17 @@ func OpenForWriting(root string, opts vaultconfig.Options) (*VaultWriter, error)
 // it already had: the person may have made one read-only on purpose.
 const newFileMode fs.FileMode = 0o644
 
-func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
+func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
 	if ctx.Err() != nil {
-		return domain.Fingerprint{}, ctx.Err()
+		return domain.FileStat{}, ctx.Err()
 	}
 	target, err := w.resolveNoteFile(path)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	root, name, err := w.openRoot(target)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	defer root.Close()
 
@@ -79,29 +79,29 @@ func (w *VaultWriter) Write(ctx context.Context, path string, content []byte, fi
 	switch info, err := root.Stat(name); {
 	case err == nil:
 		if info.IsDir() {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: it is a directory", path)
+			return domain.FileStat{}, fmt.Errorf("write %s: it is a directory", path)
 		}
 		mode = info.Mode().Perm()
-		if !fingerprint.IsZero() &&
-			(info.Size() != fingerprint.Size || !info.ModTime().Equal(fingerprint.ModTime)) {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		if !stat.IsZero() &&
+			(info.Size() != stat.Size || !info.ModTime().Equal(stat.ModTime)) {
+			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
 	case errors.Is(err, fs.ErrNotExist):
 		// A note that is not there yet cannot have changed, and a caller that
 		// believed it was there is told so.
-		if !fingerprint.IsZero() {
-			return domain.Fingerprint{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
+		if !stat.IsZero() {
+			return domain.FileStat{}, fmt.Errorf("write %s: %w", path, vaultport.ErrStale)
 		}
 	default:
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 
 	if err := atomicfile.CreateParents(root, filepath.Dir(name), path); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	contentVal, err := atomicfile.Replace(ctx, root, name, bytes.NewReader(content), mode)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	contentVal.Path = path
 	return contentVal, nil

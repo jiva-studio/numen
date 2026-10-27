@@ -73,7 +73,7 @@ const getBaseline = (tab: Tab): NoteBaseline | null =>
   // Stryker disable next-line ConditionalExpression: Unsaved transitions require non-null written.
   tab.savedText === null || tab.filePath === null
     ? null
-    : { prose: tab.savedText, fingerprint: tab.filePath }
+    : { prose: tab.savedText, stat: tab.filePath }
 
 /** A write of what is on screen now, presenting what it is given. */
 const beginWrite = (tab: Tab, baseline: NoteBaseline | null): Transition => ({

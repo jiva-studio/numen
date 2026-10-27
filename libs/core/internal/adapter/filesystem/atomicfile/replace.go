@@ -74,43 +74,43 @@ func CreateTempFile(root *os.Root, dir, pattern string) (*os.File, string, error
 // dot is not a note. The contents are flushed before the rename, so a machine
 // that loses power comes back to the old file or the new one.
 //
-// The fingerprint comes from the temporary file's own descriptor. The rename
+// The file stat comes from the temporary file's own descriptor. The rename
 // carries the file across whole, so its size and its modification time are the
 // ones at the target from the moment the rename lands.
-func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.Fingerprint, error) {
+func Replace(ctx context.Context, root *os.Root, target string, from io.Reader, mode fs.FileMode) (domain.FileStat, error) {
 	dir := filepath.Dir(target)
 	tmp, pos, err := CreateTempFile(root, dir, GetTempPattern(filepath.Base(target)))
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	defer root.Remove(pos)
 
 	if _, err := io.Copy(tmp, from); err != nil {
 		tmp.Close()
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if err := tmp.Sync(); err != nil {
 		tmp.Close()
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	info, err := tmp.Stat()
 	if err != nil {
 		tmp.Close()
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	// Changing the mode moves no modification time. It is asked of the open
 	// file, which is this one and can be no other.
 	if err := tmp.Chmod(mode); err != nil {
 		tmp.Close()
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if err := tmp.Close(); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if err := Rename(ctx, root, pos, target); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
-	content := domain.Fingerprint{Size: info.Size(), ModTime: info.ModTime()}
+	content := domain.FileStat{Size: info.Size(), ModTime: info.ModTime()}
 	return content, SyncDirectory(root, dir)
 }
 

@@ -111,7 +111,7 @@ func (u Remove) Execute(ctx context.Context, v domain.Vault, path string) (Remov
 
 // getBacklinksOfNotes is the links that point at any of the notes among the
 // sources.
-func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.Fingerprint) ([]domain.ResolvedLink, error) {
+func (u Remove) getBacklinksOfNotes(ctx context.Context, v domain.Vault, sources []domain.FileStat) ([]domain.ResolvedLink, error) {
 	var pointing []domain.ResolvedLink
 	for _, source := range sources {
 		if source.Kind != domain.KindNote {

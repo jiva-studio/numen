@@ -81,7 +81,7 @@ type GetDocumentResponse struct {
 	Pages []*Page `protobuf:"bytes,1,rep,name=pages,proto3" json:"pages,omitempty"`
 	// The bytes the layout was read from. A page image is asked for with it, so
 	// one address names one drawing of one file.
-	Fingerprint   *v1.Fingerprint `protobuf:"bytes,2,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Stat          *v1.FileStat `protobuf:"bytes,2,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -123,9 +123,9 @@ func (x *GetDocumentResponse) GetPages() []*Page {
 	return nil
 }
 
-func (x *GetDocumentResponse) GetFingerprint() *v1.Fingerprint {
+func (x *GetDocumentResponse) GetStat() *v1.FileStat {
 	if x != nil {
-		return x.Fingerprint
+		return x.Stat
 	}
 	return nil
 }
@@ -457,10 +457,10 @@ const file_numen_pdf_v1_document_proto_rawDesc = "" +
 	"\n" +
 	"\x1bnumen/pdf/v1/document.proto\x12\fnumen.pdf.v1\x1a\x15numen/v1/shared.proto\"(\n" +
 	"\x12GetDocumentRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"x\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"g\n" +
 	"\x13GetDocumentResponse\x12(\n" +
-	"\x05pages\x18\x01 \x03(\v2\x12.numen.pdf.v1.PageR\x05pages\x127\n" +
-	"\vfingerprint\x18\x02 \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\"4\n" +
+	"\x05pages\x18\x01 \x03(\v2\x12.numen.pdf.v1.PageR\x05pages\x12&\n" +
+	"\x04stat\x18\x02 \x01(\v2\x12.numen.v1.FileStatR\x04stat\"4\n" +
 	"\x04Page\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\x01R\x05width\x12\x16\n" +
 	"\x06height\x18\x02 \x01(\x01R\x06height\"P\n" +
@@ -505,12 +505,12 @@ var file_numen_pdf_v1_document_proto_goTypes = []any{
 	(*DocumentRun)(nil),           // 5: numen.pdf.v1.DocumentRun
 	(*DocumentPlace)(nil),         // 6: numen.pdf.v1.DocumentPlace
 	(*DocumentRect)(nil),          // 7: numen.pdf.v1.DocumentRect
-	(*v1.Fingerprint)(nil),        // 8: numen.v1.Fingerprint
+	(*v1.FileStat)(nil),           // 8: numen.v1.FileStat
 	(*v1.Span)(nil),               // 9: numen.v1.Span
 }
 var file_numen_pdf_v1_document_proto_depIdxs = []int32{
 	2, // 0: numen.pdf.v1.GetDocumentResponse.pages:type_name -> numen.pdf.v1.Page
-	8, // 1: numen.pdf.v1.GetDocumentResponse.fingerprint:type_name -> numen.v1.Fingerprint
+	8, // 1: numen.pdf.v1.GetDocumentResponse.stat:type_name -> numen.v1.FileStat
 	9, // 2: numen.pdf.v1.GetHighlightsRequest.spans:type_name -> numen.v1.Span
 	5, // 3: numen.pdf.v1.GetHighlightsResponse.runs:type_name -> numen.pdf.v1.DocumentRun
 	6, // 4: numen.pdf.v1.DocumentRun.places:type_name -> numen.pdf.v1.DocumentPlace

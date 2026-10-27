@@ -37,9 +37,9 @@ type DeckContents struct {
 	Raw string
 	// CardModels is where the wikilink under each card's heading lands, keyed by
 	CardModels map[string]string
-	// Fingerprint is what the file was when it was asked about, which is before
+	// FileStat is what the file was when it was asked about, which is before
 	// its bytes were read.
-	Fingerprint domain.Fingerprint
+	FileStat domain.FileStat
 }
 
 // CardModelContents is one card model as a read hands it over.
@@ -50,8 +50,8 @@ type CardModelContents struct {
 	Type    domain.NoteType
 	// Body is what the file says: the fields a card is asked for and the templates
 	// it is shown through. It says nothing for any outcome but Ok.
-	Body        format.CardModel
-	Fingerprint domain.Fingerprint
+	Body     format.CardModel
+	FileStat domain.FileStat
 }
 
 // Read hands over a deck or a card model, read out of the vault.
@@ -78,7 +78,7 @@ func (u Read) Deck(ctx context.Context, v domain.Vault, path string) (DeckConten
 	if err != nil {
 		return DeckContents{}, err
 	}
-	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
+	out.FileStat, out.Outcome, out.Type = ref, outcome, n.Type
 	// A file that will not read is carried out in the outcome above, and adds
 	// nothing to a body nobody read.
 	//exhaustive:ignore
@@ -203,7 +203,7 @@ func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardM
 	if err != nil {
 		return CardModelContents{}, err
 	}
-	out.Fingerprint, out.Outcome, out.Type = ref, outcome, n.Type
+	out.FileStat, out.Outcome, out.Type = ref, outcome, n.Type
 	out.Title = n.Title
 	if outcome == note.Ok {
 		out.Body = format.ReadCardModel(n)
@@ -215,16 +215,16 @@ func (u Read) CardModel(ctx context.Context, v domain.Vault, path string) (CardM
 // its bytes parse to once everything that would refuse them has been asked.
 func (u Read) readNote(
 	ctx context.Context, v domain.Vault, path string, maxSize int64,
-) (domain.Note, domain.Fingerprint, note.ReadOutcome, error) {
+) (domain.Note, domain.FileStat, note.ReadOutcome, error) {
 	reader, err := u.readers.Open(v)
 	if err != nil {
-		return domain.Note{}, domain.Fingerprint{}, "", err
+		return domain.Note{}, domain.FileStat{}, "", err
 	}
 
 	// The vault says what is at a path without opening it: a note, a file it
 	// leaves alone, or nothing. The size is among what it says, which is what
 	// keeps a deck over the bound unread.
-	ref, err := reader.GetFingerprint(ctx, path)
+	ref, err := reader.StatFile(ctx, path)
 	target := err == nil
 	switch {
 	case target:
@@ -235,9 +235,9 @@ func (u Read) readNote(
 			return domain.Note{}, ref, note.TooLarge, nil
 		}
 	case errors.Is(err, ports.ErrNotANote):
-		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
+		return domain.Note{}, domain.FileStat{}, note.NotANote, nil
 	case !errors.Is(err, fs.ErrNotExist):
-		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("look at %s: %w", path, err)
+		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("look at %s: %w", path, err)
 	}
 
 	raw, err := reader.Read(ctx, path)
@@ -245,9 +245,9 @@ func (u Read) readNote(
 	case errors.Is(err, fs.ErrNotExist):
 		return domain.Note{}, ref, note.Missing, nil
 	case !target && err == nil:
-		return domain.Note{}, domain.Fingerprint{}, note.NotANote, nil
+		return domain.Note{}, domain.FileStat{}, note.NotANote, nil
 	case err != nil:
-		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("read %s: %w", path, err)
+		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 
 	// The values of a card go out in string fields. A browser turns an
@@ -259,7 +259,7 @@ func (u Read) readNote(
 	if _, err := markdown.Open(raw); errors.Is(err, markdown.ErrUnreadable) {
 		return domain.Note{}, ref, note.Unreadable, nil
 	} else if err != nil {
-		return domain.Note{}, domain.Fingerprint{}, "", fmt.Errorf("read %s: %w", path, err)
+		return domain.Note{}, domain.FileStat{}, "", fmt.Errorf("read %s: %w", path, err)
 	}
 	return markdown.Parse(ref, raw), ref, note.Ok, nil
 }

@@ -123,9 +123,9 @@ func (ErrorCode) EnumDescriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
-// Fingerprint is which file this is: where it is filed, how big it is, and when
+// FileStat is which file this is: where it is filed, how big it is, and when
 // it last changed.
-type Fingerprint struct {
+type FileStat struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	Path  string                 `protobuf:"bytes,1,opt,name=path,proto3" json:"path,omitempty"`
 	Size  int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
@@ -135,20 +135,20 @@ type Fingerprint struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *Fingerprint) Reset() {
-	*x = Fingerprint{}
+func (x *FileStat) Reset() {
+	*x = FileStat{}
 	mi := &file_numen_v1_shared_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *Fingerprint) String() string {
+func (x *FileStat) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*Fingerprint) ProtoMessage() {}
+func (*FileStat) ProtoMessage() {}
 
-func (x *Fingerprint) ProtoReflect() protoreflect.Message {
+func (x *FileStat) ProtoReflect() protoreflect.Message {
 	mi := &file_numen_v1_shared_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -160,26 +160,26 @@ func (x *Fingerprint) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use Fingerprint.ProtoReflect.Descriptor instead.
-func (*Fingerprint) Descriptor() ([]byte, []int) {
+// Deprecated: Use FileStat.ProtoReflect.Descriptor instead.
+func (*FileStat) Descriptor() ([]byte, []int) {
 	return file_numen_v1_shared_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *Fingerprint) GetPath() string {
+func (x *FileStat) GetPath() string {
 	if x != nil {
 		return x.Path
 	}
 	return ""
 }
 
-func (x *Fingerprint) GetSize() int64 {
+func (x *FileStat) GetSize() int64 {
 	if x != nil {
 		return x.Size
 	}
 	return 0
 }
 
-func (x *Fingerprint) GetMtime() int64 {
+func (x *FileStat) GetMtime() int64 {
 	if x != nil {
 		return x.Mtime
 	}
@@ -352,8 +352,8 @@ var File_numen_v1_shared_proto protoreflect.FileDescriptor
 
 const file_numen_v1_shared_proto_rawDesc = "" +
 	"\n" +
-	"\x15numen/v1/shared.proto\x12\bnumen.v1\"K\n" +
-	"\vFingerprint\x12\x12\n" +
+	"\x15numen/v1/shared.proto\x12\bnumen.v1\"H\n" +
+	"\bFileStat\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x12\n" +
 	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x14\n" +
 	"\x05mtime\x18\x03 \x01(\x03R\x05mtime\"*\n" +
@@ -396,7 +396,7 @@ var file_numen_v1_shared_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_numen_v1_shared_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_numen_v1_shared_proto_goTypes = []any{
 	(ErrorCode)(0),         // 0: numen.v1.ErrorCode
-	(*Fingerprint)(nil),    // 1: numen.v1.Fingerprint
+	(*FileStat)(nil),       // 1: numen.v1.FileStat
 	(*Span)(nil),           // 2: numen.v1.Span
 	(*Bounds)(nil),         // 3: numen.v1.Bounds
 	(*ReasoningLevel)(nil), // 4: numen.v1.ReasoningLevel

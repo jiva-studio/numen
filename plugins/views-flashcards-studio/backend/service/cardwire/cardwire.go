@@ -41,11 +41,11 @@ func NewWireSummary(s cards.CardModelSummary) *flashcardsv1.CardModelSummary {
 // NewRenameResponse is what a rename reached and what it did not, as the schema carries
 // it. A deck it could not be written to keeps the old heading, and the problem
 // says which deck and why.
-func NewRenameResponse(r cards.RenameResult, fingerprint *v1.Fingerprint) *flashcardsv1.RenameCardModelFieldResponse {
+func NewRenameResponse(r cards.RenameResult, stat *v1.FileStat) *flashcardsv1.RenameCardModelFieldResponse {
 	out := &flashcardsv1.RenameCardModelFieldResponse{
 		Decks: r.Decks,
 		Cards: int32(r.Cards),
-		At:    fingerprint,
+		At:    stat,
 	}
 	for _, deck := range r.NotWritten {
 		out.NotWritten = append(out.NotWritten, &flashcardsv1.UnwrittenDeck{

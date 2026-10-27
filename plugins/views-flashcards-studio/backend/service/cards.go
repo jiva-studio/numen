@@ -123,10 +123,10 @@ func (h *cardsHandler) RenameCardModelField(
 	}
 	renamed, err := h.scenarios().cards.RenameField.Execute(ctx, showing, cards.Rename{
 		CardModel: r.Msg.GetPath(), From: r.Msg.GetFrom(), To: r.Msg.GetTo(),
-		Fingerprint: readFingerprint(r.Msg.GetBaseline()),
+		FileStat: readFileStat(r.Msg.GetBaseline()),
 	})
 	if err == nil || errors.Is(err, note.ErrUnlevelled) {
-		out := cardwire.NewRenameResponse(renamed, writeFingerprint(renamed.CardModel))
+		out := cardwire.NewRenameResponse(renamed, writeFileStat(renamed.CardModel))
 		out.IsUnlevelled = isUnlevelled(err)
 		return connect.NewResponse(out), nil
 	}
@@ -164,7 +164,7 @@ func (h *cardsHandler) ReadCardModel(
 	out.CardModel = cardwire.NewWireCardModel(found.Path, title, found.Body)
 	// What the file was when this came out of it, for the client to present
 	// when it writes the card model back.
-	out.At = writeFingerprint(found.Fingerprint)
+	out.At = writeFileStat(found.FileStat)
 	return connect.NewResponse(out), nil
 }
 
@@ -193,7 +193,7 @@ func (h *cardsHandler) ReadDeck(
 	}
 	title := h.getTitle(ctx, showing, found.Path)
 	out.Deck = cardwire.NewWireDeck(found.Path, title, found.Body, found.CardModels)
-	out.At = writeFingerprint(found.Fingerprint)
+	out.At = writeFileStat(found.FileStat)
 	return connect.NewResponse(out), nil
 }
 
@@ -211,14 +211,14 @@ func (h *cardsHandler) WriteDeck(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	wrote, err := h.scenarios().cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, readFingerprint(r.Msg.GetBaseline()))
+	wrote, err := h.scenarios().cards.Write.Deck(ctx, showing, r.Msg.GetPath(), body, readFileStat(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save, and told where the
+	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&flashcardsv1.WriteDeckResponse{
-			At: writeFingerprint(wrote.Fingerprint), IsUnlevelled: unlevelled,
+			At: writeFileStat(wrote.FileStat), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, note.ErrTooLarge) {
@@ -250,14 +250,14 @@ func (h *cardsHandler) WriteCardModel(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	pos, err := h.scenarios().cards.Write.CardModel(
-		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), readFingerprint(r.Msg.GetBaseline()))
+		ctx, showing, r.Msg.GetPath(), body, r.Msg.GetFields(), readFileStat(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save, and told where the
+	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&flashcardsv1.WriteCardModelResponse{
-			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
+			At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, ok := getErrorCode(err)

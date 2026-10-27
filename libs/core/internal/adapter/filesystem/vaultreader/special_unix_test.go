@@ -44,14 +44,14 @@ func TestSpecialFileIsNotANote(t *testing.T) {
 	isDone := make(chan error, 1)
 	go func() {
 		var walked []string
-		err := src.WalkFiles(t.Context(), func(r domain.Fingerprint) error {
+		err := src.WalkFiles(t.Context(), func(r domain.FileStat) error {
 			walked = append(walked, r.Path)
 			return nil
 		})
 		if err == nil && !slices.Equal(walked, []string{"note.md"}) {
 			t.Errorf("walk found %v, want [note.md]", walked)
 		}
-		if _, err := src.GetFingerprint(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
+		if _, err := src.StatFile(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {
 			t.Errorf("stat pipe.md: %v, want ErrNotANote", err)
 		}
 		if _, err := src.Read(t.Context(), "pipe.md"); !errors.Is(err, vaultport.ErrNotANote) {

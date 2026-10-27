@@ -19,11 +19,11 @@ import (
 // trashSources is the index saying which sources sit under a path.
 type trashSources struct {
 	sourceport.SourceQueries
-	underCtx []domain.Fingerprint
+	underCtx []domain.FileStat
 	err      error
 }
 
-func (s trashSources) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (s trashSources) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.FileStat, error) {
 	return s.underCtx, s.err
 }
 
@@ -95,8 +95,8 @@ func (tr *trashing) remove() note.Remove {
 	})
 }
 
-func noteAt(path string) domain.Fingerprint {
-	return domain.Fingerprint{Path: path, Kind: domain.KindNote}
+func noteAt(path string) domain.FileStat {
+	return domain.FileStat{Path: path, Kind: domain.KindNote}
 }
 
 func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
@@ -120,7 +120,7 @@ func TestRemovingStopsWhenTheIndexCannotSayWhatIsBelowThePath(t *testing.T) {
 func TestRemovingStopsWhenTheLinksCannotBeAskedAbout(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	broken := errors.New("the index is gone")
 	tr.links.err = broken
 
@@ -155,7 +155,7 @@ func TestRemovingStopsWhenTheVaultCannotBeOpenedForWriting(t *testing.T) {
 func TestOnlyNotesAreAskedWhatPointsAtThem(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.underCtx = []domain.Fingerprint{
+	tr.sources.underCtx = []domain.FileStat{
 		{Path: "physics/figure.epub", Kind: domain.KindFile},
 		noteAt("physics/Entropy.md"),
 	}
@@ -233,16 +233,16 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 	t.Parallel()
 	for name, tc := range map[string]struct {
 		path     string
-		underCtx []domain.Fingerprint
+		underCtx []domain.FileStat
 		want     []string
 	}{
-		"a note": {"Entropy.md", []domain.Fingerprint{noteAt("Entropy.md")}, []string{"Entropy.md"}},
+		"a note": {"Entropy.md", []domain.FileStat{noteAt("Entropy.md")}, []string{"Entropy.md"}},
 		"a folder with one note": {
-			"physics", []domain.Fingerprint{noteAt("physics/Entropy.md")}, []string{"physics/Entropy.md"},
+			"physics", []domain.FileStat{noteAt("physics/Entropy.md")}, []string{"physics/Entropy.md"},
 		},
 		"a folder with two": {
 			"physics",
-			[]domain.Fingerprint{noteAt("physics/Entropy.md"), noteAt("physics/Heat.md")},
+			[]domain.FileStat{noteAt("physics/Entropy.md"), noteAt("physics/Heat.md")},
 			[]string{"physics/Entropy.md", "physics/Heat.md"},
 		},
 		"a path the index knows nothing under": {"physics", nil, []string{"physics"}},
@@ -267,7 +267,7 @@ func TestRemovingLevelsTheIndexAtEachSourceThatWent(t *testing.T) {
 func TestRemovingNamesTheNotesAfterOneThatWentWithTheFolder(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.underCtx = []domain.Fingerprint{noteAt("physics/A.md"), noteAt("physics/B.md")}
+	tr.sources.underCtx = []domain.FileStat{noteAt("physics/A.md"), noteAt("physics/B.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{
 		"physics/A.md": {{From: "physics/B.md"}},
 		"physics/B.md": {{From: "Outside.md"}},
@@ -297,7 +297,7 @@ func TestAMoveThatFailsOtherwiseThanByAnOccupiedNameIsReported(t *testing.T) {
 func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	removing := tr.remove().WithIndex(nil)
 
 	got, err := removing.Execute(t.Context(), domain.Vault{}, "Entropy.md")
@@ -319,7 +319,7 @@ func TestRemovingWithNoIndexIsTheMoveAlone(t *testing.T) {
 func TestAnIndexThatCannotBeLevelledIsSaidAlongsideTheRemoval(t *testing.T) {
 	t.Parallel()
 	tr := newTrashing()
-	tr.sources.underCtx = []domain.Fingerprint{noteAt("Entropy.md")}
+	tr.sources.underCtx = []domain.FileStat{noteAt("Entropy.md")}
 	tr.links.pointing = map[string][]domain.ResolvedLink{"Entropy.md": {{From: "Heat.md"}}}
 	broken := errors.New("the index is gone")
 	tr.levelErr = broken

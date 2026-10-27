@@ -53,7 +53,7 @@ type unknowing struct {
 	err error
 }
 
-func (u unknowing) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.Fingerprint, error) {
+func (u unknowing) GetSourcesUnder(context.Context, domain.VaultID, string) ([]domain.FileStat, error) {
 	return nil, u.err
 }
 

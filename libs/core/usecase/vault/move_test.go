@@ -194,7 +194,7 @@ func walkSources(t *testing.T, f filing, path string) []string {
 		t.Fatal(err)
 	}
 	var out []string
-	if err := reader.WalkFiles(t.Context(), func(ref domain.Fingerprint) error {
+	if err := reader.WalkFiles(t.Context(), func(ref domain.FileStat) error {
 		if ref.Path == path || strings.HasPrefix(ref.Path, path+"/") {
 			out = append(out, ref.Path)
 		}

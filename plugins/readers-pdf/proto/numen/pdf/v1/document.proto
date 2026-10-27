@@ -38,7 +38,7 @@ message GetDocumentResponse {
 
   // The bytes the layout was read from. A page image is asked for with it, so
   // one address names one drawing of one file.
-  numen.v1.Fingerprint fingerprint = 2;
+  numen.v1.FileStat stat = 2;
 }
 
 // Page is one page of the document, in the document's own units. A client

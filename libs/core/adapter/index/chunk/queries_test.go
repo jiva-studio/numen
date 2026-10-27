@@ -176,7 +176,7 @@ func embed(t *testing.T, db *index.DB, vault domain.VaultID, path string, seed b
 	}
 }
 
-func getPaths(found []domain.Fingerprint) []string {
+func getPaths(found []domain.FileStat) []string {
 	out := make([]string, 0, len(found))
 	for _, f := range found {
 		out = append(out, f.Path)
@@ -262,7 +262,7 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 	source{path: "b/x.epub", kind: "book", size: 5, mtime: 9}.save(t, db)
 	source{vault: vaultB, path: "n/other.md", kind: "note", size: 3, mtime: 9}.save(t, db)
 
-	got, err := db.ChunkQueries().GetFingerprints(t.Context(), vaultA, "note")
+	got, err := db.ChunkQueries().GetFileStats(t.Context(), vaultA, "note")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,7 +283,7 @@ func TestFingerprintsAreTheFilesOfOneKindInOneVault(t *testing.T) {
 }
 
 func TestFingerprintsOfAVaultTheIndexNeverHeardOfAreAnEmptyMap(t *testing.T) {
-	got, err := openIndex(t).ChunkQueries().GetFingerprints(t.Context(), nobody, "note")
+	got, err := openIndex(t).ChunkQueries().GetFileStats(t.Context(), nobody, "note")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,17 +293,17 @@ func TestFingerprintsOfAVaultTheIndexNeverHeardOfAreAnEmptyMap(t *testing.T) {
 }
 
 func TestAFingerprintReadFromAClosedOrBrokenIndexFails(t *testing.T) {
-	if _, err := closed(t).GetFingerprints(t.Context(), vaultA, "note"); err == nil {
+	if _, err := closed(t).GetFileStats(t.Context(), vaultA, "note"); err == nil {
 		t.Error("a closed index answered")
 	}
 	removed := broken(t, func(*index.DB) {}, `ALTER TABLE sources RENAME TO gone`)
-	if _, err := removed.GetFingerprints(t.Context(), vaultA, "note"); err == nil {
+	if _, err := removed.GetFileStats(t.Context(), vaultA, "note"); err == nil {
 		t.Error("an index with no sources table answered")
 	}
 	garbled := broken(t, func(db *index.DB) {
 		source{path: "n/one.md", kind: "note", size: 1}.save(t, db)
 	}, `UPDATE sources SET size = 'abc'`)
-	if _, err := garbled.GetFingerprints(t.Context(), vaultA, "note"); err == nil {
+	if _, err := garbled.GetFileStats(t.Context(), vaultA, "note"); err == nil {
 		t.Error("a size that is no number was read")
 	}
 }
@@ -1215,7 +1215,7 @@ func TestEveryQueryFailsWhenTheVaultCannotBeLooked(t *testing.T) {
 	kinds := []domain.SourceKind{domain.KindFile}
 
 	checks := map[string]func() error{
-		"GetFingerprints": func() error { _, err := q.GetFingerprints(ctx, vaultA, "book"); return err },
+		"GetFingerprints": func() error { _, err := q.GetFileStats(ctx, vaultA, "book"); return err },
 		"GetSourcesUnder": func() error { _, err := q.GetSourcesUnder(ctx, vaultA, "p"); return err },
 		"FindLexical":     func() error { _, err := q.FindLexical(ctx, vaultA, "w", kinds, 5, false); return err },
 		"GetNamedPassages": func() error {

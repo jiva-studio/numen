@@ -33,7 +33,7 @@ export interface Book {
   readonly printedPages: readonly PrintedPage[]
   readonly pages: number
   readonly pageBytes: number
-  readonly fingerprint: string
+  readonly stat: string
 }
 
 /** Service port for book operations. */
@@ -41,9 +41,9 @@ export interface Books {
   /** Retrieves book metadata and spine. */
   getBook(path: string): Promise<Book>
   /** Reads document markup for a spine item. */
-  readMarkup(path: string, document: string, fingerprint: string): Promise<string>
+  readMarkup(path: string, document: string, stat: string): Promise<string>
   /** Returns the URL for an archived resource entry. */
-  getEntryUrl(path: string, name: string, fingerprint: string): string
+  getEntryUrl(path: string, name: string, stat: string): string
   /** The EPUB CFI of the character at an offset of the text, and null for a book with no text. */
   getCfi(path: string, offset: number): Promise<string | null>
   /** The offset of the text a CFI names, and null where it names no place in the book. */

@@ -63,7 +63,7 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 	return registry, nil
 }
 
-func formatFingerprint(ref domain.Fingerprint) string {
+func formatFingerprint(ref domain.FileStat) string {
 	var nanos int64
 	if !ref.ModTime.IsZero() {
 		nanos = ref.ModTime.UnixNano()
@@ -71,25 +71,25 @@ func formatFingerprint(ref domain.Fingerprint) string {
 	return strconv.FormatInt(ref.Size, 10) + "-" + strconv.FormatInt(nanos, 10)
 }
 
-func parseFingerprint(s string) (domain.Fingerprint, error) {
+func parseFingerprint(s string) (domain.FileStat, error) {
 	if s == "" {
-		return domain.Fingerprint{}, errors.New("fingerprint required")
+		return domain.FileStat{}, errors.New("fingerprint required")
 	}
 	sizeStr, mtimeStr, found := strings.Cut(s, "-")
 	if !found {
-		return domain.Fingerprint{}, fmt.Errorf("invalid fingerprint format: %q", s)
+		return domain.FileStat{}, fmt.Errorf("invalid fingerprint format: %q", s)
 	}
 	size, err := strconv.ParseInt(sizeStr, 10, 64)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("invalid fingerprint size: %w", err)
+		return domain.FileStat{}, fmt.Errorf("invalid fingerprint size: %w", err)
 	}
 	nanos, err := strconv.ParseInt(mtimeStr, 10, 64)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("invalid fingerprint timestamp: %w", err)
+		return domain.FileStat{}, fmt.Errorf("invalid fingerprint timestamp: %w", err)
 	}
 	var modTime time.Time
 	if nanos != 0 {
 		modTime = time.Unix(0, nanos)
 	}
-	return domain.Fingerprint{Size: size, ModTime: modTime}, nil
+	return domain.FileStat{Size: size, ModTime: modTime}, nil
 }

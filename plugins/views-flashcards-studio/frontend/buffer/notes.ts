@@ -76,7 +76,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         tab.error = null
         tab.keepOverride = false
         tab.filePath = res.value.at ?? tab.filePath
-        tab.baseline = { prose: tab.body, fingerprint: res.value.at ?? '' }
+        tab.baseline = { prose: tab.body, stat: res.value.at ?? '' }
       } else {
         if (res.error === 'changed') {
           tab.state = 'stale'
@@ -111,7 +111,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         if (res.ok) {
           tab.body = res.value.body
           tab.filePath = res.value.at ?? path
-          tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+          tab.baseline = { prose: res.value.body, stat: res.value.at ?? '' }
           tab.state = 'clean'
           tab.error = null
         } else {
@@ -197,7 +197,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         if (res.ok) {
           tab.body = res.value.body
           tab.filePath = res.value.at ?? tab.path
-          tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+          tab.baseline = { prose: res.value.body, stat: res.value.at ?? '' }
           tab.state = 'clean'
           tab.error = null
           tab.keepOverride = false
@@ -249,7 +249,7 @@ export function openNotes(notes: Notes, options?: OpenNotesOptions) {
         void notes.read(tab.path).then((res) => {
           if (res.ok) {
             tab.body = res.value.body
-            tab.baseline = { prose: res.value.body, fingerprint: res.value.at ?? '' }
+            tab.baseline = { prose: res.value.body, stat: res.value.at ?? '' }
             tab.filePath = res.value.at ?? tab.filePath
             options?.onReplaced?.(tab.path)
           }

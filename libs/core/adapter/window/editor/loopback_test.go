@@ -77,11 +77,11 @@ func ask(handler http.Handler, url string) *httptest.ResponseRecorder {
 // statOf is what the vault says about the file at a path, which is what an
 // address names. A path the vault does not hold has an address all the same,
 // and what that address is answered with is what some of these ask about.
-func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.Fingerprint {
+func statOf(t *testing.T, api *Services, v domain.Vault, path string) domain.FileStat {
 	t.Helper()
-	ref, err := api.Media.getFingerprint.Execute(t.Context(), v, path)
+	ref, err := api.Media.statFile.Execute(t.Context(), v, path)
 	if err != nil {
-		return domain.Fingerprint{Path: path}
+		return domain.FileStat{Path: path}
 	}
 	return ref
 }
@@ -305,8 +305,8 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 	pos := time.Date(2026, 9, 3, 11, 4, 5, 123456789, time.UTC)
 	const nanos = 1788433445123456789
 
-	ref := domain.Fingerprint{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
-	if target := convertFingerprintToWire(ref).GetMtime(); target != nanos {
+	ref := domain.FileStat{Path: "library/Compost.pdf", Size: 12, ModTime: pos}
+	if target := convertFileStatToWire(ref).GetMtime(); target != nanos {
 		t.Errorf("the schema carries mtime %d, want %d", target, nanos)
 	}
 
@@ -318,14 +318,14 @@ func TestTheSchemaAndTheAddressCarryNanosecondsSinceTheEpoch(t *testing.T) {
 }
 
 func TestAFileStampedByAClockIsStillItselfThroughTheSchema(t *testing.T) {
-	ref := domain.Fingerprint{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
-	if back := convertFingerprintFromWire(convertFingerprintToWire(ref)); !back.IsUnchanged(ref) {
+	ref := domain.FileStat{Path: "recordings/Compost.mp3", Size: 3, ModTime: time.Now()}
+	if back := convertFileStatFromWire(convertFileStatToWire(ref)); !back.IsUnchanged(ref) {
 		t.Errorf("the message carried the file back as %+v, and it is %+v", back, ref)
 	}
 }
 
 func TestAnEmptyStampIsNoStampAndNotTheEpoch(t *testing.T) {
-	if back := convertFingerprintFromWire(convertFingerprintToWire(domain.Fingerprint{})); !back.IsZero() {
+	if back := convertFileStatFromWire(convertFileStatToWire(domain.FileStat{})); !back.IsZero() {
 		t.Errorf("nothing said about a file came back as %+v", back)
 	}
 	if target := stamp(time.Time{}); target != 0 {

@@ -15,9 +15,9 @@ import (
 func (s *store) saveNote(vault domain.VaultID, path, title string, named bool) {
 	s.t.Helper()
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 10, ModTime: time.Unix(100, 0)},
-		Title:       title,
-		Body:        "words of " + title,
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 10, ModTime: time.Unix(100, 0)},
+		Title:    title,
+		Body:     "words of " + title,
 	}
 	if named {
 		n.Frontmatter = map[string]any{"title": title}

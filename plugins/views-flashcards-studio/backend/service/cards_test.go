@@ -526,7 +526,7 @@ func TestRenamingAFieldWritesTheTemplatesOfThatCardModel(t *testing.T) {
 	if problems := after.Msg.GetCardModel().GetProblems(); len(problems) != 0 {
 		t.Errorf("the card model declares something its templates do not place: %+v", problems)
 	}
-	// One write, so the fingerprint that came back is the file on disk and the
+	// One write, so the file stat that came back is the file on disk and the
 	// next write of it lands.
 	if answer.Msg.GetAt().GetSize() != int64(len(onDisk(t, f.root, "cards/Animal.md"))) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())
@@ -663,7 +663,7 @@ func TestACardModelIsSavedWithItsTemplatesAndItsFields(t *testing.T) {
 	if !strings.Contains(target, "fields:\n  - Name\n  - Height\n") {
 		t.Errorf("the card model declares something else: %q", target)
 	}
-	// The fingerprint that comes back is the file on disk, so the write that
+	// The file stat that comes back is the file on disk, so the write that
 	// follows this one lands.
 	if answer.Msg.GetAt().GetSize() != int64(len(target)) {
 		t.Errorf("the fingerprint is not the file: %+v", answer.Msg.GetAt())

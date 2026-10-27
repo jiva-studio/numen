@@ -95,7 +95,7 @@ func BenchmarkWarmScan(b *testing.B) {
 }
 
 // BenchmarkIncrementalScan is one edited note in a vault that is otherwise
-// untouched: a whole walk, and a fingerprint of every note, for one file. It is
+// untouched: a whole walk, and a file stat of every note, for one file. It is
 // the cost of finding a change without being told about one, which is what a
 // scan at startup pays; a change the watcher names goes through Refresh and
 // touches only that path.

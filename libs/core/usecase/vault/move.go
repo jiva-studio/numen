@@ -119,7 +119,7 @@ func (u Move) Execute(ctx context.Context, v domain.Vault, from, to string) (not
 // getBacklinksByPath is the links that point at each note among the sources, by
 // the note's path.
 func (u Move) getBacklinksByPath(
-	ctx context.Context, v domain.Vault, sources []domain.Fingerprint,
+	ctx context.Context, v domain.Vault, sources []domain.FileStat,
 ) (map[string][]domain.ResolvedLink, error) {
 	linksBySource := make(map[string][]domain.ResolvedLink, len(sources))
 	for _, source := range sources {
@@ -141,7 +141,7 @@ func (u Move) rewriteNoteLinks(
 	ctx context.Context,
 	v domain.Vault,
 	from, to string,
-	sources []domain.Fingerprint,
+	sources []domain.FileStat,
 	pointing map[string][]domain.ResolvedLink,
 	res *note.MoveResult,
 ) error {
@@ -162,7 +162,7 @@ func (u Move) rewriteNoteLinks(
 // isRename is whether this move is one note given a different name, in the
 // folder and under the extension it already has. Travelling is everything the
 // index files under from.
-func isRename(travelling []domain.Fingerprint, from, to string) bool {
+func isRename(travelling []domain.FileStat, from, to string) bool {
 	if pathpkg.Dir(from) != pathpkg.Dir(to) || pathpkg.Ext(from) != pathpkg.Ext(to) {
 		return false
 	}

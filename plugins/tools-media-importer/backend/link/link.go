@@ -131,7 +131,7 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 	if err != nil {
 		return Link{}, err
 	}
-	note := markdown.Parse(domain.Fingerprint{Path: path}, raw)
+	note := markdown.Parse(domain.FileStat{Path: path}, raw)
 	value, _ := note.Frontmatter[urlKey].(string)
 	if note.Type != NoteType || value == "" {
 		return Link{}, fmt.Errorf("%s: %w", path, ErrNotALink)

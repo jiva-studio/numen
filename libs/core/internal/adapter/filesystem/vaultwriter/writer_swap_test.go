@@ -58,7 +58,7 @@ func TestAFolderSwappedForALinkConsumesNothingOutOfTheVault(t *testing.T) {
 		_ = writer.MakeFolder(ctx, "notes/inside")
 		_ = writer.Import(ctx, "notes/landed.md", strings.NewReader("bytes"))
 		_ = writer.Create(ctx, "notes/created.md", []byte("bytes"))
-		_, _ = writer.Write(ctx, "notes/written.md", []byte("bytes"), domain.Fingerprint{})
+		_, _ = writer.Write(ctx, "notes/written.md", []byte("bytes"), domain.FileStat{})
 		_ = writer.Move(ctx, "notes/landed.md", "notes/moved.md")
 		_ = writer.Remove(ctx, "notes/moved.md")
 	}

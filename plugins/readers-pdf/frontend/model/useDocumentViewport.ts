@@ -9,7 +9,7 @@ const WIDEST = 4096
 export interface DocumentViewportOptions {
   pages: ShallowRef<readonly Page[]>
   pageNumber: Ref<number>
-  fingerprint: Ref<string | undefined>
+  stat: Ref<string | undefined>
   isOpen: () => boolean
 }
 
@@ -18,7 +18,7 @@ export function useDocumentViewport(
   path: string,
   options: DocumentViewportOptions,
 ) {
-  const { pages, pageNumber, fingerprint, isOpen } = options
+  const { pages, pageNumber, stat, isOpen } = options
   const width = ref(0)
 
   const expandWidth = (pixels: number) => {
@@ -28,7 +28,7 @@ export function useDocumentViewport(
 
   const getPageImageUrl = (page: number): string =>
     pages.value.length > 0 && width.value > 0
-      ? documents.getPageUrl(path, page, width.value, fingerprint.value!)
+      ? documents.getPageUrl(path, page, width.value, stat.value!)
       : ''
 
   const picture = computed(() => getPageImageUrl(pageNumber.value))

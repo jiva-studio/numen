@@ -13,7 +13,7 @@ option go_package = "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1;num
 // that shows no vault of its own, or a plugin counting every vault, reaches them.
 //
 // The vault is the host's own: the plugin reads and writes its files through
-// the host, so the index, the watcher, the fingerprints and the trash all stay
+// the host, so the index, the watcher, the file stats and the trash all stay
 // level with what the plugin did.
 service HostVaultService {
   // GetHostVault names the vault the host is showing. A host showing none answers
@@ -28,14 +28,14 @@ service HostVaultService {
   // caller asks again once WatchMoves tells it something moved.
   rpc EnsureVaultIndexed(EnsureVaultIndexedRequest) returns (EnsureVaultIndexedResponse);
 
-  // GetFileFingerprint says what a file is now. A file that is not there is
+  // StatFile says what a file is now. A file that is not there is
   // answered with the error code MISSING.
-  rpc GetFileFingerprint(GetFileFingerprintRequest) returns (GetFileFingerprintResponse);
+  rpc StatFile(StatFileRequest) returns (StatFileResponse);
 
-  // ReadFile reads a whole file, with the fingerprint it had when it was read.
+  // ReadFile reads a whole file, with the file stat it had when it was read.
   rpc ReadFile(ReadFileRequest) returns (ReadFileResponse);
 
-  // WriteFile replaces a file that has not changed since the fingerprint given.
+  // WriteFile replaces a file that has not changed since the file stat given.
   // A file that moved past it is answered with the error code STALE and
   // nothing is written.
   rpc WriteFile(WriteFileRequest) returns (WriteFileResponse);
@@ -111,7 +111,7 @@ enum HostVaultErrorCode {
   // The path is outside the vault or names no file.
   HOST_VAULT_ERROR_CODE_OUTSIDE = 3;
 
-  // The file changed since the fingerprint given.
+  // The file changed since the file stat given.
   HOST_VAULT_ERROR_CODE_STALE = 4;
 
   // A file is already there.
@@ -124,9 +124,9 @@ enum HostVaultErrorCode {
   HOST_VAULT_ERROR_CODE_NOT_A_NOTE = 8;
 }
 
-// HostFingerprint is what a file was at a moment: at its current position, how large it
+// HostFileStat is what a file was at a moment: at its current position, how large it
 // was and when it last changed.
-message HostFingerprint {
+message HostFileStat {
   string path = 1;
   int64 size = 2;
   // Nanoseconds since the epoch.
@@ -181,13 +181,13 @@ message GetHostVaultResponse {
   string name = 4;
 }
 
-message GetFileFingerprintRequest {
+message StatFileRequest {
   string path = 1;
 }
 
-message GetFileFingerprintResponse {
+message StatFileResponse {
   HostVaultErrorCode error = 1;
-  HostFingerprint fingerprint = 2;
+  HostFileStat stat = 2;
 }
 
 message ReadFileRequest {
@@ -197,20 +197,20 @@ message ReadFileRequest {
 message ReadFileResponse {
   HostVaultErrorCode error = 1;
   bytes content = 2;
-  HostFingerprint fingerprint = 3;
+  HostFileStat stat = 3;
 }
 
 message WriteFileRequest {
   string path = 1;
   bytes content = 2;
   // What the file was when the caller read it.
-  HostFingerprint baseline = 3;
+  HostFileStat baseline = 3;
 }
 
 message WriteFileResponse {
   HostVaultErrorCode error = 1;
   // What the file is now.
-  HostFingerprint fingerprint = 2;
+  HostFileStat stat = 2;
 }
 
 message CreateFileRequest {

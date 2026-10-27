@@ -477,7 +477,7 @@ type textID struct {
 type rows struct {
 	candidates    map[textID][]int64
 	remainingErrs map[int64]bool
-	// hash is the fingerprint each row holds, so a row that goes says which
+	// hash is the file stat each row holds, so a row that goes says which
 	// text went with it.
 	hash map[int64]string
 }

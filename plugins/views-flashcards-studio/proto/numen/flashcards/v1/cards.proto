@@ -340,7 +340,7 @@ message ReadCardModelResponse {
   optional ErrorCode error = 2;
 
   // The file this card model came out of, for the caller to present at its next
-  optional numen.v1.Fingerprint at = 3;
+  optional numen.v1.FileStat at = 3;
 }
 
 message WriteCardModelRequest {
@@ -354,7 +354,7 @@ message WriteCardModelRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the card model now holds.
-  optional numen.v1.Fingerprint baseline = 4;
+  optional numen.v1.FileStat baseline = 4;
 
   // The prose to stand below the frontmatter and above the first template, with
   // line endings as LF.
@@ -372,7 +372,7 @@ message WriteCardModelResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional numen.v1.Fingerprint at = 2;
+  optional numen.v1.FileStat at = 2;
 
   // Set when the card model is on disk and the index would not come level with it.
   // The write happened and `at` stands; search answers about this file as it
@@ -390,7 +390,7 @@ message RenameCardModelFieldRequest {
 
   // The card model this caller last read. Absent for a rename that lands on
   // whatever the card model now holds.
-  optional numen.v1.Fingerprint baseline = 4;
+  optional numen.v1.FileStat baseline = 4;
 }
 
 message RenameCardModelFieldResponse {
@@ -410,7 +410,7 @@ message RenameCardModelFieldResponse {
 
   // The card model the rename produced, for the caller to present at its next
   // write. Absent when nothing was renamed.
-  optional numen.v1.Fingerprint at = 5;
+  optional numen.v1.FileStat at = 5;
 
   // Set when the rename reached the vault and the index would not come level
   // with it. Search answers about these files as it read them last, until a
@@ -459,7 +459,7 @@ message ReadDeckResponse {
   optional ErrorCode error = 2;
 
   // The file this deck came out of, for the caller to present at its next
-  optional numen.v1.Fingerprint at = 3;
+  optional numen.v1.FileStat at = 3;
 
   // The size a deck is read up to, in bytes. Set with
   // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding
@@ -483,7 +483,7 @@ message WriteDeckRequest {
 
   // The file this caller last read. Absent for a write that lands on whatever
   // the deck now holds.
-  optional numen.v1.Fingerprint baseline = 5;
+  optional numen.v1.FileStat baseline = 5;
 
   // What the file is to end with, below the last value, with line endings as
   // LF.
@@ -498,7 +498,7 @@ message WriteDeckResponse {
 
   // The file the write produced, for the caller to present at its next write.
   // Absent when nothing was written.
-  optional numen.v1.Fingerprint at = 2;
+  optional numen.v1.FileStat at = 2;
 
   // The size a deck is written up to, in bytes. Set with
   // ERROR_CODE_DECK_TOO_LARGE, so the interface names the bound without holding

@@ -70,9 +70,9 @@ export const mapLink = (link: Link) => ({
   label: link.label ?? '',
 })
 
-export const mapBaseline = (baseline: { prose: string; fingerprint: string }) => ({
+export const mapBaseline = (baseline: { prose: string; stat: string }) => ({
   prose: baseline.prose,
-  at: parseFingerprint(baseline.fingerprint),
+  at: parseFingerprint(baseline.stat),
 })
 
 export const mapNoteResult = (from: {
@@ -82,10 +82,10 @@ export const mapNoteResult = (from: {
 }): NoteResult => {
   const error = findErrorCode(from)
   if (error) return asFailure(error)
-  const fingerprint = formatFingerprint(from.at)
+  const stat = formatFingerprint(from.at)
   return asValue({
     body: from.body ?? '',
-    ...(fingerprint === undefined ? {} : { at: fingerprint }),
+    ...(stat === undefined ? {} : { at: stat }),
   })
 }
 

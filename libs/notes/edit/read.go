@@ -35,9 +35,9 @@ const (
 
 // Reader is what a read asks of the files.
 type Reader interface {
-	// GetFingerprint says what the file is without opening it. It returns fs.ErrNotExist for a file
+	// StatFile says what the file is without opening it. It returns fs.ErrNotExist for a file
 	// that is not there and ErrNotANote for one the vault does not hold as a note.
-	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the bytes of the file.
 	Read(ctx context.Context, path string) ([]byte, error)
 }
@@ -49,9 +49,9 @@ type Contents struct {
 	// Body is the prose below the frontmatter, with every line break written as one \n. It is empty
 	// for every outcome but Ok.
 	Body string
-	// Fingerprint is what the file was when it was asked about, which is before its bytes were read.
+	// FileStat is what the file was when it was asked about, which is before its bytes were read.
 	// size still says what it was.
-	Fingerprint domain.Fingerprint
+	FileStat domain.FileStat
 }
 
 // Read hands over the prose of the note at path, refusing what is larger than MaxBytes.
@@ -63,11 +63,11 @@ func Read(ctx context.Context, files Reader, path string) (Contents, error) {
 
 	// The vault says what is at a path without opening it: a note, a file it leaves alone, or
 	// nothing.
-	ref, err := files.GetFingerprint(ctx, path)
+	ref, err := files.StatFile(ctx, path)
 	target := err == nil
 	switch {
 	case target:
-		out.Fingerprint = ref
+		out.FileStat = ref
 		// A vault holds several kinds of source and this reads one of them.
 		if ref.Kind != domain.KindNote {
 			out.Outcome = NotANote

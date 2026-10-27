@@ -44,7 +44,7 @@ func TestAWriteOfABodyThatOpensWithFrontmatterIsRefused(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
-	_, err := c.newWrite().Execute(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", domain.Fingerprint{})
+	_, err := c.newWrite().Execute(t.Context(), c.vault, "Entropy.md", "---\nid: x\n---\nMine.\n", domain.FileStat{})
 	if !errors.Is(err, note.ErrBodyUnwritable) {
 		t.Fatalf("want ErrBodyUnwritable, got %v", err)
 	}
@@ -71,7 +71,7 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 	c := openChanging(t, map[string]string{"Mammals.md": "# Mammals\n"})
 	body := strings.Repeat("x", note.MaxBytes+1)
 
-	_, err := c.newWrite().Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{})
+	_, err := c.newWrite().Execute(t.Context(), c.vault, "Mammals.md", body, domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -81,7 +81,7 @@ func TestAWriteIsHeldToTheBoundOfItsWriter(t *testing.T) {
 
 	wideWrite := c.newWrite()
 	wideWrite.Bound = 2 * note.MaxBytes
-	if _, err := wideWrite.Execute(t.Context(), c.vault, "Mammals.md", body, domain.Fingerprint{}); err != nil {
+	if _, err := wideWrite.Execute(t.Context(), c.vault, "Mammals.md", body, domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 	if got := len(c.read(t, "Mammals.md")); got <= note.MaxBytes {
@@ -124,7 +124,7 @@ func TestAWriteTellsTheStretchThatChanged(t *testing.T) {
 			c := openChanging(t, map[string]string{"Entropy.md": tc.was})
 			var notified []domain.Edit
 
-			if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.Fingerprint{}); err != nil {
+			if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", tc.now, domain.FileStat{}); err != nil {
 				t.Fatal(err)
 			}
 			if len(notified) != 2 {
@@ -149,7 +149,7 @@ func TestAWriteOfTheSameProseTellsNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "alpha beta\n"})
 	var notified []domain.Edit
 
-	if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.Fingerprint{}); err != nil {
+	if _, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Entropy.md", "alpha beta\n", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 	if len(notified) != 0 {
@@ -163,7 +163,7 @@ func TestARefusedWriteTellsNothing(t *testing.T) {
 	c := openChanging(t, map[string]string{"Heat.md": half})
 	var notified []domain.Edit
 
-	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.Fingerprint{})
+	_, err := c.newDrawingWrite(&notified).Execute(t.Context(), c.vault, "Heat.md", "# Heat death\n\nMine.\n", domain.FileStat{})
 	if !errors.Is(err, note.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
@@ -178,7 +178,7 @@ func TestAWriterWithASmallerBoundRefusesWhatTheDefaultAllows(t *testing.T) {
 	small := c.newWrite()
 	small.Bound = 100
 
-	_, err := small.Execute(t.Context(), c.vault, "Mammals.md", strings.Repeat("x", 200), domain.Fingerprint{})
+	_, err := small.Execute(t.Context(), c.vault, "Mammals.md", strings.Repeat("x", 200), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -196,7 +196,7 @@ func TestAWriteThroughReplacedPortsUsesThem(t *testing.T) {
 			return nil
 		})
 
-	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.Fingerprint{}); err != nil {
+	if _, err := w.Execute(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nMine.\n", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Mine.") {

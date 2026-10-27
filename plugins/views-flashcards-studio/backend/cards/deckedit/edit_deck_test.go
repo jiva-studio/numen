@@ -112,7 +112,7 @@ func (e editing) version(t *testing.T) deckedit.DeckVersion {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return deckedit.DeckVersion{Path: mammals, Fingerprint: got.Fingerprint}
+	return deckedit.DeckVersion{Path: mammals, FileStat: got.FileStat}
 }
 
 func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
@@ -125,7 +125,7 @@ func TestReadingCardsProducesARunOrOneCardWithTheFieldsAskedFor(t *testing.T) {
 	if whole.Total != 2 || len(whole.Cards) != 2 || len(whole.Sections) != 1 || whole.Sections[0] != "The ones with fur" {
 		t.Fatalf("the deck read as %+v", whole)
 	}
-	if whole.Fingerprint != e.version(t).Fingerprint {
+	if whole.FileStat != e.version(t).FileStat {
 		t.Error("fingerprint mismatch for deck")
 	}
 
@@ -184,8 +184,8 @@ func TestAddingACardWritesItAtTheEndAndNamesItsMark(t *testing.T) {
 	if !strings.Contains(body, "Okapi") || !strings.Contains(body, added.CardID) {
 		t.Errorf("the card is not in the deck under its card id:\n%s", body)
 	}
-	if added.Fingerprint.Size != int64(len(body)) {
-		t.Errorf("returned fingerprint has size %d, want %d", added.Fingerprint.Size, len(body))
+	if added.FileStat.Size != int64(len(body)) {
+		t.Errorf("returned fingerprint has size %d, want %d", added.FileStat.Size, len(body))
 	}
 }
 
@@ -209,7 +209,7 @@ func TestADeckEditOverAnEditNobodySawIsRefused(t *testing.T) {
 	before := read(t, e.vs.first, mammals)
 
 	_, err := e.addSection.Execute(t.Context(), e.vs.first,
-		deckedit.DeckVersion{Path: mammals, Fingerprint: domain.Fingerprint{Size: 1}}, "New")
+		deckedit.DeckVersion{Path: mammals, FileStat: domain.FileStat{Size: 1}}, "New")
 	if !errors.Is(err, ports.ErrStale) {
 		t.Errorf("a write over a deck that changed since was %v", err)
 	}

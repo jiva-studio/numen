@@ -15,16 +15,16 @@ import (
 
 // files are the files of a vault held in memory. A write moves the modification time on, and one held
 type files struct {
-	content      map[string]string
-	kinds        map[string]domain.SourceKind
-	clock        time.Time
-	fingerprints map[string]domain.Fingerprint
-	locks        int
+	content map[string]string
+	kinds   map[string]domain.SourceKind
+	clock   time.Time
+	stats   map[string]domain.FileStat
+	locks   int
 }
 
 func newFiles(content map[string]string) *files {
 	f := &files{
-		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, fingerprints: map[string]domain.Fingerprint{},
+		content: map[string]string{}, kinds: map[string]domain.SourceKind{}, stats: map[string]domain.FileStat{},
 		clock: time.Unix(1_700_000_000, 0),
 	}
 	for path, body := range content {
@@ -33,17 +33,17 @@ func newFiles(content map[string]string) *files {
 	return f
 }
 
-func (f *files) put(path, body string) domain.Fingerprint {
+func (f *files) put(path, body string) domain.FileStat {
 	f.clock = f.clock.Add(time.Second)
 	f.content[path] = body
-	f.fingerprints[path] = domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
-	return f.fingerprints[path]
+	f.stats[path] = domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: f.clock}
+	return f.stats[path]
 }
 
-func (f *files) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
-	fp, there := f.fingerprints[path]
+func (f *files) StatFile(_ context.Context, path string) (domain.FileStat, error) {
+	fp, there := f.stats[path]
 	if !there {
-		return domain.Fingerprint{}, fs.ErrNotExist
+		return domain.FileStat{}, fs.ErrNotExist
 	}
 	if kind, set := f.kinds[path]; set {
 		fp.Kind = kind
@@ -59,9 +59,9 @@ func (f *files) Read(_ context.Context, path string) ([]byte, error) {
 	return []byte(body), nil
 }
 
-func (f *files) Write(_ context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	if !fingerprint.IsZero() && !f.fingerprints[path].IsUnchanged(fingerprint) {
-		return domain.Fingerprint{}, edit.ErrStale
+func (f *files) Write(_ context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
+	if !stat.IsZero() && !f.stats[path].IsUnchanged(stat) {
+		return domain.FileStat{}, edit.ErrStale
 	}
 	return f.put(path, string(content)), nil
 }
@@ -85,7 +85,7 @@ func TestANoteIsReadAsItsProse(t *testing.T) {
 
 	got, err := edit.Read(t.Context(), f, "A.md")
 
-	if err != nil || got.Outcome != edit.Ok || got.Body != "\nhello\nworld\n" || got.Fingerprint.Path != "A.md" {
+	if err != nil || got.Outcome != edit.Ok || got.Body != "\nhello\nworld\n" || got.FileStat.Path != "A.md" {
 		t.Errorf("got %+v (%v)", got, err)
 	}
 }
@@ -121,7 +121,7 @@ func TestAReadReturnsWhatIsWrongWithTheNoteAndNotAnError(t *testing.T) {
 
 func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.GetFingerprint(t.Context(), "A.md")
+	read, _ := f.StatFile(t.Context(), "A.md")
 
 	res, err := editing(f).Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
@@ -138,10 +138,10 @@ func TestAnEditStampsTheIdentifierAndContainsTheWriteToWhatWasRead(t *testing.T)
 
 func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.GetFingerprint(t.Context(), "A.md")
+	read, _ := f.StatFile(t.Context(), "A.md")
 	f.put("A.md", "# A, edited by somebody\n")
 	e := editing(f)
-	e.Fingerprint = read
+	e.FileStat = read
 
 	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
@@ -152,11 +152,11 @@ func TestAnEditOverANoteThatMovedIsRefused(t *testing.T) {
 
 func TestABaselineOfTheSameProseLandsWhateverTheFileReturns(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A\n"})
-	read, _ := f.GetFingerprint(t.Context(), "A.md")
+	read, _ := f.StatFile(t.Context(), "A.md")
 	f.put("A.md", "# A\n")
 	e := editing(f)
 	e.ShouldOverwrite = true
-	e.Baseline = &edit.Baseline{Prose: "# A\n", Fingerprint: read}
+	e.Baseline = &edit.Baseline{Prose: "# A\n", FileStat: read}
 
 	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 
@@ -169,7 +169,7 @@ func TestABaselineOfOtherProseIsStale(t *testing.T) {
 	f := newFiles(map[string]string{"A.md": "# A, changed\n"})
 	e := editing(f)
 	e.ShouldOverwrite = true
-	e.Baseline = &edit.Baseline{Prose: "# A\n", Fingerprint: domain.Fingerprint{Path: "A.md", Size: 3}}
+	e.Baseline = &edit.Baseline{Prose: "# A\n", FileStat: domain.FileStat{Path: "A.md", Size: 3}}
 
 	_, err := e.Apply(t.Context(), vault, "A.md", func(doc *markdown.Document) error { return doc.SetBody("# B\n") })
 

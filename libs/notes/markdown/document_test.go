@@ -40,7 +40,7 @@ func TestOpenAndCloseChangesNothing(t *testing.T) {
 func TestCreateIsReadBackByTheParser(t *testing.T) {
 	identifier := ulid.New(time.Now())
 	raw := Create(identifier, "# Entropy\n")
-	n := Parse(domain.Fingerprint{Path: "entropy.md"}, raw)
+	n := Parse(domain.FileStat{Path: "entropy.md"}, raw)
 	if n.ID != identifier {
 		t.Errorf("identifier not read back: %q", n.ID)
 	}

@@ -8,9 +8,9 @@ import (
 
 // NoteQueries answers questions about notes in shapes that are not notes.
 type NoteQueries interface {
-	// GetFingerprints is what the index believes about each file, keyed by path, so
+	// GetFileStats is what the index believes about each file, keyed by path, so
 	// a scan can decide what to reparse without reading anything.
-	GetFingerprints(ctx context.Context, vaultID domain.VaultID) (map[string]domain.Fingerprint, error)
+	GetFileStats(ctx context.Context, vaultID domain.VaultID) (map[string]domain.FileStat, error)
 
 	// GetNameMatches is the names in a vault that match the words typed: a note's own
 	// title, and the headings inside notes. Searching the text a vault holds is

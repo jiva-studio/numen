@@ -76,11 +76,11 @@ type Vault interface {
 	// watch is on, and the channel closes when the watch ends.
 	WatchMoves(ctx context.Context) (<-chan struct{}, error)
 
-	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
-	// Read returns the file with the fingerprint it had when it was read.
-	Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error)
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
+	// Read returns the file with the file stat it had when it was read.
+	Read(ctx context.Context, path string) ([]byte, domain.FileStat, error)
 	// Write replaces the file if it is still what the baseline says, else it returns ErrStale.
-	Write(ctx context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error)
+	Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrOccupied.
 	Create(ctx context.Context, path string, content []byte) error
 	// Lock holds the vault's writers to this plugin until the release is called.

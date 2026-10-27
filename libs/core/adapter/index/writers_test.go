@@ -39,9 +39,9 @@ func saveCut(ctx context.Context, db *DB, vaultID domain.VaultID, notes []domain
 func saveNote(t *testing.T, db *DB, v domain.Vault, path, title string) error {
 	t.Helper()
 	return saveCut(t.Context(), db, v.ID, []domain.Note{{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
-		Title:       title,
-		Type:        domain.TypeNote,
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(title)), ModTime: walked},
+		Title:    title,
+		Type:     domain.TypeNote,
 	}})
 }
 

@@ -16,7 +16,7 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 
 	db := openDB(t)
 	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
-		Fingerprint: domain.Fingerprint{
+		FileStat: domain.FileStat{
 			Path: "notes/Compost.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 		},
 		Title: "Compost",
@@ -34,7 +34,7 @@ func TestTheSourceRowContainsNanosecondsSinceTheEpoch(t *testing.T) {
 		t.Errorf("the row holds modified_at %d, want %d", target, nanos)
 	}
 
-	found, err := db.NoteQueries().GetFingerprints(t.Context(), first.ID)
+	found, err := db.NoteQueries().GetFileStats(t.Context(), first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -50,16 +50,16 @@ func TestAFileStampedByAClockIsUnchangedThroughTheIndex(t *testing.T) {
 	pos := time.Now()
 	db := openDB(t)
 
-	ref := domain.Fingerprint{
+	ref := domain.FileStat{
 		Path: "notes/Leaves.md", Kind: domain.KindNote, Size: 12, ModTime: pos,
 	}
 	if err := saveCut(t.Context(), db, first.ID, []domain.Note{{
-		Fingerprint: ref, Title: "Leaves", Body: "Turned and rotted down.",
+		FileStat: ref, Title: "Leaves", Body: "Turned and rotted down.",
 	}}); err != nil {
 		t.Fatal(err)
 	}
 
-	found, err := db.NoteQueries().GetFingerprints(t.Context(), first.ID)
+	found, err := db.NoteQueries().GetFileStats(t.Context(), first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

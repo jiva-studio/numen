@@ -41,7 +41,7 @@ func TestAReplacementMustNameTheTextItReplaces(t *testing.T) {
 	was := "one two three\n"
 	c := openChanging(t, map[string]string{"Aggressor.md": was})
 
-	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.Fingerprint{}); err == nil {
+	if _, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{}); err == nil {
 		t.Fatal("a replacement naming nothing was accepted")
 	}
 	if body := c.read(t, "Aggressor.md"); body != was {
@@ -55,7 +55,7 @@ func TestAMissingSpanReplacedByNothingIsMissing(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.Fingerprint{})
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "four", "", domain.FileStat{})
 	var nowhere note.MissingSpan
 	if !errors.As(err, &nowhere) {
 		t.Fatalf("want MissingSpan, got %v", err)
@@ -67,17 +67,17 @@ func TestAReplacementPresentingAStaleFingerprintIsRefused(t *testing.T) {
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 	replacing := c.replace()
 
-	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONES", domain.Fingerprint{})
+	first, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONES", domain.FileStat{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	if _, err := replacing.Execute(
-		t.Context(), c.vault, "Aggressor.md", "two", "TWOS", first.Fingerprint); err != nil {
+		t.Context(), c.vault, "Aggressor.md", "two", "TWOS", first.FileStat); err != nil {
 		t.Fatal(err)
 	}
 	before := c.read(t, "Aggressor.md")
 
-	_, err = replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREES", first.Fingerprint)
+	_, err = replacing.Execute(t.Context(), c.vault, "Aggressor.md", "three", "THREES", first.FileStat)
 	if !errors.Is(err, vaultport.ErrStale) {
 		t.Fatalf("want ErrStale, got %v", err)
 	}
@@ -90,13 +90,13 @@ func TestAReplacementAnswersWithTheFileItWrote(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.Fingerprint{})
+	isDone, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "one", "ONE", domain.FileStat{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	content := c.read(t, "Aggressor.md")
-	if isDone.Fingerprint.Path != "Aggressor.md" || isDone.Fingerprint.Size != int64(len(content)) {
-		t.Errorf("the answer describes %+v, and the file is %d bytes", isDone.Fingerprint, len(content))
+	if isDone.FileStat.Path != "Aggressor.md" || isDone.FileStat.Size != int64(len(content)) {
+		t.Errorf("the answer describes %+v, and the file is %d bytes", isDone.FileStat, len(content))
 	}
 }
 
@@ -105,7 +105,7 @@ func TestAReplacementThatMakesTheNoteTooLargeIsRefused(t *testing.T) {
 	was := "# Big\n\n" + strings.Repeat("a", note.MaxBytes-100) + "\nneedle\n"
 	c := openChanging(t, map[string]string{"Big.md": was})
 
-	_, err := c.replace().Execute(t.Context(), c.vault, "Big.md", "needle", strings.Repeat("n", 200), domain.Fingerprint{})
+	_, err := c.replace().Execute(t.Context(), c.vault, "Big.md", "needle", strings.Repeat("n", 200), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -120,7 +120,7 @@ func TestAReplacementInANoteWhoseFrontmatterIsNeverClosedIsRefused(t *testing.T)
 	was := "---\ntitle: Aggressor\nA hedgehog.\n"
 	c := openChanging(t, map[string]string{"Aggressor.md": was})
 
-	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
 	if !errors.Is(err, markdown.ErrUnterminated) {
 		t.Fatalf("want ErrUnterminated, got %v", err)
 	}
@@ -138,7 +138,7 @@ func TestWhoeverIsDrawingTheNoteIsReportedTheStretchInUTF16(t *testing.T) {
 	replacing := c.replace()
 	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
 
-	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.Fingerprint{}); err != nil {
+	if _, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "target", "goal", domain.FileStat{}); err != nil {
 		t.Fatal(err)
 	}
 	if len(notified) != 2 {
@@ -193,7 +193,7 @@ func TestAMissingSpanNamesWhereACopyStoppedAgreeing(t *testing.T) {
 			t.Parallel()
 			c := openChanging(t, map[string]string{"Aggressor.md": tc.note})
 
-			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.Fingerprint{})
+			_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", tc.status, "q", domain.FileStat{})
 			var nowhere note.MissingSpan
 			if !errors.As(err, &nowhere) {
 				t.Fatalf("want MissingSpan, got %v", err)
@@ -210,7 +210,7 @@ func TestAReplacementNamingNothingIsRefusedAsSuch(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "one two three\n"})
 
-	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.Fingerprint{})
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "", "four", domain.FileStat{})
 	var nowhere note.MissingSpan
 	if err == nil || errors.As(err, &nowhere) || !strings.Contains(err.Error(), "name the text to replace") {
 		t.Errorf("want the rejection to name the text, got %v", err)
@@ -225,7 +225,7 @@ func TestAReplacementRefusedForItsFrontmatterDrawsNothing(t *testing.T) {
 	replacing := c.replace()
 	replacing.Drawing = func(_ context.Context, response domain.Edit) { notified = append(notified, response) }
 
-	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.Fingerprint{})
+	_, err := replacing.Execute(t.Context(), c.vault, "Aggressor.md", "A hedgehog", "An axe", domain.FileStat{})
 	if err == nil || !strings.HasPrefix(err.Error(), "Aggressor.md: ") {
 		t.Errorf("want the error to name the note, got %v", err)
 	}
@@ -239,7 +239,7 @@ func TestAMissingSpanAfterAThreeByteRuneNamesWhereItStopped(t *testing.T) {
 	t.Parallel()
 	c := openChanging(t, map[string]string{"Aggressor.md": "x\n"})
 
-	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.Fingerprint{})
+	_, err := c.replace().Execute(t.Context(), c.vault, "Aggressor.md", "x€y", "q", domain.FileStat{})
 	var nowhere note.MissingSpan
 	if !errors.As(err, &nowhere) {
 		t.Fatalf("want MissingSpan, got %v", err)

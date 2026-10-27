@@ -100,9 +100,9 @@ type failingWriter struct {
 	err error
 }
 
-func (f failingWriter) Write(ctx context.Context, path string, content []byte, fp domain.Fingerprint) (domain.Fingerprint, error) {
+func (f failingWriter) Write(ctx context.Context, path string, content []byte, fp domain.FileStat) (domain.FileStat, error) {
 	if f.err != nil {
-		return domain.Fingerprint{}, f.err
+		return domain.FileStat{}, f.err
 	}
 	return f.VaultWriter.Write(ctx, path, content, fp)
 }

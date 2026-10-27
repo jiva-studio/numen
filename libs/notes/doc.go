@@ -1,5 +1,5 @@
 // Package notes is the vocabulary of a vault and the way a note is written: what a note, a link, a
-// note type and a fingerprint are (domain), how a note's file is read and edited (markdown), how a note
+// note type and a file stat are (domain), how a note's file is read and edited (markdown), how a note
 // held in a vault is read and changed through the few calls on its files that takes (edit), and the
 // identifiers it is given (ulid).
 //

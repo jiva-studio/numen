@@ -106,7 +106,7 @@ type GetBookResponse struct {
 	// The bytes the book was read from. It is passed back in the request for a
 	// document and in the address of a picture, so both name one reading of one
 	// file.
-	Fingerprint   *v1.Fingerprint `protobuf:"bytes,8,opt,name=fingerprint,proto3" json:"fingerprint,omitempty"`
+	Stat          *v1.FileStat `protobuf:"bytes,8,opt,name=stat,proto3" json:"stat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -190,9 +190,9 @@ func (x *GetBookResponse) GetPageBytes() int32 {
 	return 0
 }
 
-func (x *GetBookResponse) GetFingerprint() *v1.Fingerprint {
+func (x *GetBookResponse) GetStat() *v1.FileStat {
 	if x != nil {
-		return x.Fingerprint
+		return x.Stat
 	}
 	return nil
 }
@@ -405,7 +405,7 @@ type ReadBookMarkupRequest struct {
 	// Which bytes the request was given out for. A file that is other bytes now
 	// is refused: the window reads the book again and asks with what that
 	// returns.
-	Baseline      *v1.Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
+	Baseline      *v1.FileStat `protobuf:"bytes,3,opt,name=baseline,proto3,oneof" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -454,7 +454,7 @@ func (x *ReadBookMarkupRequest) GetDocument() string {
 	return ""
 }
 
-func (x *ReadBookMarkupRequest) GetBaseline() *v1.Fingerprint {
+func (x *ReadBookMarkupRequest) GetBaseline() *v1.FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -514,7 +514,7 @@ type ReadBookEntryRequest struct {
 	Entry string `protobuf:"bytes,2,opt,name=entry,proto3" json:"entry,omitempty"`
 	// Which bytes the request was given out for. A file that is other bytes now
 	// is refused.
-	Baseline      *v1.Fingerprint `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
+	Baseline      *v1.FileStat `protobuf:"bytes,3,opt,name=baseline,proto3" json:"baseline,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -563,7 +563,7 @@ func (x *ReadBookEntryRequest) GetEntry() string {
 	return ""
 }
 
-func (x *ReadBookEntryRequest) GetBaseline() *v1.Fingerprint {
+func (x *ReadBookEntryRequest) GetBaseline() *v1.FileStat {
 	if x != nil {
 		return x.Baseline
 	}
@@ -803,7 +803,7 @@ const file_numen_epub_v1_book_proto_rawDesc = "" +
 	"\n" +
 	"\x18numen/epub/v1/book.proto\x12\rnumen.epub.v1\x1a\x15numen/v1/shared.proto\"$\n" +
 	"\x0eGetBookRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\"\xe9\x02\n" +
+	"\x04path\x18\x01 \x01(\tR\x04path\"\xd8\x02\n" +
 	"\x0fGetBookResponse\x12\x14\n" +
 	"\x05title\x18\x01 \x01(\tR\x05title\x12:\n" +
 	"\tdocuments\x18\x02 \x03(\v2\x1c.numen.epub.v1.SpineDocumentR\tdocuments\x12-\n" +
@@ -814,8 +814,8 @@ const file_numen_epub_v1_book_proto_rawDesc = "" +
 	"\n" +
 	"text_bytes\x18\x06 \x01(\x05R\ttextBytes\x12\x1d\n" +
 	"\n" +
-	"page_bytes\x18\a \x01(\x05R\tpageBytes\x127\n" +
-	"\vfingerprint\x18\b \x01(\v2\x15.numen.v1.FingerprintR\vfingerprint\";\n" +
+	"page_bytes\x18\a \x01(\x05R\tpageBytes\x12&\n" +
+	"\x04stat\x18\b \x01(\v2\x12.numen.v1.FileStatR\x04stat\";\n" +
 	"\rGetCfiRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
 	"\x06offset\x18\x02 \x01(\x05R\x06offset\"\"\n" +
@@ -825,18 +825,18 @@ const file_numen_epub_v1_book_proto_rawDesc = "" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x10\n" +
 	"\x03cfi\x18\x02 \x01(\tR\x03cfi\",\n" +
 	"\x12FindOffsetResponse\x12\x16\n" +
-	"\x06offset\x18\x01 \x01(\x05R\x06offset\"\x8c\x01\n" +
+	"\x06offset\x18\x01 \x01(\x05R\x06offset\"\x89\x01\n" +
 	"\x15ReadBookMarkupRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x1a\n" +
-	"\bdocument\x18\x02 \x01(\tR\bdocument\x126\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x15.numen.v1.FingerprintH\x00R\bbaseline\x88\x01\x01B\v\n" +
+	"\bdocument\x18\x02 \x01(\tR\bdocument\x123\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatH\x00R\bbaseline\x88\x01\x01B\v\n" +
 	"\t_baseline\"0\n" +
 	"\x16ReadBookMarkupResponse\x12\x16\n" +
-	"\x06markup\x18\x01 \x01(\tR\x06markup\"s\n" +
+	"\x06markup\x18\x01 \x01(\tR\x06markup\"p\n" +
 	"\x14ReadBookEntryRequest\x12\x12\n" +
 	"\x04path\x18\x01 \x01(\tR\x04path\x12\x14\n" +
-	"\x05entry\x18\x02 \x01(\tR\x05entry\x121\n" +
-	"\bbaseline\x18\x03 \x01(\v2\x15.numen.v1.FingerprintR\bbaseline\"+\n" +
+	"\x05entry\x18\x02 \x01(\tR\x05entry\x12.\n" +
+	"\bbaseline\x18\x03 \x01(\v2\x12.numen.v1.FileStatR\bbaseline\"+\n" +
 	"\x15ReadBookEntryResponse\x12\x12\n" +
 	"\x04body\x18\x01 \x01(\fR\x04body\"S\n" +
 	"\rSpineDocument\x12\x12\n" +
@@ -885,15 +885,15 @@ var file_numen_epub_v1_book_proto_goTypes = []any{
 	(*SpineDocument)(nil),          // 10: numen.epub.v1.SpineDocument
 	(*BookPart)(nil),               // 11: numen.epub.v1.BookPart
 	(*PrintedPage)(nil),            // 12: numen.epub.v1.PrintedPage
-	(*v1.Fingerprint)(nil),         // 13: numen.v1.Fingerprint
+	(*v1.FileStat)(nil),            // 13: numen.v1.FileStat
 }
 var file_numen_epub_v1_book_proto_depIdxs = []int32{
 	10, // 0: numen.epub.v1.GetBookResponse.documents:type_name -> numen.epub.v1.SpineDocument
 	11, // 1: numen.epub.v1.GetBookResponse.parts:type_name -> numen.epub.v1.BookPart
 	12, // 2: numen.epub.v1.GetBookResponse.printed_pages:type_name -> numen.epub.v1.PrintedPage
-	13, // 3: numen.epub.v1.GetBookResponse.fingerprint:type_name -> numen.v1.Fingerprint
-	13, // 4: numen.epub.v1.ReadBookMarkupRequest.baseline:type_name -> numen.v1.Fingerprint
-	13, // 5: numen.epub.v1.ReadBookEntryRequest.baseline:type_name -> numen.v1.Fingerprint
+	13, // 3: numen.epub.v1.GetBookResponse.stat:type_name -> numen.v1.FileStat
+	13, // 4: numen.epub.v1.ReadBookMarkupRequest.baseline:type_name -> numen.v1.FileStat
+	13, // 5: numen.epub.v1.ReadBookEntryRequest.baseline:type_name -> numen.v1.FileStat
 	0,  // 6: numen.epub.v1.BookService.GetBook:input_type -> numen.epub.v1.GetBookRequest
 	6,  // 7: numen.epub.v1.BookService.ReadBookMarkup:input_type -> numen.epub.v1.ReadBookMarkupRequest
 	8,  // 8: numen.epub.v1.BookService.ReadBookEntry:input_type -> numen.epub.v1.ReadBookEntryRequest

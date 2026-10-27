@@ -100,17 +100,17 @@ func fail(code v1.HostVaultErrorCode) error {
 	return fmt.Errorf("host: rejected with code %s", code)
 }
 
-func readFingerprint(f *v1.HostFingerprint) domain.Fingerprint {
+func readFileStat(f *v1.HostFileStat) domain.FileStat {
 	if f == nil {
-		return domain.Fingerprint{}
+		return domain.FileStat{}
 	}
-	return domain.Fingerprint{
+	return domain.FileStat{
 		Path: f.GetPath(), Kind: readKind(f), Size: f.GetSize(), ModTime: time.Unix(0, f.GetModTime()),
 	}
 }
 
-// readKind is the kind of the file a fingerprint names, and none for a fingerprint naming no file.
-func readKind(f *v1.HostFingerprint) domain.SourceKind {
+// readKind is the kind of the file a file stat names, and none for a file stat naming no file.
+func readKind(f *v1.HostFileStat) domain.SourceKind {
 	switch {
 	case f.GetIsNote():
 		return domain.KindNote
@@ -121,8 +121,8 @@ func readKind(f *v1.HostFingerprint) domain.SourceKind {
 	}
 }
 
-func writeFingerprint(f domain.Fingerprint) *v1.HostFingerprint {
-	return &v1.HostFingerprint{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
+func writeFileStat(f domain.FileStat) *v1.HostFileStat {
+	return &v1.HostFileStat{Path: f.Path, Size: f.Size, ModTime: f.ModTime.UnixNano(), IsNote: f.Kind == domain.KindNote}
 }
 
 func readLink(l *v1.HostLink) domain.ResolvedLink {
@@ -158,39 +158,39 @@ func (c *Client) GetVault(ctx context.Context) (domain.Vault, error) {
 	return domain.Vault{ID: domain.VaultID(res.Msg.GetId()), Name: res.Msg.GetName(), Path: res.Msg.GetPath()}, nil
 }
 
-func (c *Client) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	res, err := c.rpc.GetFileFingerprint(ctx, request(c, &v1.GetFileFingerprintRequest{Path: path}))
+func (c *Client) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	res, err := c.rpc.StatFile(ctx, request(c, &v1.StatFileRequest{Path: path}))
 	if err != nil {
-		return domain.Fingerprint{}, readError(err)
+		return domain.FileStat{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
-	return readFingerprint(res.Msg.GetFingerprint()), nil
+	return readFileStat(res.Msg.GetStat()), nil
 }
 
-func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.Fingerprint, error) {
+func (c *Client) Read(ctx context.Context, path string) ([]byte, domain.FileStat, error) {
 	res, err := c.rpc.ReadFile(ctx, request(c, &v1.ReadFileRequest{Path: path}))
 	if err != nil {
-		return nil, domain.Fingerprint{}, readError(err)
+		return nil, domain.FileStat{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
-	return res.Msg.GetContent(), readFingerprint(res.Msg.GetFingerprint()), nil
+	return res.Msg.GetContent(), readFileStat(res.Msg.GetStat()), nil
 }
 
-func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {
+func (c *Client) Write(ctx context.Context, path string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	res, err := c.rpc.WriteFile(ctx, request(c, &v1.WriteFileRequest{
-		Path: path, Content: content, Baseline: writeFingerprint(baseline),
+		Path: path, Content: content, Baseline: writeFileStat(baseline),
 	}))
 	if err != nil {
-		return domain.Fingerprint{}, readError(err)
+		return domain.FileStat{}, readError(err)
 	}
 	if err := fail(res.Msg.GetError()); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
-	return readFingerprint(res.Msg.GetFingerprint()), nil
+	return readFileStat(res.Msg.GetStat()), nil
 }
 
 func (c *Client) Create(ctx context.Context, path string, content []byte) error {

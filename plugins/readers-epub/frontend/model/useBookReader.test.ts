@@ -43,7 +43,7 @@ const BOOK: Book = {
   printedPages: [],
   pages: 3,
   pageBytes: 3_000,
-  fingerprint: '20480 1700000000000000000 mahabharata.epub',
+  stat: '20480 1700000000000000000 mahabharata.epub',
 }
 
 const UNNAMED: Book = { ...BOOK, parts: [] }
@@ -67,8 +67,8 @@ function shelf(book: Book | Error = BOOK, markup: Error | null = null) {
       if (book instanceof Error) throw book
       return book
     },
-    readMarkup: async (path, document, fingerprint) => {
-      markupCalls.push(`${path} ${document} ${fingerprint}`)
+    readMarkup: async (path, document, stat) => {
+      markupCalls.push(`${path} ${document} ${stat}`)
       if (markup) throw markup
       return `<p data-offset="0">${document}</p>`
     },

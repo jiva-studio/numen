@@ -311,7 +311,7 @@ func (u AssignCardIDs) Execute(ctx context.Context, v domain.Vault) (AssignCardI
 		}
 		// A deck the index could not be brought level with carries its card ids all
 		// the same, and its cards stand in this session.
-		if _, err := write.Deck(ctx, v, path, body, deck.Fingerprint); err != nil &&
+		if _, err := write.Deck(ctx, v, path, body, deck.FileStat); err != nil &&
 			!errors.Is(err, note.ErrUnlevelled) {
 			out.Unwritten = append(out.Unwritten, path)
 		}

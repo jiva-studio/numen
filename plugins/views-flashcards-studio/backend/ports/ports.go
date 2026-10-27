@@ -32,9 +32,9 @@ type Clock func() time.Time
 
 // VaultReader is what a use case reads of one vault's files.
 type VaultReader interface {
-	// GetFingerprint says what the file is without opening it. It returns fs.ErrNotExist for a file
+	// StatFile says what the file is without opening it. It returns fs.ErrNotExist for a file
 	// that is not there and ErrNotANote for one the vault does not hold as a note.
-	GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error)
+	StatFile(ctx context.Context, path string) (domain.FileStat, error)
 	// Read returns the bytes of the file.
 	Read(ctx context.Context, path string) ([]byte, error)
 }
@@ -47,9 +47,9 @@ type VaultReaders interface {
 
 // VaultWriter is what a use case changes in one vault's files.
 type VaultWriter interface {
-	// Write replaces the file if it is still what the fingerprint says, else it returns ErrStale. An
-	// empty fingerprint holds the write to nothing.
-	Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error)
+	// Write replaces the file if it is still what the file stat says, else it returns ErrStale. An
+	// empty file stat holds the write to nothing.
+	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
 	// Create makes a file that is not there, else it returns ErrOccupied.
 	Create(ctx context.Context, path string, content []byte) error
 }

@@ -49,7 +49,7 @@ func TestAnEmptyLinksKeyConsumesTheFirstEntry(t *testing.T) {
 	got := string(d.Bytes())
 	if again, err := Open([]byte(got)); err != nil {
 		t.Fatalf("the note stopped being readable: %v\n%s", err, got)
-	} else if links := Parse(domain.Fingerprint{Path: "D.md"}, []byte(again.Bytes())).Links; len(links) != 1 {
+	} else if links := Parse(domain.FileStat{Path: "D.md"}, []byte(again.Bytes())).Links; len(links) != 1 {
 		t.Errorf("links = %v\n%s", links, got)
 	}
 }
@@ -68,7 +68,7 @@ func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("add link: %v", err)
 	}
-	parsed := Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	parsed := Parse(domain.FileStat{Path: "Bhagavad-gita.md"}, doc.Bytes())
 	if len(parsed.Links) != 1 || parsed.Links[0].Label != "one" || parsed.Links[0].Role != domain.RoleChild {
 		t.Fatalf("unexpected parsed links after add: %+v", parsed.Links)
 	}
@@ -81,7 +81,7 @@ func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
 	}); err != nil {
 		t.Fatalf("update link: %v", err)
 	}
-	parsed = Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	parsed = Parse(domain.FileStat{Path: "Bhagavad-gita.md"}, doc.Bytes())
 	if len(parsed.Links) != 1 || parsed.Links[0].Label != "two" || parsed.Links[0].Role != domain.RoleJump {
 		t.Fatalf("unexpected parsed links after update: %+v", parsed.Links)
 	}
@@ -90,7 +90,7 @@ func TestAddAndUpdateLinkWithLabelAndRole(t *testing.T) {
 	if _, err := doc.RemoveLink(domain.ParseAddress("Q"), domain.RoleJump); err != nil {
 		t.Fatalf("remove link: %v", err)
 	}
-	parsed = Parse(domain.Fingerprint{Path: "Bhagavad-gita.md"}, doc.Bytes())
+	parsed = Parse(domain.FileStat{Path: "Bhagavad-gita.md"}, doc.Bytes())
 	if len(parsed.Links) != 0 {
 		t.Fatalf("expected 0 links after remove, got: %+v", parsed.Links)
 	}
@@ -114,7 +114,7 @@ func TestAKeyAfterLinksSurvivesAnEditWithATrailingComment(t *testing.T) {
 	}
 	if again, err := Open([]byte(got)); err != nil {
 		t.Fatalf("the note stopped being readable: %v\n%s", err, got)
-	} else if links := Parse(domain.Fingerprint{Path: "D.md"}, again.Bytes()).Links; len(links) != 2 {
+	} else if links := Parse(domain.FileStat{Path: "D.md"}, again.Bytes()).Links; len(links) != 2 {
 		t.Errorf("links = %v\n%s", links, got)
 	}
 }
@@ -134,7 +134,7 @@ func TestAddLinkWithComplexLabelContainingColonsAndQuotes(t *testing.T) {
 		t.Fatalf("add link: %v", err)
 	}
 
-	parsed := Parse(domain.Fingerprint{Path: "Srimad-Bhagavatam.md"}, doc.Bytes())
+	parsed := Parse(domain.FileStat{Path: "Srimad-Bhagavatam.md"}, doc.Bytes())
 	if len(parsed.Links) != 1 {
 		t.Fatalf("expected 1 link, got %d", len(parsed.Links))
 	}

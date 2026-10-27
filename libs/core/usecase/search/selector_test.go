@@ -48,8 +48,8 @@ func TestAPassageOfATextVersionCarriesTheSelectorOfItsSegment(t *testing.T) {
 	second := len(segments[0].Text)
 	if err := c.db.Sources().SaveExtraction(ctx, c.first.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindFile, Size: 1},
-			Hash:        "h", Recipe: "r", Producer: string(version.GetID()),
+			FileStat: domain.FileStat{Path: path, Kind: domain.KindFile, Size: 1},
+			Hash:     "h", Recipe: "r", Producer: string(version.GetID()),
 		},
 		Chunks: []domain.Chunk{
 			{Start: 0, Length: second, Text: segments[0].Text},

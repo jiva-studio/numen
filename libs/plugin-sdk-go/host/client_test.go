@@ -24,14 +24,14 @@ type answering struct {
 	authHeader string
 	unlocked   string
 	named      string
-	baselines  []*v1.HostFingerprint
+	baselines  []*v1.HostFileStat
 }
 
-func (a *answering) GetFileFingerprint(_ context.Context, req *connect.Request[v1.GetFileFingerprintRequest]) (*connect.Response[v1.GetFileFingerprintResponse], error) {
+func (a *answering) StatFile(_ context.Context, req *connect.Request[v1.StatFileRequest]) (*connect.Response[v1.StatFileResponse], error) {
 	a.authHeader = req.Header().Get("Authorization")
-	return connect.NewResponse(&v1.GetFileFingerprintResponse{
-		Error:       a.code,
-		Fingerprint: &v1.HostFingerprint{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
+	return connect.NewResponse(&v1.StatFileResponse{
+		Error: a.code,
+		Stat:  &v1.HostFileStat{Path: req.Msg.GetPath(), Size: 7, ModTime: 1_700_000_000_123_456_789},
 	}), nil
 }
 
@@ -96,9 +96,9 @@ func clientTo(t *testing.T, a *answering) *host.Client {
 func TestTheClientPresentsItsTokenAndReadsTheFingerprint(t *testing.T) {
 	a := &answering{}
 
-	fp, err := clientTo(t, a).GetFingerprint(context.Background(), "n.md")
+	fp, err := clientTo(t, a).StatFile(context.Background(), "n.md")
 
-	want := domain.Fingerprint{Path: "n.md", Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
+	want := domain.FileStat{Path: "n.md", Size: 7, ModTime: time.Unix(0, 1_700_000_000_123_456_789)}
 	if err != nil || fp != want || a.authHeader != "Bearer tok" {
 		t.Errorf("got %+v (%v) authHeader as %q", fp, err, a.authHeader)
 	}
@@ -115,7 +115,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 		v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_NOT_A_NOTE:      host.ErrNotANote,
 	}
 	for code, want := range cases {
-		_, err := clientTo(t, &answering{code: code}).GetFingerprint(context.Background(), "n.md")
+		_, err := clientTo(t, &answering{code: code}).StatFile(context.Background(), "n.md")
 		if !errors.Is(err, want) {
 			t.Errorf("code %s: got %v, want %v", code, err, want)
 		}
@@ -124,7 +124,7 @@ func TestEachCodeOfTheHostIsItsOwnError(t *testing.T) {
 
 func TestAWriteSendsTheBaselineAndReportsStale(t *testing.T) {
 	a := &answering{code: v1.HostVaultErrorCode_HOST_VAULT_ERROR_CODE_STALE}
-	baseline := domain.Fingerprint{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
+	baseline := domain.FileStat{Path: "n.md", Size: 3, ModTime: time.Unix(5, 6)}
 
 	_, err := clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
 
@@ -235,7 +235,7 @@ func TestAWatchOfMovesBeginsAfterTheFirstMessage(t *testing.T) {
 
 func TestAFingerprintPreservesWhatSortOfSourceTheFileIs(t *testing.T) {
 	a := &answering{}
-	baseline := domain.Fingerprint{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
+	baseline := domain.FileStat{Path: "n.md", Kind: domain.KindNote, Size: 3, ModTime: time.Unix(5, 6)}
 
 	_, _ = clientTo(t, a).Write(context.Background(), "n.md", []byte("abc"), baseline)
 

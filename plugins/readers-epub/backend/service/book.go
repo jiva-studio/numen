@@ -163,7 +163,7 @@ func (s *BookServer) ReadBookEntry(
 		return nil, newReadError(err)
 	}
 	defer s.books.release(book)
-	if baseline := req.Msg.GetBaseline(); baseline != nil && !isFingerprintOf(baseline, book.size, book.mtime) {
+	if baseline := req.Msg.GetBaseline(); baseline != nil && !isStatOf(baseline, book.size, book.mtime) {
 		return nil, connect.NewError(connect.CodeAborted, fmt.Errorf("read book %s: the file changed", path))
 	}
 	body, err := book.archive.Entry(req.Msg.GetEntry())
@@ -173,9 +173,9 @@ func (s *BookServer) ReadBookEntry(
 	return connect.NewResponse(&epubv1.ReadBookEntryResponse{Body: body}), nil
 }
 
-// isFingerprintOf is whether a file of the size and the stamp given is the bytes the
-// fingerprint names. A stamp of zero names no time.
-func isFingerprintOf(named *numenv1.Fingerprint, size, mtime int64) bool {
+// isStatOf is whether a file of the size and the stamp given is the bytes the
+// file stat names. A stamp of zero names no time.
+func isStatOf(named *numenv1.FileStat, size, mtime int64) bool {
 	if named.GetSize() != size {
 		return false
 	}

@@ -41,7 +41,7 @@ func (h *presetsHandler) GetDeckPreset(
 	out.Preset = presetwire.ConvertPresetToWire(found, h.getTitle(ctx, showing, found.Path))
 	// What the file was when this came out of it, for the client to present
 	// when it writes the settings back.
-	out.At = writeFingerprint(found.Fingerprint)
+	out.At = writeFileStat(found.FileStat)
 	return connect.NewResponse(out), nil
 }
 
@@ -93,14 +93,14 @@ func (h *presetsHandler) ScheduleDeck(
 		return nil, err
 	}
 	pos, err := h.scenarios().flash.Presets.Point(
-		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), readFingerprint(r.Msg.GetBaseline()))
+		ctx, showing, r.Msg.GetDeck(), r.Msg.GetPreset(), readFileStat(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save, and told where the
+	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&flashcardsv1.ScheduleDeckResponse{
-			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
+			At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	if errors.Is(err, flashcards.ErrNotAPreset) {
@@ -133,7 +133,7 @@ func (h *presetsHandler) ReadPreset(
 		return connect.NewResponse(out), nil
 	}
 	out.Preset = presetwire.ConvertPresetToWire(found, h.getTitle(ctx, showing, found.Path))
-	out.At = writeFingerprint(found.Fingerprint)
+	out.At = writeFileStat(found.FileStat)
 	return connect.NewResponse(out), nil
 }
 
@@ -151,14 +151,14 @@ func (h *presetsHandler) WritePreset(
 	if err != nil {
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
-	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, readFingerprint(r.Msg.GetBaseline()))
+	pos, err := h.scenarios().flash.Presets.Save(ctx, showing, r.Msg.GetPath(), settings, readFileStat(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save, and told where the
+	// handed the file stat it presents at its next save, and told where the
 	// index did not follow.
 	unlevelled := isUnlevelled(err)
 	if err == nil || unlevelled {
 		return connect.NewResponse(&flashcardsv1.WritePresetResponse{
-			At: writeFingerprint(pos), IsUnlevelled: unlevelled,
+			At: writeFileStat(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	// A value outside what a preset may hold is the client's to correct.

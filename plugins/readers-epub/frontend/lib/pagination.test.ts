@@ -36,7 +36,7 @@ describe('pagination and document lookup', () => {
       printedPages: [],
       pages: 10,
       pageBytes: 100,
-      fingerprint: 'f1',
+      stat: 'f1',
     }
 
     expect(getContents(bookWithParts, words)).toEqual([{ title: 'Chapter 1', at: 0, level: 0 }])
@@ -49,7 +49,7 @@ describe('pagination and document lookup', () => {
       printedPages: [{ label: 'iv', offset: 50 }],
       pages: 10,
       pageBytes: 100,
-      fingerprint: 'f1',
+      stat: 'f1',
     }
 
     expect(getContents(bookWithPrinted, words)).toEqual([{ title: 'Page iv', at: 50, level: 0 }])
@@ -65,7 +65,7 @@ describe('the name of a document of the spine', () => {
     printedPages: [],
     pages: 1,
     pageBytes: 10,
-    fingerprint: 'f',
+    stat: 'f',
   })
   const getTitle = (path: string) => getContents(book(path), { page: 'Page' })[0]?.title
 

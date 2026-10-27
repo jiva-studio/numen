@@ -323,7 +323,7 @@ type cancellingReader struct {
 	parent *cancellingReaders
 }
 
-func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (c *cancellingReader) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	err := c.VaultReader.WalkFiles(ctx, fn)
 	c.parent.cancel()
 	return err
@@ -394,7 +394,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 	db := openIndex(t)
 
 	// Two vaults holding a note at the same path is not a corner case: copying
-	// a vault folder produces exactly that. If Fingerprints leaks, the second
+	// a vault folder produces exactly that. If FileStats leaks, the second
 	// vault's note looks unchanged and is never indexed — silently, with the
 	// scan reporting success.
 	shared := "notes/Entropy.md"
@@ -420,7 +420,7 @@ func TestFingerprintsAndSummaryNeverCrossVaults(t *testing.T) {
 
 	queries := db.Queries()
 
-	recognized, err := queries.GetFingerprints(ctx, first.ID)
+	recognized, err := queries.GetFileStats(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -561,7 +561,7 @@ func TestAVanishedFileKeepsWhatTheIndexAlreadyHad(t *testing.T) {
 		t.Errorf("removed %d notes, want 0", res.Removed)
 	}
 
-	recognized, err := db.Queries().GetFingerprints(ctx, v.ID)
+	recognized, err := db.Queries().GetFileStats(ctx, v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -644,7 +644,7 @@ func TestScanStopsWhenCancelled(t *testing.T) {
 		t.Errorf("a cancelled scan walked %d files, want the 500 it had reached", res.Notes)
 	}
 
-	recognized, err := db.Queries().GetFingerprints(t.Context(), v.ID)
+	recognized, err := db.Queries().GetFileStats(t.Context(), v.ID)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -84,16 +84,16 @@ type files struct {
 	vault   domain.Vault
 }
 
-func (f files) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	return f.reader.GetFingerprint(ctx, path)
+func (f files) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	return f.reader.StatFile(ctx, path)
 }
 
 func (f files) Read(ctx context.Context, path string) ([]byte, error) {
 	return f.reader.Read(ctx, path)
 }
 
-func (f files) Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	return f.writer.Write(ctx, path, content, fingerprint)
+func (f files) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
+	return f.writer.Write(ctx, path, content, stat)
 }
 
 func (f files) Lock(ctx context.Context) (func(), error) { return f.writers.Lock(ctx, f.vault) }
@@ -130,16 +130,16 @@ func NewWrite(readers ports.VaultReaders, writers ports.VaultWriters, index Leve
 	return Write{readers: readers, writers: writers, index: index, now: now}
 }
 
-// Execute puts body in the note at path over the fingerprint the caller read, and returns the
-// fingerprint of the file this write produced.
+// Execute puts body in the note at path over the file stat the caller read, and returns the
+// file stat of the file this write produced.
 func (u Write) Execute(
-	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
+) (domain.FileStat, error) {
 	if markdown.IsFrontmatterStart(body) {
-		return domain.Fingerprint{}, ErrBodyUnwritable
+		return domain.FileStat{}, ErrBodyUnwritable
 	}
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	e.Bound = u.Bound
 	if e.Bound == 0 {
 		e.Bound = MaxBytes
@@ -163,10 +163,10 @@ func NewEditLinks(readers ports.VaultReaders, writers ports.VaultWriters, index 
 // PointAt makes a note name one place under a link `type`. An empty address takes the entry out.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	to domain.Address, role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	return e.PointAt(ctx, v, from, of, to, role)
 }
 

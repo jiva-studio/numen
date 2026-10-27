@@ -68,7 +68,7 @@ func (r *Repository) Save(
 	}
 	for _, one := range notes {
 		if err := saveNote(ctx, tx, vault, one); err != nil {
-			return fmt.Errorf("%s: %w", one.Note.Fingerprint.Path, err)
+			return fmt.Errorf("%s: %w", one.Note.FileStat.Path, err)
 		}
 	}
 	if err := tx.Commit(); err != nil {
@@ -132,12 +132,12 @@ func saveSourceAndNote(
 	var row int64
 	var updated bool
 	if err := tx.QueryRowContext(ctx, stmt.Get("save_source"),
-		vault, n.Fingerprint.Path, kind, n.Fingerprint.Size, chunk.ConvertTimeToNanos(n.Fingerprint.ModTime),
+		vault, n.FileStat.Path, kind, n.FileStat.Size, chunk.ConvertTimeToNanos(n.FileStat.ModTime),
 		nil, nil, nil,
 	).Scan(&row, &updated); err != nil {
 		return 0, fmt.Errorf("record the source this note is: %w", err)
 	}
-	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.Fingerprint.Path)),
+	if err := exec(ctx, tx, "save_note", row, vault, domain.FoldName(domain.Basename(n.FileStat.Path)),
 		n.Title, string(noteType(n)), newNullable(n.ID), frontmatter, newNullable(problem)); err != nil {
 		return 0, err
 	}

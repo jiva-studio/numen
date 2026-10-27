@@ -78,14 +78,14 @@ func (s *store) SaveSource(_ context.Context, vaultID domain.VaultID, src domain
 }
 
 func (s *store) SaveExtraction(_ context.Context, vaultID domain.VaultID, e domain.SourceChunks) error {
-	s.outBytes[e.Source.Fingerprint.Path]++
+	s.outBytes[e.Source.FileStat.Path]++
 	s.put(vaultID, e.Source)
-	s.clear(vaultID, e.Source.Fingerprint.Path)
+	s.clear(vaultID, e.Source.FileStat.Path)
 
 	for _, large := range e.Chunks {
-		parent := s.insert(vaultID, e.Source.Fingerprint, large, 0)
+		parent := s.insert(vaultID, e.Source.FileStat, large, 0)
 		for _, small := range large.Small {
-			s.insert(vaultID, e.Source.Fingerprint, small, parent)
+			s.insert(vaultID, e.Source.FileStat, small, parent)
 		}
 	}
 	return nil
@@ -121,21 +121,21 @@ func (s *store) GetKeptVectors(_ context.Context, recipe string, of [][]byte) (m
 	return out, nil
 }
 
-func (s *store) GetFingerprints(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
-	out := map[string]domain.Fingerprint{}
+func (s *store) GetFileStats(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error) {
+	out := map[string]domain.FileStat{}
 	for path, src := range s.sources[vaultID] {
-		if src.Fingerprint.Kind != kind {
+		if src.FileStat.Kind != kind {
 			continue
 		}
 		// The kind is what was asked for, so the answer leaves it empty.
-		out[path] = domain.Fingerprint{Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime}
+		out[path] = domain.FileStat{Path: path, Size: src.FileStat.Size, ModTime: src.FileStat.ModTime}
 	}
 	return out, nil
 }
 
 func (s *store) GetUnchunkedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
 	return s.paths(vaultID, kind, limit, func(src domain.Source) bool {
-		return !s.cut(vaultID, src.Fingerprint.Path)
+		return !s.cut(vaultID, src.FileStat.Path)
 	})
 }
 
@@ -162,7 +162,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 			continue
 		}
 		src := s.sources[c.vault][c.path]
-		mtime := src.Fingerprint.ModTime.UnixNano()
+		mtime := src.FileStat.ModTime.UnixNano()
 		if mtime > afterMTime || (mtime == afterMTime && c.id <= afterChunk) {
 			continue
 		}
@@ -181,7 +181,7 @@ func (s *store) GetUnembeddedChunks(_ context.Context, vaultID domain.VaultID, m
 	next := after
 	if len(out) > 0 {
 		src := s.sources[lastChunk.vault][lastChunk.path]
-		next = embeddingport.ChunkCursor(strconv.FormatInt(src.Fingerprint.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.id, 10))
+		next = embeddingport.ChunkCursor(strconv.FormatInt(src.FileStat.ModTime.UnixNano(), 10) + ":" + strconv.FormatInt(lastChunk.id, 10))
 	}
 	return out, next, nil
 }
@@ -229,7 +229,7 @@ func (s *store) put(vaultID domain.VaultID, src domain.Source) {
 	if s.sources[vaultID] == nil {
 		s.sources[vaultID] = map[string]domain.Source{}
 	}
-	s.sources[vaultID][src.Fingerprint.Path] = src
+	s.sources[vaultID][src.FileStat.Path] = src
 }
 
 // clear takes out the chunks of one source, and the vectors made from them.
@@ -238,7 +238,7 @@ func (s *store) put(vaultID domain.VaultID, src domain.Source) {
 func (s *store) RemoveSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind, paths []string) error {
 	target := s.sources[vaultID]
 	for _, path := range paths {
-		if src, ok := target[path]; ok && src.Fingerprint.Kind == kind {
+		if src, ok := target[path]; ok && src.FileStat.Kind == kind {
 			delete(target, path)
 			s.clear(vaultID, path)
 		}
@@ -256,7 +256,7 @@ func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to 
 		}
 		landed := to + path[len(from):]
 		delete(target, path)
-		src.Fingerprint.Path = landed
+		src.FileStat.Path = landed
 		target[landed] = src
 		for i, c := range s.chunks {
 			if c.vault == vaultID && c.path == path {
@@ -268,14 +268,14 @@ func (s *store) MoveSources(_ context.Context, vaultID domain.VaultID, from, to 
 }
 
 // Under is every source the store holds at a path and beneath it.
-func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
-	var out []domain.Fingerprint
+func (s *store) GetSourcesUnder(_ context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
+	var out []domain.FileStat
 	for target, src := range s.sources[vaultID] {
 		if target == path || strings.HasPrefix(target, path+"/") {
-			out = append(out, src.Fingerprint)
+			out = append(out, src.FileStat)
 		}
 	}
-	slices.SortFunc(out, func(a, b domain.Fingerprint) int { return strings.Compare(a.Path, b.Path) })
+	slices.SortFunc(out, func(a, b domain.FileStat) int { return strings.Compare(a.Path, b.Path) })
 	return out, nil
 }
 
@@ -291,7 +291,7 @@ func (s *store) clear(vaultID domain.VaultID, path string) {
 	s.chunks = keptChunks
 }
 
-func (s *store) insert(vaultID domain.VaultID, ref domain.Fingerprint, c domain.Chunk, parent int64) int64 {
+func (s *store) insert(vaultID domain.VaultID, ref domain.FileStat, c domain.Chunk, parent int64) int64 {
 	s.next++
 	s.chunks = append(s.chunks, storedChunk{
 		id: s.next, vault: vaultID, path: ref.Path, kind: ref.Kind,
@@ -308,8 +308,8 @@ func (s *store) paths(vaultID domain.VaultID, kind domain.SourceKind, limit int,
 	}
 	var out []string
 	for _, src := range s.sources[vaultID] {
-		if src.Fingerprint.Kind == kind && owing(src) {
-			out = append(out, src.Fingerprint.Path)
+		if src.FileStat.Kind == kind && owing(src) {
+			out = append(out, src.FileStat.Path)
 		}
 	}
 	slices.Sort(out)
@@ -349,8 +349,8 @@ func (s *store) getOrderedChunks() []storedChunk {
 	slices.SortFunc(out, func(a, b storedChunk) int {
 		srcA := s.sources[a.vault][a.path]
 		srcB := s.sources[b.vault][b.path]
-		timeA := srcA.Fingerprint.ModTime.UnixNano()
-		timeB := srcB.Fingerprint.ModTime.UnixNano()
+		timeA := srcA.FileStat.ModTime.UnixNano()
+		timeB := srcB.FileStat.ModTime.UnixNano()
 		if timeA != timeB {
 			return cmp.Compare(timeB, timeA)
 		}
@@ -401,7 +401,7 @@ func (l *library) hold(path string, kind domain.SourceKind, raw []byte, mtime in
 	l.files[path] = &shelved{kind: kind, raw: raw, mtime: mtime}
 }
 
-func (l *library) WalkFiles(_ context.Context, fn func(domain.Fingerprint) error) error {
+func (l *library) WalkFiles(_ context.Context, fn func(domain.FileStat) error) error {
 	for _, path := range slices.Sorted(maps.Keys(l.files)) {
 		if err := fn(l.ref(path)); err != nil {
 			return err
@@ -433,16 +433,16 @@ type nopCloser struct{ *bytes.Reader }
 
 func (nopCloser) Close() error { return nil }
 
-func (l *library) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
+func (l *library) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	if _, ok := l.files[path]; !ok {
-		return domain.Fingerprint{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
+		return domain.FileStat{}, fmt.Errorf("stat %s: %w", path, fs.ErrNotExist)
 	}
 	return l.ref(path), nil
 }
 
-func (l *library) ref(path string) domain.Fingerprint {
+func (l *library) ref(path string) domain.FileStat {
 	target := l.files[path]
-	return domain.Fingerprint{
+	return domain.FileStat{
 		Path: path, Kind: target.kind, Size: int64(len(target.raw)), ModTime: time.Unix(0, target.mtime),
 	}
 }
@@ -475,8 +475,8 @@ func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 	}
 	// The row says what the file was when it was read, as the query does.
 	return sourceport.SourceText{
-		Fingerprint: domain.Fingerprint{
-			Path: path, Size: src.Fingerprint.Size, ModTime: src.Fingerprint.ModTime,
+		FileStat: domain.FileStat{
+			Path: path, Size: src.FileStat.Size, ModTime: src.FileStat.ModTime,
 		},
 		Producer: src.Producer,
 		Hash:     src.Hash,
@@ -486,11 +486,11 @@ func (s *store) GetSourceText(_ context.Context, vaultID domain.VaultID, path st
 func (s *store) GetRecognisedSources(_ context.Context, vaultID domain.VaultID, kind domain.SourceKind) ([]sourceport.SourceText, error) {
 	var out []sourceport.SourceText
 	for path, src := range s.sources[vaultID] {
-		if src.Fingerprint.Kind == kind && src.Producer != "" {
+		if src.FileStat.Kind == kind && src.Producer != "" {
 			out = append(out, sourceport.SourceText{
-				Fingerprint: domain.Fingerprint{Path: path},
-				Producer:    src.Producer,
-				Hash:        src.Hash,
+				FileStat: domain.FileStat{Path: path},
+				Producer: src.Producer,
+				Hash:     src.Hash,
 			})
 		}
 	}

@@ -60,26 +60,26 @@ func Row(id domain.ChunkID) (int64, error) {
 	return row, nil
 }
 
-// GetFingerprints is what the index believes about each file of one kind, keyed by
+// GetFileStats is what the index believes about each file of one kind, keyed by
 // path, so a scan can decide what to read again without opening anything.
-func (q *Queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.Fingerprint, error) {
+func (q *Queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind string) (map[string]domain.FileStat, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
-		return map[string]domain.Fingerprint{}, nil
+		return map[string]domain.FileStat{}, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints"), vault, kind)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats"), vault, kind)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	out := map[string]domain.Fingerprint{}
+	out := map[string]domain.FileStat{}
 	for rows.Next() {
-		var ref domain.Fingerprint
+		var ref domain.FileStat
 		var mtime int64
 		if err := rows.Scan(&ref.Path, &ref.Size, &mtime); err != nil {
 			return nil, err
@@ -92,7 +92,7 @@ func (q *Queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID, k
 
 // GetSourcesUnder is every source the vault holds at a path and beneath it, by
 // path: the one file, or everything a folder holds.
-func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
 	vault, err := vaultRow(ctx, q.db, vaultID)
 	if errors.Is(err, errNoVault) {
 		return nil, nil
@@ -102,15 +102,15 @@ func (q *Queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, p
 	}
 
 	first, past := getRangeUnder(path)
-	rows, err := q.db.QueryContext(ctx, stmt.Get("fingerprints_under"), vault, path, vault, first, past)
+	rows, err := q.db.QueryContext(ctx, stmt.Get("file_stats_under"), vault, path, vault, first, past)
 	if err != nil {
 		return nil, fmt.Errorf("what the vault holds at %s and under it: %w", path, err)
 	}
 	defer rows.Close()
 
-	var out []domain.Fingerprint
+	var out []domain.FileStat
 	for rows.Next() {
-		var ref domain.Fingerprint
+		var ref domain.FileStat
 		var mtime int64
 		if err := rows.Scan(&ref.Path, &ref.Kind, &ref.Size, &mtime); err != nil {
 			return nil, err

@@ -142,7 +142,7 @@ func (l *Loopback) getHandler() http.Handler {
 // The address names which bytes the file was when it was given out, so a player
 // loaded from it plays one recording through and is not spliced with another
 // halfway. A file rewritten under the same name is a different address.
-func (l *Loopback) Address(vault domain.Vault, ref domain.Fingerprint) string {
+func (l *Loopback) Address(vault domain.Vault, ref domain.FileStat) string {
 	if l == nil || l.stopped.Load() {
 		return ""
 	}
@@ -208,7 +208,7 @@ func (h *fileServer) File(w http.ResponseWriter, r *http.Request, id, targetPath
 //
 // The size the address carries is the copy's own: a copy made again is a different address.
 func (h *fileServer) serveCopy(
-	w http.ResponseWriter, r *http.Request, target domain.Vault, path string, named domain.Fingerprint,
+	w http.ResponseWriter, r *http.Request, target domain.Vault, path string, named domain.FileStat,
 ) bool {
 	if h.openCopy == nil {
 		return false
@@ -259,20 +259,20 @@ func (l *Loopback) getPlayOrigins() []string {
 
 const immutable = "public, max-age=31536000, immutable"
 
-func formatFingerprint(ref domain.Fingerprint) string {
+func formatFingerprint(ref domain.FileStat) string {
 	return fmt.Sprintf("size=%d&mtime=%d", ref.Size, stamp(ref.ModTime))
 }
 
-func parseFingerprint(query url.Values) (domain.Fingerprint, error) {
+func parseFingerprint(query url.Values) (domain.FileStat, error) {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
+		return domain.FileStat{}, fmt.Errorf("size: %q is not a size", query.Get("size"))
 	}
 	mtime, err := strconv.ParseInt(query.Get("mtime"), 10, 64)
 	if err != nil {
-		return domain.Fingerprint{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
+		return domain.FileStat{}, fmt.Errorf("mtime: %q is not a time", query.Get("mtime"))
 	}
-	return domain.Fingerprint{Size: size, ModTime: instant(mtime)}, nil
+	return domain.FileStat{Size: size, ModTime: instant(mtime)}, nil
 }
 
 func stamp(t time.Time) int64 {

@@ -12,14 +12,14 @@ import (
 // A limit bounds every answer that is a list, so that the caller works through a
 // library of any size in pieces.
 type SourceQueries interface {
-	// GetFingerprints is what the index believes about each file of one kind, keyed
+	// GetFileStats is what the index believes about each file of one kind, keyed
 	// by path, so a walk can decide what to read without opening anything.
-	GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error)
+	GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error)
 
 	// GetSourcesUnder is every source the vault holds at a path and beneath it:
 	// the one file, or everything a folder holds, by path. The index holds a row
 	// per file with the path it is filed under, and one query reads them.
-	GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error)
+	GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error)
 
 	// GetUnchunkedSources is the sources of one kind with no small chunk: the
 	// file changed, or nothing has cut it yet.
@@ -54,11 +54,11 @@ type SourceQueries interface {
 // SourceText is one source whose text a producer made: where the file is, what
 // made the text, and the hash the files of that recognition are kept under.
 type SourceText struct {
-	// The fingerprint is the file as the index last saw it. A recognition is of the
+	// The file stat is the file as the index last saw it. A recognition is of the
 	// bytes that were there then, and a file rewritten since is one those
 	// coordinates no longer describe. It is embedded so that the file's
 	// coordinates are declared once, in the domain, and carry their units here.
-	domain.Fingerprint
+	domain.FileStat
 	Producer string
 	Hash     string
 }

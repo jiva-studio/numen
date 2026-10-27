@@ -73,7 +73,7 @@ func MoveRenamedSources(
 // findSameContent is the index of the removed source whose content the file at
 // path holds, and -1 where none does or the file cannot be read.
 func findSameContent(ctx context.Context, reader vaultport.VaultReader, path string, removed []sourceport.SourceText) int {
-	ref, err := reader.GetFingerprint(ctx, path)
+	ref, err := reader.StatFile(ctx, path)
 	if err != nil || !slices.ContainsFunc(removed, func(old sourceport.SourceText) bool { return old.Size == ref.Size }) {
 		return -1
 	}

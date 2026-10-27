@@ -24,7 +24,7 @@ type VaultOpener struct {
 	// ErrorHandler, if set, is called with what went wrong, and with nil when a
 	// later attempt succeeds.
 	ErrorHandler windowport.ErrorHandler
-	// ShouldRebuild reads every note again, whatever its fingerprint says.
+	// ShouldRebuild reads every note again, whatever its file stat says.
 	ShouldRebuild bool
 
 	watcher  vaultport.VaultWatcher
@@ -210,7 +210,7 @@ type bufferedWrites struct {
 
 func (b *bufferedNoteRepository) Save(ctx context.Context, vaultID domain.VaultID, notes []domain.NoteChunks) error {
 	for _, one := range notes {
-		b.record(one.Note.Fingerprint.Path)
+		b.record(one.Note.FileStat.Path)
 	}
 	return b.NoteRepository.Save(ctx, vaultID, notes)
 }

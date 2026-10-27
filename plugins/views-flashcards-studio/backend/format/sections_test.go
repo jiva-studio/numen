@@ -118,10 +118,10 @@ func BenchmarkSections(b *testing.B) {
 
 func BenchmarkReadDeck(b *testing.B) {
 	smallRaw := createDeckBody(10, 2)
-	smallNote := domain.Note{Fingerprint: domain.Fingerprint{Path: "Deck.md"}, Body: string(smallRaw)}
+	smallNote := domain.Note{FileStat: domain.FileStat{Path: "Deck.md"}, Body: string(smallRaw)}
 
 	largeRaw := createDeckBody(1000, 5)
-	largeNote := domain.Note{Fingerprint: domain.Fingerprint{Path: "Deck.md"}, Body: string(largeRaw)}
+	largeNote := domain.Note{FileStat: domain.FileStat{Path: "Deck.md"}, Body: string(largeRaw)}
 
 	b.Run("DeckSmall", func(b *testing.B) {
 		b.ReportAllocs()

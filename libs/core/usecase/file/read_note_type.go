@@ -36,5 +36,5 @@ func ReadNoteType(ctx context.Context, readers vaultport.VaultReaders, v domain.
 
 // getNoteType is the type a note's bytes carry.
 func getNoteType(raw []byte) domain.NoteType {
-	return markdown.Parse(domain.Fingerprint{}, raw).Type
+	return markdown.Parse(domain.FileStat{}, raw).Type
 }

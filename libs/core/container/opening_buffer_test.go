@@ -31,7 +31,7 @@ func (r repositoryAnswering) Remove(context.Context, domain.VaultID, []string) e
 func notesAt(paths ...string) []domain.NoteChunks {
 	var notes []domain.NoteChunks
 	for _, path := range paths {
-		notes = append(notes, domain.NoteChunks{Note: domain.Note{Fingerprint: domain.Fingerprint{Path: path}}})
+		notes = append(notes, domain.NoteChunks{Note: domain.Note{FileStat: domain.FileStat{Path: path}}})
 	}
 	return notes
 }

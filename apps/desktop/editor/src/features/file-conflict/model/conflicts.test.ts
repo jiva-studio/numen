@@ -141,7 +141,7 @@ describe('a window of real notes', () => {
       if (
         observed &&
         files.get(path) !== observed.prose &&
-        `at:${files.get(path)}` !== observed.fingerprint
+        `at:${files.get(path)}` !== observed.stat
       ) {
         return asFailure('changed' as const)
       }

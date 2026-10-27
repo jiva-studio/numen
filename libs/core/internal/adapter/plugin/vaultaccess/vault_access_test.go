@@ -144,7 +144,7 @@ func TestAHostShowingNoVaultAnswersEveryCallThatWorksOneWithErrNoVault(t *testin
 	access := Vault{Current: func() (domain.Vault, bool) { return domain.Vault{}, false }}
 
 	_, _, readErr := access.Read(t.Context(), "a.md")
-	_, writeErr := access.Write(t.Context(), "a.md", nil, domain.Fingerprint{})
+	_, writeErr := access.Write(t.Context(), "a.md", nil, domain.FileStat{})
 	_, lockErr := access.Lock(t.Context())
 	_, notesErr := access.GetNotes(t.Context(), nil)
 	_, openErr := access.OpenStore("md.numen.a")

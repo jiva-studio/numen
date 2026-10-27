@@ -399,9 +399,9 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	db := openDB(t)
 
 	note := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 14, ModTime: walked},
-		Title:       "Entropy",
-		Body:        "the first body",
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 14, ModTime: walked},
+		Title:    "Entropy",
+		Body:     "the first body",
 	}
 	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -421,7 +421,7 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 		t.Fatal("the note was not embedded, so this test would pass either way")
 	}
 
-	note.Fingerprint.Size = 23
+	note.FileStat.Size = 23
 	note.Body = "the second body, longer"
 	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -447,7 +447,7 @@ func TestResavingANoteConsumesItsChunksWithIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(found) == 0 || found[0].Source != note.Fingerprint.Path {
+	if len(found) == 0 || found[0].Source != note.FileStat.Path {
 		t.Errorf("the rewritten note is not findable by its new words: %+v", found)
 	}
 	if stale, err := db.ChunkQueries().FindLexical(ctx, first.ID, "first", nil, 10, false); err != nil {
@@ -469,9 +469,9 @@ func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 
 	body := strings.Repeat("entropy is the measure of disorder in a closed system. ", 8)
 	note := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: walked},
-		Title:       "Entropy",
-		Body:        body,
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: int64(len(body)), ModTime: walked},
+		Title:    "Entropy",
+		Body:     body,
 	}
 	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
@@ -486,7 +486,7 @@ func TestANoteIsSplitIntoChunksThatCanCarryAVector(t *testing.T) {
 	}
 	// Every offset is into the file, so the text of a passage can be read back.
 	for _, p := range owing {
-		if p.Start < 0 || p.Start+p.Length > int(note.Fingerprint.Size) {
+		if p.Start < 0 || p.Start+p.Length > int(note.FileStat.Size) {
 			t.Errorf("a chunk lies outside the file: %+v", p)
 		}
 	}
@@ -535,14 +535,14 @@ func TestRemovingANoteConsumesItsIndexedRows(t *testing.T) {
 	db := openDB(t)
 
 	note := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 6, ModTime: walked},
-		Title:       "Entropy",
-		Body:        "a body",
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 6, ModTime: walked},
+		Title:    "Entropy",
+		Body:     "a body",
 	}
 	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.Fingerprint.Path, []chunk.Chunk{{
+	if err := db.Chunks().ReplaceChunks(ctx, first.ID, "note", note.FileStat.Path, []chunk.Chunk{{
 		Start: 0, Length: 6, Text: note.Body,
 		Small: []chunk.Chunk{{Start: 0, Length: 6, Text: note.Body}},
 	}}); err != nil {
@@ -550,7 +550,7 @@ func TestRemovingANoteConsumesItsIndexedRows(t *testing.T) {
 	}
 	saveSeededVectors(t, db, first, 0x00)
 
-	if err := db.Notes().Remove(ctx, first.ID, []string{note.Fingerprint.Path}); err != nil {
+	if err := db.Notes().Remove(ctx, first.ID, []string{note.FileStat.Path}); err != nil {
 		t.Fatal(err)
 	}
 	if got := countRows(t, db, `SELECT COUNT(*) FROM chunks_vec`); got != 0 {
@@ -573,22 +573,22 @@ func TestANoteScanDoesNotSeeABook(t *testing.T) {
 	book(t, db, first, "library/first.epub", 0x00)
 
 	note := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/Entropy.md", Size: 20, ModTime: walked},
-		Title:       "Entropy",
-		Body:        "a body",
+		FileStat: domain.FileStat{Path: "notes/Entropy.md", Size: 20, ModTime: walked},
+		Title:    "Entropy",
+		Body:     "a body",
 	}
 	if err := saveCut(ctx, db, first.ID, []domain.Note{note}); err != nil {
 		t.Fatal(err)
 	}
 
-	recognized, err := db.NoteQueries().GetFingerprints(ctx, first.ID)
+	recognized, err := db.NoteQueries().GetFileStats(ctx, first.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if len(recognized) != 1 {
 		t.Errorf("a note scan sees %v, want only the note", recognized)
 	}
-	books, err := db.ChunkQueries().GetFingerprints(ctx, first.ID, "book")
+	books, err := db.ChunkQueries().GetFileStats(ctx, first.ID, "book")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1453,7 +1453,7 @@ func TestASectionSurvivesTheWayASourceIsHandedOver(t *testing.T) {
 
 	if err := db.Sources().SaveExtraction(ctx, first.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{
+			FileStat: domain.FileStat{
 				Path: "library/chaitanya.pdf", Kind: domain.KindFile, Size: 1000, ModTime: walked,
 			},
 			Hash:   "hash",

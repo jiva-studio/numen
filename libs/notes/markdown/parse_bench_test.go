@@ -56,7 +56,7 @@ See [[Third Law of Thermodynamics]] and [[Absolute Zero]].
 var benchSampleLine = "See [[Entropy|entropy measure]] and [[Thermodynamics#Second Law]] for [[Details]]."
 
 func BenchmarkParseNote(b *testing.B) {
-	ref := domain.Fingerprint{Path: "notes/sample.md", Size: int64(len(benchSampleNote))}
+	ref := domain.FileStat{Path: "notes/sample.md", Size: int64(len(benchSampleNote))}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for range b.N {

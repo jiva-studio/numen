@@ -684,7 +684,7 @@ func TestAKeyIsSavedWhereTheBlocksOwnKeysExist(t *testing.T) {
 	if id, ok := back.Identifier(); !ok || id != "01J8" {
 		t.Errorf("the note lost its identity: %q %v\n%s", id, ok, got)
 	}
-	front := Parse(domain.Fingerprint{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
+	front := Parse(domain.FileStat{Path: "Sanskrit.md"}, []byte(got)).Frontmatter
 	want := map[string]any{
 		"type": "preset", "id": "01J8", "minutes_a_day": 35, "new_a_day": 8,
 		"colour": "green",
@@ -841,7 +841,7 @@ func TestATypeNobodyNamedIsSavedIn(t *testing.T) {
 				t.Fatalf("set: %v", err)
 			}
 
-			n := Parse(domain.Fingerprint{Path: "samples/Roots.md"}, d.Bytes())
+			n := Parse(domain.FileStat{Path: "samples/Roots.md"}, d.Bytes())
 			var named []domain.Link
 			for _, link := range n.Links {
 				if link.Type == "preset" {

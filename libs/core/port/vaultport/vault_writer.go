@@ -28,15 +28,15 @@ type VaultWriter interface {
 	// the folders above it. It is atomic: a reader sees the note as it was or
 	// as it now is, never half of either.
 	//
-	// Fingerprint, when it is not the zero value, is what the caller believes
+	// FileStat, when it is not the zero value, is what the caller believes
 	// is on disk. A file that no longer matches it is left alone and
 	// ErrStale is returned: the caller read a note, thought about it, and
 	// something else wrote in the meantime.
 	//
-	// What comes back is the fingerprint of the file this write produced,
+	// What comes back is the file stat of the file this write produced,
 	// which is what the caller presents at its next write. It is the zero
 	// value when nothing was written.
-	Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error)
+	Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error)
 
 	// Create puts content where there is nothing, and refuses where there is
 	// something. Only the filesystem can answer whether a path is free, and it

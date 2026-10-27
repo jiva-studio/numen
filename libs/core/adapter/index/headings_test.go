@@ -17,10 +17,10 @@ func saveNoteWithHeadings(t *testing.T, db *DB, vault domain.Vault, path string,
 		text = append(text, h.Text)
 	}
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
-		Title:       path,
-		Body:        strings.Join(text, "\n"),
-		Headings:    headings,
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
+		Title:    path,
+		Body:     strings.Join(text, "\n"),
+		Headings: headings,
 	}
 	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)

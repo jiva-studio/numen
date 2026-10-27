@@ -114,7 +114,7 @@ func TestNoteWrite(t *testing.T) {
 		t.Fatal("expected non-empty fingerprint")
 	}
 
-	// 2. Atomic update with valid fingerprint
+	// 2. Atomic update with valid file stat
 	callReq2 := &v1.CallToolRequest{
 		VaultId: testVault,
 		Name:    "note_write",
@@ -129,7 +129,7 @@ func TestNoteWrite(t *testing.T) {
 		t.Fatalf("tool refused: %s", res2.Msg.GetResult().GetText())
 	}
 
-	// 3. Stale update with old fingerprint fails
+	// 3. Stale update with old file stat fails
 	callReq3 := &v1.CallToolRequest{
 		VaultId: testVault,
 		Name:    "note_write",

@@ -51,9 +51,9 @@ func TestABookIsSplitIntoChunksRecordedWithTheRecipeThatSplitThem(t *testing.T) 
 			if source.Hash == "" {
 				t.Error("nothing addresses the content the chunks were cut from")
 			}
-			if source.Fingerprint.Size != int64(len(raw)) ||
-				!source.Fingerprint.ModTime.Equal(time.Unix(0, 1)) {
-				t.Errorf("the source was recorded as %+v, want the file as it is", source.Fingerprint)
+			if source.FileStat.Size != int64(len(raw)) ||
+				!source.FileStat.ModTime.Equal(time.Unix(0, 1)) {
+				t.Errorf("the source was recorded as %+v, want the file as it is", source.FileStat)
 			}
 
 			// A chunk keeps a place in the extracted text and not the text
@@ -279,7 +279,7 @@ func TestExtractionStaysInsideItsVault(t *testing.T) {
 					t.Fatalf("a chunk of %s holds the other vault's words: %q", c.vault.Name, chunk.text)
 				}
 			}
-			recognized, err := index.GetFingerprints(ctx, c.vault.ID, domain.KindFile)
+			recognized, err := index.GetFileStats(ctx, c.vault.ID, domain.KindFile)
 			if err != nil {
 				t.Fatal(err)
 			}

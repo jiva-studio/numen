@@ -32,7 +32,7 @@ func (c changing) openNote(t *testing.T, path string) *note.Baseline {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &note.Baseline{Prose: found.Body, Fingerprint: found.Fingerprint}
+	return &note.Baseline{Prose: found.Body, FileStat: found.FileStat}
 }
 
 // A flow sequence is the commonest frontmatter line there is, and an identifier
@@ -223,7 +223,7 @@ func TestASaveFollowsASaveWithNoReadBetween(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Entropy.md", "# Entropy\n\nTwo.\n",
-		&note.Baseline{Prose: baseline.Prose, Fingerprint: pos}); err != nil {
+		&note.Baseline{Prose: baseline.Prose, FileStat: pos}); err != nil {
 		t.Fatalf("the save after a save was stopped: %v", err)
 	}
 	if body := c.read(t, "Entropy.md"); !strings.Contains(body, "Two.") {
@@ -249,7 +249,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if _, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
+	if _, err := c.newEditLinks().Add(t.Context(), c.vault, "Heat.md", domain.FileStat{}, domain.Link{
 		Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 		Role:   domain.RoleParent,
 	}); err != nil {
@@ -257,7 +257,7 @@ func TestALinkAnAgentAddsBetweenTwoSavesIsNotAChange(t *testing.T) {
 	}
 
 	if _, err := saving.Save(t.Context(), c.vault, "Heat.md", "# Heat\n\nMine, and more.\n",
-		&note.Baseline{Prose: mine, Fingerprint: pos}); err != nil {
+		&note.Baseline{Prose: mine, FileStat: pos}); err != nil {
 		t.Fatalf("a link written into the frontmatter stopped a save: %v", err)
 	}
 
@@ -344,7 +344,7 @@ func TestALinkSavedWhileASaveIsReadingSurvivesIt(t *testing.T) {
 
 	added := make(chan error, 1)
 	go func() {
-		_, err := agent.Add(t.Context(), c.vault, "Heat.md", domain.Fingerprint{}, domain.Link{
+		_, err := agent.Add(t.Context(), c.vault, "Heat.md", domain.FileStat{}, domain.Link{
 			Target: domain.Address{Scheme: domain.SchemeName, Value: "Entropy"},
 			Role:   domain.RoleParent,
 		})
@@ -536,7 +536,7 @@ func TestANoteIsSavedNoLargerThanItCanBeRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	if found.Outcome != note.Ok {
-		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.Fingerprint.Size)
+		t.Errorf("the save left a note the read answers %q to, of %d bytes", found.Outcome, found.FileStat.Size)
 	}
 }
 
@@ -569,7 +569,7 @@ func TestWritingMoreTextThanANoteContains(t *testing.T) {
 	c := openChanging(t, map[string]string{"Entropy.md": "# Entropy\n"})
 
 	_, err := c.newWrite().Execute(
-		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.Fingerprint{})
+		t.Context(), c.vault, "Entropy.md", strings.Repeat("x", note.MaxBytes+1), domain.FileStat{})
 	if !errors.Is(err, note.ErrTooLarge) {
 		t.Fatalf("want ErrTooLarge, got %v", err)
 	}
@@ -661,8 +661,8 @@ func (w watchedReader) Read(ctx context.Context, path string) ([]byte, error) {
 	return raw, err
 }
 
-func (w watchedReader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	ref, err := w.VaultReader.GetFingerprint(ctx, path)
+func (w watchedReader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	ref, err := w.VaultReader.StatFile(ctx, path)
 	if w.stat != nil {
 		w.stat(path)
 	}

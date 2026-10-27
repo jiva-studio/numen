@@ -12,7 +12,7 @@
 
 import type { GenFile, GenMessage, GenService } from "@bufbuild/protobuf/codegenv2";
 import { fileDesc, messageDesc, serviceDesc } from "@bufbuild/protobuf/codegenv2";
-import type { Fingerprint, Span } from "@numen/protocol/numen/v1/shared_pb.js";
+import type { FileStat, Span } from "@numen/protocol/numen/v1/shared_pb.js";
 import { file_numen_v1_shared } from "@numen/protocol/numen/v1/shared_pb.js";
 import type { Message } from "@bufbuild/protobuf";
 
@@ -20,7 +20,7 @@ import type { Message } from "@bufbuild/protobuf";
  * Describes the file numen/pdf/v1/document.proto.
  */
 export const file_numen_pdf_v1_document: GenFile = /*@__PURE__*/
-  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSIiChJHZXREb2N1bWVudFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJkChNHZXREb2N1bWVudFJlc3BvbnNlEiEKBXBhZ2VzGAEgAygLMhIubnVtZW4ucGRmLnYxLlBhZ2USKgoLZmluZ2VycHJpbnQYAiABKAsyFS5udW1lbi52MS5GaW5nZXJwcmludCIlCgRQYWdlEg0KBXdpZHRoGAEgASgBEg4KBmhlaWdodBgCIAEoASJDChRHZXRIaWdobGlnaHRzUmVxdWVzdBIMCgRwYXRoGAEgASgJEh0KBXNwYW5zGAIgAygLMg4ubnVtZW4udjEuU3BhbiJAChVHZXRIaWdobGlnaHRzUmVzcG9uc2USJwoEcnVucxgBIAMoCzIZLm51bWVuLnBkZi52MS5Eb2N1bWVudFJ1biI6CgtEb2N1bWVudFJ1bhIrCgZwbGFjZXMYASADKAsyGy5udW1lbi5wZGYudjEuRG9jdW1lbnRQbGFjZSJICg1Eb2N1bWVudFBsYWNlEgwKBHBhZ2UYASABKAUSKQoFcmVjdHMYAiADKAsyGi5udW1lbi5wZGYudjEuRG9jdW1lbnRSZWN0IkoKDERvY3VtZW50UmVjdBINCgVtaW5feBgBIAEoAhINCgVtaW5feRgCIAEoAhINCgVtYXhfeBgDIAEoAhINCgVtYXhfeRgEIAEoAjK/AQoPRG9jdW1lbnRTZXJ2aWNlElIKC0dldERvY3VtZW50EiAubnVtZW4ucGRmLnYxLkdldERvY3VtZW50UmVxdWVzdBohLm51bWVuLnBkZi52MS5HZXREb2N1bWVudFJlc3BvbnNlElgKDUdldEhpZ2hsaWdodHMSIi5udW1lbi5wZGYudjEuR2V0SGlnaGxpZ2h0c1JlcXVlc3QaIy5udW1lbi5wZGYudjEuR2V0SGlnaGxpZ2h0c1Jlc3BvbnNlQklaR2dpdGh1Yi5jb20vaml2YS1zdHVkaW8vbnVtZW4vcGx1Z2lucy9yZWFkZXJzLXBkZi9nZW4vbnVtZW4vcGRmL3YxO3BkZnYxYgZwcm90bzM", [file_numen_v1_shared]);
+  fileDesc("ChtudW1lbi9wZGYvdjEvZG9jdW1lbnQucHJvdG8SDG51bWVuLnBkZi52MSIiChJHZXREb2N1bWVudFJlcXVlc3QSDAoEcGF0aBgBIAEoCSJaChNHZXREb2N1bWVudFJlc3BvbnNlEiEKBXBhZ2VzGAEgAygLMhIubnVtZW4ucGRmLnYxLlBhZ2USIAoEc3RhdBgCIAEoCzISLm51bWVuLnYxLkZpbGVTdGF0IiUKBFBhZ2USDQoFd2lkdGgYASABKAESDgoGaGVpZ2h0GAIgASgBIkMKFEdldEhpZ2hsaWdodHNSZXF1ZXN0EgwKBHBhdGgYASABKAkSHQoFc3BhbnMYAiADKAsyDi5udW1lbi52MS5TcGFuIkAKFUdldEhpZ2hsaWdodHNSZXNwb25zZRInCgRydW5zGAEgAygLMhkubnVtZW4ucGRmLnYxLkRvY3VtZW50UnVuIjoKC0RvY3VtZW50UnVuEisKBnBsYWNlcxgBIAMoCzIbLm51bWVuLnBkZi52MS5Eb2N1bWVudFBsYWNlIkgKDURvY3VtZW50UGxhY2USDAoEcGFnZRgBIAEoBRIpCgVyZWN0cxgCIAMoCzIaLm51bWVuLnBkZi52MS5Eb2N1bWVudFJlY3QiSgoMRG9jdW1lbnRSZWN0Eg0KBW1pbl94GAEgASgCEg0KBW1pbl95GAIgASgCEg0KBW1heF94GAMgASgCEg0KBW1heF95GAQgASgCMr8BCg9Eb2N1bWVudFNlcnZpY2USUgoLR2V0RG9jdW1lbnQSIC5udW1lbi5wZGYudjEuR2V0RG9jdW1lbnRSZXF1ZXN0GiEubnVtZW4ucGRmLnYxLkdldERvY3VtZW50UmVzcG9uc2USWAoNR2V0SGlnaGxpZ2h0cxIiLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVxdWVzdBojLm51bWVuLnBkZi52MS5HZXRIaWdobGlnaHRzUmVzcG9uc2VCSVpHZ2l0aHViLmNvbS9qaXZhLXN0dWRpby9udW1lbi9wbHVnaW5zL3JlYWRlcnMtcGRmL2dlbi9udW1lbi9wZGYvdjE7cGRmdjFiBnByb3RvMw", [file_numen_v1_shared]);
 
 /**
  * @generated from message numen.pdf.v1.GetDocumentRequest
@@ -56,9 +56,9 @@ export type GetDocumentResponse = Message<"numen.pdf.v1.GetDocumentResponse"> & 
    * The bytes the layout was read from. A page image is asked for with it, so
    * one address names one drawing of one file.
    *
-   * @generated from field: numen.v1.Fingerprint fingerprint = 2;
+   * @generated from field: numen.v1.FileStat stat = 2;
    */
-  fingerprint?: Fingerprint | undefined;
+  stat?: FileStat | undefined;
 };
 
 /**

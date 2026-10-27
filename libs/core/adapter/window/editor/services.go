@@ -108,7 +108,7 @@ func (s *Services) readFiles(readers vaultport.VaultReaders, openCopy *file.Open
 	s.server.openFile = file.NewOpenFile(readers)
 	s.server.openCopy = openCopy
 	s.server.mediaTypes = mediaTypes
-	s.Media.getFingerprint = file.NewGetFingerprint(readers)
+	s.Media.statFile = file.NewStatFile(readers)
 	s.Media.openCopy = openCopy
 	s.Media.mediaTypes = mediaTypes
 }

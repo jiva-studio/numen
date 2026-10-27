@@ -51,13 +51,13 @@ const vaultHeader = "Numen-Vault"
 
 // parseBytesQuery reads the size and the modification time of a file from the query, and is nil
 // where the query names no size.
-func parseBytesQuery(query url.Values) *numenv1.Fingerprint {
+func parseBytesQuery(query url.Values) *numenv1.FileStat {
 	size, err := strconv.ParseInt(query.Get("size"), 10, 64)
 	if err != nil {
 		return nil
 	}
 	stamp, _ := strconv.ParseInt(query.Get("mtime"), 10, 64)
-	return &numenv1.Fingerprint{Size: size, Mtime: stamp}
+	return &numenv1.FileStat{Size: size, Mtime: stamp}
 }
 
 // getHTTPStatus is the HTTP status of a Connect error.

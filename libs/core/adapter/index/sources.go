@@ -64,12 +64,12 @@ func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, 
 }
 
 // GetSourcesUnder is every source the vault holds at a path and beneath it.
-func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.Fingerprint, error) {
+func (s queries) GetSourcesUnder(ctx context.Context, vaultID domain.VaultID, path string) ([]domain.FileStat, error) {
 	return s.read.GetSourcesUnder(ctx, vaultID, path)
 }
 
-func (s queries) GetFingerprints(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.Fingerprint, error) {
-	return s.read.GetFingerprints(ctx, vaultID, string(kind))
+func (s queries) GetFileStats(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind) (map[string]domain.FileStat, error) {
+	return s.read.GetFileStats(ctx, vaultID, string(kind))
 }
 
 func (s queries) GetUnchunkedSources(ctx context.Context, vaultID domain.VaultID, kind domain.SourceKind, limit int) ([]string, error) {
@@ -181,10 +181,10 @@ func parseCursorNumbers(after embeddingport.ChunkCursor, parts []string) ([]int6
 
 func newChunkSource(s domain.Source) chunk.Source {
 	return chunk.Source{
-		Path:     s.Fingerprint.Path,
-		Kind:     string(s.Fingerprint.Kind),
-		Size:     s.Fingerprint.Size,
-		MTime:    chunk.ConvertTimeToNanos(s.Fingerprint.ModTime),
+		Path:     s.FileStat.Path,
+		Kind:     string(s.FileStat.Kind),
+		Size:     s.FileStat.Size,
+		MTime:    chunk.ConvertTimeToNanos(s.FileStat.ModTime),
 		Hash:     s.Hash,
 		Recipe:   s.Recipe,
 		Producer: s.Producer,
@@ -204,9 +204,9 @@ func (s queries) GetSourceText(ctx context.Context, vaultID domain.VaultID, path
 		return sourceport.SourceText{}, false, err
 	}
 	return sourceport.SourceText{
-		Fingerprint: domain.Fingerprint{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
-		Producer:    found.Producer,
-		Hash:        found.Hash,
+		FileStat: domain.FileStat{Path: found.Path, Size: found.Size, ModTime: chunk.ConvertNanosToTime(found.MTime)},
+		Producer: found.Producer,
+		Hash:     found.Hash,
 	}, true, nil
 }
 
@@ -219,9 +219,9 @@ func (s queries) GetRecognisedSources(ctx context.Context, vaultID domain.VaultI
 	out := make([]sourceport.SourceText, 0, len(found))
 	for _, r := range found {
 		out = append(out, sourceport.SourceText{
-			Fingerprint: domain.Fingerprint{Path: r.Path},
-			Producer:    r.Producer,
-			Hash:        r.Hash,
+			FileStat: domain.FileStat{Path: r.Path},
+			Producer: r.Producer,
+			Hash:     r.Hash,
 		})
 	}
 	return out, nil

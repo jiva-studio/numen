@@ -17,9 +17,9 @@ import (
 func TestASmallChunkIsSplitBelowTheLimitGiven(t *testing.T) {
 	body := strings.TrimSpace(strings.Repeat("chunks carry vectors ", 200))
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
-		Title:       "Cut",
-		Body:        body,
+		FileStat: domain.FileStat{Path: "notes/cut.md", Size: int64(len(body)), ModTime: time.Unix(0, 1)},
+		Title:    "Cut",
+		Body:     body,
 	}
 
 	for _, limit := range []int{64, 512} {

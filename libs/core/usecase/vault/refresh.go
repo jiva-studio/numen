@@ -75,8 +75,8 @@ type ledgerKey struct {
 }
 
 type ledgerEntry struct {
-	fingerprint domain.Fingerprint
-	hash        [sha256.Size]byte
+	stat domain.FileStat
+	hash [sha256.Size]byte
 }
 
 // NewLedger is a ledger holding nothing.
@@ -117,7 +117,7 @@ func (l *Ledger) Len() int {
 // lock.
 func (l *Ledger) prune(now time.Time) {
 	for key, entry := range l.item {
-		if now.Sub(entry.fingerprint.ModTime) >= TimestampGranularity {
+		if now.Sub(entry.stat.ModTime) >= TimestampGranularity {
 			delete(l.item, key)
 		}
 	}
@@ -265,7 +265,7 @@ func (u Refresh) refreshPath(
 	}
 	res.Indexed = append(res.Indexed, path)
 	if u.isRecent(ref.ModTime) {
-		recorded[path] = &ledgerEntry{fingerprint: ref, hash: sha256.Sum256(raw)}
+		recorded[path] = &ledgerEntry{stat: ref, hash: sha256.Sum256(raw)}
 	} else {
 		recorded[path] = nil
 	}
@@ -288,13 +288,13 @@ func readListedFile(ctx context.Context, reader vaultport.VaultReader, path stri
 	return nil, false
 }
 
-// statNote is the fingerprint of the file at path and whether it is a note. A
+// statNote is the file stat of the file at path and whether it is a note. A
 // path that is not one is filed in res under the list that says why, and nothing
 // is lost by it: one file nobody can read costs that file and not the others.
 func (u Refresh) statNote(
 	ctx context.Context, reader vaultport.VaultReader, path string, res *RefreshResult,
-) (domain.Fingerprint, bool) {
-	ref, err := reader.GetFingerprint(ctx, path)
+) (domain.FileStat, bool) {
+	ref, err := reader.StatFile(ctx, path)
 	switch {
 	case errors.Is(err, vaultport.ErrNotANote):
 		// An attachment, an export or a note renamed out of the vault's sight is
@@ -311,7 +311,7 @@ func (u Refresh) statNote(
 	default:
 		return ref, true
 	}
-	return domain.Fingerprint{}, false
+	return domain.FileStat{}, false
 }
 
 // writeLedger puts the recorded entries in the ledger and drops the paths
@@ -367,12 +367,12 @@ func (u Refresh) followRenames(ctx context.Context, v domain.Vault, reader vault
 }
 
 // isCurrent reports whether the index already holds the note as the file is.
-func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v domain.Vault, ref domain.Fingerprint) bool {
+func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v domain.Vault, ref domain.FileStat) bool {
 	target, err := u.queries.GetSourcesUnder(ctx, v.ID, ref.Path)
 	if err != nil {
 		return false
 	}
-	pos := slices.IndexFunc(target, func(f domain.Fingerprint) bool {
+	pos := slices.IndexFunc(target, func(f domain.FileStat) bool {
 		return f.Path == ref.Path && f.Kind == domain.KindNote
 	})
 	if pos < 0 || !target[pos].IsUnchanged(ref) {
@@ -382,7 +382,7 @@ func (u Refresh) isCurrent(ctx context.Context, reader vaultport.VaultReader, v 
 	if !ok {
 		return !u.isRecent(ref.ModTime)
 	}
-	if !entry.fingerprint.IsUnchanged(ref) {
+	if !entry.stat.IsUnchanged(ref) {
 		return false
 	}
 	raw, err := reader.Read(ctx, ref.Path)

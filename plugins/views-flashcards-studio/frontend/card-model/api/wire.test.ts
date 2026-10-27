@@ -6,7 +6,13 @@
  */
 import { describe, expect, it, vi } from 'vitest'
 import { asFailure, asValue } from '@numen/wire'
-import type { Cards, DeckProblem, FieldRenameResult, RenamedField, VaultCardModel } from '../../cards'
+import type {
+  Cards,
+  DeckProblem,
+  FieldRenameResult,
+  RenamedField,
+  VaultCardModel,
+} from '../../cards'
 import { WORDS as words } from '../../cards'
 import { ERRORS } from '../../cards/wire/errors'
 import { createCardModelWire, NOTHING } from './wire'
@@ -93,7 +99,11 @@ describe('reading a card model', () => {
 
     await wire.renameField('Word.md', { from: 'Front', to: 'Template' }, vi.fn())
 
-    expect(cards.renameField).toHaveBeenCalledWith('Word.md', { from: 'Front', to: 'Template' }, null)
+    expect(cards.renameField).toHaveBeenCalledWith(
+      'Word.md',
+      { from: 'Front', to: 'Template' },
+      null,
+    )
   })
 
   it('holds what is wrong with the file the vault named', async () => {
@@ -118,7 +128,7 @@ describe('writing a card model', () => {
 
     const readItem = await wire.read('Word.md')
     const body = readItem.ok ? readItem.value.body : ''
-    const answer = await wire.write('Word.md', body, { prose: body, fingerprint: '12 34 Word.md' })
+    const answer = await wire.write('Word.md', body, { prose: body, stat: '12 34 Word.md' })
 
     expect(cards.writeCardModel).toHaveBeenCalledWith(
       'Word.md',
@@ -228,7 +238,11 @@ describe('renaming a field', () => {
 
     await wire.renameField('Word.md', { from: 'Front', to: 'Template' }, vi.fn())
 
-    expect(cards.renameField).toHaveBeenCalledWith('Word.md', { from: 'Front', to: 'Template' }, null)
+    expect(cards.renameField).toHaveBeenCalledWith(
+      'Word.md',
+      { from: 'Front', to: 'Template' },
+      null,
+    )
   })
 
   it('counts the cards it reached and names the decks it did not', async () => {

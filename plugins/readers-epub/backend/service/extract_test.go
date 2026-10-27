@@ -84,7 +84,7 @@ func writeBook(t *testing.T) (dir, name string, size, mtime int64) {
 	return dir, name, info.Size(), info.ModTime().UnixNano()
 }
 
-func readEntry(t *testing.T, path, entry string, baseline *numenv1.Fingerprint) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
+func readEntry(t *testing.T, path, entry string, baseline *numenv1.FileStat) (*connect.Response[epubv1.ReadBookEntryResponse], error) {
 	t.Helper()
 	server := NewBookServer(hosttest.New("vault"), func() string { return os.Getenv("NUMEN_VAULT_PATH") })
 	t.Cleanup(server.Close)
@@ -94,7 +94,7 @@ func readEntry(t *testing.T, path, entry string, baseline *numenv1.Fingerprint) 
 
 func TestReadBookEntryAnswersTheBytesOfTheEntry(t *testing.T) {
 	_, name, size, mtime := writeBook(t)
-	resp, err := readEntry(t, name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: mtime})
+	resp, err := readEntry(t, name, "EPUB/cover.png", &numenv1.FileStat{Path: name, Size: size, Mtime: mtime})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +112,7 @@ func TestReadBookEntryAnswersWithoutABaseline(t *testing.T) {
 
 func TestReadBookEntryRefusesAFileThatChanged(t *testing.T) {
 	_, name, size, mtime := writeBook(t)
-	cases := map[string]*numenv1.Fingerprint{
+	cases := map[string]*numenv1.FileStat{
 		"another size":  {Path: name, Size: size + 1, Mtime: mtime},
 		"another stamp": {Path: name, Size: size, Mtime: mtime + 1},
 	}
@@ -193,7 +193,7 @@ func TestReadBookEntryRefusesNotFound(t *testing.T) {
 
 func TestReadBookEntryAnswersWithZeroMtimeBaseline(t *testing.T) {
 	_, name, size, _ := writeBook(t)
-	if _, err := readEntry(t, name, "EPUB/cover.png", &numenv1.Fingerprint{Path: name, Size: size, Mtime: 0}); err != nil {
+	if _, err := readEntry(t, name, "EPUB/cover.png", &numenv1.FileStat{Path: name, Size: size, Mtime: 0}); err != nil {
 		t.Fatalf("expected success with Mtime == 0, got %v", err)
 	}
 }

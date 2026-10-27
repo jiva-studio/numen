@@ -57,21 +57,21 @@ export const books: Books = {
       })),
       pages: answer.pageCount,
       pageBytes: answer.pageBytes,
-      fingerprint: formatFingerprint(answer.fingerprint) ?? '',
+      stat: formatFingerprint(answer.stat) ?? '',
     } satisfies Book
   },
-  readMarkup: async (path, document, fingerprint) => {
+  readMarkup: async (path, document, stat) => {
     const answer = await retryWhileBusy(() =>
       client.books.readBookMarkup({
         path,
         document,
-        ...(fingerprint === '' ? {} : { baseline: parseFingerprint(fingerprint) }),
+        ...(stat === '' ? {} : { baseline: parseFingerprint(stat) }),
       }),
     )
     return answer.markup
   },
-  getEntryUrl: (path, name, fingerprint) =>
-    `${PLUGIN_ROUTE}/entries/${name.split('/').map(encodeURIComponent).join('/')}?path=${encodeURIComponent(path)}${fingerprint === '' ? '' : `&${getBytesQuery(fingerprint)}`}`,
+  getEntryUrl: (path, name, stat) =>
+    `${PLUGIN_ROUTE}/entries/${name.split('/').map(encodeURIComponent).join('/')}?path=${encodeURIComponent(path)}${stat === '' ? '' : `&${getBytesQuery(stat)}`}`,
   getCfi: async (path, offset) => {
     const answer = await findPlace(() => client.books.getCfi({ path, offset }))
     return answer?.cfi ?? null

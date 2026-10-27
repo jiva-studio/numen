@@ -18,8 +18,8 @@ import (
 
 // Parse reads one note. It never fails: a file that cannot be understood is
 // still readable text, and refusing to index it would hide it from the user.
-func Parse(ref domain.Fingerprint, raw []byte) domain.Note {
-	n := domain.Note{Fingerprint: ref}
+func Parse(ref domain.FileStat, raw []byte) domain.Note {
+	n := domain.Note{FileStat: ref}
 
 	body, fm, fmErr := readFrontmatter(raw)
 	n.Frontmatter = fm

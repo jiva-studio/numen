@@ -69,7 +69,7 @@ describe('the file a save presents', () => {
     if (!readItem.ok) throw new Error('the read failed')
     await core.write(noteFile.path, 'prose and more', {
       prose: readItem.value.body,
-      fingerprint: readItem.value.at ?? '',
+      stat: readItem.value.at ?? '',
     })
 
     expect(request.writeNote.mock.calls[0]?.[0]).toEqual({

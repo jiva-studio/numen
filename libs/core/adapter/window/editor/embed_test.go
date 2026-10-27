@@ -181,7 +181,7 @@ type counts struct {
 	posVal *walking
 }
 
-func (r counts) WalkFiles(ctx context.Context, fn func(domain.Fingerprint) error) error {
+func (r counts) WalkFiles(ctx context.Context, fn func(domain.FileStat) error) error {
 	r.posVal.walks.Add(1)
 	return r.VaultReader.WalkFiles(ctx, fn)
 }

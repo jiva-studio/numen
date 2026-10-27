@@ -51,8 +51,8 @@ func (r Readers) Open(v domain.Vault) (ports.VaultReader, error) {
 
 type reader struct{ vault host.Vault }
 
-func (r reader) GetFingerprint(ctx context.Context, path string) (domain.Fingerprint, error) {
-	pos, err := r.vault.GetFingerprint(ctx, path)
+func (r reader) StatFile(ctx context.Context, path string) (domain.FileStat, error) {
+	pos, err := r.vault.StatFile(ctx, path)
 	return pos, readError(err)
 }
 
@@ -74,8 +74,8 @@ func (w Writers) Lock(ctx context.Context, v domain.Vault) (func(), error) {
 
 type writer struct{ vault host.Vault }
 
-func (w writer) Write(ctx context.Context, path string, content []byte, fingerprint domain.Fingerprint) (domain.Fingerprint, error) {
-	pos, err := w.vault.Write(ctx, path, content, fingerprint)
+func (w writer) Write(ctx context.Context, path string, content []byte, stat domain.FileStat) (domain.FileStat, error) {
+	pos, err := w.vault.Write(ctx, path, content, stat)
 	return pos, readError(err)
 }
 

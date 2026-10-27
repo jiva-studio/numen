@@ -30,9 +30,9 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 		return Folder{}, err
 	}
 	entries := make([]domain.Entry, 0, len(paths))
-	refs := make(map[string]domain.Fingerprint, len(paths))
+	refs := make(map[string]domain.FileStat, len(paths))
 	for _, path := range paths {
-		ref, err := reader.GetFingerprint(ctx, path)
+		ref, err := reader.StatFile(ctx, path)
 		if errors.Is(err, fs.ErrNotExist) || errors.Is(err, vaultport.ErrOutside) {
 			continue
 		}
@@ -57,7 +57,7 @@ func (u *GetFileKinds) Execute(ctx context.Context, v domain.Vault, paths []stri
 // readMissingTypes adds the type of each note the types leave out, read from the note itself.
 func readMissingTypes(
 	ctx context.Context, reader vaultport.VaultReader, entries []domain.Entry,
-	refs map[string]domain.Fingerprint, types map[string]domain.NoteType,
+	refs map[string]domain.FileStat, types map[string]domain.NoteType,
 ) (map[string]domain.NoteType, error) {
 	for _, entry := range entries {
 		if entry.Kind != domain.KindNote {

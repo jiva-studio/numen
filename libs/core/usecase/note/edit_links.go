@@ -60,22 +60,22 @@ func (u EditLinks) WithWriters(writers vaultport.VaultWriters) EditLinks {
 // One link is named on its own, so there is always at least one: no links is
 // still a read and a write, and stamps an identifier into a note without one.
 //
-// Fingerprint is what the caller believes is on disk, and every one of these
+// FileStat is what the caller believes is on disk, and every one of these
 // takes it for the reason PointAt does: a note that changed since it was read
-// is left alone and port.ErrStale comes back. The empty fingerprint is a
+// is left alone and port.ErrStale comes back. The empty file stat is a
 // caller holding itself to whatever the note is at the moment of the write.
 func (u EditLinks) Add(
-	ctx context.Context, v domain.Vault, from string, fingerprint domain.Fingerprint,
+	ctx context.Context, v domain.Vault, from string, stat domain.FileStat,
 	add domain.Link, more ...domain.Link,
-) (domain.Fingerprint, error) {
+) (domain.FileStat, error) {
 	links := append([]domain.Link{add}, more...)
 	for _, link := range links {
 		if err := CheckWritable(link); err != nil {
-			return domain.Fingerprint{}, err
+			return domain.FileStat{}, err
 		}
 	}
 	e := u.newEdit()
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		for _, link := range links {
 			if err := doc.AddLink(link); err != nil {
@@ -90,17 +90,17 @@ func (u EditLinks) Add(
 // its label, the reason it exists — without moving where it goes.
 //
 // Every field left out is cleared, so what this writes is decided from what the
-// caller read. That is what the fingerprint is for here: the label a person
+// caller read. That is what the file stat is for here: the label a person
 // wrote in the meantime is not silently thrown away.
 func (u EditLinks) Update(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
-	change domain.Link, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	change domain.Link, stat domain.FileStat,
+) (domain.FileStat, error) {
 	if change.Role != "" && !domain.IsKnownRole(change.Role) {
-		return domain.Fingerprint{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
+		return domain.FileStat{}, fmt.Errorf("%q is not a role a link can carry", change.Role)
 	}
 	e := u.newEdit()
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		changed, err := doc.UpdateLink(to, change)
 		if err != nil {
@@ -120,16 +120,16 @@ func (u EditLinks) Update(
 // person wrote on it — its role, its label, why it exists — is kept, and every
 // other entry of the block comes out of the write as the bytes it went in as.
 //
-// Fingerprint, when it is given, is what the caller believes is on disk. A note
+// FileStat, when it is given, is what the caller believes is on disk. A note
 // that has changed since it was read is left alone and port.ErrStale comes
-// back. A write that landed answers with the fingerprint of the file it
+// back. A write that landed answers with the file stat of the file it
 // produced.
 func (u EditLinks) PointAt(
 	ctx context.Context, v domain.Vault, from, of string,
-	to domain.Address, role domain.LinkRole, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	to domain.Address, role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
 	e := u.newEdit()
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	return e.shared().PointAt(ctx, v, from, of, to, role)
 }
 
@@ -138,10 +138,10 @@ func (u EditLinks) PointAt(
 // was.
 func (u EditLinks) Remove(
 	ctx context.Context, v domain.Vault, from string, to domain.Address,
-	role domain.LinkRole, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	role domain.LinkRole, stat domain.FileStat,
+) (domain.FileStat, error) {
 	e := u.newEdit()
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	return e.Apply(ctx, v, from, func(doc *markdown.Document) error {
 		removed, err := doc.RemoveLink(to, role)
 		if err != nil {

@@ -12,9 +12,9 @@ func saveNamedNote(t *testing.T, db *DB, vault domain.Vault, path, title string,
 	t.Helper()
 
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
-		Title:       title,
-		Body:        strings.Join(headings, "\n"),
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: 100, ModTime: walked},
+		Title:    title,
+		Body:     strings.Join(headings, "\n"),
 	}
 	for item, heading := range headings {
 		n.Headings = append(n.Headings, domain.Heading{Level: 2, Text: heading, Line: item * 2})

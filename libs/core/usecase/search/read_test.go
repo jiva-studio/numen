@@ -24,7 +24,7 @@ type fakeVault struct {
 	order   []string
 }
 
-func (f *fakeVault) WalkFiles(context.Context, func(domain.Fingerprint) error) error { return nil }
+func (f *fakeVault) WalkFiles(context.Context, func(domain.FileStat) error) error { return nil }
 
 func (f *fakeVault) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 
@@ -32,11 +32,11 @@ func (f *fakeVault) Open(context.Context, string) (io.ReadSeekCloser, error) {
 	return nil, errors.New("not read a part at a time by this fixture")
 }
 
-func (f *fakeVault) GetFingerprint(_ context.Context, path string) (domain.Fingerprint, error) {
+func (f *fakeVault) StatFile(_ context.Context, path string) (domain.FileStat, error) {
 	if _, target := f.content[path]; !target {
-		return domain.Fingerprint{}, fs.ErrNotExist
+		return domain.FileStat{}, fs.ErrNotExist
 	}
-	return domain.Fingerprint{Path: path, Kind: domain.KindNote}, nil
+	return domain.FileStat{Path: path, Kind: domain.KindNote}, nil
 }
 
 func (f *fakeVault) Read(_ context.Context, path string) ([]byte, error) {

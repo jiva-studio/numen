@@ -178,9 +178,9 @@ func TestABookThatWentPreservesTheIndex(t *testing.T) {
 	testsupport.WriteBook(t, v.Path, book)
 	if err := db.Sources().SaveExtraction(t.Context(), v.ID, domain.SourceChunks{
 		Source: domain.Source{
-			Fingerprint: domain.Fingerprint{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
-			Hash:        "a-hash",
-			Recipe:      "epub",
+			FileStat: domain.FileStat{Path: book, Kind: domain.KindFile, Size: 1, ModTime: time.Unix(0, 1)},
+			Hash:     "a-hash",
+			Recipe:   "epub",
 		},
 		Chunks: []domain.Chunk{{Start: 0, Length: 19, Text: "a reversible engine"}},
 	}); err != nil {

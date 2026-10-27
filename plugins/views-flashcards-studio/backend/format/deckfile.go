@@ -73,7 +73,7 @@ func writeIdentifier(doc *markdown.Document, identifier string) (bool, error) {
 }
 
 // Deck is what the file now says.
-func (f *DeckFile) Deck(ref domain.Fingerprint) Deck {
+func (f *DeckFile) Deck(ref domain.FileStat) Deck {
 	deck, _ := readDeck(ref, []byte(f.doc.Body()))
 	return deck
 }
@@ -192,7 +192,7 @@ func (f *DeckFile) RemoveCard(card cardid.ID) error {
 // card id is ErrNoSuchCard, and a deck holding two is ErrTwoCards: choosing
 // between them is choosing which of the two the person meant.
 func (f *DeckFile) getCardSpan(body []byte, card cardid.ID) (cardSpan, error) {
-	_, spans := readDeck(domain.Fingerprint{}, body)
+	_, spans := readDeck(domain.FileStat{}, body)
 	// gomutants:disable-next-line INTEGER_INCREMENT reason="at is only compared with zero, so -1 becomes -2 and nothing reads the difference"
 	pos := -1
 	for i, span := range spans {
@@ -385,7 +385,7 @@ func DeckBody(d Deck) (string, error) {
 // in the brackets.
 func (f *DeckFile) RenameField(cutting map[string]string, cardModel, from, to string) (int, error) {
 	body := []byte(f.doc.Body())
-	deck, spans := readDeck(domain.Fingerprint{}, body)
+	deck, spans := readDeck(domain.FileStat{}, body)
 
 	var heads []valueSpan
 	for i, span := range spans {

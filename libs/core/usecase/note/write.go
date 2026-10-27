@@ -87,22 +87,22 @@ func (u Write) WithIndex(index Levels) Write {
 
 // Execute puts body in the note at path.
 //
-// Fingerprint, when it is given, is what the caller believes is on disk. A note
+// FileStat, when it is given, is what the caller believes is on disk. A note
 // that has changed since it was read is left alone and port.ErrStale comes
 // back: someone editing their own note outranks a caller that read it, thought
 // about it, and arrived late.
 //
-// What comes back is the fingerprint of the file this write produced, which is
+// What comes back is the file stat of the file this write produced, which is
 // what the caller presents at its next write.
 func (u Write) Execute(
-	ctx context.Context, v domain.Vault, path, body string, fingerprint domain.Fingerprint,
-) (domain.Fingerprint, error) {
+	ctx context.Context, v domain.Vault, path, body string, stat domain.FileStat,
+) (domain.FileStat, error) {
 	if markdown.IsFrontmatterStart(body) {
-		return domain.Fingerprint{}, ErrBodyUnwritable
+		return domain.FileStat{}, ErrBodyUnwritable
 	}
 
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
-	e.Fingerprint = fingerprint
+	e.FileStat = stat
 	e.Bound = u.maxBound()
 	ends := func() {}
 	defer func() { ends() }()
@@ -140,13 +140,13 @@ func (u Write) Execute(
 // a note holding prose it has not is left alone with port.ErrStale. Nil is a
 // caller that compares nothing, and its body lands.
 //
-// What comes back is the fingerprint of the file the save produced, which is
+// What comes back is the file stat of the file the save produced, which is
 // what the caller presents at its next save.
 func (u Write) Save(
 	ctx context.Context, v domain.Vault, path, body string, baseline *Baseline,
-) (domain.Fingerprint, error) {
+) (domain.FileStat, error) {
 	if markdown.IsFrontmatterStart(body) {
-		return domain.Fingerprint{}, ErrBodyUnwritable
+		return domain.FileStat{}, ErrBodyUnwritable
 	}
 	e := NewEdit(u.readers, u.writers, u.index, u.now)
 	e.ShouldOverwrite = true

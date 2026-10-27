@@ -25,7 +25,7 @@ func newHeldWalk() heldWalk {
 
 func (h heldWalk) Open(context.Context, string) (io.ReadSeekCloser, error) { return nil, nil }
 
-func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.Fingerprint) error) error {
+func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.FileStat) error) error {
 	h.began <- struct{}{}
 	select {
 	case <-h.let:
@@ -38,8 +38,8 @@ func (h heldWalk) WalkFiles(ctx context.Context, _ func(domain.Fingerprint) erro
 func (heldWalk) List(context.Context, string) ([]domain.Entry, error) { return nil, nil }
 func (heldWalk) Read(context.Context, string) ([]byte, error)         { return nil, nil }
 
-func (heldWalk) GetFingerprint(context.Context, string) (domain.Fingerprint, error) {
-	return domain.Fingerprint{}, nil
+func (heldWalk) StatFile(context.Context, string) (domain.FileStat, error) {
+	return domain.FileStat{}, nil
 }
 
 // hasWalkBegun says whether a walk began before the wait ran out.

@@ -10,7 +10,7 @@ export type State = 'loading' | 'clean' | 'unsaved' | 'saving' | 'stale' | 'gone
 
 export interface NoteBaseline {
   readonly prose?: string
-  readonly fingerprint: string
+  readonly stat: string
 }
 
 export interface LinkAddress {

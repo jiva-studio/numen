@@ -194,8 +194,8 @@ func TestAFileInAHiddenFolderIsRemainingAloneByTheVault(t *testing.T) {
 	ctx := context.Background()
 	v := hosttest.OnDisk(t, "Physics", map[string]string{"samples/.Hidden.md": "---\ntype: sample\n---\n"})
 
-	_, statErr := v.GetFingerprint(ctx, "samples/.Hidden.md")
-	_, missing := v.GetFingerprint(ctx, "samples/Nothing.md")
+	_, statErr := v.StatFile(ctx, "samples/.Hidden.md")
+	_, missing := v.StatFile(ctx, "samples/Nothing.md")
 	samples, _ := v.GetPathsOfType(ctx, "sample")
 
 	if !errors.Is(statErr, host.ErrNotANote) || !errors.Is(missing, host.ErrNotExist) || len(samples) != 0 {
@@ -241,10 +241,10 @@ func TestGetFingerprintNamesANoteByItsExtension(t *testing.T) {
 	v.File("a.sample", "one")
 	v.File("b.MD", "two")
 
-	if fingerprint, err := v.GetFingerprint(ctx, "a.sample"); err != nil || fingerprint.Kind != domain.KindFile {
-		t.Errorf("fingerprint = %+v, %v, want a file that is not a note", fingerprint, err)
+	if stat, err := v.StatFile(ctx, "a.sample"); err != nil || stat.Kind != domain.KindFile {
+		t.Errorf("fingerprint = %+v, %v, want a file that is not a note", stat, err)
 	}
-	if fingerprint, _ := v.GetFingerprint(ctx, "b.MD"); fingerprint.Kind != domain.KindNote {
-		t.Errorf("fingerprint = %+v, want a note", fingerprint)
+	if stat, _ := v.StatFile(ctx, "b.MD"); stat.Kind != domain.KindNote {
+		t.Errorf("fingerprint = %+v, want a note", stat)
 	}
 }

@@ -89,7 +89,7 @@ func TestOpenAndWriteChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			if got := cardHeadings(f.Deck(domain.Fingerprint{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
+			if got := cardHeadings(f.Deck(domain.FileStat{Path: "Animals.md"})); !slices.Equal(got, one.cards) {
 				t.Errorf("cards = %v, want %v", got, one.cards)
 			}
 			if err := os.WriteFile(path, f.Bytes(), 0o600); err != nil {
@@ -145,7 +145,7 @@ func TestSetValueKeepsTheOrderTheFieldsWereSavedIn(t *testing.T) {
 	if err != nil {
 		t.Fatalf("open: %v", err)
 	}
-	card := f.Deck(domain.Fingerprint{}).Cards[0]
+	card := f.Deck(domain.FileStat{}).Cards[0]
 	if got := fieldsOf(card); !slices.Equal(got, []string{"Life span", "Height"}) {
 		t.Errorf("fields = %v, want the order they were written in", got)
 	}
@@ -307,7 +307,7 @@ func TestTheSplicesASectionNeeds(t *testing.T) {
 	if got := string(f.Bytes()); got != removed {
 		t.Errorf("section removed wrong\n want %q\n  got %q", removed, got)
 	}
-	read := f.Deck(domain.Fingerprint{})
+	read := f.Deck(domain.FileStat{})
 	if len(read.Cards) != 2 {
 		t.Errorf("cards = %+v, want the cards left where they were", read.Cards)
 	}
@@ -360,7 +360,7 @@ func TestAddCard(t *testing.T) {
 		t.Errorf("card added wrong\n want %q\n  got %q", want, got)
 	}
 
-	card, err := f.Deck(domain.Fingerprint{}).Card("m9n8b7v6c5")
+	card, err := f.Deck(domain.FileStat{}).Card("m9n8b7v6c5")
 	if err != nil {
 		t.Fatalf("the card that was written cannot be read back: %v", err)
 	}
@@ -409,7 +409,7 @@ func TestRenameFieldReachesTheCardsOfThatCardModelAlone(t *testing.T) {
 		t.Errorf("renamed = %d, want the one card cut by that card model", renamed)
 	}
 
-	deck := f.Deck(domain.Fingerprint{})
+	deck := f.Deck(domain.FileStat{})
 	llama := deck.Cards[0]
 	if got := fieldsOf(llama); !slices.Equal(got, []string{"Life span", "Shoulder height"}) {
 		t.Errorf("fields = %v", got)
@@ -481,7 +481,7 @@ func TestWritingFieldsPreservesTheRestOfTheFrontmatterAlone(t *testing.T) {
 	// A field's name is written where the card model declares it and in the braces
 	// of every template that places it, so the card model that comes out declares what
 	// its templates place.
-	n := markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes())
+	n := markdown.Parse(domain.FileStat{Path: "Animal.md"}, f.Bytes())
 	read := format.ReadCardModel(n)
 	if !slices.Equal(read.Fields, []string{"Name", "Shoulder height", "Life span", "Weight"}) {
 		t.Errorf("read fields = %v", read.Fields)
@@ -540,7 +540,7 @@ func TestATemplateIsSavedWithTheSidesItHas(t *testing.T) {
 		t.Errorf("template written wrong\n want %q\n  got %q", want, got)
 	}
 
-	read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, f.Bytes()))
+	read := format.ReadCardModel(markdown.Parse(domain.FileStat{Path: "Animal.md"}, f.Bytes()))
 	var missing int
 	for _, p := range read.Problems {
 		if p.Fault == format.FaultTemplateSide {
@@ -569,7 +569,7 @@ func TestACardIsSplitByWhatItsLinkPointsAt(t *testing.T) {
 	if renamed != 1 {
 		t.Fatalf("renamed = %d, want the card the link points at", renamed)
 	}
-	if got := f.Deck(domain.Fingerprint{}).Cards[0]; got.CardModelLink != "Animal|the beast" {
+	if got := f.Deck(domain.FileStat{}).Cards[0]; got.CardModelLink != "Animal|the beast" {
 		t.Errorf("the link was rewritten: %q", got.CardModelLink)
 	}
 }
@@ -591,7 +591,7 @@ func TestSetValueRefusesADeckOfTwoCardsOfOneMark(t *testing.T) {
 	if string(f.Bytes()) != raw {
 		t.Error("a card was written anyway")
 	}
-	if _, err := f.Deck(domain.Fingerprint{}).Card("k7m2xq9fzp"); !errors.Is(err, format.ErrTwoCards) {
+	if _, err := f.Deck(domain.FileStat{}).Card("k7m2xq9fzp"); !errors.Is(err, format.ErrTwoCards) {
 		t.Errorf("card = %v, want ErrTwoCards", err)
 	}
 }
@@ -614,7 +614,7 @@ func TestAHeadingAndASectionsNameAreSplitAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.Fingerprint{})
+	read := f.Deck(domain.FileStat{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}
@@ -644,7 +644,7 @@ func TestAFieldsNameIsSplitAtTheFirstBreak(t *testing.T) {
 		t.Fatalf("add: %v", err)
 	}
 
-	read := f.Deck(domain.Fingerprint{})
+	read := f.Deck(domain.FileStat{})
 	if len(read.Cards) != 1 {
 		t.Fatalf("cards = %+v, want the one card that was written", read.Cards)
 	}
@@ -1379,7 +1379,7 @@ func TestReadingACardModelAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+			read := format.ReadCardModel(markdown.Parse(domain.FileStat{Path: "Animal.md"}, []byte(raw)))
 			body, err := format.CardModelBody(read.Preamble, read.Templates, read.Tail)
 			if err != nil {
 				t.Fatalf("card model body: %v", err)
@@ -1414,7 +1414,7 @@ func TestReadingTheFixtureVaultAndWritingItBackChangesNothing(t *testing.T) {
 			if err != nil {
 				t.Fatalf("open: %v", err)
 			}
-			n := markdown.Parse(domain.Fingerprint{Path: path}, raw)
+			n := markdown.Parse(domain.FileStat{Path: path}, raw)
 
 			var body string
 			switch n.Type {
@@ -1445,7 +1445,7 @@ func TestWritingOneTemplatePreservesTheRestOfTheCardModelAlone(t *testing.T) {
 		"## Recognise\n\nThe one to start with.\n\n### Front\n\n{{Name}}\n\n### Back\n\n{{Height}}\n\n" +
 		"## Name it\n\nAnd this one the other way round.\n\n### Front\n\n{{Height}}\n\n### Back\n\n{{Name}}\n"
 
-	read := format.ReadCardModel(markdown.Parse(domain.Fingerprint{Path: "Animal.md"}, []byte(raw)))
+	read := format.ReadCardModel(markdown.Parse(domain.FileStat{Path: "Animal.md"}, []byte(raw)))
 	target := append([]format.CardTemplate(nil), read.Templates...)
 	target[0].Back = "**{{Height}}**"
 

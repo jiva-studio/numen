@@ -29,7 +29,7 @@ func getNotADeckReason(read DeckContents) string {
 		return ""
 	case note.TooLarge:
 		return fmt.Sprintf("it is %d bytes, larger than the %d a deck is read at; open the file instead",
-			read.Fingerprint.Size, MaxBytes)
+			read.FileStat.Size, MaxBytes)
 	case note.Missing:
 		return "there is no note at this path"
 	case note.NotANote:

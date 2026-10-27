@@ -7,14 +7,14 @@ package domain
 // sizes that produced the source's chunks. Both are empty on a source nothing
 // has taken text out of yet.
 type Source struct {
-	Fingerprint Fingerprint
-	Hash        string
-	Recipe      string
+	FileStat FileStat
+	Hash     string
+	Recipe   string
 
 	// Producer is what made the text this source's chunks are places in. Empty
 	// where the source's own bytes are the text, which is the ordinary case.
 	//
-	// It is cleared by a write that records a fingerprint alone, because a file
+	// It is cleared by a write that records a file stat alone, because a file
 	// that changed is a file whose reading was of other bytes.
 	Producer string
 }

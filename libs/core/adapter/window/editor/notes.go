@@ -33,7 +33,7 @@ func (h *noteHandler) ReadNote(
 	} else {
 		// What the file was when this prose came out of it, for the client to
 		// present when it puts prose back.
-		out.At = convertFingerprintToWire(found.Fingerprint)
+		out.At = convertFileStatToWire(found.FileStat)
 	}
 	return connect.NewResponse(out), nil
 }
@@ -56,7 +56,7 @@ func (h *noteHandler) WriteNote(
 	defer h.state.Writing.finish()
 	pos, err := h.write.Save(ctx, showing, r.Msg.GetPath(), r.Msg.GetBody(), newBaseline(r.Msg.GetBaseline()))
 	// A write that reached the vault is a write that happened, so the client is
-	// handed the fingerprint it presents at its next save. It is told in the
+	// handed the file stat it presents at its next save. It is told in the
 	// same breath where the index did not follow, because the prose is on disk
 	// and search does not hold it.
 	unlevelled := h.state.isUnlevelled(err)
@@ -67,7 +67,7 @@ func (h *noteHandler) WriteNote(
 			h.state.NotifyNoteWritten()
 		}
 		return connect.NewResponse(&v1.WriteNoteResponse{
-			At: convertFingerprintToWire(pos), IsUnlevelled: unlevelled,
+			At: convertFileStatToWire(pos), IsUnlevelled: unlevelled,
 		}), nil
 	}
 	reason, ok := wire.GetErrorCode(err)
@@ -142,7 +142,7 @@ func (h *noteHandler) WriteLink(
 
 	// at the moment it is made.
 	if _, err := h.editLinks.Add(
-		ctx, showing, r.Msg.GetPath(), domain.Fingerprint{}, link,
+		ctx, showing, r.Msg.GetPath(), domain.FileStat{}, link,
 	); err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
@@ -172,7 +172,7 @@ func (h *noteHandler) RemoveLink(
 		return nil, connect.NewError(connect.CodeInvalidArgument, err)
 	}
 	if _, err := h.editLinks.Remove(
-		ctx, showing, r.Msg.GetPath(), to, role, domain.Fingerprint{},
+		ctx, showing, r.Msg.GetPath(), to, role, domain.FileStat{},
 	); err != nil {
 		reason, ok := wire.GetErrorCode(err)
 		if !ok {
@@ -380,14 +380,14 @@ func convertRelationToWire(s domain.Relation) v1.Relation {
 	}
 }
 
-// convertFingerprintToWire is a file as the schema carries it. Nothing is carried for the
-// zero value: a caller is given a fingerprint only where there is a file behind
+// convertFileStatToWire is a file as the schema carries it. Nothing is carried for the
+// zero value: a caller is given a file stat only where there is a file behind
 // it.
-func convertFingerprintToWire(ref domain.Fingerprint) *v1.Fingerprint {
+func convertFileStatToWire(ref domain.FileStat) *v1.FileStat {
 	if ref.IsZero() {
 		return nil
 	}
-	return &v1.Fingerprint{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
+	return &v1.FileStat{Path: ref.Path, Size: ref.Size, Mtime: stamp(ref.ModTime)}
 }
 
 // newBaseline is what a client says it last saw of a note. Nothing said is nothing
@@ -396,16 +396,16 @@ func newBaseline(baseline *v1.ReadBaseline) *note.Baseline {
 	if baseline == nil {
 		return nil
 	}
-	return &note.Baseline{Prose: baseline.GetProse(), Fingerprint: convertFingerprintFromWire(baseline.GetAt())}
+	return &note.Baseline{Prose: baseline.GetProse(), FileStat: convertFileStatFromWire(baseline.GetAt())}
 }
 
-// convertFingerprintFromWire is a fingerprint as the core holds one. The kind is left empty: what
+// convertFileStatFromWire is a file stat as the core holds one. The kind is left empty: what
 // the file is was decided when it was asked for.
-func convertFingerprintFromWire(pos *v1.Fingerprint) domain.Fingerprint {
+func convertFileStatFromWire(pos *v1.FileStat) domain.FileStat {
 	if pos == nil {
-		return domain.Fingerprint{}
+		return domain.FileStat{}
 	}
-	return domain.Fingerprint{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
+	return domain.FileStat{Path: pos.GetPath(), Size: pos.GetSize(), ModTime: instant(pos.GetMtime())}
 }
 
 // ListHeadings hands the client the headings of the notes the filter names. A

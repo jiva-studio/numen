@@ -241,51 +241,51 @@ func (v *Vault) GetVault(ctx context.Context) (domain.Vault, error) {
 	return v.vault, nil
 }
 
-func (v *Vault) GetFingerprint(ctx context.Context, filePath string) (domain.Fingerprint, error) {
+func (v *Vault) StatFile(ctx context.Context, filePath string) (domain.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	at, err := v.files.stat(filePath)
 	if err == nil && isIgnored(filePath) {
-		return domain.Fingerprint{}, host.ErrNotANote
+		return domain.FileStat{}, host.ErrNotANote
 	}
 	return at, err
 }
 
-func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.Fingerprint, error) {
+func (v *Vault) Read(ctx context.Context, filePath string) ([]byte, domain.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	fp, err := v.files.stat(filePath)
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	content, err := v.files.read(filePath)
 	if err != nil {
-		return nil, domain.Fingerprint{}, err
+		return nil, domain.FileStat{}, err
 	}
 	return content, fp, nil
 }
 
-func (v *Vault) Write(ctx context.Context, filePath string, content []byte, baseline domain.Fingerprint) (domain.Fingerprint, error) {
+func (v *Vault) Write(ctx context.Context, filePath string, content []byte, baseline domain.FileStat) (domain.FileStat, error) {
 	v.world.mu.Lock()
 	defer v.world.mu.Unlock()
 	if err := v.check(ctx, filePath); err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if failErr := v.unwritable[filePath]; failErr != nil {
-		return domain.Fingerprint{}, failErr
+		return domain.FileStat{}, failErr
 	}
 	now, err := v.files.stat(filePath)
 	if err != nil {
-		return domain.Fingerprint{}, err
+		return domain.FileStat{}, err
 	}
 	if !baseline.IsZero() && !now.IsUnchanged(baseline) {
-		return domain.Fingerprint{}, host.ErrStale
+		return domain.FileStat{}, host.ErrStale
 	}
 	return v.files.write(filePath, content)
 }

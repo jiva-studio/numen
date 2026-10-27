@@ -8,25 +8,25 @@ import (
 )
 
 // LinkAddition is one relationship to write, and the note it is written in.
-// Fingerprint is that note as the caller read it.
+// FileStat is that note as the caller read it.
 type LinkAddition struct {
-	From        string
-	Fingerprint domain.Fingerprint
-	Link        domain.Link
+	From     string
+	FileStat domain.FileStat
+	Link     domain.Link
 
-	// FingerprintError is why the caller's fingerprint could not be read. It is
-	FingerprintError error
+	// FileStatError is why the caller's file stat could not be read. It is
+	FileStatError error
 }
 
 // LinkAdded is what happened to one addition. Error is nil when it was
-// written, and Fingerprint is then the note as it now stands.
+// written, and FileStat is then the note as it now stands.
 type LinkAdded struct {
-	Fingerprint domain.Fingerprint
-	Error       error
+	FileStat domain.FileStat
+	Error    error
 }
 
 // AddLinks writes a batch of relationships, grouped by the note each is
-// written in: the links of one note are one write against one fingerprint, and
+// written in: the links of one note are one write against one file stat, and
 // succeed or fail together.
 type AddLinks struct {
 	linking EditLinks
@@ -52,11 +52,11 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 			return nil, err
 		}
 		group := groups.links[from]
-		content, err := u.linking.Add(ctx, v, from, groups.fingerprints[from], group[0], group[1:]...)
+		content, err := u.linking.Add(ctx, v, from, groups.stats[from], group[0], group[1:]...)
 		for _, i := range groups.positions[from] {
 			results[i].Error = err
 			if err == nil {
-				results[i].Fingerprint = content
+				results[i].FileStat = content
 			}
 		}
 	}
@@ -66,17 +66,17 @@ func (u AddLinks) Execute(ctx context.Context, v domain.Vault, additions []LinkA
 // linkGroups holds the links of one call grouped by the note they are written
 // in, in order of first appearance.
 type linkGroups struct {
-	order        []string
-	links        map[string][]domain.Link
-	fingerprints map[string]domain.Fingerprint
-	positions    map[string][]int
+	order     []string
+	links     map[string][]domain.Link
+	stats     map[string]domain.FileStat
+	positions map[string][]int
 }
 
 func newLinkGroups() *linkGroups {
 	return &linkGroups{
-		links:        map[string][]domain.Link{},
-		fingerprints: map[string]domain.Fingerprint{},
-		positions:    map[string][]int{},
+		links:     map[string][]domain.Link{},
+		stats:     map[string]domain.FileStat{},
+		positions: map[string][]int{},
 	}
 }
 
@@ -85,16 +85,16 @@ func (g *linkGroups) add(i int, add LinkAddition) error {
 	if err := CheckWritable(add.Link); err != nil {
 		return err
 	}
-	if add.FingerprintError != nil {
-		return add.FingerprintError
+	if add.FileStatError != nil {
+		return add.FileStatError
 	}
-	if first, grouped := g.fingerprints[add.From]; grouped && first != add.Fingerprint {
+	if first, grouped := g.stats[add.From]; grouped && first != add.FileStat {
 		return fmt.Errorf("the links written into %s name two different fingerprints, and they are one write", add.From)
 	}
 	if _, grouped := g.links[add.From]; !grouped {
 		g.order = append(g.order, add.From)
 	}
-	g.fingerprints[add.From] = add.Fingerprint
+	g.stats[add.From] = add.FileStat
 	g.links[add.From] = append(g.links[add.From], add.Link)
 	g.positions[add.From] = append(g.positions[add.From], i)
 	return nil

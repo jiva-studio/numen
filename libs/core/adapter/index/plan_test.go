@@ -32,14 +32,14 @@ var expectedPlans = []struct {
 	{note.Statements(), "links_of", []any{1}, []string{"(note_id=?)"}},
 	{note.Statements(), "identify", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
 	{note.Statements(), "addressing", []any{1, "p"}, []string{"(vault_id=? AND path=?)"}},
-	{note.Statements(), "fingerprints", []any{1, "note"}, []string{"sources_by_fingerprint"}},
+	{note.Statements(), "file_stats", []any{1, "note"}, []string{"sources_by_fingerprint"}},
 	{note.Statements(), "notes_of_type", []any{1, "sample"}, []string{"notes_by_type"}},
 	{note.Statements(), "types_at", []any{1, `["p"]`}, []string{"(vault_id=? AND path=?)"}},
 
 	{chunk.Statements(), "identify", []any{1, "book", "p"}, []string{"(vault_id=? AND path=?)"}},
-	{chunk.Statements(), "fingerprints", []any{1, "book"}, []string{"sources_by_fingerprint"}},
+	{chunk.Statements(), "file_stats", []any{1, "book"}, []string{"sources_by_fingerprint"}},
 	{chunk.Statements(), "source_text", []any{1, "library/note.epub"}, []string{"(vault_id=? AND path=?)"}},
-	{chunk.Statements(), "fingerprints_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
+	{chunk.Statements(), "file_stats_under", []any{1, "folder", 1, "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
 	{chunk.Statements(), "sources_under", []any{1, "folder", "folder/", "folder0"}, []string{"(vault_id=? AND path=?)", "(vault_id=? AND path>? AND path<?)"}},
 	// A folder and everything under it are filed at their new paths through the
 	// same two lookups, and the note at the path itself is renamed by its own.

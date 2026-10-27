@@ -26,11 +26,11 @@ func saveTypedNoteWithHeadings(
 		body += headings[i].Text + "\n"
 	}
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
-		Title:       path,
-		Type:        kind,
-		Body:        body,
-		Headings:    headings,
+		FileStat: domain.FileStat{Path: path, Kind: domain.KindNote, Size: int64(len(body)), ModTime: walked},
+		Title:    path,
+		Type:     kind,
+		Body:     body,
+		Headings: headings,
 	}
 	if err := saveCut(t.Context(), db, vault.ID, []domain.Note{n}); err != nil {
 		t.Fatal(err)
@@ -272,11 +272,11 @@ func TestAnOrdinaryNoteKeepsEveryHeadingItHas(t *testing.T) {
 func TestATypedNoteIsANoteInEveryOtherWay(t *testing.T) {
 	db := openDB(t)
 	n := domain.Note{
-		Fingerprint: domain.Fingerprint{Path: "samples/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
-		Title:       "Mammals",
-		Type:        sampleType,
-		ID:          "01HQXMAMMALS",
-		Body:        "## Compost ^k7m2xq9fzp\n",
+		FileStat: domain.FileStat{Path: "samples/mammals.md", Kind: domain.KindNote, Size: 100, ModTime: walked},
+		Title:    "Mammals",
+		Type:     sampleType,
+		ID:       "01HQXMAMMALS",
+		Body:     "## Compost ^k7m2xq9fzp\n",
 		Links: []domain.Link{{
 			Target: domain.Address{Scheme: "note", Value: "forms/Term"},
 			Role:   domain.RoleRef,
