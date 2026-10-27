@@ -17,11 +17,12 @@ func Mount(s *server.Server) error {
 		return err
 	}
 	vaultRoot := func() string { return os.Getenv("NUMEN_VAULT_PATH") }
-	return mount(s, NewDocumentServer(texts), NewTextServer(vaultRoot, texts))
+	return mount(s, NewDocumentServer(texts), NewPageServer(vaultRoot), NewTextServer(vaultRoot, texts))
 }
 
-func mount(s *server.Server, documents *DocumentServer, texts *TextServer) error {
+func mount(s *server.Server, documents *DocumentServer, pages *PageServer, texts *TextServer) error {
 	s.Register(numenv1connect.NewDocumentServiceHandler(documents, s.HandlerOptions()...))
+	s.RegisterRoute(pagesPattern, pages)
 	s.Register(host.NewTextProviderHandler(texts, s.HandlerOptions()...))
 	return nil
 }
@@ -36,6 +37,7 @@ func NewHandler(vars map[string]string) (http.Handler, error) {
 			return err
 		}
 		root := vars["NUMEN_VAULT_PATH"]
-		return mount(s, NewDocumentServerIn(root, texts), NewTextServer(func() string { return root }, texts))
+		vaultRoot := func() string { return root }
+		return mount(s, NewDocumentServerIn(root, texts), NewPageServer(vaultRoot), NewTextServer(vaultRoot, texts))
 	})
 }

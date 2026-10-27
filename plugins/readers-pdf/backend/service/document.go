@@ -1,11 +1,9 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"image/jpeg"
 	"os"
 	"runtime"
 	"slices"
@@ -92,56 +90,6 @@ func (s *DocumentServer) GetDocument(
 
 	return connect.NewResponse(&numenv1.GetDocumentResponse{
 		Pages: pages,
-	}), nil
-}
-
-// RenderPage renders a single page of the PDF to JPEG format.
-func (s *DocumentServer) RenderPage(
-	_ context.Context,
-	req *connect.Request[numenv1.RenderPageRequest],
-) (*connect.Response[numenv1.RenderPageResponse], error) {
-	path := req.Msg.GetPath()
-	if path == "" {
-		return nil, connect.NewError(connect.CodeInvalidArgument, fmt.Errorf("path required"))
-	}
-	cleanPath, err := vault.ValidatePathIn(s.vaultRoot(), path)
-	if err != nil {
-		return nil, connect.NewError(connect.CodePermissionDenied, fmt.Errorf("path traversal outside allowed scope: %w", err))
-	}
-
-	file, err := os.Open(cleanPath)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeNotFound, fmt.Errorf("open file: %w", err))
-	}
-	defer file.Close()
-
-	scan, err := pdf.OpenReader(file)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeFailedPrecondition, fmt.Errorf("read pdf: %w", err))
-	}
-	defer scan.Close()
-
-	dpi := int(req.Msg.GetDpi())
-	if dpi <= 0 {
-		dpi = 150
-	}
-
-	img, err := scan.RenderPage(int(req.Msg.GetPage()), dpi)
-	if err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("render page: %w", err))
-	}
-
-	var buf bytes.Buffer
-	if err := jpeg.Encode(&buf, img, &jpeg.Options{Quality: 85}); err != nil {
-		return nil, connect.NewError(connect.CodeInternal, fmt.Errorf("encode jpeg: %w", err))
-	}
-
-	bounds := img.Bounds()
-	return connect.NewResponse(&numenv1.RenderPageResponse{
-		ImageData:   buf.Bytes(),
-		ContentType: "image/jpeg",
-		Width:       float64(bounds.Dx()),
-		Height:      float64(bounds.Dy()),
 	}), nil
 }
 

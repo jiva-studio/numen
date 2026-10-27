@@ -50,6 +50,18 @@ test.describe('PDF Document Reader', () => {
     await expect(page.locator('.fallback-panel')).not.toBeVisible({ timeout: 5_000 })
     await expect(page.locator('text=something inside numen went wrong')).not.toBeVisible()
     await expect(page.locator('.reader')).toBeVisible({ timeout: 10_000 })
+
+    // The page image arrives from the plugin's own route and decodes
+    const picture = page.locator('.reader__picture').first()
+    await expect(picture).toHaveAttribute('src', /^\/plugin\/md\.numen\.readers\.pdf\/pages\//, {
+      timeout: 10_000,
+    })
+    await expect
+      .poll(
+        () => picture.evaluate((img: HTMLImageElement) => (img.complete ? img.naturalWidth : 0)),
+        { timeout: 15_000 },
+      )
+      .toBeGreaterThan(0)
   })
 
   test('handles viewport resize on PDF reader', async ({ page }) => {

@@ -32,14 +32,6 @@ func TestPdfServerVaultBoundary(t *testing.T) {
 		t.Fatalf("expected CodePermissionDenied for GetDocument outside vault, got %v", err)
 	}
 
-	// 2. RenderPage outside vault -> PermissionDenied
-	_, err = server.RenderPage(ctx, connect.NewRequest(&numenv1.RenderPageRequest{
-		Path: outsidePath,
-	}))
-	if err == nil || connect.CodeOf(err) != connect.CodePermissionDenied {
-		t.Fatalf("expected CodePermissionDenied for RenderPage outside vault, got %v", err)
-	}
-
 	// 4. Traversal path -> PermissionDenied
 	_, err = server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{
 		Path: filepath.Join(vaultDir, "..", "outside.pdf"),
@@ -96,12 +88,6 @@ func TestDocumentServerEmptyPath(t *testing.T) {
 	_, err := server.GetDocument(ctx, connect.NewRequest(&numenv1.GetDocumentRequest{Path: ""}))
 	if err == nil || connect.CodeOf(err) != connect.CodeInvalidArgument {
 		t.Fatalf("expected CodeInvalidArgument for GetDocument with empty path, got %v", err)
-	}
-
-	// 2. RenderPage with empty path
-	_, err = server.RenderPage(ctx, connect.NewRequest(&numenv1.RenderPageRequest{Path: ""}))
-	if err == nil || connect.CodeOf(err) != connect.CodeInvalidArgument {
-		t.Fatalf("expected CodeInvalidArgument for RenderPage with empty path, got %v", err)
 	}
 
 	// 4. GetHighlights with empty path

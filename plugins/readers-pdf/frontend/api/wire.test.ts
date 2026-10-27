@@ -45,13 +45,13 @@ describe('the layout of a document', () => {
 describe('the address a page is drawn from', () => {
   it('carries the width requested for and which bytes it is about', () => {
     expect(documents.getPageUrl('Books/Book.pdf', 3, 1200, '12 34 Books/Book.pdf')).toBe(
-      '/assets/Books%2FBook.pdf/pages/3?wide=1200&size=12&mtime=34',
+      '/plugin/md.numen.readers.pdf/pages/3?path=Books%2FBook.pdf&wide=1200&size=12&mtime=34',
     )
   })
 
   it('is about no bytes in particular where the caller read no file', () => {
     expect(documents.getPageUrl('Book.pdf', 1, 800)).toBe(
-      '/assets/Book.pdf/pages/1?wide=800&size=0&mtime=0',
+      '/plugin/md.numen.readers.pdf/pages/1?path=Book.pdf&wide=800&size=0&mtime=0',
     )
   })
 })

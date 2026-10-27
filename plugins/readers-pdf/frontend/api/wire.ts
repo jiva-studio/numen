@@ -7,14 +7,11 @@ import {
   type DocumentRun as DocumentRunMessage,
   type TextRect as TextRectMessage,
 } from '@numen/protocol'
-import {
-  formatFingerprint,
-  getAssetUrl,
-  getBytesQuery,
-  retryWhileBusy,
-  transport,
-} from '@numen/wire'
+import { formatFingerprint, getBytesQuery, retryWhileBusy, transport } from '@numen/wire'
 import type { Documents, PageHighlight, Rect } from '../types'
+
+/** Where the plugin's backend answers the window: the core forwards /plugin/<id>/ to it. */
+const PLUGIN_ROUTE = '/plugin/md.numen.readers.pdf'
 
 export const client = {
   documents: createClient(DocumentService, transport),
@@ -41,7 +38,7 @@ export const documents: Documents = {
     }
   },
   getPageUrl: (...[path, pageNumber, width, fingerprint = '']: [string, number, number, string?]) =>
-    `${getAssetUrl(path)}/pages/${pageNumber}?wide=${width}&${getBytesQuery(fingerprint)}`,
+    `${PLUGIN_ROUTE}/pages/${pageNumber}?path=${encodeURIComponent(path)}&wide=${width}&${getBytesQuery(fingerprint)}`,
   getHighlights: async (path, spans) => {
     const answer = await retryWhileBusy(() =>
       client.documents.getHighlights({ path, spans: [...spans] }),
