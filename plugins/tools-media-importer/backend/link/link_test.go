@@ -436,3 +436,15 @@ func TestTheTextOfALinkIsRecordedInTheVaultTheRequestNames(t *testing.T) {
 		t.Errorf("the article read in Chemistry is %q (%v), want its text", read, err)
 	}
 }
+
+func TestALinkOfTheShownVaultCarriesItsIdentity(t *testing.T) {
+	w := newWorld(t)
+	made := w.create(t, articleAddress)
+	read, err := w.links.Read(t.Context(), made.Path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if vaultID := w.vault.Vault().ID; made.Vault != vaultID || read.Vault != vaultID {
+		t.Errorf("the link is made in %q and read in %q, want %q both times", made.Vault, read.Vault, vaultID)
+	}
+}

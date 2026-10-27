@@ -107,7 +107,8 @@ func (l *Links) Wait() { l.wg.Wait() }
 
 // Link is one link note. Key names the text stored for its address, and Hash is the content hash of
 // the note, which names the copy of its video and is the source hash of its text version. Vault is
-// the vault the note is in, and empty for the one the host shows.
+// the identity of the vault the note is in, read from the host when the note is read or made, so
+// the work on a link of the shown vault is keyed as that vault's and not as no vault.
 type Link struct {
 	Vault   domain.VaultID
 	Path    string
@@ -139,7 +140,7 @@ func readLink(ctx context.Context, vault host.Vault, path string) (Link, error) 
 	if err != nil {
 		return Link{}, fmt.Errorf("%s: %w: %w", path, ErrNotALink, err)
 	}
-	return newLink(path, parsed, raw), nil
+	return newLinkIn(ctx, vault, path, parsed, raw)
 }
 
 func newLink(path string, parsed address.URL, raw []byte) Link {
@@ -172,7 +173,7 @@ func (l *Links) Create(ctx context.Context, folder, raw string) (Link, error) {
 	if err := l.host.Vault.Create(ctx, path, content); err != nil {
 		return Link{}, err
 	}
-	return newLink(path, parsed, content), nil
+	return newLinkIn(ctx, l.host.Vault, path, parsed, content)
 }
 
 // getStore is the plugin's folder in the vault of the link.
@@ -557,4 +558,15 @@ func (w *storeWriter) send(chunk []byte) error {
 	w.byteCount += int64(len(chunk))
 	w.report(w.byteCount)
 	return nil
+}
+
+// newLinkIn is the link note at a path of the vault, carrying the identity of the vault.
+func newLinkIn(ctx context.Context, vault host.Vault, path string, parsed address.URL, raw []byte) (Link, error) {
+	v, err := vault.GetVault(ctx)
+	if err != nil {
+		return Link{}, err
+	}
+	made := newLink(path, parsed, raw)
+	made.Vault = v.ID
+	return made, nil
 }
