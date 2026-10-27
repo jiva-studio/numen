@@ -75,3 +75,15 @@ func (a *AuthInterceptor) WrapStreamingHandler(next connect.StreamingHandlerFunc
 		return next(ctx, conn)
 	}
 }
+
+// RequireToken wraps a plain HTTP handler with the same bearer token check the interceptor applies
+// to Connect-RPC calls.
+func (a *AuthInterceptor) RequireToken(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := a.checkToken(r.Header); err != nil {
+			http.Error(w, ErrUnauthorized.Error(), http.StatusUnauthorized)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}

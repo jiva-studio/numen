@@ -246,6 +246,16 @@ func (s *Server) Register(pattern string, handler http.Handler) {
 	s.mux.Handle(pattern, handler)
 }
 
+// RoutePrefix is where the host forwards the plugin route: a window's GET of /plugin/<id>/<rest>
+// arrives at /plugin/<rest>.
+const RoutePrefix = "/plugin/"
+
+// RegisterRoute mounts handler for GET and HEAD requests at RoutePrefix+pattern, a pattern of
+// http.ServeMux such as "pages/{page}". A request without the host's token is answered 401.
+func (s *Server) RegisterRoute(pattern string, handler http.Handler) {
+	s.mux.Handle(http.MethodGet+" "+RoutePrefix+pattern, s.interceptor.RequireToken(handler))
+}
+
 // HandlerOptions returns Connect-RPC options enforcing server authentication.
 func (s *Server) HandlerOptions() []connect.HandlerOption {
 	return []connect.HandlerOption{connect.WithInterceptors(s.interceptor)}
