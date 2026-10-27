@@ -17,6 +17,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"connectrpc.com/connect"
 	sdk "github.com/modelcontextprotocol/go-sdk/mcp"
@@ -26,9 +27,11 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/hostendpoint"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
+	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 )
 
@@ -452,5 +455,91 @@ func TestTheEndpointRefusesAnotherToken(t *testing.T) {
 	}
 	if err := session.Close(); err != nil {
 		t.Error(err)
+	}
+}
+
+// Every call of a run is made in the vault the run works, which the card tools read.
+func TestACardToolCallCarriesTheVaultOfTheRun(t *testing.T) {
+	agent := &toolAgent{calls: []toolCall{{name: "card_current", arguments: `{}`}}}
+	host, _, cards := vaultAndCards(t, agent)
+	assembly := container.NewEditorAssembly(container.Config{PluginHost: host}, nil, nil)
+
+	runToEnd(t, assembly.GetAgent(), agentport.Task{Question: "q", Agent: "alpha", Vault: "v-garden"})
+
+	if requests := cards.getRequests(); len(requests) != 1 || requests[0].GetVaultId() != "v-garden" {
+		t.Errorf("the plugin was called with %v", requests)
+	}
+	if request := agent.getRequests()[0]; request.GetVaultId() != "v-garden" {
+		t.Errorf("the agent request names the vault %q", request.GetVaultId())
+	}
+}
+
+// shownVault is a host that shows one vault and is asked nothing else of it.
+type shownVault struct {
+	pluginport.PluginVault
+	vault domain.Vault
+}
+
+func (s shownVault) GetVault() (domain.Vault, bool) { return s.vault, true }
+
+const mcpPlugin = "md.test.mcp"
+
+// A plugin that serves the tools to programs outside Numen lists the tools of the tools plugins on
+// the host, and calls them in the vault the host shows with no context. A tool whose effect it
+// holds no permission of is neither listed nor run.
+func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
+	agent := &toolAgent{}
+	vault := &toolPlugin{tools: []*v1.PluginTool{
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READS),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_WRITES),
+	}}
+	host := hostOver(t,
+		agentAt(agent),
+		toolsAt(vaultPlugin, []string{"vault:read", "vault:write"}, vault),
+		testPlugin{id: mcpPlugin, permissions: []string{"vault:read"}, mount: func(*http.ServeMux) {}},
+	)
+	t.Cleanup(func() { _ = host.TeardownAll(context.WithoutCancel(t.Context()), time.Millisecond) })
+	host.SetPluginVault(shownVault{vault: domain.Vault{ID: "v-garden", Name: "Garden"}})
+	served, err := hostendpoint.Open(t.Context(), hostendpoint.Address, host)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = served.Close(context.WithoutCancel(t.Context())) })
+	caller, err := host.EnsureActive(t.Context(), mcpPlugin)
+	if err != nil {
+		t.Fatal(err)
+	}
+	client := numenv1connect.NewPluginToolServiceClient(
+		&http.Client{Transport: bearerTransport{token: caller.Token}}, fmt.Sprintf("http://127.0.0.1:%d", served.GetPort()))
+
+	listed, err := client.ListTools(t.Context(), connect.NewRequest(&v1.ListToolsRequest{}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var names []string
+	for _, one := range listed.Msg.GetTools() {
+		names = append(names, one.GetName())
+	}
+	if !slices.Equal(names, []string{"note_read"}) {
+		t.Errorf("the host lists %v", names)
+	}
+	res, err := client.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
+		Name: "note_read", Arguments: []byte(`{"path":"Garden.md"}`), Context: map[string]string{cardKey: "c-1"},
+	}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if text := res.Msg.GetResult().GetText(); text != `note_read {"path":"Garden.md"} ` {
+		t.Errorf("the call answered %q", text)
+	}
+	if requests := vault.getRequests(); len(requests) != 1 || requests[0].GetVaultId() != "v-garden" || len(requests[0].GetContext()) != 0 {
+		t.Errorf("the plugin was called with %v", requests)
+	}
+	denial, err := client.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{Name: "note_write"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if denial.Msg.GetError() != v1.ToolErrorCode_TOOL_ERROR_CODE_UNKNOWN_TOOL || len(vault.getRequests()) != 1 {
+		t.Errorf("a tool the caller may not run answered %v", denial.Msg)
 	}
 }

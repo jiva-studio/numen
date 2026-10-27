@@ -34,6 +34,7 @@ type callers struct {
 	vault     pluginport.PluginVault
 	texts     pluginport.PluginTexts
 	work      pluginport.PluginWork
+	tools     PluginTools
 	acquired  map[string]int
 	releases  chan string
 }
@@ -70,6 +71,7 @@ func (c *callers) GetPluginVault() pluginport.PluginVault { return c.vault }
 func (c *callers) GetPluginTexts() pluginport.PluginTexts        { return c.texts }
 func (c *callers) GetDependencies() pluginport.DependencyCatalog { return nil }
 func (c *callers) GetPluginWork() pluginport.PluginWork          { return c.work }
+func (c *callers) GetPluginTools() PluginTools                   { return c.tools }
 
 func (c *callers) Acquire(pluginID string) {
 	c.mu.Lock()

@@ -9,6 +9,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/lifecycle"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/plugindir"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/process"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolserver"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -174,4 +175,10 @@ func (h *Host) clearPluginWork(pluginID string) {
 	if work := h.GetPluginWork(); work != nil {
 		work.ClearPlugin(pluginID)
 	}
+}
+
+// GetPluginTools is the tools the plugins with the tools capability offer on the full server, which
+// a plugin serves to programs outside Numen.
+func (h *Host) GetPluginTools() hostendpoint.PluginTools {
+	return toolserver.NewCatalog(h, toolserver.Full)
 }

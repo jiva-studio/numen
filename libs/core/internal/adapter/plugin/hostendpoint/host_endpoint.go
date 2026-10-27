@@ -37,11 +37,19 @@ var (
 // it, what that plugin may do, whether the person lets it ask a model, and who
 // answers a completion.
 type Callers interface {
+	Services
 	GetPluginIDByToken(token string) (string, bool)
 	CheckPluginPermission(pluginID, permission string) error
 	CheckCompletionConsent(pluginID string) error
+	// Acquire keeps a running plugin from being stopped as idle until Release.
+	Acquire(pluginID string)
+	Release(pluginID string)
+}
+
+// Services is what the host lends the plugins that call it.
+type Services interface {
 	GetCompleter() completionport.Completer
-	// none to offer it returns nil.
+	// GetPluginVault is the vault the host shows, or nil where it has none to offer.
 	GetPluginVault() pluginport.PluginVault
 	// GetPluginTexts is the text versions of the vault the host shows, or nil.
 	GetPluginTexts() pluginport.PluginTexts
@@ -49,9 +57,8 @@ type Callers interface {
 	GetDependencies() pluginport.DependencyCatalog
 	// GetPluginWork is the queue and the list of tasks the plugins use, or nil.
 	GetPluginWork() pluginport.PluginWork
-	// Acquire keeps a running plugin from being stopped as idle until Release.
-	Acquire(pluginID string)
-	Release(pluginID string)
+	// GetPluginTools is the tools of the plugins a plugin serves to programs outside Numen, or nil.
+	GetPluginTools() PluginTools
 }
 
 // Endpoint answers the calls plugins make to the host. It listens on the
@@ -87,6 +94,7 @@ func Open(ctx context.Context, address string, callers Callers) (*Endpoint, erro
 	mux.Handle(numenv1connect.NewHostTextServiceHandler(&textEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewDependencyServiceHandler(&dependencyEndpoint{endpoint: endpoint}))
 	mux.Handle(numenv1connect.NewHostQueueServiceHandler(&queueEndpoint{endpoint: endpoint}))
+	mux.Handle(numenv1connect.NewPluginToolServiceHandler(&toolEndpoint{endpoint: endpoint}))
 	endpoint.server = &http.Server{Handler: mux, ReadHeaderTimeout: hostEndpointHeaderTimeout}
 	go func() {
 		// Serve returns http.ErrServerClosed after Close.

@@ -37,30 +37,6 @@ func NewToolAggregator(client ToolClient, mcpServer *sdk.Server) *ToolAggregator
 	}
 }
 
-// readCallContext is the context of a call: the string values of its `_meta` whose keys start with
-// a plugin id and a slash. Keys with no prefix, and prefixes whose second label is
-// "modelcontextprotocol" or "mcp", are reserved by MCP.
-func readCallContext(meta sdk.Meta) map[string]string {
-	callContext := make(map[string]string, len(meta))
-	for key, value := range meta {
-		text, isText := value.(string)
-		if isText && isPluginKey(key) {
-			callContext[key] = text
-		}
-	}
-	return callContext
-}
-
-// isPluginKey says whether a `_meta` key is one a plugin wrote.
-func isPluginKey(key string) bool {
-	prefix, _, hasPrefix := strings.Cut(key, "/")
-	if !hasPrefix || prefix == "" {
-		return false
-	}
-	labels := strings.Split(prefix, ".")
-	return len(labels) < 2 || (labels[1] != "modelcontextprotocol" && labels[1] != "mcp")
-}
-
 // GetRegisteredTools returns the sorted list of currently registered tool names.
 func (a *ToolAggregator) GetRegisteredTools() []string {
 	a.mu.RLock()
@@ -111,12 +87,10 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 		toolName := name
 		a.mcpServer.AddTool(declared, func(callCtx context.Context, req *sdk.CallToolRequest) (*sdk.CallToolResult, error) {
 			var args json.RawMessage
-			var callContext map[string]string
 			if req.Params != nil {
 				args = req.Params.Arguments
-				callContext = readCallContext(req.Params.GetMeta())
 			}
-			return a.ExecuteTool(callCtx, toolName, args, callContext)
+			return a.ExecuteTool(callCtx, toolName, args)
 		})
 	}
 
@@ -134,11 +108,9 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 	return nil
 }
 
-// ExecuteTool forwards a tool call, with the context it was made under, to the host and translates
-// the response.
-func (a *ToolAggregator) ExecuteTool(
-	ctx context.Context, name string, args json.RawMessage, callContext map[string]string,
-) (*sdk.CallToolResult, error) {
+// ExecuteTool forwards a tool call to the host and translates the response. The host runs it in the
+// vault it shows, with no context: no question was asked in Numen.
+func (a *ToolAggregator) ExecuteTool(ctx context.Context, name string, args json.RawMessage) (*sdk.CallToolResult, error) {
 	if a.client == nil {
 		return &sdk.CallToolResult{
 			IsError: true,
@@ -149,7 +121,6 @@ func (a *ToolAggregator) ExecuteTool(
 	req := &numenv1.CallToolRequest{
 		Name:      name,
 		Arguments: []byte(args),
-		Context:   callContext,
 	}
 
 	res, err := a.client.CallTool(ctx, connect.NewRequest(req))
