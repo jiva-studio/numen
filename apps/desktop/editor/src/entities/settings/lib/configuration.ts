@@ -2,6 +2,8 @@
  * What the settings hold: one setting written at its current position, and the models a
  * setting that names one can be set to.
  */
+import type { PluginSettingType } from '@numen/plugin-sdk'
+export type { CompletionChoice, PluginSettingType } from '@numen/plugin-sdk'
 
 /** One setting of the configuration file, and the JSON value to set. */
 export interface SettingEdit {
@@ -73,7 +75,7 @@ export interface PluginSecret {
 /** Declarative setting schema and metadata exposed by a plugin. */
 export interface PluginSettingInfo {
   readonly key: string
-  readonly type: 'boolean' | 'string' | 'number' | 'enum' | 'range' | 'agent' | 'file' | 'folder'
+  readonly type: PluginSettingType
   readonly title: string
   readonly description: string
   readonly default: unknown
@@ -132,12 +134,6 @@ export interface PluginInfo {
 export interface PluginReader {
   readonly id: string
   readonly extensions: readonly string[]
-}
-
-/** The agent program and the model a setting of type `agent` holds. Empty is the default. */
-export interface CompletionChoice {
-  readonly agent: string
-  readonly model: string
 }
 
 /** Every setting currently, where they stand, and the models offered. */

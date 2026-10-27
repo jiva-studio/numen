@@ -15,7 +15,7 @@ describe('a writer under a name', () => {
     expect(log.messages.value).toHaveLength(1)
     expect(log.messages.value[0]).toMatchObject({
       name: 'command',
-      kind: 'error',
+      severity: 'error',
       text: 'a note of that name is filed there',
     })
   })

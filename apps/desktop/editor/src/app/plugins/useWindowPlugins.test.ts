@@ -33,8 +33,8 @@ const coreKind = (state: object): AnyTabKind => ({
 })
 
 describe('closing the tabs of a plugin', () => {
-  it('closes the tabs of the kinds the plugin registered, whatever their state holds', async () => {
-    const { windowTabs, support, removeClosedTab } = createSupport()
+  it('replaces the tabs of the kinds the plugin registered with placeholders', async () => {
+    const { windowTabs, support } = createSupport()
     support.pluginHost
       .createContext('md.numen.a')
       .registerTabKind({ kind: 'a-kind', component: null, title: 'A' })
@@ -43,8 +43,11 @@ describe('closing the tabs of a plugin', () => {
 
     support.pluginHost.disposePlugin('md.numen.a')
 
-    expect(windowTabs.getTab(id)).toBeNull()
-    expect(removeClosedTab).toHaveBeenCalledWith(id)
+    expect(windowTabs.getTab(id)?.state).toEqual({
+      kind: 'a-kind',
+      targetPath: 'x',
+      saved: undefined,
+    })
   })
 
   it('keeps a tab of a core kind whose state names the plugin', async () => {
@@ -95,14 +98,18 @@ describe('the tab kind a plugin adds', () => {
     expect(windowTabs.getTab(await windowTabs.createTab('chat', ''))).not.toBeNull()
   })
 
-  it('goes, with its open tabs, when the plugin is disabled', async () => {
+  it('goes, with its open tabs turned into placeholders, when the plugin is disabled', async () => {
     const { windowTabs, support } = await activateChat()
     const id = await windowTabs.createTab('chat', '')
 
     support.pluginHost.disposePlugin(manifest.id)
 
     expect(windowTabs.hasKind('chat')).toBe(false)
-    expect(windowTabs.getTab(id)).toBeNull()
+    expect(windowTabs.getTab(id)?.state).toEqual({
+      kind: 'chat',
+      targetPath: '',
+      saved: undefined,
+    })
   })
 })
 

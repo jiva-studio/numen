@@ -81,9 +81,9 @@ describe('restoring a session with a disabled plugin', () => {
 
       const window = await mountWindow()
       expect(getTabs(window)).toEqual([
-        { id: 'disabled-plugin:/docs/sample.pdf', title: 'Plugin unavailable' },
+        { id: 'disabled-plugin:/docs/sample.pdf', title: 'sample.pdf' },
       ])
-      expect(window.text()).toContain('Plugin unavailable')
+      expect(window.text()).toContain('Plugin disabled')
       expect(window.text()).toContain('disabled-plugin')
     } finally {
       globalThis.location = originalLocation
@@ -95,6 +95,6 @@ describe('restoring a session with a disabled plugin', () => {
     const id = await window.createTab('disabled-plugin', '/docs/sample.pdf')
 
     expect(id).toBe('disabled-plugin:/docs/sample.pdf')
-    expect(window.tabs.value).toEqual([{ id, title: 'Plugin unavailable' }])
+    expect(window.tabs.value).toEqual([{ id, title: 'sample.pdf' }])
   })
 })

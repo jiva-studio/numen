@@ -29,7 +29,7 @@ export async function openDestination(
   places: DestinationDeps,
 ): Promise<void> {
   if (!destination) return
-  if (destination.at === 'travel') return void places.travel(destination.path)
+  if (destination.at === 'locate') return void places.travel(destination.path)
   places.openFile(
     destination.path,
     destination.title || destination.path,

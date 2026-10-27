@@ -60,7 +60,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animals.md', 'Animals')
 
-    expect(activeEditors).toStrictEqual(['sample Animals.md Animals here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals current —'])
   })
 
   it('opens a form in the editor of its kind', async () => {
@@ -70,7 +70,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animal.md', 'Animal')
 
-    expect(activeEditors).toStrictEqual(['form Animal.md Animal here —'])
+    expect(activeEditors).toStrictEqual(['form Animal.md Animal current —'])
   })
 
   it('opens an ordinary note in the editor of its prose', async () => {
@@ -80,7 +80,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Entropy.md', 'Entropy')
 
-    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy here —'])
+    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy current —'])
   })
 
   it('opens a file that is no note in the reader of its extension, at no place', async () => {
@@ -129,7 +129,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Entropy.md', 'Entropy')
 
-    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy here —'])
+    expect(activeEditors).toStrictEqual(['note Entropy.md Entropy current —'])
   })
 
   it('asks the vault what remains there, the caller having returned nothing', async () => {
@@ -149,7 +149,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animals.md')
 
-    expect(activeEditors).toStrictEqual(['sample Animals.md — here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md — current —'])
   })
 
   it('opens nothing where no editor was handed over for the kind', async () => {
@@ -176,7 +176,7 @@ describe('a path opened', () => {
 
     await tabOpeners.openFile('Animals.md', 'Animals', 'split')
 
-    expect(activeEditors).toStrictEqual(['sample Animals.md Animals beside —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals split —'])
   })
 
   it('carries the line it was requested at, which each editor answers for itself', async () => {
@@ -188,8 +188,8 @@ describe('a path opened', () => {
     await tabOpeners.openFile('Animals.md', 'Animals', { where: 'current', line: 12 })
 
     expect(activeEditors).toStrictEqual([
-      'note Entropy.md Entropy here 12',
-      'sample Animals.md Animals here 12',
+      'note Entropy.md Entropy current 12',
+      'sample Animals.md Animals current 12',
     ])
   })
 })
@@ -202,7 +202,7 @@ describe('a file opened at runs of its text', () => {
 
     await tabOpeners.openFileAt('Entropy.md', [{ start: 1, end: 4 }])
 
-    expect(activeEditors).toStrictEqual(['note Entropy.md — here —'])
+    expect(activeEditors).toStrictEqual(['note Entropy.md — current —'])
   })
 
   it('opens a file that is no note in its reader at no place', async () => {
@@ -242,7 +242,7 @@ describe('a file just made here', () => {
 
     tabOpeners.openNewFile('Animals.md', 'Animals', 'sample')
 
-    expect(activeEditors).toStrictEqual(['sample Animals.md Animals here —'])
+    expect(activeEditors).toStrictEqual(['sample Animals.md Animals current —'])
     expect(one.requested).toStrictEqual([])
   })
 })

@@ -6,8 +6,13 @@
  * its name, the text of its file, and which of them is chosen. A size is one
  * multiplier, and how far it goes is the application's to say.
  */
-import { Mode as Modes, Origin } from '@numen/protocol'
-import { getNames } from '@numen/plugin-sdk'
+import {
+  getNames,
+  THEME_MODE,
+  THEME_ORIGIN,
+  type ThemeModeCode,
+  type ThemeOriginCode,
+} from '@numen/plugin-sdk'
 import { theme } from '@/shared/clients'
 
 /** Which half of a `light-dark()` pair every token is read as. */
@@ -111,10 +116,10 @@ const parseBounds = (bounds: { min: number; max: number } | undefined): Bounds =
  * Whether a theme ships inside the application. Keyed by the schema, so an origin
  * added to it has to be answered here before this compiles.
  */
-const ships: Record<Origin, boolean> = {
-  [Origin.UNSPECIFIED]: false,
-  [Origin.PRESET]: true,
-  [Origin.MINE]: false,
+const ships: Record<ThemeOriginCode, boolean> = {
+  [THEME_ORIGIN.UNSPECIFIED]: false,
+  [THEME_ORIGIN.PRESET]: true,
+  [THEME_ORIGIN.MINE]: false,
 }
 
 /**
@@ -122,12 +127,12 @@ const ships: Record<Origin, boolean> = {
  * system's. Keyed by the schema, so a mode added to it has to be given a word
  * here before this compiles.
  */
-const WORDED: Record<Modes, Mode | null> = {
-  [Modes.UNSPECIFIED]: null,
-  [Modes.SYSTEM]: 'system',
-  [Modes.LIGHT]: 'light',
-  [Modes.DARK]: 'dark',
+const WORDED: Record<ThemeModeCode, Mode | null> = {
+  [THEME_MODE.UNSPECIFIED]: null,
+  [THEME_MODE.SYSTEM]: 'system',
+  [THEME_MODE.LIGHT]: 'light',
+  [THEME_MODE.DARK]: 'dark',
 }
 
 /** The mode as the schema carries it, read off the words above. */
-const ASKED = getNames<Mode, Modes>(WORDED)
+const ASKED = getNames<Mode, ThemeModeCode>(WORDED)

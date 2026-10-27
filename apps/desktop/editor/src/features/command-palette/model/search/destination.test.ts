@@ -35,7 +35,7 @@ describe('a name chosen', () => {
   it('is put in front where the plugin that shows notes puts it, and opens no tab', async () => {
     const one = window()
 
-    await openDestination(landing({ at: 'travel' }), one.places)
+    await openDestination(landing({ at: 'locate' }), one.places)
 
     expect(one.travelled).toStrictEqual(['Note.md'])
     expect(one.openedFiles).toStrictEqual([])

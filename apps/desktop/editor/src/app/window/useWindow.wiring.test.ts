@@ -184,7 +184,6 @@ describe('what the window answers about the tab in front', () => {
       path: '',
       title: '',
       file: '',
-      source: null,
       vault: { id: 'vault' },
       isReady: true,
     })
@@ -201,7 +200,6 @@ describe('what the window answers about the tab in front', () => {
       path: 'a',
       title: 'A',
       file: 'a.md',
-      source: 'src',
       vault: { id: 'vault' },
       isReady: true,
     })

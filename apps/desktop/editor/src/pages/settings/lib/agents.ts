@@ -4,19 +4,24 @@
  * routes to the one a plugin's setting names, else to the default of the
  * settings, else to the program the agent section of the settings names.
  */
+import {
+  AGENT_SETTING_TYPE,
+  AGENT_USE_PATH,
+  DEFAULT_AGENT_PATH,
+  DEFAULT_MODEL_PATH,
+  getProgramModelPath,
+  readAgentChoice,
+} from '@numen/plugin-sdk'
 import type { CompletionChoice, Model, PluginInfo, SettingSource } from '@/entities/settings'
 import type { SelectChoice } from '@numen/ui'
 
-const USE_AT = ['agent', 'use'] as const
-export const getProgramModelsAt = (program: string): readonly string[] => [
-  'agent',
-  program,
-  'model',
-]
+export { AGENT_SETTING_TYPE }
+const USE_AT = AGENT_USE_PATH
+export const getProgramModelsAt = getProgramModelPath
 
 /** Where the default agent and its model stand in the settings file. */
-export const DEFAULT_AGENT_AT = ['ai', 'default', 'agent'] as const
-export const DEFAULT_MODEL_AT = ['ai', 'default', 'model'] as const
+export const DEFAULT_AGENT_AT = DEFAULT_AGENT_PATH
+export const DEFAULT_MODEL_AT = DEFAULT_MODEL_PATH
 
 /** One model an agent offers. */
 export interface AgentModel {
@@ -78,15 +83,8 @@ export const getAgents = (source: AgentSource): readonly Agent[] => {
 export const findAgent = (agents: readonly Agent[], id: string): Agent | undefined =>
   id === '' ? agents.find((one) => one.isDefault) : agents.find((one) => one.id === id)
 
-/** The choice a setting of type `agent` holds, and the empty choice for any other value. */
-export const readChoice = (value: unknown): CompletionChoice => {
-  if (typeof value !== 'object' || value === null) return { agent: '', model: '' }
-  const fields = value as Record<string, unknown>
-  return {
-    agent: typeof fields['agent'] === 'string' ? fields['agent'] : '',
-    model: typeof fields['model'] === 'string' ? fields['model'] : '',
-  }
-}
+/** The choice a plugin's agent setting holds, and the empty choice for any other value. */
+export const readChoice: (value: unknown) => CompletionChoice = readAgentChoice
 
 /** The agents as rows, with an agent the settings name and no plugin lists. */
 const getAgentRows = (

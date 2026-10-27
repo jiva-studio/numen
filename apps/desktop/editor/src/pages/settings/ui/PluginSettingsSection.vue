@@ -3,6 +3,7 @@
  * Dynamic settings section rendered for active plugins with declarative schemas.
  */
 import { computed } from 'vue'
+import { AGENT_SETTING_TYPE } from '@numen/plugin-sdk'
 import { NumberField, Select, Slider, Switch } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
 import { AgentChoice } from './agent-choice'
@@ -71,11 +72,11 @@ const getModelChoices = (choice: CompletionChoice) => {
 
 /** The setting of a plugin that chooses its agent, drawn first, and the rest. */
 function getAgentSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
-  return plugin.settings.filter((one) => one.type === 'agent')
+  return plugin.settings.filter((one) => one.type === AGENT_SETTING_TYPE)
 }
 
 function getOtherSettings(plugin: PluginInfo): readonly PluginSettingInfo[] {
-  return plugin.settings.filter((one) => one.type !== 'agent')
+  return plugin.settings.filter((one) => one.type !== AGENT_SETTING_TYPE)
 }
 
 /** The models a string setting is chosen from, and none where it is typed or the program lists none. */

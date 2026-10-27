@@ -50,7 +50,7 @@ export interface Passage {
  * line, any other file the selector its reader moves to.
  */
 export interface SearchDestination {
-  at: 'travel' | 'file'
+  at: 'locate' | 'file'
   path: string
   /** What the note is called, for a tab that has not been opened before. */
   title: string
@@ -65,7 +65,7 @@ export interface SearchDestination {
  * in front where the plugin that shows notes puts it, which only a window with
  * such a plugin offers.
  */
-export const TRAVEL = 'travel'
+export const LOCATE = 'locate'
 export const NOTE = 'note'
 
 /**
@@ -92,20 +92,20 @@ export interface SearchRow {
 
 /** What the search says over a note, the action that puts it in front among them where there is one. */
 const getNoteActions = (travel: string, first: { id: string; text: string }) => ({
-  actions: travel ? [first, { id: TRAVEL, text: travel }] : [first],
-  offers: travel ? [first.id, TRAVEL] : [first.id],
+  actions: travel ? [first, { id: LOCATE, text: travel }] : [first],
+  offers: travel ? [first.id, LOCATE] : [first.id],
 })
 
 /**
  * A name the search turned up. A note found by its name is put in front first,
- * and a heading is opened at first. `travel` is the words of the action that puts
- * a note in front, and empty where nothing does.
+ * and a heading is opened at first. The last argument is the words of the action
+ * that puts a note in front, and empty where nothing does.
  */
 export function createNameItem(one: NameMatch, words: Words, travel: string): SearchRow {
   const atHeading = getNoteActions(travel, { id: NOTE, text: words.readAt })
   const read = { id: NOTE, text: words.read }
   const byName = travel
-    ? { actions: [{ id: TRAVEL, text: travel }, read], offers: [TRAVEL, NOTE] }
+    ? { actions: [{ id: LOCATE, text: travel }, read], offers: [LOCATE, NOTE] }
     : { actions: [read], offers: [NOTE] }
   return one.heading
     ? {
@@ -181,7 +181,7 @@ export function resolveDestination(
 ): SearchDestination | null {
   if (!hit || !hit.offers.includes(action)) return null
   const named = { path: hit.path, title: hit.title }
-  if (action === TRAVEL) return { at: 'travel', ...named }
+  if (action === LOCATE) return { at: 'locate', ...named }
   if (hit.selector) return { at: 'file', ...named, selector: hit.selector }
   return hit.line >= 0 ? { at: 'file', ...named, line: hit.line } : { at: 'file', ...named }
 }

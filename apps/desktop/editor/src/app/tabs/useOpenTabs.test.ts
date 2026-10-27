@@ -32,7 +32,7 @@ const create = (entries: Entry[], front: { id: string; kind: string } | null = n
         kind: {
           kind: one.kind ?? 'note',
           icon: one.icon,
-          getOpenTab: () => one.openTab,
+          ...(one.openTab ? { getOpenTab: () => one.openTab } : {}),
           ...(one.takesText ? { receiveText: () => {} } : {}),
         },
       }
@@ -51,23 +51,27 @@ describe('the open tabs', () => {
     ])
 
     expect(target.open.value.tabs).toStrictEqual([
-      { id: 'a', kind: 'note', title: 'A', path: 'a.md' },
-      { id: 'b', kind: 'document', title: 'B', path: 'b.pdf', document: 'doc-1' },
-      { id: 'c', kind: 'recording', title: 'C', path: 'c.mp3', recording: 'rec-1' },
-      { id: 'd', kind: 'book', title: 'D', path: 'd.epub', book: 'book-1' },
+      { id: 'a', kind: 'note', title: 'A', path: 'a.md', state: '' },
+      { id: 'b', kind: 'document', title: 'B', path: 'b.pdf', state: '' },
+      { id: 'c', kind: 'recording', title: 'C', path: 'c.mp3', state: '' },
+      { id: 'd', kind: 'book', title: 'D', path: 'd.epub', state: '' },
     ])
   })
 
   it('lists a tab the window cannot resolve with an empty kind and path', () => {
     const target = create([{ id: 'a', title: 'A', unresolved: true }])
 
-    expect(target.open.value.tabs).toStrictEqual([{ id: 'a', kind: '', title: 'A', path: '' }])
+    expect(target.open.value.tabs).toStrictEqual([
+      { id: 'a', kind: '', title: 'A', path: '', state: '' },
+    ])
   })
 
   it('lists a tab whose kind has no open-tab form with an empty path', () => {
     const target = create([{ id: 'a', title: 'A', kind: 'files' }])
 
-    expect(target.open.value.tabs).toStrictEqual([{ id: 'a', kind: 'files', title: 'A', path: '' }])
+    expect(target.open.value.tabs).toStrictEqual([
+      { id: 'a', kind: 'files', title: 'A', path: '', state: '' },
+    ])
   })
 
   it('notifies the core the list when it is made, and again when it changes', async () => {

@@ -3,6 +3,11 @@
  * Settings for the AI agent.
  */
 import { computed } from 'vue'
+import {
+  getProgramHooksPath,
+  getProgramModelPath,
+  getProgramStepsPath,
+} from '@numen/plugin-sdk'
 import { NumberField, Select, Switch } from '@numen/ui'
 import type { SelectChoice } from '@numen/ui'
 import SettingRow from './setting-row/SettingRow.vue'
@@ -32,11 +37,9 @@ const activeProgram = computed(() => {
 })
 const hasAgent = computed(() => activeProgram.value !== '')
 
-const agentModelPath = computed(() => ['agent', activeProgram.value, 'model'] as const)
-const agentStepsPath = computed(() => ['agent', activeProgram.value, 'max_steps'] as const)
-const agentHooksPath = computed(
-  () => ['agent', activeProgram.value, 'reads_hooks_and_skills'] as const,
-)
+const agentModelPath = computed(() => getProgramModelPath(activeProgram.value))
+const agentStepsPath = computed(() => getProgramStepsPath(activeProgram.value))
+const agentHooksPath = computed(() => getProgramHooksPath(activeProgram.value))
 
 const getChoices = (path: readonly string[]): readonly SelectChoice[] =>
   createModelChoices(fields, path, words)
@@ -69,7 +72,7 @@ function onAgentHooksChange(value: boolean) {
 
     <SettingRow
       v-slot="{ labelledBy }"
-      at="agent"
+      at="agent-use"
       :name="words.agentUse"
       :detail="words.agentUseDetail"
     >

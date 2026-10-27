@@ -148,8 +148,8 @@ describe('files domain', () => {
 
     request.listFileKinds.mockResolvedValue({
       kinds: [
-        { path: 'a.bin', kind: 2, type: '' },
-        { path: 'a.md', kind: 1, type: 'deck' },
+        { path: 'a.bin', isNote: false, type: '' },
+        { path: 'a.md', isNote: true, type: 'deck' },
       ],
     })
     const kinds = await core.fileKinds(['a.bin', 'a.md'])

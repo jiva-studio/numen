@@ -58,7 +58,7 @@ const createHit = (overrides: Partial<SearchHit> = {}): SearchHit => ({
   line: -1,
   start: 0,
   length: 0,
-  offers: ['note', 'travel'],
+  offers: ['note', 'locate'],
   type: 'note',
   selector: null,
   ...overrides,
@@ -70,10 +70,10 @@ describe('a note found by its title', () => {
 
     expect(row.item.id).toBe('physics/Ontology.md')
     expect(row.item.actions).toStrictEqual([
-      { id: 'travel', text: SHOW },
+      { id: 'locate', text: SHOW },
       { id: 'note', text: WORDS.read },
     ])
-    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['travel', 'note'] }))
+    expect(row.hit).toStrictEqual(createHit({ line: -1, offers: ['locate', 'note'] }))
   })
 })
 
@@ -99,9 +99,9 @@ describe('a heading found by its name', () => {
     expect(row.item.detail).toBe('Ontology')
     expect(row.item.actions).toStrictEqual([
       { id: 'note', text: WORDS.readAt },
-      { id: 'travel', text: SHOW },
+      { id: 'locate', text: SHOW },
     ])
-    expect(row.hit).toStrictEqual(createHit({ line: 7, offers: ['note', 'travel'], type: 'sample' }))
+    expect(row.hit).toStrictEqual(createHit({ line: 7, offers: ['note', 'locate'], type: 'sample' }))
   })
 })
 
@@ -112,10 +112,10 @@ describe('a passage found in a note', () => {
     expect(row.item.id).toBe('text:physics/Ontology.md:12')
     expect(row.item.actions).toStrictEqual([
       { id: 'note', text: WORDS.read },
-      { id: 'travel', text: SHOW },
+      { id: 'locate', text: SHOW },
     ])
     expect(row.hit).toStrictEqual(
-      createHit({ line: 3, start: 12, length: 4, offers: ['note', 'travel'] }),
+      createHit({ line: 3, start: 12, length: 4, offers: ['note', 'locate'] }),
     )
   })
 })
@@ -148,12 +148,12 @@ describe('a passage found in a file that is no note', () => {
 describe('where choosing an item takes the person', () => {
   it('is nowhere where nothing was found, or the item does not offer that', () => {
     expect(resolveDestination(undefined, 'note')).toBeNull()
-    expect(resolveDestination(createHit({ offers: ['note'] }), 'travel')).toBeNull()
+    expect(resolveDestination(createHit({ offers: ['note'] }), 'locate')).toBeNull()
   })
 
   it('is the note put in front, by the note it remains in', () => {
-    expect(resolveDestination(createHit(), 'travel')).toStrictEqual({
-      at: 'travel',
+    expect(resolveDestination(createHit(), 'locate')).toStrictEqual({
+      at: 'locate',
       path: 'physics/Ontology.md',
       title: 'Ontology',
     })

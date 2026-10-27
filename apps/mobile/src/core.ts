@@ -5,9 +5,8 @@
  * there everything is the schema, and both halves are generated from it.
  */
 import { registerPlugin } from '@capacitor/core'
-import { createClient } from '@connectrpc/connect'
 import { createConnectTransport } from '@connectrpc/connect-web'
-import { NoteService, VaultService } from '@numen/protocol'
+import { createNoteClient, createVaultClient } from '@numen/plugin-sdk'
 
 interface CorePlugin {
   start(): Promise<{ port: number; dir: string }>
@@ -28,8 +27,8 @@ export interface Core {
 const createTransport = (port: number) =>
   createConnectTransport({ baseUrl: `http://127.0.0.1:${port}` })
 
-const vaultClient = (port: number) => createClient(VaultService, createTransport(port))
-const noteClient = (port: number) => createClient(NoteService, createTransport(port))
+const vaultClient = (port: number) => createVaultClient(createTransport(port))
+const noteClient = (port: number) => createNoteClient(createTransport(port))
 
 /** Start the core and answer with clients onto the vault it opened. */
 export async function startCore(): Promise<Core> {

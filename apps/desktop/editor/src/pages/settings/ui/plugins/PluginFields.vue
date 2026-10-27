@@ -18,6 +18,7 @@ import {
   type PluginSettingInfo,
 } from '@/entities/settings'
 import {
+  AGENT_SETTING_TYPE as AGENT_TYPE,
   DEFAULT_AGENT_AT,
   createAgentModelChoices,
   createPluginAgentChoices,
@@ -43,10 +44,10 @@ const fields = createSettingFields(() => props.state.installation)
 
 const agents = computed(() => getAgents(installation.value))
 const defaultAgent = computed(() => fields.getString(DEFAULT_AGENT_AT))
-const agentSettings = computed(() => props.plugin.settings.filter((one) => one.type === 'agent'))
+const agentSettings = computed(() => props.plugin.settings.filter((one) => one.type === AGENT_TYPE))
 const otherSettings = computed(() =>
   props.plugin.settings.filter(
-    (one) => one.type !== 'agent' && isShown(props.plugin, one.when, readSetting),
+    (one) => one.type !== AGENT_TYPE && isShown(props.plugin, one.when, readSetting),
   ),
 )
 const { getEnumOptions, getEnumValue, getDetail, getOrigin } = createEnumFields(

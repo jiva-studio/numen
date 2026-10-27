@@ -18,7 +18,9 @@ const layerElements = createLayerElements({ order: layerOrder, sliceLayers })
 const layerPolicies = createLayerPolicies({ order: layerOrder, sliceLayers })
 
 export default tseslint.config(
-  ...createBaseConfig(import.meta.dirname),
+  ...createBaseConfig(import.meta.dirname, {
+    extraIgnores: ['eslint.config.js', 'vitest.config.ts'],
+  }),
 
   // FSD Layer Hierarchy and boundaries enforcement
   {

@@ -5,8 +5,9 @@
 import { onMounted, ref, useTemplateRef } from 'vue'
 import { formatErrorCodeMessage } from '@numen/plugin-sdk'
 import { NoteBar } from './note-bar'
-import type { ReadNoteResponse } from '@numen/protocol'
 import type { Core } from '../core'
+
+type NoteBaselineAt = NonNullable<Awaited<ReturnType<Core['notes']['readNote']>>['at']>
 
 /* --------------------------------- Props ---------------------------------- */
 const props = defineProps<{ core: Core; path: string }>()
@@ -19,7 +20,7 @@ const emit = defineEmits<{
 
 /* --------------------------------- State ---------------------------------- */
 const prose = ref('')
-const loadedNote = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
+const loadedNote = ref<{ prose: string; at: NoteBaselineAt } | null>(null)
 const isReading = ref(true)
 const editor = useTemplateRef<HTMLTextAreaElement>('editor')
 

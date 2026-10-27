@@ -4,7 +4,7 @@
  * it. The application decides what the menu holds from the enabled plugins and
  * the versions the file has.
  */
-import { FileMenuAction } from '@numen/protocol'
+import { FILE_MENU_ACTION } from '@numen/plugin-sdk'
 import { textVersions } from '@/shared/clients'
 
 /** What an entry of a file's menu does: a plugin makes text, or deletes a version it made. */
@@ -25,9 +25,11 @@ export interface FileMenuEntry {
   readonly versionId: string
 }
 
-const ACTIONS: ReadonlyMap<FileMenuAction, FileMenuActionName> = new Map([
-  [FileMenuAction.CREATE_TEXT, 'create-text'],
-  [FileMenuAction.DELETE_VERSION, 'delete-version'],
+type FileMenuActionCode = (typeof FILE_MENU_ACTION)[keyof typeof FILE_MENU_ACTION]
+
+const ACTIONS: ReadonlyMap<FileMenuActionCode, FileMenuActionName> = new Map([
+  [FILE_MENU_ACTION.CREATE_TEXT, 'create-text'],
+  [FILE_MENU_ACTION.DELETE_VERSION, 'delete-version'],
 ])
 
 /** The entries of the menu of the file at the path, as the file is now. */
@@ -54,7 +56,7 @@ export async function runFileMenuEntry(path: string, entry: FileMenuEntry): Prom
   const action = [...ACTIONS].find(([, name]) => name === entry.action)?.[0]
   await textVersions.runFileMenuEntry({
     path,
-    action: action ?? FileMenuAction.UNSPECIFIED,
+    action: action ?? FILE_MENU_ACTION.UNSPECIFIED,
     pluginId: entry.pluginId,
     versionId: entry.versionId,
   })

@@ -341,8 +341,8 @@ describe('where a thing found takes the person', () => {
     const palette = await createFilledPalette()
     const item = getGroup(palette.groups.value, 'names')!.items[0]!
 
-    expect(palette.chooseItem(item.id, 'travel')).toEqual({
-      at: 'travel',
+    expect(palette.chooseItem(item.id, 'locate')).toEqual({
+      at: 'locate',
       path: 'notes/entropy.md',
       title: 'Entropy',
     })
@@ -364,8 +364,8 @@ describe('where a thing found takes the person', () => {
       line: 12,
     })
     // A note is put in front whole, and not at the lines inside it.
-    expect(palette.chooseItem(item.id, 'travel')).toEqual({
-      at: 'travel',
+    expect(palette.chooseItem(item.id, 'locate')).toEqual({
+      at: 'locate',
       path: 'notes/carnot.md',
       title: 'The Carnot cycle',
     })
@@ -395,7 +395,7 @@ describe('where a thing found takes the person', () => {
 
   it('takes nobody anywhere for an item it is not drawing', async () => {
     const palette = await createFilledPalette()
-    expect(palette.chooseItem('notes/nowhere.md', 'travel')).toBeNull()
+    expect(palette.chooseItem('notes/nowhere.md', 'locate')).toBeNull()
   })
 })
 
@@ -421,9 +421,9 @@ describe('what a key reaches, per kind of thing found', () => {
         (one) => one.id,
       )
 
-    expect(getActions('names', 0)).toEqual(['travel', 'note'])
-    expect(getActions('names', 1)).toEqual(['note', 'travel'])
-    expect(getActions('text', 0)).toEqual(['note', 'travel'])
+    expect(getActions('names', 0)).toEqual(['locate', 'note'])
+    expect(getActions('names', 1)).toEqual(['note', 'locate'])
+    expect(getActions('text', 0)).toEqual(['note', 'locate'])
   })
 })
 
@@ -442,6 +442,7 @@ describe('a passage from something that is not a note', () => {
         path: 'library/mahabharata.epub',
         title: '',
         isNote: false,
+        selector: { cfi: 'epubcfi(/6/4!/4/2)' },
         start: 40_512,
         length: 31,
       }),
@@ -458,16 +459,14 @@ describe('a passage from something that is not a note', () => {
     expect(item.actions?.map((one) => one.text)).toEqual([WORDS.readDocument])
 
     // The document opens where the words stand in its own text.
-    expect(palette.chooseItem(item.id, 'document')).toEqual({
-      at: 'document',
+    expect(palette.chooseItem(item.id, 'note')).toEqual({
+      at: 'file',
       path: 'library/mahabharata.epub',
       title: '',
-      start: 40_512,
-      length: 31,
+      selector: { cfi: 'epubcfi(/6/4!/4/2)' },
     })
-    // It is no note, and neither is answered for.
-    expect(palette.chooseItem(item.id, 'note')).toBeNull()
-    expect(palette.chooseItem(item.id, 'travel')).toBeNull()
+    // It is no note, and cannot be located as one.
+    expect(palette.chooseItem(item.id, 'locate')).toBeNull()
   })
 })
 

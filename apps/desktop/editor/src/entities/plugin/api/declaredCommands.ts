@@ -3,8 +3,21 @@
  * plugins' backends run. The application checks a run against the declaration
  * before it reaches the plugin.
  */
-import { CommandErrorCode, type PluginCommand as WireCommand } from '@numen/protocol'
+import { COMMAND_ERROR_CODE } from '@numen/plugin-sdk'
 import { pluginCommands } from '@/shared/clients'
+
+interface WireCommand {
+  readonly pluginId: string
+  readonly id: string
+  readonly title: string
+  readonly contentTypes: readonly string[]
+  readonly extensions: readonly string[]
+  readonly arguments: readonly {
+    readonly name: string
+    readonly title: string
+    readonly isRequired: boolean
+  }[]
+}
 
 interface DeclaredArgument {
   readonly name: string
@@ -70,7 +83,7 @@ export async function runDeclaredCommand(
     path: command.contentTypes.length > 0 ? run.path : '',
     arguments: { ...run.values },
   })
-  if (answer.error === CommandErrorCode.UNSPECIFIED) {
+  if (answer.error === COMMAND_ERROR_CODE.UNSPECIFIED) {
     return { ok: true, value: { message: answer.message, openedPath: answer.openedPath } }
   }
   return { ok: false, error: answer.message }

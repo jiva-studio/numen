@@ -1,21 +1,32 @@
 /**
  * Session, lifecycle, and workspace domain methods for the window core.
  */
-import type { IndexCoverage, Scan } from '@numen/protocol'
 import { WINDOW } from './clients'
 import { agentService, vault, windowService, workspace } from '@/shared/clients'
 import { counted, flushResults } from './words'
 import type { VaultPort } from '@/app/ports/vault'
 
+interface ScanState {
+  readonly isReady: boolean
+  readonly error: string
+  readonly watchError: string
+}
+
+interface CoverageState {
+  readonly chunkCount: bigint
+  readonly embeddedCount: bigint
+  readonly isEmbedding: boolean
+}
+
 /** How far the scan of the vault has got. */
-const parseScan = (scan: Scan | undefined) => ({
+const parseScan = (scan: ScanState | undefined) => ({
   isReady: scan?.isReady ?? false,
   error: scan?.error ?? '',
   unwatchedPath: scan?.watchError ?? '',
 })
 
 /** How much of the vault the index holds. */
-const parseCoverage = (coverage: IndexCoverage | undefined) => ({
+const parseCoverage = (coverage: CoverageState | undefined) => ({
   chunkCount: coverage?.chunkCount ?? 0n,
   embeddedCount: coverage?.embeddedCount ?? 0n,
   isEmbedding: coverage?.isEmbedding ?? false,
