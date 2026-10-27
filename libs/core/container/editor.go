@@ -58,7 +58,7 @@ func (c Config) GetEditorAssembly(ctx context.Context) (EditorAssembly, error) {
 // NewEditorAssembly is that assembly over a list of vaults and a cache already
 // open, for a caller that opened them itself.
 func NewEditorAssembly(cfg Config, registry vaultport.VaultRegistry, db *Index) EditorAssembly {
-	return EditorAssembly{cfg: cfg, registry: registry, db: db, agent: cfg.AgentProvider()}
+	return EditorAssembly{cfg: cfg, registry: registry, db: db, agent: cfg.serveTools(cfg.AgentProvider())}
 }
 
 func (e EditorAssembly) GetPluginDir(id string) (string, bool) { return e.cfg.GetPluginDir(id) }

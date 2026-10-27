@@ -8,6 +8,7 @@ import (
 
 	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/agentbridge"
+	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/toolserver"
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 	"github.com/jiva-studio/numen/libs/core/port/completionport"
 	"github.com/jiva-studio/numen/libs/core/usecase/completion"
@@ -133,16 +134,17 @@ func (p *completionPrograms) StartRun(ctx context.Context, task agentport.Task) 
 
 // GetSettingsAgent runs a window's tasks on the programs the plugins run, under the settings read at
 // every task. A task naming no program goes to the one agent.use names, else to the default of the
-// plugins. It is nil where AgentProvider is.
+// plugins. Each run reaches the tools of the plugins on an endpoint of its own. It is nil where
+// AgentProvider is.
 func (c Config) GetSettingsAgent() agentport.Agent {
 	provider := c.AgentProvider()
 	if provider == nil {
 		return nil
 	}
-	return &settingsAgent{programs: &completionPrograms{
+	return c.serveTools(&settingsAgent{programs: &completionPrograms{
 		provider: provider,
 		getAgent: func() settings.Agent { return c.getSettingsOrDefaults().Agent },
-	}}
+	}})
 }
 
 // settingsAgent starts each task on the program the task or the settings name.
@@ -166,4 +168,13 @@ func (a *settingsAgent) StartRun(ctx context.Context, task agentport.Task) (agen
 // EndConversation says a conversation is over to every plugin it was asked in.
 func (a *settingsAgent) EndConversation(ctx context.Context, conversation string) error {
 	return a.programs.provider.EndConversation(ctx, conversation)
+}
+
+// serveTools gives each run of the agent an MCP endpoint of its own, serving the tools the plugins
+// with the tools capability offer on the full server. A nil agent stays nil.
+func (c Config) serveTools(agent agentport.Agent) agentport.Agent {
+	if agent == nil {
+		return nil
+	}
+	return toolserver.NewAgent(agent, c.PluginHost, toolserver.Full)
 }
