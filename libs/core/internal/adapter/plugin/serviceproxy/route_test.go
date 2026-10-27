@@ -4,18 +4,17 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
 
 // newRouteHost is a host running one plugin, org.example.reader, at the server given.
-func newRouteHost(t *testing.T, plugin *httptest.Server, origins ...string) *servingHost {
+func newRouteHost(t *testing.T, plugin *httptest.Server) *servingHost {
 	t.Helper()
 	return &servingHost{
 		endpoints: map[string]pluginport.Endpoint{"org.example.reader": endpointOf(t, plugin, "secret")},
-		manifests: map[string]pluginport.PluginManifest{"org.example.reader": {ID: "org.example.reader", Origins: origins}},
+		manifests: map[string]pluginport.PluginManifest{"org.example.reader": {ID: "org.example.reader"}},
 	}
 }
 
@@ -25,10 +24,11 @@ func TestServeRouteForwardsBelowThePluginRoute(t *testing.T) {
 		asked, auth, cookie = r.URL.RequestURI(), r.Header.Get("Authorization"), r.Header.Get("Cookie")
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Header().Set("Content-Security-Policy", "default-src *")
+		w.Header().Set("Set-Cookie", "plugin=1")
 		_, _ = io.WriteString(w, "page bytes")
 	}))
 	t.Cleanup(plugin.Close)
-	host := newRouteHost(t, plugin, "https://tiles.example.org")
+	host := newRouteHost(t, plugin)
 	req := httptest.NewRequest(http.MethodGet, "/plugin/org.example.reader/pages/2?path=Books%2Fa.pdf&wide=800", nil)
 	req.Header.Set("Cookie", "session=1")
 	recorded := httptest.NewRecorder()
@@ -41,9 +41,11 @@ func TestServeRouteForwardsBelowThePluginRoute(t *testing.T) {
 	if asked != "/plugin/pages/2?path=Books%2Fa.pdf&wide=800" || auth != "Bearer secret" || cookie != "" {
 		t.Errorf("the plugin was asked %q with %q and cookie %q", asked, auth, cookie)
 	}
-	policy := recorded.Header().Get("Content-Security-Policy")
-	if !strings.Contains(policy, "connect-src 'self' https://tiles.example.org;") || strings.Contains(policy, "default-src *") {
-		t.Errorf("the policy reads %q", policy)
+	if recorded.Header().Get("Set-Cookie") != "" {
+		t.Error("the plugin set a cookie")
+	}
+	if policy := recorded.Header().Get("Content-Security-Policy"); policy != "" {
+		t.Errorf("the plugin set the policy %q", policy)
 	}
 	if host.getReleased() != 1 {
 		t.Errorf("the plugin was released %d times", host.getReleased())
