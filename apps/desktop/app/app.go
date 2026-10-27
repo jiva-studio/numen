@@ -20,7 +20,6 @@ import (
 	"github.com/jiva-studio/numen/apps/desktop/internal/shutdown"
 	"github.com/jiva-studio/numen/apps/desktop/internal/themes"
 	"github.com/jiva-studio/numen/apps/desktop/internal/version"
-	"github.com/jiva-studio/numen/libs/core/adapter/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor"
 	"github.com/jiva-studio/numen/libs/core/container"
 	"github.com/jiva-studio/numen/libs/notes/domain"
@@ -130,12 +129,12 @@ type scaleSettings struct{ interfaceScale, textScale float64 }
 
 func (s scaleSettings) validate() error {
 	if s.interfaceScale > 0 {
-		if err := settings.InterfaceScaleBounds.Check("-interface-scale", s.interfaceScale); err != nil {
+		if err := container.CheckInterfaceScale("-interface-scale", s.interfaceScale); err != nil {
 			return err
 		}
 	}
 	if s.textScale > 0 {
-		return settings.TextScaleBounds.Check("-text-scale", s.textScale)
+		return container.CheckTextScale("-text-scale", s.textScale)
 	}
 	return nil
 }

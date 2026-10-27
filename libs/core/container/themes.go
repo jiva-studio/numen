@@ -30,6 +30,17 @@ func (c Config) Themes(say func(string)) (*theme.Service, error) {
 	}, err
 }
 
+// CheckInterfaceScale is an error naming the scale where the interface scale setting does not take
+// it.
+func CheckInterfaceScale(name string, scale float64) error {
+	return settings.InterfaceScaleBounds.Check(name, scale)
+}
+
+// CheckTextScale is an error naming the scale where the text scale setting does not take it.
+func CheckTextScale(name string, scale float64) error {
+	return settings.TextScaleBounds.Check(name, scale)
+}
+
 // appearances is the settings file as the themes reach it, with what the
 // command line said about size standing over what the file holds.
 type appearances struct {
