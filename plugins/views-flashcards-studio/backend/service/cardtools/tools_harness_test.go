@@ -105,7 +105,7 @@ func TestACallWorksTheVaultTheHostNames(t *testing.T) {
 	}
 	s := &session{registry: registry, vault: garden.ID}
 
-	if read := readCards(t, s, map[string]any{"path": "Animals.md"}); len(read.Cards) != 2 || read.Cards[0].Mark != llama {
+	if read := readCards(t, s, map[string]any{"path": "Animals.md"}); len(read.Cards) != 2 || read.Cards[0].CardID != llama {
 		t.Errorf("the call read %+v", read.Cards)
 	}
 
