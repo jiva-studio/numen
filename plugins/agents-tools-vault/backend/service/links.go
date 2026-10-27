@@ -33,7 +33,7 @@ func (t *Tools) addNoteNeighbourhood(registry *tools.Registry) error {
 		Name:        "note_neighbourhood",
 		Title:       "Note Neighbourhood",
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).listLinks))
 }
@@ -43,7 +43,7 @@ func (t *Tools) addLinkList(registry *tools.Registry) error {
 		Name:        "link_list",
 		Title:       "List Links",
 		Description: "List outgoing wikilinks and incoming backlinks connected to a note.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).listLinks))
 }

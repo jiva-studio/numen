@@ -25,7 +25,7 @@ func newRegistry(t *testing.T) *tools.Registry {
 	t.Helper()
 	registry := tools.New()
 	err := tools.Add(registry, tools.Spec{
-		Name: "greet", Title: "Greet", Description: "Greets.", Effect: tools.Reads,
+		Name: "greet", Title: "Greet", Description: "Greets.", Effect: tools.ReadOnly,
 		Servers: []tools.Server{tools.Full, tools.Reading}, Step: tools.Search,
 	}, func(_ context.Context, in greetIn) (greetOut, error) {
 		if in.Name == "" {
@@ -67,7 +67,7 @@ func TestAToolIsListedWithTheSchemasOfItsStructsAndWhereItIsOffered(t *testing.T
 	if len(tool.GetOutputSchema()) == 0 {
 		t.Error("the result is a struct and lists no schema")
 	}
-	if tool.GetEffect() != numenv1.ToolEffect_TOOL_EFFECT_READS || tool.GetStep() != numenv1.ToolStep_TOOL_STEP_SEARCH ||
+	if tool.GetEffect() != numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY || tool.GetStep() != numenv1.ToolStep_TOOL_STEP_SEARCH ||
 		len(tool.GetServers()) != 2 {
 		t.Errorf("the tool came out as %v", tool)
 	}
@@ -113,7 +113,7 @@ func TestANameNothingWasAddedBelowAndArgumentsThatAreNoObjectAreAnsweredWithAnEr
 
 func TestATextResultIsAnsweredAsText(t *testing.T) {
 	registry := tools.New()
-	if err := tools.Add(registry, tools.Spec{Name: "count", Effect: tools.Reads}, func(context.Context, struct{}) (int, error) {
+	if err := tools.Add(registry, tools.Spec{Name: "count", Effect: tools.ReadOnly}, func(context.Context, struct{}) (int, error) {
 		return 3, nil
 	}); err != nil {
 		t.Fatal(err)
@@ -129,7 +129,7 @@ func TestATextResultIsAnsweredAsText(t *testing.T) {
 func TestTwoToolsOfOneNameAreRefused(t *testing.T) {
 	registry := newRegistry(t)
 
-	err := tools.Add(registry, tools.Spec{Name: "greet", Effect: tools.Reads}, func(context.Context, greetIn) (greetOut, error) {
+	err := tools.Add(registry, tools.Spec{Name: "greet", Effect: tools.ReadOnly}, func(context.Context, greetIn) (greetOut, error) {
 		return greetOut{}, nil
 	})
 
@@ -144,8 +144,8 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 	type out struct {
 		Mark string `json:"mark"`
 	}
-	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.Reads}, func(ctx context.Context, _ in) (out, error) {
-		return out{Mark: tools.Asked(ctx)["org.example.sample/item"]}, nil
+	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.ReadOnly}, func(ctx context.Context, _ in) (out, error) {
+		return out{Mark: tools.GetCallContext(ctx)["org.example.sample/item"]}, nil
 	}); err != nil {
 		t.Fatal(err)
 	}
@@ -165,7 +165,7 @@ func TestACallKnowsTheVaultItWorks(t *testing.T) {
 	type out struct {
 		Vault string `json:"vault"`
 	}
-	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.Reads}, func(ctx context.Context, _ in) (out, error) {
+	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.ReadOnly}, func(ctx context.Context, _ in) (out, error) {
 		return out{Vault: tools.GetVault(ctx)}, nil
 	}); err != nil {
 		t.Fatal(err)

@@ -26,10 +26,10 @@ import (
 type Effect int
 
 const (
-	// Reads is a tool that reads and changes nothing. The plugin needs vault:read.
-	Reads Effect = iota + 1
-	// Writes is a tool that changes the vault. The plugin needs vault:write.
-	Writes
+	// ReadOnly is a tool that reads and changes nothing. The plugin needs vault:read.
+	ReadOnly Effect = iota + 1
+	// ReadWrite is a tool that changes the vault. The plugin needs vault:write.
+	ReadWrite
 )
 
 // Step is how a call of a tool is shown to a person.
@@ -178,20 +178,20 @@ func (r *Registry) CallTool(
 	if arguments := req.Msg.GetArguments(); len(arguments) > 0 && !isObject(arguments) {
 		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
 	}
-	ctx = context.WithValue(ctx, askedKey{}, req.Msg.GetContext())
+	ctx = context.WithValue(ctx, callContextKey{}, req.Msg.GetContext())
 	ctx = context.WithValue(ctx, vaultKey{}, req.Msg.GetVaultId())
 	return connect.NewResponse(&numenv1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
 }
 
-type askedKey struct{}
+type callContextKey struct{}
 
 type vaultKey struct{}
 
-// Asked is the context of the question the call was made under: what the asking view shows, under
-// keys that start with the id of the plugin that wrote them and a slash. It is empty for a question
-// asked with none. A tool reads it as data about the call, and it is no part of the arguments.
-func Asked(ctx context.Context) map[string]string {
-	request, _ := ctx.Value(askedKey{}).(map[string]string)
+// GetCallContext returns the context of the question the call was made under: what the asking view
+// shows, under keys that start with the id of the plugin that wrote them and a slash. It is empty for
+// a question asked with none. A tool reads it as data about the call, and it is no part of the arguments.
+func GetCallContext(ctx context.Context) map[string]string {
+	request, _ := ctx.Value(callContextKey{}).(map[string]string)
 	return request
 }
 
@@ -242,10 +242,10 @@ func writeResult(out any) *numenv1.ToolResult {
 
 func writeEffect(effect Effect) numenv1.ToolEffect {
 	switch effect {
-	case Reads:
-		return numenv1.ToolEffect_TOOL_EFFECT_READS
-	case Writes:
-		return numenv1.ToolEffect_TOOL_EFFECT_WRITES
+	case ReadOnly:
+		return numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY
+	case ReadWrite:
+		return numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE
 	}
 	return numenv1.ToolEffect_TOOL_EFFECT_UNSPECIFIED
 }

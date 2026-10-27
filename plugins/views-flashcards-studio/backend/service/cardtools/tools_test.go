@@ -1013,7 +1013,7 @@ func TestEachToolIsOfferedOnItsServersAndShownAsWhatItDoes(t *testing.T) {
 		step    v1.ToolStep
 		servers []v1.ToolServer
 	}
-	reads, writes := v1.ToolEffect_TOOL_EFFECT_READS, v1.ToolEffect_TOOL_EFFECT_WRITES
+	reads, writes := v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolEffect_TOOL_EFFECT_READ_WRITE
 	byEffect, remove, move := v1.ToolStep_TOOL_STEP_UNSPECIFIED, v1.ToolStep_TOOL_STEP_REMOVE, v1.ToolStep_TOOL_STEP_MOVE
 	want := map[string]placed{
 		"card_current":        {reads, byEffect, []v1.ToolServer{full, reading}},

@@ -30,7 +30,7 @@ func (t *Tools) addNoteRead(registry *tools.Registry) error {
 		Name:        "note_read",
 		Title:       "Read Note",
 		Description: "Read the content, body prose, title, and metadata of a note in the vault.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).readNote))
 }
@@ -92,7 +92,7 @@ func (t *Tools) addNoteWrite(registry *tools.Registry) error {
 		Name:        "note_write",
 		Title:       "Write Note",
 		Description: "Atomically write or create a note in the vault. If fingerprint is provided, verifies optimistic concurrency.",
-		Effect:      tools.Writes,
+		Effect:      tools.ReadWrite,
 		Servers:     []tools.Server{tools.Full},
 	}, inVault(t, (*Tools).writeNote))
 }
@@ -180,7 +180,7 @@ func (t *Tools) addNoteHeadings(registry *tools.Registry) error {
 		Name:        "note_headings",
 		Title:       "Extract Note Headings",
 		Description: "Extract the outline and headings from a note in the vault.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).getNoteHeadings))
 }

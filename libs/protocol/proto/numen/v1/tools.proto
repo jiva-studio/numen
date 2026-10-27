@@ -59,10 +59,10 @@ enum ToolEffect {
   TOOL_EFFECT_UNSPECIFIED = 0;
 
   // The tool reads and changes nothing. The plugin needs vault:read.
-  TOOL_EFFECT_READS = 1;
+  TOOL_EFFECT_READ_ONLY = 1;
 
   // The tool changes the vault. The plugin needs vault:write.
-  TOOL_EFFECT_WRITES = 2;
+  TOOL_EFFECT_READ_WRITE = 2;
 }
 
 // ToolStep is how a call is shown to a person: as what it does. The zero value

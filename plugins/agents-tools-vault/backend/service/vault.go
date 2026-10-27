@@ -23,7 +23,7 @@ func (t *Tools) addVaultInfo(registry *tools.Registry) error {
 		Name:        "vault_info",
 		Title:       "Vault Info",
 		Description: "Get metadata, name, root path, and note count for the vault.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).getVaultInfo))
 }
@@ -33,7 +33,7 @@ func (t *Tools) addVaultGet(registry *tools.Registry) error {
 		Name:        "vault_get",
 		Title:       "Get Vault Info",
 		Description: "Get metadata, name, root path, and note count for the vault.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).getVaultInfo))
 }

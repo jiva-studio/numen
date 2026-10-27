@@ -29,7 +29,7 @@ func (t *Tools) addFileRead(registry *tools.Registry) error {
 		Name:        "file_read",
 		Title:       "Read File",
 		Description: "Read raw content or a byte range of any file in the vault.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).readFile))
 }
@@ -86,7 +86,7 @@ func (t *Tools) addFileCreate(registry *tools.Registry) error {
 		Name:        "file_create",
 		Title:       "Create File",
 		Description: "Create a new raw file in the vault with the specified content.",
-		Effect:      tools.Writes,
+		Effect:      tools.ReadWrite,
 		Servers:     []tools.Server{tools.Full},
 	}, inVault(t, (*Tools).createFile))
 }

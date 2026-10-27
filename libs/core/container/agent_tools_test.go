@@ -277,11 +277,11 @@ func toolsAt(id string, permissions []string, tools *toolPlugin) testPlugin {
 func vaultAndCards(t *testing.T, agent *toolAgent) (*plugin.Host, *toolPlugin, *toolPlugin) {
 	t.Helper()
 	vault := &toolPlugin{tools: []*v1.PluginTool{
-		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READS, v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
-		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_WRITES),
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL, v1.ToolServer_TOOL_SERVER_READING),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
 	}}
 	cards := &toolPlugin{tools: []*v1.PluginTool{
-		newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READS, v1.ToolServer_TOOL_SERVER_FULL),
+		newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_FULL),
 	}}
 	host := hostOver(t,
 		agentAt(agent),
@@ -376,12 +376,12 @@ func TestASettingsAgentRunCallsTheToolsOfThePlugins(t *testing.T) {
 func TestOnlyTheToolsTheWindowAllowsAreServed(t *testing.T) {
 	agent := &toolAgent{}
 	reader := &toolPlugin{tools: []*v1.PluginTool{
-		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READS),
-		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_WRITES),
-		newPluginTool("note_quote", v1.ToolEffect_TOOL_EFFECT_READS, v1.ToolServer_TOOL_SERVER_READING),
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
+		newPluginTool("note_quote", v1.ToolEffect_TOOL_EFFECT_READ_ONLY, v1.ToolServer_TOOL_SERVER_READING),
 		newPluginTool("note_guess", v1.ToolEffect_TOOL_EFFECT_UNSPECIFIED),
 	}}
-	undeclared := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READS)}}
+	undeclared := &toolPlugin{tools: []*v1.PluginTool{newPluginTool("card_current", v1.ToolEffect_TOOL_EFFECT_READ_ONLY)}}
 	host := hostOver(t,
 		agentAt(agent),
 		toolsAt(vaultPlugin, []string{"vault:read"}, reader),
@@ -490,8 +490,8 @@ const mcpPlugin = "md.test.mcp"
 func TestAPluginListsAndCallsTheToolsOfTheOthersThroughTheHost(t *testing.T) {
 	agent := &toolAgent{}
 	vault := &toolPlugin{tools: []*v1.PluginTool{
-		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READS),
-		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_WRITES),
+		newPluginTool("note_read", v1.ToolEffect_TOOL_EFFECT_READ_ONLY),
+		newPluginTool("note_write", v1.ToolEffect_TOOL_EFFECT_READ_WRITE),
 	}}
 	host := hostOver(t,
 		agentAt(agent),

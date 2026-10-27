@@ -31,7 +31,7 @@ func (h *standInHost) ListTools(
 ) (*connect.Response[numenv1.ListToolsResponse], error) {
 	h.record(req.Header(), nil)
 	return connect.NewResponse(&numenv1.ListToolsResponse{Tools: []*numenv1.PluginTool{{
-		Name: "note_read", Title: "Read a note", Effect: numenv1.ToolEffect_TOOL_EFFECT_READS,
+		Name: "note_read", Title: "Read a note", Effect: numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
 		InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
 	}}}), nil
 }

@@ -105,7 +105,7 @@ func declareTool(spec *v1.PluginTool) *sdk.Tool {
 		Title:       spec.GetTitle(),
 		Description: spec.GetDescription(),
 		InputSchema: readInputSchema(spec.GetInputSchema()),
-		Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_READS},
+		Annotations: &sdk.ToolAnnotations{ReadOnlyHint: spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_READ_ONLY},
 	}
 	if output := spec.GetOutputSchema(); json.Valid(output) && isObject(output) {
 		declared.OutputSchema = json.RawMessage(output)

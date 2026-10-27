@@ -22,7 +22,7 @@ func (t *Tools) addCardDeckCreate(registry *tools.Registry) error {
 			"everything that reads the vault before a card is written into it. Make a " +
 			"deck here: a note made with `note_create` is an ordinary note, and " +
 			"`card_add` writes into a deck alone. The deck is named after its title.",
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
+		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 	}, func(ctx context.Context, in deckCreateInput) (cards.CreateNoteResult, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
@@ -51,7 +51,7 @@ func (t *Tools) addCardCardModelCreate(registry *tools.Registry) error {
 			"heading is its first line. The card model is filed under its title, and the " +
 			"name a card's wikilink writes is that filename, which `card_model_list` " +
 			"gives under `name`.",
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full},
+		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full},
 	}, func(ctx context.Context, in cardModelCreateInput) (cards.CreateNoteResult, error) {
 		v, err := t.getToolVault(ctx)
 		if err != nil {
@@ -90,7 +90,7 @@ func (t *Tools) addCardFieldRename(registry *tools.Registry) error {
 			"old heading. Every deck of the vault is read for this, so a vault holding " +
 			"more than " + fmt.Sprint(cards.MaxDecksPerRename) + " of them fails whole and the " +
 			"person renames the field in the window.",
-		Effect: tools.Writes, Servers: []tools.Server{tools.Full}, Step: tools.Move,
+		Effect: tools.ReadWrite, Servers: []tools.Server{tools.Full}, Step: tools.Move,
 	}, t.renameCardField)
 }
 

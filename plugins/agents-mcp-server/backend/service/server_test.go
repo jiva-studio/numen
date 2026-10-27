@@ -27,7 +27,7 @@ func TestServerLifecycleAndToolCall(t *testing.T) {
 				Title:       "Get Note",
 				Description: "Gets a note by path",
 				InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READS,
+				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
 			},
 		},
 		callResp: &numenv1.CallToolResponse{

@@ -28,22 +28,22 @@ type ToolEffect int32
 const (
 	ToolEffect_TOOL_EFFECT_UNSPECIFIED ToolEffect = 0
 	// The tool reads and changes nothing. The plugin needs vault:read.
-	ToolEffect_TOOL_EFFECT_READS ToolEffect = 1
+	ToolEffect_TOOL_EFFECT_READ_ONLY ToolEffect = 1
 	// The tool changes the vault. The plugin needs vault:write.
-	ToolEffect_TOOL_EFFECT_WRITES ToolEffect = 2
+	ToolEffect_TOOL_EFFECT_READ_WRITE ToolEffect = 2
 )
 
 // Enum value maps for ToolEffect.
 var (
 	ToolEffect_name = map[int32]string{
 		0: "TOOL_EFFECT_UNSPECIFIED",
-		1: "TOOL_EFFECT_READS",
-		2: "TOOL_EFFECT_WRITES",
+		1: "TOOL_EFFECT_READ_ONLY",
+		2: "TOOL_EFFECT_READ_WRITE",
 	}
 	ToolEffect_value = map[string]int32{
 		"TOOL_EFFECT_UNSPECIFIED": 0,
-		"TOOL_EFFECT_READS":       1,
-		"TOOL_EFFECT_WRITES":      2,
+		"TOOL_EFFECT_READ_ONLY":   1,
+		"TOOL_EFFECT_READ_WRITE":  2,
 	}
 )
 
@@ -660,12 +660,12 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"structured\x18\x02 \x01(\fR\n" +
 	"structured\x12\x1d\n" +
 	"\n" +
-	"is_refusal\x18\x03 \x01(\bR\tisRefusal*X\n" +
+	"is_refusal\x18\x03 \x01(\bR\tisRefusal*`\n" +
 	"\n" +
 	"ToolEffect\x12\x1b\n" +
-	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x15\n" +
-	"\x11TOOL_EFFECT_READS\x10\x01\x12\x16\n" +
-	"\x12TOOL_EFFECT_WRITES\x10\x02*e\n" +
+	"\x17TOOL_EFFECT_UNSPECIFIED\x10\x00\x12\x19\n" +
+	"\x15TOOL_EFFECT_READ_ONLY\x10\x01\x12\x1a\n" +
+	"\x16TOOL_EFFECT_READ_WRITE\x10\x02*e\n" +
 	"\bToolStep\x12\x19\n" +
 	"\x15TOOL_STEP_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10TOOL_STEP_SEARCH\x10\x01\x12\x14\n" +

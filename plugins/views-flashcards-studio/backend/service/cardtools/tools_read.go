@@ -25,9 +25,9 @@ func (t *Tools) addCardCurrent(registry *tools.Registry) error {
 			"card and moves to the next while you work — and read the card itself with " +
 			"`card_read`. Nothing is in front of them between cards, and the deck comes " +
 			"back empty.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, func(ctx context.Context, _ struct{}) (CurrentCard, error) {
-		request := tools.Asked(ctx)
+		request := tools.GetCallContext(ctx)
 		return CurrentCard{Deck: request[askedDeck], Card: request[askedCard], Template: request[askedTemplate]}, nil
 	})
 }
@@ -51,7 +51,7 @@ func (t *Tools) addCardCardModelList(registry *tools.Registry) error {
 			"for the fields that card model declares. At most 50 come back, and `total` says " +
 			"how many the vault holds, so a list shorter than that was cut by the " +
 			"ceiling. A card model with no fields listed is one that could not be read.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.listCardCardModels)
 }
 
@@ -99,7 +99,7 @@ func (t *Tools) addCardCardModelRead(registry *tools.Registry) error {
 		Description: "The fields and templates of one card model: what it is called, the " +
 			"fields a card cut by it is asked for, and the ways a card is shown through " +
 			"it. Hand the fingerprint back to `card_model_edit` to edit the card model in place.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.readCardCardModel)
 }
 
@@ -167,7 +167,7 @@ func (t *Tools) addCardRead(registry *tools.Registry) error {
 			"on the card it is against. The fingerprint is what the writing tools want: " +
 			"hand it back and a write fails if the person changed the deck in the " +
 			"meantime.",
-		Effect: tools.Reads, Servers: []tools.Server{tools.Full, tools.Reading},
+		Effect: tools.ReadOnly, Servers: []tools.Server{tools.Full, tools.Reading},
 	}, t.readCards)
 }
 

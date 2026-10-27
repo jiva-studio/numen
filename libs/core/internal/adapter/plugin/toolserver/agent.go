@@ -89,7 +89,7 @@ func getStepKind(spec *v1.PluginTool) domain.StepKind {
 		return domain.StepMove
 	case v1.ToolStep_TOOL_STEP_UNSPECIFIED:
 	}
-	if spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_WRITES {
+	if spec.GetEffect() == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
 		return domain.StepEdit
 	}
 	return domain.StepRead

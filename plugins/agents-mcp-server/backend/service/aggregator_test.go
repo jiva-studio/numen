@@ -58,14 +58,14 @@ func TestToolAggregatorSyncTools(t *testing.T) {
 				Title:       "Read Note",
 				Description: "Reads note contents",
 				InputSchema: []byte(`{"type":"object","properties":{"path":{"type":"string"}}}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READS,
+				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
 			},
 			{
 				Name:        "note_write",
 				Title:       "Write Note",
 				Description: "Writes note contents",
 				InputSchema: []byte(`{"type":"object"}`),
-				Effect:      numenv1.ToolEffect_TOOL_EFFECT_WRITES,
+				Effect:      numenv1.ToolEffect_TOOL_EFFECT_READ_WRITE,
 			},
 		},
 	}

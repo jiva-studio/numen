@@ -77,7 +77,7 @@ func (a *ToolAggregator) SyncTools(ctx context.Context) error {
 			Description: wireTool.GetDescription(),
 			InputSchema: sanitizeInputSchema(wireTool.GetInputSchema()),
 			Annotations: &sdk.ToolAnnotations{
-				ReadOnlyHint: wireTool.GetEffect() == numenv1.ToolEffect_TOOL_EFFECT_READS,
+				ReadOnlyHint: wireTool.GetEffect() == numenv1.ToolEffect_TOOL_EFFECT_READ_ONLY,
 			},
 		}
 		if len(wireTool.GetOutputSchema()) > 0 {

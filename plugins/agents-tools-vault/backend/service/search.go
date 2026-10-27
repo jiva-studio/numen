@@ -38,7 +38,7 @@ func (t *Tools) addNoteSearch(registry *tools.Registry) error {
 		Name:        "note_search",
 		Title:       "Search Notes",
 		Description: "Search notes across the vault by title, path, and text content.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Step:        tools.Search,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).searchNotes))
@@ -49,7 +49,7 @@ func (t *Tools) addSearchQuery(registry *tools.Registry) error {
 		Name:        "search_query",
 		Title:       "Search Query",
 		Description: "Search notes across the vault by title, path, and text content.",
-		Effect:      tools.Reads,
+		Effect:      tools.ReadOnly,
 		Step:        tools.Search,
 		Servers:     []tools.Server{tools.Full, tools.Reading},
 	}, inVault(t, (*Tools).searchNotes))

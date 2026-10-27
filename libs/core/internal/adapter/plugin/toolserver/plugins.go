@@ -120,7 +120,7 @@ func isOffered(spec *v1.PluginTool, server Server) bool {
 
 // hasPermission says whether the plugin holds the permission a tool of the effect needs.
 func hasPermission(permissions []string, effect v1.ToolEffect) bool {
-	if effect == v1.ToolEffect_TOOL_EFFECT_WRITES {
+	if effect == v1.ToolEffect_TOOL_EFFECT_READ_WRITE {
 		return slices.Contains(permissions, pluginport.PermissionVaultWrite)
 	}
 	return slices.Contains(permissions, pluginport.PermissionVaultRead) ||

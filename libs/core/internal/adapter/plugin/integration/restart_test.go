@@ -187,6 +187,6 @@ func (r restartedTools) ListTools(
 ) (*connect.Response[v1.ListToolsResponse], error) {
 	r.plugin.requested.Add(1)
 	return connect.NewResponse(&v1.ListToolsResponse{Tools: []*v1.PluginTool{{
-		Name: "stub_read", InputSchema: []byte("{}"), Effect: v1.ToolEffect_TOOL_EFFECT_READS,
+		Name: "stub_read", InputSchema: []byte("{}"), Effect: v1.ToolEffect_TOOL_EFFECT_READ_ONLY,
 	}}}), nil
 }
