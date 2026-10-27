@@ -6,7 +6,7 @@
  * true of it alone.
  */
 import { percent } from '@numen/ui'
-import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
+import type { StepGroup, StepRow } from '@/shared/steps'
 import { MODES, ladder, parseSize, isInBounds } from '@/entities/settings'
 import type { Mode, Ranges, Sizes, Theme } from '@/entities/settings'
 import type { AppearanceWords } from '../words'

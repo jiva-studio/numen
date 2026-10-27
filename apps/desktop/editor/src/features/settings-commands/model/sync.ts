@@ -7,7 +7,7 @@
  * rename after the choice is the first one it answers.
  */
 import { ref } from 'vue'
-import type { StepGroup } from '@/features/command-palette/@x/settings-commands'
+import type { StepGroup } from '@/shared/steps'
 import type { MessageWriter } from '@/shared/notices/messages'
 import type { SyncWords } from '../words'
 import { createWriteGuard } from '../lib/writeGuard'

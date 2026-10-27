@@ -11,7 +11,10 @@ import type { Source } from '@/entities/file'
 import type { EditorKind, FilePlacement } from '@/entities/tab'
 import type { VaultList } from '@/entities/vault'
 import type { NameMatch } from './model/search/search'
+import type { StepGroup } from '@/shared/steps'
 import type { ConfirmWords, RetypeWords } from './words'
+
+export type { StepGroup, StepRow } from '@/shared/steps'
 
 /** What the commands ask of the application before anything is chosen. */
 export interface CommandsDeps {
@@ -145,27 +148,6 @@ export interface CommandInvocation {
   readonly tab: string
   /** What the `arguments` steps were answered, by the name of each prompt. */
   readonly values?: Readonly<Record<string, string>>
-}
-
-/** One of a list the window itself holds, as the step that offers it draws it. */
-export interface StepRow {
-  readonly id: string
-  readonly title: string
-  /** A second line: what is true of this row and not of the ones beside it. */
-  readonly detail?: string
-  /** Drawn, said, and not chosen. */
-  readonly isDisabled?: boolean
-  /** The value the setting this list is of holds now, which is where it opens. */
-  readonly isCurrent?: boolean
-}
-
-/** One group of such a list, named by whatever holds it. */
-export interface StepGroup {
-  readonly id: string
-  readonly title: string
-  readonly items: readonly StepRow[]
-  /** What is said in its place where it holds nothing. */
-  readonly silence?: string
 }
 
 /**

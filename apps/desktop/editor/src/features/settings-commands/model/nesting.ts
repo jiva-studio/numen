@@ -6,7 +6,7 @@
  * holds, choosing another writes it, and the plex reads both as it draws.
  */
 import { ref } from 'vue'
-import type { StepGroup, StepRow } from '@/features/command-palette/@x/settings-commands'
+import type { StepGroup, StepRow } from '@/shared/steps'
 import type { MessageWriter } from '@/shared/notices/messages'
 import { DEFAULT_HEADINGS, nestingLadder as ladder } from '@/entities/settings'
 import type { NestingSettings } from '@/entities/settings'
