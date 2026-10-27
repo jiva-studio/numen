@@ -1006,6 +1006,7 @@ func (p *testInterceptingPlugins) ServeHTTP(w http.ResponseWriter, r *http.Reque
 
 func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	state := &State{Window: &wire.Window{Named: wire.Editor, Tasking: run.NewTasks()}}
+	state.setVault(domain.Vault{ID: "v-garden", Path: "/vaults/Garden"})
 	services := createServices(state)
 	agent := &testAgentProvider{tasks: make(chan agentport.Task, 1)}
 	services.Agent.GetAgent = func() agentport.Agent { return agent }
@@ -1041,7 +1042,7 @@ func TestAskAgentRoutesToAgentAndBypassesPluginServices(t *testing.T) {
 	}
 	select {
 	case task := <-agent.tasks:
-		if task.Agent != "claude" || task.Question != "test question" {
+		if task.Agent != "claude" || task.Question != "test question" || task.Vault != "v-garden" || task.Root != "/vaults/Garden" {
 			t.Errorf("unexpected task: %+v", task)
 		}
 	default:

@@ -150,7 +150,10 @@ type AskAgentRequest struct {
 	ToolsToken string `protobuf:"bytes,16,opt,name=tools_token,json=toolsToken,proto3" json:"tools_token,omitempty"`
 	// The depth of reasoning the model works at, by the name of one of the levels the model offers.
 	// Empty leaves the depth to the program.
-	Reasoning     string `protobuf:"bytes,17,opt,name=reasoning,proto3" json:"reasoning,omitempty"`
+	Reasoning string `protobuf:"bytes,17,opt,name=reasoning,proto3" json:"reasoning,omitempty"`
+	// The vault the run works, by identity. Every tool the agent calls is given it as
+	// CallToolRequest.vault_id. Empty is the vault the window shows.
+	VaultId       string `protobuf:"bytes,18,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -293,6 +296,13 @@ func (x *AskAgentRequest) GetToolsToken() string {
 func (x *AskAgentRequest) GetReasoning() string {
 	if x != nil {
 		return x.Reasoning
+	}
+	return ""
+}
+
+func (x *AskAgentRequest) GetVaultId() string {
+	if x != nil {
+		return x.VaultId
 	}
 	return ""
 }
@@ -1550,7 +1560,7 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\x14numen/v1/agent.proto\x12\bnumen.v1\x1a\x15numen/v1/shared.proto\"\x16\n" +
 	"\x14GetAgentStateRequest\"9\n" +
 	"\x15GetAgentStateResponse\x12 \n" +
-	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xba\x05\n" +
+	"\vunreachable\x18\x01 \x01(\tR\vunreachable\"\xd5\x05\n" +
 	"\x0fAskAgentRequest\x12\x16\n" +
 	"\x06prompt\x18\x01 \x01(\tR\x06prompt\x12\x14\n" +
 	"\x05focus\x18\x02 \x01(\tR\x05focus\x12\"\n" +
@@ -1569,7 +1579,8 @@ const file_numen_v1_agent_proto_rawDesc = "" +
 	"\ttools_url\x18\x0f \x01(\tR\btoolsUrl\x12\x1f\n" +
 	"\vtools_token\x18\x10 \x01(\tR\n" +
 	"toolsToken\x12\x1c\n" +
-	"\treasoning\x18\x11 \x01(\tR\treasoning\x1a:\n" +
+	"\treasoning\x18\x11 \x01(\tR\treasoning\x12\x19\n" +
+	"\bvault_id\x18\x12 \x01(\tR\avaultId\x1a:\n" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\x1a:\n" +

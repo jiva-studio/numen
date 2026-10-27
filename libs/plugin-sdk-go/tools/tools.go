@@ -179,10 +179,13 @@ func (r *Registry) CallTool(
 		return connect.NewResponse(&numenv1.CallToolResponse{Error: numenv1.ToolErrorCode_TOOL_ERROR_CODE_BAD_ARGUMENTS}), nil
 	}
 	ctx = context.WithValue(ctx, askedKey{}, req.Msg.GetContext())
+	ctx = context.WithValue(ctx, vaultKey{}, req.Msg.GetVaultId())
 	return connect.NewResponse(&numenv1.CallToolResponse{Result: one.run(ctx, req.Msg.GetArguments())}), nil
 }
 
 type askedKey struct{}
+
+type vaultKey struct{}
 
 // Asked is the context of the question the call was made under: what the asking view shows, under
 // keys that start with the id of the plugin that wrote them and a slash. It is empty for a question
@@ -190,6 +193,13 @@ type askedKey struct{}
 func Asked(ctx context.Context) map[string]string {
 	request, _ := ctx.Value(askedKey{}).(map[string]string)
 	return request
+}
+
+// GetVault is the identity of the vault the call works: the one the agent run was started on, or for
+// a call from a program outside Numen the one the host shows. It is empty where there is none.
+func GetVault(ctx context.Context) string {
+	vault, _ := ctx.Value(vaultKey{}).(string)
+	return vault
 }
 
 func isObject(raw []byte) bool {

@@ -76,6 +76,7 @@ func newAskRequest(task agentport.Task) *v1.AskAgentRequest {
 		ToolsUrl:         task.Endpoint.URL,
 		ToolsToken:       task.Endpoint.Token,
 		Context:          task.Context,
+		VaultId:          string(task.Vault),
 	}
 }
 

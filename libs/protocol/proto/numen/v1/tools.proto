@@ -105,8 +105,14 @@ message CallToolRequest {
   // The context of the AskAgentRequest the call was made under: what the asking
   // view shows, under keys that start with the id of the plugin that wrote them
   // and a slash. It is data about the call and no part of the arguments, and it
-  // is empty for a question asked with none.
+  // is empty for a question asked with none, and for a call from a program
+  // outside Numen.
   map<string, string> context = 3;
+
+  // The vault the call works, by identity: the one the agent run was started
+  // on, or for a call from a program outside Numen the one the host shows.
+  // Empty where there is none.
+  string vault_id = 4;
 }
 
 message CallToolResponse {

@@ -39,12 +39,12 @@ type endpoint struct {
 
 // toolCaller runs a tool on the plugin that listed it.
 type toolCaller interface {
-	callTool(ctx context.Context, one tool, arguments []byte, callContext map[string]string) (*v1.CallToolResponse, error)
+	callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (*v1.CallToolResponse, error)
 }
 
 // serveEndpoint serves the tools on a loopback port the machine picks, under a new token. Every call
-// is made with the context given, whatever `_meta` the agent sends.
-func serveEndpoint(tools []tool, callContext map[string]string, caller toolCaller) (*endpoint, error) {
+// is made in the scope given, whatever `_meta` the agent sends.
+func serveEndpoint(tools []tool, scope callScope, caller toolCaller) (*endpoint, error) {
 	token, err := createToken()
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func serveEndpoint(tools []tool, callContext map[string]string, caller toolCalle
 			if req.Params != nil {
 				arguments = req.Params.Arguments
 			}
-			res, err := caller.callTool(ctx, one, arguments, callContext)
+			res, err := caller.callTool(ctx, one, arguments, scope)
 			if err != nil {
 				return newErrorResult(err.Error()), nil
 			}

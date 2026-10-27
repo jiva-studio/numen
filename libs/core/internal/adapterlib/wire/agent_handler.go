@@ -9,6 +9,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/port/agentport"
 )
 
@@ -24,6 +26,8 @@ type AgentHandler struct {
 	GetAgent func() agentport.Agent
 	// GetRoot is the folder a task naming none is started in. Nil leaves it empty.
 	GetRoot func() string
+	// GetVault is the vault a task naming none works. Nil leaves it empty.
+	GetVault func() domain.VaultID
 	// GetUnreachable is why no agent can be reached, empty while one can. Nil is always empty.
 	GetUnreachable func() string
 }
@@ -63,6 +67,10 @@ func (h *AgentHandler) AskAgent(
 	if root == "" && h.GetRoot != nil {
 		root = h.GetRoot()
 	}
+	vault := domain.VaultID(r.Msg.GetVaultId())
+	if vault == "" && h.GetVault != nil {
+		vault = h.GetVault()
+	}
 
 	task := agentport.Task{
 		Question:     r.Msg.GetPrompt(),
@@ -73,6 +81,7 @@ func (h *AgentHandler) AskAgent(
 		Reasoning:    r.Msg.GetReasoning(),
 		Context:      r.Msg.GetContext(),
 		Root:         root,
+		Vault:        vault,
 	}
 	return StreamAgentTask(ctx, taking, task, stream)
 }

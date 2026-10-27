@@ -34,6 +34,9 @@ export interface AgentQuery {
   // What the asking view shows, handed to every tool the agent calls. Each key starts with the id of
   // the plugin that wrote it and a slash: "md.numen.views.flashcards.studio/card".
   readonly context?: Readonly<Record<string, string>> | undefined
+  // The vault the question is about, by identity, which every tool the agent calls works. Empty is
+  // the vault the window shows.
+  readonly vault?: string | undefined
 }
 
 // ReasoningLevel is one depth of reasoning a model can be asked to work at.

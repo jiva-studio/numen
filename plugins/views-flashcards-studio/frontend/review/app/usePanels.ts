@@ -56,7 +56,7 @@ export const usePanels = (deps: PanelsDeps) => {
   }
 
   const agentPanel = useAgentPanel({
-    agent: (card) => createCardAgentPort(deps.agent, card),
+    agent: (card) => createCardAgentPort(deps.agent, card, deps.vault()),
     card: deps.card,
     unreachable: deps.unreachable,
     open: () => showing.value === 'asking',

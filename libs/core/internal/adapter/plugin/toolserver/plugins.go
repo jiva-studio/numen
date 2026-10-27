@@ -10,6 +10,8 @@ import (
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 )
@@ -27,6 +29,13 @@ type Server v1.ToolServer
 // Full is the set an agent works the whole vault through.
 const Full = Server(v1.ToolServer_TOOL_SERVER_FULL)
 
+// callScope is what every call of a run is made with: the context of the question and the vault
+// the run works.
+type callScope struct {
+	context map[string]string
+	vault   domain.VaultID
+}
+
 // tool is one tool a plugin lists, with the plugin that runs it.
 type tool struct {
 	pluginID string
@@ -39,13 +48,13 @@ type plugins struct {
 }
 
 // listTools lists the tools offered on the server by the plugins that declare the tools capability,
-// in the order of the plugin ids. A tool whose effect needs a permission its plugin lacks is left
-// out, and of two tools with one name the first is kept.
-func (p plugins) listTools(ctx context.Context, server Server) []tool {
+// in the order of the plugin ids, leaving out the plugin of the id given. A tool whose effect needs a
+// permission its plugin lacks is left out, and of two tools with one name the first is kept.
+func (p plugins) listTools(ctx context.Context, server Server, except string) []tool {
 	var found []tool
 	names := map[string]bool{}
 	for _, info := range p.host.GetPluginInfos() {
-		if !slices.Contains(info.Capabilities, bridge.CapabilityTools) {
+		if info.ID == except || !slices.Contains(info.Capabilities, bridge.CapabilityTools) {
 			continue
 		}
 		listed, err := p.listPluginTools(ctx, info.ID)
@@ -80,10 +89,8 @@ func (p plugins) listPluginTools(ctx context.Context, pluginID string) ([]*v1.Pl
 	return res.Msg.GetTools(), nil
 }
 
-// callTool runs the tool on the plugin that listed it, with the context of the run.
-func (p plugins) callTool(
-	ctx context.Context, one tool, arguments []byte, callContext map[string]string,
-) (*v1.CallToolResponse, error) {
+// callTool runs the tool on the plugin that listed it, in the scope of the run.
+func (p plugins) callTool(ctx context.Context, one tool, arguments []byte, scope callScope) (*v1.CallToolResponse, error) {
 	client, lease, err := bridge.Open(ctx, p.host, one.pluginID, numenv1connect.NewPluginToolServiceClient)
 	if err != nil {
 		return nil, err
@@ -91,7 +98,7 @@ func (p plugins) callTool(
 	defer func() { _ = lease.Close() }()
 
 	res, err := client.CallTool(ctx, connect.NewRequest(&v1.CallToolRequest{
-		Name: one.spec.GetName(), Arguments: arguments, Context: callContext,
+		Name: one.spec.GetName(), Arguments: arguments, Context: scope.context, VaultId: string(scope.vault),
 	}))
 	if err != nil {
 		return nil, fmt.Errorf("call %s on %s: %w", one.spec.GetName(), one.pluginID, err)

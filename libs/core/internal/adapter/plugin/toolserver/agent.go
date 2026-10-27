@@ -34,14 +34,14 @@ func NewAgent(agent agentport.Agent, host Host, server Server) *Agent {
 // and their declarations. A run with no tool to call is started with no endpoint.
 func (a *Agent) StartRun(ctx context.Context, task agentport.Task) (agentport.Run, error) {
 	listing, cancel := context.WithTimeout(ctx, listLimit)
-	available := a.plugins.listTools(listing, a.server)
+	available := a.plugins.listTools(listing, a.server, "")
 	cancel()
 	if len(available) == 0 {
 		task.Tools, task.ToolDeclarations, task.Endpoint = nil, nil, agentport.ToolEndpoint{}
 		return a.agent.StartRun(ctx, task)
 	}
 
-	served, err := serveEndpoint(available, maps.Clone(task.Context), a.plugins)
+	served, err := serveEndpoint(available, callScope{context: maps.Clone(task.Context), vault: task.Vault}, a.plugins)
 	if err != nil {
 		return nil, err
 	}

@@ -11,12 +11,11 @@ import (
 	"github.com/jiva-studio/numen/plugins/views-flashcards-studio/backend/cards/deckedit"
 )
 
-var errNoVault = errors.New("no vault is open")
+var errNoVault = errors.New("the call names no vault")
 
 // The keys of what the host tells a tool about the window the agent was started from. The review
-// writes the card keys, under this plugin's id, as the context of the question.
+// writes them, under this plugin's id, as the context of the question.
 const (
-	askedVault    = "vault"
 	askedDeck     = "md.numen.views.flashcards.studio/deck"
 	askedCard     = "md.numen.views.flashcards.studio/card"
 	askedTemplate = "md.numen.views.flashcards.studio/template"
@@ -61,19 +60,15 @@ func (t *Tools) Registry() (*tools.Registry, error) {
 	return registry, nil
 }
 
-// getToolVault is the vault a tool works: the one the host says the agent works, else the one the
-// window shows.
+// getToolVault is the vault the call works, as the host names it.
 func (t *Tools) getToolVault(ctx context.Context) (domain.Vault, error) {
-	if id := tools.Asked(ctx)[askedVault]; id != "" {
-		v, err := t.vault.With(domain.VaultID(id)).GetVault(ctx)
-		if errors.Is(err, host.ErrUnknownVault) {
-			return domain.Vault{}, errors.New("the vault the agent works is not one this installation knows")
-		}
-		return v, err
-	}
-	v, err := t.vault.GetVault(ctx)
-	if errors.Is(err, host.ErrNoVault) {
+	id := tools.GetVault(ctx)
+	if id == "" {
 		return domain.Vault{}, errNoVault
+	}
+	v, err := t.vault.With(domain.VaultID(id)).GetVault(ctx)
+	if errors.Is(err, host.ErrUnknownVault) {
+		return domain.Vault{}, errors.New("the vault the agent works is not one this installation knows")
 	}
 	return v, err
 }

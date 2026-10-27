@@ -40,8 +40,8 @@ type answeringRun struct{ steps chan agentport.Step }
 func (r answeringRun) GetSteps() <-chan agentport.Step { return r.steps }
 func (answeringRun) Stop() error                       { return nil }
 
-// The window answers AgentService with its own agent even where a plugin serves the service, and
-// ends the conversation there.
+// The window answers AgentService with its own agent even where a plugin serves the service, runs
+// the task in the vault the question names, and ends the conversation there.
 func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 	agent := &answering{tasks: make(chan agentport.Task, 1), ended: make(chan string, 1)}
 	api := newAPI(t)
@@ -62,7 +62,7 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 
 	stream, err := client.AskAgent(t.Context(), connect.NewRequest(&v1.AskAgentRequest{
 		Prompt: "Where does it live?", Focus: "samples/animals.md", Conversation: "c-1",
-		Context: map[string]string{"org.example.sample/item": "k7"},
+		Context: map[string]string{"org.example.sample/item": "k7"}, VaultId: "v-3",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -78,7 +78,8 @@ func TestTheWindowAnswersTheAgentWithItsOwn(t *testing.T) {
 		t.Errorf("the agent said %q", text)
 	}
 	if task := <-agent.tasks; task.Question != "Where does it live?" || task.Focus != "samples/animals.md" ||
-		task.Conversation != "c-1" || task.Agent != "" || task.Context["org.example.sample/item"] != "k7" {
+		task.Conversation != "c-1" || task.Agent != "" || task.Context["org.example.sample/item"] != "k7" ||
+		task.Vault != "v-3" {
 		t.Errorf("the agent was given %+v", task)
 	}
 

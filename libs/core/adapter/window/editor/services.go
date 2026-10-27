@@ -3,6 +3,8 @@ package editor
 import (
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
 
+	"github.com/jiva-studio/numen/libs/notes/domain"
+
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/note"
 	"github.com/jiva-studio/numen/libs/core/usecase/plugincommand"
@@ -149,10 +151,11 @@ func (s *Services) GetPickFolder() *vaults.PickFolder {
 }
 
 // newAgentHandler answers for the agent the panel's tasks go to. A task naming no folder is started
-// in the vault open in the window.
+// in the vault open in the window, and works it.
 func newAgentHandler(state *State) *wire.AgentHandler {
 	return &wire.AgentHandler{
 		GetRoot:        func() string { return state.GetCurrentVault().Path },
+		GetVault:       func() domain.VaultID { return state.GetCurrentVault().ID },
 		GetUnreachable: state.Unreachable.Why,
 	}
 }

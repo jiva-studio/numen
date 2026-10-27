@@ -436,8 +436,13 @@ type CallToolRequest struct {
 	// The context of the AskAgentRequest the call was made under: what the asking
 	// view shows, under keys that start with the id of the plugin that wrote them
 	// and a slash. It is data about the call and no part of the arguments, and it
-	// is empty for a question asked with none.
-	Context       map[string]string `protobuf:"bytes,3,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// is empty for a question asked with none, and for a call from a program
+	// outside Numen.
+	Context map[string]string `protobuf:"bytes,3,rep,name=context,proto3" json:"context,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// The vault the call works, by identity: the one the agent run was started
+	// on, or for a call from a program outside Numen the one the host shows.
+	// Empty where there is none.
+	VaultId       string `protobuf:"bytes,4,opt,name=vault_id,json=vaultId,proto3" json:"vault_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -491,6 +496,13 @@ func (x *CallToolRequest) GetContext() map[string]string {
 		return x.Context
 	}
 	return nil
+}
+
+func (x *CallToolRequest) GetVaultId() string {
+	if x != nil {
+		return x.VaultId
+	}
+	return ""
 }
 
 type CallToolResponse struct {
@@ -629,11 +641,12 @@ const file_numen_v1_tools_proto_rawDesc = "" +
 	"\routput_schema\x18\x05 \x01(\fR\foutputSchema\x12,\n" +
 	"\x06effect\x18\x06 \x01(\x0e2\x14.numen.v1.ToolEffectR\x06effect\x12.\n" +
 	"\aservers\x18\a \x03(\x0e2\x14.numen.v1.ToolServerR\aservers\x12&\n" +
-	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xc1\x01\n" +
+	"\x04step\x18\b \x01(\x0e2\x12.numen.v1.ToolStepR\x04step\"\xdc\x01\n" +
 	"\x0fCallToolRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x1c\n" +
 	"\targuments\x18\x02 \x01(\fR\targuments\x12@\n" +
-	"\acontext\x18\x03 \x03(\v2&.numen.v1.CallToolRequest.ContextEntryR\acontext\x1a:\n" +
+	"\acontext\x18\x03 \x03(\v2&.numen.v1.CallToolRequest.ContextEntryR\acontext\x12\x19\n" +
+	"\bvault_id\x18\x04 \x01(\tR\avaultId\x1a:\n" +
 	"\fContextEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"o\n" +

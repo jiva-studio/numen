@@ -60,6 +60,8 @@ type Task struct {
 	// Context is what the asking view shows, which every tool the agent calls is given. Each key
 	// starts with the id of the plugin that wrote it and a slash.
 	Context map[string]string
+	// Vault is the vault the run works, which every tool the agent calls is given. Empty is none.
+	Vault domain.VaultID
 	// written.
 	ToolDeclarations []ToolDeclaration
 }

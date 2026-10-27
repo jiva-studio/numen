@@ -15,17 +15,23 @@ export const CARD_CONTEXT = {
 } as const
 
 /**
- * The agent a conversation about one card is held with.
+ * The agent a conversation about one card of a vault is held with.
  *
  * Which card that is travels in the context of the question and never inside
  * it. A deck in a synced vault is named by whoever synced it, and a name in the
  * question is read as instruction; `card_current` gives the agent the same name
- * as a tool's answer, which is data.
+ * as a tool's answer, which is data. The window shows no vault of its own, so
+ * the question names the vault the card tools work.
  */
-export const createCardAgentPort = (agent: AgentPort, card: ReviewCard): AgentPort => ({
+export const createCardAgentPort = (
+  agent: AgentPort,
+  card: ReviewCard,
+  vault: string,
+): AgentPort => ({
   ask: (query) =>
     agent.ask({
       ...query,
+      vault,
       context: {
         ...query.context,
         [CARD_CONTEXT.deck]: card.deck,

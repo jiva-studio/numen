@@ -25,6 +25,7 @@ export interface AgentClient {
       model?: string
       reasoning?: string
       context?: Record<string, string>
+      vaultId?: string
     },
     options: { signal: AbortSignal },
   ): AsyncIterable<AskAgentResponse>
@@ -33,9 +34,18 @@ export interface AgentClient {
 
 type AgentRequest = Parameters<AgentClient['askAgent']>[0]
 
-/** The request a query is asked with. An empty agent, model, reasoning or context is left out. */
+/** The request a query is asked with. An empty agent, model, reasoning, context or vault is left out. */
 const createAgentRequest = (query: AgentQuery): AgentRequest => {
-  const { question: prompt, focus, conversation, agentId, modelId, reasoning, context } = query
+  const {
+    question: prompt,
+    focus,
+    conversation,
+    agentId,
+    modelId,
+    reasoning,
+    context,
+    vault,
+  } = query
   return {
     prompt,
     focus,
@@ -44,6 +54,7 @@ const createAgentRequest = (query: AgentQuery): AgentRequest => {
     ...(modelId ? { model: modelId } : {}),
     ...(reasoning ? { reasoning } : {}),
     ...(context && Object.keys(context).length > 0 ? { context: { ...context } } : {}),
+    ...(vault ? { vaultId: vault } : {}),
   }
 }
 

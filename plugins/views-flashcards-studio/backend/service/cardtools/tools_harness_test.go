@@ -16,8 +16,10 @@ import (
 // session is the tools the plugin offers, called the way the host calls them.
 type session struct {
 	registry *tools.Registry
-	// asked is what the host tells each tool about the window the agent was started from.
+	// toolContext is what the host tells each tool about the window the agent was started from.
 	toolContext map[string]string
+	// vault is the vault the host says each call works.
+	vault domain.VaultID
 }
 
 // newSession is the tools over a vault of the notes given.
@@ -28,7 +30,7 @@ func newSession(t *testing.T, notes map[string]string) (*session, domain.Vault) 
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &session{registry: registry}, env.Vault
+	return &session{registry: registry, vault: env.Vault.ID}, env.Vault
 }
 
 // invoke calls one tool and returns what it answered.
@@ -39,7 +41,7 @@ func (s *session) invoke(t *testing.T, name string, args any) *v1.CallToolRespon
 		t.Fatal(err)
 	}
 	res, err := s.registry.CallTool(t.Context(), connect.NewRequest(&v1.CallToolRequest{
-		Name: name, Arguments: raw, Context: s.toolContext,
+		Name: name, Arguments: raw, Context: s.toolContext, VaultId: string(s.vault),
 	}))
 	if err != nil {
 		t.Fatalf("%s: %v", name, err)
@@ -89,4 +91,26 @@ func deckFingerprint(t *testing.T, s *session, path string) string {
 	return call[struct {
 		Fingerprint string `json:"fingerprint"`
 	}](t, s, "card_read", map[string]any{"path": path}).Fingerprint
+}
+
+// A call works the vault the host names, though the host shows none of its own, and a call that
+// names none is refused.
+func TestACallWorksTheVaultTheHostNames(t *testing.T) {
+	installation := vaulttest.NewInstallation()
+	installation.Add(t, map[string]string{"Animals.md": "# Empty\n"})
+	garden := installation.Add(t, vault())
+	registry, err := service.New(service.Config{Vault: installation.Host, Store: installation.Host.Store()}).Tools()
+	if err != nil {
+		t.Fatal(err)
+	}
+	s := &session{registry: registry, vault: garden.ID}
+
+	if read := readCards(t, s, map[string]any{"path": "Animals.md"}); len(read.Cards) != 2 || read.Cards[0].Mark != llama {
+		t.Errorf("the call read %+v", read.Cards)
+	}
+
+	s.vault = ""
+	if got := getToolError(t, s, "card_read", map[string]any{"path": "Animals.md"}); got != "the call names no vault" {
+		t.Errorf("a call naming no vault answered %q", got)
+	}
 }

@@ -91,6 +91,9 @@ message AskAgentRequest {
   // The depth of reasoning the model works at, by the name of one of the levels the model offers.
   // Empty leaves the depth to the program.
   string reasoning = 17;
+  // The vault the run works, by identity. Every tool the agent calls is given it as
+  // CallToolRequest.vault_id. Empty is the vault the window shows.
+  string vault_id = 18;
 }
 
 message GetAgentProgramsRequest {

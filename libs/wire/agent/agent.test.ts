@@ -189,3 +189,28 @@ describe('the context of a question', () => {
     expect(await ask()).not.toHaveProperty('context')
   })
 })
+
+describe('the vault of a question', () => {
+  const ask = async (vault?: string) => {
+    const { agent, requests } = service([])
+    const port = createAgentPort(agent)
+    for await (const step of port.ask({
+      question: 'what is this card?',
+      focus: '',
+      conversation: 'one',
+      signal: new AbortController().signal,
+      ...(vault === undefined ? {} : { vault }),
+    }))
+      void step
+    return requests[0]?.request
+  }
+
+  it('is handed to the service where the view names one', async () => {
+    expect(await ask('v-garden')).toMatchObject({ vaultId: 'v-garden' })
+  })
+
+  it('is left out where the view names none', async () => {
+    expect(await ask('')).not.toHaveProperty('vaultId')
+    expect(await ask()).not.toHaveProperty('vaultId')
+  })
+})

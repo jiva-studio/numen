@@ -158,3 +158,24 @@ func TestATokenCallKnowsWhatThePersonIsLookingAt(t *testing.T) {
 		t.Errorf("got %v (%v)", res.Msg.GetResult(), err)
 	}
 }
+
+func TestACallKnowsTheVaultItWorks(t *testing.T) {
+	registry := tools.New()
+	type in struct{}
+	type out struct {
+		Vault string `json:"vault"`
+	}
+	if err := tools.Add(registry, tools.Spec{Name: "current", Effect: tools.Reads}, func(ctx context.Context, _ in) (out, error) {
+		return out{Vault: tools.GetVault(ctx)}, nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	res, err := registry.CallTool(t.Context(), connect.NewRequest(&numenv1.CallToolRequest{
+		Name: "current", Arguments: []byte(`{}`), VaultId: "v-garden",
+	}))
+
+	if err != nil || string(res.Msg.GetResult().GetStructured()) != `{"vault":"v-garden"}` {
+		t.Errorf("got %v (%v)", res.Msg.GetResult(), err)
+	}
+}
