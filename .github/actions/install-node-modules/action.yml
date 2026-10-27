@@ -1,5 +1,5 @@
 name: "Install Node dependencies"
-description: "Installs the npm workspaces at modules/ exactly as the lock file pins them"
+description: "Installs the npm workspaces at the repository root exactly as the lock file pins them"
 runs:
   using: "composite"
   steps:
@@ -9,5 +9,5 @@ runs:
       shell: bash
       working-directory: ${{ github.workspace }}
       run: |
-        npm ci --ignore-scripts --prefix modules
-        npm rebuild esbuild unrs-resolver --prefix modules
+        npm ci --ignore-scripts
+        npm rebuild esbuild unrs-resolver
