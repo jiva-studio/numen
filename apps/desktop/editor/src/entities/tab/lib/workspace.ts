@@ -10,8 +10,6 @@ import { branch, pane, type Workspace } from '@numen/shell'
 export const NOTE = 'note'
 /** What this installation is configured as, one tab of it to a window. */
 export const SETTINGS = 'settings'
-/** The settings file itself, opened whole as text, one tab of it to a window. */
-export const SETTINGS_FILE = 'settings-file'
 
 /**
  * The identity a tab or a conversation is given when nothing it can be found

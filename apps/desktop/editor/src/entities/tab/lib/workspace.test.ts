@@ -7,7 +7,7 @@
  */
 import { describe, expect, it } from 'vitest'
 import { getPanes } from '@numen/shell'
-import { NOTE, SETTINGS, SETTINGS_FILE, createWorkspace, generateId } from './workspace'
+import { NOTE, SETTINGS, createWorkspace, generateId } from './workspace'
 
 describe('the identity a tab is filed under', () => {
   it('is a new one every time, so a second of a kind is a second tab', () => {
@@ -26,7 +26,7 @@ describe('the identity a tab is filed under', () => {
 })
 
 describe('the kinds a tab is filed under', () => {
-  const kinds = [NOTE, SETTINGS, SETTINGS_FILE]
+  const kinds = [NOTE, SETTINGS]
 
   it('are each a word, so an identity names its kind', () => {
     for (const kind of kinds) expect(kind).not.toBe('')
