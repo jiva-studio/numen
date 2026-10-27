@@ -44,9 +44,9 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 		return domain.VersionText{}, err
 	}
 	hash := domain.HashContent(raw)
-	version := domain.TextVersion{Path: path, PluginID: TextReader, Key: hash[:12], InputHash: hash, Hash: hash}
+	version := domain.TextVersion{Path: path, PluginID: TextReader, Key: hash[:12], SourceHash: hash, Hash: hash}
 	if bytes.HasPrefix(raw, []byte("%PDF-")) {
-		version.Format = domain.TextFormatPositioned
+		version.Kind = "page-text"
 		return domain.NewVersionText(version, splitAt(documentText, []int{0, 11}, nil)), nil
 	}
 	if !bytes.HasPrefix(raw, []byte(bookMark)) {
@@ -61,22 +61,22 @@ func (t vaultTexts) read(ctx context.Context, path string) (domain.VersionText, 
 		titles = append(titles, "Part "+strconv.Itoa(i+1))
 		offset += len(line) + 1
 	}
-	version.Format = domain.TextFormatPlain
+	version.Kind = "book-text"
 	return domain.NewVersionText(version, splitAt(text, starts, titles)), nil
 }
 
-// splitAt is text cut into parts where each start says. A part with a title
-// opens a section; a part without one is a page, numbered by its place.
-func splitAt(text string, starts []int, titles []string) []domain.TextPart {
-	parts := make([]domain.TextPart, 0, len(starts))
+// splitAt is text cut into segments where each start says. A segment with a
+// title opens a heading; one without is a page, numbered by its place from 1.
+func splitAt(text string, starts []int, titles []string) []domain.TextSegment {
+	parts := make([]domain.TextSegment, 0, len(starts))
 	for i, from := range starts {
 		to := len(text)
 		if i+1 < len(starts) {
 			to = starts[i+1]
 		}
-		part := domain.TextPart{Text: text[from:to], Place: domain.TextPlace{Page: i}}
+		part := domain.TextSegment{Text: text[from:to], Selector: domain.Selector(`{"page":` + strconv.Itoa(i+1) + `}`)}
 		if i < len(titles) {
-			part.Section = titles[i]
+			part.Heading = titles[i]
 		}
 		parts = append(parts, part)
 	}
@@ -90,7 +90,7 @@ func (t vaultTexts) FindLiveVersion(ctx context.Context, path, fileHash string) 
 
 func (t vaultTexts) GetLiveText(ctx context.Context, path, fileHash string) (domain.VersionText, error) {
 	doc, err := t.read(ctx, path)
-	if err == nil && doc.Version.InputHash != fileHash {
+	if err == nil && doc.Version.SourceHash != fileHash {
 		return domain.VersionText{}, textport.ErrNoText
 	}
 	return doc, err

@@ -8,7 +8,7 @@
   "activationEvents": [],
   "permissions": ["vault:read", "vault:write", "ai:complete"],
   "textInput": {
-    "formats": ["timed", "positioned"]
+    "kinds": ["transcript", "recognition"]
   },
   "commands": [
     {

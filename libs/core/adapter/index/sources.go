@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/embeddingport"
@@ -23,7 +24,8 @@ import (
 
 type sources struct {
 	queries
-	write *chunk.Repository
+	write    *chunk.Repository
+	versions *version.Repository
 }
 
 // queries is the half of that which is asked: what the index holds about sources,
@@ -52,9 +54,13 @@ func (s sources) RemoveSources(ctx context.Context, vaultID domain.VaultID, kind
 }
 
 // MoveSources files what was at one path, and everything under it, where it now
-// is. A note its filename names is called by the one it lands under.
+// is. A note its filename names is called by the one it lands under. The text
+// versions of what moved move with it.
 func (s sources) MoveSources(ctx context.Context, vaultID domain.VaultID, from, to string) error {
-	return s.write.MoveSources(ctx, vaultID, from, to)
+	if err := s.write.MoveSources(ctx, vaultID, from, to); err != nil {
+		return err
+	}
+	return s.versions.MoveVersions(ctx, vaultID, from, to)
 }
 
 // GetSourcesUnder is every source the vault holds at a path and beneath it.

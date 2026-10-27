@@ -20,21 +20,21 @@ import (
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
 
-// memoryTexts keeps the versions the plugins put, and answers a version's text with its key.
+// memoryTexts keeps the versions the plugins put, and returns a version's text as its key.
 type memoryTexts struct {
 	mu       sync.Mutex
 	versions []domain.TextVersion
 }
 
 func (m *memoryTexts) PutVersion(_ context.Context, pluginID string, params pluginport.PluginTextPut) (domain.TextVersion, error) {
-	if params.Key == "" || !params.Format.IsValid() {
+	if params.Key == "" || params.Kind == "" || params.File == "" {
 		return domain.TextVersion{}, textport.ErrInvalidVersion
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	version := domain.TextVersion{
-		Path: params.Path, PluginID: pluginID, Key: params.Key, Input: params.Input, Format: params.Format,
-		InputHash: params.InputHash, Hash: params.Hash,
+		Path: params.Path, PluginID: pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
+		SourceHash: params.SourceHash, File: params.File,
 	}
 	m.versions = append(m.versions, version)
 	return version, nil
@@ -66,7 +66,7 @@ func (m *memoryTexts) ReadText(_ context.Context, path string, id domain.TextVer
 	listing, _ := m.ListVersions(context.Background(), path)
 	for _, v := range listing.Versions {
 		if v.GetID() == id {
-			return pluginport.PluginTextPage{Parts: []domain.TextPart{{Text: v.Key, Place: domain.TextPlace{Page: 3}}}}, nil
+			return pluginport.PluginTextPage{Segments: []domain.TextSegment{{Text: v.Key, Selector: `{"page":3}`}}}, nil
 		}
 	}
 	return pluginport.PluginTextPage{}, textport.ErrNoText
@@ -89,7 +89,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	client := newTextClient(t, fakeCallers, "token-a")
 
 	put, err := client.PutTextVersion(ctx, connect.NewRequest(&v1.PutTextVersionRequest{
-		Path: "a.pdf", Key: "k", Format: v1.TextFormat_TEXT_FORMAT_POSITIONED, InputHash: "f", Hash: "h",
+		Path: "a.pdf", Key: "k", Kind: "recognition", SourceHash: "f", File: "k.jsonl",
 	}))
 	if err != nil {
 		t.Fatal(err)
@@ -111,7 +111,7 @@ func TestHostEndpointSavesListsReadsAndRemovesVersions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if parts := read.Msg.GetParts(); len(parts) != 1 || parts[0].GetText() != "k" || parts[0].GetPlace().GetPage() != 3 {
+	if segments := read.Msg.GetSegments(); len(segments) != 1 || segments[0].GetText() != "k" || segments[0].GetSelector() != `{"page":3}` {
 		t.Fatalf("read %v", read.Msg)
 	}
 	missing, err := client.ReadText(ctx, connect.NewRequest(&v1.ReadTextRequest{Path: "a.pdf", VersionId: "x/y"}))
@@ -157,7 +157,7 @@ func TestTextCallsWithNoVaultOrNoPermissionAreAnswered(t *testing.T) {
 	}
 	fakeCallers.texts = &memoryTexts{}
 	_, err = newTextClient(t, fakeCallers, "token-b").PutTextVersion(t.Context(), connect.NewRequest(&v1.PutTextVersionRequest{
-		Path: "a.pdf", Key: "k", Format: v1.TextFormat_TEXT_FORMAT_PLAIN,
+		Path: "a.pdf", Key: "k", Kind: "article", File: "k.jsonl",
 	}))
 	if code := readCode(t, err); code != connect.CodePermissionDenied {
 		t.Fatalf("a plugin without the permission got %v", code)

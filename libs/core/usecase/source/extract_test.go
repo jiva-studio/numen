@@ -383,10 +383,10 @@ func TestRebuildingTheIndexReadsEveryFile(t *testing.T) {
 const talkPath = "talks/a lecture.mp3"
 
 // timedParts is the text a transcription plugin gives of one talk.
-func timedParts() []domain.TextPart {
-	return []domain.TextPart{
-		{Text: words(sanskrit, 200) + "\n", Place: domain.TextPlace{Start: 1500 * time.Millisecond}},
-		{Text: words(latin, 200) + "\n", Place: domain.TextPlace{Start: 5025 * time.Second}},
+func timedParts() []domain.TextSegment {
+	return []domain.TextSegment{
+		{Text: words(sanskrit, 200) + "\n", Selector: `{"t":[1.5,4]}`},
+		{Text: words(latin, 200) + "\n", Selector: `{"t":[5025,5030]}`},
 	}
 }
 
@@ -416,15 +416,14 @@ func TestARecordingWithNoVersionIsASourceWithNoChunks(t *testing.T) {
 	}
 }
 
-// The live version of a recording is its text, and a chunk of it is located by
-// when it was said.
+// The live version of a recording is its text.
 func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	ctx := t.Context()
 	index, shelf := newStore(), newLibrary()
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
 	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
-	transcript := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
+	transcript := texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
 	res, err := extract.Execute(ctx, first)
 	if err != nil {
 		t.Fatal(err)
@@ -439,15 +438,6 @@ func TestARecordingIsSplitFromItsLiveVersion(t *testing.T) {
 	if want := recipe(versionReader, extract.sizes()); src.Recipe != want {
 		t.Errorf("recipe = %q, want %q", src.Recipe, want)
 	}
-	located := 0
-	for _, c := range index.chunks {
-		if strings.Contains(c.location, ":") {
-			located++
-		}
-	}
-	if located != len(index.chunks) {
-		t.Fatalf("%d of %d chunks of a recording say when they were said", located, len(index.chunks))
-	}
 }
 
 // A version that stops being the live one leaves its chunks owed: the next run
@@ -458,7 +448,7 @@ func TestSourceExtractedFromOutdatedVersionIsExtractedAgain(t *testing.T) {
 	shelf.hold(talkPath, domain.KindRecording, []byte("ID3 and then the samples"), 1)
 
 	extract, texts := newExtractWithTexts(vaults{first.ID: shelf}, index, index)
-	texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
+	texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
@@ -492,7 +482,7 @@ func TestExtractOneUsesTheLiveVersion(t *testing.T) {
 	if _, err := extract.Execute(ctx, first); err != nil {
 		t.Fatal(err)
 	}
-	transcript := texts.put(first, talkPath, "test.transcriber", domain.TextFormatTimed, timedParts())
+	transcript := texts.put(first, talkPath, "test.transcriber", "transcript", timedParts())
 	if _, err := extract.ExtractOne(ctx, first, talkPath); err != nil {
 		t.Fatal(err)
 	}

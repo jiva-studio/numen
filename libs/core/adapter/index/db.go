@@ -22,6 +22,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/index/chunk"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/note"
 	"github.com/jiva-studio/numen/libs/core/adapter/index/vault"
+	"github.com/jiva-studio/numen/libs/core/adapter/index/version"
 	"github.com/jiva-studio/numen/libs/core/internal/testonly"
 )
 
@@ -135,8 +136,12 @@ func (d *DB) ChunkQueries() *chunk.Queries { return chunk.NewQueries(d.read) }
 // Sources is the source and vector ports over the chunk tables. It writes and
 // reads both, through the pool each half belongs to.
 func (d *DB) Sources() sources {
-	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks()}
+	return sources{queries: queries{read: d.ChunkQueries()}, write: d.Chunks(), versions: d.TextVersions()}
 }
+
+// TextVersions is the text versions of every vault. A rebuild of the index
+// reads the vaults again and leaves them as they are.
+func (d *DB) TextVersions() *version.Repository { return version.NewRepository(d.read, d.write) }
 
 func dsn(path string, pos settings) string {
 	return dsnOf(path, append(slices.Clone(pragmas), pos.synchronous))

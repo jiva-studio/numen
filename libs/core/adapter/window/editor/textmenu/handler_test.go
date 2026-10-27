@@ -111,7 +111,7 @@ func TestRunFileMenuEntryPassesEntry(t *testing.T) {
 }
 
 func TestRunFileMenuEntryMapsErrors(t *testing.T) {
-	for _, why := range []error{textversion.ErrInvalidVersion, textversion.ErrInputNotAccepted, textversion.ErrNotTextPlugin, textversion.ErrNoText} {
+	for _, why := range []error{textversion.ErrInvalidVersion, textversion.ErrSourceNotAccepted, textversion.ErrNotTextPlugin, textversion.ErrNoText} {
 		h := NewHandler(vault, &menu{runErr: fmt.Errorf("run: %w", why)})
 		_, err := h.RunFileMenuEntry(t.Context(), connect.NewRequest(&v1.RunFileMenuEntryRequest{Path: "scan.pdf"}))
 		if connect.CodeOf(err) != connect.CodeInvalidArgument {

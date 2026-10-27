@@ -69,8 +69,8 @@ func (e *textEndpoint) PutTextVersion(
 	}
 	m := req.Msg
 	version, err := texts.PutVersion(ctx, pluginID, pluginport.PluginTextPut{
-		Path: m.GetPath(), Key: m.GetKey(), Input: domain.TextVersionID(m.GetInputVersionId()),
-		Format: textwire.ReadFormat(m.GetFormat()), InputHash: m.GetInputHash(), Hash: m.GetHash(),
+		Path: m.GetPath(), Key: m.GetKey(), Source: domain.TextVersionID(m.GetSourceVersionId()),
+		Kind: domain.TextKind(m.GetKind()), SourceHash: m.GetSourceHash(), File: m.GetFile(),
 	})
 	code, err := answerText(ctx, err)
 	if err != nil {
@@ -138,6 +138,6 @@ func (e *textEndpoint) ReadText(
 		return nil, err
 	}
 	return connect.NewResponse(&v1.ReadTextResponse{
-		Error: code, Parts: textwire.WriteParts(page.Parts), NextCursor: page.NextCursor,
+		Error: code, Segments: textwire.WriteSegments(page.Segments), NextCursor: page.NextCursor,
 	}), nil
 }

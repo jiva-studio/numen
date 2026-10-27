@@ -237,3 +237,17 @@ type UnknownVaultError = vault.UnknownError
 func (e EditorAssembly) OpenChoosePluginPath(dialog machineport.PathDialog) *settings.ChoosePluginPath {
 	return settings.NewChoosePluginPath(dialog, e.cfg.Plugins(), e.cfg.GetSettingsWriter())
 }
+
+// OpenFileText is the live text of a vault's files and a person's edits of it, and nil where the
+// installation keeps no text versions.
+func (e EditorAssembly) OpenFileText() *textversion.FileText {
+	if e.cfg.TextVersions == nil {
+		return nil
+	}
+	text, err := textversion.NewFileText(e.cfg.TextVersions, e.cfg.VaultReaders())
+	if err != nil {
+		e.cfg.handleError(err)
+		return nil
+	}
+	return text
+}

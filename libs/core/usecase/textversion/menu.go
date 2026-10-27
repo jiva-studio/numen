@@ -17,7 +17,7 @@ const (
 	ActionRecognise MenuAction = "recognise"
 	// ActionProofread asks a plugin that reads text for a version made from the live one.
 	ActionProofread MenuAction = "proofread"
-	// ActionDeleteVersion asks the plugin that made a version to delete it.
+	// ActionDeleteVersion deletes a version and its file.
 	ActionDeleteVersion MenuAction = "delete-version"
 )
 
@@ -35,15 +35,18 @@ type MenuEntry struct {
 
 // GetMenu is what a file's menu offers, as the enabled plugins and the file's
 // versions say: a recognition by every plugin that reads the file's type, a
-// proofreading of the live version by every plugin that reads its format, and
-// a deletion of every version whose plugin is enabled.
+// proofreading of the live version by every plugin that reads its kind, and a
+// deletion of every version, whether or not its plugin is enabled.
 func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash string) ([]MenuEntry, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return nil, err
 	}
 	plugins := u.plugins.GetTextPlugins()
-	live, hasLive := domain.FindLiveVersion(versions, fileHash, u.isEnabled)
+	live, hasLive, err := u.findLive(ctx, v, versions, fileHash)
+	if err != nil {
+		return nil, err
+	}
 
 	var entries []MenuEntry
 	for _, plugin := range plugins {
@@ -52,17 +55,19 @@ func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash s
 		}
 	}
 	for _, plugin := range plugins {
-		if hasLive && slices.Contains(plugin.Formats, live.Format) {
+		if hasLive && slices.Contains(plugin.Kinds, live.Kind) {
 			entries = append(entries, MenuEntry{Action: ActionProofread, PluginID: plugin.ID, PluginName: plugin.Name, Version: live.GetID(), IsLive: true})
 		}
 	}
 	for _, version := range versions {
+		name := version.PluginID
 		if plugin, ok := u.findPlugin(version.PluginID); ok {
-			entries = append(entries, MenuEntry{
-				Action: ActionDeleteVersion, PluginID: plugin.ID, PluginName: plugin.Name, Version: version.GetID(),
-				IsLive: hasLive && version.GetID() == live.GetID(),
-			})
+			name = plugin.Name
 		}
+		entries = append(entries, MenuEntry{
+			Action: ActionDeleteVersion, PluginID: version.PluginID, PluginName: name, Version: version.GetID(),
+			IsLive: hasLive && version.GetID() == live.GetID(),
+		})
 	}
 	return entries, nil
 }

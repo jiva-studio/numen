@@ -176,8 +176,9 @@ func TestMigrationFourAppliesOnAnIndexAtTheVersionBeforeIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	for _, statement := range []string{
+		`DROP TABLE text_versions`,
 		`DROP TABLE coarse_recipe`,
-		`DELETE FROM schema_migrations WHERE version = 4`,
+		`DELETE FROM schema_migrations WHERE version >= 4`,
 		`PRAGMA user_version = 3`,
 	} {
 		if _, err := db.write.ExecContext(ctx, statement); err != nil {

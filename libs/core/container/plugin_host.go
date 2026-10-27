@@ -106,7 +106,7 @@ func (c Config) OpenPluginCommands(ctx context.Context, v domain.Vault) (pluginc
 // through the text versions, as a window does.
 func (c Config) OpenPluginWork(ctx context.Context, db *Index, v domain.Vault) (Config, error) {
 	c.SetPluginVaultPath(v.Path)
-	versions, err := c.NewTextVersions()
+	versions, err := c.NewTextVersions(db)
 	if err != nil {
 		return c, err
 	}

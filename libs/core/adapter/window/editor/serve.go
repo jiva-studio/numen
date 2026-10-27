@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/assembly"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/command"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/usecase/file"
 	"github.com/jiva-studio/numen/libs/core/usecase/indexing"
@@ -342,6 +343,9 @@ func (o *Installation) wireUseCases() {
 	services.Command = command.NewHandler(made.GetPluginCommands())
 	if menu := made.OpenFileMenu(); menu != nil {
 		services.TextVersion = textmenu.NewHandler(o.State, menu)
+	}
+	if text := made.OpenFileText(); text != nil {
+		services.Text = texts.NewHandler(o.State, text)
 	}
 	services.Agent.GetAgent = made.GetAgent
 	services.Settings.Write = made.OpenWriteSettings()

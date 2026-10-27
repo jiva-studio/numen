@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/textfile"
 
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 	"github.com/jiva-studio/numen/libs/core/usecase/textversion"
@@ -41,12 +42,6 @@ func (r memoryRepo) GetVersions(_ context.Context, path string) ([]domain.TextVe
 	return out, nil
 }
 
-func (r memoryRepo) ListVersions(context.Context) ([]domain.TextVersion, error) {
-	r.store.mu.Lock()
-	defer r.store.mu.Unlock()
-	return slices.Clone(r.store.versions[r.vault]), nil
-}
-
 func (r memoryRepo) SaveVersion(_ context.Context, version domain.TextVersion) error {
 	r.store.mu.Lock()
 	defer r.store.mu.Unlock()
@@ -71,6 +66,75 @@ func (r memoryRepo) RemoveVersion(_ context.Context, path string, id domain.Text
 		return one.Path == path && one.GetID() == id
 	})
 	return nil
+}
+
+func (r memoryRepo) RemovePluginVersions(_ context.Context, pluginID string) ([]domain.TextVersion, error) {
+	r.store.mu.Lock()
+	defer r.store.mu.Unlock()
+	var removed []domain.TextVersion
+	r.store.versions[r.vault] = slices.DeleteFunc(r.store.versions[r.vault], func(one domain.TextVersion) bool {
+		if one.PluginID == pluginID {
+			removed = append(removed, one)
+			return true
+		}
+		return false
+	})
+	return removed, nil
+}
+
+// memoryFiles is the plugin folders of every vault, held in memory, by
+// "<plugin>/<name>".
+type memoryFiles struct {
+	mu    sync.Mutex
+	files map[string][]byte
+}
+
+func (m *memoryFiles) Open(domain.Vault) (textport.TextFiles, error) { return m, nil }
+
+func (m *memoryFiles) ReadTextFile(_ context.Context, pluginID, name string) (textport.TextFile, error) {
+	m.mu.Lock()
+	raw, ok := m.files[pluginID+"/"+name]
+	m.mu.Unlock()
+	if !ok {
+		return textport.TextFile{}, textport.ErrNoText
+	}
+	segments, err := textfile.Decode(raw)
+	if err != nil {
+		return textport.TextFile{}, err
+	}
+	return textport.TextFile{Segments: segments, Hash: domain.HashContent(raw)}, nil
+}
+
+func (m *memoryFiles) WriteTextFile(_ context.Context, pluginID, name string, segments []domain.TextSegment) (string, error) {
+	raw, err := textfile.Encode(segments)
+	if err != nil {
+		return "", err
+	}
+	m.write(pluginID+"/"+name, raw)
+	return domain.HashContent(raw), nil
+}
+
+func (m *memoryFiles) DeleteTextFile(_ context.Context, pluginID, name string) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	delete(m.files, pluginID+"/"+name)
+	return nil
+}
+
+func (m *memoryFiles) write(key string, raw []byte) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.files == nil {
+		m.files = map[string][]byte{}
+	}
+	m.files[key] = raw
+}
+
+func (m *memoryFiles) has(key string) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	_, ok := m.files[key]
+	return ok
 }
 
 // plugins is the text plugins installed, each switched on or off.
@@ -121,7 +185,7 @@ func (l *listener) take() []string {
 	return out
 }
 
-// providers answers for each plugin with the provider it was given.
+// providers returns for each plugin the provider it was given.
 type providers map[string]textport.TextProvider
 
 func (p providers) OpenProvider(_ context.Context, pluginID string) (textport.TextProvider, error) {
@@ -132,87 +196,51 @@ func (p providers) OpenProvider(_ context.Context, pluginID string) (textport.Te
 	return provider, nil
 }
 
-// fakeProvider keeps its texts in memory, and on CreateText makes one with
-// make and puts its version through the use case, the way a plugin calls the host.
+// fakeProvider, on CreateText, makes a text with make, writes it into its
+// folder and puts its version through the use case, the way a plugin calls the host.
 type fakeProvider struct {
 	pluginID string
-	format   domain.TextFormat
+	kind     domain.TextKind
 	versions *textversion.Versions
 	vault    domain.Vault
-	// make is the text made of the file, or of the input text where input is set.
-	make func(path string, input domain.VersionText, hasInput bool) []domain.TextPart
-	// files is the content of each file, as the plugin reads it.
+	folders  *memoryFiles
+	// make is the text made of the file, or of the source text where hasSource is set.
+	make func(path string, source domain.VersionText, hasSource bool) []domain.TextSegment
+	// files is the content of each vault file, as the plugin reads it.
 	files map[string][]byte
 
 	mu      sync.Mutex
-	texts   map[string][]domain.TextPart
 	created int
 	// isUserStarted is whether each creation was asked for by a person, in order.
 	isUserStarted []bool
-	deleted       []string
-	// pageSize is how many parts one page holds. Zero is all of them.
-	pageSize int
-}
-
-func (f *fakeProvider) GetText(_ context.Context, req textport.TextRequest) (textport.TextPage, error) {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	parts, ok := f.texts[req.Path+"|"+req.Key]
-	if !ok {
-		return textport.TextPage{}, textport.ErrNoText
-	}
-	if f.pageSize == 0 {
-		return textport.TextPage{Parts: parts}, nil
-	}
-	from := 0
-	if req.Cursor != "" {
-		if _, err := fmt.Sscan(req.Cursor, &from); err != nil {
-			return textport.TextPage{}, err
-		}
-	}
-	to := min(from+f.pageSize, len(parts))
-	page := textport.TextPage{Parts: parts[from:to]}
-	if to < len(parts) {
-		page.NextCursor = fmt.Sprint(to)
-	}
-	return page, nil
 }
 
 func (f *fakeProvider) CreateText(ctx context.Context, req textport.TextCreation) error {
-	params := textversion.VersionPut{Path: req.Path, Input: req.Input, Format: f.format}
-	var parts []domain.TextPart
-	if req.Input == "" {
-		params.InputHash = domain.HashContent(f.files[req.Path])
-		params.Key = "file-" + params.InputHash[:8]
-		parts = f.make(req.Path, domain.VersionText{}, false)
+	params := textversion.VersionPut{Path: req.Path, Source: req.Source, Kind: f.kind}
+	var segments []domain.TextSegment
+	if req.Source == "" {
+		params.SourceHash = domain.HashContent(f.files[req.Path])
+		params.Key = "file-" + params.SourceHash[:8]
+		segments = f.make(req.Path, domain.VersionText{}, false)
 	} else {
-		input, err := f.versions.GetVersionText(ctx, f.vault, req.Path, req.Input)
+		source, err := f.versions.GetVersionText(ctx, f.vault, req.Path, req.Source)
 		if err != nil {
 			return err
 		}
-		params.InputHash = input.Version.Hash
-		params.Key = "from-" + strings.ReplaceAll(string(req.Input), "/", "-")
-		parts = f.make(req.Path, input, true)
+		params.SourceHash = source.Version.Hash
+		params.Key = "from-" + strings.ReplaceAll(string(req.Source), "/", "-")
+		segments = f.make(req.Path, source, true)
 	}
-	params.Hash = domain.HashContent([]byte(domain.NewVersionText(domain.TextVersion{}, parts).Text))
+	params.File = params.Key + ".jsonl"
+	if _, err := f.folders.WriteTextFile(ctx, f.pluginID, params.File, segments); err != nil {
+		return err
+	}
 	f.mu.Lock()
-	if f.texts == nil {
-		f.texts = map[string][]domain.TextPart{}
-	}
-	f.texts[req.Path+"|"+params.Key] = parts
 	f.created++
 	f.isUserStarted = append(f.isUserStarted, req.IsUserStarted)
 	f.mu.Unlock()
 	_, err := f.versions.PutVersion(ctx, f.vault, f.pluginID, params)
 	return err
-}
-
-func (f *fakeProvider) DeleteText(_ context.Context, _ domain.VaultID, path, key string) error {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	delete(f.texts, path+"|"+key)
-	f.deleted = append(f.deleted, key)
-	return nil
 }
 
 func (f *fakeProvider) getCreated() int {

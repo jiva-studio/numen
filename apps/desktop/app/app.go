@@ -229,16 +229,21 @@ func openInstallation(
 	if err != nil {
 		return shownInstallation{}, err
 	}
-	versions, err := cfg.NewTextVersions()
+	registry, err := cfg.Registry()
 	if err != nil {
+		return shownInstallation{}, err
+	}
+	db, err := cfg.OpenIndex(ctx)
+	if err != nil {
+		return shownInstallation{}, err
+	}
+	versions, err := cfg.NewTextVersions(db)
+	if err != nil {
+		_ = db.Close()
 		return shownInstallation{}, err
 	}
 	cfg.TextVersions = versions
-
-	made, err := cfg.GetEditorAssembly(ctx)
-	if err != nil {
-		return shownInstallation{}, err
-	}
+	made := container.NewEditorAssembly(cfg, registry, db)
 	opened, err := editor.Open(ctx, made, vault, os.Stdout)
 	if err != nil {
 		return shownInstallation{}, err

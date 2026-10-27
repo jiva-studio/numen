@@ -11,9 +11,7 @@ import (
 
 	"connectrpc.com/connect"
 
-	"github.com/jiva-studio/numen/libs/notes/domain"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
-	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host/hosttest"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/hostcall"
 	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 	"github.com/jiva-studio/numen/libs/protocol/gen/numen/v1/numenv1connect"
@@ -34,13 +32,13 @@ func (h *textHost) PutTextVersion(_ context.Context, req *connect.Request[v1.Put
 	}
 	return connect.NewResponse(&v1.PutTextVersionResponse{Version: &v1.TextVersion{
 		Id: "p/" + req.Msg.GetKey(), Path: req.Msg.GetPath(), PluginId: "p", Key: req.Msg.GetKey(),
-		Format: req.Msg.GetFormat(), CreateTimeUnixMs: 1_700_000_000_000,
+		Kind: req.Msg.GetKind(), File: req.Msg.GetFile(), CreateTimeUnixMs: 1_700_000_000_000,
 	}}), nil
 }
 
 func (h *textHost) ListTextVersions(context.Context, *connect.Request[v1.ListTextVersionsRequest]) (*connect.Response[v1.ListTextVersionsResponse], error) {
 	return connect.NewResponse(&v1.ListTextVersionsResponse{
-		Versions:      []*v1.TextVersion{{Id: "p/k", Path: "a.pdf", PluginId: "p", Key: "k", Format: v1.TextFormat_TEXT_FORMAT_TIMED}},
+		Versions:      []*v1.TextVersion{{Id: "p/k", Path: "a.pdf", PluginId: "p", Key: "k", Kind: "transcript"}},
 		LiveVersionId: "p/k",
 		Error:         h.code,
 	}), nil
@@ -48,9 +46,9 @@ func (h *textHost) ListTextVersions(context.Context, *connect.Request[v1.ListTex
 
 func (h *textHost) ReadText(_ context.Context, req *connect.Request[v1.ReadTextRequest]) (*connect.Response[v1.ReadTextResponse], error) {
 	if req.Msg.GetCursor() == "" {
-		return connect.NewResponse(&v1.ReadTextResponse{Parts: []*v1.TextPart{{Text: "one ", Place: &v1.TextPlace{StartMs: 1500}}}, NextCursor: "1"}), nil
+		return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "one ", Selector: `{"t":[1.5,2]}`}}, NextCursor: "1"}), nil
 	}
-	return connect.NewResponse(&v1.ReadTextResponse{Parts: []*v1.TextPart{{Text: "two"}}}), nil
+	return connect.NewResponse(&v1.ReadTextResponse{Segments: []*v1.TextSegment{{Text: "two"}}}), nil
 }
 
 func newTextClient(t *testing.T, h *textHost) *host.TextClient {
@@ -67,14 +65,14 @@ func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 	h := &textHost{}
 	client := newTextClient(t, h)
 
-	version, err := client.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Input: "q/x", Format: domain.TextFormatTimed, InputHash: "i", Hash: "h"})
+	version, err := client.PutVersion(ctx, host.TextPut{Path: "a.pdf", Key: "k", Source: "q/x", Kind: "transcript", SourceHash: "i", File: "k.jsonl"})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if h.request.GetFormat() != v1.TextFormat_TEXT_FORMAT_TIMED || h.request.GetInputVersionId() != "q/x" || h.auth != "Bearer tok" {
+	if h.request.GetKind() != "transcript" || h.request.GetSourceVersionId() != "q/x" || h.request.GetFile() != "k.jsonl" || h.auth != "Bearer tok" {
 		t.Fatalf("the host received %v with %q", h.request, h.auth)
 	}
-	if version.GetID() != "p/k" || version.Format != domain.TextFormatTimed || !version.CreateTime.Equal(time.UnixMilli(1_700_000_000_000)) {
+	if version.GetID() != "p/k" || version.Kind != "transcript" || version.File != "k.jsonl" || !version.CreateTime.Equal(time.UnixMilli(1_700_000_000_000)) {
 		t.Fatalf("version %+v", version)
 	}
 
@@ -83,8 +81,8 @@ func TestTextClientSavesListsAndReadsThroughTheHost(t *testing.T) {
 		t.Fatalf("listing %+v (%v)", listing, err)
 	}
 	text, err := host.ReadWholeText(ctx, client, listing.Versions[0])
-	if err != nil || text.Text != "one two" || text.Locate(0) != "0:01" {
-		t.Fatalf("read %q located %q (%v)", text.Text, text.Locate(0), err)
+	if err != nil || text.Text != "one two" || text.GetSelector(0) != `{"t":[1.5,2]}` {
+		t.Fatalf("read %q (%v)", text.Text, err)
 	}
 }
 
@@ -105,43 +103,8 @@ func TestTheTextClientReadsEveryCodeAsItsError(t *testing.T) {
 	}
 }
 
-func TestAProviderIsServedAsTextProviderService(t *testing.T) {
-	ctx := t.Context()
-	provider := hosttest.NewMemoryProvider()
-	provider.Hold("a.pdf", "k", []domain.TextPart{
-		{Text: "one ", Section: "Intro", Place: domain.TextPlace{Page: 2, Rects: []domain.Rect{{MaxX: 1}}}},
-		{Text: "two"},
-	})
-	mux := http.NewServeMux()
-	mux.Handle(host.NewTextProviderHandler(provider))
-	server := httptest.NewServer(mux)
-	t.Cleanup(server.Close)
-	client := numenv1connect.NewTextProviderServiceClient(server.Client(), server.URL)
-
-	first, err := client.GetText(ctx, connect.NewRequest(&v1.TextProviderServiceGetTextRequest{VaultId: "v", Path: "a.pdf", Key: "k"}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	parts := first.Msg.GetParts()
-	if len(parts) != 1 || parts[0].GetSection() != "Intro" || parts[0].GetPlace().GetPage() != 2 || first.Msg.GetNextCursor() != "1" {
-		t.Fatalf("first page %v", first.Msg)
-	}
-	missing, err := client.GetText(ctx, connect.NewRequest(&v1.TextProviderServiceGetTextRequest{Path: "a.pdf", Key: "gone"}))
-	if err != nil || missing.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_MISSING {
-		t.Fatalf("a text not there answered %v (%v)", missing.Msg, err)
-	}
-	if _, err := client.DeleteText(ctx, connect.NewRequest(&v1.TextProviderServiceDeleteTextRequest{Path: "a.pdf", Key: "k"})); err != nil {
-		t.Fatal(err)
-	}
-	after, err := client.GetText(ctx, connect.NewRequest(&v1.TextProviderServiceGetTextRequest{Path: "a.pdf", Key: "k"}))
-	if err != nil || after.Msg.GetError() != v1.TextErrorCode_TEXT_ERROR_CODE_MISSING {
-		t.Fatalf("a deleted text answered %v (%v)", after.Msg, err)
-	}
-}
-
 // recordingProvider is a provider that records each creation it is requests for.
 type recordingProvider struct {
-	hosttest.MemoryProvider
 	requests []host.TextCreation
 }
 
@@ -151,7 +114,7 @@ func (c *recordingProvider) CreateText(_ context.Context, req host.TextCreation)
 }
 
 func TestProviderReceivesUserStartedFlag(t *testing.T) {
-	provider := &recordingProvider{MemoryProvider: *hosttest.NewMemoryProvider()}
+	provider := &recordingProvider{}
 	mux := http.NewServeMux()
 	mux.Handle(host.NewTextProviderHandler(provider))
 	server := httptest.NewServer(mux)
@@ -159,14 +122,14 @@ func TestProviderReceivesUserStartedFlag(t *testing.T) {
 	client := numenv1connect.NewTextProviderServiceClient(server.Client(), server.URL)
 
 	for _, isUserStarted := range []bool{true, false} {
-		req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf", InputVersionId: "p/k", IsUserStarted: isUserStarted}
+		req := &v1.TextProviderServiceCreateTextRequest{VaultId: "v", Path: "a.pdf", SourceVersionId: "p/k", IsUserStarted: isUserStarted}
 		if _, err := client.CreateText(t.Context(), connect.NewRequest(req)); err != nil {
 			t.Fatal(err)
 		}
 	}
 	want := []host.TextCreation{
-		{Vault: "v", Path: "a.pdf", Input: "p/k", IsUserStarted: true},
-		{Vault: "v", Path: "a.pdf", Input: "p/k"},
+		{Vault: "v", Path: "a.pdf", Source: "p/k", IsUserStarted: true},
+		{Vault: "v", Path: "a.pdf", Source: "p/k"},
 	}
 	if !slices.Equal(provider.requests, want) {
 		t.Fatalf("got %+v, want %+v", provider.requests, want)

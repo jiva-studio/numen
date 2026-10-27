@@ -3,37 +3,27 @@ package textwire_test
 import (
 	"reflect"
 	"testing"
-	"time"
-
-	v1 "github.com/jiva-studio/numen/libs/protocol/gen/numen/v1"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textwire"
-	"github.com/jiva-studio/numen/libs/core/internal/testsupport"
 )
 
-func TestEveryFormatCrossesTheWireAndBack(t *testing.T) {
-	for _, f := range domain.TextFormats() {
-		if got := textwire.ReadFormat(textwire.WriteFormat(f)); got != f {
-			t.Errorf("%s came back as %q", f, got)
-		}
+func TestSegmentsCrossTheWireAndBack(t *testing.T) {
+	segments := []domain.TextSegment{
+		{Text: "one ", Heading: "Intro", Selector: `{"page":3,"boxes":[[0.1,0.2,0.3,0.4]]}`},
+		{Text: "two", Selector: `{"t":[1.5,3]}`},
 	}
-	if got := textwire.ReadFormat(v1.TextFormat_TEXT_FORMAT_UNSPECIFIED); got != "" {
-		t.Errorf("no format came back as %q", got)
+	if got := textwire.ReadSegments(textwire.WriteSegments(segments)); !reflect.DeepEqual(got, segments) {
+		t.Fatalf("got %+v, want %+v", got, segments)
 	}
-	testsupport.RoundTrip(t, textwire.ReadFormat, textwire.WriteFormat)
 }
 
-func TestPartsCrossTheWireAndBack(t *testing.T) {
-	parts := []domain.TextPart{
-		{Text: "one ", Section: "Intro", Place: domain.TextPlace{Page: 2, Rects: []domain.Rect{{MinX: 0.1, MinY: 0.2, MaxX: 0.3, MaxY: 0.4}}}},
-		{Text: "two", Place: domain.TextPlace{Start: 1500 * time.Millisecond, End: 3 * time.Second}},
-	}
-	got := textwire.ReadParts(textwire.WriteParts(parts))
-	want := parts
-	want[1].Place.Rects = []domain.Rect{}
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got %+v, want %+v", got, want)
+func TestWriteVersionCarriesTheSourceKindAndFile(t *testing.T) {
+	got := textwire.WriteVersion(domain.TextVersion{
+		Path: "a.mp3", PluginID: "p.x", Key: "k", Source: "q.y/s", Kind: "transcript", File: "k.jsonl", SourceHash: "s", Hash: "h",
+	})
+	if got.GetId() != "p.x/k" || got.GetSourceVersionId() != "q.y/s" || got.GetKind() != "transcript" || got.GetFile() != "k.jsonl" {
+		t.Fatalf("got %+v", got)
 	}
 }

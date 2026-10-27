@@ -30,7 +30,7 @@ type libraryTexts struct {
 
 type placedVersion struct {
 	version domain.TextVersion
-	parts   []domain.TextPart
+	parts   []domain.TextSegment
 }
 
 func newLibraryTexts(shelves vaults) *libraryTexts {
@@ -38,12 +38,12 @@ func newLibraryTexts(shelves vaults) *libraryTexts {
 }
 
 // put gives a file a version made from its bytes as they are now. The newest put is live.
-func (s *libraryTexts) put(v domain.Vault, path, pluginID string, format domain.TextFormat, parts []domain.TextPart) domain.TextVersion {
+func (s *libraryTexts) put(v domain.Vault, path, pluginID string, kind domain.TextKind, parts []domain.TextSegment) domain.TextVersion {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	raw := s.shelves[v.ID].files[path].raw
 	version := domain.TextVersion{
-		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Format: format, InputHash: domain.HashContent(raw),
+		Path: path, PluginID: pluginID, Key: fmt.Sprint(len(s.extra[path])), Kind: kind, SourceHash: domain.HashContent(raw),
 	}
 	s.extra[path] = append(s.extra[path], placedVersion{version: version, parts: parts})
 	return version
@@ -82,7 +82,7 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) 
 		return placedVersion{}, failure
 	}
 	for i := len(extra) - 1; i >= 0; i-- {
-		if extra[i].version.InputHash == fileHash {
+		if extra[i].version.SourceHash == fileHash {
 			return extra[i], nil
 		}
 	}
@@ -100,14 +100,14 @@ func (t libraryVaultTexts) findLive(ctx context.Context, path, fileHash string) 
 	if err != nil {
 		return placedVersion{}, textport.ErrNoText
 	}
-	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: fileHash[:8], Format: domain.TextFormatPlain, InputHash: fileHash}
-	var parts []domain.TextPart
+	version := domain.TextVersion{Path: path, PluginID: bookReader, Key: fileHash[:8], Kind: "book-text", SourceHash: fileHash}
+	var parts []domain.TextSegment
 	for i, part := range book.Parts {
 		end := len(book.Text)
 		if i+1 < len(book.Parts) {
 			end = book.Parts[i+1].Offset
 		}
-		parts = append(parts, domain.TextPart{Text: book.Text[part.Offset:end], Section: part.Title})
+		parts = append(parts, domain.TextSegment{Text: book.Text[part.Offset:end], Heading: part.Title})
 	}
 	made = placedVersion{version: version, parts: parts}
 	s.mu.Lock()

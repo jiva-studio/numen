@@ -2,18 +2,20 @@ package hosttest
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"slices"
 	"sync"
 	"time"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
+	"github.com/jiva-studio/numen/libs/notes/textfile"
 	"github.com/jiva-studio/numen/libs/plugin-sdk-go/host"
 )
 
 // Texts is the text versions of a vault in memory, worked as one plugin works them through the
-// host. The live version is the one the core would show: newest, made by enabled plugins, from
-// inputs that are unchanged.
+// host. A version's file is read from the folder of the plugin that made it, as the host reads it:
+// the store SetStore names, or a folder in memory. The live version is the one the core would show:
+// the newest whose sources are unchanged and whose file still has the hash it was recorded with.
 type Texts struct {
 	world    *textWorld
 	pluginID string
@@ -21,14 +23,13 @@ type Texts struct {
 
 // textWorld is what every plugin's view of one vault's texts shares.
 type textWorld struct {
-	mu        sync.Mutex
-	vault     domain.VaultID
-	versions  []domain.TextVersion
-	files     map[string][]byte
-	providers map[string]host.TextProvider
-	disabled  map[string]bool
-	changes   []string
-	clock     time.Time
+	mu       sync.Mutex
+	vault    domain.VaultID
+	versions []domain.TextVersion
+	files    map[string][]byte
+	stores   map[string]host.Store
+	changes  []string
+	clock    time.Time
 }
 
 var _ host.Texts = (*Texts)(nil)
@@ -36,7 +37,7 @@ var _ host.Texts = (*Texts)(nil)
 // NewTexts is the texts of the vault of the identity, as the plugin of the id works them.
 func NewTexts(vault domain.VaultID, pluginID string) *Texts {
 	return &Texts{world: &textWorld{
-		vault: vault, files: map[string][]byte{}, providers: map[string]host.TextProvider{}, disabled: map[string]bool{},
+		vault: vault, files: map[string][]byte{}, stores: map[string]host.Store{},
 		clock: time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC),
 	}, pluginID: pluginID}
 }
@@ -51,19 +52,29 @@ func (t *Texts) File(path string, raw []byte) {
 	t.world.files[path] = raw
 }
 
-// Provide is the provider the host reads a plugin's texts from.
-func (t *Texts) Provide(pluginID string, provider host.TextProvider) {
+// SetStore is the folder the host reads a plugin's version files from.
+func (t *Texts) SetStore(pluginID string, store host.Store) {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()
-	t.world.providers[pluginID] = provider
+	t.world.stores[pluginID] = store
 }
 
-// SetEnabled switches a plugin on or off. The versions of a plugin that is off are not live, nor
-// any version made from them.
-func (t *Texts) SetEnabled(pluginID string, isEnabled bool) {
+// GetStore is the folder of a plugin's version files: the one SetStore named, or a folder in
+// memory made on first use.
+func (t *Texts) GetStore(pluginID string) host.Store {
 	t.world.mu.Lock()
 	defer t.world.mu.Unlock()
-	t.world.disabled[pluginID] = !isEnabled
+	return t.world.getStore(pluginID)
+}
+
+// getStore is GetStore; the caller holds the lock.
+func (w *textWorld) getStore(pluginID string) host.Store {
+	store, ok := w.stores[pluginID]
+	if !ok {
+		store = New(pluginID).Store()
+		w.stores[pluginID] = store
+	}
+	return store
 }
 
 // TakeChanges is every file whose versions changed since the last time it was asked, in order.
@@ -75,20 +86,25 @@ func (t *Texts) TakeChanges() []string {
 	return out
 }
 
-func (t *Texts) PutVersion(_ context.Context, params host.TextPut) (domain.TextVersion, error) {
+func (t *Texts) PutVersion(ctx context.Context, params host.TextPut) (domain.TextVersion, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	if params.Path == "" || params.Key == "" || !params.Format.IsValid() {
+	if params.Path == "" || params.Key == "" || params.Kind == "" || params.File == "" {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
 	version := domain.TextVersion{
-		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Input: params.Input, Format: params.Format,
-		InputHash: params.InputHash, Hash: params.Hash,
+		Path: params.Path, PluginID: t.pluginID, Key: params.Key, Source: params.Source, Kind: params.Kind,
+		File: params.File, SourceHash: params.SourceHash,
 	}
-	if params.Input == version.GetID() || (params.Input != "" && w.indexOf(params.Path, params.Input) < 0) {
+	if params.Source == version.GetID() || (params.Source != "" && w.indexOf(params.Path, params.Source) < 0) {
 		return domain.TextVersion{}, host.ErrInvalidVersion
 	}
+	_, hash, err := w.readFile(ctx, version)
+	if err != nil {
+		return domain.TextVersion{}, errors.Join(host.ErrInvalidVersion, err)
+	}
+	version.Hash = hash
 	if i := w.indexOf(params.Path, version.GetID()); i >= 0 {
 		version.CreateTime = w.versions[i].CreateTime
 		w.versions[i] = version
@@ -111,7 +127,7 @@ func (t *Texts) RemoveVersion(_ context.Context, path, key string) error {
 	return nil
 }
 
-func (t *Texts) ListVersions(_ context.Context, path string) (host.TextListing, error) {
+func (t *Texts) ListVersions(ctx context.Context, path string) (host.TextListing, error) {
 	w := t.world
 	w.mu.Lock()
 	defer w.mu.Unlock()
@@ -121,84 +137,45 @@ func (t *Texts) ListVersions(_ context.Context, path string) (host.TextListing, 
 			listing.Versions = append(listing.Versions, v)
 		}
 	}
-	isEnabled := func(pluginID string) bool { return !w.disabled[pluginID] }
-	if live, ok := domain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isEnabled); ok {
+	isIntact := func(v domain.TextVersion) bool {
+		_, hash, err := w.readFile(ctx, v)
+		return err == nil && hash == v.Hash
+	}
+	if live, ok := domain.FindLiveVersion(listing.Versions, domain.HashContent(w.files[path]), isIntact); ok {
 		listing.Live = live.GetID()
 	}
 	return listing, nil
 }
 
-func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersionID, cursor string) (host.TextPage, error) {
+// ReadText returns every segment of the version in one page.
+func (t *Texts) ReadText(ctx context.Context, path string, id domain.TextVersionID, _ string) (host.TextPage, error) {
 	w := t.world
 	w.mu.Lock()
+	defer w.mu.Unlock()
 	i := w.indexOf(path, id)
 	if i < 0 {
-		w.mu.Unlock()
 		return host.TextPage{}, host.ErrNotExist
 	}
-	version := w.versions[i]
-	provider, ok := w.providers[version.PluginID]
-	vault := w.vault
-	w.mu.Unlock()
-	if !ok {
-		return host.TextPage{}, fmt.Errorf("hosttest: no provider of %s: %w", version.PluginID, host.ErrNotExist)
+	segments, hash, err := w.readFile(ctx, w.versions[i])
+	if err != nil || hash != w.versions[i].Hash {
+		return host.TextPage{}, host.ErrNotExist
 	}
-	return provider.GetText(ctx, host.TextRequest{Vault: vault, Path: path, Key: version.Key, Cursor: cursor})
+	return host.TextPage{Segments: segments}, nil
+}
+
+// readFile is the segments of a version's file and the hash of its bytes. The caller holds the lock.
+func (w *textWorld) readFile(ctx context.Context, v domain.TextVersion) ([]domain.TextSegment, string, error) {
+	raw, err := w.getStore(v.PluginID).Read(ctx, v.File)
+	if err != nil {
+		return nil, "", err
+	}
+	segments, err := textfile.Decode(raw)
+	if err != nil {
+		return nil, "", err
+	}
+	return segments, domain.HashContent(raw), nil
 }
 
 func (w *textWorld) indexOf(path string, id domain.TextVersionID) int {
 	return slices.IndexFunc(w.versions, func(v domain.TextVersion) bool { return v.Path == path && v.GetID() == id })
-}
-
-// MemoryProvider is a TextProvider over texts held in memory, a page a part. CreateText makes
-// nothing; a test puts each text with Hold.
-type MemoryProvider struct {
-	mu    sync.Mutex
-	texts map[string][]domain.TextPart
-}
-
-var _ host.TextProvider = (*MemoryProvider)(nil)
-
-// NewMemoryProvider is a provider that holds no text yet.
-func NewMemoryProvider() *MemoryProvider {
-	return &MemoryProvider{texts: map[string][]domain.TextPart{}}
-}
-
-// Hold keeps a text of a file under a key.
-func (p *MemoryProvider) Hold(path, key string, parts []domain.TextPart) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	p.texts[path+"\x00"+key] = parts
-}
-
-func (p *MemoryProvider) GetText(_ context.Context, req host.TextRequest) (host.TextPage, error) {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	parts, ok := p.texts[req.Path+"\x00"+req.Key]
-	if !ok {
-		return host.TextPage{}, host.ErrNotExist
-	}
-	from := 0
-	if req.Cursor != "" {
-		if _, err := fmt.Sscan(req.Cursor, &from); err != nil || from < 0 || from > len(parts) {
-			return host.TextPage{}, fmt.Errorf("hosttest: cursor %q: %w", req.Cursor, host.ErrNotExist)
-		}
-	}
-	if from >= len(parts) {
-		return host.TextPage{}, nil
-	}
-	page := host.TextPage{Parts: parts[from : from+1]}
-	if from+1 < len(parts) {
-		page.NextCursor = fmt.Sprint(from + 1)
-	}
-	return page, nil
-}
-
-func (p *MemoryProvider) CreateText(context.Context, host.TextCreation) error { return nil }
-
-func (p *MemoryProvider) DeleteText(_ context.Context, _ domain.VaultID, path, key string) error {
-	p.mu.Lock()
-	defer p.mu.Unlock()
-	delete(p.texts, path+"\x00"+key)
-	return nil
 }

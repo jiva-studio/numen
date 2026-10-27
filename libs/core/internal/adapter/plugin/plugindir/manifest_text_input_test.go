@@ -20,24 +20,24 @@ func readTextManifest(t *testing.T, input string) (pluginport.PluginManifest, er
 }
 
 func TestAManifestDeclaresWhatItMakesTextFrom(t *testing.T) {
-	m, err := readTextManifest(t, `{"contentTypes": ["application/pdf", "image/vnd.djvu"], "formats": ["positioned"], "autoRun": true}`)
+	m, err := readTextManifest(t, `{"contentTypes": ["application/pdf", "image/vnd.djvu"], "kinds": ["recognition"], "autoRun": true}`)
 	if err != nil {
 		t.Fatal(err)
 	}
 	in := m.TextInput
 	if in == nil || !slices.Equal(in.ContentTypes, []domain.ContentType{"application/pdf", "image/vnd.djvu"}) || !in.IsAutoRun ||
-		!slices.Equal(in.Formats, []domain.TextFormat{domain.TextFormatPositioned}) {
+		!slices.Equal(in.Kinds, []domain.TextKind{"recognition"}) {
 		t.Fatalf("read %+v", in)
 	}
 }
 
 func TestATextInputThatNamesNothingOrNamesItWronglyIsRefused(t *testing.T) {
 	for name, input := range map[string]string{
-		"nothing":                         `{}`,
-		"an extension for a type":         `{"contentTypes": [".pdf"]}`,
-		"a type of no subtype":            `{"contentTypes": ["audio"]}`,
-		"a format the core does not read": `{"formats": ["html"]}`,
-		"a run on its own with no types":  `{"formats": ["plain"], "autoRun": true}`,
+		"nothing":                        `{}`,
+		"an extension for a type":        `{"contentTypes": [".pdf"]}`,
+		"a type of no subtype":           `{"contentTypes": ["audio"]}`,
+		"a kind with no name":            `{"kinds": [" "]}`,
+		"a run on its own with no types": `{"kinds": ["article"], "autoRun": true}`,
 	} {
 		if _, err := readTextManifest(t, input); !errors.Is(err, pluginport.ErrInvalidTextInput) {
 			t.Errorf("%s: got %v, want ErrInvalidTextInput", name, err)

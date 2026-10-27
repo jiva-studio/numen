@@ -388,7 +388,7 @@ func fillSource(
 		return err
 	}
 	first := found[indices[0]]
-	prose, err := of.getText(ctx, source, first.Producer)
+	prose, version, err := of.getText(ctx, source, first.Producer)
 	if vaultport.IsNoNote(err) || errors.Is(err, errUnreadable) {
 		return nil
 	}
@@ -403,6 +403,9 @@ func fillSource(
 		p := found[i]
 		p.Text = span(prose, p.Start, p.Length)
 		p.Line = lineOf(prose, opens, p.Start+p.HitAt)
+		if version != nil {
+			p.Selector = version.GetSelector(p.Start + p.HitAt)
+		}
 		filled[i] = p
 		keep[i] = true
 	}
@@ -434,28 +437,29 @@ type sourceTexts struct {
 	texts textport.Texts
 }
 
-// getText is the text a source's chunks are places in. A source cut from no
-// version is a note, and its text is its file. A source cut from a version is
-// that version, and a version no longer there is errUnreadable.
-func (s sourceTexts) getText(ctx context.Context, path, version string) (string, error) {
+// getText is the text a source's chunks are places in, and the version it is
+// when it is one. A source cut from no version is a note, and its text is its
+// file. A source cut from a version is that version, and a version no longer
+// there is errUnreadable.
+func (s sourceTexts) getText(ctx context.Context, path, version string) (string, *domain.VersionText, error) {
 	if version == "" {
 		raw, err := s.files.Read(ctx, path)
 		if err != nil {
-			return "", err
+			return "", nil, err
 		}
-		return string(raw), nil
+		return string(raw), nil, nil
 	}
 	if s.texts == nil {
-		return "", errUnreadable
+		return "", nil, errUnreadable
 	}
 	doc, err := s.texts.GetVersionText(ctx, path, domain.TextVersionID(version))
 	if errors.Is(err, textport.ErrNoText) {
-		return "", errUnreadable
+		return "", nil, errUnreadable
 	}
 	if err != nil {
-		return "", err
+		return "", nil, err
 	}
-	return doc.Text, nil
+	return doc.Text, &doc, nil
 }
 
 // span is the text a chunk addresses, bounded by what the source holds now. A

@@ -29,6 +29,10 @@ type ScenarioAssembly interface {
 	// installation keeps no text versions.
 	OpenFileMenu() *textversion.FileMenu
 
+	// OpenFileText is the live text of a vault's files and a person's edits of it, and nil
+	// where the installation keeps no text versions.
+	OpenFileText() *textversion.FileText
+
 	// OpenCopy opens the copy a plugin keeps of a file, played in place of the file.
 	OpenCopy() *file.OpenCopy
 

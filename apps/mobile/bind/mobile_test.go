@@ -207,8 +207,8 @@ func TestTheFilesOfTheVaultAreNotServedToThePhone(t *testing.T) {
 		"/assets/Physics.md",
 		"/numen.v1.DocumentService/GetDocument",
 		"/numen.v1.RecordingService/GetRecording",
-		"/numen.v1.TranscriptService/ReadTranscript",
-		"/numen.v1.TranscriptService/WriteTranscript",
+		"/numen.v1.TextService/ReadLiveText",
+		"/numen.v1.TextService/CreateTextEdit",
 		"/numen.v1.ArticleService/ReadArticle",
 	} {
 		url := fmt.Sprintf("http://127.0.0.1:%d%s", port, item)

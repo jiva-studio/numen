@@ -12,7 +12,6 @@ import (
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/bridge"
-	"github.com/jiva-studio/numen/libs/core/internal/adapter/plugin/textwire"
 	"github.com/jiva-studio/numen/libs/core/port/pluginport"
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
@@ -45,7 +44,7 @@ func (p Plugins) GetTextPlugins() []textport.TextPlugin {
 		}
 		in := found.Manifest.TextInput
 		out = append(out, textport.TextPlugin{
-			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(in.ContentTypes), Formats: in.Formats, IsAutoRun: in.IsAutoRun,
+			ID: info.ID, Name: found.Manifest.Name, Files: p.getFileInput(in.ContentTypes), Kinds: in.Kinds, IsAutoRun: in.IsAutoRun,
 		})
 	}
 	return out
@@ -82,24 +81,6 @@ type provider struct {
 	service bridge.Service[numenv1connect.TextProviderServiceClient]
 }
 
-func (p provider) GetText(ctx context.Context, req textport.TextRequest) (textport.TextPage, error) {
-	client, lease, err := p.service.Open(ctx)
-	if err != nil {
-		return textport.TextPage{}, err
-	}
-	defer func() { _ = lease.Close() }()
-	res, err := client.GetText(ctx, connect.NewRequest(&v1.TextProviderServiceGetTextRequest{
-		VaultId: string(req.Vault), Path: req.Path, Key: req.Key, Cursor: req.Cursor,
-	}))
-	if err != nil {
-		return textport.TextPage{}, fmt.Errorf("rpc get text: %w", err)
-	}
-	if err := readError(res.Msg.GetError()); err != nil {
-		return textport.TextPage{}, err
-	}
-	return textport.TextPage{Parts: textwire.ReadParts(res.Msg.GetParts()), NextCursor: res.Msg.GetNextCursor()}, nil
-}
-
 func (p provider) CreateText(ctx context.Context, req textport.TextCreation) error {
 	client, lease, err := p.service.Open(ctx)
 	if err != nil {
@@ -107,25 +88,10 @@ func (p provider) CreateText(ctx context.Context, req textport.TextCreation) err
 	}
 	defer func() { _ = lease.Close() }()
 	res, err := client.CreateText(ctx, connect.NewRequest(&v1.TextProviderServiceCreateTextRequest{
-		VaultId: string(req.Vault), Path: req.Path, InputVersionId: string(req.Input), IsUserStarted: req.IsUserStarted,
+		VaultId: string(req.Vault), Path: req.Path, SourceVersionId: string(req.Source), IsUserStarted: req.IsUserStarted,
 	}))
 	if err != nil {
 		return fmt.Errorf("rpc create text: %w", err)
-	}
-	return readError(res.Msg.GetError())
-}
-
-func (p provider) DeleteText(ctx context.Context, v domain.VaultID, path, key string) error {
-	client, lease, err := p.service.Open(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { _ = lease.Close() }()
-	res, err := client.DeleteText(ctx, connect.NewRequest(&v1.TextProviderServiceDeleteTextRequest{
-		VaultId: string(v), Path: path, Key: key,
-	}))
-	if err != nil {
-		return fmt.Errorf("rpc delete text: %w", err)
 	}
 	return readError(res.Msg.GetError())
 }

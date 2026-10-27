@@ -2,16 +2,13 @@ package textversion
 
 import (
 	"context"
-	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
 	"github.com/jiva-studio/numen/libs/core/port/textport"
 )
-
-// errRepeatedCursor is a provider that answered a page with the cursor it was asked with.
-var errRepeatedCursor = errors.New("the provider answered the same page twice")
 
 // GetLiveText is the text of the file's live version, or textport.ErrNoText.
 func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, fileHash string) (domain.VersionText, error) {
@@ -19,70 +16,82 @@ func (u *Versions) GetLiveText(ctx context.Context, v domain.Vault, path, fileHa
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	live, ok := domain.FindLiveVersion(versions, fileHash, u.isEnabled)
+	live, ok, err := u.findLive(ctx, v, versions, fileHash)
+	if err != nil {
+		return domain.VersionText{}, err
+	}
 	if !ok {
 		return domain.VersionText{}, fmt.Errorf("%w: %s has no live version", textport.ErrNoText, path)
 	}
 	return u.readText(ctx, v, live)
 }
 
-// GetVersionText is the text of one version, or textport.ErrNoText where the
-// file has no such version or the plugin that made it is not enabled.
+// GetVersionText is the text of one version, live or not, whether or not the
+// plugin that made it is enabled. A version the file has not, or whose file
+// changed since it was recorded, is textport.ErrNoText.
 func (u *Versions) GetVersionText(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID) (domain.VersionText, error) {
 	versions, err := u.getVersions(ctx, v, path)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
 	i := indexOf(versions, id)
-	if i < 0 || !u.isEnabled(versions[i].PluginID) {
+	if i < 0 {
 		return domain.VersionText{}, fmt.Errorf("%w: version %s of %s", textport.ErrNoText, id, path)
 	}
 	return u.readText(ctx, v, versions[i])
 }
 
-// GetTextPage is one page of a version's text, as the plugin that made it
-// answers it.
-func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (textport.TextPage, error) {
-	versions, err := u.getVersions(ctx, v, path)
-	if err != nil {
-		return textport.TextPage{}, err
-	}
-	i := indexOf(versions, id)
-	if i < 0 || !u.isEnabled(versions[i].PluginID) {
-		return textport.TextPage{}, fmt.Errorf("%w: version %s of %s", textport.ErrNoText, id, path)
-	}
-	provider, err := u.providers.OpenProvider(ctx, versions[i].PluginID)
-	if err != nil {
-		return textport.TextPage{}, err
-	}
-	return provider.GetText(ctx, textport.TextRequest{Vault: v.ID, Path: path, Key: versions[i].Key, Cursor: cursor})
+// TextPage is one page of a version's segments. An empty NextCursor is the last page.
+type TextPage struct {
+	Segments   []domain.TextSegment
+	NextCursor string
 }
 
-// readText is every page of a version's text, joined.
+// pageSize is how many segments one page of a version's text holds.
+const pageSize = 1000
+
+// GetTextPage is one page of a version's segments. cursor is the NextCursor of
+// the page before, and empty for the first.
+func (u *Versions) GetTextPage(ctx context.Context, v domain.Vault, path string, id domain.TextVersionID, cursor string) (TextPage, error) {
+	start := 0
+	if cursor != "" {
+		n, err := strconv.Atoi(cursor)
+		if err != nil || n < 0 {
+			return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
+		}
+		start = n
+	}
+	text, err := u.GetVersionText(ctx, v, path, id)
+	if err != nil {
+		return TextPage{}, err
+	}
+	segments := text.GetSegments()
+	if start > len(segments) {
+		return TextPage{}, fmt.Errorf("%w: cursor %q", textport.ErrNoText, cursor)
+	}
+	end := min(start+pageSize, len(segments))
+	page := TextPage{Segments: segments[start:end]}
+	if end < len(segments) {
+		page.NextCursor = strconv.Itoa(end)
+	}
+	return page, nil
+}
+
+// readText reads a version's file, and is textport.ErrNoText where the file is
+// gone or no longer has the hash the version was recorded with.
 func (u *Versions) readText(ctx context.Context, v domain.Vault, version domain.TextVersion) (domain.VersionText, error) {
-	provider, err := u.providers.OpenProvider(ctx, version.PluginID)
+	files, err := u.files.Open(v)
 	if err != nil {
 		return domain.VersionText{}, err
 	}
-	var parts []domain.TextPart
-	cursor := ""
-	for {
-		if err := ctx.Err(); err != nil {
-			return domain.VersionText{}, err
-		}
-		page, err := provider.GetText(ctx, textport.TextRequest{Vault: v.ID, Path: version.Path, Key: version.Key, Cursor: cursor})
-		if err != nil {
-			return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, err)
-		}
-		parts = append(parts, page.Parts...)
-		if page.NextCursor == "" {
-			return domain.NewVersionText(version, parts), nil
-		}
-		if page.NextCursor == cursor {
-			return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, errRepeatedCursor)
-		}
-		cursor = page.NextCursor
+	file, err := files.ReadTextFile(ctx, version.PluginID, version.File)
+	if err != nil {
+		return domain.VersionText{}, fmt.Errorf("read text %s of %s: %w", version.GetID(), version.Path, err)
 	}
+	if file.Hash != version.Hash {
+		return domain.VersionText{}, fmt.Errorf("%w: the file of %s of %s changed", textport.ErrNoText, version.GetID(), version.Path)
+	}
+	return domain.NewVersionText(version, file.Segments), nil
 }
 
 // Open is the text of one vault, as the index, the search and the highlighting read it.

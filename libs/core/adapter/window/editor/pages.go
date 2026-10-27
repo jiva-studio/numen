@@ -158,6 +158,9 @@ func (s *Services) newServices() []service {
 		{numenv1connect.TextVersionServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			return numenv1connect.NewTextVersionServiceHandler(s.TextVersion, c)
 		}},
+		{numenv1connect.TextServiceName, func(c connect.HandlerOption) (string, http.Handler) {
+			return numenv1connect.NewTextServiceHandler(s.Text, c)
+		}},
 		{numenv1connect.PluginServiceName, func(c connect.HandlerOption) (string, http.Handler) {
 			if s.Plugin == nil {
 				return numenv1connect.NewPluginServiceHandler(numenv1connect.UnimplementedPluginServiceHandler{}, c)

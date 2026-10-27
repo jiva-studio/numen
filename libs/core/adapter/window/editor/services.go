@@ -13,6 +13,7 @@ import (
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/search"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/settings"
 	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/textmenu"
+	"github.com/jiva-studio/numen/libs/core/adapter/window/editor/texts"
 
 	"github.com/jiva-studio/numen/libs/core/internal/adapterlib/wire"
 	"github.com/jiva-studio/numen/libs/core/port/machineport"
@@ -39,6 +40,8 @@ type Services struct {
 	Recording *recordingHandler
 	// TextVersion answers the menu a file's text versions make.
 	TextVersion *textmenu.Handler
+	// Text serves the live text of a file and a person's edit of it to the views.
+	Text *texts.Handler
 
 	// Themes are the stylesheets the window may be dressed in. They belong to
 	// the installation, so they arrive here from whatever put the window
@@ -85,6 +88,7 @@ func createServices(state *State) *Services {
 		Command:     command.NewHandler(plugincommand.NewCommands(nil, nil)),
 		Recording:   &recordingHandler{state: state},
 		TextVersion: textmenu.NewHandler(state, nil),
+		Text:        texts.NewHandler(state, nil),
 		Plugin:      numenv1connect.UnimplementedPluginServiceHandler{},
 		server:      &fileServer{state: state},
 	}

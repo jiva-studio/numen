@@ -137,6 +137,7 @@ func (h *Handler) SearchPassages(
 			Span:     &v1.Span{From: int32(p.Start), To: int32(p.Start + p.Length)},
 			Line:     int32(p.Line),
 			Kind:     convertSourceKindToWire(p.Kind),
+			Selector: string(p.Selector),
 		}
 		if noteRef, target := titles[p.Source]; target {
 			passage.Note = convertNoteToWire(noteRef)

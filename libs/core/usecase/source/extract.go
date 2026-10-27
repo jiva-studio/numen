@@ -445,12 +445,12 @@ func (u Extract) reportError(err error) {
 // chunksOf cuts one source's text: the large chunks a result shows, each
 // holding the small chunks that carry a vector.
 func chunksOf(doc domain.VersionText, sizes chunking.Sizes, reads chunking.Legibility) []domain.Chunk {
-	return chunking.Chunks(doc.Text, doc.GetSections(), sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
+	return chunking.Chunks(doc.Text, doc.GetHeadings(), sizes, reads, func(c chunking.Chunk, isLarge bool) domain.Chunk {
 		out := chunkAt(doc, c)
 		// The name of a section is kept on the chunk that begins it, and on that
 		// one only.
 		if isLarge {
-			out.Opens = doc.GetNamesAt(c.Start)
+			out.Opens = doc.GetHeadingsAt(c.Start)
 		}
 		return out
 	})

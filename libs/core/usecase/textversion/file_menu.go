@@ -46,8 +46,8 @@ func (u *FileMenu) RunMenuEntry(ctx context.Context, v domain.Vault, path string
 
 // The errors of a menu entry the file's menu does not hold, for a driving adapter.
 var (
-	ErrNoText           = textport.ErrNoText
-	ErrNotTextPlugin    = textport.ErrNotTextPlugin
-	ErrInvalidVersion   = textport.ErrInvalidVersion
-	ErrInputNotAccepted = textport.ErrInputNotAccepted
+	ErrNoText            = textport.ErrNoText
+	ErrNotTextPlugin     = textport.ErrNotTextPlugin
+	ErrInvalidVersion    = textport.ErrInvalidVersion
+	ErrSourceNotAccepted = textport.ErrSourceNotAccepted
 )
