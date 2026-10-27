@@ -3,7 +3,7 @@
  * Standalone Markdown and plain text editor tab component using CodeMirror 6.
  */
 import { computed, ref, useTemplateRef, watch } from 'vue'
-import { Editor } from '@numen/ui'
+import { Editor } from './editor'
 import type { Extension } from '@codemirror/state'
 import { useMarkdownDocument, type EditorHandle } from './useMarkdownDocument'
 

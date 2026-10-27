@@ -1,6 +1,8 @@
 <script setup lang="ts">
+/**
+ * One note on the phone, as plain text until the note editor view is mounted here.
+ */
 import { onMounted, ref, useTemplateRef } from 'vue'
-import { Editor } from '@numen/ui'
 import { formatErrorCodeMessage } from '@numen/wire'
 import { NoteBar } from './note-bar'
 import type { ReadNoteResponse } from '@numen/protocol'
@@ -19,7 +21,7 @@ const emit = defineEmits<{
 const prose = ref('')
 const loadedNote = ref<{ prose: string; at: NonNullable<ReadNoteResponse['at']> } | null>(null)
 const isReading = ref(true)
-const editor = useTemplateRef<InstanceType<typeof Editor>>('editor')
+const editor = useTemplateRef<HTMLTextAreaElement>('editor')
 
 /* --------------------------------- Hooks ---------------------------------- */
 onMounted(async () => {
@@ -57,7 +59,14 @@ async function onKeep() {
   <div class="note">
     <NoteBar :path="path" :is-reading="isReading" @close="emit('close')" @keep="onKeep" />
     <div class="note__prose">
-      <Editor ref="editor" v-model="prose" data-testid="editor" />
+      <textarea
+        ref="editor"
+        v-model="prose"
+        class="note__text"
+        aria-label="Note"
+        :readonly="isReading"
+        data-testid="editor"
+      />
     </div>
   </div>
 </template>
@@ -76,5 +85,23 @@ async function onKeep() {
 .note__prose {
   flex: 1;
   min-block-size: 0;
+}
+
+.note__text {
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100%;
+  padding: var(--numen-gutter);
+  border: none;
+  resize: none;
+  background: transparent;
+  color: var(--numen-ink);
+  font: inherit;
+  font-size: var(--numen-reading-size);
+  line-height: 1.6;
+}
+
+.note__text:focus {
+  outline: none;
 }
 </style>

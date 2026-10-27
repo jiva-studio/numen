@@ -21,7 +21,7 @@ import {
   ViewPlugin,
   type ViewUpdate,
 } from '@codemirror/view'
-import { browserClock, type Clock } from '@/shared/lib/time/clock'
+import { browserClock, type Clock } from '@numen/ui'
 
 /** A change being made to this text by something other than the reader. */
 export interface EditorChange {

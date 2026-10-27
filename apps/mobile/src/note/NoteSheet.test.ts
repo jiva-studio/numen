@@ -43,3 +43,30 @@ describe('a note the core rejected', () => {
     sheet.unmount()
   })
 })
+
+describe('a note typed in on the phone', () => {
+  it('writes the typed text against the version it read', async () => {
+    const version = { modifyTime: 1n }
+    const writeNote = vi.fn().mockResolvedValue({})
+    const core = createCore({
+      readNote: vi.fn().mockResolvedValue({ body: 'One line.\n', at: version }),
+      writeNote,
+    })
+    const sheet = mount(NoteSheet, { props: { core, path: 'Kept.md' }, attachTo: document.body })
+    await flushPromises()
+
+    expect(sheet.get('textarea').element.value).toBe('One line.\n')
+    await sheet.get('textarea').setValue('Two lines.\n')
+    await sheet.get('[data-testid="keep"]').trigger('click')
+    await flushPromises()
+
+    expect(writeNote).toHaveBeenCalledWith({
+      path: 'Kept.md',
+      body: 'Two lines.\n',
+      baseline: { prose: 'One line.\n', at: version },
+    })
+    expect(sheet.emitted('close')).toHaveLength(1)
+
+    sheet.unmount()
+  })
+})

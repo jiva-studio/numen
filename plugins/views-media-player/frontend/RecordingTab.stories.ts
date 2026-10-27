@@ -102,7 +102,6 @@ const render = (cues: readonly Cue[], menu: readonly MenuEntry[], isPlaying: boo
 
 /** A lecture playing, with the words heard in it under the player. */
 export const Playing: Story = {
-  parameters: { reach: { keeps: 'Escape hands Tab back to the page' } },
   render: render(SPOKEN, [TRANSCRIBED], true),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement)

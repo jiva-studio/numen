@@ -145,13 +145,5 @@
     "libs/protocol/proto/numen/v1/file.proto: SOURCE_KIND_URL": 1,
     "libs/protocol/proto/numen/v1/workspace.proto: BookProgress": 2,
     "libs/protocol/proto/numen/v1/workspace.proto: RecordingProgress": 2
-  },
-  "ui-exports-no-editor": {
-    "libs/ui/core/src/features/editor: directory": 1,
-    "libs/ui/core/src/index.ts: export createTimeGutter": 1,
-    "libs/ui/core/src/index.ts: export Editor": 1,
-    "libs/ui/core/src/index.ts: export Extension": 1,
-    "libs/ui/core/src/index.ts: export getWikilinks": 1,
-    "libs/ui/core/src/index.ts: export isNoteAddress": 1
   }
 }

@@ -1,10 +1,9 @@
 /**
- * One pane of the workspace holding an editor among its tabs.
+ * One pane of the workspace holding a scrolled text among its tabs.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, userEvent } from 'storybook/test'
 import { ref } from 'vue'
-import { Editor } from '@numen/ui'
 import { pane } from '../../lib/node'
 import WorkspacePane from './WorkspacePane.vue'
 import { RUSSIAN } from '@/shared/fixtures/prose'
@@ -14,7 +13,6 @@ const meta = {
   component: WorkspacePane,
   parameters: {
     layout: 'fullscreen',
-    reach: { keeps: 'Escape hands Tab back to the page' },
   },
 } satisfies Meta<typeof WorkspacePane>
 
@@ -32,65 +30,59 @@ const nextFrame = () => new Promise((isDone) => requestAnimationFrame(() => isDo
 /**
  * A tab switched away from and come back to.
  *
- * Every tab of a pane is drawn and the ones not shown are held out of sight.
- * The pane says which tab is on screen and that tab's editor is measured again,
- * and the offset the person left the text at is the offset it comes back at.
+ * Every tab of a pane is drawn and the ones not shown are held out of sight. The pane says which
+ * tab is on screen again, so the tab can take its measurements again, and the text in it keeps
+ * what was typed.
  */
 export const ShownAgain: Story = {
   args: { pane: pane('main', [NOTE_TAB, BESIDE], NOTE_TAB) },
   render: () => ({
-    components: { Editor, WorkspacePane },
+    components: { WorkspacePane },
     setup: () => {
       const heldTab = ref(pane('main', [NOTE_TAB, BESIDE], NOTE_TAB))
-      const editors = new Map<string, { measure: () => void }>()
+      const shownTabs = ref<string[]>([])
       return {
         held: heldTab,
         NOTE_TAB,
         text: TEXT,
+        shownTabs,
         titles: { [NOTE_TAB]: 'Note', [BESIDE]: 'Beside' },
         choose: (tab: string) => {
           heldTab.value = pane('main', [NOTE_TAB, BESIDE], tab)
         },
-        drew: (editor: unknown) => {
-          if (editor) editors.set(NOTE_TAB, editor as { measure: () => void })
-        },
-        shown: (tab: string) => editors.get(tab)?.measure(),
+        onShow: (tab: string) => shownTabs.value.push(tab),
       }
     },
     template: `
       <div class="numen h-screen bg-surface">
-        <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="shown">
+        <WorkspacePane :pane="held" :titles="titles" @choose="choose" @show="onShow">
           <template #tab="{ id }">
-            <Editor
+            <textarea
               v-if="id === NOTE_TAB"
-              :ref="drew"
-              :model-value="text"
-              class="h-full"
+              :value="text"
+              aria-label="Note"
+              class="h-full w-full resize-none p-4 font-sans text-base text-ink"
             />
             <p v-else class="p-4 font-sans text-base text-ink">Something else</p>
           </template>
         </WorkspacePane>
+        <output data-shown>{{ shownTabs.join(' ') }}</output>
       </div>`,
   }),
   play: async ({ canvasElement }) => {
-    const scroller = canvasElement.querySelector('.cm-scroller') as HTMLElement
+    const note = canvasElement.querySelector('textarea') as HTMLTextAreaElement
+    const shownLog = canvasElement.querySelector('[data-shown]') as HTMLElement
     const tab = (id: string) =>
       canvasElement.querySelector(`[data-workspace-tab="${id}"]`) as HTMLElement
 
-    scroller.scrollTop = 600
-    await nextFrame()
-    const offset = scroller.scrollTop
-    await expect(offset).toBeGreaterThan(0)
+    await userEvent.type(note, 'Kept.')
 
-    // Away: the panel is held out of sight, and what has no box has no offset.
     await userEvent.click(tab(BESIDE))
     await nextFrame()
-    await expect(scroller.scrollTop).toBe(0)
-
     await userEvent.click(tab(NOTE_TAB))
     await nextFrame()
-    await nextFrame()
 
-    await expect(scroller.scrollTop).toBe(offset)
+    await expect(shownLog.textContent?.split(' ').at(-1)).toBe(NOTE_TAB)
+    await expect(note.value).toContain('Kept.')
   },
 }

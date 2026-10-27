@@ -28,7 +28,7 @@ export default defineConfig({
     rollupOptions: {
       external: ['vue'],
       // One file per module, so a window linking a handful of components is
-      // not handed the editor and its grammars along with them.
+      // not handed every other module along with them.
       output: {
         preserveModules: true,
         preserveModulesRoot: fileURLToPath(new URL('./src', import.meta.url)),

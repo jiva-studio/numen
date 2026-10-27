@@ -6,13 +6,14 @@
  * product is taken from, so every piece is drawn in the state it settles in.
  * The book is a picture of its page: the reader that draws a document is the
  * PDF plugin's, and its stories are in the plugins' Storybook. The agent's
- * pane is empty for the same reason: views-agent-chat draws the agent chat.
+ * pane is empty for the same reason: views-agent-chat draws the agent chat. The
+ * notes are plain text: the notes plugin draws the note editor.
  */
 import type { Meta, StoryObj } from '@storybook/vue3-vite'
 import { expect, waitFor, within } from 'storybook/test'
 import { Book, BookOpen, Bot, FileText, Folder, FolderOpen, FolderTree } from '@lucide/vue'
 import { ref } from 'vue'
-import { Editor, Tree, keyChord } from '@numen/ui'
+import { Tree, keyChord } from '@numen/ui'
 import type { PaletteKeys, Row, Span } from '@numen/ui'
 import {
   WorkspaceLayout,
@@ -387,44 +388,22 @@ const FILE_COMMANDS: readonly PaletteGroup[] = [
   OVER_VAULT,
 ]
 
-/** A note carrying a table, for the picture of one being typed in. */
-const TABLED = `The three counts, held against each other. Same logarithm, three
-places it is taken.
-
-| Where | What is counted | Written |
-| --- | --- | --- |
-| A gas | arrangements of one energy | Boltzmann, 1877 |
-| A channel | messages it could carry | Shannon, 1948 |
-| A memory | what clearing one bit costs | Landauer, 1961 |
-
-The middle column is the one to watch: it is the same sentence three times, and
-only the noun changes.
-`
-
 interface Screen {
   /** How the window is divided, and which tab each pane shows. */
   readonly workspace: () => State
   readonly panel?: 'search' | 'commands' | null
   /** What the commands panel offers, where it is the panel drawn. */
   readonly commands?: readonly PaletteGroup[]
-  /** What the note in a tab holds. */
-  readonly markdown?: string
   /** The rows of the vault the selection relies on. */
   readonly selected?: readonly string[]
 }
 
 /** One arrangement of the window, drawn from the pieces above. */
-const screen = ({
-  workspace,
-  panel = null,
-  commands = COMMANDS,
-  markdown = MARKDOWN,
-  selected = [],
-}: Screen) => ({
-  components: { WorkspaceLayout, Editor, Palette, Tree },
+const screen = ({ workspace, panel = null, commands = COMMANDS, selected = [] }: Screen) => ({
+  components: { WorkspaceLayout, Palette, Tree },
   setup() {
     const target = ref<State>(workspace())
-    const text = ref(markdown)
+    const text = ref(MARKDOWN)
     const other = ref(OTHER)
     const searchQuery = ref(panel === 'search' ? 'entrop' : '')
     return {
@@ -462,8 +441,8 @@ const screen = ({
         </template>
 
         <template #tab="{ id }">
-          <Editor v-if="id === NOTE" v-model="text" />
-          <Editor v-else-if="id === OTHER_NOTE" v-model="other" />
+          <textarea v-if="id === NOTE" v-model="text" aria-label="Note" class="h-full w-full resize-none bg-transparent p-6 font-sans text-base text-ink" />
+          <textarea v-else-if="id === OTHER_NOTE" v-model="other" aria-label="Other note" class="h-full w-full resize-none bg-transparent p-6 font-sans text-base text-ink" />
           <section v-else-if="id === AGENT" class="h-full" aria-label="Agent" />
           <div
             v-else-if="id === BOOK"
@@ -504,9 +483,6 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-/** A window holding a note: Tab indents in the editor until Escape hands it back. */
-const WRITING = { reach: { keeps: 'Escape hands Tab back to the page' } }
-
 /** One pane of the window, by the name it was divided under. */
 const getPane = (canvas: HTMLElement, id: string): HTMLElement => {
   const element = canvas.querySelector<HTMLElement>(`[data-workspace-pane="${id}"]`)
@@ -519,7 +495,6 @@ const isPast = (later: HTMLElement, earlier: HTMLElement): boolean =>
   later.getBoundingClientRect().left >= earlier.getBoundingClientRect().right - 1
 
 export const Writing: Story = {
-  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -542,19 +517,15 @@ export const Writing: Story = {
       }),
     }),
   play: async ({ canvasElement }) => {
-    // Writing means somewhere to type: the note in the pane is drawn as text a
-    // person may put a caret in.
-    await waitFor(() => {
-      const content = canvasElement.querySelector('.cm-content')
-      expect(content).not.toBeNull()
-      expect(content?.getAttribute('contenteditable')).toBe('true')
-    })
+    // Writing means somewhere to type: the note in the pane is text a person may
+    // put a caret in.
+    const note = await waitFor(() => within(canvasElement).getByRole('textbox', { name: 'Note' }))
+    expect(note).not.toHaveAttribute('readonly')
   },
 }
 
 /** The palette, over everything the window holds. */
 export const Searching: Story = {
-  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -583,7 +554,6 @@ export const Searching: Story = {
 
 /** The commands, in the three groups they are drawn in. */
 export const Commanding: Story = {
-  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -609,7 +579,6 @@ export const Commanding: Story = {
 
 /** The agent beside the note it is being asked about. */
 export const Asking: Story = {
-  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -668,7 +637,6 @@ export const Recognising: Story = {
 
 /** The folders of the vault, with rows chosen across two of them. */
 export const Filing: Story = {
-  parameters: WRITING,
   render: () =>
     screen({
       workspace: () => ({
@@ -709,39 +677,5 @@ export const Filing: Story = {
     for (const [at, folder] of folders.entries()) {
       expect(rows.indexOf(folder)).toBeLessThan(rows.indexOf(selected[at]!))
     }
-  },
-}
-
-/** A note holding a table, which is typed in as a table. */
-export const Tabling: Story = {
-  parameters: WRITING,
-  render: () =>
-    screen({
-      workspace: () => ({
-        root: branch(
-          'root',
-          [pane('main', [FILES]), pane('middle', [NOTE, BOOK], NOTE)],
-          [0.3, 0.7],
-        ),
-        axis: 'horizontal',
-        focus: 'middle',
-      }),
-      markdown: TABLED,
-    }),
-  play: async ({ canvasElement }) => {
-    // The table in the note is drawn as a table, not as the pipes it is
-    // written with, and every cell of it is a cell to type in.
-    const table = await waitFor(() => within(canvasElement).getByRole('table'))
-    const heads = within(table).getAllByRole('columnheader')
-    expect(heads.map((head) => head.textContent?.trim())).toEqual([
-      'Where',
-      'What is counted',
-      'Written',
-    ])
-
-    const cells = within(table).getAllByRole('cell')
-    expect(cells).toHaveLength(9)
-    for (const cell of cells) expect(cell).toHaveAttribute('contenteditable', 'plaintext-only')
-    expect(within(canvasElement).queryByText(/\| --- \|/)).toBeNull()
   },
 }

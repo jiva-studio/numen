@@ -30,11 +30,6 @@ export { isTyping } from './shared/lib/dom/typing'
 export { KeyCap, keyChord } from './shared/ui/key-cap'
 export type { PaletteIcon, PaletteKeys } from './shared/ui/key-cap'
 
-export { Editor } from './features/editor'
-/** A time against every line of an editor, and the line being said now. */
-export { createTimeGutter } from './features/editor'
-export type { Extension } from './features/editor'
-
 /** A moment of a recording as a player writes one. */
 export { clock } from './shared/lib/time/duration'
 
@@ -44,9 +39,6 @@ export { createFollower } from './shared/lib/async/stream'
 export { Spinner } from './shared/ui/spinner'
 export { LoadingIndicator } from './shared/ui/loading-indicator'
 export { Skeleton } from './shared/ui/skeleton'
-
-/** A link to a note: `[[name]]` in the text, `note://<identifier>` inside it. */
-export { isNoteAddress, getWikilinks } from './shared/lib/text/address'
 
 /** A link that leads out of the application, and the window held against it. */
 export { interceptExternalLinks, isExternalLink } from './shared/lib/text/externalLink'

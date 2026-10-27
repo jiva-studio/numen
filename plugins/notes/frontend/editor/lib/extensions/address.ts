@@ -5,7 +5,7 @@ import { syntaxTree } from '@codemirror/language'
 import type { EditorState } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import type { SyntaxNode } from '@lezer/common'
-import { findWikilink } from '@/shared/lib/text/address'
+import { findWikilink } from './wikilink'
 import { addressOpener } from '../outside'
 
 /** Finds the first child node matching the specified syntax type. */

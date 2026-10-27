@@ -34,8 +34,8 @@ describe('a note read on the phone', () => {
     })
     await flushPromises()
 
-    // The note is drawn, and every address in it is drawn as the words it is.
-    expect(document.body.innerHTML).toContain('evil.example')
+    // The note is shown, and every address in it is shown as the words it is.
+    expect(sheet.get('textarea').element.value).toContain('evil.example')
     const reaching = document.querySelectorAll('a[href], area[href], img[src], form[action]')
     expect([...reaching].map((each) => each.outerHTML)).toStrictEqual([])
 

@@ -80,7 +80,3 @@ export const getWikilinks = (text: string): readonly Wikilink[] => {
   }
   return found
 }
-
-/** The wikilink a position in a text falls inside, and nothing where it falls in none. */
-export const findWikilink = (text: string, pos: number): Wikilink | null =>
-  getWikilinks(text).find((one) => pos >= one.at && pos <= one.to) ?? null

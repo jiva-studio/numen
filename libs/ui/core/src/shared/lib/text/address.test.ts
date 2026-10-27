@@ -4,7 +4,7 @@
  * The same brackets stand in an answer and in a note, and both are read here.
  */
 import { describe, expect, it } from 'vitest'
-import { parseAddress, isNoteAddress, writeAddress, findWikilink, getWikilinks } from './address'
+import { parseAddress, isNoteAddress, writeAddress, getWikilinks } from './address'
 
 /**
  * The addresses in a note travel on the wire as they were written, so the core
@@ -107,17 +107,5 @@ describe('the wikilinks in a text', () => {
 
   it('are not brackets holding nothing', () => {
     expect(getWikilinks('[[]] and [[ ]]')).toStrictEqual([])
-  })
-
-  it('are found under a position in the text, and nowhere else', () => {
-    const text = 'Under [[Thermodynamics]] it sits.'
-
-    expect(findWikilink(text, 10)?.address).toBe('name://Thermodynamics')
-    expect(findWikilink(text, 6)?.address).toBe('name://Thermodynamics')
-    expect(findWikilink(text, 24)?.address).toBe('name://Thermodynamics')
-    expect(findWikilink(text, 5)).toBeNull()
-    expect(findWikilink(text, 25)).toBeNull()
-    expect(findWikilink(text, 2)).toBeNull()
-    expect(findWikilink(text, 30)).toBeNull()
   })
 })

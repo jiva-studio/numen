@@ -4,7 +4,9 @@
  * none. A time in the gutter is clicked to play from there.
  */
 import { watch } from 'vue'
-import { Editor, createTimeGutter, LoadingIndicator } from '@numen/ui'
+import { LoadingIndicator } from '@numen/ui'
+import { createTimeGutter } from './lib/timeGutter'
+import TranscriptText from './TranscriptText.vue'
 import { WORDS as words } from './words'
 import type { TranscriptState } from './model/transcript'
 
@@ -68,14 +70,13 @@ function onSave() {
       </button>
     </div>
 
-    <Editor
+    <TranscriptText
       v-else
       class="transcript__text"
       :model-value="prose"
-      :is-live="false"
-      :is-readonly="!isEditable"
+      :is-editable="isEditable"
+      :label="words.transcript"
       :extensions="timed ? times.extension : []"
-      :aria-label="words.transcript"
       @update:model-value="onUpdateModelValue"
       @save="onSave"
     />

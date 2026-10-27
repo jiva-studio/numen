@@ -15,9 +15,9 @@ import {
   setReveal,
   type EditorChange,
 } from './change'
-import type { Clock } from '@/shared/lib/time/clock'
+import type { Clock } from '@numen/ui'
 import { createState } from '../../fixtures/state'
-import { RUSSIAN } from '@/shared/fixtures/prose'
+import { RUSSIAN } from '../../fixtures/prose'
 
 // Nothing here has a size, and the editor measures anyway.
 Range.prototype.getClientRects = () =>

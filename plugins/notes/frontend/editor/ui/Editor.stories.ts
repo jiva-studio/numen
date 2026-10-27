@@ -10,12 +10,11 @@ import { EditorSelection } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import Editor from './Editor.vue'
 import type { EditorChange } from '../lib/change/change'
-import { createTimeGutter } from '../lib/extensions/timeGutter'
-import { MARKED_UP, PICTURE, TABLE } from '@/shared/fixtures/markdown'
-import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '@/shared/fixtures/prose'
+import { MARKED_UP, PICTURE, TABLE } from '../fixtures/markdown'
+import { ARABIC, DEVANAGARI, LINK, LONG, RUSSIAN, UNBREAKABLE } from '../fixtures/prose'
 
 const meta = {
-  title: 'Text/Editor',
+  title: 'Notes/Editor',
   component: Editor,
   parameters: {
     layout: 'fullscreen',
@@ -819,47 +818,4 @@ export const AWholeDocumentOfCode: Story = {
 /** A language no fence answers to leaves the document plain. */
 export const ALanguageNothingAnswersTo: Story = {
   render: renderEditor(SETTINGS, { isLive: false, language: 'not-a-language' }),
-}
-
-/* Two paragraphs that wrap over several rows in the measure the story sets, each with a time. */
-const TIMED = [LONG, '', RUSSIAN].join('\n')
-const TIMED_TIMES = ['0:01', '', '0:41']
-
-/**
- * A transcript: a time in the gutter against each paragraph, set on the paragraph's first row
- * however many rows the paragraph wraps over.
- */
-export const Timed: Story = {
-  render: () => ({
-    components: { Editor },
-    setup: () => {
-      const times = createTimeGutter(() => {})
-      times.show({ times: TIMED_TIMES, current: 0, isFollowing: false })
-      return { text: TIMED, extensions: times.extension }
-    },
-    template: `<Editor :model-value="text" :is-live="false" :extensions="extensions" style="--editor-measure: 24rem" class="h-screen bg-surface" />`,
-  }),
-  play: async ({ canvasElement }) => {
-    const view = getView(canvasElement)
-    await waitFor(() => expect(canvasElement.querySelector('.cm-time')).not.toBeNull())
-    await nextFrame()
-
-    for (const [index, text] of TIMED_TIMES.entries()) {
-      if (!text) continue
-      const line = view.state.doc.line(index + 1)
-      const first = view.coordsAtPos(line.from, 1)
-      const last = view.coordsAtPos(line.to, -1)
-      const time = Array.from(canvasElement.querySelectorAll<HTMLElement>('.cm-time')).find(
-        (one) => one.textContent === text,
-      )
-      if (!first || !last || !time) throw new Error(`nothing is drawn for ${text}`)
-      const box = time.getBoundingClientRect()
-      await expect({ text, wraps: last.top > first.bottom }).toEqual({ text, wraps: true })
-      const middle = (box.top + box.bottom) / 2
-      await expect({
-        text,
-        onFirstRow: middle >= first.top && middle <= first.bottom,
-      }).toEqual({ text, onFirstRow: true })
-    }
-  },
 }
