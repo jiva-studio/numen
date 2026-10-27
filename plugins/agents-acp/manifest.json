@@ -6,7 +6,6 @@
   "description": "Agent Client Protocol (ACP) client: finds ACP programs and runs completions through them",
   "capabilities": ["agent", "ai.agent.provider"],
   "targets": ["desktop.editor", "desktop.flashcards"],
-  "activationEvents": ["onCommand:askAgent"],
   "permissions": ["network:outbound", "vault:read", "vault:write"],
   "lifecycle": {
     "idleTimeoutSeconds": 180,
