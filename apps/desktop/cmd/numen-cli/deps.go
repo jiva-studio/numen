@@ -10,7 +10,9 @@ import (
 )
 
 func configureLocations(cfg container.Config, where cli.Locations) container.Config {
-	cfg.IndexPath = where.Index
+	if where.Index != "" {
+		cfg.IndexPath = where.Index
+	}
 	cfg.RegistryPath = where.Registry
 	cfg.ServiceDir = where.ServiceDir
 	cfg = cfg.SetSafeMode(where.SafeMode)

@@ -34,7 +34,7 @@ func main() {
 	cfg := makeConfig(os.Stderr)
 	var showVersion bool
 	var debug debugOptions
-	flag.StringVar(&cfg.IndexPath, "index", "", "path to the index database")
+	flag.StringVar(&cfg.IndexPath, "index", cfg.IndexPath, "path to the index database")
 	flag.StringVar(&cfg.RegistryPath, "registry", "", "path to the vault list")
 	flag.BoolVar(&showVersion, "version", false, "say what this build is and stop")
 	registerDebugFlags(flag.CommandLine, &debug)

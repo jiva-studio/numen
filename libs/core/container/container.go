@@ -9,6 +9,7 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -40,6 +41,8 @@ import (
 // Config is what the user may point somewhere else. Empty fields mean the
 // platform's own locations.
 type Config struct {
+	// IndexPath is the index database. The application chooses it; the core
+	// does not start without one.
 	IndexPath    string
 	RegistryPath string
 	ServiceDir   string
@@ -318,25 +321,17 @@ func (c Config) vaultOptions() vaultconfig.Options {
 	}
 }
 
-// IndexPathOrDefault returns the database index path, defaulting to the system cache directory.
-func (c Config) IndexPathOrDefault() (string, error) { return c.indexPath() }
+// ErrNoIndexPath is a configuration that names no index database.
+var ErrNoIndexPath = errors.New("the configuration names no index database: the application sets IndexPath")
 
 func (c Config) indexPath() (string, error) {
-	if c.IndexPath != "" {
-		if err := os.MkdirAll(filepath.Dir(c.IndexPath), 0o755); err != nil {
-			return "", err
-		}
-		return c.IndexPath, nil
+	if c.IndexPath == "" {
+		return "", ErrNoIndexPath
 	}
-	dir, err := os.UserCacheDir()
-	if err != nil {
+	if err := os.MkdirAll(filepath.Dir(c.IndexPath), 0o755); err != nil {
 		return "", err
 	}
-	dir = filepath.Join(dir, "numen")
-	if err := os.MkdirAll(dir, 0o755); err != nil {
-		return "", err
-	}
-	return filepath.Join(dir, "index.db"), nil
+	return c.IndexPath, nil
 }
 
 // GetWait is the wait every scenario assembled here is handed, bound to this

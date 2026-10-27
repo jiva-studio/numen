@@ -132,7 +132,7 @@ func TestTheIndexIsWhereTheInstallationNamedItAndItsFolderIsMade(t *testing.T) {
 	isolate(t)
 	named := filepath.Join(t.TempDir(), "nested", "deeper", "index.db")
 
-	got, err := Config{IndexPath: named}.IndexPathOrDefault()
+	got, err := Config{IndexPath: named}.indexPath()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -151,7 +151,7 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got, err := Config{IndexPath: filepath.Join(file, "index.db")}.IndexPathOrDefault()
+	got, err := Config{IndexPath: filepath.Join(file, "index.db")}.indexPath()
 	if err == nil || got != "" {
 		t.Errorf("the index is at %q: %v", got, err)
 	}
@@ -160,42 +160,6 @@ func TestAnIndexWhoseFolderCannotBeMadeIsAReason(t *testing.T) {
 	}
 }
 
-func TestAnIndexNobodyNamedIsInTheUsersCacheFolder(t *testing.T) {
-	isolate(t)
-	cache, err := os.UserCacheDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	got, err := Config{}.IndexPathOrDefault()
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := filepath.Join(cache, "numen", "index.db"); got != want {
-		t.Errorf("the index is at %q, not %q", got, want)
-	}
-	if info, err := os.Stat(filepath.Dir(got)); err != nil || !info.IsDir() {
-		t.Errorf("the folder of the index was not made: %v", err)
-	}
-}
-
-func TestAnIndexIsNotMadeWhereTheCacheFolderCannotBeMade(t *testing.T) {
-	isolate(t)
-	file := filepath.Join(t.TempDir(), "file")
-	if err := os.WriteFile(file, nil, 0o600); err != nil {
-		t.Fatal(err)
-	}
-	t.Setenv("XDG_CACHE_HOME", file)
-	t.Setenv("HOME", file)
-
-	if got, err := (Config{}).IndexPathOrDefault(); err == nil || got != "" {
-		t.Errorf("the index is at %q: %v", got, err)
-	}
-	isolateWithNoHome(t)
-	if got, err := (Config{}).IndexPathOrDefault(); err == nil || got != "" {
-		t.Errorf("the index is at %q: %v", got, err)
-	}
-}
 
 func TestWhatWentWrongIsReportedToWhoeverAskedToBeReported(t *testing.T) {
 	var notified []error

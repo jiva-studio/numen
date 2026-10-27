@@ -210,14 +210,8 @@ func getIndexFatalReport(cfg container.Config, code int, why error) fatalReport 
 	return response
 }
 
-// getIndexPath is the file the index is kept in, whether or not one was named.
-func getIndexPath(cfg container.Config) string {
-	path, err := cfg.IndexPathOrDefault()
-	if err != nil {
-		return cfg.IndexPath
-	}
-	return path
-}
+// getIndexPath is the file the index is kept in.
+func getIndexPath(cfg container.Config) string { return cfg.IndexPath }
 
 // getSettingsPath is the file a person configures this installation in. A registry
 // pointed somewhere chosen takes the settings with it.

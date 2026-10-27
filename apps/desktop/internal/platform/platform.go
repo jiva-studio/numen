@@ -45,9 +45,14 @@ func GetConfig() container.Config { return GetConfigFor(TargetEditor) }
 // GetConfigFor is GetConfig for the window of a target, whose plugin host runs the plugins that name
 // that target.
 func GetConfigFor(target string) container.Config {
-	return container.Config{
+	cfg := container.Config{
 		PluginHost: newPluginHost(target, getPluginsDirs()...),
 	}
+	// A machine with no data folder leaves the path empty, and the core refuses to start.
+	if path, err := GetIndexPath(); err == nil {
+		cfg.IndexPath = path
+	}
+	return cfg
 }
 
 func getPluginsDirs() []string {
