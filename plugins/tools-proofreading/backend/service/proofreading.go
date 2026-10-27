@@ -128,7 +128,7 @@ func (p *Proofreading) findSource(ctx context.Context, texts host.Texts, filePat
 		if id == "" || version.GetID() != id {
 			continue
 		}
-		if !p.kinds[version.Kind] {
+		if !p.kinds[version.Kind] && !p.kinds["*"] {
 			return domain.TextVersion{}, fmt.Errorf("%s is %s text: %w", id, version.Kind, errFormat)
 		}
 		return version, nil

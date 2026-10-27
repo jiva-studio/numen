@@ -20,9 +20,6 @@ const OPEN_GROUP = 'open'
 /** The group the files the tab makes stand in. */
 const FILE_GROUP = 'file'
 
-/** The group the window draws the notes a note can be made in a relation of. */
-const RELATION_GROUP = 'relation'
-
 /** What the tab makes, offered wherever the menu was asked for. */
 export const MADE: readonly MenuEntry[] = [
   { id: NEW_NOTE, text: own.newNote, group: FILE_GROUP },
@@ -65,34 +62,7 @@ export const createMenuItems = (
     { id: RENAME, text: own.rename, group: FILE_GROUP },
   ]
 
-  // Any flat relation items (e.g. from fixtures or non-grouped hosts) are grouped into relation submenu
-  const relationItems = hosted.filter(
-    (one) => one.parentId === 'relation' || (one.group === RELATION_GROUP && one.id !== 'relation'),
-  )
-  const relationSubmenu: MenuEntry[] =
-    relationItems.length > 0 && !hosted.some((one) => one.id === 'relation')
-      ? [
-          {
-            id: 'relation',
-            text: 'Relation',
-            group: RELATION_GROUP,
-            children: relationItems.map((one) => ({
-              id: one.id,
-              text: one.text,
-              group: RELATION_GROUP,
-              ...(one.isDisabled !== undefined ? { isDisabled: one.isDisabled } : {}),
-            })),
-          },
-        ]
-      : []
-
-  const nonNewHosted = hosted.filter(
-    (one) =>
-      one.parentId !== 'new' &&
-      (relationSubmenu.length === 0 ||
-        (one.parentId !== 'relation' && one.group !== RELATION_GROUP)),
-  )
-
+  const nonNewHosted = hosted.filter((one) => one.parentId !== 'new')
   const fileHosted = nonNewHosted.filter((one) => one.group === FILE_GROUP)
   const otherHosted = nonNewHosted.filter(
     (one) => one.group !== OPEN_GROUP && one.group !== FILE_GROUP,
@@ -102,7 +72,6 @@ export const createMenuItems = (
     ...nonNewHosted.filter((one) => one.group === OPEN_GROUP),
     ...ownItems,
     ...fileHosted,
-    ...relationSubmenu,
     ...otherHosted,
   ]
 }

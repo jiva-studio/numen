@@ -2,7 +2,6 @@ package textversion
 
 import (
 	"context"
-	"slices"
 
 	"github.com/jiva-studio/numen/libs/notes/domain"
 
@@ -57,7 +56,7 @@ func (u *Versions) GetMenu(ctx context.Context, v domain.Vault, path, fileHash s
 		entry := MenuEntry{Action: ActionCreateText, PluginID: plugin.ID, PluginName: plugin.Name, Item: plugin.Menu}
 		switch {
 		case u.isTaking(ctx, v, plugin, path):
-		case hasLive && slices.Contains(plugin.Kinds, live.Kind):
+		case hasLive && isKindAccepted(plugin.Kinds, live.Kind):
 			entry.Version, entry.IsLive = live.GetID(), true
 		default:
 			continue

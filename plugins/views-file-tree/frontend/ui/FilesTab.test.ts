@@ -211,7 +211,7 @@ describe('the menu on a row', () => {
       'new',
       'rename',
       'copy',
-      'relation',
+      'links',
       'ask',
       'remove',
     ])
@@ -224,7 +224,7 @@ describe('the menu on a row', () => {
       'file',
       'file',
       'file',
-      'relation',
+      'links',
       'agent',
       'remove',
     ])

@@ -34,7 +34,7 @@ describe('the menu on a row standing for a note', () => {
       '— new',
       'rename',
       'copy',
-      '— relation',
+      '— links',
       '— ask',
       '— remove',
     ])
@@ -43,8 +43,8 @@ describe('the menu on a row standing for a note', () => {
     const newSubmenu = menu.find((one) => one.id === 'new')
     expect(newSubmenu?.children?.map((c) => c.id)).toStrictEqual([NEW_NOTE, NEW_FOLDER])
 
-    const relationSubmenu = menu.find((one) => one.id === 'relation')
-    expect(relationSubmenu?.children?.map((c) => c.id)).toStrictEqual([
+    const linksSubmenu = menu.find((one) => one.id === 'links')
+    expect(linksSubmenu?.children?.map((c) => c.id)).toStrictEqual([
       'child',
       'parent',
       'jump',
@@ -59,8 +59,8 @@ describe('the menu on a row standing for any other file', () => {
       'new',
       'rename',
       'copy',
-      '— transcribe',
-      'proofread',
+      '— extract',
+      'refine',
       '— remove',
     ])
   })

@@ -158,6 +158,12 @@ export interface CommandNote {
   readonly type: NoteType
 }
 
+// NOTE_SCOPE offers a command while a note is in front, in the palette's group of note commands.
+export const NOTE_SCOPE = 'note' as const
+
+// NOTE_TARGET offers a context menu item on a note.
+export const NOTE_TARGET = 'note' as const
+
 // CommandRegistration registers a palette or keybound action.
 export interface CommandRegistration {
   id: string

@@ -115,7 +115,6 @@ func createTabFromPath(path, tabID, title string, nextIndex int) TabInfo {
 	}
 	return TabInfo{
 		ID:       tabID,
-		Kind:     "note",
 		Path:     path,
 		Title:    title,
 		IsActive: true,

@@ -1,5 +1,5 @@
 import { FolderOpen, FolderTree } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
 import FilesTab from './ui/FilesTab.vue'
 import { createFilesKind, FILES } from './kind'
 import { useFileTree } from './model/useFileTree'
@@ -36,7 +36,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'reveal',
     title: WORDS.reveal,
-    scope: 'note',
+    scope: NOTE_SCOPE,
     icon: FolderOpen,
     handler: async (note) => {
       await context.navigateTab?.(FILES, note.path)

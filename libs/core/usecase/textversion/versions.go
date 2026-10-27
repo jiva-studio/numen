@@ -310,7 +310,7 @@ func (u *Versions) createText(ctx context.Context, v domain.Vault, req textport.
 		if i < 0 {
 			return fmt.Errorf("%w: version %s of %s", textport.ErrNoText, source, path)
 		}
-		if !slices.Contains(plugin.Kinds, versions[i].Kind) {
+		if !isKindAccepted(plugin.Kinds, versions[i].Kind) {
 			return fmt.Errorf("%w: %s does not read %s text", textport.ErrSourceNotAccepted, pluginID, versions[i].Kind)
 		}
 	}
@@ -404,6 +404,10 @@ func indexOf(versions []domain.TextVersion, id domain.TextVersionID) int {
 
 func hasVersion(versions []domain.TextVersion, id domain.TextVersionID) bool {
 	return indexOf(versions, id) >= 0
+}
+
+func isKindAccepted(kinds []domain.TextKind, kind domain.TextKind) bool {
+	return slices.Contains(kinds, kind) || slices.Contains(kinds, "*")
 }
 
 // isTaking reports whether the plugin's text input takes the file at the path: a file of its

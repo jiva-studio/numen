@@ -1,5 +1,5 @@
 import { Waypoints } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, NOTE_SCOPE, NOTE_TARGET, type PluginContext } from '@numen/plugin-sdk'
 import PlexGraphView from './PlexGraphView.vue'
 import { createPlexKind, PLEX } from './kind'
 import { usePlexView } from './model/usePlexView'
@@ -42,7 +42,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'travel',
     title: WORDS.travel,
-    scope: 'note',
+    scope: NOTE_SCOPE,
     shortcut: 'mod+shift+p',
     icon: Waypoints,
     isNoteDestination: true,
@@ -53,7 +53,7 @@ export function activate(context: PluginContext): void {
     id: 'travel',
     text: WORDS.travel,
     group: 'open',
-    target: 'note',
+    target: NOTE_TARGET,
     icon: Waypoints,
     handler: (target) => travel(target.path),
   })
@@ -61,7 +61,7 @@ export function activate(context: PluginContext): void {
     id: 'child',
     text: WORDS.child,
     parentId: 'relation',
-    target: 'note',
+    target: NOTE_TARGET,
     handler: (target) => {
       void notes.createInRelation(target.path, 'child')
     },
@@ -70,7 +70,7 @@ export function activate(context: PluginContext): void {
     id: 'parent',
     text: WORDS.parent,
     parentId: 'relation',
-    target: 'note',
+    target: NOTE_TARGET,
     handler: (target) => {
       void notes.createInRelation(target.path, 'parent')
     },
@@ -79,7 +79,7 @@ export function activate(context: PluginContext): void {
     id: 'jump',
     text: WORDS.jump,
     parentId: 'relation',
-    target: 'note',
+    target: NOTE_TARGET,
     handler: (target) => {
       void notes.createInRelation(target.path, 'jump')
     },

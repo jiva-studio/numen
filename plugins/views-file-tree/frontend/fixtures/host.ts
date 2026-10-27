@@ -4,13 +4,14 @@
  * asked.
  */
 import { defineComponent, h, ref } from 'vue'
-import type {
-  MenuEntry,
-  OpenFileOptions,
-  PathCommandTarget,
-  PathMenuRow,
-  VaultEntry,
-  WorkspaceHost,
+import {
+  NOTE_TYPE,
+  type MenuEntry,
+  type OpenFileOptions,
+  type PathCommandTarget,
+  type PathMenuRow,
+  type VaultEntry,
+  type WorkspaceHost,
 } from '@numen/plugin-sdk'
 import type { FileTreeHost } from '../model/tabDeps'
 
@@ -19,21 +20,29 @@ const command = (id: string, group: string, text = id): MenuEntry => ({ id, text
 
 const COPY = command('copy', 'file')
 const REMOVE = command('remove', 'remove')
+const LINKS: MenuEntry = {
+  id: 'links',
+  text: 'Links',
+  group: 'links',
+  children: [
+    command('child', 'links'),
+    command('parent', 'links'),
+    command('jump', 'links'),
+    command('title', 'links'),
+  ],
+}
 const NOTE = [
   command('read', 'open'),
   command('travel', 'open'),
   COPY,
-  command('child', 'relation'),
-  command('parent', 'relation'),
-  command('jump', 'relation'),
-  command('title', 'relation'),
+  LINKS,
   command('ask', 'agent'),
   command('remove', 'remove', 'Remove note'),
 ]
 /** The commands the plugins add over a file, by the extension of its name. */
 const RUNS: Readonly<Record<string, readonly MenuEntry[]>> = {
-  mp3: [command('transcribe', 'run'), command('proofread', 'run')],
-  pdf: [command('recognise', 'run'), command('proofread', 'run')],
+  mp3: [command('extract', 'run'), command('refine', 'run')],
+  pdf: [command('scan', 'run'), command('refine', 'run')],
   url: [command('downloadText', 'run'), command('downloadCopy', 'run')],
 }
 
@@ -105,7 +114,7 @@ export function createHost({ linked = {}, folders = {} }: HostOptions = {}) {
     list: async (folder) => folders[folder] ?? [],
     move: async (from, to) => void recorded.made.push(`move ${from} ${to}`),
     createFolder: async (path) => void recorded.made.push(`folder ${path}`),
-    createNote: record('note'),
+    createNote: record(NOTE_TYPE),
   }
 
   const host: FileTreeHost = { workspace, files }

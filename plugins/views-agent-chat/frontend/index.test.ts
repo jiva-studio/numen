@@ -105,8 +105,14 @@ describe('view-agent-chat plugin', () => {
   })
 
   it('refuses to activate in a window that offers no workspace or agent', () => {
+    const { host } = createHost()
     expect(() =>
-      activate(createMockPluginContext({ pluginId: 'md.numen.views.agent.chat' })),
+      activate(
+        createMockPluginContext({
+          pluginId: 'md.numen.views.agent.chat',
+          workspace: host.workspace,
+        }),
+      ),
     ).toThrow('an agent chat needs the window it is drawn in and the agent it asks')
   })
 

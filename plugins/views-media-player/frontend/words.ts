@@ -32,5 +32,5 @@ export const WORDS = {
 }
 
 /** The ids of what the tab's menu offers. */
-export const PROOFREAD = 'proofread'
+export const PROOFREAD = 'proofreadText'
 export const DELETE_TEXT = 'deleteText'

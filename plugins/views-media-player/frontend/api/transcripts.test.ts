@@ -3,9 +3,9 @@ import { createMockVaultTexts } from '@numen/plugin-sdk/testing'
 import { createTranscripts, findSegmentTime, getCues, getSegments } from './transcripts'
 
 const transcript = {
-  id: 'md.numen.engines.transcription/k',
+  id: 'md.test.transcription/k',
   path: 'talks/river.mp3',
-  pluginId: 'md.numen.engines.transcription',
+  pluginId: 'md.test.transcription',
   key: 'k',
   sourceVersionId: '',
   kind: 'transcript',

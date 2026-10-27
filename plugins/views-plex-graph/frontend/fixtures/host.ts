@@ -3,7 +3,13 @@
  * a test. Everything the plex asks of either is written down in the order asked.
  */
 import { ref } from 'vue'
-import type { NoteRef, OpenFileOptions, VaultNotes, WorkspaceHost } from '@numen/plugin-sdk'
+import {
+  NOTE_TYPE,
+  type NoteRef,
+  type OpenFileOptions,
+  type VaultNotes,
+  type WorkspaceHost,
+} from '@numen/plugin-sdk'
 import type { PlexHost } from '../model/tabDeps'
 
 export interface HostOptions {
@@ -45,7 +51,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
       return linked[tabId] ?? false
     },
     runCommand: (id, target) => void recorded.commands.push([id, target]),
-    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note', group: 'note' }],
+    getNoteCommands: () => [{ id: 'plugin:share', text: 'Share the note', group: NOTE_TYPE }],
     ask: (text) => void recorded.questions.push(text),
     showError: (text) => void recorded.errors.push(text),
     getMessageWriter: () => () => {},
@@ -59,7 +65,7 @@ export function createHost({ opening = 'Opening.md', linked = {} }: HostOptions 
   const notes: VaultNotes = {
     getNeighbourhood: async (path) => ({
       focus: { path, title: path.replace(/\.md$/, '') },
-      focusType: 'note',
+      focusType: NOTE_TYPE,
       related: [],
     }),
     getHeadings: async (paths) => {

@@ -188,8 +188,14 @@ describe('flashcards-studio plugin', () => {
   })
 
   it('refuses to activate in a window that offers no workspace or open files', () => {
+    const { ctx } = createContext()
     expect(() =>
-      activate(createMockPluginContext({ pluginId: 'md.numen.views.flashcards.studio' })),
+      activate(
+        createMockPluginContext({
+          pluginId: 'md.numen.views.flashcards.studio',
+          workspace: ctx.workspace,
+        }),
+      ),
     ).toThrow('the flashcards need the window their tabs are drawn in and its open files')
   })
 

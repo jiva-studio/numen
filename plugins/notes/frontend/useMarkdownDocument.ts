@@ -1,4 +1,5 @@
 import { computed, onMounted, ref, watch, type Ref } from 'vue'
+import { getAssetUrl } from '@numen/plugin-sdk'
 import { parseFrontmatter, type FrontmatterResult } from './frontmatter'
 
 export interface EditorHandle {
@@ -275,7 +276,7 @@ export function useMarkdownDocument(
   async function loadContentFromPath(filePath: string): Promise<void> {
     if (!filePath) return
     try {
-      const res = await fetch(`/assets/${encodeURIComponent(filePath)}`)
+      const res = await fetch(getAssetUrl(filePath))
       if (res.ok) {
         const text = await res.text()
         if (!docContent.value) {

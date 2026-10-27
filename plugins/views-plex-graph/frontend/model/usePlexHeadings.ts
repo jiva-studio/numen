@@ -2,6 +2,7 @@
  * Fetching and reactivity of the headings of notes drawn on a plex graph.
  */
 import { shallowRef, watch, type Ref } from 'vue'
+import { NOTE_TYPE } from '@numen/plugin-sdk'
 import type { PlexHeading } from '../plex'
 import { createRequestGuard } from '../lib/requestGuard'
 import { convertHeadings } from '../lib/picture'
@@ -17,7 +18,7 @@ export function usePlexHeadings(
   const guard = createRequestGuard()
 
   const readHeadings = async () => {
-    const notes = paths.value.filter((path) => (types.value.get(path) ?? 'note') === 'note')
+    const notes = paths.value.filter((path) => (types.value.get(path) ?? NOTE_TYPE) === NOTE_TYPE)
     const mine = guard.acquireRequest()
     if (!deps.isNesting.value || notes.length === 0) {
       headings.value = new Map()

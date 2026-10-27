@@ -1,5 +1,5 @@
 import { Gauge, Layers, LayoutTemplate } from '@lucide/vue'
-import { definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import { definePlugin, NOTE_SCOPE, type PluginContext } from '@numen/plugin-sdk'
 import { cards, presets } from './cards'
 import { useDeckTabs } from './deck/model/useDeckTabs'
 import { useCardModelTabs } from './card-model/kind'
@@ -10,7 +10,6 @@ import {
   createReviewKind,
   createVaultCounts,
   createVaultSummaryView,
-  FLASHCARDS_TARGET,
 } from './review'
 
 export { DECK } from './deck/kind'
@@ -29,7 +28,8 @@ export type { PresetTabState } from './preset/types'
 export { REVIEW } from './review'
 
 export function activate(context: PluginContext): void {
-  if (context.target === FLASHCARDS_TARGET) {
+  const { workspace, buffers, files } = context
+  if (!workspace) {
     const { notices, closeTab, agent } = context
     if (!notices || !closeTab || !agent) {
       throw new Error(
@@ -50,8 +50,7 @@ export function activate(context: PluginContext): void {
     )
     return
   }
-  const { workspace, buffers, files } = context
-  if (!workspace || !buffers) {
+  if (!buffers) {
     throw new Error('the flashcards need the window their tabs are drawn in and its open files')
   }
   const closeTab = (id: string): void => context.closeTab?.(id)
@@ -74,7 +73,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'preset',
     title: presetWords.openPreset,
-    scope: 'note',
+    scope: NOTE_SCOPE,
     icon: Gauge,
     handler: async (note) => {
       await schedules.openPresetOf(note, (kind, path) => context.openTab?.(kind, path))

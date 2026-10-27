@@ -17,7 +17,6 @@ import type { VaultCounts } from './app/counts'
 import { VaultSummary } from './pages/vaults'
 import type { MountView } from './shared/views'
 
-export { FLASHCARDS_TARGET } from './target'
 export { createVaultCounts } from './app/counts'
 export { createNotices } from './app/notices'
 

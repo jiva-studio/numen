@@ -12,6 +12,9 @@ export interface NoteRef {
 // NoteType is what a note of the vault is: a note, or a type a plugin declares in its manifest.
 export type NoteType = string
 
+// NOTE_TYPE is the NoteType of a note of the vault.
+export const NOTE_TYPE: NoteType = 'note'
+
 // NoteHeading is one heading inside a note.
 export interface NoteHeading {
   readonly text: string

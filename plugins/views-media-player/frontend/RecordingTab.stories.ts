@@ -41,15 +41,15 @@ const SPOKEN: readonly Cue[] = SAID.reduce<Cue[]>((cues, text) => {
 
 const TRANSCRIBE: MenuEntry = {
   action: 'createText',
-  pluginId: 'md.numen.engines.transcription',
+  pluginId: 'md.test.transcription',
   versionId: '',
   isLive: false,
 }
 
 const TRANSCRIBED: MenuEntry = {
   action: 'deleteVersion',
-  pluginId: 'md.numen.engines.transcription',
-  versionId: 'md.numen.engines.transcription/lecture-4',
+  pluginId: 'md.test.transcription',
+  versionId: 'md.test.transcription/lecture-4',
   isLive: true,
 }
 

@@ -43,7 +43,6 @@ func addWindowTabsGet(registry *tools.Registry, manager *WindowManager) error {
 			if focus := requestContext["focus"]; focus != "" {
 				inferredTab := TabInfo{
 					ID:       "front-tab",
-					Kind:     "note",
 					Path:     focus,
 					Title:    formatTitleFromPath(focus),
 					IsActive: true,
@@ -166,35 +165,17 @@ func formatTabsSummary(tabs []TabInfo, activeID string) string {
 
 func describeTab(t TabInfo) string {
 	name := formatTabName(t)
-	switch t.Kind {
-	case "note":
-		return fmt.Sprintf("the note %s is in front of them", name)
-	case "plex":
-		if t.Path == "" {
-			return "they are looking at a plex standing on no note"
-		}
-		return fmt.Sprintf("they are looking at the plex around the note %s", name)
-	case "document":
-		if t.Where != "" {
-			return fmt.Sprintf("the document %s is in front of them, open at %s", name, t.Where)
-		}
-		return fmt.Sprintf("the document %s is in front of them", name)
-	case "book":
-		if t.Where != "" {
-			return fmt.Sprintf("the book %s is in front of them, open at %s", name, t.Where)
-		}
-		return fmt.Sprintf("the book %s is in front of them", name)
-	case "recording":
-		if t.Where != "" {
-			return fmt.Sprintf("the recording %s is in front of them, with %s", name, t.Where)
-		}
-		return fmt.Sprintf("the recording %s is in front of them", name)
-	default:
-		if t.Kind != "" {
-			return fmt.Sprintf("a tab of kind %q is in front of them", t.Kind)
-		}
-		return fmt.Sprintf("the tab %s is in front of them", name)
+	kind := t.Kind
+	if kind == "" {
+		kind = "tab"
 	}
+	if t.Title == "" && t.Path == "" {
+		return fmt.Sprintf("a tab of kind %q is in front of them", kind)
+	}
+	if t.Where != "" {
+		return fmt.Sprintf("the %s %s is in front of them, open at %s", kind, name, t.Where)
+	}
+	return fmt.Sprintf("the %s %s is in front of them", kind, name)
 }
 
 func formatTabName(t TabInfo) string {

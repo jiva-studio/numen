@@ -5,8 +5,8 @@ import { readMenuEntries, writeMenuAction } from './wire'
 
 const entry = (action: number) => ({
   action,
-  pluginId: 'md.numen.engines.transcription',
-  versionId: 'md.numen.engines.transcription/abc',
+  pluginId: 'md.test.transcription',
+  versionId: 'md.test.transcription/abc',
   isLive: true,
 })
 

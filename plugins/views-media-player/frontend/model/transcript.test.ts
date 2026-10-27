@@ -61,7 +61,7 @@ describe('what the menu offers', () => {
   it('takes text made from the file as transcribing and from the live version as proofreading', () => {
     const proofread = {
       ...TRANSCRIBE_ENTRY,
-      pluginId: 'md.numen.tools.proofreading',
+      pluginId: 'md.test.proofreading',
       versionId: DELETE_ENTRY.versionId,
       isLive: true,
     }

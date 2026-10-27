@@ -2,7 +2,7 @@
  * Tab state, tree interactions, and window tab registration for the files tab.
  */
 import { ref } from 'vue'
-import { getFileName, type MenuEntry } from '@numen/plugin-sdk'
+import { getFileName, NOTE_TYPE, type MenuEntry } from '@numen/plugin-sdk'
 import { resolveDropFolder, ROOT } from './useFileTree'
 import { createMenuItems, NEW_FOLDER, NEW_NOTE, OWN_IDS, RENAME } from '../lib/menu'
 import { resolveRenamePath } from './rename'
@@ -81,11 +81,18 @@ const getMenuEntry = (list: FileTree, path: string): Entry =>
     name: getFileName(path),
     isFolder: false,
     isNote: false,
-    type: 'note',
+    type: NOTE_TYPE,
   }
 
 const hasMenuId = (items: readonly MenuEntry[], id: string): boolean =>
   items.some((one) => one.id === id || (one.children && hasMenuId(one.children, id)))
+
+const hasSubmenuChildren = (items: readonly MenuEntry[], id: string): boolean =>
+  items.some(
+    (one) =>
+      (one.id === id && Boolean(one.children?.length)) ||
+      (one.children !== undefined && hasSubmenuChildren(one.children, id)),
+  )
 
 function useFileMenu(options: FileMenuDeps) {
   const { list, deps, renamingPath, creators, getNameOf, isNoteAt } = options
@@ -111,14 +118,13 @@ function useFileMenu(options: FileMenuDeps) {
     )
   }
 
-  const isOffered = (id: string, path: string | null): boolean =>
-    OWN_IDS.has(id) || hasMenuId(getMenuItems(path), id)
-
   const chooseMenuItem = (id: string) => {
     const request = menu.value
     menu.value = null
-    if (!request || !isOffered(id, request.path)) return
-    if (id === 'new' || id === 'relation') return
+    if (!request) return
+    const items = getMenuItems(request.path)
+    if (!OWN_IDS.has(id) && !hasMenuId(items, id)) return
+    if (hasSubmenuChildren(items, id)) return
     if (id === NEW_NOTE) return void creators.createNote(request.path)
     if (id === NEW_FOLDER) return void creators.createFolder(request.path)
 

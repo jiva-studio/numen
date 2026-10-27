@@ -4,7 +4,7 @@
 import { computed, ref, watch, type Component } from 'vue'
 import { findIcon } from '../lib/icons'
 import type { PlexNeighbourhood, PlexRelation, PlexDestination } from '../plex'
-import { getFileName } from '@numen/plugin-sdk'
+import { getFileName, NOTE_TYPE } from '@numen/plugin-sdk'
 import { createNodeItems, NEW_NOTE, NONE, OFFERED } from '../lib/menu'
 import { convertNeighbourhood, getNoteTypes } from '../lib/picture'
 import { createNodeIdMap } from '../lib/nodeIdMap'
@@ -82,7 +82,7 @@ function usePlexPicture(
     return neighbourhood ? getNoteTypes(neighbourhood) : new Map()
   })
 
-  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? 'note'
+  const getType = (node: string): NoteType => types.value.get(map.getNodePath(node)) ?? NOTE_TYPE
 
   const activePaths = computed<readonly string[]>(() => {
     const neighbourhood = view.neighbourhood.value
@@ -249,7 +249,7 @@ export function createPlexTab(view: PlexView, deps: PlexTabDeps): PlexTabState {
     getMenuIcon,
     getNodeIcon: (node: string) => {
       const type = getType(node)
-      return type === 'note' ? null : deps.getNoteIcon(type)
+      return type === NOTE_TYPE ? null : deps.getNoteIcon(type)
     },
     creatable: deps.creatable,
     getType,

@@ -5,6 +5,7 @@
  * and everything the editor was asked to do is kept in the order it was asked.
  */
 import { ref } from 'vue'
+import { NOTE_TYPE } from '@numen/plugin-sdk'
 import type { PlexRelation } from '../plex'
 import type { PlexEditor, PlexView, Neighbourhood, NoteType, PathRename } from '../types'
 
@@ -33,7 +34,7 @@ const createNeighbourhood = (
   types: Types = {},
 ): Neighbourhood => ({
   focus: { path: focus, title: focus.replace(/\.md$/, '') },
-  focusType: types[focus] ?? 'note',
+  focusType: types[focus] ?? NOTE_TYPE,
   related: neighbours.map((item) => {
     const spec: RelatedNeighbourSpec = typeof item === 'string' ? { path: item } : item
     return {
@@ -44,7 +45,7 @@ const createNeighbourhood = (
       isMutual: spec.isMutual ?? false,
       path: spec.path,
       title: spec.title ?? spec.path.replace(/\.md$/, ''),
-      type: spec.type ?? types[spec.path] ?? 'note',
+      type: spec.type ?? types[spec.path] ?? NOTE_TYPE,
     }
   }),
 })

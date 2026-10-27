@@ -164,7 +164,7 @@ func TestCaptionsAreTheTimedTextVersionOfTheirLink(t *testing.T) {
 		t.Fatal(err)
 	}
 	listing, err := w.texts.ListVersions(t.Context(), made.Path)
-	if err != nil || len(listing.Versions) != 1 || listing.Versions[0].Kind != "transcript" {
+	if err != nil || len(listing.Versions) != 1 || listing.Versions[0].Kind != "captions" {
 		t.Fatalf("the versions are %+v (%v)", listing, err)
 	}
 	page, err := w.texts.ReadText(t.Context(), made.Path, listing.Live, "")

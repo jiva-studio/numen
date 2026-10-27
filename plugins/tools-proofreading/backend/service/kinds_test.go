@@ -19,7 +19,7 @@ func TestReadKindsReturnsTheManifestKinds(t *testing.T) {
 	}
 
 	got := slices.Sorted(maps.Keys(kinds))
-	want := []domain.TextKind{"page-text", "recognition", "transcript"}
+	want := []domain.TextKind{"*"}
 	if !slices.Equal(got, want) {
 		t.Errorf("kinds %v, want %v", got, want)
 	}

@@ -35,7 +35,7 @@ var copyExts = []string{".mp4", ".m4a", ".webm", ".mp3", ".ogg", ".wav", ".flac"
 // The kinds of the text versions of links.
 const (
 	kindArticle  domain.TextKind = "article"
-	kindCaptions domain.TextKind = "transcript"
+	kindCaptions domain.TextKind = "captions"
 )
 
 // folder is what is kept for the links of one vault.

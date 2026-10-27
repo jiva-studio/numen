@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	ocrID    = "md.numen.engines.ocr"
-	layerID  = "md.numen.readers.pdf"
-	speechID = "md.numen.engines.transcription"
+	ocrID    = "md.test.alpha"
+	layerID  = "md.test.beta"
+	speechID = "md.test.gamma"
 	scanPath = "books/flywheel.pdf"
 	talkPath = "talks/storage.wav"
 
@@ -261,6 +261,7 @@ func TestTheVersionMadeFromARecognitionStaysLiveWithTheOCRPluginOff(t *testing.T
 
 func TestProofreadRefusesWhatItCannotRead(t *testing.T) {
 	s := newScene(t)
+	s.run.kinds = map[domain.TextKind]bool{kindRecognition: true}
 	article := s.hold(t, layerID, "notes/article.url", "article", "article", "", []domain.TextSegment{{Text: "words"}})
 
 	for name, req := range map[string]struct {
@@ -269,7 +270,7 @@ func TestProofreadRefusesWhatItCannotRead(t *testing.T) {
 	}{
 		"a file with no text": {Request{Path: talkPath}, errNoText},
 		"an article":          {Request{Path: "notes/article.url", Source: article.GetID()}, errFormat},
-		"a version not there": {Request{Path: scanPath, Source: "md.numen.engines.ocr/gone"}, host.ErrNotExist},
+		"a version not there": {Request{Path: scanPath, Source: ocrID + "/gone"}, host.ErrNotExist},
 	} {
 		if _, err := s.run.Proofread(t.Context(), req.request); !errors.Is(err, req.want) {
 			t.Errorf("%s: got %v, want %v", name, err, req.want)

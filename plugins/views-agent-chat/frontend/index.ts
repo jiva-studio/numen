@@ -1,5 +1,11 @@
 import { Bot } from '@lucide/vue'
-import { CONVERSATION, definePlugin, type PluginContext } from '@numen/plugin-sdk'
+import {
+  CONVERSATION,
+  definePlugin,
+  NOTE_SCOPE,
+  NOTE_TARGET,
+  type PluginContext,
+} from '@numen/plugin-sdk'
 import { useConversation } from './thread'
 import AgentTab from './ui/AgentTab.vue'
 import { ConversationView } from './conversation'
@@ -14,15 +20,11 @@ export { useAgentConversation } from './model/useAgentConversation'
 export * from './types'
 export { WORDS } from './words'
 
-/** The window a person runs their cards in, which draws no agent tab. */
-const FLASHCARDS_TARGET = 'desktop.flashcards'
-
 export function activate(context: PluginContext): void {
   context.registerView({ capability: CONVERSATION, component: ConversationView })
-  if (context.target === FLASHCARDS_TARGET) return
-
   const { workspace, agent } = context
-  if (!workspace || !agent) {
+  if (!workspace) return
+  if (!agent) {
     throw new Error('an agent chat needs the window it is drawn in and the agent it asks')
   }
   const chats = createAgentKind({ workspace, agent }, (deps) =>
@@ -52,7 +54,7 @@ export function activate(context: PluginContext): void {
   context.registerCommand({
     id: 'ask',
     title: WORDS.askAbout,
-    scope: 'note',
+    scope: NOTE_SCOPE,
     icon: Bot,
     handler: (note) => askAbout(note.path),
   })
@@ -60,7 +62,7 @@ export function activate(context: PluginContext): void {
     id: 'ask',
     text: WORDS.askAbout,
     group: 'agent',
-    target: 'note',
+    target: NOTE_TARGET,
     icon: Bot,
     handler: (target) => askAbout(target.path),
   })

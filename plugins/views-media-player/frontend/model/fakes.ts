@@ -13,15 +13,15 @@ export const CUES: readonly Cue[] = [
 
 export const TRANSCRIBE_ENTRY: MenuEntry = {
   action: 'createText',
-  pluginId: 'md.numen.engines.transcription',
+  pluginId: 'md.test.transcription',
   versionId: '',
   isLive: false,
 }
 
 export const DELETE_ENTRY: MenuEntry = {
   action: 'deleteVersion',
-  pluginId: 'md.numen.engines.transcription',
-  versionId: 'md.numen.engines.transcription/abc',
+  pluginId: 'md.test.transcription',
+  versionId: 'md.test.transcription/abc',
   isLive: true,
 }
 
