@@ -249,12 +249,12 @@ describe('createPluginLoader', () => {
     const success = await loader.activatePlugin('dynamic.sample')
     expect(success).toBe(true)
     expect(activated).toBe(true)
-    expect(manifestFetchedUrl).toBe('/api/plugins/dynamic.sample/manifest.json')
-    expect(dynamicImportCalledWith).toBe('/api/plugins/dynamic.sample/dist/bundle.js?activation=1')
+    expect(manifestFetchedUrl).toBe('/plugin/dynamic.sample/manifest.json')
+    expect(dynamicImportCalledWith).toBe('/plugin/dynamic.sample/dist/bundle.js?activation=1')
 
     expect(document.head.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
     expect(document.querySelector('link[data-plugin-id="dynamic.sample"]')).toBeNull()
-    expect(getPluginStyle('dynamic.sample')).toBe('/api/plugins/dynamic.sample/dist/bundle.css')
+    expect(getPluginStyle('dynamic.sample')).toBe('/plugin/dynamic.sample/dist/bundle.css')
     expect(host.createContext).toHaveBeenCalledWith(
       'dynamic.sample',
       expect.objectContaining({ id: 'dynamic.sample' }),
@@ -531,8 +531,8 @@ describe('createPluginLoader failures, order and toggles', () => {
     await loader.activatePlugin('dyn')
 
     expect(imports).toStrictEqual([
-      '/api/plugins/dyn/dist/index.js?activation=1',
-      '/api/plugins/dyn/dist/index.js?activation=2',
+      '/plugin/dyn/dist/index.js?activation=1',
+      '/plugin/dyn/dist/index.js?activation=2',
     ])
   })
 

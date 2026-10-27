@@ -187,8 +187,9 @@ func TestTheWindowServesItsPluginsAndTheirFiles(t *testing.T) {
 	}
 
 	for path, want := range map[string]int{
-		"/api/plugins/md.numen.example/dist/index.js": http.StatusOK,
-		"/api/plugins/md.numen.other/dist/index.js":   http.StatusNotFound,
+		"/plugin/md.numen.example/dist/index.js":   http.StatusOK,
+		"/plugin/md.numen.example/dist/missing.js": http.StatusNotFound,
+		"/plugin/md.numen.other/dist/index.js":     http.StatusNotFound,
 	} {
 		response, err := server.Client().Get(server.URL + path)
 		if err != nil {

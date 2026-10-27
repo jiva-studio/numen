@@ -49,8 +49,11 @@ func (a *API) NewHandler(files http.Handler) http.Handler {
 			agent.ServeHTTP(w, r)
 		case strings.HasPrefix(r.URL.Path, vaultsRoute):
 			vaults.ServeHTTP(w, r)
-		case strings.HasPrefix(r.URL.Path, wire.PluginAssetsRoute):
-			wire.ServePluginAsset(w, r, a.GetPluginDir)
+		case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
+			// The shell runs no plugin backend: the route serves only the files of a plugin folder.
+			if !wire.ServePluginFile(w, r, a.GetPluginDir) {
+				http.Error(w, "plugin file not found", http.StatusNotFound)
+			}
 		case a.PluginServices != nil && a.PluginServices.Serves(r.URL.Path):
 			a.PluginServices.ServeHTTP(w, r)
 		case slices.Contains(wire.OpenedAt, r.URL.Path):

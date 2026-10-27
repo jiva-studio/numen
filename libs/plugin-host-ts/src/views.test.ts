@@ -82,7 +82,7 @@ describe('createViewRegistry', () => {
 
   it('adds the stylesheet link of the declaring plugin before the view', () => {
     clearPluginStyles()
-    registerPluginStyle('chat.plugin', '/api/plugins/chat.plugin/dist/styles.css')
+    registerPluginStyle('chat.plugin', '/plugin/chat.plugin/dist/styles.css')
     const views = createViewRegistry()
     views.registerView('chat.plugin', {
       capability: CONVERSATION,
@@ -93,7 +93,7 @@ describe('createViewRegistry', () => {
     views.mountView(CONVERSATION, element, {})
 
     const link = element.querySelector('link')
-    expect(link?.getAttribute('href')).toBe('/api/plugins/chat.plugin/dist/styles.css')
+    expect(link?.getAttribute('href')).toBe('/plugin/chat.plugin/dist/styles.css')
     expect(link?.dataset['pluginId']).toBe('chat.plugin')
     clearPluginStyles()
   })

@@ -9,7 +9,7 @@ test.describe('the stock plugins after the window starts', () => {
   test('start without a failure, a markdown note open', async ({ page }) => {
     const failedFetches: string[] = []
     page.on('response', (response) => {
-      if (response.url().includes('/api/plugins/') && response.status() >= 400) {
+      if (response.url().includes('/plugin/') && response.status() >= 400) {
         failedFetches.push(`${response.status()} ${response.url()}`)
       }
     })

@@ -247,7 +247,7 @@ func (s *Server) Register(pattern string, handler http.Handler) {
 }
 
 // RoutePrefix is where the host forwards the plugin route: a window's GET of /plugin/<id>/<rest>
-// arrives at /plugin/<rest>.
+// that names no file of the plugin folder arrives at /plugin/<rest>.
 const RoutePrefix = "/plugin/"
 
 // RegisterRoute mounts handler for GET and HEAD requests at RoutePrefix+pattern, a pattern of

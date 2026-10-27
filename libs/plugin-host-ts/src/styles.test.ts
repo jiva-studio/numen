@@ -37,14 +37,10 @@ describe('loadPluginStyle and adoptPluginStyle', () => {
   it('reads the stylesheet into a sheet the panes adopt', async () => {
     const fetchFn = answer('.sketch { color: red }')
 
-    await loadPluginStyle(
-      'md.numen.sketch',
-      '/api/plugins/md.numen.sketch/dist/styles.css',
-      fetchFn,
-    )
+    await loadPluginStyle('md.numen.sketch', '/plugin/md.numen.sketch/dist/styles.css', fetchFn)
 
-    expect(fetchFn).toHaveBeenCalledWith('/api/plugins/md.numen.sketch/dist/styles.css')
-    expect(getPluginStyle('md.numen.sketch')).toBe('/api/plugins/md.numen.sketch/dist/styles.css')
+    expect(fetchFn).toHaveBeenCalledWith('/plugin/md.numen.sketch/dist/styles.css')
+    expect(getPluginStyle('md.numen.sketch')).toBe('/plugin/md.numen.sketch/dist/styles.css')
     expect((getPluginSheet('md.numen.sketch') as unknown as TextSheet).text).toBe(
       '.sketch { color: red }',
     )

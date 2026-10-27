@@ -121,14 +121,14 @@ describe('the pane of a declared kind', () => {
   })
 
   it('renders the plugin stylesheet next to the component', () => {
-    registerPluginStyle('md.numen.sample', '/api/plugins/md.numen.sample/dist/styles.css')
+    registerPluginStyle('md.numen.sample', '/plugin/md.numen.sample/dist/styles.css')
     const view = mount(createDeclaredPane('md.numen.sample', Pane), {
       props: { state: { at: 'Graph.md', id: 'target: 1', title: '' } },
     })
     unregisterPluginStyle('md.numen.sample')
 
     const link = view.find('link[rel="stylesheet"]')
-    expect(link.attributes('href')).toBe('/api/plugins/md.numen.sample/dist/styles.css')
+    expect(link.attributes('href')).toBe('/plugin/md.numen.sample/dist/styles.css')
     expect(link.attributes('data-plugin-id')).toBe('md.numen.sample')
     expect(view.find('.held').text()).toBe('Graph.md')
     expect(document.head.querySelector('link[data-plugin-id="md.numen.sample"]')).toBeNull()

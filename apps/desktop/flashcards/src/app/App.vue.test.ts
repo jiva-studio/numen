@@ -149,9 +149,7 @@ describe('the window over a plugin that draws the review', () => {
       'owes physics',
       'owes words',
     ])
-    expect(window.find('link').attributes('href')).toBe(
-      '/api/plugins/md.numen.cards/dist/styles.css',
-    )
+    expect(window.find('link').attributes('href')).toBe('/plugin/md.numen.cards/dist/styles.css')
   })
 
   it('opens the review on a vault pressed, and goes back to the vaults when the review closes', async () => {

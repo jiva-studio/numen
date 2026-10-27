@@ -507,7 +507,7 @@ function getPackageNames(dir) {
 
 /**
  * The application compiles nothing from `plugins/`, and a plugin compiles nothing from `apps/`.
- * The window reaches a plugin only through `/api/plugins/<id>/` at runtime.
+ * The window reaches a plugin only through `/plugin/<id>/` at runtime.
  */
 function verifyAppPluginBoundary() {
   const findings = [

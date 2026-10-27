@@ -1131,3 +1131,34 @@ func TestServeUpdateAsksTheEndpointTheServicesName(t *testing.T) {
 		t.Errorf("answered %d %q, want 200 and the manifest of the endpoint", resp.StatusCode, body)
 	}
 }
+
+func TestPluginRouteServesAFolderFileAndForwardsTheRest(t *testing.T) {
+	folder := t.TempDir()
+	if err := os.WriteFile(filepath.Join(folder, "manifest.json"), []byte(`{"id":"org.example.reader"}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	plugins := &routedPlugins{}
+	services := newBareServices()
+	services.PluginServices = plugins
+	services.getPluginDir = func(id string) (string, bool) { return folder, id == "org.example.reader" }
+	server := httptest.NewServer(services.NewHandler(http.NotFoundHandler()))
+	t.Cleanup(server.Close)
+
+	for path, want := range map[string]string{
+		"/plugin/org.example.reader/manifest.json": `{"id":"org.example.reader"}`,
+		"/plugin/org.example.reader/pages/2":       "page bytes",
+	} {
+		resp, err := server.Client().Get(server.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		body, _ := io.ReadAll(resp.Body)
+		resp.Body.Close()
+		if resp.StatusCode != http.StatusOK || string(body) != want {
+			t.Errorf("%s answered %d %q, want %q", path, resp.StatusCode, body, want)
+		}
+	}
+	if !slices.Equal(plugins.routed, []string{"/plugin/org.example.reader/pages/2"}) {
+		t.Errorf("forwarded %q", plugins.routed)
+	}
+}

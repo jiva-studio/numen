@@ -290,7 +290,7 @@ describe('createPluginHost', () => {
       },
     })
 
-    registerPluginStyle('sample.plugin', '/api/plugins/sample.plugin/styles.css')
+    registerPluginStyle('sample.plugin', '/plugin/sample.plugin/styles.css')
     const Wrapper = createPluginPaneWrapper('sample.plugin', SampleComponent)
     const wrapper = mount(Wrapper, {
       props: { state: {} },
@@ -306,7 +306,7 @@ describe('createPluginHost', () => {
     const shadow = hostDiv.shadowRoot!
     const link = shadow.querySelector('link[rel="stylesheet"]')
     expect(link).not.toBeNull()
-    expect(link?.getAttribute('href')).toBe('/api/plugins/sample.plugin/styles.css')
+    expect(link?.getAttribute('href')).toBe('/plugin/sample.plugin/styles.css')
     expect(shadow.querySelector('.sample-content')?.textContent).toBe('Plugin Content')
 
     expect(document.head.querySelector('link[data-plugin-id="sample.plugin"]')).toBeNull()

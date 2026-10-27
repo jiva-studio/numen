@@ -167,7 +167,7 @@ async function closeLoader(
 
 function resolveDefaultDeps(deps: PluginLoaderDeps) {
   return {
-    baseUrl: deps.baseUrl ?? '/api/plugins',
+    baseUrl: deps.baseUrl ?? '/plugin',
     fetchFn:
       deps.fetch ??
       ((input: RequestInfo | URL, init?: RequestInit) => globalThis.fetch(input, init)),

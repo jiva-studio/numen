@@ -182,20 +182,13 @@ func (s *Services) serveBeside(w http.ResponseWriter, r *http.Request, isWhole b
 	switch {
 	case r.URL.Path == updateRoute:
 		s.serveUpdate(w, r)
-	case strings.HasPrefix(r.URL.Path, wire.PluginAssetsRoute):
+	case strings.HasPrefix(r.URL.Path, wire.PluginRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
 			return
 		}
 		defer s.state.questions.finish()
-		wire.ServePluginAsset(w, r, s.getPluginDir)
-	case isWhole && s.PluginServices != nil && strings.HasPrefix(r.URL.Path, wire.PluginRoute):
-		if !s.state.questions.begin() {
-			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
-			return
-		}
-		defer s.state.questions.finish()
-		s.PluginServices.ServeRoute(w, r)
+		s.servePluginRoute(w, r, isWhole)
 	case isWhole && strings.HasPrefix(r.URL.Path, assetsRoute):
 		if !s.state.questions.begin() {
 			http.Error(w, errShut.Error(), http.StatusServiceUnavailable)
@@ -296,4 +289,17 @@ func (s *Services) serveVaultAsset(w http.ResponseWriter, r *http.Request, unesc
 	}
 	http.ServeFile(w, r, cleanTarget)
 	return true
+}
+
+// servePluginRoute answers the plugin route: a file of the plugin's folder, or else the plugin's
+// backend in a build that answers the whole schema.
+func (s *Services) servePluginRoute(w http.ResponseWriter, r *http.Request, isWhole bool) {
+	if wire.ServePluginFile(w, r, s.getPluginDir) {
+		return
+	}
+	if !isWhole || s.PluginServices == nil {
+		http.Error(w, "plugin file not found", http.StatusNotFound)
+		return
+	}
+	s.PluginServices.ServeRoute(w, r)
 }

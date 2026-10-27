@@ -9,11 +9,9 @@ import (
 	"strings"
 )
 
-// PluginAssetsRoute is the path prefix where plugin bundles and assets are served.
-const PluginAssetsRoute = "/api/plugins/"
-
-// PluginRoute is the path prefix the window forwards to plugin backends: /plugin/<id>/<rest> reaches
-// the backend of the plugin with that id at /plugin/<rest>.
+// PluginRoute is the path prefix of everything a window loads from a plugin. /plugin/<id>/<rest>
+// is the file <rest> of the plugin's folder where the folder holds one, and otherwise reaches the
+// backend of the plugin at /plugin/<rest>.
 const PluginRoute = "/plugin/"
 
 func setPluginAssetContentType(w http.ResponseWriter, path string) {
@@ -33,46 +31,48 @@ func setPluginAssetContentType(w http.ResponseWriter, path string) {
 	}
 }
 
-// ServePluginAsset writes the bytes of a plugin's frontend bundle or stylesheet. getPluginDir is the
-// folder of an installed plugin, and nil where the window has no plugins.
-func ServePluginAsset(w http.ResponseWriter, r *http.Request, getPluginDir func(id string) (string, bool)) {
+// ServePluginFile writes a file of a plugin's folder named on the plugin route and reports
+// whether it answered the request. A path that names no file of the folder is left unanswered,
+// for the plugin's backend. getPluginDir is the folder of an installed plugin, and nil where the
+// window has no plugins.
+func ServePluginFile(w http.ResponseWriter, r *http.Request, getPluginDir func(id string) (string, bool)) bool {
 	if r.Method != http.MethodGet && r.Method != http.MethodHead {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
-		return
+		return true
 	}
 	if getPluginDir == nil {
-		http.Error(w, "plugin manager not configured", http.StatusNotFound)
-		return
+		return false
 	}
-	assetPath := strings.TrimPrefix(r.URL.Path, PluginAssetsRoute)
+	assetPath := strings.TrimPrefix(r.URL.Path, PluginRoute)
 	parts := strings.SplitN(assetPath, "/", 2)
 	if len(parts) < 2 || parts[0] == "" || parts[1] == "" || !filepath.IsLocal(parts[1]) {
-		http.Error(w, "invalid plugin asset path", http.StatusBadRequest)
-		return
+		http.Error(w, "invalid plugin path", http.StatusBadRequest)
+		return true
 	}
 
 	pluginDir, ok := getPluginDir(parts[0])
 	if !ok {
 		http.Error(w, "plugin not found", http.StatusNotFound)
-		return
+		return true
 	}
 
 	file, info, err := openPluginAsset(r.Context(), pluginDir, parts[1])
 	if err != nil {
 		switch {
 		case errors.Is(err, os.ErrNotExist):
-			http.Error(w, "plugin asset not found", http.StatusNotFound)
+			return false
 		case errors.Is(err, os.ErrPermission), errors.Is(err, errPluginAssetEscapes):
 			http.Error(w, "forbidden: path escapes plugin directory", http.StatusForbidden)
 		default:
-			http.Error(w, "cannot read plugin asset", http.StatusInternalServerError)
+			http.Error(w, "cannot read plugin file", http.StatusInternalServerError)
 		}
-		return
+		return true
 	}
 	defer file.Close()
 
 	setPluginAssetContentType(w, parts[1])
 	http.ServeContent(w, r, info.Name(), info.ModTime(), file)
+	return true
 }
 
 // errPluginAssetEscapes marks a link that leads out of the plugin directory.
